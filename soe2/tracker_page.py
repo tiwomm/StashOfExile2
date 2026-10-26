@@ -1,0 +1,576 @@
+"""The Session tracker utility (2.0 beta 9): its window, the timer overlay over the game, and its hotkeys.
+
+Mixed into App. The logic is in tracker.py, the game log reading in gamelog.py. Wealth is only READ: at the start
+the tracker notes what your Wealth holds; at the end it compares, both at the same (latest) prices."""
+import copy
+import os
+import threading
+import time
+import tkinter as tk
+from datetime import datetime
+from tkinter import filedialog, ttk
+
+from .config import save_json, SETTINGS
+from .gamelog import find_log, LogReader
+from .overlay import game_active, key_label, parse_key
+from .pricefmt import fmt_div
+from .style import C, FONT_TITLE, KeyCapture, SegBar
+from .tracker import fmt_time, Session, Sessions, value_at
+from .wealth import WEALTH, wealth_key, WPRICES
+
+DEFAULTS = {"overlay": True, "locked": False, "x": 60, "y": 260, "w": 230, "h": 172, "opacity": 225,
+            "lines": {"session": True, "map": True, "maps": True, "avg": True, "profit": True, "gold": False},
+            "key_toggle": "", "key_pause": "", "ask_count": True, "log_path": ""}
+LINE_NAMES = [("session", "Session time"), ("map", "This map's time"), ("maps", "Maps done"), ("avg", "Average map"),
+              ("profit", "Profit / hour"), ("gold", "Gold from selling")]
+
+
+class TrackerPage:
+    # ---------------- set-up
+    def tracker_cfg(self):
+        cfg = SETTINGS.setdefault("tracker", {})
+        for k, v in DEFAULTS.items():
+            cfg.setdefault(k, copy.deepcopy(v))
+        for k, v in DEFAULTS["lines"].items():
+            cfg["lines"].setdefault(k, v)
+        return cfg
+
+    def tracker_save(self):
+        save_json("settings.json", SETTINGS)
+
+    def build_tracker_window(self, body):
+        cfg = self.tracker_cfg()
+        P1, P2 = C["panel"], C["panel2"]
+        self.tk_session, self.tk_sessions = None, Sessions()
+        self.tk_reader, self.tk_waiting_count, self.tk_finishing = None, False, False
+        self.tk_overlay = None
+        # ---- top: start / pause, and where the log is
+        top = tk.Frame(body, bg=P2, padx=14, pady=10, highlightthickness=1, highlightbackground=C["line"])
+        top.pack(fill="x", padx=10, pady=(10, 6))
+        self.tk_start_btn = ttk.Button(top, text="▶ Start tracking", style="Accent.TButton", command=self.tracker_toggle)
+        self.tk_start_btn.pack(side="left")
+        self.tk_pause_btn = ttk.Button(top, text="Pause", command=self.tracker_pause_toggle, state="disabled")
+        self.tk_pause_btn.pack(side="left", padx=6)
+        self.tk_state = tk.Label(top, text="Not tracking", bg=P2, fg=C["muted"], font=("Segoe UI", 11, "bold"))
+        self.tk_state.pack(side="left", padx=12)
+        self.tk_ov_btn = ttk.Button(top, text="Show timer", command=self.tracker_overlay_toggle)
+        self.tk_ov_btn.pack(side="right")
+        self.tk_strip = tk.Frame(body, bg="#2a2110", padx=12, pady=8, highlightthickness=1, highlightbackground="#7a6428")
+        self.tk_strip_lbl = tk.Label(self.tk_strip, text="", bg="#2a2110", fg=C["text"], anchor="w", justify="left",
+                                     wraplength=640)
+        self.tk_strip_lbl.pack(side="left", fill="x", expand=True)
+        self.tk_strip_btns = tk.Frame(self.tk_strip, bg="#2a2110")
+        self.tk_strip_btns.pack(side="right")
+        lrow = tk.Frame(body, bg=P1)
+        lrow.pack(fill="x", padx=12)
+        self.tk_log_lbl = tk.Label(lrow, text="", bg=P1, fg=C["muted"], anchor="w", font=("Segoe UI", 8))
+        self.tk_log_lbl.pack(side="left", fill="x", expand=True)
+        # 2.0 beta 21: only shown when Client.txt can't be found (right-click the line above to pick another one)
+        self.tk_pick_btn = ttk.Button(lrow, text="Find Client.txt…", command=self.tracker_pick_log)
+        self.tk_log_lbl.bind("<Button-3>", lambda e: self.tracker_pick_log())
+
+        # ---- the numbers
+        nums = tk.Frame(body, bg=P1)
+        nums.pack(fill="x", padx=10, pady=(8, 6))
+        self.tk_nums = {}
+        for i, (k, label) in enumerate((("time", "Session"), ("where", "Where you are"), ("map", "This map"),
+                                        ("maps", "Maps"), ("avg", "Average map"), ("gold", "Gold sold"),
+                                        ("start", "Wealth at start"), ("profit", "Profit"))):
+            f = tk.Frame(nums, bg=P2, padx=10, pady=6, highlightthickness=1, highlightbackground=C["line"])
+            f.grid(row=i // 4, column=i % 4, sticky="nsew", padx=(0, 6), pady=(0, 6))
+            tk.Label(f, text=label, bg=P2, fg=C["muted"], font=("Segoe UI", 8)).pack(anchor="w")
+            v = tk.Label(f, text="-", bg=P2, fg=C["text"], font=("Segoe UI", 10 if k == "where" else 13, "bold"), anchor="w")
+            v.pack(anchor="w")
+            self.tk_nums[k] = v
+        for c in range(4):
+            nums.columnconfigure(c, weight=1, uniform="n")
+
+        # ---- this session's maps / past sessions
+        self.tk_view = SegBar(body, ["This session's maps", "Past sessions", "Options"], command=lambda v: self.tracker_view(),
+                              size=9, pad=(12, 4))
+        self.tk_view.pack(anchor="w", padx=10, pady=(4, 6))
+        self.tk_pages = {}
+        pm = tk.Frame(body, bg=P1)
+        tv = ttk.Treeview(pm, columns=("n", "map", "lvl", "time", "entries", "deaths"), show="headings", height=4)
+        for cid, title, w, a in (("n", "#", 40, "e"), ("map", "Map", 220, "w"), ("lvl", "Level", 60, "e"),
+                                 ("time", "Time in it", 90, "e"), ("entries", "Times entered", 100, "e"),
+                                 ("deaths", "Deaths", 70, "e")):
+            tv.heading(cid, text=title)
+            tv.column(cid, width=w, anchor=a, stretch=(cid == "map"))
+        tv.pack(fill="both", expand=True)
+        self.tk_maps = tv
+        self.tk_pages["This session's maps"] = pm
+        ph = tk.Frame(body, bg=P1)
+        hv = ttk.Treeview(ph, columns=("when", "len", "maps", "avg", "profit", "ph", "gold", "note"), show="headings", height=4)
+        for cid, title, w, a in (("when", "Started", 120, "w"), ("len", "Length", 70, "e"), ("maps", "Maps", 50, "e"),
+                                 ("avg", "Avg map", 70, "e"), ("profit", "Profit", 90, "e"), ("ph", "Per hour", 90, "e"),
+                                 ("gold", "Gold", 70, "e"), ("note", "Note", 200, "w")):
+            hv.heading(cid, text=title)
+            hv.column(cid, width=w, anchor=a, stretch=(cid == "note"))
+        hv.pack(fill="both", expand=True)
+        hv.bind("<Double-1>", self.tracker_edit_note)
+        self.tk_hist = hv
+        tk.Label(ph, text="Double-click a session to write a note (e.g. 'T15 Breach + Delirium').", bg=P1, fg=C["muted"],
+                 font=("Segoe UI", 8), anchor="w").pack(fill="x")
+        self.tk_pages["Past sessions"] = ph
+        po = tk.Frame(body, bg=P1)
+        self._tracker_options(po)
+        self.tk_pages["Options"] = po
+        tk.Label(body, text="Reads only Path of Exile 2's own log file (Client.txt) on your PC: never the game's memory, "
+                            "never its servers, never sends keys or clicks.", bg=P1, fg=C["steel"], font=("Segoe UI", 8),
+                 anchor="w").pack(side="bottom", fill="x", padx=12, pady=(0, 6))
+        self.tracker_view()
+        self.tracker_fill_history()
+        self.root.after(1000, self.tracker_tick)
+        # (the timer shows while a session runs - beta 10; Show timer brings it up any time)
+
+    def _tracker_options(self, po):
+        cfg, P2 = self.tracker_cfg(), C["panel2"]
+        box = tk.Frame(po, bg=P2, padx=14, pady=10, highlightthickness=1, highlightbackground=C["line"])
+        box.pack(fill="x")
+        tk.Label(box, text="Timer over the game", bg=P2, fg=C["accent"], font=("Segoe UI", 10, "bold")).grid(
+            row=0, column=0, columnspan=3, sticky="w")
+        self.tk_line_vars = {}
+        for i, (k, label) in enumerate(LINE_NAMES):
+            v = tk.BooleanVar(value=bool(cfg["lines"].get(k)))
+            self.tk_line_vars[k] = v
+            ttk.Checkbutton(box, text=label, variable=v, command=self.tracker_options_changed).grid(
+                row=1 + i // 3, column=i % 3, sticky="w", padx=(0, 16))
+        self.tk_lock = tk.BooleanVar(value=bool(cfg.get("locked")))
+        ttk.Checkbutton(box, text="Lock it (can't be moved or resized by accident)", variable=self.tk_lock,
+                        command=self.tracker_options_changed).grid(row=3, column=0, columnspan=2, sticky="w", pady=(6, 0))
+        tk.Label(box, text="Opacity", bg=P2, fg=C["text"]).grid(row=3, column=2, sticky="w", pady=(6, 0))
+        self.tk_opacity = tk.IntVar(value=int(cfg.get("opacity", 225)))
+        ttk.Scale(box, from_=60, to=255, variable=self.tk_opacity, orient="horizontal", length=120,
+                  command=lambda _v: self.tracker_options_changed()).grid(row=3, column=2, sticky="e", pady=(6, 0))
+        box2 = tk.Frame(po, bg=P2, padx=14, pady=10, highlightthickness=1, highlightbackground=C["line"])
+        box2.pack(fill="x", pady=(6, 0))
+        tk.Label(box2, text="Hotkeys (work while the game is in front; also on the Hotkeys list in Settings)", bg=P2,
+                 fg=C["accent"], font=("Segoe UI", 10, "bold")).grid(row=0, column=0, columnspan=4, sticky="w")
+        self.tk_key_vars = {}
+        for i, (k, label) in enumerate((("key_toggle", "Start / stop"), ("key_pause", "Pause / resume"))):
+            tk.Label(box2, text=label, bg=P2, fg=C["text"]).grid(row=1, column=i * 2, sticky="w", padx=(0, 6))
+            v = tk.StringVar(value=cfg.get(k, ""))
+            self.tk_key_vars[k] = v
+            KeyCapture(box2, v, width=12, on_change=lambda t: self.tracker_save_keys()).grid(row=1, column=i * 2 + 1, sticky="w", padx=(0, 18))
+        self.tk_key_msg = tk.Label(box2, text="Click a box and press the key. Esc keeps the old one; Backspace or "
+                                              "right-click clears it.", bg=P2, fg=C["muted"], font=("Segoe UI", 8))
+        self.tk_key_msg.grid(row=2, column=0, columnspan=5, sticky="w", pady=(4, 0))
+        self.tk_ask = tk.BooleanVar(value=bool(cfg.get("ask_count", True)))
+        ttk.Checkbutton(po, text="When I stop, offer to count new currency in Wealth first (so the profit includes it)",
+                        variable=self.tk_ask, command=self.tracker_options_changed).pack(anchor="w", pady=(8, 0))
+
+    def tracker_view(self):
+        for name, f in self.tk_pages.items():
+            if name == self.tk_view.get():
+                f.pack(fill="both", expand=True, padx=10, pady=(0, 6))
+            else:
+                f.pack_forget()
+
+    def tracker_options_changed(self):
+        cfg = self.tracker_cfg()
+        for k, v in self.tk_line_vars.items():
+            cfg["lines"][k] = bool(v.get())
+        cfg["locked"] = bool(self.tk_lock.get())
+        cfg["opacity"] = int(float(self.tk_opacity.get()))
+        cfg["ask_count"] = bool(self.tk_ask.get())
+        self.tracker_save()
+        if self.tk_overlay is not None:
+            self.tracker_overlay_build()
+
+    def tracker_save_keys(self):
+        cfg, bad = self.tracker_cfg(), []
+        for k, v in self.tk_key_vars.items():
+            txt = v.get().strip()
+            if txt and not parse_key(txt):
+                bad.append(txt)
+                continue
+            cfg[k] = txt
+        self.tracker_save()
+        clash = self.hotkey_clashes()
+        msg = ("Not understood: " + ", ".join(bad)) if bad else ("Saved. " + ("Clash: " + "; ".join(clash) if clash else ""))
+        self.tk_key_msg.config(text=msg, fg=C["red"] if bad or clash else C["green"])
+
+    # ---------------- the game log
+    def tracker_pick_log(self):
+        p = filedialog.askopenfilename(parent=self.root, title="Find Path of Exile 2's Client.txt (in its logs folder)",
+                                       filetypes=[("Client.txt", "Client.txt"), ("Text", "*.txt"), ("All files", "*.*")])
+        if p:
+            self.tracker_cfg()["log_path"] = p
+            self.tracker_save()
+            self.tk_reader = None
+            self.tracker_open_log()
+
+    def tracker_open_log(self):
+        """-> True if the log is being followed."""
+        if self.tk_reader is not None and not self.tk_reader.error:
+            return True
+        path = find_log(self.tracker_cfg().get("log_path"))
+        if not path:
+            self.tk_log_lbl.config(text="Client.txt wasn't found, so maps aren't counted (the timer and profit still "
+                                        "work). It's in the game's logs folder, usually:\n"
+                                        "  Steam: C:\\Program Files (x86)\\Steam\\steamapps\\common\\Path of Exile 2\\logs\n"
+                                        "  Standalone: C:\\Program Files (x86)\\Grinding Gear Games\\Path of Exile 2\\logs\n"
+                                        "(or the same folders in your Steam library on another drive).",
+                                   fg=C["good"], justify="left")
+            if not self.tk_pick_btn.winfo_ismapped():
+                self.tk_pick_btn.pack(side="right", anchor="n")
+            return False
+        self.tk_pick_btn.pack_forget()
+        self.tk_reader = LogReader(path)
+        evs = self.tk_reader.start()
+        self.tk_last_area = next((e for e in reversed(evs) if e[0] == "area"), None)
+        self.tk_last_scene = next((e for e in reversed(evs) if e[0] == "scene" and e[2]["name"] != "Atlas"), None)
+        size = os.path.getsize(path) / 1048576 if os.path.exists(path) else 0
+        self.tk_log_lbl.config(text=f"Following {path} ({size:,.0f} MB - only new lines are read). "
+                                    "Right-click here to use a different Client.txt.", fg=C["muted"])
+        return True
+
+    def tracker_tick(self):
+        try:
+            s = self.tk_session
+            if s is not None and s.ended is None and self.tk_reader is not None:
+                changed = False
+                for kind, ts, data in self.tk_reader.poll():
+                    changed |= s.feed(kind, ts, data)
+                    if kind == "afk" and data["on"] and s.running():
+                        s.pause(ts)
+                        changed = True
+                if changed:
+                    self.tracker_fill_maps()
+            self.tracker_draw()
+        except Exception:
+            self.log_error("session tracker")
+        self.root.after(1000, self.tracker_tick)
+
+    # ---------------- start / pause / stop
+    def tracker_toggle(self):
+        if self.tk_session is None or self.tk_session.ended is not None:
+            self.tracker_start()
+        else:
+            self.tracker_stop()
+
+    def tracker_start(self):
+        now = time.time()
+        items = copy.deepcopy(WEALTH.all_items())
+        s = Session(now=now, start_items=items)
+        s.start_value = value_at(items, WPRICES, WEALTH.overrides, wealth_key) if items else None
+        self.tk_session = s
+        self.tracker_open_log()
+        la = getattr(self, "tk_last_area", None)
+        if la:                                     # where you are right now (from the end of the log)
+            s.feed("area", now, la[2])
+            sc = getattr(self, "tk_last_scene", None)
+            if sc and sc[1] >= la[1]:
+                s.feed("scene", now, sc[2])
+        self.tk_start_btn.config(text="■ Stop", style="TButton")
+        self.tk_pause_btn.config(state="normal", text="Pause")
+        self._tk_strip_close()
+        self.tracker_fill_maps()
+        self.tracker_draw()
+        self._say("Session started." + ("" if s.start_value is not None else " (Wealth is empty, so no profit can be "
+                                                                              "worked out; the timer and maps still work.)"), 8)
+        if self.tk_overlay is None and self.tracker_cfg().get("overlay"):
+            self.tracker_overlay_show()
+
+    def tracker_pause_toggle(self):
+        s = self.tk_session
+        if not s or s.ended is not None:
+            return
+        if s.paused_at is None:
+            s.pause()
+            self.tk_pause_btn.config(text="Resume")
+        else:
+            s.resume()
+            self.tk_pause_btn.config(text="Pause")
+        self.tracker_draw()
+
+    def tracker_stop(self):
+        s = self.tk_session
+        if not s or s.ended is not None:
+            return
+        if self.tracker_cfg().get("ask_count") and s.start_value is not None:
+            s.pause()
+            self._tk_strip("Before finishing: count the currency you picked up, so it's part of the profit? (Timer is "
+                           "paused.)", [("Count in Wealth first", self.tracker_count_first),
+                                        ("Finish now", self.tracker_finish), ("Keep going", self.tracker_keep_going)])
+            return
+        self.tracker_finish()
+
+    def tracker_keep_going(self):
+        self._tk_strip_close()
+        if self.tk_session and self.tk_session.paused_at is not None:
+            self.tk_session.resume()
+
+    def tracker_count_first(self):
+        self.tk_waiting_count = True
+        self._tk_strip("Counting in Wealth: copy your new stacks (Ctrl+C), then press Finish counting there - the "
+                       "session ends by itself after that.", [("Finish now", self.tracker_finish)])
+        self.shell.open("wealth")
+        if not self.w_counting:
+            self.wealth_count_toggle()
+
+    def tracker_after_count(self):
+        """Wealth finished a count (wealth_page calls this)."""
+        if self.tk_waiting_count:
+            self.tk_waiting_count = False
+            self.root.after(300, self.tracker_finish)
+
+    def tracker_finish(self):
+        s = self.tk_session
+        if not s or s.ended is not None or self.tk_finishing:
+            return
+        self.tk_finishing = True
+        self.tk_waiting_count = False
+        self._tk_strip("Working out the profit (fresh prices from poe.ninja)…", [])
+        lg = SETTINGS.get("league")
+
+        def work():
+            try:
+                if lg:
+                    WPRICES.ensure(lg)
+            except Exception:
+                pass
+            self.ui_q.put(("tracker", "finish"))
+        threading.Thread(target=work, daemon=True).start()
+
+    def ev_tracker(self, what):
+        if what == "finish":
+            self._tracker_finish_now()
+        elif what == "toggle":
+            self.tracker_toggle()
+        elif what == "pause":
+            self.tracker_pause_toggle()
+
+    def _tracker_finish_now(self):
+        s = self.tk_session
+        self.tk_finishing = False
+        if not s or s.ended is not None:
+            return
+        end_items = WEALTH.all_items()
+        start_now = value_at(s.start_items, WPRICES, WEALTH.overrides, wealth_key) if s.start_items else None
+        end_now = value_at(end_items, WPRICES, WEALTH.overrides, wealth_key) if end_items else None
+        profit = (end_now - start_now) if (start_now is not None and end_now is not None) else None
+        s.stop(end_value=end_now, profit=profit)
+        self.tk_sessions.add(s)
+        self.tk_start_btn.config(text="▶ Start tracking", style="Accent.TButton")
+        self.tk_pause_btn.config(state="disabled", text="Pause")
+        ph = s.per_hour()
+        msg = (f"Session done: {fmt_time(s.elapsed())}, {s.map_count()} map{'s' if s.map_count() != 1 else ''}"
+               + (f", profit {'+' if profit >= 0 else '-'}{fmt_div(abs(profit))}" if profit is not None else "")
+               + (f" ({fmt_div(ph)} per hour)" if ph is not None else "") + ".")
+        self._tk_strip(msg + " Both ends are valued at today's prices, so price changes don't count as profit.",
+                       [("OK", self._tk_strip_close)])
+        self._say(msg, 15)
+        self.tracker_fill_history()
+        self.tracker_draw()
+        self.root.after(8000, lambda: (self.tk_session is s and s.ended is not None) and self.tracker_overlay_hide())
+
+    def _tk_strip(self, text, actions):
+        for w in self.tk_strip_btns.winfo_children():
+            w.destroy()
+        self.tk_strip_lbl.config(text=text)
+        for i, (label, fn) in enumerate(actions):
+            ttk.Button(self.tk_strip_btns, text=label, command=fn, style="Accent.TButton" if i == 0 else "TButton").pack(
+                side="left", padx=(6, 0))
+        if not self.tk_strip.winfo_ismapped():
+            self.tk_strip.pack(fill="x", padx=10, pady=(0, 6), after=self.tk_start_btn.master)
+
+    def _tk_strip_close(self):
+        self.tk_strip.pack_forget()
+
+    # ---------------- drawing
+    def tracker_numbers(self):
+        s, now = self.tk_session, time.time()
+        if s is None:
+            return {}
+        avg = s.avg_map_time(now)
+        cur = s.current_map_time(now)
+        prof = s.profit
+        ph = s.per_hour() if s.ended else None
+        return {"time": fmt_time(s.elapsed(now)) + ("  (paused)" if s.paused_at and not s.ended else ""),
+                "where": s.location(), "map": fmt_time(cur) if cur is not None else "-", "maps": str(s.map_count()),
+                "avg": fmt_time(avg) if avg is not None else "-", "gold": f"{s.gold:,}",
+                "start": fmt_div(s.start_value) if s.start_value is not None else "-",
+                "profit": ((('+' if prof >= 0 else '-') + fmt_div(abs(prof))) + (f"  ({fmt_div(ph)}/h)" if ph else ""))
+                if prof is not None else ("when you stop" if s.ended is None else "-")}
+
+    def tracker_draw(self):
+        s = self.tk_session
+        n = self.tracker_numbers()
+        for k, lab in self.tk_nums.items():
+            lab.config(text=n.get(k, "-"))
+        if s is None or s.ended is not None:
+            self.tk_state.config(text="Not tracking", fg=C["muted"])
+        elif s.paused_at is not None:
+            self.tk_state.config(text="⏸ Paused", fg=C["good"])
+        else:
+            self.tk_state.config(text="● Tracking", fg=C["green"])
+        self.tracker_overlay_draw(n)
+
+    def tracker_fill_maps(self):
+        tv = self.tk_maps
+        tv.delete(*tv.get_children())
+        s = self.tk_session
+        if not s:
+            return
+        now = time.time()
+        for i, m in enumerate(s.maps):
+            t = s.current_map_time(now) if (s.where and s.where.get("map") == i) else m["time"]
+            tv.insert("", "end", values=(i + 1, m["name"], m["level"], fmt_time(t), m["entries"], m["deaths"]))
+
+    def tracker_fill_history(self):
+        hv = self.tk_hist
+        hv.delete(*hv.get_children())
+        for i, s in reversed(list(enumerate(self.tk_sessions.items))):
+            avg = s.avg_map_time()
+            ph = s.per_hour()
+            hv.insert("", "end", iid=str(i), values=(
+                datetime.fromtimestamp(s.started).strftime("%b %d %H:%M"), fmt_time(s.elapsed()), s.map_count(),
+                fmt_time(avg) if avg is not None else "-",
+                (('+' if s.profit >= 0 else '-') + fmt_div(abs(s.profit))) if s.profit is not None else "-",
+                fmt_div(ph) if ph is not None else "-", f"{s.gold:,}", s.note))
+
+    def tracker_edit_note(self, e):
+        iid = self.tk_hist.identify_row(e.y)
+        if not iid:
+            return
+        from tkinter import simpledialog
+        s = self.tk_sessions.items[int(iid)]
+        txt = simpledialog.askstring("Note", "A note for this session:", initialvalue=s.note, parent=self.root)
+        if txt is not None:
+            s.note = txt.strip()
+            self.tk_sessions.save()
+            self.tracker_fill_history()
+
+    # ---------------- the timer over the game
+    def tracker_overlay_toggle(self):
+        cfg = self.tracker_cfg()
+        if self.tk_overlay is not None:
+            self.tracker_overlay_hide()
+            cfg["overlay"] = False
+        else:
+            cfg["overlay"] = True
+            self.tracker_overlay_show()
+        self.tracker_save()
+
+    def tracker_overlay_show(self):
+        self.tracker_overlay_build()
+        self.tk_ov_btn.config(text="Hide timer")
+
+    def tracker_overlay_hide(self):
+        if self.tk_overlay is not None:
+            self._tracker_store_geo()
+            self.tk_overlay.destroy()
+            self.tk_overlay = None
+        self.tk_ov_btn.config(text="Show timer")
+
+    def _tracker_store_geo(self):
+        w = self.tk_overlay
+        try:
+            if w is not None and w.winfo_ismapped() and w.winfo_width() > 1:
+                self.tracker_cfg().update(x=w.winfo_x(), y=w.winfo_y(), w=w.winfo_width(), h=w.winfo_height())
+        except Exception:
+            pass
+
+    def tracker_overlay_build(self):
+        """The timer over the game: the shared over-the-game window (overlaywin.py, same look as Notes)."""
+        from .overlaywin import OverlayWindow, BODY_BG
+        cfg = self.tracker_cfg()
+        if self.tk_overlay is not None:
+            self._tracker_store_geo()
+            self.tk_overlay.destroy()
+        fg = "#ffd9a8"
+
+        def moved(x, y, ww, hh):
+            cfg.update(x=x, y=y, w=ww, h=hh)
+            self.tracker_save()
+
+        def lock(on):
+            cfg["locked"] = bool(on)
+            if getattr(self, "tk_lock", None) is not None:
+                self.tk_lock.set(bool(on))
+            self.tracker_save()
+            self.tracker_overlay_build()
+        w = OverlayWindow(self.root, "Session", "⏱", (cfg["x"], cfg["y"], cfg["w"], cfg["h"]),
+                          opacity=int(cfg.get("opacity", 225)), locked=bool(cfg.get("locked")),
+                          min_size=(140, 60), on_close=self.tracker_overlay_toggle, on_lock=lock, on_moved=moved,
+                          drag_body=True, follow_game=True, no_activate=True)
+        w.withdraw()
+        inner = tk.Frame(w.body, bg=BODY_BG, padx=10, pady=4)
+        inner.pack(fill="both", expand=True)
+        self.tk_ov_lbls = {}
+        for k, _label in LINE_NAMES:
+            if cfg["lines"].get(k):
+                lab = tk.Label(inner, text="", bg=BODY_BG, fg=fg if k == "session" else "#e8eefc",
+                               font=("Segoe UI", 15 if k == "session" else 10, "bold" if k in ("session", "profit") else "normal"),
+                               anchor="w")
+                lab.pack(fill="x")
+                self.tk_ov_lbls[k] = lab
+                if not cfg.get("locked"):
+                    w.draggable(lab)
+        if not cfg.get("locked"):
+            w.draggable(inner)
+        self.tk_overlay = w
+        self.tracker_overlay_draw(self.tracker_numbers())
+        w.show()                                   # only while the game (or the app) is in front (2.0 beta 15)
+
+    def tracker_overlay_draw(self, n):
+        if self.tk_overlay is None:
+            return
+        s = self.tk_session
+        live = s is not None and s.ended is None
+        texts = {"session": n.get("time", "0:00") if live else "not tracking",
+                 "map": f"Map  {n.get('map', '-')}" + (f"   {n.get('where', '')}" if live and n.get("where") not in ("-", None) else ""),
+                 "maps": f"Maps  {n.get('maps', '0')}", "avg": f"Avg  {n.get('avg', '-')}",
+                 "profit": "Profit  " + (n.get("profit", "-") if s is not None else "-"),
+                 "gold": f"Gold  {n.get('gold', '0')}"}
+        for k, lab in self.tk_ov_lbls.items():
+            lab.config(text=texts.get(k, ""))
+
+    # ---------------- hotkeys (fed by the keyboard watcher, on its own thread)
+    def tracker_on_key(self, vk, ctrl, alt, shift):
+        cfg = SETTINGS.get("tracker") or {}
+        if not SETTINGS.get("labs"):
+            return False
+        for key, action in (("key_toggle", "toggle"), ("key_pause", "pause")):
+            k = parse_key(cfg.get(key) or "")
+            if k and k == (vk, ctrl, alt, shift):
+                self.ui_q.put(("tracker", action))
+                return bool(game_active())          # in game: the key is used up; elsewhere it still does its usual job
+        return False
+
+    def tracker_status(self):
+        s = getattr(self, "tk_session", None)
+        if s is None or s.ended is not None:
+            return False
+        return "warn" if s.paused_at is not None else True
+
+    # ---------------- every hotkey in one list (Settings)
+    def all_hotkeys(self):
+        """[(what, key text, where it is set, editable key id or None)]"""
+        ov = getattr(self, "overlay", None)
+        oc = ov.cfg if ov else {}
+        tc = self.tracker_cfg()
+        rows = [("Add the item under the mouse to Price checks", "Ctrl+Alt+C", "fixed", None),
+                ("One-key copy (experimental, in game)", SETTINGS.get("quick_copy_key", ""), "Price checks",
+                 "checks:quick_copy_key"),
+                ("Go to hideout", oc.get("hideout_key", ""), "Chat commands", "overlay:hideout_key"),
+                ("Show / hide notes", oc.get("notes_key", ""), "Notes", "overlay:notes_key"),
+                ("Session tracker: start / stop", tc.get("key_toggle", ""), "Session tracker", "tracker:key_toggle"),
+                ("Session tracker: pause / resume", tc.get("key_pause", ""), "Session tracker", "tracker:key_pause")]
+        for c in oc.get("commands", []) or []:
+            rows.append((f"Chat: {c.get('cmd', '')}", c.get("key", ""), "Chat commands", None))
+        return rows
+
+    def hotkey_clashes(self):
+        seen, out = {}, []
+        for what, key, _w, _id in self.all_hotkeys():
+            k = parse_key(key) if key and key != "Ctrl+Alt+C" else ((0x43, True, True, False) if key == "Ctrl+Alt+C" else None)
+            if not k:
+                continue
+            if k in seen:
+                out.append(f"{key_label(key)} is used by \"{seen[k]}\" and \"{what}\"")
+            else:
+                seen[k] = what
+        return out

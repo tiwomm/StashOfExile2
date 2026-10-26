@@ -1,0 +1,813 @@
+# RePoE export of Path of Exile 2's game files, game version 0.5.5.4.2 (tools/build_modlists.py)
+Ruby
+Base Prefix
+(4—6)% increased Area of Effect
+(10—20)% increased Armour
+Break (5—15)% increased Armour
+(5—15)% increased Attack Damage
+(3—7)% chance to inflict Bleeding on Hit
+(3—7)% increased Block chance
+(15—25)% increased Damage against Enemies with Fully Broken Armour
+(5—15)% increased Elemental Damage
+Empowered Attacks deal (10—20)% increased Damage
+(5—15)% increased Fire Damage
+Damage Penetrates (5—10)% Fire Resistance
+(5—15)% increased Ignite Magnitude
+(6—16)% increased Damage with Maces
++(1—2) to Maximum Rage
+(5—15)% increased Melee Damage
+Minions have (5—8)% increased Area of Effect
+Minions have (5—15)% increased maximum Life
+(5—15)% increased Global Physical Damage
+(18—32)% increased Armour, Evasion and Energy Shield from Equipped Shield
+(5—15)% increased Magnitude of Bleeding you inflict
+(10—20)% increased Thorns damage
+(10—18)% increased Totem Damage
+(10—20)% increased Totem Life
+(10—20)% increased Damage with Warcries
+(15—25)% chance for Attack Hits to apply Incision
+Banner Skills have (6—16)% increased Area of Effect
+(15—25)% increased Presence Area of Effect
+(5—15)% increased Damage while Shapeshifted
+(5—15)% increased Damage with Plant Skills
+Base Suffix
+(10—20)% increased Armour Break Duration
+(5—10)% increased Bleeding Duration
+(10—20)% increased Flammability Magnitude
+(5—10)% increased Skill Effect Duration
+(5—15)% increased Knockback Distance
+(4—6)% of Skill Mana Costs Converted to Life Costs
+(5—15)% increased amount of Life Leeched
+(5—10)% increased Life Regeneration rate
+(15—25)% increased Stun Buildup with Maces
++1% to Maximum Fire Resistance
+Minions have (6—16)% additional Physical Damage Reduction
+Gain 1 Rage on Melee Hit
+Gain (1—3) Rage when Hit by an Enemy
+(10—20)% increased Stun Buildup
+(6—16)% increased Stun Threshold
+(10—20)% increased Totem Placement speed
+(5—15)% increased Warcry Cooldown Recovery Rate
+(10—20)% increased Warcry Speed
+(15—20)% increased Glory generation for Banner Skills
+Banner Skills have (15—25)% increased Duration
+(2—4)% increased Skill Speed while Shapeshifted
+CurrencyVaalCorrupted
++(4—6) to Strength
++(4—6) to Dexterity
++(4—6) to Intelligence
++(5—10)% to Fire Resistance
++(5—10)% to Cold Resistance
++(5—10)% to Lightning Resistance
++(3—7)% to Chaos Resistance
+Immune to Maim
+You cannot be Hindered
+Corrupted Blood cannot be inflicted on you
+Cannot be Blinded
+Emerald
+Base Prefix
+(5—10)% increased Accuracy Rating
+(5—15)% increased Magnitude of Ailments you inflict
+(5—15)% increased Attack Damage
+(5—10)% increased Blind Effect
+(10—20)% increased Damage with Hits against Rare and Unique Enemies
+(5—15)% increased Accuracy Rating with Bows
+(6—16)% increased Damage with Bows
+(10—20)% increased Damage while you have an active Charm
+(10—20)% increased Magnitude of Damaging Ailments you inflict with Critical Hits
+(6—16)% increased Damage with Crossbows
+(5—15)% increased Elemental Damage
+(10—20)% increased Evasion Rating
+Herald Skills deal (15—25)% increased Damage
+(5—15)% increased Lightning Damage
+Damage Penetrates (5—10)% Lightning Resistance
+(4—8)% increased Effect of your Mark Skills
+(5—15)% increased Magnitude of Poison you inflict
+(5—15)% increased Projectile Damage
+(4—8)% increased Projectile Speed
+(6—16)% increased Damage with Quarterstaves
+(4—6)% increased bonuses gained from Equipped Quiver
+(10—15)% increased Magnitude of Shock you inflict
+(6—16)% increased Damage with Spears
+(10—20)% increased Projectile Damage if you've dealt a Melee Hit in the past eight seconds
+(10—20)% increased Melee Damage if you've dealt a Projectile Attack Hit in the past eight seconds
+(15—25)% increased Parry Damage
+Companions deal (10—20)% increased Damage
+Companions have (10—20)% increased maximum Life
+(10—20)% increased Hazard Damage
+(5—15)% increased Damage with Plant Skills
+Base Suffix
+(5—15)% increased chance to inflict Ailments
+(10—20)% increased Elemental Ailment Threshold
+(6—16)% increased Critical Hit Chance for Attacks
+(10—20)% increased Critical Damage Bonus for Attack Damage
+(2—4)% increased Attack Speed
+(3—7)% chance to Blind Enemies on Hit with Attacks
+(2—4)% increased Attack Speed with Bows
+Projectiles have (3—5)% chance to Chain an additional time from terrain
+(5—15)% increased Charm Effect Duration
+(5—15)% increased Charm Charges gained
+(3—5)% increased Cooldown Recovery Rate
+(10—15)% increased Crossbow Reload Speed
+(2—4)% increased Attack Speed with Crossbows
+(5—10)% increased Duration of Damaging Ailments on Enemies
+(5—10)% chance to Daze on Hit
+Debuffs on you expire (5—10)% faster
+(5—10)% increased Duration of Ignite, Shock and Chill on Enemies
+Damaging Ailments deal damage (3—7)% faster
+(5—10)% increased Flask Charges gained
+(5—10)% increased Flask Effect Duration
+Projectiles have (10—15)% chance for an additional Projectile when Forking
+(5—15)% increased Life Recovery from Flasks
+(10—20)% increased Life Flask Charges gained
+(5—15)% increased Mana Recovery from Flasks
+(10—20)% increased Mana Flask Charges gained
+(5—15)% increased amount of Mana Leeched
+Mark Skills have (5—15)% increased Use Speed
+Mark Skills have (18—32)% increased Skill Effect Duration
++1% to Maximum Lightning Resistance
+(1—2)% increased Movement Speed
+(10—20)% chance to Pierce an Enemy
+(10—20)% increased Pin Buildup
+(5—10)% chance to Poison on Hit
+(5—10)% increased Poison Duration
+(10—20)% increased Freeze Buildup with Quarterstaves
+(2—4)% increased Attack Speed with Quarterstaves
+(10—20)% increased chance to Shock
+(15—25)% increased Shock Duration
+(10—5)% reduced Slowing Potency of Debuffs on You
+(2—4)% increased Attack Speed with Spears
+(10—20)% increased Critical Damage Bonus with Spears
+(15—25)% increased Stun Threshold if you haven't been Stunned Recently
+(10—15)% increased Parried Debuff Duration
+(15—25)% increased Stun Threshold while Parrying
+CurrencyVaalCorrupted
++(4—6) to Strength
++(4—6) to Dexterity
++(4—6) to Intelligence
++(5—10)% to Fire Resistance
++(5—10)% to Cold Resistance
++(5—10)% to Lightning Resistance
++(3—7)% to Chaos Resistance
+Immune to Maim
+You cannot be Hindered
+Corrupted Blood cannot be inflicted on you
+Cannot be Blinded
+Sapphire
+Base Prefix
+(5—15)% increased Magnitude of Ailments you inflict
+(4—6)% increased Area of Effect
+(7—13)% increased Chaos Damage
+(5—15)% increased Cold Damage
+Damage Penetrates (5—10)% Cold Resistance
+(10—20)% increased Damage if you have Consumed a Corpse Recently
+(10—20)% increased Magnitude of Damaging Ailments you inflict with Critical Hits
+(8—12)% increased Area of Effect of Curses
+(2—4)% increased Curse Magnitudes
+(5—15)% increased Elemental Damage
+(10—20)% increased maximum Energy Shield
+(10—15)% faster start of Energy Shield Recharge
+(30—50)% increased Energy Shield from Equipped Focus
+(5—15)% increased Ignite Magnitude
+Minions deal (5—15)% increased Damage
+Offerings have (15—25)% increased Maximum Life
+(10—15)% increased Magnitude of Shock you inflict
+(5—15)% increased Spell Damage
+Triggered Spells deal (10—18)% increased Spell Damage
+(5—10)% increased Withered Magnitude
+(15—25)% increased Presence Area of Effect
+(5—15)% increased Damage while Shapeshifted
+(5—15)% increased Damage with Plant Skills
+Base Suffix
+(5—15)% increased chance to inflict Ailments
+(2—4)% increased Cast Speed
+(15—25)% increased Chill Duration on Enemies
+(5—15)% increased Critical Hit Chance
+(10—20)% increased Critical Damage Bonus
+(10—20)% increased Critical Spell Damage Bonus
+(15—5)% faster Curse Activation
+(15—25)% increased Curse Duration
+(2—4)% of Damage is taken from Mana before Life
+(5—10)% increased Duration of Damaging Ailments on Enemies
+Debuffs on you expire (5—10)% faster
+Meta Skills gain (4—8)% increased Energy
+Damaging Ailments deal damage (3—7)% faster
+(10—20)% increased Freeze Buildup
+(18—32)% increased Freeze Threshold
+(10—20)% increased Flammability Magnitude
+(5—10)% increased Skill Effect Duration
+Recover (1—2)% of maximum Life on Kill
+(2—3)% of Damage taken Recouped as Life
+Recover (1—2)% of maximum Mana on Kill
+(5—15)% increased Mana Regeneration Rate
++1% to Maximum Cold Resistance
+Minions have (2—4)% increased Attack and Cast Speed
+Minions have +(7—13)% to Chaos Resistance
+Minions have (10—20)% increased Critical Hit Chance
+Minions have (15—25)% increased Critical Damage Bonus
+Minions have +(5—10)% to all Elemental Resistances
+Offering Skills have (15—25)% increased Duration
+(10—20)% increased Freeze Buildup with Quarterstaves
+(10—20)% increased chance to Shock
+(15—25)% increased Shock Duration
+(5—15)% increased Critical Hit Chance for Spells
+Gain additional Stun Threshold equal to (5—15)% of maximum Energy Shield
+Gain additional Ailment Threshold equal to (5—15)% of maximum Energy Shield
+(2—4)% increased Skill Speed while Shapeshifted
+CurrencyVaalCorrupted
++(4—6) to Strength
++(4—6) to Dexterity
++(4—6) to Intelligence
++(5—10)% to Fire Resistance
++(5—10)% to Cold Resistance
++(5—10)% to Lightning Resistance
++(3—7)% to Chaos Resistance
+Immune to Maim
+You cannot be Hindered
+Corrupted Blood cannot be inflicted on you
+Cannot be Blinded
+Diamond
+Base Prefix
+(5—10)% increased Accuracy Rating
+(5—15)% increased Magnitude of Ailments you inflict
+(4—6)% increased Area of Effect
+(10—20)% increased Armour
+Break (5—15)% increased Armour
+(5—15)% increased Attack Damage
+(3—7)% chance to inflict Bleeding on Hit
+(5—10)% increased Blind Effect
+(3—7)% increased Block chance
+(10—20)% increased Damage with Hits against Rare and Unique Enemies
+(5—15)% increased Accuracy Rating with Bows
+(6—16)% increased Damage with Bows
+(10—20)% increased Damage while you have an active Charm
+(7—13)% increased Chaos Damage
+(5—15)% increased Cold Damage
+Damage Penetrates (5—10)% Cold Resistance
+(10—20)% increased Damage if you have Consumed a Corpse Recently
+(10—20)% increased Magnitude of Damaging Ailments you inflict with Critical Hits
+(6—16)% increased Damage with Crossbows
+(8—12)% increased Area of Effect of Curses
+(2—4)% increased Curse Magnitudes
+(15—25)% increased Damage against Enemies with Fully Broken Armour
+(5—15)% increased Elemental Damage
+Empowered Attacks deal (10—20)% increased Damage
+(10—20)% increased maximum Energy Shield
+(10—15)% faster start of Energy Shield Recharge
+(10—20)% increased Evasion Rating
+(5—15)% increased Fire Damage
+Damage Penetrates (5—10)% Fire Resistance
+(30—50)% increased Energy Shield from Equipped Focus
+Herald Skills deal (15—25)% increased Damage
+(5—15)% increased Ignite Magnitude
+(5—15)% increased Lightning Damage
+Damage Penetrates (5—10)% Lightning Resistance
+(6—16)% increased Damage with Maces
+(4—8)% increased Effect of your Mark Skills
++(1—2) to Maximum Rage
+(5—15)% increased Melee Damage
+Minions have (5—8)% increased Area of Effect
+Minions deal (5—15)% increased Damage
+Minions have (5—15)% increased maximum Life
+Offerings have (15—25)% increased Maximum Life
+(5—15)% increased Global Physical Damage
+(5—15)% increased Magnitude of Poison you inflict
+(5—15)% increased Projectile Damage
+(4—8)% increased Projectile Speed
+(6—16)% increased Damage with Quarterstaves
+(4—6)% increased bonuses gained from Equipped Quiver
+(18—32)% increased Armour, Evasion and Energy Shield from Equipped Shield
+(10—15)% increased Magnitude of Shock you inflict
+(6—16)% increased Damage with Spears
+(5—15)% increased Spell Damage
+(5—15)% increased Magnitude of Bleeding you inflict
+(10—20)% increased Thorns damage
+(10—18)% increased Totem Damage
+(10—20)% increased Totem Life
+Triggered Spells deal (10—18)% increased Spell Damage
+(10—20)% increased Damage with Warcries
+(5—10)% increased Withered Magnitude
+(10—20)% increased Projectile Damage if you've dealt a Melee Hit in the past eight seconds
+(10—20)% increased Melee Damage if you've dealt a Projectile Attack Hit in the past eight seconds
+(15—25)% increased Parry Damage
+Companions deal (10—20)% increased Damage
+Companions have (10—20)% increased maximum Life
+(10—20)% increased Hazard Damage
+(15—25)% chance for Attack Hits to apply Incision
+Banner Skills have (6—16)% increased Area of Effect
+(15—25)% increased Presence Area of Effect
+(5—15)% increased Damage while Shapeshifted
+(5—15)% increased Damage with Plant Skills
+Base Suffix
+(5—15)% increased chance to inflict Ailments
+(10—20)% increased Elemental Ailment Threshold
+(10—20)% increased Armour Break Duration
+(6—16)% increased Critical Hit Chance for Attacks
+(10—20)% increased Critical Damage Bonus for Attack Damage
+(2—4)% increased Attack Speed
+(5—10)% increased Bleeding Duration
+(3—7)% chance to Blind Enemies on Hit with Attacks
+(2—4)% increased Attack Speed with Bows
+(2—4)% increased Cast Speed
+Projectiles have (3—5)% chance to Chain an additional time from terrain
+(5—15)% increased Charm Effect Duration
+(5—15)% increased Charm Charges gained
+(15—25)% increased Chill Duration on Enemies
+(3—5)% increased Cooldown Recovery Rate
+(5—15)% increased Critical Hit Chance
+(10—20)% increased Critical Damage Bonus
+(10—20)% increased Critical Spell Damage Bonus
+(10—15)% increased Crossbow Reload Speed
+(2—4)% increased Attack Speed with Crossbows
+(15—5)% faster Curse Activation
+(15—25)% increased Curse Duration
+(2—4)% of Damage is taken from Mana before Life
+(5—10)% increased Duration of Damaging Ailments on Enemies
+(5—10)% chance to Daze on Hit
+Debuffs on you expire (5—10)% faster
+(5—10)% increased Duration of Ignite, Shock and Chill on Enemies
+Meta Skills gain (4—8)% increased Energy
+Damaging Ailments deal damage (3—7)% faster
+(5—10)% increased Flask Charges gained
+(5—10)% increased Flask Effect Duration
+Projectiles have (10—15)% chance for an additional Projectile when Forking
+(10—20)% increased Freeze Buildup
+(18—32)% increased Freeze Threshold
+(10—20)% increased Flammability Magnitude
+(5—10)% increased Skill Effect Duration
+(5—15)% increased Knockback Distance
+(4—6)% of Skill Mana Costs Converted to Life Costs
+(5—15)% increased Life Recovery from Flasks
+(10—20)% increased Life Flask Charges gained
+(5—15)% increased amount of Life Leeched
+Recover (1—2)% of maximum Life on Kill
+(2—3)% of Damage taken Recouped as Life
+(5—10)% increased Life Regeneration rate
+(15—25)% increased Stun Buildup with Maces
+(5—15)% increased Mana Recovery from Flasks
+(10—20)% increased Mana Flask Charges gained
+(5—15)% increased amount of Mana Leeched
+Recover (1—2)% of maximum Mana on Kill
+(5—15)% increased Mana Regeneration Rate
+Mark Skills have (5—15)% increased Use Speed
+Mark Skills have (18—32)% increased Skill Effect Duration
++1% to Maximum Cold Resistance
++1% to Maximum Fire Resistance
++1% to Maximum Lightning Resistance
+Minions have (2—4)% increased Attack and Cast Speed
+Minions have +(7—13)% to Chaos Resistance
+Minions have (10—20)% increased Critical Hit Chance
+Minions have (15—25)% increased Critical Damage Bonus
+Minions have (6—16)% additional Physical Damage Reduction
+Minions have +(5—10)% to all Elemental Resistances
+(1—2)% increased Movement Speed
+Offering Skills have (15—25)% increased Duration
+(10—20)% chance to Pierce an Enemy
+(10—20)% increased Pin Buildup
+(5—10)% chance to Poison on Hit
+(5—10)% increased Poison Duration
+(10—20)% increased Freeze Buildup with Quarterstaves
+(2—4)% increased Attack Speed with Quarterstaves
+Gain 1 Rage on Melee Hit
+Gain (1—3) Rage when Hit by an Enemy
+(10—20)% increased chance to Shock
+(15—25)% increased Shock Duration
+(10—5)% reduced Slowing Potency of Debuffs on You
+(2—4)% increased Attack Speed with Spears
+(10—20)% increased Critical Damage Bonus with Spears
+(5—15)% increased Critical Hit Chance for Spells
+(10—20)% increased Stun Buildup
+(6—16)% increased Stun Threshold
+Gain additional Stun Threshold equal to (5—15)% of maximum Energy Shield
+Gain additional Ailment Threshold equal to (5—15)% of maximum Energy Shield
+(15—25)% increased Stun Threshold if you haven't been Stunned Recently
+(10—20)% increased Totem Placement speed
+(5—15)% increased Warcry Cooldown Recovery Rate
+(10—20)% increased Warcry Speed
+(10—15)% increased Parried Debuff Duration
+(15—25)% increased Stun Threshold while Parrying
+(15—20)% increased Glory generation for Banner Skills
+Banner Skills have (15—25)% increased Duration
+(2—4)% increased Skill Speed while Shapeshifted
+CurrencyVaalCorrupted
++(4—6) to Strength
++(4—6) to Dexterity
++(4—6) to Intelligence
++(5—10)% to Fire Resistance
++(5—10)% to Cold Resistance
++(5—10)% to Lightning Resistance
++(3—7)% to Chaos Resistance
+Immune to Maim
+You cannot be Hindered
+Corrupted Blood cannot be inflicted on you
+Cannot be Blinded
+Time-Lost Ruby
+Base Prefix
+Upgrades Radius to Medium
+Upgrades Radius to Large
+Notable Passive Skills in Radius also grant (2—3)% increased Area of Effect
+Small Passive Skills in Radius also grant (2—3)% increased Armour
+Small Passive Skills in Radius also grant Break (1—2)% increased Armour
+Small Passive Skills in Radius also grant (1—2)% increased Attack Damage
+Small Passive Skills in Radius also grant 1% chance to inflict Bleeding on Hit
+Notable Passive Skills in Radius also grant (1—3)% increased Block chance
+Small Passive Skills in Radius also grant (2—4)% increased Damage against Enemies with Fully Broken Armour
+Small Passive Skills in Radius also grant (1—2)% increased Elemental Damage
+Small Passive Skills in Radius also grant Empowered Attacks deal (2—3)% increased Damage
+Small Passive Skills in Radius also grant (1—2)% increased Fire Damage
+Small Passive Skills in Radius also grant Damage Penetrates (1—2)% Fire Resistance
+Notable Passive Skills in Radius also grant (3—7)% increased Ignite Magnitude
+Small Passive Skills in Radius also grant (1—2)% increased Damage with Maces
+Notable Passive Skills in Radius also grant +1 to Maximum Rage
+Small Passive Skills in Radius also grant (1—2)% increased Melee Damage
+Notable Passive Skills in Radius also grant Minions have (3—5)% increased Area of Effect
+Small Passive Skills in Radius also grant Minions have (1—2)% increased maximum Life
+Small Passive Skills in Radius also grant (1—2)% increased Global Physical Damage
+Notable Passive Skills in Radius also grant (8—15)% increased Armour, Evasion and Energy Shield from Equipped Shield
+Notable Passive Skills in Radius also grant (3—7)% increased Magnitude of Bleeding you inflict
+Small Passive Skills in Radius also grant (2—3)% increased Thorns damage
+Small Passive Skills in Radius also grant (2—3)% increased Totem Damage
+Small Passive Skills in Radius also grant (2—3)% increased Totem Life
+Small Passive Skills in Radius also grant (2—3)% increased Damage with Warcries
+(3—5)% chance for Attack Hits to apply Incision
+Small Passive Skills in Radius also grant Banner Skills have (2—3)% increased Area of Effect
+Notable Passive Skills in Radius also grant (8—12)% increased Presence Area of Effect
+Small Passive Skills in Radius also grant (1—2)% increased Damage while Shapeshifted
+Small Passive Skills in Radius also grant (1—2)% increased Damage with Plant Skills
+Base Suffix
+(15—25)% increased Effect of Small Passive Skills in Radius
+(15—25)% increased Effect of Notable Passive Skills in Radius
+Notable Passive Skills in Radius also grant (5—10)% increased Armour Break Duration
+Notable Passive Skills in Radius also grant (3—7)% increased Bleeding Duration
+Small Passive Skills in Radius also grant (2—3)% increased Flammability Magnitude
+Notable Passive Skills in Radius also grant (3—5)% increased Skill Effect Duration
+Notable Passive Skills in Radius also grant (3—7)% increased Knockback Distance
+Notable Passive Skills in Radius also grant (2—3)% of Skill Mana Costs Converted to Life Costs
+Small Passive Skills in Radius also grant (2—3)% increased amount of Life Leeched
+Notable Passive Skills in Radius also grant (3—5)% increased Life Regeneration rate
+Notable Passive Skills in Radius also grant (6—12)% increased Stun Buildup with Maces
+Small Passive Skills in Radius also grant Minions have (1—2)% additional Physical Damage Reduction
+Notable Passive Skills in Radius also grant Gain 1 Rage on Melee Hit
+Notable Passive Skills in Radius also grant Gain (1—2) Rage when Hit by an Enemy
+Notable Passive Skills in Radius also grant (5—10)% increased Stun Buildup
+Small Passive Skills in Radius also grant (1—2)% increased Stun Threshold
+Small Passive Skills in Radius also grant (2—3)% increased Totem Placement speed
+Notable Passive Skills in Radius also grant (3—7)% increased Warcry Cooldown Recovery Rate
+Small Passive Skills in Radius also grant (2—3)% increased Warcry Speed
+Notable Passive Skills in Radius also grant (8—12)% increased Glory generation for Banner Skills
+Small Passive Skills in Radius also grant Banner Skills have (3—4)% increased Duration
+Notable Passive Skills in Radius also grant (1—2)% increased Skill Speed while Shapeshifted
+CurrencyVaalCorrupted
++(4—6) to Strength
++(4—6) to Dexterity
++(4—6) to Intelligence
++(5—10)% to Fire Resistance
++(5—10)% to Cold Resistance
++(5—10)% to Lightning Resistance
++(3—7)% to Chaos Resistance
+Immune to Maim
+You cannot be Hindered
+Corrupted Blood cannot be inflicted on you
+Cannot be Blinded
+Time-Lost Emerald
+Base Prefix
+Upgrades Radius to Medium
+Upgrades Radius to Large
+Small Passive Skills in Radius also grant (1—2)% increased Accuracy Rating
+Notable Passive Skills in Radius also grant (3—7)% increased Magnitude of Ailments you inflict
+Small Passive Skills in Radius also grant (1—2)% increased Attack Damage
+Notable Passive Skills in Radius also grant (3—5)% increased Blind Effect
+Small Passive Skills in Radius also grant (2—3)% increased Damage with Hits against Rare and Unique Enemies
+Small Passive Skills in Radius also grant (1—2)% increased Accuracy Rating with Bows
+Small Passive Skills in Radius also grant (2—3)% increased Damage with Bows
+Small Passive Skills in Radius also grant (2—3)% increased Damage while you have an active Charm
+Notable Passive Skills in Radius also grant (5—10)% increased Magnitude of Damaging Ailments you inflict with Critical Hits
+Small Passive Skills in Radius also grant (2—3)% increased Damage with Crossbows
+Small Passive Skills in Radius also grant (1—2)% increased Elemental Damage
+Small Passive Skills in Radius also grant (2—3)% increased Evasion Rating
+Small Passive Skills in Radius also grant Herald Skills deal (2—4)% increased Damage
+Small Passive Skills in Radius also grant (1—2)% increased Lightning Damage
+Small Passive Skills in Radius also grant Damage Penetrates (1—2)% Lightning Resistance
+Notable Passive Skills in Radius also grant (2—3)% increased Effect of your Mark Skills
+Notable Passive Skills in Radius also grant (3—7)% increased Magnitude of Poison you inflict
+Small Passive Skills in Radius also grant (1—2)% increased Projectile Damage
+Notable Passive Skills in Radius also grant (2—3)% increased Projectile Speed
+Small Passive Skills in Radius also grant (1—2)% increased Damage with Quarterstaves
+Notable Passive Skills in Radius also grant (2—3)% increased bonuses gained from Equipped Quiver
+Notable Passive Skills in Radius also grant (5—7)% increased Magnitude of Shock you inflict
+Small Passive Skills in Radius also grant (1—2)% increased Damage with Spears
+Small Passive Skills in Radius also grant (2—3)% increased Projectile Damage if you've dealt a Melee Hit in the past eight seconds
+Small Passive Skills in Radius also grant (2—3)% increased Melee Damage if you've dealt a Projectile Attack Hit in the past eight seconds
+Small Passive Skills in Radius also grant (2—3)% increased Parry Damage
+Small Passive Skills in Radius also grant Companions deal (2—3)% increased Damage
+Small Passive Skills in Radius also grant Companions have (2—3)% increased maximum Life
+Small Passive Skills in Radius also grant (2—3)% increased Hazard Damage
+Small Passive Skills in Radius also grant (1—2)% increased Damage with Plant Skills
+Base Suffix
+(15—25)% increased Effect of Small Passive Skills in Radius
+(15—25)% increased Effect of Notable Passive Skills in Radius
+Notable Passive Skills in Radius also grant (3—7)% increased chance to inflict Ailments
+Small Passive Skills in Radius also grant (2—3)% increased Elemental Ailment Threshold
+Notable Passive Skills in Radius also grant (3—7)% increased Critical Hit Chance for Attacks
+Notable Passive Skills in Radius also grant (5—10)% increased Critical Damage Bonus for Attack Damage
+Notable Passive Skills in Radius also grant (1—2)% increased Attack Speed
+Small Passive Skills in Radius also grant 1% chance to Blind Enemies on Hit with Attacks
+Notable Passive Skills in Radius also grant (1—2)% increased Attack Speed with Bows
+Notable Passive Skills in Radius also grant Projectiles have (1—2)% chance to Chain an additional time from terrain
+Small Passive Skills in Radius also grant (1—2)% increased Charm Effect Duration
+Notable Passive Skills in Radius also grant (3—7)% increased Charm Charges gained
+Notable Passive Skills in Radius also grant (1—3)% increased Cooldown Recovery Rate
+Notable Passive Skills in Radius also grant (5—7)% increased Crossbow Reload Speed
+Notable Passive Skills in Radius also grant (1—2)% increased Attack Speed with Crossbows
+Notable Passive Skills in Radius also grant (3—5)% increased Duration of Damaging Ailments on Enemies
+1% chance to Daze on Hit
+Notable Passive Skills in Radius also grant Debuffs on you expire (3—5)% faster
+Notable Passive Skills in Radius also grant (3—5)% increased Duration of Ignite, Shock and Chill on Enemies
+Notable Passive Skills in Radius also grant Damaging Ailments deal damage (2—3)% faster
+Notable Passive Skills in Radius also grant (3—5)% increased Flask Charges gained
+Small Passive Skills in Radius also grant (1—2)% increased Flask Effect Duration
+Notable Passive Skills in Radius also grant Projectiles have (5—7)% chance for an additional Projectile when Forking
+Small Passive Skills in Radius also grant (2—3)% increased Life Recovery from Flasks
+Notable Passive Skills in Radius also grant (5—10)% increased Life Flask Charges gained
+Small Passive Skills in Radius also grant (1—2)% increased Mana Recovery from Flasks
+Notable Passive Skills in Radius also grant (5—10)% increased Mana Flask Charges gained
+Small Passive Skills in Radius also grant (1—2)% increased amount of Mana Leeched
+Small Passive Skills in Radius also grant Mark Skills have (2—3)% increased Use Speed
+Small Passive Skills in Radius also grant Mark Skills have (3—4)% increased Skill Effect Duration
+Notable Passive Skills in Radius also grant 1% increased Movement Speed
+Notable Passive Skills in Radius also grant (5—10)% chance to Pierce an Enemy
+Notable Passive Skills in Radius also grant (5—10)% increased Pin Buildup
+Small Passive Skills in Radius also grant 1% chance to Poison on Hit
+Notable Passive Skills in Radius also grant (3—7)% increased Poison Duration
+Notable Passive Skills in Radius also grant (5—10)% increased Freeze Buildup with Quarterstaves
+Notable Passive Skills in Radius also grant (1—2)% increased Attack Speed with Quarterstaves
+Small Passive Skills in Radius also grant (2—3)% increased chance to Shock
+Small Passive Skills in Radius also grant (2—3)% increased Shock Duration
+(5—2)% reduced Slowing Potency of Debuffs on You
+Notable Passive Skills in Radius also grant (1—2)% increased Attack Speed with Spears
+Notable Passive Skills in Radius also grant (5—10)% increased Critical Damage Bonus with Spears
+Small Passive Skills in Radius also grant (2—3)% increased Stun Threshold if you haven't been Stunned Recently
+Notable Passive Skills in Radius also grant (5—10)% increased Parried Debuff Duration
+Notable Passive Skills in Radius also grant (8—12)% increased Stun Threshold while Parrying
+CurrencyVaalCorrupted
++(4—6) to Strength
++(4—6) to Dexterity
++(4—6) to Intelligence
++(5—10)% to Fire Resistance
++(5—10)% to Cold Resistance
++(5—10)% to Lightning Resistance
++(3—7)% to Chaos Resistance
+Immune to Maim
+You cannot be Hindered
+Corrupted Blood cannot be inflicted on you
+Cannot be Blinded
+Time-Lost Sapphire
+Base Prefix
+Upgrades Radius to Medium
+Upgrades Radius to Large
+Notable Passive Skills in Radius also grant (3—7)% increased Magnitude of Ailments you inflict
+Notable Passive Skills in Radius also grant (2—3)% increased Area of Effect
+Small Passive Skills in Radius also grant (1—2)% increased Chaos Damage
+Small Passive Skills in Radius also grant (1—2)% increased Cold Damage
+Small Passive Skills in Radius also grant Damage Penetrates (1—2)% Cold Resistance
+Small Passive Skills in Radius also grant (2—3)% increased Damage if you have Consumed a Corpse Recently
+Notable Passive Skills in Radius also grant (5—10)% increased Magnitude of Damaging Ailments you inflict with Critical Hits
+Notable Passive Skills in Radius also grant (3—6)% increased Area of Effect of Curses
+Notable Passive Skills in Radius also grant 1% increased Curse Magnitudes
+Small Passive Skills in Radius also grant (1—2)% increased Elemental Damage
+Small Passive Skills in Radius also grant (2—3)% increased maximum Energy Shield
+Notable Passive Skills in Radius also grant (5—7)% faster start of Energy Shield Recharge
+Notable Passive Skills in Radius also grant (15—25)% increased Energy Shield from Equipped Focus
+Notable Passive Skills in Radius also grant (3—7)% increased Ignite Magnitude
+Small Passive Skills in Radius also grant Minions deal (1—2)% increased Damage
+Small Passive Skills in Radius also grant Offerings have (2—3)% increased Maximum Life
+Notable Passive Skills in Radius also grant (5—7)% increased Magnitude of Shock you inflict
+Small Passive Skills in Radius also grant (1—2)% increased Spell Damage
+Small Passive Skills in Radius also grant Triggered Spells deal (2—3)% increased Spell Damage
+Notable Passive Skills in Radius also grant (3—5)% increased Withered Magnitude
+Notable Passive Skills in Radius also grant (8—12)% increased Presence Area of Effect
+Small Passive Skills in Radius also grant (1—2)% increased Damage while Shapeshifted
+Small Passive Skills in Radius also grant (1—2)% increased Damage with Plant Skills
+Base Suffix
+(15—25)% increased Effect of Small Passive Skills in Radius
+(15—25)% increased Effect of Notable Passive Skills in Radius
+Notable Passive Skills in Radius also grant (3—7)% increased chance to inflict Ailments
+Notable Passive Skills in Radius also grant (1—2)% increased Cast Speed
+Notable Passive Skills in Radius also grant (6—12)% increased Chill Duration on Enemies
+Notable Passive Skills in Radius also grant (3—7)% increased Critical Hit Chance
+Notable Passive Skills in Radius also grant (5—10)% increased Critical Damage Bonus
+Notable Passive Skills in Radius also grant (5—10)% increased Critical Spell Damage Bonus
+Small Passive Skills in Radius also grant (2—4)% increased Curse Duration
+Notable Passive Skills in Radius also grant 1% of Damage is taken from Mana before Life
+Notable Passive Skills in Radius also grant (3—5)% increased Duration of Damaging Ailments on Enemies
+Notable Passive Skills in Radius also grant Debuffs on you expire (3—5)% faster
+Notable Passive Skills in Radius also grant Meta Skills gain (2—4)% increased Energy
+Notable Passive Skills in Radius also grant Damaging Ailments deal damage (2—3)% faster
+Notable Passive Skills in Radius also grant (5—10)% increased Freeze Buildup
+Small Passive Skills in Radius also grant (2—4)% increased Freeze Threshold
+Small Passive Skills in Radius also grant (2—3)% increased Flammability Magnitude
+Notable Passive Skills in Radius also grant (3—5)% increased Skill Effect Duration
+Notable Passive Skills in Radius also grant Recover 1% of maximum Life on Kill
+Notable Passive Skills in Radius also grant 1% of Damage taken Recouped as Life
+Notable Passive Skills in Radius also grant Recover 1% of maximum Mana on Kill
+Small Passive Skills in Radius also grant (1—2)% increased Mana Regeneration Rate
+Notable Passive Skills in Radius also grant Minions have (1—2)% increased Attack and Cast Speed
+Small Passive Skills in Radius also grant Minions have +(1—2)% to Chaos Resistance
+Notable Passive Skills in Radius also grant Minions have (5—10)% increased Critical Hit Chance
+Notable Passive Skills in Radius also grant Minions have (6—12)% increased Critical Damage Bonus
+Small Passive Skills in Radius also grant Minions have +(1—2)% to all Elemental Resistances
+Notable Passive Skills in Radius also grant Offering Skills have (6—12)% increased Duration
+Notable Passive Skills in Radius also grant (5—10)% increased Freeze Buildup with Quarterstaves
+Small Passive Skills in Radius also grant (2—3)% increased chance to Shock
+Small Passive Skills in Radius also grant (2—3)% increased Shock Duration
+Notable Passive Skills in Radius also grant (3—7)% increased Critical Hit Chance for Spells
+Small Passive Skills in Radius also grant Gain additional Stun Threshold equal to (1—2)% of maximum Energy Shield
+Small Passive Skills in Radius also grant Gain additional Ailment Threshold equal to (1—2)% of maximum Energy Shield
+Notable Passive Skills in Radius also grant (1—2)% increased Skill Speed while Shapeshifted
+CurrencyVaalCorrupted
++(4—6) to Strength
++(4—6) to Dexterity
++(4—6) to Intelligence
++(5—10)% to Fire Resistance
++(5—10)% to Cold Resistance
++(5—10)% to Lightning Resistance
++(3—7)% to Chaos Resistance
+Immune to Maim
+You cannot be Hindered
+Corrupted Blood cannot be inflicted on you
+Cannot be Blinded
+Time-Lost Diamond
+Base Prefix
+Upgrades Radius to Medium
+Upgrades Radius to Large
+Small Passive Skills in Radius also grant (1—2)% increased Accuracy Rating
+Notable Passive Skills in Radius also grant (3—7)% increased Magnitude of Ailments you inflict
+Notable Passive Skills in Radius also grant (2—3)% increased Area of Effect
+Small Passive Skills in Radius also grant (2—3)% increased Armour
+Small Passive Skills in Radius also grant Break (1—2)% increased Armour
+Small Passive Skills in Radius also grant (1—2)% increased Attack Damage
+Small Passive Skills in Radius also grant 1% chance to inflict Bleeding on Hit
+Notable Passive Skills in Radius also grant (3—5)% increased Blind Effect
+Notable Passive Skills in Radius also grant (1—3)% increased Block chance
+Small Passive Skills in Radius also grant (2—3)% increased Damage with Hits against Rare and Unique Enemies
+Small Passive Skills in Radius also grant (1—2)% increased Accuracy Rating with Bows
+Small Passive Skills in Radius also grant (2—3)% increased Damage with Bows
+Small Passive Skills in Radius also grant (2—3)% increased Damage while you have an active Charm
+Small Passive Skills in Radius also grant (1—2)% increased Chaos Damage
+Small Passive Skills in Radius also grant (1—2)% increased Cold Damage
+Small Passive Skills in Radius also grant Damage Penetrates (1—2)% Cold Resistance
+Small Passive Skills in Radius also grant (2—3)% increased Damage if you have Consumed a Corpse Recently
+Notable Passive Skills in Radius also grant (5—10)% increased Magnitude of Damaging Ailments you inflict with Critical Hits
+Small Passive Skills in Radius also grant (2—3)% increased Damage with Crossbows
+Notable Passive Skills in Radius also grant (3—6)% increased Area of Effect of Curses
+Notable Passive Skills in Radius also grant 1% increased Curse Magnitudes
+Small Passive Skills in Radius also grant (2—4)% increased Damage against Enemies with Fully Broken Armour
+Small Passive Skills in Radius also grant (1—2)% increased Elemental Damage
+Small Passive Skills in Radius also grant Empowered Attacks deal (2—3)% increased Damage
+Small Passive Skills in Radius also grant (2—3)% increased maximum Energy Shield
+Notable Passive Skills in Radius also grant (5—7)% faster start of Energy Shield Recharge
+Small Passive Skills in Radius also grant (2—3)% increased Evasion Rating
+Small Passive Skills in Radius also grant (1—2)% increased Fire Damage
+Small Passive Skills in Radius also grant Damage Penetrates (1—2)% Fire Resistance
+Notable Passive Skills in Radius also grant (15—25)% increased Energy Shield from Equipped Focus
+Small Passive Skills in Radius also grant Herald Skills deal (2—4)% increased Damage
+Notable Passive Skills in Radius also grant (3—7)% increased Ignite Magnitude
+Small Passive Skills in Radius also grant (1—2)% increased Lightning Damage
+Small Passive Skills in Radius also grant Damage Penetrates (1—2)% Lightning Resistance
+Small Passive Skills in Radius also grant (1—2)% increased Damage with Maces
+Notable Passive Skills in Radius also grant (2—3)% increased Effect of your Mark Skills
+Notable Passive Skills in Radius also grant +1 to Maximum Rage
+Small Passive Skills in Radius also grant (1—2)% increased Melee Damage
+Notable Passive Skills in Radius also grant Minions have (3—5)% increased Area of Effect
+Small Passive Skills in Radius also grant Minions deal (1—2)% increased Damage
+Small Passive Skills in Radius also grant Minions have (1—2)% increased maximum Life
+Small Passive Skills in Radius also grant Offerings have (2—3)% increased Maximum Life
+Small Passive Skills in Radius also grant (1—2)% increased Global Physical Damage
+Notable Passive Skills in Radius also grant (3—7)% increased Magnitude of Poison you inflict
+Small Passive Skills in Radius also grant (1—2)% increased Projectile Damage
+Notable Passive Skills in Radius also grant (2—3)% increased Projectile Speed
+Small Passive Skills in Radius also grant (1—2)% increased Damage with Quarterstaves
+Notable Passive Skills in Radius also grant (2—3)% increased bonuses gained from Equipped Quiver
+Notable Passive Skills in Radius also grant (8—15)% increased Armour, Evasion and Energy Shield from Equipped Shield
+Notable Passive Skills in Radius also grant (5—7)% increased Magnitude of Shock you inflict
+Small Passive Skills in Radius also grant (1—2)% increased Damage with Spears
+Small Passive Skills in Radius also grant (1—2)% increased Spell Damage
+Notable Passive Skills in Radius also grant (3—7)% increased Magnitude of Bleeding you inflict
+Small Passive Skills in Radius also grant (2—3)% increased Thorns damage
+Small Passive Skills in Radius also grant (2—3)% increased Totem Damage
+Small Passive Skills in Radius also grant (2—3)% increased Totem Life
+Small Passive Skills in Radius also grant Triggered Spells deal (2—3)% increased Spell Damage
+Small Passive Skills in Radius also grant (2—3)% increased Damage with Warcries
+Notable Passive Skills in Radius also grant (3—5)% increased Withered Magnitude
+Small Passive Skills in Radius also grant (2—3)% increased Projectile Damage if you've dealt a Melee Hit in the past eight seconds
+Small Passive Skills in Radius also grant (2—3)% increased Melee Damage if you've dealt a Projectile Attack Hit in the past eight seconds
+Small Passive Skills in Radius also grant (2—3)% increased Parry Damage
+Small Passive Skills in Radius also grant Companions deal (2—3)% increased Damage
+Small Passive Skills in Radius also grant Companions have (2—3)% increased maximum Life
+Small Passive Skills in Radius also grant (2—3)% increased Hazard Damage
+(3—5)% chance for Attack Hits to apply Incision
+Small Passive Skills in Radius also grant Banner Skills have (2—3)% increased Area of Effect
+Notable Passive Skills in Radius also grant (8—12)% increased Presence Area of Effect
+Small Passive Skills in Radius also grant (1—2)% increased Damage while Shapeshifted
+Small Passive Skills in Radius also grant (1—2)% increased Damage with Plant Skills
+Base Suffix
+(15—25)% increased Effect of Small Passive Skills in Radius
+(15—25)% increased Effect of Notable Passive Skills in Radius
+Notable Passive Skills in Radius also grant (3—7)% increased chance to inflict Ailments
+Small Passive Skills in Radius also grant (2—3)% increased Elemental Ailment Threshold
+Notable Passive Skills in Radius also grant (5—10)% increased Armour Break Duration
+Notable Passive Skills in Radius also grant (3—7)% increased Critical Hit Chance for Attacks
+Notable Passive Skills in Radius also grant (5—10)% increased Critical Damage Bonus for Attack Damage
+Notable Passive Skills in Radius also grant (1—2)% increased Attack Speed
+Notable Passive Skills in Radius also grant (3—7)% increased Bleeding Duration
+Small Passive Skills in Radius also grant 1% chance to Blind Enemies on Hit with Attacks
+Notable Passive Skills in Radius also grant (1—2)% increased Attack Speed with Bows
+Notable Passive Skills in Radius also grant (1—2)% increased Cast Speed
+Notable Passive Skills in Radius also grant Projectiles have (1—2)% chance to Chain an additional time from terrain
+Small Passive Skills in Radius also grant (1—2)% increased Charm Effect Duration
+Notable Passive Skills in Radius also grant (3—7)% increased Charm Charges gained
+Notable Passive Skills in Radius also grant (6—12)% increased Chill Duration on Enemies
+Notable Passive Skills in Radius also grant (1—3)% increased Cooldown Recovery Rate
+Notable Passive Skills in Radius also grant (3—7)% increased Critical Hit Chance
+Notable Passive Skills in Radius also grant (5—10)% increased Critical Damage Bonus
+Notable Passive Skills in Radius also grant (5—10)% increased Critical Spell Damage Bonus
+Notable Passive Skills in Radius also grant (5—7)% increased Crossbow Reload Speed
+Notable Passive Skills in Radius also grant (1—2)% increased Attack Speed with Crossbows
+Small Passive Skills in Radius also grant (2—4)% increased Curse Duration
+Notable Passive Skills in Radius also grant 1% of Damage is taken from Mana before Life
+Notable Passive Skills in Radius also grant (3—5)% increased Duration of Damaging Ailments on Enemies
+1% chance to Daze on Hit
+Notable Passive Skills in Radius also grant Debuffs on you expire (3—5)% faster
+Notable Passive Skills in Radius also grant (3—5)% increased Duration of Ignite, Shock and Chill on Enemies
+Notable Passive Skills in Radius also grant Meta Skills gain (2—4)% increased Energy
+Notable Passive Skills in Radius also grant Damaging Ailments deal damage (2—3)% faster
+Notable Passive Skills in Radius also grant (3—5)% increased Flask Charges gained
+Small Passive Skills in Radius also grant (1—2)% increased Flask Effect Duration
+Notable Passive Skills in Radius also grant Projectiles have (5—7)% chance for an additional Projectile when Forking
+Notable Passive Skills in Radius also grant (5—10)% increased Freeze Buildup
+Small Passive Skills in Radius also grant (2—4)% increased Freeze Threshold
+Small Passive Skills in Radius also grant (2—3)% increased Flammability Magnitude
+Notable Passive Skills in Radius also grant (3—5)% increased Skill Effect Duration
+Notable Passive Skills in Radius also grant (3—7)% increased Knockback Distance
+Notable Passive Skills in Radius also grant (2—3)% of Skill Mana Costs Converted to Life Costs
+Small Passive Skills in Radius also grant (2—3)% increased Life Recovery from Flasks
+Notable Passive Skills in Radius also grant (5—10)% increased Life Flask Charges gained
+Small Passive Skills in Radius also grant (2—3)% increased amount of Life Leeched
+Notable Passive Skills in Radius also grant Recover 1% of maximum Life on Kill
+Notable Passive Skills in Radius also grant 1% of Damage taken Recouped as Life
+Notable Passive Skills in Radius also grant (3—5)% increased Life Regeneration rate
+Notable Passive Skills in Radius also grant (6—12)% increased Stun Buildup with Maces
+Small Passive Skills in Radius also grant (1—2)% increased Mana Recovery from Flasks
+Notable Passive Skills in Radius also grant (5—10)% increased Mana Flask Charges gained
+Small Passive Skills in Radius also grant (1—2)% increased amount of Mana Leeched
+Notable Passive Skills in Radius also grant Recover 1% of maximum Mana on Kill
+Small Passive Skills in Radius also grant (1—2)% increased Mana Regeneration Rate
+Small Passive Skills in Radius also grant Mark Skills have (2—3)% increased Use Speed
+Small Passive Skills in Radius also grant Mark Skills have (3—4)% increased Skill Effect Duration
+Notable Passive Skills in Radius also grant Minions have (1—2)% increased Attack and Cast Speed
+Small Passive Skills in Radius also grant Minions have +(1—2)% to Chaos Resistance
+Notable Passive Skills in Radius also grant Minions have (5—10)% increased Critical Hit Chance
+Notable Passive Skills in Radius also grant Minions have (6—12)% increased Critical Damage Bonus
+Small Passive Skills in Radius also grant Minions have (1—2)% additional Physical Damage Reduction
+Small Passive Skills in Radius also grant Minions have +(1—2)% to all Elemental Resistances
+Notable Passive Skills in Radius also grant 1% increased Movement Speed
+Notable Passive Skills in Radius also grant Offering Skills have (6—12)% increased Duration
+Notable Passive Skills in Radius also grant (5—10)% chance to Pierce an Enemy
+Notable Passive Skills in Radius also grant (5—10)% increased Pin Buildup
+Small Passive Skills in Radius also grant 1% chance to Poison on Hit
+Notable Passive Skills in Radius also grant (3—7)% increased Poison Duration
+Notable Passive Skills in Radius also grant (5—10)% increased Freeze Buildup with Quarterstaves
+Notable Passive Skills in Radius also grant (1—2)% increased Attack Speed with Quarterstaves
+Notable Passive Skills in Radius also grant Gain 1 Rage on Melee Hit
+Notable Passive Skills in Radius also grant Gain (1—2) Rage when Hit by an Enemy
+Small Passive Skills in Radius also grant (2—3)% increased chance to Shock
+Small Passive Skills in Radius also grant (2—3)% increased Shock Duration
+(5—2)% reduced Slowing Potency of Debuffs on You
+Notable Passive Skills in Radius also grant (1—2)% increased Attack Speed with Spears
+Notable Passive Skills in Radius also grant (5—10)% increased Critical Damage Bonus with Spears
+Notable Passive Skills in Radius also grant (3—7)% increased Critical Hit Chance for Spells
+Notable Passive Skills in Radius also grant (5—10)% increased Stun Buildup
+Small Passive Skills in Radius also grant (1—2)% increased Stun Threshold
+Small Passive Skills in Radius also grant Gain additional Stun Threshold equal to (1—2)% of maximum Energy Shield
+Small Passive Skills in Radius also grant Gain additional Ailment Threshold equal to (1—2)% of maximum Energy Shield
+Small Passive Skills in Radius also grant (2—3)% increased Stun Threshold if you haven't been Stunned Recently
+Small Passive Skills in Radius also grant (2—3)% increased Totem Placement speed
+Notable Passive Skills in Radius also grant (3—7)% increased Warcry Cooldown Recovery Rate
+Small Passive Skills in Radius also grant (2—3)% increased Warcry Speed
+Notable Passive Skills in Radius also grant (5—10)% increased Parried Debuff Duration
+Notable Passive Skills in Radius also grant (8—12)% increased Stun Threshold while Parrying
+Notable Passive Skills in Radius also grant (8—12)% increased Glory generation for Banner Skills
+Small Passive Skills in Radius also grant Banner Skills have (3—4)% increased Duration
+Notable Passive Skills in Radius also grant (1—2)% increased Skill Speed while Shapeshifted
+CurrencyVaalCorrupted
++(4—6) to Strength
++(4—6) to Dexterity
++(4—6) to Intelligence
++(5—10)% to Fire Resistance
++(5—10)% to Cold Resistance
++(5—10)% to Lightning Resistance
++(3—7)% to Chaos Resistance
+Immune to Maim
+You cannot be Hindered
+Corrupted Blood cannot be inflicted on you
+Cannot be Blinded
