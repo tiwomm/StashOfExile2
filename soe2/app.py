@@ -44,6 +44,7 @@ from . import gear, waystone
 from .style import C, FLAG_COLORS, FONT_TITLE, hotkey_blocked, MONO, Plate, SegBook, SegBar, setup_style, Toast, KeyCapture
 from .winsys import ICON_B64, KeyWatch, Tray
 from .wealth_page import WealthPage
+from .wealth_setup import WealthSetup
 from .library_page import LibraryPage
 from .regex_page import RegexPage
 from .calc import CalcPage
@@ -59,7 +60,7 @@ from .shell import Shell
 from .config import PAGE_CHECKS       # 1.40: was "Items"
 
 
-class App(WealthPage, LibraryPage, RegexPage, UtilitiesPage, TrackerPage, SearchPage, CalcPage, InsightsPage):
+class App(WealthSetup, WealthPage, LibraryPage, RegexPage, UtilitiesPage, TrackerPage, SearchPage, CalcPage, InsightsPage):
     COLS = [("added", "#", 46, "e"), ("name", "Item", 220, "w"), ("type", "Type", 110, "w"), ("mark", "Status", 90, "center"),
             ("est", "Est. value", 110, "e"), ("conf", "Confidence", 95, "center"), ("listings", "Listings", 70, "e"), ("priced", "Priced at", 130, "w"),
             ("match", "How it was priced", 300, "w")]
@@ -605,7 +606,7 @@ class App(WealthPage, LibraryPage, RegexPage, UtilitiesPage, TrackerPage, Search
         self.tree.tag_configure("odd", background=C["odd"])
         self.tree.tag_configure("listed", foreground=C["green"])
         self.tree.tag_configure("removed", foreground=C["muted"])
-        self.tree.bind("<<TreeviewSelect>>", self.on_select)
+        self.tree.bind("<<TreeviewSelect>>", self._on_select_soon)
         self.tree.bind("<Double-1>", lambda e: self.open_trade())
         self.empty_lbl = tk.Label(left, bg=C["panel"], fg=C["muted"], font=("Segoe UI", 12), justify="center",
                                   text=self.EMPTY_TEXT)
@@ -841,6 +842,11 @@ class App(WealthPage, LibraryPage, RegexPage, UtilitiesPage, TrackerPage, Search
         row = section("Advanced", "Under the hood", "How the price checker reads an item: its base, which bases it "
                                                     "is compared with, and which trade-site search each mod becomes.")
         ttk.Button(row, text="Open Under the hood", command=lambda: self.shell.open("library")).pack(side="left")
+        row = section("Advanced", "Problem report", "Something priced badly or went wrong? This makes one .zip with "
+                                                    "your recent price checks (the copied item texts and what the app "
+                                                    "did with them) and the app's log files - no account name, no "
+                                                    "Wealth data. Send it along with what you saw.")
+        ttk.Button(row, text="Make a problem report…", command=self.problem_report).pack(side="left")
         row = section("Advanced", "Your data", "Settings, price-check lists, the Mod book, Wealth and sessions are "
                                                "kept here, shared by every version of the app.")
         tk.Label(row, text=str(DATA_DIR), bg=P2, fg=C["text"], font=(MONO, 9)).pack(side="left")
@@ -879,6 +885,19 @@ class App(WealthPage, LibraryPage, RegexPage, UtilitiesPage, TrackerPage, Search
                 if hasattr(mod, n):
                     setattr(mod, n, wrap(getattr(mod, n)))
         mb._soe2_parented = True
+
+    def problem_report(self):
+        from .report import make_report
+        path = filedialog.asksaveasfilename(defaultextension=".zip", filetypes=[("Zip", "*.zip")],
+                                            initialfile=f"StashOfExile2_report_{time.strftime('%Y%m%d_%H%M')}.zip")
+        if not path:
+            return
+        try:
+            n = make_report(path, self.records)
+        except Exception as e:
+            return self._say(f"Couldn't make the report: {e}", 10)
+        self._say(f"Report saved ({n} recent price checks): {path}", 12)
+        self.open_path(os.path.dirname(path))
 
     def open_path(self, path):
         try:
@@ -2856,6 +2875,19 @@ class App(WealthPage, LibraryPage, RegexPage, UtilitiesPage, TrackerPage, Search
         ids = sorted(self.tree.get_children(), key=key, reverse=self.sort_rev)
         for i, iid in enumerate(ids):
             self.tree.move(iid, "", i)
+
+    def _on_select_soon(self, _e=None):
+        """2.3.0: the selection changes once per row when many rows are deleted (or selected) at once, and each change
+        rebuilt the item panel - deleting 150 items took seconds. Now the panel is rebuilt once, when it settles."""
+        if getattr(self, "_sel_job", None) is None:
+            self._sel_job = self.root.after_idle(self._on_select_now)
+
+    def _on_select_now(self):
+        self._sel_job = None
+        try:
+            self.on_select()
+        except tk.TclError:
+            pass
 
     def on_select(self, _e=None):
         sel = self.tree.selection()
