@@ -1,52 +1,36 @@
 # StashOfExile2 roadmap
 
-Where things stand at **2.1.0**, and what comes next. Main features are stable. Labs features are experimental: they're marked BETA and only show when Settings > General > Labs is on.
+**Current version: 2.2.0**
 
-## Done in the 2.0 betas
+Releases are numbered 2.x for new features and 2.x.y for fixes. Each step below is one release; we work through them top to bottom.
 
-- **The app as a desktop.** Every tool is a real window, with a dock (or desktop icons, or both), a Toolkit menu and a taskbar with a clock. Settings has General, Appearance, Hotkeys and Advanced tabs.
-- **Price checks** for tablets, jewels and waystones.
-  - Tablets and jewels are priced on the mods that matter.
-  - Waystones are priced on their endgame numbers (Waystone Drop Chance, Pack Size, Item Rarity, Monster Rarity, Monster Effectiveness).
-  - Other gear is priced as a rough guess.
-  - Selected items can be deleted, with undo.
-- **Mod book.** It learns what mods are worth from real listings, and holds your tablet and jewel mod rules. Regex shows the same ratings with ★.
-- **Regex.** Stash search strings for tablets, waystones and relics.
-- **Utilities:**
-  - chat command keys;
-  - a sticky note and the session timer, both shown over the game only while it's in front;
-  - the Delirium alert;
-  - one list of hotkeys, set by pressing the key or a mouse button.
-- **Tools:** Exchange rates, Calculator, Under the hood (how an item is read).
-- **Labs:** Wealth, the Session tracker and Game search.
-- **Look:** themes, accent colours and text size for the whole app, plus a start-up screen.
-- **2.1:** Map stats with per-map leaderboards in the Session tracker, and Top value (Labs) for your most valuable tablets, waystones and jewels.
-- **Licensing and polish:**
-  - all game data comes from RePoE;
-  - the icons are original;
-  - a what's-new card once per version;
-  - optional update checks.
+## ✅ Done
 
-## Next
+| Version | What it brought |
+|---|---|
+| 2.0 | The app as a desktop with windows, dock and taskbar. Price checks for tablets, jewels and waystones. Mod book, Regex, chat keys, sticky note, Delirium alert. Themes and a start-up screen. Updates that never go backwards. |
+| 2.1 | Map stats with per-map leaderboards (Session tracker). Top value (Labs). Clock follows Windows' 12 / 24-hour setting. |
+| 2.2 | Regex key: one key in game copies your stash search. Currency Exchange helper (whole-number ratios to post). CSV export for map runs, sessions and Wealth. |
 
-1. **Testing on Windows.** Check window focus and typing, the mouse-button hotkeys, minimising and the tray, and waystone prices against real listings.
-2. **Wealth (Labs) usability:**
-   - a guided first setup: count currency, then add a synced tab step by step with a check that the price marker is right;
-   - totals, the breakdown and snapshots that explain themselves (the "How it works" guide is the first step);
-   - clearer price overrides;
-   - moving it out of Labs once it holds up.
-3. **Mod book for waystones and relics.** Rule lists for their mods (today they can only be rated from Regex with a right-click).
-4. **Session tracker (Labs).** Check the death and AFK lines against real Client.txt logs, and refine how maps are counted.
-5. **One-key copy.** Make it reliable on every keyboard and mouse, or keep it as an experiment. Ctrl+Alt+C stays the default and can't be changed.
-6. **Labs graduation.** Decide what Wealth, the Session tracker and Game search each need before they lose the BETA tag.
-7. **Publish 2.0 on GitHub** as a release, so people on 1.28 update straight to it. After that: 2.0.x for fixes, 2.1 for the next features.
+## ▶ Next up
+
+| Version | Plan | Why |
+|---|---|---|
+| 2.3 | **Windows check-up.** Go through everything on a real Windows PC: typing in windows, mouse-button hotkeys, minimise / tray, themes, restart, splash, the Regex key and one-key copy in game. Fix what turns up. | Most of 2.0–2.2 was built on Linux and only checked against tests there. |
+| 2.4 | **Wealth, step by step.** A guided first setup: count currency, then add a synced tab with a check that the price marker is right. Clearer totals and snapshots. | Wealth is the feature that's hardest to understand today. |
+| 2.5 | **Waystone & relic mods in the Mod book.** Rate their mods like tablet mods; Regex and Top value pick it up. | Today they can only be rated from Regex with a right-click. |
+| 2.6 | **Session tracker polish.** Deaths and time away from keyboard checked against real Client.txt logs; daily maps chart. | The death / AFK lines haven't been confirmed for PoE2 yet. |
+| 2.7 | **Leaving Labs.** Decide what Wealth, the Session tracker, Game search and Top value each need to drop the BETA tag, and do it. | |
+
+## 💤 Parked (not planned unless something changes)
+
+- **One-key copy:** stays an experiment; Ctrl+Alt+C is the reliable way.
+- **Automatic loot logging, auto-syncing stash tabs:** too intrusive / too many trade-site requests.
+- **One-click price note, "worth listing vs vendor" split, price history charts, map stats by waystone mod:** good ideas, not needed right now.
 
 ## Rules this project keeps
 
 - **One action per key press.** Nothing is automated in the game.
-- **No game memory, no packet reading.** The app only reads:
-  - your clipboard (item copies);
-  - the game's own log file (session tracker);
-  - your screen (Delirium alert).
-- **Trade site limits respected.** No automatic syncing; price checks queue behind the rate limits.
-- **No copied art or data.** Game data comes from RePoE (see THIRD_PARTY_NOTICES.txt), and every icon is drawn for this app.
+- **Only reads what's yours to read.** No game memory or packets; only your clipboard, the game's own log file and your own screen.
+- **Respects the trade site.** Its limits are respected and nothing syncs on a timer.
+- **No copied art or data.** All game data comes from RePoE, and the icons are original.

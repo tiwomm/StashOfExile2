@@ -7,8 +7,8 @@ from tkinter import simpledialog, ttk
 
 from . import regex as R
 from .clipboard import read_clipboard_text
-from .config import load_json, save_json
-from .style import C, MONO
+from .config import load_json, save_json, SETTINGS
+from .style import C, KeyCapture, MONO
 
 KIND_NAMES = {"tablet": "Tablets", "waystone": "Waystones", "relic": "Relics"}
 STATE_FILE, PRESETS_FILE = "regex_state.json", "regex_presets.json"
@@ -54,6 +54,19 @@ class RegexPage:
         self.rx_preset_box.pack(side="right")
         self.rx_preset_box.bind("<<ComboboxSelected>>", lambda e: self.rx_load_preset())
         tk.Label(top, text="Saved searches", bg=P1, fg=C["muted"]).pack(side="right", padx=(0, 6))
+        # 2.2.0: the Regex key - one key in game puts a search on the clipboard
+        hk = tk.Frame(tab, bg=P1, padx=10)
+        hk.pack(fill="x", pady=(0, 6))
+        tk.Label(hk, text="Regex key", bg=P1, fg=C["text"]).pack(side="left")
+        self.rx_key_var = tk.StringVar(value=SETTINGS.get("regex_key", ""))
+        KeyCapture(hk, self.rx_key_var, width=14, on_change=self.rx_key_set).pack(side="left", padx=6)
+        tk.Label(hk, text="copies", bg=P1, fg=C["muted"]).pack(side="left")
+        self.rx_hk_var = tk.StringVar()
+        self.rx_hk_box = ttk.Combobox(hk, textvariable=self.rx_hk_var, state="readonly", width=34)
+        self.rx_hk_box.pack(side="left", padx=6)
+        self.rx_hk_box.bind("<<ComboboxSelected>>", lambda e: self.rx_hotkey_pick())
+        tk.Label(hk, text="- press it in game, then Ctrl+F and Ctrl+V in your stash.", bg=P1, fg=C["muted"],
+                 font=("Segoe UI", 9)).pack(side="left")
 
         # ---- the search string
         res = tk.Frame(tab, bg=P2, padx=12, pady=8, highlightthickness=1, highlightbackground=C["line"])
@@ -170,6 +183,7 @@ class RegexPage:
         self.rx_build_lists()
         self.rx_update()
         self.rx_presets_refresh()
+        self.rx_hotkey_refresh()
         if save:
             self.rx_save()
 
@@ -543,6 +557,66 @@ class RegexPage:
         self.own_clip = s                       # our own copy: the clipboard watcher ignores it
         self._say(f"Copied ({len(s)} characters). In game: open the stash, Ctrl+F, Ctrl+V.", 8)
 
+    # ---------------- 2.2.0: one key copies a stash search (in game: Ctrl+F, Ctrl+V)
+    def rx_hotkey_choices(self):
+        """[(label, value)]: the search shown for each item type, and every saved search."""
+        out = [(f"{KIND_NAMES[k][:-1]} search (as set up here)", f"current:{k}") for k in R.KINDS]
+        for k in R.KINDS:
+            for name in sorted(self.rx_presets.get(k, {})):
+                out.append((f"Saved: {name} ({KIND_NAMES[k][:-1].lower()})", f"preset:{k}:{name}"))
+        return out
+
+    def rx_search_for(self, choice):
+        """The search string for a hotkey choice ('current:tablet', 'preset:waystone:My T15s') -> (label, text)."""
+        parts = str(choice or "current:tablet").split(":", 2)
+        kind = parts[1] if len(parts) > 1 and parts[1] in R.KINDS else "tablet"
+        if parts[0] == "preset" and len(parts) == 3:
+            st = self.rx_presets.get(kind, {}).get(parts[2])
+            label = parts[2]
+        else:
+            st, label = self.rx_state.get(kind), KIND_NAMES[kind][:-1] + " search"
+        if not st:
+            return label, ""
+        want = list((st.get("want") or {}).items())
+        avoid = [(i, None) for i in st.get("avoid") or []]
+        s, _notes = R.build(kind, want, avoid, st.get("all"), st.get("opts"))
+        return label, s or ""
+
+    def rx_hotkey_copy(self):
+        """The Regex hotkey was pressed (in game): put the chosen search on the clipboard."""
+        label, s = self.rx_search_for(SETTINGS.get("regex_hotkey_search"))
+        if not s:
+            self.toast.show("Nothing to copy", ["The search for the Regex key is empty.",
+                                                "Pick mods in the Regex window first."], C["red"], 5)
+            return
+        self.ignore_clip(s)
+        self.own_clip = s
+        self.root.clipboard_clear()
+        self.root.clipboard_append(s)
+        self.toast.show("Stash search copied", [f"{label} ({len(s)} characters)",
+                                                "In your stash: Ctrl+F, then Ctrl+V."], C["accent"], 4)
+
+    def rx_key_set(self, text):
+        SETTINGS["regex_key"] = text
+        save_json("settings.json", SETTINGS)
+        if hasattr(self, "fill_hotkeys"):
+            self.fill_hotkeys()
+        self.update_mouse_watch()
+
+    def rx_hotkey_pick(self):
+        val = dict(self.rx_hotkey_choices()).get(self.rx_hk_var.get())
+        if val:
+            SETTINGS["regex_hotkey_search"] = val
+            save_json("settings.json", SETTINGS)
+
+    def rx_hotkey_refresh(self):
+        if not hasattr(self, "rx_hk_box"):
+            return
+        ch = self.rx_hotkey_choices()
+        self.rx_hk_box["values"] = [lab for lab, _v in ch]
+        cur = SETTINGS.get("regex_hotkey_search") or f"current:{self.rx_kind.get()}"
+        self.rx_hk_var.set(next((lab for lab, v in ch if v == cur), ch[0][0]))
+
     # ---------------- saved searches
     def rx_presets_refresh(self):
         names = sorted(self.rx_presets.get(self.rx_kind.get(), {}))
@@ -557,6 +631,7 @@ class RegexPage:
             return
         self.rx_presets.setdefault(self.rx_kind.get(), {})[name.strip()] = copy.deepcopy(self._rx())
         save_json(PRESETS_FILE, self.rx_presets)
+        self.rx_hotkey_refresh()
         self.rx_presets_refresh()
         self.rx_preset.set(name.strip())
 

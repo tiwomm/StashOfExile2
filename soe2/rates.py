@@ -187,3 +187,40 @@ class Rates:
 
 
 RATES = Rates()
+
+
+# ---------------------------------------------------------------- the in-game Currency Exchange (2.2.0)
+def whole_ratio(r, max_left=20, tol=0.004):
+    """r = how many of B one A is worth -> (a, b) whole numbers with b / a close to r, the smallest a that's within
+    tol (0.4%) - the Currency Exchange only takes whole numbers. 182.3 -> (1, 182); 0.0055 -> (182, 1)."""
+    if r is None or r <= 0:
+        return None
+    if r < 1:
+        b, a = whole_ratio(1 / r, max_left, tol)
+        return a, b
+    best = None
+    for a in range(1, max_left + 1):
+        b = max(1, round(r * a))
+        err = abs(b / a - r) / r
+        if best is None or err < best[2] - 1e-12:
+            best = (a, b, err)
+        if err <= tol:
+            break
+    return best[0], best[1]
+
+
+def exchange_offers(have, want, rates, spread=0.02):
+    """What to post on the Currency Exchange when you sell `have` for `want`:
+    [(label, a, b, note)] - a of `have` for b of `want`. Quick = a little under the market (fills fast), Fair = the
+    market rate, Patient = a little over (waits for a buyer). None if either rate is missing."""
+    vh, vw = rates.value(have) if have != "divine" else 1.0, rates.value(want) if want != "divine" else 1.0
+    if not vh or not vw:
+        return None
+    r = vh / vw                                          # how many `want` one `have` is worth
+    out = []
+    for label, k, note in (("Quick sale", 1 - spread, "a little under the market: someone takes it soon"),
+                           ("Fair", 1.0, "the market rate"),
+                           ("Patient", 1 + spread, "a little over the market: wait for a buyer")):
+        a, b = whole_ratio(r * k)
+        out.append((label, a, b, note))
+    return r, out

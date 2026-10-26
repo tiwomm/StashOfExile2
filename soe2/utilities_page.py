@@ -50,12 +50,24 @@ class UtilitiesPage:
                 return True
         except Exception:
             pass
+        try:                                           # 2.2.0: the Regex key
+            k = parse_key(SETTINGS.get("regex_key") or "")
+            if k and k == (vk, ctrl, alt, shift):
+                from .overlay import game_active, POE_TITLE
+                if game_active((getattr(self, "overlay", None) and self.overlay.cfg.get("poe_title")) or POE_TITLE):
+                    self.ui_q.put(("regexcopy",))
+                    return True
+        except Exception:
+            pass
         try:
             if self.tracker_on_key(vk, ctrl, alt, shift):
                 return True
         except Exception:
             pass
         return self.overlay.on_key(vk, ctrl, alt, shift)
+
+    def ev_regexcopy(self):
+        self.rx_hotkey_copy()
 
     def ev_keycap(self, vk, ctrl, alt, shift):
         box = CAPTURING[0]

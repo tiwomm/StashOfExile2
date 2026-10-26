@@ -173,6 +173,9 @@ class WealthPage:
         mm.add_command(label="Re-check magic / rare items", command=self.wealth_recheck_rares)
         mm.add_command(label="Add currency by hand…", command=self.wealth_manual_add)
         mm.add_separator()
+        mm.add_command(label="Export history (CSV)…", command=self.wealth_export_history)    # 2.2.0
+        mm.add_command(label="Export items (CSV)…", command=self.wealth_export_items)
+        mm.add_separator()
         mm.add_command(label="Edit synced tabs", command=self.wealth_toggle_edit)
         more.config(menu=mm)
         more.pack(side="right")
@@ -496,6 +499,26 @@ class WealthPage:
         self.w_man_qty.set("")
         self._w_tell(f"{name}: {qty:,} counted." if qty > 0 else f"Removed {name}.", "ok")
         self.refresh_wealth(force=True)
+
+    def wealth_export_history(self):
+        from .csvexport import write_wealth_history
+        from tkinter import filedialog
+        path = filedialog.asksaveasfilename(defaultextension=".csv", initialfile="wealth_history.csv",
+                                            filetypes=[("CSV", "*.csv")])
+        if path:
+            n = write_wealth_history(path, WEALTH.snapshots, SETTINGS.get("league"))
+            self._w_tell(f"Saved {n} snapshots to {path}.", "ok")
+
+    def wealth_export_items(self):
+        from .csvexport import write_wealth_items
+        from .wealth import wealth_rows
+        from tkinter import filedialog
+        path = filedialog.asksaveasfilename(defaultextension=".csv", initialfile="wealth_items.csv",
+                                            filetypes=[("CSV", "*.csv")])
+        if path:
+            rows, _total, _priced = wealth_rows(WEALTH.all_items(), WPRICES, WEALTH.overrides)
+            n = write_wealth_items(path, rows)
+            self._w_tell(f"Saved {n} items to {path}.", "ok")
 
     def wealth_remove_held(self):
         """Delete removes the selected counted-by-hand stacks - one, several (Ctrl / Shift+click) or all (Ctrl+A).
