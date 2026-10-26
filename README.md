@@ -14,7 +14,7 @@ Hover an item in game and press **Ctrl+Alt+C**. The item is added to a list and 
 - **Mod book.** Learns what mods are worth from the listings it sees. Your tablet and jewel rules live here.
 - **Regex.** Builds stash-search strings for tablets, waystones and relics. ★ marks the mods your Mod book rates valuable.
 - **Utilities:** chat command keys (e.g. `/hideout`), a sticky note over the game, and a Delirium "end it now" alert.
-- **Tools:** exchange rates (poe.ninja), a calculator, and "Under the hood" (how an item is read).
+- **Tools:** exchange rates (poe.ninja) with an Exchange Helper and Arbitrage, a calculator, and "Under the hood" (how an item is read).
 - **Your look:** six themes, accent colours and text size (Settings > Appearance).
 - **Labs (experimental, off by default):** Wealth (stash value over time), a session tracker (maps, time, profit), and an offline game-data search.
 
@@ -39,6 +39,7 @@ Your settings and data are kept in `%APPDATA%\StashOfExile2` and survive updates
 
 - **[RePoE](https://github.com/repoe-fork/repoe-fork):** game data.
 - **[poe.ninja](https://poe.ninja):** prices.
+- **Grinding Gear Games' public [Currency Exchange history](https://www.pathofexile.com/developer/docs):** the Arbitrage tab in Exchange rates (only read when you press Refresh).
 - **[Exiled Exchange 2](https://github.com/Kvan7/Exiled-Exchange-2) (MIT):** base types, stat wordings and trade stat ids.
 
 See `THIRD_PARTY_NOTICES.txt` for the full list.

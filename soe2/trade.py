@@ -158,7 +158,11 @@ def fetch_rich(qid, ids, max_hours=None):
                 if seen_any:
                     mods = [(norm(l), [float(m.group(1)) for m in VAL.finditer(strip_markup(l))]) for l in lines]
                 out.append({"id": (e or {}).get("id"), "price": (p["amount"], p["currency"]), "ts": ts, "mods": mods,
-                            "fields": None if mods is not None else sorted(it.keys())[:40]})   # 2.0: for market_log.txt
+                            "fields": None if mods is not None else sorted(it.keys())[:40],   # 2.0: for market_log.txt
+                            # 2.4.0: what Top value shows for a listing
+                            "name": " ".join(x for x in (strip_markup(str(it.get("name") or "")),
+                                                         str(it.get("typeLine") or it.get("baseType") or "")) if x),
+                            "text": [strip_markup(l) for l in lines], "qid": qid})
         _fetch_cache[key] = (time.time(), out)
     return out
 

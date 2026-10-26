@@ -135,10 +135,11 @@ class WealthPage:
         sv.column("why", width=50, anchor="w")
         sv.column("total", width=58, anchor="e")
         sv.pack(fill="both", expand=True)
-        tk.Label(self.w_side_snaps, text="Ctrl+click two to compare them.", bg=P1, fg=C["muted"],
+        tk.Label(self.w_side_snaps, text="Ctrl+click two to compare. Delete removes.", bg=P1, fg=C["muted"],
                  font=("Segoe UI", 8), anchor="w").pack(fill="x")
         sv.bind("<<TreeviewSelect>>", lambda e: self.wealth_pick_snapshot())
         self.w_snaps = sv
+        self.list_register("wealth", sv, delete=lambda rows: self.wealth_remove_snaps(rows))
         self.w_edit_lbl = tk.Label(side, text="✎ Edit synced tabs", bg=P1, fg=C["blue"] if "blue" in C else "#6ea8ff",
                                    cursor="hand2", font=("Segoe UI", 10), anchor="w")
         self.w_edit_lbl.pack(side="bottom", fill="x", pady=(8, 0))
@@ -146,6 +147,8 @@ class WealthPage:
 
         right = tk.Frame(main, bg=P1)
         right.pack(side="left", fill="both", expand=True)
+        abar = tk.Frame(right, bg=P1)                   # 2.4.0: actions on their own row, so none get squeezed out
+        abar.pack(fill="x", pady=(0, 6))
         ibar = tk.Frame(right, bg=P1)
         ibar.pack(fill="x", pady=(0, 6))
         self.w_filter = tk.StringVar()
@@ -174,7 +177,7 @@ class WealthPage:
         self.w_filter_chip = tk.Label(ibar, text="", bg="#2c4a84", fg="#ffffff", padx=8, pady=2, cursor="hand2",
                                       font=("Segoe UI", 9, "bold"))
         self.w_filter_chip.bind("<Button-1>", lambda e: self.wealth_clear_filters())
-        more = tk.Menubutton(ibar, text="More ▾", bg="#1b2a48", fg=C["text"], activebackground="#2c4a84",
+        more = tk.Menubutton(abar, text="More ▾", bg="#1b2a48", fg=C["text"], activebackground="#2c4a84",
                              activeforeground="#ffffff", relief="flat", padx=10, pady=4, cursor="hand2")
         mm = tk.Menu(more, tearoff=0, bg=C["panel2"], fg=C["text"], activebackground="#2c4a84")
         mm.add_command(label="Update prices from poe.ninja", command=self.wealth_update_prices)
@@ -189,13 +192,14 @@ class WealthPage:
         more.pack(side="right")
         self.w_price_btn = _MenuItem(mm, 0)
         self.w_rares_btn = _MenuItem(mm, 1)
-        self.w_stop_btn = ttk.Button(ibar, text="Stop", command=self.wealth_stop, state="disabled")
+        self.w_stop_btn = ttk.Button(abar, text="Stop", command=self.wealth_stop, state="disabled")
         self.w_stop_btn.pack(side="right", padx=(0, 6))
-        self.w_sync_btn = ttk.Button(ibar, text="⟳ Sync", style="Accent.TButton", command=self.wealth_sync)
+        self.w_sync_btn = ttk.Button(abar, text="⟳ Sync", style="Accent.TButton", command=self.wealth_sync)
         self.w_sync_btn.pack(side="right", padx=(0, 6))
-        self.w_count_btn = ttk.Button(ibar, text="Count currency", command=self.wealth_count_toggle)
+        self.w_count_btn = ttk.Button(abar, text="Count currency", command=self.wealth_count_toggle)
         self.w_count_btn.pack(side="right", padx=(0, 6))
-        self.w_synced = tk.Label(ibar, text="", **lab)
+
+        self.w_synced = tk.Label(abar, text="", **lab)
         self.w_synced.pack(side="right", padx=(0, 10))
 
         # counting / "copied a stack" strip (hidden until used)
@@ -255,6 +259,7 @@ class WealthPage:
         self.w_tabs.pack(side="left")
         self.w_tabs.bind("<<TreeviewSelect>>", lambda e: self.wealth_show_tab_result())
         self.w_tabs.bind("<Double-1>", lambda e: self.wealth_open_trade())
+        self.list_register("wealth", self.w_tabs, delete=lambda rows: self.wealth_remove_tab(), multi=False)
         add = tk.Frame(self.w_setup, bg=P2, pady=8)
         add.pack(fill="x")
         self.w_add = add
@@ -313,11 +318,15 @@ class WealthPage:
         self.w_items.tag_configure("own", foreground="#7cc7ff")
         self.w_items.bind("<Button-3>", self.wealth_item_menu)
         self.w_items.bind("<Double-1>", self.wealth_set_price)
-        self.w_items.bind("<Delete>", lambda e: self.wealth_remove_held())
-        for seq in ("<Control-a>", "<Control-A>"):                     # 2.0 beta 21: select everything, then Delete
-            self.w_items.bind(seq, lambda e: (self.w_items.selection_set(self.w_items.get_children()), "break")[1])
-        self.w_count = tk.Label(right, text="", bg=P1, fg=C["muted"], anchor="w", font=("Segoe UI", 8))
-        self.w_count.pack(fill="x", pady=(4, 0))
+        self.list_register("wealth", self.w_items, delete=lambda rows: self.wealth_remove_rows(rows))   # 2.4.0
+        crow = tk.Frame(right, bg=P1)                    # 2.4.0: under the list - what's in it, Clear and Undo
+        crow.pack(fill="x", pady=(4, 0))
+        self.undo_button(crow, "wealth").pack(side="right")
+        ttk.Button(crow, text="Clear…", command=self.wealth_clear_items).pack(side="right", padx=(0, 6))
+        self.w_count = tk.Label(crow, text="", bg=P1, fg=C["muted"], anchor="w", font=("Segoe UI", 8),
+                                justify="left")
+        self.w_count.pack(side="left", fill="x", expand=True)
+        self.w_count.bind("<Configure>", lambda e: self.w_count.config(wraplength=max(200, e.width - 6)))
         self.w_empty = tk.Label(itf, bg=P1, fg=C["muted"], font=("Segoe UI", 11), justify="center",
                                 text="Nothing here yet.\nPress Count currency and copy your currency stacks in game "
                                      "(Ctrl+C),\nor set up a priced tab (Edit synced tabs) and press Sync.")
@@ -531,23 +540,90 @@ class WealthPage:
             self._w_tell(f"Saved {n} items to {path}.", "ok")
 
     def wealth_remove_held(self):
-        """Delete removes the selected counted-by-hand stacks - one, several (Ctrl / Shift+click) or all (Ctrl+A).
-        Items read from a synced tab come back with the next sync, so those are left alone (2.0 beta 21)."""
-        sel = self.w_items.selection()
-        items = [self.w_rowmap.get(i) for i in sel]
-        held = [it for it in items if it and it.get("held")]
-        other = len([it for it in items if it and not it.get("held")])
-        if not held:
-            if other:
-                self._w_tell("Those come from a synced tab: remove the tab (Edit synced tabs) instead.")
+        """(Older callers.) Delete removes the selected rows."""
+        self.wealth_remove_rows(self.w_items.selection())
+
+    def wealth_remove_rows(self, rows):
+        """2.4.0: Delete removes the selected rows - one, several (Ctrl / Shift+click) or all (Ctrl+A). Counted stacks
+        are gone until you count them again; items from a synced tab come back with the next sync if they're still
+        in that tab. Ctrl+Z / Undo puts them back."""
+        items = [it for r in rows for it in (self.w_rowitems.get(r) or [])]
+        if not items:
             return
-        what = (f"{held[0]['type']} ({held[0]['qty']:,})" if len(held) == 1 else f"these {len(held)} counted stacks")
-        note = f"\n\n({other} item{'s' if other != 1 else ''} from synced tabs stay.)" if other else ""
-        if messagebox.askyesno("Remove", f"Remove {what} from Counted by hand?{note}"):
-            for it in held:
-                WEALTH.set_holding(it["type"], 0)
-            self._w_tell(f"Removed {len(held)} counted stack{'s' if len(held) != 1 else ''}.", "ok")
+        held = [it for it in items if it.get("held")]
+        synced = [it for it in items if not it.get("held")]
+        with WEALTH.lock:
+            old_hold = {it["type"]: dict(WEALTH.holdings[it["type"]]) for it in held if it["type"] in WEALTH.holdings}
+            lids = {str(it["lid"]) for it in synced}
+            old_items = {tid: list(lst) for tid, lst in WEALTH.items.items() if any(str(i["lid"]) in lids for i in lst)}
+            for name in old_hold:
+                WEALTH.holdings.pop(name, None)
+            for tid in old_items:
+                WEALTH.items[tid] = [i for i in WEALTH.items[tid] if str(i["lid"]) not in lids]
+        WEALTH.save()
+        n = len(held) + len(synced)
+        label = f"{n} item{'s' if n != 1 else ''}"
+
+        def restore():
+            with WEALTH.lock:
+                WEALTH.holdings.update(old_hold)
+                WEALTH.items.update(old_items)
+            WEALTH.save()
             self.refresh_wealth(force=True)
+        self.push_undo("wealth", label, restore)
+        self._w_tell(f"Removed {label}." + (" Synced items come back with the next sync if they're still in the tab."
+                                            if synced else "") + " Ctrl+Z (or Undo) puts them back.", "ok")
+        self.refresh_wealth(force=True)
+
+    def wealth_clear_items(self):
+        """2.4.0: empty the item list - counted stacks and what synced tabs found. Tabs and history stay."""
+        n = len(WEALTH.holdings) + sum(len(v) for v in WEALTH.items.values())
+        if not n:
+            return self._w_tell("The list is already empty.", "note")
+        if not messagebox.askyesno("Clear Wealth items",
+                                   f"Clear all {n:,} items from the list?\n\nYour synced tabs and your history (the "
+                                   "chart and snapshots) stay. Count currency or Sync to fill it again.\n\n"
+                                   "You can undo this with Ctrl+Z or the Undo button.", parent=self.dlg_parent()):
+            return
+        with WEALTH.lock:
+            old_hold, old_items = dict(WEALTH.holdings), dict(WEALTH.items)
+            WEALTH.holdings.clear()
+            WEALTH.items = {}
+        WEALTH.save()
+
+        def restore():
+            with WEALTH.lock:
+                WEALTH.holdings.update(old_hold)
+                WEALTH.items.update(old_items)
+            WEALTH.save()
+            self.refresh_wealth(force=True)
+        self.push_undo("wealth", f"{n:,} items", restore)
+        self._w_tell(f"Cleared {n:,} items. Ctrl+Z (or Undo) puts them back.", "ok")
+        self.refresh_wealth(force=True)
+
+    def wealth_remove_snaps(self, rows):
+        """2.4.0: Delete removes the selected snapshots (points on the chart)."""
+        idx = sorted({int(r) for r in rows if str(r).isdigit()}, reverse=True)
+        with WEALTH.lock:
+            gone = [(i, WEALTH.snapshots[i]) for i in idx if i < len(WEALTH.snapshots)]
+            for i, _sn in gone:
+                del WEALTH.snapshots[i]
+        if not gone:
+            return
+        WEALTH.save()
+        label = f"{len(gone)} snapshot{'s' if len(gone) != 1 else ''}"
+
+        def restore():
+            with WEALTH.lock:
+                for i, sn in sorted(gone):
+                    WEALTH.snapshots.insert(min(i, len(WEALTH.snapshots)), sn)
+            WEALTH.save()
+            self.refresh_wealth(force=True)
+            self.wealth_side()
+        self.push_undo("wealth", label, restore)
+        self._w_tell(f"Removed {label}. Ctrl+Z (or Undo) puts them back.", "ok")
+        self.refresh_wealth(force=True)
+        self.wealth_side()
 
     # ---------------- 2.0 beta 7: side list, breakdown, filters
     def wealth_toggle_edit(self):
@@ -813,10 +889,23 @@ class WealthPage:
                                                  "Your net worth history is kept."):
             return
         with WEALTH.lock:
+            pos = next((i for i, x in enumerate(WEALTH.tabs) if x["id"] == t["id"]), len(WEALTH.tabs))
+            old_items, old_res = WEALTH.items.get(t["id"]), WEALTH.results.get(t["id"])
             WEALTH.tabs = [x for x in WEALTH.tabs if x["id"] != t["id"]]
             WEALTH.items.pop(t["id"], None)
             WEALTH.results.pop(t["id"], None)
         WEALTH.save()
+
+        def restore():
+            with WEALTH.lock:
+                WEALTH.tabs.insert(pos, t)
+                if old_items is not None:
+                    WEALTH.items[t["id"]] = old_items
+                if old_res is not None:
+                    WEALTH.results[t["id"]] = old_res
+            WEALTH.save()
+            self.refresh_wealth(force=True)
+        self.push_undo("wealth", f"the tab \"{t['label']}\"", restore)
         self.refresh_wealth(force=True)
 
     def wealth_open_trade(self):
@@ -1115,7 +1204,7 @@ class WealthPage:
             name = wealth_display_name(it)
             if needle and needle not in name.lower() and not any(needle in m.lower() for m in it["mods"]):
                 continue
-            shown.append([it, name, it["qty"], each, tot, src, 1])
+            shown.append([it, name, it["qty"], each, tot, src, 1, [it]])
         if self.w_combine.get():
             merged = {}
             for r in shown:
@@ -1126,6 +1215,7 @@ class WealthPage:
                     m[2] += r[2]
                     m[4] = (m[4] or 0) + (r[4] or 0) if m[4] is not None else None
                     m[6] += 1
+                    m[7] = m[7] + r[7]
                 else:
                     merged[k] = list(r)
             shown = list(merged.values())
@@ -1135,9 +1225,9 @@ class WealthPage:
                 "src": lambda r: r[5] or ""}[col]
         shown.sort(key=keyf, reverse=self.w_sort_rev)
         self.w_items.delete(*self.w_items.get_children())
-        self.w_rowmap = {}
+        self.w_rowmap, self.w_rowitems = {}, {}
         rarity_tag = {1: "magic", 2: "rare", 3: "unique", 4: "gem"}
-        for n, (it, name, qty, each, tot, src, stacks) in enumerate(shown):
+        for n, (it, name, qty, each, tot, src, stacks, parts) in enumerate(shown):
             tags = (["held"] if it.get("held") else [rarity_tag.get(it["frame"], "")]) if each is not None else ["none"]
             if src == "your price":                           # 2.3.0: prices you set yourself stand out
                 tags = ["own"]
@@ -1149,6 +1239,7 @@ class WealthPage:
                                       values=(label, it["stash"], f"{qty:,}", fmt_div(each) if each is not None else "set price",
                                               fmt_div(tot) if tot is not None else "", src or self._w_why_unpriced(it)))
             self.w_rowmap[iid] = it
+            self.w_rowitems[iid] = parts
         filt = []
         if self.w_tabfilter is not None:
             filt.append(COUNTED_LABEL if self.w_tabfilter == COUNTED_TAB else
@@ -1163,7 +1254,8 @@ class WealthPage:
             self.w_filter_chip.pack_forget()
         shown_total = sum(r[4] or 0 for r in shown)
         self.w_count.config(text=f"{len(shown)} shown, worth {fmt_div(shown_total)}.   Double-click a price to set your "
-                                 f"own; on Counted by hand, double-click the quantity to change it (Delete removes it).")
+                                 f"own; on Counted by hand, double-click the quantity to change it. Select rows and press Delete to remove them "
+                                 f"(Ctrl+Z undoes).")
         if rows or self.w_setup.winfo_ismapped():
             self.w_empty.place_forget()
         else:

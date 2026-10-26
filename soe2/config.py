@@ -175,14 +175,28 @@ def load_json(name, default):
         return default
 
 
+SAVE_ERRORS = []                          # 2.4.0: (file, problem) - saving no longer fails without a trace
+
+
 def save_json(name, data):
+    """-> True when the file was written. A failure (file in use, folder not writable...) is noted in SAVE_ERRORS and
+    error_log.txt instead of passing silently."""
     try:
         tmp = P(name) + ".tmp"
         with open(tmp, "w", encoding="utf-8") as f:
             json.dump(data, f)
         os.replace(tmp, P(name))          # all-or-nothing: never leaves a half-written file behind
-    except Exception:
-        pass
+        return True
+    except Exception as e:
+        SAVE_ERRORS.append((name, str(e)[:200]))
+        del SAVE_ERRORS[:-20]
+        try:
+            import time as _t
+            with open(P("error_log.txt"), "a", encoding="utf-8") as f:
+                f.write(f"{_t.strftime('%Y-%m-%d %H:%M:%S')} could not save {name}: {e}\n")
+        except Exception:
+            pass
+        return False
 
 
 refresh_bundled_data()                       # needs load_json / save_json above
