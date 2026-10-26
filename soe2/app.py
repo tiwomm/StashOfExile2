@@ -46,6 +46,7 @@ from .winsys import ICON_B64, KeyWatch, Tray
 from .wealth_page import WealthPage
 from .wealth_setup import WealthSetup
 from .listkeys import ListKeys
+from .searchopts_page import SearchOptsPage
 from .valuelog import VALUE_LOG
 from .exchange_page import ExchangePage
 from .library_page import LibraryPage
@@ -63,7 +64,7 @@ from .shell import Shell
 from .config import PAGE_CHECKS       # 1.40: was "Items"
 
 
-class App(ListKeys, ExchangePage, WealthSetup, WealthPage, LibraryPage, RegexPage, UtilitiesPage, TrackerPage, SearchPage, CalcPage, InsightsPage):
+class App(ListKeys, SearchOptsPage, ExchangePage, WealthSetup, WealthPage, LibraryPage, RegexPage, UtilitiesPage, TrackerPage, SearchPage, CalcPage, InsightsPage):
     COLS = [("added", "#", 46, "e"), ("name", "Item", 220, "w"), ("type", "Type", 110, "w"), ("mark", "Status", 90, "center"),
             ("est", "Est. value", 110, "e"), ("conf", "Confidence", 95, "center"), ("listings", "Listings", 70, "e"), ("priced", "Priced at", 130, "w"),
             ("match", "How it was priced", 300, "w")]
@@ -3081,6 +3082,10 @@ class App(ListKeys, ExchangePage, WealthSetup, WealthPage, LibraryPage, RegexPag
         how = tk.Label(trow, text="Under the hood", bg=P2, fg="#6ea8ff", cursor="hand2", font=("Segoe UI", 8, "underline"))
         how.pack(side="right", padx=(0, 10))
         how.bind("<Button-1>", lambda e: self.lib_inspect(rec.get("raw", "")))
+        wiki = tk.Label(trow, text="Wiki ↗", bg=P2, fg="#6ea8ff", cursor="hand2", font=("Segoe UI", 8, "underline"))
+        wiki.pack(side="right", padx=(0, 10))                # 2.4.1: the base type on the community wiki
+        wiki.bind("<Button-1>", lambda e: webbrowser.open("https://www.poe2wiki.net/wiki/" +
+                                                          it["base"].replace(" ", "_")))
         tk.Label(d, text=it["name"], bg=P2, fg=col, font=("Segoe UI", 16, "bold"), anchor="w",
                  wraplength=wrap-11, justify="left").pack(fill="x")
         if it["corrupted"]:
@@ -3281,7 +3286,8 @@ class App(ListKeys, ExchangePage, WealthSetup, WealthPage, LibraryPage, RegexPag
             elif li and li["tier"] == "high":
                 tk.Label(meta, text="learned: valuable", bg=P1, fg=C["good"], font=("Segoe UI", 9, "bold")).pack(side="right")
 
-        if any(m.get("value") is not None and not m.get("novalue") for m in it["mods"]):
+        self.search_filters_box(rec, d, wrap)                 # 2.4.1: seller, currency, corrupted, gear numbers
+        if rec.get("opts") or any(m.get("value") is not None and not m.get("novalue") for m in it["mods"]):
             ttk.Button(d, text="Search with these values  [Enter]", style="Accent.TButton",
                        command=lambda: self.reprice([rec["id"]])).pack(fill="x", pady=(6, 0))
         # ---- tracking: has this one been listed yet?

@@ -1,0 +1,59 @@
+# Builds StashOfExile2.exe on GitHub's own Windows machine and publishes a release.
+# Runs when a version tag is pushed (v2.5.0, v2.6.0-rc.1 ...). The app's "Check for updates" downloads the .exe from
+# the newest release, so pushing a tag is all a release needs. (Same steps as build_exe.bat.)
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Check the tag matches the app's version
+        shell: bash
+        run: |
+          APP=$(python -c "import re;print(re.search(r'APP_VERSION = \"([^\"]+)\"', open('stashofexile2.py', encoding='utf-8').read()).group(1))")
+          PKG=$(python -c "import re;print(re.search(r'__version__ = \"([^\"]+)\"', open('soe2/__init__.py', encoding='utf-8').read()).group(1))")
+          TAG="${GITHUB_REF_NAME#v}"
+          echo "tag $TAG, launcher $APP, soe2 $PKG"
+          if [ "$APP" != "$TAG" ] || [ "$PKG" != "$TAG" ]; then echo "::error::Tag v$TAG doesn't match APP_VERSION $APP / __version__ $PKG"; exit 1; fi
+
+      - name: Install the build tools
+        run: python -m pip install --upgrade requests pystray pillow pyinstaller mss numpy opencv-python-headless
+
+      - name: Build StashOfExile2.exe
+        run: >
+          python -m PyInstaller --noconfirm --clean --onefile --windowed --name StashOfExile2 --icon stashofexile2.ico
+          --collect-submodules soe2
+          --add-data "tabs.txt;." --add-data "jewels.txt;." --add-data "gamedata.json;." --add-data "regexdata.json;."
+          --add-data "default_rules.json;." --add-data "searchdata.json;." --add-data "stashofexile2.ico;."
+          --add-data "soe2\templates;soe2\templates" --hidden-import pystray._win32 --hidden-import PIL._tkinter_finder
+          --hidden-import cv2 --hidden-import mss --hidden-import numpy stashofexile2.py
+
+      - name: Make the build kit zip and the release notes
+        shell: bash
+        run: |
+          V="${GITHUB_REF_NAME#v}"
+          git archive --format=zip -o "StashOfExile2_build_kit_$V.zip" HEAD
+          python tools/release_notes.py "$V" > notes.md
+          cat notes.md
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          name: StashOfExile2 ${{ github.ref_name }}
+          body_path: notes.md
+          prerelease: ${{ contains(github.ref_name, '-') }}
+          files: |
+            dist/StashOfExile2.exe
+            StashOfExile2_build_kit_*.zip
