@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU GPL v3.0 (see LICENSE). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.6   (2.6.0)
+VERSION 2.7   (2.7.0)
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -18,7 +18,13 @@ VERSION 2.6   (2.6.0)
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
-  2.6.0
+  2.7.0
+       (1) Session tracker: only YOUR deaths count. A real PoE 2 log (Oct 2026) logs ": <name> has been slain." for
+           party members too, and ": <name> has joined / left the area." for other players only (never you). So a
+           death counts when the name is your character name (Options), or - with no name set - when that name hasn't
+           joined or left your area; the first one counted is remembered as you (tracker cfg character_guess).
+       (2) AFK: "AFK mode is now OFF." resumes a session that "AFK mode is now ON." paused (not one you paused).
+       (3) Map stats: a maps-per-day chart for the last 14 days (tracker.daily_maps), with a red dot on days you died.
        (1) Mod book > Waystone rules and Relic rules: every waystone / relic mod from regexdata.json (RePoE), rated
            High / Normal / Ignore like tablet mods (filter, Set selected to, double-click). One row per mod; a
            two-line mod's rule covers both lines.
@@ -656,7 +662,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.6.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.7.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 

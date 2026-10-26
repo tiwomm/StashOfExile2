@@ -16,12 +16,17 @@ INTRO = [
 
 # What's being worked on (2.4.0: not shown in the app any more - kept for ROADMAP.md / the developer).
 NEXT = [
-    "2.7: Session tracker: deaths and time away checked against real logs, and a daily maps chart.",
     "2.8: deciding what Wealth, the Session tracker, Game search and Top value need to leave Labs.",
 ]
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.7.0": [
+        "Session tracker counts only your own deaths, not your party's. Type your character name in Options, or "
+        "let the app work it out.",
+        "When the game turns AFK off, a session that AFK paused carries on by itself.",
+        "Map stats shows how many maps you ran each day, over the last two weeks.",
+    ],
     "2.6.0": [
         "Mod book has Waystone rules and Relic rules: rate each mod High, Normal or Ignore, like tablet mods.",
         "Regex marks the mods you rate High with ★, and ★ Select valuable picks them.",

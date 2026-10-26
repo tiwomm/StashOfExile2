@@ -1,6 +1,6 @@
 # StashOfExile2 roadmap
 
-**Current version: 2.6.0**
+**Current version: 2.7.0**
 
 Releases are numbered 2.x for new features and 2.x.y for fixes. Each step below is one release; we work through them top to bottom.
 
@@ -15,12 +15,12 @@ Releases are numbered 2.x for new features and 2.x.y for fixes. Each step below 
 | 2.4 | Lists work the same everywhere (multi-select, Delete, Ctrl+Z / Undo). Wealth Clear and Undo. Regex Favorites tab. Exchange rates tabs with Exchange Helper and Arbitrage (GGG's hourly exchange history). Top value keeps your priced items after clearing and shows listing details. Profit / hour explained. |
 | 2.5 | Search filters in the item panel (seller, priced in, corrupted, gear item level / quality / sockets / base). Wiki link. |
 | 2.6 | Waystone and relic mod rules in the Mod book (their own ratings, apart from tablet / jewel ones); Regex and Top value use them. |
+| 2.7 | Session tracker: only your own deaths count (checked against a real log), AFK off resumes, maps-per-day chart. |
 
 ## ▶ Next up
 
 | Version | Plan | Why |
 |---|---|---|
-| 2.7 | **Session tracker polish.** Deaths and time away from keyboard checked against real Client.txt logs; daily maps chart. | The death / AFK lines haven't been confirmed for PoE2 yet. |
 | 2.8 | **Leaving Labs.** Decide what Wealth, the Session tracker, Game search and Top value each need to drop the BETA tag, and do it. | |
 
 ## 💤 Parked (not planned unless something changes)
