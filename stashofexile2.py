@@ -1,7 +1,7 @@
 """
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 
-VERSION 2.1   (2.1.0)
+VERSION 2.2   (2.2.0)
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -17,6 +17,16 @@ VERSION 2.1   (2.1.0)
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.2.0
+       (1) Regex key (SETTINGS regex_key, also in Settings > Hotkeys): in game, copies the chosen search to the
+           clipboard (regex_hotkey_search: the search set up for a kind, or a saved search) and shows a small card.
+           Clipboard only - nothing is sent to the game.
+       (2) Currency Exchange helper (Exchange rates window): sell X of A for B -> market ratio and three whole-number
+           ratios to post (quick sale -2%, fair, patient +2%; rates.whole_ratio / exchange_offers), with what you'd
+           get for your amount.
+       (3) CSV export (csvexport.py): every map run (Map stats), sessions (Past sessions), Wealth history and items
+           (Wealth > More).
+       (4) ROADMAP.md rewritten as one list of releases (done / next up / parked); "Coming next" on the card follows it.
   2.1.0
        (1) Session tracker > Map stats: every map you ran, over all sessions (tracker.map_stats): runs, best,
            average, deaths, last run; pick a map for its leaderboard (your 10 fastest runs, the running map in green).
@@ -591,7 +601,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.1.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.2.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
