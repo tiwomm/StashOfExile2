@@ -20,7 +20,8 @@ from .wealth import WEALTH, wealth_key, WPRICES
 
 DEFAULTS = {"overlay": True, "locked": False, "x": 60, "y": 260, "w": 230, "h": 172, "opacity": 225,
             "lines": {"session": True, "map": True, "maps": True, "avg": True, "profit": True, "gold": False},
-            "key_toggle": "", "key_pause": "", "ask_count": True, "log_path": ""}
+            "key_toggle": "", "key_pause": "", "ask_count": True, "log_path": "",
+            "character": "", "character_guess": ""}
 LINE_NAMES = [("session", "Session time"), ("map", "This map's time"), ("maps", "Maps done"), ("avg", "Average map"),
               ("profit", "Profit")]        # (2.3.0: "gold from selling" is gone - it can't be read reliably)
 
@@ -186,8 +187,46 @@ class TrackerPage:
         tk.Label(right, text="Your fastest runs of the map you pick on the left. Time = time inside the map (hideout "
                              "visits in between don't count); visits under 30 seconds aren't counted.",
                  bg=P2, fg=C["muted"], font=("Segoe UI", 8), anchor="w", justify="left", wraplength=320).pack(fill="x", pady=(4, 0))
+        # ---- 2.7.0: maps per day
+        day = tk.Frame(page, bg=P2, highlightthickness=1, highlightbackground=C["line"], padx=10, pady=6)
+        day.pack(fill="x", pady=(6, 0))
+        tk.Label(day, text="Maps per day (last 14 days)", bg=P2, fg=C["accent"], font=("Segoe UI", 10, "bold"),
+                 anchor="w").pack(fill="x")
+        self.tk_daily = tk.Canvas(day, height=110, bg=P2, highlightthickness=0)
+        self.tk_daily.pack(fill="x")
+        self.tk_daily.bind("<Configure>", lambda e: self.tracker_draw_daily())
         self.tk_stats_sort_col, self.tk_stats_rev = "runs", True
         return page
+
+    def tracker_draw_daily(self):
+        """Bars: maps each day; the number on top, a red dot when you died that day."""
+        from .tracker import daily_maps
+        cv = getattr(self, "tk_daily", None)
+        if cv is None:
+            return
+        cv.delete("all")
+        rows = daily_maps(self.tk_sessions.items, self.tk_session)
+        w, h = max(cv.winfo_width(), 300), int(cv.cget("height"))
+        top, bottom = 16, 18
+        most = max((r[1] for r in rows), default=0) or 1
+        slot = w / len(rows)
+        bw = max(6, min(34, slot * 0.6))
+        for i, (d, maps, deaths, secs) in enumerate(rows):
+            x = slot * i + slot / 2
+            bh = (h - top - bottom) * maps / most
+            y1 = h - bottom
+            if maps:
+                cv.create_rectangle(x - bw / 2, y1 - bh, x + bw / 2, y1, fill=C["accent"], outline="")
+                cv.create_text(x, y1 - bh - 7, text=str(maps), fill=C["text"], font=("Segoe UI", 8, "bold"))
+                if deaths:
+                    cv.create_oval(x + bw / 2 - 3, y1 - bh - 3, x + bw / 2 + 5, y1 - bh + 5, fill=C["red"], outline="")
+            else:
+                cv.create_line(x - bw / 2, y1 - 1, x + bw / 2, y1 - 1, fill=C["line"])
+            label = "today" if i == len(rows) - 1 else d.strftime("%a %d")
+            cv.create_text(x, h - 7, text=label, fill=C["muted"], font=("Segoe UI", 7))
+        if not any(r[1] for r in rows):
+            cv.create_text(w / 2, (h - bottom) / 2, text="No maps in the last 14 days.", fill=C["muted"],
+                           font=("Segoe UI", 9))
 
     def _csv_path(self, name):
         from tkinter import filedialog
@@ -235,6 +274,7 @@ class TrackerPage:
         else:
             self.tk_stats_sum.config(text="No maps yet: start a session and run some maps - they show up here, with "
                                           "your best times.")
+        self.tracker_draw_daily()
         if keep and tv.exists(keep[0]):
             tv.selection_set(keep[0])
         elif tv.get_children():
@@ -274,6 +314,16 @@ class TrackerPage:
         self.tk_lock = tk.BooleanVar(value=bool(cfg.get("locked")))
         ttk.Checkbutton(box, text="Lock it (can't be moved or resized by accident)", variable=self.tk_lock,
                         command=self.tracker_options_changed).grid(row=3, column=0, columnspan=3, sticky="w", pady=(6, 0))
+        ch = tk.Frame(box, bg=P2)                       # 2.7.0: whose deaths count
+        ch.grid(row=5, column=0, columnspan=3, sticky="w", pady=(8, 0))
+        tk.Label(ch, text="Your character name", bg=P2, fg=C["text"]).pack(side="left")
+        self.tk_char = tk.StringVar(value=cfg.get("character", ""))
+        ttk.Entry(ch, textvariable=self.tk_char, width=22).pack(side="left", padx=(10, 0))
+        self.tk_char.trace_add("write", lambda *a: self.tracker_char_set())
+        self.tk_char_hint = tk.Label(box, text="", bg=P2, fg=C["muted"], font=("Segoe UI", 8), anchor="w",
+                                     justify="left", wraplength=600)
+        self.tk_char_hint.grid(row=6, column=0, columnspan=3, sticky="w")
+        self.tracker_char_hint()
         op = tk.Frame(box, bg=P2)                       # 2.3.0: own row - it used to sit on top of its label
         op.grid(row=4, column=0, columnspan=3, sticky="w", pady=(6, 0))
         tk.Label(op, text="Opacity", bg=P2, fg=C["text"]).pack(side="left")
@@ -402,10 +452,47 @@ class TrackerPage:
         self.tk_reader = LogReader(path)
         evs = self.tk_reader.start()
         self.tk_last_area = next((e for e in reversed(evs) if e[0] == "area"), None)
+        self.tk_others = {e[2]["who"].lower() for e in evs if e[0] == "party"}       # 2.7.0: other players seen
         self.tk_last_scene = next((e for e in reversed(evs) if e[0] == "scene" and e[2]["name"] != "Atlas"), None)
         size = os.path.getsize(path) / 1048576 if os.path.exists(path) else 0
         self.tk_log_lbl.config(text=f"Following {path} ({size:,.0f} MB - only new lines are read). "
                                     "Right-click here to use a different Client.txt.", fg=C["muted"])
+        return True
+
+    def tracker_char_set(self):
+        cfg = self.tracker_cfg()
+        cfg["character"] = self.tk_char.get().strip()
+        self.tracker_save()
+        self.tracker_char_hint()
+
+    def tracker_char_hint(self):
+        cfg = self.tracker_cfg()
+        guess = cfg.get("character_guess")
+        if (cfg.get("character") or "").strip():
+            txt = "Only this character's deaths count - party members' deaths don't."
+        elif guess:
+            txt = (f"Counting deaths for {guess} (worked out from the log). Not you? Type your character's name. "
+                   "Party members' deaths don't count.")
+        else:
+            txt = ("Deaths count for you only, not party members. Leave it empty and the app works it out, or type "
+                   "your character's name.")
+        self.tk_char_hint.config(text=txt)
+
+    def tracker_is_me(self, who):
+        """Is this death yours? Your character name (Options) if you set it; otherwise anyone who hasn't joined or
+        left your area (the game only logs that for other players). The first death counted that way names you."""
+        cfg = self.tracker_cfg()
+        mine = (cfg.get("character") or "").strip().lower()
+        w = (who or "").strip().lower()
+        if mine:
+            return w == mine
+        if w in getattr(self, "tk_others", set()):
+            return False
+        if cfg.get("character_guess", "").lower() != w:
+            cfg["character_guess"] = who
+            self.tracker_save()
+            if hasattr(self, "tk_char_hint"):
+                self.tracker_char_hint()
         return True
 
     def tracker_tick(self):
@@ -414,10 +501,23 @@ class TrackerPage:
             if s is not None and s.ended is None and self.tk_reader is not None:
                 changed = False
                 for kind, ts, data in self.tk_reader.poll():
+                    if kind == "party":
+                        self.tk_others = getattr(self, "tk_others", set()) | {data["who"].lower()}
+                        continue
+                    if kind == "death" and not self.tracker_is_me(data["who"]):
+                        continue                              # a party member died, not you
                     changed |= s.feed(kind, ts, data)
                     if kind == "afk" and data["on"] and s.running():
                         s.pause(ts)
+                        self.tk_afk_paused = True             # 2.7.0: AFK off resumes it (only a pause AFK made)
+                        self.tk_pause_btn.config(text="Resume")
                         changed = True
+                    elif kind == "afk" and not data["on"] and getattr(self, "tk_afk_paused", False):
+                        self.tk_afk_paused = False
+                        if s.paused_at is not None and s.ended is None:
+                            s.resume(ts)
+                            self.tk_pause_btn.config(text="Pause")
+                            changed = True
                 if changed:
                     self.tracker_fill_maps()
             self.tracker_draw()
@@ -463,6 +563,7 @@ class TrackerPage:
         s = self.tk_session
         if not s or s.ended is not None:
             return
+        self.tk_afk_paused = False                         # your own press: AFK off won't undo it
         if s.paused_at is None:
             s.pause()
             self.tk_pause_btn.config(text="Resume")

@@ -190,6 +190,26 @@ class Sessions:
 MIN_RUN_SECS = 30          # shorter visits (walked in and straight out again) don't count as runs
 
 
+def daily_maps(sessions, current=None, days=14, now=None, min_secs=MIN_RUN_SECS):
+    """2.7.0: maps run per day, the last `days` days (today last): [(date, maps, deaths, seconds in maps)].
+    A map counts on the day you first entered it; visits under min_secs don't count (like Map stats)."""
+    import datetime as _dt
+    now = now or time.time()
+    today = _dt.date.fromtimestamp(now)
+    out = {today - _dt.timedelta(days=i): [0, 0, 0.0] for i in range(days)}
+    every = list(sessions) + ([current] if current is not None and current not in sessions else [])
+    for s in every:
+        for m in s.maps:
+            if m.get("time", 0) < min_secs:
+                continue
+            d = _dt.date.fromtimestamp(m.get("first") or s.started)
+            if d in out:
+                out[d][0] += 1
+                out[d][1] += m.get("deaths", 0)
+                out[d][2] += m.get("time", 0)
+    return [(d, *out[d]) for d in sorted(out)]
+
+
 def map_stats(sessions, current=None, now=None, min_secs=MIN_RUN_SECS):
     """Every map you ran, over all sessions (2.1.0): {map name: {"runs", "best", "avg", "median", "total", "deaths",
     "last", "levels", "list": [run, ...] fastest first}} - a run is {"time", "when", "level", "deaths"}.

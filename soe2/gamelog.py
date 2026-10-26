@@ -9,8 +9,12 @@ Lines used (seen in a real PoE 2 log, Oct 2026):
   2026/10/25 17:04:22 ... [INFO Client 24908] [SCENE] Set Source [Sun Temple]
   2026/10/25 17:04:11 ... [DEBUG Client 24908] local player sold an item for 610 gold
   2026/10/25 17:10:56 ... [INFO Client 24908] [WINDOW] Lost focus
+  2026/10/26 13:10:02 ... [INFO Client 21412] : Tylo_witch has been slain.        (anyone in your area, you too)
+  2026/10/26 12:14:20 ... [INFO Client 21412] : Tylo_witch has joined the area.    (OTHER players only)
+  2026/10/26 14:25:27 ... [INFO Client 21412] : AFK mode is now ON. Autoreply "This player is AFK."
 Going back into the same map through its portal logs the same area with the SAME seed; a new map has a new seed.
-Hideouts and towns have seed 1."""
+Hideouts and towns have seed 1. "has been slain" is logged for party members too, and your own joins aren't logged,
+so a name that joins or leaves your area is someone else (2.7.0: only your own deaths count)."""
 import os
 import re
 import string
@@ -21,7 +25,8 @@ LINE = re.compile(r"^(\d{4}/\d{2}/\d{2} \d{2}:\d{2}:\d{2}) \S+ \S+ \[(\w+) Clien
 AREA = re.compile(r'Generating level (\d+) area "([^"]+)" with seed (\d+)')
 SCENE = re.compile(r"\[SCENE\] Set Source \[(.+)\]")
 GOLD = re.compile(r"local player sold an item for ([\d,]+) gold")
-SLAIN = re.compile(r"^: (.+) has been slain\.")           # not seen in a PoE 2 log yet: kept, harmless if it never matches
+SLAIN = re.compile(r"^: (.+) has been slain\.")           # 2.7.0: confirmed in a real PoE 2 log (anyone in the area)
+PARTY = re.compile(r"^: (.+) has (joined|left) the area\.")
 AFK_ON = re.compile(r"AFK mode is now ON", re.I)
 AFK_OFF = re.compile(r"AFK mode is now OFF", re.I)
 FOCUS = re.compile(r"\[WINDOW\] (Lost|Gained) focus", re.I)
@@ -83,6 +88,9 @@ def parse(line):
     d = SLAIN.search(text)
     if d:
         return "death", ts, {"who": d.group(1)}
+    p = PARTY.search(text)
+    if p:
+        return "party", ts, {"who": p.group(1), "joined": p.group(2) == "joined"}
     if AFK_ON.search(text):
         return "afk", ts, {"on": True}
     if AFK_OFF.search(text):
