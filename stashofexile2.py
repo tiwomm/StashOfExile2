@@ -26,6 +26,9 @@ VERSION HISTORY
            them to every search for that item (thread-local, set in engine.price_rec). Searches narrowed this way
            don't teach the Mod book (engine._stage).
        (2) Wiki ↗ link next to Under the hood: the item's base type on poe2wiki.net.
+       (3) The source is on GitHub (main branch, one commit per version from 2.0.0), GPL-3.0. Releases build themselves:
+           when main gets a new APP_VERSION, .github/workflows/release.yml builds StashOfExile2.exe on GitHub's Windows
+           runner, tags v<version> and publishes the release that "Check for updates" reads.
   2.4.0
        (1) Lists behave the same everywhere (listkeys.py): click / Ctrl+click / Shift+click / Ctrl+A select, Delete
            removes, Ctrl+Z undoes - routed to the list last clicked in the window in front (Delete in Wealth works
