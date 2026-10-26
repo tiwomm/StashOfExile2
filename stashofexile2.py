@@ -1,7 +1,7 @@
 """
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 
-VERSION 2.3   (2.3.0)
+VERSION 2.4   (2.4.0)
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -17,6 +17,27 @@ VERSION 2.3   (2.3.0)
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.4.0
+       (1) Lists behave the same everywhere (listkeys.py): click / Ctrl+click / Shift+click / Ctrl+A select, Delete
+           removes, Ctrl+Z undoes - routed to the list last clicked in the window in front (Delete in Wealth works
+           again: the key never reached the list, only the Price checks window got it). Undo per window, 20 deep.
+       (2) Wealth: Delete removes counted or synced rows (combined stacks: all of them), snapshots and tabs; Clear…
+           empties the item list (tabs and history stay); Undo button + Ctrl+Z.
+       (3) Regex: "Saved searches" -> a Favorites tab (regex_favorites.json + .backup.json, every item type in one
+           list; the old regex_presets.json is brought over once). save_json now returns False and logs to
+           error_log.txt instead of failing silently (config.SAVE_ERRORS).
+       (4) Exchange rates in tabs: Rates / Exchange Helper / Arbitrage. Arbitrage (arbitrage.py, exchange_page.py):
+           GGG's public hourly Currency Exchange history (web.poecdn.com/api/currency-exchange/poe2/<hour>, no key),
+           three-market loops whose average rates don't agree; only on Refresh, finished hours cached, 1.5 s between
+           requests, stops on 429. Plus "Check a flip you see in game". (poe.ninja can't show this: its prices come
+           from each currency's busiest pair, so they always agree.)
+       (5) Top value: "Your most valuable" comes from value_log.json (valuelog.py), kept after Clear list; details
+           panel; Delete + Undo. "Dearest listings seen" stores and shows each listing's name, mod lines, own price
+           and the search it came from (market.db listings: name, lines, price_txt, qid).
+       (6) Session tracker: Profit / hour explained in Options (with the count-on-stop setting next to it, worded
+           plainly); a "Profit / hour" card instead of "Wealth at start"; a note and a Set up Wealth button when
+           Wealth is empty. "Timer over the game" is called Options.
+       (7) What's new no longer shows "Coming next".
   2.3.0
        (1) Price checks: deleting many rows no longer hangs (the item panel redraw is debounced, app._on_select_soon).
        (2) Jewels / tablets: the spread is measured per search (engine.spread_of) - a wide spread gives a ROUGH PRICE
@@ -613,7 +634,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.3.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.4.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 

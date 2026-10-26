@@ -45,6 +45,9 @@ from .style import C, FLAG_COLORS, FONT_TITLE, hotkey_blocked, MONO, Plate, SegB
 from .winsys import ICON_B64, KeyWatch, Tray
 from .wealth_page import WealthPage
 from .wealth_setup import WealthSetup
+from .listkeys import ListKeys
+from .valuelog import VALUE_LOG
+from .exchange_page import ExchangePage
 from .library_page import LibraryPage
 from .regex_page import RegexPage
 from .calc import CalcPage
@@ -60,7 +63,7 @@ from .shell import Shell
 from .config import PAGE_CHECKS       # 1.40: was "Items"
 
 
-class App(WealthSetup, WealthPage, LibraryPage, RegexPage, UtilitiesPage, TrackerPage, SearchPage, CalcPage, InsightsPage):
+class App(ListKeys, ExchangePage, WealthSetup, WealthPage, LibraryPage, RegexPage, UtilitiesPage, TrackerPage, SearchPage, CalcPage, InsightsPage):
     COLS = [("added", "#", 46, "e"), ("name", "Item", 220, "w"), ("type", "Type", 110, "w"), ("mark", "Status", 90, "center"),
             ("est", "Est. value", 110, "e"), ("conf", "Confidence", 95, "center"), ("listings", "Listings", 70, "e"), ("priced", "Priced at", 130, "w"),
             ("match", "How it was priced", 300, "w")]
@@ -423,11 +426,7 @@ class App(WealthSetup, WealthPage, LibraryPage, RegexPage, UtilitiesPage, Tracke
             t.insert("end", f"New in {pretty_version(v)}\n", "h")
             for line in lines:
                 t.insert("end", "•  " + line + "\n", "li")
-        from .whatsnew import NEXT
-        if NEXT:                                                # 2.0 beta 21: what's being worked on next
-            t.insert("end", "Coming next\n", "h")
-            for line in NEXT:
-                t.insert("end", "•  " + line + "\n", "li")
+        # (2.4.0: "Coming next" is no longer shown here - the plan lives in ROADMAP.md)
         t.config(state="disabled")
         card.lift()
 
@@ -1277,23 +1276,28 @@ class App(WealthSetup, WealthPage, LibraryPage, RegexPage, UtilitiesPage, Tracke
                                        ("O", self.hk_trade, False), ("F2", self.toggle_pause, True),
                                        ("Escape", self.hk_min, False)):
             r.bind_all(f"<KeyPress-{seq}>", lambda e, f=fn, ok=needs_text_ok: self.on_hotkey(e, f, ok))   # every window
-        for seq, fn in (("<Control-a>", self.hk_select_all), ("<Control-A>", self.hk_select_all),
-                        ("<Control-z>", self.undo_mark), ("<Control-Z>", self.undo_mark),
-                        ("<KeyPress-Delete>", self.hk_clear)):
-            r.bind_all(seq, lambda e, f=fn: self.on_list_key(f))
+        for seq, act in (("<Control-a>", "all"), ("<Control-A>", "all"), ("<Control-z>", "undo"),
+                         ("<Control-Z>", "undo"), ("<KeyPress-Delete>", "delete")):
+            r.bind_all(seq, lambda e, a=act: self.on_list_key(a))
 
-    def on_list_key(self, fn):
-        """Ctrl+A, Ctrl+Z and Del act on the item list - not while you type in a box (there they keep their usual job)."""
+    def on_list_key(self, action):
+        """Ctrl+A, Ctrl+Z and Del act on the list in the window in front - not while you type in a box (there they
+        keep their usual job). 2.4.0: every window's lists, not only Price checks (listkeys.py)."""
+        if callable(action):                                   # (older callers passed the function itself)
+            action = {self.hk_select_all: "all", self.undo_mark: "undo", self.hk_clear: "delete"}.get(action, "")
         try:
             cls = self.root.focus_get().winfo_class()
         except Exception:
             cls = ""
         if cls in ("TEntry", "Entry", "TSpinbox", "Spinbox", "TCombobox", "Text"):
             return None
-        if not self._on_checks():
-            return None
-        fn()
-        return "break"
+        if self._on_checks():
+            {"all": self.hk_select_all, "undo": self.undo_mark, "delete": self.hk_clear}[action]()
+            return "break"
+        sh = getattr(self, "shell", None)
+        if sh is not None and sh.active and self.list_key(sh.active, action):
+            return "break"
+        return None
 
     def hk_select_all(self):
         kids = self.tree.get_children()
@@ -1461,8 +1465,15 @@ class App(WealthSetup, WealthPage, LibraryPage, RegexPage, UtilitiesPage, Tracke
             return False
         return "warn" if (RATES.error or age is None or age > 7200) else True
 
-    def build_rates_window(self, w):
-        self.rates_win = w
+    def build_rates_window(self, win):
+        self.rates_win = win
+        # 2.4.0: three tabs - Rates, Exchange Helper, Arbitrage (exchange_page.py)
+        self.rates_view = SegBar(win, ["Rates", "Exchange Helper", "Arbitrage"], command=lambda v: self.rates_show_page(),
+                                 size=10, pad=(16, 5))
+        self.rates_view.pack(anchor="w", padx=14, pady=(10, 0))
+        self.rates_pages = {k: tk.Frame(win, bg=C["panel"]) for k in ("Rates", "Exchange Helper", "Arbitrage")}
+        w = self.rates_pages["Rates"]
+        w.pack(fill="both", expand=True)
         top = tk.Frame(w, bg=C["panel"], padx=14, pady=10)
         top.pack(fill="x")
         self.rates_status = tk.Label(top, text="", bg=C["panel"], fg=C["text"], anchor="w", justify="left", wraplength=360)
@@ -1487,11 +1498,15 @@ class App(WealthSetup, WealthPage, LibraryPage, RegexPage, UtilitiesPage, Tracke
                                  wraplength=580)
         self.conv_out.pack(fill="x", pady=(8, 0))
         self.conv_var.trace_add("write", lambda *a: self.draw_rates())
-        # ---- 2.2.0: what to post on the in-game Currency Exchange
-        ex = tk.Frame(w, bg=C["panel2"], padx=14, pady=10, highlightthickness=1, highlightbackground=C["line"])
-        ex.pack(fill="x", padx=14, pady=(0, 10))
-        tk.Label(ex, text="Currency Exchange helper", bg=C["panel2"], fg=C["accent"], font=("Segoe UI", 10, "bold"),
+        # ---- 2.2.0: what to post on the in-game Currency Exchange (2.4.0: its own tab, "Exchange Helper")
+        hp = self.rates_pages["Exchange Helper"]
+        ex = tk.Frame(hp, bg=C["panel2"], padx=14, pady=10, highlightthickness=1, highlightbackground=C["line"])
+        ex.pack(fill="x", padx=14, pady=10)
+        tk.Label(ex, text="Exchange Helper", bg=C["panel2"], fg=C["accent"], font=("Segoe UI", 10, "bold"),
                  anchor="w").pack(fill="x")
+        tk.Label(ex, text="Pick what you're selling and what you want: it shows the ratio to post on the Currency "
+                          "Exchange, and what you'd get.", bg=C["panel2"], fg=C["muted"], anchor="w", justify="left",
+                 wraplength=560).pack(fill="x")
         er = tk.Frame(ex, bg=C["panel2"])
         er.pack(fill="x", pady=(4, 0))
         tk.Label(er, text="I sell", bg=C["panel2"], fg=C["muted"]).pack(side="left")
@@ -1531,7 +1546,19 @@ class App(WealthSetup, WealthPage, LibraryPage, RegexPage, UtilitiesPage, Tracke
         tv.tag_configure("odd", background=C["odd"])
         tv.tag_configure("thin", foreground=C["muted"])
         self.rates_tv = tv
+        self.list_register("rates", tv)
+        self.build_arbitrage(self.rates_pages["Arbitrage"])
         self.draw_rates()
+
+    def rates_show_page(self):
+        pick = self.rates_view.get()
+        for k, f in self.rates_pages.items():
+            if k == pick:
+                f.pack(fill="both", expand=True)
+            else:
+                f.pack_forget()
+        if pick == "Arbitrage":
+            self.arb_draw()
 
     def draw_rates(self):
         w = self.rates_win
@@ -2091,6 +2118,8 @@ class App(WealthSetup, WealthPage, LibraryPage, RegexPage, UtilitiesPage, Tracke
         if rec["state"] == "done":
             self.done_times.append(time.time())
             self.append_history(rec)
+            if VALUE_LOG.add(rec, SETTINGS.get("league")):             # 2.4.0: Top value keeps it after a Clear list
+                self.value_log_save_soon()
             # in a bulk run the end-of-batch summary covers this; only pop up for one-off checks
             if SETTINGS["popups"] and len(self.batch_ids) <= 1 and rec["est"] is not None and rec["est"] >= SETTINGS["good_div"] \
                     and "WIDE SPREAD" not in rec.get("label", ""):
@@ -2252,6 +2281,7 @@ class App(WealthSetup, WealthPage, LibraryPage, RegexPage, UtilitiesPage, Tracke
             if not rec:
                 continue
             rec["mark"] = mark
+            VALUE_LOG.mark(rec)
             if mark == "listed":
                 rec["list_price"] = typed or (fmt_div(rec["est"]) if rec.get("est") is not None and not rec.get("skip") else "")
                 div = parse_price(rec["list_price"])              # remembered in market.db: a hint on similar items later
@@ -2262,6 +2292,7 @@ class App(WealthSetup, WealthPage, LibraryPage, RegexPage, UtilitiesPage, Tracke
             elif self.tree.exists(str(rid)):
                 self.tree.delete(str(rid))
         self.dirty = True
+        self.value_log_save_soon()
         self.update_total()
         left = list(self.tree.get_children())
         if any(str(r) in left for r in sel):                  # still visible (Show: All) - just refresh the panel
@@ -2303,6 +2334,7 @@ class App(WealthSetup, WealthPage, LibraryPage, RegexPage, UtilitiesPage, Tracke
             if not rec:
                 continue
             rec["mark"] = mark
+            VALUE_LOG.mark(rec)
             if lp is None:
                 rec.pop("list_price", None)
             else:
@@ -2436,6 +2468,7 @@ class App(WealthSetup, WealthPage, LibraryPage, RegexPage, UtilitiesPage, Tracke
         ns.tv.tag_configure("high", foreground=C["good"])
         ns.tv.tag_configure("ignore", foreground=C["muted"])
         ns.tv.bind("<Double-1>", lambda e, c=cat: self.cycle_rule(e, c))
+        self.list_register("modbook", ns.tv)                                      # 2.4.0: Ctrl+A, Shift / Ctrl+click
 
     def rules_cat(self):
         """Which rules page is showing: 'jewel' or 'tablet'."""
@@ -2984,6 +3017,13 @@ class App(WealthSetup, WealthPage, LibraryPage, RegexPage, UtilitiesPage, Tracke
                             r.get("mark", "new"), r.get("list_price", ""),
                             time.strftime("%Y-%m-%d %H:%M", time.localtime(r["priced_at"])) if r.get("priced_at") else ""])
 
+    def value_log_save_soon(self):
+        if getattr(self, "_vl_job", None) is None:
+            def go():
+                self._vl_job = None
+                VALUE_LOG.save()
+            self._vl_job = self.root.after(1500, go)
+
     def append_history(self, rec):
         new = not os.path.exists(P("history.csv"))
         try:
@@ -3392,6 +3432,7 @@ class App(WealthSetup, WealthPage, LibraryPage, RegexPage, UtilitiesPage, Tracke
             tv.column(cid, width=w, anchor=anchor, stretch=(cid in ("mods", "mod", "text")))
         tv.tag_configure("warn", foreground=C["orange"])
         tv.tag_configure("great", foreground=C["good"])
+        self.list_register("modbook", tv)
         sb = ttk.Scrollbar(self.mem_frame, orient="vertical", command=tv.yview)
         tv.configure(yscrollcommand=sb.set)
         sb.pack(side="right", fill="y")

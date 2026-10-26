@@ -1,6 +1,6 @@
 # StashOfExile2 roadmap
 
-**Current version: 2.3.0**
+**Current version: 2.4.0**
 
 Releases are numbered 2.x for new features and 2.x.y for fixes. Each step below is one release; we work through them top to bottom.
 
@@ -12,14 +12,15 @@ Releases are numbered 2.x for new features and 2.x.y for fixes. Each step below 
 | 2.1 | Map stats with per-map leaderboards (Session tracker). Top value (Labs). Clock follows Windows' 12 / 24-hour setting. |
 | 2.2 | Regex key: one key in game copies your stash search. Currency Exchange helper (whole-number ratios to post). CSV export for map runs, sessions and Wealth. |
 | 2.3 | Windows check-up done. Wealth, step by step: a guided first setup, "up X since yesterday", snapshots you can compare, your own prices marked. Rough prices for jewels and tablets instead of "check by hand"; no freeze when deleting many price checks; a problem report. |
+| 2.4 | Lists work the same everywhere (multi-select, Delete, Ctrl+Z / Undo). Wealth Clear and Undo. Regex Favorites tab. Exchange rates tabs with Exchange Helper and Arbitrage (GGG's hourly exchange history). Top value keeps your priced items after clearing and shows listing details. Profit / hour explained. |
 
 ## ▶ Next up
 
 | Version | Plan | Why |
 |---|---|---|
-| 2.4 | **Waystone & relic mods in the Mod book.** Rate their mods like tablet mods; Regex and Top value pick it up. | Today they can only be rated from Regex with a right-click. |
-| 2.5 | **Session tracker polish.** Deaths and time away from keyboard checked against real Client.txt logs; daily maps chart. | The death / AFK lines haven't been confirmed for PoE2 yet. |
-| 2.6 | **Leaving Labs.** Decide what Wealth, the Session tracker, Game search and Top value each need to drop the BETA tag, and do it. | |
+| 2.5 | **Waystone & relic mods in the Mod book.** Rate their mods like tablet mods; Regex and Top value pick it up. | Today they can only be rated from Regex with a right-click. |
+| 2.6 | **Session tracker polish.** Deaths and time away from keyboard checked against real Client.txt logs; daily maps chart. | The death / AFK lines haven't been confirmed for PoE2 yet. |
+| 2.7 | **Leaving Labs.** Decide what Wealth, the Session tracker, Game search and Top value each need to drop the BETA tag, and do it. | |
 
 ## 💤 Parked (not planned unless something changes)
 
