@@ -1,0 +1,153 @@
+"""Reading Path of Exile 2's own log file, Client.txt (2.0 beta 9), for the session tracker.
+
+Only reads a text file the game writes on your PC: it never touches the game, its memory, its servers or your input.
+The file grows forever (often hundreds of MB), so it is never loaded whole: the reader jumps to the end, looks back a
+little to learn where you are now, then only reads lines the game adds after that.
+
+Lines used (seen in a real PoE 2 log, Oct 2026):
+  2026/10/25 17:04:22 ... [DEBUG Client 24908] Generating level 80 area "MapSunTemple" with seed 1312512231
+  2026/10/25 17:04:22 ... [INFO Client 24908] [SCENE] Set Source [Sun Temple]
+  2026/10/25 17:04:11 ... [DEBUG Client 24908] local player sold an item for 610 gold
+  2026/10/25 17:10:56 ... [INFO Client 24908] [WINDOW] Lost focus
+Going back into the same map through its portal logs the same area with the SAME seed; a new map has a new seed.
+Hideouts and towns have seed 1."""
+import os
+import re
+import string
+import time
+from datetime import datetime
+
+LINE = re.compile(r"^(\d{4}/\d{2}/\d{2} \d{2}:\d{2}:\d{2}) \S+ \S+ \[(\w+) Client \d+\] (.*)$")
+AREA = re.compile(r'Generating level (\d+) area "([^"]+)" with seed (\d+)')
+SCENE = re.compile(r"\[SCENE\] Set Source \[(.+)\]")
+GOLD = re.compile(r"local player sold an item for ([\d,]+) gold")
+SLAIN = re.compile(r"^: (.+) has been slain\.")           # not seen in a PoE 2 log yet: kept, harmless if it never matches
+AFK_ON = re.compile(r"AFK mode is now ON", re.I)
+AFK_OFF = re.compile(r"AFK mode is now OFF", re.I)
+FOCUS = re.compile(r"\[WINDOW\] (Lost|Gained) focus", re.I)
+
+LOOKBACK = 256 * 1024          # bytes read before the end at start-up, to find the area you are in now
+
+
+def candidates():
+    """Where Client.txt usually is: Steam and the standalone client, on every drive letter."""
+    rels = [r"Program Files (x86)\Steam\steamapps\common\Path of Exile 2\logs\Client.txt",
+            r"Program Files\Steam\steamapps\common\Path of Exile 2\logs\Client.txt",
+            r"SteamLibrary\steamapps\common\Path of Exile 2\logs\Client.txt",
+            r"Steam\steamapps\common\Path of Exile 2\logs\Client.txt",
+            r"Program Files (x86)\Grinding Gear Games\Path of Exile 2\logs\Client.txt",
+            r"Program Files\Grinding Gear Games\Path of Exile 2\logs\Client.txt",
+            r"Grinding Gear Games\Path of Exile 2\logs\Client.txt",
+            r"Games\Path of Exile 2\logs\Client.txt"]
+    if os.name != "nt":
+        return []
+    out = []
+    for d in string.ascii_uppercase[2:]:
+        root = f"{d}:\\"
+        if not os.path.exists(root):
+            continue
+        out += [os.path.join(root, r) for r in rels]
+    return out
+
+
+def find_log(saved=None):
+    """-> path of Client.txt or None. A path you picked yourself wins."""
+    if saved and os.path.isfile(saved):
+        return saved
+    for p in candidates():
+        if os.path.isfile(p):
+            return p
+    return None
+
+
+def parse(line):
+    """One log line -> (kind, timestamp, data) or None."""
+    m = LINE.match(line.rstrip("\r\n"))
+    if not m:
+        return None
+    try:
+        ts = datetime.strptime(m.group(1), "%Y/%m/%d %H:%M:%S").timestamp()
+    except ValueError:
+        return None
+    text = m.group(3)
+    a = AREA.search(text)
+    if a:
+        return "area", ts, {"level": int(a.group(1)), "area": a.group(2), "seed": int(a.group(3))}
+    s = SCENE.search(text)
+    if s:
+        name = s.group(1)
+        return ("scene", ts, {"name": name}) if name != "(null)" else None
+    g = GOLD.search(text)
+    if g:
+        return "gold", ts, {"amount": int(g.group(1).replace(",", ""))}
+    d = SLAIN.search(text)
+    if d:
+        return "death", ts, {"who": d.group(1)}
+    if AFK_ON.search(text):
+        return "afk", ts, {"on": True}
+    if AFK_OFF.search(text):
+        return "afk", ts, {"on": False}
+    f = FOCUS.search(text)
+    if f:
+        return "focus", ts, {"on": f.group(1).lower() == "gained"}
+    return None
+
+
+def area_kind(area, seed):
+    """'map' (an endgame map), 'hideout', 'town' or 'other' (campaign, trials, ...)."""
+    a = area or ""
+    if a.startswith("Hideout"):
+        return "hideout"
+    if a.startswith("Map") and seed != 1:
+        return "map"
+    if seed == 1:
+        return "town"
+    return "other"
+
+
+class LogReader:
+    """Follows Client.txt from its end. poll() -> new events since the last call (call it about once a second)."""
+
+    def __init__(self, path):
+        self.path = path
+        self.pos = None
+        self.buf = b""
+        self.error = ""
+
+    def start(self):
+        """Jump near the end. -> the events in the last bit of the file (to learn the current area)."""
+        try:
+            size = os.path.getsize(self.path)
+            with open(self.path, "rb") as f:
+                f.seek(max(0, size - LOOKBACK))
+                tail = f.read()
+            self.pos = size
+            self.error = ""
+        except OSError as e:
+            self.error = str(e)
+            return []
+        lines = tail.split(b"\n")[1:] if size > LOOKBACK else tail.split(b"\n")
+        return [ev for ev in (parse(l.decode("utf-8", "replace")) for l in lines) if ev]
+
+    def poll(self):
+        if self.pos is None:
+            self.start()
+            return []
+        try:
+            size = os.path.getsize(self.path)
+            if size < self.pos:                       # the file was cleared (or replaced): start over at its top
+                self.pos, self.buf = 0, b""
+            if size == self.pos:
+                return []
+            with open(self.path, "rb") as f:
+                f.seek(self.pos)
+                data = f.read(min(size - self.pos, 4 * 1024 * 1024))
+            self.pos += len(data)
+            self.error = ""
+        except OSError as e:
+            self.error = str(e)
+            return []
+        data = self.buf + data
+        lines = data.split(b"\n")
+        self.buf = lines.pop()                       # a line the game is still writing
+        return [ev for ev in (parse(l.decode("utf-8", "replace")) for l in lines) if ev]
