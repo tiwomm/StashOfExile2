@@ -1,7 +1,7 @@
 """
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 
-VERSION 2.2   (2.2.0)
+VERSION 2.3   (2.3.0)
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -17,6 +17,18 @@ VERSION 2.2   (2.2.0)
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.3.0
+       (1) Price checks: deleting many rows no longer hangs (the item panel redraw is debounced, app._on_select_soon).
+       (2) Jewels / tablets: the spread is measured per search (engine.spread_of) - a wide spread gives a ROUGH PRICE
+           with Low confidence instead of CHECK BY HAND; a stat filled in twice is dropped instead of giving up; when
+           no listing has all the mods together, the best mod alone gives a floor price.
+       (3) Settings > Advanced > Problem report (report.py): a zip of recent price checks and logs to look at misses.
+       (4) Session tracker: "gold from selling" removed (it can't be tracked reliably); its card is "Fastest map".
+       (5) Wealth: step-by-step setup (wealth_setup.py; opens the first time Wealth opens empty, and from "Set up
+           step by step"); "Up X since yesterday"; snapshots say why they were taken (wealth.snapshot why=) and two
+           can be compared; your own prices are marked and right-click goes back to the market price.
+       (6) trade.estimate leaves out listings under 1/5 or over 5x the median (two far apart: the cheaper); the
+           Session tracker's opacity slider has its own row (it sat on top of its label).
   2.2.0
        (1) Regex key (SETTINGS regex_key, also in Settings > Hotkeys): in game, copies the chosen search to the
            clipboard (regex_hotkey_search: the search set up for a kind, or a saved search) and shows a small card.
@@ -601,7 +613,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.2.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.3.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 

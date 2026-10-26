@@ -22,7 +22,7 @@ DEFAULTS = {"overlay": True, "locked": False, "x": 60, "y": 260, "w": 230, "h": 
             "lines": {"session": True, "map": True, "maps": True, "avg": True, "profit": True, "gold": False},
             "key_toggle": "", "key_pause": "", "ask_count": True, "log_path": ""}
 LINE_NAMES = [("session", "Session time"), ("map", "This map's time"), ("maps", "Maps done"), ("avg", "Average map"),
-              ("profit", "Profit / hour"), ("gold", "Gold from selling")]
+              ("profit", "Profit / hour")]        # (2.3.0: "gold from selling" is gone - it can't be read reliably)
 
 
 class TrackerPage:
@@ -74,7 +74,7 @@ class TrackerPage:
         nums.pack(fill="x", padx=10, pady=(8, 6))
         self.tk_nums = {}
         for i, (k, label) in enumerate((("time", "Session"), ("where", "Where you are"), ("map", "This map"),
-                                        ("maps", "Maps"), ("avg", "Average map"), ("gold", "Gold sold"),
+                                        ("maps", "Maps"), ("avg", "Average map"), ("best", "Fastest map"),
                                         ("start", "Wealth at start"), ("profit", "Profit"))):
             f = tk.Frame(nums, bg=P2, padx=10, pady=6, highlightthickness=1, highlightbackground=C["line"])
             f.grid(row=i // 4, column=i % 4, sticky="nsew", padx=(0, 6), pady=(0, 6))
@@ -102,10 +102,10 @@ class TrackerPage:
         self.tk_maps = tv
         self.tk_pages["This session's maps"] = pm
         ph = tk.Frame(body, bg=P1)
-        hv = ttk.Treeview(ph, columns=("when", "len", "maps", "avg", "profit", "ph", "gold", "note"), show="headings", height=4)
+        hv = ttk.Treeview(ph, columns=("when", "len", "maps", "avg", "profit", "ph", "note"), show="headings", height=4)
         for cid, title, w, a in (("when", "Started", 120, "w"), ("len", "Length", 70, "e"), ("maps", "Maps", 50, "e"),
                                  ("avg", "Avg map", 70, "e"), ("profit", "Profit", 90, "e"), ("ph", "Per hour", 90, "e"),
-                                 ("gold", "Gold", 70, "e"), ("note", "Note", 200, "w")):
+                                 ("note", "Note", 200, "w")):
             hv.heading(cid, text=title)
             hv.column(cid, width=w, anchor=a, stretch=(cid == "note"))
         hv.pack(fill="both", expand=True)
@@ -261,11 +261,15 @@ class TrackerPage:
                 row=1 + i // 3, column=i % 3, sticky="w", padx=(0, 16))
         self.tk_lock = tk.BooleanVar(value=bool(cfg.get("locked")))
         ttk.Checkbutton(box, text="Lock it (can't be moved or resized by accident)", variable=self.tk_lock,
-                        command=self.tracker_options_changed).grid(row=3, column=0, columnspan=2, sticky="w", pady=(6, 0))
-        tk.Label(box, text="Opacity", bg=P2, fg=C["text"]).grid(row=3, column=2, sticky="w", pady=(6, 0))
+                        command=self.tracker_options_changed).grid(row=3, column=0, columnspan=3, sticky="w", pady=(6, 0))
+        op = tk.Frame(box, bg=P2)                       # 2.3.0: own row - it used to sit on top of its label
+        op.grid(row=4, column=0, columnspan=3, sticky="w", pady=(6, 0))
+        tk.Label(op, text="Opacity", bg=P2, fg=C["text"]).pack(side="left")
         self.tk_opacity = tk.IntVar(value=int(cfg.get("opacity", 225)))
-        ttk.Scale(box, from_=60, to=255, variable=self.tk_opacity, orient="horizontal", length=120,
-                  command=lambda _v: self.tracker_options_changed()).grid(row=3, column=2, sticky="e", pady=(6, 0))
+        ttk.Scale(op, from_=60, to=255, variable=self.tk_opacity, orient="horizontal", length=160,
+                  command=lambda _v: self.tracker_options_changed()).pack(side="left", padx=(10, 0))
+        tk.Label(op, text="(lower = see more of the game through it)", bg=P2, fg=C["muted"],
+                 font=("Segoe UI", 9)).pack(side="left", padx=(8, 0))
         box2 = tk.Frame(po, bg=P2, padx=14, pady=10, highlightthickness=1, highlightbackground=C["line"])
         box2.pack(fill="x", pady=(6, 0))
         tk.Label(box2, text="Hotkeys (work while the game is in front; also on the Hotkeys list in Settings)", bg=P2,
@@ -513,9 +517,11 @@ class TrackerPage:
         cur = s.current_map_time(now)
         prof = s.profit
         ph = s.per_hour() if s.ended else None
+        runs = [(m["time"], m["name"]) for m in s.maps if m["time"] >= 30]
+        best = f"{fmt_time(min(runs)[0])}  {min(runs)[1]}" if runs else "-"
         return {"time": fmt_time(s.elapsed(now)) + ("  (paused)" if s.paused_at and not s.ended else ""),
                 "where": s.location(), "map": fmt_time(cur) if cur is not None else "-", "maps": str(s.map_count()),
-                "avg": fmt_time(avg) if avg is not None else "-", "gold": f"{s.gold:,}",
+                "avg": fmt_time(avg) if avg is not None else "-", "best": best,
                 "start": fmt_div(s.start_value) if s.start_value is not None else "-",
                 "profit": ((('+' if prof >= 0 else '-') + fmt_div(abs(prof))) + (f"  ({fmt_div(ph)}/h)" if ph else ""))
                 if prof is not None else ("when you stop" if s.ended is None else "-")}
@@ -554,7 +560,7 @@ class TrackerPage:
                 datetime.fromtimestamp(s.started).strftime("%b %d %H:%M"), fmt_time(s.elapsed()), s.map_count(),
                 fmt_time(avg) if avg is not None else "-",
                 (('+' if s.profit >= 0 else '-') + fmt_div(abs(s.profit))) if s.profit is not None else "-",
-                fmt_div(ph) if ph is not None else "-", f"{s.gold:,}", s.note))
+                fmt_div(ph) if ph is not None else "-", s.note))
 
     def tracker_edit_note(self, e):
         iid = self.tk_hist.identify_row(e.y)
@@ -649,7 +655,7 @@ class TrackerPage:
                  "map": f"Map  {n.get('map', '-')}" + (f"   {n.get('where', '')}" if live and n.get("where") not in ("-", None) else ""),
                  "maps": f"Maps  {n.get('maps', '0')}", "avg": f"Avg  {n.get('avg', '-')}",
                  "profit": "Profit  " + (n.get("profit", "-") if s is not None else "-"),
-                 "gold": f"Gold  {n.get('gold', '0')}"}
+                 }
         for k, lab in self.tk_ov_lbls.items():
             lab.config(text=texts.get(k, ""))
 

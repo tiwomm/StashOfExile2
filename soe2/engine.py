@@ -24,6 +24,33 @@ from .pricefmt import confidence, fmt_div, fmt_price
 from .wealth import WealthJobs
 
 
+def spread_of(stages, league):
+    """How far apart the cheapest listings are, per search (2.3.0). Before, the cheapest 5 of SEVERAL different
+    searches were thrown together - a stricter and a looser search naturally differ - and one price-fixer listing
+    (1 chaos among 2-divine listings) was enough, so many jewels and tablets came out as "check by hand".
+    Now each search is measured on its own, after leaving out listings far below the rest (under a fifth of their
+    median) or far above them (over five times it: a jewel with better extra mods, or a "make me an offer" price).
+    -> (largest ratio, cheapest kept (amount, currency), dearest kept) or (None, None, None)."""
+    worst = (None, None, None)
+    for st in stages:
+        vals = []
+        for amt, cur in (st.get("prices") or [])[:5]:
+            d = RATES.to_div(amt, cur, league)
+            if d is not None and d > 0:
+                vals.append((d, (amt, cur)))
+        if len(vals) < 2:
+            continue
+        med = statistics.median(v for v, _ in vals)
+        kept = [v for v in vals if med / 5 <= v[0] <= med * 5]
+        if len(kept) < 2:
+            kept = vals                                    # e.g. two listings, 1 chaos and 30 divine: say so
+        lo, hi = min(kept), max(kept)
+        r = hi[0] / lo[0]
+        if worst[0] is None or r > worst[0]:
+            worst = (r, lo[1], hi[1])
+    return worst
+
+
 # ------------------------------------------------------------------ background engine
 class Engine(WealthJobs, threading.Thread):
     """One background thread does all network work. Lower priority number = sooner."""
@@ -207,16 +234,17 @@ class Engine(WealthJobs, threading.Thread):
         def short(g):                                       # "#% increased Pack Size in Map" -> "Pack Size"
             t = re.sub(r"^[+\-#%\s]*(?:increased |reduced |more |less )?", "", pretty(g["mods"][0]["text"]), flags=re.I)
             return re.sub(r"\s+(?:found )?in Map$", "", t, flags=re.I)[:28]
-        seen_sid = {}                                       # safety check: one trade stat must not stand for two different mods
-        for g in groups:
+        seen_sid, doubled = {}, []                          # one trade stat must not stand for two different mods:
+        for g in groups:                                    # 2.3.0: search on it once (it used to stop the price check)
+            keep = []
             for m in g["mods"]:
                 other = seen_sid.setdefault(m["sid"], g)
                 if other is not g:
-                    why = (f"two different mods on this item matched the same trade-site stat "
-                           f"({pretty(other['mods'][0]['text'])}  /  {pretty(m['text'])}), so a search would be wrong")
-                    return dict(label="CHECK BY HAND: " + why, total=0, prices=[], est=None, qid=None, partial=False,
-                                thin=False, nomatch=False, stages=[], wide=False, manual=True, manual_why=why,
-                                conf="-", conf_why=[], memory="")
+                    doubled.append(pretty(m["text"]))
+                else:
+                    keep.append(m)
+            g["mods"] = keep
+        groups = [g for g in groups if g["mods"]]
         suffixes = [g for g in groups if g["kind"] == "Suffix"]
         prefixes = sorted([g for g in groups if g["kind"] != "Suffix"], key=lambda g: (g["impact"] != "high", -worth(g)))
         plan = [("all mods", suffixes + prefixes)]
@@ -268,6 +296,16 @@ class Engine(WealthJobs, threading.Thread):
             stages.append(st)
             found = [st] if st["n"] else []
             any_roll = bool(found)
+        alone = None
+        if not found and len(plan[0][1]) >= 2:                  # 2.3.0: still nothing - the best mod on its own
+            best = sorted(plan[0][1], key=lambda g: (g["impact"] != "high", -worth(g)))[0]
+            fs = [_flt(m) for m in best["mods"]]
+            total, ids, qid = search_ids(league, item["base"], fs + extra, None, None)
+            st = self._stage(item["base"], f"only {short(best)}", [best], total, ids, qid, hours, league, verify_tot,
+                             record=False)
+            stages.append(st)
+            if st["n"]:
+                found, any_roll, alone = [st], True, short(best)
         used = [s for s in stages if s["weight"]]
         if not found:
             return dict(label="no listings carry these mods - not priced", total=0, prices=[], est=None,
@@ -277,7 +315,10 @@ class Engine(WealthJobs, threading.Thread):
         wide, ratio = False, None
         primary = found[0]
         thin = not any(s["n"] >= need for s in found)
-        if any_roll:
+        if alone:
+            label = (f"no listing has all these mods together - priced on {alone} alone, so it's a floor (the other "
+                     f"mods add to it)")
+        elif any_roll:
             label = ("nothing found at your rolls - searched with ANY roll: price is a floor (a high roll can be worth more)")
         elif len(stages) == 1:
             label = stages[0]["name"] + (" (enough listings, other searches skipped)" if len(plan) > 1 else "")
@@ -289,21 +330,15 @@ class Engine(WealthJobs, threading.Thread):
         if skipped:
             label += " · ⚠ listings priced in " + ", ".join(skipped) + " left out (no exchange rate)"
         spread = SETTINGS.get("spread_warn") or 0
-        if spread and used:
-            vals = []
-            for st in used:
-                for amt, cur in st["prices"][:5]:
-                    d = RATES.to_div(amt, cur, league)
-                    if d is not None and d > 0:
-                        vals.append((d, (amt, cur)))
-            if len(vals) >= 2:
-                lo, hi = min(vals), max(vals)
-                ratio = hi[0] / lo[0]
-                if hi[0] / lo[0] >= spread:
-                    label = (f"CHECK BY HAND: matching listings range from {fmt_price(lo[1])} to {fmt_price(hi[1])} - "
-                             f"too far apart to give a price")
-                    wide = True
-                    est = None
+        rough = False
+        if used:
+            ratio, lo, hi = spread_of(used, league)
+            if spread and ratio and ratio >= spread:          # 2.3.0: a rough price instead of no price
+                label = (f"ROUGH PRICE: the listings that match range from {fmt_price(lo)} to {fmt_price(hi)}, so "
+                         f"worth a look by hand · " + label)
+                rough = True
+        if doubled:
+            label += " · " + ", ".join(doubled[:2]) + " is the same trade-site stat as another mod: searched once"
         conflict = bool(mem and est is not None and est < 0.5 * mem["floor"])
         if conflict:
             label += f" · ⚠ earlier searches for these mods found listings from {fmt_div(mem['floor'])}"
@@ -312,8 +347,9 @@ class Engine(WealthJobs, threading.Thread):
         ages = [s_["age_h"] for s_ in used if s_.get("age_h") is not None]
         conf, why = confidence(max((s_["n"] for s_ in used), default=0), len(used) > 1 and not any_roll, any_roll, ratio,
                                verify_tot["unverifiable"], verify_tot["bad"], max(ages) if ages else None, conflict, skipped)
-        if wide:
-            conf, why = "-", []
+        if rough:
+            conf = "Low"
+            why = ["matching listings are priced far apart"] + [w for w in why if "apart" not in w]
         return dict(label=label, total=primary["total"], prices=primary["prices"], qid=primary["qid"], est=est,
                     partial=any_roll, thin=thin, nomatch=False, stages=stages, wide=wide, manual=wide,
                     conf=conf, conf_why=why, memory=self._mem_text(mem), model=model_txt, spread=ratio)
@@ -410,19 +446,17 @@ class Engine(WealthJobs, threading.Thread):
         skipped = sorted(set(chosen.get("unk", ())))
         if skipped:
             label += " · ⚠ listings priced in " + ", ".join(skipped) + " left out (no exchange rate)"
-        ratio = None
-        vals = [d for d in (RATES.to_div(a, c, league) for a, c in chosen["prices"][:5]) if d]
-        if len(vals) >= 2:
-            ratio = max(vals) / min(vals)
+        ratio, lo, hi = spread_of([chosen], league)
         est, wide = chosen["est"], False
         spread = SETTINGS.get("spread_warn") or 0
-        if spread and ratio and ratio >= spread:
-            label = "CHECK BY HAND: matching listings are priced too far apart to give a price · " + how.lower()
-            est, wide = None, True
+        rough = bool(spread and ratio and ratio >= spread)
+        if rough:                                          # 2.3.0: a rough price instead of no price
+            label = (f"ROUGH PRICE: the listings that match range from {fmt_price(lo)} to {fmt_price(hi)}, so worth a "
+                     f"look by hand · " + label)
         conf, why = confidence(chosen["n"], step > 0, False, ratio, verify_tot["unverifiable"], verify_tot["bad"],
                                chosen.get("age_h"), False, skipped)
-        if wide:
-            conf, why = "-", []
+        if rough:
+            conf = "Low"
         return dict(blank, label=label, total=chosen["total"], prices=chosen["prices"], qid=chosen["qid"], est=est,
                     partial=False, thin=thin, stages=stages, wide=wide, manual=wide, conf=conf, conf_why=why,
                     spread=ratio)

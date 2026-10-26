@@ -82,6 +82,10 @@ class WealthPage:
         how = tk.Label(head, text="ⓘ How it works", bg=P2, fg="#6ea8ff", cursor="hand2", font=("Segoe UI", 9, "underline"))
         how.pack(side="left", padx=(10, 0))                        # 2.0 beta 21
         how.bind("<Button-1>", lambda e: self.wealth_guide())
+        setup = tk.Label(head, text="▶ Set up step by step", bg=P2, fg="#6ea8ff", cursor="hand2",
+                         font=("Segoe UI", 9, "underline"))
+        setup.pack(side="left", padx=(10, 0))                       # 2.3.0
+        setup.bind("<Button-1>", lambda e: self.wealth_setup_open())
         self.w_mode = SegBar(head, ["Total", "Daily"], command=lambda v: self.wealth_draw_chart(), size=9, pad=(10, 3))
         self.w_mode.pack(side="left", padx=(16, 8))
         self.w_range = tk.StringVar(value=SETTINGS.get("wealth_range", "7 days"))
@@ -123,12 +127,16 @@ class WealthPage:
         self.w_side_mode.pack(anchor="w", pady=(0, 8))
         self.w_side_tabs = tk.Frame(side, bg=C["accent"], padx=2, pady=2)
         self.w_side_snaps = tk.Frame(side, bg=P1)
-        sv = ttk.Treeview(self.w_side_snaps, columns=("when", "total"), show="headings", selectmode="browse")
+        sv = ttk.Treeview(self.w_side_snaps, columns=("when", "why", "total"), show="headings", selectmode="extended")
         sv.heading("when", text="When")
+        sv.heading("why", text="After")
         sv.heading("total", text="Total")
-        sv.column("when", width=100, anchor="w")
-        sv.column("total", width=70, anchor="e")
+        sv.column("when", width=78, anchor="w")
+        sv.column("why", width=50, anchor="w")
+        sv.column("total", width=58, anchor="e")
         sv.pack(fill="both", expand=True)
+        tk.Label(self.w_side_snaps, text="Ctrl+click two to compare them.", bg=P1, fg=C["muted"],
+                 font=("Segoe UI", 8), anchor="w").pack(fill="x")
         sv.bind("<<TreeviewSelect>>", lambda e: self.wealth_pick_snapshot())
         self.w_snaps = sv
         self.w_edit_lbl = tk.Label(side, text="✎ Edit synced tabs", bg=P1, fg=C["blue"] if "blue" in C else "#6ea8ff",
@@ -302,6 +310,8 @@ class WealthPage:
                         ("none", C["muted"]), ("held", "#ffe2a8")):
             self.w_items.tag_configure(tg, foreground=col)
         self.w_items.tag_configure("odd", background=C["odd"])
+        self.w_items.tag_configure("own", foreground="#7cc7ff")
+        self.w_items.bind("<Button-3>", self.wealth_item_menu)
         self.w_items.bind("<Double-1>", self.wealth_set_price)
         self.w_items.bind("<Delete>", lambda e: self.wealth_remove_held())
         for seq in ("<Control-a>", "<Control-A>"):                     # 2.0 beta 21: select everything, then Delete
@@ -471,7 +481,7 @@ class WealthPage:
     def _w_prices_then_snapshot(self, lg):
         try:
             WPRICES.ensure(lg)
-            WEALTH.snapshot(lg, WPRICES)
+            WEALTH.snapshot(lg, WPRICES, "counted")
         except Exception:
             pass
         self.ui_q.put(("wealth", "prices"))
@@ -554,8 +564,11 @@ class WealthPage:
             self.w_snaps.delete(*self.w_snaps.get_children())
             for i, sn in reversed(list(enumerate(WEALTH.snapshots))):
                 if sn.get("league") == lg:
-                    self.w_snaps.insert("", "end", iid=str(i), values=(datetime.fromtimestamp(sn["ts"]).strftime("%b %d %H:%M"),
-                                                                       fmt_div(sn["total"])))
+                    self.w_snaps.insert("", "end", iid=str(i), values=(
+                        datetime.fromtimestamp(sn["ts"]).strftime("%b %d %H:%M"),
+                        {"synced": "sync", "counted": "count", "rares priced": "rares", "prices updated": "prices",
+                         "session start": "start", "session end": "end"}.get(sn.get("why", ""), sn.get("why", "")),
+                        fmt_div(sn["total"])))
             return
         self.w_side_snaps.pack_forget()
         if self.w_snap_sel is not None:
@@ -594,8 +607,25 @@ class WealthPage:
 
     def wealth_pick_snapshot(self):
         sel = self.w_snaps.selection()
+        if len(sel) == 2:                                     # 2.3.0: two picked - what changed between them
+            a, b = sorted((WEALTH.snapshots[int(i)] for i in sel), key=lambda s: s["ts"])
+            self._w_tell(self.wealth_compare(a, b), "ok")
+            return
         self.w_snap_sel = int(sel[0]) if sel else None
         self.wealth_breakdown()
+
+    def wealth_compare(self, a, b):
+        """A line saying what changed between two snapshots, biggest changes first."""
+        d = b["total"] - a["total"]
+        when = (f"From {datetime.fromtimestamp(a['ts']).strftime('%b %d %H:%M')} to "
+                f"{datetime.fromtimestamp(b['ts']).strftime('%b %d %H:%M')}")
+        cats = set(a.get("by_cat") or {}) | set(b.get("by_cat") or {})
+        ch = sorted(((c, (b.get("by_cat") or {}).get(c, 0) - (a.get("by_cat") or {}).get(c, 0)) for c in cats),
+                    key=lambda x: -abs(x[1]))
+        parts = [f"{self.CAT_INFO.get(c, ('', c))[1]} {'+' if v >= 0 else '-'}{fmt_div(abs(v))}"
+                 for c, v in ch if abs(v) >= 0.01][:5]
+        return (f"{when}: {'+' if d >= 0 else '-'}{fmt_div(abs(d))} in total"
+                + (" (" + ", ".join(parts) + ")" if parts else "") + ".")
 
     @staticmethod
     def _w_cat(it):
@@ -858,7 +888,7 @@ class WealthPage:
         def work():
             try:
                 WPRICES.ensure(lg, force=True)
-                WEALTH.snapshot(lg, WPRICES)
+                WEALTH.snapshot(lg, WPRICES, "prices updated")
             except Exception as e:
                 WPRICES.errors = [str(e)[:120]]
             self.ui_q.put(("wealth", "prices"))
@@ -890,6 +920,29 @@ class WealthPage:
                 except ValueError:
                     return self._say("That isn't a number.", 8)
         WEALTH.save()
+        self.refresh_wealth(force=True)
+
+    def wealth_item_menu(self, e):
+        """Right-click an item: set your own price, or go back to the market price (2.3.0)."""
+        iid = self.w_items.identify_row(e.y)
+        it = self.w_rowmap.get(iid)
+        if not it:
+            return
+        self.w_items.selection_set(iid)
+        key = wealth_key(it)
+        m = tk.Menu(self.root, tearoff=0, bg=C["panel2"], fg=C["text"], activebackground="#2c4a84")
+        m.add_command(label="Set my own price…", command=lambda: self.wealth_set_price(e))
+        if key in WEALTH.overrides:
+            m.add_command(label="Use the market price again", command=lambda: self.wealth_clear_price(key))
+        if it.get("held"):
+            m.add_command(label="Change the amount…", command=lambda: self._w_held_ask(it["type"]))
+        m.tk_popup(e.x_root, e.y_root)
+
+    def wealth_clear_price(self, key):
+        with WEALTH.lock:
+            WEALTH.overrides.pop(key, None)
+        WEALTH.save()
+        self._w_tell("Back to the market price.", "ok")
         self.refresh_wealth(force=True)
 
     def wealth_sort(self, col):
@@ -981,12 +1034,11 @@ class WealthPage:
         snaps = [s for s in WEALTH.snapshots if s.get("league") == lg]
         delta = ""
         if snaps and rows:
-            latest = snaps[-1]["ts"]
-            prev = next((s for s in reversed(snaps) if latest - s["ts"] >= 1800), None)
+            prev = self.wealth_compare_point(snaps)
             if prev:
                 d = total - prev["total"]
                 delta = f"{'+' if d >= 0 else '-'}{fmt_div(abs(d))}"
-                self.w_delta_since = f"since {self._w_ago(prev['ts'])}"
+                self.w_delta_since = self.wealth_since_words(prev["ts"])
                 self.w_delta.config(fg=C["green"] if d >= 0 else C["red"])
         self.w_delta.config(text=delta)
         facts = []
@@ -999,12 +1051,34 @@ class WealthPage:
         if WEALTH.last_sync:
             facts.append(f"Tabs read {self._w_ago(WEALTH.last_sync)}.")
         if delta:
-            facts.insert(0, f"Change {delta} {getattr(self, 'w_delta_since', '')}.")
+            word = "Up" if not delta.startswith("-") else "Down"
+            facts.insert(0, f"{word} {delta.lstrip('+-')} {getattr(self, 'w_delta_since', '')}.")
         self.w_facts.config(text="  ".join(facts))
         self.wealth_side()
         self.wealth_breakdown()
         self.wealth_draw_chart()
         self.wealth_fill_items()
+
+    @staticmethod
+    def wealth_compare_point(snaps, now=None):
+        """The snapshot to compare today's total with (2.3.0): one from about a day ago if there is one, else the
+        last one at least 30 minutes old."""
+        now = now or time.time()
+        day = [s for s in snaps if 18 * 3600 <= now - s["ts"] <= 48 * 3600]
+        if day:
+            return min(day, key=lambda s: abs((now - s["ts"]) - 86400))
+        return next((s for s in reversed(snaps) if now - s["ts"] >= 1800), None)
+
+    @staticmethod
+    def wealth_since_words(ts, now=None):
+        now = now or time.time()
+        age = now - ts
+        if 18 * 3600 <= age <= 48 * 3600:
+            return "since yesterday"
+        if age < 18 * 3600:
+            h = max(1, round(age / 3600))
+            return f"in the last {h} hour{'s' if h != 1 else ''}"
+        return f"since {datetime.fromtimestamp(ts).strftime('%b %d')}"
 
     @staticmethod
     def _w_ago(ts):
@@ -1065,6 +1139,9 @@ class WealthPage:
         rarity_tag = {1: "magic", 2: "rare", 3: "unique", 4: "gem"}
         for n, (it, name, qty, each, tot, src, stacks) in enumerate(shown):
             tags = (["held"] if it.get("held") else [rarity_tag.get(it["frame"], "")]) if each is not None else ["none"]
+            if src == "your price":                           # 2.3.0: prices you set yourself stand out
+                tags = ["own"]
+                src = "✎ your price (right-click to undo)"
             if n % 2:
                 tags.append("odd")
             label = name + (f"   ({stacks} stacks)" if stacks > 1 else "") + ("   corrupted" if it["corrupted"] else "")

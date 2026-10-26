@@ -16,13 +16,27 @@ INTRO = [
 
 # "Coming next" on the card: what's being worked on, in plain words.
 NEXT = [
-    "2.3: a full check-up on Windows, fixing whatever turns up.",
-    "2.4: Wealth with a step-by-step first setup and clearer totals.",
-    "2.5: rating waystone and relic mods in the Mod book, like tablet mods.",
+    "2.4: rating waystone and relic mods in the Mod book, like tablet mods.",
+    "2.5: Session tracker: deaths and time away checked against real logs, and a daily maps chart.",
+    "2.6: deciding what Wealth, the Session tracker, Game search and Top value need to leave Labs.",
 ]
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.3.0": [
+        "Wealth has a step-by-step setup: count your currency, then (if you like) add a stash tab. It opens the first "
+        "time, and \"Set up step by step\" in Wealth brings it back.",
+        "Wealth says how much you're up or down since yesterday. Snapshots say why they were taken - pick two to see "
+        "what changed between them.",
+        "Prices you set yourself in Wealth are shown in blue. Right-click an item to go back to the market price.",
+        "Jewels and tablets get a price more often: when the listings vary a lot you get a rough price to look at "
+        "instead of \"check by hand\".",
+        "One very cheap or very dear listing no longer throws the price off.",
+        "Deleting many price checks at once no longer freezes the app.",
+        "Session tracker > Options: the opacity slider no longer sits on top of its label.",
+        "Session tracker no longer has \"gold from selling\" - the game doesn't give a reliable way to count it.",
+        "Price checks still missing? Settings > Advanced > Problem report saves them in a zip you can share.",
+    ],
     "2.2.0": [
         "Regex key: set a key in the Regex window (or Settings > Hotkeys) and pick which search it copies. Press it "
         "in game, then Ctrl+F and Ctrl+V in your stash.",
