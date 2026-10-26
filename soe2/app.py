@@ -1030,6 +1030,8 @@ class App(WealthPage, LibraryPage, RegexPage, UtilitiesPage, TrackerPage, Search
             where, key = kid.split(":")
             if where == "checks":
                 SETTINGS[key] = txt
+                if key == "regex_key" and hasattr(self, "rx_key_var") and self.rx_key_var.get() != txt:
+                    self.rx_key_var.set(txt)
             elif where == "overlay":
                 self.overlay.cfg[key] = txt
                 if hasattr(self, "ov_vars") and key in self.ov_vars:
@@ -1466,6 +1468,34 @@ class App(WealthPage, LibraryPage, RegexPage, UtilitiesPage, TrackerPage, Search
                                  wraplength=580)
         self.conv_out.pack(fill="x", pady=(8, 0))
         self.conv_var.trace_add("write", lambda *a: self.draw_rates())
+        # ---- 2.2.0: what to post on the in-game Currency Exchange
+        ex = tk.Frame(w, bg=C["panel2"], padx=14, pady=10, highlightthickness=1, highlightbackground=C["line"])
+        ex.pack(fill="x", padx=14, pady=(0, 10))
+        tk.Label(ex, text="Currency Exchange helper", bg=C["panel2"], fg=C["accent"], font=("Segoe UI", 10, "bold"),
+                 anchor="w").pack(fill="x")
+        er = tk.Frame(ex, bg=C["panel2"])
+        er.pack(fill="x", pady=(4, 0))
+        tk.Label(er, text="I sell", bg=C["panel2"], fg=C["muted"]).pack(side="left")
+        self.ex_amt = tk.StringVar(value="10")
+        ttk.Entry(er, textvariable=self.ex_amt, width=7).pack(side="left", padx=6)
+        self.ex_have = tk.StringVar(value="Divine Orb")
+        self.ex_want = tk.StringVar(value="Exalted Orb")
+        self.ex_boxes = []
+        for i, var in enumerate((self.ex_have, self.ex_want)):
+            if i:
+                tk.Label(er, text="for", bg=C["panel2"], fg=C["muted"]).pack(side="left", padx=(6, 6))
+            cb = ttk.Combobox(er, textvariable=var, state="readonly", width=22)
+            cb.pack(side="left")
+            cb.bind("<<ComboboxSelected>>", lambda e: self.draw_exchange())
+            self.ex_boxes.append(cb)
+        ttk.Button(er, text="⇄", width=3, command=self.ex_swap).pack(side="left", padx=6)
+        self.ex_out = tk.Label(ex, text="", bg=C["panel2"], fg=C["text"], font=(MONO, 10), anchor="w", justify="left")
+        self.ex_out.pack(fill="x", pady=(8, 0))
+        tk.Label(ex, text="The Currency Exchange only takes whole numbers, so these are the closest whole-number "
+                          "ratios to the market. Rates are from poe.ninja and move during the day.",
+                 bg=C["panel2"], fg=C["muted"], font=("Segoe UI", 8), anchor="w", justify="left",
+                 wraplength=560).pack(fill="x", pady=(6, 0))
+        self.ex_amt.trace_add("write", lambda *a: self.draw_exchange())
         cols = [("cur", "Currency", 200, "w"), ("worth", "Worth (divines)", 120, "e"), ("per", "1 divine buys", 120, "e"),
                 ("vol", "Traded (div)", 110, "e")]
         tk.Label(w, text="Rates come from poe.ninja's public exchange overview (they refresh about hourly) and are approximate. "
@@ -1498,6 +1528,7 @@ class App(WealthPage, LibraryPage, RegexPage, UtilitiesPage, TrackerPage, Search
             self.conv_out.config(text=txt + (("\n" + opt) if opt else ""))
         except ValueError:
             self.conv_out.config(text="type a number of divines")
+        self.draw_exchange()
         tv = self.rates_tv
         tv.delete(*tv.get_children())
         rows = sorted(((c, v) for c, v in RATES.table.items() if v), key=lambda cv: -(RATES.vol.get(cv[0], 0)))
@@ -1506,6 +1537,63 @@ class App(WealthPage, LibraryPage, RegexPage, UtilitiesPage, TrackerPage, Search
             vol = RATES.vol.get(cur, 0)
             tv.insert("", "end", values=(names.get(cur) or cur, f"{v:.4g}", (f"{1 / v:,.0f}" if 1 / v >= 10 else f"{1 / v:.2g}"), f"{vol:,.0f}"),
                       tags=("thin",) if vol < 5 else (("odd",) if i % 2 else ()))
+
+    def ex_currencies(self):
+        """[(display name, currency id)] most traded first, Divine Orb on top."""
+        known = {"exalted": "Exalted Orb", "chaos": "Chaos Orb", "annul": "Orb of Annulment", "vaal": "Vaal Orb",
+                 "regal": "Regal Orb", "alch": "Orb of Alchemy", "gcp": "Gemcutter's Prism", "mirror": "Mirror of Kalandra",
+                 "greater-exalted-orb": "Greater Exalted Orb", "perfect-exalted-orb": "Perfect Exalted Orb",
+                 "hinekoras-lock": "Hinekora's Lock", "chance": "Orb of Chance", "transmute": "Orb of Transmutation",
+                 "aug": "Orb of Augmentation", "artificers": "Artificer's Orb", "jewellers": "Jeweller's Orb"}
+        names = ((WPRICES.parts.get("Currency") or {}).get("names") or {}) if WPRICES.parts else {}
+        ids = sorted((c for c, v in RATES.table.items() if v), key=lambda c: -(RATES.vol.get(c, 0)))
+        first = [c for c in ("exalted", "chaos") if RATES.table.get(c)]       # the usual ones always on top
+        out = [("Divine Orb", "divine")]
+        for c in first + [c for c in ids if c not in first][:40]:
+            if c != "divine":
+                out.append((names.get(c) or known.get(c) or c.replace("-", " ").title(), c))
+        return out
+
+    def ex_swap(self):
+        a, b = self.ex_have.get(), self.ex_want.get()
+        self.ex_have.set(b)
+        self.ex_want.set(a)
+        self.draw_exchange()
+
+    def draw_exchange(self):
+        if not hasattr(self, "ex_out"):
+            return
+        from .rates import exchange_offers
+        cur = self.ex_currencies()
+        names = [n for n, _c in cur]
+        for cb in self.ex_boxes:
+            cb["values"] = names
+        ids = dict(cur)
+        if self.ex_want.get() not in ids:                    # (first time: Exalted Orb, or the most traded one)
+            ex = next((n for n, c in cur if c == "exalted"), cur[1][0] if len(cur) > 1 else None)
+            if ex:
+                self.ex_want.set(ex)
+        have, want = ids.get(self.ex_have.get()), ids.get(self.ex_want.get())
+        if have is None or want is None or have == want:
+            self.ex_out.config(text="Pick two different currencies." if RATES.table else "No rates yet - press Refresh now.")
+            return
+        res = exchange_offers(have, want, RATES)
+        if not res:
+            self.ex_out.config(text="No rate for one of these currencies yet.")
+            return
+        r, offers = res
+        try:
+            amt = float(self.ex_amt.get().replace(",", "") or 0)
+        except ValueError:
+            amt = 0
+        hn, wn = self.ex_have.get(), self.ex_want.get()
+        def num(x):
+            return _amt(x) if x >= 1 else f"{x:.3g}"
+        lines = [f"Market: 1 {hn} ≈ {num(r)} {wn}   (1 {wn} ≈ {num(1 / r)} {hn})", ""]
+        for label, a, b, note in offers:
+            get = f"   → {_amt(amt)} {hn} gets you ≈ {num(amt * b / a)} {wn}" if amt else ""
+            lines.append(f"{label:<11} post {a} : {b}{get}")
+        self.ex_out.config(text="\n".join(lines))
 
     def open_limits(self, _e=None):
         if self.limit_win and self.limit_win.winfo_exists():

@@ -111,8 +111,11 @@ class TrackerPage:
         hv.pack(fill="both", expand=True)
         hv.bind("<Double-1>", self.tracker_edit_note)
         self.tk_hist = hv
-        tk.Label(ph, text="Double-click a session to write a note (e.g. 'T15 Breach + Delirium').", bg=P1, fg=C["muted"],
-                 font=("Segoe UI", 8), anchor="w").pack(fill="x")
+        prow = tk.Frame(ph, bg=P1)
+        prow.pack(fill="x")
+        tk.Label(prow, text="Double-click a session to write a note (e.g. 'T15 Breach + Delirium').", bg=P1,
+                 fg=C["muted"], font=("Segoe UI", 8), anchor="w").pack(side="left")
+        ttk.Button(prow, text="Export CSV", command=self.tracker_export_sessions).pack(side="right", pady=(4, 0))
         self.tk_pages["Past sessions"] = ph
         self.tk_pages["Map stats"] = self._tracker_stats_page(body)
         po = tk.Frame(body, bg=P1)
@@ -130,9 +133,12 @@ class TrackerPage:
     def _tracker_stats_page(self, body):
         P1, P2 = C["panel"], C["panel2"]
         page = tk.Frame(body, bg=P1)
-        self.tk_stats_sum = tk.Label(page, text="", bg=P1, fg=C["text"], anchor="w", justify="left",
+        srow = tk.Frame(page, bg=P1)
+        srow.pack(fill="x", pady=(0, 4))
+        ttk.Button(srow, text="Export CSV", command=self.tracker_export_runs).pack(side="right")
+        self.tk_stats_sum = tk.Label(srow, text="", bg=P1, fg=C["text"], anchor="w", justify="left",
                                      font=("Segoe UI", 9, "bold"))
-        self.tk_stats_sum.pack(fill="x", pady=(0, 4))
+        self.tk_stats_sum.pack(side="left", fill="x", expand=True)
         split = tk.Frame(page, bg=P1)
         split.pack(fill="both", expand=True)
         split.columnconfigure(0, weight=3, uniform="s")
@@ -172,6 +178,25 @@ class TrackerPage:
                  bg=P2, fg=C["muted"], font=("Segoe UI", 8), anchor="w", justify="left", wraplength=320).pack(fill="x", pady=(4, 0))
         self.tk_stats_sort_col, self.tk_stats_rev = "runs", True
         return page
+
+    def _csv_path(self, name):
+        from tkinter import filedialog
+        return filedialog.asksaveasfilename(defaultextension=".csv", initialfile=name, filetypes=[("CSV", "*.csv")])
+
+    def tracker_export_runs(self):
+        """2.2.0: every map run (all sessions) as a spreadsheet file."""
+        from .csvexport import write_map_runs
+        path = self._csv_path("map_runs.csv")
+        if path:
+            n = write_map_runs(path, self.tk_sessions.items, self.tk_session)
+            self._say(f"Saved {n} map runs to {path}.", 8)
+
+    def tracker_export_sessions(self):
+        from .csvexport import write_sessions
+        path = self._csv_path("sessions.csv")
+        if path:
+            n = write_sessions(path, self.tk_sessions.items)
+            self._say(f"Saved {n} sessions to {path}.", 8)
 
     def tracker_stats_sort(self, col):
         self.tk_stats_rev = (not self.tk_stats_rev) if self.tk_stats_sort_col == col else (col != "map")
@@ -655,6 +680,7 @@ class TrackerPage:
         rows = [("Add the item under the mouse to Price checks", "Ctrl+Alt+C", "fixed", None),
                 ("One-key copy (experimental, in game)", SETTINGS.get("quick_copy_key", ""), "Price checks",
                  "checks:quick_copy_key"),
+                ("Copy your stash search (in game)", SETTINGS.get("regex_key", ""), "Regex", "checks:regex_key"),
                 ("Go to hideout", oc.get("hideout_key", ""), "Chat commands", "overlay:hideout_key"),
                 ("Show / hide notes", oc.get("notes_key", ""), "Notes", "overlay:notes_key"),
                 ("Session tracker: start / stop", tc.get("key_toggle", ""), "Session tracker", "tracker:key_toggle"),

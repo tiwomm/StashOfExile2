@@ -16,13 +16,20 @@ INTRO = [
 
 # "Coming next" on the card: what's being worked on, in plain words.
 NEXT = [
-    "Wealth: a step-by-step first setup and clearer totals.",
-    "Rating waystone and relic mods in the Mod book, like tablet mods.",
-    "Deaths and time away from keyboard in the Session tracker.",
+    "2.3: a full check-up on Windows, fixing whatever turns up.",
+    "2.4: Wealth with a step-by-step first setup and clearer totals.",
+    "2.5: rating waystone and relic mods in the Mod book, like tablet mods.",
 ]
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.2.0": [
+        "Regex key: set a key in the Regex window (or Settings > Hotkeys) and pick which search it copies. Press it "
+        "in game, then Ctrl+F and Ctrl+V in your stash.",
+        "Exchange rates > Currency Exchange helper: pick what you sell and what you want, and it shows the ratio to "
+        "post - quick sale, fair or patient - in whole numbers like the game asks for.",
+        "Export to a spreadsheet (CSV): Session tracker > Map stats and Past sessions, and Wealth > More.",
+    ],
     "2.1.0": [
         "Session tracker > Map stats: every map you've run, how many times, your best and average time, and a "
         "leaderboard of your fastest runs for each map.",
