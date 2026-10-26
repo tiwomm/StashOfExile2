@@ -1,0 +1,3162 @@
+{
+"version": 1,
+"generated": "2026-10-25",
+"source": {
+"name": "RePoE (repoe-fork/poe2)",
+"url": "https://github.com/repoe-fork/poe2"
+},
+"types": {
+"tablet": {
+"mods": [
+{
+"id": "MapExperienceGainIncrease",
+"side": "prefix",
+"lines": [
+"#% increased experience gain in map"
+],
+"tags": [
+"Any"
+],
+"min": 12.0,
+"max": 18.0,
+"names": [
+"Elevated"
+],
+"also": [],
+"token": "e g",
+"line": "#% increased experience gain in map",
+"text": "#% increased experience gain in map"
+},
+{
+"id": "MapDroppedGoldIncrease",
+"side": "prefix",
+"lines": [
+"#% increased gold found in map"
+],
+"tags": [
+"Any"
+],
+"min": 25.0,
+"max": 35.0,
+"names": [
+"Bountiful"
+],
+"also": [],
+"token": "gol",
+"line": "#% increased gold found in map",
+"text": "#% increased gold found in map"
+},
+{
+"id": "MapPackSizeIncrease",
+"side": "prefix",
+"lines": [
+"#% increased pack size in map"
+],
+"tags": [
+"Any"
+],
+"min": 5.0,
+"max": 7.0,
+"names": [
+"Breeding"
+],
+"also": [],
+"token": "ze i",
+"line": "#% increased pack size in map",
+"text": "#% increased pack size in map"
+},
+{
+"id": "MapDroppedItemRarityIncrease",
+"side": "prefix",
+"lines": [
+"#% increased rarity of items found in map"
+],
+"tags": [
+"Any"
+],
+"min": 8.0,
+"max": 12.0,
+"names": [
+"Collector's"
+],
+"also": [],
+"token": "ms f",
+"line": "#% increased rarity of items found in map",
+"text": "#% increased rarity of items found in map"
+},
+{
+"id": "MapAdditionalAzmeriWisp",
+"side": "prefix",
+"lines": [
+"map contains # additional azmeri spirit"
+],
+"tags": [
+"Any"
+],
+"min": 1.0,
+"max": 1.0,
+"names": [
+"Azmeri's"
+],
+"also": [],
+"token": "it$",
+"line": "map contains # additional azmeri spirit",
+"text": "map contains # additional azmeri spirit"
+},
+{
+"id": "MapRareChestCount",
+"side": "prefix",
+"lines": [
+"map contains # additional rare chests"
+],
+"tags": [
+"Any"
+],
+"min": 2.0,
+"max": 3.0,
+"names": [
+"Treasurer's"
+],
+"also": [],
+"token": "sts$",
+"line": "map contains # additional rare chests",
+"text": "map contains # additional rare chests"
+},
+{
+"id": "MapAdditionalEssence",
+"side": "prefix",
+"lines": [
+"map contains an additional essence"
+],
+"tags": [
+"Any"
+],
+"min": null,
+"max": null,
+"names": [
+"Crystallised"
+],
+"also": [],
+"token": "l essence$",
+"line": "map contains an additional essence",
+"text": "map contains an additional essence"
+},
+{
+"id": "MapAdditionalStoneCircle",
+"side": "prefix",
+"lines": [
+"map contains an additional summoning circle"
+],
+"tags": [
+"Any"
+],
+"min": null,
+"max": null,
+"names": [
+"Summoner's"
+],
+"also": [],
+"token": "l su",
+"line": "map contains an additional summoning circle",
+"text": "map contains an additional summoning circle"
+},
+{
+"id": "MapMagicPackIncrease",
+"side": "prefix",
+"lines": [
+"map has #% increased magic monsters"
+],
+"tags": [
+"Any"
+],
+"min": 30.0,
+"max": 40.0,
+"names": [
+"Teeming"
+],
+"also": [],
+"token": "d ma",
+"line": "map has #% increased magic monsters",
+"text": "map has #% increased magic monsters"
+},
+{
+"id": "MapMonsterRarityIncrease",
+"side": "prefix",
+"lines": [
+"map has #% increased monster rarity"
+],
+"tags": [
+"Any"
+],
+"min": 15.0,
+"max": 20.0,
+"names": [
+"Abounding"
+],
+"also": [],
+"token": "rity$",
+"line": "map has #% increased monster rarity",
+"text": "map has #% increased monster rarity"
+},
+{
+"id": "MapRarePackIncrease",
+"side": "prefix",
+"lines": [
+"map has #% increased number of rare monsters"
+],
+"tags": [
+"Any"
+],
+"min": 25.0,
+"max": 35.0,
+"names": [
+"Brimming"
+],
+"also": [],
+"token": "r of ra",
+"line": "map has #% increased number of rare monsters",
+"text": "map has #% increased number of rare monsters"
+},
+{
+"id": "MapAdditionalExile",
+"side": "prefix",
+"lines": [
+"map is inhabited by # additional rogue exile"
+],
+"tags": [
+"Any"
+],
+"min": 1.0,
+"max": 1.0,
+"names": [
+"Exiled"
+],
+"also": [],
+"token": "inh",
+"line": "map is inhabited by # additional rogue exile",
+"text": "map is inhabited by # additional rogue exile"
+},
+{
+"id": "MapMonsterEffectiveness",
+"side": "prefix",
+"lines": [
+"monsters have #% increased effectiveness"
+],
+"tags": [
+"Any"
+],
+"min": 10.0,
+"max": 15.0,
+"names": [
+"Challenger's"
+],
+"also": [],
+"token": "eness$",
+"line": "monsters have #% increased effectiveness",
+"text": "monsters have #% increased effectiveness"
+},
+{
+"id": "AbyssRareMonsterIncrease",
+"side": "suffix",
+"lines": [
+"# additional rare monsters are spawned from abysses in map"
+],
+"tags": [
+"Abyss"
+],
+"min": 2.0,
+"max": 3.0,
+"names": [
+"of Champions"
+],
+"also": [],
+"token": "wne",
+"line": "# additional rare monsters are spawned from abysses in map",
+"text": "# additional rare monsters are spawned from abysses in map"
+},
+{
+"id": "IncursionExtraPacks",
+"side": "suffix",
+"lines": [
+"# extra pack of monsters around vaal beacons in map"
+],
+"tags": [
+"Temple"
+],
+"min": 1.0,
+"max": 1.0,
+"names": [],
+"also": [],
+"token": "k o",
+"line": "# extra pack of monsters around vaal beacons in map",
+"text": "# extra pack of monsters around vaal beacons in map"
+},
+{
+"id": "IncursionExtraPacksChance",
+"side": "suffix",
+"lines": [
+"#% chance for an extra packs of monsters around vaal beacons in map"
+],
+"tags": [
+"Temple"
+],
+"min": 30.0,
+"max": 60.0,
+"names": [],
+"also": [],
+"token": "cks",
+"line": "#% chance for an extra packs of monsters around vaal beacons in map",
+"text": "#% chance for an extra packs of monsters around vaal beacons in map"
+},
+{
+"id": "IncursionBossChance",
+"side": "suffix",
+"lines": [
+"#% chance to add a vaal beacon unique monster to the map"
+],
+"tags": [
+"Temple"
+],
+"min": 10.0,
+"max": 25.0,
+"names": [],
+"also": [],
+"token": "a v",
+"line": "#% chance to add a vaal beacon unique monster to the map",
+"text": "#% chance to add a vaal beacon unique monster to the map"
+},
+{
+"id": "IncursionTokenChance",
+"side": "suffix",
+"lines": [
+"#% chance to gain an additional crystal from vaal beacons in map"
+],
+"tags": [
+"Temple"
+],
+"min": 5.0,
+"max": 10.0,
+"names": [],
+"also": [],
+"token": "o g",
+"line": "#% chance to gain an additional crystal from vaal beacons in map",
+"text": "#% chance to gain an additional crystal from vaal beacons in map"
+},
+{
+"id": "AbyssExtraModifiers",
+"side": "suffix",
+"lines": [
+"#% increased chance for abyssal monsters in map to have abyssal modifiers"
+],
+"tags": [
+"Abyss"
+],
+"min": 20.0,
+"max": 30.0,
+"names": [
+"of Dark Power"
+],
+"also": [],
+"token": "r ab",
+"line": "#% increased chance for abyssal monsters in map to have abyssal modifiers",
+"text": "#% increased chance for abyssal monsters in map to have abyssal modifiers"
+},
+{
+"id": "AbyssExtraTickets",
+"side": "suffix",
+"lines": [
+"#% increased chance for desecrated currency from abysses in map"
+],
+"tags": [
+"Abyss"
+],
+"min": 20.0,
+"max": 30.0,
+"names": [
+"of Ossification"
+],
+"also": [],
+"token": "des",
+"line": "#% increased chance for desecrated currency from abysses in map",
+"text": "#% increased chance for desecrated currency from abysses in map"
+},
+{
+"id": "IncursionRareChestChance",
+"side": "suffix",
+"lines": [
+"#% increased chance vaal beacon chests are rare in map"
+],
+"tags": [
+"Temple"
+],
+"min": 30.0,
+"max": 60.0,
+"names": [],
+"also": [],
+"token": "n c",
+"line": "#% increased chance vaal beacon chests are rare in map",
+"text": "#% increased chance vaal beacon chests are rare in map"
+},
+{
+"id": "IncursionSecondaryEncounters",
+"side": "suffix",
+"lines": [
+"#% increased chance vaal beacons summon additional monsters in map"
+],
+"tags": [
+"Temple"
+],
+"min": 25.0,
+"max": 50.0,
+"names": [],
+"also": [],
+"token": "ns s",
+"line": "#% increased chance vaal beacons summon additional monsters in map",
+"text": "#% increased chance vaal beacons summon additional monsters in map"
+},
+{
+"id": "BreachRareMonsterPotency",
+"side": "suffix",
+"lines": [
+"#% increased effectiveness of rare breach monsters in map"
+],
+"tags": [
+"Breach"
+],
+"min": 5.0,
+"max": 20.0,
+"names": [
+"of the Hand"
+],
+"also": [],
+"token": "h m",
+"line": "#% increased effectiveness of rare breach monsters in map",
+"text": "#% increased effectiveness of rare breach monsters in map"
+},
+{
+"id": "ExpeditionExplosionRadius",
+"side": "suffix",
+"lines": [
+"#% increased expedition explosive area of effect in map"
+],
+"tags": [
+"Expedition"
+],
+"min": 5.0,
+"max": 10.0,
+"names": [
+"of the Demolition"
+],
+"also": [],
+"token": "xpl",
+"line": "#% increased expedition explosive area of effect in map",
+"text": "#% increased expedition explosive area of effect in map"
+},
+{
+"id": "ExpeditionIncreasedMonsterRarity",
+"side": "suffix",
+"lines": [
+"#% increased expedition monster rarity in map"
+],
+"tags": [
+"Expedition"
+],
+"min": 15.0,
+"max": 25.0,
+"names": [
+"of Power"
+],
+"also": [],
+"token": "y i",
+"line": "#% increased expedition monster rarity in map",
+"text": "#% increased expedition monster rarity in map"
+},
+{
+"id": "IncursionPackSize",
+"side": "suffix",
+"lines": [
+"#% increased pack size for monsters around vaal beacons in map"
+],
+"tags": [
+"Temple"
+],
+"min": 10.0,
+"max": 30.0,
+"names": [],
+"also": [],
+"token": "ze f",
+"line": "#% increased pack size for monsters around vaal beacons in map",
+"text": "#% increased pack size for monsters around vaal beacons in map"
+},
+{
+"id": "ExpeditionLogbookIncrease",
+"side": "suffix",
+"lines": [
+"#% increased quantity of expedition logbooks dropped by runic monsters in map"
+],
+"tags": [
+"Expedition"
+],
+"min": 15.0,
+"max": 25.0,
+"names": [
+"of Knowledge"
+],
+"also": [],
+"token": "log",
+"line": "#% increased quantity of expedition logbooks dropped by runic monsters in map",
+"text": "#% increased quantity of expedition logbooks dropped by runic monsters in map"
+},
+{
+"id": "BreachHivebloodQuantity",
+"side": "suffix",
+"lines": [
+"#% increased quantity of hiveblood found in map"
+],
+"tags": [
+"Breach"
+],
+"min": 30.0,
+"max": 60.0,
+"names": [
+"of the Flow"
+],
+"also": [],
+"token": "hiv",
+"line": "#% increased quantity of hiveblood found in map",
+"text": "#% increased quantity of hiveblood found in map"
+},
+{
+"id": "MapBossQuantity",
+"side": "suffix",
+"lines": [
+"#% increased quantity of items dropped by map bosses"
+],
+"tags": [
+"Overseer"
+],
+"min": 13.0,
+"max": 20.0,
+"names": [
+"of Hoards"
+],
+"also": [],
+"token": "tity of i",
+"line": "#% increased quantity of items dropped by map bosses",
+"text": "#% increased quantity of items dropped by map bosses"
+},
+{
+"id": "MapBossWaystoneChance",
+"side": "suffix",
+"lines": [
+"#% increased quantity of waystones dropped by map bosses"
+],
+"tags": [
+"Overseer"
+],
+"min": 18.0,
+"max": 30.0,
+"names": [
+"of Pathways"
+],
+"also": [],
+"token": "es d",
+"line": "#% increased quantity of waystones dropped by map bosses",
+"text": "#% increased quantity of waystones dropped by map bosses"
+},
+{
+"id": "MapDroppedMapsIncrease",
+"side": "suffix",
+"lines": [
+"#% increased quantity of waystones found in map"
+],
+"tags": [
+"Any"
+],
+"min": 30.0,
+"max": 40.0,
+"names": [
+"of the Cartographer"
+],
+"also": [],
+"token": "es f",
+"line": "#% increased quantity of waystones found in map",
+"text": "#% increased quantity of waystones found in map"
+},
+{
+"id": "BreachWombgiftQuantity",
+"side": "suffix",
+"lines": [
+"#% increased quantity of wombgifts found in map"
+],
+"tags": [
+"Breach"
+],
+"min": 30.0,
+"max": 60.0,
+"names": [
+"of the Form"
+],
+"also": [],
+"token": "ts f",
+"line": "#% increased quantity of wombgifts found in map",
+"text": "#% increased quantity of wombgifts found in map"
+},
+{
+"id": "MapBossRarity",
+"side": "suffix",
+"lines": [
+"#% increased rarity of items dropped by map bosses"
+],
+"tags": [
+"Overseer"
+],
+"min": 35.0,
+"max": 60.0,
+"names": [
+"of Treasure"
+],
+"also": [],
+"token": "rity of items d",
+"line": "#% increased rarity of items dropped by map bosses",
+"text": "#% increased rarity of items dropped by map bosses"
+},
+{
+"id": "DeliriumMonsterSplinterIncrease",
+"side": "suffix",
+"lines": [
+"#% increased stack size of simulacrum splinters found in map"
+],
+"tags": [
+"Delirium"
+],
+"min": 15.0,
+"max": 30.0,
+"names": [
+"of the Simulacrum"
+],
+"also": [],
+"token": "tac",
+"line": "#% increased stack size of simulacrum splinters found in map",
+"text": "#% increased stack size of simulacrum splinters found in map"
+},
+{
+"id": "AbyssIncreasedRewards",
+"side": "suffix",
+"lines": [
+"abyss pits in map are twice as likely to have rewards"
+],
+"tags": [
+"Abyss"
+],
+"min": null,
+"max": null,
+"names": [
+"of Treasures"
+],
+"also": [],
+"token": "wic",
+"line": "abyss pits in map are twice as likely to have rewards",
+"text": "abyss pits in map are twice as likely to have rewards"
+},
+{
+"id": "AbyssEffectivenessPerChasm",
+"side": "suffix",
+"lines": [
+"abyssal monsters have #% increased effectiveness for each closed pit, up to #%"
+],
+"tags": [
+"Abyss"
+],
+"min": 8.0,
+"max": 12.0,
+"names": [
+"of Escalation"
+],
+"also": [],
+"token": "clo",
+"line": "abyssal monsters have #% increased effectiveness for each closed pit, up to #%",
+"text": "abyssal monsters have #% increased effectiveness for each closed pit, up to #%"
+},
+{
+"id": "AbyssDepthsChance",
+"side": "suffix",
+"lines": [
+"abysses in map have #% increased chance to lead to an abyssal depths"
+],
+"tags": [
+"Abyss"
+],
+"min": 10.0,
+"max": 20.0,
+"names": [
+"of the Depths"
+],
+"also": [],
+"token": "lea",
+"line": "abysses in map have #% increased chance to lead to an abyssal depths",
+"text": "abysses in map have #% increased chance to lead to an abyssal depths"
+},
+{
+"id": "AbyssMonsterIncrease",
+"side": "suffix",
+"lines": [
+"abysses in map spawn #% increased monsters"
+],
+"tags": [
+"Abyss"
+],
+"min": 20.0,
+"max": 30.0,
+"names": [
+"of the Horde"
+],
+"also": [],
+"token": "d monsters$",
+"line": "abysses in map spawn #% increased monsters",
+"text": "abysses in map spawn #% increased monsters"
+},
+{
+"id": "BreachMonsterQuantity",
+"side": "suffix",
+"lines": [
+"breaches in map have #% increased pack size"
+],
+"tags": [
+"Breach"
+],
+"min": 5.0,
+"max": 15.0,
+"names": [
+"of the Horde"
+],
+"also": [],
+"token": "^breache",
+"line": "breaches in map have #% increased pack size",
+"text": "breaches in map have #% increased pack size"
+},
+{
+"id": "RitualDeferCostIncrease",
+"side": "suffix",
+"lines": [
+"deferring favours at ritual altars in map costs #% reduced tribute"
+],
+"tags": [
+"Ritual"
+],
+"min": 20.0,
+"max": 30.0,
+"names": [
+"of Devotion"
+],
+"also": [],
+"token": "rri",
+"line": "deferring favours at ritual altars in map costs #% reduced tribute",
+"text": "deferring favours at ritual altars in map costs #% reduced tribute"
+},
+{
+"id": "DeliriumBossChance",
+"side": "suffix",
+"lines": [
+"delirium encounters in map are #% more likely to spawn unique bosses"
+],
+"tags": [
+"Delirium"
+],
+"min": 15.0,
+"max": 30.0,
+"names": [
+"of Phobia"
+],
+"also": [],
+"token": "nco",
+"line": "delirium encounters in map are #% more likely to spawn unique bosses",
+"text": "delirium encounters in map are #% more likely to spawn unique bosses"
+},
+{
+"id": "DeliriumDifficultyIncrease",
+"side": "suffix",
+"lines": [
+"delirium fog in map applies #% increased deliriousness to players"
+],
+"tags": [
+"Delirium"
+],
+"min": 15.0,
+"max": 30.0,
+"names": [
+"of Madness"
+],
+"also": [],
+"token": "ppl",
+"line": "delirium fog in map applies #% increased deliriousness to players",
+"text": "delirium fog in map applies #% increased deliriousness to players"
+},
+{
+"id": "DeliriumFogPersistence",
+"side": "suffix",
+"lines": [
+"delirium fog in map dissipates #% slower"
+],
+"tags": [
+"Delirium"
+],
+"min": 20.0,
+"max": 30.0,
+"names": [
+"of the Unending"
+],
+"also": [],
+"token": "slo",
+"line": "delirium fog in map dissipates #% slower",
+"text": "delirium fog in map dissipates #% slower"
+},
+{
+"id": "DeliriumFogDissipationDelayNew",
+"side": "suffix",
+"lines": [
+"delirium fog in map lasts # additional seconds before dissipating"
+],
+"tags": [
+"Delirium"
+],
+"min": 6.0,
+"max": 12.0,
+"names": [
+"of Eternity"
+],
+"also": [],
+"token": "bef",
+"line": "delirium fog in map lasts # additional seconds before dissipating",
+"text": "delirium fog in map lasts # additional seconds before dissipating"
+},
+{
+"id": "DeliriumDoodadsIncrease",
+"side": "suffix",
+"lines": [
+"delirium fog in map spawns #% increased fracturing mirrors"
+],
+"tags": [
+"Delirium"
+],
+"min": 15.0,
+"max": 30.0,
+"names": [
+"of Mirrors"
+],
+"also": [],
+"token": "fra",
+"line": "delirium fog in map spawns #% increased fracturing mirrors",
+"text": "delirium fog in map spawns #% increased fracturing mirrors"
+},
+{
+"id": "DeliriumAdditionalShardsChance",
+"side": "suffix",
+"lines": [
+"delirium fog in map spawns #% increased mirror shards"
+],
+"tags": [
+"Delirium"
+],
+"min": 12.0,
+"max": 26.0,
+"names": [
+"of Shattering"
+],
+"also": [],
+"token": "har",
+"line": "delirium fog in map spawns #% increased mirror shards",
+"text": "delirium fog in map spawns #% increased mirror shards"
+},
+{
+"id": "DeliriumPackSizeIncrease",
+"side": "suffix",
+"lines": [
+"delirium monsters in map have #% increased pack size"
+],
+"tags": [
+"Delirium"
+],
+"min": 15.0,
+"max": 30.0,
+"names": [
+"of Persecution"
+],
+"also": [],
+"token": "um mo",
+"line": "delirium monsters in map have #% increased pack size",
+"text": "delirium monsters in map have #% increased pack size"
+},
+{
+"id": "ExpeditionFrozenBosses",
+"side": "suffix",
+"lines": [
+"expeditions contain # additional bosses encased in ice in map"
+],
+"tags": [
+"Expedition"
+],
+"min": 1.0,
+"max": 2.0,
+"names": [
+"of Preservation"
+],
+"also": [],
+"token": "nca",
+"line": "expeditions contain # additional bosses encased in ice in map",
+"text": "expeditions contain # additional bosses encased in ice in map"
+},
+{
+"id": "ExpeditionAdditionalSentinels",
+"side": "suffix",
+"lines": [
+"expeditions contain # additional verisium sentries in map"
+],
+"tags": [
+"Expedition"
+],
+"min": 1.0,
+"max": 2.0,
+"names": [
+"of Sentinels"
+],
+"also": [
+"expeditions contain an additional verisium sentrie in map"
+],
+"token": "ntr",
+"line": "expeditions contain # additional verisium sentries in map",
+"text": "expeditions contain # additional verisium sentries in map"
+},
+{
+"id": "ExpeditionBuriedStrongboxes",
+"side": "suffix",
+"lines": [
+"expeditions contain # buried strongboxes in map"
+],
+"tags": [
+"Expedition"
+],
+"min": 1.0,
+"max": 2.0,
+"names": [
+"of Treasure"
+],
+"also": [],
+"token": "bur",
+"line": "expeditions contain # buried strongboxes in map",
+"text": "expeditions contain # buried strongboxes in map"
+},
+{
+"id": "ExpeditionVaalRemnants",
+"side": "suffix",
+"lines": [
+"expeditions contain # vaal relics in map"
+],
+"tags": [
+"Expedition"
+],
+"min": 1.0,
+"max": 2.0,
+"names": [
+"of the Past"
+],
+"also": [],
+"token": "rel",
+"line": "expeditions contain # vaal relics in map",
+"text": "expeditions contain # vaal relics in map"
+},
+{
+"id": "ExpeditionChanceForVerisiumRemnant",
+"side": "suffix",
+"lines": [
+"expeditions have +#% surpassing chance to contain an additional verisium remnant"
+],
+"tags": [
+"Expedition"
+],
+"min": 30.0,
+"max": 40.0,
+"names": [
+"of Remnants"
+],
+"also": [],
+"token": "nt$",
+"line": "expeditions have +#% surpassing chance to contain an additional verisium remnant",
+"text": "expeditions have +#% surpassing chance to contain an additional verisium remnant"
+},
+{
+"id": "ExpeditionChanceForTwinnedElites",
+"side": "suffix",
+"lines": [
+"expeditions have +#% surpassing chance to duplicate runic monsters in map"
+],
+"tags": [
+"Expedition"
+],
+"min": 30.0,
+"max": 40.0,
+"names": [
+"of Twins"
+],
+"also": [],
+"token": "dup",
+"line": "expeditions have +#% surpassing chance to duplicate runic monsters in map",
+"text": "expeditions have +#% surpassing chance to duplicate runic monsters in map"
+},
+{
+"id": "RitualDeferSpeed",
+"side": "suffix",
+"lines": [
+"favours deferred at ritual altars in map reappear #% sooner"
+],
+"tags": [
+"Ritual"
+],
+"min": 25.0,
+"max": 40.0,
+"names": [
+"of the Appeal"
+],
+"also": [],
+"token": "eap",
+"line": "favours deferred at ritual altars in map reappear #% sooner",
+"text": "favours deferred at ritual altars in map reappear #% sooner"
+},
+{
+"id": "RitualChanceForNoCost",
+"side": "suffix",
+"lines": [
+"favours rerolled at ritual altars in map have #% chance to cost no tribute"
+],
+"tags": [
+"Ritual"
+],
+"min": 3.0,
+"max": 6.0,
+"names": [
+"of the Occult"
+],
+"also": [],
+"token": "lled",
+"line": "favours rerolled at ritual altars in map have #% chance to cost no tribute",
+"text": "favours rerolled at ritual altars in map have #% chance to cost no tribute"
+},
+{
+"id": "MapBossExperience",
+"side": "suffix",
+"lines": [
+"map bosses grant #% increased experience"
+],
+"tags": [
+"Overseer"
+],
+"min": 40.0,
+"max": 80.0,
+"names": [
+"of Conquering"
+],
+"also": [],
+"token": "s g",
+"line": "map bosses grant #% increased experience",
+"text": "map bosses grant #% increased experience"
+},
+{
+"id": "MapBossAdditionalSpirit",
+"side": "suffix",
+"lines": [
+"map contains # additional azmeri spirits"
+],
+"tags": [
+"Overseer"
+],
+"min": 1.0,
+"max": 2.0,
+"names": [
+"of Wisps"
+],
+"also": [],
+"token": "l azmeri spirits",
+"line": "map contains # additional azmeri spirits",
+"text": "map contains # additional azmeri spirits"
+},
+{
+"id": "MapBossAdditionalEssence",
+"side": "suffix",
+"lines": [
+"map contains # additional essences"
+],
+"tags": [
+"Overseer"
+],
+"min": 1.0,
+"max": 2.0,
+"names": [
+"of Crystals"
+],
+"also": [],
+"token": "l essences",
+"line": "map contains # additional essences",
+"text": "map contains # additional essences"
+},
+{
+"id": "MapBossAdditionalShrine",
+"side": "suffix",
+"lines": [
+"map contains # additional shrines"
+],
+"tags": [
+"Overseer"
+],
+"min": 1.0,
+"max": 2.0,
+"names": [
+"of Worship"
+],
+"also": [],
+"token": "l shrines",
+"line": "map contains # additional shrines",
+"text": "map contains # additional shrines"
+},
+{
+"id": "MapBossAdditionalStrongbox",
+"side": "suffix",
+"lines": [
+"map contains # additional strongboxes"
+],
+"tags": [
+"Overseer"
+],
+"min": 1.0,
+"max": 2.0,
+"names": [
+"of Compartments"
+],
+"also": [],
+"token": "l strongboxe",
+"line": "map contains # additional strongboxes",
+"text": "map contains # additional strongboxes"
+},
+{
+"id": "ExpeditionRunicMonsters",
+"side": "suffix",
+"lines": [
+"map contains #% increased number of runic monster markers"
+],
+"tags": [
+"Expedition"
+],
+"min": 15.0,
+"max": 25.0,
+"names": [
+"of Runes"
+],
+"also": [],
+"token": "rke",
+"line": "map contains #% increased number of runic monster markers",
+"text": "map contains #% increased number of runic monster markers"
+},
+{
+"id": "AbyssAdditionalChance",
+"side": "suffix",
+"lines": [
+"map contains an additional abyss"
+],
+"tags": [
+"Abyss"
+],
+"min": null,
+"max": null,
+"names": [
+"of Hollows"
+],
+"also": [],
+"token": "yss$",
+"line": "map contains an additional abyss",
+"text": "map contains an additional abyss"
+},
+{
+"id": "MapAdditionalShrine",
+"side": "suffix",
+"lines": [
+"map contains an additional shrine"
+],
+"tags": [
+"Any"
+],
+"min": null,
+"max": null,
+"names": [
+"of the Devoted"
+],
+"also": [],
+"token": "ne$",
+"line": "map contains an additional shrine",
+"text": "map contains an additional shrine"
+},
+{
+"id": "MapAdditionalStrongbox",
+"side": "suffix",
+"lines": [
+"map contains an additional strongbox"
+],
+"tags": [
+"Any"
+],
+"min": null,
+"max": null,
+"names": [
+"of the Antiquarian"
+],
+"also": [],
+"token": "ox$",
+"line": "map contains an additional strongbox",
+"text": "map contains an additional strongbox"
+},
+{
+"id": "MapAdditionalModifier",
+"side": "suffix",
+"lines": [
+"map has # additional random modifiers"
+],
+"tags": [
+"Any"
+],
+"min": 1.0,
+"max": 2.0,
+"names": [
+"of Undertaking"
+],
+"also": [
+"map has an additional random modifier"
+],
+"token": "ndo",
+"line": "map has # additional random modifiers",
+"text": "map has # additional random modifiers"
+},
+{
+"id": "Abyss4AdditionalChance",
+"side": "suffix",
+"lines": [
+"map has #% chance to contain four additional abysses"
+],
+"tags": [
+"Abyss"
+],
+"min": 20.0,
+"max": 40.0,
+"names": [
+"of Schisms"
+],
+"also": [],
+"token": "four",
+"line": "map has #% chance to contain four additional abysses",
+"text": "map has #% chance to contain four additional abysses"
+},
+{
+"id": "MapStoneCircleChance",
+"side": "suffix",
+"lines": [
+"map has #% increased chance to contain a summoning circle"
+],
+"tags": [
+"Any"
+],
+"min": 70.0,
+"max": 100.0,
+"names": [
+"of the Summoning"
+],
+"also": [],
+"token": "a s",
+"line": "map has #% increased chance to contain a summoning circle",
+"text": "map has #% increased chance to contain a summoning circle"
+},
+{
+"id": "MapAdditionalSpiritChance",
+"side": "suffix",
+"lines": [
+"map has #% increased chance to contain azmeri spirits"
+],
+"tags": [
+"Any"
+],
+"min": 70.0,
+"max": 100.0,
+"names": [
+"of Spirits"
+],
+"also": [],
+"token": "n az",
+"line": "map has #% increased chance to contain azmeri spirits",
+"text": "map has #% increased chance to contain azmeri spirits"
+},
+{
+"id": "MapAdditionalEssenceChance",
+"side": "suffix",
+"lines": [
+"map has #% increased chance to contain essences"
+],
+"tags": [
+"Any"
+],
+"min": 70.0,
+"max": 100.0,
+"names": [
+"of the Essence"
+],
+"also": [],
+"token": "in e",
+"line": "map has #% increased chance to contain essences",
+"text": "map has #% increased chance to contain essences"
+},
+{
+"id": "MapAdditionalExileChance",
+"side": "suffix",
+"lines": [
+"map has #% increased chance to contain rogue exiles"
+],
+"tags": [
+"Any"
+],
+"min": 70.0,
+"max": 100.0,
+"names": [
+"of the Exile"
+],
+"also": [],
+"token": "iles",
+"line": "map has #% increased chance to contain rogue exiles",
+"text": "map has #% increased chance to contain rogue exiles"
+},
+{
+"id": "MapAdditionalShrineChance",
+"side": "suffix",
+"lines": [
+"map has #% increased chance to contain shrines"
+],
+"tags": [
+"Any"
+],
+"min": 70.0,
+"max": 100.0,
+"names": [
+"of Shrines"
+],
+"also": [],
+"token": "n sh",
+"line": "map has #% increased chance to contain shrines",
+"text": "map has #% increased chance to contain shrines"
+},
+{
+"id": "MapAdditionalStrongboxChance",
+"side": "suffix",
+"lines": [
+"map has #% increased chance to contain strongboxes"
+],
+"tags": [
+"Any"
+],
+"min": 70.0,
+"max": 100.0,
+"names": [
+"of Strongboxes"
+],
+"also": [],
+"token": "in st",
+"line": "map has #% increased chance to contain strongboxes",
+"text": "map has #% increased chance to contain strongboxes"
+},
+{
+"id": "ExpeditionIncreasedVerisium",
+"side": "suffix",
+"lines": [
+"monsters from verisium remnants drop #% increased verisium"
+],
+"tags": [
+"Expedition"
+],
+"min": 15.0,
+"max": 25.0,
+"names": [
+"of Verisium"
+],
+"also": [],
+"token": "ium$",
+"line": "monsters from verisium remnants drop #% increased verisium",
+"text": "monsters from verisium remnants drop #% increased verisium"
+},
+{
+"id": "RitualTributeIncrease",
+"side": "suffix",
+"lines": [
+"monsters sacrificed at ritual altars in map grant #% increased tribute"
+],
+"tags": [
+"Ritual"
+],
+"min": 18.0,
+"max": 30.0,
+"names": [
+"of Sacrifice"
+],
+"also": [],
+"token": "sac",
+"line": "monsters sacrificed at ritual altars in map grant #% increased tribute",
+"text": "monsters sacrificed at ritual altars in map grant #% increased tribute"
+},
+{
+"id": "RitualRerollCostIncrease",
+"side": "suffix",
+"lines": [
+"rerolling favours at ritual altars in map costs #% reduced tribute"
+],
+"tags": [
+"Ritual"
+],
+"min": 20.0,
+"max": 30.0,
+"names": [
+"of the Dogma"
+],
+"also": [],
+"token": "^rer",
+"line": "rerolling favours at ritual altars in map costs #% reduced tribute",
+"text": "rerolling favours at ritual altars in map costs #% reduced tribute"
+},
+{
+"id": "RitualRareMonsters",
+"side": "suffix",
+"lines": [
+"revived monsters from ritual altars in map have #% increased chance to be magic"
+],
+"tags": [
+"Ritual"
+],
+"min": 35.0,
+"max": 70.0,
+"names": [
+"of the Foundling"
+],
+"also": [],
+"token": "be m",
+"line": "revived monsters from ritual altars in map have #% increased chance to be magic",
+"text": "revived monsters from ritual altars in map have #% increased chance to be magic"
+},
+{
+"id": "RitualMagicMonsters",
+"side": "suffix",
+"lines": [
+"revived monsters from ritual altars in map have #% increased chance to be rare"
+],
+"tags": [
+"Ritual"
+],
+"min": 25.0,
+"max": 40.0,
+"names": [
+"of the Cult"
+],
+"also": [],
+"token": "e rare$",
+"line": "revived monsters from ritual altars in map have #% increased chance to be rare",
+"text": "revived monsters from ritual altars in map have #% increased chance to be rare"
+},
+{
+"id": "RitualAdditionalReroll",
+"side": "suffix",
+"lines": [
+"ritual altars in map allow rerolling favours # additional times"
+],
+"tags": [
+"Ritual"
+],
+"min": 1.0,
+"max": 3.0,
+"names": [
+"of Prayers"
+],
+"also": [
+"ritual altars in map allow rerolling favours an additional time"
+],
+"token": "allo",
+"line": "ritual altars in map allow rerolling favours # additional times",
+"text": "ritual altars in map allow rerolling favours # additional times"
+},
+{
+"id": "RitualOmenChance",
+"side": "suffix",
+"lines": [
+"ritual favours in map have #% increased chance to be omens"
+],
+"tags": [
+"Ritual"
+],
+"min": 35.0,
+"max": 70.0,
+"names": [
+"of Omens"
+],
+"also": [],
+"token": "ome",
+"line": "ritual favours in map have #% increased chance to be omens",
+"text": "ritual favours in map have #% increased chance to be omens"
+},
+{
+"id": "DeliriumRareMonsterPause",
+"side": "suffix",
+"lines": [
+"slaying rare monsters in map pauses the delirium mirror timer for # seconds"
+],
+"tags": [
+"Delirium"
+],
+"min": 3.0,
+"max": 5.0,
+"names": [
+"of Freeze Time"
+],
+"also": [],
+"token": "sla",
+"line": "slaying rare monsters in map pauses the delirium mirror timer for # seconds",
+"text": "slaying rare monsters in map pauses the delirium mirror timer for # seconds"
+},
+{
+"id": "ExpeditionUnearthedRares",
+"side": "suffix",
+"lines": [
+"the first # unearthed runic monsters will be rare monsters in map"
+],
+"tags": [
+"Expedition"
+],
+"min": 1.0,
+"max": 2.0,
+"names": [
+"of Ancient Evil"
+],
+"also": [],
+"token": "fir",
+"line": "the first # unearthed runic monsters will be rare monsters in map",
+"text": "the first # unearthed runic monsters will be rare monsters in map"
+},
+{
+"id": "MapAdditionalUniqueMonsterModifier",
+"side": "suffix",
+"lines": [
+"unique monsters have # additional rare modifier"
+],
+"tags": [
+"Any"
+],
+"min": 1.0,
+"max": 1.0,
+"names": [
+"of Contest"
+],
+"also": [],
+"token": "ier$",
+"line": "unique monsters have # additional rare modifier",
+"text": "unique monsters have # additional rare modifier"
+},
+{
+"id": "BreachBossChance",
+"side": "suffix",
+"lines": [
+"unstable breaches in map have #% increased chance to contain vruun, marshal of xesht"
+],
+"tags": [
+"Breach"
+],
+"min": 20.0,
+"max": 50.0,
+"names": [
+"of the Commander"
+],
+"also": [],
+"token": "vru",
+"line": "unstable breaches in map have #% increased chance to contain vruun, marshal of xesht",
+"text": "unstable breaches in map have #% increased chance to contain vruun, marshal of xesht"
+},
+{
+"id": "BreachAdditionalRares",
+"side": "suffix",
+"lines": [
+"unstable breaches in map spawn # additional rare monsters when stabilised"
+],
+"tags": [
+"Breach"
+],
+"min": 1.0,
+"max": 2.0,
+"names": [
+"of the Invasion"
+],
+"also": [
+"unstable breaches in map spawn an additional rare monster when stabilised"
+],
+"token": "whe",
+"line": "unstable breaches in map spawn # additional rare monsters when stabilised",
+"text": "unstable breaches in map spawn # additional rare monsters when stabilised"
+},
+{
+"id": "Expedition2RunicModPassoverChance",
+"side": "suffix",
+"lines": [
+"verisium remnants have +#% chance to add an additional runic modifier in map"
+],
+"tags": [
+"Expedition"
+],
+"min": 25.0,
+"max": 35.0,
+"names": [
+"of Ancient Fiends"
+],
+"also": [],
+"token": "d an",
+"line": "verisium remnants have +#% chance to add an additional runic modifier in map",
+"text": "verisium remnants have +#% chance to add an additional runic modifier in map"
+},
+{
+"id": "BreachWombgiftLevelChance",
+"side": "suffix",
+"lines": [
+"wombgifts have #% chance to drop one level higher in map"
+],
+"tags": [
+"Breach"
+],
+"min": 10.0,
+"max": 30.0,
+"names": [
+"of the Flesh"
+],
+"also": [],
+"token": "hig",
+"line": "wombgifts have #% chance to drop one level higher in map",
+"text": "wombgifts have #% chance to drop one level higher in map"
+}
+],
+"noise": [
+"item class: tablet",
+"rarity: normal",
+"rarity: magic",
+"rarity: rare",
+"rarity: unique",
+"item level: #",
+"# uses remaining",
+"can be used in a personal map device to add modifiers to a map.",
+"corrupted",
+"adds ritual altars to a map",
+"adds breaches to a map",
+"adds expeditions to a map",
+"adds delirium mirrors to a map",
+"adds abysses to a map",
+"adds vaal beacons to a map",
+"adds an additional boss to a map",
+"adds irradiated to a map",
+"precursor tablet",
+"irradiated tablet",
+"ritual tablet",
+"breach tablet",
+"expedition tablet",
+"delirium tablet",
+"abyss tablet",
+"overseer tablet",
+"temple tablet",
+"requires level #"
+]
+},
+"waystone": {
+"mods": [
+{
+"id": "MapMonsterDamageIncrease",
+"side": "prefix",
+"lines": [
+"#% increased monster damage"
+],
+"tags": [
+"T1-5",
+"T11-15",
+"T16",
+"T6-10"
+],
+"min": 5.0,
+"max": 24.0,
+"names": [
+"Painful"
+],
+"also": [],
+"token": "ge$",
+"line": "#% increased monster damage",
+"text": "#% increased monster damage"
+},
+{
+"id": "MapMonsterLifeIncrease",
+"side": "prefix",
+"lines": [
+"#% more monster life"
+],
+"tags": [
+"T1-5",
+"T11-15",
+"T16",
+"T6-10"
+],
+"min": 10.0,
+"max": 30.0,
+"names": [
+"Tough"
+],
+"also": [],
+"token": "mor",
+"line": "#% more monster life",
+"text": "#% more monster life"
+},
+{
+"id": "MapMonstersElementalPenetration",
+"side": "prefix",
+"lines": [
+"monster damage penetrates #% elemental resistances"
+],
+"tags": [
+"T1-5",
+"T11-15",
+"T16",
+"T6-10"
+],
+"min": 6.0,
+"max": 16.0,
+"names": [
+"Penetrating"
+],
+"also": [],
+"token": "pen",
+"line": "monster damage penetrates #% elemental resistances",
+"text": "monster damage penetrates #% elemental resistances"
+},
+{
+"id": "MapMonsterArmourBreak",
+"side": "prefix",
+"lines": [
+"monsters break armour equal to #% of physical damage dealt"
+],
+"tags": [
+"T1-5",
+"T11-15",
+"T16",
+"T6-10"
+],
+"min": 15.0,
+"max": 45.0,
+"names": [
+"Shattering"
+],
+"also": [],
+"token": "bre",
+"line": "monsters break armour equal to #% of physical damage dealt",
+"text": "monsters break armour equal to #% of physical damage dealt"
+},
+{
+"id": "MapMonsterDamageAsChaos",
+"side": "prefix",
+"lines": [
+"monsters deal #% of damage as extra chaos"
+],
+"tags": [
+"T1-5",
+"T11-15",
+"T16",
+"T6-10"
+],
+"min": 5.0,
+"max": 24.0,
+"names": [
+"Profane"
+],
+"also": [],
+"token": "hao",
+"line": "monsters deal #% of damage as extra chaos",
+"text": "monsters deal #% of damage as extra chaos"
+},
+{
+"id": "MapMonsterDamageAsCold",
+"side": "prefix",
+"lines": [
+"monsters deal #% of damage as extra cold"
+],
+"tags": [
+"T1-5",
+"T11-15",
+"T16",
+"T6-10"
+],
+"min": 5.0,
+"max": 24.0,
+"names": [
+"Frostbitten"
+],
+"also": [],
+"token": "col",
+"line": "monsters deal #% of damage as extra cold",
+"text": "monsters deal #% of damage as extra cold"
+},
+{
+"id": "MapMonsterDamageAsFire",
+"side": "prefix",
+"lines": [
+"monsters deal #% of damage as extra fire"
+],
+"tags": [
+"T1-5",
+"T11-15",
+"T16",
+"T6-10"
+],
+"min": 5.0,
+"max": 24.0,
+"names": [
+"Infernal"
+],
+"also": [],
+"token": "fir",
+"line": "monsters deal #% of damage as extra fire",
+"text": "monsters deal #% of damage as extra fire"
+},
+{
+"id": "MapMonsterDamageAsLightning",
+"side": "prefix",
+"lines": [
+"monsters deal #% of damage as extra lightning"
+],
+"tags": [
+"T1-5",
+"T11-15",
+"T16",
+"T6-10"
+],
+"min": 5.0,
+"max": 24.0,
+"names": [
+"Thunderous"
+],
+"also": [],
+"token": "lig",
+"line": "monsters deal #% of damage as extra lightning",
+"text": "monsters deal #% of damage as extra lightning"
+},
+{
+"id": "MapMonsterBleeding",
+"side": "prefix",
+"lines": [
+"monsters have #% chance to inflict bleeding on hit"
+],
+"tags": [
+"T1-5",
+"T11-15",
+"T16",
+"T6-10"
+],
+"min": 5.0,
+"max": 25.0,
+"names": [
+"Puncturing"
+],
+"also": [],
+"token": "nfl",
+"line": "monsters have #% chance to inflict bleeding on hit",
+"text": "monsters have #% chance to inflict bleeding on hit"
+},
+{
+"id": "MapMonsterPoisoning",
+"side": "prefix",
+"lines": [
+"monsters have #% chance to poison on hit"
+],
+"tags": [
+"T1-5",
+"T11-15",
+"T16",
+"T6-10"
+],
+"min": 13.0,
+"max": 40.0,
+"names": [
+"Venomous"
+],
+"also": [],
+"token": "poi",
+"line": "monsters have #% chance to poison on hit",
+"text": "monsters have #% chance to poison on hit"
+},
+{
+"id": "MapMonsterAccuracy",
+"side": "prefix",
+"lines": [
+"monsters have #% increased accuracy rating"
+],
+"tags": [
+"T1-5",
+"T11-15",
+"T16",
+"T6-10"
+],
+"min": 10.0,
+"max": 50.0,
+"names": [
+"Precise"
+],
+"also": [],
+"token": "acc",
+"line": "monsters have #% increased accuracy rating",
+"text": "monsters have #% increased accuracy rating"
+},
+{
+"id": "MapMonsterSpeedIncrease",
+"side": "prefix",
+"lines": [
+"monsters have #% increased attack, cast and movement speed"
+],
+"tags": [
+"T11-15",
+"T16"
+],
+"min": 10.0,
+"max": 15.0,
+"names": [
+"Fleeting"
+],
+"also": [],
+"token": "tta",
+"line": "monsters have #% increased attack, cast and movement speed",
+"text": "monsters have #% increased attack, cast and movement speed"
+},
+{
+"id": "MapMonsterCritIncrease",
+"side": "prefix",
+"lines": [
+"monsters have #% increased critical hit chance",
+"monsters have +#% critical damage bonus"
+],
+"tags": [
+"T1-5",
+"T11-15",
+"T16",
+"T6-10"
+],
+"min": 80.0,
+"max": 300.0,
+"names": [
+"Destructive"
+],
+"also": [],
+"token": "nce$",
+"line": "monsters have #% increased critical hit chance",
+"text": "monsters have #% increased critical hit chance / monsters have +#% critical damage bonus"
+},
+{
+"id": "MapMonsterStunBuildup",
+"side": "prefix",
+"lines": [
+"monsters have #% increased stun buildup"
+],
+"tags": [
+"T1-5",
+"T11-15",
+"T16",
+"T6-10"
+],
+"min": 50.0,
+"max": 110.0,
+"names": [
+"Impacting"
+],
+"also": [],
+"token": "bui",
+"line": "monsters have #% increased stun buildup",
+"text": "monsters have #% increased stun buildup"
+},
+{
+"id": "MapMonstersCurseEffectOnSelf",
+"side": "suffix",
+"lines": [
+"#% less effect of curses on monsters"
+],
+"tags": [
+"T1-5",
+"T11-15",
+"T16",
+"T6-10"
+],
+"min": 20.0,
+"max": 50.0,
+"names": [
+"of Hexwarding"
+],
+"also": [],
+"token": "ses",
+"line": "#% less effect of curses on monsters",
+"text": "#% less effect of curses on monsters"
+},
+{
+"id": "MapMonsterElementalResistances",
+"side": "suffix",
+"lines": [
+"+#% monster elemental resistances"
+],
+"tags": [
+"T1-5",
+"T11-15",
+"T16",
+"T6-10"
+],
+"min": 20.0,
+"max": 40.0,
+"names": [
+"of the Prism"
+],
+"also": [],
+"token": "r el",
+"line": "+#% monster elemental resistances",
+"text": "+#% monster elemental resistances"
+},
+{
+"id": "MapPlayerMaximumResists",
+"side": "suffix",
+"lines": [
+"-#% maximum player resistances"
+],
+"tags": [
+"T1-5",
+"T11-15",
+"T16",
+"T6-10"
+],
+"min": 3.0,
+"max": 10.0,
+"names": [
+"of Exposure"
+],
+"also": [],
+"token": "m p",
+"line": "-#% maximum player resistances",
+"text": "-#% maximum player resistances"
+},
+{
+"id": "MapSpreadChilledGround",
+"side": "suffix",
+"lines": [
+"area has patches of chilled ground"
+],
+"tags": [
+"T1-5",
+"T11-15",
+"T16",
+"T6-10"
+],
+"min": 15.0,
+"max": 15.0,
+"names": [
+"Sleet",
+"of Sleet"
+],
+"also": [],
+"token": "chi",
+"line": "area has patches of chilled ground",
+"text": "area has patches of chilled ground"
+},
+{
+"id": "MapSpreadBurningGround",
+"side": "suffix",
+"lines": [
+"area has patches of ignited ground"
+],
+"tags": [
+"T1-5",
+"T11-15",
+"T16",
+"T6-10"
+],
+"min": 15.0,
+"max": 15.0,
+"names": [
+"Flaming",
+"of Flames"
+],
+"also": [],
+"token": "ign",
+"line": "area has patches of ignited ground",
+"text": "area has patches of ignited ground"
+},
+{
+"id": "MapSpreadShockedGround",
+"side": "suffix",
+"lines": [
+"area has patches of shocked ground"
+],
+"tags": [
+"T1-5",
+"T11-15",
+"T16",
+"T6-10"
+],
+"min": 15.0,
+"max": 15.0,
+"names": [
+"Shocking",
+"of Shocking"
+],
+"also": [],
+"token": "hoc",
+"line": "area has patches of shocked ground",
+"text": "area has patches of shocked ground"
+},
+{
+"id": "MapMonsterElementAilmentChance",
+"side": "suffix",
+"lines": [
+"monster have #% increased elemental ailment application"
+],
+"tags": [
+"T1-5",
+"T11-15",
+"T16",
+"T6-10"
+],
+"min": 60.0,
+"max": 130.0,
+"names": [
+"of Overpowering"
+],
+"also": [],
+"token": "app",
+"line": "monster have #% increased elemental ailment application",
+"text": "monster have #% increased elemental ailment application"
+},
+{
+"id": "MapMonsterArmoured",
+"side": "suffix",
+"lines": [
+"monsters are armoured"
+],
+"tags": [
+"Any"
+],
+"min": 15.0,
+"max": 15.0,
+"names": [
+"of Enduring"
+],
+"also": [],
+"token": "oure",
+"line": "monsters are armoured",
+"text": "monsters are armoured"
+},
+{
+"id": "MapMonsterEvasive",
+"side": "suffix",
+"lines": [
+"monsters are evasive"
+],
+"tags": [
+"Any"
+],
+"min": 15.0,
+"max": 15.0,
+"names": [
+"of Evasion"
+],
+"also": [],
+"token": "eva",
+"line": "monsters are evasive",
+"text": "monsters are evasive"
+},
+{
+"id": "MapMonsterEnergyShield",
+"side": "suffix",
+"lines": [
+"monsters gain #% of maximum life as extra maximum energy shield"
+],
+"tags": [
+"Any"
+],
+"min": 12.0,
+"max": 25.0,
+"names": [
+"of Buffering"
+],
+"also": [],
+"token": "f m",
+"line": "monsters gain #% of maximum life as extra maximum energy shield",
+"text": "monsters gain #% of maximum life as extra maximum energy shield"
+},
+{
+"id": "MapMonsterStunAilmentThreshold",
+"side": "suffix",
+"lines": [
+"monsters have #% increased stun threshold",
+"monsters have #% increased ailment threshold"
+],
+"tags": [
+"T1-5",
+"T11-15",
+"T16",
+"T6-10"
+],
+"min": 30.0,
+"max": 79.0,
+"names": [
+"of the Unwavering"
+],
+"also": [],
+"token": "thr",
+"line": "monsters have #% increased stun threshold",
+"text": "monsters have #% increased stun threshold / monsters have #% increased ailment threshold"
+},
+{
+"id": "MapMonstersBaseSelfCriticalMultiplier",
+"side": "suffix",
+"lines": [
+"monsters take #% reduced extra damage from critical hits"
+],
+"tags": [
+"T1-5",
+"T11-15",
+"T16",
+"T6-10"
+],
+"min": 15.0,
+"max": 30.0,
+"names": [
+"of Obstruction"
+],
+"also": [],
+"token": "tak",
+"line": "monsters take #% reduced extra damage from critical hits",
+"text": "monsters take #% reduced extra damage from critical hits"
+},
+{
+"id": "MapPlayerElementalWeakness",
+"side": "suffix",
+"lines": [
+"players are periodically cursed with elemental weakness"
+],
+"tags": [
+"Any"
+],
+"min": 20.0,
+"max": 20.0,
+"names": [
+"of Erosion"
+],
+"also": [],
+"token": "wea",
+"line": "players are periodically cursed with elemental weakness",
+"text": "players are periodically cursed with elemental weakness"
+},
+{
+"id": "MapPlayerEnfeeble",
+"side": "suffix",
+"lines": [
+"players are periodically cursed with enfeeble"
+],
+"tags": [
+"Any"
+],
+"min": 20.0,
+"max": 20.0,
+"names": [
+"of Enfeebling"
+],
+"also": [],
+"token": "enf",
+"line": "players are periodically cursed with enfeeble",
+"text": "players are periodically cursed with enfeeble"
+},
+{
+"id": "MapPlayerTemporalChains",
+"side": "suffix",
+"lines": [
+"players are periodically cursed with temporal chains"
+],
+"tags": [
+"Any"
+],
+"min": 20.0,
+"max": 20.0,
+"names": [
+"of Slowing"
+],
+"also": [],
+"token": "emp",
+"line": "players are periodically cursed with temporal chains",
+"text": "players are periodically cursed with temporal chains"
+},
+{
+"id": "MapPlayerFlaskChargeGain",
+"side": "suffix",
+"lines": [
+"players gain #% reduced flask charges"
+],
+"tags": [
+"T1-5",
+"T11-15",
+"T16",
+"T6-10"
+],
+"min": 20.0,
+"max": 35.0,
+"names": [
+"of Drought"
+],
+"also": [],
+"token": "ask",
+"line": "players gain #% reduced flask charges",
+"text": "players gain #% reduced flask charges"
+},
+{
+"id": "MapPlayerCooldownRecovery",
+"side": "suffix",
+"lines": [
+"players have #% less cooldown recovery rate"
+],
+"tags": [
+"T1-5",
+"T11-15",
+"T16",
+"T6-10"
+],
+"min": 15.0,
+"max": 30.0,
+"names": [
+"of Fatigue"
+],
+"also": [],
+"token": "coo",
+"line": "players have #% less cooldown recovery rate",
+"text": "players have #% less cooldown recovery rate"
+},
+{
+"id": "MapPlayerRecoveryRate",
+"side": "suffix",
+"lines": [
+"players have #% less recovery rate of life and energy shield"
+],
+"tags": [
+"T1-5",
+"T11-15",
+"T16",
+"T6-10"
+],
+"min": 20.0,
+"max": 40.0,
+"names": [
+"of Smothering"
+],
+"also": [],
+"token": "s r",
+"line": "players have #% less recovery rate of life and energy shield",
+"text": "players have #% less recovery rate of life and energy shield"
+}
+],
+"noise": [
+"item class: waystones",
+"rarity: normal",
+"rarity: magic",
+"rarity: rare",
+"rarity: unique",
+"waystone (tier #)",
+"waystone tier: #",
+"revives available: #",
+"monster pack size: +#%",
+"magic monsters: +#%",
+"rare monsters: +#%",
+"item rarity: +#%",
+"waystone drop chance: +#%",
+"monster effectiveness: +#%",
+"monster rarity: +#%",
+"item level: #",
+"corrupted",
+"delirious",
+"can be used in a map device, allowing you to enter a map. waystones can only be used once.",
+"modifiers may be added by tablets placed in a map device",
+"unidentified"
+]
+},
+"relic": {
+"mods": [
+{
+"id": "SanctumKeyUpgradeChance",
+"side": "prefix",
+"lines": [
+"#% chance for each of your keys to upgrade on completing a floor"
+],
+"tags": [
+"Large"
+],
+"min": 3.0,
+"max": 9.0,
+"names": [
+"Enhancing",
+"Reforging",
+"Upgrading"
+],
+"also": [],
+"token": "eac",
+"line": "#% chance for each of your keys to upgrade on completing a floor",
+"text": "#% chance for each of your keys to upgrade on completing a floor"
+},
+{
+"id": "SanctumChanceToPreventHonourDeath",
+"side": "prefix",
+"lines": [
+"#% chance if you were to lose all your honour to have # honour instead"
+],
+"tags": [
+"Large"
+],
+"min": 5.0,
+"max": 12.0,
+"names": [
+"Cheater's",
+"Deceiver's"
+],
+"also": [],
+"token": "los",
+"line": "#% chance if you were to lose all your honour to have # honour instead",
+"text": "#% chance if you were to lose all your honour to have # honour instead"
+},
+{
+"id": "SanctumDefences",
+"side": "prefix",
+"lines": [
+"#% increased armour, evasion and energy shield"
+],
+"tags": [
+"Small"
+],
+"min": 20.0,
+"max": 70.0,
+"names": [
+"Girded",
+"Layered",
+"Reinforced",
+"Thickened"
+],
+"also": [],
+"token": "arm",
+"line": "#% increased armour, evasion and energy shield",
+"text": "#% increased armour, evasion and energy shield"
+},
+{
+"id": "SanctumResolveRecovery",
+"side": "prefix",
+"lines": [
+"#% increased honour restored"
+],
+"tags": [
+"Medium",
+"Small"
+],
+"min": 6.0,
+"max": 45.0,
+"names": [
+"Brightening",
+"Emboldening",
+"Enlivening",
+"Galvanising",
+"Revitalising"
+],
+"also": [],
+"token": "ored",
+"line": "#% increased honour restored",
+"text": "#% increased honour restored"
+},
+{
+"id": "SanctumMaximumHonour",
+"side": "prefix",
+"lines": [
+"#% increased maximum honour"
+],
+"tags": [
+"Medium",
+"Small"
+],
+"min": 9.0,
+"max": 45.0,
+"names": [
+"Honourable",
+"Moral",
+"Principled",
+"Respected",
+"Venerable"
+],
+"also": [],
+"token": "m honour$",
+"line": "#% increased maximum honour",
+"text": "#% increased maximum honour"
+},
+{
+"id": "SanctumMaximumLife",
+"side": "prefix",
+"lines": [
+"#% increased maximum life"
+],
+"tags": [
+"Small"
+],
+"min": 5.0,
+"max": 25.0,
+"names": [
+"Adamant",
+"Ardent",
+"Enduring",
+"Resolute",
+"Steadfast"
+],
+"also": [],
+"token": "lif",
+"line": "#% increased maximum life",
+"text": "#% increased maximum life"
+},
+{
+"id": "SanctumMovementSpeed",
+"side": "prefix",
+"lines": [
+"#% increased movement speed"
+],
+"tags": [
+"Small"
+],
+"min": 3.0,
+"max": 10.0,
+"names": [
+"Hasted",
+"Nimble",
+"Swift"
+],
+"also": [],
+"token": "ed mo",
+"line": "#% increased movement speed",
+"text": "#% increased movement speed"
+},
+{
+"id": "SanctumBossReducedDamage",
+"side": "prefix",
+"lines": [
+"bosses deal #% reduced damage"
+],
+"tags": [
+"Medium"
+],
+"min": 5.0,
+"max": 10.0,
+"names": [
+"Aegis",
+"Phalanx",
+"Vanguard"
+],
+"also": [],
+"token": "es d",
+"line": "bosses deal #% reduced damage",
+"text": "bosses deal #% reduced damage"
+},
+{
+"id": "SanctumBossIncreasedDamageTaken",
+"side": "prefix",
+"lines": [
+"bosses take #% increased damage"
+],
+"tags": [
+"Medium"
+],
+"min": 11.0,
+"max": 30.0,
+"names": [
+"Challenger's",
+"Regicidal",
+"Usurper's"
+],
+"also": [],
+"token": "ses t",
+"line": "bosses take #% increased damage",
+"text": "bosses take #% increased damage"
+},
+{
+"id": "SanctumStartingGold",
+"side": "prefix",
+"lines": [
+"gain # sacred water at the start of the trial"
+],
+"tags": [
+"Small"
+],
+"min": 30.0,
+"max": 59.0,
+"names": [
+"Commoner's",
+"Dekhara's",
+"Divinity's",
+"Djinn's",
+"Sekhema's"
+],
+"also": [],
+"token": "art",
+"line": "gain # sacred water at the start of the trial",
+"text": "gain # sacred water at the start of the trial"
+},
+{
+"id": "SanctumMonstersReducedDamage",
+"side": "prefix",
+"lines": [
+"monsters deal #% reduced damage"
+],
+"tags": [
+"Large"
+],
+"min": 6.0,
+"max": 12.0,
+"names": [
+"Fortified",
+"Impenetrable",
+"Resilient"
+],
+"also": [],
+"token": "^monsters d",
+"line": "monsters deal #% reduced damage",
+"text": "monsters deal #% reduced damage"
+},
+{
+"id": "SanctumMonsterSpeed",
+"side": "prefix",
+"lines": [
+"monsters have #% reduced attack, cast and movement speed"
+],
+"tags": [
+"Large"
+],
+"min": 4.0,
+"max": 7.0,
+"names": [
+"Chronomancy",
+"Temporal",
+"Time-warping"
+],
+"also": [],
+"token": "att",
+"line": "monsters have #% reduced attack, cast and movement speed",
+"text": "monsters have #% reduced attack, cast and movement speed"
+},
+{
+"id": "SanctumMonstersIncreasedDamageTaken",
+"side": "prefix",
+"lines": [
+"monsters take #% increased damage"
+],
+"tags": [
+"Large"
+],
+"min": 11.0,
+"max": 30.0,
+"names": [
+"Annihilating",
+"Crushing",
+"Punishing"
+],
+"also": [],
+"token": "^monsters t",
+"line": "monsters take #% increased damage",
+"text": "monsters take #% increased damage"
+},
+{
+"id": "SanctumGuardsReducedDamage",
+"side": "prefix",
+"lines": [
+"rare monsters deal #% reduced damage"
+],
+"tags": [
+"Medium"
+],
+"min": 5.0,
+"max": 10.0,
+"names": [
+"Bastion",
+"Bulwark",
+"Citadel"
+],
+"also": [],
+"token": "e monsters d",
+"line": "rare monsters deal #% reduced damage",
+"text": "rare monsters deal #% reduced damage"
+},
+{
+"id": "SanctumGuardsIncreasedDamageTaken",
+"side": "prefix",
+"lines": [
+"rare monsters take #% increased damage"
+],
+"tags": [
+"Medium"
+],
+"min": 11.0,
+"max": 30.0,
+"names": [
+"Disgrace's",
+"Transgressor's",
+"Violator's"
+],
+"also": [],
+"token": "e monsters t",
+"line": "rare monsters take #% increased damage",
+"text": "rare monsters take #% increased damage"
+},
+{
+"id": "SanctumMerchantExtraOptions",
+"side": "prefix",
+"lines": [
+"the merchant has an additional choice"
+],
+"tags": [
+"Medium"
+],
+"min": null,
+"max": null,
+"names": [
+"Plentiful"
+],
+"also": [],
+"token": "cho",
+"line": "the merchant has an additional choice",
+"text": "the merchant has an additional choice"
+},
+{
+"id": "SanctumTrapDamage",
+"side": "prefix",
+"lines": [
+"traps deal #% reduced damage"
+],
+"tags": [
+"Small"
+],
+"min": 5.0,
+"max": 10.0,
+"names": [
+"Acrobatic",
+"Limber"
+],
+"also": [],
+"token": "rap",
+"line": "traps deal #% reduced damage",
+"text": "traps deal #% reduced damage"
+},
+{
+"id": "SanctumAdditionalKeyChance",
+"side": "prefix",
+"lines": [
+"when you gain a key #% chance to gain another"
+],
+"tags": [
+"Large"
+],
+"min": 7.0,
+"max": 16.0,
+"names": [
+"Picklock's",
+"Pilferer's",
+"Thief's"
+],
+"also": [],
+"token": "ano",
+"line": "when you gain a key #% chance to gain another",
+"text": "when you gain a key #% chance to gain another"
+},
+{
+"id": "SanctumAvoidAfflictionChance",
+"side": "suffix",
+"lines": [
+"#% chance to avoid gaining an affliction"
+],
+"tags": [
+"Large"
+],
+"min": 6.0,
+"max": 15.0,
+"names": [
+"of Dignity",
+"of Glory",
+"of Honour",
+"of Prestige"
+],
+"also": [],
+"token": "avo",
+"line": "#% chance to avoid gaining an affliction",
+"text": "#% chance to avoid gaining an affliction"
+},
+{
+"id": "SanctumKeyDropChance",
+"side": "suffix",
+"lines": [
+"#% increased quantity of keys dropped by monsters"
+],
+"tags": [
+"Small"
+],
+"min": 6.0,
+"max": 25.0,
+"names": [
+"of Access",
+"of Admission",
+"of Entrance",
+"of Entry"
+],
+"also": [],
+"token": "f k",
+"line": "#% increased quantity of keys dropped by monsters",
+"text": "#% increased quantity of keys dropped by monsters"
+},
+{
+"id": "SanctumRelicQuantity",
+"side": "suffix",
+"lines": [
+"#% increased quantity of relics dropped by monsters"
+],
+"tags": [
+"Small"
+],
+"min": 6.0,
+"max": 20.0,
+"names": [
+"of Discovery",
+"of Investigation",
+"of Learning"
+],
+"also": [],
+"token": "cs d",
+"line": "#% increased quantity of relics dropped by monsters",
+"text": "#% increased quantity of relics dropped by monsters"
+},
+{
+"id": "SanctumMerchantReducedCosts",
+"side": "suffix",
+"lines": [
+"#% reduced merchant prices"
+],
+"tags": [
+"Medium"
+],
+"min": 6.0,
+"max": 10.0,
+"names": [
+"of Charity",
+"of Diplomacy"
+],
+"also": [],
+"token": "ric",
+"line": "#% reduced merchant prices",
+"text": "#% reduced merchant prices"
+},
+{
+"id": "SanctumSlowResistance",
+"side": "suffix",
+"lines": [
+"#% reduced slowing potency of debuffs on you"
+],
+"tags": [
+"Small"
+],
+"min": 8.0,
+"max": 20.0,
+"names": [
+"of Unrelenting",
+"of Unyielding",
+"of the Pathfinder"
+],
+"also": [],
+"token": "slo",
+"line": "#% reduced slowing potency of debuffs on you",
+"text": "#% reduced slowing potency of debuffs on you"
+},
+{
+"id": "SanctumDodgeRollDistance",
+"side": "suffix",
+"lines": [
+"+# metres to dodge roll distance"
+],
+"tags": [
+"Small"
+],
+"min": 0.3,
+"max": 0.7,
+"names": [
+"of Eluding",
+"of Lunging"
+],
+"also": [],
+"token": "met",
+"line": "+# metres to dodge roll distance",
+"text": "+# metres to dodge roll distance"
+},
+{
+"id": "SanctumHonourResistance",
+"side": "suffix",
+"lines": [
+"+#% to honour resistance"
+],
+"tags": [
+"Medium",
+"Small"
+],
+"min": 8.0,
+"max": 40.0,
+"names": [
+"of Deserving",
+"of Entitlement",
+"of Justification",
+"of Merit",
+"of Worth"
+],
+"also": [],
+"token": "o ho",
+"line": "+#% to honour resistance",
+"text": "+#% to honour resistance"
+},
+{
+"id": "SanctumMaximumHonourResistance",
+"side": "suffix",
+"lines": [
+"+#% to maximum honour resistance"
+],
+"tags": [
+"Large"
+],
+"min": 2.0,
+"max": 5.0,
+"names": [
+"of Brilliance",
+"of Excellence"
+],
+"also": [],
+"token": "o m",
+"line": "+#% to maximum honour resistance",
+"text": "+#% to maximum honour resistance"
+},
+{
+"id": "SanctumRevealExtraRoomEachFloor",
+"side": "suffix",
+"lines": [
+"an additional room is revealed on the trial map"
+],
+"tags": [
+"Large",
+"Medium"
+],
+"min": 2.0,
+"max": 4.0,
+"names": [
+"of Clairvoyance",
+"of Illumination"
+],
+"also": [],
+"token": "vea",
+"line": "an additional room is revealed on the trial map",
+"text": "an additional room is revealed on the trial map"
+},
+{
+"id": "SanctumFountainDoubleGoldChance",
+"side": "suffix",
+"lines": [
+"fountains have #% chance to grant double sacred water"
+],
+"tags": [
+"Small"
+],
+"min": 5.0,
+"max": 15.0,
+"names": [
+"of Abundance",
+"of Brimming",
+"of Flowing",
+"of Overflowing"
+],
+"also": [],
+"token": "gran",
+"line": "fountains have #% chance to grant double sacred water",
+"text": "fountains have #% chance to grant double sacred water"
+},
+{
+"id": "SanctumGoldOnRoomCompletion",
+"side": "suffix",
+"lines": [
+"gain # sacred water when you complete a room"
+],
+"tags": [
+"Large"
+],
+"min": 11.0,
+"max": 30.0,
+"names": [
+"of the Fountain",
+"of the Oasis",
+"of the Well"
+],
+"also": [],
+"token": "ete",
+"line": "gain # sacred water when you complete a room",
+"text": "gain # sacred water when you complete a room"
+},
+{
+"id": "SanctumReducedCritDamage",
+"side": "suffix",
+"lines": [
+"hits against you have #% reduced critical damage bonus"
+],
+"tags": [
+"Small"
+],
+"min": 12.0,
+"max": 25.0,
+"names": [
+"of Stoutness",
+"of Tenacity",
+"of Unwavering"
+],
+"also": [],
+"token": "hit",
+"line": "hits against you have #% reduced critical damage bonus",
+"text": "hits against you have #% reduced critical damage bonus"
+},
+{
+"id": "SanctumMonstersDoubleGoldChance",
+"side": "suffix",
+"lines": [
+"monsters have #% chance to drop double sacred water"
+],
+"tags": [
+"Small"
+],
+"min": 5.0,
+"max": 15.0,
+"names": [
+"of Dampening",
+"of Drenching",
+"of Saturating",
+"of Soaking"
+],
+"also": [],
+"token": "p d",
+"line": "monsters have #% chance to drop double sacred water",
+"text": "monsters have #% chance to drop double sacred water"
+},
+{
+"id": "SanctumRestoreHonourOnBossKill",
+"side": "suffix",
+"lines": [
+"restore # honour on killing a boss"
+],
+"tags": [
+"Medium"
+],
+"min": 40.0,
+"max": 150.0,
+"names": [
+"of Championship",
+"of Conquest",
+"of Empowerment",
+"of Triumph",
+"of Victory"
+],
+"also": [],
+"token": "kil",
+"line": "restore # honour on killing a boss",
+"text": "restore # honour on killing a boss"
+},
+{
+"id": "SanctumHonourOnGainKey",
+"side": "suffix",
+"lines": [
+"restore # honour on picking up a key"
+],
+"tags": [
+"Large"
+],
+"min": 25.0,
+"max": 75.0,
+"names": [
+"of Bequeathing",
+"of Bestowing",
+"of Donation",
+"of Entrusting",
+"of Offering"
+],
+"also": [],
+"token": "cki",
+"line": "restore # honour on picking up a key",
+"text": "restore # honour on picking up a key"
+},
+{
+"id": "SanctumResolveOnRoomComplete",
+"side": "suffix",
+"lines": [
+"restore # honour on room completion"
+],
+"tags": [
+"Large"
+],
+"min": 10.0,
+"max": 30.0,
+"names": [
+"of Advancement",
+"of Betterment",
+"of Headway",
+"of Progress"
+],
+"also": [],
+"token": "etio",
+"line": "restore # honour on room completion",
+"text": "restore # honour on room completion"
+},
+{
+"id": "SanctumRestoreHonourOnFountainUse",
+"side": "suffix",
+"lines": [
+"restore # honour on venerating a maraketh shrine"
+],
+"tags": [
+"Medium"
+],
+"min": 25.0,
+"max": 75.0,
+"names": [
+"of Bloom",
+"of Convalescence",
+"of Freshness",
+"of Refreshment",
+"of Youth"
+],
+"also": [],
+"token": "mar",
+"line": "restore # honour on venerating a maraketh shrine",
+"text": "restore # honour on venerating a maraketh shrine"
+}
+],
+"noise": [
+"item class: relics",
+"rarity: normal",
+"rarity: magic",
+"rarity: rare",
+"rarity: unique",
+"item level: #",
+"urn relic",
+"amphora relic",
+"vase relic",
+"seal relic",
+"coffer relic",
+"tapestry relic",
+"incense relic",
+"place this item on the altar in the relic chamber to apply its effects to your trials",
+"corrupted",
+"requires level #"
+]
+}
+}
+}
