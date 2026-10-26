@@ -29,7 +29,7 @@ from . import gamedata
 from .config import BASE
 from .mods import read_numbers, roll_pct, strip_markup
 from .net import call
-from .trade import _cached, _search_cache, listing_rules
+from .trade import apply_opts, _cached, _search_cache, listing_rules
 
 ARMOUR_CLASSES = {"body_armour", "helmet", "gloves", "boots", "shield", "buckler", "focus"}
 PER_BASE_CLASSES = {"ring", "amulet", "belt", "quiver", "charm", "flask", "relic"}
@@ -285,7 +285,7 @@ def build_query(item, must, optional, count_min, values, plain=False):
     if api_age:
         filters["trade_filters"] = {"filters": {"indexed": {"option": api_age}}}
     query["filters"] = filters
-    return query
+    return apply_opts(query, item)                            # 2.4.1: this item's own search filters
 
 
 def run_search(league, query):

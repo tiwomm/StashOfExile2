@@ -5,6 +5,7 @@ Part of StashOfExile2. Split out of the single-file app in 1.37 (see the launche
 import json
 import re
 import statistics
+import threading
 import time
 from datetime import datetime
 from .config import AGE_OPTIONS, APP_VERSION, BASE, P, SETTINGS, STATUS_OPTIONS
@@ -87,6 +88,67 @@ def listed_ts(s):
         return time.time()          # can't read the date: keep the listing
 
 
+# ---------------------------------------------------------------- 2.4.1: per-item search filters (the item panel)
+# Set for the item being priced (engine.price_rec), on the pricing thread only. None = the usual searches.
+#   status    securable (Instant Buyout) / available / online / any
+#   currency  divine / exalted / chaos / exalted_divine (only listings priced in that)
+#   corrupted any / yes / no
+#   ilvl, quality, sockets   minimums (gear)          base   same (this base only) / class (any base of its class)
+_OPTS = threading.local()
+STATUS_CHOICES = [("Instant Buyout", "securable"), ("Instant Buyout and In Person", "available"),
+                  ("In Person (Online)", "online"), ("Any", "any")]
+CURRENCY_CHOICES = [("Any currency", None), ("Divine Orbs", "divine"), ("Exalted Orbs", "exalted"),
+                    ("Chaos Orbs", "chaos"), ("Exalted or Divine Orbs", "exalted_divine")]
+
+
+def use_opts(opts):
+    _OPTS.v = dict(opts) if opts else None
+
+
+def current_opts():
+    return getattr(_OPTS, "v", None)
+
+
+def apply_opts(query, item=None, opts=None):
+    """Put this item's own search filters into a trade query (in place). -> the query."""
+    o = opts if opts is not None else current_opts()
+    if not o:
+        return query
+    flt = query.setdefault("filters", {})
+
+    def put(group, key, val):
+        g = flt.setdefault(group, {}).setdefault("filters", {})
+        if val is None:
+            g.pop(key, None)
+            if not g:
+                flt.pop(group, None)
+        else:
+            g[key] = val
+    if o.get("status") in dict((v, k) for k, v in STATUS_CHOICES):
+        query["status"] = {"option": o["status"]}
+    if "currency" in o:
+        old = (flt.get("trade_filters") or {}).get("filters", {}).get("price") or {}
+        put("trade_filters", "price", ({**{k: v for k, v in old.items() if k != "option"}, "option": o["currency"]}
+                                       if o["currency"] else ({k: v for k, v in old.items() if k != "option"} or None)))
+    if o.get("corrupted") in ("any", "yes", "no"):
+        put("misc_filters", "corrupted", None if o["corrupted"] == "any" else
+            {"option": "true" if o["corrupted"] == "yes" else "false"})
+    for key, group, name in (("ilvl", "type_filters", "ilvl"), ("quality", "type_filters", "quality"),
+                             ("sockets", "equipment_filters", "rune_sockets")):
+        if key in o:
+            v = o[key]
+            put(group, name, {"min": v} if v not in (None, "", 0) else None)
+    if item is not None and o.get("base") in ("same", "class"):
+        s = item.get("search") or {}
+        if o["base"] == "same" and item.get("base"):
+            query["type"] = item["base"]
+            put("type_filters", "category", None)
+        elif o["base"] == "class" and s.get("category"):
+            query.pop("type", None)
+            put("type_filters", "category", {"option": s["category"]})
+    return query
+
+
 def search_ids(league, base, filters, count_min, corrupted=None):
     """One trade search. Returns (total matches, first listing ids, query id). Same search twice = free."""
     plain, extra = [], []
@@ -115,6 +177,7 @@ def search_ids(league, base, filters, count_min, corrupted=None):
         flt["trade_filters"] = {"filters": {"indexed": {"option": api_age}}}
     if flt:
         query["filters"] = flt
+    apply_opts(query)                                 # 2.4.1: this item's own search filters
     key = league + json.dumps(query, sort_keys=True)
     hit = _cached(_search_cache, key)
     if hit is None:

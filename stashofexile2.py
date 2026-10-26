@@ -1,7 +1,8 @@
 """
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
+Free software under the GNU GPL v3.0 (see LICENSE). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.4   (2.4.0)
+VERSION 2.5   (2.5.0)
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -17,6 +18,14 @@ VERSION 2.4   (2.4.0)
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.5.0
+       (1) Item panel > Search filters (searchopts_page.py), like a trade site's own filters, for one item at a time:
+           seller (Instant Buyout / + In Person / Online / Any), priced in (divine / exalted / chaos / exalted or
+           divine), corrupted (Any / Yes / No), and for gear item level, quality and sockets minimums and "this base
+           only / any base of its kind". Kept as rec["opts"] (only what differs from the usual); trade.apply_opts adds
+           them to every search for that item (thread-local, set in engine.price_rec). Searches narrowed this way
+           don't teach the Mod book (engine._stage).
+       (2) Wiki ↗ link next to Under the hood: the item's base type on poe2wiki.net.
   2.4.0
        (1) Lists behave the same everywhere (listkeys.py): click / Ctrl+click / Shift+click / Ctrl+A select, Delete
            removes, Ctrl+Z undoes - routed to the list last clicked in the window in front (Delete in Wealth works
@@ -634,7 +643,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.4.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.5.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 

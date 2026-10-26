@@ -16,13 +16,19 @@ INTRO = [
 
 # What's being worked on (2.4.0: not shown in the app any more - kept for ROADMAP.md / the developer).
 NEXT = [
-    "2.5: rating waystone and relic mods in the Mod book, like tablet mods.",
-    "2.6: Session tracker: deaths and time away checked against real logs, and a daily maps chart.",
-    "2.7: deciding what Wealth, the Session tracker, Game search and Top value need to leave Labs.",
+    "2.6: rating waystone and relic mods in the Mod book, like tablet mods.",
+    "2.7: Session tracker: deaths and time away checked against real logs, and a daily maps chart.",
+    "2.8: deciding what Wealth, the Session tracker, Game search and Top value need to leave Labs.",
 ]
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.5.0": [
+        "Price checks: the item panel has Search filters - who's selling, what they price in, corrupted or not, and "
+        "for gear item level, quality, sockets and whether to compare with the same base only. They change the "
+        "search for that item only; press Search with these values.",
+        "A Wiki link next to Under the hood opens the item's base type on the community wiki.",
+    ],
     "2.4.0": [
         "Every list works the same way: Ctrl+click or Shift+click to pick several, Ctrl+A for all, Delete to "
         "remove, and Ctrl+Z (or Undo) to put them back.",
