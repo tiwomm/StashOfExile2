@@ -135,7 +135,10 @@ class InsightsPage:
         # ---- mods worth the most (the Mod book's data)
         tv, empty = self.ins_tables["mods"]
         tv.delete(*tv.get_children())
-        stats = MARKET.cached_stats() if kind != "Waystones" else {}
+        if kind in ("Waystones", "Relics"):                 # 2.6.0: your ★ rules for these (nothing is learned)
+            self._ins_rated_mods(tv, empty, kind)
+            return self._ins_fill_seen(kind)
+        stats = MARKET.cached_stats()
         rows = [(base, sid, st) for (base, sid), st in stats.items()
                 if kind_of(base) == kind and st.get("n", 0) >= 3 and st.get("med") is not None]
         rows.sort(key=lambda r: -r[2]["med"])
@@ -144,10 +147,36 @@ class InsightsPage:
             star = impact_key(norm(text)) == "high"
             tv.insert("", "end", values=(("★ " if star else "") + text[:1].upper() + text[1:], base.replace(" Tablet", ""),
                                          fmt_div(st["med"]), st["n"]), tags=("star",) if star else ())
-        why = ("Waystones are priced on their numbers (drop chance, pack size ...), not their mods." if kind == "Waystones"
-               else "Relics aren't price-checked yet." if kind == "Relics"
-               else f"Nothing learned about {kind[:-1].lower()} mods yet.\nIt fills in as you price {kind.lower()}.")
+        why = f"Nothing learned about {kind[:-1].lower()} mods yet.\nIt fills in as you price {kind.lower()}."
         self._ins_empty(empty, not rows, why)
+        self._ins_fill_seen(kind)
+
+    def _ins_rated_mods(self, tv, empty, kind):
+        """Waystones / Relics: the mods you rate ★ in the Mod book, and the best one you've priced with each."""
+        from . import regex as R
+        from .mods import impact_key, rule_key
+        cat = "waystone" if kind == "Waystones" else "relic"
+        league = SETTINGS.get("league")
+        priced = VALUE_LOG.top(league, kind_of, kind, limit=3000)
+        have = [({norm(t) for t in e.get("mods") or []}, e) for e in priced]
+        rows = []
+        for m in R.mods(cat):
+            lines = m.get("lines") or [m["line"]]
+            keys = [norm(l) for l in lines]
+            if not any(impact_key(rule_key(cat, k)) == "high" for k in keys):
+                continue
+            with_it = [e for ks, e in have if any(k in ks for k in keys)]
+            best = max((e["est"] for e in with_it if e.get("est") is not None), default=None)
+            text = " / ".join(l[:1].upper() + l[1:] for l in lines)
+            rows.append((best if best is not None else -1, text, len(with_it), best))
+        rows.sort(key=lambda r: (-r[0], r[1]))
+        for _o, text, n, best in rows:
+            tv.insert("", "end", values=("★ " + text, kind[:-1], fmt_div(best) if best is not None else "-",
+                                         n or "-"), tags=("star",))
+        self._ins_empty(empty, not rows, f"No ★ {kind[:-1].lower()} mods yet.\nRate them in Mod book > "
+                                         f"{kind[:-1]} rules,\nor right-click a mod in Regex.")
+
+    def _ins_fill_seen(self, kind):
         # ---- dearest listings seen
         tv, empty = self.ins_tables["seen"]
         tv.delete(*tv.get_children())
@@ -217,8 +246,14 @@ class InsightsPage:
         else:
             self.ins_pick = None
             vals = tv.item(sel[0], "values")
-            self.ins_det.config(text=f"{vals[0]}  on {vals[1]}: listings with this mod typically ask {vals[2]} "
-                                     f"({vals[3]} seen).", fg=C["text"])
+            if self.ins_kind.get() in ("Waystones", "Relics"):
+                self.ins_det.config(fg=C["text"], text=(
+                    f"{vals[0]}  - rated valuable in your Mod book. "
+                    + (f"You've priced {vals[3]} with it; the best was worth {vals[2]}." if vals[3] != "-" else
+                       "None priced with it yet.")))
+            else:
+                self.ins_det.config(text=f"{vals[0]}  on {vals[1]}: listings with this mod typically ask {vals[2]} "
+                                         f"({vals[3]} seen).", fg=C["text"])
 
     def ins_forget(self, rows):
         """Delete in Your most valuable: forget those items here (not in Price checks)."""
