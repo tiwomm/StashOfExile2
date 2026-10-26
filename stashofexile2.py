@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU GPL v3.0 (see LICENSE). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.5   (2.5.0)
+VERSION 2.6   (2.6.0)
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -18,7 +18,17 @@ VERSION 2.5   (2.5.0)
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
-  2.5.0
+  2.6.0
+       (1) Mod book > Waystone rules and Relic rules: every waystone / relic mod from regexdata.json (RePoE), rated
+           High / Normal / Ignore like tablet mods (filter, Set selected to, double-click). One row per mod; a
+           two-line mod's rule covers both lines.
+       (2) Waystone and relic rules are saved under their own names ("waystone:<text>", "relic:<text>",
+           mods.rule_key), so they never pick up a tablet / jewel rule with the same words (before, the relic mod
+           "#% increased movement speed" showed as High because of a jewel rule). Rules set from Regex in earlier
+           versions move over once (mods.migrate_scoped_rules, SETTINGS rules_scoped_26). default_rules.json may
+           list "waystone" and "relic" too.
+       (3) Regex uses them for ★ and ★ Select valuable, and right-click saves to them.
+       (4) Top value > Waystones / Relics: your ★ mods, how many items you've priced with each and the best one.
        (1) Item panel > Search filters (searchopts_page.py), like a trade site's own filters, for one item at a time:
            seller (Instant Buyout / + In Person / Online / Any), priced in (divine / exalted / chaos / exalted or
            divine), corrupted (Any / Yes / No), and for gear item level, quality and sockets minimums and "this base
@@ -646,7 +656,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.5.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.6.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 

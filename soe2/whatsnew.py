@@ -16,13 +16,19 @@ INTRO = [
 
 # What's being worked on (2.4.0: not shown in the app any more - kept for ROADMAP.md / the developer).
 NEXT = [
-    "2.6: rating waystone and relic mods in the Mod book, like tablet mods.",
     "2.7: Session tracker: deaths and time away checked against real logs, and a daily maps chart.",
     "2.8: deciding what Wealth, the Session tracker, Game search and Top value need to leave Labs.",
 ]
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.6.0": [
+        "Mod book has Waystone rules and Relic rules: rate each mod High, Normal or Ignore, like tablet mods.",
+        "Regex marks the mods you rate High with ★, and ★ Select valuable picks them.",
+        "Top value shows your ★ waystone and relic mods, and the best item you've priced with each.",
+        "Waystone and relic ratings are kept apart from tablet and jewel ones, so a jewel rule no longer shows up on "
+        "a relic mod with the same wording.",
+    ],
     "2.5.0": [
         "Price checks: the item panel has Search filters - who's selling, what they price in, corrupted or not, and "
         "for gear item level, quality, sockets and whether to compare with the same base only. They change the "
