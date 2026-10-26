@@ -34,7 +34,7 @@ CLOCK = {"format": "auto"}       # 2.0 beta 21: "auto" (like Windows), "12" or "
 def windows_24h():
     """Does Windows show the time as 24-hour? (Control Panel > Region; read once.)"""
     if "win24" not in CLOCK:
-        CLOCK["win24"] = True
+        CLOCK["win24"] = False                      # 12-hour unless Windows is set to 24-hour (2.1.0)
         if sys.platform == "win32":
             try:
                 import winreg

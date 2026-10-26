@@ -47,6 +47,7 @@ from .wealth_page import WealthPage
 from .library_page import LibraryPage
 from .regex_page import RegexPage
 from .calc import CalcPage
+from .insights_page import InsightsPage
 from .utilities_page import UtilitiesPage
 from .tracker_page import TrackerPage
 from .search_page import SearchPage
@@ -58,7 +59,7 @@ from .shell import Shell
 from .config import PAGE_CHECKS       # 1.40: was "Items"
 
 
-class App(WealthPage, LibraryPage, RegexPage, UtilitiesPage, TrackerPage, SearchPage, CalcPage):
+class App(WealthPage, LibraryPage, RegexPage, UtilitiesPage, TrackerPage, SearchPage, CalcPage, InsightsPage):
     COLS = [("added", "#", 46, "e"), ("name", "Item", 220, "w"), ("type", "Type", 110, "w"), ("mark", "Status", 90, "center"),
             ("est", "Est. value", 110, "e"), ("conf", "Confidence", 95, "center"), ("listings", "Listings", 70, "e"), ("priced", "Priced at", 130, "w"),
             ("match", "How it was priced", 300, "w")]
@@ -769,12 +770,15 @@ class App(WealthPage, LibraryPage, RegexPage, UtilitiesPage, TrackerPage, Search
         ttk.Button(row, text="Choose wallpaper…", command=self.pick_wallpaper).pack(side="left")
         ttk.Button(row, text="Default", command=lambda: self.shell.set_wallpaper(None)).pack(side="left", padx=6)
 
-        row = section("Appearance", "Clock", "The clock at the bottom right shows your PC's own time. Auto uses "
-                                             "the same 12 / 24-hour style as Windows.")
-        self.clock_var = tk.StringVar(value={"auto": "Like Windows", "12": "12-hour (3:45 PM)",
-                                             "24": "24-hour (15:45)"}.get(SETTINGS.get("clock_format", "auto")))
+        from .shell import windows_24h
+        row = section("Appearance", "Clock", "The clock at the bottom right shows your PC's own time. It starts out "
+                                             "the way your Windows clock is set.")
+        fmt = SETTINGS.get("clock_format", "auto")
+        if fmt not in ("12", "24"):
+            fmt = "24" if windows_24h() else "12"
+        self.clock_var = tk.StringVar(value={"12": "12-hour (3:45 PM)", "24": "24-hour (15:45)"}[fmt])
         cb = ttk.Combobox(row, textvariable=self.clock_var, state="readonly", width=20,
-                          values=["Like Windows", "12-hour (3:45 PM)", "24-hour (15:45)"])
+                          values=["12-hour (3:45 PM)", "24-hour (15:45)"])
         cb.pack(side="left")
         cb.bind("<<ComboboxSelected>>", lambda e: self.on_clock())
 
@@ -940,7 +944,7 @@ class App(WealthPage, LibraryPage, RegexPage, UtilitiesPage, TrackerPage, Search
 
     def on_clock(self):
         from . import shell as _shell
-        fmt = {"Like Windows": "auto", "12-hour (3:45 PM)": "12", "24-hour (15:45)": "24"}.get(self.clock_var.get(), "auto")
+        fmt = {"12-hour (3:45 PM)": "12", "24-hour (15:45)": "24"}.get(self.clock_var.get(), "auto")
         SETTINGS["clock_format"] = fmt
         _shell.CLOCK["format"] = fmt
         save_json("settings.json", SETTINGS)
