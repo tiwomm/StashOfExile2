@@ -14,7 +14,7 @@ from .config import save_json, SETTINGS
 from .gamelog import find_log, LogReader
 from .overlay import game_active, key_label, parse_key
 from .pricefmt import fmt_div
-from .style import C, FONT_TITLE, KeyCapture, SegBar
+from .style import ScrollArea, C, FONT_TITLE, KeyCapture, SegBar
 from .tracker import fmt_time, Session, Sessions, value_at
 from .wealth import WEALTH, wealth_key, WPRICES
 
@@ -22,7 +22,13 @@ DEFAULTS = {"overlay": True, "locked": False, "x": 60, "y": 260, "w": 230, "h": 
             "lines": {"session": True, "map": True, "maps": True, "avg": True, "profit": True, "gold": False},
             "key_toggle": "", "key_pause": "", "ask_count": True, "log_path": ""}
 LINE_NAMES = [("session", "Session time"), ("map", "This map's time"), ("maps", "Maps done"), ("avg", "Average map"),
-              ("profit", "Profit / hour")]        # (2.3.0: "gold from selling" is gone - it can't be read reliably)
+              ("profit", "Profit")]        # (2.3.0: "gold from selling" is gone - it can't be read reliably)
+
+
+PROFIT_HOW = ("How it works: when you press Start, the app notes what everything in Wealth is worth. When you press "
+              "Stop, it values Wealth again - both times at today's prices, so price swings don't count. Profit is "
+              "the difference; per hour is the profit divided by the session's time (pauses don't count). So it "
+              "needs Wealth set up: your currency counted, and any synced stash tabs.")
 
 
 class TrackerPage:
@@ -75,7 +81,7 @@ class TrackerPage:
         self.tk_nums = {}
         for i, (k, label) in enumerate((("time", "Session"), ("where", "Where you are"), ("map", "This map"),
                                         ("maps", "Maps"), ("avg", "Average map"), ("best", "Fastest map"),
-                                        ("start", "Wealth at start"), ("profit", "Profit"))):
+                                        ("profit", "Profit"), ("ph", "Profit / hour"))):
             f = tk.Frame(nums, bg=P2, padx=10, pady=6, highlightthickness=1, highlightbackground=C["line"])
             f.grid(row=i // 4, column=i % 4, sticky="nsew", padx=(0, 6), pady=(0, 6))
             tk.Label(f, text=label, bg=P2, fg=C["muted"], font=("Segoe UI", 8)).pack(anchor="w")
@@ -100,6 +106,7 @@ class TrackerPage:
             tv.column(cid, width=w, anchor=a, stretch=(cid == "map"))
         tv.pack(fill="both", expand=True)
         self.tk_maps = tv
+        self.list_register("tracker", tv)
         self.tk_pages["This session's maps"] = pm
         ph = tk.Frame(body, bg=P1)
         hv = ttk.Treeview(ph, columns=("when", "len", "maps", "avg", "profit", "ph", "note"), show="headings", height=4)
@@ -111,15 +118,18 @@ class TrackerPage:
         hv.pack(fill="both", expand=True)
         hv.bind("<Double-1>", self.tracker_edit_note)
         self.tk_hist = hv
+        self.list_register("tracker", hv, delete=self.tracker_remove_sessions)          # 2.4.0
         prow = tk.Frame(ph, bg=P1)
         prow.pack(fill="x")
-        tk.Label(prow, text="Double-click a session to write a note (e.g. 'T15 Breach + Delirium').", bg=P1,
+        tk.Label(prow, text="Double-click a session to write a note (e.g. 'T15 Breach + Delirium'). Delete removes "
+                            "the selected ones (Ctrl+Z undoes).", bg=P1,
                  fg=C["muted"], font=("Segoe UI", 8), anchor="w").pack(side="left")
         ttk.Button(prow, text="Export CSV", command=self.tracker_export_sessions).pack(side="right", pady=(4, 0))
+        self.undo_button(prow, "tracker").pack(side="right", padx=6, pady=(4, 0))
         self.tk_pages["Past sessions"] = ph
         self.tk_pages["Map stats"] = self._tracker_stats_page(body)
-        po = tk.Frame(body, bg=P1)
-        self._tracker_options(po)
+        po = ScrollArea(body, bg=P1)                   # 2.4.0: scrolls when the window is short
+        self._tracker_options(po.inner)
         self.tk_pages["Options"] = po
         tk.Label(body, text="Reads only Path of Exile 2's own log file (Client.txt) on your PC: never the game's memory, "
                             "never its servers, never sends keys or clicks.", bg=P1, fg=C["steel"], font=("Segoe UI", 8),
@@ -251,8 +261,10 @@ class TrackerPage:
         cfg, P2 = self.tracker_cfg(), C["panel2"]
         box = tk.Frame(po, bg=P2, padx=14, pady=10, highlightthickness=1, highlightbackground=C["line"])
         box.pack(fill="x")
-        tk.Label(box, text="Timer over the game", bg=P2, fg=C["accent"], font=("Segoe UI", 10, "bold")).grid(
+        tk.Label(box, text="Options", bg=P2, fg=C["accent"], font=("Segoe UI", 10, "bold")).grid(
             row=0, column=0, columnspan=3, sticky="w")
+        tk.Label(box, text="What the small timer over the game shows:", bg=P2, fg=C["muted"], font=("Segoe UI", 9)).grid(
+            row=0, column=0, columnspan=3, sticky="e")
         self.tk_line_vars = {}
         for i, (k, label) in enumerate(LINE_NAMES):
             v = tk.BooleanVar(value=bool(cfg["lines"].get(k)))
@@ -283,13 +295,54 @@ class TrackerPage:
         self.tk_key_msg = tk.Label(box2, text="Click a box and press the key. Esc keeps the old one; Backspace or "
                                               "right-click clears it.", bg=P2, fg=C["muted"], font=("Segoe UI", 8))
         self.tk_key_msg.grid(row=2, column=0, columnspan=5, sticky="w", pady=(4, 0))
+        # ---- 2.4.0: profit explained, with its one setting next to it
+        box3 = tk.Frame(po, bg=P2, padx=14, pady=10, highlightthickness=1, highlightbackground=C["line"])
+        box3.pack(fill="x", pady=(6, 0))
+        tk.Label(box3, text="Profit / hour", bg=P2, fg=C["accent"], font=("Segoe UI", 10, "bold"),
+                 anchor="w").pack(fill="x")
+        tk.Label(box3, text=PROFIT_HOW, bg=P2, fg=C["text"], anchor="w", justify="left", wraplength=620,
+                 font=("Segoe UI", 9)).pack(fill="x", pady=(2, 4))
         self.tk_ask = tk.BooleanVar(value=bool(cfg.get("ask_count", True)))
-        ttk.Checkbutton(po, text="When I stop, offer to count new currency in Wealth first (so the profit includes it)",
-                        variable=self.tk_ask, command=self.tracker_options_changed).pack(anchor="w", pady=(8, 0))
+        ttk.Checkbutton(box3, text="When I press Stop, let me count the currency I picked up first (recommended)",
+                        variable=self.tk_ask, command=self.tracker_options_changed).pack(anchor="w")
+        tk.Label(box3, text="Without it, only what changed in your synced stash tabs counts - currency in your "
+                            "inventory or counted by hand would be left out.", bg=P2, fg=C["muted"],
+                 font=("Segoe UI", 8), anchor="w", justify="left", wraplength=620).pack(fill="x", padx=(22, 0))
+        self.tk_profit_state = tk.Label(box3, text="", bg=P2, fg=C["good"], anchor="w", justify="left",
+                                        wraplength=620, font=("Segoe UI", 9))
+        self.tk_profit_state.pack(fill="x", pady=(6, 0))
+        self.tk_profit_btn = ttk.Button(box3, text="Set up Wealth", command=self.tracker_setup_wealth)
+        self.tracker_profit_state()
+
+    def tracker_profit_state(self):
+        """The line under Profit / hour: can a profit be worked out right now, and if not, why."""
+        if not hasattr(self, "tk_profit_state"):
+            return
+        labs = SETTINGS.get("labs")
+        empty = not (WEALTH.holdings or any(WEALTH.items.values()))
+        if not labs:
+            txt, btn = "Profit needs Wealth, which is in Labs: turn on Labs in Settings > General.", False
+        elif empty:
+            txt, btn = "Wealth is empty, so there's nothing to compare against yet - set it up first.", True
+        else:
+            txt, btn = "Ready: the next session you start will show its profit when you stop.", False
+        self.tk_profit_state.config(text=txt, fg=C["green"] if txt.startswith("Ready") else C["good"])
+        if btn:
+            self.tk_profit_btn.pack(anchor="w", pady=(4, 0))
+        else:
+            self.tk_profit_btn.pack_forget()
+
+    def tracker_setup_wealth(self):
+        if not SETTINGS.get("labs"):
+            return self._say("Wealth is in Labs: turn on Labs in Settings > General first.", 8)
+        self.shell.open("wealth")
+        self.wealth_setup_open()
 
     def tracker_view(self):
         if self.tk_view.get() == "Map stats":
             self.tracker_fill_stats()
+        if self.tk_view.get() == "Options":
+            self.tracker_profit_state()
         for name, f in self.tk_pages.items():
             if name == self.tk_view.get():
                 f.pack(fill="both", expand=True, padx=10, pady=(0, 6))
@@ -399,6 +452,10 @@ class TrackerPage:
         self.tracker_draw()
         self._say("Session started." + ("" if s.start_value is not None else " (Wealth is empty, so no profit can be "
                                                                               "worked out; the timer and maps still work.)"), 8)
+        if s.start_value is None:                       # 2.4.0: say why, and how to fix it, where you're looking
+            self._tk_strip("Timing your maps. Profit needs Wealth to know what you own at the start - it's empty, so "
+                           "this session won't show a profit.", [("Set up Wealth", self.tracker_setup_wealth),
+                                                                 ("OK", self._tk_strip_close)])
         if self.tk_overlay is None and self.tracker_cfg().get("overlay"):
             self.tracker_overlay_show()
 
@@ -420,9 +477,10 @@ class TrackerPage:
             return
         if self.tracker_cfg().get("ask_count") and s.start_value is not None:
             s.pause()
-            self._tk_strip("Before finishing: count the currency you picked up, so it's part of the profit? (Timer is "
-                           "paused.)", [("Count in Wealth first", self.tracker_count_first),
-                                        ("Finish now", self.tracker_finish), ("Keep going", self.tracker_keep_going)])
+            self._tk_strip("Count what you picked up? Wealth opens: copy each currency stack you have now (Ctrl+C), "
+                           "then press Finish counting - the profit is worked out right after. (Timer is paused.)",
+                           [("Count now", self.tracker_count_first), ("Skip, finish now", self.tracker_finish),
+                            ("Keep playing", self.tracker_keep_going)])
             return
         self.tracker_finish()
 
@@ -523,8 +581,11 @@ class TrackerPage:
                 "where": s.location(), "map": fmt_time(cur) if cur is not None else "-", "maps": str(s.map_count()),
                 "avg": fmt_time(avg) if avg is not None else "-", "best": best,
                 "start": fmt_div(s.start_value) if s.start_value is not None else "-",
-                "profit": ((('+' if prof >= 0 else '-') + fmt_div(abs(prof))) + (f"  ({fmt_div(ph)}/h)" if ph else ""))
-                if prof is not None else ("when you stop" if s.ended is None else "-")}
+                "profit": (('+' if prof >= 0 else '-') + fmt_div(abs(prof))) if prof is not None else
+                ("worked out when you stop" if s.ended is None and s.start_value is not None else
+                 "needs Wealth" if s.start_value is None else "-"),
+                "ph": (('+' if ph >= 0 else '-') + fmt_div(abs(ph))) if ph is not None else
+                ("when you stop" if s.ended is None and s.start_value is not None else "-")}
 
     def tracker_draw(self):
         s = self.tk_session
@@ -561,6 +622,27 @@ class TrackerPage:
                 fmt_time(avg) if avg is not None else "-",
                 (('+' if s.profit >= 0 else '-') + fmt_div(abs(s.profit))) if s.profit is not None else "-",
                 fmt_div(ph) if ph is not None else "-", s.note))
+
+    def tracker_remove_sessions(self, rows):
+        """2.4.0: Delete removes the selected past sessions (Ctrl+Z puts them back)."""
+        items = self.tk_sessions.items
+        idx = sorted({int(r) for r in rows if str(r).isdigit() and int(r) < len(items)}, reverse=True)
+        gone = [(i, items[i]) for i in idx if items[i] is not self.tk_session]
+        if not gone:
+            return
+        for i, _s in gone:
+            del items[i]
+        self.tk_sessions.save()
+        label = f"{len(gone)} session{'s' if len(gone) != 1 else ''}"
+
+        def restore():
+            for i, s_ in sorted(gone, key=lambda g: g[0]):
+                items.insert(min(i, len(items)), s_)
+            self.tk_sessions.save()
+            self.tracker_fill_history()
+        self.push_undo("tracker", label, restore)
+        self._say(f"Removed {label}. Ctrl+Z (or Undo) puts them back.", 8)
+        self.tracker_fill_history()
 
     def tracker_edit_note(self, e):
         iid = self.tk_hist.identify_row(e.y)
@@ -654,7 +736,8 @@ class TrackerPage:
         texts = {"session": n.get("time", "0:00") if live else "not tracking",
                  "map": f"Map  {n.get('map', '-')}" + (f"   {n.get('where', '')}" if live and n.get("where") not in ("-", None) else ""),
                  "maps": f"Maps  {n.get('maps', '0')}", "avg": f"Avg  {n.get('avg', '-')}",
-                 "profit": "Profit  " + (n.get("profit", "-") if s is not None else "-"),
+                 "profit": "Profit  " + (n["profit"] if s is not None and n.get("profit", "")[:1] in "+-"
+                                         else "at stop" if s is not None and s.start_value is not None else "-"),
                  }
         for k, lab in self.tk_ov_lbls.items():
             lab.config(text=texts.get(k, ""))

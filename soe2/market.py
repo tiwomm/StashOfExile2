@@ -12,6 +12,13 @@ from .rates import RATES
 from .mods import HIGH_LIFT, impact_of, LEARNED, MIN_WITH, MIN_WITHOUT, rebuild_community, sid_for_line, SIDTEXT, TEXT2SID, vfilter
 
 
+def _num_txt(x):
+    try:
+        return f"{float(x):g}"
+    except (TypeError, ValueError):
+        return str(x)
+
+
 class Market:
     """Everything the app has seen, kept in market.db: each search (which mods, how many listings, cheapest, estimate)
     and each listing (its mods, rolls and asking price). Every row is tagged with its league, so a new league starts
@@ -39,7 +46,9 @@ class Market:
                     "CREATE TABLE IF NOT EXISTS listed(sig TEXT PRIMARY KEY, ts REAL, league TEXT, base TEXT, name TEXT,"
                     " sids TEXT, vals TEXT, est_div REAL, listed_div REAL);"
                     "CREATE TABLE IF NOT EXISTS legacy(sid TEXT PRIMARY KEY, lift REAL, n INT, league TEXT, text TEXT);")
-                for table, col, kind in (("obs", "league", "TEXT"), ("listings", "league", "TEXT"), ("listings", "vals", "TEXT")):
+                for table, col, kind in (("obs", "league", "TEXT"), ("listings", "league", "TEXT"), ("listings", "vals", "TEXT"),
+                                         ("listings", "name", "TEXT"), ("listings", "lines", "TEXT"),       # 2.4.0
+                                         ("listings", "price_txt", "TEXT"), ("listings", "qid", "TEXT")):
                     if col not in [r[1] for r in self.db.execute(f"PRAGMA table_info({table})")]:
                         self.db.execute(f"ALTER TABLE {table} ADD COLUMN {col} {kind}")
                 lg = SETTINGS.get("market_league") or SETTINGS.get("league")
@@ -116,9 +125,11 @@ class Market:
                         if not sids:
                             self.last_error = ("a listing's mods did not match the trade site's mod list "
                                                f"(known mod texts: {len(TEXT2SID)}) - if that is 0 the mod list failed to download")
-                        self.db.execute("INSERT OR REPLACE INTO listings(id, base, seen, indexed, price_div, sids, league, vals)"
-                                        " VALUES (?,?,?,?,?,?,?,?)",
-                                        (r["id"], base, now, r["ts"], d, json.dumps(sorted(sids)), league, json.dumps(vals)))
+                        self.db.execute("INSERT OR REPLACE INTO listings(id, base, seen, indexed, price_div, sids, league, vals,"
+                                        " name, lines, price_txt, qid) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
+                                        (r["id"], base, now, r["ts"], d, json.dumps(sorted(sids)), league, json.dumps(vals),
+                                         r.get("name") or "", json.dumps(r.get("text") or []),
+                                         f"{_num_txt(r['price'][0])} {r['price'][1]}", r.get("qid") or ""))
                 self.db.commit()
             self.write_log()
             self.since_learn += 1
@@ -245,22 +256,33 @@ class Market:
         out = [(b, sid, len(a["p"]), min(a["p"]), statistics.median(a["p"]), max(a["p"]), a["last"]) for (b, sid), a in agg.items()]
         return sorted(out, key=lambda r: -r[5])[:limit]
 
-    def top_listings(self, limit=2000):
-        """[(base, seen, price in divines, [stat ids])] of this league's stored listings, dearest first (2.1.0)."""
+    def top_listings(self, limit=2000, detail=False):
+        """[(base, seen, price in divines, [stat ids])] of this league's stored listings, dearest first (2.1.0).
+        detail (2.4.0): dicts with name, the listing's mod lines, its own price and the search it came from too."""
         if not self.db:
             return []
         try:
             with self.lock:
-                rows = self.db.execute("SELECT base, seen, price_div, sids FROM listings WHERE league=? AND price_div IS "
-                                       "NOT NULL ORDER BY price_div DESC LIMIT ?", (self.cur(), limit)).fetchall()
+                rows = self.db.execute("SELECT base, seen, price_div, sids, vals, name, lines, price_txt, qid FROM listings "
+                                       "WHERE league=? AND price_div IS NOT NULL ORDER BY price_div DESC LIMIT ?",
+                                       (self.cur(), limit)).fetchall()
         except Exception:
             return []
         out = []
-        for base, seen, price, sids in rows:
+        for base, seen, price, sids, vals, name, lines, ptxt, qid in rows:
             try:
-                out.append((base, seen, price, json.loads(sids or "[]")))
+                sids = json.loads(sids or "[]")
             except Exception:
-                out.append((base, seen, price, []))
+                sids = []
+            if not detail:
+                out.append((base, seen, price, sids))
+                continue
+            try:
+                lines, vals = json.loads(lines or "[]"), json.loads(vals or "{}")
+            except Exception:
+                lines, vals = [], {}
+            out.append({"base": base, "seen": seen, "div": price, "sids": sids, "vals": vals, "name": name or "",
+                        "lines": lines, "price": ptxt or "", "qid": qid or ""})
         return out
 
     def exact(self, base, filt, hours):
