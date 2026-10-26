@@ -241,13 +241,22 @@ def _flt(m, with_roll=True):
 
 
 def estimate(prices, league):
-    """Median of the cheapest 5 listings, in divines (None if currencies can't be converted)."""
+    """Median of the cheapest 5 listings, in divines (None if currencies can't be converted).
+    2.3.0: listings far from the rest (under a fifth or over five times their median) are left out first - one
+    1-chaos price-fixer or one 500-divine "offers" listing no longer moves the price. Two listings far apart: the
+    cheaper one (it's what yours competes with)."""
     conv = []
     for amt, cur in prices[:5]:
         d = RATES.to_div(amt, cur, league)
         if d is not None:
             conv.append(d)
-    return statistics.median(conv) if conv else None
+    if not conv:
+        return None
+    if len(conv) == 2 and max(conv) > 5 * min(conv):
+        return min(conv)
+    med = statistics.median(conv)
+    kept = [d for d in conv if med / 5 <= d <= med * 5] or conv
+    return statistics.median(kept)
 
 
 def unconvertible(prices, league):

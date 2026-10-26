@@ -724,6 +724,8 @@ class Shell:
                 mod.on_show()
             except Exception:
                 pass
+        if key == "wealth" and hasattr(self.app, "wealth_first_open"):      # 2.3.0: the setup guide, once
+            self.app.root.after(400, self.app.wealth_first_open)
         self.close_menu()
         if save:
             self.save_layout()

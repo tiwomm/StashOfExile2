@@ -372,7 +372,7 @@ class WealthStore:
         h = self.holdings.get(name.strip())
         return h["qty"] if h else 0
 
-    def snapshot(self, league, prices):
+    def snapshot(self, league, prices, why=""):
         rows, total, priced = wealth_rows(self.all_items(), prices, self.overrides)
         if not rows:
             return None
@@ -384,7 +384,7 @@ class WealthStore:
             cat = (it["cat"] or "other").split(".")[0]
             by_cat[cat] = by_cat.get(cat, 0) + tot
         snap = {"ts": time.time(), "league": league, "total": total, "by_tab": by_tab, "by_cat": by_cat,
-                "n": len(rows), "priced": priced}
+                "n": len(rows), "priced": priced, "why": why}     # why (2.3.0): counted / synced / prices / ...
         with self.lock:
             if self.snapshots and snap["ts"] - self.snapshots[-1]["ts"] < 300 and self.snapshots[-1].get("league") == league:
                 self.snapshots[-1] = snap           # a price update right after a sync: replace, don't add a twin
@@ -737,7 +737,7 @@ class WealthJobs:
             WPRICES.ensure(s["league"])
         except Exception as e:
             WPRICES.errors = [str(e)[:120]]
-        WEALTH.snapshot(s["league"], WPRICES)
+        WEALTH.snapshot(s["league"], WPRICES, "synced")
         n = sum(len(t["items"]) for t in s["tabs"].values() if not t["error"])
         failed = len(s["tabs"]) - good
         queued = self.wealth_queue_rares(s["league"])
@@ -794,7 +794,7 @@ class WealthJobs:
         if gen != WEALTH_RARES["gen"]:
             return
         WEALTH.save()
-        WEALTH.snapshot(SETTINGS.get("league"), WPRICES)
+        WEALTH.snapshot(SETTINGS.get("league"), WPRICES, "rares priced")
         R = WEALTH_RARES
         R["running"] = False
         R["msg"] = (f"Price-checked {R['done']} magic / rare item{'s' if R['done'] != 1 else ''}: "
