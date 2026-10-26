@@ -56,5 +56,6 @@ def load(app):
     from .search import Search
     from .settings import Settings
     from .calc import Calculator
+    from .insights import Insights
     return [cls(app) for cls in (PriceChecks, Wealth, ModBook, Library, Regex, Search, Tracker, Chat, Notes, Delirium,
-                                 Rates, Calculator, Settings)]
+                                 Rates, Calculator, Insights, Settings)]

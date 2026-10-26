@@ -106,9 +106,6 @@ class CalcPage:
         top.pack(fill="x")
         tk.Label(top, text="HISTORY (click one to use it again)", bg=P2, fg=C["steel"], font=("Segoe UI", 8, "bold"),
                  padx=8, pady=4).pack(side="left")
-        import sys
-        if sys.platform == "win32":
-            ttk.Button(top, text="Windows calculator", command=self.calc_windows).pack(side="right", padx=4, pady=2)
         self.calc_hist = tk.Listbox(hist, bg=P2, fg=C["text"], relief="flat", highlightthickness=0, height=5,
                                     font=(MONO, 10), selectbackground="#2c4a84", activestyle="none")
         self.calc_hist.pack(fill="both", expand=True, padx=4, pady=(0, 4))
@@ -147,9 +144,3 @@ class CalcPage:
             self.calc_entry.icursor("end")
             self.calc_entry.focus_set()
 
-    def calc_windows(self):
-        try:
-            import subprocess
-            subprocess.Popen(["calc.exe"])
-        except Exception as e:
-            self.calc_msg.config(text=f"Couldn't start the Windows calculator ({e}).", fg=C["red"])

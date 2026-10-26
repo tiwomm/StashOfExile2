@@ -187,6 +187,37 @@ class Sessions:
         save_json(FILE, {"sessions": [s.to_json() for s in self.items[-500:]]})
 
 
+MIN_RUN_SECS = 30          # shorter visits (walked in and straight out again) don't count as runs
+
+
+def map_stats(sessions, current=None, now=None, min_secs=MIN_RUN_SECS):
+    """Every map you ran, over all sessions (2.1.0): {map name: {"runs", "best", "avg", "median", "total", "deaths",
+    "last", "levels", "list": [run, ...] fastest first}} - a run is {"time", "when", "level", "deaths"}.
+    The time is the time spent inside the map (time in your hideout in between isn't counted)."""
+    import statistics
+    out = {}
+    pool = list(sessions)
+    if current is not None and current not in pool:
+        pool.append(current)
+    for s in pool:
+        live = s.where.get("map") if (s.ended is None and s.where) else None
+        for i, m in enumerate(s.maps):
+            t = s.current_map_time(now) if live == i else m["time"]
+            if t is None or t < min_secs:
+                continue
+            d = out.setdefault(m["name"], {"list": []})
+            d["list"].append({"time": t, "when": m.get("first") or s.started, "level": m.get("level"),
+                              "deaths": m.get("deaths", 0), "live": live == i})
+    for name, d in out.items():
+        times = [r["time"] for r in d["list"]]
+        d["list"].sort(key=lambda r: r["time"])
+        d.update(runs=len(times), best=min(times), avg=sum(times) / len(times), median=statistics.median(times),
+                 total=sum(times), deaths=sum(r["deaths"] for r in d["list"]),
+                 last=max(r["when"] for r in d["list"]),
+                 levels=sorted({r["level"] for r in d["list"] if r["level"]}))
+    return out
+
+
 def value_at(items, prices, overrides, wealth_key, value_fn=None):
     """What a list of Wealth items is worth at today's prices (used for both ends of a session, so a price change
     in between doesn't count as profit)."""

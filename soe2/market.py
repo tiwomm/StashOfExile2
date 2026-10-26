@@ -245,6 +245,24 @@ class Market:
         out = [(b, sid, len(a["p"]), min(a["p"]), statistics.median(a["p"]), max(a["p"]), a["last"]) for (b, sid), a in agg.items()]
         return sorted(out, key=lambda r: -r[5])[:limit]
 
+    def top_listings(self, limit=2000):
+        """[(base, seen, price in divines, [stat ids])] of this league's stored listings, dearest first (2.1.0)."""
+        if not self.db:
+            return []
+        try:
+            with self.lock:
+                rows = self.db.execute("SELECT base, seen, price_div, sids FROM listings WHERE league=? AND price_div IS "
+                                       "NOT NULL ORDER BY price_div DESC LIMIT ?", (self.cur(), limit)).fetchall()
+        except Exception:
+            return []
+        out = []
+        for base, seen, price, sids in rows:
+            try:
+                out.append((base, seen, price, json.loads(sids or "[]")))
+            except Exception:
+                out.append((base, seen, price, []))
+        return out
+
     def exact(self, base, filt, hours):
         if not self.db:
             return []

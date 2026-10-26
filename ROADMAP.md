@@ -1,6 +1,6 @@
 # StashOfExile2 roadmap
 
-Where things stand at **2.0.0**, and what comes next. Main features are stable. Labs features are experimental: they're marked BETA and only show when Settings > General > Labs is on.
+Where things stand at **2.1.0**, and what comes next. Main features are stable. Labs features are experimental: they're marked BETA and only show when Settings > General > Labs is on.
 
 ## Done in the 2.0 betas
 
@@ -20,6 +20,7 @@ Where things stand at **2.0.0**, and what comes next. Main features are stable. 
 - **Tools:** Exchange rates, Calculator, Under the hood (how an item is read).
 - **Labs:** Wealth, the Session tracker and Game search.
 - **Look:** themes, accent colours and text size for the whole app, plus a start-up screen.
+- **2.1:** Map stats with per-map leaderboards in the Session tracker, and Top value (Labs) for your most valuable tablets, waystones and jewels.
 - **Licensing and polish:**
   - all game data comes from RePoE;
   - the icons are original;

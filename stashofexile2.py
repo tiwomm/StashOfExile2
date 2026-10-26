@@ -1,7 +1,7 @@
 """
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 
-VERSION 2.0   (2.0.0)
+VERSION 2.1   (2.1.0)
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -17,6 +17,17 @@ VERSION 2.0   (2.0.0)
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.1.0
+       (1) Session tracker > Map stats: every map you ran, over all sessions (tracker.map_stats): runs, best,
+           average, deaths, last run; pick a map for its leaderboard (your 10 fastest runs, the running map in green).
+           Time = time inside the map; visits under 30 s don't count. Sortable columns; most-run first.
+       (2) Top value (Labs tool, insights_page.py): per kind (Tablets, Waystones, Jewels, Relics) your most valuable
+           priced items (double-click opens it in Price checks), the mods worth the most (Mod book data: median ask
+           of listings with the mod, ★ = High in your rules) and the dearest listings seen (market.db, this league;
+           Market.top_listings). Nothing is searched for it.
+       (3) Clock: 12-hour or 24-hour only; until you pick, it follows Windows (12-hour if it can't tell).
+       (4) Calculator: no Windows calculator button.
+       (5) What's new / intro rewritten in plain words: only what helps you use the app.
   2.0.0  (the end of the 2.0 betas)
        (1) Updates never go backwards: version tags are read the same however they are written ("v2.0b17",
            "2.0 beta 17", "2.0.0-beta.17"); the old reader took "2.0b17" for 2.0.17 and offered beta 17 to beta 22.
@@ -580,7 +591,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.0.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.1.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 

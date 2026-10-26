@@ -86,7 +86,8 @@ class TrackerPage:
             nums.columnconfigure(c, weight=1, uniform="n")
 
         # ---- this session's maps / past sessions
-        self.tk_view = SegBar(body, ["This session's maps", "Past sessions", "Options"], command=lambda v: self.tracker_view(),
+        self.tk_view = SegBar(body, ["This session's maps", "Map stats", "Past sessions", "Options"],
+                              command=lambda v: self.tracker_view(),
                               size=9, pad=(12, 4))
         self.tk_view.pack(anchor="w", padx=10, pady=(4, 6))
         self.tk_pages = {}
@@ -113,6 +114,7 @@ class TrackerPage:
         tk.Label(ph, text="Double-click a session to write a note (e.g. 'T15 Breach + Delirium').", bg=P1, fg=C["muted"],
                  font=("Segoe UI", 8), anchor="w").pack(fill="x")
         self.tk_pages["Past sessions"] = ph
+        self.tk_pages["Map stats"] = self._tracker_stats_page(body)
         po = tk.Frame(body, bg=P1)
         self._tracker_options(po)
         self.tk_pages["Options"] = po
@@ -123,6 +125,102 @@ class TrackerPage:
         self.tracker_fill_history()
         self.root.after(1000, self.tracker_tick)
         # (the timer shows while a session runs - beta 10; Show timer brings it up any time)
+
+    # ---------------- 2.1.0: statistics for every map you ran, with a leaderboard of your fastest runs
+    def _tracker_stats_page(self, body):
+        P1, P2 = C["panel"], C["panel2"]
+        page = tk.Frame(body, bg=P1)
+        self.tk_stats_sum = tk.Label(page, text="", bg=P1, fg=C["text"], anchor="w", justify="left",
+                                     font=("Segoe UI", 9, "bold"))
+        self.tk_stats_sum.pack(fill="x", pady=(0, 4))
+        split = tk.Frame(page, bg=P1)
+        split.pack(fill="both", expand=True)
+        split.columnconfigure(0, weight=3, uniform="s")
+        split.columnconfigure(1, weight=2, uniform="s")
+        split.rowconfigure(0, weight=1)
+        left = tk.Frame(split, bg=P1)
+        left.grid(row=0, column=0, sticky="nsew", padx=(0, 6))
+        cols = (("map", "Map", 170, "w"), ("runs", "Runs", 50, "e"), ("best", "Best", 65, "e"),
+                ("avg", "Average", 70, "e"), ("deaths", "Deaths", 55, "e"), ("last", "Last run", 90, "w"))
+        tv = ttk.Treeview(left, columns=[c[0] for c in cols], show="headings", height=6, selectmode="browse")
+        for cid, title, w, a in cols:
+            tv.heading(cid, text=title, command=lambda c=cid: self.tracker_stats_sort(c))
+            tv.column(cid, width=w, anchor=a, stretch=(cid == "map"))
+        sb = ttk.Scrollbar(left, orient="vertical", command=tv.yview)
+        tv.configure(yscrollcommand=sb.set)
+        sb.pack(side="right", fill="y")
+        tv.pack(fill="both", expand=True)
+        tv.bind("<<TreeviewSelect>>", lambda e: self.tracker_board())
+        self.tk_stats = tv
+        right = tk.Frame(split, bg=P2, highlightthickness=1, highlightbackground=C["line"], padx=10, pady=8)
+        right.grid(row=0, column=1, sticky="nsew")
+        self.tk_board_title = tk.Label(right, text="Leaderboard", bg=P2, fg=C["accent"], anchor="w",
+                                       font=("Segoe UI", 10, "bold"))
+        self.tk_board_title.pack(fill="x")
+        bcols = (("rank", "#", 30, "e"), ("time", "Time", 70, "e"), ("when", "When", 110, "w"), ("lvl", "Level", 50, "e"),
+                 ("deaths", "Deaths", 55, "e"))
+        bv = ttk.Treeview(right, columns=[c[0] for c in bcols], show="headings", height=6, selectmode="none")
+        for cid, title, w, a in bcols:
+            bv.heading(cid, text=title)
+            bv.column(cid, width=w, anchor=a, stretch=(cid == "when"))
+        bv.tag_configure("gold", foreground="#ffd25a")
+        bv.tag_configure("live", foreground=C["green"])
+        bv.pack(fill="both", expand=True, pady=(4, 0))
+        self.tk_board = bv
+        tk.Label(right, text="Your fastest runs of the map you pick on the left. Time = time inside the map (hideout "
+                             "visits in between don't count); visits under 30 seconds aren't counted.",
+                 bg=P2, fg=C["muted"], font=("Segoe UI", 8), anchor="w", justify="left", wraplength=320).pack(fill="x", pady=(4, 0))
+        self.tk_stats_sort_col, self.tk_stats_rev = "runs", True
+        return page
+
+    def tracker_stats_sort(self, col):
+        self.tk_stats_rev = (not self.tk_stats_rev) if self.tk_stats_sort_col == col else (col != "map")
+        self.tk_stats_sort_col = col
+        self.tracker_fill_stats()
+
+    def tracker_fill_stats(self):
+        from .tracker import map_stats
+        st = map_stats(self.tk_sessions.items, self.tk_session)
+        self.tk_stats_data = st
+        tv = self.tk_stats
+        keep = tv.selection()
+        tv.delete(*tv.get_children())
+        key = {"map": lambda kv: kv[0].lower(), "runs": lambda kv: kv[1]["runs"], "best": lambda kv: kv[1]["best"],
+               "avg": lambda kv: kv[1]["avg"], "deaths": lambda kv: kv[1]["deaths"],
+               "last": lambda kv: kv[1]["last"]}[self.tk_stats_sort_col]
+        for name, d in sorted(st.items(), key=key, reverse=self.tk_stats_rev):
+            tv.insert("", "end", iid=name, values=(name, d["runs"], fmt_time(d["best"]), fmt_time(d["avg"]), d["deaths"],
+                                                   datetime.fromtimestamp(d["last"]).strftime("%b %d")))
+        runs = sum(d["runs"] for d in st.values())
+        if st:
+            most = max(st.items(), key=lambda kv: kv[1]["runs"])
+            fast = min(st.items(), key=lambda kv: kv[1]["best"])
+            self.tk_stats_sum.config(text=f"{runs:,} map runs · {len(st)} different maps · most run: {most[0]} "
+                                          f"({most[1]['runs']}) · fastest: {fast[0]} in {fmt_time(fast[1]['best'])}")
+        else:
+            self.tk_stats_sum.config(text="No maps yet: start a session and run some maps - they show up here, with "
+                                          "your best times.")
+        if keep and tv.exists(keep[0]):
+            tv.selection_set(keep[0])
+        elif tv.get_children():
+            tv.selection_set(tv.get_children()[0])
+        self.tracker_board()
+
+    def tracker_board(self):
+        bv = self.tk_board
+        bv.delete(*bv.get_children())
+        sel = self.tk_stats.selection()
+        d = getattr(self, "tk_stats_data", {}).get(sel[0]) if sel else None
+        if not d:
+            self.tk_board_title.config(text="Leaderboard")
+            return
+        self.tk_board_title.config(text=f"🏆 {sel[0]}: your fastest runs")
+        for i, r in enumerate(d["list"][:10]):
+            tags = ("live",) if r.get("live") else (("gold",) if i == 0 else ())
+            bv.insert("", "end", values=(i + 1, fmt_time(r["time"]),
+                                         "now (running)" if r.get("live") else
+                                         datetime.fromtimestamp(r["when"]).strftime("%b %d %H:%M"),
+                                         r["level"] or "-", r["deaths"]), tags=tags)
 
     def _tracker_options(self, po):
         cfg, P2 = self.tracker_cfg(), C["panel2"]
@@ -161,6 +259,8 @@ class TrackerPage:
                         variable=self.tk_ask, command=self.tracker_options_changed).pack(anchor="w", pady=(8, 0))
 
     def tracker_view(self):
+        if self.tk_view.get() == "Map stats":
+            self.tracker_fill_stats()
         for name, f in self.tk_pages.items():
             if name == self.tk_view.get():
                 f.pack(fill="both", expand=True, padx=10, pady=(0, 6))
