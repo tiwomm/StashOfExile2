@@ -32,7 +32,7 @@ from .rates import RATES
 from .mods import (
     auto_impact, COMMUNITY, COMMUNITY_ACTIVE, COMMUNITY_DISAGREE, default_impact, impact_key, IMPACT_LABEL,
     IMPACTS, JEWEL_KINDS, JEWELS, LEARNED, learned_info, mod_cat, norm, parse_item, pretty, rebuild_community,
-    RULES, SHARE_MAX_HIGH, SIDTEXT, TAB_KINDS, TABS, TEXT2SID, vfilter,
+    RULES, SHARE_MAX_HIGH, SIDTEXT, TAB_KINDS, TABS, TEXT2SID, vfilter, rule_key, SCOPED_CATS, migrate_scoped_rules,
 )
 from .mods import DUPS, find_stat, current_key
 from .trade import ago, mod_impact
@@ -117,6 +117,7 @@ class App(ListKeys, SearchOptsPage, ExchangePage, WealthSetup, WealthPage, Libra
         self._err_seen = {}
         self.dirty, self.last_save = False, 0.0
         self.rt = {}                                # per rules page ("tablet" / "jewel"): its widgets and row -> mod key
+        self.migrate_rules_once()
         self.keys = KeyWatch()                       # made before the windows (the utility windows ask about it); started below
         self.build()
         self.engine.start()
@@ -656,9 +657,13 @@ class App(ListKeys, SearchOptsPage, ExchangePage, WealthSetup, WealthPage, Libra
         memory_tab = tk.Frame(self.mb_nb, bg=C["panel"])
         rules_tab = tk.Frame(self.mb_nb, bg=C["panel"])
         jrules_tab = tk.Frame(self.mb_nb, bg=C["panel"])
+        wrules_tab = tk.Frame(self.mb_nb, bg=C["panel"])                # 2.6.0
+        rrules_tab = tk.Frame(self.mb_nb, bg=C["panel"])
         self.mb_nb.add(memory_tab, text="What the app learned")
-        self.mb_nb.add(rules_tab, text="Tablet mod rules")
-        self.mb_nb.add(jrules_tab, text="Jewel mod rules")
+        self.mb_nb.add(rules_tab, text="Tablet rules")
+        self.mb_nb.add(jrules_tab, text="Jewel rules")
+        self.mb_nb.add(wrules_tab, text="Waystone rules")
+        self.mb_nb.add(rrules_tab, text="Relic rules")
         self.mb_nb.bind("<<NotebookTabChanged>>", lambda e: (self.refresh_rules(), self.refresh_memory()))
         mbar = tk.Frame(memory_tab, bg=C["panel"], padx=10, pady=10)
         mbar.pack(fill="x")
@@ -681,6 +686,8 @@ class App(ListKeys, SearchOptsPage, ExchangePage, WealthSetup, WealthPage, Libra
         self.mem_empty = tk.Label(memory_tab, bg=C["panel"], fg=C["muted"], font=("Segoe UI", 11), justify="center", wraplength=640)
         self.build_rules_page(rules_tab, "tablet")
         self.build_rules_page(jrules_tab, "jewel")
+        self.build_rules_page(wrules_tab, "waystone")
+        self.build_rules_page(rrules_tab, "relic")
 
     # ---------------- the Settings window (League and Pace moved here from the old header bars)
     def build_settings(self, body):
@@ -2449,12 +2456,21 @@ class App(ListKeys, SearchOptsPage, ExchangePage, WealthSetup, WealthPage, Libra
         rbar.pack(fill="x")
         tk.Label(rbar, text="Filter", bg=C["panel"], fg=C["muted"]).pack(side="left", padx=(0, 6))
         ttk.Entry(rbar, textvariable=ns.filt, width=18).pack(side="left")
-        ttk.Button(rbar, text="Export rules", command=self.export_rules).pack(side="left", padx=(14, 0))
-        ttk.Button(rbar, text="Import rules", command=self.import_rules).pack(side="left", padx=(6, 0))
-        ttk.Button(rbar, text="Remove imported", command=self.clear_imported_rules).pack(side="left", padx=(6, 0))
+        if cat not in SCOPED_CATS:                       # sharing goes with what's learned from prices: tablets, jewels
+            ttk.Button(rbar, text="Export rules", command=self.export_rules).pack(side="left", padx=(14, 0))
+            ttk.Button(rbar, text="Import rules", command=self.import_rules).pack(side="left", padx=(6, 0))
+            ttk.Button(rbar, text="Remove imported", command=self.clear_imported_rules).pack(side="left", padx=(6, 0))
         for imp in ("ignore", "normal", "high"):
             ttk.Button(rbar, text=IMPACT_LABEL[imp], command=lambda i=imp: self.rules_selected(i)).pack(side="right", padx=(6, 0))
         tk.Label(rbar, text="Set selected to:", bg=C["panel"], fg=C["muted"]).pack(side="right", padx=8)
+        if cat in SCOPED_CATS:                           # 2.6.0: what these rules are for
+            tk.Label(tab, text={"waystone": "Waystones are priced on their numbers (pack size, rarity ...), not their "
+                                            "mods. Rate the mods you want or don't want, and Regex uses it: ★ on the "
+                                            "mod, and ★ Select valuable.",
+                                "relic": "Rate the relic mods you're after. Regex marks them ★ and ★ Select valuable "
+                                         "picks them; Top value lists them."}[cat],
+                     bg=C["panel"], fg=C["muted"], anchor="w", justify="left", wraplength=760, padx=12,
+                     font=("Segoe UI", 9)).pack(fill="x")
         ns.info = tk.Label(tab, bg=C["panel"], fg=C["muted"], anchor="w", padx=12)
         ns.info.pack(fill="x")
         ns.tv = ttk.Treeview(tab, columns=("impact", "learned", "type", "mod", "on"), show="headings", selectmode="extended")
@@ -2469,21 +2485,76 @@ class App(ListKeys, SearchOptsPage, ExchangePage, WealthSetup, WealthPage, Libra
         ns.tv.tag_configure("high", foreground=C["good"])
         ns.tv.tag_configure("ignore", foreground=C["muted"])
         ns.tv.bind("<Double-1>", lambda e, c=cat: self.cycle_rule(e, c))
+        if cat in SCOPED_CATS:
+            ns.tv.heading("on", text="Tiers" if cat == "waystone" else "Relic sizes")
+            ns.tv["displaycolumns"] = ("impact", "type", "mod", "on")         # nothing is learned for these
         self.list_register("modbook", ns.tv)                                      # 2.4.0: Ctrl+A, Shift / Ctrl+click
 
-    def rules_cat(self):
-        """Which rules page is showing: 'jewel' or 'tablet'."""
+    def migrate_rules_once(self):
+        """2.6.0, once: waystone / relic rules set from Regex move to their own names (mods.migrate_scoped_rules)."""
+        if SETTINGS.get("rules_scoped_26"):
+            return
         try:
-            return "jewel" if self.mb_nb.index(self.mb_nb.select()) == 2 else "tablet"
+            from . import regex as R
+
+            def lines(kind):
+                return [l for m in R.mods(kind) for l in (m.get("lines") or [m["line"]])]
+            if migrate_scoped_rules(lines("waystone"), lines("relic")):
+                save_json("mod_rules.json", RULES)
+            SETTINGS["rules_scoped_26"] = True
+            save_json("settings.json", SETTINGS)
+        except Exception:
+            self.log_error("moving waystone / relic rules")
+
+    def rules_cat(self):
+        """Which rules page is showing: 'tablet', 'jewel', 'waystone' or 'relic'."""
+        try:
+            return {2: "jewel", 3: "waystone", 4: "relic"}.get(self.mb_nb.index(self.mb_nb.select()), "tablet")
         except Exception:
             return "tablet"
 
     def refresh_rules(self, cat=None):
-        for c in ((cat,) if cat else ("tablet", "jewel")):
+        for c in ((cat,) if cat else ("tablet", "jewel", "waystone", "relic")):
             if c in self.rt:
                 self._refresh_rules(c)
 
+    def _refresh_scoped_rules(self, cat):
+        """2.6.0: the Waystone / Relic rules page - every mod from the game data (regexdata.json, RePoE), one row per
+        mod (a two-line mod is one row, and its rule covers both lines)."""
+        from . import regex as R
+        ns = self.rt[cat]
+        q = ns.filt.get().lower().strip()
+        keep = {tuple(ns.keys.get(i) or ()) for i in ns.tv.selection()}
+        ns.tv.delete(*ns.tv.get_children())
+        ns.keys = {}
+        order = {"high": 0, "normal": 1, "ignore": 2}
+        every = {t for m in R.mods(cat) for t in m.get("tags") or []} - {"Any"}
+        rows = []
+        for m in R.mods(cat):
+            lines = m.get("lines") or [m["line"]]
+            keys = [rule_key(cat, norm(l)) for l in lines]
+            text = " / ".join(l[:1].upper() + l[1:] for l in lines)
+            if q and q not in text.lower():
+                continue
+            imp = max((impact_key(k) for k in keys), key=lambda i: -order[i])
+            tags = set(m.get("tags") or [])
+            on = ("All" if not tags or "Any" in tags or tags >= every else
+                  ", ".join(sorted(tags, key=lambda t: (len(t), t))))
+            rows.append((order[imp], text.lower(), keys, text, imp, (m.get("side") or "").title(), on))
+        for n, (_o, _t, keys, text, imp, side, on) in enumerate(sorted(rows)):
+            iid = f"r{n}"
+            ns.keys[iid] = keys
+            ns.tv.insert("", "end", iid=iid, values=(IMPACT_LABEL[imp], "", side, text, on),
+                         tags=(imp,) if imp != "normal" else ())
+            if tuple(keys) in keep:
+                ns.tv.selection_add(iid)
+        counts = {i: sum(1 for r in rows if r[4] == i) for i in IMPACTS}
+        ns.info.config(text=f"{counts['high']} high  ·  {counts['normal']} normal  ·  {counts['ignore']} ignored"
+                            + ("" if rows or q else "   (regexdata.json not found)"))
+
     def _refresh_rules(self, cat):
+        if cat in SCOPED_CATS:
+            return self._refresh_scoped_rules(cat)
         ns = self.rt[cat]
         src, kind_src = (TABS, TAB_KINDS) if cat == "tablet" else (JEWELS, JEWEL_KINDS)
         q = ns.filt.get().lower().strip()
@@ -2675,14 +2746,19 @@ class App(ListKeys, SearchOptsPage, ExchangePage, WealthSetup, WealthPage, Libra
 
     def rules_selected(self, impact):
         ns = self.rt[self.rules_cat()]
-        self.set_rules([ns.keys[i] for i in ns.tv.selection() if i in ns.keys], impact)
+        keys = []
+        for i in ns.tv.selection():                       # (a waystone / relic row can hold several lines)
+            k = ns.keys.get(i)
+            keys += k if isinstance(k, list) else [k] if k else []
+        self.set_rules(keys, impact)
 
     def cycle_rule(self, event, cat="tablet"):
         ns = self.rt[cat]
         iid = ns.tv.identify_row(event.y)
         if iid in ns.keys:
             k = ns.keys[iid]
-            self.set_rules([k], IMPACTS[(IMPACTS.index(impact_key(k)) + 1) % len(IMPACTS)])
+            keys = k if isinstance(k, list) else [k]
+            self.set_rules(keys, IMPACTS[(IMPACTS.index(impact_key(keys[0])) + 1) % len(IMPACTS)])
 
     def set_rules(self, keys, impact):
         """Change what these mods count for, then re-price the not-yet-listed items that have them."""
