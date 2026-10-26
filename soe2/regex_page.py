@@ -351,14 +351,15 @@ class RegexPage:
 
     # ---------------- what the Mod book says about each mod (2.0 beta 20)
     @staticmethod
-    def rx_worth(m):
+    def rx_worth(m, kind="tablet"):
         """-> ("high" / "normal" / "ignore", why) for a regex mod, from the Mod book: your rules first, then what it
-        learned from prices, shared rules and the built-in defaults - the same rule the price checker uses."""
-        from .mods import COMMUNITY_ACTIVE, impact_key, learned_info, norm, RULES
+        learned from prices, shared rules and the built-in defaults - the same rule the price checker uses.
+        2.6.0: waystone and relic mods use their own rules (Mod book > Waystone rules / Relic rules)."""
+        from .mods import COMMUNITY_ACTIVE, impact_key, learned_info, norm, rule_key, RULES
         order = ["ignore", "normal", "high"]
         rated = []
         for line in m.get("lines") or [m["line"]]:
-            k = norm(line)
+            k = rule_key(kind, norm(line))
             li = learned_info(k)
             why = ("your Mod book rule" if k in RULES else "learned from prices" if li and li.get("tier") == "high" else
                    "shared rules" if k in COMMUNITY_ACTIVE else "built-in rule")
@@ -374,7 +375,7 @@ class RegexPage:
         for side, L in self.rx_lists.items():
             for mid, r in L["rows"].items():
                 if mid not in self.rx_worths:
-                    self.rx_worths[mid] = self.rx_worth(r["mod"])
+                    self.rx_worths[mid] = self.rx_worth(r["mod"], self.rx_kind.get())
                 imp, _why = self.rx_worths[mid]
                 r["star"].config(text="★" if imp == "high" else "")
         n = sum(1 for imp, _w in self.rx_worths.values() if imp == "high")
@@ -385,8 +386,9 @@ class RegexPage:
 
     def rx_rate_menu(self, e, m):
         """Right-click a mod: rate it in the Mod book from here (works for waystone and relic mods too)."""
-        from .mods import norm
-        keys = [norm(l) for l in (m.get("lines") or [m["line"]])]
+        from .mods import norm, rule_key
+        kind = self.rx_kind.get()
+        keys = [rule_key(kind, norm(l)) for l in (m.get("lines") or [m["line"]])]
         menu = tk.Menu(self.root, tearoff=0, bg=C["panel2"], fg=C["text"], activebackground="#2c4a84")
         for label, imp in (("★ Valuable (Mod book: High)", "high"), ("Normal", "normal"), ("Not worth anything (Ignore)", "ignore")):
             menu.add_command(label=label, command=lambda i=imp: (self.set_rules(keys, i), self.rx_refresh_values()))

@@ -358,6 +358,21 @@ DEFAULT_IMPACT = [(re.compile(rx), imp) for rx, imp in (
 
 RULES = load_json("mod_rules.json", {})        # your own changes: normalised mod text -> impact
 
+# 2.6.0: waystone and relic rules have their own names ("relic:#% increased movement speed"), so a relic mod never
+# picks up a jewel rule that happens to use the same words. Tablet and jewel rules keep the plain wording.
+SCOPED_CATS = ("waystone", "relic")
+
+
+def rule_key(cat, k):
+    """The name a rule is saved under: the mod text for tablets and jewels, "<cat>:<text>" for waystones and relics."""
+    return f"{cat}:{k}" if cat in SCOPED_CATS else k
+
+
+def scoped(k):
+    """-> the category of a "<cat>:<text>" rule name, or None."""
+    head = k.split(":", 1)[0]
+    return head if head in SCOPED_CATS and ":" in k else None
+
 
 def _load_default_rules():
     """default_rules.json (ships with the app, 2.0): built-in High / Ignore marks, below your own rules."""
@@ -371,10 +386,10 @@ def _load_default_rules():
                 d = json.load(f)
         except Exception:
             continue
-        for cat in ("tablet", "jewel"):
+        for cat in ("tablet", "jewel", "waystone", "relic"):
             for imp in ("high", "normal", "ignore"):
                 for text in (d.get(cat) or {}).get(imp) or []:
-                    out[norm(text)] = imp
+                    out[rule_key(cat, norm(text))] = imp
         break
     return out
 
@@ -443,6 +458,8 @@ def rebuild_community(market=None):
 
 def auto_impact(k):
     """The rule when YOU have set nothing: the built-in default, but a mod the data (or enough sharers) say is valuable becomes High."""
+    if scoped(k):                                  # waystone / relic: only the shipped defaults (nothing is learned)
+        return DEFAULT_RULES.get(k, "normal")
     d = default_impact(k)
     if d == "normal":
         li = learned_info(k)
@@ -458,6 +475,26 @@ def impact_key(k):
 
 def impact_of(text):
     return impact_key(norm(text))
+
+
+def impact_for(cat, text_or_key):
+    """The rule for a mod of this category (waystone and relic rules are their own)."""
+    return impact_key(rule_key(cat, norm(text_or_key)))
+
+
+def migrate_scoped_rules(waystone_lines, relic_lines):
+    """Once (2.6.0): rules set from Regex for waystone / relic mods were saved under the plain wording. Give them their
+    own names. A wording that is also a tablet / jewel mod keeps its plain rule too (it belongs to that mod as well).
+    -> how many were moved."""
+    moved = 0
+    for cat, lines in (("waystone", waystone_lines), ("relic", relic_lines)):
+        for k in {norm(l) for l in lines}:
+            if k in RULES and rule_key(cat, k) not in RULES:
+                RULES[rule_key(cat, k)] = RULES[k]
+                if k not in TABS and k not in JEWELS:
+                    del RULES[k]
+                moved += 1
+    return moved
 
 
 # ---- tabs.txt: every tablet mod, so the Mod rules tab can list them all. From 2.0 beta 12 it is built from RePoE's export
