@@ -1,0 +1,8 @@
+# built by build_exe.bat / PyInstaller
+build/
+dist/
+*.spec
+# kits and caches
+*.zip
+__pycache__/
+*.pyc

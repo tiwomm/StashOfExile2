@@ -1,3 +1,7 @@
+StashOfExile2's own code is licensed under the GNU General Public License v3.0 (see LICENSE). It was written by an AI
+(Claude, by Anthropic) under a human's direction. The third-party parts below keep their own licences.
+
+------------------------------------------------------------------------------
 StashOfExile2 uses data from Exiled Exchange 2 (https://github.com/Kvan7/Exiled-Exchange-2), a fork of
 awakened-poe-trade (https://github.com/SnosMe/awakened-poe-trade): the base types, stat wordings and trade-site stat ids
 in gamedata.json (built by tools/build_gamedata.py), and the pseudo-total rules transcribed from its price checker.

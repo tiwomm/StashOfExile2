@@ -168,7 +168,16 @@ class Engine(WealthJobs, threading.Thread):
         self.price_rec(rec, lambda: self.ui_q.put(("priced", rid)))
 
     def price_rec(self, rec, tell=lambda: None):
-        """Price a record (its mods resolved first). tell() is called whenever its state changes."""
+        """Price a record (its mods resolved first). tell() is called whenever its state changes.
+        2.4.1: the item's own search filters (rec["opts"], set in the item panel) apply to every search for it."""
+        from .trade import use_opts
+        use_opts(rec.get("opts"))
+        try:
+            return self._price_rec(rec, tell)
+        finally:
+            use_opts(None)
+
+    def _price_rec(self, rec, tell):
         item, league = rec["item"], SETTINGS["league"]
         if not league:
             rec.update(state="error", label="pick a league first", total=0, prices=[], est=None, qid=None)
@@ -524,6 +533,7 @@ class Engine(WealthJobs, threading.Thread):
         st["ids"] = [r["id"] for r in rich if r.get("id")]            # so the model's guess can't peek at these listings
         ages = sorted((time.time() - r["ts"]) / 3600 for r in kept)
         st["age_h"] = ages[len(ages) // 2] if ages else None
-        if record:
+        from .trade import current_opts
+        if record and not current_opts():          # 2.4.1: a search narrowed by hand doesn't teach the Mod book
             MARKET.record(base, Market.filters_of(mods), name, total, kept, st["est"])
         return st
