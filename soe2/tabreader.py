@@ -16,7 +16,7 @@ import requests
 
 from .config import BASE, P, SETTINGS
 from .net import call
-from .wealth import item_text, wealth_children, wealth_query
+from .wealth import _txt, item_text, wealth_children, wealth_query
 
 PCTAB = {"gen": 0, "running": False, "cancel": False, "msg": "", "found": 0, "read": 0, "error": "", "warnings": [],
          "qid": None, "skipped": {}, "log": []}
@@ -44,7 +44,7 @@ class TabReaderJobs:
             return "Type the price you put on the tab in game (e.g. 37882) and pick its currency."
         PCTAB["gen"] += 1
         PCTAB.update(running=True, cancel=False, msg="Searching your tab…", found=0, read=0, error="", warnings=[],
-                     qid=None, seen=set(), skipped={}, log=[f"{time.strftime('%Y-%m-%d %H:%M:%S')}  league {league}, "
+                     qid=None, seen=set(), skipped={}, raw_logged=False, log=[f"{time.strftime('%Y-%m-%d %H:%M:%S')}  league {league}, "
                                                           f"tab price {amount} {currency}"],
                      league=league, account=account.strip(),
                      tab={"id": "pctab", "label": "the tab", "amount": amount, "currency": currency})
@@ -100,7 +100,7 @@ class TabReaderJobs:
             owner = str((lst.get("account") or {}).get("name") or "").lower()
             mine = not owner or owner == acc or owner.split("#")[0] == acc.split("#")[0] and ("#" not in owner or
                                                                                          "#" not in acc)
-            name = f"{it.get('name') or ''} {it.get('typeLine') or ''}".strip()
+            name = f"{_txt(it.get('name'))} {_txt(it.get('typeLine'))}".strip()
             why = ("someone else's listing" if not mine else
                    f"priced {p.get('amount')} {p.get('currency')}, not the tab's price"
                    if p.get("amount") != tab["amount"] or p.get("currency") != tab["currency"] else
@@ -115,8 +115,14 @@ class TabReaderJobs:
             try:
                 text = item_text(it)
             except Exception as ex:                     # 2.8.1: one odd listing mustn't stop the rest
+                import json
+                import traceback
                 PCTAB["skipped"]["couldn't be read"] = PCTAB["skipped"].get("couldn't be read", 0) + 1
                 PCTAB["log"].append(f"couldn't turn into item text ({ex!r}): {name}")
+                if not PCTAB.get("raw_logged"):          # 2.8.2: the first one in full, to see what it looks like
+                    PCTAB["raw_logged"] = True
+                    PCTAB["log"].append(traceback.format_exc() + "listing item: " +
+                                        json.dumps(it, ensure_ascii=False)[:6000])
                 continue
             PCTAB["read"] += 1
             self.ui_q.put(("pctab", "item", text))
