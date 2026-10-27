@@ -298,8 +298,36 @@ class DeskWindow(tk.Toplevel):
 
     def _show(self):
         self.deiconify()
+        self.own_by_app()
         self.follow_on_top()
         self.lift()
+
+    def own_by_app(self):
+        """2.7.2: make the app's window this window's OWNER in Windows itself. Windows always keeps an owned window
+        above its owner - whatever is clicked, whatever is "on top". Tk's transient() doesn't do this for borderless
+        windows on Windows, so the app's window could come up over them and hide them. Set again every time the window
+        shows, in case Tk rebuilt it. -> True when it was (already) set."""
+        if sys.platform != "win32":
+            return False
+        try:
+            import ctypes
+            u = ctypes.windll.user32
+            u.GetParent.restype = ctypes.c_void_p
+            u.GetParent.argtypes = [ctypes.c_void_p]
+            u.GetWindow.restype = ctypes.c_void_p
+            u.GetWindow.argtypes = [ctypes.c_void_p, ctypes.c_uint]
+            setp = getattr(u, "SetWindowLongPtrW", None) or u.SetWindowLongW
+            setp.restype = ctypes.c_void_p
+            setp.argtypes = [ctypes.c_void_p, ctypes.c_int, ctypes.c_void_p]
+            me = u.GetParent(self.winfo_id()) or self.winfo_id()
+            app = u.GetParent(self.shell.root.winfo_id()) or self.shell.root.winfo_id()
+            if not me or not app:
+                return False
+            if u.GetWindow(me, 4) != app:                  # GW_OWNER
+                setp(me, -8, app)                           # GWLP_HWNDPARENT: the owner of a top-level window
+            return u.GetWindow(me, 4) == app
+        except Exception:
+            return False
 
     def follow_on_top(self):
         """Always on top (Settings): the app's own windows have to be "topmost" too. On Windows a topmost main window
@@ -477,6 +505,7 @@ class Shell:
         for k in getattr(self, "zorder", []) + [k for k in self.windows if k not in getattr(self, "zorder", [])]:
             w = self.windows.get(k)
             if w is not None and w.state_ == "open":
+                w.own_by_app()
                 w.follow_on_top()
                 w.lift()
         if self.menu is not None:
@@ -758,6 +787,7 @@ class Shell:
         win = self.windows.get(key)
         if not win or win.state_ != "open":
             return
+        win.own_by_app()
         win.follow_on_top()
         win.lift()
         if self.menu is not None:

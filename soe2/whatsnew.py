@@ -21,6 +21,9 @@ NEXT = [
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.7.2": [
+        "Fixed: windows could still slip behind the app's main window and leave only the desktop showing.",
+    ],
     "2.7.1": [
         "Fixed: with Always on top switched on, the app's windows were open but hidden behind its main window.",
     ],
