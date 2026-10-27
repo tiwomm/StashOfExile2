@@ -21,6 +21,9 @@ NEXT = [
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.8.2": [
+        "Fixed: reading a stash tab of Irradiated Tablets added nothing.",
+    ],
     "2.8.1": [
         "Reading a stash tab now says how many items it found, which it left out and why, and what happened to "
         "each one.",

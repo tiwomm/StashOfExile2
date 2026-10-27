@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU GPL v3.0 (see LICENSE). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.8   (2.8.1)
+VERSION 2.8   (2.8.2)
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -18,6 +18,12 @@ VERSION 2.8   (2.8.1)
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.8.2
+       (1) Stash tab reading failed on every item of a real tab of Irradiated Tablets ("expected string or bytes-like
+           object, got 'dict'"): some listings give text fields as objects. wealth._txt reads either form for every
+           text field item_text and wealth_item use (Wealth syncs benefit too). In 2.8.0 the error also stopped each
+           batch of 10 after its first item - why a 70-item tab showed "Read 7, added 0". If a listing still can't be
+           read, tab_reader_log.txt now keeps the first one in full.
   2.8.1
        (1) Stash tab reading explains itself: how many listings were found at the tab's price, what was left out and
            why (another price, someone else's, unique, stack), and per item whether it was added, already in the
@@ -688,7 +694,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.8.1"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.8.2"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
