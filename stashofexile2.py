@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU GPL v3.0 (see LICENSE). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.7   (2.7.1)
+VERSION 2.7   (2.7.2)
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -18,6 +18,12 @@ VERSION 2.7   (2.7.1)
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.7.2
+       (1) Windows could still slip behind the app's window (with or without Always on top) and leave only the
+           desktop showing: Tk's transient() doesn't make the app's window their real owner for borderless windows on
+           Windows. DeskWindow.own_by_app sets the owner in Windows itself (GWLP_HWNDPARENT), so Windows always keeps
+           them above it; it's checked every time a window shows, comes to the front or is restacked, and when the
+           app's window takes the focus (Always on top on or off).
   2.7.1
        (1) Always on top hid every window: only the app's own window was made "topmost", and on Windows a topmost
            window sits above the windows it owns, so they were open but behind it. Now the desktop's windows follow
@@ -667,7 +673,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.7.1"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.7.2"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
