@@ -1,6 +1,6 @@
 # StashOfExile2 roadmap
 
-**Current version: 2.7.0**
+**Current version: 2.8.0**
 
 Releases are numbered 2.x for new features and 2.x.y for fixes. Each step below is one release; we work through them top to bottom.
 
@@ -16,12 +16,13 @@ Releases are numbered 2.x for new features and 2.x.y for fixes. Each step below 
 | 2.5 | Search filters in the item panel (seller, priced in, corrupted, gear item level / quality / sockets / base). Wiki link. |
 | 2.6 | Waystone and relic mod rules in the Mod book (their own ratings, apart from tablet / jewel ones); Regex and Top value use them. |
 | 2.7 | Session tracker: only your own deaths count (checked against a real log), AFK off resumes, maps-per-day chart. |
+| 2.8 | Price checks can read a whole public stash tab (Add items from: Ctrl+Alt+C or Stash tab). |
 
 ## ▶ Next up
 
 | Version | Plan | Why |
 |---|---|---|
-| 2.8 | **Leaving Labs.** Decide what Wealth, the Session tracker, Game search and Top value each need to drop the BETA tag, and do it. | |
+| 2.9 | **Leaving Labs.** Decide what Wealth, the Session tracker, Game search and Top value each need to drop the BETA tag, and do it. | |
 
 ## 💤 Parked (not planned unless something changes)
 

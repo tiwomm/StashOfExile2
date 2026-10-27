@@ -46,6 +46,7 @@ from .winsys import ICON_B64, KeyWatch, Tray
 from .wealth_page import WealthPage
 from .wealth_setup import WealthSetup
 from .listkeys import ListKeys
+from .tabreader_page import TabReaderPage
 from .searchopts_page import SearchOptsPage
 from .valuelog import VALUE_LOG
 from .exchange_page import ExchangePage
@@ -64,7 +65,7 @@ from .shell import Shell
 from .config import PAGE_CHECKS       # 1.40: was "Items"
 
 
-class App(ListKeys, SearchOptsPage, ExchangePage, WealthSetup, WealthPage, LibraryPage, RegexPage, UtilitiesPage, TrackerPage, SearchPage, CalcPage, InsightsPage):
+class App(ListKeys, TabReaderPage, SearchOptsPage, ExchangePage, WealthSetup, WealthPage, LibraryPage, RegexPage, UtilitiesPage, TrackerPage, SearchPage, CalcPage, InsightsPage):
     COLS = [("added", "#", 46, "e"), ("name", "Item", 220, "w"), ("type", "Type", 110, "w"), ("mark", "Status", 90, "center"),
             ("est", "Est. value", 110, "e"), ("conf", "Confidence", 95, "center"), ("listings", "Listings", 70, "e"), ("priced", "Priced at", 130, "w"),
             ("match", "How it was priced", 300, "w")]
@@ -571,6 +572,7 @@ class App(ListKeys, SearchOptsPage, ExchangePage, WealthSetup, WealthPage, Libra
         self.view_var = tk.StringVar(value=SETTINGS["view"])    # its box sits above the list (2.0 beta 3)
         for cb in (sbox, abox):                                  # after picking from a dropdown, hand the keyboard back
             cb.bind("<<ComboboxSelected>>", lambda e: self.root.after(20, self.root.focus_set), add="+")
+        self.build_tab_reader(tb)                                # 2.8.0: Add items from Ctrl+Alt+C | Stash tab
 
         # ---- the key bar, at the bottom of this window (claims its space first)
         kbf = tk.Frame(body, bg=C["panel"])
@@ -629,7 +631,7 @@ class App(ListKeys, SearchOptsPage, ExchangePage, WealthSetup, WealthPage, Libra
         self.tree.bind("<<TreeviewSelect>>", self._on_select_soon)
         self.tree.bind("<Double-1>", lambda e: self.open_trade())
         self.empty_lbl = tk.Label(left, bg=C["panel"], fg=C["muted"], font=("Segoe UI", 12), justify="center",
-                                  text=self.EMPTY_TEXT)
+                                  text=self.empty_text)
         self.empty_lbl.place(relx=0.5, rely=0.45, anchor="center")
 
         pw = int(SETTINGS.get("panel_w", 430) or 430)
@@ -1167,6 +1169,13 @@ class App(ListKeys, SearchOptsPage, ExchangePage, WealthSetup, WealthPage, Libra
     EMPTY_TEXT = ("Hover an item in game and press Ctrl+Alt+C\nIt will show up here and get priced.\n\n"
                   "Made for pricing lots of tablets, jewels and waystones.\n"
                   "Other items get a rough guess - check those yourself.")
+    EMPTY_TEXT_TAB = ("Type your tab's price above and press Read tab:\nevery item on it shows up here and gets priced.\n"
+                      "(Ctrl+Alt+C in game still adds items one at a time.)")
+
+    @property
+    def empty_text(self):
+        """2.8.0: the hint for an empty list follows "Add items from"."""
+        return self.EMPTY_TEXT_TAB if SETTINGS.get("pctab", {}).get("mode") == "Stash tab" else self.EMPTY_TEXT
 
     SCOPE_TEXT = ("Price checks is made for pricing lots of simpler items quickly: tablets, jewels and waystones, where "
                   "a few mods or numbers decide the price. Other items (weapons, armour, rings ...) get a price too, "
@@ -2250,7 +2259,7 @@ class App(ListKeys, SearchOptsPage, ExchangePage, WealthSetup, WealthPage, Libra
             self.empty_lbl.place_forget()
         else:
             self.empty_lbl.config(text=("Nothing in this view." + (" Press Show all to see every item." if self.cat_var.get() != self.ALL_CATS else ""))
-                                  if self.records else self.EMPTY_TEXT)
+                                  if self.records else self.empty_text)
             self.empty_lbl.place(relx=0.5, rely=0.45, anchor="center")
         self.update_total()
 

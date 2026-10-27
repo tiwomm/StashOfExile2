@@ -16,11 +16,17 @@ INTRO = [
 
 # What's being worked on (2.4.0: not shown in the app any more - kept for ROADMAP.md / the developer).
 NEXT = [
-    "2.8: deciding what Wealth, the Session tracker, Game search and Top value need to leave Labs.",
+    "2.9: deciding what Wealth, the Session tracker, Game search and Top value need to leave Labs.",
 ]
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.8.0": [
+        "Price checks can read a whole stash tab: pick Add items from > Stash tab, type the price you put on the tab "
+        "and press Read tab. Every item on it is added and priced - no Ctrl+Alt+C one by one.",
+        "The tab has to be a public Premium tab with one price on the whole tab (like 37882 Divine Orbs). The same "
+        "tab works for Wealth.",
+    ],
     "2.7.2": [
         "Fixed: windows could still slip behind the app's main window and leave only the desktop showing.",
     ],

@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU GPL v3.0 (see LICENSE). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.7   (2.7.2)
+VERSION 2.8   (2.8.0)
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -18,6 +18,14 @@ VERSION 2.7   (2.7.2)
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.8.0
+       (1) Price checks > Add items from: Ctrl+Alt+C | Stash tab (tabreader.py, tabreader_page.py). Stash tab reads a
+           public Premium tab the way Wealth's synced tabs do (your account's listings at one odd price, e.g. 37882
+           Divine Orbs; searches split when there are more than 100), turns each listing into Ctrl+Alt+C text
+           (wealth.item_text) and adds it to the list to be priced. Uniques and stacks are left out; items already
+           in the list are skipped. Only when you press Read tab; jobs run on the engine thread at priority 4 (behind
+           the pricing it creates, ahead of a Wealth sync). Account name shared with Wealth (wealth_account); the
+           tab's price is kept in SETTINGS pctab. Ctrl+Alt+C keeps working in both modes.
   2.7.2
        (1) Windows could still slip behind the app's window (with or without Always on top) and leave only the
            desktop showing: Tk's transient() doesn't make the app's window their real owner for borderless windows on
@@ -673,7 +681,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.7.2"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.8.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
