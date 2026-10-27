@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU GPL v3.0 (see LICENSE). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.7   (2.7.0)
+VERSION 2.7   (2.7.1)
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -18,6 +18,11 @@ VERSION 2.7   (2.7.0)
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.7.1
+       (1) Always on top hid every window: only the app's own window was made "topmost", and on Windows a topmost
+           window sits above the windows it owns, so they were open but behind it. Now the desktop's windows follow
+           the setting (DeskWindow.follow_on_top) and are put back above it in their order (Shell.restack) when it's
+           switched, when a window opens or comes to the front, and when the app's own window takes the focus.
   2.7.0
        (1) Session tracker: only YOUR deaths count. A real PoE 2 log (Oct 2026) logs ": <name> has been slain." for
            party members too, and ": <name> has joined / left the area." for other players only (never you). So a
@@ -662,7 +667,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.7.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.7.1"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
