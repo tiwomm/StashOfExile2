@@ -267,7 +267,7 @@ class App(ListKeys, SearchOptsPage, ExchangePage, WealthSetup, WealthPage, Libra
     def _restack_soon(self, e=None):
         if e is not None and e.widget is not self.root:
             return
-        if not SETTINGS.get("on_top", True) or getattr(self, "_restack_job", None):
+        if getattr(self, "_restack_job", None):          # (2.7.2: with Always on top off too)
             return
 
         def go():
