@@ -21,6 +21,11 @@ NEXT = [
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.8.1": [
+        "Reading a stash tab now says how many items it found, which it left out and why, and what happened to "
+        "each one.",
+        "The other way to add items is called Manual Add.",
+    ],
     "2.8.0": [
         "Price checks can read a whole stash tab: pick Add items from > Stash tab, type the price you put on the tab "
         "and press Read tab. Every item on it is added and priced - no Ctrl+Alt+C one by one.",

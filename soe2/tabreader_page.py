@@ -1,4 +1,4 @@
-"""Price checks > "Add items from: Ctrl+Alt+C | Stash tab" (2.8.0). The Stash tab row; the reading is tabreader.py.
+"""Price checks > "Add items from: Manual Add | Stash tab" (2.8.0). The Stash tab row; the reading is tabreader.py.
 Ctrl+Alt+C keeps working in both modes: the choice only shows or hides the tab row."""
 import tkinter as tk
 from tkinter import ttk
@@ -8,7 +8,7 @@ from .style import C, SegBar
 from .tabreader import PCTAB
 from .wealth import parse_price_text, parse_trade_link, WEALTH_CURRENCIES
 
-MODES = ["Ctrl+Alt+C", "Stash tab"]
+MODES = ["Manual Add", "Stash tab"]          # 2.8.1: "Manual Add" was called "Ctrl+Alt+C"
 
 
 class TabReaderPage:
@@ -18,10 +18,12 @@ class TabReaderPage:
         """The mode picker (in the toolbar box, first row) and the Stash tab row under it."""
         P1 = C["panel"]
         cfg = SETTINGS.setdefault("pctab", {})
+        if cfg.get("mode") not in MODES:
+            cfg["mode"] = MODES[0]
         mrow = tk.Frame(tb, bg=P1, padx=10, pady=6)
         mrow.pack(fill="x", before=tb.winfo_children()[0])
         tk.Label(mrow, text="Add items from", bg=P1, fg=C["muted"]).pack(side="left", padx=(0, 8))
-        self.pc_mode = SegBar(mrow, MODES, value=cfg.get("mode", MODES[0]), command=lambda v: self.pctab_mode(),
+        self.pc_mode = SegBar(mrow, MODES, value=cfg["mode"], command=lambda v: self.pctab_mode(),
                               size=9, pad=(12, 3))
         self.pc_mode.pack(side="left")
         self.pc_mode_hint = tk.Label(mrow, text="", bg=P1, fg=C["muted"], font=("Segoe UI", 8))
@@ -103,7 +105,7 @@ class TabReaderPage:
         err = self.engine.pctab_start(acc, amount, cur)
         if err:
             return self.pc_msg.config(text=err, fg=C["red"])
-        self._pctab = {"added": 0, "already": 0, "unreadable": 0}
+        self._pctab = {"added": 0, "already": 0, "unreadable": 0, "failed": 0}
         self.pc_read_btn.config(state="disabled")
         self.pc_stop.config(state="normal")
         self.pc_msg.config(text="Searching your tab…", fg=C["muted"])
@@ -124,25 +126,44 @@ class TabReaderPage:
             self.pctab_finished()
 
     def pctab_add(self, text):
-        """One item from the tab -> a row (unless it's already in the list, or isn't something the app can price)."""
-        st = self.__dict__.setdefault("_pctab", {"added": 0, "already": 0, "unreadable": 0})
-        if hash(text.strip()) in self.seen_texts:
-            st["already"] += 1
-            return
-        item = self.read_any(text)
-        if not item:
-            st["unreadable"] += 1
-            return
-        if any(self.item_sig(r["item"]) == self.item_sig(item) for r in self.records.values()):
-            st["already"] += 1
-            return
-        if self.add_item_text(text):
-            st["added"] += 1
+        """One item from the tab -> a row (unless it's already in the list, or isn't something the app can price).
+        2.8.1: what happens to each one goes in tab_reader_log.txt, and an error on one item doesn't hide the rest."""
+        st = self.__dict__.setdefault("_pctab", {"added": 0, "already": 0, "unreadable": 0, "failed": 0})
+        st.setdefault("failed", 0)
+        first = " / ".join(l for l in text.splitlines()[2:4] if l and not l.startswith("--"))
+        try:
+            if hash(text.strip()) in self.seen_texts:
+                st["already"] += 1
+                return PCTAB["log"].append(f"already in the list: {first}")
+            item = self.read_any(text)
+            if not item:
+                st["unreadable"] += 1
+                return PCTAB["log"].append(f"the price checker can't read it: {first}\n    " +
+                                          text.replace("\n", "\n    "))
+            if any(self.item_sig(r["item"]) == self.item_sig(item) for r in self.records.values()):
+                st["already"] += 1
+                return PCTAB["log"].append(f"already in the list: {first}")
+            if self.add_item_text(text):
+                st["added"] += 1
+                PCTAB["log"].append(f"added: {first}")
+            else:
+                st["unreadable"] += 1
+                PCTAB["log"].append(f"couldn't be added: {first}")
+        except Exception:
+            import traceback
+            st["failed"] += 1
+            PCTAB["log"].append(f"error on {first}:\n{traceback.format_exc()}")
+            self.log_error("adding an item from the stash tab")
 
     def pctab_finished(self, stopped=False):
         st = getattr(self, "_pctab", {"added": 0, "already": 0, "unreadable": 0})
         self.pc_read_btn.config(state="normal")
         self.pc_stop.config(state="disabled")
+        from .tabreader import write_log
+        PCTAB["log"].append(f"result: added {st.get('added', 0)}, already {st.get('already', 0)}, can't read "
+                            f"{st.get('unreadable', 0)}, errors {st.get('failed', 0)}"
+                            + (f"; stopped" if stopped else "") + (f"; error: {PCTAB['error']}" if PCTAB["error"] else ""))
+        write_log(PCTAB["log"])
         if PCTAB["error"]:
             return self.pc_msg.config(text=PCTAB["error"], fg=C["red"])
         if stopped:
@@ -152,13 +173,21 @@ class TabReaderPage:
             return self.pc_msg.config(fg=C["good"], text=(
                 "No listings found at that price. Is the tab public, priced at exactly this amount and currency, and "
                 "has the trade site had a minute to show it? Check the account name too (with its #number)."))
-        parts = [f"Read {PCTAB['read']} item{'s' if PCTAB['read'] != 1 else ''} from your tab: "
-                 f"added {st['added']} to the list"]
+        parts = [f"Found {PCTAB['found']} listing{'s' if PCTAB['found'] != 1 else ''} at that price, read "
+                 f"{PCTAB['read']}: added {st['added']} to the list"]
         if st["already"]:
             parts.append(f"{st['already']} already in it")
         if st["unreadable"]:
-            parts.append(f"{st['unreadable']} the price checker can't price")
-        msg = ", ".join(parts) + "." + (" They're being priced now." if st["added"] else "")
+            parts.append(f"{st['unreadable']} the price checker can't read")
+        if st.get("failed"):
+            parts.append(f"{st['failed']} hit an error")
+        msg = ", ".join(parts) + "."
+        if PCTAB["skipped"]:
+            msg += " Left out: " + ", ".join(f"{n} {why}" for why, n in PCTAB["skipped"].items()) + "."
+        if PCTAB["found"] and PCTAB["found"] < 10 and not st["added"]:
+            msg += (" Only a few found? Items with their own price note keep that price - they aren't found by the "
+                    "tab's price.")
+        msg += (" They're being priced now." if st["added"] else "") + "  (Every item: tab_reader_log.txt)"
         if PCTAB["warnings"]:
             msg += " " + " ".join(PCTAB["warnings"]) + " Move some items to another tab with its own price."
         self.pc_msg.config(text=msg, fg=C["green"] if st["added"] else C["good"])
