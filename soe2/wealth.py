@@ -130,12 +130,30 @@ def _kind_guess(line, cls_text):
     return next(iter(kinds)) if len(kinds) == 1 else "Prefix"
 
 
+def _txt(x):
+    """A text field of a trade-site listing as plain text (2.8.2). Some listings (Irradiated Tablets, Oct 2026) give a
+    field as an object instead of a string - e.g. {"text": ...} or {"name": ...} - which used to stop item_text."""
+    if x is None:
+        return ""
+    if isinstance(x, str):
+        return x
+    if isinstance(x, dict):
+        for k in ("text", "value", "name", "line", "description"):
+            v = x.get(k)
+            if isinstance(v, (str, list, dict)) and v:
+                return _txt(v)
+        return ""
+    if isinstance(x, (list, tuple)):
+        return "\n".join(t for t in (_txt(v) for v in x) if t)
+    return str(x)
+
+
 def item_text(it):
     """A trade-site listing's item -> the text a Ctrl+Alt+C copy of it would give (2.0), so the Wealth page can price
     rares with the same price checkers. Mod headers (prefix / suffix, tier) come from the listing's 'extended' data."""
     frame = it.get("frameType", 0)
     rarity = it.get("rarity") or RARITY_OF_FRAME.get(frame, "Normal")
-    base = strip_markup(it.get("baseType") or "")
+    base = strip_markup(_txt(it.get("baseType")))
     b = gamedata.base(gamedata.find_base(base) or base) or {}
     cls = gamedata.classes().get(b.get("class") or "", {}).get("name") or ""
     if not cls:
@@ -143,12 +161,12 @@ def item_text(it):
         cls = "Tablet" if "tablet" in base.lower() or "tablet" in cat else "Jewels" if cat == "jewel" else cat.title() or "Item"
     lines = [f"Item Class: {cls}", f"Rarity: {rarity}"]
     if it.get("name"):
-        lines.append(strip_markup(it["name"]))
-    lines.append(strip_markup(it.get("typeLine") or base))
+        lines.append(strip_markup(_txt(it["name"])))
+    lines.append(strip_markup(_txt(it.get("typeLine")) or base))
     props, uses = [], None
     for p in it.get("properties") or []:
-        name = strip_markup(str(p.get("name", ""))).strip()
-        vals = ", ".join(strip_markup(str(v[0])) for v in (p.get("values") or []) if v)
+        name = strip_markup(_txt(p.get("name"))).strip()
+        vals = ", ".join(strip_markup(_txt(v[0] if isinstance(v, (list, tuple)) else v)) for v in (p.get("values") or []) if v)
         if not name:
             continue
         if "use" in name.lower() and vals:
@@ -164,13 +182,13 @@ def item_text(it):
         lines += ["--------", "Sockets: " + " ".join("J" if s_.get("type") == "jewel" else "S" for s_ in it["sockets"])]
     if it.get("ilvl"):
         lines += ["--------", f"Item Level: {it['ilvl']}"]
-    imp = [strip_markup(m) for m in it.get("implicitMods") or []]
+    imp = [strip_markup(_txt(m)) for m in it.get("implicitMods") or []]
     if uses and not any("uses remaining" in m.lower() for m in imp):
         imp.append(f"{uses} uses remaining")
     if imp:
         lines += ["--------", "{ Implicit Modifier }"] + [l for m in imp for l in m.split("\n")]
     for m in it.get("runeMods") or []:
-        lines += ["--------", strip_markup(m) + " (rune)"]
+        lines += ["--------", strip_markup(_txt(m)) + " (rune)"]
     ext = it.get("extended") or {}
     body = []
     for key, field, src in MOD_SOURCES:
@@ -179,7 +197,7 @@ def item_text(it):
         info = (ext.get("mods") or {}).get(key) or []
         last = None
         for n, raw in enumerate(texts):
-            t = strip_markup(raw)
+            t = strip_markup(_txt(raw))
             mi = None
             try:
                 mi = hashes[n][1][0] if hashes[n][1] else None
@@ -190,7 +208,7 @@ def item_text(it):
                 tier = str((m or {}).get("tier") or "")
                 kind = {"P": "Prefix", "S": "Suffix"}.get(tier[:1]) or _kind_guess(t, cls)
                 num = re.sub(r"[^\d]", "", tier)
-                head = f'{{ {src}{kind} Modifier' + (f' "{m.get("name")}"' if m and m.get("name") else "") + \
+                head = f'{{ {src}{kind} Modifier' + (f' "{_txt(m.get("name"))}"' if m and m.get("name") else "") + \
                        (f" (Tier: {num})" if num else "") + " }"
                 body.append(head)
             last = mi
@@ -208,9 +226,9 @@ def wealth_item(entry, tab):
     mods = []
     for k in ("implicitMods", "runeMods", "explicitMods", "fracturedMods", "desecratedMods", "craftedMods"):
         for m in it.get(k) or []:
-            mods += [strip_markup(l) for l in str(m).split("\n") if l.strip()]
+            mods += [strip_markup(l) for l in _txt(m).split("\n") if l.strip()]
     return {"lid": entry.get("id"), "tab": tab["id"], "stash": (lst.get("stash") or {}).get("name") or tab["label"],
-            "name": it.get("name") or "", "type": it.get("typeLine") or "", "base": it.get("baseType") or "",
+            "name": _txt(it.get("name")), "type": _txt(it.get("typeLine")), "base": _txt(it.get("baseType")),
             "frame": it.get("frameType", 0), "qty": it.get("stackSize") or 1, "ilvl": it.get("ilvl"),
             "corrupted": bool(it.get("corrupted")), "cat": (it.get("extended") or {}).get("category") or "",
             "level": _item_level_prop(it), "mods": mods[:14],
