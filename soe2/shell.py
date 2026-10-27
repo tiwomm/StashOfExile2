@@ -298,7 +298,17 @@ class DeskWindow(tk.Toplevel):
 
     def _show(self):
         self.deiconify()
+        self.follow_on_top()
         self.lift()
+
+    def follow_on_top(self):
+        """Always on top (Settings): the app's own windows have to be "topmost" too. On Windows a topmost main window
+        otherwise sits ABOVE the windows it owns, and they vanish behind it (2.7.1)."""
+        try:
+            from .config import SETTINGS
+            self.attributes("-topmost", bool(SETTINGS.get("on_top", True)))
+        except tk.TclError:
+            pass
 
     def open(self):
         if self.state_ == "open":
@@ -458,11 +468,25 @@ class Shell:
             if w.state_ == "open":
                 w.reposition()
                 w.deiconify()
-        for k in getattr(self, "zorder", []):                  # back in the same stacking order
+        self.restack()
+        self.app_follow()
+
+    def restack(self):
+        """Put the open windows back above the app's window, in their stacking order (2.7.1: also after Always on top
+        is switched, so they never end up behind the app's own window)."""
+        for k in getattr(self, "zorder", []) + [k for k in self.windows if k not in getattr(self, "zorder", [])]:
             w = self.windows.get(k)
             if w is not None and w.state_ == "open":
+                w.follow_on_top()
                 w.lift()
-        self.app_follow()
+        if self.menu is not None:
+            try:
+                self.menu.lift()
+            except tk.TclError:
+                pass
+        keep = getattr(self.app, "keep_on_top", None)
+        if keep:
+            keep()
 
     def paint_wallpaper(self):
         self._wall_job = None
@@ -734,6 +758,7 @@ class Shell:
         win = self.windows.get(key)
         if not win or win.state_ != "open":
             return
+        win.follow_on_top()
         win.lift()
         if self.menu is not None:
             self.menu.lift()

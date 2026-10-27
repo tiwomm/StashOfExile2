@@ -256,8 +256,27 @@ class App(ListKeys, SearchOptsPage, ExchangePage, WealthSetup, WealthPage, Libra
                 # the note / timer, which are always over the game)
                 if isinstance(w, tk.Toplevel) and not isinstance(w, (DeskWindow, OverlayWindow)) and w.winfo_exists():
                     w.attributes("-topmost", on)
+            if hasattr(self, "shell"):                   # 2.7.1: the desktop's windows follow, and stay above it
+                self.shell.restack()
+                if not getattr(self, "_restack_bound", False):
+                    self._restack_bound = True          # clicking the app's own window mustn't bury them again
+                    self.root.bind("<FocusIn>", self._restack_soon, add="+")
         except Exception:
             pass
+
+    def _restack_soon(self, e=None):
+        if e is not None and e.widget is not self.root:
+            return
+        if not SETTINGS.get("on_top", True) or getattr(self, "_restack_job", None):
+            return
+
+        def go():
+            self._restack_job = None
+            try:
+                self.shell.restack()
+            except Exception:
+                pass
+        self._restack_job = self.root.after(30, go)
 
     def _top_label(self):
         on = bool(self.top_var.get())
