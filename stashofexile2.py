@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU GPL v3.0 (see LICENSE). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.16.0
+VERSION 2.17.0
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,6 +19,13 @@ VERSION 2.16.0
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.17.0
+       (1) Game search > Anoints: all 875 notables an amulet can be instilled with, each with its three Liquid
+           Emotions and their poe.ninja prices plus the total (2x when one is needed twice). Searchable like the
+           rest: by the notable, what it does, or an emotion's name (every anoint that uses it).
+           Data: anointdata.json (tools/build_anointdata.py): emotion names from RePoE, recipes from the passive
+           tree Path of Building extracts from the game files (RePoE has no recipe table). Prices: only poe.ninja's
+           Currency and Liquid Emotions overviews (WealthPrices.ensure_types), hourly.
   2.16.0
        (1) Your own listings never count towards a price: trade.fetch_rich drops listings whose seller is the account
            typed in Price checks > Stash tab / Wealth (with or without its #1234), so your high-priced tab can't lift
@@ -811,7 +818,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.16.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.17.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
