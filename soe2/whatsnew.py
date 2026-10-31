@@ -16,11 +16,15 @@ INTRO = [
 
 # What's being worked on (2.4.0: not shown in the app any more - kept for ROADMAP.md / the developer).
 NEXT = [
-    "2.11.0: Ctrl+A / C / Z and right-click menus everywhere, striped rows, a modifier-lookup key (see ROADMAP.md).",
+    "2.12.0: Ctrl+A / C / Z and right-click menus everywhere, striped rows, a modifier-lookup key (see ROADMAP.md).",
 ]
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.11.0": [
+        "Breach: if your Hiveblood was almost full, leaving the map reminds you to spend it at the Genesis Tree - "
+        "until you do. Switch it off with \"Remind me when I leave the map\" in the Session tracker's Alerts.",
+    ],
     "2.10.2": [
         "Fixed: windows disappearing behind the app when you maximise, restore, snap or resize it.",
         "Fixed (likely): typing stopping in boxes after the app was resized.",

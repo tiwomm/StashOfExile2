@@ -277,9 +277,6 @@ class DeskWindow(tk.Toplevel):
                 f.focus_force()
         except (tk.TclError, KeyError):
             pass
-        log = getattr(self.shell.app, "diag", None)
-        if log is not None:
-            log.log(f"HWND rebuilt for {self.key}: {h:#x} - owner and keyboard given back")
         return True
 
     def has_os_focus(self):
@@ -572,9 +569,6 @@ class Shell:
             self.heal()
         except Exception:
             pass
-        log = getattr(self.app, "diag", None)
-        if log is not None:
-            log.snapshot("settled after resize")
 
     def _follow(self):
         self._follow_job = None
@@ -666,9 +660,6 @@ class Shell:
                 w.own_by_app()
                 w.follow_on_top()
                 w.lift()
-                log = getattr(self.app, "diag", None)
-                if log is not None:
-                    log.log(f"HEAL brought back {w.key}")
 
     def restack(self):
         """Put the open windows back above the app's window, in their stacking order (2.7.1: also after Always on top
@@ -990,9 +981,6 @@ class Shell:
             g = self.root.grab_current()        # window out of clicks and keys; let it go
             if g is not None and not g.winfo_viewable():         # (an open drop-down's own grab is left alone)
                 g.grab_release()
-                log = getattr(self.app, "diag", None)
-                if log is not None:
-                    log.log(f"GRAB released {g}")
         except (tk.TclError, KeyError, AttributeError):
             pass
         if self.menu is not None:                                 # a click outside the Toolkit menu closes it

@@ -16,7 +16,7 @@ import tkinter as tk
 from tkinter import ttk
 
 from .config import save_json, SETTINGS
-from .gamelog import find_log, LogReader
+from .gamelog import area_kind as gl_area_kind, find_log, LogReader
 from .style import C
 
 REPEAT_SECS = 45          # the game repeats a warning (twice in 2 s, then every ~15 s when full): one banner per level
@@ -25,6 +25,9 @@ LEVELS = {
     "almost": ("HIVEBLOOD ALMOST FULL", "Spend it at the Genesis Tree  ·  click to close", "#2a0d10", "#ff5a4a"),
     "full": ("CANNOT STORE ANY MORE HIVEBLOOD!", "Go to the Genesis Tree to consume it  ·  click to close", "#3a0606",
              "#ff2a2a"),
+    # 2.11.0: you left a map after the game warned and haven't opened the Genesis Tree since
+    "leave": ("SPEND YOUR HIVEBLOOD", "It was almost full when you left the map: visit the Genesis Tree  ·  click to "
+                                      "close", "#2a1a06", "#ffb347"),
 }
 DOT = {"on": "#5ee08a", "off": "#6b7690", "warn": "#ffb347"}
 
@@ -43,6 +46,8 @@ class AlertsPage:
         c = SETTINGS.setdefault("breach_alert", {})
         c.setdefault("on", False)
         c.setdefault("sound", True)
+        c.setdefault("leave_reminder", True)       # 2.11.0
+        c.setdefault("pending", None)              # 2.11.0: "almost" / "full" since the last warning, until the tree
         return c
 
     def alerts_init(self):
@@ -52,6 +57,7 @@ class AlertsPage:
         self._alerts_ready = True
         self.br_reader, self.br_last, self.br_win, self.br_level = None, {}, None, None
         self.br_ticks, self._br_ticking, self.br_note = 0, False, ""
+        self.br_area = None                        # 2.11.0: "map" / "hideout" / "town" / "other" - where you are
         if self.breach_cfg().get("on"):
             self.root.after(1500, self.breach_start)
 
@@ -84,8 +90,13 @@ class AlertsPage:
             snd = tk.BooleanVar(value=True)
             ttk.Checkbutton(row, text="Sound", variable=snd, command=lambda k=key: self.alerts_sound(k)).pack(side="left")
             ttk.Button(row, text="Test", command=test, width=6).pack(side="right")
-            st = tk.Label(row, text=what, bg=P2, fg=C["muted"], anchor="w", font=("Segoe UI", 8))
-            st.pack(side="left", fill="x", expand=True, padx=(10, 6))
+            if key == "breach":                    # 2.11.0
+                self.al_leave = tk.BooleanVar(value=bool(self.breach_cfg().get("leave_reminder", True)))
+                ttk.Checkbutton(row, text="Remind me when I leave the map", variable=self.al_leave,
+                                command=self.alerts_leave_changed).pack(side="left", padx=(4, 0))
+            st = tk.Label(box, text=what, bg=P2, fg=C["muted"], anchor="w", justify="left", font=("Segoe UI", 8))
+            st.pack(fill="x", padx=(24, 6))                   # 2.11.0: its own line, so it never gets cut off
+            st.bind("<Configure>", lambda e, l=st: l.config(wraplength=max(200, e.width - 10)))
             self.al_rows[key] = {"dot": dot, "on": on, "sound": snd, "status": st, "what": what, "note": ""}
         self.al_rows["breach"]["on"].set(bool(self.breach_cfg().get("on")))
         self.al_rows["breach"]["sound"].set(bool(self.breach_cfg().get("sound", True)))
@@ -125,6 +136,10 @@ class AlertsPage:
         else:
             from .utilities import DELIRIUM
             DELIRIUM.set_sound(bool(r["sound"].get()))
+
+    def alerts_leave_changed(self):
+        self.breach_cfg()["leave_reminder"] = bool(self.al_leave.get())
+        save_json("settings.json", SETTINGS)
 
     def alerts_bar_changed(self):
         self.tracker_cfg()["alerts_bar"] = bool(self.al_bar.get())
@@ -179,6 +194,9 @@ class AlertsPage:
             btxt = self.br_note or "On - looking for Client.txt…"
         elif self.br_win is not None:
             btxt = f"Warned at {time.strftime('%H:%M', time.localtime(max(self.br_last.values() or [time.time()])))}"
+        elif self.breach_cfg().get("pending"):
+            btxt = ("On - Hiveblood is waiting to be spent" + (": you'll be reminded when you leave the map"
+                                                              if self.breach_cfg().get("leave_reminder", True) else ""))
         else:
             btxt = "On - watching for the game's Hiveblood warnings"
         for k, txt in (("delirium", dtxt), ("breach", btxt)):
@@ -227,9 +245,13 @@ class AlertsPage:
                 else:
                     for kind, _ts, data in self.br_reader.poll():
                         if kind == "breach" and "hiveblood" in data["text"].lower():
+                            self.breach_set_pending(breach_level(data["text"]))
                             self.breach_alert(text=data["text"])
                         elif kind == "brequel_tree":
+                            self.breach_set_pending(None)          # spent (the tree was opened)
                             self.breach_dismiss()
+                        elif kind == "area":
+                            self.breach_area(gl_area_kind(data.get("area"), data.get("seed")))
         except Exception:
             self.log_error("breach alert")
         if self.breach_cfg().get("on"):
@@ -237,13 +259,29 @@ class AlertsPage:
         else:
             self._br_ticking = False
 
+    def breach_set_pending(self, level):
+        cfg = self.breach_cfg()
+        if level == "almost" and cfg.get("pending") == "full":
+            return
+        if cfg.get("pending") != level:
+            cfg["pending"] = level
+            save_json("settings.json", SETTINGS)
+
+    def breach_area(self, kind):
+        """2.11.0: leaving a map (to your hideout or a town) with Hiveblood still waiting -> one reminder per exit,
+        every exit, until the Genesis Tree has been opened."""
+        before, self.br_area = self.br_area, kind
+        cfg = self.breach_cfg()
+        if before == "map" and kind in ("hideout", "town") and cfg.get("pending") and cfg.get("leave_reminder", True):
+            self.breach_alert(level="leave")
+
     # ================================================================ Breach: the banner
-    def breach_alert(self, text="Stored Hiveblood is almost at the maximum!", test=False):
+    def breach_alert(self, text="Stored Hiveblood is almost at the maximum!", test=False, level=None):
         self.alerts_init()
-        level = breach_level(text)
+        level = level or breach_level(text)
         now = time.time()
         if not test:
-            if now - self.br_last.get(level, 0) < REPEAT_SECS:
+            if level != "leave" and now - self.br_last.get(level, 0) < REPEAT_SECS:
                 return
             try:
                 from .overlaywin import foreground_ok        # only over the game (Settings: "only while it's in front")
@@ -258,7 +296,7 @@ class AlertsPage:
         from .overlaywin import OverlayWindow
         big_txt, small_txt, bg, fg = LEVELS[level]
         sw = self.root.winfo_screenwidth()
-        w, h = (720, 124) if level == "full" else (560, 120)
+        w, h = (720, 124) if level == "full" else (640, 120) if level == "leave" else (560, 120)
         win = OverlayWindow(self.root, "Breach alert", "🩸", ((sw - w) // 2, 90, w, h), opacity=245,
                             body_bg=bg, lockable=False, no_activate=True, on_close=self.breach_dismiss)
         big = tk.Label(win.body, text=big_txt, bg=bg, fg=fg, cursor="hand2",
