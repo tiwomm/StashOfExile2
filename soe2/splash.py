@@ -51,8 +51,17 @@ class Splash:
             w.attributes("-topmost", True)
         except tk.TclError:
             pass
-        sw, sh = root.winfo_screenwidth(), root.winfo_screenheight()
-        w.geometry(f"{W}x{H}+{(sw - W) // 2}+{(sh - H) // 2}")
+        # 2.25.2: in the middle of where the app was last time (its monitor), not always the main monitor
+        try:
+            from .config import SETTINGS
+            from .style import monitor_rect
+            g = SETTINGS.get("main_window") or {}
+            cx, cy = int(g["x"]) + int(g["w"]) // 2, int(g["y"]) + int(g["h"]) // 2
+            l, t, r, b = monitor_rect(root, cx, cy)
+            cx, cy = max(l + W // 2, min(cx, r - W // 2)), max(t + H // 2, min(cy, b - H // 2))
+        except Exception:
+            cx, cy = root.winfo_screenwidth() // 2, root.winfo_screenheight() // 2
+        w.geometry(f"{W}x{H}+{cx - W // 2}+{cy - H // 2}")
         inner = tk.Frame(w, bg=PANEL)
         inner.pack(fill="both", expand=True, padx=1, pady=1)
         tk.Frame(inner, bg=_accent(), height=2).pack(fill="x")
