@@ -16,11 +16,19 @@ INTRO = [
 
 # What's being worked on (2.4.0: not shown in the app any more - kept for ROADMAP.md / the developer).
 NEXT = [
-    "2.18.0: Wealth uses the stash tab reader; Market Insights item preview and jewel mods (see ROADMAP.md).",
+    "2.19.0: Mod book tiers, import / export fix, teach a price, the author's rules as defaults (see ROADMAP.md).",
 ]
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.18.0": [
+        "Fixed: the Mod book stopped learning from listings (the trade site changed how it sends mods). What was "
+        "saved since then is repaired.",
+        "Market Insights: click an item to see it like the game shows it. Your own stash-tab listings (and other "
+        "people's marker tabs) no longer top the list.",
+        "Wealth: \"Use my Price checks tab\" adds the tab you read in Price checks. Low-confidence rare prices say "
+        "Price manually, like in Price checks.",
+    ],
     "2.17.0": [
         "Game search > Anoints: every notable you can anoint, the three Liquid Emotions it takes and what they cost "
         "on poe.ninja, with the total.",

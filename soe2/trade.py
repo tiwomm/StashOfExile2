@@ -205,6 +205,21 @@ def search_ids(league, base, filters, count_min, corrupted=None):
 LISTING_MOD_KEYS = ("explicitMods", "fracturedMods", "craftedMods", "desecratedMods")
 
 
+def mod_lines(x):
+    """One entry of a listing's explicitMods (etc.) -> [(text line, trade stat id or None)].
+    2.18.0: since late October 2026 the trade site sends each mod as {"description": "15% increased ...",
+    "hash": "stat.explicit.stat_57434274", "mods": {...}} instead of a plain string. Reading str() of that dict broke
+    mod checks and the Mod book's learning (every line failed to match)."""
+    if isinstance(x, dict):
+        text = x.get("description") or x.get("text") or x.get("line") or ""
+        h = str(x.get("hash") or "")
+        sid = h[5:] if h.startswith("stat.") else (h or None)
+        return [(l, sid) for l in str(text).split("\n") if l.strip()]
+    if isinstance(x, (list, tuple)):
+        return [p for v in x for p in mod_lines(v)]
+    return [(l, None) for l in str(x).split("\n") if l.strip()]
+
+
 def fetch_rich(qid, ids, max_hours=None):
     """One fetch call for up to 10 listings -> [{id, price, ts, mods}] cheapest first.
     mods = [(normalised text, [numbers])] straight from the listing, or None if the listing didn't say.
@@ -228,13 +243,14 @@ def fetch_rich(qid, ids, max_hours=None):
                 if cutoff is not None and ts < cutoff:
                     continue
                 it = (e or {}).get("item") or {}
-                lines, seen_any = [], False
+                lines, hsids, seen_any = [], [], False
                 for k in LISTING_MOD_KEYS:
                     v = it.get(k)
                     if isinstance(v, list):
                         seen_any = True
-                        for x in v:
-                            lines += [l for l in str(x).split("\n") if l.strip()]
+                        for l, sid in mod_lines(v):
+                            lines.append(l)
+                            hsids.append(sid)
                 mods = None
                 if seen_any:
                     mods = [(norm(l), [float(m.group(1)) for m in VAL.finditer(strip_markup(l))]) for l in lines]
@@ -243,7 +259,8 @@ def fetch_rich(qid, ids, max_hours=None):
                             # 2.4.0: what Top value shows for a listing
                             "name": " ".join(x for x in (strip_markup(str(it.get("name") or "")),
                                                          str(it.get("typeLine") or it.get("baseType") or "")) if x),
-                            "text": [strip_markup(l) for l in lines], "qid": qid})
+                            "text": [strip_markup(l) for l in lines], "qid": qid,
+                            "hsids": hsids})                     # 2.18.0: the stat id the site gave, per line
         _fetch_cache[key] = (time.time(), out)
     return out
 
@@ -286,7 +303,7 @@ _verify_logged = [0]
 def verify_listings(rich, mods):
     """Keep only listings that really carry every mod we searched for.
     -> (kept listings, {"ok", "bad", "unknown", "unverifiable"})."""
-    required = [acc for acc in (acceptable_texts(m["sid"]) for m in mods if m.get("sid")) if acc]
+    required = [(m["sid"], acc) for m, acc in ((m, acceptable_texts(m["sid"])) for m in mods if m.get("sid")) if acc]
     info = {"ok": 0, "bad": 0, "unknown": 0, "unverifiable": False}
     if not required:
         info["unknown"] = len(rich)
@@ -296,8 +313,8 @@ def verify_listings(rich, mods):
         if r["mods"] is None:
             verdict.append("unknown")
             continue
-        lines = {t for t, _ in r["mods"]}
-        verdict.append("ok" if all(any(a in lines for a in acc) for acc in required) else "bad")
+        lines, given = {t for t, _ in r["mods"]}, set(r.get("hsids") or [])   # 2.18.0: or the site's own stat id
+        verdict.append("ok" if all(sid in given or any(a in lines for a in acc) for sid, acc in required) else "bad")
     info["ok"], info["bad"], info["unknown"] = verdict.count("ok"), verdict.count("bad"), verdict.count("unknown")
     if info["bad"] and not info["ok"]:
         # EVERY readable listing failed: far more likely that our reader is wrong than that every listing is - keep them
@@ -306,7 +323,8 @@ def verify_listings(rich, mods):
             _verify_logged[0] += 1
             try:
                 with open(P("verify_log.txt"), "a", encoding="utf-8") as f:
-                    f.write(f"--- {time.strftime('%Y-%m-%d %H:%M:%S')} v{APP_VERSION}\nwe searched for: {required}\n")
+                    f.write(f"--- {time.strftime('%Y-%m-%d %H:%M:%S')} v{APP_VERSION}\nwe searched for: "
+                            f"{[acc for _sid, acc in required]}\n")
                     for r in rich[:2]:
                         f.write(f"a listing says: {r['mods']}\n")
             except Exception:

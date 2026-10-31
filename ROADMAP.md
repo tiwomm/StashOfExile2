@@ -1,6 +1,6 @@
 # StashOfExile2 roadmap
 
-**Current version: 2.17.0**
+**Current version: 2.18.0**
 
 Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds features, 2.10.1 only fixes. Each step below is one release; we work through them top to bottom.
 
@@ -27,12 +27,12 @@ Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds f
 | 2.14.1 – 2.15.0 | Ritual watcher fixed in the exe and reads every counter; Game search links to the wiki. |
 | 2.16.0 | Own listings never count; "Price manually" for low confidence; prices in any currency; 24 currencies for tab prices. |
 | 2.17.0 | Game search > Anoints: each notable's three Liquid Emotions with poe.ninja prices and the total; search by notable, effect or emotion. |
+| 2.18.0 | Mod book learns again (trade site's new mod format); Market Insights item preview, own / marker listings left out; Wealth shares the Price checks tab. |
 
 ## ▶ Next up
 
 | Version | Plan |
 |---|---|
-| 2.18.0 | Wealth uses the Stash tab reader; Market Insights: item preview on click, jewel mods fix, own listings left out of its log. |
 | 2.19.0 | Mod book tiers (used when a search finds nothing); import / export fix; teach the app what's worth money; the author's rules ship as the defaults. |
 | 2.20.0 | Regex: ranges, maximums and "not"; every item type; Favorites rework. |
 | 2.21.0 | Notepad tabs; Game search details and wiki links; live Arbitrage scan. |
