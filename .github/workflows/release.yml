@@ -52,7 +52,7 @@ jobs:
           --collect-submodules soe2
           --add-data "tabs.txt;." --add-data "jewels.txt;." --add-data "gamedata.json;." --add-data "regexdata.json;."
           --add-data "default_rules.json;." --add-data "searchdata.json;." --add-data "stashofexile2.ico;."
-          --add-data "soe2\templates;soe2\templates" --hidden-import pystray._win32 --hidden-import PIL._tkinter_finder
+          --add-data "soe2\templates;soe2\templates" --add-data "soe2\ritual_glyphs.json;soe2" --hidden-import pystray._win32 --hidden-import PIL._tkinter_finder
           --hidden-import cv2 --hidden-import mss --hidden-import numpy stashofexile2.py
 
       - name: Make the build kit zip and the release notes

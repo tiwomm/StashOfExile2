@@ -29,6 +29,9 @@ def make_report(path, records, limit=60):
                                 f"{time.strftime('%Y-%m-%d %H:%M:%S')}.\n{len(out)} recent price checks are in "
                                 "price_checks.json; the app's log files are next to it.\n")
         z.writestr("price_checks.json", json.dumps(out, indent=1, ensure_ascii=False))
+        import glob                                    # 2.14.0: the newest Ritual counter pictures (Capture)
+        for p in sorted(glob.glob(os.path.join(P("ritual"), "capture_*.png")))[-5:]:
+            z.write(p, "ritual/" + os.path.basename(p))
         for name in LOGS:
             p = P(name)
             if os.path.exists(p):

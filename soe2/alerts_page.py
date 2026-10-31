@@ -27,12 +27,13 @@ LEVELS = {
     "full": ("CANNOT STORE ANY MORE HIVEBLOOD!", "Go to the Genesis Tree to consume it  ·  click to close", "#3a0606",
              "#ff2a2a"),
     # 2.11.0: you left a map after the game warned and haven't opened the Genesis Tree since
+    "ritual": ("RITUALS NOT DONE", "Go back through your portal", "#2a0606", "#ff4a4a"),      # 2.14.0
     "leave": ("SPEND YOUR HIVEBLOOD", "It was almost full when you left the map: visit the Genesis Tree  ·  click to "
                                       "close", "#2a1a06", "#ffb347"),
 }
 DOT = {"on": "#5ee08a", "off": "#6b7690", "warn": "#ffb347"}
 TRANSPARENT = "#010203"
-BANNER_SECS = {"almost": 8, "full": 10, "leave": 8}       # 2.12.1: then it goes by itself (like END DELIRIUM)
+BANNER_SECS = {"almost": 8, "full": 10, "leave": 8, "ritual": 8}       # 2.12.1: then it goes by itself (like END DELIRIUM)
 
 
 def _hwnd(win):
@@ -121,6 +122,18 @@ class AlertsPage:
         c.setdefault("pending", None)              # 2.11.0: "almost" / "full" since the last warning, until the tree
         return c
 
+    def ritual_cfg(self):
+        """2.14.0: the Ritual watcher (ritual_alert.py, its own helper process)."""
+        c = SETTINGS.setdefault("ritual_alert", {})
+        c.setdefault("on", False)
+        c.setdefault("sound", True)
+        c.setdefault("leave_reminder", True)
+        return c
+
+    def log_wanted(self):
+        """Client.txt is followed while Breach or Ritual needs it (Ritual: to know when you leave a map)."""
+        return bool(self.breach_cfg().get("on") or self.ritual_cfg().get("on"))
+
     def alerts_init(self):
         """At start-up (start_utilities): the Breach watcher runs whether or not the tracker window was opened."""
         if getattr(self, "_alerts_ready", False):
@@ -129,8 +142,11 @@ class AlertsPage:
         self.br_reader, self.br_last, self.br_win, self.br_level = None, {}, None, None
         self.br_ticks, self._br_ticking, self.br_note = 0, False, ""
         self.br_area = None                        # 2.11.0: "map" / "hideout" / "town" / "other" - where you are
-        if self.breach_cfg().get("on"):
+        self.rt_map = None                         # 2.14.0: the last Ritual count seen in this map (done, total)
+        if self.log_wanted():
             self.root.after(1500, self.breach_start)
+        if self.ritual_cfg().get("on"):
+            self.root.after(2500, self.ritual_start)
 
     # ================================================================ the panel (Session tracker, main page)
     def build_alerts_panel(self, parent):
@@ -150,7 +166,9 @@ class AlertsPage:
                 ("delirium", "Delirium", "END DELIRIUM when you finish a map with Delirium still on (reads your screen)",
                  self.alerts_test_delirium),
                 ("breach", "Breach", "a banner when your stored Hiveblood is almost full, and when it's full "
-                                     "(reads Client.txt)", lambda: self.breach_alert(test=True))):
+                                     "(reads Client.txt)", lambda: self.breach_alert(test=True)),
+                ("ritual", "Ritual", "reads the Ritual counter (0/3 ...) from your screen; reminds you if you leave a "
+                                     "map with rituals not done", self.alerts_test_ritual)):
             row = tk.Frame(box, bg=P2)
             row.pack(fill="x", pady=(6, 0))
             dot = tk.Label(row, text="●", bg=P2, fg=DOT["off"], font=("Segoe UI", 11))
@@ -165,12 +183,20 @@ class AlertsPage:
                 self.al_leave = tk.BooleanVar(value=bool(self.breach_cfg().get("leave_reminder", True)))
                 ttk.Checkbutton(row, text="Remind me when I leave the map", variable=self.al_leave,
                                 command=self.alerts_leave_changed).pack(side="left", padx=(4, 0))
+            if key == "ritual":                    # 2.14.0
+                self.al_rleave = tk.BooleanVar(value=bool(self.ritual_cfg().get("leave_reminder", True)))
+                ttk.Checkbutton(row, text="Remind me when I leave the map", variable=self.al_rleave,
+                                command=self.alerts_ritual_leave_changed).pack(side="left", padx=(4, 0))
+                ttk.Button(row, text="Capture", command=self.alerts_ritual_capture, width=8).pack(side="right",
+                                                                                                padx=(0, 6))
             st = tk.Label(box, text=what, bg=P2, fg=C["muted"], anchor="w", justify="left", font=("Segoe UI", 8))
             st.pack(fill="x", padx=(24, 6))                   # 2.11.0: its own line, so it never gets cut off
             st.bind("<Configure>", lambda e, l=st: l.config(wraplength=max(200, e.width - 10)))
             self.al_rows[key] = {"dot": dot, "on": on, "sound": snd, "status": st, "what": what, "note": ""}
         self.al_rows["breach"]["on"].set(bool(self.breach_cfg().get("on")))
         self.al_rows["breach"]["sound"].set(bool(self.breach_cfg().get("sound", True)))
+        self.al_rows["ritual"]["on"].set(bool(self.ritual_cfg().get("on")))
+        self.al_rows["ritual"]["sound"].set(bool(self.ritual_cfg().get("sound", True)))
         try:
             from .utilities import DELIRIUM
             self.al_rows["delirium"]["sound"].set(bool(DELIRIUM.get_sound()))
@@ -189,6 +215,15 @@ class AlertsPage:
                 self.breach_start()
             else:
                 self.breach_stop()
+        elif key == "ritual":
+            self.ritual_cfg()["on"] = want
+            save_json("settings.json", SETTINGS)
+            err = self.ritual_start() if want else self.ritual_stop()
+            r["note"] = err or ""
+            if err and want:
+                r["on"].set(False)
+                self.ritual_cfg()["on"] = False
+                save_json("settings.json", SETTINGS)
         else:
             SETTINGS["util_delirium_autostart"] = want       # on = it also starts with the app next time
             save_json("settings.json", SETTINGS)
@@ -201,8 +236,8 @@ class AlertsPage:
 
     def alerts_sound(self, key):
         r = self.al_rows[key]
-        if key == "breach":
-            self.breach_cfg()["sound"] = bool(r["sound"].get())
+        if key in ("breach", "ritual"):
+            (self.breach_cfg() if key == "breach" else self.ritual_cfg())["sound"] = bool(r["sound"].get())
             save_json("settings.json", SETTINGS)
         else:
             from .utilities import DELIRIUM
@@ -211,6 +246,60 @@ class AlertsPage:
     def alerts_leave_changed(self):
         self.breach_cfg()["leave_reminder"] = bool(self.al_leave.get())
         save_json("settings.json", SETTINGS)
+
+    def alerts_ritual_leave_changed(self):
+        self.ritual_cfg()["leave_reminder"] = bool(self.al_rleave.get())
+        save_json("settings.json", SETTINGS)
+
+    def alerts_test_ritual(self):
+        self.breach_alert(test=True, level="ritual", sub="1 of 3 done (a test)")
+
+    def alerts_ritual_capture(self):
+        """Saves a picture of where the counter should be (data folder / ritual), for fixing a reading."""
+        from .utilities import RITUAL
+        r = self.al_rows["ritual"]
+        if not RITUAL.running():
+            r["note"] = "Switch Ritual on first."
+            return self.alerts_refresh()
+        RITUAL.captured = None
+        RITUAL.capture()
+        r["note"] = "Taking a picture of the bottom-right of the game…"
+        self.alerts_refresh()
+
+        def done(n=0):
+            if RITUAL.captured or n > 10:
+                r["note"] = (f"Saved: {RITUAL.captured} - a problem report (Settings > Advanced) includes it."
+                             if RITUAL.captured else "The picture couldn't be taken (is the game open?).")
+                self.alerts_refresh()
+            else:
+                self.root.after(300, lambda: done(n + 1))
+        self.root.after(300, done)
+
+    # ---- Ritual helper
+    def ritual_start(self):
+        from .utilities import RITUAL
+        err = RITUAL.start()
+        if not err and self.br_reader is None:
+            self.breach_start()                         # to see you leave a map
+        self.root.after(1500, self.alerts_refresh)
+        return err
+
+    def ritual_stop(self):
+        from .utilities import RITUAL
+        RITUAL.stop()
+        self.rt_map = None
+        if not self.log_wanted():
+            self.br_reader = None
+        self.alerts_refresh()
+        return None
+
+    def ritual_status(self):
+        from .utilities import RITUAL
+        if not self.ritual_cfg().get("on"):
+            return "off"
+        if not RITUAL.running() or RITUAL.state == "error":
+            return "warn"
+        return "on"
 
     def alerts_bar_changed(self):
         self.tracker_cfg()["alerts_bar"] = bool(self.al_bar.get())
@@ -235,7 +324,7 @@ class AlertsPage:
             d = "off"
         b = self.breach_status()
         return {"delirium": d, "breach": "off" if b is False else "warn" if b == "warn" and self.br_reader is None
-                else "on"}
+                else "on", "ritual": self.ritual_status()}
 
     def alerts_refresh(self):
         """Every 2 s (util_refresh) and after a change: dots, checkboxes and status lines."""
@@ -270,10 +359,39 @@ class AlertsPage:
                                                               if self.breach_cfg().get("leave_reminder", True) else ""))
         else:
             btxt = "On - watching for the game's Hiveblood warnings"
-        for k, txt in (("delirium", dtxt), ("breach", btxt)):
+        rtxt = self.ritual_text(rows["ritual"])
+        for k, txt in (("delirium", dtxt), ("breach", btxt), ("ritual", rtxt)):
             st = states[k]
             rows[k]["dot"].config(fg=DOT[st])
             rows[k]["status"].config(text=txt, fg=C["red"] if st == "warn" else C["green"] if st == "on" else C["muted"])
+
+    def ritual_text(self, row):
+        from .utilities import RITUAL
+        if row["note"]:
+            txt, row["note"] = row["note"], ""
+            return txt
+        if not self.ritual_cfg().get("on"):
+            return row["what"]
+        if not RITUAL.running():
+            last = RITUAL.lines[-1] if RITUAL.lines else ""
+            return "It stopped" + (": " + last[6:] if last.startswith("error") else "") + " - switch it off and on."
+        if RITUAL.state == "nogame":
+            return "On - waiting for the game window"
+        if RITUAL.state == "error":
+            return "Screen capture problem: " + (RITUAL.lines[-1] if RITUAL.lines else "")
+        if RITUAL.seen == "ok" and RITUAL.count:
+            d, t = RITUAL.count
+            return f"On - this map: {d} of {t} rituals done" + (" ✔" if d >= t else "")
+        if RITUAL.seen == "unread":
+            return ("On - the Ritual counter is on screen but couldn't be read. Press Capture while it shows, then "
+                    "make a problem report so it can be fixed.")
+        return "On - watching for the Ritual counter (it shows in maps with Ritual)"
+
+    def ritual_seen(self):
+        """Every second: remember the counter while you're in a map."""
+        from .utilities import RITUAL
+        if RITUAL.seen == "ok" and RITUAL.count and self.br_area in ("map", None):
+            self.rt_map = RITUAL.count
 
     def alerts_overlay_redraw(self):
         if getattr(self, "tk_overlay", None) is not None:
@@ -302,20 +420,24 @@ class AlertsPage:
         self.alerts_refresh()
 
     def breach_stop(self):
-        self.br_reader = None
+        if not self.log_wanted():
+            self.br_reader = None
         self.breach_dismiss()
         self.alerts_refresh()
 
     def breach_tick(self):
         try:
-            if self.breach_cfg().get("on"):
+            if self.ritual_cfg().get("on"):
+                self.ritual_seen()
+            if self.log_wanted():
                 if self.br_reader is None:
                     self.br_ticks += 1
                     if self.br_ticks % RETRY_TICKS == 0:
                         self.breach_start()
                 else:
                     for kind, _ts, data in self.br_reader.poll():
-                        if kind == "breach" and "hiveblood" in data["text"].lower():
+                        if kind == "breach" and "hiveblood" in data["text"].lower() and \
+                                self.breach_cfg().get("on"):
                             self.breach_set_pending(breach_level(data["text"]))
                             self.breach_alert(text=data["text"])
                         elif kind == "brequel_tree":
@@ -325,7 +447,7 @@ class AlertsPage:
                             self.breach_area(gl_area_kind(data.get("area"), data.get("seed")))
         except Exception:
             self.log_error("breach alert")
-        if self.breach_cfg().get("on"):
+        if self.log_wanted():
             self.root.after(1000, self.breach_tick)
         else:
             self._br_ticking = False
@@ -343,16 +465,24 @@ class AlertsPage:
         every exit, until the Genesis Tree has been opened."""
         before, self.br_area = self.br_area, kind
         cfg = self.breach_cfg()
-        if before == "map" and kind in ("hideout", "town") and cfg.get("pending") and cfg.get("leave_reminder", True):
+        left = before == "map" and kind in ("hideout", "town")
+        if left and cfg.get("on") and cfg.get("pending") and cfg.get("leave_reminder", True):
             self.breach_alert(level="leave")
+        rc, got = self.ritual_cfg(), self.rt_map            # 2.14.0: rituals left undone in the map you just left
+        if left and rc.get("on") and rc.get("leave_reminder", True) and got and got[0] < got[1]:
+            self.root.after(9000 if cfg.get("on") and cfg.get("pending") else 0,
+                            lambda g=got: self.breach_alert(level="ritual", sub=f"{g[0]} of {g[1]} done - go back "
+                                                                                 f"through your portal"))
+        if kind == "map" and before != "map":
+            self.rt_map = None                             # a new map: its own count
 
     # ================================================================ Breach: the banner
-    def breach_alert(self, text="Stored Hiveblood is almost at the maximum!", test=False, level=None):
+    def breach_alert(self, text="Stored Hiveblood is almost at the maximum!", test=False, level=None, sub=None):
         self.alerts_init()
         level = level or breach_level(text)
         now = time.time()
         if not test:
-            if level != "leave" and now - self.br_last.get(level, 0) < REPEAT_SECS:
+            if level not in ("leave", "ritual") and now - self.br_last.get(level, 0) < REPEAT_SECS:
                 return
             try:
                 from .overlaywin import foreground_ok        # only over the game (Settings: "only while it's in front")
@@ -365,6 +495,7 @@ class AlertsPage:
             self.br_last["almost"] = now                     # "almost" right after "full" adds nothing
         self.breach_dismiss()
         big_txt, small_txt, _bg, fg = LEVELS[level]
+        small_txt = sub or small_txt
         win = tk.Toplevel(self.root)                   # 2.12.1: the Delirium alert's look - big flashing text straight
         win.overrideredirect(True)                     # over the game, no box, clicks go through to the game
         win.attributes("-topmost", True)
@@ -395,7 +526,7 @@ class AlertsPage:
         win.big, win.small = big, small
         self.br_win, self.br_level = win, level
         self._breach_flash(big, fg, True)
-        if self.breach_cfg().get("sound", True):
+        if (self.ritual_cfg() if level == "ritual" else self.breach_cfg()).get("sound", True):
             try:
                 import winsound
                 winsound.MessageBeep(winsound.MB_ICONHAND if level == "full" else winsound.MB_ICONEXCLAMATION)

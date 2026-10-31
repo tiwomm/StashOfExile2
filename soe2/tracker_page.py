@@ -21,7 +21,7 @@ from .wealth import WEALTH, wealth_key, WPRICES
 DEFAULTS = {"overlay": True, "locked": False, "x": 60, "y": 260, "w": 230, "h": 190, "opacity": 225,
             "lines": {"session": True, "map": True, "maps": True, "avg": True, "profit": True, "gold": False},
             "key_toggle": "", "key_pause": "", "ask_count": True, "log_path": "",
-            "character": "", "character_guess": "", "alerts_bar": True}
+            "character": "", "character_guess": "", "alerts_bar": True, "autostart": False}
 DEFAULT_KEYS = {"key_toggle": "Ctrl+Alt+S", "key_pause": "Ctrl+Alt+P"}       # 2.10.0: set once, change them in Options
 LINE_NAMES = [("session", "Session time"), ("map", "This map's time"), ("maps", "Maps done"), ("avg", "Average map"),
               ("profit", "Profit")]        # (2.3.0: "gold from selling" is gone - it can't be read reliably)
@@ -149,6 +149,8 @@ class TrackerPage:
         self.tracker_view()
         self.tracker_fill_history()
         self.root.after(1000, self.tracker_tick)
+        if cfg.get("autostart"):                         # 2.14.0: a session starts with the app (once Client.txt is read)
+            self.root.after(4000, self.tracker_autostart)
         # (the timer shows while a session runs - beta 10; Show timer brings it up any time)
 
     # ---------------- 2.1.0: statistics for every map you ran, with a leaderboard of your fastest runs
@@ -322,6 +324,10 @@ class TrackerPage:
             self.tk_line_vars[k] = v
             ttk.Checkbutton(box, text=label, variable=v, command=self.tracker_options_changed).grid(
                 row=1 + i // 3, column=i % 3, sticky="w", padx=(0, 16))
+        self.tk_auto = tk.BooleanVar(value=bool(cfg.get("autostart")))           # 2.14.0
+        ttk.Checkbutton(box, text="Start tracking when StashOfExile2 starts", variable=self.tk_auto,
+                        command=self.tracker_options_changed).grid(row=7, column=0, columnspan=3, sticky="w",
+                                                                   pady=(6, 0))
         self.tk_lock = tk.BooleanVar(value=bool(cfg.get("locked")))
         ttk.Checkbutton(box, text="Lock it (can't be moved or resized by accident)", variable=self.tk_lock,
                         command=self.tracker_options_changed).grid(row=3, column=0, columnspan=3, sticky="w", pady=(6, 0))
@@ -417,6 +423,7 @@ class TrackerPage:
         cfg["locked"] = bool(self.tk_lock.get())
         cfg["opacity"] = int(float(self.tk_opacity.get()))
         cfg["ask_count"] = bool(self.tk_ask.get())
+        cfg["autostart"] = bool(self.tk_auto.get())
         self.tracker_save()
         if self.tk_overlay is not None:
             self.tracker_overlay_build()
@@ -547,6 +554,10 @@ class TrackerPage:
         self.root.after(1000, self.tracker_tick)
 
     # ---------------- start / pause / stop
+    def tracker_autostart(self):
+        if self.tk_session is None or self.tk_session.ended is not None:
+            self.tracker_start()
+
     def tracker_toggle(self):
         if self.tk_session is None or self.tk_session.ended is not None:
             self.tracker_start()
@@ -850,7 +861,7 @@ class TrackerPage:
         if cfg.get("alerts_bar", True):          # 2.10.0: a small bar: are the Delirium / Breach alerts on?
             bar = tk.Frame(w.body, bg="#16213a", padx=10, pady=2)
             bar.pack(side="bottom", fill="x", before=inner)
-            for k in ("delirium", "breach"):
+            for k in ("delirium", "breach", "ritual"):
                 lab = tk.Label(bar, text="", bg="#16213a", fg="#6b7690", font=("Segoe UI", 8, "bold"), anchor="w")
                 lab.pack(side="left", padx=(0, 12))
                 self.tk_ov_alerts[k] = lab
@@ -879,7 +890,12 @@ class TrackerPage:
             states = self.alert_states()
             for k, lab in self.tk_ov_alerts.items():
                 st = states.get(k, "off")
-                lab.config(text=f"\u25cf {k.title()} {st}", fg={"on": "#5ee08a", "off": "#6b7690", "warn": "#ffb347"}[st])
+                txt = f"\u25cf {k.title()} {st}"
+                if k == "ritual" and st == "on":                   # 2.14.0: the live count
+                    from .utilities import RITUAL
+                    if RITUAL.seen == "ok" and RITUAL.count:
+                        txt = f"\u25cf Ritual {RITUAL.count[0]}/{RITUAL.count[1]}"
+                lab.config(text=txt, fg={"on": "#5ee08a", "off": "#6b7690", "warn": "#ffb347"}[st])
 
     # ---------------- hotkeys (fed by the keyboard watcher, on its own thread)
     def tracker_on_key(self, vk, ctrl, alt, shift):
