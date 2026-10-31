@@ -180,3 +180,66 @@ class DeliriumHelper:
 
 
 DELIRIUM = DeliriumHelper()
+
+
+class RitualHelper(DeliriumHelper):
+    """2.14.0: the Ritual watcher (ritual_alert.py) - the same kind of helper process, started with --ritual.
+    It reports "count 2/3" / "count none" / "count unread" and "captured <file>"."""
+    FLAG = "--ritual"
+
+    def __init__(self):
+        super().__init__()
+        self.count = None               # (done, total) while a Ritual counter is on screen
+        self.seen = "none"              # "ok" / "none" / "unread"
+        self.captured = None
+
+    def locate(self):
+        cmd, where = super().locate()
+        if cmd is None:
+            return None, where.replace("The Delirium alert", "The Ritual watcher")
+        return [("--ritual" if c == "--delirium" else c) for c in cmd], where
+
+    def running(self):
+        return "mine" if self.proc is not None and self.proc.poll() is None else None
+
+    def _reader(self, proc):
+        try:
+            for line in proc.stdout:
+                line = line.rstrip()
+                if not line:
+                    continue
+                if line.startswith("state "):
+                    self.state = line[6:].strip()
+                elif line.startswith("count "):
+                    v = line[6:].strip()
+                    if "/" in v:
+                        a, b = v.split("/", 1)
+                        self.count, self.seen = (int(a), int(b)), "ok"
+                    else:
+                        self.count, self.seen = None, v
+                elif line.startswith("captured "):
+                    self.captured = line[9:].strip()
+                else:
+                    self.lines.append(line)
+                    del self.lines[:-30]
+        except Exception:
+            pass
+        if self.proc is proc:
+            self.state = "stopped"
+
+    def start(self, test=False):
+        if test:
+            return None
+        err = super().start()
+        return err.replace("Delirium alert", "Ritual watcher") if err else None
+
+    def stop(self):
+        super().stop()
+        self.count, self.seen = None, "none"
+        return None
+
+    def capture(self):
+        return self.send("capture")
+
+
+RITUAL = RitualHelper()

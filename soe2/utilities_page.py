@@ -135,6 +135,11 @@ class UtilitiesPage:
         except Exception:
             pass
         DELIRIUM.stop()                                  # only if the app started it
+        try:
+            from .utilities import RITUAL                # 2.14.0
+            RITUAL.stop()
+        except Exception:
+            pass
 
     # ---------------- shared bits
     def _util_head(self, body, title_var, label, command, text):

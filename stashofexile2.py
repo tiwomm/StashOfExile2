@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU GPL v3.0 (see LICENSE). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.13.0
+VERSION 2.14.0
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,6 +19,21 @@ VERSION 2.13.0
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.14.0
+       (1) Ritual watcher (soe2/ritual_alert.py): the game doesn't log Ritual progress, so - like the Delirium alert -
+           it reads the counter next to the Ritual icon (bottom right of centre) from the screen, in its own helper
+           process (StashOfExile2.exe --ritual, utilities.RITUAL), twice a second, only that corner. The icon is found
+           by template matching (templates/ritual_icon.png, cut from a real 2560x1440 screenshot, scaled to the game's
+           height); the counter's black box beside it is cut into glyphs; "/" is the slanted middle one and each digit
+           is the nearest of the reference shapes in ritual_glyphs.json (tools/build_ritual_glyphs.py: sans fonts plus
+           the real game glyphs). Only "d/3" or "d/4" with d <= total counts, seen twice in a row. Checked at 1600x900
+           to 4K.
+       (2) Session tracker > Alerts: a Ritual row (on/off, sound, "Remind me when I leave the map", Capture, Test).
+           Leaving a map (Client.txt area lines) with rituals not all done shows RITUALS NOT DONE / "1 of 3 done - go
+           back through your portal" in the Delirium style. The timer's bar shows "Ritual 2/3". Capture saves a picture
+           of that corner to the data folder (ritual/), which a problem report includes, for fixing a misread.
+       (3) Client.txt is followed while Breach or Ritual is on (log_wanted).
+       (4) Session tracker > Options: "Start tracking when StashOfExile2 starts" (tracker setting autostart).
   2.13.0
        (1) Breach banners look like the Delirium alert's END DELIRIUM again (user's choice): big flashing text straight
            over the game on a see-through background, no box, clicks pass through (WS_EX_TRANSPARENT / NOACTIVATE),
@@ -769,7 +784,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.13.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.14.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
@@ -779,6 +794,9 @@ def main():
         sys.argv.remove("--restarted")
         import time
         time.sleep(1.2)                                           # let the old window save and close first
+    if len(sys.argv) > 1 and sys.argv[1] == "--ritual":         # 2.14.0: the Ritual watcher helper (started by the app)
+        from soe2.ritual_alert import main as ritual
+        sys.exit(ritual(sys.argv[2:]))
     if len(sys.argv) > 1 and sys.argv[1] == "--delirium":       # 2.0 beta 7: the Delirium alert helper (started by the app)
         from soe2.delirium_runner import main as delirium
         sys.exit(delirium(sys.argv[2:]))
