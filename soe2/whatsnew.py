@@ -16,11 +16,21 @@ INTRO = [
 
 # What's being worked on (2.4.0: not shown in the app any more - kept for ROADMAP.md / the developer).
 NEXT = [
-    "2.22.0: Regex for jewels and gear (see ROADMAP.md).",
+    "2.24.0: Money Makers with Thoughts per Click and Clicks per hour (see ROADMAP.md).",
 ]
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.23.0": [
+        "The sticky note has tabs: + adds one, double-click renames, right-click deletes.",
+        "Game search: \"more ›\" shows a result's whole text.",
+        "Exchange rates > Arbitrage > Live scan: each new hour of Currency Exchange history is read as soon as it's "
+        "out, and a new uneven loop pops up.",
+    ],
+    "2.22.0": [
+        "Regex works for jewels (Ruby, Emerald, Sapphire, Diamond, Time-Lost) and gear (rings, amulets, belts, armour, "
+        "weapons ...) - with the same at least / range / at most boxes.",
+    ],
     "2.21.0": [
         "Price checks: type what an item sold for and press 💰 Mark as sold. The Mod book learns from real sales. "
         "Show: Sold lists them.",

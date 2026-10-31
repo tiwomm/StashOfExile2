@@ -19,7 +19,9 @@ LIMIT = 250                      # the game's search box takes at most this many
 _lock = threading.Lock()
 _data = None
 
-KINDS = ("tablet", "waystone", "relic")
+KINDS = ("tablet", "waystone", "relic", "jewel", "gear")         # 2.22.0: jewels and gear
+JEWEL_TYPES = ("Ruby", "Emerald", "Sapphire", "Diamond", "Time-Lost")
+GEAR_SLOTS = ("Ring", "Amulet", "Belt", "Helmet", "Gloves", "Boots", "Body Armour", "Shield", "Focus", "Quiver", "Weapon")
 TABLET_TYPES = ("Irradiated", "Ritual", "Delirium", "Breach", "Abyss", "Temple", "Overseer", "Expedition")
 RARITIES = ("Rare", "Magic", "Normal")
 RELIC_SIZES = {"Small": ("Urn", "Seal"), "Medium": ("Amphora", "Tapestry"), "Large": ("Vase", "Coffer", "Incense")}
@@ -191,6 +193,11 @@ def mod_term(m, minimum=None, round10=False):
     start, end = tok.startswith("^"), tok.endswith("$")
     line = m["line"]
     lo, hi = value_spec(minimum)
+    if m.get("rx"):                                            # 2.22.0: a whole-line token, numbers as \d+
+        if lo is None and hi is None:
+            return tok
+        num = num_range(int(math.ceil(lo or 0)), int(math.floor(hi))) if hi is not None else at_least(lo)
+        return tok.replace(r"\d+", num or r"\d+", 1) if num else tok
     if hi is not None and "#" in line:
         return _ranged_term(m, lo, hi)
     minimum = lo
@@ -291,6 +298,13 @@ def build(kind, want, avoid, want_all=False, options=None):
                 t = _num_term(f"{words}.*", o[key], r10)
                 if t:
                     parts.append(t)
+    elif kind == "jewel":                                # 2.22.0: which jewels (the base name is on the item)
+        jt = [x for x in o.get("types", []) if x in JEWEL_TYPES]
+        if jt and len(jt) < len(JEWEL_TYPES):
+            names = [x.lower()[:4] for x in jt if x != "Time-Lost"] + (["time-l"] if "Time-Lost" in jt else [])
+            parts.append(_q(names[0] if len(names) == 1 else "(" + "|".join(names) + ")"))
+            if "Time-Lost" not in jt:
+                parts.append(_q("!time-l"))
     elif kind == "relic":
         sizes = [x for x in o.get("sizes", []) if x in RELIC_SIZES]
         if sizes and len(sizes) < len(RELIC_SIZES):

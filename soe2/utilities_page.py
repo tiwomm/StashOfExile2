@@ -230,7 +230,8 @@ class UtilitiesPage:
             body, self.notes_on, "On", self.notes_toggle,
             "A sticky note over the game. Show / hide it with its key (in game) or the button below. It hides while "
             "the game is closed and comes back with it. Drag it by its top bar and resize it from any edge, or type "
-            "its place and size below. What you type on it is saved by itself; every option is here.")
+            "its place and size below. What you type on it is saved by itself; every option is here. Tabs on the "
+            "note: + adds one, double-click renames, right-click deletes.")
         c1 = self._card(body, "Key")
         g = tk.Frame(c1, bg=P2)
         g.pack(fill="x", pady=(4, 0))
