@@ -12,7 +12,7 @@ C = {   # Xfire-style steel blue and navy, with orange for actions and gold for 
     "bg": "#090e17", "panel": "#0e1522", "panel2": "#131c2e", "line": "#2b3d5f", "gold_dim": "#3d5582",
     "steel": "#8fa3c7", "text": "#dbe4f2", "muted": "#7d8da8", "accent": "#ffa63d", "good": "#ffd25a",
     "green": "#5fd38a", "red": "#ff6b5e", "blue": "#6aa6ff", "purple": "#b794f6", "orange": "#ff9d3a",
-    "rare": "#ffff77", "magic": "#8f9bff", "sel": "#1b4a96", "odd": "#0b111c", "key": "#26354f",
+    "rare": "#ffff77", "magic": "#8f9bff", "sel": "#1b4a96", "odd": "#0b111c", "stripe": "#16213a", "key": "#26354f",
     "warn_bg": "#2a2110", "bad_bg": "#34171a", "ok_bg": "#10281c",
 }
 

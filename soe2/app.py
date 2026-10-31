@@ -122,6 +122,9 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         self.rt = {}                                # per rules page ("tablet" / "jewel"): its widgets and row -> mod key
         self.migrate_rules_once()
         self.keys = KeyWatch()                       # made before the windows (the utility windows ask about it); started below
+        from . import listkit                        # 2.12.0: keys, right-click menus and striped rows everywhere
+        listkit.install(self)
+        SETTINGS.setdefault("poe2db_key", "Ctrl+Shift+D")
         self.build()
         self.engine.start()
         self.engine.add(0, "init")

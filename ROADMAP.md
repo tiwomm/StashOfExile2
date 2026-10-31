@@ -1,6 +1,6 @@
 # StashOfExile2 roadmap
 
-**Current version: 2.11.0**
+**Current version: 2.12.0**
 
 Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds features, 2.10.1 only fixes. Each step below is one release; we work through them top to bottom.
 
@@ -21,12 +21,12 @@ Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds f
 | 2.10.0 | Alerts panel on the Session tracker's main page (Delirium + Breach, "full" Hiveblood banner); tracker out of Labs with default keys; typing lock-up and window sizing fixes; Settings > About with Discord; quick start guide; Linux groundwork. |
 | 2.10.1 – 2.10.2 | Windows no longer vanish on resize / maximise / snap; typing in boxes fixed. |
 | 2.11.0 | Breach: reminder to spend Hiveblood when you leave a map. |
+| 2.12.0 | Striped rows, Ctrl+C and right-click menus on every list and box; poe2db key (Ctrl+Shift+D). |
 
 ## ▶ Next up
 
 | Version | Plan |
 |---|---|
-| 2.12.0 | Ctrl+A / C / Z and right-click menus everywhere; striped rows in every theme; poe2db on Ctrl+Shift+D. |
 | 2.13.0 | Pricing: your own listings left out; "Price manually" for low confidence; est. value in any currency; full currency list for tab prices; Wealth uses the Stash tab reader; Top value becomes Market Insights. |
 | 2.14.0 | Mod book tiers (used when a search finds nothing); import / export fix; teach the app what's worth money; the author's rules ship as the defaults. |
 | 2.15.0 | Regex: ranges, maximums and "not"; every item type; Favorites rework. |

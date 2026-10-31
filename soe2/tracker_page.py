@@ -907,6 +907,8 @@ class TrackerPage:
                 ("One-key copy (experimental, in game)", SETTINGS.get("quick_copy_key", ""), "Price checks",
                  "checks:quick_copy_key"),
                 ("Copy your stash search (in game)", SETTINGS.get("regex_key", ""), "Regex", "checks:regex_key"),
+                ("Open poe2db's modifier list in your browser", SETTINGS.get("poe2db_key", ""), "Settings > Hotkeys",
+                 "checks:poe2db_key"),
                 ("Go to hideout", oc.get("hideout_key", ""), "Chat commands", "overlay:hideout_key"),
                 ("Show / hide notes", oc.get("notes_key", ""), "Notes", "overlay:notes_key"),
                 ("Session tracker: start / stop", tc.get("key_toggle", ""), "Session tracker", "tracker:key_toggle"),

@@ -60,6 +60,16 @@ class UtilitiesPage:
                     return True
         except Exception:
             pass
+        try:                                           # 2.12.0: the poe2db key - in game or in the app only
+            k = parse_key(SETTINGS.get("poe2db_key") or "")
+            if k and k == (vk, ctrl, alt, shift):
+                from .overlay import game_active, POE_TITLE
+                if game_active((getattr(self, "overlay", None) and self.overlay.cfg.get("poe_title")) or POE_TITLE) \
+                        or self.app_in_front():
+                    self.ui_q.put(("quicklink", "poe2db"))
+                    return True
+        except Exception:
+            pass
         try:
             if self.tracker_on_key(vk, ctrl, alt, shift):
                 return True
@@ -367,6 +377,24 @@ class UtilitiesPage:
             hexv = None
         if hexv:
             self.ov_vars[key].set(hexv.lstrip("#").upper())
+
+    def app_in_front(self):
+        """Is one of the app's own windows the one in front? (keyboard watcher thread: Win32 only, no Tk calls)"""
+        if sys.platform != "win32":
+            return False
+        try:
+            import ctypes
+            u = ctypes.windll.user32
+            pid = ctypes.c_ulong()
+            u.GetWindowThreadProcessId(u.GetForegroundWindow(), ctypes.byref(pid))
+            return pid.value == os.getpid()
+        except Exception:
+            return False
+
+    def ev_quicklink(self, which):
+        from .listkit import open_poe2db
+        if which == "poe2db" and open_poe2db():
+            self._say("Opened poe2db's modifier list in your browser.", 5)
 
     # ---------------- delirium alert (2.10.0: no window of its own - Session tracker > Alerts switches it)
     def dl_do_start(self):
