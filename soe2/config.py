@@ -183,8 +183,9 @@ def save_json(name, data):
     error_log.txt instead of passing silently."""
     try:
         tmp = P(name) + ".tmp"
-        with open(tmp, "w", encoding="utf-8") as f:
-            json.dump(data, f)
+        text = json.dumps(data)           # 2.25.1: dumps (one go, the fast C encoder) - json.dump streams through
+        with open(tmp, "w", encoding="utf-8") as f:   # the slow pure-Python one: a long Price checks list took
+            f.write(text)                 # seconds and froze the app
         os.replace(tmp, P(name))          # all-or-nothing: never leaves a half-written file behind
         return True
     except Exception as e:

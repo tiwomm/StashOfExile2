@@ -21,6 +21,10 @@ NEXT = [
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.25.1": [
+        "Faster with long lists: prices coming in no longer slow the app down, and saving no longer freezes it for "
+        "seconds.",
+    ],
     "2.25.0": [
         "Copy marker: double-tap Esc clears the + marks (when you keep them). Pick the +'s colour in Settings > "
         "General > Copy marker.",
