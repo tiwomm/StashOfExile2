@@ -3,7 +3,7 @@
 Part of StashOfExile2. Split out of the single-file app in 1.37 (see the launcher's VERSION HISTORY)."""
 
 import re
-from .util import _num
+from .util import _amt, _num
 from .rates import RATES
 
 
@@ -51,10 +51,34 @@ def confidence(n_best, loosened, any_roll, ratio, unverifiable, dropped, age_h, 
     return ("High" if score >= 85 else "Medium" if score >= 55 else "Low"), why
 
 
+PRICE_UNITS = [("auto", "Auto (div / chaos / ex)"), ("divine", "Divine Orbs"), ("exalted", "Exalted Orbs"),
+               ("chaos", "Chaos Orbs"), ("vaal", "Vaal Orbs")]
+UNIT_NAMES = {"divine": "div", "exalted": "ex", "chaos": "chaos", "vaal": "vaal"}
+
+
+def price_unit():
+    """2.16.0: the currency prices are shown in (Price checks > Show prices in), or "auto"."""
+    try:
+        from .config import SETTINGS
+        u = SETTINGS.get("price_unit") or "auto"
+    except Exception:
+        u = "auto"
+    return u if u in UNIT_NAMES or u == "auto" else "auto"
+
+
 def fmt_div(x):
-    """Show a value in the unit people actually trade it in: divine, chaos or exalted."""
+    """Show a value in the unit people actually trade it in: divine, chaos or exalted - or, 2.16.0, always in the
+    currency picked under Show prices in (converted with poe.ninja's rates; divines when a rate isn't known)."""
     if x is None:
         return "—"
+    unit = price_unit()
+    if unit not in ("auto", "divine"):
+        r = RATES.value(unit)
+        if r:
+            v = x / r
+            return f"{_amt(v) if v >= 1 else f'{v:.2f}'} {UNIT_NAMES[unit]}"
+    elif unit == "divine":
+        return f"{_num(x)} div" if x >= 1 else f"{x:.2f} div"
     if x >= 1:
         return f"{_num(x)} div"
     for cur, name in (("chaos", "chaos"), ("exalted", "exalted")):

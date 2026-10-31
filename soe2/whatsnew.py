@@ -16,11 +16,17 @@ INTRO = [
 
 # What's being worked on (2.4.0: not shown in the app any more - kept for ROADMAP.md / the developer).
 NEXT = [
-    "2.16.0: pricing - your own listings left out, Price manually, est. value in any currency (see ROADMAP.md).",
+    "2.17.0: Wealth uses the stash tab reader; Market Insights item preview and jewel mods (see ROADMAP.md).",
 ]
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.16.0": [
+        "Your own listings never count towards a price (the account name you typed for Stash tab / Wealth).",
+        "Low-confidence prices say \"Price manually\" instead of a guessed number, and aren't in the total.",
+        "Price checks > Prices in: show every price in Divine, Exalted, Chaos or Vaal Orbs.",
+        "Stash tab prices can be in any currency, from Exalted to Mirror of Kalandra.",
+    ],
     "2.15.0": [
         "Fixed: the Ritual watcher couldn't read some counters (like 3/4).",
         "The Ritual reminder only comes when you did some rituals but left before finishing (0 done = skipped).",

@@ -167,8 +167,10 @@ class WealthSetup:
         pr = tk.Frame(g, bg=C["panel"])
         pr.grid(row=1, column=1, columnspan=2, sticky="w", padx=8)
         ttk.Entry(pr, textvariable=self.w_new_amt, width=12).pack(side="left")
-        ttk.Combobox(pr, textvariable=self.w_new_cur, values=[n for _, n in WEALTH_CURRENCIES], state="readonly",
-                     width=16).pack(side="left", padx=(8, 0))
+        wcb = ttk.Combobox(pr, textvariable=self.w_new_cur, values=[n for _, n in WEALTH_CURRENCIES], state="readonly",
+                           width=24)
+        wcb.config(postcommand=lambda c=wcb: c.config(values=[n for _, n in WEALTH_CURRENCIES]))   # 2.16.0: full list
+        wcb.pack(side="left", padx=(8, 0))
         tk.Label(g, text="A name for it (optional)", bg=C["panel"], fg=C["text"]).grid(row=2, column=0, sticky="w", pady=2)
         ttk.Entry(g, textvariable=self.w_new_name, width=26).grid(row=2, column=1, columnspan=2, sticky="w", padx=8)
         tk.Label(g, text="…or paste a trade-site link", bg=C["panel"], fg=C["text"]).grid(row=3, column=0, sticky="w",

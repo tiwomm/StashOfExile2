@@ -39,8 +39,10 @@ class TabReaderPage:
         self.pc_amt = tk.StringVar(value=str(cfg.get("amount") or ""))
         ttk.Entry(row, textvariable=self.pc_amt, width=9).pack(side="left", padx=(6, 4))
         self.pc_cur = tk.StringVar(value=dict(WEALTH_CURRENCIES).get(cfg.get("currency") or "divine", "Divine Orb"))
-        ttk.Combobox(row, textvariable=self.pc_cur, values=[n for _c, n in WEALTH_CURRENCIES], state="readonly",
-                     width=14).pack(side="left")
+        cb = ttk.Combobox(row, textvariable=self.pc_cur, values=[n for _c, n in WEALTH_CURRENCIES], state="readonly",
+                          width=24)
+        cb.config(postcommand=lambda c=cb: c.config(values=[n for _c, n in WEALTH_CURRENCIES]))   # 2.16.0: full list
+        cb.pack(side="left")
         self.pc_stop = ttk.Button(row, text="Stop", command=self.pctab_stop, state="disabled")
         self.pc_stop.pack(side="right")
         self.pc_read_btn = ttk.Button(row, text="Read tab", style="Accent.TButton", command=self.pctab_read)
@@ -78,7 +80,9 @@ class TabReaderPage:
         self.pc_msg.config(fg=C["text"], text=(
             "How it works: Path of Exile 2 has no stash access for tools, so the app reads your tab through the trade "
             "site. In game: pick a Premium stash tab, make it public, and give the whole tab one price nobody would pay "
-            "(e.g. 37882 Divine Orbs) - that odd price is how the app finds your tab. Don't use a Merchant's tab: those "
+            "(e.g. 37882 Divine Orbs) - that odd price is how the app finds your tab, and a price that high keeps "
+            "whispers away (your own listings never count when items are priced). Any currency works. Don't use a "
+            "Merchant's tab: those "
             "sell instantly. Press Read tab: every item on it is added here and priced. Items already in the list are "
             "skipped. A new tab listing can take a minute to show on the trade site. The same tab works for Wealth."))
 

@@ -30,6 +30,33 @@ WEALTH_FINISH_PRIO = 9             # runs once every search and fetch of the syn
 
 WEALTH_CURRENCIES = [("divine", "Divine Orb"), ("vaal", "Vaal Orb"), ("chaos", "Chaos Orb"), ("exalted", "Exalted Orb"),
                      ("regal", "Regal Orb"), ("annul", "Orb of Annulment"), ("alch", "Orb of Alchemy")]
+# 2.16.0: every currency a stash tab can be priced in (the order shown). Their trade-site ids come from the site's own
+# list (/data/static, downloaded with the mod list once a day); one the site doesn't list isn't offered.
+TAB_CURRENCY_NAMES = ["Exalted Orb", "Greater Exalted Orb", "Perfect Exalted Orb", "Divine Orb", "Chaos Orb",
+                      "Greater Chaos Orb", "Perfect Chaos Orb", "Orb of Alchemy", "Orb of Annulment", "Regal Orb",
+                      "Greater Regal Orb", "Perfect Regal Orb", "Orb of Transmutation", "Greater Orb of Transmutation",
+                      "Perfect Orb of Transmutation", "Orb of Augmentation", "Greater Orb of Augmentation",
+                      "Perfect Orb of Augmentation", "Orb of Chance", "Vaal Orb", "Artificer's Orb", "Fracturing Orb",
+                      "Mirror of Kalandra", "Scroll of Wisdom"]
+
+
+def set_trade_currencies(static):
+    """The trade site's /data/static answer -> WEALTH_CURRENCIES (changed in place, so every list sees it): every
+    currency in TAB_CURRENCY_NAMES the site knows, with its id. Without the site's list the 7 built-in ones stay."""
+    ids = {}
+    for group in (static or {}).get("result") or []:
+        for e in group.get("entries") or []:
+            if e.get("text") and e.get("id"):
+                ids.setdefault(str(e["text"]).strip().lower(), str(e["id"]))
+    known = {n.lower(): c for c, n in WEALTH_CURRENCIES}
+    out = []
+    for name in TAB_CURRENCY_NAMES:
+        cid = ids.get(name.lower()) or known.get(name.lower())
+        if cid and cid not in [c for c, _n in out]:
+            out.append((cid, name))
+    if len(out) >= len(known):
+        WEALTH_CURRENCIES[:] = out
+    return WEALTH_CURRENCIES
 
 
 # The trade site returns at most 100 listing ids per search. A tab holding more is searched again in slices: by
