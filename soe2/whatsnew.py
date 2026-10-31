@@ -21,6 +21,10 @@ NEXT = [
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.10.2": [
+        "Fixed: windows disappearing behind the app when you maximise, restore, snap or resize it.",
+        "Fixed (likely): typing stopping in boxes after the app was resized.",
+    ],
     "2.10.1": [
         "Windows that disappeared when you resized the app come back on their own.",
         "A recorder for the typing and window bugs (off unless switched on for a problem report).",
