@@ -151,6 +151,18 @@ def find_icon(gray, tpl_gray, ui):
     return (x, y, score) if score >= ICON_MIN else None
 
 
+def find_icon_score(gray, tpl_gray, ui):
+    """The best icon match score anywhere in the area (for the log)."""
+    try:
+        import cv2
+        import numpy as np
+        size = max(12, int(round(tpl_gray.shape[0] * ui)))
+        t = cv2.resize(tpl_gray, (size, size), interpolation=cv2.INTER_AREA)
+        return float(cv2.matchTemplate(gray.astype(np.uint8), t.astype(np.uint8), cv2.TM_CCOEFF_NORMED).max())
+    except Exception:
+        return -1.0
+
+
 def search_rect(sw, sh, ox, oy):
     """The part of the screen to capture: (left, top, width, height)."""
     ui = sh / BASE_H
@@ -177,12 +189,29 @@ def read_counter(gray, tpl_gray, ui):
 # ================================================================ the helper process
 def main(argv):
     """StashOfExile2.exe --ritual <data folder>"""
+    from .delirium_runner import _reopen_std
+    _reopen_std()           # 2.14.1: the windowed exe has no stdin / stdout until they're opened from the OS handles -
+    #                         without this the helper quit at once and the app never heard a count
     folder = Path(argv[0]) if argv else Path.home() / ".stashofexile2"
     folder = folder / "ritual"
     folder.mkdir(parents=True, exist_ok=True)
     lock = threading.Lock()
+    logf = folder / "ritual_log.txt"
+    try:
+        if logf.exists() and logf.stat().st_size > 300_000:
+            logf.replace(folder / "ritual_log.old.txt")
+    except OSError:
+        pass
+
+    def log(line):
+        try:
+            with open(logf, "a", encoding="utf-8") as f:
+                f.write(f"{time.strftime('%Y-%m-%d %H:%M:%S')}  {line}\n")
+        except OSError:
+            pass
 
     def say(line):
+        log(line)
         with lock:
             try:
                 sys.stdout.write(str(line).rstrip("\n") + "\n")
@@ -216,8 +245,10 @@ def main(argv):
         say(f"state error")
         say(f"error {type(e).__name__}: {e}")
         return 1
+    log(f"started: {len(references())} digit shapes, icon template {tpl.shape}")
     say("state watching")
     last, pending, shown, state = None, None, None, "watching"
+    rect_seen, best_log = None, 0.0
     with mss.mss() as sct:
         while True:
             while cmds:
@@ -250,9 +281,16 @@ def main(argv):
                     say("state watching")
                 sw, sh, ox, oy = g
                 x, y, w, h = search_rect(sw, sh, ox, oy)
+                if (g, (x, y, w, h)) != rect_seen:
+                    rect_seen = (g, (x, y, w, h))
+                    log(f"game {sw}x{sh} at {ox},{oy}; looking at {w}x{h} at {x},{y}")
                 shot = np.asarray(sct.grab({"left": x, "top": y, "width": w, "height": h}))
                 gray = cv2.cvtColor(shot, cv2.COLOR_BGRA2GRAY)
                 kind, val = read_counter(gray, tpl, sh / BASE_H)
+                if kind != "ok" and time.time() - best_log > 60:        # once a minute: how close it got
+                    best_log = time.time()
+                    hit = find_icon_score(gray, tpl, sh / BASE_H)
+                    log(f"{kind}: best icon match {hit:.2f} (needs {ICON_MIN})")
                 now = (kind, val)
                 if now == pending and now != shown:     # the same twice in a row
                     shown = now
