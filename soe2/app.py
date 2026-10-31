@@ -922,10 +922,41 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
                                                     "did with them) and the app's log files - no account name, no "
                                                     "Wealth data. Send it along with what you saw.")
         ttk.Button(row, text="Make a problem report…", command=self.problem_report).pack(side="left")
+        row = section("Advanced", "Slowness recorder", "The app feels slow? Press Start, then use the app the way that "
+                                                       "feels slow for a few minutes. Every time the window gets stuck, "
+                                                       "it writes down which part of the app was busy (perf_log.txt in "
+                                                       "your data folder). It stops by itself after 5 minutes.")
+        self.perf_btn = ttk.Button(row, text="Start (5 minutes)", command=self.perf_toggle)
+        self.perf_btn.pack(side="left")
+        self.perf_msg = tk.Label(row, text="", bg=P2, fg=C["muted"])
+        self.perf_msg.pack(side="left", padx=10)
         row = section("Advanced", "Your data", "Settings, price-check lists, the Mod book, Wealth and sessions are "
                                                "kept here, shared by every version of the app.")
         tk.Label(row, text=str(DATA_DIR), bg=P2, fg=C["text"], font=(MONO, 9)).pack(side="left")
         ttk.Button(row, text="Open folder", command=lambda: self.open_path(DATA_DIR)).pack(side="left", padx=10)
+
+    def perf_toggle(self):
+        """2.25.4: Settings > Advanced > Slowness recorder (perflog.py)."""
+        from .perflog import PERF
+        if PERF.on:
+            PERF.stop()
+        else:
+            PERF.start(self.root, 5)
+        self.perf_show()
+
+    def perf_show(self):
+        from .perflog import PERF
+        if not getattr(self, "perf_btn", None) or not self.perf_btn.winfo_exists():
+            return
+        if PERF.on:
+            left = max(0, int(PERF.until - time.time()))
+            self.perf_btn.config(text="Stop")
+            self.perf_msg.config(text=f"recording - {left // 60}:{left % 60:02d} left, {PERF.stalls} stall(s) so far")
+            self.root.after(1000, self.perf_show)
+        else:
+            self.perf_btn.config(text="Start (5 minutes)")
+            self.perf_msg.config(text=(f"done: {PERF.stalls} stall(s), the longest {PERF.worst * 1000:.0f} ms - in "
+                                       f"perf_log.txt") if PERF.lines else "")
 
     def dlg_parent(self):
         """The window a question / file box belongs to: the window in front (2.0 beta 21)."""
@@ -3983,12 +4014,24 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
             self.root.after_cancel(job)
         self._win_save_job = self.root.after(3000, lambda: save_json("settings.json", SETTINGS))
 
-    def restore_zoom(self):
-        if (SETTINGS.get("main_window") or {}).get("zoomed"):
-            try:
+    def restore_zoom(self, tries=0):
+        """Maximised last time -> maximised again. 2.25.4: only once the window is really on screen (asking before
+        that did nothing on Windows, so it opened at the plain size), and checked: if Tk didn't, Windows is asked."""
+        if not (SETTINGS.get("main_window") or {}).get("zoomed"):
+            return
+        try:
+            if not self.root.winfo_viewable() or SPLASH[0] is not None:
+                if tries < 60:                                       # up to ~15 s (the start-up screen)
+                    self.root.after(250, lambda: self.restore_zoom(tries + 1))
+                return
+            if self.root.state() != "zoomed":
                 self.root.state("zoomed")
-            except tk.TclError:
-                pass
+            self.root.update_idletasks()
+            if self.root.state() != "zoomed" and sys.platform == "win32":
+                import ctypes
+                ctypes.windll.user32.ShowWindow(self._hwnd(), 3)     # SW_MAXIMIZE
+        except Exception:
+            pass
 
     def on_close(self):
         self.save_widths()

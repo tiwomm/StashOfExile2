@@ -21,6 +21,11 @@ NEXT = [
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.25.4": [
+        "Fixed: maximised when you closed it -> maximised again when you open it.",
+        "Settings > Advanced > Slowness recorder: if the app feels slow, press Start and use it for a few minutes - "
+        "it writes down what was busy whenever the window got stuck.",
+    ],
     "2.25.3": [
         "Market Insights: waystone previews show the real numbers (pack size, rarity, drop chance, revives).",
         "The app's own popups (like the Fast pace warning) open in the middle of the app.",

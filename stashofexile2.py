@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU GPL v3.0 (see LICENSE). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.25.3
+VERSION 2.25.4
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,6 +19,14 @@ VERSION 2.25.3
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.25.4
+       (1) Maximised last time -> maximised again: restore_zoom waits until the window is on screen and the start-up
+           screen is gone (asking earlier did nothing on Windows: the author's settings said zoomed, yet it opened
+           at 1280x800), checks, and asks Windows (ShowWindow SW_MAXIMIZE) if Tk didn't.
+       (2) Settings > Advanced > Slowness recorder (perflog.py): for 5 minutes a watcher thread notes every time the
+           window is stuck > 150 ms and writes the window thread's stack to perf_log.txt (also in problem reports).
+           Measured here, tools open in 30-250 ms even with the author's real data, so the slowness is in Windows'
+           drawing / something only on that PC: this finds it.
   2.25.3
        (1) Market Insights item preview: a saved line with # (waystones keep "Pack Size: #%") shows the line from the
            copied item with its real value ("Monster Pack Size: +32%") - insights_page.ins_with_value.
@@ -918,7 +926,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.25.3"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.25.4"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
