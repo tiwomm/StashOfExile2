@@ -16,11 +16,16 @@ INTRO = [
 
 # What's being worked on (2.4.0: not shown in the app any more - kept for ROADMAP.md / the developer).
 NEXT = [
-    "2.9: deciding what Wealth, the Session tracker, Game search and Top value need to leave Labs.",
+    "2.10: deciding what Wealth, the Session tracker, Game search and Top value need to leave Labs.",
 ]
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.9.0": [
+        "Session tracker > Options > Alerts while you play: a big banner when your stored Hiveblood is almost full "
+        "(Breach), and the Delirium alert's on / off.",
+        "Wealth sync carries on past a listing it can't read, and says so.",
+    ],
     "2.8.2": [
         "Fixed: reading a stash tab of Irradiated Tablets added nothing.",
     ],

@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU GPL v3.0 (see LICENSE). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.8   (2.8.2)
+VERSION 2.9   (2.9.0)
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -18,6 +18,16 @@ VERSION 2.8   (2.8.2)
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.9.0
+       (1) Breach alert (breach_page.py), a checkbox in Session tracker > Options > Alerts while you play: follows
+           Client.txt (the tracker's file) and shows a big HIVEBLOOD ALMOST FULL banner over the game, with a sound,
+           when the game writes ": <brequelwarning>{Stored Hiveblood is almost at the maximum!}" (seen in a real PoE 2
+           log; written twice in 2 s, so one banner per 45 s). Only that system line counts, not chat. Click to close;
+           opening the Brequel tree closes it too (the game logs '"BrequelTree..." is missing from ...' then).
+           gamelog.parse: new "breach" and "brequel_tree" events.
+       (2) The Delirium alert's on / off is a checkbox there too (its window keeps the other settings).
+       (3) Wealth sync: one listing that can't be read is left out with a warning, instead of losing the rest of its
+           batch of 10 (the same guard Stash tab reading got in 2.8.1); and it no longer blames a "category" for it.
   2.8.2
        (1) Stash tab reading failed on every item of a real tab of Irradiated Tablets ("expected string or bytes-like
            object, got 'dict'"): some listings give text fields as objects. wealth._txt reads either form for every
@@ -694,7 +704,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.8.2"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.9.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 

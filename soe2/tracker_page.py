@@ -345,6 +345,21 @@ class TrackerPage:
         self.tk_key_msg = tk.Label(box2, text="Click a box and press the key. Esc keeps the old one; Backspace or "
                                               "right-click clears it.", bg=P2, fg=C["muted"], font=("Segoe UI", 8))
         self.tk_key_msg.grid(row=2, column=0, columnspan=5, sticky="w", pady=(4, 0))
+        # ---- 2.9.0: alerts while you play (Breach lives here; Delirium's on / off too, its window keeps the rest)
+        box4 = tk.Frame(po, bg=P2, padx=14, pady=10, highlightthickness=1, highlightbackground=C["line"])
+        box4.pack(fill="x", pady=(6, 0))
+        tk.Label(box4, text="Alerts while you play", bg=P2, fg=C["accent"], font=("Segoe UI", 10, "bold"),
+                 anchor="w").pack(fill="x")
+        drow = tk.Frame(box4, bg=P2)
+        drow.pack(fill="x", pady=(6, 0))
+        self.tk_dl_on = tk.BooleanVar(value=False)
+        ttk.Checkbutton(drow, text="Delirium: a big END DELIRIUM banner when you finish a map with Delirium still on",
+                        variable=self.tk_dl_on, command=self.tracker_delirium_toggle).pack(side="left")
+        more = tk.Label(drow, text="Delirium settings…", bg=P2, fg="#6ea8ff", cursor="hand2",
+                        font=("Segoe UI", 9, "underline"))
+        more.pack(side="right")
+        more.bind("<Button-1>", lambda e: self.shell.open("delirium"))
+        self.build_breach_controls(box4)
         # ---- 2.4.0: profit explained, with its one setting next to it
         box3 = tk.Frame(po, bg=P2, padx=14, pady=10, highlightthickness=1, highlightbackground=C["line"])
         box3.pack(fill="x", pady=(6, 0))
@@ -363,6 +378,13 @@ class TrackerPage:
         self.tk_profit_state.pack(fill="x", pady=(6, 0))
         self.tk_profit_btn = ttk.Button(box3, text="Set up Wealth", command=self.tracker_setup_wealth)
         self.tracker_profit_state()
+
+    def tracker_delirium_toggle(self):
+        """The Delirium alert's on / off, from here (2.9.0); its window has the rest of its settings."""
+        if self.tk_dl_on.get():
+            self.dl_do_start()
+        else:
+            self.dl_do_stop()
 
     def tracker_profit_state(self):
         """The line under Profit / hour: can a profit be worked out right now, and if not, why."""

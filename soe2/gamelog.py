@@ -30,6 +30,11 @@ PARTY = re.compile(r"^: (.+) has (joined|left) the area\.")
 AFK_ON = re.compile(r"AFK mode is now ON", re.I)
 AFK_OFF = re.compile(r"AFK mode is now OFF", re.I)
 FOCUS = re.compile(r"\[WINDOW\] (Lost|Gained) focus", re.I)
+# 2.9.0, seen in a real PoE 2 log (Oct 2026), twice within 2 s:
+#   2026/10/27 04:50:56 ... [INFO Client 27512] : <brequelwarning>{Stored Hiveblood is almost at the maximum!}
+BREACH_WARN = re.compile(r"^: <brequelwarning>\{([^}]*)\}")
+#   ... [WARN Client 27512] "BrequelTreeBreachstonesSlot" is missing from ...   (logged while the Brequel tree is open)
+BREQUEL_TREE = re.compile(r'^"BrequelTree')
 
 LOOKBACK = 256 * 1024          # bytes read before the end at start-up, to find the area you are in now
 
@@ -98,6 +103,11 @@ def parse(line):
     f = FOCUS.search(text)
     if f:
         return "focus", ts, {"on": f.group(1).lower() == "gained"}
+    b = BREACH_WARN.search(text)
+    if b:
+        return "breach", ts, {"text": b.group(1).strip()}
+    if BREQUEL_TREE.search(text):
+        return "brequel_tree", ts, {}
     return None
 
 
