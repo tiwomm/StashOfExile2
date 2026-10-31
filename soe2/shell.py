@@ -1196,6 +1196,7 @@ class Shell:
         foot = tk.Frame(m, bg=P1, highlightthickness=0)
         foot.pack(fill="x", side="bottom", padx=10, pady=10)
         for text, cmd in (("⚙ Settings", lambda: self.open("settings")), ("✦ What's new", lambda: self.app.show_whatsnew(True)),
+                          ("➜ Quick start", lambda: self.app.show_quickstart(force=True)),
                           ("⟳ Check for updates", self.app.check_updates),
                           ("✕ Quit", self.app.on_close)):
             b = tk.Label(foot, text=text, bg="#0b1222", fg=C["text"], padx=8, pady=4, cursor="hand2",

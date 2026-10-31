@@ -42,6 +42,17 @@ class ListKeys:
         except tk.TclError:
             pass
 
+    def listkit_owner(self, tree):
+        """2.12.0, for the right-click menu: (window key, delete function or None) of a registered list."""
+        self._lk_init()
+        if tree is getattr(self, "tree", None):              # the Price checks list has its own Delete / Ctrl+Z
+            return "checks", lambda rows: self.remove_selected()
+        for key, lst in self._lk_lists.items():
+            for t, d in lst:
+                if t is tree:
+                    return key, d
+        return None, None
+
     def list_target(self, key):
         """The list Ctrl+A / Delete act on in window `key`: the one you last clicked, else the first one on screen."""
         self._lk_init()
@@ -85,10 +96,15 @@ class ListKeys:
 
     def can_undo(self, key):
         self._lk_init()
+        if key == "checks":
+            return bool(getattr(self, "undo_deleted", None) or getattr(self, "undo", None))
         return bool(self._lk_undo.get(key))
 
     def undo_last(self, key):
         self._lk_init()
+        if key == "checks":                                  # 2.12.0 (right-click Undo): Price checks' own undo
+            self.undo_mark()
+            return True
         st = self._lk_undo.get(key)
         if not st:
             self.undo_say(key, "Nothing to undo.")

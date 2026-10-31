@@ -16,11 +16,18 @@ INTRO = [
 
 # What's being worked on (2.4.0: not shown in the app any more - kept for ROADMAP.md / the developer).
 NEXT = [
-    "2.12.0: Ctrl+A / C / Z and right-click menus everywhere, striped rows, a modifier-lookup key (see ROADMAP.md).",
+    "2.13.0: pricing - your own listings left out, Price manually, est. value in any currency (see ROADMAP.md).",
 ]
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.12.0": [
+        "Lists have striped rows, like a spreadsheet. Ctrl+C copies the selected rows; right-click a list to copy, "
+        "select all, delete or undo.",
+        "Boxes you type in: Ctrl+A selects everything, Ctrl+Z undoes, and right-click has Cut / Copy / Paste.",
+        "Ctrl+Shift+D opens poe2db's modifier list in your browser (change the key in Settings > Hotkeys).",
+        "The quick start guide is in the Toolkit menu too.",
+    ],
     "2.11.0": [
         "Breach: if your Hiveblood was almost full, leaving the map reminds you to spend it at the Genesis Tree - "
         "until you do. Switch it off with \"Remind me when I leave the map\" in the Session tracker's Alerts.",
