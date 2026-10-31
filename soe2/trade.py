@@ -16,6 +16,21 @@ from .mods import DUPS, FLIP_PAIRS, impact_of, IMPACTS, norm, plural_wordings, S
 
 # ------------------------------------------------------------------ trade searching
 _search_cache, _fetch_cache = {}, {}
+OWN_SKIPPED = {"n": 0}          # 2.16.0: your own listings left out of prices so far (this run)
+
+
+def own_account():
+    """The account name typed in Price checks > Stash tab (shared with Wealth), or ""."""
+    return str(SETTINGS.get("wealth_account") or "").strip()
+
+
+def is_own(owner, mine=None):
+    """Is this listing's seller you? Compares the name with and without its #1234."""
+    mine = (own_account() if mine is None else mine).lower()
+    owner = str(owner or "").strip().lower()
+    if not mine or not owner:
+        return False
+    return owner == mine or owner.split("#")[0] == mine.split("#")[0]
 
 
 CACHE_SECS = 600          # a repeated identical search within 10 minutes is free; after that listings are re-checked
@@ -194,7 +209,7 @@ def fetch_rich(qid, ids, max_hours=None):
     """One fetch call for up to 10 listings -> [{id, price, ts, mods}] cheapest first.
     mods = [(normalised text, [numbers])] straight from the listing, or None if the listing didn't say.
     Listings older than max_hours are dropped (the search already filters, this is the double-check)."""
-    key = ("rich", qid, tuple(ids), max_hours)
+    key = ("rich", qid, tuple(ids), max_hours, own_account().lower())
     out = _cached(_fetch_cache, key)
     if out is None:
         out = []
@@ -205,6 +220,9 @@ def fetch_rich(qid, ids, max_hours=None):
                 lst = (e or {}).get("listing") or {}
                 p = lst.get("price")
                 if not p:
+                    continue
+                if is_own((lst.get("account") or {}).get("name")):   # 2.16.0: your own (often overpriced) listings
+                    OWN_SKIPPED["n"] += 1                           # don't count towards your prices
                     continue
                 ts = listed_ts(lst.get("indexed"))
                 if cutoff is not None and ts < cutoff:
