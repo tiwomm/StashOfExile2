@@ -21,6 +21,10 @@ NEXT = [
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.25.3": [
+        "Market Insights: waystone previews show the real numbers (pack size, rarity, drop chance, revives).",
+        "The app's own popups (like the Fast pace warning) open in the middle of the app.",
+    ],
     "2.25.2": [
         "Popups (Market Insights' item preview, the price popups) open on the monitor you're using, next to the "
         "mouse - not on your main monitor.",
