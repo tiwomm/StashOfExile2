@@ -164,7 +164,7 @@ AGE_OPTIONS = [("1 hour", "1hour", 1), ("3 hours", "3hours", 3), ("12 hours", "1
                ("1 week", "1week", 168), ("Any time", None, None)]
 
 
-VIEWS = ["Not yet listed", "Listed", "Removed", "All"]
+VIEWS = ["Not yet listed", "Listed", "Sold", "Removed", "All"]
 
 
 def load_json(name, default):
