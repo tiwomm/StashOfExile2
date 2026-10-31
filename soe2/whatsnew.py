@@ -16,11 +16,18 @@ INTRO = [
 
 # What's being worked on (2.4.0: not shown in the app any more - kept for ROADMAP.md / the developer).
 NEXT = [
-    "2.20.0: Mod book tiers, import / export fix, teach a price, the author's rules as defaults (see ROADMAP.md).",
+    "2.21.0: teach a price; Regex ranges, maximums and \"not\"; Favorites rework (see ROADMAP.md).",
 ]
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.20.0": [
+        "Mod book tiers: give mods a tier from S (matters most) to D. When no listing has all of an item's mods, the "
+        "D-tier ones are left out first, then C - so you get a price instead of no match.",
+        "Import rules now puts the rules into your Mod book (and your own export works as a backup). Export takes "
+        "all your rules for that page, tiers too - waystones and relics as well.",
+        "The built-in rules are updated to the author's current ones. Your own rules always win.",
+    ],
     "2.19.0": [
         "Ctrl+Alt+C now leaves a small ring for 10 seconds where your mouse was, so you can see what you've copied. "
         "Turn it off in Settings > General > Copy marker.",

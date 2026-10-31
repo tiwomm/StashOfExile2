@@ -33,6 +33,7 @@ from .mods import (
     auto_impact, COMMUNITY, COMMUNITY_ACTIVE, COMMUNITY_DISAGREE, default_impact, impact_key, IMPACT_LABEL,
     IMPACTS, JEWEL_KINDS, JEWELS, LEARNED, learned_info, mod_cat, norm, parse_item, pretty, rebuild_community,
     RULES, SHARE_MAX_HIGH, SIDTEXT, TAB_KINDS, TABS, TEXT2SID, vfilter, rule_key, SCOPED_CATS, migrate_scoped_rules,
+    default_tier, scoped, tier_key, TIER_ORDER, TIERS,
 )
 from .mods import DUPS, find_stat, current_key
 from .trade import ago, mod_impact
@@ -2576,10 +2577,20 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         rbar.pack(fill="x")
         tk.Label(rbar, text="Filter", bg=C["panel"], fg=C["muted"]).pack(side="left", padx=(0, 6))
         ttk.Entry(rbar, textvariable=ns.filt, width=18).pack(side="left")
-        if cat not in SCOPED_CATS:                       # sharing goes with what's learned from prices: tablets, jewels
-            ttk.Button(rbar, text="Export rules", command=self.export_rules).pack(side="left", padx=(14, 0))
-            ttk.Button(rbar, text="Import rules", command=self.import_rules).pack(side="left", padx=(6, 0))
+        ttk.Button(rbar, text="Export rules", command=self.export_rules).pack(side="left", padx=(14, 0))
+        ttk.Button(rbar, text="Import rules", command=self.import_rules).pack(side="left", padx=(6, 0))
+        if cat not in SCOPED_CATS and any(mod_cat(k) == cat for k in COMMUNITY):   # (votes imported before 2.20.0)
             ttk.Button(rbar, text="Remove imported", command=self.clear_imported_rules).pack(side="left", padx=(6, 0))
+        if cat not in SCOPED_CATS:                       # 2.20.0: tiers decide what's left out first
+            tbar = tk.Frame(tab, bg=C["panel"], padx=10)
+            tbar.pack(fill="x")
+            tk.Label(tbar, text="Tier for selected:", bg=C["panel"], fg=C["muted"]).pack(side="left", padx=(0, 6))
+            for t in TIER_ORDER:
+                ttk.Button(tbar, text=t, width=3, command=lambda t=t: self.tiers_selected(t)).pack(side="left", padx=(0, 4))
+            ttk.Button(tbar, text="Auto", command=lambda: self.tiers_selected(None)).pack(side="left", padx=(4, 0))
+            tk.Label(tbar, text="S matters most, D least. When no listing has all of an item's mods, the D-tier mods "
+                                "are left out first, then C. Not set: High = A, Normal = C.",
+                     bg=C["panel"], fg=C["muted"], font=("Segoe UI", 8)).pack(side="left", padx=12)
         for imp in ("ignore", "normal", "high"):
             ttk.Button(rbar, text=IMPACT_LABEL[imp], command=lambda i=imp: self.rules_selected(i)).pack(side="right", padx=(6, 0))
         tk.Label(rbar, text="Set selected to:", bg=C["panel"], fg=C["muted"]).pack(side="right", padx=8)
@@ -2593,8 +2604,10 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
                      font=("Segoe UI", 9)).pack(fill="x")
         ns.info = tk.Label(tab, bg=C["panel"], fg=C["muted"], anchor="w", padx=12)
         ns.info.pack(fill="x")
-        ns.tv = ttk.Treeview(tab, columns=("impact", "learned", "type", "mod", "on"), show="headings", selectmode="extended")
-        for cid, title, w, anchor in (("impact", "Impact", 100, "w"), ("learned", "Learned from data", 190, "w"), ("type", "Type", 80, "w"),
+        ns.tv = ttk.Treeview(tab, columns=("impact", "tier", "learned", "type", "mod", "on"), show="headings",
+                             selectmode="extended")
+        for cid, title, w, anchor in (("impact", "Impact", 100, "w"), ("tier", "Tier", 50, "center"),
+                                      ("learned", "Learned from data", 190, "w"), ("type", "Type", 80, "w"),
                                       ("mod", "Mod", 420, "w"), ("on", "Found on", 220 if cat == "tablet" else 300, "w")):
             ns.tv.heading(cid, text=title)
             ns.tv.column(cid, width=w, anchor=anchor, stretch=(cid == "mod"))
@@ -2664,7 +2677,7 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         for n, (_o, _t, keys, text, imp, side, on) in enumerate(sorted(rows)):
             iid = f"r{n}"
             ns.keys[iid] = keys
-            ns.tv.insert("", "end", iid=iid, values=(IMPACT_LABEL[imp], "", side, text, on),
+            ns.tv.insert("", "end", iid=iid, values=(IMPACT_LABEL[imp], "", "", side, text, on),
                          tags=(imp,) if imp != "normal" else ())
             if tuple(keys) in keep:
                 ns.tv.selection_add(iid)
@@ -2722,7 +2735,9 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
                 learned = "Shared - your data disagrees"
             else:
                 learned = ""
-            ns.tv.insert("", "end", iid=iid, values=(IMPACT_LABEL[imp], learned, "/".join(sorted(kd)) if len(kd) == 1 else ("Both" if kd else ""), text, on),
+            t = tier_key(k)
+            tier = (t + ("" if k in TIERS else " (auto)")) if t else ""
+            ns.tv.insert("", "end", iid=iid, values=(IMPACT_LABEL[imp], tier, learned, "/".join(sorted(kd)) if len(kd) == 1 else ("Both" if kd else ""), text, on),
                                  tags=(imp,) if imp != "normal" else ())
             if k in keep:
                 ns.tv.selection_add(iid)
@@ -2736,109 +2751,129 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         self.status_text = text
         self.status_until = time.time() + secs
 
+    def rules_of_cat(self, cat):
+        """{rule key: impact} of YOUR rules for this page's kind of mod."""
+        if cat in SCOPED_CATS:
+            return {k: v for k, v in RULES.items() if scoped(k) == cat}
+        return {k: v for k, v in RULES.items() if not scoped(k) and mod_cat(k) == cat}
+
     def export_rules(self):
-        """Write your high-priority mods (your own rules + what your app learned) to a file you can send to friends."""
+        """2.20.0: write your rules for this page (High / Normal / Ignore and tiers) to a file - to keep, move to another
+        PC or give to a friend. Import rules reads it back. (Before 2.20.0 only High mods went out, as 'votes'.)"""
         if not SETTINGS.get("share_id"):
             SETTINGS["share_id"] = "%08x" % random.getrandbits(32)
             save_json("settings.json", SETTINGS)
         cat = self.rules_cat()
-        learned = dict(LEARNED)
-        bases = {}
-        try:
-            for (b, sid_), _st in MARKET.cached_stats().items():
-                bases.setdefault(sid_, b)
-        except Exception:
-            pass
-        out, seen = [], set()
-        for k, v in RULES.items():
-            if v == "high" and mod_cat(k) == cat:
-                out.append({"text": (TABS.get(k) or JEWELS.get(k) or [pretty(k)])[0], "source": "my rule"})
-                seen.add(k)
-        for sid, li in learned.items():
-            t = SIDTEXT.get(sid, "")
-            k = norm(t)
-            if not t or k in seen or RULES.get(k) == "ignore" or mod_cat(k, bases.get(sid)) != cat:
-                continue
-            seen.add(k)
-            out.append({"text": t, "source": "learned" + (f" ({li['from']})" if li.get("from") else ""),
-                        "lift": round(li["lift"], 2), "listings": li["n"]})
-        if not out:
-            messagebox.showinfo("Export rules", f"You have no high-priority {cat} mods to share yet.")
+        rules = self.rules_of_cat(cat)
+        tiers = {k: t for k, t in TIERS.items() if (scoped(k) == cat if cat in SCOPED_CATS else
+                                                   not scoped(k) and mod_cat(k) == cat)}
+        if not rules and not tiers:
+            messagebox.showinfo("Export rules", f"You haven't set any {cat} mod rules yet.")
             return
-        path = filedialog.asksaveasfilename(defaultextension=".json", initialfile=f"my_{cat}_mod_rules.json", filetypes=[("Mod rules", "*.json")])
+        path = filedialog.asksaveasfilename(defaultextension=".json", initialfile=f"my_{cat}_mod_rules.json",
+                                            filetypes=[("Mod rules", "*.json")])
         if not path:
             return
+        high = [{"text": (TABS.get(k) or JEWELS.get(k) or [pretty(k.split(":", 1)[-1])])[0], "source": "my rule"}
+                for k, v in rules.items() if v == "high"]
         try:
             with open(path, "w", encoding="utf-8") as f:
-                json.dump({"app": "StashOfExile2", "format": 1, "id": SETTINGS["share_id"], "exported": time.strftime("%Y-%m-%d"),
-                           "league": SETTINGS.get("league", ""), "category": cat, "high": out}, f, indent=1, ensure_ascii=False)
+                json.dump({"app": "StashOfExile2", "format": 2, "id": SETTINGS["share_id"],
+                           "exported": time.strftime("%Y-%m-%d"), "league": SETTINGS.get("league", ""),
+                           "category": cat, "rules": rules, "tiers": tiers,
+                           "high": high}, f, indent=1, ensure_ascii=False)        # "high": what older versions read
         except Exception as e:
             messagebox.showerror("Export rules", f"Could not save the file: {e}")
             return
-        self._say(f"Exported {len(out)} high-priority {cat} mods ({sum(1 for o in out if o['source'] == 'my rule')} your rules, "
-                  f"{sum(1 for o in out if o['source'] != 'my rule')} learned).")
+        n = {i: sum(1 for v in rules.values() if v == i) for i in IMPACTS}
+        self._say(f"Exported {len(rules)} {cat} rules ({n['high']} high, {n['normal']} normal, {n['ignore']} ignored)"
+                  + (f" and {len(tiers)} tiers" if tiers else "") + f" to {os.path.basename(path)}.", 15)
+
+    @staticmethod
+    def read_rules_file(path):
+        """-> (category or None, {rule key: impact}, {rule key: tier}). Raises ValueError for a file that isn't one."""
+        with open(path, encoding="utf-8") as f:
+            d = json.load(f)
+        if not isinstance(d, dict) or d.get("app") != "StashOfExile2":
+            raise ValueError("not a StashOfExile2 rules file")
+        cat = d.get("category") if d.get("category") in ("tablet", "jewel", "waystone", "relic") else None
+        rules, tiers = {}, {}
+        if isinstance(d.get("rules"), dict):                             # 2.20.0 files: everything, by rule key
+            for k, v in d["rules"].items():
+                if isinstance(k, str) and v in IMPACTS:
+                    rules[k] = v
+            for k, t in (d.get("tiers") or {}).items():
+                if isinstance(k, str) and t in TIER_ORDER:
+                    tiers[k] = t
+        elif isinstance(d.get("high"), list):                            # older files: a list of High mods
+            if len(d["high"]) > SHARE_MAX_HIGH * 4:
+                raise ValueError(f"claims {len(d['high'])} high mods, looks wrong")
+            for e in d["high"]:
+                t = e.get("text") if isinstance(e, dict) else e if isinstance(e, str) else None
+                if isinstance(t, str) and t.strip():
+                    rules[rule_key(cat, norm(t)) if cat in SCOPED_CATS else norm(t)] = "high"
+        else:
+            raise ValueError("has no rules in it")
+        fixed = {}
+        for k, v in rules.items():                                      # older wording -> today's
+            head = scoped(k)
+            body = k.split(":", 1)[1] if head else k
+            fixed[f"{head}:{current_key(body)}" if head else current_key(body)] = v
+        return cat, fixed, tiers
 
     def import_rules(self):
-        """Read one or more rule files from other people. Imports only add 'High' votes, never override your own rules."""
+        """2.20.0: read rule files (your own export, or a friend's) INTO your Mod book. Rules you already have that say
+        something else are kept unless you choose to take the file's. (Before 2.20.0 an import only added 'votes' that
+        could be outvoted by your own data, and your own export was refused - so it looked like nothing happened.)"""
         paths = filedialog.askopenfilenames(filetypes=[("Mod rules", "*.json")])
         if not paths:
             return
-        mine = SETTINGS.get("share_id")
-        added, files, skipped_unknown, yours, bad = 0, 0, 0, 0, []
-        changed = set()
+        incoming, tiers_in, bad = {}, {}, []
         for path in paths:
             try:
-                with open(path, encoding="utf-8") as f:
-                    d = json.load(f)
-                if d.get("app") != "StashOfExile2" or not isinstance(d.get("high"), list) or not d.get("id"):
-                    raise ValueError("not a StashOfExile2 rules file")
-                if len(d["high"]) > SHARE_MAX_HIGH:
-                    raise ValueError(f"claims {len(d['high'])} high mods (limit {SHARE_MAX_HIGH}), looks wrong")
+                _cat, rules, tiers = self.read_rules_file(path)
             except Exception as e:
                 bad.append(f"{os.path.basename(path)}: {e}")
                 continue
-            sid_ = str(d["id"])[:32]
-            if sid_ == mine:
-                bad.append(f"{os.path.basename(path)}: this is your own export")
-                continue
-            for v in COMMUNITY.values():                      # a newer file from the same person replaces their earlier votes
-                if sid_ in v["from"]:
-                    v["from"].remove(sid_)
-                    changed.add(id(v))
-            files += 1
-            for e in d["high"]:
-                t = e.get("text") if isinstance(e, dict) else None
-                k = current_key(norm(t)) if isinstance(t, str) else ""      # older files: old wording -> today's
-                if not k or not (k in TABS or k in JEWELS or k in TEXT2SID):
-                    skipped_unknown += 1                       # not a real tablet/jewel mod: ignored
-                    continue
-                if k in RULES:
-                    yours += 1                                 # you already decided this one yourself
-                ent = COMMUNITY.setdefault(k, {"text": pretty(t), "from": []})
-                if sid_ not in ent["from"]:
-                    ent["from"].append(sid_)
-                    added += 1
-        for k in [k for k, v in COMMUNITY.items() if not v["from"]]:
-            del COMMUNITY[k]
-        before = set(COMMUNITY_ACTIVE)
-        save_json("community_rules.json", COMMUNITY)
-        rebuild_community(MARKET)
-        newly = (COMMUNITY_ACTIVE | before) - (COMMUNITY_ACTIVE & before)
-        self._after_rules_change(newly)
-        need = max(1, int(SETTINGS.get("community_min", 1) or 1))
-        nt = sum(1 for k in COMMUNITY_ACTIVE if mod_cat(k) == "tablet")
-        msg = [f"Imported {files} file(s): {added} new votes. {nt} tablet and {len(COMMUNITY_ACTIVE) - nt} jewel mods shared by others now count as High."]
-        if need > 1:
-            msg.append(f"(A mod needs {need} different people to share it before it counts.)")
-        if yours:
-            msg.append(f"{yours} you had already set yourself - yours win.")
-        if COMMUNITY_DISAGREE:
-            msg.append(f"{len(COMMUNITY_DISAGREE)} ignored because your own data says they are not valuable.")
-        if skipped_unknown:
-            msg.append(f"{skipped_unknown} unknown mods skipped.")
+            incoming.update(rules)
+            tiers_in.update(tiers)
+        unknown = [k for k in incoming if not (scoped(k) or k in TABS or k in JEWELS or k in TEXT2SID)]
+        for k in unknown:
+            incoming.pop(k)
+        new = {k: v for k, v in incoming.items() if k not in RULES}
+        same = [k for k, v in incoming.items() if RULES.get(k) == v]
+        differ = {k: v for k, v in incoming.items() if k in RULES and RULES[k] != v}
+        take = False
+        if differ:
+            ans = messagebox.askyesnocancel(
+                "Import rules", f"{len(new)} new rule(s) will be added.\n\n{len(differ)} rule(s) in the file differ from "
+                                f"yours. Use the file's for those?\n\nYes = use the file's   ·   No = keep yours")
+            if ans is None:
+                return
+            take = bool(ans)
+        for k, v in list(new.items()) + (list(differ.items()) if take else []):
+            RULES[k] = v
+        t_new = 0
+        for k, t in tiers_in.items():
+            if (k not in TIERS or take) and TIERS.get(k) != t:
+                TIERS[k] = t
+                t_new += 1
+        save_json("mod_rules.json", RULES)
+        save_json("mod_tiers.json", TIERS)
+        changed = set(new) | (set(differ) if take else set()) | set(tiers_in)
+        self._after_rules_change(changed)
+        self.refresh_rules()
+        msg = (f"Imported {len(new) + (len(differ) if take else 0)} rule(s) into your Mod book"
+               + (f" and {t_new} tier(s)" if t_new else "") + ".")
+        if same:
+            msg += f" {len(same)} you already had."
+        if differ and not take:
+            msg += f" {len(differ)} kept as yours."
+        if unknown:
+            msg += f" {len(unknown)} unknown mod(s) skipped."
         if bad:
             messagebox.showwarning("Import rules", "Some files were refused:\n\n" + "\n".join(bad))
-        self._say(" ".join(msg), 45)
+        self._say(msg, 30)
 
     def clear_imported_rules(self):
         cat = self.rules_cat()
@@ -2871,6 +2906,28 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
             k = ns.keys.get(i)
             keys += k if isinstance(k, list) else [k] if k else []
         self.set_rules(keys, impact)
+
+    def tiers_selected(self, tier):
+        """2.20.0: give the selected mods a tier (None = back to automatic), then re-price items that have them."""
+        ns = self.rt[self.rules_cat()]
+        keys = set()
+        for i in ns.tv.selection():
+            k = ns.keys.get(i)
+            keys |= set(k if isinstance(k, list) else [k] if k else [])
+        if not keys:
+            return self._say("Select mods first (Ctrl+A for all, Shift / Ctrl + click), then pick a tier.", 8)
+        for k in keys:
+            if tier is None or tier == default_tier(k):
+                TIERS.pop(k, None)
+            else:
+                TIERS[k] = tier
+        save_json("mod_tiers.json", TIERS)
+        affected = [rid for rid, rec in self.records.items() if rec.get("mark", "new") == "new"
+                    and (rec.get("nomatch") or rec.get("partial")) and any(norm(m["text"]) in keys for m in rec["item"]["mods"])]
+        self.reprice(affected)
+        self.refresh_rules()
+        self._say(f"Tier {tier or 'automatic'} for {len(keys)} mod{'s' if len(keys) != 1 else ''}"
+                  + (f"; re-pricing {len(affected)} item(s) that didn't find every mod together" if affected else "."), 8)
 
     def cycle_rule(self, event, cat="tablet"):
         ns = self.rt[cat]
