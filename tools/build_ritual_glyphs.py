@@ -3,7 +3,8 @@
     py tools/build_ritual_glyphs.py [screenshot.png ...]
 
 Shapes come from common sans-serif fonts (the counter uses a plain sans) at many sizes, plus the real glyphs cut out
-of in-game screenshots given on the command line (2560x1440, counter visible) - those count three times."""
+of in-game screenshots given on the command line - full 2560x1440 screenshots or small cut-outs around the counter,
+named with what they show, like "snip_1of3.png" - those count three times."""
 import glob
 import json
 import os
@@ -49,16 +50,19 @@ def main(shots):
         import re
         m = re.search(r"(\d)of(\d)", os.path.basename(path))
         img = np.asarray(Image.open(path).convert("L"))
-        x, y, w, h = R.search_rect(img.shape[1], img.shape[0], 0, 0)
-        area = img[y:y + h, x:x + w]
+        if img.shape[1] < 600:                          # a small cut-out around the counter (Snipping Tool, Capture)
+            area = img
+        else:
+            x, y, w, h = R.search_rect(img.shape[1], img.shape[0], 0, 0)
+            area = img[y:y + h, x:x + w]
         import cv2
         tpl = cv2.imread(os.path.join(os.path.dirname(R.__file__), "templates", "ritual_icon.png"), 0)
-        hit = R.find_icon(area, tpl, img.shape[0] / R.BASE_H)
+        ui = 1.0 if img.shape[1] < 600 else img.shape[0] / R.BASE_H
+        hit = R.find_icon(area, tpl, ui)
         if not hit or not m:
             print("skipped", path)
             continue
         ix, iy, _s = hit
-        ui = img.shape[0] / R.BASE_H
         box = area[iy + int(R.TEXT_BOX[2] * ui):iy + int(R.TEXT_BOX[3] * ui),
                    ix + int(R.TEXT_BOX[0] * ui):ix + int(R.TEXT_BOX[1] * ui)]
         mask = box > 150

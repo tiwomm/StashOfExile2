@@ -21,6 +21,9 @@ NEXT = [
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.14.1": [
+        "Fixed: the Ritual watcher didn't work in the app you download (it stopped right after starting).",
+    ],
     "2.14.0": [
         "Ritual watcher (Session tracker > Alerts): reads the Ritual counter (0/3 ...) from your screen and reminds "
         "you if you leave a map with rituals not done. The timer shows the count.",

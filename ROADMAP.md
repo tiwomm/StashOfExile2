@@ -1,6 +1,6 @@
 # StashOfExile2 roadmap
 
-**Current version: 2.14.0**
+**Current version: 2.14.1**
 
 Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds features, 2.10.1 only fixes. Each step below is one release; we work through them top to bottom.
 
