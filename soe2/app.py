@@ -776,7 +776,7 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
                         command=self.on_game_only).pack(side="left", padx=(16, 0))
 
         row = section("General", "Labs (experimental)", "Features still being tried out: Wealth, Game search and "
-                                                         "Top value. They work, but may change a lot or have "
+                                                         "Market Insights. They work, but may change a lot or have "
                                                          "rough edges. When Labs is off they are hidden.")
         self.labs_var = tk.BooleanVar(value=bool(SETTINGS.get("labs")))
         ttk.Checkbutton(row, text="Show Labs features (marked BETA)", variable=self.labs_var,
@@ -2504,7 +2504,7 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
                                             "mods. Rate the mods you want or don't want, and Regex uses it: ★ on the "
                                             "mod, and ★ Select valuable.",
                                 "relic": "Rate the relic mods you're after. Regex marks them ★ and ★ Select valuable "
-                                         "picks them; Top value lists them."}[cat],
+                                         "picks them; Market Insights lists them."}[cat],
                      bg=C["panel"], fg=C["muted"], anchor="w", justify="left", wraplength=760, padx=12,
                      font=("Segoe UI", 9)).pack(fill="x")
         ns.info = tk.Label(tab, bg=C["panel"], fg=C["muted"], anchor="w", padx=12)

@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU GPL v3.0 (see LICENSE). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.12.0
+VERSION 2.13.0
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,6 +19,13 @@ VERSION 2.12.0
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.13.0
+       (1) Breach banners look like the Delirium alert's END DELIRIUM again (user's choice): big flashing text straight
+           over the game on a see-through background, no box, clicks pass through (WS_EX_TRANSPARENT / NOACTIVATE),
+           centred on the game window 22% down (END DELIRIUM sits at 62%). The text shrinks to fit the game window.
+           Being click-through, they go by themselves (8 s; "full" 10 s) or when the Genesis Tree opens.
+       (2) Top value is now Market Insights (window, dock, Labs text); its "Dearest listings seen" table is "Most
+           expensive listings seen".
   2.12.0
        (1) listkit.py: every list (ttk.Treeview) has striped rows like a spreadsheet, in every theme (tags row_a /
            row_b, background C["panel"] / C["stripe"]; the old per-list "odd" / "even" tags are replaced). Rows are
@@ -762,7 +769,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.12.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.13.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 

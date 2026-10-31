@@ -1,4 +1,4 @@
-"""Top value (2.1.0, a Labs tool): the most valuable things the app has seen, per kind of item - your own priced items
+"""Market Insights (2.12.1; was Top value, 2.1.0, a Labs tool): the most valuable things the app has seen, per kind of item - your own priced items
 (Price checks), the mods worth the most (what the Mod book learned from listings) and the dearest listings it looked
 at on the trade site. Nothing is searched for this window: it only shows what earlier price checks found."""
 import re
@@ -42,7 +42,7 @@ class InsightsPage:
         P1, P2 = C["panel"], C["panel2"]
         top = tk.Frame(body, bg=P1, padx=12, pady=10)
         top.pack(fill="x")
-        tk.Label(top, text="Top value", bg=P1, fg=C["text"], font=(FONT_TITLE, 16, "bold")).pack(side="left")
+        tk.Label(top, text="Market Insights", bg=P1, fg=C["text"], font=(FONT_TITLE, 16, "bold")).pack(side="left")
         self.ins_kind = SegBar(top, KINDS, command=lambda v: self.refresh_insights(), size=9, pad=(12, 4))
         self.ins_kind.pack(side="left", padx=16)
         ttk.Button(top, text="Refresh", command=self.refresh_insights).pack(side="right")
@@ -102,7 +102,7 @@ class InsightsPage:
         table(0, 1, "mods", "Mods worth the most", "What the Mod book learned: the typical asking price of listings "
                                                     "with this mod. ★ = valuable in your Mod book.",
               (("mod", "Mod", 220, "w"), ("base", "On", 90, "w"), ("med", "Typical", 70, "e"), ("n", "Seen", 45, "e")))
-        table(1, 0, "seen", "Dearest listings seen", "The most expensive listings your price checks came across on the "
+        table(1, 0, "seen", "Most expensive listings seen", "The most expensive listings your price checks came across on the "
                                                      "trade site (this league).",
               (("price", "Asking", 90, "e"), ("name", "Item", 200, "w"), ("mods", "Mods", 360, "w"),
                ("when", "Seen", 70, "w")), colspan=2)
@@ -177,7 +177,7 @@ class InsightsPage:
                                          f"{kind[:-1]} rules,\nor right-click a mod in Regex.")
 
     def _ins_fill_seen(self, kind):
-        # ---- dearest listings seen
+        # ---- most expensive listings seen
         tv, empty = self.ins_tables["seen"]
         tv.delete(*tv.get_children())
         seen = [x for x in MARKET.top_listings(detail=True) if kind_of(x["base"]) == kind][:50]
@@ -269,7 +269,7 @@ class InsightsPage:
             VALUE_LOG.save()
             self.refresh_insights()
         self.push_undo("insights", label, restore)
-        self._say(f"Removed {label} from Top value. Ctrl+Z (or Undo) puts them back.", 8)
+        self._say(f"Removed {label} from Market Insights. Ctrl+Z (or Undo) puts them back.", 8)
         self.refresh_insights()
 
     def ins_price_again(self):
