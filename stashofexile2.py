@@ -26,6 +26,8 @@ VERSION HISTORY
            Settings > General > Copy marker (on by default). Triggered from the key watcher's combo_time, checked
            on every clipboard poll (app.copy_mark_check).
        (2) Price checks: one ★ before the item's name per valuable mod (Mod book) - the gold rows now say why.
+       (3) Release build: the first 2.19.0 build stopped at the release notes (Windows console cp1252 can't print
+           "★"). tools/release_notes.py writes UTF-8 and lists every version since the last release.
   2.18.0
        (1) FIX: since late Oct 2026 the trade site sends each listing mod as a dict {"description", "hash", "mods"}
            instead of a string. fetch_rich stored str(dict), so every mod failed to match: the Mod book learned

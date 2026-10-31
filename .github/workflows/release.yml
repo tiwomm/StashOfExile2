@@ -58,6 +58,8 @@ jobs:
       - name: Make the build kit zip and the release notes
         if: steps.ver.outputs.skip == 'false'
         shell: bash
+        env:
+          PYTHONUTF8: "1"
         run: |
           V="${{ steps.ver.outputs.version }}"
           git archive --format=zip -o "StashOfExile2_build_kit_$V.zip" HEAD
