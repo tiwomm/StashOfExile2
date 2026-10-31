@@ -100,15 +100,35 @@ def classify_digit(g):
     return best if best_d < 14.0 else None
 
 
+def text_band(m):
+    """The rows of the text itself: the tallest run of rows with ink (gaps of one row allowed). 2.14.1: the box also
+    catches the icon's edge above and the frame's ornament below, which used to glue the glyphs together."""
+    import numpy as np
+    rows = m.any(axis=1)
+    best, start, gap = None, None, 0
+    for y, on in enumerate(list(rows) + [False, False]):
+        if on:
+            if start is None:
+                start = y
+            gap, end = 0, y
+        elif start is not None:
+            gap += 1
+            if gap > 1:
+                if best is None or end - start > best[1] - best[0]:
+                    best = (start, end)
+                start, gap = None, 0
+    return best
+
+
 def read_text(gray):
     """The counter's box (grayscale array, white text on black) -> (done, total) or None."""
     import numpy as np
     for thr in (150, 175, 200, 125):
         m = bright_mask(gray, thr)
-        rows = np.nonzero(m.any(axis=1))[0]
-        if not len(rows):
+        band = text_band(m)
+        if band is None:
             return None
-        m = m[rows.min():rows.max() + 1, :]
+        m = m[band[0]:band[1] + 1, :]
         spans = [s for s in glyph_spans(m) if m[:, s[0]:s[1] + 1].sum() >= 4]
         if len(spans) != 3:
             continue

@@ -291,7 +291,7 @@ class LibraryPage:
         self.lib_check()
 
     def lib_lookup(self, words):
-        """Show a base or mod on the left (Game search: 'how the price checker sees it')."""
+        """Show a base or mod on the left."""
         self.shell.open("library")
         self.lib_q.set(words)
 
