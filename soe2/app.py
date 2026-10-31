@@ -89,8 +89,9 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
             root.iconphoto(True, self.icon_img)
         except Exception:
             pass
-        root.geometry("1280x800")
+        root.geometry(self.saved_geometry() or "1280x800")      # 2.23.1: where you left it last time
         root.minsize(1000, 560)
+        root.bind("<Configure>", self._note_window, add="+")
         from .style import apply_look                   # 2.0.0: Settings > Appearance (theme, accent, text size)
         apply_look(SETTINGS.get("theme", "midnight"), SETTINGS.get("accent", "orange"),
                    int(SETTINGS.get("ui_scale", 100) or 100), root)
@@ -386,6 +387,7 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         _splash_step(i=2)
         self.shell.finish()
         self.shell.set_launcher(self.shell.cfg.get("launcher", "dock"))
+        self.root.after(60, self.restore_zoom)                 # 2.23.1: maximised last time -> maximised again
         self.root.after(1500, self.show_whatsnew)              # 2.0 beta 12: once per new version
         if SPLASH[0] is not None:                              # 2.0.0: the start-up screen waits for the mod list,
             _splash_step(i=3)                                  # but never more than 3 seconds
@@ -3842,6 +3844,63 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
                 SETTINGS["panel_w"] = pw
         except Exception:
             pass
+
+    # ---------------- 2.23.1: the window opens where you left it
+    @staticmethod
+    def desktop_rect():
+        """(left, top, width, height) of all monitors together (Windows), else the main screen; None if unknown."""
+        if sys.platform == "win32":
+            try:
+                import ctypes
+                g = ctypes.windll.user32.GetSystemMetrics
+                return g(76), g(77), g(78), g(79)        # SM_X/YVIRTUALSCREEN, SM_CX/CYVIRTUALSCREEN
+            except Exception:
+                return None
+        return None
+
+    def saved_geometry(self):
+        """"WxH+X+Y" from last time - only if its title bar is still on a screen (a monitor may be gone)."""
+        g = SETTINGS.get("main_window") or {}
+        try:
+            w, h, x, y = int(g["w"]), int(g["h"]), int(g["x"]), int(g["y"])
+        except (KeyError, TypeError, ValueError):
+            return None
+        w, h = max(1000, w), max(560, h)
+        d = self.desktop_rect() or (0, 0, self.root.winfo_screenwidth(), self.root.winfo_screenheight())
+        dx, dy, dw, dh = d
+        if x + w - 120 < dx or x + 120 > dx + dw or y < dy - 10 or y + 40 > dy + dh:
+            return f"{min(w, dw)}x{min(h, dh)}"            # off every screen now: keep the size, let Windows place it
+        return f"{w}x{h}+{x}+{y}"
+
+    def _note_window(self, e):
+        """Remember the window's place and size as it moves (the normal size, not maximised)."""
+        if e.widget is not self.root:
+            return
+        try:
+            st = self.root.state()
+        except tk.TclError:
+            return
+        g = SETTINGS.setdefault("main_window", {})
+        if st == "normal":
+            if self.root.winfo_width() > 200:
+                g.update(w=self.root.winfo_width(), h=self.root.winfo_height(), x=self.root.winfo_x(),
+                         y=self.root.winfo_y())
+            g["zoomed"] = False
+        elif st == "zoomed":
+            g["zoomed"] = True
+        else:
+            return
+        job = getattr(self, "_win_save_job", None)            # written a moment after it stops moving (a crash
+        if job:                                               # keeps it too)
+            self.root.after_cancel(job)
+        self._win_save_job = self.root.after(3000, lambda: save_json("settings.json", SETTINGS))
+
+    def restore_zoom(self):
+        if (SETTINGS.get("main_window") or {}).get("zoomed"):
+            try:
+                self.root.state("zoomed")
+            except tk.TclError:
+                pass
 
     def on_close(self):
         self.save_widths()
