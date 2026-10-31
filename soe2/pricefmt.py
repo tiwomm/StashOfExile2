@@ -113,3 +113,13 @@ def parse_price(text):
             return None
         total += amount * r
     return total
+
+
+def needs_manual_price(rec):
+    """2.16.0 / 2.18.0: Low confidence, or a gear item's rough guess -> "Price manually" (no number counted).
+    Used by Price checks and Wealth's magic / rare pricing alike."""
+    if rec.get("est") is None:
+        return False
+    it = rec.get("item") or {}
+    guess = it.get("gear") and not it.get("waystone") and it.get("rarity") != "Unique"
+    return rec.get("conf") == "Low" or bool(guess and rec.get("conf") not in (None, "", "-"))
