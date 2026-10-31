@@ -53,6 +53,9 @@ class SearchPage:
         t.tag_configure("sep", font=("Segoe UI", 4))
         t.tag_configure("more", foreground=C["accent"], font=("Segoe UI", 10, "bold"), underline=True)
         t.tag_configure("empty", foreground=C["muted"], font=("Segoe UI", 11), justify="center")
+        t.tag_configure("emo", foreground="#d9b8ff", font=("Segoe UI", 10, "bold"))       # 2.17.0: Anoints
+        t.tag_configure("price", foreground=C["good"], font=("Segoe UI", 10))
+        t.tag_configure("total", foreground="#ffd9a8", font=("Segoe UI", 10, "bold"))
         t.tag_bind("link", "<Enter>", lambda e: t.config(cursor="hand2"))
         t.tag_bind("link", "<Leave>", lambda e: t.config(cursor="arrow"))
         t.tag_bind("more", "<Button-1>", lambda e: self.gs_more())
@@ -146,7 +149,9 @@ class SearchPage:
                 self.gs_summary.config(text=f"{len(lst):,} result{'s' if len(lst) != 1 else ''}"
                                             + (f" in {self.gs_active}" if self.gs_active else " across all categories"))
             else:                                              # 2.0 beta 21: a category on its own lists all of it
-                self.gs_summary.config(text=f"All {len(lst):,} in {self.gs_active}. Type to narrow it down.")
+                self.gs_summary.config(text=f"All {len(lst):,} in {self.gs_active}. Type to narrow it down."
+                                       + ("  Type an emotion (e.g. Isolation) to see every anoint that uses it. "
+                                          "Prices: poe.ninja." if self.gs_active == gamesearch.ANOINTS else ""))
             if not lst:
                 t.insert("end", "\nNothing matched. Try fewer words, or a different spelling.", "empty")
             for n, it in enumerate(lst[:self.gs_shown]):
@@ -201,9 +206,81 @@ class SearchPage:
         if it["t"]:
             self._gs_put(self._gs_cut(it["t"], terms, 300), terms, ("txt",))
             t.insert("end", "\n")
+        if it.get("a"):                                   # 2.17.0: an anoint - its emotions and what they cost
+            return self._gs_anoint(it, terms)
         if it["k"]:
             self._gs_put(self._gs_cut(it["k"], terms, 160), terms, ("kw",))
             t.insert("end", "\n")
+
+    def _gs_anoint(self, it, terms):
+        """The three Liquid Emotions, each with its poe.ninja price, and the total."""
+        from .pricefmt import fmt_div
+        from .wealth import WPRICES
+        t = self.gs_text
+        self.gs_prices_wanted()
+        total, missing = 0.0, False
+        for i, (name, n) in enumerate(gamesearch.emotion_counts(it["a"])):
+            t.insert("end", "   +   " if i else "", ("tag",))
+            if n > 1:
+                t.insert("end", f"{n}× ", ("emo",))
+            self._gs_put(name, terms, ("emo",))
+            v = WPRICES.named(name) if self.gs_prices_ok() else None
+            if v is None:
+                missing = True
+                t.insert("end", "  (no price)" if self.gs_prices_ok() else "", ("tag",))
+            else:
+                total += v * n
+                t.insert("end", f"  {fmt_div(v)}" + (" each" if n > 1 else ""), ("price",))
+        if self.gs_prices_ok() and total:
+            t.insert("end", f"   =  {fmt_div(total)}" + (" + the unpriced one" if missing else ""), ("total",))
+        elif getattr(self, "gs_price_state", "") == "loading":
+            t.insert("end", "   prices loading from poe.ninja…", ("tag",))
+        elif getattr(self, "gs_price_state", "") == "none":
+            t.insert("end", "   (no prices: pick your league in Settings)" if not self.gs_league() else
+                     "   (poe.ninja prices unavailable right now)", ("tag",))
+        t.insert("end", "\n")
+
+    @staticmethod
+    def gs_league():
+        from .config import SETTINGS
+        return SETTINGS.get("league") or ""
+
+    def gs_prices_ok(self):
+        from .wealth import WPRICES
+        return (getattr(self, "gs_price_state", "") == "ok" and WPRICES.ok
+                and bool((WPRICES.parts.get("Delirium") or {}).get("lines")))
+
+    def gs_prices_wanted(self):
+        """Liquid Emotion prices from poe.ninja: fetched in the background the first time an anoint is shown, and
+        again when they're over an hour old (WealthPrices.ensure_types)."""
+        import threading
+        import time
+        lg = self.gs_league()
+        st = getattr(self, "gs_price_state", "")
+        if st == "loading" or (st in ("ok", "none") and lg == getattr(self, "gs_price_league", None)
+                               and time.time() - getattr(self, "gs_price_ts", 0) < 3600):
+            return
+        if not lg:
+            self.gs_price_state, self.gs_price_league, self.gs_price_ts = "none", lg, time.time()
+            return
+        self.gs_price_state, self.gs_price_league = "loading", lg
+
+        def work():
+            from .wealth import WPRICES
+            try:
+                WPRICES.ensure_types(lg, ("Delirium",))
+            except Exception:
+                pass
+            self.ui_q.put(("search_prices",))
+        threading.Thread(target=work, daemon=True).start()
+
+    def ev_search_prices(self):
+        import time
+        from .wealth import WPRICES
+        self.gs_price_ts = time.time()
+        self.gs_price_state = "ok" if WPRICES.ok and (WPRICES.parts.get("Delirium") or {}).get("lines") else "none"
+        if getattr(self, "gs_text", None) is not None and self.gs_text.winfo_exists():
+            self.gs_render(keep_scroll=True)
 
     def gs_wiki(self, name):
         import urllib.parse

@@ -16,11 +16,16 @@ INTRO = [
 
 # What's being worked on (2.4.0: not shown in the app any more - kept for ROADMAP.md / the developer).
 NEXT = [
-    "2.17.0: Wealth uses the stash tab reader; Market Insights item preview and jewel mods (see ROADMAP.md).",
+    "2.18.0: Wealth uses the stash tab reader; Market Insights item preview and jewel mods (see ROADMAP.md).",
 ]
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.17.0": [
+        "Game search > Anoints: every notable you can anoint, the three Liquid Emotions it takes and what they cost "
+        "on poe.ninja, with the total.",
+        "Search by the notable, by what it does, or by an emotion (e.g. Isolation) to see every anoint that uses it.",
+    ],
     "2.16.0": [
         "Your own listings never count towards a price (the account name you typed for Stash tab / Wealth).",
         "Low-confidence prices say \"Price manually\" instead of a guessed number, and aren't in the total.",

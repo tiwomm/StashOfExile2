@@ -508,6 +508,44 @@ class WealthPrices:
                                              "parts": self.parts, "etags": self.etags})
             self._index()
 
+    def ensure_types(self, league, types=("Delirium",)):
+        """2.17.0: just these categories (plus Currency, for the divine rate) when they're over an hour old - Game
+        search > Anoints only needs the Liquid Emotions, not all twenty categories."""
+        if not league:
+            return
+        tts = self.__dict__.setdefault("tts", {})
+        need = [t for t in ("Currency",) + tuple(types)
+                if not (self.league == league and t in self.parts and time.time() - tts.get(t, self.ts) < 3600)]
+        if not need:
+            return
+        with self.lock:
+            for name in ([self.src] if self.league == league and self.src else []) + Rates.names_for(league):
+                parts = dict(self.parts) if self.league == league else {}
+                errors = []
+                for typ in need:
+                    try:
+                        body = self._get(typ, name)
+                    except Exception as e:
+                        errors.append(f"{typ}: {str(e)[:80]}")
+                        continue
+                    if body is not None:
+                        parts[typ] = self._parse(typ, body)
+                    tts[typ] = time.time()
+                if (parts.get("Currency") or {}).get("lines"):
+                    if self.league != league:
+                        self.ts = 0                            # only some categories: Wealth still fetches the rest
+                    self.parts, self.league, self.src = parts, league, name
+                    break
+            self.errors = errors
+            save_json("wealth_prices.json", {"v": PRICES_VERSION, "league": self.league, "src": self.src, "ts": self.ts,
+                                             "parts": self.parts, "etags": self.etags})
+            self._index()
+
+    def named(self, name):
+        """divines for one stackable by its name (or poe.ninja id), or None."""
+        hit = self.by_name.get(name.lower()) or getattr(self, "by_slug", {}).get(slug(name))
+        return hit[0] if hit else None
+
     @staticmethod
     def _parse(typ, body):
         if typ in NINJA_EXCHANGE_TYPES:

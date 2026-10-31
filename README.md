@@ -14,7 +14,7 @@ Hover an item in game and press **Ctrl+Alt+C**. It goes into a list and is price
 - **Exchange rates:** poe.ninja rates, an Exchange Helper, and an Arbitrage tab for uneven Currency Exchange rates.
 - **Session tracker:** time, maps and deaths per session with a timer over the game, plus Delirium, Breach (Hiveblood) and Ritual alerts.
 - **Utilities:** chat command keys, a sticky note, a calculator.
-- **Labs (off by default):** Wealth (stash value over time), Market Insights and an offline game-data search.
+- **Labs (off by default):** Wealth (stash value over time), Market Insights and an offline game-data search (with every anoint, its Liquid Emotions and their poe.ninja prices).
 
 ## Install
 
@@ -45,6 +45,6 @@ Questions, ideas and bug reports: [Discord](https://discord.gg/Ta8EVnxx4T). The 
 
 The code is free software under the **GNU General Public License v3.0** ([LICENSE](LICENSE)): you can use it, change it and share it. If you share a changed version, it has to stay under the same license, with its source.
 
-Game data in `gamedata.json`, `regexdata.json` and `searchdata.json` comes from [RePoE](https://github.com/repoe-fork/repoe-fork) and belongs to Grinding Gear Games; it isn't covered by this license. Other sources and their licenses are in [THIRD_PARTY_NOTICES.txt](THIRD_PARTY_NOTICES.txt).
+Game data in `gamedata.json`, `regexdata.json` and `searchdata.json` comes from [RePoE](https://github.com/repoe-fork/repoe-fork) (anoint recipes in `anointdata.json`: [Path of Building PoE2](https://github.com/PathOfBuildingCommunity/PathOfBuilding-PoE2)) and belongs to Grinding Gear Games; it isn't covered by this license. Other sources and their licenses are in [THIRD_PARTY_NOTICES.txt](THIRD_PARTY_NOTICES.txt).
 
 This product isn't affiliated with or endorsed by Grinding Gear Games in any way. Path of Exile 2 is a trademark of Grinding Gear Games.
