@@ -2005,7 +2005,8 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         self.info_card(msg)
 
     def app_toast(self, text, title="", actions=(), secs=15, colour="#e0a030"):
-        """2.18.0: a small popup in the bottom-right corner of the app - seen whichever window you're in. Goes away
+        """2.18.0: a small popup in the middle of the app (2.25.3; was its bottom-right corner) - seen whichever
+        window you're in. Goes away
         after `secs`, with OK, or with one of its buttons."""
         old = getattr(self, "_app_toast", None)
         if old is not None:
@@ -2039,10 +2040,10 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         ttk.Button(btns, text="OK", command=close).pack(side="right")
         for label, fn in actions:
             ttk.Button(btns, text=label, command=lambda f=fn: (close(), f())).pack(side="right", padx=(0, 6))
-        w.update_idletasks()
+        w.update_idletasks()                                 # 2.25.3: in the middle of the app, a little above centre
         rx, ry = self.root.winfo_rootx(), self.root.winfo_rooty()
         rw, rh = max(400, self.root.winfo_width()), max(300, self.root.winfo_height())
-        w.geometry(f"+{rx + rw - w.winfo_reqwidth() - 24}+{ry + rh - w.winfo_reqheight() - 24}")
+        w.geometry(f"+{rx + (rw - w.winfo_reqwidth()) // 2}+{ry + max(40, (rh - w.winfo_reqheight()) // 3)}")
         w.deiconify()
         self._app_toast = w
         self.root.after(secs * 1000, lambda: close() if getattr(self, "_app_toast", None) is w else None)
