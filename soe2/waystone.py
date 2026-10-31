@@ -64,6 +64,8 @@ def parse_waystone(text):
         v = float(m.group(2))
         v = int(v) if v.is_integer() else v
         pct = "%" if "%" in l else ""
+        if not v:
+            default = "ignore"                     # 2.10.0: "at least 0" filters nothing (e.g. Revives Available: 0)
         mods.append({"text": f"{short}: #{pct}", "shown": f"{short}: {'+' if v > 0 and pct else ''}{v:g}{pct}",
                      "kind": "Endgame", "tier": None, "mid": f"map:{fid}",
                      "flags": set(), "value": v, "lo": None, "hi": None, "roll": None, "sid": f"map:{fid}",
