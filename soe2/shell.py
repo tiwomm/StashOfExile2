@@ -510,6 +510,28 @@ class Shell:
     def _follow_soon(self, _e=None):
         if getattr(self, "_follow_job", None) is None:
             self._follow_job = self.root.after(15, self._follow)
+        # 2.10.1: while you drag the app's edge (or Windows snaps it), Windows runs its own loop and the positions Tk
+        # reports can be stale, so the windows were put in the wrong place and seemed to vanish. Once it has been
+        # still for 0.4 s, every window is placed again from scratch.
+        if getattr(self, "_settle_job", None) is not None:
+            self.root.after_cancel(self._settle_job)
+        self._settle_job = self.root.after(400, self._settle)
+
+    def _settle(self):
+        self._settle_job = None
+        try:
+            self.root.update_idletasks()
+        except tk.TclError:
+            return
+        self._last_place = None
+        self._follow()
+        try:
+            self.heal()
+        except Exception:
+            pass
+        log = getattr(self.app, "diag", None)
+        if log is not None:
+            log.snapshot("settled after resize")
 
     def _follow(self):
         self._follow_job = None
@@ -564,6 +586,15 @@ class Shell:
             if w.state_ != "open":
                 continue
             gone = w.state() == "withdrawn" or not w.winfo_ismapped()
+            if not gone:                                     # shown, but off the app's desktop area
+                try:
+                    ox, oy = self.desk_origin()
+                    x, y = w.winfo_rootx() - ox, w.winfo_rooty() - oy
+                    dw, dh = self.desk.winfo_width(), self.desk.winfo_height()
+                    if dw > 200 and dh > 150 and (x > dw - 40 or y > dh - 20 or x + w.winfo_width() < 40 or y < -20):
+                        gone = True
+                except tk.TclError:
+                    pass
             if not gone and sys.platform == "win32":
                 try:
                     import ctypes
