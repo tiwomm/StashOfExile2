@@ -12,7 +12,7 @@ Hover an item in game and press **Ctrl+Alt+C**. It goes into a list and is price
 - **Mod book:** learns which mods are worth money from the listings it sees.
 - **Regex:** builds stash-search strings for tablets, waystones and relics, with saved Favorites.
 - **Exchange rates:** poe.ninja rates, an Exchange Helper, and an Arbitrage tab for uneven Currency Exchange rates.
-- **Session tracker:** time, maps and deaths per session with a timer over the game, plus Delirium and Breach (Hiveblood) alerts.
+- **Session tracker:** time, maps and deaths per session with a timer over the game, plus Delirium, Breach (Hiveblood) and Ritual alerts.
 - **Utilities:** chat command keys, a sticky note, a calculator.
 - **Labs (off by default):** Wealth (stash value over time), Market Insights and an offline game-data search.
 
@@ -38,7 +38,7 @@ Questions, ideas and bug reports: [Discord](https://discord.gg/Ta8EVnxx4T). The 
 ## Fair play
 
 - **One action per key press.** It never plays the game for you.
-- **Reads nothing from the game itself:** no memory, no network traffic. Only item text you copy, the game's own `Client.txt` log, and screenshots of your own screen (Delirium alert).
+- **Reads nothing from the game itself:** no memory, no network traffic. Only item text you copy, the game's own `Client.txt` log, and screenshots of your own screen (Delirium alert, Ritual watcher).
 - **Respects the trade site's rate limits**, and nothing syncs on its own.
 
 ## License

@@ -7,7 +7,7 @@ python3 -c "import tkinter; r=tkinter.Tk(); r.withdraw(); print('Tk', tkinter.Tk
 python3 -m PyInstaller --noconfirm --onefile --name StashOfExile2 \
   --add-data "gamedata.json:." --add-data "searchdata.json:." --add-data "regexdata.json:." \
   --add-data "default_rules.json:." --add-data "jewels.txt:." --add-data "tabs.txt:." \
-  --add-data "soe2/templates:soe2/templates" \
+  --add-data "soe2/templates:soe2/templates" --add-data "soe2/ritual_glyphs.json:soe2" \
   --hidden-import PIL._tkinter_finder --exclude-module pystray._win32 \
   stashofexile2.py
 tar -C dist -czf dist/StashOfExile2-linux.tar.gz StashOfExile2

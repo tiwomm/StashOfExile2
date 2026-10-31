@@ -16,11 +16,16 @@ INTRO = [
 
 # What's being worked on (2.4.0: not shown in the app any more - kept for ROADMAP.md / the developer).
 NEXT = [
-    "2.14.0: pricing - your own listings left out, Price manually, est. value in any currency (see ROADMAP.md).",
+    "2.15.0: pricing - your own listings left out, Price manually, est. value in any currency (see ROADMAP.md).",
 ]
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.14.0": [
+        "Ritual watcher (Session tracker > Alerts): reads the Ritual counter (0/3 ...) from your screen and reminds "
+        "you if you leave a map with rituals not done. The timer shows the count.",
+        "Session tracker > Options: start tracking when StashOfExile2 starts.",
+    ],
     "2.13.0": [
         "Breach alerts look like the Delirium alert again: big flashing text over the game, no box. They go by "
         "themselves after a few seconds.",
