@@ -1,7 +1,10 @@
 """Builds regexdata.json (the Regex page's mod lists) from RePoE's Path of Exile 2 export.
 
   git clone --depth 1 https://github.com/repoe-fork/poe2 repoe2      (only data/mods.json is needed)
-  python tools/build_regexdata.py repoe2/data/mods.json regexdata.json
+  python tools/build_regexdata.py repoe2/data/mods.json regexdata.json [repoe2/data/base_items.json]
+
+2.22.0: jewels (Ruby / Emerald / Sapphire / Diamond, Time-Lost too) and gear (rings, amulets, belts, armour, weapons)
+as well. base_items.json gives the gear and jewel base names, which a token must not match either.
 
 For every tablet, waystone and relic mod that can roll, it keeps the text as the game shows it (numbers as #), which
 tablet types / relic sizes / waystone tiers it rolls on, its value range, and a short SEARCH TOKEN: the shortest piece
@@ -15,6 +18,21 @@ import sys
 import time
 
 DOMAINS = {"tablet": "tablet", "area": "waystone", "sanctum_relic": "relic"}
+# 2.22.0: kinds whose mods come from several domains, kept only when they roll on one of these tags
+JEWEL_TAGS = {"strjewel": "Ruby", "dexjewel": "Emerald", "intjewel": "Sapphire", "radius_jewel": "Time-Lost",
+              "str_radius_jewel": "Time-Lost", "dex_radius_jewel": "Time-Lost", "int_radius_jewel": "Time-Lost"}
+WEAPON_TAGS = ("weapon", "one_hand_weapon", "two_hand_weapon", "wand", "staff", "sceptre", "sword", "mace", "axe", "bow",
+               "crossbow", "spear", "flail", "dagger", "claw", "talisman", "warstaff", "trap")
+GEAR_TAGS = {"ring": "Ring", "amulet": "Amulet", "belt": "Belt", "gloves": "Gloves", "boots": "Boots", "helmet": "Helmet",
+             "body_armour": "Body Armour", "shield": "Shield", "focus": "Focus", "quiver": "Quiver",
+             **{t: "Weapon" for t in WEAPON_TAGS},
+             **{t: "Armour" for t in ("armour", "str_armour", "dex_armour", "int_armour", "str_dex_armour",
+                                      "str_int_armour", "dex_int_armour", "str_dex_int_armour")}}
+MULTI = {"jewel": (("misc", "desecrated"), JEWEL_TAGS), "gear": (("item", "desecrated"), GEAR_TAGS)}
+GEAR_CLASSES = ("Ring", "Amulet", "Belt", "Gloves", "Boots", "Helmet", "Body Armour", "Shield", "Buckler", "Focus",
+                "Quiver", "One Hand Mace", "Two Hand Mace", "Warstaff", "Spear", "Bow", "Crossbow", "Talisman",
+                "One Hand Sword", "Two Hand Sword", "Dagger", "One Hand Axe", "Two Hand Axe", "Flail", "Staff", "Wand",
+                "Sceptre", "Claw")
 
 # Waystone mods carry their bonus as extra lines (15% more Waystones found in Area ...); the game adds those up into the
 # waystone's properties instead of showing them as mod lines, so they are not part of the searchable mod text.
@@ -42,6 +60,17 @@ NOISE = {
               "urn relic", "amphora relic", "vase relic", "seal relic", "coffer relic", "tapestry relic", "incense relic",
               "place this item on the altar in the relic chamber to apply its effects to your trials", "corrupted",
               "requires level #"],
+    "jewel": ["item class: jewels", "rarity: normal", "rarity: magic", "rarity: rare", "rarity: unique", "item level: #",
+              "place into an allocated jewel socket on the passive skill tree. right click to remove from the socket.",
+              "radius: small", "radius: medium", "radius: large", "corrupted", "unidentified", "requires level #"],
+    "gear": ["item class: rings", "item class: amulets", "item class: belts", "item class: gloves", "item class: boots",
+             "item class: helmets", "item class: body armours", "item class: shields", "item class: foci",
+             "item class: quivers", "rarity: normal", "rarity: magic", "rarity: rare", "rarity: unique", "quality: +#%",
+             "armour: #", "evasion rating: #", "energy shield: #", "block chance: #%", "spirit: #",
+             "physical damage: #-#", "fire damage: #-#", "cold damage: #-#", "lightning damage: #-#",
+             "chaos damage: #-#", "critical hit chance: #%", "attacks per second: #", "reload time: #",
+             "requires: level #", "requires level #", "item level: #", "sockets: s", "corrupted", "unidentified",
+             "mirrored", "fractured item", "charm slots: #"],
 }
 TAG_NAMES = {
     "default": "Any", "tower_augment_generic": "Irradiated", "tower_augment_breach": "Breach", "tower_augment_expedition": "Expedition",
@@ -119,22 +148,31 @@ def best_token(line, others, also=()):
     return best[2] if best else None
 
 
-def main(src, out):
+def main(src, out, bases_path=None):
     mods = json.load(open(src, encoding="utf-8"))
+    if bases_path:                                        # 2.22.0: base names are on every item: no token may match
+        bases = json.load(open(bases_path, encoding="utf-8"))
+        for kind, classes in (("gear", GEAR_CLASSES), ("jewel", ("Jewel",))):
+            NOISE[kind] += sorted({b["name"].lower() for b in bases.values()
+                                   if b.get("item_class") in classes and b.get("release_state") == "released"})
     result = {"version": 1, "generated": time.strftime("%Y-%m-%d"), "source": {"name": "RePoE (repoe-fork/poe2)",
               "url": "https://github.com/repoe-fork/poe2"}, "types": {}}
-    for dom, kind in DOMAINS.items():
+    for dom, kind in list(DOMAINS.items()) + [(None, k) for k in MULTI]:
         by_type = {}
+        doms, keep = MULTI.get(kind, ((dom,), None))
         for mid, m in mods.items():
-            if m.get("domain") != dom or m.get("generation_type") not in ("prefix", "suffix") or not m.get("text"):
+            if m.get("domain") not in doms or m.get("generation_type") not in ("prefix", "suffix") or not m.get("text"):
                 continue
             tags = [w["tag"] for w in m.get("spawn_weights", []) if w["weight"] > 0]
+            if keep is not None:
+                tags = sorted({keep[t] for t in tags if t in keep})
             if not tags:
                 continue
             lines = [l for l in display(m["text"]) if not any(h.match(l) for h in HIDDEN)]
             if not lines:
                 continue
-            e = by_type.setdefault(m["type"], {"id": m["type"], "side": m["generation_type"], "lines": lines, "tags": set(),
+            key = m["type"] if kind not in MULTI else (m["generation_type"], tuple(lines))   # same text = one mod
+            e = by_type.setdefault(key, {"id": m["type"], "side": m["generation_type"], "lines": lines, "tags": set(),
                                                "min": None, "max": None, "names": set()})
             e["tags"].update(tags)
             if m.get("name"):
@@ -147,7 +185,10 @@ def main(src, out):
         entries = list(by_type.values())
         noise = NOISE[kind]
         for e in entries:
-            others = ([l for o in entries if o is not e for l in o["lines"]] + noise
+            # 2.22.0 jewels / gear: a line another mod has word for word (a hybrid's half, the same mod as a prefix and
+            # a suffix) isn't "the wrong thing" - that item has the stat too - so it doesn't block a token
+            same = set(e["lines"]) if kind in MULTI else set()
+            others = ([l for o in entries if o is not e for l in o["lines"] if l not in same] + noise
                       + [n.lower() for o in entries if o is not e for n in o["names"]])   # magic items' names
             main_line = next((l for l in e["lines"] if "#" in l), e["lines"][0])
             var = singular_variant(main_line) if (e["min"] or 0) <= 1 else None
@@ -156,12 +197,22 @@ def main(src, out):
             tok = tok or best_token(main_line, others)
             if tok is None:                                  # no unique piece in that line: try the others
                 tok = next((t for t in (best_token(l, others) for l in e["lines"]) if t), None)
-                main_line = next((l for l in e["lines"] if tok and tok in l), main_line)
+                main_line = next((l for l in e["lines"] if tok and tok.strip("^$") in l), main_line)
             e["token"], e["line"] = tok, main_line
+            if tok is None and kind in MULTI:              # 2.22.0: the whole line, numbers as \d+, both ends fixed
+                main_line = next((l for l in e["lines"] if "#" in l), e["lines"][0])
+                e["token"] = "^" + re.sub(r"([\\^$.|?*+()\[\]{}])", r"\\\1", main_line).replace("#", r"\d+") + "$"
+                e["line"], e["rx"] = main_line, True
             e["text"] = " / ".join(e["lines"])
             e["tags"] = sorted(TAG_NAMES.get(t, t) for t in e["tags"])
             e["names"] = sorted(e["names"])
         entries.sort(key=lambda e: (e["side"], e["text"]))
+        seen_ids = {}                                       # 2.22.0: one RePoE type can have two texts: unique ids
+        for e in entries:
+            n = seen_ids.get(e["id"], 0)
+            seen_ids[e["id"]] = n + 1
+            if n:
+                e["id"] = f"{e['id']}~{n + 1}"
         result["types"][kind] = {"mods": entries, "noise": noise}
         print(kind, len(entries), "mods,", sum(1 for e in entries if not e["token"]), "without a token")
     with open(out, "w", encoding="utf-8") as f:
@@ -169,4 +220,4 @@ def main(src, out):
 
 
 if __name__ == "__main__":
-    main(sys.argv[1], sys.argv[2])
+    main(sys.argv[1], sys.argv[2], sys.argv[3] if len(sys.argv) > 3 else None)

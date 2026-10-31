@@ -349,12 +349,113 @@ class Overlay:
                           min_size=(NOTE_MIN_W, NOTE_MIN_H), on_close=self.hide_notes, on_lock=self.set_locked,
                           on_moved=moved, follow_game=True)
         w.withdraw()                           # show_notes() shows it
+        # 2.23.0: tabs - several pages on one note (click a tab, + adds one, double-click renames, right-click deletes)
+        self.notes_tabbar = tk.Frame(w.body, bg=bg)
+        self.notes_tabbar.pack(fill="x")
         text = tk.Text(w.body, bg=bg, fg=fg, insertbackground=fg, relief="flat", highlightthickness=0, wrap="word",
                        font=("Consolas", int(c.get("notes_font", 11))), padx=6, pady=4)
         text.pack(fill="both", expand=True)
-        text.insert("1.0", c.get("notes_text", ""))
+        tabs, i = self.note_tabs(), self.note_index()
+        text.insert("1.0", tabs[i]["text"])
+        text.edit_modified(False)
         text.bind("<<Modified>>", self._text_changed)
         self.notes, self.notes_text = w, text
+        self._paint_tabs()
+
+    # ---- 2.23.0: note tabs
+    def note_tabs(self):
+        """[{"name", "text"}] - made from the single note of older versions the first time."""
+        c = self.cfg
+        tabs = c.get("notes_tabs")
+        if not isinstance(tabs, list) or not tabs:
+            tabs = c["notes_tabs"] = [{"name": "Note 1", "text": c.get("notes_text", "")}]
+        return tabs
+
+    def note_index(self):
+        i = self.cfg.get("notes_tab", 0)
+        return i if isinstance(i, int) and 0 <= i < len(self.note_tabs()) else 0
+
+    def _keep_text(self):
+        """What's typed on the note -> its tab (and notes_text, which older versions read)."""
+        try:
+            t = self.notes_text.get("1.0", "end-1c")
+        except Exception:
+            return
+        self.note_tabs()[self.note_index()]["text"] = t
+        self.cfg["notes_text"] = t
+
+    def _paint_tabs(self):
+        bar = getattr(self, "notes_tabbar", None)
+        if bar is None or not bar.winfo_exists():
+            return
+        for w_ in bar.winfo_children():
+            w_.destroy()
+        bg, fg = self._colour("notes_bg", "1A1A2E"), self._colour("notes_fg", "E2C97E")
+        cur = self.note_index()
+        for i, t in enumerate(self.note_tabs()):
+            on = i == cur
+            lab = tk.Label(bar, text=t["name"][:18], bg=fg if on else bg, fg=bg if on else fg, padx=7, pady=1,
+                           cursor="hand2", font=("Segoe UI", 8, "bold" if on else "normal"),
+                           highlightthickness=1, highlightbackground=fg)
+            lab.pack(side="left", padx=(0, 2), pady=(0, 2))
+            lab.bind("<Button-1>", lambda e, i=i: self.switch_tab(i))
+            lab.bind("<Double-1>", lambda e, i=i: self.rename_tab(i))
+            lab.bind("<Button-3>", lambda e, i=i: self.delete_tab(i))
+        add = tk.Label(bar, text="+", bg=bg, fg=fg, padx=6, cursor="hand2", font=("Segoe UI", 9, "bold"))
+        add.pack(side="left", pady=(0, 2))
+        add.bind("<Button-1>", lambda e: self.add_tab())
+
+    def switch_tab(self, i):
+        if not 0 <= i < len(self.note_tabs()):
+            return
+        self._keep_text()
+        self.cfg["notes_tab"] = i
+        self.notes_text.delete("1.0", "end")
+        self.notes_text.insert("1.0", self.note_tabs()[i]["text"])
+        self.notes_text.edit_modified(False)
+        self.cfg["notes_text"] = self.note_tabs()[i]["text"]
+        self.save_settings()
+        self._paint_tabs()
+
+    def add_tab(self, name=None):
+        tabs = self.note_tabs()
+        if len(tabs) >= 12:
+            return None
+        n = len(tabs) + 1
+        while any(t["name"] == f"Note {n}" for t in tabs):
+            n += 1
+        tabs.append({"name": name or f"Note {n}", "text": ""})
+        self.switch_tab(len(tabs) - 1)
+        return len(tabs) - 1
+
+    def rename_tab(self, i, name=None):
+        if name is None:
+            from tkinter import simpledialog
+            name = simpledialog.askstring("Rename note", "Name:", initialvalue=self.note_tabs()[i]["name"],
+                                          parent=self.notes)
+        if name and name.strip():
+            self.note_tabs()[i]["name"] = name.strip()[:30]
+            self.save_settings()
+            self._paint_tabs()
+
+    def delete_tab(self, i, ask=True):
+        tabs = self.note_tabs()
+        if len(tabs) <= 1 or not 0 <= i < len(tabs):
+            return False
+        self._keep_text()
+        if ask and tabs[i]["text"].strip():
+            from tkinter import messagebox
+            if not messagebox.askyesno("Delete note", f"Delete \"{tabs[i]['name']}\" and what's on it?", parent=self.notes):
+                return False
+        del tabs[i]
+        cur = self.note_index()
+        self.cfg["notes_tab"] = min(cur if cur < i else max(0, cur - 1), len(tabs) - 1)
+        self.notes_text.delete("1.0", "end")
+        self.notes_text.insert("1.0", tabs[self.note_index()]["text"])
+        self.notes_text.edit_modified(False)
+        self.save_settings()
+        self._paint_tabs()
+        return True
 
     def set_locked(self, on):
         """The lock on the note's title bar (or the Notes window): no moving or resizing while locked."""
@@ -375,10 +476,7 @@ class Overlay:
 
     def _autosave(self):
         self._save_job = None
-        try:
-            self.cfg["notes_text"] = self.notes_text.get("1.0", "end-1c")
-        except Exception:
-            return
+        self._keep_text()
         self.save_settings()
 
     def _store_geometry(self):
@@ -386,7 +484,7 @@ class Overlay:
             w = self.notes
             if w.winfo_width() > 1 and w.winfo_ismapped():         # a note that isn't laid out yet reports 1x1 at 0,0
                 self.cfg.update(notes_x=w.winfo_x(), notes_y=w.winfo_y(), notes_w=w.winfo_width(), notes_h=w.winfo_height())
-            self.cfg["notes_text"] = self.notes_text.get("1.0", "end-1c")
+            self._keep_text()
         except Exception:
             pass
 

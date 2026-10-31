@@ -53,6 +53,10 @@ class ExchangePage:
             v.trace_add("write", lambda *a: self.root.after_idle(self.arb_opts_changed))
         self.arb_btn = ttk.Button(bar, text="Refresh", style="Accent.TButton", command=self.arb_refresh)
         self.arb_btn.pack(side="right")
+        # 2.23.0: live scan - GGG publishes each hour when it ends; the app reads it as soon as it's out
+        self.arb_live = tk.BooleanVar(value=bool(SETTINGS.get("arb_live")))
+        ttk.Checkbutton(bar, text="Live scan", variable=self.arb_live,
+                        command=self.arb_live_changed).pack(side="right", padx=(0, 10))
         self.arb_status = tk.Label(page, text="", bg=P1, fg=C["muted"], anchor="w", padx=14, justify="left")
         self.arb_status.pack(fill="x")
         tf = tk.Frame(page, bg=P1)                      # (packed last: the boxes below keep their room)
@@ -107,6 +111,61 @@ class ExchangePage:
             v.trace_add("write", lambda *a: self.flip_draw())
         self.flip_draw()
         tf.pack(fill="both", expand=True, padx=14, pady=(4, 0))
+        if SETTINGS.get("arb_live"):                         # 2.23.0: Live scan was left on
+            self.root.after(3000, lambda: self.arb_live_tick(first=True))
+
+    # ---- 2.23.0: live scan
+    LIVE_CHECK_MS = 5 * 60 * 1000                       # look for a newly finished hour every 5 minutes
+
+    def arb_live_changed(self):
+        SETTINGS["arb_live"] = bool(self.arb_live.get())
+        save_json("settings.json", SETTINGS)
+        if SETTINGS["arb_live"]:
+            self.arb_live_seen = None                      # this scan's loops don't count as "new"
+            self.arb_live_tick(first=True)
+        self._say("Live scan on: each new hour of Currency Exchange history is read when it's out, and a new uneven "
+                  "loop pops up." if SETTINGS["arb_live"] else "Live scan off.", 10)
+
+    def arb_live_tick(self, first=False):
+        """While Live scan is on: read the newest finished hour as soon as GGG publishes it (it's hourly - there is
+        nothing more live to read), then say if a loop appeared that wasn't there before. Never more than one
+        refresh at a time, and the reader already waits between requests and honours "slow down"."""
+        job = getattr(self, "_arb_live_job", None)
+        if job:
+            try:
+                self.root.after_cancel(job)
+            except Exception:
+                pass
+        self._arb_live_job = None
+        if not SETTINGS.get("arb_live"):
+            return
+        league = SETTINGS.get("league")
+        if league and not A.CX.busy:
+            n = LOOKBACK.get(self.arb_back.get(), 3) if hasattr(self, "arb_back") else 3
+            newest = A.CX.wanted(1)[0]
+            if first or A.CX.league != league or newest not in A.CX.hours:
+                threading.Thread(target=lambda: A.CX.refresh(league, n), daemon=True).start()
+                self.root.after(300, self.arb_poll)
+        self._arb_live_job = self.root.after(self.LIVE_CHECK_MS, self.arb_live_tick)
+
+    def arb_live_notify(self, loops, newest=None):
+        """A loop that wasn't in the last scan -> a popup (only while Live scan is on, and only when a new hour came
+        in - changing the settings above doesn't count)."""
+        keys = {" > ".join(a for a, _b, _r in lp["steps"]): lp for lp in loops}
+        seen = getattr(self, "arb_live_seen", None)
+        fresh = newest is not None and newest != getattr(self, "arb_live_newest", None)
+        self.arb_live_newest = newest
+        self.arb_live_seen = set(keys)
+        if seen is None or not fresh or not SETTINGS.get("arb_live"):
+            return []
+        new = [lp for k, lp in keys.items() if k not in seen]
+        if new:
+            best = max(new, key=lambda lp: lp["edge"])
+            names = [self.arb_name(a) for a, _b, _r in best["steps"]] + [self.arb_name(best["start"])]
+            self.app_toast(" → ".join(names) + f"  (+{best['edge'] * 100:.1f} %)"
+                           + (f" and {len(new) - 1} more" if len(new) > 1 else "") + ". Check it in game first.",
+                           title="💱 New uneven loop on the Currency Exchange", secs=20, colour=C["good"])
+        return new
 
     # ---- names
     def arb_name(self, cid):
@@ -168,6 +227,8 @@ class ExchangePage:
         except ValueError:
             depth = 5.0
         loops = A.find_loops(tot, edge, depth) if tot else []
+        if hours:
+            self.arb_live_notify(loops, max(hours))
         tv = self.arb_tv
         tv.delete(*tv.get_children())
         self.arb_rows = {}

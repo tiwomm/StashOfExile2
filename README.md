@@ -10,7 +10,7 @@ Hover an item in game and press **Ctrl+Alt+C**. It goes into a list and is price
 
 - **Price checks:** bulk pricing for tablets, jewels and waystones, with a confidence rating and filters per item. Other gear gets a rough guess only.
 - **Mod book:** learns which mods are worth money from the listings it sees.
-- **Regex:** builds stash-search strings for tablets, waystones and relics, with saved Favorites.
+- **Regex:** builds stash-search strings for tablets, waystones, relics, jewels and gear (at least, ranges, at most), with saved Favorites.
 - **Exchange rates:** poe.ninja rates, an Exchange Helper, and an Arbitrage tab for uneven Currency Exchange rates.
 - **Session tracker:** time, maps and deaths per session with a timer over the game, plus Delirium, Breach (Hiveblood) and Ritual alerts.
 - **Utilities:** chat command keys, a sticky note, a calculator.
