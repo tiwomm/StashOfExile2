@@ -11,7 +11,8 @@ from .clipboard import read_clipboard_text
 from .config import load_json, save_json, SETTINGS
 from .style import C, KeyCapture, MONO, SegBar
 
-KIND_NAMES = {"tablet": "Tablets", "waystone": "Waystones", "relic": "Relics"}
+KIND_NAMES = {"tablet": "Tablets", "waystone": "Waystones", "relic": "Relics", "jewel": "Jewels",
+              "gear": "Gear items"}                         # 2.22.0: jewels and gear
 STATE_FILE, PRESETS_FILE = "regex_state.json", "regex_presets.json"
 FAV_FILE, FAV_BACKUP = "regex_favorites.json", "regex_favorites.backup.json"     # 2.4.0: Favorites
 SEL_BG = "#1d3a66"
@@ -110,8 +111,9 @@ class RegexPage:
         self.rx_q = tk.StringVar()
         self.rx_q.trace_add("write", lambda *a: self.root.after_idle(self.rx_filter))
         ttk.Entry(fbar, textvariable=self.rx_q, width=30).pack(side="left")
-        tk.Label(fbar, text="Click a mod to select it (click again to remove it). In \"I want\", type a number in its box "
-                            "to require at least that value.", bg=P1, fg=C["muted"], font=("Segoe UI", 9)).pack(side="left", padx=12)
+        tk.Label(fbar, text="Click a mod to select it (click again to remove it). In \"I want\", type in its box: 50 = at "
+                            "least 50, 50-80 = from 50 to 80, <80 = at most 80. \"I don't want\" leaves items with "
+                            "that mod out.", bg=P1, fg=C["muted"], font=("Segoe UI", 9)).pack(side="left", padx=12)
         self.rx_info = tk.Label(fbar, text="", bg=P1, fg=C["muted"])
         self.rx_info.pack(side="right")
         # 2.0 beta 20: the Mod book's view of each mod
@@ -238,7 +240,7 @@ class RegexPage:
         for c in range(3):
             box.columnconfigure(c, weight=1, uniform="cards")
         rarity = set(o.get("rarity") or [])
-        name = {"tablet": "TABLET", "waystone": "WAYSTONE", "relic": "RELIC"}[kind]
+        name = {"tablet": "TABLET", "waystone": "WAYSTONE", "relic": "RELIC", "jewel": "JEWEL", "gear": "GEAR"}[kind]
         if kind == "tablet":
             c1 = card("TABLET RARITY", 0)
             for i, r in enumerate(R.RARITIES):
@@ -265,6 +267,30 @@ class RegexPage:
             check(c3, "cor_only", "Corrupted waystones", 1, 1, value=o.get("corrupted") == "only")
             check(c3, "cor_not", "Uncorrupted waystones", 2, 1, value=o.get("corrupted") == "not")
             check(c3, "round10", "Round down to nearest 10", 3, 1)
+        elif kind == "jewel":                                # 2.22.0
+            c1 = card("JEWEL RARITY", 0)
+            for i, r in enumerate(R.RARITIES):
+                check(c1, "rar:" + r, r, i + 1, value=r in rarity)
+            c2 = card("JEWEL TYPE", 1)
+            have = set(o.get("types") or [])
+            for i, t in enumerate(R.JEWEL_TYPES):
+                check(c2, "type:" + t, t, 1 + i % 3, i // 3, value=t in have)
+            c3 = card("OPTIONS", 2)
+            check(c3, "cor_only", "Corrupted", 1, value=o.get("corrupted") == "only")
+            check(c3, "cor_not", "Not corrupted", 2, value=o.get("corrupted") == "not")
+            check(c3, "round10", "Round down to nearest 10", 3)
+        elif kind == "gear":                                 # 2.22.0
+            c1 = card("GEAR RARITY", 0)
+            for i, r in enumerate(R.RARITIES):
+                check(c1, "rar:" + r, r, i + 1, value=r in rarity)
+            c2 = card("SHOW MODS FOR", 1)
+            have = set(o.get("slots") or [])
+            for i, t in enumerate(R.GEAR_SLOTS):
+                check(c2, "slot:" + t, t, 1 + i % 4, i // 4, value=t in have)
+            c3 = card("OPTIONS", 2)
+            check(c3, "cor_only", "Corrupted", 1, value=o.get("corrupted") == "only")
+            check(c3, "cor_not", "Not corrupted", 2, value=o.get("corrupted") == "not")
+            check(c3, "round10", "Round down to nearest 10", 3)
         else:
             c1 = card("RELIC RARITY", 0)
             for i, r in enumerate(R.RARITIES):
@@ -281,10 +307,11 @@ class RegexPage:
         st, v = self._rx(), self.rx_vars
         o = {}
         for key, var in v.items():
-            if key.startswith(("rar:", "type:", "size:")):
+            if key.startswith(("rar:", "type:", "size:", "slot:")):
                 if var.get():
                     group, val = key.split(":", 1)
-                    o.setdefault({"rar": "rarity", "type": "types", "size": "sizes"}[group], []).append(val)
+                    o.setdefault({"rar": "rarity", "type": "types", "size": "sizes", "slot": "slots"}[group],
+                                 []).append(val)
             elif key in ("round10",):
                 o[key] = bool(var.get())
             elif key in ("cor_only", "cor_not"):
@@ -316,6 +343,8 @@ class RegexPage:
 
     def rx_commit_opts(self):
         self._rx_cancel_opts_job()
+        if self.rx_kind.get() == "gear":                   # 2.22.0: the slot boxes pick which mods are listed
+            self.rx_filter()
         self.rx_update()
         self.rx_save()
 
@@ -340,7 +369,7 @@ class RegexPage:
         if side == "want":
             st = self._rx()
             cur = st["want"].get(m["id"])
-            v = tk.StringVar(value="" if cur is None else f"{cur:g}")
+            v = tk.StringVar(value="" if cur is None else f"{cur:g}" if isinstance(cur, (int, float)) else str(cur))
             if "#" in m["line"]:
                 ent = tk.Entry(row, textvariable=v, width=7, justify="center", bg=C["odd"], fg=C["text"], relief="flat",
                                insertbackground=C["text"], highlightthickness=1, highlightbackground=C["line"],
@@ -463,9 +492,12 @@ class RegexPage:
         st = self._rx()
         if txt:
             try:
-                val = float(txt)
+                lo, hi = R.value_spec(txt)                   # 2.21.0: 50, 50-80 or <80
             except ValueError:
+                ent and ent.config(highlightbackground=C["red"])
                 return
+            ent and ent.config(highlightbackground=C["line"])
+            val = lo if hi is None else txt.replace(" ", "")   # a plain minimum stays a number (older favorites)
             st["want"][mid] = val                            # typing a value selects the mod
             if mid in st["avoid"]:
                 st["avoid"].remove(mid)
@@ -537,6 +569,11 @@ class RegexPage:
         worths = getattr(self, "rx_worths", {})
         rank = {"high": 0, "normal": 1, "ignore": 2}
         shown = 0
+        slots = set()
+        if self.rx_kind.get() == "gear":                     # 2.22.0: only the mods that roll on the picked slots
+            slots = set(self._rx()["opts"].get("slots") or [])
+            if slots & {"Helmet", "Gloves", "Boots", "Body Armour"}:
+                slots.add("Armour")
         for side, L in self.rx_lists.items():
             rows = list(L["rows"].items())
             if first:                                        # ★ mods at the top (2.0 beta 20)
@@ -547,6 +584,8 @@ class RegexPage:
                 m = r["mod"]
                 ok = not q or q in m["text"] or q in " ".join(m["tags"]).lower()
                 if only and worths.get(mid, ("normal",))[0] != "high":
+                    ok = False
+                if slots and not slots & set(m["tags"]):
                     ok = False
                 if ok:
                     r["row"].pack(fill="x")
@@ -706,16 +745,16 @@ class RegexPage:
             ttk.Button(bar, text=text, command=fn, style="Accent.TButton" if accent else "TButton").pack(side="left",
                                                                                                     padx=(0, 6))
         self.undo_button(bar, "regex").pack(side="left", padx=(0, 6))
-        self.rx_fav_msg = tk.Label(page, text="Your saved searches, all item types together. Double-click one to copy "
-                                              "it; Delete removes the selected ones (Ctrl+Z undoes). They're kept in "
+        self.rx_fav_msg = tk.Label(page, text="Your saved searches, all item types together. 📋 Copy (or double-click) "
+                                              "copies one; Delete removes the selected ones (Ctrl+Z undoes). They're kept in "
                                               "the app's data folder, so updates don't touch them.",
                                    bg=P1, fg=C["muted"], anchor="w", justify="left", padx=12)
         self.rx_fav_msg.pack(fill="x")
         self.rx_fav_msg.bind("<Configure>", lambda e: self.rx_fav_msg.config(wraplength=max(300, e.width - 24)))
         tf = tk.Frame(page, bg=P1)
         tf.pack(fill="both", expand=True, padx=10, pady=(6, 10))
-        cols = (("name", "Name", 200, "w"), ("kind", "For", 90, "w"), ("search", "Search", 420, "w"),
-                ("len", "Length", 60, "e"))
+        cols = (("copy", "", 70, "center"), ("name", "Name", 200, "w"), ("kind", "For", 90, "w"),
+                ("search", "Search", 420, "w"), ("len", "Length", 60, "e"))
         tv = ttk.Treeview(tf, columns=[c[0] for c in cols], show="headings")
         for cid, title, w, anchor in cols:
             tv.heading(cid, text=title)
@@ -726,6 +765,7 @@ class RegexPage:
         tv.pack(fill="both", expand=True)
         tv.tag_configure("odd", background=C["odd"])
         tv.bind("<Double-1>", lambda e: self.rx_fav_copy())
+        tv.bind("<ButtonRelease-1>", self.rx_fav_click, add="+")      # 2.21.0: a Copy button on every row
         self.rx_fav_tv = tv
         self.list_register("regex", tv, delete=self.rx_fav_delete)
         self.rx_fav_empty = tk.Label(tf, text="No Favorites yet.\nBuild a search, then press ☆ Add to Favorites.",
@@ -747,7 +787,7 @@ class RegexPage:
                 s = self.rx_fav_search(f)
             except Exception:
                 s = ""
-            tv.insert("", "end", iid=str(i), values=(f["name"], KIND_NAMES[f["kind"]][:-1], s or "(empty)", len(s)),
+            tv.insert("", "end", iid=str(i), values=("📋 Copy", f["name"], KIND_NAMES[f["kind"]][:-1], s or "(empty)", len(s)),
                       tags=("odd",) if i % 2 else ())
         if self.rx_favs:
             self.rx_fav_empty.place_forget()
@@ -757,6 +797,16 @@ class RegexPage:
     def _rx_fav_sel(self):
         sel = self.rx_fav_tv.selection()
         return [self.rx_favs[int(i)] for i in sel if str(i).isdigit() and int(i) < len(self.rx_favs)]
+
+    def rx_fav_click(self, e):
+        """A click on a row's "📋 Copy" cell copies that favorite."""
+        tv = self.rx_fav_tv
+        if tv.identify_region(e.x, e.y) in ("heading", "separator") or tv.identify_column(e.x) != "#1":
+            return
+        iid = tv.identify_row(e.y)
+        if iid:
+            tv.selection_set(iid)
+            self.rx_fav_copy()
 
     def rx_fav_copy(self):
         f = (self._rx_fav_sel() or [None])[0]
@@ -768,6 +818,8 @@ class RegexPage:
         self.root.clipboard_clear()
         self.root.clipboard_append(s)
         self._say(f"Copied \"{f['name']}\" ({len(s)} characters). In game: open the stash, Ctrl+F, Ctrl+V.", 8)
+        self.app_toast(f"\"{f['name']}\" is on the clipboard. In game: open the stash, Ctrl+F, Ctrl+V.",
+                       title="✓ Copied", secs=4, colour=C["green"])
 
     def rx_fav_open(self):
         f = (self._rx_fav_sel() or [None])[0]

@@ -72,8 +72,8 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
     COLS = [("added", "#", 46, "e"), ("name", "Item", 220, "w"), ("type", "Type", 110, "w"), ("mark", "Status", 90, "center"),
             ("est", "Est. value", 110, "e"), ("conf", "Confidence", 95, "center"), ("listings", "Listings", 70, "e"), ("priced", "Priced at", 130, "w"),
             ("match", "How it was priced", 300, "w")]
-    MARK_TEXT = {"new": "", "listed": "✔ listed", "removed": "✖ removed"}
-    VIEW_MARK = {"Not yet listed": "new", "Listed": "listed", "Removed": "removed"}
+    MARK_TEXT = {"new": "", "listed": "✔ listed", "sold": "💰 sold", "removed": "✖ removed"}
+    VIEW_MARK = {"Not yet listed": "new", "Listed": "listed", "Sold": "sold", "Removed": "removed"}
 
     def __init__(self, root):
         self.root = root
@@ -642,6 +642,7 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         self.tree.tag_configure("odd", background=C["odd"])
         self.tree.tag_configure("listed", foreground=C["green"])
         self.tree.tag_configure("removed", foreground=C["muted"])
+        self.tree.tag_configure("sold", foreground="#7fe0c0")              # 2.21.0
         self.tree.bind("<<TreeviewSelect>>", self._on_select_soon)
         self.tree.bind("<Double-1>", lambda e: self.open_trade())
         self.empty_lbl = tk.Label(left, bg=C["panel"], fg=C["muted"], font=("Segoe UI", 12), justify="center",
@@ -2393,12 +2394,18 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         if not sel:
             return
         recs = [self.records[r] for r in sel if r in self.records]
-        if mark in ("listed", "removed") and recs and all(r.get("mark", "new") == mark for r in recs):
+        if mark in ("listed", "removed", "sold") and recs and all(r.get("mark", "new") == mark for r in recs):
             mark = "new"                                  # already listed / removed: the button switches it back (1.35)
+        typed_sold = ""
+        if mark == "sold":                                # 2.21.0: what it really sold for
+            typed_sold = (getattr(self, "sold_var", None).get().strip() if getattr(self, "sold_var", None) else "")
+            if len(sel) != 1 or not parse_price(typed_sold):
+                return self._say("Type what it sold for in the item's panel (e.g. 3 div, 150 chaos, 40 ex), then press "
+                                 "Mark as sold.", 10)
         self.undo = [(r["id"], r.get("mark", "new"), r.get("list_price")) for r in recs]
         self.undo_deleted = []
         self.undo_btn.config(state="normal")
-        word = {"listed": "listed", "removed": "removed", "new": "not listed"}[mark]
+        word = {"listed": "listed", "removed": "removed", "sold": f"sold for {typed_sold}", "new": "not listed"}[mark]
         self._say(f"Marked {len(recs)} item{'s' if len(recs) != 1 else ''} as {word}. Ctrl+Z or Undo puts it back.", 12)
         typed = ""
         if mark == "listed" and len(sel) == 1 and self.price_var is not None:
@@ -2409,8 +2416,13 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
             rec = self.records.get(rid)
             if not rec:
                 continue
+            if rec.get("mark") == "sold" and mark != "sold":     # unmarked: that sale isn't learned from any more
+                MARKET.forget_sale(rec["item"])
             rec["mark"] = mark
             VALUE_LOG.mark(rec)
+            if mark == "sold":                                    # 2.21.0: a real sale - the Mod book learns from it
+                rec["sold_price"] = typed_sold
+                MARKET.save_sale(rec["item"], parse_price(typed_sold), typed_sold)
             if mark == "listed":
                 rec["list_price"] = typed or (fmt_div(rec["est"]) if rec.get("est") is not None and not rec.get("skip") else "")
                 div = parse_price(rec["list_price"])              # remembered in market.db: a hint on similar items later
@@ -3009,6 +3021,8 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
             tags.append("listed")
         elif mark == "removed":
             tags.append("removed")
+        elif mark == "sold":
+            tags.append("sold")
         elif st in ("queued", "pricing"):
             tags.append("pending")
         elif st == "error":
@@ -3574,9 +3588,11 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         tk.Label(bx, text="LISTING STATUS", bg=P1, fg=C["steel"], font=("Segoe UI", 9, "bold"), anchor="w").pack(fill="x")
         cur_txt = {"new": "Not listed yet",
                    "listed": "✔ Listed" + (f" for {rec['list_price']}" if rec.get("list_price") else ""),
+                   "sold": "💰 Sold" + (f" for {rec['sold_price']}" if rec.get("sold_price") else ""),
                    "removed": "✖ Removed (reforged / changed)"}[mark]
         tk.Label(bx, text=cur_txt, bg=P1, font=("Segoe UI", 12, "bold"), anchor="w",
-                 fg={"new": C["text"], "listed": C["green"], "removed": C["muted"]}[mark]).pack(fill="x", pady=(2, 6))
+                 fg={"new": C["text"], "listed": C["green"], "sold": "#7fe0c0", "removed": C["muted"]}[mark]
+                 ).pack(fill="x", pady=(2, 6))
         prow = tk.Frame(bx, bg=P1)
         prow.pack(fill="x", pady=(0, 6))
         tk.Label(prow, text="Listed at", bg=P1, fg=C["muted"]).pack(side="left", padx=(0, 6))
@@ -3589,6 +3605,20 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         else:
             ttk.Button(bx, text="✔ Mark as listed", style="Accent.TButton",
                        command=lambda: self.mark_selected("listed")).pack(fill="x", pady=2)
+        # 2.21.0: what it really sold for - the Mod book learns from real sales
+        srow = tk.Frame(bx, bg=P1)
+        srow.pack(fill="x", pady=(8, 2))
+        tk.Label(srow, text="Sold for", bg=P1, fg=C["muted"]).pack(side="left", padx=(0, 6))
+        self.sold_var = tk.StringVar(value=rec.get("sold_price") or "")
+        se = ttk.Entry(srow, textvariable=self.sold_var, width=16)
+        se.pack(side="left")
+        se.bind("<Return>", lambda e: self.mark_selected("sold"))
+        if mark == "sold":
+            ttk.Button(srow, text="↺ Unmark sold", command=lambda: self.mark_selected("new")).pack(side="left", padx=6)
+        else:
+            ttk.Button(srow, text="💰 Mark as sold", command=lambda: self.mark_selected("sold")).pack(side="left", padx=6)
+        tk.Label(bx, text="A real sale teaches the Mod book what these mods are worth.", bg=P1, fg=C["muted"],
+                 font=("Segoe UI", 8), anchor="w").pack(fill="x")
         if mark == "removed":
             ttk.Button(bx, text="↺ Unmark removed (back to not listed)", command=lambda: self.mark_selected("new")).pack(fill="x", pady=2)
         else:

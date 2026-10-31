@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU GPL v3.0 (see LICENSE). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.20.0
+VERSION 2.23.0
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,6 +19,31 @@ VERSION 2.20.0
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.23.0
+       (1) Notes: tabs on the sticky note (overlay: cfg notes_tabs / notes_tab; + adds, double-click renames,
+           right-click deletes; up to 12). The single note of older versions becomes "Note 1"; notes_text keeps the
+           open tab for older versions.
+       (2) Game search: "more ›" opens a result's whole text (one line per part) and every keyword; "less ‹" closes.
+       (3) Exchange rates > Arbitrage: Live scan. GGG's Currency Exchange history is published per finished hour, so
+           "live" = each new hour is read as soon as it's out (checked every 5 minutes while the app runs), and a
+           loop that wasn't there the hour before pops up (app_toast). Settings arb_live.
+  2.22.0
+       (1) Regex for jewels (Ruby / Emerald / Sapphire / Diamond / Time-Lost) and gear (rings, amulets, belts,
+           armour, shields, foci, quivers, weapons). tools/build_regexdata.py: MULTI kinds from several RePoE
+           domains (misc / item / desecrated) kept by spawn tag; mods with the same text are one row; a line another
+           mod shares word for word doesn't block a token; base names are noise; when no short token is unique the
+           whole line is the token (^...$, numbers as \d+, mod["rx"]). Jewel type filter (base name), gear "Show
+           mods for" slot boxes (list only). Ranges / maximums work the same. BUNDLED_DATA regexdata.json 2.
+           Exact number patterns (regex.num_range writes \d, never '.', up to 9999) for whole-line tokens, lines with
+           two numbers ("adds # to # ...") and mods that can reach 1,000+: checked over every roll of every mod.
+  2.21.0
+       (1) Price checks: "Sold for" + 💰 Mark as sold in the item's panel (mark "sold", Show: Sold). The sale goes in
+           market.db (table sales, and as a listing "sale:<sig>" at the price it really went for) so the Mod book
+           learns from real sales. Unmark sold takes it back out.
+       (2) Regex: a mod's box takes 50 (at least), 50-80 (range) or <80 (at most). regex.num_range writes an exact
+           number pattern with two characters before it and one after (no match inside a longer number; a term
+           can't start with a space). Checked against every roll of every tablet / waystone / relic mod.
+       (3) Regex Favorites: a "📋 Copy" cell on every row (one click copies) and a "✓ Copied" popup.
   2.20.0
        (1) Mod book tiers S / A / B / C / D (mods.TIERS, mod_tiers.json; not set: High = A, Normal = C). Tier column and
            "Tier for selected" buttons on the Tablet / Jewel mod rules pages. When no listing has all of an item's
@@ -857,7 +882,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.20.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.23.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 

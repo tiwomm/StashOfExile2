@@ -1,6 +1,6 @@
 # StashOfExile2 roadmap
 
-**Current version: 2.20.0**
+**Current version: 2.23.0**
 
 Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds features, 2.10.1 only fixes. Each step below is one release; we work through them top to bottom.
 
@@ -30,15 +30,16 @@ Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds f
 | 2.18.0 | Mod book learns again (trade site's new mod format); Market Insights item preview, own / marker listings left out; Wealth shares the Price checks tab. |
 | 2.19.0 | Copy marker: a ring for 10 seconds where you pressed Ctrl+Alt+C; a ★ per valuable mod in Price checks. |
 | 2.20.0 | Mod book tiers S-D (lowest left out first when nothing matches); Import rules really imports; the author's current rules ship as defaults. |
+| 2.21.0 | Price checks: Mark as sold (the Mod book learns from real sales); Regex ranges and maximums; Favorites Copy button. |
+| 2.22.0 | Regex for jewels and gear. |
+| 2.23.0 | Note tabs; Game search "more ›" details; Arbitrage Live scan. |
 
 ## ▶ Next up
 
 | Version | Plan |
 |---|---|
-| 2.21.0 | Teach the app what's worth money (paste what something sold for). Regex: ranges, maximums and "not"; every item type; Favorites rework. |
-| 2.22.0 | Notepad tabs; Game search details and wiki links; live Arbitrage scan. |
-| 2.23.0 | Money Makers: farming guides, tablet crafting reference, run tracker. Each strat gets a difficulty rating in **Thoughts per Click** (fewer = easier) and **Clicks per hour**, so you can sort and filter strats by effort. |
-| 2.24.0 | Map library with ranks, import / export. |
+| 2.24.0 | Money Makers: farming guides, tablet crafting reference, run tracker. Each strat gets a difficulty rating in **Thoughts per Click** (fewer = easier) and **Clicks per hour**, so you can sort and filter strats by effort. |
+| 2.25.0 | Map library with ranks, import / export. |
 | Later | Sidekick / Exiled Exchange-style pricing for more item types; public stash order test tool; Ancients price helper; Linux build. |
 
 ## 💤 Parked (not planned unless something changes)

@@ -80,7 +80,7 @@ import_old_data()
 # ---- bundled reference data (1.37): tabs.txt and jewels.txt come inside the app. A newer copy in a new version
 # replaces the one in the data folder (the old one is kept as a .bak); your own files (settings, rules, lists) are
 # never touched. Bump a number here when you ship a changed file.
-BUNDLED_DATA = {"tabs.txt": 2, "jewels.txt": 2, "gamedata.json": 1, "regexdata.json": 1, "default_rules.json": 3, "searchdata.json": 1, "anointdata.json": 1}   # gamedata 1.38, regexdata 1.44
+BUNDLED_DATA = {"tabs.txt": 2, "jewels.txt": 2, "gamedata.json": 1, "regexdata.json": 2, "default_rules.json": 3, "searchdata.json": 1, "anointdata.json": 1}   # gamedata 1.38, regexdata 1.44
 DATA_UPDATED = []
 
 
@@ -164,7 +164,7 @@ AGE_OPTIONS = [("1 hour", "1hour", 1), ("3 hours", "3hours", 3), ("12 hours", "1
                ("1 week", "1week", 168), ("Any time", None, None)]
 
 
-VIEWS = ["Not yet listed", "Listed", "Removed", "All"]
+VIEWS = ["Not yet listed", "Listed", "Sold", "Removed", "All"]
 
 
 def load_json(name, default):
