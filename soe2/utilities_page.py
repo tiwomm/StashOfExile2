@@ -1,5 +1,5 @@
 """The utility windows (2.0 beta 7): Chat commands and Notes (the POE2 Overlay, rebuilt, now two separate utilities)
-and the Delirium alert (built in: see utilities.py / delirium_runner.py)."""
+(the Delirium alert lives in the Session tracker since 2.10.0: alerts_page.py)."""
 import os
 import sys
 import threading
@@ -38,6 +38,7 @@ class UtilitiesPage:
             self.root.after(800, self.overlay.show_notes)
         if SETTINGS.get("util_delirium_autostart"):
             self.root.after(1500, self.dl_do_start)
+        self.alerts_init()                               # 2.10.0: the Breach alert starts here if it's on
         self.root.after(2000, self.util_refresh)
 
     def on_any_key(self, vk, ctrl, alt, shift):
@@ -270,49 +271,6 @@ class UtilitiesPage:
         except (AttributeError, ValueError):
             pass
 
-    # ---------------- the Delirium alert window
-    def build_delirium_window(self, body):
-        P2 = C["panel2"]
-        self.dl_on = tk.BooleanVar(value=False)
-        self.dl_status = self._util_head(
-            body, self.dl_on, "On", lambda: self.dl_do_start() if self.dl_on.get() else self.dl_do_stop(),
-            "Shows a big flashing END DELIRIUM when you complete a map while the Delirium fast-forward arrows are on "
-            "screen. It only looks at your screen (no input, no game files). Run the game in Windowed Fullscreen / "
-            "Borderless. It runs next to the app as its own process, so it never slows the price checker down.")
-        c1 = self._card(body, "Controls")
-        drow = tk.Frame(c1, bg=P2)
-        drow.pack(fill="x", pady=(6, 0))
-        self.dl_start = ttk.Button(drow, text="Start", style="Accent.TButton", command=self.dl_do_start)
-        self.dl_start.pack(side="left")
-        self.dl_stop = ttk.Button(drow, text="Stop", command=self.dl_do_stop)
-        self.dl_stop.pack(side="left", padx=6)
-        ttk.Button(drow, text="Test alert (5 s)", command=self.dl_do_test).pack(side="left")
-        prow = tk.Frame(c1, bg=P2)
-        prow.pack(fill="x", pady=(8, 0))
-        self.dl_move = ttk.Button(prow, text="Move the splinter", command=lambda: self.dl_send("move", "Drag the splinter "
-                                  "where you want it, then click it to drop it."))
-        self.dl_move.pack(side="left")
-        self.dl_reset = ttk.Button(prow, text="Reset its position", command=lambda: self.dl_send("reset_pos", "Splinter back "
-                                   "in its default place."))
-        self.dl_reset.pack(side="left", padx=6)
-        c2 = self._card(body, "Options")
-        self.dl_auto = tk.BooleanVar(value=bool(SETTINGS.get("util_delirium_autostart")))
-        ttk.Checkbutton(c2, text="Start it with StashOfExile2", variable=self.dl_auto,
-                        command=lambda: (SETTINGS.__setitem__("util_delirium_autostart", bool(self.dl_auto.get())),
-                                         save_json("settings.json", SETTINGS))).pack(anchor="w", pady=(6, 0))
-        self.dl_sound = tk.BooleanVar(value=DELIRIUM.get_sound())
-        ttk.Checkbutton(c2, text="Sound (once per map)", variable=self.dl_sound, command=self.dl_set_sound).pack(anchor="w")
-        self.dl_ind = tk.BooleanVar(value=DELIRIUM.get_indicator())
-        ttk.Checkbutton(c2, text="Show the splinter on screen (its colour shows what it sees)", variable=self.dl_ind,
-                        command=self.dl_set_indicator).pack(anchor="w")
-        c3 = self._card(body, "", expand=True)
-        self.dl_msg = tk.Label(c3, text="", bg=P2, fg=C["muted"], anchor="nw", justify="left", wraplength=560,
-                               font=("Segoe UI", 9))
-        self.dl_msg.pack(fill="both", expand=True)
-        tk.Label(c3, text="Log: " + os.path.join(DATA_DIR, "delirium", "delirium_log.txt"), bg=P2, fg=C["steel"],
-                 anchor="w", font=("Segoe UI", 8)).pack(fill="x", side="bottom")
-        self.util_refresh()
-
     # ---------------- chat commands & notes
     def chat_toggle(self):
         self.overlay.set_chat(self.chat_on.get())
@@ -410,35 +368,20 @@ class UtilitiesPage:
         if hexv:
             self.ov_vars[key].set(hexv.lstrip("#").upper())
 
-    # ---------------- delirium alert
+    # ---------------- delirium alert (2.10.0: no window of its own - Session tracker > Alerts switches it)
     def dl_do_start(self):
+        """-> None, or why it couldn't start."""
         err = DELIRIUM.start()
-        self.dl_msg.config(text=err or "Starting… the splinter shows on screen once it is watching.",
-                           fg=C["red"] if err else C["green"])
         self.root.after(1200, self.util_refresh)
+        return err
 
     def dl_do_stop(self):
         err = DELIRIUM.stop()
-        self.dl_msg.config(text=err or "Stopped.", fg=C["red"] if err else C["muted"])
-        self.util_refresh()
+        self.root.after(200, self.util_refresh)
+        return err
 
     def dl_do_test(self):
-        err = DELIRIUM.test_alert()
-        self.dl_msg.config(text=err or "The END DELIRIUM banner shows for 5 seconds.", fg=C["red"] if err else C["muted"])
-
-    def dl_send(self, cmd, ok):
-        if DELIRIUM.send(cmd):
-            self.dl_msg.config(text=ok, fg=C["muted"])
-        else:
-            self.dl_msg.config(text="Start it first.", fg=C["muted"])
-
-    def dl_set_sound(self):
-        DELIRIUM.set_sound(self.dl_sound.get())
-        self.dl_msg.config(text="Saved.", fg=C["muted"])
-
-    def dl_set_indicator(self):
-        DELIRIUM.set_indicator(self.dl_ind.get())
-        self.dl_msg.config(text="Saved.", fg=C["muted"])
+        return DELIRIUM.test_alert()
 
     # ---------------- status (dots on the dock / taskbar, and the windows), every 2 s
     def chat_status(self):
@@ -459,33 +402,14 @@ class UtilitiesPage:
         return "warn" if r == "mine" and DELIRIUM.state in ("alert", "error") else True
 
     def util_refresh(self):
-        if not hasattr(self, "dl_status") or not hasattr(self, "chat_st"):
+        if getattr(self, "_util_job", None):
+            self.root.after_cancel(self._util_job)
+        self._util_job = self.root.after(2000, self.util_refresh)
+        refresh = getattr(self, "alerts_refresh", None)          # 2.10.0: the Alerts panel in the Session tracker
+        if refresh:
+            refresh()
+        if not hasattr(self, "chat_st"):
             return
-        state = DELIRIUM.running()
-        cmd, why = DELIRIUM.locate()
-        if state == "other":
-            text, col = "Running (the standalone PoE2DeliriumAlert.exe)", C["green"]
-        elif state == "mine":
-            text = STATES.get(DELIRIUM.state, DELIRIUM.state)
-            col = C["red"] if DELIRIUM.state in ("alert", "error") else C["good"] if DELIRIUM.state == "nogame" else C["green"]
-            last = DELIRIUM.last_message()
-            if last and self.dl_msg.cget("fg") != C["red"]:
-                self.dl_msg.config(text=last, fg=C["muted"])
-        elif cmd is None:
-            text, col = "Can't run here", C["red"]
-            self.dl_msg.config(text=why, fg=C["red"])
-        else:
-            text, col = "Off", C["muted"]
-            if DELIRIUM.lines and DELIRIUM.lines[-1].startswith("error"):
-                self.dl_msg.config(text="It stopped: " + DELIRIUM.lines[-1][6:], fg=C["red"])
-        self.dl_status.config(text=text, fg=col)
-        self.dl_on.set(bool(state))
-        if hasattr(self, "tk_dl_on"):                   # 2.9.0: the checkbox in Session tracker > Options
-            self.tk_dl_on.set(bool(state))
-        self.dl_start.config(state="disabled" if state or cmd is None else "normal")
-        self.dl_stop.config(state="normal" if state == "mine" else "disabled")
-        for b in (self.dl_move, self.dl_reset):
-            b.config(state="normal" if state == "mine" else "disabled")
         cfg = self.overlay.cfg
         if not cfg.get("chat_enabled"):
             st, col = "Off", C["muted"]
@@ -508,6 +432,3 @@ class UtilitiesPage:
         self._note_geo_refresh()
         self.chat_on.set(bool(cfg.get("chat_enabled")))
         self.notes_on.set(bool(cfg.get("notes_enabled")))
-        if getattr(self, "_util_job", None):
-            self.root.after_cancel(self._util_job)
-        self._util_job = self.root.after(2000, self.util_refresh)

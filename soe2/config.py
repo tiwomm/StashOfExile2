@@ -13,14 +13,14 @@ from . import __version__ as APP_VERSION      # set in soe2/__init__.py; the lau
 
 
 def pretty_version(v=None):
-    """'2.0.0-beta.1' -> '2.0 beta 1', '2.0.1' -> '2.0.1', '2.1.0' -> '2.1' (what people read)."""
+    """'2.0.0-beta.1' -> '2.0.0 beta 1', '2.0.1' -> '2.0.1', '2.10.0' -> '2.10.0' (2.10.0: always in full, SemVer)."""
     import re as _re
     m = _re.match(r"v?(\d+)\.(\d+)(?:\.(\d+))?\s*[-_. ]?\s*(?:(beta|b|rc)\s*[-_. ]?\s*(\d+))?", str(v or APP_VERSION).strip(),
                   _re.I)
     if not m:
         return str(v or APP_VERSION)
     major, minor, patch, kind, n = m.groups()
-    out = f"{major}.{minor}" + (f".{patch}" if patch and patch != "0" else "")
+    out = f"{major}.{minor}.{patch or 0}"
     if kind:
         out += (" RC " if kind.lower() == "rc" else " beta ") + n
     return out

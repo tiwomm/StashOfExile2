@@ -78,6 +78,9 @@ def key_label(text):
 def game_active(title=POE_TITLE):
     """Is Path of Exile 2 the window you are typing into?"""
     if sys.platform != "win32":
+        if sys.platform.startswith("linux"):         # 2.10.0: Hyprland only; False elsewhere
+            from .linsys import game_active as _ga
+            return _ga(title)
         return False
     import ctypes
     u = ctypes.windll.user32

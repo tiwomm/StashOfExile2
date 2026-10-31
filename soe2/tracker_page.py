@@ -18,10 +18,11 @@ from .style import ScrollArea, C, FONT_TITLE, KeyCapture, SegBar
 from .tracker import fmt_time, Session, Sessions, value_at
 from .wealth import WEALTH, wealth_key, WPRICES
 
-DEFAULTS = {"overlay": True, "locked": False, "x": 60, "y": 260, "w": 230, "h": 172, "opacity": 225,
+DEFAULTS = {"overlay": True, "locked": False, "x": 60, "y": 260, "w": 230, "h": 190, "opacity": 225,
             "lines": {"session": True, "map": True, "maps": True, "avg": True, "profit": True, "gold": False},
             "key_toggle": "", "key_pause": "", "ask_count": True, "log_path": "",
-            "character": "", "character_guess": ""}
+            "character": "", "character_guess": "", "alerts_bar": True}
+DEFAULT_KEYS = {"key_toggle": "Ctrl+Alt+S", "key_pause": "Ctrl+Alt+P"}       # 2.10.0: set once, change them in Options
 LINE_NAMES = [("session", "Session time"), ("map", "This map's time"), ("maps", "Maps done"), ("avg", "Average map"),
               ("profit", "Profit")]        # (2.3.0: "gold from selling" is gone - it can't be read reliably)
 
@@ -40,6 +41,11 @@ class TrackerPage:
             cfg.setdefault(k, copy.deepcopy(v))
         for k, v in DEFAULTS["lines"].items():
             cfg["lines"].setdefault(k, v)
+        if not cfg.get("keys_210"):                  # 2.10.0: start / stop and pause get a key (only if you had none)
+            cfg["keys_210"] = True
+            for k, v in DEFAULT_KEYS.items():
+                if not cfg.get(k):
+                    cfg[k] = v
         return cfg
 
     def tracker_save(self):
@@ -62,6 +68,9 @@ class TrackerPage:
         self.tk_state.pack(side="left", padx=12)
         self.tk_ov_btn = ttk.Button(top, text="Show timer", command=self.tracker_overlay_toggle)
         self.tk_ov_btn.pack(side="right")
+        self.tk_keys_lbl = tk.Label(top, text="", bg=P2, fg=C["muted"], font=("Segoe UI", 8))       # 2.10.0
+        self.tk_keys_lbl.pack(side="right", padx=10)
+        self.tracker_keys_hint()
         self.tk_strip = tk.Frame(body, bg="#2a2110", padx=12, pady=8, highlightthickness=1, highlightbackground="#7a6428")
         self.tk_strip_lbl = tk.Label(self.tk_strip, text="", bg="#2a2110", fg=C["text"], anchor="w", justify="left",
                                      wraplength=640)
@@ -91,6 +100,8 @@ class TrackerPage:
             self.tk_nums[k] = v
         for c in range(4):
             nums.columnconfigure(c, weight=1, uniform="n")
+        # ---- 2.10.0: alerts while you play (Delirium, Breach) on the main page
+        self.build_alerts_panel(body).pack(fill="x", padx=10, pady=(0, 6))
 
         # ---- this session's maps / past sessions
         self.tk_view = SegBar(body, ["This session's maps", "Map stats", "Past sessions", "Options"],
@@ -345,21 +356,6 @@ class TrackerPage:
         self.tk_key_msg = tk.Label(box2, text="Click a box and press the key. Esc keeps the old one; Backspace or "
                                               "right-click clears it.", bg=P2, fg=C["muted"], font=("Segoe UI", 8))
         self.tk_key_msg.grid(row=2, column=0, columnspan=5, sticky="w", pady=(4, 0))
-        # ---- 2.9.0: alerts while you play (Breach lives here; Delirium's on / off too, its window keeps the rest)
-        box4 = tk.Frame(po, bg=P2, padx=14, pady=10, highlightthickness=1, highlightbackground=C["line"])
-        box4.pack(fill="x", pady=(6, 0))
-        tk.Label(box4, text="Alerts while you play", bg=P2, fg=C["accent"], font=("Segoe UI", 10, "bold"),
-                 anchor="w").pack(fill="x")
-        drow = tk.Frame(box4, bg=P2)
-        drow.pack(fill="x", pady=(6, 0))
-        self.tk_dl_on = tk.BooleanVar(value=False)
-        ttk.Checkbutton(drow, text="Delirium: a big END DELIRIUM banner when you finish a map with Delirium still on",
-                        variable=self.tk_dl_on, command=self.tracker_delirium_toggle).pack(side="left")
-        more = tk.Label(drow, text="Delirium settings…", bg=P2, fg="#6ea8ff", cursor="hand2",
-                        font=("Segoe UI", 9, "underline"))
-        more.pack(side="right")
-        more.bind("<Button-1>", lambda e: self.shell.open("delirium"))
-        self.build_breach_controls(box4)
         # ---- 2.4.0: profit explained, with its one setting next to it
         box3 = tk.Frame(po, bg=P2, padx=14, pady=10, highlightthickness=1, highlightbackground=C["line"])
         box3.pack(fill="x", pady=(6, 0))
@@ -378,13 +374,6 @@ class TrackerPage:
         self.tk_profit_state.pack(fill="x", pady=(6, 0))
         self.tk_profit_btn = ttk.Button(box3, text="Set up Wealth", command=self.tracker_setup_wealth)
         self.tracker_profit_state()
-
-    def tracker_delirium_toggle(self):
-        """The Delirium alert's on / off, from here (2.9.0); its window has the rest of its settings."""
-        if self.tk_dl_on.get():
-            self.dl_do_start()
-        else:
-            self.dl_do_stop()
 
     def tracker_profit_state(self):
         """The line under Profit / hour: can a profit be worked out right now, and if not, why."""
@@ -444,6 +433,16 @@ class TrackerPage:
         clash = self.hotkey_clashes()
         msg = ("Not understood: " + ", ".join(bad)) if bad else ("Saved. " + ("Clash: " + "; ".join(clash) if clash else ""))
         self.tk_key_msg.config(text=msg, fg=C["red"] if bad or clash else C["green"])
+        self.tracker_keys_hint()
+
+    def tracker_keys_hint(self):
+        """The keys next to Start (2.10.0), so you know they exist."""
+        from .overlay import key_label
+        cfg = self.tracker_cfg()
+        parts = [f"{what} {key_label(cfg[k])}" for k, what in (("key_toggle", "Start/stop"), ("key_pause", "Pause"))
+                 if cfg.get(k)]
+        if getattr(self, "tk_keys_lbl", None) is not None:
+            self.tk_keys_lbl.config(text=("In game: " + "  ·  ".join(parts)) if parts else "")
 
     # ---------------- the game log
     def tracker_pick_log(self):
@@ -847,6 +846,18 @@ class TrackerPage:
                     w.draggable(lab)
         if not cfg.get("locked"):
             w.draggable(inner)
+        self.tk_ov_alerts = {}
+        if cfg.get("alerts_bar", True):          # 2.10.0: a small bar: are the Delirium / Breach alerts on?
+            bar = tk.Frame(w.body, bg="#16213a", padx=10, pady=2)
+            bar.pack(side="bottom", fill="x", before=inner)
+            for k in ("delirium", "breach"):
+                lab = tk.Label(bar, text="", bg="#16213a", fg="#6b7690", font=("Segoe UI", 8, "bold"), anchor="w")
+                lab.pack(side="left", padx=(0, 12))
+                self.tk_ov_alerts[k] = lab
+                if not cfg.get("locked"):
+                    w.draggable(lab)
+            if not cfg.get("locked"):
+                w.draggable(bar)
         self.tk_overlay = w
         self.tracker_overlay_draw(self.tracker_numbers())
         w.show()                                   # only while the game (or the app) is in front (2.0 beta 15)
@@ -864,12 +875,15 @@ class TrackerPage:
                  }
         for k, lab in self.tk_ov_lbls.items():
             lab.config(text=texts.get(k, ""))
+        if getattr(self, "tk_ov_alerts", None):
+            states = self.alert_states()
+            for k, lab in self.tk_ov_alerts.items():
+                st = states.get(k, "off")
+                lab.config(text=f"\u25cf {k.title()} {st}", fg={"on": "#5ee08a", "off": "#6b7690", "warn": "#ffb347"}[st])
 
     # ---------------- hotkeys (fed by the keyboard watcher, on its own thread)
     def tracker_on_key(self, vk, ctrl, alt, shift):
         cfg = SETTINGS.get("tracker") or {}
-        if not SETTINGS.get("labs"):
-            return False
         for key, action in (("key_toggle", "toggle"), ("key_pause", "pause")):
             k = parse_key(cfg.get(key) or "")
             if k and k == (vk, ctrl, alt, shift):

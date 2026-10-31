@@ -43,6 +43,7 @@ class RegexPage:
         self.rx_presets = self.rx_fav_index()
         self.rx_kind = tk.StringVar(value=self.rx_state.get("_kind", "tablet") if self.rx_state.get("_kind") in R.KINDS else "tablet")
         self.rx_test_text = ""
+        self._rx_opts_job = None
 
         # ---- 2.4.0: two pages - building a search, and your Favorites
         outer = tab
@@ -182,6 +183,7 @@ class RegexPage:
         save_json(STATE_FILE, self.rx_state)
 
     def rx_kind_changed(self, save=True):
+        self._rx_cancel_opts_job()
         if getattr(self, "_rx_last_kind", None) not in (None, self.rx_kind.get()):
             self.rx_test_text = ""                           # a copied tablet says nothing about waystones
             self.rx_pick_btn.pack_forget()
@@ -207,8 +209,7 @@ class RegexPage:
 
         def changed(*_a):
             self.rx_read_opts()
-            self.rx_update()
-            self.rx_save()
+            self.rx_schedule_opts()
 
         def card(title, col):
             f = tk.Frame(box, bg=P2, padx=12, pady=6, highlightthickness=1, highlightbackground=C["line"])
@@ -226,9 +227,11 @@ class RegexPage:
             tk.Label(parent, text=label, bg=P2, fg=C["text"], anchor="w").grid(row=row, column=col, sticky="w", pady=1)
             v = tk.StringVar(value="" if o.get(key) in (None, "") else str(o[key]))
             self.rx_vars[key] = v
-            tk.Entry(parent, textvariable=v, width=6, justify="center", bg=C["odd"], fg=C["text"], relief="flat",
-                     insertbackground=C["text"], highlightthickness=1, highlightbackground=C["line"],
-                     font=("Segoe UI", 9)).grid(row=row, column=col + 1, sticky="e", padx=(8, 4), pady=1)
+            ent = tk.Entry(parent, textvariable=v, width=6, justify="center", bg=C["odd"], fg=C["text"], relief="flat",
+                           insertbackground=C["text"], highlightthickness=1, highlightbackground=C["line"],
+                           font=("Segoe UI", 9))
+            ent.grid(row=row, column=col + 1, sticky="e", padx=(8, 4), pady=1)
+            ent.bind("<FocusOut>", lambda _e: self.rx_commit_opts())
             parent.columnconfigure(col, weight=1)
             v.trace_add("write", changed)
 
@@ -297,6 +300,24 @@ class RegexPage:
             elif not_.get() and not only.get():
                 o["corrupted"] = "not"
         st["opts"] = o
+
+    def _rx_cancel_opts_job(self):
+        if self._rx_opts_job is not None:
+            self.root.after_cancel(self._rx_opts_job)
+            self._rx_opts_job = None
+
+    def rx_schedule_opts(self):
+        self._rx_cancel_opts_job()
+        self._rx_opts_job = self.root.after(150, self.rx_opts_ready)
+
+    def rx_opts_ready(self):
+        self._rx_opts_job = None
+        self.rx_commit_opts()
+
+    def rx_commit_opts(self):
+        self._rx_cancel_opts_job()
+        self.rx_update()
+        self.rx_save()
 
     # ---------------- the two mod lists
     def rx_build_lists(self):

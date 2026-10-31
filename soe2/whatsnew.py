@@ -9,18 +9,28 @@ INTRO = [
     "To price an item: hover it in game and press Ctrl+Alt+C. It appears in Price checks with what it's worth and "
     "what to list it for. It works best on tablets, jewels and waystones.",
     "The bar on the left opens everything. Tools work while their window is open; Utilities (chat keys, the sticky "
-    "note, the Delirium alert) keep working over the game.",
+    "note, the Session tracker and its alerts) keep working over the game.",
     "Your league is in Settings (bottom left). Things marked BETA are still being worked on: turn them on under "
     "Settings > General > Labs if you'd like to try them.",
 ]
 
 # What's being worked on (2.4.0: not shown in the app any more - kept for ROADMAP.md / the developer).
 NEXT = [
-    "2.10: deciding what Wealth, the Session tracker, Game search and Top value need to leave Labs.",
+    "2.11.0: Ctrl+A / C / Z and right-click menus everywhere, striped rows, a poe2db key (see ROADMAP.md).",
 ]
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.10.0": [
+        "Session tracker: Delirium and Breach alerts are on its main page, each with on / off, sound and Test. The "
+        "timer over the game shows whether they're on.",
+        "Breach: a second, stronger banner when the game says you can't store any more Hiveblood.",
+        "The Session tracker is out of Labs. Ctrl+Alt+S starts / stops it and Ctrl+Alt+P pauses it in game (change "
+        "them in its Options).",
+        "Fixed: typing in a box could stop working until the window was reopened.",
+        "Fixed: windows now stay inside the app when you make it smaller.",
+        "Settings > About: what's new, the GitHub page and our Discord. New installs get a short quick start guide.",
+    ],
     "2.9.0": [
         "Session tracker > Options > Alerts while you play: a big banner when your stored Hiveblood is almost full "
         "(Breach), and the Delirium alert's on / off.",

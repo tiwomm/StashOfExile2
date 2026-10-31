@@ -4,7 +4,7 @@ The app starts a second copy of itself with  --delirium <data folder>  (StashOfE
 python stashofexile2.py --delirium ...). That copy lands here, never loads the app, and runs the alert. Instead of its
 own tray icon it is controlled by the app over stdin / stdout:
 
-  app -> helper (one per line): test, move, reset_pos, sound_on, sound_off, indicator_on, indicator_off, quit
+  app -> helper (one per line): test, sound_on, sound_off, quit
   helper -> app:                "state <watching|active|alert|nogame|error|move>", anything else = a message line
 
 If the app goes away (stdin closes) the helper quits too. Its log, calibration and settings live in
@@ -71,10 +71,9 @@ def main(argv):
     D.CALIB_FILE = folder / "calibration_v2.json"
     D.SETTINGS_FILE = folder / "settings.json"
     D.CONFIG["tray"] = True                              # "tray" = our pipe below, not an icon
+    D.CONFIG["indicator"] = False      # 2.10.0: no splinter over the game; the Session tracker shows if it's on
     try:
         data = json.loads(D.SETTINGS_FILE.read_text())
-        if "indicator" in data:
-            D.CONFIG["indicator"] = bool(data["indicator"])
         if data.get("game_window_title"):
             D.CONFIG["game_window_title"] = str(data["game_window_title"])
     except Exception:
