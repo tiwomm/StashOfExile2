@@ -65,10 +65,16 @@ def main(shots):
         ix, iy, _s = hit
         box = area[iy + int(R.TEXT_BOX[2] * ui):iy + int(R.TEXT_BOX[3] * ui),
                    ix + int(R.TEXT_BOX[0] * ui):ix + int(R.TEXT_BOX[1] * ui)]
-        mask = box > 150
-        rows = np.nonzero(mask.any(axis=1))[0]
-        mask = mask[rows.min():rows.max() + 1]
-        spans = R.glyph_spans(mask)
+        spans = []
+        for thr in (150, 175, 200, 125):                # the same tries as the reader
+            mask = box > thr
+            band = R.text_band(mask)
+            if band is None:
+                continue
+            mask = mask[band[0]:band[1] + 1]
+            spans = [sp for sp in R.glyph_spans(mask) if mask[:, sp[0]:sp[1] + 1].sum() >= 4]
+            if len(spans) == 3 and R._is_slash(mask[:, spans[1][0]:spans[1][1] + 1]):
+                break
         if len(spans) != 3:
             print("skipped (glyphs)", path)
             continue

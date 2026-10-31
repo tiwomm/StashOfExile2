@@ -168,7 +168,7 @@ class AlertsPage:
                 ("breach", "Breach", "a banner when your stored Hiveblood is almost full, and when it's full "
                                      "(reads Client.txt)", lambda: self.breach_alert(test=True)),
                 ("ritual", "Ritual", "reads the Ritual counter (0/3 ...) from your screen; reminds you if you leave a "
-                                     "map with rituals not done", self.alerts_test_ritual)):
+                                     "map after starting its rituals but not finishing them", self.alerts_test_ritual)):
             row = tk.Frame(box, bg=P2)
             row.pack(fill="x", pady=(6, 0))
             dot = tk.Label(row, text="●", bg=P2, fg=DOT["off"], font=("Segoe UI", 11))
@@ -469,7 +469,8 @@ class AlertsPage:
         if left and cfg.get("on") and cfg.get("pending") and cfg.get("leave_reminder", True):
             self.breach_alert(level="leave")
         rc, got = self.ritual_cfg(), self.rt_map            # 2.14.0: rituals left undone in the map you just left
-        if left and rc.get("on") and rc.get("leave_reminder", True) and got and got[0] < got[1]:
+        # only when you started them (2.15.0: 0 done = you chose to skip Ritual in this map)
+        if left and rc.get("on") and rc.get("leave_reminder", True) and got and 0 < got[0] < got[1]:
             self.root.after(9000 if cfg.get("on") and cfg.get("pending") else 0,
                             lambda g=got: self.breach_alert(level="ritual", sub=f"{g[0]} of {g[1]} done - go back "
                                                                                  f"through your portal"))

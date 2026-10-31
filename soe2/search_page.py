@@ -192,12 +192,11 @@ class SearchPage:
             t.insert("end", "\n", "sep")
         self._gs_put(it["n"], terms, ("name",))
         t.insert("end", f"   {it['g']} · {it['c']}", ("tag",))
-        q = gamesearch.inspector_query(it)
-        if q:
+        if it.get("n"):                                   # 2.14.2: its wiki page (the inspector link is gone)
             tag = f"lnk{n}"
             t.insert("end", "   ")
-            t.insert("end", "how the price checker sees it ›", ("link", tag))
-            t.tag_bind(tag, "<Button-1>", lambda e, qq=q: self.lib_lookup(qq))
+            t.insert("end", "wiki ›", ("link", tag))
+            t.tag_bind(tag, "<Button-1>", lambda e, nm=it["n"]: self.gs_wiki(nm))
         t.insert("end", "\n")
         if it["t"]:
             self._gs_put(self._gs_cut(it["t"], terms, 300), terms, ("txt",))
@@ -205,6 +204,11 @@ class SearchPage:
         if it["k"]:
             self._gs_put(self._gs_cut(it["k"], terms, 160), terms, ("kw",))
             t.insert("end", "\n")
+
+    def gs_wiki(self, name):
+        import urllib.parse
+        import webbrowser
+        webbrowser.open("https://www.poe2wiki.net/wiki/" + urllib.parse.quote(name.replace(" ", "_")))
 
     # ---------------- category buttons (wrap onto more rows when the window is narrow)
     def _gs_chips(self, counts, total, order):
