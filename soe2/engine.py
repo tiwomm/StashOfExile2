@@ -96,7 +96,23 @@ class Engine(TabReaderJobs, WealthJobs, threading.Thread):
             self.table = self._load_stats()
         except Exception as e:
             self.ui_q.put(("error", "init", f"Couldn't download the trade site's mod list ({e}). Check your internet.", None))
+        self._load_static()
         self.ui_q.put(("ready",))
+
+    def _load_static(self):
+        """2.16.0: the trade site's list of currencies (ids for every currency a stash tab can be priced in), once a
+        day like the mod list. Never stops the app: without it the built-in currencies stay."""
+        from .wealth import set_trade_currencies
+        try:
+            cache = P("trade_static.json")
+            if os.path.exists(cache) and time.time() - os.path.getmtime(cache) < 86400:
+                data = load_json("trade_static.json", {})
+            else:
+                data = call("GET", BASE + "/data/static")
+                save_json("trade_static.json", data)
+            set_trade_currencies(data)
+        except Exception:
+            pass
 
     def _load_stats(self):
         cache = P("stats_cache.json")

@@ -614,6 +614,13 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
             cb.bind("<<ComboboxSelected>>", lambda e: self.root.after(20, self.root.focus_set), add="+")
         ttk.Button(frow, text="Show all", command=self.cat_reset).pack(side="left", padx=(12, 0))
         ttk.Button(frow, text="↕ Order added", command=self.sort_added).pack(side="left", padx=(8, 0))   # 2.0 beta 22
+        from .pricefmt import PRICE_UNITS                    # 2.16.0: show every price in the currency you pick
+        self.unit_var = tk.StringVar(value=dict(PRICE_UNITS).get(SETTINGS.get("price_unit") or "auto", PRICE_UNITS[0][1]))
+        ubox = ttk.Combobox(frow, textvariable=self.unit_var, values=[t for _k, t in PRICE_UNITS], state="readonly",
+                            width=20)
+        ubox.pack(side="right")
+        ubox.bind("<<ComboboxSelected>>", lambda e: (self.on_price_unit(), self.root.after(20, self.root.focus_set)))
+        tk.Label(frow, text="Prices in", **flab).pack(side="right", padx=(12, 6))
         self.cat_count = tk.Label(frow, text="", **flab)
         self.cat_count.pack(side="right")
         self.pane = ttk.PanedWindow(items_tab, orient="horizontal")        # drag the divider to resize
@@ -2847,6 +2854,8 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
                 est = "NO MATCH"
             elif rec.get("manual"):
                 est = "CHECK BY HAND"
+            elif self.price_manually(rec):
+                est = "Price manually"                        # 2.16.0: a low-confidence number isn't shown as a price
             else:
                 est = fmt_div(rec["est"]) if rec["est"] is not None else (fmt_price(rec["prices"][0]) if rec["prices"] else "none listed")
                 if rec.get("partial") and rec["prices"]:
@@ -2882,6 +2891,33 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         self.tree.item(str(rid), values=(rid, it["name"], it["base"], self.MARK_TEXT[mark], est, conf, listings, stamp, match),
                        tags=tags)
 
+    def on_price_unit(self):
+        from .pricefmt import PRICE_UNITS
+        SETTINGS["price_unit"] = next((k for k, t in PRICE_UNITS if t == self.unit_var.get()), "auto")
+        save_json("settings.json", SETTINGS)
+        self.refresh_all()
+        self.update_total()
+        for fn in ("refresh_insights", "wealth_fill_items", "tracker_draw"):   # other windows that show prices
+            f = getattr(self, fn, None)
+            if f:
+                try:
+                    f()
+                except Exception:
+                    pass
+        u = SETTINGS["price_unit"]
+        if u not in ("auto", "divine") and not RATES.value(u):
+            self._say("No exchange rate for that currency yet (Exchange rates loads them): prices stay in divines "
+                      "until it has one.", 8)
+
+    def price_manually(self, rec):
+        """2.16.0: Low confidence, or a gear item's rough guess: shown as "Price manually" and left out of the total
+        (the rough number and why are still in the item's panel)."""
+        if rec.get("state") != "done" or rec.get("est") is None:
+            return False
+        it = rec.get("item") or {}
+        guess = it.get("gear") and not it.get("waystone") and it.get("rarity") != "Unique"
+        return rec.get("conf") == "Low" or bool(guess and rec.get("conf") not in (None, "", "-"))
+
     def refresh_all(self):
         for rid in list(self.records):
             if self.tree.exists(str(rid)):
@@ -2899,7 +2935,7 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         self.cat_refresh()                                                    # category counts follow every change
         shown = [r for r in self.records.values() if self.visible(r)]       # totals follow the Show filter
         done = [r for r in shown if r["state"] == "done"]
-        tot = sum(r["est"] for r in done if r["est"] is not None)
+        tot = sum(r["est"] for r in done if r["est"] is not None and not self.price_manually(r))
         review = sum(1 for r in done if (r.get("manual") or r.get("nomatch") or r.get("conf") == "Low" or r["est"] is None)
                      and not r.get("skip"))
         if shown:
