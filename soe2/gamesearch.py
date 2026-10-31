@@ -29,12 +29,53 @@ def load():
         for n, g, c, k, t in d["rows"]:
             rows.append({"n": n, "g": g, "c": c, "k": k, "t": t, "ln": n.lower(), "lk": (k or "").lower(),
                          "lt": (t or "").lower()})
-        _DATA.update(rows=rows, order=d.get("order") or [], nolink=set(d.get("nolink") or []),
+        order = list(d.get("order") or [])
+        rows += anoint_rows()
+        if any(r["g"] == ANOINTS for r in rows) and ANOINTS not in order:
+            order.insert(order.index("Modifiers") if "Modifiers" in order else len(order), ANOINTS)
+        _DATA.update(rows=rows, order=order, nolink=set(d.get("nolink") or []),
                      version=d.get("version", "?"), error=None)
     except Exception as e:
         _DATA.update(rows=[], order=[], nolink=set(), version="?",
                      error=f"searchdata.json {'not found' if not path else 'could not be read'} ({e})")
     return _DATA
+
+
+ANOINTS = "Anoints"
+
+
+def _find(name):
+    return next((p for p in (P(name), os.path.join(RESOURCE_DIR, name), os.path.join(APP_DIR, name))
+                 if os.path.isfile(p)), None)
+
+
+def anoint_rows():
+    """2.17.0: Game search > Anoints - every notable an amulet can be instilled with, and the three Liquid Emotions it
+    takes (anointdata.json, tools/build_anointdata.py). Searching an emotion's name finds every anoint that uses it."""
+    path = _find("anointdata.json")
+    if not path:
+        return []
+    try:
+        with open(path, encoding="utf-8") as f:
+            d = json.load(f)
+        names = d["emotions"]
+        out = []
+        for n, rec, stats in d["rows"]:
+            em = [names.get(r, r) for r in rec]
+            k = ", ".join(dict.fromkeys(em)) + " · anoint, instil, amulet"
+            out.append({"n": n, "g": ANOINTS, "c": "Anoint (amulet)", "k": k, "t": stats, "a": em, "ln": n.lower(),
+                        "lk": k.lower(), "lt": (stats or "").lower()})
+        return out
+    except Exception:
+        return []
+
+
+def emotion_counts(em):
+    """['Liquid Envy', 'Diluted Liquid Guilt', 'Liquid Envy'] -> [('Liquid Envy', 2), ('Diluted Liquid Guilt', 1)]"""
+    out = {}
+    for e in em:
+        out[e] = out.get(e, 0) + 1
+    return list(out.items())
 
 
 def parse(text):
