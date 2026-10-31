@@ -132,7 +132,8 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         SETTINGS.setdefault("poe2db_key", "Ctrl+Shift+D")
         SETTINGS.setdefault("copy_marker", True)            # 2.19.0: a mark where you pressed Ctrl+Alt+C
         SETTINGS.setdefault("copy_marker_secs", 10)         # 2.24.0: how long it stays
-        SETTINGS.setdefault("copy_marker_hold", False)      # 2.24.0: or until Esc is held for 3 seconds
+        SETTINGS.setdefault("copy_marker_hold", False)      # 2.24.0: or until Esc is tapped twice (2.25.0)
+        SETTINGS.setdefault("copy_marker_colour", "Gold")    # 2.25.0
         self.build()
         self.engine.start()
         self.engine.add(0, "init")
@@ -792,8 +793,14 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         sp.bind("<FocusOut>", lambda e: self.on_copy_marker())
         tk.Label(row, text="seconds", bg=P2, fg=C["text"]).pack(side="left", padx=(4, 14))
         self.mark_hold = tk.BooleanVar(value=bool(SETTINGS.get("copy_marker_hold")))
-        ttk.Checkbutton(row, text="Keep them until I hold Esc for 3 seconds", variable=self.mark_hold,
+        ttk.Checkbutton(row, text="Keep them until I double-tap Esc", variable=self.mark_hold,
                         command=self.on_copy_marker).pack(side="left")
+        from .copymark import COLOURS                       # 2.25.0: the +'s colour
+        tk.Label(row, text="Colour", bg=P2, fg=C["text"]).pack(side="left", padx=(14, 4))
+        self.mark_colour = tk.StringVar(value=SETTINGS.get("copy_marker_colour", "Gold"))
+        mc = ttk.Combobox(row, textvariable=self.mark_colour, values=list(COLOURS), state="readonly", width=9)
+        mc.pack(side="left")
+        mc.bind("<<ComboboxSelected>>", lambda e: self.on_copy_marker(preview=True))
 
         row = section("General", "Window", "Always on top keeps StashOfExile2 in front of the game (and brings it "
                                            "back if something minimises it). The 📌 on the taskbar does the same. "
@@ -1449,8 +1456,19 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         save_json("settings.json", SETTINGS)
         self.refresh_all()
 
-    def on_copy_marker(self):
+    def on_copy_marker(self, preview=False):
         SETTINGS["copy_marker"] = bool(self.mark_var.get())
+        if hasattr(self, "mark_colour"):
+            SETTINGS["copy_marker_colour"] = self.mark_colour.get()
+        if preview:                                          # show the new colour next to the box for 2 s
+            try:
+                from .copymark import COLOURS, CopyMarker
+                if getattr(self, "copy_marker", None) is None:
+                    self.copy_marker = CopyMarker(self.root)
+                self.copy_marker.show(self.root.winfo_pointerx() + 30, self.root.winfo_pointery(), secs=2,
+                                      colour=COLOURS.get(SETTINGS["copy_marker_colour"], COLOURS["Gold"]))
+            except Exception:
+                pass
         try:
             SETTINGS["copy_marker_secs"] = max(1, min(600, int(float(self.mark_secs.get()))))
         except (ValueError, AttributeError):
@@ -1861,10 +1879,11 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
     def copy_mark_check(self):
         """2.19.0: a fresh Ctrl+Alt+C (seen by the key watcher) -> a ring where the mouse is, for 10 seconds."""
         keys = getattr(self, "keys", None)
-        esc = getattr(keys, "esc_since", 0) if keys else 0
-        if esc and time.time() - esc >= 3 and getattr(self, "copy_marker", None) and self.copy_marker.marks:
-            self.copy_marker.clear()                          # 2.24.0: Esc held 3 s clears every mark
-            keys.esc_since = time.time() + 3600               # once per hold (Esc going up resets it)
+        dbl = getattr(keys, "esc_double", 0) if keys else 0
+        if dbl and dbl > getattr(self, "_esc_double_seen", 0):  # 2.25.0: Esc tapped twice clears every mark
+            self._esc_double_seen = dbl
+            if getattr(self, "copy_marker", None) and self.copy_marker.marks:
+                self.copy_marker.clear()
         t = getattr(keys, "combo_time", 0) if keys else 0
         if not t or t <= getattr(self, "_marked_combo", 0):
             return
@@ -1881,7 +1900,9 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
                 secs = max(1, min(600, int(float(SETTINGS.get("copy_marker_secs") or 10))))
             except (TypeError, ValueError):
                 secs = 10
-            self.copy_marker.show(x, y, secs=None if hold else secs)
+            from .copymark import COLOURS
+            self.copy_marker.show(x, y, secs=None if hold else secs,
+                                  colour=COLOURS.get(SETTINGS.get("copy_marker_colour"), COLOURS["Gold"]))
         except Exception:
             self.log_error("showing the copy marker")
 

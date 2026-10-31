@@ -11,6 +11,8 @@ from .alerts_page import TRANSPARENT, click_through, force_topmost
 MARK_SECS = 10
 MAX_MARKS = 30                      # many quick copies: the oldest go first
 RING = "#ffcf40"
+COLOURS = {"Gold": "#ffcf40", "White": "#ffffff", "Red": "#ff3b3b", "Lime": "#5dff3b", "Cyan": "#3be8ff",
+           "Magenta": "#ff3df0", "Orange": "#ff9a1f", "Blue": "#4d8dff"}     # 2.25.0
 SIZE = 16                           # 2.24.0: the + is this many pixels across
 
 
@@ -19,7 +21,7 @@ class CopyMarker:
         self.root = root
         self.marks = []
 
-    def show(self, x, y, number=None, secs=MARK_SECS):
+    def show(self, x, y, number=None, secs=MARK_SECS, colour=RING):
         """A ring centred on (x, y) (screen pixels, Tk's coordinates) for `secs`. -> the window."""
         while len(self.marks) >= MAX_MARKS:
             self._close(self.marks[0])
@@ -42,9 +44,9 @@ class CopyMarker:
         c.pack()
         m = full // 2
         h = SIZE // 2
-        for colour, width in (("#000000", 5), (RING, 2)):            # a dark edge, so it shows on any background
-            c.create_line(m - h, m, m + h + 1, m, fill=colour, width=width)
-            c.create_line(m, m - h, m, m + h + 1, fill=colour, width=width)
+        for col, width in (("#000000", 5), (colour, 2)):              # a dark edge, so it shows on any background
+            c.create_line(m - h, m, m + h + 1, m, fill=col, width=width)
+            c.create_line(m, m - h, m, m + h + 1, fill=col, width=width)
         if number is not None:
             c.create_text(full - 1, 1, text=str(number), anchor="ne", fill="#ffffff", font=("Segoe UI", 7, "bold"))
         w.geometry(f"{full}x{full}+{int(x) - m}+{int(y) - m}")
