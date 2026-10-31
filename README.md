@@ -12,8 +12,9 @@ Hover an item in game and press **Ctrl+Alt+C**. It goes into a list and is price
 - **Mod book:** learns which mods are worth money from the listings it sees.
 - **Regex:** builds stash-search strings for tablets, waystones and relics, with saved Favorites.
 - **Exchange rates:** poe.ninja rates, an Exchange Helper, and an Arbitrage tab for uneven Currency Exchange rates.
-- **Utilities:** chat command keys, a sticky note, a Delirium alert, a calculator.
-- **Labs (off by default):** Wealth (stash value over time), a session tracker, Top value and an offline game-data search.
+- **Session tracker:** time, maps and deaths per session with a timer over the game, plus Delirium and Breach (Hiveblood) alerts.
+- **Utilities:** chat command keys, a sticky note, a calculator.
+- **Labs (off by default):** Wealth (stash value over time), Top value and an offline game-data search.
 
 ## Install
 
@@ -26,7 +27,13 @@ py -m pip install requests pystray pillow mss numpy opencv-python-headless
 py stashofexile2.py
 ```
 
+**Linux:** not supported yet. There's untested groundwork for Hyprland in [linux/](linux/README.md) for anyone who wants to package it.
+
 To build the exe yourself, run `build_exe.bat`; it makes `dist\StashOfExile2.exe`. Every version tag pushed here builds the exe automatically and publishes it as a release (`.github/workflows/release.yml`).
+
+## Community
+
+Questions, ideas and bug reports: [Discord](https://discord.gg/Ta8EVnxx4T). The plan is in [ROADMAP.md](ROADMAP.md).
 
 ## Fair play
 
