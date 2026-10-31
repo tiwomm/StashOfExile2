@@ -159,6 +159,7 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         """The app's window is back: so are its windows (2.0 beta 13: they are real windows of their own)."""
         if e.widget is self.root and hasattr(self, "shell"):
             self.root.after(30, self.shell.show_all)
+            self.root.after(60, self.shell.check_owners)      # 2.10.2: maximise / restore / snap
 
     def on_unmap(self, e):
         if e.widget is not self.root or self.in_tray:
