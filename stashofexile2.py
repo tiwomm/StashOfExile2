@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU GPL v3.0 (see LICENSE). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.18.0
+VERSION 2.19.0
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,6 +19,12 @@ VERSION 2.18.0
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.19.0
+       (1) Copy marker: after Ctrl+Alt+C a gold ring shows for 10 s where the mouse was (soe2/copymark.py), so you
+           can see which items you've copied. Up to 30 at once. Display only - a click-through, see-through window
+           like the Delirium alert; sends nothing to the game, reads nothing from it (mouse position from Tk).
+           Settings > General > Copy marker (on by default). Triggered from the key watcher's combo_time, checked
+           on every clipboard poll (app.copy_mark_check).
   2.18.0
        (1) FIX: since late Oct 2026 the trade site sends each listing mod as a dict {"description", "hash", "mods"}
            instead of a string. fetch_rich stored str(dict), so every mod failed to match: the Mod book learned
@@ -836,7 +842,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.18.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.19.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 

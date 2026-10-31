@@ -125,6 +125,7 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         from . import listkit                        # 2.12.0: keys, right-click menus and striped rows everywhere
         listkit.install(self)
         SETTINGS.setdefault("poe2db_key", "Ctrl+Shift+D")
+        SETTINGS.setdefault("copy_marker", True)            # 2.19.0: a ring where you pressed Ctrl+Alt+C
         self.build()
         self.engine.start()
         self.engine.add(0, "init")
@@ -767,6 +768,13 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         ttk.Button(row, text="Exchange rates…", command=self.open_rates).pack(side="left", padx=(18, 0))
         for cb in (self.league_box, pace):
             cb.bind("<<ComboboxSelected>>", lambda e: self.root.after(20, self.root.focus_set), add="+")
+
+        row = section("General", "Copy marker", "After Ctrl+Alt+C, a small ring shows for 10 seconds where your "
+                                                "mouse was, so you can see which items you've already copied. It only "
+                                                "draws on the screen: nothing is sent to the game.")
+        self.mark_var = tk.BooleanVar(value=SETTINGS.get("copy_marker", True))
+        ttk.Checkbutton(row, text="Mark where I pressed Ctrl+Alt+C", variable=self.mark_var,
+                        command=self.on_copy_marker).pack(side="left")
 
         row = section("General", "Window", "Always on top keeps StashOfExile2 in front of the game (and brings it "
                                            "back if something minimises it). The 📌 on the taskbar does the same. "
@@ -1422,6 +1430,12 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         save_json("settings.json", SETTINGS)
         self.refresh_all()
 
+    def on_copy_marker(self):
+        SETTINGS["copy_marker"] = bool(self.mark_var.get())
+        save_json("settings.json", SETTINGS)
+        if not SETTINGS["copy_marker"] and getattr(self, "copy_marker", None):
+            self.copy_marker.clear()
+
     def on_pace(self, _e=None):
         SETTINGS["pace"] = self.pace_var.get()
         save_json("settings.json", SETTINGS)
@@ -1761,6 +1775,7 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
             return                                           # an older watcher that was replaced: let it die
         gen = self.poll_gen
         self.last_poll = time.time()
+        self.copy_mark_check()
         try:
             seq = clip_seq()
             if seq is not None:                              # Windows: every copy bumps the counter, even identical text
@@ -1817,6 +1832,23 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
                                 "Wrong? untick \"Ctrl+Alt+C only\" on the toolbar")
             self.status_until = time.time() + 8
         return False
+
+    def copy_mark_check(self):
+        """2.19.0: a fresh Ctrl+Alt+C (seen by the key watcher) -> a ring where the mouse is, for 10 seconds."""
+        t = getattr(self.keys, "combo_time", 0) if getattr(self, "keys", None) else 0
+        if not t or t <= getattr(self, "_marked_combo", 0):
+            return
+        self._marked_combo = t
+        if not SETTINGS.get("copy_marker", True):
+            return
+        try:
+            from .copymark import CopyMarker
+            if getattr(self, "copy_marker", None) is None:
+                self.copy_marker = CopyMarker(self.root)
+            x, y = self.root.winfo_pointerxy()
+            self.copy_marker.show(x, y)
+        except Exception:
+            self.log_error("showing the copy marker")
 
     def restart_watcher(self):
         """Start a fresh clipboard watcher (the old one, if still alive, stops itself)."""

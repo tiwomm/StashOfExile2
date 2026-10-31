@@ -16,11 +16,15 @@ INTRO = [
 
 # What's being worked on (2.4.0: not shown in the app any more - kept for ROADMAP.md / the developer).
 NEXT = [
-    "2.19.0: Mod book tiers, import / export fix, teach a price, the author's rules as defaults (see ROADMAP.md).",
+    "2.20.0: Mod book tiers, import / export fix, teach a price, the author's rules as defaults (see ROADMAP.md).",
 ]
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.19.0": [
+        "Ctrl+Alt+C now leaves a small ring for 10 seconds where your mouse was, so you can see what you've copied. "
+        "Turn it off in Settings > General > Copy marker.",
+    ],
     "2.18.0": [
         "Fixed: the Mod book stopped learning from listings (the trade site changed how it sends mods). What was "
         "saved since then is repaired.",
