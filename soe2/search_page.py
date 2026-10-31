@@ -203,13 +203,22 @@ class SearchPage:
             t.insert("end", "wiki ›", ("link", tag))
             t.tag_bind(tag, "<Button-1>", lambda e, nm=it["n"]: self.gs_wiki(nm))
         t.insert("end", "\n")
+        opened = it["n"] + "|" + it["g"] in getattr(self, "gs_open", set())
         if it["t"]:
-            self._gs_put(self._gs_cut(it["t"], terms, 300), terms, ("txt",))
+            if opened:                                    # 2.23.0: the whole text, one line per part
+                self._gs_put(it["t"].replace(" | ", "\n"), terms, ("txt",))
+            else:
+                self._gs_put(self._gs_cut(it["t"], terms, 300), terms, ("txt",))
+            if len(it["t"]) > 300 or " | " in it["t"] or (it["k"] and len(it["k"]) > 160):
+                tag = f"det{n}"
+                t.insert("end", "   ")
+                t.insert("end", "less ‹" if opened else "more ›", ("link", tag))
+                t.tag_bind(tag, "<Button-1>", lambda e, key=it["n"] + "|" + it["g"]: self.gs_toggle(key))
             t.insert("end", "\n")
         if it.get("a"):                                   # 2.17.0: an anoint - its emotions and what they cost
             return self._gs_anoint(it, terms)
         if it["k"]:
-            self._gs_put(self._gs_cut(it["k"], terms, 160), terms, ("kw",))
+            self._gs_put(it["k"] if opened else self._gs_cut(it["k"], terms, 160), terms, ("kw",))
             t.insert("end", "\n")
 
     def _gs_anoint(self, it, terms):
@@ -281,6 +290,12 @@ class SearchPage:
         self.gs_price_state = "ok" if WPRICES.ok and (WPRICES.parts.get("Delirium") or {}).get("lines") else "none"
         if getattr(self, "gs_text", None) is not None and self.gs_text.winfo_exists():
             self.gs_render(keep_scroll=True)
+
+    def gs_toggle(self, key):
+        """2.23.0: open / close one result's full details (the whole text and every keyword)."""
+        s = self.__dict__.setdefault("gs_open", set())
+        s.symmetric_difference_update({key})
+        self.gs_render(keep_scroll=True)
 
     def gs_wiki(self, name):
         import urllib.parse

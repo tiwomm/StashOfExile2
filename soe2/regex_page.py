@@ -11,7 +11,8 @@ from .clipboard import read_clipboard_text
 from .config import load_json, save_json, SETTINGS
 from .style import C, KeyCapture, MONO, SegBar
 
-KIND_NAMES = {"tablet": "Tablets", "waystone": "Waystones", "relic": "Relics"}
+KIND_NAMES = {"tablet": "Tablets", "waystone": "Waystones", "relic": "Relics", "jewel": "Jewels",
+              "gear": "Gear items"}                         # 2.22.0: jewels and gear
 STATE_FILE, PRESETS_FILE = "regex_state.json", "regex_presets.json"
 FAV_FILE, FAV_BACKUP = "regex_favorites.json", "regex_favorites.backup.json"     # 2.4.0: Favorites
 SEL_BG = "#1d3a66"
@@ -239,7 +240,7 @@ class RegexPage:
         for c in range(3):
             box.columnconfigure(c, weight=1, uniform="cards")
         rarity = set(o.get("rarity") or [])
-        name = {"tablet": "TABLET", "waystone": "WAYSTONE", "relic": "RELIC"}[kind]
+        name = {"tablet": "TABLET", "waystone": "WAYSTONE", "relic": "RELIC", "jewel": "JEWEL", "gear": "GEAR"}[kind]
         if kind == "tablet":
             c1 = card("TABLET RARITY", 0)
             for i, r in enumerate(R.RARITIES):
@@ -266,6 +267,30 @@ class RegexPage:
             check(c3, "cor_only", "Corrupted waystones", 1, 1, value=o.get("corrupted") == "only")
             check(c3, "cor_not", "Uncorrupted waystones", 2, 1, value=o.get("corrupted") == "not")
             check(c3, "round10", "Round down to nearest 10", 3, 1)
+        elif kind == "jewel":                                # 2.22.0
+            c1 = card("JEWEL RARITY", 0)
+            for i, r in enumerate(R.RARITIES):
+                check(c1, "rar:" + r, r, i + 1, value=r in rarity)
+            c2 = card("JEWEL TYPE", 1)
+            have = set(o.get("types") or [])
+            for i, t in enumerate(R.JEWEL_TYPES):
+                check(c2, "type:" + t, t, 1 + i % 3, i // 3, value=t in have)
+            c3 = card("OPTIONS", 2)
+            check(c3, "cor_only", "Corrupted", 1, value=o.get("corrupted") == "only")
+            check(c3, "cor_not", "Not corrupted", 2, value=o.get("corrupted") == "not")
+            check(c3, "round10", "Round down to nearest 10", 3)
+        elif kind == "gear":                                 # 2.22.0
+            c1 = card("GEAR RARITY", 0)
+            for i, r in enumerate(R.RARITIES):
+                check(c1, "rar:" + r, r, i + 1, value=r in rarity)
+            c2 = card("SHOW MODS FOR", 1)
+            have = set(o.get("slots") or [])
+            for i, t in enumerate(R.GEAR_SLOTS):
+                check(c2, "slot:" + t, t, 1 + i % 4, i // 4, value=t in have)
+            c3 = card("OPTIONS", 2)
+            check(c3, "cor_only", "Corrupted", 1, value=o.get("corrupted") == "only")
+            check(c3, "cor_not", "Not corrupted", 2, value=o.get("corrupted") == "not")
+            check(c3, "round10", "Round down to nearest 10", 3)
         else:
             c1 = card("RELIC RARITY", 0)
             for i, r in enumerate(R.RARITIES):
@@ -282,10 +307,11 @@ class RegexPage:
         st, v = self._rx(), self.rx_vars
         o = {}
         for key, var in v.items():
-            if key.startswith(("rar:", "type:", "size:")):
+            if key.startswith(("rar:", "type:", "size:", "slot:")):
                 if var.get():
                     group, val = key.split(":", 1)
-                    o.setdefault({"rar": "rarity", "type": "types", "size": "sizes"}[group], []).append(val)
+                    o.setdefault({"rar": "rarity", "type": "types", "size": "sizes", "slot": "slots"}[group],
+                                 []).append(val)
             elif key in ("round10",):
                 o[key] = bool(var.get())
             elif key in ("cor_only", "cor_not"):
@@ -317,6 +343,8 @@ class RegexPage:
 
     def rx_commit_opts(self):
         self._rx_cancel_opts_job()
+        if self.rx_kind.get() == "gear":                   # 2.22.0: the slot boxes pick which mods are listed
+            self.rx_filter()
         self.rx_update()
         self.rx_save()
 
@@ -541,6 +569,11 @@ class RegexPage:
         worths = getattr(self, "rx_worths", {})
         rank = {"high": 0, "normal": 1, "ignore": 2}
         shown = 0
+        slots = set()
+        if self.rx_kind.get() == "gear":                     # 2.22.0: only the mods that roll on the picked slots
+            slots = set(self._rx()["opts"].get("slots") or [])
+            if slots & {"Helmet", "Gloves", "Boots", "Body Armour"}:
+                slots.add("Armour")
         for side, L in self.rx_lists.items():
             rows = list(L["rows"].items())
             if first:                                        # ★ mods at the top (2.0 beta 20)
@@ -551,6 +584,8 @@ class RegexPage:
                 m = r["mod"]
                 ok = not q or q in m["text"] or q in " ".join(m["tags"]).lower()
                 if only and worths.get(mid, ("normal",))[0] != "high":
+                    ok = False
+                if slots and not slots & set(m["tags"]):
                     ok = False
                 if ok:
                     r["row"].pack(fill="x")
