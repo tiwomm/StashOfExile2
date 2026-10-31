@@ -281,6 +281,7 @@ class InsightsPage:
             mods = [l for l in (obj.get("mods") or []) if l] or \
                    [l for s in secs[1:] for l in s if not re.match(r"^(Item Level|Requires|Quality|Note|Sockets|"
                                                                     r"Corrupted|Unidentified|Map Tier|Waystone Tier)", l)]
+            mods = [self.ins_with_value(m, lines) for m in mods]          # 2.25.3: the real numbers
             if not head:
                 head = [obj.get("name") or "", obj.get("base") or ""]
             price = f"Worth about {fmt_div(obj.get('est'))}" + (f"  ·  {obj['conf']} confidence"
@@ -304,6 +305,19 @@ class InsightsPage:
         if not obj:
             return self.ins_preview_close()
         self.ins_preview(key, obj, e.x_root + 18, e.y_root + 10)
+
+    @staticmethod
+    def ins_with_value(text, lines):
+        """2.25.3: a saved mod line with # (waystones keep their numbers as "Pack Size: #%") -> the same line from the
+        copied item, with its real value ("Monster Pack Size: +32%"). Unchanged when the item text hasn't got it."""
+        if "#" not in text:
+            return text
+        num = r"[+-]?\d+(?:\.\d+)?(?:\([^)]*\))?"           # 17 or 17(15-19) (an advanced copy)
+        rx = re.compile(re.escape(text).replace(r"\#", num).replace("#", num), re.I)
+        for l in lines:
+            if rx.search(l):
+                return l
+        return text
 
     def ins_preview(self, key, obj, x, y):
         self.ins_preview_close()
