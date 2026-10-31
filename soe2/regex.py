@@ -9,6 +9,7 @@ cheapest piece of its text found in no other mod of that item type and in none o
 A minimum value turns a token into  <number at least N><the text between>token  on the same line."""
 import json
 import os
+import math
 import re
 import threading
 
@@ -88,6 +89,73 @@ def at_least(n, round10=False):
     return alts[0] if len(alts) == 1 else "(" + "|".join(alts) + ")"
 
 
+def _cls(a, b):
+    """digits a..b as short as possible: 0-9 -> '.', 3 -> '3', 3-5 -> '[3-5]'."""
+    return "." if (a, b) == (0, 9) else str(a) if a == b else f"[{a}-{b}]"
+
+
+def _same_len(lo, hi):
+    """Regex alternatives for every number lo..hi written with the same number of digits (strings)."""
+    if len(lo) == 1:
+        return [_cls(int(lo), int(hi))]
+    if lo[0] == hi[0]:
+        return [lo[0] + r for r in _same_len(lo[1:], hi[1:])]
+    k = len(lo) - 1
+    out = []
+    if lo[1:] == "0" * k:                                   # 30..   covers 30-39 whole
+        a = int(lo[0])
+    else:
+        out += [lo[0] + r for r in _same_len(lo[1:], "9" * k)]
+        a = int(lo[0]) + 1
+    if hi[1:] == "9" * k:
+        b = int(hi[0])
+        tail = []
+    else:
+        b = int(hi[0]) - 1
+        tail = [hi[0] + r for r in _same_len("0" * k, hi[1:])]
+    if a <= b:
+        out.append(_cls(a, b) + "." * k)
+    return out + tail
+
+
+def num_range(lo, hi):
+    r"""2.21.0: regex for a whole number from lo to hi (0-999), exact - the caller puts fixed text on both sides so it
+    can't match inside a longer number: 10-25 -> (1.|2[0-5]),  5-120 -> ([5-9]|..|1[01].|120)."""
+    lo, hi = max(0, int(lo)), min(999, int(hi))
+    if lo > hi:
+        lo, hi = hi, lo
+    alts = []
+    for d in range(len(str(lo)), len(str(hi)) + 1):
+        a = max(lo, 0 if d == 1 else 10 ** (d - 1))
+        b = min(hi, 10 ** d - 1)
+        if a <= b:
+            alts += _same_len(str(a), str(b))
+    return alts[0] if len(alts) == 1 else "(" + "|".join(alts) + ")"
+
+
+def value_spec(v):
+    """A mod's value box -> (minimum, maximum), either None. 50 / "50" -> (50, None); "50-80" -> (50, 80);
+    "<80" / "max 80" / "-80"... no: "<80" and "<=80" -> (None, 80); {"min": 5, "max": 9} -> (5, 9)."""
+    if v is None or v == "":
+        return None, None
+    if isinstance(v, dict):
+        return v.get("min"), v.get("max")
+    if isinstance(v, (int, float)):
+        return float(v), None
+    t = str(v).strip().replace(" ", "").lower()
+    m = re.fullmatch(r"(?:<=?|≤|max|upto)(\d+(?:\.\d+)?)", t)
+    if m:
+        return None, float(m.group(1))
+    m = re.fullmatch(r"(\d+(?:\.\d+)?)(?:-|to|\.\.)(\d+(?:\.\d+)?)", t)
+    if m:
+        a, b = float(m.group(1)), float(m.group(2))
+        return min(a, b), max(a, b)
+    m = re.fullmatch(r"(?:>=?|≥|min)?(\d+(?:\.\d+)?)\+?", t)
+    if m:
+        return float(m.group(1)), None
+    raise ValueError(f"can't read {v!r}: type 50, 50-80 or <80")
+
+
 def tier_range(lo, hi):
     r"""'Waystone (Tier 15)' for tiers lo..hi, as short as possible: 14-16 -> er 1[4-6]\), 5-16 -> er ([5-9]|1[0-6])\)."""
     lo, hi = max(1, int(lo)), min(16, int(hi))
@@ -116,11 +184,16 @@ def esc(text):
 
 # ---------------------------------------------------------------- one mod
 def mod_term(m, minimum=None, round10=False):
-    """The regex for one mod, optionally 'value at least minimum'."""
+    """The regex for one mod, optionally 'value at least minimum' - or (2.21.0) a range / maximum: minimum may be
+    "50-80", "<80" or {"min": 50, "max": 80} (see value_spec)."""
     tok = m["token"]
     core = tok.strip("^$")
     start, end = tok.startswith("^"), tok.endswith("$")
     line = m["line"]
+    lo, hi = value_spec(minimum)
+    if hi is not None and "#" in line:
+        return _ranged_term(m, lo, hi)
+    minimum = lo
     if minimum is None or "#" not in line or (m.get("min") is not None and float(minimum) <= float(m["min"])) \
             or float(minimum) != int(float(minimum)):
         return tok if (start or end) else esc(core)            # no value check: the token alone
@@ -139,6 +212,29 @@ def mod_term(m, minimum=None, round10=False):
     gap = line[t + len(core):h]                                # token ... number
     mid = esc(gap) if len(gap) <= 6 else ".*"
     return ("^" if start else "") + esc(core) + mid + num + esc(after)
+
+
+def _ranged_term(m, lo, hi):
+    """2.21.0: the mod with its number between lo and hi. The exact number pattern gets the character before the number
+    (or ^ at the start of the line) and the one after it, so '5' can't match inside '15'."""
+    tok, line = m["token"], m["line"]
+    core = tok.strip("^$")
+    start, end = tok.startswith("^"), tok.endswith("$")
+    if lo is None:                                             # a maximum only: from the mod's lowest roll
+        lo = float(m["min"]) if m.get("min") is not None and float(m["min"]) <= hi else 0
+    num = num_range(int(math.ceil(lo)), int(math.floor(hi)))
+    h = line.index("#")
+    # two characters before the number (a search term can't start with a space - the game trims it)
+    before = esc(line[max(0, h - 2):h]) if h > 0 else "^"
+    after = esc(line[h + 1:h + 2])
+    t = len(line) - len(core) if end else 0 if start else line.find(core)
+    if t > h:                                                  # number ... token
+        gap = line[h + 1:t]
+        mid = esc(gap) if len(gap) <= 6 else after + ".*"
+        return before + num + mid + esc(core) + ("$" if end else "")
+    gap = line[t + len(core):max(0, h - 2)] if h > 0 else ""
+    mid = esc(gap) if len(gap) <= 6 else ".*"
+    return ("^" if start else "") + esc(core) + mid + before + num + after
 
 
 # ---------------------------------------------------------------- the whole search

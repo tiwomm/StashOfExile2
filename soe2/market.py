@@ -597,6 +597,63 @@ class Market:
         n, hits, _ = self.accuracy(base, 0.20, 100)
         return n >= 100 and hits / n >= 0.99
 
+    def save_sale(self, item, div, price_txt=""):
+        """2.21.0: you sold this for `div` divines - kept with the listings the Mod book learns from (as a listing at
+        the price it really went for), and counted in the 'sales' table. -> True if saved."""
+        if not self.db or not div:
+            return False
+        try:
+            mods = [m for m in item["mods"] if m.get("sid")]
+            sids = sorted({m["sid"] for m in mods})
+            vals = {m["sid"]: m["value"] for m in mods if m.get("value") is not None}
+            sig = f"{self.cur()}|{item['name']}|{json.dumps(sids)}|{json.dumps(vals, sort_keys=True)}"
+            now = time.time()
+            with self.lock:
+                self.db.execute("CREATE TABLE IF NOT EXISTS sales(sig TEXT PRIMARY KEY, ts REAL, league TEXT, base TEXT,"
+                                " name TEXT, sids TEXT, vals TEXT, sold_div REAL, price_txt TEXT)")
+                self.db.execute("INSERT OR REPLACE INTO sales VALUES (?,?,?,?,?,?,?,?,?)",
+                                (sig, now, self.cur(), item["base"], item["name"], json.dumps(sids), json.dumps(vals),
+                                 div, price_txt))
+                self.db.execute("INSERT OR REPLACE INTO listings(id, base, seen, indexed, price_div, sids, league, vals,"
+                                " name, lines, price_txt, qid) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
+                                ("sale:" + sig, item["base"], now, now, div, json.dumps(sids), self.cur(), json.dumps(vals),
+                                 item["name"], json.dumps([m["text"] for m in item["mods"]]), f"sold {price_txt}".strip(), ""))
+                self.db.commit()
+            self.since_learn = 99                         # learn again soon
+            return True
+        except Exception as e:
+            self.last_error = f"saving a sale: {type(e).__name__}: {e}"
+            return False
+
+    def forget_sale(self, item):
+        if not self.db:
+            return
+        try:
+            mods = [m for m in item["mods"] if m.get("sid")]
+            sids = sorted({m["sid"] for m in mods})
+            vals = {m["sid"]: m["value"] for m in mods if m.get("value") is not None}
+            sig = f"{self.cur()}|{item['name']}|{json.dumps(sids)}|{json.dumps(vals, sort_keys=True)}"
+            with self.lock:
+                self.db.execute("DELETE FROM listings WHERE id=?", ("sale:" + sig,))
+                try:
+                    self.db.execute("DELETE FROM sales WHERE sig=?", (sig,))
+                except Exception:
+                    pass
+                self.db.commit()
+        except Exception:
+            pass
+
+    def sales(self):
+        """[(base, name, sold_div, ts)] of this league's sales, newest first."""
+        if not self.db:
+            return []
+        try:
+            with self.lock:
+                return self.db.execute("SELECT base, name, sold_div, ts FROM sales WHERE league=? ORDER BY ts DESC",
+                                       (self.cur(),)).fetchall()
+        except Exception:
+            return []
+
     def save_listed(self, item, est, listed_div):
         if not self.db or listed_div is None:
             return
