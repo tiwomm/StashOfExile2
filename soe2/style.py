@@ -136,6 +136,44 @@ def setup_style(root):
     s.configure("Sash", sashthickness=7, gripcount=0, background=C["line"])
 
 
+def monitor_rect(root, x, y):
+    """2.25.2: (left, top, right, bottom) of the monitor holding the point (x, y) - its work area, without the
+    taskbar. Popups are kept on THAT monitor; winfo_screenwidth() is only the main monitor, which pushed popups over
+    to it when the app was on another one."""
+    if sys.platform == "win32":
+        try:
+            import ctypes
+            from ctypes import wintypes
+
+            class MONITORINFO(ctypes.Structure):
+                _fields_ = [("cbSize", wintypes.DWORD), ("rcMonitor", wintypes.RECT), ("rcWork", wintypes.RECT),
+                            ("dwFlags", wintypes.DWORD)]
+            u = ctypes.windll.user32
+            u.MonitorFromPoint.restype = ctypes.c_void_p
+            u.MonitorFromPoint.argtypes = [wintypes.POINT, wintypes.DWORD]
+            u.GetMonitorInfoW.argtypes = [ctypes.c_void_p, ctypes.POINTER(MONITORINFO)]
+            h = u.MonitorFromPoint(wintypes.POINT(int(x), int(y)), 2)        # MONITOR_DEFAULTTONEAREST
+            mi = MONITORINFO()
+            mi.cbSize = ctypes.sizeof(MONITORINFO)
+            if h and u.GetMonitorInfoW(h, ctypes.byref(mi)):
+                r = mi.rcWork
+                return r.left, r.top, r.right, r.bottom
+        except Exception:
+            pass
+    return 0, 0, root.winfo_screenwidth(), root.winfo_screenheight()
+
+
+def place_near(root, win, x, y):
+    """Put `win` with its corner at (x, y), kept inside the monitor that point is on."""
+    win.update_idletasks()
+    l, t, r, b = monitor_rect(root, x, y)
+    w, h = win.winfo_reqwidth(), win.winfo_reqheight()
+    x = max(l, min(int(x), r - w - 8))
+    y = max(t, min(int(y), b - h - 8))
+    win.geometry(f"+{x}+{y}")
+    return x, y
+
+
 class Toast:
     """Small always-on-top popup near the mouse that never takes keyboard focus."""
 
@@ -172,11 +210,7 @@ class Toast:
             tk.Label(card, text=ln, bg=C["panel"], fg=C["text"], font=("Segoe UI", 10), anchor="w",
                      justify="left").pack(fill="x")
         w.update_idletasks()
-        x = self.root.winfo_pointerx() + 26
-        y = self.root.winfo_pointery() + 26
-        x = max(0, min(x, self.root.winfo_screenwidth() - w.winfo_reqwidth() - 8))
-        y = max(0, min(y, self.root.winfo_screenheight() - w.winfo_reqheight() - 8))
-        w.geometry(f"+{x}+{y}")
+        place_near(self.root, w, self.root.winfo_pointerx() + 26, self.root.winfo_pointery() + 26)
         if sys.platform == "win32":      # do not steal focus from the game
             try:
                 import ctypes
