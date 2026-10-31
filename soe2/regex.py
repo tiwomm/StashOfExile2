@@ -93,7 +93,8 @@ def at_least(n, round10=False):
 
 def _cls(a, b):
     """digits a..b as short as possible: 0-9 -> '.', 3 -> '3', 3-5 -> '[3-5]'."""
-    return "." if (a, b) == (0, 9) else str(a) if a == b else f"[{a}-{b}]"
+    return r"\d" if (a, b) == (0, 9) else str(a) if a == b else f"[{a}-{b}]"   # \d, never '.': a short number
+                                                                   # followed by " to" must not pass as a longer one
 
 
 def _same_len(lo, hi):
@@ -116,14 +117,14 @@ def _same_len(lo, hi):
         b = int(hi[0]) - 1
         tail = [hi[0] + r for r in _same_len("0" * k, hi[1:])]
     if a <= b:
-        out.append(_cls(a, b) + "." * k)
+        out.append(_cls(a, b) + r"\d" * k)
     return out + tail
 
 
 def num_range(lo, hi):
     r"""2.21.0: regex for a whole number from lo to hi (0-999), exact - the caller puts fixed text on both sides so it
     can't match inside a longer number: 10-25 -> (1.|2[0-5]),  5-120 -> ([5-9]|..|1[01].|120)."""
-    lo, hi = max(0, int(lo)), min(999, int(hi))
+    lo, hi = max(0, int(lo)), min(9999, int(hi))
     if lo > hi:
         lo, hi = hi, lo
     alts = []
@@ -196,14 +197,23 @@ def mod_term(m, minimum=None, round10=False):
     if m.get("rx"):                                            # 2.22.0: a whole-line token, numbers as \d+
         if lo is None and hi is None:
             return tok
-        num = num_range(int(math.ceil(lo or 0)), int(math.floor(hi))) if hi is not None else at_least(lo)
-        return tok.replace(r"\d+", num or r"\d+", 1) if num else tok
+        if lo is not None and round10:
+            lo = float(lo) - float(lo) % 10
+        if lo is not None and m.get("min") is not None and hi is None and float(lo) <= float(m["min"]):
+            return tok                                         # every roll is at least that
+        # the number sits between fixed text here, so it must be exact: no "a longer number contains it" shortcut
+        num = num_range(int(math.ceil(lo or 0)), int(math.floor(hi)) if hi is not None else 9999)
+        return tok.replace(r"\d+", num, 1)
     if hi is not None and "#" in line:
         return _ranged_term(m, lo, hi)
     minimum = lo
     if minimum is None or "#" not in line or (m.get("min") is not None and float(minimum) <= float(m["min"])) \
             or float(minimum) != int(float(minimum)):
         return tok if (start or end) else esc(core)            # no value check: the token alone
+    if line.count("#") > 1 or (m.get("max") or 0) * 3 >= 1000:
+        # 2.22.0: two numbers on the line (the token could find the other one), or a mod big enough for 1,000+:
+        # the exact form, fixed text on both sides of the number
+        return _ranged_term(m, float(minimum) - float(minimum) % 10 if round10 else float(minimum), 9999)
     num = at_least(minimum, round10)
     if num is None:
         return tok if (start or end) else esc(core)
