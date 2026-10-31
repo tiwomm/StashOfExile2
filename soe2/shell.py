@@ -93,10 +93,15 @@ class DeskWindow(tk.Toplevel):
         super().__init__(shell.root, bg=BORDER_OFF, highlightthickness=1, highlightbackground="#5b77ad")
         self.withdraw()
         self.overrideredirect(True)
-        try:
-            self.transient(shell.root)
-        except tk.TclError:
-            pass
+        # 2.10.2: not transient() on Windows - with it, Tk threw away and rebuilt this window's real (Win32) window
+        # every time the app was maximised, restored or snapped, and the new one had no owner: it fell behind the
+        # app (windows "vanished") and the keyboard was lost. own_by_app() sets the owner instead (diag_log.txt).
+        if sys.platform != "win32":
+            try:
+                self.transient(shell.root)
+            except tk.TclError:
+                pass
+        self._hwnd_seen = None
         self.shell, self.key, self.title, self.icon, self.utility = shell, key, title, icon, utility
         self.inner = tk.Frame(self, bg=C["panel"])
         self.inner.pack(fill="both", expand=True, padx=EDGE, pady=EDGE)
@@ -240,6 +245,43 @@ class DeskWindow(tk.Toplevel):
         except tk.TclError:
             pass
 
+    def hwnd(self):
+        """The real (Win32) window Windows knows this one by, or None."""
+        if sys.platform != "win32":
+            return None
+        try:
+            import ctypes
+            u = ctypes.windll.user32
+            u.GetParent.restype = ctypes.c_void_p
+            u.GetParent.argtypes = [ctypes.c_void_p]
+            return u.GetParent(self.winfo_id()) or self.winfo_id()
+        except Exception:
+            return None
+
+    def check_owner(self):
+        """2.10.2: if Tk rebuilt this window's real window, give it its owner back and bring it forward again (and
+        the keyboard, if a box in it had it). -> True when it had changed."""
+        h = self.hwnd()
+        if h is None or h == self._hwnd_seen:
+            return False
+        first = self._hwnd_seen is None
+        self._hwnd_seen = h
+        if first:
+            return False
+        self.own_by_app()
+        self.follow_on_top()
+        self.lift()
+        try:
+            f = self.focus_get()
+            if f is not None and f.winfo_toplevel() is self:
+                f.focus_force()
+        except (tk.TclError, KeyError):
+            pass
+        log = getattr(self.shell.app, "diag", None)
+        if log is not None:
+            log.log(f"HWND rebuilt for {self.key}: {h:#x} - owner and keyboard given back")
+        return True
+
     def has_os_focus(self):
         """Is this window the one Windows sends the keys to? (Other systems: trust Tk.)"""
         if sys.platform != "win32":
@@ -316,6 +358,7 @@ class DeskWindow(tk.Toplevel):
 
     def _show(self):
         self.deiconify()
+        self._hwnd_seen = self.hwnd()
         self.own_by_app()
         self.follow_on_top()
         self.lift()
@@ -542,6 +585,7 @@ class Shell:
         self._last_place = (org, size)
         for w in self.windows.values():
             w.reposition()
+        self.check_owners()
         if self.menu is not None:
             self._place_menu()
         self.app_follow()
@@ -574,6 +618,16 @@ class Shell:
         self.restack()
         self.app_follow()
 
+    def check_owners(self):
+        """2.10.2: any open window whose real window Tk rebuilt gets its owner back (then the stacking order)."""
+        changed = False
+        for w in self.windows.values():
+            if w.state_ == "open":
+                changed = w.check_owner() or changed
+        if changed:
+            self.restack()
+        return changed
+
     def heal(self):
         """2.10.1, every 2 s: a window that is open in the app but hidden by the system (it vanished when the app was
         resized) is shown again, in its place. Not while the app itself is minimised or in the tray."""
@@ -582,6 +636,7 @@ class Shell:
                 return
         except tk.TclError:
             return
+        self.check_owners()
         for w in self.windows.values():
             if w.state_ != "open":
                 continue
