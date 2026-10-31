@@ -14,7 +14,7 @@ Hover an item in game and press **Ctrl+Alt+C**. It goes into a list and is price
 - **Exchange rates:** poe.ninja rates, an Exchange Helper, and an Arbitrage tab for uneven Currency Exchange rates.
 - **Session tracker:** time, maps and deaths per session with a timer over the game, plus Delirium and Breach (Hiveblood) alerts.
 - **Utilities:** chat command keys, a sticky note, a calculator.
-- **Labs (off by default):** Wealth (stash value over time), Top value and an offline game-data search.
+- **Labs (off by default):** Wealth (stash value over time), Market Insights and an offline game-data search.
 
 ## Install
 

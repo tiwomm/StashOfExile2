@@ -6,11 +6,12 @@ Breach: the game writes its Hiveblood warnings to its own log, Client.txt (seen 
     : <brequelwarning>{Cannot store any more Hiveblood! Go to the Genesis Tree to consume it.}
 Both are easy to miss in the middle of a Breach. This follows Client.txt (only new lines, about once a second - the
 same way the Session tracker does) and shows a banner over the game: an "almost full" one, and a stronger "full"
-one. Nothing is read from the game itself and no keys are sent. A banner stays until you click it, or until you open
-the Genesis Tree (the game logs that too).
+one. Nothing is read from the game itself and no keys are sent. A banner looks like the Delirium alert's END DELIRIUM (2.12.1): big flashing text over the game,
+no box; clicks go through it. It goes after a few seconds, or as soon as you open the Genesis Tree.
 
 Delirium: the helper (utilities.DELIRIUM, delirium_runner.py) looks at your screen; its END DELIRIUM banner is its own.
 This panel only starts / stops it, sets its sound and tests it. Its splinter icon is gone (2.10.0)."""
+import sys
 import time
 import tkinter as tk
 from tkinter import ttk
@@ -22,7 +23,7 @@ from .style import C
 REPEAT_SECS = 45          # the game repeats a warning (twice in 2 s, then every ~15 s when full): one banner per level
 RETRY_TICKS = 15          # Client.txt not found: look again every this many seconds
 LEVELS = {
-    "almost": ("HIVEBLOOD ALMOST FULL", "Spend it at the Genesis Tree  ·  click to close", "#2a0d10", "#ff5a4a"),
+    "almost": ("HIVEBLOOD ALMOST FULL", "Spend it at the Genesis Tree  ·  click to close", "#2a0d10", "#ff3df0"),
     "full": ("CANNOT STORE ANY MORE HIVEBLOOD!", "Go to the Genesis Tree to consume it  ·  click to close", "#3a0606",
              "#ff2a2a"),
     # 2.11.0: you left a map after the game warned and haven't opened the Genesis Tree since
@@ -30,6 +31,76 @@ LEVELS = {
                                       "close", "#2a1a06", "#ffb347"),
 }
 DOT = {"on": "#5ee08a", "off": "#6b7690", "warn": "#ffb347"}
+TRANSPARENT = "#010203"
+BANNER_SECS = {"almost": 8, "full": 10, "leave": 8}       # 2.12.1: then it goes by itself (like END DELIRIUM)
+
+
+def _hwnd(win):
+    import ctypes
+    u = ctypes.windll.user32
+    u.GetParent.restype = ctypes.c_void_p
+    u.GetParent.argtypes = [ctypes.c_void_p]
+    return u.GetParent(win.winfo_id()) or win.winfo_id()
+
+
+def click_through(win):
+    """Clicks go through to the game and it never takes the keyboard (Windows) - as the Delirium alert does."""
+    if sys.platform != "win32":
+        return
+    try:
+        import ctypes
+        u = ctypes.windll.user32
+        u.GetWindowLongW.argtypes = [ctypes.c_void_p, ctypes.c_int]
+        u.SetWindowLongW.argtypes = [ctypes.c_void_p, ctypes.c_int, ctypes.c_long]
+        h = _hwnd(win)
+        u.SetWindowLongW(h, -20, u.GetWindowLongW(h, -20) | 0x80000 | 0x20 | 0x80 | 0x08000000)
+    except Exception:
+        pass
+
+
+def force_topmost(win):
+    if sys.platform != "win32":
+        return
+    try:
+        import ctypes
+        u = ctypes.windll.user32
+        u.SetWindowPos.argtypes = [ctypes.c_void_p, ctypes.c_void_p, ctypes.c_int, ctypes.c_int, ctypes.c_int,
+                                   ctypes.c_int, ctypes.c_uint]
+        u.SetWindowPos(_hwnd(win), ctypes.c_void_p(-1), 0, 0, 0, 0, 0x1 | 0x2 | 0x10)
+    except Exception:
+        pass
+
+
+def game_rect(title="Path of Exile 2"):
+    """-> (left, top, width, height) of the game window, or None (then the main screen is used)."""
+    if sys.platform.startswith("linux"):
+        from .linsys import game_rect as _gr
+        return _gr(title)
+    if sys.platform != "win32":
+        return None
+    try:
+        import ctypes
+        from ctypes import wintypes
+        u = ctypes.windll.user32
+        found = []
+
+        @ctypes.WINFUNCTYPE(ctypes.c_bool, wintypes.HWND, wintypes.LPARAM)
+        def cb(hwnd, _):
+            if u.IsWindowVisible(hwnd):
+                n = u.GetWindowTextLengthW(hwnd)
+                if n:
+                    buf = ctypes.create_unicode_buffer(n + 1)
+                    u.GetWindowTextW(hwnd, buf, n + 1)
+                    if buf.value.strip().lower() == title.lower():
+                        r = wintypes.RECT()
+                        u.GetWindowRect(hwnd, ctypes.byref(r))
+                        found.append((r.left, r.top, r.right - r.left, r.bottom - r.top))
+                        return False
+            return True
+        u.EnumWindows(cb, 0)
+        return found[0] if found and found[0][2] > 200 and found[0][3] > 200 else None
+    except Exception:
+        return None
 
 
 def breach_level(text):
@@ -293,23 +364,37 @@ class AlertsPage:
         if level == "full":
             self.br_last["almost"] = now                     # "almost" right after "full" adds nothing
         self.breach_dismiss()
-        from .overlaywin import OverlayWindow
-        big_txt, small_txt, bg, fg = LEVELS[level]
-        sw = self.root.winfo_screenwidth()
-        w, h = (720, 124) if level == "full" else (640, 120) if level == "leave" else (560, 120)
-        win = OverlayWindow(self.root, "Breach alert", "🩸", ((sw - w) // 2, 90, w, h), opacity=245,
-                            body_bg=bg, lockable=False, no_activate=True, on_close=self.breach_dismiss)
-        big = tk.Label(win.body, text=big_txt, bg=bg, fg=fg, cursor="hand2",
-                       font=("Segoe UI", 22 if level == "full" else 26, "bold"))
-        big.pack(fill="x", pady=(10, 0))
-        small = tk.Label(win.body, text=small_txt, bg=bg, fg="#ffd9cf", cursor="hand2", font=("Segoe UI", 11),
-                         wraplength=w - 30)
-        small.pack(fill="x", pady=(2, 10))
-        for wdg in (win.body, big, small):
-            wdg.bind("<Button-1>", lambda e: self.breach_dismiss())
-        win.show()
+        big_txt, small_txt, _bg, fg = LEVELS[level]
+        win = tk.Toplevel(self.root)                   # 2.12.1: the Delirium alert's look - big flashing text straight
+        win.overrideredirect(True)                     # over the game, no box, clicks go through to the game
+        win.attributes("-topmost", True)
+        win.configure(bg=TRANSPARENT)
+        try:
+            win.attributes("-transparentcolor", TRANSPARENT)
+        except tk.TclError:
+            pass
+        ox, oy, sw, sh = game_rect() or (0, 0, self.root.winfo_screenwidth(), self.root.winfo_screenheight())
+        ui = max(0.5, sh / 1440.0)
+        big = tk.Label(win, text=big_txt, fg=fg, bg=TRANSPARENT, font=("Segoe UI Black", -int(80 * ui), "bold"))
+        big.pack(fill="x")
+        small = tk.Label(win, text=small_txt.split("  ·  ")[0], fg="#ffffff", bg=TRANSPARENT,
+                         font=("Segoe UI Black", -int(30 * ui), "bold"))
+        small.pack(fill="x")
+        size = int(80 * ui)
+        win.update_idletasks()
+        while big.winfo_reqwidth() > sw * 0.94 and size > 24:      # always fits the game window, whatever the font
+            size -= 4
+            big.config(font=("Segoe UI Black", -size, "bold"))
+            win.update_idletasks()
+        w = max(big.winfo_reqwidth(), small.winfo_reqwidth()) + 40
+        h = big.winfo_reqheight() + small.winfo_reqheight() + 10
+        win.geometry(f"{w}x{h}+{ox + (sw - w) // 2}+{oy + int(sh * 0.22)}")
+        win.update_idletasks()
+        click_through(win)
+        force_topmost(win)
+        win.big, win.small = big, small
         self.br_win, self.br_level = win, level
-        self._breach_flash(big, fg, 12 if level == "full" else 8)
+        self._breach_flash(big, fg, True)
         if self.breach_cfg().get("sound", True):
             try:
                 import winsound
@@ -318,17 +403,17 @@ class AlertsPage:
                 self.root.bell()
         self.alerts_refresh()
         self.alerts_overlay_redraw()
-        if test:
-            self.root.after(5000, lambda: self.br_win is win and self.breach_dismiss())
+        secs = 5 if test else BANNER_SECS.get(level, 8)
+        self.root.after(secs * 1000, lambda: self.br_win is win and self.breach_dismiss())
 
-    def _breach_flash(self, lbl, fg, n):
-        if n <= 0 or self.br_win is None:
+    def _breach_flash(self, lbl, fg, on):
+        if self.br_win is None:
             return
         try:
-            lbl.config(fg=fg if n % 2 else "#ffe36e")
+            lbl.config(fg=fg if on else "#ffffff")
         except tk.TclError:
             return
-        self.root.after(450, lambda: self._breach_flash(lbl, fg, n - 1))
+        self.root.after(350, lambda: self._breach_flash(lbl, fg, not on))
 
     def breach_dismiss(self):
         w, self.br_win = getattr(self, "br_win", None), None
