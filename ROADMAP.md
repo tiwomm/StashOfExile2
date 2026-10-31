@@ -1,6 +1,6 @@
 # StashOfExile2 roadmap
 
-**Current version: 2.25.3**
+**Current version: 2.25.4**
 
 Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds features, 2.10.1 only fixes. Each step below is one release; we work through them top to bottom.
 
@@ -39,6 +39,7 @@ Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds f
 | 2.25.1 | Faster with long lists: price updates about 15x quicker, no more freezes while saving. |
 | 2.25.2 | Popups open on the monitor you're using. |
 | 2.25.3 | Waystone previews show real numbers; app popups open in the middle of the app. |
+| 2.25.4 | Maximised stays maximised; Slowness recorder (Settings > Advanced). |
 
 ## ▶ Next up
 
