@@ -16,7 +16,7 @@ INTRO = [
 
 # What's being worked on (2.4.0: not shown in the app any more - kept for ROADMAP.md / the developer).
 NEXT = [
-    "2.11.0: Ctrl+A / C / Z and right-click menus everywhere, striped rows, a poe2db key (see ROADMAP.md).",
+    "2.11.0: Ctrl+A / C / Z and right-click menus everywhere, striped rows, a modifier-lookup key (see ROADMAP.md).",
 ]
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
