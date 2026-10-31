@@ -20,7 +20,7 @@ PROPS = {
     "monster effectiveness": ("map_magic_monsters", "Monster Effectiveness", "normal"),
     "experience gain": ("map_experience", "Experience", "normal"),
     "gold found": ("map_gold", "Gold Found", "normal"),
-    "revives available": ("map_revives", "Revives Available", "ignore"),
+    "revives available": ("map_revives", "Revives Available", "normal"),
 }
 _PROP = re.compile(r"^([A-Za-z ]+):\s*([+-]?\d+(?:\.\d+)?)%?")
 _TIER = re.compile(r"Waystone \(Tier (\d+)\)")

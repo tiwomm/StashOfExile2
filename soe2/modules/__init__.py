@@ -5,7 +5,7 @@
     icon    - one character / emoji for the dock, taskbar and menu
     kind    - "module" (a big tool you work in: Price checks, Mod book ...), "tool" (a quick helper that only does
               something while its window is open: Regex, Exchange rates, Game search), "utility" (keeps working in or
-              over the game while its window is closed, with an on/off dot: chat commands, notes, Delirium alert,
+              over the game while its window is closed, with an on/off dot: chat commands, notes,
               session tracker) or "core" (Settings: not on the dock)
     hidden  - True: not on the dock, the Toolkit menu or the desktop; opened from inside another window only
               (2.0 beta 14: Under the hood, opened from Price checks)
@@ -50,12 +50,11 @@ def load(app):
     from .regex import Regex
     from .chat import Chat
     from .notes import Notes
-    from .delirium import Delirium
     from .rates import Rates
     from .tracker import Tracker
     from .search import Search
     from .settings import Settings
     from .calc import Calculator
     from .insights import Insights
-    return [cls(app) for cls in (PriceChecks, Wealth, ModBook, Library, Regex, Search, Tracker, Chat, Notes, Delirium,
+    return [cls(app) for cls in (PriceChecks, Wealth, ModBook, Library, Regex, Search, Tracker, Chat, Notes,
                                  Rates, Calculator, Insights, Settings)]

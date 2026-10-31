@@ -61,6 +61,7 @@ jobs:
         run: |
           V="${{ steps.ver.outputs.version }}"
           git archive --format=zip -o "StashOfExile2_build_kit_$V.zip" HEAD
+          python tools/check_version.py
           python tools/release_notes.py "$V" > notes.md
           cat notes.md
 

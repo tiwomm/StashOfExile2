@@ -35,7 +35,13 @@ def foreground_ok():
     """May over-the-game windows show right now? Yes while Path of Exile 2 is the window in front, or one of these
     windows itself is (you clicked the note to type in it). 2.0 beta 17: not just because the app is in front - they
     popped up over the app's own windows."""
-    if not GAME_ONLY[0] or sys.platform != "win32":
+    if not GAME_ONLY[0]:
+        return True
+    if sys.platform != "win32":                      # 2.10.0: Hyprland can tell; anywhere else, don't block
+        if sys.platform.startswith("linux"):
+            from . import linsys
+            if linsys.hypr_socket():
+                return linsys.game_active(GAME_TITLE[0] or "Path of Exile 2") or bool(linsys.app_in_front())
         return True
     try:
         from .overlay import game_active

@@ -46,7 +46,8 @@ from .winsys import ICON_B64, KeyWatch, Tray
 from .wealth_page import WealthPage
 from .wealth_setup import WealthSetup
 from .listkeys import ListKeys
-from .breach_page import BreachAlert
+from .alerts_page import AlertsPage
+from .about_page import AboutPage
 from .tabreader_page import TabReaderPage
 from .searchopts_page import SearchOptsPage
 from .valuelog import VALUE_LOG
@@ -66,7 +67,7 @@ from .shell import Shell
 from .config import PAGE_CHECKS       # 1.40: was "Items"
 
 
-class App(ListKeys, BreachAlert, TabReaderPage, SearchOptsPage, ExchangePage, WealthSetup, WealthPage, LibraryPage, RegexPage, UtilitiesPage, TrackerPage, SearchPage, CalcPage, InsightsPage):
+class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, ExchangePage, WealthSetup, WealthPage, LibraryPage, RegexPage, UtilitiesPage, TrackerPage, SearchPage, CalcPage, InsightsPage):
     COLS = [("added", "#", 46, "e"), ("name", "Item", 220, "w"), ("type", "Type", 110, "w"), ("mark", "Status", 90, "center"),
             ("est", "Est. value", 110, "e"), ("conf", "Confidence", 95, "center"), ("listings", "Listings", 70, "e"), ("priced", "Priced at", 130, "w"),
             ("match", "How it was priced", 300, "w")]
@@ -322,7 +323,7 @@ class App(ListKeys, BreachAlert, TabReaderPage, SearchOptsPage, ExchangePage, We
         r = self.root
         r.configure(bg=C["bg"])
         self.PAGES = [PAGE_CHECKS, "Wealth", "Mod book", "Regex", "Chat commands", "Notes",
-                      "Delirium alert", "Settings"]
+                      "Settings"]
         self.page_var = tk.StringVar(value=PAGE_CHECKS)           # the window in front (kept for older code)
         self.top_var = tk.BooleanVar(value=SETTINGS.get("on_top", True))
         self.league_var = tk.StringVar(value=SETTINGS["league"])
@@ -395,7 +396,10 @@ class App(ListKeys, BreachAlert, TabReaderPage, SearchOptsPage, ExchangePage, We
         seen = SETTINGS.get("seen_version")
         if not force and seen == APP_VERSION:
             return
+        if not seen and not force and self.show_quickstart():     # 2.10.0: a fresh install gets the quick start
+            return
         notes = notes_between(None if force or not seen else seen, APP_VERSION)
+        self._wn_h = None
         old = getattr(self, "_whatsnew", None)
         if old is not None and old.winfo_exists():
             old.destroy()
@@ -459,7 +463,7 @@ class App(ListKeys, BreachAlert, TabReaderPage, SearchOptsPage, ExchangePage, We
             return
         ox, oy = self.shell.desk_origin()
         dw, dh = max(300, self.shell.desk.winfo_width()), max(300, self.shell.desk.winfo_height())
-        ww, hh = min(660, dw - 20), min(600, dh - 20)
+        ww, hh = min(660, dw - 20), min(getattr(self, "_wn_h", None) or 600, dh - 20)
         w.geometry(f"{ww}x{hh}+{ox + (dw - ww) // 2}+{oy + (dh - hh) // 2}")
 
     def keep_on_top(self):
@@ -720,7 +724,7 @@ class App(ListKeys, BreachAlert, TabReaderPage, SearchOptsPage, ExchangePage, We
         self.set_nb = SegBook(body)
         self.set_nb.pack(fill="both", expand=True, padx=10, pady=(10, 0))
         pages = {}
-        for name in ("General", "Appearance", "Hotkeys", "Advanced"):
+        for name in ("General", "Appearance", "Hotkeys", "Advanced", "About"):
             sa = ScrollArea(self.set_nb, P1)
             wrap = tk.Frame(sa.inner, bg=P1, padx=6, pady=4)
             wrap.pack(fill="both", expand=True)
@@ -740,6 +744,7 @@ class App(ListKeys, BreachAlert, TabReaderPage, SearchOptsPage, ExchangePage, We
             row.pack(fill="x")
             return row
 
+        self.build_about(pages["About"][1])                      # 2.10.0
         # ======== General
         row = section("General", "League and search pace", "The league is used everywhere: Price checks, Wealth and "
                                                            "the session tracker. Pace = how fast the trade site is "
@@ -766,8 +771,8 @@ class App(ListKeys, BreachAlert, TabReaderPage, SearchOptsPage, ExchangePage, We
         ttk.Checkbutton(row, text="Notes and timer only while Path of Exile 2 is in front", variable=self.game_only_var,
                         command=self.on_game_only).pack(side="left", padx=(16, 0))
 
-        row = section("General", "Labs (experimental)", "Features still being tried out: Wealth, the Session tracker "
-                                                         "and Game search. They work, but may change a lot or have "
+        row = section("General", "Labs (experimental)", "Features still being tried out: Wealth, Game search and "
+                                                         "Top value. They work, but may change a lot or have "
                                                          "rough edges. When Labs is off they are hidden.")
         self.labs_var = tk.BooleanVar(value=bool(SETTINGS.get("labs")))
         ttk.Checkbutton(row, text="Show Labs features (marked BETA)", variable=self.labs_var,
@@ -1014,12 +1019,8 @@ class App(ListKeys, BreachAlert, TabReaderPage, SearchOptsPage, ExchangePage, We
     def on_labs(self):
         on = bool(self.labs_var.get())
         self.shell.set_labs(on)
-        if not on:
-            self.tracker_overlay_hide()
-            if self.w_counting:
-                self.wealth_count_cancel()
-        elif self.tracker_cfg().get("overlay") and self.tk_session is not None and self.tk_session.ended is None:
-            self.tracker_overlay_show()
+        if not on and self.w_counting:                 # 2.10.0: the Session tracker isn't a Labs feature any more
+            self.wealth_count_cancel()
         self._say("Labs features are " + ("on (marked BETA)." if on else "hidden."), 6)
 
     def fill_hotkeys(self):
@@ -1348,12 +1349,14 @@ class App(ListKeys, BreachAlert, TabReaderPage, SearchOptsPage, ExchangePage, We
     def on_hotkey(self, e, fn, even_when_typing):
         if hotkey_blocked(e.state):                                      # Ctrl / Alt held: not ours (Ctrl+C etc.)
             return
-        cls = ""
-        try:
-            cls = self.root.focus_get().winfo_class()
-        except Exception:
-            pass
-        if not even_when_typing and cls in ("TEntry", "Entry", "TSpinbox", "Spinbox", "TCombobox", "Text"):
+        typing = ("TEntry", "Entry", "TSpinbox", "Spinbox", "TCombobox", "Text")
+        classes = []
+        for get in (lambda: e.widget, self.root.focus_get):          # 2.10.0: the key's own box counts too, and
+            try:                                                      # "don't know" never swallows a typed letter
+                classes.append(get().winfo_class())
+            except Exception:
+                classes.append(None)
+        if not even_when_typing and (None in classes or any(c in typing for c in classes)):
             return                                                       # you're typing in a box
         fn()
         return "break"
@@ -3679,7 +3682,7 @@ def _splash_step(text=None, i=None):
 
 
 def main():
-    root = tk.Tk()
+    root = tk.Tk(className="StashOfExile2")      # 2.10.0: window managers (Hyprland) see class "Stashofexile2"
     if SETTINGS.get("splash", True):
         try:
             from .splash import Splash

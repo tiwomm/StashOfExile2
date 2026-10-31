@@ -228,7 +228,10 @@ class DeskWindow(tk.Toplevel):
         except (tk.TclError, KeyError):
             f = None
         try:
-            if f is not None and f.winfo_toplevel() is self and (widget is None or f is widget):
+            # 2.10.0: Tk's own idea of the focus can be stale - Tk still says the box has it while Windows sends the
+            # keys to another window, and typing stops until the window is reopened. So only skip when Windows
+            # agrees this window is the one in front.
+            if f is not None and f.winfo_toplevel() is self and (widget is None or f is widget) and self.has_os_focus():
                 return                                            # it already has it
             if widget is not None and widget.winfo_class() in self.TYPING:
                 widget.focus_force()
@@ -236,6 +239,21 @@ class DeskWindow(tk.Toplevel):
                 self.focus_force()
         except tk.TclError:
             pass
+
+    def has_os_focus(self):
+        """Is this window the one Windows sends the keys to? (Other systems: trust Tk.)"""
+        if sys.platform != "win32":
+            return True
+        try:
+            import ctypes
+            u = ctypes.windll.user32
+            u.GetParent.restype = ctypes.c_void_p
+            u.GetParent.argtypes = [ctypes.c_void_p]
+            u.GetForegroundWindow.restype = ctypes.c_void_p
+            me = u.GetParent(self.winfo_id()) or self.winfo_id()
+            return u.GetForegroundWindow() == me
+        except Exception:
+            return True
 
     def _resize_bind(self, widget, side):
         widget.bind("<ButtonPress-1>", lambda e: self._resize_press(e, side))
@@ -355,7 +373,7 @@ class DeskWindow(tk.Toplevel):
         if self.maxed:
             self.place_at(0, 0, self.shell.desk.winfo_width(), self.shell.desk.winfo_height())
         elif self._g:
-            self.place_at(*self._g)
+            self.place_at(*self.shell.fit(self._g))          # 2.10.0: shrinks / moves to stay inside the app
 
     def minimise(self):
         self.geo = self.current_geo()
@@ -438,7 +456,42 @@ class Shell:
         self.menu = None
         self.clock = None
         self.root.bind_all("<ButtonPress-1>", self._any_click, add="+")
+        # 2.10.0: typing that suddenly lands on a bare window (not the box you were typing in) goes back to that box
+        self._typing = (None, 0.0)
+        self.root.bind_all("<KeyPress>", self._note_typing, add="+")
+        self.root.bind_all("<FocusIn>", self._note_typing, add="+")
+        for cls in ("Tk", "Toplevel"):
+            self.root.bind_class(cls, "<KeyPress>", self._stray_key, add="+")
         self.root.after(1000, self._tick)
+
+    # ---- 2.10.0: keys that lost their way
+    def _note_typing(self, e):
+        w = e.widget
+        try:
+            if isinstance(w, tk.Misc) and w.winfo_class() in DeskWindow.TYPING:
+                self._typing = (w, time.time())
+        except (tk.TclError, AttributeError):
+            pass
+
+    def _stray_key(self, e):
+        """A key reached a window itself instead of a box in it. Right after you were typing in a box, that's the
+        keyboard getting lost (Windows and Tk disagreeing about who has it): hand it back and pass the key on."""
+        w, when = self._typing
+        if w is None or e.widget is w or time.time() - when > 4 or not e.keysym:
+            return None
+        try:
+            if not w.winfo_exists() or not w.winfo_viewable():
+                return None
+            top = w.winfo_toplevel()
+            if isinstance(top, DeskWindow) and top.state_ != "open":
+                return None
+            top.focus_force()
+            w.focus_force()
+            self._typing = (w, time.time())
+            w.event_generate("<KeyPress>", keysym=e.keysym, state=e.state, when="tail")
+        except tk.TclError:
+            return None
+        return "break"
 
     # ---- the wallpaper
     def _desk_resized(self, e):
@@ -505,6 +558,12 @@ class Shell:
         for k in getattr(self, "zorder", []) + [k for k in self.windows if k not in getattr(self, "zorder", [])]:
             w = self.windows.get(k)
             if w is not None and w.state_ == "open":
+                try:                                    # 2.10.0: an open window that went missing comes back
+                    if not getattr(self, "_all_hidden", False) and w.state() == "withdrawn":
+                        w.reposition()
+                        w.deiconify()
+                except tk.TclError:
+                    pass
                 w.own_by_app()
                 w.follow_on_top()
                 w.lift()
@@ -807,6 +866,8 @@ class Shell:
     def _any_click(self, e):
         """A click anywhere inside a window brings that window to the front."""
         w = e.widget
+        if w is not self._typing[0]:
+            self._typing = (None, 0.0)          # clicked somewhere else: keys there are meant for there
         if self.menu is not None:                                 # a click outside the Toolkit menu closes it
             try:
                 inside, p = False, w

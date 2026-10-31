@@ -2,14 +2,15 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU GPL v3.0 (see LICENSE). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.9   (2.9.0)
+VERSION 2.10.0
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
       2.1.0, 2.2.0 ...  new features or changes you'll notice
       3.0.0             another big change
     Only when a bigger version needs testing first does it get a short run of release candidates (2.1.0-rc.1, -rc.2,
-    shown as "2.1 RC 1"), never long beta numbers again. Older names still sort right: 2.0 beta 22 < 2.0 RC 1 < 2.0.
+    shown as "2.1.0 RC 1"), never long beta numbers again. Always written in full (2.10.0). This is Semantic
+    Versioning 2.0.0; py tools/check_version.py checks every place agrees before a release. Older names still sort right: 2.0 beta 22 < 2.0 RC 1 < 2.0.
     "Check for updates" only ever offers a version newer than the one running (updates.is_newer).
   The test builds 1.33 to 1.45 were all on the way to 2.0; their notes are kept below.
   The app is this launcher (always called stashofexile2.py) plus the soe2 folder next to it. The version is in two
@@ -18,6 +19,30 @@ VERSION 2.9   (2.9.0)
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.10.0
+       (1) Alerts while you play moved to the Session tracker's main page (alerts_page.py, replaces breach_page.py): one
+           panel with Delirium and Breach on / off, sound, Test and a status dot each. The timer over the game has a
+           small "Delirium on / Breach off" bar (tracker setting alerts_bar). The Delirium alert has no window of its
+           own any more (modules/delirium.py gone) and never draws its splinter icon; splinter.png isn't shipped.
+       (2) Breach: the game's second warning, ": <brequelwarning>{Cannot store any more Hiveblood! Go to the Genesis
+           Tree to consume it.}", shows a stronger CANNOT STORE ANY MORE HIVEBLOOD! banner straight away (seen in a
+           real log). Banners only while the game is in front (Settings), 45 s per kind, and it keeps looking for
+           Client.txt every 15 s if it wasn't found. It starts with the app, not with the tracker window.
+       (3) The Session tracker is out of Labs. Its start / stop and pause keys work with Labs off, get Ctrl+Alt+S and
+           Ctrl+Alt+P if you had none, and show next to the Start button.
+       (4) Typing that stopped going into a box: Tk could still think the box had the keyboard while Windows sent the
+           keys elsewhere, so clicking the box didn't help (DeskWindow.take_keyboard now checks with Windows). Keys
+           that land on a bare window right after you typed in a box go back to that box (Shell._stray_key). The
+           app's single-letter keys (C, O) never swallow a letter typed in a box.
+       (5) Windows stay inside the app when it gets smaller (they shrink / move), and an open window that went missing
+           comes back when the app is clicked.
+       (6) Regex: the endgame number boxes save 150 ms after you stop typing (and when you leave the box), not on every
+           key. Waystone searches stick to the waystone's own tier; Revives Available is searched by default.
+       (7) Settings > About: version, what's new, GitHub page, Discord, licence and credits. A fresh install gets a short
+           quick start guide instead of the welcome card (About brings it back). Versions show in full (2.10.0).
+       (8) Linux groundwork (not a Linux build): linsys.py (Hyprland IPC, the game window, Steam libraries),
+           tk class "StashOfExile2", updater never picks an .exe off Windows, linux/ window rules, build_linux.sh.
+       (9) tools/check_version.py checks the version in every place (also run by the release workflow).
   2.9.0
        (1) Breach alert (breach_page.py), a checkbox in Session tracker > Options > Alerts while you play: follows
            Client.txt (the tracker's file) and shows a big HIVEBLOOD ALMOST FULL banner over the game, with a sound,
@@ -704,7 +729,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.9.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.10.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 

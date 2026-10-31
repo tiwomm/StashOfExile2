@@ -261,8 +261,12 @@ KEY_HEX = "#ff00fe"
 
 
 def load_splinter(size):
-    from PIL import Image
-    img = Image.open(TEMPLATE_DIR / "splinter.png").convert("RGBA")
+    from PIL import Image, ImageDraw
+    try:
+        img = Image.open(TEMPLATE_DIR / "splinter.png").convert("RGBA")
+    except OSError:                    # StashOfExile2 2.10.0 doesn't ship the splinter picture: a plain diamond
+        img = Image.new("RGBA", (64, 64), (0, 0, 0, 0))
+        ImageDraw.Draw(img).polygon([(32, 2), (60, 32), (32, 62), (4, 32)], fill=(150, 110, 220, 255))
     img.thumbnail((size, size), Image.LANCZOS)
     return img
 

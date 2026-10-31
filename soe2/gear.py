@@ -254,6 +254,8 @@ def build_query(item, must, optional, count_min, values, plain=False):
     if tf:
         filters["type_filters"] = {"filters": tf}
     eq, mp = {}, {}
+    if item.get("waystone") and item.get("tier") is not None:
+        mp["map_tier"] = {"min": item["tier"], "max": item["tier"]}     # 2.10.0: same tier only
     and_f = []
     for m in must:
         v = values.get(id(m))

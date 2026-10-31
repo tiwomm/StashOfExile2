@@ -18,6 +18,7 @@ so a name that joins or leaves your area is someone else (2.7.0: only your own d
 import os
 import re
 import string
+import sys
 import time
 from datetime import datetime
 
@@ -33,6 +34,7 @@ FOCUS = re.compile(r"\[WINDOW\] (Lost|Gained) focus", re.I)
 # 2.9.0, seen in a real PoE 2 log (Oct 2026), twice within 2 s:
 #   2026/10/27 04:50:56 ... [INFO Client 27512] : <brequelwarning>{Stored Hiveblood is almost at the maximum!}
 BREACH_WARN = re.compile(r"^: <brequelwarning>\{([^}]*)\}")
+#   ... : <brequelwarning>{Cannot store any more Hiveblood! Go to the Genesis Tree to consume it.}   (2.10.0)
 #   ... [WARN Client 27512] "BrequelTreeBreachstonesSlot" is missing from ...   (logged while the Brequel tree is open)
 BREQUEL_TREE = re.compile(r'^"BrequelTree')
 
@@ -49,7 +51,10 @@ def candidates():
             r"Program Files\Grinding Gear Games\Path of Exile 2\logs\Client.txt",
             r"Grinding Gear Games\Path of Exile 2\logs\Client.txt",
             r"Games\Path of Exile 2\logs\Client.txt"]
-    if os.name != "nt":
+    if os.name != "nt":                      # 2.10.0: Linux (Steam / Proton) - see linsys.py
+        if sys.platform.startswith("linux"):
+            from .linsys import log_candidates
+            return log_candidates()
         return []
     out = []
     for d in string.ascii_uppercase[2:]:
