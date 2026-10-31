@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU GPL v3.0 (see LICENSE). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.20.0
+VERSION 2.21.0
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,6 +19,14 @@ VERSION 2.20.0
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.21.0
+       (1) Price checks: "Sold for" + 💰 Mark as sold in the item's panel (mark "sold", Show: Sold). The sale goes in
+           market.db (table sales, and as a listing "sale:<sig>" at the price it really went for) so the Mod book
+           learns from real sales. Unmark sold takes it back out.
+       (2) Regex: a mod's box takes 50 (at least), 50-80 (range) or <80 (at most). regex.num_range writes an exact
+           number pattern with two characters before it and one after (no match inside a longer number; a term
+           can't start with a space). Checked against every roll of every tablet / waystone / relic mod.
+       (3) Regex Favorites: a "📋 Copy" cell on every row (one click copies) and a "✓ Copied" popup.
   2.20.0
        (1) Mod book tiers S / A / B / C / D (mods.TIERS, mod_tiers.json; not set: High = A, Normal = C). Tier column and
            "Tier for selected" buttons on the Tablet / Jewel mod rules pages. When no listing has all of an item's
@@ -857,7 +865,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.20.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.21.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 

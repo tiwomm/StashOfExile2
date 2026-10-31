@@ -16,11 +16,17 @@ INTRO = [
 
 # What's being worked on (2.4.0: not shown in the app any more - kept for ROADMAP.md / the developer).
 NEXT = [
-    "2.21.0: teach a price; Regex ranges, maximums and \"not\"; Favorites rework (see ROADMAP.md).",
+    "2.22.0: Regex for jewels and gear (see ROADMAP.md).",
 ]
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.21.0": [
+        "Price checks: type what an item sold for and press 💰 Mark as sold. The Mod book learns from real sales. "
+        "Show: Sold lists them.",
+        "Regex: in a mod's box, 50 = at least 50, 50-80 = from 50 to 80, <80 = at most 80.",
+        "Regex Favorites: a 📋 Copy button on every row.",
+    ],
     "2.20.0": [
         "Mod book tiers: give mods a tier from S (matters most) to D. When no listing has all of an item's mods, the "
         "D-tier ones are left out first, then C - so you get a price instead of no match.",
