@@ -552,6 +552,38 @@ class Shell:
         self.restack()
         self.app_follow()
 
+    def heal(self):
+        """2.10.1, every 2 s: a window that is open in the app but hidden by the system (it vanished when the app was
+        resized) is shown again, in its place. Not while the app itself is minimised or in the tray."""
+        try:
+            if getattr(self, "_all_hidden", False) or self.root.state() not in ("normal", "zoomed"):
+                return
+        except tk.TclError:
+            return
+        for w in self.windows.values():
+            if w.state_ != "open":
+                continue
+            gone = w.state() == "withdrawn" or not w.winfo_ismapped()
+            if not gone and sys.platform == "win32":
+                try:
+                    import ctypes
+                    u = ctypes.windll.user32
+                    u.GetParent.restype = ctypes.c_void_p
+                    u.GetParent.argtypes = [ctypes.c_void_p]
+                    u.IsWindowVisible.argtypes = [ctypes.c_void_p]
+                    gone = not u.IsWindowVisible(u.GetParent(w.winfo_id()) or w.winfo_id())
+                except Exception:
+                    gone = False
+            if gone:
+                w.reposition()
+                w.deiconify()
+                w.own_by_app()
+                w.follow_on_top()
+                w.lift()
+                log = getattr(self.app, "diag", None)
+                if log is not None:
+                    log.log(f"HEAL brought back {w.key}")
+
     def restack(self):
         """Put the open windows back above the app's window, in their stacking order (2.7.1: also after Always on top
         is switched, so they never end up behind the app's own window)."""
@@ -868,6 +900,15 @@ class Shell:
         w = e.widget
         if w is not self._typing[0]:
             self._typing = (None, 0.0)          # clicked somewhere else: keys there are meant for there
+        try:                                    # 2.10.1: a grab left behind (a closed drop-down) shuts every other
+            g = self.root.grab_current()        # window out of clicks and keys; let it go
+            if g is not None and not g.winfo_viewable():         # (an open drop-down's own grab is left alone)
+                g.grab_release()
+                log = getattr(self.app, "diag", None)
+                if log is not None:
+                    log.log(f"GRAB released {g}")
+        except (tk.TclError, KeyError, AttributeError):
+            pass
         if self.menu is not None:                                 # a click outside the Toolkit menu closes it
             try:
                 inside, p = False, w
@@ -995,6 +1036,10 @@ class Shell:
             if self.clock is not None:
                 self.clock.config(text=clock_text())
             self.refresh_dots()
+        except Exception:
+            pass
+        try:
+            self.heal()
         except Exception:
             pass
         self.root.after(2000, self._tick)

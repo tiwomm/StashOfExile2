@@ -21,6 +21,10 @@ NEXT = [
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.10.1": [
+        "Windows that disappeared when you resized the app come back on their own.",
+        "A recorder for the typing and window bugs (off unless switched on for a problem report).",
+    ],
     "2.10.0": [
         "Session tracker: Delirium and Breach alerts are on its main page, each with on / off, sound and Test. The "
         "timer over the game shows whether they're on.",

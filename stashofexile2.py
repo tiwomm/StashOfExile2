@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU GPL v3.0 (see LICENSE). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.10.0
+VERSION 2.10.1
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,6 +19,12 @@ VERSION 2.10.0
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.10.1
+       (1) Windows that vanished when the app was resized: every 2 s an open window that Windows or Tk hid is shown
+           again in its place (Shell.heal). Clicking anywhere also lets go of a Tk grab left behind by a closed
+           drop-down (one shuts every other window out of clicks and keys).
+       (2) diag.py: a window / keyboard recorder for these two bugs, off unless diag_on.txt is in the data folder;
+           writes diag_log.txt (what Tk and Windows each think has the keyboard, grabs, each window's state on resize).
   2.10.0
        (1) Alerts while you play moved to the Session tracker's main page (alerts_page.py, replaces breach_page.py): one
            panel with Delirium and Breach on / off, sound, Test and a status dot each. The timer over the game has a
@@ -729,7 +735,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.10.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.10.1"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
