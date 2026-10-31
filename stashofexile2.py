@@ -20,8 +20,10 @@ VERSION 2.10.1
 
 VERSION HISTORY
   2.10.1
-       (1) Windows that vanished when the app was resized: every 2 s an open window that Windows or Tk hid is shown
-           again in its place (Shell.heal). Clicking anywhere also lets go of a Tk grab left behind by a closed
+       (1) Windows that vanished when the app was resized by dragging its edge or by Windows snap (not maximize):
+           while Windows runs its own sizing loop the positions Tk reports can be stale. Once the app has been still
+           for 0.4 s every window is placed again from scratch (Shell._settle), and every 2 s an open window that is
+           hidden or off the app's desktop is put back (Shell.heal). Clicking anywhere also lets go of a Tk grab left behind by a closed
            drop-down (one shuts every other window out of clicks and keys).
        (2) diag.py: a window / keyboard recorder for these two bugs, off unless diag_on.txt is in the data folder;
            writes diag_log.txt (what Tk and Windows each think has the keyboard, grabs, each window's state on resize).
