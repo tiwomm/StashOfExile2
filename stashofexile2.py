@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU GPL v3.0 (see LICENSE). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.24.0
+VERSION 2.25.0
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,6 +19,11 @@ VERSION 2.24.0
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.25.0
+       (1) Copy marks: "Keep them until I double-tap Esc" (two fresh Esc presses within 0.5 s, winsys.DOUBLE_TAP;
+           key repeat doesn't count) replaces holding Esc for 3 s, which didn't clear them for the author.
+       (2) The +'s colour: Gold, White, Red, Lime, Cyan, Magenta, Orange or Blue (copymark.COLOURS,
+           SETTINGS copy_marker_colour); picking one shows a sample + for 2 s.
   2.24.0
        (1) Copy marker: a small + instead of the ring (copymark.SIZE 16), shown for copy_marker_secs (Settings >
            General > Copy marker, 1-600, default 10) - or, with "Keep them until I hold Esc for 3 seconds"
@@ -893,7 +898,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.24.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.25.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 

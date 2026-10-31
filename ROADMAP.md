@@ -1,6 +1,6 @@
 # StashOfExile2 roadmap
 
-**Current version: 2.24.0**
+**Current version: 2.25.0**
 
 Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds features, 2.10.1 only fixes. Each step below is one release; we work through them top to bottom.
 
@@ -35,13 +35,14 @@ Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds f
 | 2.23.0 | Note tabs; Game search "more ›" details; Arbitrage Live scan. |
 | 2.23.1 | The app opens where you left it. |
 | 2.24.0 | Copy marker is a small + (seconds setting, or keep until Esc is held 3 s); Price checks "★ Valuable" column. |
+| 2.25.0 | Copy marks clear with a double tap of Esc; pick the +'s colour. |
 
 ## ▶ Next up
 
 | Version | Plan |
 |---|---|
-| 2.25.0 | Money Makers: farming guides, tablet crafting reference, run tracker. Each strat gets a difficulty rating in **Thoughts per Click** (fewer = easier) and **Clicks per hour**, so you can sort and filter strats by effort. |
-| 2.26.0 | Map library with ranks, import / export. |
+| 2.26.0 | Money Makers: farming guides, tablet crafting reference, run tracker. Each strat gets a difficulty rating in **Thoughts per Click** (fewer = easier) and **Clicks per hour**, so you can sort and filter strats by effort. |
+| 2.27.0 | Map library with ranks, import / export. |
 | Later | Sidekick / Exiled Exchange-style pricing for more item types; public stash order test tool; Ancients price helper; Linux build. |
 
 ## 💤 Parked (not planned unless something changes)

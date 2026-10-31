@@ -209,17 +209,34 @@ def app_icon_image():
         return None
 
 
+DOUBLE_TAP = 0.5                   # 2.25.0: two Esc presses this close together = a double tap
+
+
 class KeyWatch:
     """Notices when YOU press Ctrl+Alt+C. Windows marks key presses sent by other programs (Sidekick) as 'injected',
     so those are ignored. Needs nothing installed."""
 
     def __init__(self):
         self.combo_time, self.active, self.err = 0.0, False, None
-        self.esc_since = 0.0        # 2.24.0: when Esc went down (0 = it's up) - holding it 3 s clears copy marks
+        self.esc_since = 0.0        # 2.24.0: when Esc went down (0 = it's up)
+        self.esc_last = 0.0         # 2.25.0: the last fresh Esc press, and when two came quickly (a double tap)
+        self.esc_double = 0.0
         self.ctrl = self.alt = self.shift = False
         self.listener = None        # 2.0: f(vk, ctrl, alt, shift) -> True to swallow the key (Utilities hotkeys)
         self._swallowed = set()
         self.mouse_on, self._mouse_hook, self._tid = False, None, None     # 2.0 beta 17: mouse buttons as hotkeys
+
+    def note_esc(self, down, up, now=None):
+        """2.25.0: Esc went down / up. Two fresh presses within DOUBLE_TAP = a double tap (esc_double); a held key's
+        repeats aren't fresh presses."""
+        now = time.time() if now is None else now
+        if down and not self.esc_since:
+            self.esc_since = now
+            if now - self.esc_last <= DOUBLE_TAP:
+                self.esc_double = now
+            self.esc_last = now
+        elif up:
+            self.esc_since = 0.0
 
     def set_mouse(self, on):
         """Watch the middle / side mouse buttons too (only while a hotkey uses one, or a key box is waiting: a mouse
@@ -277,10 +294,7 @@ class KeyWatch:
                             elif vk == 0x43 and down and self.ctrl and self.alt:
                                 self.combo_time = time.time()
                             if vk == 0x1B:                                   # Esc: never swallowed, only timed
-                                if down and not self.esc_since:
-                                    self.esc_since = time.time()
-                                elif up:
-                                    self.esc_since = 0.0
+                                self.note_esc(down, up)
                             if up and vk in self._swallowed:            # the release of a key we acted on
                                 self._swallowed.discard(vk)
                                 return 1
