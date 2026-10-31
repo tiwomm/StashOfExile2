@@ -24,6 +24,7 @@ NOTES = {
     "2.19.0": [
         "Ctrl+Alt+C now leaves a small ring for 10 seconds where your mouse was, so you can see what you've copied. "
         "Turn it off in Settings > General > Copy marker.",
+        "Price checks: a ★ before an item's name for each mod your Mod book rates valuable (that's why it's gold).",
     ],
     "2.18.0": [
         "Fixed: the Mod book stopped learning from listings (the trade site changed how it sends mods). What was "

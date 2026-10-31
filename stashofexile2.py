@@ -25,6 +25,7 @@ VERSION HISTORY
            like the Delirium alert; sends nothing to the game, reads nothing from it (mouse position from Tk).
            Settings > General > Copy marker (on by default). Triggered from the key watcher's combo_time, checked
            on every clipboard poll (app.copy_mark_check).
+       (2) Price checks: one ★ before the item's name per valuable mod (Mod book) - the gold rows now say why.
   2.18.0
        (1) FIX: since late Oct 2026 the trade site sends each listing mod as a dict {"description", "hash", "mods"}
            instead of a string. fetch_rich stored str(dict), so every mod failed to match: the Mod book learned

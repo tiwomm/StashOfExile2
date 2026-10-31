@@ -2965,8 +2965,9 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         conf = "" if conf == "-" else conf
         if conf and it.get("gear") and not it.get("waystone") and it.get("rarity") != "Unique":
             conf = "Guess"                                    # 2.0 beta 21: gear prices are a rough guess
-        self.tree.item(str(rid), values=(rid, it["name"], it["base"], self.MARK_TEXT[mark], est, conf, listings, stamp, match),
-                       tags=tags)
+        stars = "★" * keys + " " if keys else ""               # 2.19.0: one star per valuable mod (why it's gold)
+        self.tree.item(str(rid), values=(rid, stars + it["name"], it["base"], self.MARK_TEXT[mark], est, conf, listings,
+                                         stamp, match), tags=tags)
 
     def on_price_unit(self):
         from .pricefmt import PRICE_UNITS
