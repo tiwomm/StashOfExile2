@@ -16,11 +16,17 @@ INTRO = [
 
 # What's being worked on (2.4.0: not shown in the app any more - kept for ROADMAP.md / the developer).
 NEXT = [
-    "2.24.0: Money Makers with Thoughts per Click and Clicks per hour (see ROADMAP.md).",
+    "2.25.0: Money Makers with Thoughts per Click and Clicks per hour (see ROADMAP.md).",
 ]
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.24.0": [
+        "The Ctrl+Alt+C marker is a small +. Settings > General > Copy marker: how many seconds it stays (10 by "
+        "default), or keep the marks until you hold Esc for 3 seconds.",
+        "Price checks: a \"★ Valuable\" column - one star for each mod your Mod book rates valuable. Click its "
+        "heading to sort.",
+    ],
     "2.23.1": [
         "The app opens where you left it - same place, same size, maximised if it was.",
     ],
