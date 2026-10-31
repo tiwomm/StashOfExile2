@@ -2912,11 +2912,8 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
     def price_manually(self, rec):
         """2.16.0: Low confidence, or a gear item's rough guess: shown as "Price manually" and left out of the total
         (the rough number and why are still in the item's panel)."""
-        if rec.get("state") != "done" or rec.get("est") is None:
-            return False
-        it = rec.get("item") or {}
-        guess = it.get("gear") and not it.get("waystone") and it.get("rarity") != "Unique"
-        return rec.get("conf") == "Low" or bool(guess and rec.get("conf") not in (None, "", "-"))
+        from .pricefmt import needs_manual_price
+        return rec.get("state") == "done" and needs_manual_price(rec)
 
     def refresh_all(self):
         for rid in list(self.records):

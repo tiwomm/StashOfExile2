@@ -47,6 +47,9 @@ class TabReaderPage:
         self.pc_stop.pack(side="right")
         self.pc_read_btn = ttk.Button(row, text="Read tab", style="Accent.TButton", command=self.pctab_read)
         self.pc_read_btn.pack(side="right", padx=(0, 6))
+        self.pc_to_wealth = tk.Label(row, text="＋ Count it in Wealth", bg=P1, fg="#6ea8ff", cursor="hand2",
+                                     font=("Segoe UI", 9, "underline"))          # 2.18.0: the same tab in Wealth
+        self.pc_to_wealth.bind("<Button-1>", lambda e: self.pctab_to_wealth())
         how = tk.Label(row, text="ⓘ How", bg=P1, fg="#6ea8ff", cursor="hand2", font=("Segoe UI", 9, "underline"))
         how.pack(side="right", padx=(0, 10))
         how.bind("<Button-1>", lambda e: self.pctab_explain())
@@ -76,6 +79,25 @@ class TabReaderPage:
             self.pc_msg.pack_forget()
             self.pc_mode_hint.config(text="hover an item in game and press Ctrl+Alt+C")
 
+    def pctab_wealth_link(self):
+        """Show "Count it in Wealth" once a tab was read and Wealth doesn't have it yet."""
+        from .wealth import WEALTH
+        cfg = SETTINGS.get("pctab") or {}
+        have = any(t["amount"] == cfg.get("amount") and t["currency"] == cfg.get("currency") for t in WEALTH.tabs)
+        if cfg.get("amount") and cfg.get("read_ok") and not have:
+            if not self.pc_to_wealth.winfo_ismapped():
+                self.pc_to_wealth.pack(side="right", padx=(0, 10))
+        else:
+            self.pc_to_wealth.pack_forget()
+
+    def pctab_to_wealth(self):
+        cfg = SETTINGS.get("pctab") or {}
+        if not hasattr(self, "_wealth_add"):
+            return
+        if cfg.get("amount") and self._wealth_add(cfg["amount"], cfg.get("currency") or "divine", "Price checks tab"):
+            self.pc_msg.config(text="Added to Wealth. Sync there to count it (it's read the same way).", fg=C["green"])
+        self.pctab_wealth_link()
+
     def pctab_explain(self):
         self.pc_msg.config(fg=C["text"], text=(
             "How it works: Path of Exile 2 has no stash access for tools, so the app reads your tab through the trade "
@@ -103,6 +125,8 @@ class TabReaderPage:
             cur = cur or next((c for c, n in WEALTH_CURRENCIES if n == self.pc_cur.get()), "divine")
         cfg = SETTINGS.setdefault("pctab", {})
         cfg.update(amount=amount, currency=cur)
+        from .market import remember_marker
+        remember_marker(amount, cur)                   # 2.18.0: never counted as someone's price
         if acc:
             SETTINGS["wealth_account"] = acc           # one account name for Wealth and this
         save_json("settings.json", SETTINGS)
@@ -192,6 +216,8 @@ class TabReaderPage:
             msg += (" Only a few found? Items with their own price note keep that price - they aren't found by the "
                     "tab's price.")
         msg += (" They're being priced now." if st["added"] else "") + "  (Every item: tab_reader_log.txt)"
+        SETTINGS.setdefault("pctab", {})["read_ok"] = True
+        self.pctab_wealth_link()
         if PCTAB["warnings"]:
             msg += " " + " ".join(PCTAB["warnings"]) + " Move some items to another tab with its own price."
         self.pc_msg.config(text=msg, fg=C["green"] if st["added"] else C["good"])
