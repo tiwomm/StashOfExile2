@@ -1,6 +1,6 @@
 # StashOfExile2 roadmap
 
-**Current version: 2.15.0**
+**Current version: 2.16.0**
 
 Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds features, 2.10.1 only fixes. Each step below is one release; we work through them top to bottom.
 
@@ -25,17 +25,18 @@ Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds f
 | 2.13.0 | Breach banners in the Delirium alert's style; Top value renamed Market Insights. |
 | 2.14.0 | Ritual watcher (reads the 0/3 counter, reminds you when you leave a map with rituals left); tracker can start with the app. |
 | 2.14.1 – 2.15.0 | Ritual watcher fixed in the exe and reads every counter; Game search links to the wiki. |
+| 2.16.0 | Own listings never count; "Price manually" for low confidence; prices in any currency; 24 currencies for tab prices. |
 
 ## ▶ Next up
 
 | Version | Plan |
 |---|---|
-| 2.16.0 | Pricing: your own listings left out; "Price manually" for low confidence; est. value in any currency; full currency list for tab prices; Wealth uses the Stash tab reader; Market Insights: item preview on click, jewel mods fix. |
-| 2.17.0 | Mod book tiers (used when a search finds nothing); import / export fix; teach the app what's worth money; the author's rules ship as the defaults. |
-| 2.18.0 | Regex: ranges, maximums and "not"; every item type; Favorites rework. |
-| 2.19.0 | Notepad tabs; Game search details and wiki links; live Arbitrage scan. |
-| 2.20.0 | Money Makers: farming guides, tablet crafting reference, run tracker. Each strat gets a difficulty rating in **Thoughts per Click** (fewer = easier) and **Clicks per hour**, so you can sort and filter strats by effort. |
-| 2.21.0 | Map library with ranks, import / export. |
+| 2.17.0 | Wealth uses the Stash tab reader; Market Insights: item preview on click, jewel mods fix, own listings left out of its log. |
+| 2.18.0 | Mod book tiers (used when a search finds nothing); import / export fix; teach the app what's worth money; the author's rules ship as the defaults. |
+| 2.19.0 | Regex: ranges, maximums and "not"; every item type; Favorites rework. |
+| 2.20.0 | Notepad tabs; Game search details and wiki links; live Arbitrage scan. |
+| 2.21.0 | Money Makers: farming guides, tablet crafting reference, run tracker. Each strat gets a difficulty rating in **Thoughts per Click** (fewer = easier) and **Clicks per hour**, so you can sort and filter strats by effort. |
+| 2.22.0 | Map library with ranks, import / export. |
 | Later | Sidekick / Exiled Exchange-style pricing for more item types; public stash order test tool; Ancients price helper; Linux build. |
 
 ## 💤 Parked (not planned unless something changes)

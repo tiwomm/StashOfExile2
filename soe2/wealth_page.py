@@ -271,6 +271,7 @@ class WealthPage:
         self.w_amt_entry.pack(side="left", padx=(4, 4))
         self.w_amt_entry.bind("<Return>", lambda e: self.wealth_add_tab())
         cur = ttk.Combobox(add, textvariable=self.w_new_cur, values=[n for _, n in WEALTH_CURRENCIES], state="readonly", width=14)
+        cur.config(width=24, postcommand=lambda c=cur: c.config(values=[n for _, n in WEALTH_CURRENCIES]))   # 2.16.0
         cur.pack(side="left")
         cur.bind("<<ComboboxSelected>>", lambda e: self.root.after(20, self.root.focus_set), add="+")
         tk.Label(add, text="Name (optional)", **lab2).pack(side="left", padx=(10, 0))

@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU GPL v3.0 (see LICENSE). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.15.0
+VERSION 2.16.0
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,6 +19,17 @@ VERSION 2.15.0
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.16.0
+       (1) Your own listings never count towards a price: trade.fetch_rich drops listings whose seller is the account
+           typed in Price checks > Stash tab / Wealth (with or without its #1234), so your high-priced tab can't lift
+           prices. Covers Price checks, Market Insights' seen listings and the Mod book's learning (all use fetch_rich).
+       (2) Low confidence (and gear's rough guesses) show "Price manually" in Price checks instead of a number, and
+           are left out of the total; the item's panel still has the rough figure and why.
+       (3) Price checks > Prices in: Auto (div / chaos / ex as before) or always Divine / Exalted / Chaos / Vaal Orbs,
+           converted with poe.ninja's rates (pricefmt.fmt_div, SETTINGS price_unit); every window that shows prices
+           follows. A currency without a rate yet stays in divines.
+       (4) A stash tab's price can be in any of 24 currencies (wealth.TAB_CURRENCY_NAMES): their trade-site ids come
+           from the site's own /data/static list (trade_static.json, once a day); without it the 7 built-in ones stay.
   2.15.0
        (1) Ritual: the user's four Capture pictures (0/4, 1/4, 3/4, 4/4) showed 3/4 couldn't be read - the box also
            caught the icon's edge and the frame's ornament, gluing the glyphs together. Only the main band of text rows
@@ -800,7 +811,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.15.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.16.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
