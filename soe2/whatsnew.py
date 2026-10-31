@@ -21,6 +21,9 @@ NEXT = [
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.23.1": [
+        "The app opens where you left it - same place, same size, maximised if it was.",
+    ],
     "2.23.0": [
         "The sticky note has tabs: + adds one, double-click renames, right-click deletes.",
         "Game search: \"more ›\" shows a result's whole text.",

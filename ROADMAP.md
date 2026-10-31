@@ -1,6 +1,6 @@
 # StashOfExile2 roadmap
 
-**Current version: 2.23.0**
+**Current version: 2.23.1**
 
 Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds features, 2.10.1 only fixes. Each step below is one release; we work through them top to bottom.
 
@@ -33,6 +33,7 @@ Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds f
 | 2.21.0 | Price checks: Mark as sold (the Mod book learns from real sales); Regex ranges and maximums; Favorites Copy button. |
 | 2.22.0 | Regex for jewels and gear. |
 | 2.23.0 | Note tabs; Game search "more ›" details; Arbitrage Live scan. |
+| 2.23.1 | The app opens where you left it. |
 
 ## ▶ Next up
 
