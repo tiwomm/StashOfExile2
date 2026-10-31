@@ -2,7 +2,7 @@ from . import Module
 
 
 class Insights(Module):
-    key, title, short, icon, kind = "insights", "Top value", "Top value", "💎", "tool"
+    key, title, short, icon, kind = "insights", "Market Insights", "Insights", "💎", "tool"
     labs = True
     blurb = "The most valuable tablets, waystones and jewels your price checks found, and the mods worth the most."
 

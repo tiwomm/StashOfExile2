@@ -16,11 +16,16 @@ INTRO = [
 
 # What's being worked on (2.4.0: not shown in the app any more - kept for ROADMAP.md / the developer).
 NEXT = [
-    "2.13.0: pricing - your own listings left out, Price manually, est. value in any currency (see ROADMAP.md).",
+    "2.14.0: pricing - your own listings left out, Price manually, est. value in any currency (see ROADMAP.md).",
 ]
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.13.0": [
+        "Breach alerts look like the Delirium alert again: big flashing text over the game, no box. They go by "
+        "themselves after a few seconds.",
+        "Top value is now called Market Insights; \"Dearest listings seen\" is \"Most expensive listings seen\".",
+    ],
     "2.12.0": [
         "Lists have striped rows, like a spreadsheet. Ctrl+C copies the selected rows; right-click a list to copy, "
         "select all, delete or undo.",
