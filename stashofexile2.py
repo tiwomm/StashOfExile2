@@ -33,6 +33,10 @@ VERSION HISTORY
        (4) Wealth and Price checks share the stash tab: "Use my Price checks tab" in Wealth, "Count it in Wealth"
            after reading a tab. Wealth's magic / rare pricing follows Price checks' "Price manually" rule
            (pricefmt.needs_manual_price).
+       (5) Price checks: the "Under the hood" and "Wiki" links are gone (summary row, item panel, the "not priced"
+           card). Under the hood still opens from Settings > Advanced.
+       (6) Picking the Fast pace shows a warning popup (app_toast, bottom-right of the app): it hits the trade
+           site's rate limits quickly. "Back to Balanced" on it.
   2.17.0
        (1) Game search > Anoints: all 875 notables an amulet can be instilled with, each with its three Liquid
            Emotions and their poe.ninja prices plus the total (2x when one is needed twice). Searchable like the
