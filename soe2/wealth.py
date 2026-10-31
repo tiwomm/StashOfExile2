@@ -872,8 +872,11 @@ class WealthJobs:
                    "est": None, "qid": None}
             self.resolve_rec(rec)
             self.price_rec(rec)
-            rp.update(est=rec.get("est") if not rec.get("manual") else None, conf=rec.get("conf") or "-",
-                      label=rec.get("label", "")[:200], qid=rec.get("qid"))
+            from .pricefmt import needs_manual_price
+            manual = rec.get("manual") or needs_manual_price(rec)   # 2.18.0: same rule as Price checks
+            rp.update(est=None if manual else rec.get("est"), conf=rec.get("conf") or "-",
+                      label=(("Price manually - " if manual and rec.get("est") is not None else "")
+                             + rec.get("label", ""))[:200], qid=rec.get("qid"))
         with WEALTH.lock:
             WEALTH.rare_prices[str(lid)] = rp
         WEALTH_RARES["done"] += 1

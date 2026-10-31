@@ -98,6 +98,7 @@ class InsightsPage:
                      (("name", "Item", 160, "w"), ("base", "Type", 110, "w"), ("est", "Worth", 70, "e"),
                       ("status", "Status", 70, "w")))
         mine.bind("<Double-1>", lambda e: self.ins_open_record())
+        mine.bind("<ButtonRelease-1>", lambda e: self.ins_preview_at("mine", e), add="+")   # 2.18.0: item preview
         self.list_register("insights", mine, delete=self.ins_forget)
         table(0, 1, "mods", "Mods worth the most", "What the Mod book learned: the typical asking price of listings "
                                                     "with this mod. ★ = valuable in your Mod book.",
@@ -107,6 +108,8 @@ class InsightsPage:
               (("price", "Asking", 90, "e"), ("name", "Item", 200, "w"), ("mods", "Mods", 360, "w"),
                ("when", "Seen", 70, "w")), colspan=2)
         self.list_register("insights", self.ins_tables["seen"][0])
+        self.ins_tables["seen"][0].bind("<ButtonRelease-1>", lambda e: self.ins_preview_at("seen", e), add="+")
+        body.bind("<Unmap>", lambda e: self.ins_preview_close(), add="+")
         self.list_register("insights", self.ins_tables["mods"][0])
         self.ins_rowmap, self.ins_seenmap = {}, {}
         self.refresh_insights()
@@ -180,11 +183,13 @@ class InsightsPage:
         # ---- most expensive listings seen
         tv, empty = self.ins_tables["seen"]
         tv.delete(*tv.get_children())
-        seen = [x for x in MARKET.top_listings(detail=True) if kind_of(x["base"]) == kind][:50]
+        # 2.18.0: rows with neither mod lines nor stat ids (saved by an older version) say nothing: left out
+        seen = [x for x in MARKET.top_listings(detail=True) if kind_of(x["base"]) == kind
+                and (x.get("lines") or x.get("sids"))][:50]
         now = time.time()
         self.ins_seenmap = {}
         for x in seen:
-            mods = "  ·  ".join(l[:48] for l in self.ins_listing_mods(x)[:4]) or "(mods weren't saved for this one)"
+            mods = "  ·  ".join(l[:48] for l in self.ins_listing_mods(x)[:4])
             ts = x["seen"]
             age = now - (ts or now)
             when = "today" if age < 86400 else datetime.fromtimestamp(ts).strftime("%b %d")
@@ -237,7 +242,7 @@ class InsightsPage:
                 return
             self.ins_pick = ("seen", x)
             when = datetime.fromtimestamp(x["seen"]).strftime("%b %d %H:%M") if x.get("seen") else "?"
-            mods = "\n".join("  " + m for m in self.ins_listing_mods(x)) or "  (mods weren't saved for this one)"
+            mods = "\n".join("  " + m for m in self.ins_listing_mods(x))
             txt = (f"{x['name'] or x['base']}  -  asking {x['price'] or fmt_div(x['div'])} (≈ {fmt_div(x['div'])})"
                    f"\nSeen {when} while pricing a {x['base']}\n{mods}")
             self.ins_det.config(text=txt, fg=C["text"])
@@ -254,6 +259,102 @@ class InsightsPage:
             else:
                 self.ins_det.config(text=f"{vals[0]}  on {vals[1]}: listings with this mod typically ask {vals[2]} "
                                          f"({vals[3]} seen).", fg=C["text"])
+
+    # ---------------- 2.18.0: click a row -> the item, drawn like the game's tooltip
+    RARITY_FG = {"Unique": "#af6025", "Rare": "#ffff77", "Magic": "#8888ff", "Normal": "#c8c8c8"}
+
+    def ins_preview_item(self, key, obj):
+        """-> (name lines, rarity, mod lines, price text, footnote) for a row of Your most valuable / listings seen."""
+        if key == "mine":
+            raw = obj.get("raw") or ""
+            lines = [l.strip() for l in raw.splitlines()]
+            rar = next((l.split(":", 1)[1].strip() for l in lines if l.startswith("Rarity:")), "Rare")
+            secs, cur = [], []
+            for l in lines:
+                if l.startswith("--------"):
+                    secs.append(cur)
+                    cur = []
+                elif l:
+                    cur.append(l)
+            secs.append(cur)
+            head = [l for l in (secs[0] if secs else []) if not l.startswith(("Item Class:", "Rarity:"))]
+            mods = [l for l in (obj.get("mods") or []) if l] or \
+                   [l for s in secs[1:] for l in s if not re.match(r"^(Item Level|Requires|Quality|Note|Sockets|"
+                                                                    r"Corrupted|Unidentified|Map Tier|Waystone Tier)", l)]
+            if not head:
+                head = [obj.get("name") or "", obj.get("base") or ""]
+            price = f"Worth about {fmt_div(obj.get('est'))}" + (f"  ·  {obj['conf']} confidence"
+                                                               if obj.get("conf") and obj["conf"] != "-" else "")
+            when = datetime.fromtimestamp(obj["ts"]).strftime("%b %d %H:%M") if obj.get("ts") else ""
+            return [h for h in head if h], rar, mods, price, (f"Priced {when}" if when else "")
+        name = obj.get("name") or obj.get("base") or ""
+        base = obj.get("base") or ""
+        head = [name[:-len(base)].strip(), base] if base and name.endswith(base) and name != base else [name]
+        rar = "Rare" if len(head) > 1 else "Magic"
+        when = datetime.fromtimestamp(obj["seen"]).strftime("%b %d %H:%M") if obj.get("seen") else ""
+        price = f"Asking {obj.get('price') or fmt_div(obj.get('div'))}" + (f"  (≈ {fmt_div(obj['div'])})"
+                                                                          if obj.get("price") else "")
+        return [h for h in head if h], rar, self.ins_listing_mods(obj), price, (f"Seen on the trade site {when}"
+                                                                                if when else "")
+
+    def ins_preview_at(self, key, e):
+        tv = self.ins_tables[key][0]
+        iid = tv.identify_row(e.y)
+        obj = (self.ins_rowmap if key == "mine" else self.ins_seenmap).get(iid)
+        if not obj:
+            return self.ins_preview_close()
+        self.ins_preview(key, obj, e.x_root + 18, e.y_root + 10)
+
+    def ins_preview(self, key, obj, x, y):
+        self.ins_preview_close()
+        head, rar, mods, price, foot = self.ins_preview_item(key, obj)
+        fg = self.RARITY_FG.get(rar, "#c8c8c8")
+        w = tk.Toplevel(self.root)
+        w.withdraw()
+        w.overrideredirect(True)
+        try:
+            w.attributes("-topmost", True)
+        except tk.TclError:
+            pass
+        box = tk.Frame(w, bg="#0b0b0e", highlightthickness=2, highlightbackground="#7a5a2e")
+        box.pack()
+        top = tk.Frame(box, bg="#1d1712", padx=18, pady=6)
+        top.pack(fill="x")
+        for h in head:
+            tk.Label(top, text=h, bg="#1d1712", fg=fg, font=("Fontin SmallCaps", 13, "bold")).pack()
+        body = tk.Frame(box, bg="#0b0b0e", padx=16, pady=8)
+        body.pack(fill="x")
+        for m in mods or ["(no mods saved)"]:
+            tk.Label(body, text=m, bg="#0b0b0e", fg="#8888ff" if mods else "#7f7f7f", font=("Segoe UI", 10),
+                     wraplength=420, justify="center").pack()
+        tk.Frame(box, bg="#5a4630", height=1).pack(fill="x", padx=12)
+        tk.Label(box, text=price, bg="#0b0b0e", fg="#ffd9a8", font=("Segoe UI", 10, "bold"), pady=6).pack()
+        if foot:
+            tk.Label(box, text=foot, bg="#0b0b0e", fg="#7f7f7f", font=("Segoe UI", 8)).pack(pady=(0, 6))
+        w.update_idletasks()
+        sw, sh = w.winfo_screenwidth(), w.winfo_screenheight()
+        x = min(x, sw - w.winfo_reqwidth() - 8)
+        y = min(y, sh - w.winfo_reqheight() - 8)
+        w.geometry(f"+{max(0, x)}+{max(0, y)}")
+        w.deiconify()
+        w.bind("<Button-1>", lambda e: self.ins_preview_close())
+        w.bind("<Escape>", lambda e: self.ins_preview_close())
+        self.ins_pop = w
+        self.ins_pop_job = self.root.after(20000, self.ins_preview_close)   # never left lying around
+
+    def ins_preview_close(self):
+        job, self.__dict__["ins_pop_job"] = getattr(self, "ins_pop_job", None), None
+        if job:
+            try:
+                self.root.after_cancel(job)
+            except Exception:
+                pass
+        w, self.__dict__["ins_pop"] = getattr(self, "ins_pop", None), None
+        if w is not None:
+            try:
+                w.destroy()
+            except tk.TclError:
+                pass
 
     def ins_forget(self, rows):
         """Delete in Your most valuable: forget those items here (not in Price checks)."""

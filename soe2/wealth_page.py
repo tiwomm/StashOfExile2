@@ -286,6 +286,8 @@ class WealthPage:
         le.pack(side="left", padx=(6, 0))
         le.bind("<Return>", lambda e: self.wealth_add_from_link())
         ttk.Button(lnk, text="Add from link", command=self.wealth_add_from_link).pack(side="left", padx=(8, 0))
+        # 2.18.0: the tab you read in Price checks > Stash tab, one click away (same tab, same reader)
+        self.w_pc_btn = ttk.Button(lnk, text="", command=self.wealth_add_pc_tab)
         acts = tk.Frame(self.w_setup, bg=P2)
         acts.pack(fill="x", pady=(6, 0))
         self.w_acts = acts
@@ -790,9 +792,38 @@ class WealthPage:
             self.w_add_btn.config(text="Done adding" if self.w_adding else "Add a tab")
         else:
             self.w_add_btn.pack_forget()
+        self.wealth_pc_refresh()
+
+    def wealth_pc_tab(self):
+        """(amount, currency) of the tab read in Price checks > Stash tab, if it isn't a Wealth tab yet."""
+        pc = SETTINGS.get("pctab") or {}
+        a, c = pc.get("amount"), pc.get("currency") or "divine"
+        if not a or any(t["amount"] == a and t["currency"] == c for t in WEALTH.tabs):
+            return None
+        return a, c
+
+    def wealth_pc_refresh(self):
+        btn = getattr(self, "w_pc_btn", None)
+        if btn is None:
+            return
+        got = self.wealth_pc_tab()
+        if got:
+            btn.config(text=f"Use my Price checks tab ({got[0]:,} {dict(WEALTH_CURRENCIES).get(got[1], got[1])})")
+            if not btn.winfo_ismapped():
+                btn.pack(side="left", padx=(14, 0))
+        elif btn.winfo_ismapped():
+            btn.pack_forget()
+
+    def wealth_add_pc_tab(self):
+        got = self.wealth_pc_tab()
+        if got and self._wealth_add(got[0], got[1], "Price checks tab"):
+            self._w_tell("Added the tab you read in Price checks. Press Sync to count what's on it.", "ok")
+        self.wealth_pc_refresh()
 
     def _w_tell(self, text, kind="error"):
         """Say something on the Wealth page itself (and in the status line)."""
+        if not hasattr(self, "w_msg"):
+            return self._say(text, 15)
         self.w_msg.config(text=text, fg={"error": C["red"], "ok": C["green"], "note": C["good"]}.get(kind, C["muted"]))
         self._say(text, 15)
 
@@ -805,7 +836,10 @@ class WealthPage:
             WEALTH.tabs.append({"id": "%08x" % random.getrandbits(32), "label": name or f"~price {amount} {cur}",
                                 "amount": amount, "currency": cur, "enabled": True})
         WEALTH.save()
-        self.refresh_wealth(force=True)
+        from .market import remember_marker
+        remember_marker(amount, cur)                    # 2.18.0: listings at this price are never counted
+        if hasattr(self, "w_tabs"):                     # (Price checks can add one before Wealth was ever opened)
+            self.refresh_wealth(force=True)
         return True
 
     def wealth_pending(self):

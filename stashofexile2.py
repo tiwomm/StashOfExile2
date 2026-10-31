@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU GPL v3.0 (see LICENSE). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.17.0
+VERSION 2.18.0
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,6 +19,20 @@ VERSION 2.17.0
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.18.0
+       (1) FIX: since late Oct 2026 the trade site sends each listing mod as a dict {"description", "hash", "mods"}
+           instead of a string. fetch_rich stored str(dict), so every mod failed to match: the Mod book learned
+           nothing and the listing check fell back to "unverifiable". trade.mod_lines reads the new format (text +
+           the site's own stat id, used by verify_listings and market.record). market.repair_dict_rows turns the
+           rows already saved that way back into mod lines + stat ids (once, on start).
+       (2) Stash-tab marker listings out of market.db: your own tab prices (Price checks tab, Wealth tabs, every tab
+           price you've used: SETTINGS own_markers) any price over 1,000 div shared by 3+ listings, and anything over 10,000 div
+           (market.drop_markers, on start and when a new tab price is used). They topped Market Insights.
+       (3) Market Insights: click a row for the item drawn like the game's tooltip (name, mods, price). Old rows with
+           no saved mods are left out of "Most expensive listings seen".
+       (4) Wealth and Price checks share the stash tab: "Use my Price checks tab" in Wealth, "Count it in Wealth"
+           after reading a tab. Wealth's magic / rare pricing follows Price checks' "Price manually" rule
+           (pricefmt.needs_manual_price).
   2.17.0
        (1) Game search > Anoints: all 875 notables an amulet can be instilled with, each with its three Liquid
            Emotions and their poe.ninja prices plus the total (2x when one is needed twice). Searchable like the
@@ -818,7 +832,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.17.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.18.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 

@@ -12,6 +12,37 @@ from .rates import RATES
 from .mods import HIGH_LIFT, impact_of, LEARNED, MIN_WITH, MIN_WITHOUT, rebuild_community, sid_for_line, SIDTEXT, TEXT2SID, vfilter
 
 
+DESC_RE = __import__("re").compile(r"""'description': (['"])(.*?)\1, '""")
+HASH_RE = __import__("re").compile(r"'hash': '(stat\.[^']+)'")
+
+
+def own_marker_prices():
+    """[(amount, currency)] of the prices you put on your own stash tabs (Price checks > Stash tab, Wealth tabs)."""
+    out = []
+    pc = SETTINGS.get("pctab") or {}
+    if pc.get("amount"):
+        out.append((pc["amount"], pc.get("currency") or "divine"))
+    out += [tuple(x) for x in SETTINGS.get("own_markers") or [] if isinstance(x, (list, tuple)) and len(x) == 2]
+    try:
+        from .wealth import WEALTH
+        out += [(t["amount"], t["currency"]) for t in WEALTH.tabs if t.get("amount")]
+    except Exception:
+        pass
+    return list(dict.fromkeys(out))
+
+
+def remember_marker(amount, currency):
+    """Keep a tab price you used (so listings at it are never counted, even after you change the tab's price)."""
+    lst = SETTINGS.setdefault("own_markers", [])
+    if amount and [amount, currency] not in lst:
+        lst.append([amount, currency])
+        del lst[:-20]
+        try:
+            MARKET.drop_markers()
+        except NameError:                              # (MARKET not made yet)
+            pass
+
+
 def _num_txt(x):
     try:
         return f"{float(x):g}"
@@ -65,7 +96,81 @@ class Market:
         except Exception as e:
             self.db = None
             self.db_error = f"{type(e).__name__}: {e}"
+        self.repaired = self.repair_dict_rows()
+        self.dropped_markers = self.drop_markers()
         self.refresh_learned()
+
+    def repair_dict_rows(self):
+        """2.18.0: listings saved from late October 2026 hold each mod as the text of a dict ("{'description': ...,
+        'hash': 'stat.explicit.stat_123', ...}") because the trade site changed its format. Turn them back into mod
+        lines with their stat ids and rolls, so the Mod book and Market Insights can use them. -> rows repaired."""
+        if not self.db:
+            return 0
+        import ast
+        import re
+        fixed = 0
+        try:
+            with self.lock:
+                rows = self.db.execute("SELECT id, lines FROM listings WHERE lines LIKE ?", ('["{%',)).fetchall()
+                for lid, lines in rows:
+                    try:
+                        raw = json.loads(lines)
+                    except Exception:
+                        continue
+                    out, sids, vals = [], set(), {}
+                    for x in raw:
+                        try:
+                            d = ast.literal_eval(x) if isinstance(x, str) and x.startswith("{") else x
+                        except Exception:              # the saved text lost some [ ] (markup stripping): pick it apart
+                            d = {}
+                            if isinstance(x, str):
+                                m = DESC_RE.search(x)
+                                h = HASH_RE.search(x)
+                                if m:
+                                    d = {"description": m.group(2), "hash": h.group(1) if h else ""}
+                        if not isinstance(d, dict) or not d.get("description"):
+                            out.append(str(x))
+                            continue
+                        text = str(d.get("description") or "")
+                        h = str(d.get("hash") or "")
+                        sid = h[5:] if h.startswith("stat.") else None
+                        out += [l for l in text.split("\n") if l.strip()]
+                        if sid:
+                            sids.add(sid)
+                            m = re.search(r"[-+]?\d+(?:\.\d+)?", text)
+                            if m and sid not in vals:
+                                vals[sid] = float(m.group(0))
+                    self.db.execute("UPDATE listings SET lines=?, sids=?, vals=? WHERE id=?",
+                                    (json.dumps(out), json.dumps(sorted(sids)), json.dumps(vals), lid))
+                    fixed += 1
+                self.db.commit()
+        except Exception as e:
+            self.last_error = f"repairing listings: {type(e).__name__}: {e}"
+        return fixed
+
+    MARKER_DIV = 1000           # 2.18.0: one price this high on 3+ listings = a stash-tab marker, not a real price
+    ABSURD_DIV = 10000          # and anything over this (more than a Mirror and a half) on its own
+
+    def drop_markers(self, extra=()):
+        """Stash-tab marker listings (yours or anyone's: a whole tab at one price nobody would pay, like 37882 div) out
+        of the listings kept: they'd top Market Insights and lift the Mod book's typical prices. Your own tab prices
+        (Price checks > Stash tab, Wealth tabs) go too, whatever they are. -> rows removed."""
+        if not self.db:
+            return 0
+        own = {f"{_num_txt(a)} {c}" for a, c in own_marker_prices()} | {f"{_num_txt(a)} {c}" for a, c in extra}
+        try:
+            with self.lock:
+                n = self.db.execute(
+                    "DELETE FROM listings WHERE price_txt IN (SELECT price_txt FROM listings WHERE price_div>=? "
+                    "GROUP BY league, price_txt HAVING COUNT(*)>=3)", (self.MARKER_DIV,)).rowcount
+                n += self.db.execute("DELETE FROM listings WHERE price_div>=?", (self.ABSURD_DIV,)).rowcount
+                for t in own:
+                    n += self.db.execute("DELETE FROM listings WHERE price_txt=?", (t,)).rowcount
+                self.db.commit()
+            return n
+        except Exception as e:
+            self.last_error = f"dropping marker listings: {type(e).__name__}: {e}"
+            return 0
 
     @staticmethod
     def cur():
@@ -109,8 +214,11 @@ class Market:
                             rs["field_samples"].append(r["fields"])
                     if r.get("id") and r["mods"] is not None:
                         sids, vals = set(), {}
-                        for t, nums in r["mods"]:
+                        given = r.get("hsids") or []
+                        for i, (t, nums) in enumerate(r["mods"]):
                             sid = sid_for_line(t)
+                            if not sid and i < len(given) and given[i] in SIDTEXT:   # 2.18.0: the site's own id
+                                sid = given[i]
                             if sid:
                                 sids.add(sid)
                                 if nums:
