@@ -382,8 +382,6 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         self.shell.finish()
         self.shell.set_launcher(self.shell.cfg.get("launcher", "dock"))
         self.root.after(1500, self.show_whatsnew)              # 2.0 beta 12: once per new version
-        from .diag import start as _diag_start                # 2.10.1: only when diag_on.txt is in the data folder
-        self.diag = _diag_start(self)
         if SPLASH[0] is not None:                              # 2.0.0: the start-up screen waits for the mod list,
             _splash_step(i=3)                                  # but never more than 3 seconds
             self.root.after(3000, self.close_splash)
@@ -3652,9 +3650,6 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
             pass
 
     def on_close(self):
-        if getattr(self, "diag", None) is not None:
-            self.diag.log("=== closing")
-            self.diag.flush()
         self.save_widths()
         self.save_session()
         try:                                         # 2.0 beta 9: a running session is kept (without a profit)

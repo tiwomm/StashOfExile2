@@ -1,6 +1,6 @@
 # StashOfExile2 roadmap
 
-**Current version: 2.10.2**
+**Current version: 2.11.0**
 
 Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds features, 2.10.1 only fixes. Each step below is one release; we work through them top to bottom.
 
@@ -19,18 +19,20 @@ Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds f
 | 2.8 | Price checks can read a whole public stash tab (Add items from: Manual Add or Stash tab). |
 | 2.9 | Alerts while you play (Session tracker): Breach Hiveblood banner, Delirium on / off. Wealth sync skips unreadable listings. |
 | 2.10.0 | Alerts panel on the Session tracker's main page (Delirium + Breach, "full" Hiveblood banner); tracker out of Labs with default keys; typing lock-up and window sizing fixes; Settings > About with Discord; quick start guide; Linux groundwork. |
+| 2.10.1 – 2.10.2 | Windows no longer vanish on resize / maximise / snap; typing in boxes fixed. |
+| 2.11.0 | Breach: reminder to spend Hiveblood when you leave a map. |
 
 ## ▶ Next up
 
 | Version | Plan |
 |---|---|
-| 2.11.0 | Ctrl+A / C / Z and right-click menus everywhere; striped rows in every theme; poe2db on Ctrl+Shift+D. |
-| 2.12.0 | Pricing: your own listings left out; "Price manually" for low confidence; est. value in any currency; full currency list for tab prices; Wealth uses the Stash tab reader; Top value becomes Market Insights. |
-| 2.13.0 | Mod book tiers (used when a search finds nothing); import / export fix; teach the app what's worth money; the author's rules ship as the defaults. |
-| 2.14.0 | Regex: ranges, maximums and "not"; every item type; Favorites rework. |
-| 2.15.0 | Notepad tabs; Game search details and wiki links; live Arbitrage scan. |
-| 2.16.0 | Money Makers: farming guides, tablet crafting reference, run tracker. |
-| 2.17.0 | Map library with ranks, import / export. |
+| 2.12.0 | Ctrl+A / C / Z and right-click menus everywhere; striped rows in every theme; poe2db on Ctrl+Shift+D. |
+| 2.13.0 | Pricing: your own listings left out; "Price manually" for low confidence; est. value in any currency; full currency list for tab prices; Wealth uses the Stash tab reader; Top value becomes Market Insights. |
+| 2.14.0 | Mod book tiers (used when a search finds nothing); import / export fix; teach the app what's worth money; the author's rules ship as the defaults. |
+| 2.15.0 | Regex: ranges, maximums and "not"; every item type; Favorites rework. |
+| 2.16.0 | Notepad tabs; Game search details and wiki links; live Arbitrage scan. |
+| 2.17.0 | Money Makers: farming guides, tablet crafting reference, run tracker. |
+| 2.18.0 | Map library with ranks, import / export. |
 | Later | Sidekick / Exiled Exchange-style pricing for more item types; public stash order test tool; Ancients price helper; Linux build. |
 
 ## 💤 Parked (not planned unless something changes)
