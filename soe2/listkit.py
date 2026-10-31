@@ -41,9 +41,9 @@ def restripe(tree):
         def walk(parent):
             nonlocal n
             for iid in tree.get_children(parent):
-                tags = [t for t in tree.item(iid, "tags") or () if t not in STRIPE and t not in ("odd", "even")]
-                want = tags + [STRIPE[n % 2]]
-                if list(tree.item(iid, "tags") or ()) != want:
+                cur = list(tree.item(iid, "tags") or ())                 # (read once - 2.25.1)
+                want = [t for t in cur if t not in STRIPE and t not in ("odd", "even")] + [STRIPE[n % 2]]
+                if cur != want:
                     tree.item(iid, tags=want)
                 n += 1
                 if tree.item(iid, "open"):
@@ -90,10 +90,22 @@ def _patch_treeview():
     orig_item = ttk.Treeview.item
 
     def item(self, iid, option=None, **kw):              # someone set new tags: put the stripe back
-        res = orig_item(self, iid, option, **kw)
         if "tags" in kw and not getattr(self, "_restriping", False):
+            # 2.25.1: keep this row's own stripe instead of restriping the whole list - with 2,000 rows every price
+            # that came in restriped all of them (half the time of each update)
+            try:
+                have = [t for t in (orig_item(self, iid, "tags") or ()) if t in STRIPE]
+            except tk.TclError:
+                have = []
+            new = kw["tags"]
+            new = [new] if isinstance(new, str) else list(new or ())
+            if have:
+                kw["tags"] = [t for t in new if t not in STRIPE and t not in ("odd", "even")] + have[:1]
+                return orig_item(self, iid, option, **kw)
+            res = orig_item(self, iid, option, **kw)
             schedule_restripe(self)
-        return res
+            return res
+        return orig_item(self, iid, option, **kw)
     ttk.Treeview.item = item
 
 
