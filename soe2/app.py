@@ -519,10 +519,6 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         self.tot_val.pack(side="left", padx=(8, 0))
         self.chip_review.pack(side="right")
         self.chip_priced.pack(side="right", padx=(0, 8))
-        hood = tk.Label(summ, text="Under the hood ›", bg=C["panel2"], fg="#6e86b0", cursor="hand2",
-                        font=("Segoe UI", 8, "underline"))
-        hood.pack(side="right", padx=(0, 14))                      # 2.0 beta 14: how items are read and compared
-        hood.bind("<Button-1>", lambda e: self.shell.open("library"))
 
         # ---- the two toolbar rows
         tb = tk.Frame(body, bg=C["panel"], highlightthickness=1, highlightbackground=C["line"])
@@ -1429,6 +1425,11 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
     def on_pace(self, _e=None):
         SETTINGS["pace"] = self.pace_var.get()
         save_json("settings.json", SETTINGS)
+        if SETTINGS["pace"] == "Fast":                      # 2.18.0: say what it costs
+            self.app_toast("Fast pace searches the trade site much harder. You'll hit its rate limits quickly, and each "
+                       "one locks searches for several minutes (sometimes longer). Balanced is safer.",
+                       title="⚠  Fast pace: rate limits ahead",
+                       actions=[("Back to Balanced", lambda: (self.pace_var.set("Balanced"), self.on_pace()))])
 
     def toggle_pause(self):
         self.engine.paused = not self.engine.paused
@@ -1907,13 +1908,57 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
             why = "its base type isn't in the library"
         else:
             why = "the price checker doesn't price this kind of item yet"
-        msg = (f"{cls}: not priced - {why}. {what} is in Under the hood, so you can see how the app reads it.")
+        msg = f"{cls}: not priced - {why}."                  # 2.18.0: no Under the hood link from Price checks
         self.status_text, self.status_until = msg, time.time() + 20
         if hasattr(self, "lib_in"):
             self.lib_in.delete("1.0", "end")
             self.lib_in.insert("1.0", text)
             self.lib_check()
-        self.info_card(msg, [("Open Under the hood", lambda: self.shell.open("library"))])
+        self.info_card(msg)
+
+    def app_toast(self, text, title="", actions=(), secs=15, colour="#e0a030"):
+        """2.18.0: a small popup in the bottom-right corner of the app - seen whichever window you're in. Goes away
+        after `secs`, with OK, or with one of its buttons."""
+        old = getattr(self, "_app_toast", None)
+        if old is not None:
+            try:
+                old.destroy()
+            except Exception:
+                pass
+        w = tk.Toplevel(self.root)
+        w.withdraw()
+        w.overrideredirect(True)
+        try:
+            w.attributes("-topmost", True)
+        except tk.TclError:
+            pass
+        box = tk.Frame(w, bg=C["panel2"], padx=14, pady=10, highlightthickness=2, highlightbackground=colour)
+        box.pack(fill="both")
+        if title:
+            tk.Label(box, text=title, bg=C["panel2"], fg=colour, font=("Segoe UI", 10, "bold"), anchor="w").pack(fill="x")
+        tk.Label(box, text=text, bg=C["panel2"], fg=C["text"], font=("Segoe UI", 9), wraplength=340, justify="left",
+                 anchor="w").pack(fill="x", pady=(4, 8))
+        btns = tk.Frame(box, bg=C["panel2"])
+        btns.pack(fill="x")
+
+        def close():
+            try:
+                w.destroy()
+            except Exception:
+                pass
+            if getattr(self, "_app_toast", None) is w:
+                self._app_toast = None
+        ttk.Button(btns, text="OK", command=close).pack(side="right")
+        for label, fn in actions:
+            ttk.Button(btns, text=label, command=lambda f=fn: (close(), f())).pack(side="right", padx=(0, 6))
+        w.update_idletasks()
+        rx, ry = self.root.winfo_rootx(), self.root.winfo_rooty()
+        rw, rh = max(400, self.root.winfo_width()), max(300, self.root.winfo_height())
+        w.geometry(f"+{rx + rw - w.winfo_reqwidth() - 24}+{ry + rh - w.winfo_reqheight() - 24}")
+        w.deiconify()
+        self._app_toast = w
+        self.root.after(secs * 1000, lambda: close() if getattr(self, "_app_toast", None) is w else None)
+        return w
 
     def info_card(self, text, actions=(), secs=25):
         """A note above the list you can't miss (the status line is easy to miss). Replaces the previous one; goes
@@ -3224,13 +3269,6 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         tk.Label(trow, text=it["base"].upper(), bg="#1b2b4a", fg="#cfe0ff", font=("Segoe UI", 8, "bold"), padx=9, pady=3,
                  highlightthickness=1, highlightbackground=C["gold_dim"]).pack(side="left")
         ttk.Button(trow, text="Copy name  [C]", command=lambda: self.copy_name(rec, True)).pack(side="right")
-        how = tk.Label(trow, text="Under the hood", bg=P2, fg="#6ea8ff", cursor="hand2", font=("Segoe UI", 8, "underline"))
-        how.pack(side="right", padx=(0, 10))
-        how.bind("<Button-1>", lambda e: self.lib_inspect(rec.get("raw", "")))
-        wiki = tk.Label(trow, text="Wiki ↗", bg=P2, fg="#6ea8ff", cursor="hand2", font=("Segoe UI", 8, "underline"))
-        wiki.pack(side="right", padx=(0, 10))                # 2.4.1: the base type on the community wiki
-        wiki.bind("<Button-1>", lambda e: webbrowser.open("https://www.poe2wiki.net/wiki/" +
-                                                          it["base"].replace(" ", "_")))
         tk.Label(d, text=it["name"], bg=P2, fg=col, font=("Segoe UI", 16, "bold"), anchor="w",
                  wraplength=wrap-11, justify="left").pack(fill="x")
         if it["corrupted"]:
