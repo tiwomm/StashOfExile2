@@ -2215,7 +2215,7 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
                 except Exception:
                     self.log_error(step.__name__)
             if self.dirty and time.time() - self.last_save > 4:
-                self.save_session()
+                self.save_session(background=True)           # 2.25.1: written off the window thread
         finally:
             self.root.after(100, self.poll_events)
 
@@ -2297,7 +2297,7 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
             self.lib_price_show()
         self.update_row(rid)
         self.refresh_detail_if_selected(rid)
-        self.update_total()
+        self.update_total_soon()                             # 2.25.1: once per burst of prices, not per price
         self.dirty = True
         if rec["state"] == "done":
             self.done_times.append(time.time())
@@ -2602,7 +2602,11 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         self.status_until = time.time() + 25
 
     # ---------------- saving the list between sessions
-    def save_session(self):
+    _session_lock = threading.Lock()
+
+    def save_session(self, background=False):
+        """Price checks list -> session.json. 2.25.1: with background=True the file is written on another thread -
+        a long list took seconds to write, and the app froze every few seconds while prices came in."""
         try:
             recs = []
             for rec in list(self.records.values()):
@@ -2611,10 +2615,28 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
                 it["mods"] = [{**m, "flags": sorted(m["flags"])} for m in rec["item"]["mods"]]
                 r["item"] = it
                 recs.append(r)
-            save_json("session.json", {"next_id": self.next_id, "records": recs})
+            data = {"next_id": self.next_id, "records": recs}
         except Exception:
             return                          # the engine was editing an item at that moment - try again shortly
         self.dirty, self.last_save = False, time.time()
+
+        def write():
+            with self._session_lock:          # one write at a time, newest last
+                try:
+                    save_json("session.json", data)
+                except Exception:
+                    self.dirty = True
+        if background:
+            if getattr(self, "_session_thread", None) is not None and self._session_thread.is_alive():
+                self.dirty = True             # still writing the last one: try again in a few seconds
+                return
+            self._session_thread = threading.Thread(target=write, daemon=True)
+            self._session_thread.start()
+        else:
+            t = getattr(self, "_session_thread", None)
+            if t is not None and t.is_alive():
+                t.join(10)
+            write()
 
     def load_session(self):
         data = load_json("session.json", {})
@@ -3131,6 +3153,16 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         if len(sel) == 1 and sel[0] == str(rid):
             self.show_detail(self.records[rid])
 
+    def update_total_soon(self, ms=250):
+        """2.25.1: the total and the category counts go through every item (2,000+ in a long league): when prices
+        arrive one after another, add them up once they pause instead of after each one."""
+        if getattr(self, "_total_job", None) is None:
+            self._total_job = self.root.after(ms, self._update_total_job)
+
+    def _update_total_job(self):
+        self._total_job = None
+        self.update_total()
+
     def update_total(self):
         self.cat_refresh()                                                    # category counts follow every change
         shown = [r for r in self.records.values() if self.visible(r)]       # totals follow the Show filter
@@ -3373,7 +3405,7 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         if getattr(self, "_vl_job", None) is None:
             def go():
                 self._vl_job = None
-                VALUE_LOG.save()
+                threading.Thread(target=VALUE_LOG.save, daemon=True).start()   # 2.25.1: off the window thread
             self._vl_job = self.root.after(1500, go)
 
     def append_history(self, rec):
