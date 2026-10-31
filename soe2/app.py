@@ -71,7 +71,10 @@ from .config import PAGE_CHECKS       # 1.40: was "Items"
 class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, ExchangePage, WealthSetup, WealthPage, LibraryPage, RegexPage, UtilitiesPage, TrackerPage, SearchPage, CalcPage, InsightsPage):
     COLS = [("added", "#", 46, "e"), ("name", "Item", 220, "w"), ("type", "Type", 110, "w"), ("mark", "Status", 90, "center"),
             ("est", "Est. value", 110, "e"), ("conf", "Confidence", 95, "center"), ("listings", "Listings", 70, "e"), ("priced", "Priced at", 130, "w"),
-            ("match", "How it was priced", 300, "w")]
+            ("match", "How it was priced", 300, "w"), ("vmods", "★ Valuable", 80, "center")]
+    # 2.24.0: "★ Valuable" (how many of the item's mods your Mod book rates High) is the last column in the data, so
+    # older code reading values by position keeps working, but it's shown right after the item's name
+    SHOW_COLS = ("added", "name", "vmods", "type", "mark", "est", "conf", "listings", "priced", "match")
     MARK_TEXT = {"new": "", "listed": "✔ listed", "sold": "💰 sold", "removed": "✖ removed"}
     VIEW_MARK = {"Not yet listed": "new", "Listed": "listed", "Sold": "sold", "Removed": "removed"}
 
@@ -127,7 +130,9 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         from . import listkit                        # 2.12.0: keys, right-click menus and striped rows everywhere
         listkit.install(self)
         SETTINGS.setdefault("poe2db_key", "Ctrl+Shift+D")
-        SETTINGS.setdefault("copy_marker", True)            # 2.19.0: a ring where you pressed Ctrl+Alt+C
+        SETTINGS.setdefault("copy_marker", True)            # 2.19.0: a mark where you pressed Ctrl+Alt+C
+        SETTINGS.setdefault("copy_marker_secs", 10)         # 2.24.0: how long it stays
+        SETTINGS.setdefault("copy_marker_hold", False)      # 2.24.0: or until Esc is held for 3 seconds
         self.build()
         self.engine.start()
         self.engine.add(0, "init")
@@ -632,6 +637,7 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
             self.tree.heading(cid, text=title, command=lambda c=cid: self.sort_by(c))
             self.tree.column(cid, width=max(int(SETTINGS.get("col_widths", {}).get(cid, w)), 95 if cid == "conf" else 0), minwidth=50,
                              anchor=anchor, stretch=(cid == "match"))
+        self.tree["displaycolumns"] = self.SHOW_COLS
         sb = ttk.Scrollbar(left, orient="vertical", command=self.tree.yview)
         self.tree.configure(yscrollcommand=sb.set)
         sb.pack(side="right", fill="y")
@@ -773,11 +779,20 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         for cb in (self.league_box, pace):
             cb.bind("<<ComboboxSelected>>", lambda e: self.root.after(20, self.root.focus_set), add="+")
 
-        row = section("General", "Copy marker", "After Ctrl+Alt+C, a small ring shows for 10 seconds where your "
-                                                "mouse was, so you can see which items you've already copied. It only "
-                                                "draws on the screen: nothing is sent to the game.")
+        row = section("General", "Copy marker", "After Ctrl+Alt+C, a small + shows where your mouse was, so you can "
+                                                "see which items you've already copied. It only draws on the screen: "
+                                                "nothing is sent to the game.")
         self.mark_var = tk.BooleanVar(value=SETTINGS.get("copy_marker", True))
         ttk.Checkbutton(row, text="Mark where I pressed Ctrl+Alt+C", variable=self.mark_var,
+                        command=self.on_copy_marker).pack(side="left")
+        tk.Label(row, text="for", bg=P2, fg=C["text"]).pack(side="left", padx=(14, 4))
+        self.mark_secs = tk.StringVar(value=str(SETTINGS.get("copy_marker_secs", 10)))
+        sp = ttk.Spinbox(row, from_=1, to=600, textvariable=self.mark_secs, width=5, command=self.on_copy_marker)
+        sp.pack(side="left")
+        sp.bind("<FocusOut>", lambda e: self.on_copy_marker())
+        tk.Label(row, text="seconds", bg=P2, fg=C["text"]).pack(side="left", padx=(4, 14))
+        self.mark_hold = tk.BooleanVar(value=bool(SETTINGS.get("copy_marker_hold")))
+        ttk.Checkbutton(row, text="Keep them until I hold Esc for 3 seconds", variable=self.mark_hold,
                         command=self.on_copy_marker).pack(side="left")
 
         row = section("General", "Window", "Always on top keeps StashOfExile2 in front of the game (and brings it "
@@ -1436,6 +1451,12 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
 
     def on_copy_marker(self):
         SETTINGS["copy_marker"] = bool(self.mark_var.get())
+        try:
+            SETTINGS["copy_marker_secs"] = max(1, min(600, int(float(self.mark_secs.get()))))
+        except (ValueError, AttributeError):
+            pass
+        if hasattr(self, "mark_hold"):
+            SETTINGS["copy_marker_hold"] = bool(self.mark_hold.get())
         save_json("settings.json", SETTINGS)
         if not SETTINGS["copy_marker"] and getattr(self, "copy_marker", None):
             self.copy_marker.clear()
@@ -1839,7 +1860,12 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
 
     def copy_mark_check(self):
         """2.19.0: a fresh Ctrl+Alt+C (seen by the key watcher) -> a ring where the mouse is, for 10 seconds."""
-        t = getattr(self.keys, "combo_time", 0) if getattr(self, "keys", None) else 0
+        keys = getattr(self, "keys", None)
+        esc = getattr(keys, "esc_since", 0) if keys else 0
+        if esc and time.time() - esc >= 3 and getattr(self, "copy_marker", None) and self.copy_marker.marks:
+            self.copy_marker.clear()                          # 2.24.0: Esc held 3 s clears every mark
+            keys.esc_since = time.time() + 3600               # once per hold (Esc going up resets it)
+        t = getattr(keys, "combo_time", 0) if keys else 0
         if not t or t <= getattr(self, "_marked_combo", 0):
             return
         self._marked_combo = t
@@ -1850,7 +1876,12 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
             if getattr(self, "copy_marker", None) is None:
                 self.copy_marker = CopyMarker(self.root)
             x, y = self.root.winfo_pointerxy()
-            self.copy_marker.show(x, y)
+            hold = bool(SETTINGS.get("copy_marker_hold"))
+            try:
+                secs = max(1, min(600, int(float(SETTINGS.get("copy_marker_secs") or 10))))
+            except (TypeError, ValueError):
+                secs = 10
+            self.copy_marker.show(x, y, secs=None if hold else secs)
         except Exception:
             self.log_error("showing the copy marker")
 
@@ -3038,9 +3069,9 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         conf = "" if conf == "-" else conf
         if conf and it.get("gear") and not it.get("waystone") and it.get("rarity") != "Unique":
             conf = "Guess"                                    # 2.0 beta 21: gear prices are a rough guess
-        stars = "★" * keys + " " if keys else ""               # 2.19.0: one star per valuable mod (why it's gold)
-        self.tree.item(str(rid), values=(rid, stars + it["name"], it["base"], self.MARK_TEXT[mark], est, conf, listings,
-                                         stamp, match), tags=tags)
+        stars = "★" * keys if keys else ""                     # 2.24.0: its own column (2.19.0 put it before the name)
+        self.tree.item(str(rid), values=(rid, it["name"], it["base"], self.MARK_TEXT[mark], est, conf, listings,
+                                         stamp, match, stars), tags=tags)
 
     def on_price_unit(self):
         from .pricefmt import PRICE_UNITS
@@ -3161,7 +3192,8 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
 
     # ---------------- sorting / selection / actions
     def sort_by(self, col):
-        self.sort_rev = (not self.sort_rev) if self.sort_col == col else (col in ("est", "conf", "listings", "priced"))
+        self.sort_rev = (not self.sort_rev) if self.sort_col == col else (col in ("est", "conf", "listings", "priced",
+                                                                                   "vmods"))
         self.sort_col = col
         self._apply_sort()
         self.sort_headings()
@@ -3201,6 +3233,8 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
                 return rec["item"]["base"].lower()
             if col == "mark":
                 return rec.get("mark", "new")
+            if col == "vmods":
+                return len(self.key_mods(rec)) if rec.get("resolved") else 0
             return rec["label"].lower()
         ids = sorted(self.tree.get_children(), key=key, reverse=self.sort_rev)
         for i, iid in enumerate(ids):
