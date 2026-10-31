@@ -1,30 +1,6 @@
 {
- "about": "Built-in mod rules that ship with StashOfExile2 (from the author's own tablet and jewel rules, exported Oct 25, 2026). Your own rules (Mod book > Tablet / Jewel mod rules) always win over these.",
- "version": 2,
- "tablet": {
-  "high": [
-   "#% increased chance for Abyssal monsters in Map to have Abyssal Modifiers",
-   "#% increased Quantity of Hiveblood found in Map",
-   "#% increased Quantity of Waystones dropped by Map Bosses",
-   "#% increased Quantity of Wombgifts found in Map",
-   "#% increased Stack size of Simulacrum Splinters found in Map",
-   "Abyss Pits in Map are twice as likely to have Rewards",
-   "Abyssal Monsters have #% increased Effectiveness for each closed Pit, up to 100%",
-   "Abysses in Map have #% increased chance to lead to an Abyssal Depths",
-   "Deferring Favours at Ritual Altars in Map costs #% reduced Tribute",
-   "Expeditions have +#% Surpassing chance to contain an additional Verisium Remnant",
-   "Favours Rerolled at Ritual Altars in Map have #% chance to cost no Tribute",
-   "Map contains 1 additional Azmeri Spirits",
-   "Map contains 1 additional Summoning Circles",
-   "map has # additional random modifier",
-   "Map has # additional random Modifiers",
-   "Map has #% chance to contain four additional Abysses",
-   "Rerolling Favours at Ritual Altars in Map costs #% reduced Tribute",
-   "Ritual Altars in Map allow rerolling Favours # additional times",
-   "Ritual Favours in Map have #% increased chance to be Omens",
-   "Unique Monsters have 1 additional Rare Modifiers"
-  ]
- },
+ "about": "Built-in mod rules that ship with StashOfExile2 (the author's own rules, exported Oct 31, 2026). Your own rules (Mod book) always win over these.",
+ "version": 3,
  "jewel": {
   "high": [
    "#% increased Attack Damage",
@@ -52,8 +28,6 @@
    "#% increased Damage with Spears",
    "#% increased Damage with Warcries",
    "#% increased Duration of Damaging Ailments on Enemies",
-   "#% increased Effect of Prefixes",
-   "#% increased Effect of Suffixes",
    "#% increased Elemental Damage",
    "#% increased Fire Damage",
    "#% increased Global Physical Damage",
@@ -65,7 +39,7 @@
    "#% increased Movement Speed",
    "#% increased Projectile Damage",
    "#% increased Projectile Speed",
-   "#% increased Skill Effect",
+   "#% increased Skill Effect Duration",
    "#% increased Spell Damage",
    "#% increased Totem Damage",
    "Damaging Ailments deal damage #% faster",
@@ -73,6 +47,57 @@
    "Minions have #% increased Critical Damage Bonus",
    "Minions have #% increased Critical Hit Chance",
    "Minions have #% increased maximum Life"
+  ]
+ },
+ "tablet": {
+  "high": [
+   "#% increased chance for Abyssal monsters in Map to have Abyssal Modifiers",
+   "#% increased effect of prefixes",
+   "#% increased effect of suffixes",
+   "#% increased Quantity of Hiveblood found in Map",
+   "#% increased Quantity of Waystones dropped by Map Bosses",
+   "#% increased Quantity of Wombgifts found in Map",
+   "#% increased Stack size of Simulacrum Splinters found in Map",
+   "Abyss Pits in Map are twice as likely to have Rewards",
+   "Abyssal Monsters have #% increased Effectiveness for each closed Pit, up to 100%",
+   "Abysses in Map have #% increased chance to lead to an Abyssal Depths",
+   "Deferring Favours at Ritual Altars in Map costs #% reduced Tribute",
+   "Expeditions have +#% Surpassing chance to contain an additional Verisium Remnant",
+   "Favours Rerolled at Ritual Altars in Map have #% chance to cost no Tribute",
+   "Map contains 1 additional Azmeri Spirit",
+   "Map contains # additional Azmeri Spirits",
+   "Map contains an additional Summoning Circle",
+   "map has # additional random modifier",
+   "Map has # additional random Modifiers",
+   "Map has #% chance to contain four additional Abysses",
+   "Rerolling Favours at Ritual Altars in Map costs #% reduced Tribute",
+   "Ritual Altars in Map allow rerolling Favours # additional times",
+   "Ritual Favours in Map have #% increased chance to be Omens",
+   "Unique Monsters have 1 additional Rare Modifier"
+  ],
+  "ignore": [
+   "#% increased chance Vaal Beacon Chests are Rare in Map",
+   "#% increased chance Vaal Beacons summon additional Monsters in Map",
+   "Map contains # additional Essences",
+   "Map contains # additional Rare Chests",
+   "Map contains # additional Shrines",
+   "Map contains an additional Essence",
+   "Map contains an additional Shrine",
+   "Map has #% increased chance to contain a Summoning Circle",
+   "Map has #% increased chance to contain Azmeri Spirits",
+   "Map has #% increased chance to contain Essences",
+   "Map has #% increased chance to contain Rogue Exiles",
+   "Map has #% increased chance to contain Shrines",
+   "Map has #% increased chance to contain Strongboxes"
+  ],
+  "normal": [
+   "#% increased Experience gain in Map",
+   "#% increased Pack Size in Map"
+  ]
+ },
+ "relic": {
+  "high": [
+   "#% increased Movement Speed"
   ]
  }
 }

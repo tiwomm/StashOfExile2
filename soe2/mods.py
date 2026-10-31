@@ -374,6 +374,35 @@ def scoped(k):
     return head if head in SCOPED_CATS and ":" in k else None
 
 
+# ---- 2.20.0: tiers - how much a mod matters, S (most) to D (least). When no listing has all of an item's mods, the
+# lowest tier is left out first. A mod you haven't given a tier: High = A, Normal = C (Ignore isn't searched at all).
+TIER_ORDER = ("S", "A", "B", "C", "D")
+TIERS = load_json("mod_tiers.json", {})        # your tiers: rule key -> "S".."D"
+
+
+def default_tier(k):
+    if k in DEFAULT_TIERS:
+        return DEFAULT_TIERS[k]
+    imp = impact_key(k)
+    return {"high": "A", "normal": "C"}.get(imp)
+
+
+def tier_key(k):
+    """The tier of a mod (rule key), or None when it's ignored."""
+    if impact_key(k) == "ignore":
+        return None
+    t = TIERS.get(k)
+    return t if t in TIER_ORDER else default_tier(k)
+
+
+def tier_rank(t):
+    """S = 0 ... D = 4; no tier (ignored) = 9."""
+    return TIER_ORDER.index(t) if t in TIER_ORDER else 9
+
+
+DEFAULT_TIERS = {}
+
+
 def _load_default_rules():
     """default_rules.json (ships with the app, 2.0): built-in High / Ignore marks, below your own rules."""
     import json
@@ -390,6 +419,9 @@ def _load_default_rules():
             for imp in ("high", "normal", "ignore"):
                 for text in (d.get(cat) or {}).get(imp) or []:
                     out[rule_key(cat, norm(text))] = imp
+            for text, t in ((d.get(cat) or {}).get("tiers") or {}).items():      # 2.20.0
+                if t in TIER_ORDER:
+                    DEFAULT_TIERS[rule_key(cat, norm(text))] = t
         break
     return out
 

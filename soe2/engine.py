@@ -280,7 +280,9 @@ class Engine(TabReaderJobs, WealthJobs, threading.Thread):
         else:                                              # jewels (and later rings...): drop ONE affix at a time
             allg = suffixes + prefixes
             if len(allg) >= 3:
-                plan += [(f"without {short(d)}", [g for g in allg if g is not d]) for d in reversed(allg)]
+                from .mods import tier_key, tier_rank                  # 2.20.0: the lowest tier is left out first
+                order = sorted(reversed(allg), key=lambda g: -min(tier_rank(tier_key(norm(m["text"]))) for m in g["mods"]))
+                plan += [(f"without {short(d)}", [g for g in allg if g is not d]) for d in order]
         vals = {m["sid"]: m["value"] for g in groups for m in g["mods"] if m.get("sid")}
         mem = MARKET.lower_bound(item["base"], vals, SETTINGS.get("memory_hours", 24) or 24)
         filt_all = Market.filters_of([m for g in plan[0][1] for m in g["mods"]])
@@ -315,6 +317,32 @@ class Engine(TabReaderJobs, WealthJobs, threading.Thread):
                 break
         found = [s for s in stages if s["n"]]
         any_roll = False
+        relaxed = None
+        if not found and len(plan[0][1]) >= 2:                  # 2.20.0: leave out the lowest-tier mods, then the next
+            from .mods import tier_key, tier_rank, TIER_ORDER
+            for g in plan[0][1]:
+                ranks = [tier_rank(tier_key(norm(m["text"]))) for m in g["mods"]]
+                g["tier_rank"] = min(ranks + ([1] if g["impact"] == "high" else []))
+            keep = list(plan[0][1])
+            for _ in range(2):                                  # at most 2 more searches (the trade site's limits)
+                low = max(g["tier_rank"] for g in keep)
+                left = [g for g in keep if g["tier_rank"] != low]
+                if not left or low <= 0:                        # never drop everything, never drop S
+                    break
+                dropped = [g for g in keep if g["tier_rank"] == low]
+                keep = left
+                fs = [_flt(m) for g in keep for m in g["mods"]]
+                total, ids, qid = search_ids(league, item["base"], fs + extra, None, None)
+                tname = TIER_ORDER[low] if low < len(TIER_ORDER) else "?"
+                st = self._stage(item["base"], f"without {tname}-tier: " + ", ".join(short(g) for g in dropped), keep,
+                                 total, ids, qid, hours, league, verify_tot, record=False)
+                stages.append(st)
+                relaxed = (relaxed or []) + [(tname, [short(g) for g in dropped])]
+                if st["n"]:
+                    found = [st]
+                    break
+            if not found:
+                relaxed = None
         if not found:                                           # nothing at your rolls: once more with ANY value
             fs = [_flt(m, with_roll=False) for g in plan[0][1] for m in g["mods"]]
             total, ids, qid = search_ids(league, item["base"], fs + extra, None, None)
@@ -341,7 +369,11 @@ class Engine(TabReaderJobs, WealthJobs, threading.Thread):
         wide, ratio = False, None
         primary = found[0]
         thin = not any(s["n"] >= need for s in found)
-        if alone:
+        if relaxed:
+            label = ("no listing has all these mods together - left out the "
+                     + "; ".join(f"{t}-tier {', '.join(n)}" for t, n in relaxed)
+                     + ", so it's a floor (those mods add to it)")
+        elif alone:
             label = (f"no listing has all these mods together - priced on {alone} alone, so it's a floor (the other "
                      f"mods add to it)")
         elif any_roll:
@@ -377,7 +409,7 @@ class Engine(TabReaderJobs, WealthJobs, threading.Thread):
             conf = "Low"
             why = ["matching listings are priced far apart"] + [w for w in why if "apart" not in w]
         return dict(label=label, total=primary["total"], prices=primary["prices"], qid=primary["qid"], est=est,
-                    partial=any_roll, thin=thin, nomatch=False, stages=stages, wide=wide, manual=wide,
+                    partial=any_roll or bool(relaxed), thin=thin, nomatch=False, stages=stages, wide=wide, manual=wide,
                     conf=conf, conf_why=why, memory=self._mem_text(mem), model=model_txt, spread=ratio)
 
     FULL_USES = 10
