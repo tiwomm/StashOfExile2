@@ -16,11 +16,16 @@ INTRO = [
 
 # What's being worked on (2.4.0: not shown in the app any more - kept for ROADMAP.md / the developer).
 NEXT = [
-    "2.15.0: pricing - your own listings left out, Price manually, est. value in any currency (see ROADMAP.md).",
+    "2.16.0: pricing - your own listings left out, Price manually, est. value in any currency (see ROADMAP.md).",
 ]
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.15.0": [
+        "Fixed: the Ritual watcher couldn't read some counters (like 3/4).",
+        "The Ritual reminder only comes when you did some rituals but left before finishing (0 done = skipped).",
+        "Game search: the \"how the price checker sees it\" links are gone; results link to the wiki instead.",
+    ],
     "2.14.1": [
         "Fixed: the Ritual watcher didn't work in the app you download (it stopped right after starting).",
     ],
