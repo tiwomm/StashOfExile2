@@ -480,6 +480,8 @@ class UtilitiesPage:
                 self.dl_msg.config(text="It stopped: " + DELIRIUM.lines[-1][6:], fg=C["red"])
         self.dl_status.config(text=text, fg=col)
         self.dl_on.set(bool(state))
+        if hasattr(self, "tk_dl_on"):                   # 2.9.0: the checkbox in Session tracker > Options
+            self.tk_dl_on.set(bool(state))
         self.dl_start.config(state="disabled" if state or cmd is None else "normal")
         self.dl_stop.config(state="normal" if state == "mine" else "disabled")
         for b in (self.dl_move, self.dl_reset):

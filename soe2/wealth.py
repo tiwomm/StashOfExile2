@@ -719,7 +719,14 @@ class WealthJobs:
             if p.get("amount") != tab["amount"] or p.get("currency") != tab["currency"] or not mine:
                 t["dropped"] += 1                   # not carrying the exact marker price, or someone else's listing
                 continue
-            t["items"].append(wealth_item(e, tab))
+            try:
+                t["items"].append(wealth_item(e, tab))
+            except Exception as ex:                 # 2.8.3: one odd listing mustn't lose the rest of its batch
+                t["unreadable"] = t.get("unreadable", 0) + 1
+                if t["unreadable"] == 1:
+                    t["warnings"].append(f"Couldn't read a listing ({type(ex).__name__}: {str(ex)[:80]}) - it was left "
+                                         f"out. Problem report (Settings > Advanced) helps find out why.")
+                continue
             s["fetched"] += 1
         self.ui_q.put(("wealth", "progress"))
 
@@ -738,13 +745,15 @@ class WealthJobs:
                        "error": t["error"], "qid": t["qid"], "ts": now, "league": s["league"]}
                 if t["dropped"]:
                     res["warnings"].append(f"{t['dropped']} listing(s) not at exactly this tab's price were left out.")
+                if t.get("unreadable", 0) > 1:
+                    res["warnings"].append(f"{t['unreadable']} listings couldn't be read and were left out.")
                 if not t["error"]:
                     good += 1
                     WEALTH.items[tab_id] = t["items"]             # a tab that failed keeps its last good items
                     if t["total"] == 0:
                         res["warnings"].append("No listings found. Is the tab public, priced at exactly this amount and "
                                                "currency, and has the trade site had a minute to list it?")
-                    elif t["total"] and len(t["items"]) < t["total"]:
+                    elif t["total"] and len(t["items"]) + t.get("unreadable", 0) < t["total"]:
                         res["warnings"].append(f"Read {len(t['items'])} of {t['total']} items; the rest are in a "
                                                f"category the app can't search separately. Split the tab.")
                 WEALTH.results[tab_id] = res
