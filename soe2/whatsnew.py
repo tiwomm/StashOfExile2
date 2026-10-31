@@ -28,6 +28,7 @@ NOTES = {
         "people's marker tabs) no longer top the list.",
         "Wealth: \"Use my Price checks tab\" adds the tab you read in Price checks. Low-confidence rare prices say "
         "Price manually, like in Price checks.",
+        "Price checks: no more Under the hood / Wiki links. Picking the Fast pace warns you about rate limits.",
     ],
     "2.17.0": [
         "Game search > Anoints: every notable you can anoint, the three Liquid Emotions it takes and what they cost "

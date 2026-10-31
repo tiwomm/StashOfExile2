@@ -27,7 +27,7 @@ class LibraryPage:
         self.lib_info.pack(side="left", fill="x", expand=True)
 
         purpose = tk.Label(tab, text="Part of Price checks, for the curious: how the price checker reads an item. Paste a "
-                           "copied item on the right (or press \"Under the hood\" on an item in Price checks) to see its "
+                           "copied item on the right to see its "
                            "base, which bases it is compared with, and which trade-site search each mod turns into. On the "
                            "left, every base by class and group, and every mod the trade site can search for. You never "
                            "need this to price things.",
