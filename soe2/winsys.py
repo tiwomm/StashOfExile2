@@ -215,6 +215,7 @@ class KeyWatch:
 
     def __init__(self):
         self.combo_time, self.active, self.err = 0.0, False, None
+        self.esc_since = 0.0        # 2.24.0: when Esc went down (0 = it's up) - holding it 3 s clears copy marks
         self.ctrl = self.alt = self.shift = False
         self.listener = None        # 2.0: f(vk, ctrl, alt, shift) -> True to swallow the key (Utilities hotkeys)
         self._swallowed = set()
@@ -275,6 +276,11 @@ class KeyWatch:
                                 self.shift = down or (self.shift and not up)
                             elif vk == 0x43 and down and self.ctrl and self.alt:
                                 self.combo_time = time.time()
+                            if vk == 0x1B:                                   # Esc: never swallowed, only timed
+                                if down and not self.esc_since:
+                                    self.esc_since = time.time()
+                                elif up:
+                                    self.esc_since = 0.0
                             if up and vk in self._swallowed:            # the release of a key we acted on
                                 self._swallowed.discard(vk)
                                 return 1

@@ -11,7 +11,7 @@ from .alerts_page import TRANSPARENT, click_through, force_topmost
 MARK_SECS = 10
 MAX_MARKS = 30                      # many quick copies: the oldest go first
 RING = "#ffcf40"
-SIZE = 34
+SIZE = 16                           # 2.24.0: the + is this many pixels across
 
 
 class CopyMarker:
@@ -23,7 +23,7 @@ class CopyMarker:
         """A ring centred on (x, y) (screen pixels, Tk's coordinates) for `secs`. -> the window."""
         while len(self.marks) >= MAX_MARKS:
             self._close(self.marks[0])
-        pad = 6
+        pad = 4
         full = SIZE + 2 * pad
         w = tk.Toplevel(self.root)
         w.withdraw()
@@ -40,20 +40,21 @@ class CopyMarker:
                 pass
         c = tk.Canvas(w, width=full, height=full, bg=TRANSPARENT, highlightthickness=0, bd=0)
         c.pack()
-        c.create_oval(pad, pad, pad + SIZE, pad + SIZE, outline="#000000", width=6)       # dark edge: shows on any
-        c.create_oval(pad, pad, pad + SIZE, pad + SIZE, outline=RING, width=3)            # background
         m = full // 2
-        c.create_oval(m - 3, m - 3, m + 3, m + 3, fill=RING, outline="#000000")
+        h = SIZE // 2
+        for colour, width in (("#000000", 5), (RING, 2)):            # a dark edge, so it shows on any background
+            c.create_line(m - h, m, m + h + 1, m, fill=colour, width=width)
+            c.create_line(m, m - h, m, m + h + 1, fill=colour, width=width)
         if number is not None:
-            c.create_text(full - 2, 2, text=str(number), anchor="ne", fill="#ffffff",
-                          font=("Segoe UI", 9, "bold"))
+            c.create_text(full - 1, 1, text=str(number), anchor="ne", fill="#ffffff", font=("Segoe UI", 7, "bold"))
         w.geometry(f"{full}x{full}+{int(x) - m}+{int(y) - m}")
         w.deiconify()
         w.update_idletasks()
         click_through(w)
         force_topmost(w)
         self.marks.append(w)
-        self.root.after(int(secs * 1000), lambda: self._close(w))
+        if secs:                                             # None / 0: stays until clear() (Esc held 3 s)
+            self.root.after(int(secs * 1000), lambda: self._close(w))
         return w
 
     def _close(self, w):
