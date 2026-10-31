@@ -331,11 +331,8 @@ class InsightsPage:
         tk.Label(box, text=price, bg="#0b0b0e", fg="#ffd9a8", font=("Segoe UI", 10, "bold"), pady=6).pack()
         if foot:
             tk.Label(box, text=foot, bg="#0b0b0e", fg="#7f7f7f", font=("Segoe UI", 8)).pack(pady=(0, 6))
-        w.update_idletasks()
-        sw, sh = w.winfo_screenwidth(), w.winfo_screenheight()
-        x = min(x, sw - w.winfo_reqwidth() - 8)
-        y = min(y, sh - w.winfo_reqheight() - 8)
-        w.geometry(f"+{max(0, x)}+{max(0, y)}")
+        from .style import place_near                  # 2.25.2: on the monitor the mouse is on, not the main one
+        place_near(self.root, w, x, y)
         w.deiconify()
         w.bind("<Button-1>", lambda e: self.ins_preview_close())
         w.bind("<Escape>", lambda e: self.ins_preview_close())

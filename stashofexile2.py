@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU GPL v3.0 (see LICENSE). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.25.1
+VERSION 2.25.2
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,6 +19,11 @@ VERSION 2.25.1
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.25.2
+       Popups open on the monitor you're using: style.monitor_rect (Win32 MonitorFromPoint / GetMonitorInfo work
+       area) + place_near keep the Market Insights item preview and the price popups on the monitor under the mouse
+       (they were clamped to winfo_screenwidth(), the MAIN monitor, so they jumped over to it). The start-up screen
+       opens in the middle of where the app was last time.
   2.25.1
        Speed (measured with 2,200 Price checks rows, the author's list):
        (1) listkit: setting a row's tags keeps that row's stripe instead of restriping the whole list (every price
@@ -908,7 +913,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.25.1"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.25.2"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
