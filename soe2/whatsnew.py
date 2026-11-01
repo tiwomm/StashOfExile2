@@ -21,6 +21,11 @@ NEXT = [
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.26.2": [
+        "Regex: switching between tablets, waystones, jewels, gear ... no longer freezes the app.",
+        "Fixed: maximised when you closed it -> maximised when you open it (for real this time).",
+        "Price checks shows the time left right from the start, not only after a few items are done.",
+    ],
     "2.26.1": [
         "Fixed: after changing the theme (the app restarts itself), the Delirium alert could fail with "
         "\"No module named 'cv2'\".",
