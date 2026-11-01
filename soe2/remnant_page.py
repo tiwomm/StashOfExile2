@@ -35,7 +35,7 @@ class RemnantPage:
         c = SETTINGS.setdefault("remnant", {})
         c.setdefault("on", False)
         c.setdefault("key", RM.DEFAULT_KEY)
-        c.setdefault("sound", True)
+        c.pop("sound", None)                        # 2.39.0: no sound (the tags are enough)
         c.setdefault("auto", True)                  # Auto: watch where the book opens; tags come and go by themselves
         c.setdefault("area", None)                  # None = RM.AREA; set only when a key press found it elsewhere
         return c
@@ -160,12 +160,6 @@ class RemnantPage:
         best = next((r for r in rows if r.get("best")), None)
         self.rm_last = (f"{time.strftime('%H:%M')}: {len(rows)} priced" + (f", best {best['name']}" if best else "")
                         + (" (Auto)" if auto else ""))
-        if best and best["total"] >= 1 and self.remnant_cfg().get("sound", True):
-            try:
-                import winsound
-                winsound.MessageBeep(winsound.MB_ICONASTERISK)
-            except Exception:
-                self.root.bell()
 
     # ---------------- the key (keyboard watcher thread)
     def remnant_on_key(self, vk, ctrl, alt, shift):

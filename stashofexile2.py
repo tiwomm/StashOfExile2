@@ -26,7 +26,8 @@ VERSION HISTORY
        Fix: the Helpers bar (2.38.0) could be off the screen - first placed right under the timer, which often sits
        at the bottom of the screen. Now under it if it fits, else above it; any saved place off the screen (a
        monitor unplugged, another resolution) is pulled back on (tracker_page._helpers_on_screen, monitor_rect).
-       Expedition Remnant Price Checker tags use short units, no space: 16ex, 20c, 29d (pricefmt.fmt_short).
+       Expedition Remnant Price Checker tags use short units, no space: 16ex, 20c, 29d (pricefmt.fmt_short). It makes no
+       sound any more (the user asked): no beep, no Sound box on its Alerts row.
   2.38.0
        GGG ToS safety check: TOS.md (the 7 rules), a copy at the top of README / ROADMAP / board, strats and linux
        READMEs / both handovers, notes in every screen watcher; tools/check_tos.py (game-memory / injection APIs,
