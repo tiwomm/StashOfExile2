@@ -10,9 +10,24 @@ import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, ROOT)
+import soe2.moneymakers as MM  # noqa: E402
 from soe2.moneymakers import SCHEMA, from_text, tidy, tidy_one, validate, validate_one  # noqa: E402
 
 FOLDER, OUT = os.path.join(ROOT, "strats"), os.path.join(ROOT, "moneymakers.json")
+BOARD_SCHEMA = os.path.join(ROOT, "board", "src", "schema.json")
+
+
+def write_board_schema():
+    """2.30.0: the layout rules for the community board server (board/src/index.js checks posts with them), so
+    the app and the server never disagree."""
+    d = {"schema": SCHEMA, "taxonomy": MM.TAXONOMY, "tags": list(MM.ALL_TAGS), "tag_groups": MM.TAG_GROUPS,
+         "thinking": {str(k): w for k, (w, _d) in MM.THINKING.items()}, "clicks": list(MM.CLICKS),
+         "units": list(MM.UNITS), "required": list(MM.REQUIRED), "lists": list(MM.LISTS), "order": list(MM.ORDER),
+         "one_order": list(MM.ONE_ORDER)}
+    os.makedirs(os.path.dirname(BOARD_SCHEMA), exist_ok=True)
+    with open(BOARD_SCHEMA, "w", encoding="utf-8", newline="\n") as f:
+        json.dump(d, f, indent=1, ensure_ascii=False)
+        f.write("\n")
 
 
 def collect():
@@ -53,6 +68,8 @@ def collect():
 
 def main():
     strats, ones, problems = collect()
+    if "--check" not in sys.argv:
+        write_board_schema()
     for p in problems:
         print("PROBLEM", p)
     if problems:
@@ -64,10 +81,15 @@ def main():
     if os.path.exists(OUT):
         with open(OUT, encoding="utf-8") as f:
             old = json.load(f)
-    rev = old.get("revision", 0) + (old.get("strats") != strats or old.get("oneliners", []) != ones)
+    url_file = os.path.join(ROOT, "board", "url.txt")
+    board_url = open(url_file, encoding="utf-8").read().strip() if os.path.exists(url_file) else ""
+    rev = old.get("revision", 0) + (old.get("strats") != strats or old.get("oneliners", []) != ones or
+                                    old.get("board_url", "") != board_url)
     with open(OUT, "w", encoding="utf-8", newline="\n") as f:
-        json.dump({"schema": SCHEMA, "revision": rev, "strats": strats, "oneliners": ones}, f, indent=1,
-                  ensure_ascii=False)
+        out = {"schema": SCHEMA, "revision": rev, "strats": strats, "oneliners": ones}
+        if board_url:
+            out["board_url"] = board_url                     # 2.30.0: where the Community board lives
+        json.dump(out, f, indent=1, ensure_ascii=False)
         f.write("\n")
     print(f"moneymakers.json: {len(strats)} strats, {len(ones)} one-liners, revision {rev}")
     return 0

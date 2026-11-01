@@ -7,11 +7,13 @@ import tkinter as tk
 import webbrowser
 from tkinter import filedialog, ttk
 
+from . import board as B
 from . import moneymakers as MM
 from .config import SETTINGS, save_json
 from .style import C, MONO, SegBar, place_near
 
-ORIGIN = {"community": "Community", "mine": "Mine", "example": "Example"}
+ORIGIN = {"community": "Official", "mine": "Mine", "example": "Example", "board": "Community"}
+VIEWS = ("Official", "Community", "Mine")
 
 
 def _hms(secs):
@@ -58,13 +60,20 @@ class MoneyMakersPage:
         P1, P2 = C["panel"], C["panel2"]
         bar = tk.Frame(page, bg=P1, padx=10, pady=8)
         bar.pack(fill="x")
+        # 2.30.0: where the strats come from - the curated Official list, the Community board, or your own
+        self.mm_view = SegBar(bar, list(VIEWS), command=lambda v: self.mm_view_changed(), size=10, pad=(12, 4))
+        self.mm_view.pack(side="left", padx=(0, 14))
+        self.mm_board, self.mm_board_ones, self.mm_official = [], [], self._mm_official_cache()
         tk.Label(bar, text="Search", bg=P1, fg=C["muted"]).pack(side="left", padx=(0, 6))
         self.mm_q = tk.StringVar()
         self.mm_q.trace_add("write", lambda *_a: self.root.after_idle(self.mm_fill))
         ttk.Entry(bar, textvariable=self.mm_q, width=22).pack(side="left")
-        ttk.Button(bar, text="↻ Check for new strats", command=lambda: self.mm_check_live(force=True)).pack(side="right")
+        self.mm_acct = ttk.Button(bar, text="", command=self.mm_account_click)
+        self.mm_acct.pack(side="right")
+        ttk.Button(bar, text="↻ Refresh", command=self.mm_refresh).pack(side="right", padx=(0, 6))
         self.mm_live_lbl = tk.Label(bar, text="", bg=P1, fg=C["muted"], font=("Segoe UI", 9))
         self.mm_live_lbl.pack(side="right", padx=8)
+        self.mm_account_paint()
         fbar = tk.Frame(page, bg=P1, padx=10)
         fbar.pack(fill="x", pady=(0, 6))
 
@@ -80,6 +89,10 @@ class MoneyMakersPage:
         pick("Waystone tier", self.mm_tier, ("Any",) + tuple(str(i) for i in range(1, 17)), 4)
         pick("🧠 Thinking at most", self.mm_max, ["Any"] + [w for w, _d in MM.THINKING.values()], 10)
         pick("🖱 Clicks at most", self.mm_cmax, ["Any"] + list(MM.CLICKS), 8)
+        self.mm_bsort = tk.StringVar(value="Top")
+        self.mm_bsort_lab = tk.Label(fbar, text="Sort", bg=P1, fg=C["muted"])
+        self.mm_bsort_box = ttk.Combobox(fbar, textvariable=self.mm_bsort, values=("Top", "New"), state="readonly", width=5)
+        self.mm_bsort_box.bind("<<ComboboxSelected>>", lambda e: (self.mm_board_fetch(), self.root.after(20, self.root.focus_set)))
         self.mm_cat = tk.StringVar(value="")                 # picked in the browser on the left ("" = all)
         self.mm_type = tk.StringVar(value="")
 
@@ -113,13 +126,14 @@ class MoneyMakersPage:
         self.mm_pane = pane
         cols = (("name", "Strat", 170, "w"), ("type", "Type", 110, "w"),
                 ("thoughts_per_click", "🧠 Thinking", 84, "center"), ("clicks_per_hour", "🖱 Clicks/h", 80, "center"),
-                ("profit", "Est. profit/h", 92, "center"), ("origin", "From", 70, "center"))
+                ("profit", "Est. profit/h", 92, "center"), ("score", "▲", 44, "center"), ("origin", "By", 90, "w"))
         self.mm_tree = ttk.Treeview(left, columns=[c[0] for c in cols], show="headings", selectmode="browse")
         for cid, title, w, anchor in cols:
             self.mm_tree.heading(cid, text=title, command=lambda c=cid: self.mm_sort_by(c))
             self.mm_tree.column(cid, width=w, minwidth=56, anchor=anchor, stretch=cid == "name")
         self.mm_tree.tag_configure("mine", foreground=C["green"])
         self.mm_tree.tag_configure("example", foreground=C["muted"])
+        self.mm_tree.tag_configure("hidden", foreground=C["red"])
         sb = ttk.Scrollbar(left, orient="vertical", command=self.mm_tree.yview)
         self.mm_tree.configure(yscrollcommand=sb.set)
         sb.pack(side="right", fill="y")
@@ -134,8 +148,9 @@ class MoneyMakersPage:
         acts.pack(fill="x")
         self.mm_btns = {}
         for key, text, cmd, style in (("track", "▶ Track runs", self.mm_track, "Accent.TButton"),
+                                      ("vote", "▲ Upvote", self.mm_vote, "TButton"),
+                                      ("post", "📤 Post to Community", self.mm_post, "TButton"),
                                       ("regex", "Copy regex", self.mm_copy_regex, "TButton"),
-                                      ("share", "Share…", self.mm_share, "TButton"),
                                       ("more", "⋯ More", self.mm_more, "TButton")):
             self.mm_btns[key] = ttk.Button(acts, text=text, command=cmd, style=style)
         self.mm_detail = tk.Text(right, bg=P2, fg=C["text"], relief="flat", wrap="word", padx=12, pady=6,
@@ -170,8 +185,37 @@ class MoneyMakersPage:
         except tk.TclError:
             pass
 
+    # ---------------- 2.30.0: Official / Community / Mine
+    def _mm_official_cache(self):
+        from .config import load_json
+        d = load_json("board_official.json", {})
+        return d if isinstance(d, dict) else {}
+
+    def mm_view_list(self):
+        view = self.mm_view.get()
+        if view == "Community":
+            return list(self.mm_board) if B.configured() else []
+        local = MM.all_strats()
+        if view == "Mine":
+            return [s for s in local if s["origin"] == "mine"]
+        have = {s["id"] for s in local}
+        promoted = [dict(s, origin="community") for s in self.mm_official.get("strats") or []
+                    if not MM.validate(s) and s.get("id") not in have]
+        return [s for s in local if s["origin"] != "mine"] + promoted
+
+    def mm_view_changed(self):
+        community = self.mm_view.get() == "Community"
+        for w in (self.mm_bsort_lab, self.mm_bsort_box):
+            w.pack_forget()
+        if community:
+            self.mm_bsort_lab.pack(side="left", padx=(12, 6))
+            self.mm_bsort_box.pack(side="left")
+            self.mm_board_fetch()
+        self.mm_sel = None
+        self.mm_reload()
+
     def mm_reload(self, keep=None):
-        self.mm_strats = MM.all_strats()
+        self.mm_strats = self.mm_view_list()
         self.mm_nav_fill()
         self.mm_fill(keep)
         if hasattr(self, "mm_one_tree"):
@@ -203,9 +247,11 @@ class MoneyMakersPage:
                 continue
             out.append(s)
         key, rev = self.mm_sort
-        num = key in ("thoughts_per_click", "profit")
+        num = key in ("thoughts_per_click", "profit", "score")
 
         def k(s):
+            if key == "score":
+                return (s.get("_post") or {}).get("score", -1)
             if key == "profit":
                 p = s.get("est_profit") or {}
                 return p.get("high") or p.get("low") or -1
@@ -249,15 +295,23 @@ class MoneyMakersPage:
         tv.delete(*tv.get_children())
         rows = self.mm_rows()
         for s in rows:
-            tv.insert("", "end", iid=s["id"] + "|" + s["origin"], tags=(s["origin"],),
-                      values=(s["name"], s.get("type", "") if self.mm_cat.get() else MM.type_text(s),
+            post = s.get("_post") or {}
+            tags = (s["origin"],) + (("hidden",) if post.get("hidden") else ())
+            by = post.get("author", {}).get("name") or (s.get("author") if s["origin"] != "mine" else "me")
+            tv.insert("", "end", iid=s["id"] + "|" + s["origin"], tags=tags,
+                      values=(("✔ " if post.get("voted") else "") + s["name"],
+                              s.get("type", "") if self.mm_cat.get() else MM.type_text(s),
                               MM.thinking_word(s.get("thoughts_per_click")), s.get("clicks_per_hour", ""),
-                              MM.money_text(s.get("est_profit")), ORIGIN.get(s["origin"], "")))
+                              MM.money_text(s.get("est_profit")), post.get("score", "") if post else "", by or ""))
         if rows:
             self.mm_empty.place_forget()
         else:
-            self.mm_empty.config(text="No strats match." if self.mm_strats else
-                                 "No strats yet. Press ↻ Check for new strats, or + Add my own.")
+            view = self.mm_view.get()
+            empty = {"Community": "No community strats yet - post one of yours (Mine > 📤 Post to Community)."
+                                  if B.configured() else "The community board isn't set up yet.",
+                     "Mine": "None yet - press + Add my own.",
+                     "Official": "No strats yet - press ↻ Refresh."}[view]
+            self.mm_empty.config(text="No strats match." if self.mm_strats else empty)
             self.mm_empty.place(relx=0.5, rely=0.3, anchor="center")
         if keep and tv.exists(keep):
             tv.selection_set(keep)
@@ -270,7 +324,7 @@ class MoneyMakersPage:
     def mm_sort_by(self, col):
         key = "thoughts_per_click" if col == "thoughts_per_click" else col
         cur, rev = self.mm_sort
-        self.mm_sort = (key, not rev if cur == key else key in ("profit",))
+        self.mm_sort = (key, not rev if cur == key else key in ("profit", "score"))
         self.mm_fill()
 
     def mm_current(self):
@@ -294,14 +348,19 @@ class MoneyMakersPage:
             t.insert("end", "Pick a strat on the left.", "meta")
             t.config(state="disabled")
             return
-        show = ["track"] + (["regex"] if s.get("regex") else []) + ["share", "more"]
+        post = s.get("_post") or {}
+        show = ["track"] + (["vote"] if post else []) + (["post"] if s["origin"] == "mine" else []) + \
+            (["regex"] if s.get("regex") else []) + ["more"]
+        if post:
+            self.mm_btns["vote"].config(text=f"{'▲ Upvoted' if post.get('voted') else '▲ Upvote'} ({post.get('score', 0)})")
         for key in show:
             self.mm_btns[key].pack(side="left", padx=(0, 6))
         t.insert("end", MM.type_text(s).upper() + "\n", "kicker")
         t.insert("end", s["name"] + "\n", "title")
-        t.insert("end", f"by {s.get('author', '?')} · game {s.get('patch', '?')} · "
+        t.insert("end", f"by {post.get('author', {}).get('name') or s.get('author', '?')} · game {s.get('patch', '?')} · "
                         f"updated {s.get('updated', '?')} · {ORIGIN.get(s['origin'], '')}"
-                        + "\n", "meta")
+                        + (f" · ▲ {post.get('score', 0)}" if post else "")
+                        + (" · HIDDEN (reported)" if post.get("hidden") else "") + "\n", "meta")
         t.insert("end", s.get("summary", "") + "\n", "summary")
         tpc, cph = s.get("thoughts_per_click", 0), s.get("clicks_per_hour", "")
         word, why = MM.THINKING.get(tpc, ("?", ""))
@@ -367,21 +426,203 @@ class MoneyMakersPage:
         s = self.mm_current()
         if not s:
             return
+        post, me = s.get("_post") or {}, B.signed_in() or {}
         m = tk.Menu(self.root, tearoff=0, bg=C["panel2"], fg=C["text"], activebackground="#2c4a84")
         m.add_command(label="▶ Track runs", command=self.mm_track)
-        if s and s.get("regex"):
+        if s.get("regex"):
             m.add_command(label="Copy regex", command=self.mm_copy_regex)
-        m.add_command(label="Share…", command=self.mm_share)
+        if post:
+            m.add_command(label="▲ Remove my upvote" if post.get("voted") else "▲ Upvote", command=self.mm_vote)
+        if s["origin"] == "mine":
+            m.add_command(label="📤 Post to Community", command=self.mm_post)
+        else:
+            m.add_command(label="Copy to Mine (to change it)", command=self.mm_copy_mine)
         m.add_command(label="Export…", command=self.mm_export)
-        if s and s["origin"] == "mine":
+        if s["origin"] == "mine" or post.get("mine"):
             m.add_separator()
             m.add_command(label="Edit", command=self.mm_edit)
             m.add_command(label="Delete", command=self.mm_delete)
+        if post and not post.get("mine"):
+            m.add_separator()
+            m.add_command(label="⚑ Report…", command=self.mm_report)
+        if post and me.get("admin"):
+            m.add_separator()
+            m.add_command(label="Admin: " + ("Un-hide" if post.get("hidden") else "Hide"),
+                          command=lambda: self.mm_admin("unhide" if post.get("hidden") else "hide"))
+            m.add_command(label="Admin: " + ("Remove from Official" if post.get("promoted") else "Promote to Official"),
+                          command=lambda: self.mm_admin("unpromote" if post.get("promoted") else "promote"))
+            m.add_command(label="Admin: Delete", command=lambda: self.mm_admin("delete"))
+            m.add_command(label=f"Admin: Ban {post.get('author', {}).get('name', '')}",
+                          command=lambda: self.mm_admin("ban"))
         m.tk_popup(x, y)
+
+    # ---------------- the board (network work off the main thread; mm_sync = do it now, for tests)
+    def _mm_bg(self, work, done):
+        if getattr(self, "mm_sync", False):
+            return done(work())
+        threading.Thread(target=lambda: (lambda r: self.root.after(0, lambda: done(r)))(work()), daemon=True).start()
+
+    def mm_refresh(self):
+        self.mm_check_live(force=True)
+        self.mm_board_fetch()
+        self._mm_bg(B.official, self._mm_official_done)
+
+    def _mm_official_done(self, res):
+        ok, d = res
+        if ok and isinstance(d, dict):
+            self.mm_official = d
+            save_json("board_official.json", d)
+            if self.mm_view.get() == "Official":
+                self.mm_reload()
+            if hasattr(self, "mm_one_tree"):
+                self.mm_one_fill()
+
+    def mm_board_fetch(self, keep=None):
+        if not B.configured():
+            self.mm_live_lbl.config(text="The community board isn't set up yet.", fg=C["muted"])
+            return
+        sort = "new" if self.mm_bsort.get() == "New" else "top"
+        admin = (B.signed_in() or {}).get("admin")
+        self._mm_bg(lambda: (B.posts("strat", sort, limit=100, hidden=admin), B.posts("one", sort, limit=100, hidden=admin)),
+                    lambda r: self._mm_board_done(r, keep))
+
+    def _mm_board_done(self, res, keep=None):
+        (ok, d), (ok1, d1) = res
+        if not ok:
+            self.mm_live_lbl.config(text=d, fg=C["red"])
+            return
+        self.mm_board = [dict(p["data"], origin="board", _post=p) for p in d["posts"] if p["kind"] == "strat"]
+        self.mm_board_ones = [dict(p["data"], origin="board", _post=p) for p in (d1 or {}).get("posts", [])] if ok1 else []
+        self.mm_live_lbl.config(text=f"Community: {d['total']} strat{'s' if d['total'] != 1 else ''}", fg=C["muted"])
+        if self.mm_view.get() == "Community":
+            self.mm_reload(keep=keep)
+        if hasattr(self, "mm_one_tree"):
+            self.mm_one_fill()
+
+    def mm_need_login(self, why):
+        if B.signed_in():
+            return False
+        if not B.configured():
+            self.app_toast("The community board isn't set up yet.", "Community")
+            return True
+        self.app_toast(f"Sign in with Discord to {why}.", "Community", actions=[("Sign in with Discord", self.mm_signin)])
+        return True
+
+    def mm_board_result(self, res, done_text=None, keep=None):
+        ok, d = res
+        if not ok:
+            self.app_toast(d, "Community")
+            return False
+        if done_text:
+            self._say(done_text, 6)
+        self.mm_board_fetch(keep=keep)
+        return True
+
+    def mm_vote(self):
+        s = self.mm_current()
+        post = (s or {}).get("_post")
+        if not post or self.mm_need_login("upvote"):
+            return None
+        self._mm_bg(lambda: B.vote(post["id"], not post.get("voted")),
+                    lambda r: self.mm_board_result(r, keep=self.mm_sel))
+
+    def mm_post(self):
+        s = self.mm_current()
+        if not s or s["origin"] != "mine" or self.mm_need_login("post"):
+            return None
+        data = {k: v for k, v in MM.tidy(s).items() if k not in ("id", "author")}
+        self._mm_bg(lambda: B.post("strat", data),
+                    lambda r: self.mm_board_result(r, f"Posted \"{s['name']}\" to the Community board."))
+
+    def mm_report(self):
+        s = self.mm_current()
+        post = (s or {}).get("_post")
+        if not post:
+            return None
+        return self._mm_report_post(post)
+
+    def mm_admin(self, action):
+        s = self.mm_current()
+        post = (s or {}).get("_post")
+        if not post:
+            return None
+        if action == "delete":
+            work = lambda: B.delete(post["id"])  # noqa: E731
+        elif action == "ban":
+            work = lambda: B.ban(post["author"]["id"])  # noqa: E731
+        else:
+            work = lambda: B.admin(post["id"], action)  # noqa: E731
+        self._mm_bg(work, lambda r: (self.mm_board_result(r, f"Done: {action}."),
+                                     action in ("promote", "unpromote") and self._mm_bg(B.official, self._mm_official_done)))
+
+    def mm_copy_mine(self):
+        s = self.mm_current()
+        if not s:
+            return None
+        c = {k: v for k, v in MM.tidy(s).items()}
+        c["id"] = MM.slug("my-" + c["name"])
+        MM.save_mine([m for m in MM.mine() if m["id"] != c["id"]] + [c])
+        self.mm_show_mine(c["id"])
+        return c
+
+    def mm_show_mine(self, sid=None):
+        if self.mm_view.get() != "Mine":
+            self.mm_view.pick("Mine", notify=False)
+            self.mm_view_changed()
+        self.mm_reload(keep=(sid + "|mine") if sid else None)
+
+    # ---------------- sign in with Discord
+    def mm_account_paint(self):
+        me = B.signed_in()
+        self.mm_acct.config(text=(f"👤 {me.get('name', '?')}" + (" (admin)" if me.get("admin") else "") + " ▾")
+                            if me else "Sign in with Discord")
+
+    def mm_account_click(self):
+        if not B.signed_in():
+            return self.mm_signin()
+        m = tk.Menu(self.root, tearoff=0, bg=C["panel2"], fg=C["text"], activebackground="#2c4a84")
+        m.add_command(label="My posts", command=lambda: (self.mm_view.pick("Community", notify=False),
+                                                         self.mm_view_changed(), self.mm_q.set("")))
+        m.add_command(label="Sign out", command=lambda: (B.sign_out(), self.mm_account_paint(), self.mm_board_fetch()))
+        b = self.mm_acct
+        m.tk_popup(b.winfo_rootx(), b.winfo_rooty() + b.winfo_height())
+
+    def mm_signin(self, open_browser=True):
+        """Opens Discord in your browser; the app waits (up to 3 minutes) until you've allowed it."""
+        if not B.configured():
+            self.app_toast("The community board isn't set up yet.", "Community")
+            return None
+        state, link = B.login_start()
+        if open_browser:
+            webbrowser.open(link)
+        self.mm_acct.config(text="Waiting for Discord…")
+        self._mm_login = {"state": state, "until": time.time() + 180}
+        self.root.after(2000, self._mm_login_poll)
+        return state, link
+
+    def _mm_login_poll(self):
+        lg = getattr(self, "_mm_login", None)
+        if not lg:
+            return
+        res = B.login_poll(lg["state"])
+        if res == "waiting" and time.time() < lg["until"]:
+            self.root.after(2000, self._mm_login_poll)
+            return
+        self._mm_login = None
+        self.mm_account_paint()
+        if res == "done":
+            self._say(f"Signed in as {B.signed_in().get('name', '?')}.", 6)
+            self.mm_board_fetch()
+        else:
+            self.app_toast("Sign-in didn't finish. " + ("It took too long." if res == "waiting" else res), "Community")
 
     # ---------------- live updates from GitHub
     def mm_on_show(self):
         self.mm_check_live(force=False)
+        self.mm_account_paint()
+        if B.configured() and not getattr(self, "_mm_official_asked", False):
+            self._mm_official_asked = True
+            self._mm_bg(B.official, self._mm_official_done)
 
     def mm_check_live(self, force=False):
         if getattr(self, "_mm_checking", False):
@@ -416,12 +657,6 @@ class MoneyMakersPage:
             self.root.clipboard_append(s["regex"])
             self.own_clip = s["regex"]
             self._say("Copied the strat's stash search. In game: Ctrl+F, Ctrl+V.", 6)
-
-    def mm_share(self):
-        s = self.mm_current()
-        if s:
-            webbrowser.open(MM.issue_link(s))
-            self._say("Opened a GitHub issue with the strat filled in - check it and press Submit.", 8)
 
     def mm_export(self):
         s = self.mm_current()
@@ -476,7 +711,7 @@ class MoneyMakersPage:
             mine = [m for m in mine if m["id"] != s["id"]] + [s]
             added += 1
         MM.save_mine(mine)
-        self.mm_reload()
+        self.mm_show_mine()
         msg = f"Added {added} strat{'s' if added != 1 else ''} to Mine."
         if bad:
             msg += "\nLeft out (not in the standard layout): " + "; ".join(bad[:3])
@@ -485,6 +720,9 @@ class MoneyMakersPage:
 
     def mm_delete(self):
         s = self.mm_current()
+        post = (s or {}).get("_post")
+        if post and post.get("mine"):
+            return self._mm_bg(lambda: B.delete(post["id"]), lambda r: self.mm_board_result(r, "Deleted."))
         if s and s["origin"] == "mine":
             MM.save_mine([m for m in MM.mine() if m["id"] != s["id"]])
             self.mm_sel = None
@@ -495,7 +733,7 @@ class MoneyMakersPage:
 
     def mm_edit(self):
         s = self.mm_current()
-        if s and s["origin"] == "mine":
+        if s and (s["origin"] == "mine" or (s.get("_post") or {}).get("mine")):
             self.mm_form(dict(s))
 
     def mm_form(self, s):
@@ -638,15 +876,25 @@ class MoneyMakersPage:
             out["updated"] = time.strftime("%Y-%m-%d")
             if not s.get("name"):
                 out["id"] = MM.slug("my-" + out["name"])
+            post = s.get("_post")
             out = MM.tidy(out)
             probs = MM.validate(out)
             if probs:
                 msg.config(text="Not saved: " + probs[0], fg=C["red"])
                 return
+            if post:                                         # your Community post: saved on the board
+                data = {k: v for k, v in out.items() if k not in ("id", "author")}
+                ok, d = B.update(post["id"], data)
+                if not ok:
+                    msg.config(text="Not saved: " + d, fg=C["red"])
+                    return
+                win.destroy()
+                self.mm_board_fetch(keep=s["id"] + "|board")
+                return
             mine = [m for m in MM.mine() if m["id"] not in (s.get("id"), out["id"])] + [out]
             MM.save_mine(mine)
             win.destroy()
-            self.mm_reload(keep=out["id"] + "|mine")
+            self.mm_show_mine(out["id"])
 
         btns = tk.Frame(win, bg=P1, padx=14, pady=8)
         btns.pack(fill="x", side="bottom", before=sa)
@@ -793,20 +1041,22 @@ class MoneyMakersPage:
         self.mm_one_q.trace_add("write", lambda *_a: self.root.after_idle(self.mm_one_fill))
         ttk.Entry(bar, textvariable=self.mm_one_q, width=26).pack(side="left")
         for text, cmd, style in (("+ Add a one-liner", self.mm_one_add, "Accent.TButton"),
-                                 ("Share…", self.mm_one_share, "TButton"), ("Copy", self.mm_one_copy, "TButton")):
+                                 ("📤 Post", self.mm_one_post, "TButton"), ("▲ Upvote", self.mm_one_vote, "TButton"),
+                                 ("Copy text", self.mm_one_copy, "TButton")):
             ttk.Button(bar, text=text, command=cmd, style=style).pack(side="right", padx=(6, 0))
-        tk.Label(page, text="Quick money makers in one line - no guide needed. Shared ones arrive with the strats; "
-                            "Share sends yours to everyone.", bg=P1, fg=C["muted"], font=("Segoe UI", 9),
-                 anchor="w").pack(fill="x", padx=12, pady=(0, 6))
+        tk.Label(page, text="Quick money makers in one line - no guide needed. Official ones come with the app, "
+                            "Community ones from other players; 📤 Post shares yours.", bg=P1, fg=C["muted"],
+                 font=("Segoe UI", 9), anchor="w").pack(fill="x", padx=12, pady=(0, 6))
         box = tk.Frame(page, bg=P1)
         box.pack(fill="both", expand=True, padx=10, pady=(0, 6))
-        cols = (("text", "Strat", 600, "w"), ("mech", "Type / tags", 150, "w"), ("by", "By", 110, "w"),
-                ("origin", "From", 80, "center"))
+        cols = (("text", "Strat", 560, "w"), ("mech", "Type / tags", 150, "w"), ("score", "▲", 44, "center"),
+                ("by", "By", 110, "w"), ("origin", "From", 90, "center"))
         self.mm_one_tree = ttk.Treeview(box, columns=[c[0] for c in cols], show="headings", selectmode="browse")
         for cid, title, w, anchor in cols:
             self.mm_one_tree.heading(cid, text=title)
-            self.mm_one_tree.column(cid, width=w, minwidth=60, anchor=anchor, stretch=cid == "text")
+            self.mm_one_tree.column(cid, width=w, minwidth=40, anchor=anchor, stretch=cid == "text")
         self.mm_one_tree.tag_configure("mine", foreground=C["green"])
+        self.mm_one_tree.tag_configure("hidden", foreground=C["red"])
         sb = ttk.Scrollbar(box, orient="vertical", command=self.mm_one_tree.yview)
         self.mm_one_tree.configure(yscrollcommand=sb.set)
         sb.pack(side="right", fill="y")
@@ -816,20 +1066,28 @@ class MoneyMakersPage:
         self.mm_one_tree.bind("<Delete>", lambda e: self.mm_one_delete())
         self.mm_one_empty = tk.Label(box, text="", bg=P1, fg=C["muted"], font=("Segoe UI", 10))
 
+    def mm_one_items(self):
+        have = {o["id"] for o in MM.oneliners()}
+        promoted = [dict(o, origin="community") for o in self.mm_official.get("oneliners") or []
+                    if o.get("id") not in have]
+        return MM.oneliners() + promoted + list(getattr(self, "mm_board_ones", []))
+
     def mm_one_fill(self):
         tv = self.mm_one_tree
         tv.delete(*tv.get_children())
         q = self.mm_one_q.get().strip().lower()
         self.mm_ones = {}
-        for o in MM.oneliners():
-            if q and q not in json.dumps(o, ensure_ascii=False).lower():
+        for o in self.mm_one_items():
+            if q and q not in o.get("text", "").lower() + " " + " ".join(o.get("tags") or []).lower():
                 continue
             iid = o["id"] + "|" + o["origin"]
+            post = o.get("_post") or {}
             self.mm_ones[iid] = o
-            tv.insert("", "end", iid=iid, tags=(o["origin"],),
-                      values=(o["text"], MM.type_text(o) if o.get("category") else ", ".join(o.get("tags") or []),
-                              o.get("author", ""),
-                              ORIGIN.get(o["origin"], "")))
+            tv.insert("", "end", iid=iid, tags=(o["origin"],) + (("hidden",) if post.get("hidden") else ()),
+                      values=(("✔ " if post.get("voted") else "") + o["text"],
+                              MM.type_text(o) if o.get("category") else ", ".join(o.get("tags") or []),
+                              post.get("score", "") if post else "",
+                              post.get("author", {}).get("name") or o.get("author", ""), ORIGIN.get(o["origin"], "")))
         if self.mm_ones:
             self.mm_one_empty.place_forget()
         else:
@@ -862,13 +1120,31 @@ class MoneyMakersPage:
             self.own_clip = o["text"]
             self._say("Copied.", 4)
 
-    def mm_one_share(self):
+    def mm_one_post(self):
         o = self.mm_one_current()
-        if o:
-            webbrowser.open(MM.one_issue_link(o))
+        if not o or o["origin"] != "mine":
+            self._say("Pick one of your own one-liners (From: Mine) to post it.", 6)
+            return None
+        if self.mm_need_login("post"):
+            return None
+        data = {k: v for k, v in MM.tidy_one(o).items() if k not in ("id", "author")}
+        self._mm_bg(lambda: B.post("one", data), lambda r: self.mm_board_result(r, "Posted to the Community board."))
+
+    def mm_one_vote(self):
+        o = self.mm_one_current()
+        post = (o or {}).get("_post")
+        if not post:
+            self._say("Upvotes are for Community one-liners.", 5)
+            return None
+        if self.mm_need_login("upvote"):
+            return None
+        self._mm_bg(lambda: B.vote(post["id"], not post.get("voted")), lambda r: self.mm_board_result(r))
 
     def mm_one_delete(self):
         o = self.mm_one_current()
+        post = (o or {}).get("_post")
+        if post and (post.get("mine") or (B.signed_in() or {}).get("admin")):
+            return self._mm_bg(lambda: B.delete(post["id"]), lambda r: self.mm_board_result(r, "Deleted."))
         if o and o["origin"] == "mine":
             MM.save_mine_one([x for x in MM.mine_one() if x["id"] != o["id"]])
             self.mm_one_fill()
@@ -879,13 +1155,37 @@ class MoneyMakersPage:
             return
         self.mm_one_tree.selection_set(row)
         o = self.mm_one_current()
+        post, me = (o or {}).get("_post") or {}, B.signed_in() or {}
         m = tk.Menu(self.root, tearoff=0, bg=C["panel2"], fg=C["text"], activebackground="#2c4a84")
-        m.add_command(label="Copy", command=self.mm_one_copy)
-        m.add_command(label="Share…", command=self.mm_one_share)
+        m.add_command(label="Copy text", command=self.mm_one_copy)
+        if post:
+            m.add_command(label="▲ Remove my upvote" if post.get("voted") else "▲ Upvote", command=self.mm_one_vote)
         if o and o["origin"] == "mine":
+            m.add_command(label="📤 Post to Community", command=self.mm_one_post)
+        if (o and o["origin"] == "mine") or post.get("mine"):
             m.add_separator()
             m.add_command(label="Delete", command=self.mm_one_delete)
+        if post and not post.get("mine"):
+            m.add_command(label="⚑ Report…", command=lambda: self._mm_report_post(post))
+        if post and me.get("admin"):
+            m.add_separator()
+            for label, act in (("Un-hide" if post.get("hidden") else "Hide", "unhide" if post.get("hidden") else "hide"),
+                               ("Remove from Official" if post.get("promoted") else "Promote to Official",
+                                "unpromote" if post.get("promoted") else "promote")):
+                m.add_command(label="Admin: " + label, command=lambda a=act: self._mm_bg(
+                    lambda: B.admin(post["id"], a), lambda r: (self.mm_board_result(r, f"Done: {a}."),
+                                                              self._mm_bg(B.official, self._mm_official_done))))
+            m.add_command(label="Admin: Delete", command=lambda: self._mm_bg(lambda: B.delete(post["id"]),
+                                                                             lambda r: self.mm_board_result(r, "Deleted.")))
         m.tk_popup(e.x_root, e.y_root)
+
+    def _mm_report_post(self, post):
+        from tkinter import simpledialog
+        if self.mm_need_login("report"):
+            return None
+        why = simpledialog.askstring("Report", "What's wrong with it? (spam, wrong, offensive ...)", parent=self.root)
+        if why is not None:
+            self._mm_bg(lambda: B.report(post["id"], why), lambda r: self.mm_board_result(r, "Reported - thanks."))
 
     # ---------------- Tablet Crafting quick reference
     def mm_build_tablets(self, page):

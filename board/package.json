@@ -1,0 +1,12 @@
+{
+  "name": "soe2-board",
+  "private": true,
+  "description": "StashOfExile2 Money Makers community board (Cloudflare Worker + D1)",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy"
+  },
+  "devDependencies": {
+    "wrangler": "4.156.0"
+  }
+}
