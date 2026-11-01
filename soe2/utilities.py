@@ -15,6 +15,24 @@ import time
 from .config import APP_DIR, DATA_DIR
 
 FROZEN = bool(getattr(sys, "frozen", False))
+_APP_MARK = [None]
+
+
+def app_mark():
+    """2.40.0: a named mutex held for as long as the app runs - a helper checks it exists to know the app is still
+    there (delirium_runner.parent_alive). Windows lets it go when the app ends."""
+    if sys.platform != "win32" or _APP_MARK[0]:
+        return
+    try:
+        import ctypes
+        from .delirium_runner import APP_MARK
+        k = ctypes.windll.kernel32
+        k.CreateMutexW.restype = ctypes.c_void_p
+        _APP_MARK[0] = k.CreateMutexW(None, False, APP_MARK.format(pid=os.getpid()))
+    except Exception:
+        pass
+
+
 MUTEX = "PoE2DeliriumAlert_single_instance"             # the name the alert uses to allow only one copy
 NEEDS = ("cv2", "mss", "numpy", "PIL")
 STATES = {"watching": "Watching", "active": "Delirium active in this map", "alert": "ALERT showing: END DELIRIUM",
@@ -102,6 +120,8 @@ class DeliriumHelper:
         if cmd is None:
             return where
         try:
+            app_mark()
+            cmd = cmd + ["--parent", str(os.getpid())]       # 2.40.0: so it can tell "app gone" from "pipe broken"
             p = subprocess.Popen(cmd + (["--test-alert"] if test else []), cwd=where, creationflags=_no_window(),
                                  stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                                  text=True, encoding="utf-8", errors="replace", bufsize=1)
