@@ -532,6 +532,11 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         self.tot_val.pack(side="left", padx=(8, 0))
         self.chip_review.pack(side="right")
         self.chip_priced.pack(side="right", padx=(0, 8))
+        # 2.26.4: what the stars in Valuable mods mean - up top where it is seen (was a small line under the list)
+        self.vmods_legend = tk.Label(summ, text="Valuable mods:  ★ = a mod your Mod book rates valuable  (★★★ = three)",
+                                     bg="#2a2110", fg="#ffd9a8", font=("Segoe UI", 9, "bold"), padx=10, pady=3,
+                                     highlightthickness=1, highlightbackground="#7a6428")
+        self.vmods_legend.pack(side="left", padx=(18, 0))
 
         # ---- the two toolbar rows
         tb = tk.Frame(body, bg=C["panel"], highlightthickness=1, highlightbackground=C["line"])
@@ -621,7 +626,9 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         self.type_box.bind("<<ComboboxSelected>>", lambda e: self.on_cat(changed="type"))
         for cb in (vbox, self.cat_box, self.rar_box, self.type_box):
             cb.bind("<<ComboboxSelected>>", lambda e: self.root.after(20, self.root.focus_set), add="+")
-        ttk.Button(frow, text="Show all", command=self.cat_reset).pack(side="left", padx=(12, 0))
+        # 2.26.4: was "Show all" - it clears Category / Rarity / Type, and only lights up when one is set
+        self.clear_btn = ttk.Button(frow, text="✕ Clear filters", command=self.cat_reset, state="disabled")
+        self.clear_btn.pack(side="left", padx=(12, 0))
         ttk.Button(frow, text="↕ Order added", command=self.sort_added).pack(side="left", padx=(8, 0))   # 2.0 beta 22
         from .pricefmt import PRICE_UNITS                    # 2.16.0: show every price in the currency you pick
         self.unit_var = tk.StringVar(value=dict(PRICE_UNITS).get(SETTINGS.get("price_unit") or "auto", PRICE_UNITS[0][1]))
@@ -642,11 +649,6 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
             self.tree.column(cid, width=max(int(SETTINGS.get("col_widths", {}).get(cid, w)), 95 if cid == "conf" else 0), minwidth=50,
                              anchor=anchor, stretch=(cid == "match"))
         self.tree["displaycolumns"] = self.SHOW_COLS
-        # 2.26.2: what the stars mean (under the list)
-        self.vmods_legend = tk.Label(left, text="Valuable mods:  ★ = one mod your Mod book rates valuable (★★★ = three "
-                                                "of them).  Gold rows have at least one.  Set them in Mod book > rules.",
-                                     bg=C["panel"], fg=C["muted"], font=("Segoe UI", 8), anchor="w", padx=6)
-        self.vmods_legend.pack(side="bottom", fill="x")
         sb = ttk.Scrollbar(left, orient="vertical", command=self.tree.yview)
         self.tree.configure(yscrollcommand=sb.set)
         sb.pack(side="right", fill="y")
@@ -2429,6 +2431,13 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
             self.type_var.set("All")
         self.cat_refresh()
         self.rebuild_tree()
+        self.clear_btn_state()
+
+    def clear_btn_state(self):
+        btn = getattr(self, "clear_btn", None)
+        if btn is not None:
+            on = (self.cat_var.get(), self.rar_var.get(), self.type_var.get()) != (self.ALL_CATS, "All", "All")
+            btn.config(state="normal" if on else "disabled")
 
     def cat_reset(self):
         self.cat_var.set(self.ALL_CATS)
@@ -2452,7 +2461,7 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         if shown:
             self.empty_lbl.place_forget()
         else:
-            self.empty_lbl.config(text=("Nothing in this view." + (" Press Show all to see every item." if self.cat_var.get() != self.ALL_CATS else ""))
+            self.empty_lbl.config(text=("Nothing in this view." + (" Press Clear filters to see every item." if self.cat_var.get() != self.ALL_CATS else ""))
                                   if self.records else self.empty_text)
             self.empty_lbl.place(relx=0.5, rely=0.45, anchor="center")
         self.update_total()
