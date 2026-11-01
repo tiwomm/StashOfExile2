@@ -1,6 +1,6 @@
 # StashOfExile2 roadmap
 
-**Current version: 2.26.4**
+**Current version: 2.27.0**
 
 Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds features, 2.10.1 only fixes. Each step below is one release; we work through them top to bottom.
 
@@ -45,14 +45,42 @@ Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds f
 | 2.26.2 | Regex type switching without freezes; maximised really stays maximised; time left from the start. |
 | 2.26.3 | Updates no longer hang with a flashing console window. |
 | 2.26.4 | Regex Jewels / Gear fast (list widget); star legend up top; "Clear filters" button. |
+| 2.27.0 | Chat commands is a tab in Settings (no longer a Utilities window). |
 
 ## ▶ Next up
 
 | Version | Plan |
 |---|---|
-| 2.27.0 | Money Makers: farming guides, tablet crafting reference, run tracker. Each strat gets a difficulty rating in **Thoughts per Click** (fewer = easier) and **Clicks per hour**, so you can sort and filter strats by effort. |
-| 2.28.0 | Map library with ranks, import / export. |
+| 2.28.0 | Money Makers: farming guides, tablet crafting reference, run tracker. Each strat gets a difficulty rating in **Thoughts per Click** (fewer = easier) and **Clicks per hour**, so you can sort and filter strats by effort. |
+| 2.29.0 | Map library with ranks, import / export. |
+| 2.30.0 | **Polish 1 - Foundation:** design tokens (one spacing scale of 4 / 8 / 12 / 16 / 24, four text sizes, colour roles), one button hierarchy (primary / secondary / quiet / danger), contrast check of every theme (see Accessibility below). Nothing changes in what the app does. |
+| 2.31.0 | **Polish 2 - Responsive:** windows reflow when narrow (toolbars wrap, side panels drop under the list, sensible minimum sizes), sharp on every monitor (per-monitor DPI), a text size setting (100-150 %). |
+| 2.32.0 | **Polish 3 - Hover, focus, micro-interactions:** the same hover and pressed look on every button, row, icon and tab; a visible keyboard focus ring everywhere; short (120-180 ms) fades for popups and toasts, never on lists; a "Reduce motion" setting that turns them off. |
+| 2.33.0 | **Polish 4 - Context menus:** right-click menus where you'd expect them: Price checks rows (Re-price, Copy name, Open on trade site, Mark listed / sold, Delete), Wealth, Favorites, Game search, Insights, Notes. Every menu also opens with the Menu key / Shift+F10. |
+| 2.34.0 | **Polish 5 - Toasts:** one toast system for the whole app (info / success / warning / error, each with an icon, not colour alone), stacked inside the app window, pause while hovered, time based on text length, never steals focus, last 20 kept in Settings > Advanced. Replaces the separate toast / status-line messages where they matter. |
+| 2.35.0 | **Polish 6 - Visual hierarchy:** the suggestions below, window by window, with before / after screenshots in each PR. |
 | Later | Sidekick / Exiled Exchange-style pricing for more item types; public stash order test tool; Ancients price helper; Linux build. |
+
+### Visual hierarchy - suggestions (for 2.35.0)
+
+- **One primary action per window**, in the accent colour (Price checks: Re-price all, Regex: Copy, Wealth: Refresh). Everything else is secondary or quiet.
+- **Big number, small label:** totals and prices large; their labels small and muted. The same chip style for every status (Priced, Require Review, time left).
+- **Group toolbars** into labelled clusters; move rarely used actions into a "⋯ More" menu so the main row stays short.
+- **Gold means value only** (prices, ★ valuable mods). Headings and highlights use the accent or white instead.
+- **Numbers line up:** right-aligned, same-width digits in price and count columns.
+- **Empty states** say what to do next, with the button to do it ("Nothing in the list yet - hover an item and press Ctrl+Alt+C").
+- **Section cards** everywhere: the same title style, padding and spacing, so settings and tools read the same way.
+- **Sidebar:** a clear bar on the active module; BETA badges smaller and quieter.
+
+### Accessibility - WCAG 2.1 AA (applies to every Polish release)
+
+- **Contrast:** text at least 4.5:1 (3:1 for large text); borders, icons and focus rings at least 3:1 - checked for every theme by a test.
+- **Not colour alone:** selected / avoided / valuable / error states also change shape, icon or weight (✔, ✕, ★, bold).
+- **Keyboard:** every action reachable without a mouse, in a sensible Tab order, with a visible focus ring; no keyboard traps.
+- **Timing:** toasts can be paused and found again later; nothing important disappears before you can read it.
+- **Motion:** nothing flashes more than 3 times a second; Reduce motion turns animations off.
+- **Resize:** text up to 150 % without cut-off text or overlapping controls.
+- **Names:** every icon-only button gets a text label or tooltip. (Tk gives screen readers little to work with on Windows, so full screen-reader support is not promised.)
 
 ## 💤 Parked (not planned unless something changes)
 
