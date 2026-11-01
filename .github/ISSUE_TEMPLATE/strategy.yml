@@ -1,0 +1,71 @@
+name: Money Makers strat
+description: Share a farming strat for the Money Makers window (same layout as strats/README.md).
+title: "[Strat] "
+labels: ["strat"]
+body:
+  - type: markdown
+    attributes:
+      value: "Fill in what you know - leave a box empty if you don't. A maintainer turns it into a file in `strats/`; once merged, every app gets it within 12 hours."
+  - type: input
+    id: name
+    attributes: {label: Name}
+    validations: {required: true}
+  - type: dropdown
+    id: category
+    attributes:
+      label: Category
+      options: [Mapping, Breach, Delirium, Ritual, Expedition, Abyss, Bossing, Crafting, Trading, Other]
+    validations: {required: true}
+  - type: input
+    id: summary
+    attributes: {label: Summary, description: "One line: what you do and where the money comes from."}
+    validations: {required: true}
+  - type: input
+    id: patch
+    attributes: {label: Game version, placeholder: "0.4"}
+    validations: {required: true}
+  - type: dropdown
+    id: thoughts
+    attributes:
+      label: Thoughts per Click (fewer = easier)
+      options: ["1", "2", "3", "4", "5"]
+      description: "1 Autopilot, 2 Light, 3 Moderate, 4 Heavy, 5 Big brain"
+    validations: {required: true}
+  - type: input
+    id: clicks
+    attributes: {label: Clicks per hour, description: "Every click and key press an hour takes (estimate). Chill < 300, Steady < 900, Busy < 1800, Frantic."}
+    validations: {required: true}
+  - type: input
+    id: profit
+    attributes: {label: Profit per hour, placeholder: "5-10 div"}
+  - type: input
+    id: investment
+    attributes: {label: Investment, placeholder: "20 div"}
+  - type: textarea
+    id: requirements
+    attributes: {label: Requirements (one per line)}
+  - type: textarea
+    id: setup
+    attributes: {label: Setup (one per line)}
+  - type: textarea
+    id: steps
+    attributes: {label: Steps (one per line, in order)}
+    validations: {required: true}
+  - type: textarea
+    id: loot
+    attributes: {label: Loot to sell (item names, one per line)}
+  - type: textarea
+    id: tips
+    attributes: {label: Tips (one per line)}
+  - type: textarea
+    id: risks
+    attributes: {label: Risks (one per line)}
+  - type: input
+    id: regex
+    attributes: {label: Stash regex}
+  - type: textarea
+    id: sources
+    attributes: {label: Sources (links, one per line)}
+  - type: textarea
+    id: json
+    attributes: {label: "JSON (filled in by the app's Share button - leave as is)"}

@@ -1,0 +1,23 @@
+{
+  "id": "short-name-with-dashes",
+  "name": "What the strat is called",
+  "author": "your name or in-game account",
+  "updated": "2026-10-31",
+  "patch": "0.4",
+  "category": "Mapping",
+  "summary": "One line: what you do and where the money comes from.",
+  "thoughts_per_click": 2,
+  "clicks_per_hour": 600,
+  "profit_per_hour": {"low": 5, "high": 10, "unit": "div"},
+  "investment": {"amount": 20, "unit": "div"},
+  "league_start": false,
+  "tags": ["low budget"],
+  "requirements": ["What the build / atlas must have"],
+  "setup": ["Waystone tier, tablets, atlas passives, scarabs ..."],
+  "steps": ["1st thing you do in a map", "2nd thing", "What you do with the loot"],
+  "loot": ["Item names to sell (the app can price these)"],
+  "tips": ["Small things that make it better"],
+  "risks": ["What can go wrong, what the price depends on"],
+  "regex": "",
+  "sources": [{"title": "Video / guide", "url": "https://..."}]
+}

@@ -1,0 +1,20 @@
+name: Check strats
+on:
+  pull_request:
+    paths: ["strats/**", "moneymakers.json", "soe2/moneymakers.py", "tools/build_strats.py"]
+  push:
+    branches: [main]
+    paths: ["strats/**", "moneymakers.json"]
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12"}
+      - name: Every strat follows the layout
+        run: python tools/build_strats.py --check
+      - name: moneymakers.json is up to date
+        run: |
+          python tools/build_strats.py
+          git diff --exit-code moneymakers.json || (echo "Run: py tools/build_strats.py and commit moneymakers.json" && exit 1)

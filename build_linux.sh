@@ -5,7 +5,7 @@ set -euo pipefail
 cd "$(dirname "$0")"
 python3 -c "import tkinter; r=tkinter.Tk(); r.withdraw(); print('Tk', tkinter.TkVersion)" >/dev/null
 python3 -m PyInstaller --noconfirm --onefile --name StashOfExile2 \
-  --add-data "gamedata.json:." --add-data "searchdata.json:." --add-data "anointdata.json:." --add-data "cxnames.json:." --add-data "regexdata.json:." \
+  --add-data "gamedata.json:." --add-data "searchdata.json:." --add-data "anointdata.json:." --add-data "cxnames.json:." --add-data "moneymakers.json:." --add-data "regexdata.json:." \
   --add-data "default_rules.json:." --add-data "jewels.txt:." --add-data "tabs.txt:." \
   --add-data "soe2/templates:soe2/templates" --add-data "soe2/ritual_glyphs.json:soe2" \
   --hidden-import PIL._tkinter_finder --exclude-module pystray._win32 \

@@ -1,0 +1,43 @@
+{
+ "schema": 1,
+ "revision": 1,
+ "strats": [
+  {
+   "id": "example-ritual-omens",
+   "name": "Example: Ritual for omens",
+   "author": "StashOfExile2",
+   "updated": "2026-10-31",
+   "patch": "0.4",
+   "category": "Ritual",
+   "summary": "An example of the layout: run maps with Ritual, save tribute, buy the omens that sell well. Numbers left out on purpose - add real ones from your runs.",
+   "thoughts_per_click": 2,
+   "clicks_per_hour": 700,
+   "league_start": true,
+   "tags": [
+    "example"
+   ],
+   "requirements": [
+    "A build that clears Ritual circles safely"
+   ],
+   "setup": [
+    "Ritual tablets in your towers",
+    "Ritual atlas passives"
+   ],
+   "steps": [
+    "Do every Ritual circle in the map",
+    "Defer favours you don't want so they come back cheaper",
+    "Buy the omens worth the most on the Currency Exchange (Settings > Exchange rates)"
+   ],
+   "loot": [
+    "Omen of Light",
+    "Omen of Whittling"
+   ],
+   "tips": [
+    "Track a few runs with the Run tracker to get your own Profit per hour"
+   ],
+   "risks": [
+    "Omen prices move a lot in the first weeks of a league"
+   ]
+  }
+ ]
+}
