@@ -21,6 +21,11 @@ NEXT = [
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.50.0": [
+        "Overlays › Appearance (was Look) says what opacity does and shows it in %.",
+        "The Mechanic Helper bar is its own thing now: switch it on in Overlays › Mechanic Helper and it shows over "
+        "the game whether the Session timer is running or not.",
+    ],
     "2.49.0": [
         "Settings is the cog at the top of the dock; the Toolkit menu is at the left end of the taskbar, like Start.",
         "Every on / off option is a switch now.",

@@ -53,7 +53,7 @@ class TrackerPage:
         save_json("settings.json", SETTINGS)
 
     # ---------------- 2.44.0: Overlays - everything shown over the game, in one window
-    OVH_TABS = ("Session timer", "Mechanic Helper", "Notes", "Look")
+    OVH_TABS = ("Session timer", "Mechanic Helper", "Notes", "Appearance")      # 2.49.0: was "Look"
 
     def build_overlays_hub(self, body):
         """Overlays (was Session tracker): one tab per thing over the game - each with its own switch, key, place and
@@ -860,7 +860,7 @@ class TrackerPage:
             self._tracker_store_geo()
             self.tk_overlay.destroy()
             self.tk_overlay = None
-        self.tracker_helpers_destroy()                         # (comes and goes with the timer)
+        # (2.49.0: the Mechanic Helper bar stays - it has its own switch)
         self.tk_ov_btn.config(text="Show timer")
 
     def _tracker_store_geo(self):
@@ -902,7 +902,7 @@ class TrackerPage:
         if w.parch:                                # 2.47.0: the mockups' layout, drawn on the skin's background
             self._tracker_ov_canvas(w, cfg, P)
             self.tk_overlay = w
-            self.tracker_helpers_build()
+            self.tracker_helpers_sync()
             self.tracker_overlay_draw(self.tracker_numbers())
             w.show()
             return
@@ -931,7 +931,7 @@ class TrackerPage:
         if not cfg.get("locked"):
             w.draggable(inner)
         self.tk_overlay = w
-        self.tracker_helpers_build()               # 2.38.0: the Helpers bar is its own window now
+        self.tracker_helpers_sync()                # 2.49.0: its own window, with its own switch
         self.tracker_overlay_draw(self.tracker_numbers())
         w.show()                                   # only while the game (or the app) is in front (2.0 beta 15)
 
@@ -1138,6 +1138,7 @@ class TrackerPage:
         return f"  ({c['rank']})" if c else ""
 
     def tracker_overlay_draw(self, n):
+        self.tracker_helpers_paint()               # 2.49.0: the Mechanic Helper bar stands on its own
         if self.tk_overlay is None:
             return
         s = self.tk_session
@@ -1160,6 +1161,9 @@ class TrackerPage:
                 self.tk_ov_clock.config(text=clock_text())          # time, and the date under it
             except tk.TclError:
                 pass
+
+    def tracker_helpers_paint(self):
+        """The Mechanic Helper bar's cells: on (green) / off (red) / needs attention, Ritual's live count."""
         if getattr(self, "tk_ov_alerts", None):
             states = self.alert_states()
             for k, (dot, lab) in self.tk_ov_alerts.items():
@@ -1173,6 +1177,16 @@ class TrackerPage:
                 P = pal()
                 dot.config(fg=P[st], text=P["on_icon"] if st != "off" else P["off_icon"])   # green on, red off
                 lab.config(text=txt, fg=P["text"] if st != "off" else P["muted"])
+
+    def tracker_helpers_sync(self):
+        """2.49.0 (the user: "it's a different bar, independent of the session tracker"): the bar shows whenever its
+        switch is on - timer or not, session or not - and only while the game is in front (like every overlay)."""
+        on = bool(self.tracker_cfg().get("alerts_bar", True))
+        if on and getattr(self, "tk_helpers", None) is None:
+            self.tracker_helpers_build()
+        elif not on and getattr(self, "tk_helpers", None) is not None:
+            self.tracker_helpers_destroy()
+        self.tracker_helpers_paint()
 
     def tracker_helper_click(self, key):
         """2.26.0: a click on a helper in the timer's bar switches it on / off."""
