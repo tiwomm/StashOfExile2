@@ -21,6 +21,10 @@ NEXT = [
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.44.0": [
+        "Session tracker is now Overlays: the Session timer, the Mechanic Helper, Notes and their Look (style and "
+        "opacity) are tabs in one window, each with its own options.",
+    ],
     "2.43.0": [
         "New look for the Session timer, Notes and the Mechanic Helper bar (was Helpers): parchment, like the "
         "remnant's reward book. Prefer the old dark look? Settings > Appearance > Over the game.",
