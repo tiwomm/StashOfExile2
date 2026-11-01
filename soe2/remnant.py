@@ -27,6 +27,7 @@ CREDIT_URL = "https://github.com/pedro-quiterio/PoeAncientsPriceHelper"
 DEFAULT_KEY = "Ctrl+Alt+R"
 SHOW_SECS = 30
 MATCH = 0.84                      # how close an OCR'd line must be to an item name (difflib ratio)
+LAST_WORD = 0.75                  # ... and its last word to the name's last word (2.40.0)
 
 QTY = re.compile(r"(?:^|\s)(?:[x×х]\s?(\d{1,4})|(\d{1,4})\s?[x×х])(?=\s|$)", re.I)
 JUNK = re.compile(r"[^\w' ()\-:,.]+")
@@ -67,20 +68,44 @@ class Names:
         if low in self.exact:
             return self.exact[low]
         pool = self.by_first.get(low[:1], []) or self.keys       # OCR rarely gets the first letter wrong
-        hit = difflib.get_close_matches(low, pool, n=1, cutoff=MATCH)
-        if not hit and pool is not self.keys:
-            hit = difflib.get_close_matches(low, self.keys, n=1, cutoff=MATCH)
-        return self.exact[hit[0]] if hit else None
+        hits = difflib.get_close_matches(low, pool, n=5, cutoff=MATCH)
+        if not hits and pool is not self.keys:
+            hits = difflib.get_close_matches(low, self.keys, n=5, cutoff=MATCH)
+        for h in hits:
+            if same_ending(low, h):
+                return self.exact[h]
+        return None
+
+
+def same_ending(a, b):
+    """2.40.0: the last word must match too. Many names share a long start ("Warding Rune of ..."), so the whole
+    name scores high even when the part that matters differs: "Warding Rune of Obsession" vs "... of Protection"
+    is 0.82 overall. An OCR slip in the last word is still fine (Alchemv / Alchemy)."""
+    wa, wb = a.split()[-1:], b.split()[-1:]
+    if not wa or not wb:
+        return False
+    return difflib.SequenceMatcher(None, wa[0], wb[0]).ratio() >= LAST_WORD
+
+
+def explicit_qty(text):
+    """The line has an amount ("6x ...", "... x3") - remnant reward lines always do."""
+    return bool(QTY.search(" ".join(str(text).split())))
 
 
 def price_lines(lines, names, value_of):
     """[(text, box)] from OCR -> [{"text", "name", "qty", "each", "total", "box"}] for the lines that are items
-    (value_of(name) -> divines each, or None when poe.ninja has no price)."""
+    (value_of(name) -> divines each, or None when poe.ninja has no price). A reward line poe.ninja doesn't know at
+    all is kept too, with "unknown": True and no price."""
     out = []
     for text, box in lines:
         base, qty = split_qty(text)
         name = names.match(base)
         if not name:
+            # 2.40.0: a reward line poe.ninja doesn't list (e.g. Warding Rune of Obsession) - still tagged, as
+            # "no price", so you can see it was read (only lines with an amount: junk never has one)
+            if explicit_qty(text) and len(base) >= 6 and len(base.split()) >= 2 and re.search(r"[a-z]{3}", base):
+                out.append({"text": text, "name": base, "qty": qty, "each": None, "total": None, "box": box,
+                            "unknown": True})
             continue
         each = value_of(name)
         out.append({"text": text, "name": name, "qty": qty, "each": each,

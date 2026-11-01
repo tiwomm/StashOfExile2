@@ -295,7 +295,7 @@ class RemnantPage:
 
         for row in rows:
             x0, y0, x1, y1 = row["box"]
-            if row["total"] is None:
+            if row["total"] is None:                           # (2.40.0: also a reward poe.ninja doesn't list)
                 txt, fg = "no price", "#9aa6bd"
             else:
                 txt = fmt_short(row["total"])                   # 2.39.0: 16ex, 20c, 29d
