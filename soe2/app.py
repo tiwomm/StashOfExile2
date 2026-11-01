@@ -63,6 +63,7 @@ from .maplib_page import MapLibraryPage
 from .remnant_page import RemnantPage         # 2.37.0: Expedition Remnant Price Checker
 from .ledger_page import LedgerPage           # 2.45.0: Money Makers > Farm Ledger
 from .feedback_page import FeedbackPage       # 2.48.0: the update badge and Report a bug (taskbar)
+from .feed_page import FeedPage               # 2.51.0: Mod book › Manual feed
 from .utilities_page import UtilitiesPage
 from .tracker_page import TrackerPage
 from .search_page import SearchPage
@@ -74,7 +75,7 @@ from .shell import Shell
 from .config import PAGE_CHECKS       # 1.40: was "Items"
 
 
-class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, ExchangePage, WealthSetup, WealthPage, LibraryPage, RegexPage, UtilitiesPage, TrackerPage, SearchPage, CalcPage, InsightsPage, MoneyMakersPage, MapLibraryPage, RemnantPage, LedgerPage, FeedbackPage):
+class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, ExchangePage, WealthSetup, WealthPage, LibraryPage, RegexPage, UtilitiesPage, TrackerPage, SearchPage, CalcPage, InsightsPage, MoneyMakersPage, MapLibraryPage, RemnantPage, LedgerPage, FeedbackPage, FeedPage):
     COLS = [("added", "#", 46, "e"), ("name", "Item", 220, "w"), ("type", "Type", 110, "w"), ("mark", "Status", 90, "center"),
             ("est", "Est. value", 110, "e"), ("conf", "Confidence", 95, "center"), ("listings", "Listings", 70, "e"), ("priced", "Priced at", 130, "w"),
             ("match", "How it was priced", 300, "w"), ("vmods", "Valuable mods", 100, "center")]
@@ -731,11 +732,13 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         jrules_tab = tk.Frame(self.mb_nb, bg=C["panel"])
         wrules_tab = tk.Frame(self.mb_nb, bg=C["panel"])                # 2.6.0
         rrules_tab = tk.Frame(self.mb_nb, bg=C["panel"])
+        feed_tab = tk.Frame(self.mb_nb, bg=C["panel"])                 # 2.51.0
         self.mb_nb.add(memory_tab, text="What the app learned")
         self.mb_nb.add(rules_tab, text="Tablet rules")
         self.mb_nb.add(jrules_tab, text="Jewel rules")
         self.mb_nb.add(wrules_tab, text="Waystone rules")
         self.mb_nb.add(rrules_tab, text="Relic rules")
+        self.mb_nb.add(feed_tab, text="Manual feed")
         self.mb_nb.bind("<<NotebookTabChanged>>", lambda e: (self.refresh_rules(), self.refresh_memory()))
         mbar = tk.Frame(memory_tab, bg=C["panel"], padx=8, pady=8)
         mbar.pack(fill="x")
@@ -760,6 +763,7 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         self.build_rules_page(jrules_tab, "jewel")
         self.build_rules_page(wrules_tab, "waystone")
         self.build_rules_page(rrules_tab, "relic")
+        self.build_feed(feed_tab)
 
     # ---------------- the Settings window (League and Pace moved here from the old header bars)
     def build_settings(self, body):
@@ -1167,7 +1171,8 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
                                                "the game shows through it. Lower = more see-through: the whole window "
                                                "fades, text and all, so you can see the game behind it - handy where "
                                                "it sits over the map or the minimap. 24% is the lowest, so it never "
-                                               "disappears. Changes show at once.")
+                                               "disappears. Changes show at once. Hard to read over a busy spot? 95-100% "
+                                               "reads best - text on a see-through window takes on the game behind it.")
         grid = tk.Frame(row, bg=P2)
         grid.pack(fill="x")
         self.ov_op_vars, self.ov_op_pct = {}, {}
@@ -2192,6 +2197,8 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         if not SETTINGS.get("listen", True):
             return
         if text.lstrip().startswith("Item Class:"):               # 2.45.0: the Farm Ledger's loot box / setup takes it
+            if self.fd_capturing():                               # 2.51.0: Mod book › Manual feed, while it shows
+                return self.fd_take_clip(text)
             if self.fl_capturing():
                 return self.fl_take_clip(text)
             if self.fl_ed_open() and self.fl_ed_take(text):
