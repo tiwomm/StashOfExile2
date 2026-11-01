@@ -986,6 +986,9 @@ class Shell:
         if key == "chat":                          # 2.27.0: Chat commands is a tab in Settings now
             self.app.open_settings_tab("Chat commands")
             return
+        if key == "notes" and hasattr(self.app, "ovh_open"):     # 2.44.0: Notes is a tab of Overlays now
+            self.app.ovh_open("Notes")
+            return
         win = self.windows.get(key)
         if not win:
             return

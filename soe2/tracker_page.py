@@ -52,6 +52,53 @@ class TrackerPage:
     def tracker_save(self):
         save_json("settings.json", SETTINGS)
 
+    # ---------------- 2.44.0: Overlays - everything shown over the game, in one window
+    OVH_TABS = ("Session timer", "Mechanic Helper", "Notes", "Look")
+
+    def build_overlays_hub(self, body):
+        """Overlays (was Session tracker): one tab per thing over the game - each with its own switch, key, place and
+        options - and Look for all of them (parchment / classic, how see-through each one is)."""
+        P1 = C["panel"]
+        self.ovh_bar = SegBar(body, list(self.OVH_TABS), command=lambda v: self.ovh_show(), size=10, pad=(16, 4))
+        self.ovh_bar.pack(anchor="w", padx=8, pady=(8, 0))
+        tk.Frame(body, height=1, bg=C["line"]).pack(fill="x", padx=8)
+        host = tk.Frame(body, bg=P1)
+        host.pack(fill="both", expand=True)
+        self.ovh_pages = {}
+        page = tk.Frame(host, bg=P1)
+        self.ovh_pages["Session timer"] = page
+        self.build_tracker_window(page)
+        for name in self.OVH_TABS[1:]:
+            sa = ScrollArea(host, P1)
+            self.ovh_pages[name] = sa
+            inner = sa.inner
+            if name == "Mechanic Helper":
+                tk.Label(inner, text="Small helpers for league mechanics. They only watch and show - they never act in "
+                                     "the game. Click one on the Mechanic Helper bar to switch it on or off.",
+                         bg=P1, fg=C["muted"], font=("Segoe UI", 9), anchor="w", justify="left",
+                         wraplength=640).pack(fill="x", padx=12, pady=(8, 8))
+                self.build_alerts_panel(inner).pack(fill="x", padx=8, pady=(0, 8))
+            elif name == "Notes":
+                self.build_notes_window(inner)
+            else:
+                self.build_overlay_look(inner)
+        self.ovh_show()
+
+    def ovh_show(self):
+        cur = self.ovh_bar.get()
+        for name, f in self.ovh_pages.items():
+            if name == cur:
+                f.pack(fill="both", expand=True)
+            else:
+                f.pack_forget()
+
+    def ovh_open(self, tab):
+        """Open Overlays at one tab (Settings' link, the old Notes window, the ⚙ on the Mechanic Helper bar)."""
+        self.shell.open("tracker")
+        if getattr(self, "ovh_bar", None) is not None:
+            self.ovh_bar.pick(tab, notify=False)
+            self.ovh_show()
+
     def build_tracker_window(self, body):
         cfg = self.tracker_cfg()
         P1, P2 = C["panel"], C["panel2"]
@@ -101,8 +148,7 @@ class TrackerPage:
             self.tk_nums[k] = v
         for c in range(4):
             nums.columnconfigure(c, weight=1, uniform="n")
-        # ---- 2.10.0: alerts while you play (Delirium, Breach) on the main page
-        self.build_alerts_panel(body).pack(fill="x", padx=8, pady=(0, 8))
+        # (2.10.0's "Alerts while you play" panel is the Mechanic Helper tab since 2.44.0: build_overlays_hub)
 
         # ---- this session's maps / past sessions
         self.tk_view = SegBar(body, ["This session's maps", "Map stats", "Past sessions", "Options"],
@@ -940,7 +986,7 @@ class TrackerPage:
         cog = tk.Label(bar, text="\u2699", bg=BB, fg=P["muted"], font=("Segoe UI Symbol", 10), cursor="hand2")
         cog.pack(side="left", padx=(12, 0))
         cog.bind("<Button-1>", lambda e: self.tracker_helpers_settings())
-        Tooltip(cog, "Mechanic Helper options (Session tracker > Alerts)")
+        Tooltip(cog, "Mechanic Helper options (Overlays › Mechanic Helper)")
         self.tk_helpers = w
         self._helpers_on_screen(w, hx, hy, first)
         w.show()
@@ -1036,8 +1082,8 @@ class TrackerPage:
         self.tracker_overlay_draw(self.tracker_numbers())
 
     def tracker_helpers_settings(self):
-        """2.26.0: the ⚙ on the timer's bar - the Session tracker window, where the helpers' options are."""
-        self.shell.open("tracker")
+        """2.26.0: the ⚙ on the timer's bar - 2.44.0: Overlays › Mechanic Helper, where its options are."""
+        self.ovh_open("Mechanic Helper")
         try:
             self.root.deiconify()
             self.root.lift()
@@ -1075,11 +1121,11 @@ class TrackerPage:
                 ("Open poe2db's modifier list in your browser", SETTINGS.get("poe2db_key", ""), "Settings > Hotkeys",
                  "checks:poe2db_key"),
                 ("Go to hideout", oc.get("hideout_key", ""), "Settings > Chat commands", "overlay:hideout_key"),
-                ("Show / hide notes", oc.get("notes_key", ""), "Notes", "overlay:notes_key"),
-                ("Session tracker: start / stop", tc.get("key_toggle", ""), "Session tracker", "tracker:key_toggle"),
-                ("Session tracker: pause / resume", tc.get("key_pause", ""), "Session tracker", "tracker:key_pause"),
+                ("Show / hide notes", oc.get("notes_key", ""), "Overlays › Notes", "overlay:notes_key"),
+                ("Session timer: start / stop", tc.get("key_toggle", ""), "Overlays › Session timer", "tracker:key_toggle"),
+                ("Session timer: pause / resume", tc.get("key_pause", ""), "Overlays › Session timer", "tracker:key_pause"),
                 ("Expedition Remnant Price Checker (in game)", self.remnant_cfg().get("key", ""),
-                 "Session tracker > Alerts", "remnant:key")]
+                 "Overlays › Mechanic Helper", "remnant:key")]
         for c in oc.get("commands", []) or []:
             rows.append((f"Chat: {c.get('cmd', '')}", c.get("key", ""), "Settings > Chat commands", None))
         return rows
