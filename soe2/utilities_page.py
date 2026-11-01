@@ -39,6 +39,7 @@ class UtilitiesPage:
         if SETTINGS.get("util_delirium_autostart"):
             self.root.after(1500, self.dl_do_start)
         self.alerts_init()                               # 2.10.0: the Breach alert starts here if it's on
+        self.root.after(1500, self.tracker_helpers_sync)  # 2.49.0: the Mechanic Helper bar, if its switch is on
         self.root.after(2000, self.util_refresh)
 
     def on_any_key(self, vk, ctrl, alt, shift):
@@ -238,7 +239,7 @@ class UtilitiesPage:
         tk.Label(g, text="Show / hide notes", bg=P2, fg=C["text"], anchor="w").grid(row=0, column=0, sticky="w", padx=(0, 8))
         self._ov_entry(g, "notes_key", 0, 1, 10)
         ttk.Button(g, text="Show / hide now", command=lambda: self.overlay.toggle_notes()).grid(row=0, column=2, sticky="w")
-        c2 = self._card(body, "Look")
+        c2 = self._card(body, "Colours and font (Classic style)")
         self.build_notes_look(c2)
         c3 = self._card(body, "Position")
         lrow = tk.Frame(c3, bg=P2)
