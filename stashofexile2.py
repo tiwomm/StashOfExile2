@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU GPL v3.0 (see LICENSE). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.46.0
+VERSION 2.47.0
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,6 +19,17 @@ VERSION 2.46.0
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.47.0
+       Overlays › Look: the four PoE2 looks of the 2.43.0 mockups, all to choose from - Runeshape parchment (default),
+       Relic tooltip, Carved frame, Quiet HUD - plus Classic dark (overlaywin LOOKS / PALETTES, skinned()). The user:
+       the 2.43.0 parchment didn't match mockup C and was "too clean". Now: a grungy parchment made at run time
+       (overlaywin.texture: grain, fibres, stains, burnt edges - Pillow, no image file), drawn titles and buttons on
+       canvases (no flat boxes on the texture), the mockup's Session layout (title + clock on the bar, the big time,
+       two columns: Map 9:54 | Oasis, Maps | Avg, Profit; CanvasText answers like a Label), drawn Mechanic Helper
+       cells (◆ on / ◇ off; ✓ / ✕ on the HUD), Notes as a page on the parchment. Remnant tips follow the look.
+       Price checks › Stash tab: "＋ Tab" is a button. Who we build for (PoE players are utilitarian: data, how it
+       was worked out, sort / filter / export, depth one click away) is in ROADMAP, README, strats/README, the
+       module docs and the handovers. test_v2470.
   2.46.0
        Strat guides as CSV (user: "csv files and a standardized formatting that matches the run tracker"): rows of
        section, field, value, note (moneymakers.to_csv / from_csv / read_any; .txt and JSON still read). The note
@@ -1230,7 +1241,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.46.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.47.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
