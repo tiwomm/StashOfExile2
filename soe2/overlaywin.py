@@ -30,12 +30,13 @@ LOOKS = {"parchment": "Runeshape parchment (default)", "relic": "Relic tooltip",
          "hud": "Quiet HUD", "classic": "Classic dark (2.42)"}
 LOOK = ["parchment"]
 SERIF = "Palatino Linotype"
-_P = {"title_size": 10, "align": "w", "texture": False, "on_icon": "\u25c6", "off_icon": "\u25c7", "rules": False,
+_P = {"halo": "#000000", "title_size": 10, "align": "w", "texture": False, "on_icon": "\u25c6", "off_icon": "\u25c7", "rules": False,
       "plate": False, "frame2": None, "cell_bg": None, "cell_line": None}
 PALETTES = {
     "parchment": dict(_P, leather="#2a1f16", edge="#000000", border=5, bg="#d8c49a", band="#d8c49a", head="#4a3520",
                       text="#2e2216", muted="#5d4630", line="#a88a5c", on="#1f8a1c", off="#c0261b", warn="#a86a00",
-                      field="#e6d6b0", big="#2e2216", font=SERIF, texture=True, cell_bg="#ead9b2", cell_line="#a88a5c"),
+                      field="#e6d6b0", big="#2e2216", font=SERIF, texture=True, cell_bg="#ead9b2", cell_line="#a88a5c",
+                      halo="#f1e5c8"),
     "relic": dict(_P, leather="#6e5b3a", edge="#000000", border=1, bg="#0c0a08", band="#17130e", head="#e6d39f",
                   text="#e9e2cf", muted="#a89a7c", line="#6e5b3a", on="#62c45a", off="#d24b3a", warn="#e0a352",
                   field="#14110d", big="#f2e6c4", font=SERIF, align="center", cell_bg="#0c0a08", cell_line="#2c251b"),
@@ -70,10 +71,10 @@ def skinned():
 _TEX = {}
 
 
-def texture(root, w, h, seed=7):
+def texture(root, w, h, seed=7, calm=False):
     """2.47.0: a grungy parchment (the user: "too clean") - made here, no image file: the base colour, fibres and
     grain, a few stains and darker, burnt edges. A Tk PhotoImage (None without Pillow)."""
-    key = (w // 16 * 16 + 16, h // 16 * 16 + 16, seed)
+    key = (w // 16 * 16 + 16, h // 16 * 16 + 16, seed, calm)
     if key in _TEX:
         return _TEX[key]
     try:
@@ -87,16 +88,19 @@ def texture(root, w, h, seed=7):
     px = img.load()
     for y in range(H):                                     # grain
         for x in range(W):
-            n = rnd.randint(-10, 10)
+            n = rnd.randint(-4, 4) if calm else rnd.randint(-10, 10)
             r, g, b = px[x, y]
             px[x, y] = (r + n, g + n, b + n - 2)
     d = ImageDraw.Draw(img, "RGBA")
+    # 2.51.0 calm: where text sits (the user: "barely legible") - lighter grain, faint stains and fibres
     for _ in range(max(6, W * H // 6000)):                 # stains
         cx, cy, rr = rnd.randint(0, W), rnd.randint(0, H), rnd.randint(8, 40)
-        d.ellipse((cx - rr, cy - rr * 0.7, cx + rr, cy + rr * 0.7), fill=(120, 86, 40, rnd.randint(10, 28)))
+        d.ellipse((cx - rr, cy - rr * 0.7, cx + rr, cy + rr * 0.7),
+                  fill=(120, 86, 40, rnd.randint(4, 10) if calm else rnd.randint(10, 28)))
     for _ in range(W * H // 900):                          # fibres
         x0, y0 = rnd.randint(0, W), rnd.randint(0, H)
-        d.line((x0, y0, x0 + rnd.randint(-14, 14), y0 + rnd.randint(-3, 3)), fill=(110, 80, 40, rnd.randint(14, 34)))
+        d.line((x0, y0, x0 + rnd.randint(-14, 14), y0 + rnd.randint(-3, 3)),
+               fill=(110, 80, 40, rnd.randint(6, 14) if calm else rnd.randint(14, 34)))
     img = img.filter(ImageFilter.GaussianBlur(0.6))
     edge = Image.new("L", (W, H), 0)                       # burnt, darker edges
     de = ImageDraw.Draw(edge)
@@ -110,11 +114,11 @@ def texture(root, w, h, seed=7):
     return photo
 
 
-def paint_texture(canvas, seed=7):
+def paint_texture(canvas, seed=7, calm=False):
     """Keep a canvas' background the parchment texture (redrawn when it changes size)."""
     def draw(_e=None):
         w, h = max(8, canvas.winfo_width()), max(8, canvas.winfo_height())
-        img = texture(canvas, w, h, seed)
+        img = texture(canvas, w, h, seed, calm)
         canvas.delete("tex")
         if img is not None:
             canvas.create_image(0, 0, image=img, anchor="nw", tags="tex")
@@ -127,8 +131,22 @@ class CanvasText:
     """A text on a canvas that answers like a Label (config / cget of text, fg, bg) - the skinned overlays draw their
     text straight on the textured canvas, and the code that fills them still says lab.config(text=...)."""
 
-    def __init__(self, canvas, item, bg=None):
+    def __init__(self, canvas, item, bg=None, halo=None):
         self.canvas, self.item, self._bg = canvas, item, bg
+        self.halos = []
+        if halo:                                  # 2.51.0: a soft outline in the page colour round every letter,
+            x, y = canvas.coords(item)            # so ink stays readable on the texture and over the game behind it
+            for dx, dy in ((-1, 0), (1, 0), (0, -1), (0, 1), (-1, -1), (1, 1), (-1, 1), (1, -1)):
+                h = canvas.create_text(x + dx, y + dy, text=canvas.itemcget(item, "text"), fill=halo,
+                                       font=canvas.itemcget(item, "font"), anchor=canvas.itemcget(item, "anchor"),
+                                       justify=canvas.itemcget(item, "justify"))
+                self.halos.append((h, dx, dy))
+                canvas.tag_lower(h, item)
+
+    def place(self, x, y):
+        self.canvas.coords(self.item, x, y)
+        for h, dx, dy in self.halos:
+            self.canvas.coords(h, x + dx, y + dy)
 
     def config(self, **kw):
         o = {}
@@ -139,6 +157,9 @@ class CanvasText:
         if o:
             try:
                 self.canvas.itemconfigure(self.item, **o)
+                if "text" in o:
+                    for h, _dx, _dy in self.halos:
+                        self.canvas.itemconfigure(h, text=o["text"])
             except tk.TclError:
                 pass
         if hasattr(self, "on_change"):
@@ -439,7 +460,7 @@ class OverlayWindow(tk.Toplevel):
         cv = tk.Canvas(self.body, bg=self.P["bg"], highlightthickness=0)
         cv.pack(fill="both", expand=True)
         if self.P.get("texture"):
-            paint_texture(cv, seed=11)
+            paint_texture(cv, seed=11, calm=True)
         return cv
 
     def _close(self):

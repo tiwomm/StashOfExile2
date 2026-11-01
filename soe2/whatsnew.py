@@ -21,6 +21,12 @@ NEXT = [
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.51.0": [
+        "Mod book › Manual feed: Ctrl+Alt+C (or paste) an item you know the price of - an expensive tablet, say - type "
+        "the price and Feed it. The Mod book learns from it like a sale; you see what changed, and can undo it.",
+        "The Session timer is easier to read: bigger, bolder text with a light outline, and a calmer parchment under "
+        "it. Still hard over a busy spot? Raise its opacity in Overlays › Appearance.",
+    ],
     "2.50.0": [
         "Overlays › Appearance (was Look) says what opacity does and shows it in %.",
         "The Mechanic Helper bar is its own thing now: switch it on in Overlays › Mechanic Helper and it shows over "

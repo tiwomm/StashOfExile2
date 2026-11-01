@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU GPL v3.0 (see LICENSE). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.50.0
+VERSION 2.51.0
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,6 +19,17 @@ VERSION 2.50.0
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.51.0
+       Mod book › Manual feed (feed_page.py; the user: paste an already expensive tablet with its price so the app
+       learns it - on top of how it learns now). Ctrl+Alt+C (while the tab shows) or paste an item, type its price
+       (parse_price: 8, 8 div, 35c, 2 ex), pick how much it counts (1-10 listings; MIN_WITH = 8 decides a mod) and
+       Feed it: Market.feed stores it in table 'fed' and as listings 'fed:<sig>:<n>' at that price - the listings
+       Market.stats learns from, like save_sale; never expire (seen refreshed at start); feeding the same item again
+       replaces it. Optional: rate its ticked mods High (set_rules). Each mod shows what the Mod book thinks before /
+       after (Market.standing). Fed so far: list, Forget (unfeed), CSV. Readability (the user: the timer was "barely
+       legible"): a halo in the page colour round every letter on the parchment (CanvasText halo), a calmer texture
+       under the text (texture calm), the timer's text a size up and bold; the Opacity note says 95-100% reads best.
+       test_v2510.
   2.50.0
        Overlays: the Look tab is "Appearance"; Style and Opacity explained (100% = solid ... 24% lowest), with a % next
        to each slider; runeshape tips only on the Mechanic Helper tab. The Mechanic Helper bar stands on its own (the
@@ -1268,7 +1279,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.50.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.51.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 

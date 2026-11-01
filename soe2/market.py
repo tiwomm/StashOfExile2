@@ -88,7 +88,8 @@ class Market:
                     self.db.execute("UPDATE listings SET league=? WHERE league IS NULL", (lg,))
                     if not SETTINGS.get("market_league"):
                         SETTINGS["market_league"] = lg
-                cut = time.time() - self.KEEP_DAYS * 86400
+                self.db.execute("UPDATE listings SET seen=? WHERE id LIKE 'fed:%'", (time.time(),))   # 2.51.0: what
+                cut = time.time() - self.KEEP_DAYS * 86400                                            # you fed stays
                 self.db.execute("DELETE FROM obs WHERE ts<?", (cut,))
                 self.db.execute("DELETE FROM listings WHERE seen<?", (cut,))
                 self.db.execute("CREATE INDEX IF NOT EXISTS listings_bl ON listings(base, league)")
@@ -631,6 +632,79 @@ class Market:
         except Exception as e:
             self.last_error = f"saving a sale: {type(e).__name__}: {e}"
             return False
+
+    # ---- 2.51.0: Manual feed - you tell the Mod book what an item is worth (an expensive tablet you saw sell, ...)
+    FEED_MAX = 10
+
+    def feed(self, item, div, copies=3, price_txt="", note=""):
+        """An item and its price -> `copies` listings at that price, kept with the ones the Mod book learns from (the
+        same way a sale is), and a row in 'fed' so you can see and undo it. copies = how much it counts: the Mod book
+        needs a mod on 8 listings before it decides, so one real price can count for a few. -> its sig, or None."""
+        if not self.db or not div or div <= 0:
+            return None
+        from .mods import norm
+        copies = max(1, min(self.FEED_MAX, int(copies)))
+        try:
+            sids, vals, lines = set(), {}, []
+            for m in item.get("mods") or []:
+                sid = m.get("sid") or sid_for_line(norm(m["text"]))
+                lines.append(m["text"])
+                if sid:
+                    sids.add(sid)
+                    if m.get("value") is not None:
+                        vals[sid] = m["value"]
+            sig = f"{self.cur()}|{item.get('name')}|{json.dumps(sorted(sids))}|{json.dumps(vals, sort_keys=True)}"
+            now = time.time()
+            with self.lock:
+                self.db.execute("CREATE TABLE IF NOT EXISTS fed(sig TEXT PRIMARY KEY, ts REAL, league TEXT, base TEXT,"
+                                " name TEXT, sids TEXT, vals TEXT, div REAL, copies INT, price_txt TEXT, lines TEXT,"
+                                " note TEXT)")
+                self.db.execute("DELETE FROM listings WHERE id LIKE ?", ("fed:" + sig + ":%",))
+                self.db.execute("INSERT OR REPLACE INTO fed VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
+                                (sig, now, self.cur(), item["base"], item.get("name") or "", json.dumps(sorted(sids)),
+                                 json.dumps(vals), div, copies, price_txt, json.dumps(lines), note))
+                for i in range(copies):
+                    self.db.execute("INSERT OR REPLACE INTO listings(id, base, seen, indexed, price_div, sids, league,"
+                                    " vals, name, lines, price_txt, qid) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
+                                    (f"fed:{sig}:{i}", item["base"], now, now, div, json.dumps(sorted(sids)), self.cur(),
+                                     json.dumps(vals), item.get("name") or "", json.dumps(lines),
+                                     f"fed {price_txt}".strip(), ""))
+                self.db.commit()
+            self.refresh_learned()
+            return sig
+        except Exception as e:
+            self.last_error = f"manual feed: {type(e).__name__}: {e}"
+            return None
+
+    def fed(self):
+        """[{sig, ts, base, name, sids, div, copies, price_txt, lines, note}] - what you fed, newest first."""
+        if not self.db:
+            return []
+        try:
+            with self.lock:
+                rows = self.db.execute("SELECT sig, ts, base, name, sids, div, copies, price_txt, lines, note FROM fed "
+                                       "WHERE league=? ORDER BY ts DESC", (self.cur(),)).fetchall()
+        except Exception:
+            return []
+        return [{"sig": r[0], "ts": r[1], "base": r[2], "name": r[3], "sids": json.loads(r[4] or "[]"), "div": r[5],
+                 "copies": r[6], "price_txt": r[7], "lines": json.loads(r[8] or "[]"), "note": r[9]} for r in rows]
+
+    def unfeed(self, sig):
+        if not self.db:
+            return
+        try:
+            with self.lock:
+                self.db.execute("DELETE FROM listings WHERE id LIKE ?", ("fed:" + sig + ":%",))
+                self.db.execute("DELETE FROM fed WHERE sig=?", (sig,))
+                self.db.commit()
+            self.refresh_learned()
+        except Exception as e:
+            self.last_error = f"manual feed: {type(e).__name__}: {e}"
+
+    def standing(self, base, sids):
+        """{sid: {n, med, lift, tier, decided}} for these mods on this base, this league - what the Mod book thinks."""
+        st = self.stats()
+        return {sid: st.get((base, sid)) for sid in sids}
 
     def forget_sale(self, item):
         if not self.db:
