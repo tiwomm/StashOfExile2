@@ -1,6 +1,6 @@
 # StashOfExile2 roadmap
 
-**Current version: 2.29.0**
+**Current version: 2.29.1**
 
 Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds features, 2.10.1 only fixes. Each step below is one release; we work through them top to bottom.
 
@@ -48,6 +48,7 @@ Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds f
 | 2.27.0 | Chat commands is a tab in Settings (no longer a Utilities window). |
 | 2.28.0 | Money Makers: community strats in one layout (Thoughts per Click, Clicks per hour), live updates from GitHub, own strats + Share, simple run tracker. |
 | 2.29.0 | Money Makers reworked: Category › Type browser + tag groups, effort in words, tablet / waystone / atlas / craft sections, waystone tiers, Download Format (.txt), Lucrative Strats, Tablet Crafting quick reference. |
+| 2.29.1 | Fix: updating opens no console windows (the new exe installs itself). |
 
 ## ▶ Next up
 
