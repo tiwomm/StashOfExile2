@@ -362,6 +362,17 @@ def estimate(prices, league):
     return statistics.median(kept)
 
 
+def cheapest_real(prices, league):
+    """2.41.0: the cheapest listing that isn't a price-fixer (under a fifth of the cheapest 5's median), in divines.
+    With only a few listings (waystones often) the middle one says little - a buyer takes the cheapest real offer."""
+    conv = [d for d in (RATES.to_div(a, c, league) for a, c in prices[:5]) if d is not None]
+    if not conv:
+        return None
+    med = statistics.median(conv)
+    kept = sorted(d for d in conv if d >= med / 5) or sorted(conv)
+    return kept[0]
+
+
 def unconvertible(prices, league):
     """Currencies among the cheapest listings that we have no exchange rate for (those listings are left out of the price)."""
     return sorted({cur for amt, cur in prices[:5] if RATES.to_div(amt, cur, league) is None})

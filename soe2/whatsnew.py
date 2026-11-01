@@ -21,6 +21,12 @@ NEXT = [
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.41.0": [
+        "Waystone prices are more realistic: when only a few match, the price is the cheapest real offer (not the "
+        "middle one), and it never says High confidence from a handful of listings.",
+        "Tip: Listings set to \"Any\" counts offline sellers' old asks - the price check now says so. Instant Buyout "
+        "is closest to what really sells.",
+    ],
     "2.40.1": [
         "Stash tab reads every item, even hundreds of the same kind (a tab of 455 waystones read 234 before). Wealth "
         "syncs read big tabs completely too.",
