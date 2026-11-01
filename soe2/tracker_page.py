@@ -956,12 +956,12 @@ class TrackerPage:
                 ("Copy your stash search (in game)", SETTINGS.get("regex_key", ""), "Regex", "checks:regex_key"),
                 ("Open poe2db's modifier list in your browser", SETTINGS.get("poe2db_key", ""), "Settings > Hotkeys",
                  "checks:poe2db_key"),
-                ("Go to hideout", oc.get("hideout_key", ""), "Chat commands", "overlay:hideout_key"),
+                ("Go to hideout", oc.get("hideout_key", ""), "Settings > Chat commands", "overlay:hideout_key"),
                 ("Show / hide notes", oc.get("notes_key", ""), "Notes", "overlay:notes_key"),
                 ("Session tracker: start / stop", tc.get("key_toggle", ""), "Session tracker", "tracker:key_toggle"),
                 ("Session tracker: pause / resume", tc.get("key_pause", ""), "Session tracker", "tracker:key_pause")]
         for c in oc.get("commands", []) or []:
-            rows.append((f"Chat: {c.get('cmd', '')}", c.get("key", ""), "Chat commands", None))
+            rows.append((f"Chat: {c.get('cmd', '')}", c.get("key", ""), "Settings > Chat commands", None))
         return rows
 
     def hotkey_clashes(self):

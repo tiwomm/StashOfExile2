@@ -48,7 +48,6 @@ def load(app):
     from .modbook import ModBook
     from .library import Library
     from .regex import Regex
-    from .chat import Chat
     from .notes import Notes
     from .rates import Rates
     from .tracker import Tracker
@@ -56,5 +55,5 @@ def load(app):
     from .settings import Settings
     from .calc import Calculator
     from .insights import Insights
-    return [cls(app) for cls in (PriceChecks, Wealth, ModBook, Library, Regex, Search, Tracker, Chat, Notes,
+    return [cls(app) for cls in (PriceChecks, Wealth, ModBook, Library, Regex, Search, Tracker, Notes,
                                  Rates, Calculator, Insights, Settings)]
