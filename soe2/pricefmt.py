@@ -88,6 +88,16 @@ def fmt_div(x):
     return f"{x:.3f} div"
 
 
+SHORT_UNITS = {"div": "d", "divine": "d", "exalted": "ex", "ex": "ex", "chaos": "c", "vaal": "v"}
+
+
+def fmt_short(x):
+    """2.39.0: fmt_div with the short trade units and no space - 16ex, 20c, 29d (price tags over the game)."""
+    t = fmt_div(x)
+    num, _, unit = t.partition(" ")
+    return num + SHORT_UNITS.get(unit, unit) if unit else t
+
+
 def fmt_price(p):
     a = p[0]
     return f"{int(a) if float(a).is_integer() else a} {p[1]}"
