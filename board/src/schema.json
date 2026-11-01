@@ -1,0 +1,187 @@
+{
+ "schema": 2,
+ "taxonomy": {
+  "Mapping": [
+   "Breach",
+   "Delirium",
+   "Ritual",
+   "Expedition",
+   "Abyss",
+   "Essence",
+   "Strongbox",
+   "Rogue Exiles",
+   "Shrines",
+   "Overseer",
+   "Temple",
+   "Juiced mapping",
+   "Alch & go"
+  ],
+  "Bossing": [
+   "Pinnacle bosses",
+   "Map bosses",
+   "Simulacrum",
+   "Trial of the Sekhemas",
+   "Trial of Chaos"
+  ],
+  "Crafting": [
+   "Tablet crafting",
+   "Waystone crafting",
+   "Gear crafting",
+   "Jewel crafting",
+   "Flask & charm crafting"
+  ],
+  "Trading": [
+   "Currency flipping",
+   "Bulk selling",
+   "Buy low, sell high",
+   "Services"
+  ],
+  "Other": [
+   "Vendor recipes",
+   "Gold",
+   "Other"
+  ]
+ },
+ "tags": [
+  "Abyss",
+  "Breach",
+  "Delirium",
+  "Ritual",
+  "Expedition",
+  "Essence",
+  "Strongbox",
+  "Rogue Exiles",
+  "Shrines",
+  "Overseer",
+  "Temple",
+  "City area farm",
+  "Sacred Bloom farm",
+  "Juiced maps",
+  "Low-tier maps",
+  "Campaign zones",
+  "League start",
+  "Low budget",
+  "Mid budget",
+  "High budget",
+  "SSF friendly",
+  "Trade league",
+  "Party play",
+  "Hardcore safe",
+  "example"
+ ],
+ "tag_groups": {
+  "Also uses": [
+   "Abyss",
+   "Breach",
+   "Delirium",
+   "Ritual",
+   "Expedition",
+   "Essence",
+   "Strongbox",
+   "Rogue Exiles",
+   "Shrines",
+   "Overseer",
+   "Temple"
+  ],
+  "Farm type": [
+   "City area farm",
+   "Sacred Bloom farm",
+   "Juiced maps",
+   "Low-tier maps",
+   "Campaign zones"
+  ],
+  "Budget": [
+   "League start",
+   "Low budget",
+   "Mid budget",
+   "High budget"
+  ],
+  "Play style": [
+   "SSF friendly",
+   "Trade league",
+   "Party play",
+   "Hardcore safe"
+  ]
+ },
+ "thinking": {
+  "1": "Autopilot",
+  "2": "Easy",
+  "3": "Moderate",
+  "4": "Hard",
+  "5": "Big brain"
+ },
+ "clicks": [
+  "Chill",
+  "Steady",
+  "Busy",
+  "Frantic"
+ ],
+ "units": [
+  "div",
+  "ex",
+  "chaos"
+ ],
+ "required": [
+  "id",
+  "name",
+  "author",
+  "updated",
+  "patch",
+  "category",
+  "type",
+  "summary",
+  "thoughts_per_click",
+  "clicks_per_hour",
+  "steps"
+ ],
+ "lists": [
+  "tags",
+  "requirements",
+  "tablets",
+  "waystones",
+  "atlas",
+  "craft_steps",
+  "setup",
+  "steps",
+  "loot",
+  "tips",
+  "risks"
+ ],
+ "order": [
+  "id",
+  "name",
+  "author",
+  "updated",
+  "patch",
+  "category",
+  "type",
+  "summary",
+  "thoughts_per_click",
+  "clicks_per_hour",
+  "tags",
+  "waystone_tiers",
+  "est_cost",
+  "est_profit",
+  "requirements",
+  "tablets",
+  "waystones",
+  "atlas",
+  "craft_steps",
+  "setup",
+  "steps",
+  "loot",
+  "tips",
+  "risks",
+  "regex",
+  "sources"
+ ],
+ "one_order": [
+  "id",
+  "text",
+  "author",
+  "updated",
+  "category",
+  "type",
+  "tags"
+ ]
+}

@@ -4,7 +4,9 @@ Where strats come from (newest wins, by "revision"):
   1. moneymakers.json bundled with the app (built from the strats/ folder by tools/build_strats.py)
   2. the same file on GitHub main - fetched when the window opens (at most every 12 h) or with "Check for new strats",
      so a strat merged into the repo reaches everyone without a new release
-  3. your own strats (my_strats.json in the data folder) - share one with "Share" (a GitHub issue form, filled in)
+  3. your own strats (my_strats.json in the data folder)
+  4. 2.30.0: the Community board (board.py <-> board/, a Cloudflare Worker): players post, upvote and report;
+     admins promote the best posts, which then join the Official list
 
 The layout (SCHEMA 1) is documented in strats/README.md; validate() is the one place that checks it (the build tool
 and the app use the same function). Nothing here touches the game or the trade site."""
@@ -23,7 +25,6 @@ MINE = "my_strats.json"
 RUNS = "money_runs.json"
 REPO = "tiwomm/StashOfExile2"
 LIVE_URL = f"https://raw.githubusercontent.com/{REPO}/main/{FILE}"
-ISSUE_URL = f"https://github.com/{REPO}/issues/new"
 LIVE_EVERY = 12 * 3600
 
 # ---- what a strat IS: one category and one type inside it (2.28.0: "Mapping > Breach" - the strat is Breach farming,
@@ -482,33 +483,6 @@ def from_text(text):
     if s.get("name") and not s.get("id"):
         s["id"] = slug(s["name"])
     return {k: v for k, v in s.items() if v not in (None, "", [])}
-
-
-def issue_link(s):
-    """A GitHub issue (form strategy.yml) filled in with this strat, to share it with everyone."""
-    lines = lambda k: "\n".join(s.get(k) or [])
-    p = s.get("est_profit") or {}
-    inv = s.get("est_cost") or {}
-    q = {"template": "strategy.yml", "title": f"[Strat] {s.get('name', '')}",
-         "name": s.get("name", ""), "type": type_text(s),
-         "summary": s.get("summary", ""), "patch": s.get("patch", ""),
-         "thoughts": thinking_word(s.get("thoughts_per_click")), "clicks": str(s.get("clicks_per_hour", "")),
-         "profit": f"{p.get('low', '')}-{p.get('high', '')} {p.get('unit', 'div')}" if p else "",
-         "investment": f"{inv.get('amount', '')} {inv.get('unit', 'div')}" if inv else "",
-         "tiers": tiers_text(s.get("waystone_tiers")), "tags": ", ".join(s.get("tags") or []),
-         "requirements": lines("requirements"),
-         "tablets": lines("tablets"), "waystones": lines("waystones"), "atlas": lines("atlas"),
-         "craft_steps": lines("craft_steps"), "setup": lines("setup"), "steps": lines("steps"),
-         "loot": lines("loot"), "tips": lines("tips"), "risks": lines("risks"), "regex": s.get("regex", ""),
-         "sources": "\n".join(x.get("url", "") for x in s.get("sources") or []),
-         "json": "```json\n" + json.dumps(tidy(s), indent=2, ensure_ascii=False) + "\n```"}
-    return ISSUE_URL + "?" + urllib.parse.urlencode({k: v for k, v in q.items() if v})
-
-
-def one_issue_link(o):
-    q = {"template": "lucrative.yml", "title": f"[Lucrative] {o.get('text', '')[:60]}", "text": o.get("text", ""),
-         "type": type_text(o), "tags": ", ".join(o.get("tags") or [])}
-    return ISSUE_URL + "?" + urllib.parse.urlencode({k: v for k, v in q.items() if v})
 
 
 def new_strat(**kw):

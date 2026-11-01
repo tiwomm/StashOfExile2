@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU GPL v3.0 (see LICENSE). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.29.1
+VERSION 2.30.0
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,6 +19,18 @@ VERSION 2.29.1
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.30.0
+       Money Makers: a Community board instead of GitHub issues for sharing. Server = board/ (Cloudflare Worker +
+       D1, deployed by .github/workflows/board.yml with repo secrets - board/README.md has the setup). Sign in
+       with Discord (state polling: /auth/start -> Discord -> /auth/callback; the app polls /auth/poll; token in
+       board_session.json). Posts (strats + one-liners) are live at once, checked against the same layout
+       (board/src/schema.json, written by build_strats.py); upvotes (one per player); reports (3 distinct = hidden
+       until an admin looks); admins (ADMIN_IDS) hide / un-hide / delete / ban / promote; promoted posts come from
+       GET /official and join the Official list. App: soe2/board.py (client, never raises); Strats tab gets
+       Official / Community / Mine, ▲ column, Top / New, Upvote, 📤 Post to Community, Report, Copy to Mine, admin
+       items; your own posts edit through the same form. Lucrative Strats show Community one-liners too. The
+       board's address comes from the shared strat file (board/url.txt -> moneymakers.json "board_url"), so it
+       can be switched on without a release. GitHub issue forms and MM.issue_link are gone.
   2.29.1
        Fixed: updating opened console windows over and over ("Pinging 127.0.0.1 ..."). 2.26.3's swap .bat waited
        with ping and was started with CREATE_NO_WINDOW | DETACHED_PROCESS - Windows ignores NO_WINDOW with
@@ -1009,7 +1021,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.29.1"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.30.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 

@@ -21,6 +21,12 @@ NEXT = [
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.30.0": [
+        "Money Makers > Strats: Official, Community and Mine. Community is a board where players post their strats, "
+        "upvote the good ones and report junk - sign in with Discord to post, vote or report.",
+        "Post one of yours with 📤 Post to Community; the best ones get promoted to the Official list.",
+        "Lucrative Strats shows Community one-liners too, with upvotes.",
+    ],
     "2.29.1": [
         "Fixed: updating no longer opens black windows (\"Pinging 127.0.0.1\") over and over - the new version "
         "now installs itself, with no windows at all.",

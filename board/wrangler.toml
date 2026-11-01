@@ -1,0 +1,13 @@
+# StashOfExile2 community board. Deployed by .github/workflows/board.yml (see board/README.md for the setup).
+name = "soe2-board"
+main = "src/index.js"
+compatibility_date = "2026-10-01"
+
+[vars]
+REPORT_HIDE = "3"          # distinct reports that hide a post until an admin looks at it
+POSTS_PER_DAY = "10"       # per user
+
+[[d1_databases]]
+binding = "DB"
+database_name = "soe2-board"
+database_id = "REPLACE_WITH_YOUR_D1_ID"     # the deploy workflow fills this in from the D1_ID secret
