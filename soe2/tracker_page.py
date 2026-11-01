@@ -941,8 +941,9 @@ class TrackerPage:
         from .overlaywin import CanvasText
         cv = w.canvas_body()
         self.tk_ov_cv = cv
-        f_big, f_row, f_bold = (P["font"], 20, "bold"), (P["font"], 10), (P["font"], 10, "bold")
-        items = {"session": cv.create_text(12, 8, text="", anchor="nw", fill=P["big"], font=f_big)}
+        # 2.51.0 (the user: "barely legible"): a size up, bold numbers, a halo round every letter
+        f_big, f_row, f_bold = (P["font"], 22, "bold"), (P["font"], 11, "bold"), (P["font"], 11, "bold")
+        items = {"session": cv.create_text(12, 6, text="", anchor="nw", fill=P["big"], font=f_big)}
         lines = cfg["lines"]
         rows = []
         if lines.get("map"):
@@ -960,18 +961,21 @@ class TrackerPage:
                 items[right] = cv.create_text(0, 0, text="", anchor="e", fill=P["text"],
                                               font=f_bold if right == "where" else f_row)
 
+        halo = P.get("halo") if P.get("texture") else None
+        self.tk_ov_lbls = {k: CanvasText(cv, it, P["bg"], halo=halo) for k, it in items.items()}
+        lbl = self.tk_ov_lbls
+
         def layout(_e=None):
             wd = max(cv.winfo_width(), 120)
-            y = 46
+            y = 50
             for left, right in rows:
                 if left:
-                    cv.coords(items[left], 12, y)
+                    lbl[left].place(12, y)
                 if right:
-                    cv.coords(items[right], wd - 12, y)
-                y += 20
+                    lbl[right].place(wd - 12, y)
+                y += 22
         cv.bind("<Configure>", layout, add="+")
         layout()
-        self.tk_ov_lbls = {k: CanvasText(cv, it, P["bg"]) for k, it in items.items()}
         if not cfg.get("locked"):
             w.draggable(cv)
         if cfg.get("clock", True):                 # the clock on the title bar, like the mockup - or, when it doesn't
