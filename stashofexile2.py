@@ -25,10 +25,18 @@ VERSION HISTORY
        strats.yml). Strats live as one JSON file each in strats/ -> moneymakers.json (bundled) -> also fetched from
        GitHub main (raw) when the window opens, at most every 12 h, or with "Check for new strats" - newest
        "revision" wins, a file for a newer schema is refused. So a merged strat reaches everyone without a release.
-       Rated by Thoughts per Click (1-5) and Clicks per hour (Chill/Steady/Busy/Frantic bands). Your own strats
-       (my_strats.json): add / edit / import / export, Share = a GitHub issue form (.github/ISSUE_TEMPLATE/
-       strategy.yml) filled in by URL. Run tracker of its own (money_runs.json): Start / End run, optional profit,
-       runs per hour, div per hour; "Your runs" shows on the strat.
+       What a strat IS = Category > Type (TAXONOMY: Mapping > Breach, Crafting > Tablet crafting ...), shown in a
+       browser on the left with counts; everything else = tags in groups (TAG_GROUPS: Also uses, Farm type,
+       Budget, Play style - checkboxes). Tag search matches the type too. Effort is picked, never typed: Thinking
+       (Autopilot / Easy / Moderate / Hard / Big brain, stored 1-5 as thoughts_per_click) and Clicks per hour
+       (Chill / Steady / Busy / Frantic). Dedicated optional sections: tablets, waystones, atlas / master setup,
+       craft steps; waystone tiers 1-16 (filter); est. cost / est. profit. "Download Format" saves the blank layout as a .txt (Notepad; to_text / from_text, also
+       accepted by build_strats.py and Import). Your own strats (my_strats.json): add / edit / import / export,
+       Share = a GitHub issue form (strategy.yml) filled in by URL. Tabs: Lucrative Strats (one-liners,
+       strats/oneliners.json + my_lucrative.json, lucrative.yml issue form); Tablet Crafting (the trans/aug ->
+       alch or regal+exalt -> reforge flow, Check my tablet from the clipboard, valuable tablet mods from the Mod
+       book + learned prices + regex data, regex copy, trade-site link per mod); Run tracker of its own
+       (money_runs.json): Start / End run, optional profit, runs and div per hour, "Your runs" on the strat.
   2.27.0
        Chat commands left Utilities: it is a tab in Settings now (build_chat_window on the "Chat commands" page;
        modules/chat.py removed; shell.open("chat") opens that tab, so old saved layouts and links still work).
