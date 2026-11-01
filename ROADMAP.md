@@ -1,6 +1,6 @@
 # StashOfExile2 roadmap
 
-**Current version: 2.31.0**
+**Current version: 2.32.0**
 
 Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds features, 2.10.1 only fixes. Each step below is one release; we work through them top to bottom.
 
@@ -51,12 +51,12 @@ Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds f
 | 2.29.1 | Fix: updating opens no console windows (the new exe installs itself). |
 | 2.30.0 | Money Makers Community board: no login (pick a name), post / upvote / report, admins promote to Official (Cloudflare Worker). |
 | 2.31.0 | Community Mod book: pooled mod prices (anonymous, hourly) and community ratings; Stash tab marked BETA; Ritual Capture, Lag finder and the toolbar "Ctrl+Alt+C only" box removed. |
+| 2.32.0 | Map library: every endgame area (maps, citadels, pinnacles, league areas), ranks S-D / Avoid, export / import, community ranks; the tracker counts pinnacles and learns new areas. |
 
 ## ▶ Next up
 
 | Version | Plan |
 |---|---|
-| 2.32.0 | Map library with ranks, import / export. |
 | 2.33.0 | **Polish 1 - Foundation:** design tokens (one spacing scale of 4 / 8 / 12 / 16 / 24, four text sizes, colour roles), one button hierarchy (primary / secondary / quiet / danger), contrast check of every theme (see Accessibility below). Nothing changes in what the app does. |
 | 2.34.0 | **Polish 2 - Responsive:** windows reflow when narrow (toolbars wrap, side panels drop under the list, sensible minimum sizes), sharp on every monitor (per-monitor DPI), a text size setting (100-150 %). |
 | 2.35.0 | **Polish 3 - Hover, focus, micro-interactions:** the same hover and pressed look on every button, row, icon and tab; a visible keyboard focus ring everywhere; short (120-180 ms) fades for popups and toasts, never on lists; a "Reduce motion" setting that turns them off. |

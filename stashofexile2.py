@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU GPL v3.0 (see LICENSE). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.31.0
+VERSION 2.32.0
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,6 +19,19 @@ VERSION 2.31.0
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.32.0
+       Map library (maplib.py, maplib_page.py, modules/maps.py - its own window; the Session tracker has a 🗺 button).
+       mapdata.json (tools/build_mapdata.py from RePoE world_areas): 209 endgame areas by kind - Map, Tower, Unique
+       map, Citadel (lineage / special: citadels, Jade Isles), Pinnacle (Simulacrum, Arbiter, Breach, Ritual, Abyss,
+       Expedition ...), League area (Trials, logbooks ...). gamelog.area_kind now asks the library: pinnacles and league
+       areas count as runs; claimable "MapHideout..." are hideouts (they counted as maps before); an unknown area of
+       level 65+ that isn't a hideout / town / campaign is learned on its first visit (maps_learned.json, by the name
+       the game shows; "Not a map" forgets it for good). Ranks S A B C D / Avoid by map name (map_ranks.json in the
+       data folder - kept across versions): buttons, right-click, keys S A B C D X. Export / Import (.json,
+       format soe2-map-ranks); import and "Take the community's ranks" ask Replace all / Add and update / Add new
+       only. Community: your ranks are votes in the hourly community sync (board map_votes, /maps/ratings); the
+       library shows the community's average rank with its vote count. This session's maps and the in-game timer
+       show the rank.
   2.31.0
        Community Mod book (communitymods.py; board /mods/batch, /mods/stats, /mods/ratings). Once an hour (and on
        close) the app sends a SUMMARY of the listings its price checks stored since the last time: per (base, mod)
@@ -1040,7 +1053,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.31.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.32.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
