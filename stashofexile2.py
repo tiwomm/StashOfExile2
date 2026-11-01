@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU GPL v3.0 (see LICENSE). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.26.2
+VERSION 2.26.3
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,6 +19,14 @@ VERSION 2.26.2
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.26.3
+       Fixed: an update could hang with a console window flashing over and over. (1) The swap script waited with
+       "timeout", which needs a console - run hidden it opened a new console every try; it waits with ping now.
+       (2) Stopping a helper (Delirium / Ritual = the same one-file exe) only ended its starter process; the real
+       one kept running and kept the exe in use, so the swap could never finish. utilities.kill_tree ends the whole
+       tree (taskkill /t); the script also force-closes what's left of the old exe after 15 s, and gives up after
+       90 tries with a line in update_log.txt instead of looping. (3) The app ends with os._exit(0) after closing
+       for an update. Note: an update FROM an older version still runs that version's script.
   2.26.2
        (1) Regex: switching item type kept freezing (Lag finder: rx_build_lists destroying ~650 gear rows, up to
            0.8 s each time). Each type's rows are now built once and kept (canvas window swap); the other types are
@@ -955,7 +963,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.26.2"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.26.3"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 

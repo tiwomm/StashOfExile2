@@ -21,6 +21,9 @@ NEXT = [
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.26.3": [
+        "Fixed: updating could hang, with a black window popping up again and again, until you closed the app.",
+    ],
     "2.26.2": [
         "Regex: switching between tablets, waystones, jewels, gear ... no longer freezes the app.",
         "Fixed: maximised when you closed it -> maximised when you open it (for real this time).",
