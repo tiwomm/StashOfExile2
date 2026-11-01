@@ -21,6 +21,11 @@ NEXT = [
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.47.0": [
+        "Overlays › Look has four Path of Exile 2 styles: Runeshape parchment (now with real grunge, and the clean "
+        "layout from the mockup), Relic tooltip, Carved frame and Quiet HUD - or the old Classic dark.",
+        "Price checks › Stash tab: ＋ Tab is a proper button.",
+    ],
     "2.46.0": [
         "Strat guides are CSV files now (open them in Excel or Google Sheets) - Download Format, Export and Import. "
         "Older .txt guides still import.",

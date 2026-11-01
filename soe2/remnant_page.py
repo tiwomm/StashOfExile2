@@ -371,11 +371,12 @@ class RemnantPage:
         except tk.TclError:
             pass
         small = size                                           # (as big as the tags: read at a glance)
-        from .overlaywin import pal, parchment                # 2.43.0: parchment, like the book beside it
+        from .overlaywin import pal, parchment, skinned       # 2.43.0: parchment, like the book beside it
         P = pal()
-        BG, TXT, MUT = (P["bg"], P["text"], P["muted"]) if parchment() else ("#101826", "#e8eefc", "#9aa6bd")
-        EDGE_ = "#2a1f16" if parchment() else "#5b77ad"
-        box = tk.Frame(w, bg=BG, highlightthickness=4 if parchment() else 1, highlightbackground=EDGE_, padx=8, pady=4)
+        BG, TXT, MUT = (P["bg"], P["text"], P["muted"]) if skinned() else ("#101826", "#e8eefc", "#9aa6bd")
+        EDGE_ = P["leather"] if skinned() else "#5b77ad"                      # 2.47.0: every look
+        box = tk.Frame(w, bg=BG, highlightthickness=max(1, P["border"]) if skinned() else 1, highlightbackground=EDGE_,
+                       padx=8, pady=4)
         box.pack()
         tk.Label(box, text="Runeshapes for loot", bg=BG, fg=TXT,
                  font=("Segoe UI", small, "bold"), anchor="w").pack(fill="x")

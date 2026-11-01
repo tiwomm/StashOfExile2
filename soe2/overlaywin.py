@@ -18,28 +18,143 @@ EDGE = 4
 OUTLINE = "#5b77ad"              # the same 1px outline as the app's windows
 BODY_BG = "#0d1424"
 
-# ---- 2.43.0: the look of the windows over the game (Settings > Appearance > Over the game). "parchment" is like the
-# Expedition remnant's reward book: parchment in a dark leather binding, ink text. "classic" is the dark look of 2.42.
-LOOKS = {"parchment": "Parchment (like the remnant book)", "classic": "Classic dark"}
+# ---- 2.43.0 / 2.47.0: the look of the windows over the game (Overlays › Look). Four PoE2-style skins from the
+# 2.43.0 mockups - the user picked C, Runeshape parchment (the default) and wanted all four to choose from - plus the
+# Classic dark look of 2.42.
+#   parchment  the Expedition remnant's reward book: grungy parchment (made by texture(), no image file) in a dark
+#              leather binding, ink text, serif title, diamond icons
+#   relic      item / relic tooltips: near-black glass, a gold title band, a thin bronze rule
+#   carved     Inventory / Currency Exchange: stone panel, double bronze frame, a raised title plate
+#   hud        the area info top right: almost no box, a dark band between two gold hairlines, game-orange text
+LOOKS = {"parchment": "Runeshape parchment (default)", "relic": "Relic tooltip", "carved": "Carved frame",
+         "hud": "Quiet HUD", "classic": "Classic dark (2.42)"}
 LOOK = ["parchment"]
 SERIF = "Palatino Linotype"
+_P = {"title_size": 10, "align": "w", "texture": False, "on_icon": "\u25c6", "off_icon": "\u25c7", "rules": False,
+      "plate": False, "frame2": None, "cell_bg": None, "cell_line": None}
 PALETTES = {
-    "parchment": {"leather": "#2a1f16", "bg": "#dccaa0", "head": "#4a3520", "text": "#2e2216", "muted": "#5d4630",
-                  "line": "#a88a5c", "on": "#1f5a1a", "off": "#a3281b", "warn": "#6e4404", "field": "#e8dab8",
-                  "big": "#2e2216", "font": SERIF},
-    "classic": {"leather": BORDER_OFF, "bg": BODY_BG, "head": "#ffe2b8", "text": "#e8eefc", "muted": "#9fb0cc",
-                "line": "#8a6a3a", "on": "#5ee08a", "off": "#ff5c5c", "warn": "#ffb347", "field": BODY_BG,
-                "big": "#ffd9a8", "font": "Segoe UI"},
+    "parchment": dict(_P, leather="#2a1f16", edge="#000000", border=5, bg="#d8c49a", band="#d8c49a", head="#4a3520",
+                      text="#2e2216", muted="#5d4630", line="#a88a5c", on="#1f5a1a", off="#a3281b", warn="#6e4404",
+                      field="#e6d6b0", big="#2e2216", font=SERIF, texture=True, cell_bg="#ead9b2", cell_line="#a88a5c"),
+    "relic": dict(_P, leather="#6e5b3a", edge="#000000", border=1, bg="#0c0a08", band="#17130e", head="#e6d39f",
+                  text="#e9e2cf", muted="#a89a7c", line="#6e5b3a", on="#62c45a", off="#d24b3a", warn="#e0a352",
+                  field="#14110d", big="#f2e6c4", font=SERIF, align="center", cell_bg="#0c0a08", cell_line="#2c251b"),
+    "carved": dict(_P, leather="#8a7046", edge="#000000", border=2, bg="#1a1714", band="#1a1714", head="#f0dca4",
+                   text="#e9e2cf", muted="#a89a7c", line="#4d3f2a", on="#62c45a", off="#d24b3a", warn="#e0a352",
+                   field="#12100d", big="#f2e6c4", font=SERIF, align="center", plate=True, frame2="#4d3f2a",
+                   cell_bg="#12100d", cell_line="#4f6a3a"),
+    "hud": dict(_P, leather="#000000", edge="#000000", border=0, bg="#0a0907", band="#0a0907", head="#e0a352",
+                text="#f3e3bd", muted="#d9c79e", line="#7a5a2e", on="#6fd36a", off="#e5604c", warn="#e0a352",
+                field="#0a0907", big="#f3e3bd", font=SERIF, rules=True, on_icon="\u2713", off_icon="\u2715",
+                cell_bg="#0a0907", cell_line="#0a0907"),
+    "classic": dict(_P, leather=BORDER_OFF, edge=OUTLINE, border=0, bg=BODY_BG, band=BODY_BG, head="#ffe2b8",
+                    text="#e8eefc", muted="#9fb0cc", line="#8a6a3a", on="#5ee08a", off="#ff5c5c", warn="#ffb347",
+                    field=BODY_BG, big="#ffd9a8", font="Segoe UI", on_icon="\u25cf", off_icon="\u25cf"),
 }
 
 
 def pal():
-    """The colours (and font) of the windows over the game, for their content."""
+    """The colours, font and shape of the windows over the game, for their content."""
     return PALETTES.get(LOOK[0], PALETTES["parchment"])
 
 
 def parchment():
     return LOOK[0] == "parchment"
+
+
+def skinned():
+    """One of the PoE2-style looks (not Classic): content is drawn on a canvas, like the mockups."""
+    return LOOK[0] in PALETTES and LOOK[0] != "classic"
+
+
+_TEX = {}
+
+
+def texture(root, w, h, seed=7):
+    """2.47.0: a grungy parchment (the user: "too clean") - made here, no image file: the base colour, fibres and
+    grain, a few stains and darker, burnt edges. A Tk PhotoImage (None without Pillow)."""
+    key = (w // 16 * 16 + 16, h // 16 * 16 + 16, seed)
+    if key in _TEX:
+        return _TEX[key]
+    try:
+        import random
+        from PIL import Image, ImageDraw, ImageFilter, ImageTk
+    except Exception:
+        return None
+    W, H = key[0], key[1]
+    rnd = random.Random(seed)
+    img = Image.new("RGB", (W, H), (216, 196, 154))
+    px = img.load()
+    for y in range(H):                                     # grain
+        for x in range(W):
+            n = rnd.randint(-10, 10)
+            r, g, b = px[x, y]
+            px[x, y] = (r + n, g + n, b + n - 2)
+    d = ImageDraw.Draw(img, "RGBA")
+    for _ in range(max(6, W * H // 6000)):                 # stains
+        cx, cy, rr = rnd.randint(0, W), rnd.randint(0, H), rnd.randint(8, 40)
+        d.ellipse((cx - rr, cy - rr * 0.7, cx + rr, cy + rr * 0.7), fill=(120, 86, 40, rnd.randint(10, 28)))
+    for _ in range(W * H // 900):                          # fibres
+        x0, y0 = rnd.randint(0, W), rnd.randint(0, H)
+        d.line((x0, y0, x0 + rnd.randint(-14, 14), y0 + rnd.randint(-3, 3)), fill=(110, 80, 40, rnd.randint(14, 34)))
+    img = img.filter(ImageFilter.GaussianBlur(0.6))
+    edge = Image.new("L", (W, H), 0)                       # burnt, darker edges
+    de = ImageDraw.Draw(edge)
+    for i in range(max(0, min(14, W // 2 - 1, H // 2 - 1))):
+        de.rectangle((i, i, W - 1 - i, H - 1 - i), outline=int(150 * (1 - i / 14) ** 2))
+    edge = edge.filter(ImageFilter.GaussianBlur(3))
+    dark = Image.new("RGB", (W, H), (92, 62, 30))
+    img = Image.composite(dark, img, edge)
+    photo = ImageTk.PhotoImage(img, master=root)
+    _TEX[key] = photo
+    return photo
+
+
+def paint_texture(canvas, seed=7):
+    """Keep a canvas' background the parchment texture (redrawn when it changes size)."""
+    def draw(_e=None):
+        w, h = max(8, canvas.winfo_width()), max(8, canvas.winfo_height())
+        img = texture(canvas, w, h, seed)
+        canvas.delete("tex")
+        if img is not None:
+            canvas.create_image(0, 0, image=img, anchor="nw", tags="tex")
+            canvas.tag_lower("tex")
+    canvas.bind("<Configure>", draw, add="+")
+    draw()
+
+
+class CanvasText:
+    """A text on a canvas that answers like a Label (config / cget of text, fg, bg) - the skinned overlays draw their
+    text straight on the textured canvas, and the code that fills them still says lab.config(text=...)."""
+
+    def __init__(self, canvas, item, bg=None):
+        self.canvas, self.item, self._bg = canvas, item, bg
+
+    def config(self, **kw):
+        o = {}
+        if "text" in kw:
+            o["text"] = kw["text"]
+        if "fg" in kw:
+            o["fill"] = kw["fg"]
+        if o:
+            try:
+                self.canvas.itemconfigure(self.item, **o)
+            except tk.TclError:
+                pass
+        if hasattr(self, "on_change"):
+            self.on_change()
+    configure = config
+
+    def cget(self, key):
+        if key == "bg":
+            return self._bg
+        return self.canvas.itemcget(self.item, {"fg": "fill"}.get(key, key))
+
+    def winfo_exists(self):
+        try:
+            return bool(self.canvas.winfo_exists())
+        except tk.TclError:
+            return False
 
 # ---- over-the-game windows only show while the game is in front (2.0 beta 15)
 GAME_ONLY = [True]                # Settings > Window: "only while Path of Exile 2 is in front"
@@ -123,13 +238,13 @@ class OverlayWindow(tk.Toplevel):
         follow_game: only visible while the game (or the window itself) is in front; show() / hide() say whether you want it.
         no_activate: clicking it never takes the keyboard away from the game (for windows you don't type in).
         resizable=False: always the size of its content (2.38.0: the Helpers bar)."""
-        parch = parchment() and not app_colours           # 2.43.0: the remnant book's look
+        parch = skinned() and not app_colours             # 2.43.0 / 2.47.0: a PoE2-style skin
         P = pal()
         if parch:
             body_bg = P["bg"]
         super().__init__(root, bg=P["leather"] if parch else BORDER_OFF, highlightthickness=1,
-                         highlightbackground="#000000" if parch else OUTLINE)
-        self.parch = parch
+                         highlightbackground=P["edge"] if parch else OUTLINE)
+        self.parch, self.P = parch, P
         self.overrideredirect(True)
         try:
             self.attributes("-topmost", True)
@@ -144,34 +259,65 @@ class OverlayWindow(tk.Toplevel):
         self.locked, self.min_size = bool(locked), min_size
         self.on_moved, self.on_lock, self.on_close = on_moved, on_lock, on_close
         edge = 0 if self.locked else EDGE
-        inner = tk.Frame(self, bg=body_bg)
-        if parch:                                         # the leather binding shows round the page, locked or not
-            edge = EDGE
+        if parch:                                         # the binding / frame shows round the page, locked or not
+            edge = max(P["border"], 0 if self.locked else 1)
+        outer = self
+        if parch and P.get("frame2"):                     # carved: the second, inner bronze line
+            outer = tk.Frame(self, bg=P["frame2"])
+            outer.pack(fill="both", expand=True, padx=edge, pady=edge)
+            edge = 1
+        inner = tk.Frame(outer, bg=body_bg)
         inner.pack(fill="both", expand=True, padx=edge, pady=edge)
+        self.inner = inner
+        if parch and P.get("rules"):                      # hud: a gold hairline above and below
+            tk.Frame(inner, height=1, bg=P["line"]).pack(fill="x", side="top")
+            tk.Frame(inner, height=1, bg=P["line"]).pack(fill="x", side="bottom")
         title_fg, btn_bg, btn_line, accent = (("#ffffff", "#22345a", "#5b77ad", C["accent"]) if app_colours else
-                                              (P["head"], P["bg"], P["bg"], P["line"]) if parch else
+                                              (P["head"], P["band"], P["band"], P["line"]) if parch else
                                               ("#ffe2b8", "#3a3020", "#6a5a3a", "#8a6a3a"))
+        self._title = title
         if parch:                                         # (wide enough for its title and buttons)
             from tkinter import font as tkfont
-            need = tkfont.Font(root=root, family=SERIF, size=10, weight="bold").measure(title) + 16 + 24 * (2 if lockable else 1)
-            self.bar = tk.Canvas(inner, height=BAR_H, width=need, bg=P["bg"], highlightthickness=0)
+            self._tfont = (P["font"], P["title_size"], "bold")
+            need = tkfont.Font(root=root, family=P["font"], size=P["title_size"], weight="bold").measure(title) \
+                + 24 + 22 * (2 if lockable else 1)
+            self.bar = tk.Canvas(inner, height=BAR_H + (6 if P.get("plate") else 0), width=need, bg=P["band"],
+                                 highlightthickness=0)
         else:
             self.bar = GradientBar(inner, BAR_H, TITLE_ON if app_colours else UTIL_TITLE)
         self.bar.pack(fill="x")
         self.bar.configure(cursor="" if self.locked else "fleur")
-        self.bar.create_text(8, BAR_H // 2, text=title if parch else f"{icon}  {title}", anchor="w", fill=title_fg,
-                             font=(SERIF, 10, "bold") if parch else ("Segoe UI", 9, "bold"))
         self._btns = []
         buttons = [("×", self._close, btn_bg if parch else "#7a2a20")]
         if lockable:
             buttons.append(("🔒" if self.locked else "🔓", self._toggle_lock, btn_bg))
-        for txt, cmd, bg in buttons:
-            b = tk.Label(self.bar, text=txt, bg=bg, fg=P["muted"] if parch else title_fg, font=("Segoe UI", 9, "bold"),
-                         width=2, highlightthickness=0 if parch else 1, highlightbackground=btn_line, cursor="hand2")
-            b.bind("<Button-1>", lambda e, c=cmd: c())
-            self._btns.append(self.bar.create_window(0, BAR_H // 2, window=b, anchor="e"))
+        if parch:
+            if P.get("texture"):
+                paint_texture(self.bar, seed=3)
+            self._title_items = []
+            self.bar_note_item = self.bar.create_text(0, BAR_H // 2, text="", anchor="e", fill=P["muted"],
+                                                      font=(P["font"], 9))
+            for i, (txt, cmd, _bg) in enumerate(buttons):     # drawn on the canvas: no flat box on the texture
+                tag = f"btn{i}"
+                it = self.bar.create_text(0, BAR_H // 2, text=txt, fill=P["muted"], font=("Segoe UI Symbol", 10, "bold"),
+                                          anchor="e", tags=(tag,))
+                self.bar.tag_bind(tag, "<Button-1>", lambda e, c=cmd: c())
+                self.bar.tag_bind(tag, "<Enter>", lambda e: self.bar.configure(cursor="hand2"))
+                self.bar.tag_bind(tag, "<Leave>", lambda e: self.bar.configure(cursor="" if self.locked else "fleur"))
+                self._btns.append(it)
+            self.bar.bind("<Configure>", self._paint_title, add="+")
+            self._paint_title()
+        else:
+            self.bar.create_text(8, BAR_H // 2, text=f"{icon}  {title}", anchor="w", fill=title_fg,
+                                 font=("Segoe UI", 9, "bold"))
+            for txt, cmd, bg in buttons:
+                b = tk.Label(self.bar, text=txt, bg=bg, fg=title_fg, font=("Segoe UI", 9, "bold"),
+                             width=2, highlightthickness=1, highlightbackground=btn_line, cursor="hand2")
+                b.bind("<Button-1>", lambda e, c=cmd: c())
+                self._btns.append(self.bar.create_window(0, BAR_H // 2, window=b, anchor="e"))
         self.bar.bind("<Configure>", self._place_btns, add="+")
-        tk.Frame(inner, height=1 if not app_colours else 2, bg=accent).pack(fill="x")     # the accent line
+        if not (parch and P.get("plate")):
+            tk.Frame(inner, height=1 if not app_colours else 2, bg=accent).pack(fill="x")     # the accent line
         self.body = tk.Frame(inner, bg=body_bg)
         self.body.pack(fill="both", expand=True)
         self._drag, self._size = {}, {}
@@ -238,8 +384,50 @@ class OverlayWindow(tk.Toplevel):
     # ---- title bar buttons
     def _place_btns(self, _e=None):
         w = self.bar.winfo_width()
+        step = 22 if self.parch else 24
         for n, item in enumerate(self._btns):
-            self.bar.coords(item, w - 4 - n * 24, BAR_H // 2)
+            self.bar.coords(item, w - 6 - n * step, self._bar_mid() if self.parch else BAR_H // 2)
+        if self.parch:
+            self.bar.coords(self.bar_note_item, w - 10 - len(self._btns) * step, self._bar_mid())
+
+    def _bar_mid(self):
+        return (BAR_H + (6 if self.P.get("plate") else 0)) // 2
+
+    def _paint_title(self, _e=None):
+        """The title as the skin draws it: left (parchment, hud), centred on a gold band (relic) or on a raised
+        plate (carved), with a small diamond."""
+        P, c = self.P, self.bar
+        w = max(c.winfo_width(), int(c.cget("width")))
+        mid = self._bar_mid()
+        c.delete("title")
+        if P.get("plate"):
+            from tkinter import font as tkfont
+            tw = tkfont.Font(root=c, family=P["font"], size=P["title_size"], weight="bold").measure(self._title)
+            x0 = max(4, (w - tw) // 2 - 16)
+            c.create_rectangle(x0, 2, x0 + tw + 32, mid * 2 - 2, fill="#2a2219", outline="#b08e56", tags="title")
+            c.create_text(x0 + 16 + tw // 2, mid, text=self._title, fill=P["head"], font=self._tfont, tags="title")
+        elif P["align"] == "center":
+            c.create_polygon(10, mid, 14, mid - 4, 18, mid, 14, mid + 4, fill="#a8874e", tags="title")
+            c.create_text(w // 2, mid, text=self._title.upper(), fill=P["head"], font=self._tfont, tags="title")
+        else:
+            txt = self._title.upper() if P.get("rules") else self._title
+            c.create_text(10, mid, text=txt, anchor="w", fill=P["head"], font=self._tfont, tags="title")
+            if not P.get("rules"):
+                c.create_line(8, mid * 2 - 1, w - 8, mid * 2 - 1, fill=P["line"], tags="title")
+        self._place_btns()
+
+    def bar_note(self, text):
+        """Small text on the title bar, left of its buttons (the Session timer's clock)."""
+        if self.parch:
+            self.bar.itemconfigure(self.bar_note_item, text=text)
+
+    def canvas_body(self):
+        """A canvas filling the body, with the skin's background (the parchment texture): draw text straight on it."""
+        cv = tk.Canvas(self.body, bg=self.P["bg"], highlightthickness=0)
+        cv.pack(fill="both", expand=True)
+        if self.P.get("texture"):
+            paint_texture(cv, seed=11)
+        return cv
 
     def _close(self):
         if self.on_close:

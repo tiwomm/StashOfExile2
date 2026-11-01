@@ -2,7 +2,9 @@
 
 > **GGG ToS safety check - read first.** One key press = one action, only when you press it · nothing acts in the game by itself (watchers only look and show) · never touch the game's memory, code or traffic · the mouse is never moved or clicked for you · it reads only your clipboard, Client.txt, screen pixels, the trade site (within its limits) and poe.ninja. Every change must pass all of [TOS.md](TOS.md) (`tools/check_tos.py` checks the code on every PR).
 
-**Current version: 2.46.0**
+> **Who we build for - read second.** Path of Exile players are utilitarian: they love data and information, problem solving and creative thinking. So every feature shows its numbers *and how they were worked out*, lets you sort, filter, compare and export them (CSV), keeps power-user depth (keys, versions, raw data) one click away instead of hiding it, explains in plain words, and leaves the decision to the player. Pretty is welcome; vague is not.
+
+**Current version: 2.47.0**
 
 Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds features, 2.10.1 only fixes. Each step below is one release; we work through them top to bottom.
 
@@ -71,6 +73,7 @@ Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds f
 | 2.44.0 | Overlays (was Session tracker): Session timer, Mechanic Helper, Notes and Look as tabs of one window; Settings links to Look. |
 | 2.45.0 | Farm Ledger (was Run tracker): setups with versions, items priced by themselves, loot copied and priced by poe.ninja item by item every N runs, a spreadsheet, figures, compare, CSV. |
 | 2.46.0 | Strat guides as CSV (the Farm Ledger's column names); a setup exports as a guide; Cost now: a strat's items checked on the trade site once a day. |
+| 2.47.0 | Overlays › Look: Runeshape parchment (grungy, the mockup's layout), Relic tooltip, Carved frame, Quiet HUD, Classic. ＋ Tab is a button. |
 
 ## ▶ Next up
 
@@ -78,11 +81,12 @@ Order (decided 2.34.0): the Polish basics first, so new features are built on th
 
 | Version | Plan |
 |---|---|
-| 2.47.0 | **More item types priced (Sidekick / Exiled Exchange-style):** a pricing engine for item types the app only guesses today. Their licences are checked first; logic is ported, not code, with credit. |
-| 2.48.0 | **Public stash order test tool.** |
-| 2.49.0 | **Polish 4 - Responsive:** windows reflow when narrow (toolbars wrap, side panels drop under the list, sensible minimum sizes), sharp on every monitor (per-monitor DPI), a text size setting (100-150 %). |
-| 2.50.0 | **Polish 5 - Hover, focus, micro-interactions:** the same hover and pressed look on every button, row, icon and tab; a visible keyboard focus ring everywhere; short (120-180 ms) fades for popups and toasts, never on lists; a "Reduce motion" setting that turns them off. |
-| 2.51.0 | **Polish 6 - Visual hierarchy:** the suggestions below, window by window, with before / after screenshots in each PR. |
+| 2.48.0 | **Update badge and bug reports:** an update shows on the taskbar whatever window you're in; a Report a bug button on the taskbar sends the report to GitHub Issues (through the board server - no token in the app) and Discord is told about new issues. |
+| 2.49.0 | **More item types priced (Sidekick / Exiled Exchange-style):** a pricing engine for item types the app only guesses today. Their licences are checked first; logic is ported, not code, with credit. |
+| 2.50.0 | **Public stash order test tool.** |
+| 2.51.0 | **Polish 4 - Responsive:** windows reflow when narrow (toolbars wrap, side panels drop under the list, sensible minimum sizes), sharp on every monitor (per-monitor DPI), a text size setting (100-150 %). |
+| 2.52.0 | **Polish 5 - Hover, focus, micro-interactions:** the same hover and pressed look on every button, row, icon and tab; a visible keyboard focus ring everywhere; short (120-180 ms) fades for popups and toasts, never on lists; a "Reduce motion" setting that turns them off. |
+| 2.53.0 | **Polish 6 - Visual hierarchy:** the suggestions below, window by window, with before / after screenshots in each PR. |
 | Last | **Linux build** (Hyprland / Wayland first) - the groundwork is in place (session_linux_handover.txt). |
 
 ### Visual hierarchy - suggestions (for 2.47.0)

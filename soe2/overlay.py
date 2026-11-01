@@ -332,9 +332,9 @@ class Overlay:
 
     def note_colours(self):
         """(background, text): the remnant book's parchment (2.43.0), or your own colours with the Classic look."""
-        from .overlaywin import pal, parchment
-        if parchment():
-            return pal()["bg"], pal()["text"]
+        from .overlaywin import pal, skinned
+        if skinned():                                     # 2.47.0: every PoE2 look: its own page colours
+            return pal()["field"], pal()["text"]
         return self._colour("notes_bg", "1A1A2E"), self._colour("notes_fg", "E2C97E")
 
     def _colour(self, key, default):
@@ -343,7 +343,7 @@ class Overlay:
 
     def _build_notes(self):
         """The sticky note: the shared over-the-game window (overlaywin.py) with your colours inside it."""
-        from .overlaywin import OverlayWindow, pal, parchment
+        from .overlaywin import OverlayWindow, pal, skinned
         c = self.cfg
         bg, fg = self.note_colours()
 
@@ -356,11 +356,21 @@ class Overlay:
                           min_size=(NOTE_MIN_W, NOTE_MIN_H), on_close=self.hide_notes, on_lock=self.set_locked,
                           on_moved=moved, follow_game=True)
         w.withdraw()                           # show_notes() shows it
+        host = w.body
+        if w.parch:                            # 2.47.0: a page on the skin's background (the parchment shows round it)
+            cv = w.canvas_body()
+            host = tk.Frame(cv, bg=bg)
+            win_id = cv.create_window(8, 4, window=host, anchor="nw")
+            cv.bind("<Configure>", lambda e: cv.itemconfigure(win_id, width=max(40, e.width - 16),
+                                                              height=max(30, e.height - 12)), add="+")
+            if not c.get("notes_locked"):
+                w.draggable(cv)
         # 2.23.0: tabs - several pages on one note (click a tab, + adds one, double-click renames, right-click deletes)
-        self.notes_tabbar = tk.Frame(w.body, bg=bg)
+        self.notes_tabbar = tk.Frame(host, bg=bg)
         self.notes_tabbar.pack(fill="x")
-        text = tk.Text(w.body, bg=bg, fg=fg, insertbackground=fg, relief="flat", highlightthickness=0, wrap="word",
-                       font=(pal()["font"] if parchment() else "Consolas", int(c.get("notes_font", 11))), padx=8, pady=4)
+        text = tk.Text(host, bg=bg, fg=fg, insertbackground=fg, relief="flat", highlightthickness=0, wrap="word",
+                       font=(pal()["font"] if skinned() else "Consolas", int(c.get("notes_font", 11))), padx=8, pady=4,
+                       spacing1=2, spacing3=2)
         text.pack(fill="both", expand=True)
         tabs, i = self.note_tabs(), self.note_index()
         text.insert("1.0", tabs[i]["text"])
