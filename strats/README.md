@@ -2,8 +2,9 @@
 
 > **GGG ToS safety check - read first.** One key press = one action, only when you press it · nothing acts in the game by itself (watchers only look and show) · never touch the game's memory, code or traffic · the mouse is never moved or clicked for you · it reads only your clipboard, Client.txt, screen pixels, the trade site (within its limits) and poe.ninja. Every change must pass all of [TOS.md](../TOS.md) (`tools/check_tos.py` checks the code on every PR).
 
-Each strat is **one file** in this folder, in the standard layout below: a `.json` file, or the plain-text `.txt`
-layout the app saves with **⬇ Download Format** (opens in Notepad). One-liners for **Lucrative Strats** go in
+Each strat is **one file** in this folder, in the standard layout below: a `.csv` file (2.46.0 - what the app saves
+with **⬇ Download Format** and **Export**; opens in Excel / Google Sheets), or `.json`. The older plain-text `.txt`
+layout still reads. One-liners for **Lucrative Strats** go in
 `oneliners.json`. `tools/build_strats.py` checks every file and builds `moneymakers.json`, which ships with the app
 **and** is fetched from `main` by the app (at most every 12 h), so a merged strat reaches everyone without a new release.
 
@@ -50,6 +51,15 @@ Searching a tag finds both: `Breach` finds Mapping › Breach and strats tagged 
 | `requirements`, `setup`, `loot`, `tips`, `risks` | no | lists of lines (`loot` = item names to sell) |
 | `regex` | no | a stash search string |
 | `sources` | no | `[{"title", "url"}]` |
+
+| `items` | no | `[{"kind", "base", "name", "count", "lasts", "key_mods"}]` - what a run uses, with the mods that matter: the app checks their trade price once a day ("Cost now") |
+| `ledger` | no | numbers from the author's Farm Ledger: `runs`, `minutes`, `cost_per_run_div`, `loot_per_run_div`, `profit_per_run_div`, `div_per_hour` |
+
+**The CSV layout** (one header for every Money Makers CSV): `section,field,value,note`. `strat` rows hold the fields
+above (`thinking` as a word, `est_cost_div` a run, `est_profit_div` an hour), `tag` rows one tag each (field = its
+group), list rows one line each (section = the list, field = 1, 2, 3 ...), `source` rows a link (note = its title),
+`item` rows `1:kind`, `1:base`, `1:count`, `1:lasts`, `1:key_mod` (repeat for more mods), and `ledger` rows the Farm
+Ledger's numbers under the same names as its own CSV. The `note` column is help - the app ignores it.
 
 One-liner (`oneliners.json`): `{"id", "text", "author"}` + optional `category`, `type`, `tags`, `updated`.
 The tag `example` marks a sample strat. Check your files with `py tools/build_strats.py --check`.

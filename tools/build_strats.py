@@ -33,12 +33,12 @@ def write_board_schema():
 def collect():
     strats, problems = [], []
     for name in sorted(os.listdir(FOLDER)):
-        if name.startswith("_") or name == "oneliners.json" or not name.endswith((".json", ".txt")):
+        if name.startswith("_") or name == "oneliners.json" or not name.endswith((".json", ".txt", ".csv")):
             continue
         path = os.path.join(FOLDER, name)
         try:
             with open(path, encoding="utf-8-sig") as f:
-                s = json.load(f) if name.endswith(".json") else from_text(f.read())
+                s = json.load(f) if name.endswith(".json") else MM.read_any(f.read())     # .csv (2.46.0) or .txt
         except Exception as e:
             problems.append(f"{name}: can't be read ({e})")
             continue

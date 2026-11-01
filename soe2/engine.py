@@ -23,6 +23,7 @@ from .market import MARKET, Market
 from .pricefmt import confidence, fmt_div, fmt_price
 from .wealth import WealthJobs
 from .tabreader import TabReaderJobs
+from .stratcost import StratCostJobs          # 2.46.0: what a strat costs today
 
 
 def spread_of(stages, league):
@@ -53,7 +54,7 @@ def spread_of(stages, league):
 
 
 # ------------------------------------------------------------------ background engine
-class Engine(TabReaderJobs, WealthJobs, threading.Thread):
+class Engine(TabReaderJobs, WealthJobs, StratCostJobs, threading.Thread):
     """One background thread does all network work. Lower priority number = sooner."""
 
     def __init__(self, records, ui_q):
