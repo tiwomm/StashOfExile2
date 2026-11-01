@@ -10,6 +10,7 @@
     hidden  - True: not on the dock, the Toolkit menu or the desktop; opened from inside another window only
               (2.0 beta 14: Under the hood, opened from Price checks)
     labs    - True for an experimental (Labs) one: only shown when Labs is on in Settings, tagged BETA
+    beta    - True to tag it BETA but show it always (2.38.0: Money Makers)
     blurb   - one line about it (dock tooltip, menu search)
     build(body)  - draw its content into its window's body (called once at start-up; windows that are closed are
                    only hidden, so a module is always there for the rest of the app)
@@ -36,6 +37,7 @@ class Module:
     kind = "module"
     blurb = ""
     hidden = False
+    beta = False        # 2.38.0: tagged BETA, still shown (labs: hidden unless Labs is on)
     parent = None       # 2.33.0: a child tool's parent module (see "How the app is organised" below)
 
     def __init__(self, app):

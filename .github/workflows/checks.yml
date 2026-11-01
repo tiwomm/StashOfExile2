@@ -1,4 +1,4 @@
-# Quick checks on every pull request (2.34.0): the version agrees everywhere, the code stays on the design tokens,
+# Quick checks on every pull request (2.34.0): the GGG ToS safety check (2.38.0, TOS.md), the version agrees everywhere, the code stays on the design tokens,
 # and every theme / accent keeps WCAG AA text contrast. Each is one script in tools/ - run them yourself the same way.
 name: Checks
 
@@ -16,6 +16,8 @@ jobs:
       - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
+      - name: GGG ToS safety check (TOS.md)
+        run: python tools/check_tos.py
       - name: Version agrees everywhere
         run: python tools/check_version.py
       - name: Design tokens (text sizes, spacing)

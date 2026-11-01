@@ -14,7 +14,10 @@ learned instead. The game's log (Client.txt) says nothing when a remnant is open
 
 Credit: the idea comes from PoE Ancients Price Helper by Pedro Quitério
 (https://github.com/pedro-quiterio/PoeAncientsPriceHelper). That project isn't open source, so none of its code, text
-or images are used here - this is our own implementation of the idea."""
+or images are used here - this is our own implementation of the idea.
+
+ToS (TOS.md): this only LOOKS at the screen (a capture, like a screenshot) and SHOWS something; it never presses,
+clicks, types or sends anything to the game, and never reads the game's memory or traffic."""
 import difflib
 import re
 import sys

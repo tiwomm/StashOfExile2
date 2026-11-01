@@ -124,6 +124,7 @@ def wealth_children(extra, level):
 
 def wealth_query(account, tab, extra):
     filters = {"trade_filters": {"filters": {"account": {"input": account.strip()},
+                                             "sale_type": {"option": "any"},          # 2.38.0: as the site's own link
                                              "price": {"option": tab["currency"], "min": tab["amount"], "max": tab["amount"]}}}}
     if extra:
         filters["type_filters"] = {"filters": dict(extra)}

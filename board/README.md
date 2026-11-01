@@ -1,5 +1,7 @@
 # Money Makers Community board
 
+> **GGG ToS safety check - read first.** One key press = one action, only when you press it · nothing acts in the game by itself (watchers only look and show) · never touch the game's memory, code or traffic · the mouse is never moved or clicked for you · it reads only your clipboard, Client.txt, screen pixels, the trade site (within its limits) and poe.ninja. Every change must pass all of [TOS.md](../TOS.md) (`tools/check_tos.py` checks the code on every PR).
+
 The server behind **Money Makers › Community** (2.30.0). Players post strats and one-liners, upvote them and report
 them, with no login: the first time someone posts, votes or reports, the app asks for a display name and the board
 gives that install its own key. At most 5 new accounts a day are allowed per internet address, so votes can't be
