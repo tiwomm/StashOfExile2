@@ -867,7 +867,7 @@ class TrackerPage:
             bar = tk.Frame(w.body, bg=BB, padx=8, pady=2)
             bar.pack(side="bottom", fill="x", before=inner)
             tk.Label(bar, text="Helpers:", bg=BB, fg="#8b96b0", font=("Segoe UI", 9)).pack(side="left", padx=(0, 8))
-            for i, k in enumerate(("breach", "delirium", "ritual")):
+            for i, k in enumerate(("breach", "delirium", "ritual", "remnant")):
                 if i:
                     tk.Label(bar, text="|", bg=BB, fg="#3a4560", font=("Segoe UI", 9)).pack(side="left", padx=4)
                 cell = tk.Frame(bar, bg=BB, cursor="hand2")
@@ -952,6 +952,8 @@ class TrackerPage:
 
     # ---------------- hotkeys (fed by the keyboard watcher, on its own thread)
     def tracker_on_key(self, vk, ctrl, alt, shift):
+        if self.remnant_on_key(vk, ctrl, alt, shift):                   # 2.37.0: Expedition Remnant Price Checker
+            return True
         cfg = SETTINGS.get("tracker") or {}
         for key, action in (("key_toggle", "toggle"), ("key_pause", "pause")):
             k = parse_key(cfg.get(key) or "")
@@ -981,7 +983,9 @@ class TrackerPage:
                 ("Go to hideout", oc.get("hideout_key", ""), "Settings > Chat commands", "overlay:hideout_key"),
                 ("Show / hide notes", oc.get("notes_key", ""), "Notes", "overlay:notes_key"),
                 ("Session tracker: start / stop", tc.get("key_toggle", ""), "Session tracker", "tracker:key_toggle"),
-                ("Session tracker: pause / resume", tc.get("key_pause", ""), "Session tracker", "tracker:key_pause")]
+                ("Session tracker: pause / resume", tc.get("key_pause", ""), "Session tracker", "tracker:key_pause"),
+                ("Expedition Remnant Price Checker (in game)", self.remnant_cfg().get("key", ""),
+                 "Session tracker > Alerts", "remnant:key")]
         for c in oc.get("commands", []) or []:
             rows.append((f"Chat: {c.get('cmd', '')}", c.get("key", ""), "Settings > Chat commands", None))
         return rows

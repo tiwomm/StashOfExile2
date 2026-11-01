@@ -9,6 +9,8 @@ same way the Session tracker does) and shows a banner over the game: an "almost 
 one. Nothing is read from the game itself and no keys are sent. A banner looks like the Delirium alert's END DELIRIUM (2.12.1): big flashing text over the game,
 no box; clicks go through it. It goes after a few seconds, or as soon as you open the Genesis Tree.
 
+Remnant (2.37.0): the Expedition Remnant Price Checker (remnant.py / remnant_page.py) - a key, not a watcher.
+
 Delirium: the helper (utilities.DELIRIUM, delirium_runner.py) looks at your screen; its END DELIRIUM banner is its own.
 This panel only starts / stops it, sets its sound and tests it. Its splinter icon is gone (2.10.0)."""
 import sys
@@ -18,7 +20,7 @@ from tkinter import ttk
 
 from .config import save_json, SETTINGS
 from .gamelog import area_kind as gl_area_kind, find_log, LogReader
-from .style import C
+from .style import C, Tooltip
 
 REPEAT_SECS = 45          # the game repeats a warning (twice in 2 s, then every ~15 s when full): one banner per level
 RETRY_TICKS = 15          # Client.txt not found: look again every this many seconds
@@ -168,14 +170,17 @@ class AlertsPage:
                 ("breach", "Breach", "a banner when your stored Hiveblood is almost full, and when it's full "
                                      "(reads Client.txt)", lambda: self.breach_alert(test=True)),
                 ("ritual", "Ritual", "reads the Ritual counter (0/3 ...) from your screen; reminds you if you leave a "
-                                     "map after starting its rituals but not finishing them", self.alerts_test_ritual)):
+                                     "map after starting its rituals but not finishing them", self.alerts_test_ritual),
+                ("remnant", "Remnant", "Expedition Remnant Price Checker: a key on a remnant's reward list prices "
+                                       "each reward (reads your screen once per press)", self.alerts_test_remnant)):
             row = tk.Frame(box, bg=P2)
             row.pack(fill="x", pady=(8, 0))
             dot = tk.Label(row, text="●", bg=P2, fg=DOT["off"], font=("Segoe UI", 10))
             dot.pack(side="left")
             on = tk.BooleanVar(value=False)
-            ttk.Checkbutton(row, text=name, variable=on, width=9,
-                            command=lambda k=key: self.alerts_toggle(k)).pack(side="left", padx=(4, 0))
+            nb = ttk.Checkbutton(row, text=name, variable=on, width=9, command=lambda k=key: self.alerts_toggle(k))
+            nb.pack(side="left", padx=(4, 0))
+            Tooltip(nb, what)                       # 2.37.0: what it does - the line under a row shows only while on
             snd = tk.BooleanVar(value=True)
             ttk.Checkbutton(row, text="Sound", variable=snd, command=lambda k=key: self.alerts_sound(k)).pack(side="left")
             ttk.Button(row, text="Test", command=test, width=6).pack(side="right")
@@ -190,11 +195,13 @@ class AlertsPage:
             st = tk.Label(box, text=what, bg=P2, fg=C["muted"], anchor="w", justify="left", font=("Segoe UI", 9))
             st.pack(fill="x", padx=(24, 8))                   # 2.11.0: its own line, so it never gets cut off
             st.bind("<Configure>", lambda e, l=st: l.config(wraplength=max(200, e.width - 10)))
-            self.al_rows[key] = {"dot": dot, "on": on, "sound": snd, "status": st, "what": what, "note": ""}
+            self.al_rows[key] = {"dot": dot, "on": on, "sound": snd, "status": st, "what": what, "note": "", "row": row}
         self.al_rows["breach"]["on"].set(bool(self.breach_cfg().get("on")))
         self.al_rows["breach"]["sound"].set(bool(self.breach_cfg().get("sound", True)))
         self.al_rows["ritual"]["on"].set(bool(self.ritual_cfg().get("on")))
         self.al_rows["ritual"]["sound"].set(bool(self.ritual_cfg().get("sound", True)))
+        self.al_rows["remnant"]["on"].set(bool(self.remnant_cfg().get("on")))          # 2.37.0
+        self.al_rows["remnant"]["sound"].set(bool(self.remnant_cfg().get("sound", True)))
         try:
             from .utilities import DELIRIUM
             self.al_rows["delirium"]["sound"].set(bool(DELIRIUM.get_sound()))
@@ -238,6 +245,9 @@ class AlertsPage:
                 r["on"].set(False)
                 self.ritual_cfg()["on"] = False
                 save_json("settings.json", SETTINGS)
+        elif key == "remnant":                                # 2.37.0
+            err = self.remnant_toggle(want)
+            r["note"] = err or ""
         else:
             SETTINGS["util_delirium_autostart"] = want       # on = it also starts with the app next time
             save_json("settings.json", SETTINGS)
@@ -251,8 +261,9 @@ class AlertsPage:
 
     def alerts_sound(self, key):
         r = self.al_rows[key]
-        if key in ("breach", "ritual"):
-            (self.breach_cfg() if key == "breach" else self.ritual_cfg())["sound"] = bool(r["sound"].get())
+        if key in ("breach", "ritual", "remnant"):
+            cfg = {"breach": self.breach_cfg, "ritual": self.ritual_cfg, "remnant": self.remnant_cfg}[key]()
+            cfg["sound"] = bool(r["sound"].get())
             save_json("settings.json", SETTINGS)
         else:
             from .utilities import DELIRIUM
@@ -265,6 +276,11 @@ class AlertsPage:
     def alerts_ritual_leave_changed(self):
         self.ritual_cfg()["leave_reminder"] = bool(self.al_rleave.get())
         save_json("settings.json", SETTINGS)
+
+    def alerts_test_remnant(self):
+        r = self.al_rows["remnant"]
+        r["note"] = self.remnant_test()
+        self.alerts_refresh()
 
     def alerts_test_ritual(self):
         self.breach_alert(test=True, level="ritual", sub="1 of 3 done (a test)")
@@ -318,7 +334,7 @@ class AlertsPage:
             d = "off"
         b = self.breach_status()
         return {"delirium": d, "breach": "off" if b is False else "warn" if b == "warn" and self.br_reader is None
-                else "on", "ritual": self.ritual_status()}
+                else "on", "ritual": self.ritual_status(), "remnant": self.remnant_status()}
 
     def alerts_refresh(self):
         """Every 2 s (util_refresh) and after a change: dots, checkboxes and status lines."""
@@ -354,8 +370,20 @@ class AlertsPage:
         else:
             btxt = "On - watching for the game's Hiveblood warnings"
         rtxt = self.ritual_text(rows["ritual"])
-        for k, txt in (("delirium", dtxt), ("breach", btxt), ("ritual", rtxt)):
+        mtxt = rows["remnant"]["note"] or self.remnant_text(rows["remnant"])
+        rows["remnant"]["note"] = ""
+        rows["remnant"]["on"].set(bool(self.remnant_cfg().get("on")))
+        for k, txt in (("delirium", dtxt), ("breach", btxt), ("ritual", rtxt), ("remnant", mtxt)):
             st = states[k]
+            lbl = rows[k]["status"]                 # 2.37.0: a helper that's off (and has nothing to say) takes one line
+            show = st != "off" or txt != rows[k]["what"]
+            try:
+                if show and not lbl.winfo_manager():
+                    lbl.pack(fill="x", padx=(24, 8), after=rows[k]["row"])
+                elif not show and lbl.winfo_manager():
+                    lbl.pack_forget()
+            except tk.TclError:
+                pass
             rows[k]["dot"].config(fg=DOT[st])
             rows[k]["status"].config(text=txt, fg=C["red"] if st == "warn" else C["green"] if st == "on" else C["muted"])
 

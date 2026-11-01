@@ -282,6 +282,59 @@ class Toast:
         self.job = self.root.after(int(secs * 1000), self.hide)
 
 
+class Tooltip:
+    """2.37.0: a small tip under a widget while the mouse rests on it (also the text a screen reader can't get from
+    an icon). Tooltip(widget, text); .text can be changed later."""
+
+    def __init__(self, widget, text, delay=450):
+        self.w, self.text, self.delay, self.win, self.job = widget, text, delay, None, None
+        widget.bind("<Enter>", self._enter, add="+")
+        widget.bind("<Leave>", self._leave, add="+")
+        widget.bind("<ButtonPress>", self._leave, add="+")
+
+    def _enter(self, _e=None):
+        self._cancel()
+        self.job = self.w.after(self.delay, self.show)
+
+    def _cancel(self):
+        if self.job:
+            try:
+                self.w.after_cancel(self.job)
+            except tk.TclError:
+                pass
+            self.job = None
+
+    def _leave(self, _e=None):
+        self._cancel()
+        self.hide()
+
+    def show(self):
+        self.job = None
+        if not self.text or self.win is not None:
+            return
+        try:
+            x, y = self.w.winfo_rootx() + 8, self.w.winfo_rooty() + self.w.winfo_height() + 4
+        except tk.TclError:
+            return
+        self.win = tk.Toplevel(self.w)
+        self.win.overrideredirect(True)
+        try:
+            self.win.attributes("-topmost", True)
+        except tk.TclError:
+            pass
+        tk.Label(self.win, text=self.text, bg=C["panel2"], fg=C["text"], font=("Segoe UI", SMALL), justify="left",
+                 wraplength=420, padx=8, pady=4, highlightthickness=1, highlightbackground=C["line"]).pack()
+        place_near(self.w.winfo_toplevel(), self.win, x, y)
+
+    def hide(self):
+        if self.win is not None:
+            try:
+                self.win.destroy()
+            except tk.TclError:
+                pass
+            self.win = None
+
+
 class SegBar(tk.Frame):
     """A row of joined toggle buttons (2.0 beta 7), like  [ Total | Daily ].  One is picked at a time; the picked one is
     lit with an orange line under it. command(value) is called when you pick another."""

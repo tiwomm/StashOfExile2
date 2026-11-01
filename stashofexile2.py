@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU GPL v3.0 (see LICENSE). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.36.0
+VERSION 2.37.0
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,6 +19,18 @@ VERSION 2.36.0
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.37.0
+       Expedition Remnant Price Checker (remnant.py, remnant_page.py). A
+       helper like Delirium / Breach / Ritual: its row in Session tracker > Alerts (on / off, dot, Sound, Test, status
+       line) and a green / red cell in the timer's Helpers bar (click = on / off). With a remnant's reward list open,
+       its key (Ctrl+Alt+R, Settings > Hotkeys) takes one picture of the game window, reads it with Windows.Media.Ocr
+       (PyWinRT winrt-* packages, --collect-submodules winrt), matches lines to poe.ninja names (WPRICES, all exchange
+       types + uniques; split_qty for "x3" / "3x"; difflib >= 0.84), and draws click-through price tags right of each
+       line (amount x each, best one ★, "no price"); the key again or 30 s takes them off. No calibration: only lines
+       that match an item get a tag. Off Windows / without an OCR language it says why (status warn). CI checks.yml
+       runs remnant.selftest() on Windows (informational). Credit: the idea is PoE Ancients Price Helper by Pedro
+       Quitério (github.com/pedro-quiterio/PoeAncientsPriceHelper) - not open source, so no code, text or images
+       from it; credited in About, README, THIRD_PARTY_NOTICES and the code.
   2.36.0
        Polish 3 - Context menus. listkit.list_menu puts a list's own actions on top (tree.menu_actions(sel) ->
        [(label, fn, enabled, accelerator) | None]), then the standard Copy / Select all / Delete / Undo. Price checks
@@ -44,7 +56,7 @@ VERSION HISTORY
        teal / ice was 1.9-3.4 : 1); accent-derived button colours are no longer recoloured by themes (Ice accent).
        tools/check_contrast.py: every text pair, every theme x accent >= 4.5 : 1. .github/workflows/checks.yml runs
        check_version, check_tokens and check_contrast on every PR. Roadmap reordered: Toasts 2.35, Context menus 2.36,
-       Ancients helper 2.37, more item types 2.38, stash order tool 2.39, Responsive 2.40, Hover / focus 2.41, Visual
+       Expedition Remnant Price Checker 2.37, more item types 2.38, stash order tool 2.39, Responsive 2.40, Hover / focus 2.41, Visual
        hierarchy 2.42, Linux last.
   2.33.1
        Map library: the "✖ Avoid" rank button was cut off (ttk width -7 = at least 7, grows to fit).
@@ -1088,7 +1100,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.36.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.37.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
