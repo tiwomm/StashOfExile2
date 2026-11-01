@@ -107,7 +107,8 @@ class FeedbackPage:
         win.title("Report a bug")
         win.configure(bg=P1)
         win.transient(self.root)
-        win.geometry("640x640")
+        win.geometry("640x660")
+        win.minsize(520, 560)
         self.bug_win = win
         win.protocol("WM_DELETE_WINDOW", self._bug_close)
         f = tk.Frame(win, bg=P1, padx=16, pady=12)
@@ -126,6 +127,9 @@ class FeedbackPage:
                             highlightthickness=1, highlightbackground=C["line"], wrap="word", font=("Segoe UI", 9))
                 t.pack(fill="x")
                 t.bind("<KeyRelease>", lambda e: self._bug_preview())
+                # 2.50.0: Tab moves on to the next box (in a text box it typed a tab character)
+                t.bind("<Tab>", lambda e: (e.widget.tk_focusNext().focus_set(), "break")[1])
+                t.bind("<Shift-Tab>", lambda e: (e.widget.tk_focusPrev().focus_set(), "break")[1])
                 self.bug_vars[key] = t
             else:
                 v = tk.StringVar()
@@ -136,16 +140,16 @@ class FeedbackPage:
         field("what", "What happened?", 3)
         field("steps", "How can it be made to happen? (steps - optional)", 3)
         field("expected", "What did you expect? (optional)", 2)
-        field("contact", "Your Discord or in-game name, if you'd like an answer (optional)")
         self.bug_log = tk.BooleanVar(value=True)
         ttk.Checkbutton(f, text=f"Add the last {LOG_LINES} lines of the app's error log (helps a lot)",
                         variable=self.bug_log, command=self._bug_preview).pack(anchor="w", pady=(8, 4))
+        b = tk.Frame(f, bg=P1)                   # 2.50.0: the buttons first, at the bottom - never cut off
+        b.pack(side="bottom", fill="x", pady=(8, 0))
         tk.Label(f, text="What will be sent", bg=P1, fg=C["muted"], font=("Segoe UI", 9), anchor="w").pack(fill="x")
-        self.bug_prev = tk.Text(f, height=8, bg=C["bg"], fg=C["muted"], relief="flat", wrap="word",
-                                font=("Consolas", 9), highlightthickness=1, highlightbackground=C["line"])
+        self.bug_prev = tk.Text(f, height=6, bg=C["bg"], fg=C["muted"], relief="flat", wrap="word",
+                                font=("Consolas", 9), highlightthickness=1, highlightbackground=C["line"],
+                                takefocus=0)
         self.bug_prev.pack(fill="both", expand=True)
-        b = tk.Frame(f, bg=P1)
-        b.pack(fill="x", pady=(8, 0))
         self.bug_msg = tk.Label(b, text="", bg=P1, fg=C["muted"], font=("Segoe UI", 9), anchor="w", justify="left",
                                 wraplength=380)
         self.bug_msg.pack(side="left", fill="x", expand=True)
@@ -170,8 +174,8 @@ class FeedbackPage:
     def _bug_preview(self):
         if getattr(self, "bug_win", None) is None:
             return
-        text = self.bug_report_text(self._bug_val("what"), self._bug_val("steps"), self._bug_val("expected"),
-                                    self._bug_val("contact"), self.bug_log.get())
+        text = self.bug_report_text(self._bug_val("what"), self._bug_val("steps"), self._bug_val("expected"), "",
+                                    self.bug_log.get())
         self.bug_prev.config(state="normal")
         self.bug_prev.delete("1.0", "end")
         self.bug_prev.insert("1.0", f"[Bug] {self._bug_val('title').strip()}\n\n{text}")
@@ -182,8 +186,7 @@ class FeedbackPage:
         if len(title) < 4 or len(what) < 10:
             self.bug_msg.config(text="A title and a few words about what happened, please.", fg=C["red"])
             return None
-        body = self.bug_report_text(what, self._bug_val("steps"), self._bug_val("expected"), self._bug_val("contact"),
-                                    self.bug_log.get())
+        body = self.bug_report_text(what, self._bug_val("steps"), self._bug_val("expected"), "", self.bug_log.get())
         self.bug_send_btn.config(state="disabled")
         self.bug_msg.config(text="Sending…", fg=C["muted"])
 
