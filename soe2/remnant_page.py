@@ -8,7 +8,7 @@ import tkinter as tk
 
 from . import remnant as RM
 from .config import save_json, SETTINGS
-from .pricefmt import fmt_div
+from .pricefmt import fmt_short
 
 TAG_BG, TAG_BEST = "#101826", "#2a2108"
 
@@ -304,9 +304,9 @@ class RemnantPage:
             if row["total"] is None:
                 txt, fg = "no price", "#9aa6bd"
             else:
-                txt = fmt_div(row["total"])
+                txt = fmt_short(row["total"])                   # 2.39.0: 16ex, 20c, 29d
                 if row["qty"] > 1:
-                    txt = f"{txt}  ({row['qty']} × {fmt_div(row['each'])})"
+                    txt = f"{txt}  ({row['qty']} × {fmt_short(row['each'])})"
                 fg = "#ffd25a" if row.get("best") else "#e8eefc"
             if row.get("best"):
                 txt = "★ " + txt
