@@ -895,29 +895,10 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         ttk.Checkbutton(row, text="Also show it on the Session timer (in game)", variable=self.ingame_clock_var,
                         command=self.on_ingame_clock).pack(side="left", padx=(16, 0))
 
-        # 2.43.0: the Session timer, the Mechanic Helper bar and Notes - their look and how see-through they are
-        from .overlaywin import LOOKS, LOOK
-        row = section("Appearance", "Over the game", "The Session timer, the Mechanic Helper bar and Notes. Move them "
-                                                     "by their title bar; the lock on each keeps it in place. Lower "
-                                                     "opacity = see more of the game through them.")
-        self.ov_look_var = tk.StringVar(value=LOOKS[LOOK[0]])
-        lk = ttk.Combobox(row, textvariable=self.ov_look_var, values=list(LOOKS.values()), state="readonly", width=30)
-        lk.pack(side="left")
-        lk.bind("<<ComboboxSelected>>", lambda e: self.on_ov_look())
-        grid = tk.Frame(row.master, bg=P2)
-        grid.pack(fill="x", pady=(8, 0))
-        self.ov_op_vars = {}
-        for i, (key, label) in enumerate((("session", "Session timer"), ("helper", "Mechanic Helper"),
-                                          ("notes", "Notes"))):
-            tk.Label(grid, text=label, bg=P2, fg=C["text"]).grid(row=i, column=0, sticky="w", padx=(0, 8), pady=2)
-            v = tk.IntVar(value=self.ov_opacity_get(key))
-            self.ov_op_vars[key] = v
-            ttk.Scale(grid, from_=60, to=255, variable=v, orient="horizontal", length=200,
-                      command=lambda _v, k=key: self.on_ov_opacity(k)).grid(row=i, column=1, sticky="w")
-        self.rm_tips_var = tk.BooleanVar(value=bool((SETTINGS.get("remnant") or {}).get("tips", True)))
-        ttk.Checkbutton(row.master, text="Runeshape tips next to the remnant prices (while a remnant's book is open)",
-                        variable=self.rm_tips_var,
-                        command=lambda: self.remnant_tips_changed(self.rm_tips_var.get())).pack(anchor="w", pady=(8, 0))
+        # 2.44.0: the look of the windows over the game lives in Overlays › Look (with the things it changes)
+        row = section("Appearance", "Over the game", "The Session timer, the Mechanic Helper bar and Notes have their "
+                                                     "own look and opacity, in Overlays › Look.")
+        ttk.Button(row, text="Open Overlays › Look", command=lambda: self.ovh_open("Look")).pack(side="left")
 
         from .style import ACCENTS, THEMES
         row = section("Appearance", "Look of the app", "Colours and text size for every window. Changes take effect "
@@ -1156,7 +1137,43 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         if getattr(self, "tk_overlay", None) is not None:              # 2.39.0: the timer's clock follows it too
             self.tracker_overlay_draw(self.tracker_numbers())
 
-    # ---- 2.43.0: Settings > Appearance > Over the game
+    # ---- 2.43.0: the look of the windows over the game (2.44.0: Overlays › Look)
+    def build_overlay_look(self, parent):
+        P2 = C["panel2"]
+
+        def section(_page, title, note=""):
+            f = tk.Frame(parent, bg=P2, padx=16, pady=8, highlightthickness=1, highlightbackground=C["line"])
+            f.pack(fill="x", padx=8, pady=(8, 0))
+            tk.Label(f, text=title, bg=P2, fg=C["accent"], font=("Segoe UI", 12, "bold"), anchor="w").pack(fill="x")
+            if note:
+                tk.Label(f, text=note, bg=P2, fg=C["muted"], font=("Segoe UI", 9), anchor="w", justify="left",
+                         wraplength=600).pack(fill="x", pady=(2, 8))
+            row = tk.Frame(f, bg=P2)
+            row.pack(fill="x")
+            return row
+        from .overlaywin import LOOKS, LOOK
+        row = section("Appearance", "Style and opacity", "For the Session timer, the Mechanic Helper bar and Notes. "
+                                                         "Move each one by its title bar; its lock keeps it in place. "
+                                                         "Lower opacity = see more of the game through it.")
+        self.ov_look_var = tk.StringVar(value=LOOKS[LOOK[0]])
+        lk = ttk.Combobox(row, textvariable=self.ov_look_var, values=list(LOOKS.values()), state="readonly", width=30)
+        lk.pack(side="left")
+        lk.bind("<<ComboboxSelected>>", lambda e: self.on_ov_look())
+        grid = tk.Frame(row.master, bg=P2)
+        grid.pack(fill="x", pady=(8, 0))
+        self.ov_op_vars = {}
+        for i, (key, label) in enumerate((("session", "Session timer"), ("helper", "Mechanic Helper"),
+                                          ("notes", "Notes"))):
+            tk.Label(grid, text=label, bg=P2, fg=C["text"]).grid(row=i, column=0, sticky="w", padx=(0, 8), pady=2)
+            v = tk.IntVar(value=self.ov_opacity_get(key))
+            self.ov_op_vars[key] = v
+            ttk.Scale(grid, from_=60, to=255, variable=v, orient="horizontal", length=200,
+                      command=lambda _v, k=key: self.on_ov_opacity(k)).grid(row=i, column=1, sticky="w")
+        self.rm_tips_var = tk.BooleanVar(value=bool((SETTINGS.get("remnant") or {}).get("tips", True)))
+        ttk.Checkbutton(row.master, text="Runeshape tips next to the remnant prices (while a remnant's book is open)",
+                        variable=self.rm_tips_var,
+                        command=lambda: self.remnant_tips_changed(self.rm_tips_var.get())).pack(anchor="w", pady=(8, 0))
+
     def ov_opacity_get(self, key):
         t = self.tracker_cfg()
         if key == "session":
