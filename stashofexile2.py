@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU GPL v3.0 (see LICENSE). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.34.0
+VERSION 2.36.0
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,6 +19,21 @@ VERSION 2.34.0
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.36.0
+       Polish 3 - Context menus. listkit.list_menu puts a list's own actions on top (tree.menu_actions(sel) ->
+       [(label, fn, enabled, accelerator) | None]), then the standard Copy / Select all / Delete / Undo. Price checks
+       rows: Re-price, Copy name, Open on trade site, Mark listed / sold / removed. Market Insights: Show in Price
+       checks, Price it again, Open the search. Regex Favorites: Copy, Open in Build a search, Use for the Regex key,
+       Rename. listkit.menu_key: the Menu key / Shift+F10 opens the right-click menu of whatever has the keyboard
+       (lists at the focused row, boxes too) - every menu works without a mouse. Wealth, Game search, Map library and
+       Money Makers keep their own menus (reached by the key too).
+  2.35.0
+       Polish 2 - Toasts. soe2/toasts.py: one toast system - info ℹ / success ✔ / warning ⚠ / error ✖ (icon + edge
+       colour, never colour alone), stacked in the app's bottom-right corner (at most 4, newest at the bottom), paused
+       while hovered, timed by text length (4-20 s; errors x1.5, with buttons at least 10 s), never activated / focused
+       (WS_EX_NOACTIVATE), lifted while the app is always-on-top. Last 20 in toasts.json and Settings > Advanced >
+       Recent messages. app_toast() now uses it (kind= or guessed); simple messagebox infos became toasts (update
+       check, Export / Import / Remove imported rules). style.Toast (the popup at the mouse over the game) stays.
   2.34.0
        Polish 1 - Foundation. Design tokens in style.py: SPACE (4 8 12 16 24; 0-2 for hairlines), text sizes SMALL 9 /
        BODY 10 / HEAD 12 / TITLE 16 (+ DISPLAY 18-28 for glyphs and big numbers), ROLE + role() colour roles. Every
@@ -1073,7 +1088,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.34.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.36.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
