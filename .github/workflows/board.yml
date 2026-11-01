@@ -18,14 +18,14 @@ jobs:
       run:
         working-directory: board
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Secrets set?
         id: ready
         run: |
           if [ -z "$CLOUDFLARE_API_TOKEN" ] || [ -z "$CLOUDFLARE_ACCOUNT_ID" ] || [ -z "$D1_ID" ]; then
             echo "Board secrets aren't set yet - see board/README.md. Skipping."; echo "go=no" >> "$GITHUB_OUTPUT"
           else echo "go=yes" >> "$GITHUB_OUTPUT"; fi
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         if: steps.ready.outputs.go == 'yes'
         with: {node-version: "22"}
       - name: Install wrangler
