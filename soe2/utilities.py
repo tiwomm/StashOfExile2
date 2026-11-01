@@ -26,6 +26,24 @@ def _no_window():
     return 0x08000000 if sys.platform == "win32" else 0     # CREATE_NO_WINDOW
 
 
+def kill_tree(p):
+    """2.26.3: end a helper and everything it started. The one-file exe runs as two processes (a small starter and
+    the real program): terminate() only ended the starter, the real one kept running - and kept the exe in use, so
+    an update could never replace it."""
+    try:
+        if sys.platform == "win32":
+            subprocess.run(["taskkill", "/f", "/t", "/pid", str(p.pid)], capture_output=True, timeout=5,
+                           creationflags=0x08000000)
+        else:
+            p.terminate()
+        p.wait(timeout=3)
+    except Exception:
+        try:
+            p.kill()
+        except Exception:
+            pass
+
+
 class DeliriumHelper:
     def __init__(self):
         self.proc = None
@@ -113,13 +131,9 @@ class DeliriumHelper:
             p = self.proc
             self.send("quit")
             try:
-                p.wait(timeout=4)
+                p.wait(timeout=3)
             except Exception:
-                try:
-                    p.terminate()
-                    p.wait(timeout=3)
-                except Exception:
-                    pass
+                kill_tree(p)
             self.proc, self.state = None, "stopped"
             return None
         if r == "other":
