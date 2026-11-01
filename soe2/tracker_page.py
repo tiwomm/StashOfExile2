@@ -982,7 +982,13 @@ class TrackerPage:
                 cv.bind("<Configure>", lambda e: cv.coords(clk, e.width - 10, 10), add="+")
 
             class _Clock:
+                text = ""
+
+                def cget(self_, key):
+                    return self_.text if key == "text" else ""
+
                 def config(self_, text="", **_kw):
+                    self_.text = text
                     if clk is None:
                         w.bar_note(" · ".join(text.splitlines()))
                     else:
