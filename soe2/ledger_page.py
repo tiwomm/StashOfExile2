@@ -615,6 +615,7 @@ class LedgerPage:
         m.add_command(label="CSV - every drop", command=lambda: self.fl_export("loot"))
         m.add_command(label="CSV - logs of every setup", command=lambda: self.fl_export("all"))
         m.add_command(label="Setup file (.json) - for a friend's Farm Ledger", command=lambda: self.fl_export("json"))
+        m.add_command(label="Strat guide (CSV) - share this setup as a strat", command=lambda: self.fl_export("strat"))
         m.add_command(label="Copy summary (for Discord)", command=self.fl_copy_summary)
         m.add_separator()
         m.add_command(label="Import a setup file…", command=self.fl_import_json)
@@ -627,6 +628,19 @@ class LedgerPage:
             return None
         name = (s["name"] if s else "farm-ledger").replace(" ", "_")
         ext = ".json" if what == "json" else ".csv"
+        if what == "strat":                                        # 2.46.0: the standard strat guide, from this setup
+            st = self.fl_strat_guide(s)
+            if path is None:
+                path = filedialog.asksaveasfilename(parent=self.dlg_parent(), defaultextension=".csv",
+                                                    initialfile=f"{st['id'] or name}.csv",
+                                                    filetypes=[("Strat guide (CSV)", "*.csv")])
+            if not path:
+                return None
+            self.mm_write_strat(st, path)
+            probs = MM.validate(st)
+            if probs:
+                self._say(f"Saved {path} - fill in the rest before sharing it ({probs[0]}).", 10)
+            return path
         if path is None:
             path = filedialog.asksaveasfilename(parent=self.dlg_parent(), defaultextension=ext,
                                                 initialfile=f"{name}_{what}{ext}",
@@ -639,6 +653,47 @@ class LedgerPage:
             fh.write(text)
         self._say(f"Saved {path}", 6)
         return path
+
+    def fl_strat_guide(self, s):
+        """2.46.0: a setup -> a strat in the standard layout: its strat's text (if it has one), the items it runs
+        (with the mods that matter - Money Makers checks their cost every day), the atlas, and its numbers."""
+        import json as _json
+        base = next((x for x in MM.all_strats() if x["id"] == s.get("strat")), None)
+        st = {k: v for k, v in _json.loads(_json.dumps(base)).items() if not k.startswith("_") and k != "origin"} if base \
+            else MM.new_strat(name=s["name"], summary="", steps=[], author=SETTINGS.get("wealth_account") or "me")
+        ver = L.version(s)
+        st["waystones"] = [f"{e.get('count', 1)}× {e['name']}" + (f" - ★ {', '.join(e['key_mods'])}" if e.get("key_mods") else "")
+                           for e in ver["waystones"]] or st.get("waystones", [])
+        st["tablets"] = [f"{e.get('count', 1)}× {e['name']} (lasts {e.get('lasts', 1)} runs)"
+                         + (f" - ★ {', '.join(e['key_mods'])}" if e.get("key_mods") else "")
+                         for e in ver["tablets"] + ver["others"]] or st.get("tablets", [])
+        atlas = [f"{t['name']}: {t.get('points', 0)} points" for t in ver["atlas"]["trees"]]
+        atlas += [l for l in (ver["atlas"].get("notes") or "").splitlines() if l.strip()]
+        if atlas:
+            st["atlas"] = atlas
+        tiers = [e["tier"] for e in ver["waystones"] if e.get("tier")]
+        if tiers:
+            st["waystone_tiers"] = {"min": min(tiers), "max": max(tiers)}
+        st["items"] = [{"kind": k[:-1], "base": e["base"], "name": e["name"], "count": e.get("count", 1),
+                        "lasts": e.get("lasts", 1), "key_mods": e.get("key_mods") or []}
+                       for k in ("waystones", "tablets", "others") for e in ver[k]]
+        if not st["items"]:
+            st.pop("items")
+        f = L.figures(L.logs_of(self.fl_data(), s["id"], ver["v"]))
+        if f["runs"]:
+            lg = {"runs": f["runs"], "minutes": round(f["secs"] / 60, 1)}
+            for k, v in (("cost_per_run_div", f["cost_run"]), ("loot_per_run_div", f["loot_run"]),
+                         ("profit_per_run_div", f["profit_run"]), ("div_per_hour", f["per_hour"])):
+                if v is not None:
+                    lg[k] = round(v, 3)
+            st["ledger"] = lg
+            if f["per_hour"] is not None:
+                st["est_profit"] = {"low": round(f["per_hour"], 1), "high": round(f["per_hour"], 1), "unit": "div"}
+        cost = L.cost_per_run(ver)[0]
+        if cost:
+            st["est_cost"] = {"amount": round(cost, 3), "unit": "div"}
+        st["updated"] = time.strftime("%Y-%m-%d")
+        return st
 
     def fl_copy_summary(self):
         s = self.fl_setup()

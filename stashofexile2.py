@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU GPL v3.0 (see LICENSE). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.45.0
+VERSION 2.46.0
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,6 +19,17 @@ VERSION 2.45.0
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.46.0
+       Strat guides as CSV (user: "csv files and a standardized formatting that matches the run tracker"): rows of
+       section, field, value, note (moneymakers.to_csv / from_csv / read_any; .txt and JSON still read). The note
+       column is help (the options for each field). New optional fields: items [{kind, base, name, count, lasts,
+       key_mods}] and ledger {runs, minutes, cost_per_run_div, loot_per_run_div, profit_per_run_div, div_per_hour}
+       - the Farm Ledger CSV's names. Download Format / Export / Import use CSV; build_strats reads .csv. Farm Ledger:
+       Export ▸ Strat guide (CSV) makes a guide from a setup (fl_strat_guide). Cost now (stratcost.py, Engine
+       StratCostJobs): a strat that lists items gets one trade search per item (base + key mods, cheapest first,
+       trade.cheapest_real) once a day while Money Makers is open (strat_costs.json); its page shows the cost a run
+       and each item's part; "Check what it costs now" in its menu. The strat page shows your Farm Ledger numbers
+       (was the old Run tracker's). test_v2460.
   2.45.0
        Money Makers > Farm Ledger (was Run tracker; ledger.py = data + figures + CSV, ledger_page.py = UI). A SETUP =
        strat (optional) + waystone + tablets / other items (count, runs each lasts) + atlas trees and notes + other
@@ -1219,7 +1230,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.45.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.46.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
