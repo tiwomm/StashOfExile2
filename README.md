@@ -13,6 +13,7 @@ Hover an item in game and press **Ctrl+Alt+C**. It goes into a list and is price
 - **Money Makers:** community farming strats in one layout (Notepad-friendly template), rated by Thoughts per Click and Clicks per hour, updated from GitHub; post and upvote on the Community board (no login); Lucrative one-liners; Tablet Crafting quick reference; simple run tracker. Strat format: [strats/README.md](strats/README.md).
 - **Regex:** builds stash-search strings for tablets, waystones, relics, jewels and gear (at least, ranges, at most), with saved Favorites.
 - **Exchange rates:** poe.ninja rates, an Exchange Helper, and an Arbitrage tab for uneven Currency Exchange rates.
+- **Map library:** every map, citadel and pinnacle fight, ranked S to D or Avoid by you and the community; share ranks as a file.
 - **Session tracker:** time, maps and deaths per session with a timer over the game, plus Delirium, Breach (Hiveblood) and Ritual alerts.
 - **Utilities:** chat command keys, a sticky note, a calculator.
 - **Labs (off by default):** Wealth (stash value over time), Market Insights and an offline game-data search (with every anoint, its Liquid Emotions and their poe.ninja prices).

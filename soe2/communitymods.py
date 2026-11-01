@@ -91,14 +91,20 @@ def push(market, rules, call=None):
     since = float(st.get("last_ts", 0) or 0) or (time.time() - EVERY)
     prices, bases, newest = summary(market, since, league)
     votes = vote_changes(dict(rules), st.get("votes", {}))
-    if not prices and not votes:
+    from .maplib import ranks as map_ranks                # 2.32.0: your map ranks count as your vote too
+    mine_maps = map_ranks()
+    before = st.get("maps", {})
+    maps = [{"name": k, "rank": v} for k, v in mine_maps.items() if before.get(k) != v]
+    maps += [{"name": k, "rank": None} for k in before if k not in mine_maps]
+    if not prices and not votes and not maps:
         return True, 0
     ok, d = (call or B.call)("POST", "/mods/batch", body={"cid": cid(), "league": league, "prices": prices,
-                                                         "bases": bases, "votes": votes})
+                                                         "bases": bases, "votes": votes, "maps": maps[:400]})
     if not ok:
         return False, d
     st["last_ts"] = newest
     st["votes"] = {k: v for k, v in dict(rules).items() if v in ("high", "normal", "ignore")}
+    st["maps"] = dict(mine_maps)
     st.setdefault("helped", {})[league] = int(st.get("helped", {}).get(league, 0)) + int(d.get("prices", 0))
     save_json(SENT, st)
     return True, int(d.get("prices", 0))
@@ -114,8 +120,10 @@ def pull(call=None):
     if not ok:
         return False, s
     ok2, r = (call or B.call)("GET", "/mods/ratings")
+    ok3, mp = (call or B.call)("GET", "/maps/ratings")
     d = {"league": league, "stats": s.get("stats", []), "players": s.get("players", 0),
-         "ratings": r.get("ratings", []) if ok2 else cached().get("ratings", []), "ts": time.time()}
+         "ratings": r.get("ratings", []) if ok2 else cached().get("ratings", []),
+         "maps": mp.get("maps", []) if ok3 else cached().get("maps", []), "ts": time.time()}
     save_json(FILE, d)
     return True, d
 

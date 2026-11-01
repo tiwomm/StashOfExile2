@@ -20,8 +20,12 @@ def fmt_time(secs):
 
 
 def pretty_area(area):
-    """'MapSunTemple' -> 'Sun Temple' (when the game didn't tell us the name)."""
+    """'MapSunTemple' -> 'Sun Temple' (when the game didn't tell us the name). 2.32.0: the Map library's name first."""
     import re
+    from .maplib import id_name
+    known = id_name(area)
+    if known:
+        return known
     a = area[3:] if area.startswith("Map") else area
     return re.sub(r"(?<=[a-z])(?=[A-Z])", " ", a).strip() or area
 
@@ -101,7 +105,7 @@ class Session:
         if kind == "area":
             if self.running():
                 self._close_stretch(ts)
-            k = area_kind(data["area"], data["seed"])
+            k = area_kind(data["area"], data["seed"], data.get("level", 0))
             idx = None
             if k == "map":
                 idx = next((i for i, m in enumerate(self.maps) if m["area"] == data["area"] and m["seed"] == data["seed"]), None)
@@ -119,6 +123,11 @@ class Session:
             self.where["name"] = data["name"]
             if self.where.get("map") is not None:
                 self.maps[self.where["map"]]["name"] = data["name"]
+                try:                                     # 2.32.0: an area the Map library didn't know yet
+                    from .maplib import learn
+                    learn(self.where.get("area"), data["name"], self.maps[self.where["map"]].get("level"))
+                except Exception:
+                    pass
             return True
         if kind == "gold":
             self.gold += data["amount"]

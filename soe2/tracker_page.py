@@ -108,12 +108,15 @@ class TrackerPage:
                               command=lambda v: self.tracker_view(),
                               size=9, pad=(12, 4))
         self.tk_view.pack(anchor="w", padx=10, pady=(4, 6))
+        ttk.Button(self.tk_view.master, text="🗺 Map library", command=lambda: self.shell.open("maps")).place(
+            in_=self.tk_view, relx=1.0, x=12, rely=0.5, anchor="w")             # 2.32.0: its own window
         self.tk_pages = {}
         pm = tk.Frame(body, bg=P1)
-        tv = ttk.Treeview(pm, columns=("n", "map", "lvl", "time", "entries", "deaths"), show="headings", height=4)
+        tv = ttk.Treeview(pm, columns=("n", "map", "lvl", "time", "entries", "deaths", "rank"), show="headings",
+                          height=4)
         for cid, title, w, a in (("n", "#", 40, "e"), ("map", "Map", 220, "w"), ("lvl", "Level", 60, "e"),
                                  ("time", "Time in it", 90, "e"), ("entries", "Times entered", 100, "e"),
-                                 ("deaths", "Deaths", 70, "e")):
+                                 ("deaths", "Deaths", 70, "e"), ("rank", "Rank", 70, "center")):
             tv.heading(cid, text=title)
             tv.column(cid, width=w, anchor=a, stretch=(cid == "map"))
         tv.pack(fill="both", expand=True)
@@ -740,9 +743,12 @@ class TrackerPage:
         if not s:
             return
         now = time.time()
+        from .maplib import community, ranks
+        mine, com = ranks(), community()
         for i, m in enumerate(s.maps):
             t = s.current_map_time(now) if (s.where and s.where.get("map") == i) else m["time"]
-            tv.insert("", "end", values=(i + 1, m["name"], m["level"], fmt_time(t), m["entries"], m["deaths"]))
+            rank = mine.get(m["name"]) or (f"({com[m['name']]['rank']})" if m["name"] in com else "")
+            tv.insert("", "end", values=(i + 1, m["name"], m["level"], fmt_time(t), m["entries"], m["deaths"], rank))
 
     def tracker_fill_history(self):
         hv = self.tk_hist
@@ -885,13 +891,31 @@ class TrackerPage:
         self.tracker_overlay_draw(self.tracker_numbers())
         w.show()                                   # only while the game (or the app) is in front (2.0 beta 15)
 
+    @staticmethod
+    def _ov_rank(where):
+        """2.32.0: the map's rank on the timer (yours, else the community's in brackets)."""
+        if not where or where == "-":
+            return ""
+        import time as _t
+        from .maplib import community, ranks
+        cache = TrackerPage.__dict__.get("_ov_cache")
+        if not cache or _t.time() - cache[0] > 5:              # (the timer redraws every second)
+            cache = (_t.time(), ranks(), community())
+            TrackerPage._ov_cache = cache
+        r = cache[1].get(where)
+        if r:
+            return f"  [{'AVOID' if r == 'Avoid' else r}]"
+        c = cache[2].get(where)
+        return f"  ({c['rank']})" if c else ""
+
     def tracker_overlay_draw(self, n):
         if self.tk_overlay is None:
             return
         s = self.tk_session
         live = s is not None and s.ended is None
         texts = {"session": n.get("time", "0:00") if live else "not tracking",
-                 "map": f"Map  {n.get('map', '-')}" + (f"   {n.get('where', '')}" if live and n.get("where") not in ("-", None) else ""),
+                 "map": f"Map  {n.get('map', '-')}" + (f"   {n.get('where', '')}" if live and n.get("where") not in ("-", None) else "")
+                        + self._ov_rank(n.get("where") if live else None),
                  "maps": f"Maps  {n.get('maps', '0')}", "avg": f"Avg  {n.get('avg', '-')}",
                  "profit": "Profit  " + (n["profit"] if s is not None and n.get("profit", "")[:1] in "+-"
                                          else "at stop" if s is not None and s.start_value is not None else "-"),

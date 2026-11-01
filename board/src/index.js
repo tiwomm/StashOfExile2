@@ -299,6 +299,7 @@ async function official(env) {
 const BATCH_EVERY = 45 * 60;                 // one summary per install per 45 minutes at most (the app sends hourly)
 const MAX_PAIRS = 600, MAX_VOTES = 400, W_CAP = 10;
 const SID = /^[a-z_]+\.[A-Za-z0-9_.]{1,80}$/, KEY = /^.{2,200}$/s, VOTE = ["high", "normal", "ignore"];
+const MAP_RANKS = ["S", "A", "B", "C", "D", "Avoid"];
 const okPrice = (m) => typeof m === "number" && isFinite(m) && m > 0.0005 && m < 100000;
 const okText = (t, n = 80) => typeof t === "string" && t.length > 0 && t.length <= n;
 
@@ -332,6 +333,13 @@ async function modBatch(req, env) {
         .bind(league, b.base, Math.min(Math.floor(b.n), 2000), w, w * Math.log(b.med), t));
     }
   }
+  for (const v of (Array.isArray(body.maps) ? body.maps : []).slice(0, MAX_VOTES)) {   // 2.32.0: map ranks
+    const name = String(v?.name ?? "").trim();
+    if (!name || name.length > 80) continue;
+    if (v.rank === null) stmts.push(env.DB.prepare("DELETE FROM map_votes WHERE name = ? AND cid = ?").bind(name, cid));
+    else if (MAP_RANKS.includes(v.rank)) stmts.push(env.DB.prepare(`INSERT INTO map_votes (name, cid, rank, updated)
+      VALUES (?1, ?2, ?3, ?4) ON CONFLICT(name, cid) DO UPDATE SET rank = ?3, updated = ?4`).bind(name, cid, v.rank, t));
+  }
   let votes = 0;
   for (const v of (Array.isArray(body.votes) ? body.votes : []).slice(0, MAX_VOTES)) {
     if (!KEY.test(String(v?.key ?? ""))) continue;
@@ -360,6 +368,13 @@ async function modStats(url, env) {
   return json({ league, stats: out, players: (await env.DB.prepare("SELECT COUNT(*) AS n FROM contributors").first()).n });
 }
 
+async function mapRatings(env) {
+  const rows = await env.DB.prepare("SELECT name, rank, COUNT(*) AS n FROM map_votes GROUP BY name, rank").all();
+  const by = {};
+  for (const r of rows.results) (by[r.name] ??= {})[r.rank] = r.n;
+  return json({ maps: Object.entries(by) });
+}
+
 async function modRatings(env) {
   const rows = await env.DB.prepare(`SELECT key, SUM(value = 'high') AS high, SUM(value = 'normal') AS normal,
     SUM(value = 'ignore') AS ignore FROM mod_votes GROUP BY key HAVING COUNT(*) >= 2`).all();
@@ -379,6 +394,7 @@ export default {
       if (path === "/mods/batch" && req.method === "POST") return modBatch(req, env);
       if (path === "/mods/stats") return modStats(url, env);
       if (path === "/mods/ratings") return modRatings(env);
+      if (path === "/maps/ratings") return mapRatings(env);
       const me = await who(req, env);
       if (path === "/me") return me ? json({ user: me }) : fail(401, "sign in first");
       if (path === "/auth/logout" && req.method === "POST") {
