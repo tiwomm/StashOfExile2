@@ -21,6 +21,11 @@ NEXT = [
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.40.0": [
+        "Runeshape tips: while a remnant's prices show, a small list next to them shows the runeshapes players rate "
+        "best for loot - S: Opulent, Power, Oath; A: Time, Death, Soul, Bond. Switch it off in Session tracker > "
+        "Alerts (Runeshape tips).",
+    ],
     "2.39.1": [
         "Fix: Expedition Remnant Price Checker - a reward poe.ninja doesn't list (like Warding Rune of Obsession) now "
         "shows \"no price\" instead of nothing, and can never get a similar-named item's price.",
