@@ -46,7 +46,7 @@ Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds f
 | 2.26.3 | Updates no longer hang with a flashing console window. |
 | 2.26.4 | Regex Jewels / Gear fast (list widget); star legend up top; "Clear filters" button. |
 | 2.27.0 | Chat commands is a tab in Settings (no longer a Utilities window). |
-| 2.28.0 | Money Makers: community strats in one layout (Thoughts per Click, Clicks per hour), live updates from GitHub, own strats + Share, simple run tracker. |
+| 2.28.0 | Money Makers: community strats in one layout (Category › Type browser, tag groups, tablets, waystones, atlas, craft steps, tiers 1-16, est. cost / profit, Thinking and Clicks per hour picked from lists), Download Format (.txt), live updates from GitHub, Share; Lucrative Strats; Tablet Crafting quick reference; simple run tracker. |
 
 ## ▶ Next up
 
