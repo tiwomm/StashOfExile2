@@ -4,7 +4,9 @@ Every list (Treeview), in every window:
   - rows alternate colours like a spreadsheet (in every theme), kept right after rows are added, removed or sorted;
   - Ctrl+C copies the selected rows (tab-separated, pastes into a spreadsheet); Ctrl+A / Delete / Ctrl+Z as before
     (listkeys.py);
-  - right-click: Copy, Copy every row, Select all, and Delete / Undo where that list has them.
+  - right-click: the window's own actions for the row (2.36.0: tree.menu_actions), then Copy, Copy every row,
+    Select all, and Delete / Undo where that list has them;
+  - the Menu key / Shift+F10 opens the same menu from the keyboard (2.36.0).
 Every box you type in (Entry, Spinbox, Combobox, Text):
   - Ctrl+A selects everything, Ctrl+Z undoes your last change (Ctrl+C / X / V as always);
   - right-click: Undo, Cut, Copy, Paste, Delete, Select all.
@@ -275,6 +277,17 @@ def list_menu(app, e):
     st = lambda on: "normal" if on else "disabled"                       # noqa: E731
     m = _menu(tree)
     n = len(sel)
+    acts = getattr(tree, "menu_actions", None)          # 2.36.0: the window's own actions for the rows, on top
+    acts = acts(sel) if callable(acts) and sel else []
+    for a in acts:
+        if a is None:
+            m.add_separator()
+            continue
+        label, fn, *rest = a
+        on = rest[0] if rest else True
+        m.add_command(label=label, state=st(on), command=fn, accelerator=rest[1] if len(rest) > 1 else "")
+    if acts:
+        m.add_separator()
     m.add_command(label=f"Copy {n} row{'s' if n != 1 else ''}" if n else "Copy", accelerator="Ctrl+C",
                   state=st(n), command=lambda: copy_rows(tree))
     m.add_command(label="Copy every row", state=st(tree.get_children("")), command=lambda: copy_rows(tree, every=True))
@@ -288,6 +301,33 @@ def list_menu(app, e):
     if key is not None and app.can_undo(key):
         m.add_command(label="Undo", accelerator="Ctrl+Z", command=lambda: app.undo_last(key))
     m.tk_popup(e.x_root, e.y_root)
+    return "break"
+
+
+def menu_key(e=None):
+    """2.36.0: the Menu key / Shift+F10 opens the right-click menu of whatever has the keyboard (a list: at its focused
+    row; a box: at the cursor) - so every menu works without a mouse."""
+    root = e.widget.winfo_toplevel() if e is not None else None
+    try:
+        w = (root or tk._default_root).focus_get()
+    except (tk.TclError, KeyError, AttributeError):
+        w = None
+    if w is None:
+        return None
+    x, y = 12, 12
+    try:
+        if isinstance(w, ttk.Treeview):
+            row = w.focus() or (w.selection() or ("",))[0]
+            if row and not w.selection():
+                w.selection_set(row)
+            box = w.bbox(row) if row else ""
+            if box:
+                x, y = box[0] + 24, box[1] + box[3] // 2
+        else:
+            x, y = min(40, max(4, w.winfo_width() // 2)), max(4, w.winfo_height() // 2)
+        w.event_generate("<Button-3>", x=x, y=y, rootx=w.winfo_rootx() + x, rooty=w.winfo_rooty() + y)
+    except tk.TclError:
+        return None
     return "break"
 
 
@@ -312,6 +352,11 @@ def install(app):
         root.bind_class(cls, "<Control-z>", lambda e: HISTORY.undo(e.widget))
         root.bind_class(cls, "<Control-Z>", lambda e: HISTORY.undo(e.widget))
     root.bind_class("Treeview", "<Button-3>", lambda e: list_menu(app, e), add="+")
+    for seq in ("<Shift-F10>", "<KeyPress-App>", "<KeyPress-Menu>"):    # 2.36.0: menus without a mouse
+        try:
+            root.bind_all(seq, menu_key, add="+")
+        except tk.TclError:
+            pass
     root.bind_class("Treeview", "<Control-c>", lambda e: copy_rows(e.widget) and "break", add="+")
     root.bind_class("Treeview", "<Control-C>", lambda e: copy_rows(e.widget) and "break", add="+")
     for ev in ("<<TreeviewOpen>>", "<<TreeviewClose>>"):
