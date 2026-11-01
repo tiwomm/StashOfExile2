@@ -103,6 +103,8 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         apply_look(SETTINGS.get("theme", "midnight"), SETTINGS.get("accent", "orange"),
                    int(SETTINGS.get("ui_scale", 100) or 100), root)
         root.configure(bg=C["bg"])
+        from . import overlaywin as _ow                  # 2.43.0: the look of the windows over the game
+        _ow.LOOK[0] = SETTINGS.get("overlay_look") if SETTINGS.get("overlay_look") in _ow.LOOKS else "parchment"
         setup_style(root)
         self.records, self.next_id = {}, 1
         self.ui_q = queue.Queue()
@@ -893,6 +895,30 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         ttk.Checkbutton(row, text="Also show it on the Session timer (in game)", variable=self.ingame_clock_var,
                         command=self.on_ingame_clock).pack(side="left", padx=(16, 0))
 
+        # 2.43.0: the Session timer, the Mechanic Helper bar and Notes - their look and how see-through they are
+        from .overlaywin import LOOKS, LOOK
+        row = section("Appearance", "Over the game", "The Session timer, the Mechanic Helper bar and Notes. Move them "
+                                                     "by their title bar; the lock on each keeps it in place. Lower "
+                                                     "opacity = see more of the game through them.")
+        self.ov_look_var = tk.StringVar(value=LOOKS[LOOK[0]])
+        lk = ttk.Combobox(row, textvariable=self.ov_look_var, values=list(LOOKS.values()), state="readonly", width=30)
+        lk.pack(side="left")
+        lk.bind("<<ComboboxSelected>>", lambda e: self.on_ov_look())
+        grid = tk.Frame(row.master, bg=P2)
+        grid.pack(fill="x", pady=(8, 0))
+        self.ov_op_vars = {}
+        for i, (key, label) in enumerate((("session", "Session timer"), ("helper", "Mechanic Helper"),
+                                          ("notes", "Notes"))):
+            tk.Label(grid, text=label, bg=P2, fg=C["text"]).grid(row=i, column=0, sticky="w", padx=(0, 8), pady=2)
+            v = tk.IntVar(value=self.ov_opacity_get(key))
+            self.ov_op_vars[key] = v
+            ttk.Scale(grid, from_=60, to=255, variable=v, orient="horizontal", length=200,
+                      command=lambda _v, k=key: self.on_ov_opacity(k)).grid(row=i, column=1, sticky="w")
+        self.rm_tips_var = tk.BooleanVar(value=bool((SETTINGS.get("remnant") or {}).get("tips", True)))
+        ttk.Checkbutton(row.master, text="Runeshape tips next to the remnant prices (while a remnant's book is open)",
+                        variable=self.rm_tips_var,
+                        command=lambda: self.remnant_tips_changed(self.rm_tips_var.get())).pack(anchor="w", pady=(8, 0))
+
         from .style import ACCENTS, THEMES
         row = section("Appearance", "Look of the app", "Colours and text size for every window. Changes take effect "
                                                        "when the app restarts (Restart now does it for you; your "
@@ -1129,6 +1155,59 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
             self.shell.clock.config(text=_shell.clock_text())
         if getattr(self, "tk_overlay", None) is not None:              # 2.39.0: the timer's clock follows it too
             self.tracker_overlay_draw(self.tracker_numbers())
+
+    # ---- 2.43.0: Settings > Appearance > Over the game
+    def ov_opacity_get(self, key):
+        t = self.tracker_cfg()
+        if key == "session":
+            return int(t.get("opacity", 225))
+        if key == "helper":
+            return int(t.get("hopacity", t.get("opacity", 225)))
+        return int(self.overlay.cfg.get("notes_opacity", 215))
+
+    def on_ov_opacity(self, key):
+        v = int(float(self.ov_op_vars[key].get()))
+        t = self.tracker_cfg()
+        if key == "session":
+            t["opacity"] = v
+            w = getattr(self, "tk_overlay", None)
+            if getattr(self, "tk_opacity", None) is not None:
+                self.tk_opacity.set(v)
+        elif key == "helper":
+            t["hopacity"] = v
+            w = getattr(self, "tk_helpers", None)
+        else:
+            self.overlay.cfg["notes_opacity"] = v
+            w = getattr(self.overlay, "notes", None)
+            if getattr(self, "ov_opacity", None) is not None:
+                self.ov_opacity.set(v)
+        try:
+            if w is not None and w.winfo_exists():
+                w.set_opacity(v)
+        except Exception:
+            pass
+        job = getattr(self, "_ov_save_job", None)              # save once the slider stops
+        if job:
+            self.root.after_cancel(job)
+        self._ov_save_job = self.root.after(400, self._ov_save)
+
+    def _ov_save(self):
+        self._ov_save_job = None
+        self.tracker_save()
+        self.overlay.save_settings()
+
+    def on_ov_look(self):
+        from . import overlaywin
+        key = next((k for k, t in overlaywin.LOOKS.items() if t == self.ov_look_var.get()), "parchment")
+        SETTINGS["overlay_look"] = key
+        overlaywin.LOOK[0] = key
+        save_json("settings.json", SETTINGS)
+        if getattr(self, "tk_overlay", None) is not None:
+            self.tracker_overlay_build()
+        try:
+            self.overlay.restyle()
+        except Exception:
+            self.log_error("restyling Notes")
 
     def on_ingame_clock(self):
         """2.39.0: the clock + date line on the Session timer, on or off."""
