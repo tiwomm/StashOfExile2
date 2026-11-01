@@ -111,6 +111,7 @@ class Engine(TabReaderJobs, WealthJobs, threading.Thread):
                 data = call("GET", BASE + "/data/static")
                 save_json("trade_static.json", data)
             set_trade_currencies(data)
+            self.ui_q.put(("currencies_loaded",))          # 2.40.0: Stash tab's box can show the saved currency
         except Exception:
             pass
 
