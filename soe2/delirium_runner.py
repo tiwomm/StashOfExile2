@@ -17,26 +17,87 @@ from pathlib import Path
 
 
 def _reopen_std():
-    """A windowed exe has no sys.stdin / sys.stdout even when the app gave it pipes: open them from the OS handles."""
-    if sys.platform != "win32" or (sys.stdin is not None and sys.stdout is not None):
+    """The app talks to a helper over pipes (stdin / stdout). A windowed exe may have no sys.stdin / sys.stdout - or
+    (2.40.0) stand-ins that aren't the pipes, which made the Ritual watcher read "end of input" at once and quit
+    the moment it started. So in the exe, whenever the OS handle really is a pipe, open sys.stdin / sys.stdout from
+    it, whatever Python set them to."""
+    if sys.platform != "win32":
+        return
+    frozen = bool(getattr(sys, "frozen", False))
+    if not frozen and sys.stdin is not None and sys.stdout is not None:
         return
     try:
         import ctypes
         import msvcrt
         k = ctypes.windll.kernel32
         k.GetStdHandle.restype = ctypes.c_void_p
-        if sys.stdin is None:
-            h = k.GetStdHandle(-10)
-            if h and h != ctypes.c_void_p(-1).value:
-                sys.stdin = open(msvcrt.open_osfhandle(h, os.O_RDONLY), "r", encoding="utf-8", errors="replace")
-        if sys.stdout is None:
-            h = k.GetStdHandle(-11)
-            if h and h != ctypes.c_void_p(-1).value:
-                sys.stdout = open(msvcrt.open_osfhandle(h, os.O_WRONLY), "w", encoding="utf-8", errors="replace")
+        k.GetFileType.argtypes = [ctypes.c_void_p]
+
+        def pipe(n):
+            h = k.GetStdHandle(n)
+            if not h or h == ctypes.c_void_p(-1).value:
+                return None
+            return h if k.GetFileType(h) == 3 else None          # FILE_TYPE_PIPE
+        h = pipe(-10)
+        if h and (frozen or sys.stdin is None):
+            sys.stdin = open(msvcrt.open_osfhandle(h, os.O_RDONLY), "r", encoding="utf-8", errors="replace")
+        h = pipe(-11)
+        if h and (frozen or sys.stdout is None):
+            sys.stdout = open(msvcrt.open_osfhandle(h, os.O_WRONLY), "w", encoding="utf-8", errors="replace")
         if sys.stderr is None:
             sys.stderr = sys.stdout
     except Exception:
         pass
+
+
+def parent_pid(argv):
+    """2.40.0: the app passes its process id (--parent <pid>), so a helper can tell "the app is gone" apart from
+    "the pipe is broken"."""
+    try:
+        return int(argv[argv.index("--parent") + 1]) if "--parent" in argv else None
+    except (ValueError, IndexError):
+        return None
+
+
+APP_MARK = "StashOfExile2_app_{pid}"     # 2.40.0: the app holds a named mutex while it runs (utilities.app_mark)
+
+
+def parent_alive(pid):
+    """Is the app that started this helper still running? On Windows: does its named mark still exist (it goes
+    when the app ends) - nothing about the process itself is opened."""
+    if not pid:
+        return False
+    if sys.platform == "win32":
+        try:
+            import ctypes
+            k = ctypes.windll.kernel32
+            k.OpenMutexW.restype = ctypes.c_void_p
+            h = k.OpenMutexW(0x00100000, False, APP_MARK.format(pid=int(pid)))      # SYNCHRONIZE
+            if not h:
+                return False
+            k.CloseHandle(ctypes.c_void_p(h))
+            return True
+        except Exception:
+            return True
+    try:
+        os.kill(int(pid), 0)
+        return True
+    except OSError:
+        return False
+
+
+def after_stdin_ends(pid, quit_fn, log=None):
+    """The app's pipe ended. Normally that means the app is gone: quit. 2.40.0: if the app is still running (the
+    pipe was never really connected), keep working and quit only when the app goes away."""
+    import time
+    if not pid or not parent_alive(pid):
+        quit_fn()
+        return
+    if log:
+        log("the app's pipe closed but the app is running - carrying on until it ends")
+    while parent_alive(pid):
+        time.sleep(2.0)
+    quit_fn()
 
 
 def template_dir():
@@ -91,6 +152,7 @@ def main(argv):
         def __init__(self, commands):
             self.commands = commands
             self.state = None
+            self.pid = parent_pid(argv)
             threading.Thread(target=self._read, daemon=True).start()
             say("state watching")
 
@@ -102,7 +164,7 @@ def main(argv):
                         self.commands.append(cmd)
             except Exception:
                 pass
-            self.commands.append("quit")                  # the app is gone: so are we
+            after_stdin_ends(self.pid, lambda: self.commands.append("quit"))     # the app is gone: so are we
 
         def set(self, state):
             if state != self.state:

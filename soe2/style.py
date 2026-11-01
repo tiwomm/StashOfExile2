@@ -727,6 +727,10 @@ def apply_look(theme="midnight", accent="orange", scale=100, root=None):
     _THEME["keep"] = {v.lower() for k, v in C.items() if k in ("rare", "magic", "blue", "purple", "green", "red",
                                                                  "orange", "good", "accent")}
     _THEME["keep"] |= {old_accent.lower(), "#6ea8ff", "#ffffff", "#ffe9e6"}
+    # 2.40.0: the see-through key of the banners over the game (alerts_page.TRANSPARENT) must never be recoloured -
+    # it's a dark blue to the theme, so Amethyst etc. turned the window's background #020103 while the key stayed
+    # #010203: the Breach / Ritual banners (and 2.37.0's remnant tags) showed a black box instead of see-through.
+    _THEME["keep"] |= {"#010203"}
     if not getattr(tk.Misc, "_soe2_themed", False):          # every colour given to Tk goes through theme_color
         orig = tk.Misc._options
 

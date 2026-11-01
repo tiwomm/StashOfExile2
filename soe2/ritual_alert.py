@@ -215,7 +215,9 @@ def main(argv):
     from .delirium_runner import _reopen_std
     _reopen_std()           # 2.14.1: the windowed exe has no stdin / stdout until they're opened from the OS handles -
     #                         without this the helper quit at once and the app never heard a count
-    folder = Path(argv[0]) if argv else Path.home() / ".stashofexile2"
+    from .delirium_runner import after_stdin_ends, parent_pid
+    pid = parent_pid(argv)
+    folder = Path(argv[0]) if argv and not argv[0].startswith("--") else Path.home() / ".stashofexile2"
     folder = folder / "ritual"
     folder.mkdir(parents=True, exist_ok=True)
     lock = threading.Lock()
@@ -251,7 +253,7 @@ def main(argv):
                     cmds.append(line.strip())
         except Exception:
             pass
-        cmds.append("quit")
+        after_stdin_ends(pid, lambda: cmds.append("quit"), log)      # 2.40.0: a broken pipe isn't "the app is gone"
     threading.Thread(target=read_stdin, daemon=True).start()
     try:
         import cv2
@@ -278,6 +280,7 @@ def main(argv):
                 c = cmds.pop(0)
                 if c == "quit":
                     say("state stopped")
+                    log("stopped (the app asked, or it ended)")
                     return 0
                 if c == "capture":
                     try:
