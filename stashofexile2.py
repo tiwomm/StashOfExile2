@@ -23,6 +23,9 @@ VERSION HISTORY
        In-game clock: the Session timer shows the time and date (shell.clock_text - your 12 / 24-hour setting), small,
        on the session time's row so the timer needs no extra line. Settings > Appearance > Clock: "Also show it on the
        Session timer (in game)" (tracker cfg "clock", on by default); changing 12 / 24-hour updates it at once.
+       Fix: the Helpers bar (2.38.0) could be off the screen - first placed right under the timer, which often sits
+       at the bottom of the screen. Now under it if it fits, else above it; any saved place off the screen (a
+       monitor unplugged, another resolution) is pulled back on (tracker_page._helpers_on_screen, monitor_rect).
   2.38.0
        GGG ToS safety check: TOS.md (the 7 rules), a copy at the top of README / ROADMAP / board, strats and linux
        READMEs / both handovers, notes in every screen watcher; tools/check_tos.py (game-memory / injection APIs,

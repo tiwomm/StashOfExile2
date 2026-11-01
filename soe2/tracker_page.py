@@ -894,7 +894,8 @@ class TrackerPage:
         if not cfg.get("alerts_bar", True):
             return
         hx, hy = cfg.get("hx"), cfg.get("hy")
-        if hx is None or hy is None:                     # first time: right under the timer
+        first = hx is None or hy is None
+        if first:                                        # first time: right under the timer (2.39.0: or above it)
             hx, hy = cfg["x"], cfg["y"] + cfg["h"] + 8
 
         def moved(x, y, _w, _h):
@@ -938,7 +939,29 @@ class TrackerPage:
         cog.bind("<Button-1>", lambda e: self.tracker_helpers_settings())
         Tooltip(cog, "Helpers' options (Session tracker > Alerts)")
         self.tk_helpers = w
+        self._helpers_on_screen(w, hx, hy, first)
         w.show()
+
+    def _helpers_on_screen(self, w, hx, hy, first):
+        """2.39.0: never off the screen. The timer often sits at the bottom of the screen, and "right under it" was
+        below the screen's edge - the bar was there, just invisible. First time: under the timer if it fits, else
+        above it. Any saved place that's off the screen (a monitor unplugged, another resolution) comes back on."""
+        from .style import monitor_rect
+        cfg = self.tracker_cfg()
+        try:
+            w.update_idletasks()
+            bw, bh = max(w.winfo_reqwidth(), 120), max(w.winfo_reqheight(), 30)
+            l_, t, r, b = monitor_rect(self.root, cfg["x"] + 10, cfg["y"] + 10)
+        except Exception:
+            return
+        if first and hy + bh > b:
+            hy = cfg["y"] - bh - 8
+        hx = max(l_, min(int(hx), r - bw))
+        hy = max(t, min(int(hy), b - bh))
+        if (hx, hy) != (cfg.get("hx"), cfg.get("hy")):
+            cfg.update(hx=hx, hy=hy)
+            self.tracker_save()
+        w.geometry(f"+{hx}+{hy}")
 
     def tracker_helpers_destroy(self):
         w, self.tk_helpers = getattr(self, "tk_helpers", None), None
