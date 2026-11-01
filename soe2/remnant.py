@@ -4,7 +4,13 @@ How: with a remnant's list open, press its key (Session tracker > Alerts, defaul
 of the game window, reads the text in it with Windows' own OCR (Windows.Media.Ocr - part of Windows, nothing to
 install), finds the lines that are items (an item name, often with an amount like "Orb of Alchemy x3"), and puts a
 price tag next to each from poe.ninja (the same prices as Wealth), the best one marked ★. One action per key press:
-nothing is sent to the game and nothing runs in the background; the tags go away after a while or with the key again.
+nothing is sent to the game; the tags go away after a while or with the key again.
+
+Auto (on by default - like the original, but without drawing a box): the app looks at the spot where the reward book
+opens (AREA, scaled to the game window like the Delirium / Ritual watchers) about every 0.7 s while the game is in
+front. Only when that spot looks like the book's parchment, and changed, is its text read; the tags come and go by
+themselves as the book opens and closes. If a key press finds the list somewhere else (another UI scale), that spot is
+learned instead. The game's log (Client.txt) says nothing when a remnant is opened, so the screen is the only way.
 
 Credit: the idea comes from PoE Ancients Price Helper by Pedro Quitério
 (https://github.com/pedro-quiterio/PoeAncientsPriceHelper). That project isn't open source, so none of its code, text
@@ -80,6 +86,68 @@ def price_lines(lines, names, value_of):
     for r in out:
         r["best"] = r is best
     return out
+
+
+# ================================================================ Auto: where the list is (like the other watchers)
+# The remnant's reward book opens at the left of the game (seen on a 2000x1125 screenshot from the user, Nov 2026:
+# reward lines at x 44-560, y 110-740). The game scales its UI with the window's HEIGHT and anchors this panel to the
+# left, so the area is kept in units of the game's height from its top-left corner - right for any resolution or
+# aspect ratio (16:9, 21:9 ...), the same way the Delirium and Ritual watchers find their spot.
+AREA = (0.02, 0.10, 0.53, 0.66)   # x0, y0, x1, y1 in game heights
+AUTO_POLL = 0.7                   # seconds between looks (only while the game is in front)
+AUTO_GONE = 2                     # looks without the book = it was closed: tags off
+PARCHMENT = 0.35                  # share of the area that must look like the book's light parchment before reading
+
+
+def area_rect(area, rect):
+    """Area in game heights from the top-left -> screen pixels (left, top, right, bottom), kept inside the game."""
+    l_, t, r, b = rect
+    h = b - t
+    return (int(l_ + area[0] * h), int(t + area[1] * h), min(r, int(l_ + area[2] * h)), min(b, int(t + area[3] * h)))
+
+
+def learn_area(rows, rect):
+    """A key press found reward lines outside the usual spot (UI scale, another layout) -> an area that covers them,
+    in game heights (a little bigger than what was seen, since a list can be longer)."""
+    if not rows:
+        return None
+    h = rect[3] - rect[1]
+    x0 = min(r["box"][0] for r in rows) / h
+    y0 = min(r["box"][1] for r in rows) / h
+    x1 = max(r["box"][2] for r in rows) / h
+    y1 = max(r["box"][3] for r in rows) / h
+    return (round(max(0.0, x0 - 0.05), 4), round(max(0.0, y0 - 0.06), 4), round(x1 + 0.05, 4), round(y1 + 0.2, 4))
+
+
+def inside(rows, area, rect):
+    """Every line a key press found is within the area (then nothing needs learning)."""
+    ar = area_rect(area, (0, 0, rect[2] - rect[0], rect[3] - rect[1]))
+    return all(ar[0] <= r["box"][0] and r["box"][2] <= ar[2] and ar[1] <= r["box"][1] and r["box"][3] <= ar[3]
+               for r in rows)
+
+
+def shift(lines, dx, dy):
+    """OCR lines of a cut-out -> the same lines in the whole game window's pixels."""
+    return [(t, (b[0] + dx, b[1] + dy, b[2] + dx, b[3] + dy)) for t, b in lines]
+
+
+def parchment_share(img):
+    """How much of the area looks like the reward book's light, warm parchment (0-1), from a tiny thumbnail - cheap
+    enough to check every look, so text is only read when the book is likely open."""
+    px = list(img.convert("RGB").resize((40, 40)).getdata())
+    hit = sum(1 for r, g, b in px if r > 150 and g > 135 and b > 100 and 0 <= r - b < 80)
+    return hit / len(px)
+
+
+def thumb(img):
+    return img.convert("L").resize((48, 32)).tobytes()
+
+
+def changed(a, b, tol=6.0):
+    """Two small grey thumbnails (bytes) differ enough to read again."""
+    if a is None or b is None or len(a) != len(b):
+        return True
+    return sum(abs(x - y) for x, y in zip(a, b)) / len(a) > tol
 
 
 # ================================================================ the picture and the OCR (Windows)
