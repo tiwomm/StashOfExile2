@@ -112,24 +112,70 @@ def download_asset(asset, dest, progress=None):
     return True, "ok", verified
 
 
-# 2.26.3: runs hidden. It waits with ping (timeout needs a console: run hidden, it opened a new console window on
-# every try). After 15 s it force-closes what's left of the old exe (a helper's inner process could keep the file
-# locked forever), and after 90 tries it gives up quietly and writes why to update_log.txt next to the exe.
-SWAP_BAT = """@echo off
-set "OLD={old}"
-set "NEW={new}"
-set "IMG={image}"
-set /a n=0
-:wait
-set /a n+=1
-if %n% gtr 90 goto fail
-ping -n 2 127.0.0.1 >nul
-if %n% equ 15 taskkill /f /t /im "%IMG%" >nul 2>&1
-move /y "%NEW%" "%OLD%" >nul 2>&1
-if errorlevel 1 goto wait
-start "" "%OLD%"
-(goto) 2>nul & del "%~f0"
-:fail
-echo %date% %time% the update could not replace "%OLD%" (still in use) - the new version is "%NEW%">>"%~dp0update_log.txt"
-(goto) 2>nul & del "%~f0"
-"""
+UPDATE_NAME = "StashOfExile2_update.exe"
+NO_WINDOW = 0x08000000                              # CREATE_NO_WINDOW
+
+
+def clean_env():
+    """For starting another copy of the one-file exe: it must unpack fresh, not reuse this copy's folder."""
+    env = {k: v for k, v in os.environ.items() if not k.startswith(("_PYI_", "_MEIPASS"))}
+    env["PYINSTALLER_RESET_ENVIRONMENT"] = "1"
+    return env
+
+
+def finish_update(old, me=None, tries=240, wait=0.5, run=None, popen=None, sleep=None):
+    """2.29.1: the swap, done by the NEW exe itself - started as  StashOfExile2_update.exe --finish-update <old exe>.
+    It has no window and runs no console commands (2.26.3's .bat waited with ping, and started detached every ping
+    and move opened a console window of its own). It waits for the old exe to close, copies itself over it, starts
+    it, and ends; the started app deletes StashOfExile2_update.exe. After 15 s it ends what's left of the old exe
+    (a helper's inner process could keep the file in use); after 2 minutes it gives up, writes why to
+    update_log.txt and starts the new version from where it is, so you still get it. -> 0 done / 1 gave up."""
+    import shutil
+    import subprocess
+    import time
+    me = me or sys.executable
+    run, popen, sleep = run or subprocess.run, popen or subprocess.Popen, sleep or time.sleep
+    image = os.path.basename(old)
+    for i in range(tries):
+        try:
+            shutil.copyfile(me, old)
+            break
+        except OSError:
+            if i == int(15 / wait) and image.lower() != os.path.basename(me).lower() and sys.platform == "win32":
+                try:
+                    run(["taskkill", "/f", "/t", "/im", image], capture_output=True, timeout=10, creationflags=NO_WINDOW)
+                except Exception:
+                    pass
+            sleep(wait)
+    else:
+        try:
+            with open(os.path.join(os.path.dirname(old), "update_log.txt"), "a", encoding="utf-8") as f:
+                f.write(f"{time.strftime('%Y-%m-%d %H:%M:%S')} the update could not replace {old} (still in use) - "
+                        f"running the new version from {me}\n")
+        except OSError:
+            pass
+        popen([me], env=clean_env(), close_fds=True)
+        return 1
+    popen([old], env=clean_env(), close_fds=True)
+    return 0
+
+
+def cleanup_update(app_dir, me=None, tries=20, sleep=None):
+    """At start-up: remove what an update left behind (the downloaded exe once it's been copied, and 2.26.3's
+    StashOfExile2_update.bat). The finishing copy may still be closing, so it tries for a few seconds."""
+    import time
+    me = os.path.abspath(me or sys.executable)
+    sleep = sleep or time.sleep
+    left = [os.path.join(app_dir, n) for n in (UPDATE_NAME, "StashOfExile2_update.bat")]
+    left = [p for p in left if os.path.exists(p) and os.path.abspath(p) != me]
+    for _ in range(tries):
+        for p in list(left):
+            try:
+                os.remove(p)
+                left.remove(p)
+            except OSError:
+                pass
+        if not left:
+            return True
+        sleep(0.5)
+    return False
