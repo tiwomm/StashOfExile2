@@ -460,6 +460,7 @@ COMMUNITY = load_json("community_rules.json", {})     # normalised mod text -> {
 
 
 COMMUNITY_ACTIVE, COMMUNITY_DISAGREE = set(), set()
+BOARD_RATED = {}            # 2.31.0: Mod book key -> (High votes, all votes) from the community board
 
 
 SHARE_MAX_HIGH = 80                                    # a file claiming more "high" mods than this looks wrong: refused
@@ -469,6 +470,13 @@ def rebuild_community(market=None):
     """Which imported mods count: enough different sharers, and your own data does not clearly contradict them."""
     need = max(1, int(SETTINGS.get("community_min", 1) or 1))
     cand = {k for k, v in COMMUNITY.items() if len(v.get("from", [])) >= need}
+    try:                                           # 2.31.0: mods most players rate High (their own Mod book rules)
+        from .communitymods import rated_high
+        BOARD_RATED.clear()
+        BOARD_RATED.update(rated_high())
+        cand |= set(BOARD_RATED)
+    except Exception:
+        pass
     bad = set()
     try:
         if market is not None:

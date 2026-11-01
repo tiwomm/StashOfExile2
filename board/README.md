@@ -8,6 +8,10 @@ stuffed.
 Posts are live at once; 3 reports hide one until an admin looks at it. Admins type the admin key once in the app.
 They can then hide, delete, ban and **promote**, and promoted posts join everyone's **Official** list.
 
+Since 2.31.0 it also pools the **community Mod book**: once an hour each app sends a summary of the mod prices its
+price checks saw (per base and mod: how many listings and their median, nothing else), plus the Mod book rules the
+player set, which count as votes. These are keyed by a random install id, which the board only stores hashed.
+
 It is a Cloudflare Worker (`src/index.js`) with a D1 database (`schema.sql`), and the free plan covers it. It stores a
 made-up player id and the display name. Internet addresses are only kept as a hash with the date, to count new
 accounts.
@@ -56,3 +60,5 @@ Put test values in `board/.dev.vars`, e.g. `ADMIN_KEY=...`, `REPORT_HIDE=2`, `JO
 | `POST /posts/{id}/vote` `{up}` · `POST /posts/{id}/report` `{reason}` | upvote, report |
 | `POST /posts/{id}/admin` `{action: hide\|unhide\|promote\|unpromote}` · `POST /users/{id}/ban` | admins |
 | `GET /official` | promoted posts (part of the Official list) |
+| `POST /mods/batch` `{cid, league, prices, bases, votes}` | 2.31.0: an install's hourly summary (per base / mod: count + median) and its Mod book rule changes. One per 45 min. |
+| `GET /mods/stats?league=` · `GET /mods/ratings` | the pooled prices (median, lift, summaries) and how players rate each mod |
