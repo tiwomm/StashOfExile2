@@ -122,6 +122,8 @@ There's only one level of nesting: a child tool has no children of its own. In c
 
 The GGG Terms of Service check in [TOS.md](TOS.md) comes first; these follow from it.
 
+- **Lean pull requests.** Only what the app or its build needs: no screenshots or pictures (except the matching templates in `soe2/templates/` and the app icon), no scratch files. Before / after pictures go in the PR's description, not in the repository.
+
 - **One action per key press.** Nothing is automated in the game.
 - **Only reads what's yours to read.** No game memory or packets; only your clipboard, the game's own log file and your own screen.
 - **Respects the trade site.** Its limits are respected and nothing syncs on a timer.
