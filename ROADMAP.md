@@ -49,7 +49,7 @@ Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds f
 | 2.28.0 | Money Makers: community strats in one layout (Thoughts per Click, Clicks per hour), live updates from GitHub, own strats + Share, simple run tracker. |
 | 2.29.0 | Money Makers reworked: Category › Type browser + tag groups, effort in words, tablet / waystone / atlas / craft sections, waystone tiers, Download Format (.txt), Lucrative Strats, Tablet Crafting quick reference. |
 | 2.29.1 | Fix: updating opens no console windows (the new exe installs itself). |
-| 2.30.0 | Money Makers Community board: Discord sign-in, post / upvote / report, admins promote to Official (Cloudflare Worker). |
+| 2.30.0 | Money Makers Community board: no login (pick a name), post / upvote / report, admins promote to Official (Cloudflare Worker). |
 
 ## ▶ Next up
 

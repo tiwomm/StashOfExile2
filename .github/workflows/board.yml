@@ -40,13 +40,10 @@ jobs:
       - name: Deploy the Worker
         if: steps.ready.outputs.go == 'yes'
         run: npx wrangler deploy
-      - name: Discord + admin secrets
+      - name: Admin key
         if: steps.ready.outputs.go == 'yes'
         env:
-          DISCORD_CLIENT_ID: ${{ secrets.DISCORD_CLIENT_ID }}
-          DISCORD_CLIENT_SECRET: ${{ secrets.DISCORD_CLIENT_SECRET }}
-          ADMIN_IDS: ${{ secrets.ADMIN_IDS }}
+          ADMIN_KEY: ${{ secrets.ADMIN_KEY }}
         run: |
-          printf '%s' "$DISCORD_CLIENT_ID" | npx wrangler secret put DISCORD_CLIENT_ID
-          printf '%s' "$DISCORD_CLIENT_SECRET" | npx wrangler secret put DISCORD_CLIENT_SECRET
-          printf '%s' "$ADMIN_IDS" | npx wrangler secret put ADMIN_IDS
+          if [ -n "$ADMIN_KEY" ]; then printf '%s' "$ADMIN_KEY" | npx wrangler secret put ADMIN_KEY;
+          else echo "No ADMIN_KEY secret: nobody can become admin until you add one."; fi

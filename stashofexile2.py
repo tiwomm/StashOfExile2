@@ -21,11 +21,13 @@ VERSION 2.30.0
 VERSION HISTORY
   2.30.0
        Money Makers: a Community board instead of GitHub issues for sharing. Server = board/ (Cloudflare Worker +
-       D1, deployed by .github/workflows/board.yml with repo secrets - board/README.md has the setup). Sign in
-       with Discord (state polling: /auth/start -> Discord -> /auth/callback; the app polls /auth/poll; token in
-       board_session.json). Posts (strats + one-liners) are live at once, checked against the same layout
+       D1, deployed by .github/workflows/board.yml with repo secrets - board/README.md has the setup). No login
+       (Discord OAuth was dropped: its app rules were too much): the first post / vote / report asks for a display
+       name, POST /auth/join returns a key (board_session.json); JOINS_PER_DAY (5) new accounts per hashed IP per
+       day stop vote stuffing. Posts (strats + one-liners) are live at once, checked against the same layout
        (board/src/schema.json, written by build_strats.py); upvotes (one per player); reports (3 distinct = hidden
-       until an admin looks); admins (ADMIN_IDS) hide / un-hide / delete / ban / promote; promoted posts come from
+       until an admin looks); admins (entered the ADMIN_KEY secret: 👤 > Become admin) hide / un-hide / delete /
+       ban / promote; promoted posts come from
        GET /official and join the Official list. App: soe2/board.py (client, never raises); Strats tab gets
        Official / Community / Mine, ▲ column, Top / New, Upvote, 📤 Post to Community, Report, Copy to Mine, admin
        items; your own posts edit through the same form. Lucrative Strats show Community one-liners too. The

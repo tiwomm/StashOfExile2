@@ -1,8 +1,8 @@
 -- StashOfExile2 community board (D1 / SQLite). Safe to run again: everything is IF NOT EXISTS.
 CREATE TABLE IF NOT EXISTS users (
-  id TEXT PRIMARY KEY,                -- Discord user id
+  id TEXT PRIMARY KEY,                -- made by the board (no login: one per install)
   name TEXT NOT NULL,
-  avatar TEXT,
+  admin INTEGER NOT NULL DEFAULT 0,   -- set by entering ADMIN_KEY in the app
   banned INTEGER NOT NULL DEFAULT 0,
   created INTEGER NOT NULL
 );
@@ -12,11 +12,11 @@ CREATE TABLE IF NOT EXISTS sessions (
   created INTEGER NOT NULL,
   expires INTEGER NOT NULL
 );
-CREATE TABLE IF NOT EXISTS logins (   -- a sign-in in progress: the app polls with its state until the token is here
-  state TEXT PRIMARY KEY,
-  token TEXT,
-  user_id TEXT,
-  created INTEGER NOT NULL
+CREATE TABLE IF NOT EXISTS joins (    -- new accounts per internet address per day (stops vote stuffing)
+  ip TEXT NOT NULL,                   -- sha256 of the address + the day, never the address itself
+  n INTEGER NOT NULL,
+  day TEXT NOT NULL,
+  PRIMARY KEY (ip)
 );
 CREATE TABLE IF NOT EXISTS posts (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
