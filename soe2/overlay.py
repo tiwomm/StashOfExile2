@@ -353,7 +353,7 @@ class Overlay:
         self.notes_tabbar = tk.Frame(w.body, bg=bg)
         self.notes_tabbar.pack(fill="x")
         text = tk.Text(w.body, bg=bg, fg=fg, insertbackground=fg, relief="flat", highlightthickness=0, wrap="word",
-                       font=("Consolas", int(c.get("notes_font", 11))), padx=6, pady=4)
+                       font=("Consolas", int(c.get("notes_font", 11))), padx=8, pady=4)
         text.pack(fill="both", expand=True)
         tabs, i = self.note_tabs(), self.note_index()
         text.insert("1.0", tabs[i]["text"])
@@ -394,14 +394,14 @@ class Overlay:
         cur = self.note_index()
         for i, t in enumerate(self.note_tabs()):
             on = i == cur
-            lab = tk.Label(bar, text=t["name"][:18], bg=fg if on else bg, fg=bg if on else fg, padx=7, pady=1,
-                           cursor="hand2", font=("Segoe UI", 8, "bold" if on else "normal"),
+            lab = tk.Label(bar, text=t["name"][:18], bg=fg if on else bg, fg=bg if on else fg, padx=8, pady=1,
+                           cursor="hand2", font=("Segoe UI", 9, "bold" if on else "normal"),
                            highlightthickness=1, highlightbackground=fg)
             lab.pack(side="left", padx=(0, 2), pady=(0, 2))
             lab.bind("<Button-1>", lambda e, i=i: self.switch_tab(i))
             lab.bind("<Double-1>", lambda e, i=i: self.rename_tab(i))
             lab.bind("<Button-3>", lambda e, i=i: self.delete_tab(i))
-        add = tk.Label(bar, text="+", bg=bg, fg=fg, padx=6, cursor="hand2", font=("Segoe UI", 9, "bold"))
+        add = tk.Label(bar, text="+", bg=bg, fg=fg, padx=8, cursor="hand2", font=("Segoe UI", 9, "bold"))
         add.pack(side="left", pady=(0, 2))
         add.bind("<Button-1>", lambda e: self.add_tab())
 

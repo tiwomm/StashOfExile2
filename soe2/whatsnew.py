@@ -21,6 +21,12 @@ NEXT = [
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.34.0": [
+        "A cleaner, steadier look: the same text sizes and spacing everywhere, and buttons that tell you what they do - "
+        "the main action in your accent colour, deleting and clearing in red, small helpers quiet.",
+        "Every theme and accent colour now has readable text (checked against the WCAG accessibility standard). Buttons "
+        "with a bright accent (gold, lime, teal, ice) use dark text now.",
+    ],
     "2.33.1": [
         "Map library: the ✖ Avoid button is no longer cut off.",
     ],

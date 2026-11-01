@@ -62,31 +62,31 @@ class WealthPage:
         self.w_counting, self.w_session, self.w_editing = False, [], False
         self.w_msg = tk.Label(tab, text="", anchor="w", justify="left", bg=P1, fg=C["muted"], padx=12,
                               font=("Segoe UI", 10, "bold"))
-        self.w_msg.pack(fill="x", pady=(6, 0))
+        self.w_msg.pack(fill="x", pady=(8, 0))
         self.w_msg.bind("<Configure>", lambda e: self.w_msg.config(wraplength=max(300, e.width - 30)))
 
         # ---- the two cards
         cards = tk.Frame(tab, bg=P1)
-        cards.pack(fill="x", padx=10, pady=(6, 8))
+        cards.pack(fill="x", padx=8, pady=(8, 8))
         cards.columnconfigure(0, weight=3, uniform="c")
         cards.columnconfigure(1, weight=2, uniform="c")
 
         def card(col):
-            f = tk.Frame(cards, bg=P2, padx=14, pady=10, highlightthickness=1, highlightbackground=C["line"])
-            f.grid(row=0, column=col, sticky="nsew", padx=(0, 5) if col == 0 else (5, 0))
+            f = tk.Frame(cards, bg=P2, padx=16, pady=8, highlightthickness=1, highlightbackground=C["line"])
+            f.grid(row=0, column=col, sticky="nsew", padx=(0, 4) if col == 0 else (5, 0))
             return f
         c1 = card(0)
         head = tk.Frame(c1, bg=P2)
         head.pack(fill="x")
-        tk.Label(head, text="Wealth", bg=P2, fg=C["text"], font=(FONT_TITLE, 15, "bold")).pack(side="left")
+        tk.Label(head, text="Wealth", bg=P2, fg=C["text"], font=(FONT_TITLE, 16, "bold")).pack(side="left")
         how = tk.Label(head, text="ⓘ How it works", bg=P2, fg="#6ea8ff", cursor="hand2", font=("Segoe UI", 9, "underline"))
-        how.pack(side="left", padx=(10, 0))                        # 2.0 beta 21
+        how.pack(side="left", padx=(8, 0))                        # 2.0 beta 21
         how.bind("<Button-1>", lambda e: self.wealth_guide())
         setup = tk.Label(head, text="▶ Set up step by step", bg=P2, fg="#6ea8ff", cursor="hand2",
                          font=("Segoe UI", 9, "underline"))
-        setup.pack(side="left", padx=(10, 0))                       # 2.3.0
+        setup.pack(side="left", padx=(8, 0))                       # 2.3.0
         setup.bind("<Button-1>", lambda e: self.wealth_setup_open())
-        self.w_mode = SegBar(head, ["Total", "Daily"], command=lambda v: self.wealth_draw_chart(), size=9, pad=(10, 3))
+        self.w_mode = SegBar(head, ["Total", "Daily"], command=lambda v: self.wealth_draw_chart(), size=9, pad=(8, 4))
         self.w_mode.pack(side="left", padx=(16, 8))
         self.w_range = tk.StringVar(value=SETTINGS.get("wealth_range", "7 days"))
         rb = ttk.Combobox(head, textvariable=self.w_range, values=list(self.RANGES), state="readonly", width=10)
@@ -96,34 +96,34 @@ class WealthPage:
                                                     self.root.after(20, self.root.focus_set)))
         self.w_total = tk.Label(head, text="-", bg=P2, fg=C["good"], font=("Segoe UI", 22, "bold"))
         self.w_total.pack(side="right")
-        self.w_delta = tk.Label(head, text="", bg=P2, fg=C["green"], font=("Segoe UI", 11, "bold"))
-        self.w_delta.pack(side="right", padx=(0, 10))
+        self.w_delta = tk.Label(head, text="", bg=P2, fg=C["green"], font=("Segoe UI", 12, "bold"))
+        self.w_delta.pack(side="right", padx=(0, 8))
         self.w_equiv = tk.Label(c1, text="", bg=P2, fg=C["steel"], anchor="e")
         self.w_equiv.pack(fill="x")
         self.w_chart = tk.Canvas(c1, height=130, bg=P2, highlightthickness=0)
         self.w_chart.pack(fill="both", expand=True, pady=(2, 0))
         self.w_chart.bind("<Configure>", lambda e: self.wealth_draw_chart())
-        self.w_facts = tk.Label(c1, text="", bg=P2, fg=C["muted"], anchor="w", justify="left", font=("Segoe UI", 8))
+        self.w_facts = tk.Label(c1, text="", bg=P2, fg=C["muted"], anchor="w", justify="left", font=("Segoe UI", 9))
         self.w_facts.pack(fill="x")
 
         c2 = card(1)
         head2 = tk.Frame(c2, bg=P2)
         head2.pack(fill="x")
-        tk.Label(head2, text="Breakdown", bg=P2, fg=C["text"], font=(FONT_TITLE, 15, "bold")).pack(side="left")
-        self.w_bd_mode = SegBar(head2, ["Divines", "Percent"], command=lambda v: self.wealth_breakdown(), size=9, pad=(10, 3))
+        tk.Label(head2, text="Breakdown", bg=P2, fg=C["text"], font=(FONT_TITLE, 16, "bold")).pack(side="left")
+        self.w_bd_mode = SegBar(head2, ["Divines", "Percent"], command=lambda v: self.wealth_breakdown(), size=9, pad=(8, 4))
         self.w_bd_mode.pack(side="right")
-        self.w_bd_note = tk.Label(c2, text="", bg=P2, fg=C["muted"], anchor="w", font=("Segoe UI", 8))
+        self.w_bd_note = tk.Label(c2, text="", bg=P2, fg=C["muted"], anchor="w", font=("Segoe UI", 9))
         self.w_bd_note.pack(fill="x", pady=(2, 4))
         self.w_bd = tk.Frame(c2, bg=P2)
         self.w_bd.pack(fill="both", expand=True)
 
         # ---- below: your tabs (or snapshots) on the left, the items on the right
         main = tk.Frame(tab, bg=P1)
-        main.pack(fill="both", expand=True, padx=10, pady=(0, 8))
+        main.pack(fill="both", expand=True, padx=8, pady=(0, 8))
         side = tk.Frame(main, bg=P1, width=196)
-        side.pack(side="left", fill="y", padx=(0, 10))
+        side.pack(side="left", fill="y", padx=(0, 8))
         side.pack_propagate(False)
-        self.w_side_mode = SegBar(side, ["Tabs", "Snapshots"], command=lambda v: self.wealth_side(), size=10, pad=(16, 5))
+        self.w_side_mode = SegBar(side, ["Tabs", "Snapshots"], command=lambda v: self.wealth_side(), size=10, pad=(16, 4))
         self.w_side_mode.pack(anchor="w", pady=(0, 8))
         self.w_side_tabs = tk.Frame(side, bg=C["accent"], padx=2, pady=2)
         self.w_side_snaps = tk.Frame(side, bg=P1)
@@ -136,7 +136,7 @@ class WealthPage:
         sv.column("total", width=58, anchor="e")
         sv.pack(fill="both", expand=True)
         tk.Label(self.w_side_snaps, text="Ctrl+click two to compare. Delete removes.", bg=P1, fg=C["muted"],
-                 font=("Segoe UI", 8), anchor="w").pack(fill="x")
+                 font=("Segoe UI", 9), anchor="w").pack(fill="x")
         sv.bind("<<TreeviewSelect>>", lambda e: self.wealth_pick_snapshot())
         self.w_snaps = sv
         self.list_register("wealth", sv, delete=lambda rows: self.wealth_remove_snaps(rows))
@@ -148,9 +148,9 @@ class WealthPage:
         right = tk.Frame(main, bg=P1)
         right.pack(side="left", fill="both", expand=True)
         abar = tk.Frame(right, bg=P1)                   # 2.4.0: actions on their own row, so none get squeezed out
-        abar.pack(fill="x", pady=(0, 6))
+        abar.pack(fill="x", pady=(0, 8))
         ibar = tk.Frame(right, bg=P1)
-        ibar.pack(fill="x", pady=(0, 6))
+        ibar.pack(fill="x", pady=(0, 8))
         self.w_filter = tk.StringVar()
         self.w_filter.trace_add("write", lambda *a: self.wealth_fill_items())
         se = tk.Entry(ibar, textvariable=self.w_filter, width=24, bg=C["odd"], fg=C["text"], insertbackground=C["text"],
@@ -178,7 +178,7 @@ class WealthPage:
                                       font=("Segoe UI", 9, "bold"))
         self.w_filter_chip.bind("<Button-1>", lambda e: self.wealth_clear_filters())
         more = tk.Menubutton(abar, text="More ▾", bg="#1b2a48", fg=C["text"], activebackground="#2c4a84",
-                             activeforeground="#ffffff", relief="flat", padx=10, pady=4, cursor="hand2")
+                             activeforeground="#ffffff", relief="flat", padx=8, pady=4, cursor="hand2")
         mm = tk.Menu(more, tearoff=0, bg=C["panel2"], fg=C["text"], activebackground="#2c4a84")
         mm.add_command(label="Update prices from poe.ninja", command=self.wealth_update_prices)
         mm.add_command(label="Re-check magic / rare items", command=self.wealth_recheck_rares)
@@ -193,14 +193,14 @@ class WealthPage:
         self.w_price_btn = _MenuItem(mm, 0)
         self.w_rares_btn = _MenuItem(mm, 1)
         self.w_stop_btn = ttk.Button(abar, text="Stop", command=self.wealth_stop, state="disabled")
-        self.w_stop_btn.pack(side="right", padx=(0, 6))
-        self.w_sync_btn = ttk.Button(abar, text="⟳ Sync", style="Accent.TButton", command=self.wealth_sync)
-        self.w_sync_btn.pack(side="right", padx=(0, 6))
+        self.w_stop_btn.pack(side="right", padx=(0, 8))
+        self.w_sync_btn = ttk.Button(abar, text="⟳ Sync", style="Primary.TButton", command=self.wealth_sync)
+        self.w_sync_btn.pack(side="right", padx=(0, 8))
         self.w_count_btn = ttk.Button(abar, text="Count currency", command=self.wealth_count_toggle)
-        self.w_count_btn.pack(side="right", padx=(0, 6))
+        self.w_count_btn.pack(side="right", padx=(0, 8))
 
         self.w_synced = tk.Label(abar, text="", **lab)
-        self.w_synced.pack(side="right", padx=(0, 10))
+        self.w_synced.pack(side="right", padx=(0, 8))
 
         # counting / "copied a stack" strip (hidden until used)
         self.w_cstrip = tk.Frame(right, bg="#2a2110", padx=12, pady=8, highlightthickness=1, highlightbackground="#7a6428")
@@ -216,21 +216,21 @@ class WealthPage:
         self.w_man_name = tk.StringVar()
         self.w_man_qty = tk.StringVar()
         self.w_man_box = ttk.Combobox(self.w_manual, textvariable=self.w_man_name, width=26)
-        self.w_man_box.pack(side="left", padx=(10, 6))
+        self.w_man_box.pack(side="left", padx=(8, 8))
         tk.Label(self.w_manual, text="amount", bg=P2, fg=C["muted"]).pack(side="left")
         qe = ttk.Entry(self.w_manual, textvariable=self.w_man_qty, width=9)
-        qe.pack(side="left", padx=(6, 6))
+        qe.pack(side="left", padx=(8, 8))
         qe.bind("<Return>", lambda e: self.wealth_manual_set())
-        ttk.Button(self.w_manual, text="Set", style="Accent.TButton", command=self.wealth_manual_set).pack(side="left")
-        ttk.Button(self.w_manual, text="Close", command=lambda: self.w_manual.pack_forget()).pack(side="left", padx=6)
+        ttk.Button(self.w_manual, text="Set", style="Primary.TButton", command=self.wealth_manual_set).pack(side="left")
+        ttk.Button(self.w_manual, text="Close", command=lambda: self.w_manual.pack_forget(), style="Quiet.TButton").pack(side="left", padx=8)
 
         # ---- the setup of your priced tabs (folded away behind "Edit synced tabs" once you have one)
-        self.w_setup = tk.Frame(right, bg=P2, padx=12, pady=10, highlightthickness=1, highlightbackground=C["line"])
+        self.w_setup = tk.Frame(right, bg=P2, padx=12, pady=8, highlightthickness=1, highlightbackground=C["line"])
         lab2 = dict(bg=P2, fg=C["muted"])
         arow = tk.Frame(self.w_setup, bg=P2)
         arow.pack(fill="x")
-        tk.Label(arow, text="Your priced tabs", bg=P2, fg=C["text"], font=("Segoe UI", 11, "bold")).pack(side="left")
-        tk.Label(arow, text="Account", **lab2).pack(side="left", padx=(20, 6))
+        tk.Label(arow, text="Your priced tabs", bg=P2, fg=C["text"], font=("Segoe UI", 12, "bold")).pack(side="left")
+        tk.Label(arow, text="Account", **lab2).pack(side="left", padx=(16, 8))
         self.w_acc = tk.StringVar(value=SETTINGS.get("wealth_account", ""))
         acc = ttk.Entry(arow, textvariable=self.w_acc, width=24)
         acc.pack(side="left")
@@ -243,7 +243,7 @@ class WealthPage:
                                                   "sell instantly, even when you're offline.\nCurrency doesn't need a "
                                                   "tab: press Count currency and copy each stack in game with Ctrl+C.",
                                bg=P2, fg=C["muted"], justify="left", anchor="w", font=("Segoe UI", 9), wraplength=700)
-        self.w_help.pack(fill="x", pady=(4, 6))
+        self.w_help.pack(fill="x", pady=(4, 8))
         tvf = tk.Frame(self.w_setup, bg=P2)
         tvf.pack(fill="x", pady=(4, 0))
         self.w_tabs = ttk.Treeview(tvf, columns=("tab", "marker", "items", "value", "last"), show="headings",
@@ -274,7 +274,7 @@ class WealthPage:
         cur.config(width=24, postcommand=lambda c=cur: c.config(values=[n for _, n in WEALTH_CURRENCIES]))   # 2.16.0
         cur.pack(side="left")
         cur.bind("<<ComboboxSelected>>", lambda e: self.root.after(20, self.root.focus_set), add="+")
-        tk.Label(add, text="Name (optional)", **lab2).pack(side="left", padx=(10, 0))
+        tk.Label(add, text="Name (optional)", **lab2).pack(side="left", padx=(8, 0))
         ttk.Entry(add, textvariable=self.w_new_name, width=12).pack(side="left", padx=(4, 0))
         ttk.Button(add, text="Add tab", command=self.wealth_add_tab).pack(side="left", padx=(8, 0))
         lnk = tk.Frame(self.w_setup, bg=P2)
@@ -283,19 +283,19 @@ class WealthPage:
         tk.Label(lnk, text="or paste a trade link", **lab2).pack(side="left")
         self.w_link = tk.StringVar()
         le = ttk.Entry(lnk, textvariable=self.w_link, width=38)
-        le.pack(side="left", padx=(6, 0))
+        le.pack(side="left", padx=(8, 0))
         le.bind("<Return>", lambda e: self.wealth_add_from_link())
         ttk.Button(lnk, text="Add from link", command=self.wealth_add_from_link).pack(side="left", padx=(8, 0))
         # 2.18.0: the tab you read in Price checks > Stash tab, one click away (same tab, same reader)
         self.w_pc_btn = ttk.Button(lnk, text="", command=self.wealth_add_pc_tab)
         acts = tk.Frame(self.w_setup, bg=P2)
-        acts.pack(fill="x", pady=(6, 0))
+        acts.pack(fill="x", pady=(8, 0))
         self.w_acts = acts
         self.w_adding = False
         self.w_add_btn = ttk.Button(acts, text="Add a tab", command=self.wealth_toggle_adding)
-        self.w_add_btn.pack(side="left", padx=(0, 6))
+        self.w_add_btn.pack(side="left", padx=(0, 8))
         ttk.Button(acts, text="Include / leave out", command=self.wealth_toggle_tab).pack(side="left")
-        ttk.Button(acts, text="Remove", command=self.wealth_remove_tab).pack(side="left", padx=6)
+        ttk.Button(acts, text="Remove", command=self.wealth_remove_tab, style="Danger.TButton").pack(side="left", padx=8)
         ttk.Button(acts, text="Open on trade site", command=self.wealth_open_trade).pack(side="left")
         self.w_tabinfo = tk.Label(self.w_setup, text="", bg=P2, fg=C["muted"], justify="left", anchor="w",
                                   wraplength=640, font=("Segoe UI", 9))
@@ -325,12 +325,12 @@ class WealthPage:
         crow = tk.Frame(right, bg=P1)                    # 2.4.0: under the list - what's in it, Clear and Undo
         crow.pack(fill="x", pady=(4, 0))
         self.undo_button(crow, "wealth").pack(side="right")
-        ttk.Button(crow, text="Clear…", command=self.wealth_clear_items).pack(side="right", padx=(0, 6))
-        self.w_count = tk.Label(crow, text="", bg=P1, fg=C["muted"], anchor="w", font=("Segoe UI", 8),
+        ttk.Button(crow, text="Clear…", command=self.wealth_clear_items, style="Danger.TButton").pack(side="right", padx=(0, 8))
+        self.w_count = tk.Label(crow, text="", bg=P1, fg=C["muted"], anchor="w", font=("Segoe UI", 9),
                                 justify="left")
         self.w_count.pack(side="left", fill="x", expand=True)
         self.w_count.bind("<Configure>", lambda e: self.w_count.config(wraplength=max(200, e.width - 6)))
-        self.w_empty = tk.Label(itf, bg=P1, fg=C["muted"], font=("Segoe UI", 11), justify="center",
+        self.w_empty = tk.Label(itf, bg=P1, fg=C["muted"], font=("Segoe UI", 10), justify="center",
                                 text="Nothing here yet.\nPress Count currency and copy your currency stacks in game "
                                      "(Ctrl+C),\nor set up a priced tab (Edit synced tabs) and press Sync.")
         self.w_rowmap, self.w_sort_col, self.w_sort_rev = {}, "total", True
@@ -369,10 +369,10 @@ class WealthPage:
         y = (w.winfo_rooty() + 60) if w is not None else self.root.winfo_rooty() + 120
         g = OverlayWindow(self.root, "How Wealth works", "💰", (x, y, 560, 520), opacity=255, body_bg=C["panel"],
                           app_colours=True, lockable=False, on_close=lambda: g.destroy())
-        t = tk.Text(g.body, bg=C["panel"], fg=C["text"], relief="flat", wrap="word", padx=14, pady=10,
+        t = tk.Text(g.body, bg=C["panel"], fg=C["text"], relief="flat", wrap="word", padx=16, pady=8,
                     highlightthickness=0, font=("Segoe UI", 10), cursor="arrow")
         t.pack(fill="both", expand=True)
-        t.tag_configure("h", foreground=C["accent"], font=("Segoe UI", 11, "bold"), spacing1=8, spacing3=3)
+        t.tag_configure("h", foreground=C["accent"], font=("Segoe UI", 12, "bold"), spacing1=8, spacing3=3)
         for head, body in self.WEALTH_GUIDE:
             t.insert("end", head + "\n", "h")
             t.insert("end", body + "\n")
@@ -431,9 +431,9 @@ class WealthPage:
         self.w_cstrip_lbl.config(text=text)
         for i, (label, fn) in enumerate(actions):
             ttk.Button(self.w_cstrip_btns, text=label, command=fn,
-                       style="Accent.TButton" if i == accent else "TButton").pack(side="left", padx=(6, 0))
+                       style="Primary.TButton" if i == accent else "TButton").pack(side="left", padx=(8, 0))
         if not self.w_cstrip.winfo_ismapped():
-            self.w_cstrip.pack(fill="x", pady=(0, 6), before=self.w_setup if self.w_setup.winfo_ismapped() else self.w_itf)
+            self.w_cstrip.pack(fill="x", pady=(0, 8), before=self.w_setup if self.w_setup.winfo_ismapped() else self.w_itf)
 
     def _w_strip_close(self):
         self.w_cstrip.pack_forget()
@@ -442,7 +442,7 @@ class WealthPage:
         if self.w_counting:
             return self.wealth_count_finish()
         self.w_counting, self.w_session = True, []
-        self.w_count_btn.config(text="Finish counting", style="Accent.TButton")
+        self.w_count_btn.config(text="Finish counting", style="Primary.TButton")
         self.wealth_count_strip()
 
     def wealth_count_strip(self):
@@ -504,7 +504,7 @@ class WealthPage:
                                            "Regal Orb", "Orb of Alchemy", "Gemcutter's Prism"})
         self.w_man_box.config(values=names)
         if not self.w_manual.winfo_ismapped():
-            self.w_manual.pack(fill="x", pady=(0, 6), before=self.w_itf)
+            self.w_manual.pack(fill="x", pady=(0, 8), before=self.w_itf)
         self.w_man_box.focus_set()
 
     def wealth_manual_set(self):
@@ -662,7 +662,7 @@ class WealthPage:
             entries.append((COUNTED_TAB, COUNTED_LABEL, "#5a4a1a"))
         for tid, label, col in entries:
             on = self.w_tabfilter == tid
-            b = tk.Label(self.w_side_tabs, text=label, bg=col, fg="#ffffff", anchor="w", padx=10, pady=4, cursor="hand2",
+            b = tk.Label(self.w_side_tabs, text=label, bg=col, fg="#ffffff", anchor="w", padx=8, pady=4, cursor="hand2",
                          font=("Segoe UI", 12, "bold" if on else "normal"), highlightthickness=2,
                          highlightbackground="#ffffff" if on else col)
             b.pack(fill="x", pady=(0, 1))
@@ -737,13 +737,13 @@ class WealthPage:
         for n, (k, v) in enumerate(sorted(by.items(), key=lambda kv: -kv[1])):
             icon, name = self.CAT_INFO[k]
             on = self.w_catfilter == k
-            f = tk.Frame(self.w_bd, bg="#1b2a48" if on else "#121c30", padx=8, pady=5, cursor="hand2",
+            f = tk.Frame(self.w_bd, bg="#1b2a48" if on else "#121c30", padx=8, pady=4, cursor="hand2",
                          highlightthickness=1, highlightbackground=C["accent"] if on else C["line"])
-            f.grid(row=n // cols, column=n % cols, sticky="ew", padx=(0, 6), pady=(0, 6))
+            f.grid(row=n // cols, column=n % cols, sticky="ew", padx=(0, 8), pady=(0, 8))
             a = tk.Label(f, text=f"{icon}  {v / total * 100:.0f}%" if pct else f"{icon}  {fmt_div(v)}", bg=f.cget("bg"),
-                         fg="#ffffff", font=("Segoe UI", 11, "bold"), anchor="w")
+                         fg="#ffffff", font=("Segoe UI", 12, "bold"), anchor="w")
             a.pack(anchor="w")
-            b = tk.Label(f, text=name, bg=f.cget("bg"), fg=C["muted"], font=("Segoe UI", 8), anchor="w")
+            b = tk.Label(f, text=name, bg=f.cget("bg"), fg=C["muted"], font=("Segoe UI", 9), anchor="w")
             b.pack(anchor="w")
             for w in (f, a, b):
                 w.bind("<Button-1>", lambda e, kk=k: self.wealth_pick_cat(kk))
@@ -772,7 +772,7 @@ class WealthPage:
         so the item list gets the room."""
         want_setup = self.w_editing or (not WEALTH.tabs and not WEALTH.holdings)
         if want_setup and not self.w_setup.winfo_ismapped():
-            self.w_setup.pack(fill="x", pady=(0, 6), before=self.w_itf)
+            self.w_setup.pack(fill="x", pady=(0, 8), before=self.w_itf)
         elif not want_setup and self.w_setup.winfo_ismapped():
             self.w_setup.pack_forget()
         self.w_edit_lbl.config(text="✓ Done editing tabs" if self.w_editing else "✎ Edit synced tabs")
@@ -784,11 +784,11 @@ class WealthPage:
             self.w_add.pack_forget()
             self.w_lnk.pack_forget()
         if not WEALTH.tabs and not self.w_help.winfo_ismapped():
-            self.w_help.pack(fill="x", pady=(4, 6), before=self.w_tabs.master)
+            self.w_help.pack(fill="x", pady=(4, 8), before=self.w_tabs.master)
         elif WEALTH.tabs and self.w_help.winfo_ismapped():
             self.w_help.pack_forget()
         if WEALTH.tabs:
-            self.w_add_btn.pack(side="left", padx=(0, 6), before=self.w_acts.winfo_children()[1])
+            self.w_add_btn.pack(side="left", padx=(0, 8), before=self.w_acts.winfo_children()[1])
             self.w_add_btn.config(text="Done adding" if self.w_adding else "Add a tab")
         else:
             self.w_add_btn.pack_forget()
@@ -810,7 +810,7 @@ class WealthPage:
         if got:
             btn.config(text=f"Use my Price checks tab ({got[0]:,} {dict(WEALTH_CURRENCIES).get(got[1], got[1])})")
             if not btn.winfo_ismapped():
-                btn.pack(side="left", padx=(14, 0))
+                btn.pack(side="left", padx=(16, 0))
         elif btn.winfo_ismapped():
             btn.pack_forget()
 
@@ -1284,7 +1284,7 @@ class WealthPage:
         if filt:
             self.w_filter_chip.config(text="Showing: " + " · ".join(filt) + "   ✕")
             if not self.w_filter_chip.winfo_ismapped():
-                self.w_filter_chip.pack(side="left", padx=(10, 0))
+                self.w_filter_chip.pack(side="left", padx=(8, 0))
         else:
             self.w_filter_chip.pack_forget()
         shown_total = sum(r[4] or 0 for r in shown)
@@ -1371,4 +1371,4 @@ class WealthPage:
         for i in range(n + 1):
             t = t0 + (t1 - t0) * i / n
             cv.create_text(X(t), h - 4, anchor="s" if 0 < i < n else ("sw" if i == 0 else "se"), fill=C["muted"],
-                           font=("Segoe UI", 8), text=day(t))
+                           font=("Segoe UI", 9), text=day(t))

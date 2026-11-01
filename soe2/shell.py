@@ -130,7 +130,7 @@ class DeskWindow(tk.Toplevel):
         self.bar.bind("<Double-1>", lambda e: self.toggle_max())
         self.body = tk.Frame(self.inner, bg=C["panel"])
         self.body.pack(fill="both", expand=True)
-        self.grip = tk.Label(self.inner, text="◢", bg=C["panel"], fg=C["steel"], font=("Segoe UI", 8),
+        self.grip = tk.Label(self.inner, text="◢", bg=C["panel"], fg=C["steel"], font=("Segoe UI", 9),
                              cursor="bottom_right_corner")
         self.grip.place(relx=1.0, rely=1.0, anchor="se")
         self._resize_bind(self.grip, "se")
@@ -858,7 +858,7 @@ class Shell:
             if not mods:
                 continue
             d.create_text(cx, y + 9, text=dict(KINDS)[kind], fill=C["steel"],
-                          font=("Segoe UI", 7, "bold"))
+                          font=("Segoe UI", 9, "bold"))
             y += 22
             for m in mods:
                 self._dock_item(m, cx, y, tile, labels)
@@ -895,7 +895,7 @@ class Shell:
                       fill="#ffffff", tags=(tag,))
         if labels:
             d.create_text(cx, y + tile + 11, text=m.short or m.title if len(m.title) > 13 else m.title,
-                          fill="#eef3ff", font=("Segoe UI", 8), width=DOCK_W - 6, tags=(tag, tag + "_lbl"))
+                          fill="#eef3ff", font=("Segoe UI", 9), width=DOCK_W - 6, tags=(tag, tag + "_lbl"))
         self.dock_btns[m.key] = t
         if getattr(m, "labs", False):                    # a Labs (experimental) one: a small BETA tag
             d.create_rectangle(x0 - 2, y + tile - 11, x0 + 22, y + tile - 1, fill=C["accent"], outline="", tags=(tag,))
@@ -1096,9 +1096,9 @@ class Shell:
                 continue
             on = k == self.active and w.state_ == "open"
             b = tk.Label(self.task_inner, text=f"{w.icon} {w.title}", bg="#2c4c8a" if on else "#22345a",
-                         fg="#ffffff" if w.state_ == "open" else C["muted"], padx=10, pady=4, cursor="hand2",
+                         fg="#ffffff" if w.state_ == "open" else C["muted"], padx=8, pady=4, cursor="hand2",
                          highlightthickness=1, highlightbackground=C["accent"] if on else "#3d5582", font=("Segoe UI", 9))
-            b.pack(side="left", padx=3)
+            b.pack(side="left", padx=4)
             b.bind("<Button-1>", lambda e, kk=k: self.task_click(kk))
             self.taskbtns[k] = b
 
@@ -1111,7 +1111,7 @@ class Shell:
 
     def add_status(self, widget):
         """Modules / the core can put small status widgets on the right of the taskbar."""
-        widget.pack(in_=self.task_right, side="left", padx=5)
+        widget.pack(in_=self.task_right, side="left", padx=4)
 
     def refresh_dots(self):
         for k, d in self.dots.items():
@@ -1151,8 +1151,8 @@ class Shell:
             self.task_dots[k] = (lab, mod)
         if old is not None:
             return
-        f.pack(side="left", padx=6)
-        self.clock = tk.Label(self.task_right, text="", bg="#111b30", fg=C["text"], font=("Segoe UI", 8, "bold"),
+        f.pack(side="left", padx=8)
+        self.clock = tk.Label(self.task_right, text="", bg="#111b30", fg=C["text"], font=("Segoe UI", 9, "bold"),
                               justify="right")
         self.clock.pack(side="left", padx=(8, 2))
 
@@ -1208,10 +1208,10 @@ class Shell:
         q = tk.StringVar()
         e = tk.Entry(m, textvariable=q, bg="#0b1222", fg=C["text"], insertbackground=C["text"], relief="flat",
                      highlightthickness=1, highlightbackground=C["line"], font=("Segoe UI", 10))
-        e.pack(fill="x", padx=10, pady=10, ipady=4)
+        e.pack(fill="x", padx=8, pady=8, ipady=4)
         e.insert(0, "")
         cols = tk.Frame(m, bg=P1)
-        cols.pack(fill="both", expand=True, padx=6)
+        cols.pack(fill="both", expand=True, padx=8)
         lists = {}
         colf = [tk.Frame(cols, bg=P1), tk.Frame(cols, bg=P1)]
         for c in colf:
@@ -1219,7 +1219,7 @@ class Shell:
         for kind, label in KINDS:
             c = tk.Frame(colf[1 if kind == "utility" else 0], bg=P1)
             c.pack(fill="x", pady=(0, 8))
-            tk.Label(c, text=label, bg=P1, fg=C["steel"], font=("Segoe UI", 8, "bold"), anchor="w").pack(fill="x", pady=(0, 4))
+            tk.Label(c, text=label, bg=P1, fg=C["steel"], font=("Segoe UI", 9, "bold"), anchor="w").pack(fill="x", pady=(0, 4))
             lists[kind] = c
 
         def fill(*_a):
@@ -1238,7 +1238,7 @@ class Shell:
                     continue
                 st = mod.status() if hasattr(mod, "status") else None
                 dot = ("● " if mod.kind == "utility" else "")
-                row = tk.Label(lists[mod.kind], text=f"{dot}{mod.icon}  {mod.title}" + ("  ·beta" if getattr(mod, "labs", False) else ""), bg=P1, anchor="w", padx=8, pady=6,
+                row = tk.Label(lists[mod.kind], text=f"{dot}{mod.icon}  {mod.title}" + ("  ·beta" if getattr(mod, "labs", False) else ""), bg=P1, anchor="w", padx=8, pady=8,
                                fg=C["text"], cursor="hand2", font=("Segoe UI", 10))
                 if mod.kind == "utility":
                     row.config(fg=C["green"] if st is True else C["text"])
@@ -1248,7 +1248,7 @@ class Shell:
                 row.bind("<Button-1>", lambda ev, kk=k: self.open(kk))
                 for c in kids:                          # 2.33.0: its child tools, indented under it
                     sub = tk.Label(lists[mod.kind], text=f"↳  {c.icon}  {c.title}" + ("  ·beta" if getattr(c, "labs", False) else ""),
-                                   bg=P1, anchor="w", padx=26, pady=4, fg=C["muted"], cursor="hand2", font=("Segoe UI", 9))
+                                   bg=P1, anchor="w", padx=24, pady=4, fg=C["muted"], cursor="hand2", font=("Segoe UI", 9))
                     sub.pack(fill="x")
                     sub.bind("<Enter>", lambda ev, r=sub: r.config(bg=C["sel"], fg=C["text"]))
                     sub.bind("<Leave>", lambda ev, r=sub: r.config(bg=P1, fg=C["muted"]))
@@ -1256,14 +1256,14 @@ class Shell:
         q.trace_add("write", fill)
         fill()
         foot = tk.Frame(m, bg=P1, highlightthickness=0)
-        foot.pack(fill="x", side="bottom", padx=10, pady=10)
+        foot.pack(fill="x", side="bottom", padx=8, pady=8)
         for text, cmd in (("⚙ Settings", lambda: self.open("settings")), ("✦ What's new", lambda: self.app.show_whatsnew(True)),
                           ("➜ Quick start", lambda: self.app.show_quickstart(force=True)),
                           ("⟳ Check for updates", self.app.check_updates),
                           ("✕ Quit", self.app.on_close)):
             b = tk.Label(foot, text=text, bg="#0b1222", fg=C["text"], padx=8, pady=4, cursor="hand2",
                          highlightthickness=1, highlightbackground=C["line"])
-            b.pack(side="left" if "Quit" not in text else "right", padx=(0, 6))
+            b.pack(side="left" if "Quit" not in text else "right", padx=(0, 8))
             b.bind("<Button-1>", lambda ev, c=cmd: (self.close_menu(), c()))
         e.focus_set()
         e.bind("<Escape>", lambda ev: self.close_menu())

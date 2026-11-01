@@ -144,19 +144,19 @@ class UtilitiesPage:
     # ---------------- shared bits
     def _util_head(self, body, title_var, label, command, text):
         P2 = C["panel2"]
-        top = tk.Frame(body, bg=P2, padx=14, pady=10, highlightthickness=1, highlightbackground=C["line"])
-        top.pack(fill="x", padx=10, pady=(10, 6))
+        top = tk.Frame(body, bg=P2, padx=16, pady=8, highlightthickness=1, highlightbackground=C["line"])
+        top.pack(fill="x", padx=8, pady=(8, 8))
         ttk.Checkbutton(top, text=label, variable=title_var, command=command).pack(side="left")
         st = tk.Label(top, text="", bg=P2, fg=C["muted"], anchor="w", font=("Segoe UI", 10, "bold"))
         st.pack(side="left", padx=12)
         tk.Label(body, text=text, bg=C["panel"], fg=C["muted"], anchor="w", justify="left", wraplength=600,
-                 font=("Segoe UI", 9)).pack(fill="x", padx=12, pady=(0, 6))
+                 font=("Segoe UI", 9)).pack(fill="x", padx=12, pady=(0, 8))
         return st
 
     def _card(self, body, title, expand=False):
         P2 = C["panel2"]
-        f = tk.Frame(body, bg=P2, padx=14, pady=10, highlightthickness=1, highlightbackground=C["line"])
-        f.pack(fill="both" if expand else "x", expand=expand, padx=10, pady=(0, 8))
+        f = tk.Frame(body, bg=P2, padx=16, pady=8, highlightthickness=1, highlightbackground=C["line"])
+        f.pack(fill="both" if expand else "x", expand=expand, padx=8, pady=(0, 8))
         if title:
             tk.Label(f, text=title, bg=P2, fg=C["accent"], font=("Segoe UI", 10, "bold"), anchor="w").pack(fill="x")
         return f
@@ -166,11 +166,11 @@ class UtilitiesPage:
         v = tk.StringVar(value=ov.get(key, ""))
         self.ov_vars[key] = v
         if key.endswith("_key"):                       # 2.0 beta 16: click and press the key
-            KeyCapture(parent, v, width=width + 4, on_change=lambda t: self.root.after(10, self.ov_save)).grid(row=row, column=col, sticky="w", padx=(0, 10), pady=2)
+            KeyCapture(parent, v, width=width + 4, on_change=lambda t: self.root.after(10, self.ov_save)).grid(row=row, column=col, sticky="w", padx=(0, 8), pady=2)
             return v
         tk.Entry(parent, textvariable=v, width=width, bg=C["odd"], fg=C["text"], insertbackground=C["text"],
                  relief="flat", highlightthickness=1, highlightbackground=C["line"]).grid(
-            row=row, column=col, sticky="w", padx=(0, 10), pady=2)
+            row=row, column=col, sticky="w", padx=(0, 8), pady=2)
         return v
 
     # ---------------- the Chat commands window
@@ -188,16 +188,16 @@ class UtilitiesPage:
         g = tk.Frame(c1, bg=P2)
         g.pack(fill="x", pady=(4, 0))
         for r, (label, key) in enumerate((("Go to hideout", "hideout_key"), ("Game window title", "poe_title"))):
-            tk.Label(g, text=label, bg=P2, fg=C["text"], anchor="w").grid(row=r, column=0, sticky="w", padx=(0, 10))
+            tk.Label(g, text=label, bg=P2, fg=C["text"], anchor="w").grid(row=r, column=0, sticky="w", padx=(0, 8))
             self._ov_entry(g, key, r, 1, 18 if key == "poe_title" else 10)
         tk.Label(g, text="Click a key box and press the key you want (with Ctrl / Alt / Shift if you like). "
-                         "Esc keeps the old one; Backspace or right-click clears it.", bg=P2, fg=C["muted"], font=("Segoe UI", 8)).grid(
+                         "Esc keeps the old one; Backspace or right-click clears it.", bg=P2, fg=C["muted"], font=("Segoe UI", 9)).grid(
             row=2, column=0, columnspan=3, sticky="w", pady=(2, 0))
         c2 = self._card(body, "Your chat commands", expand=True)
         cg = tk.Frame(c2, bg=P2)
         cg.pack(fill="x", pady=(4, 0))
         for col, t in enumerate(("Name", "Key", "Command (e.g. /leave  /dnd  /invite Name)")):
-            tk.Label(cg, text=t, bg=P2, fg=C["muted"], font=("Segoe UI", 8, "bold"), anchor="w").grid(row=0, column=col, sticky="w")
+            tk.Label(cg, text=t, bg=P2, fg=C["muted"], font=("Segoe UI", 9, "bold"), anchor="w").grid(row=0, column=col, sticky="w")
         cmds = ov.get("commands", [])
         self.ov_cmd_vars = []
         for i in range(MAX_COMMANDS):
@@ -215,10 +215,10 @@ class UtilitiesPage:
                 row.append(v)
             self.ov_cmd_vars.append(row)
         brow = tk.Frame(body, bg=C["panel"])
-        brow.pack(fill="x", padx=10, pady=(0, 10))
-        ttk.Button(brow, text="Save & apply", style="Accent.TButton", command=self.ov_save).pack(side="left")
+        brow.pack(fill="x", padx=8, pady=(0, 8))
+        ttk.Button(brow, text="Save & apply", style="Primary.TButton", command=self.ov_save).pack(side="left")
         self.ov_msg = tk.Label(brow, text="", bg=C["panel"], fg=C["muted"], anchor="w")
-        self.ov_msg.pack(side="left", fill="x", expand=True, padx=10)
+        self.ov_msg.pack(side="left", fill="x", expand=True, padx=8)
 
     # ---------------- the Notes window
     def build_notes_window(self, body):
@@ -235,7 +235,7 @@ class UtilitiesPage:
         c1 = self._card(body, "Key")
         g = tk.Frame(c1, bg=P2)
         g.pack(fill="x", pady=(4, 0))
-        tk.Label(g, text="Show / hide notes", bg=P2, fg=C["text"], anchor="w").grid(row=0, column=0, sticky="w", padx=(0, 10))
+        tk.Label(g, text="Show / hide notes", bg=P2, fg=C["text"], anchor="w").grid(row=0, column=0, sticky="w", padx=(0, 8))
         self._ov_entry(g, "notes_key", 0, 1, 10)
         ttk.Button(g, text="Show / hide now", command=lambda: self.overlay.toggle_notes()).grid(row=0, column=2, sticky="w")
         c2 = self._card(body, "Look")
@@ -246,14 +246,14 @@ class UtilitiesPage:
         self.note_lock = tk.BooleanVar(value=bool(ov.get("notes_locked")))
         ttk.Checkbutton(lrow, text="Lock it (can't be moved or resized by accident)", variable=self.note_lock,
                         command=lambda: self.overlay.set_locked(self.note_lock.get())).pack(side="left")
-        ttk.Button(lrow, text="Put it back in the corner", command=self.note_reset).pack(side="right")
+        ttk.Button(lrow, text="Put it back in the corner", command=self.note_reset, style="Quiet.TButton").pack(side="right")
         tk.Label(c3, text="Drag the note by its top bar and resize it from any edge; it remembers where you leave it.",
-                 bg=P2, fg=C["muted"], font=("Segoe UI", 9), anchor="w").pack(fill="x", pady=(6, 0))
+                 bg=P2, fg=C["muted"], font=("Segoe UI", 9), anchor="w").pack(fill="x", pady=(8, 0))
         brow = tk.Frame(body, bg=C["panel"])
-        brow.pack(fill="x", padx=10, pady=(0, 10))
-        ttk.Button(brow, text="Save & apply", style="Accent.TButton", command=self.ov_save).pack(side="left")
+        brow.pack(fill="x", padx=8, pady=(0, 8))
+        ttk.Button(brow, text="Save & apply", style="Primary.TButton", command=self.ov_save).pack(side="left")
         self.ov_msg2 = tk.Label(brow, text="", bg=C["panel"], fg=C["muted"], anchor="w")
-        self.ov_msg2.pack(side="left", fill="x", expand=True, padx=10)
+        self.ov_msg2.pack(side="left", fill="x", expand=True, padx=8)
 
     def build_notes_look(self, parent):
         """The note's colours, opacity and font size (in the Notes window; Save & apply puts them on the note)."""
@@ -264,14 +264,14 @@ class UtilitiesPage:
         ng.pack(fill="x", pady=(2, 0))
         self.ov_swatch = {}
         for r, (label, key, default) in enumerate((("Background", "notes_bg", "1A1A2E"), ("Text colour", "notes_fg", "E2C97E"))):
-            tk.Label(ng, text=label, bg=P2, fg=C["text"], anchor="w").grid(row=r, column=0, sticky="w", padx=(0, 10), pady=2)
+            tk.Label(ng, text=label, bg=P2, fg=C["text"], anchor="w").grid(row=r, column=0, sticky="w", padx=(0, 8), pady=2)
             sw = tk.Label(ng, text="", width=3, bg=self.overlay._colour(key, default), relief="flat",
                           highlightthickness=1, highlightbackground=C["line"])
             sw.grid(row=r, column=1, sticky="w")
             self.ov_swatch[key] = sw
             v = self._ov_entry(ng, key, r, 2, 8)
             v.trace_add("write", lambda *_a, k=key: self._ov_swatch(k))
-            ttk.Button(ng, text="Pick…", command=lambda k=key: self.ov_pick(k)).grid(row=r, column=3, sticky="w")
+            ttk.Button(ng, text="Pick…", command=lambda k=key: self.ov_pick(k), style="Quiet.TButton").grid(row=r, column=3, sticky="w")
         tk.Label(ng, text="Opacity", bg=P2, fg=C["text"], anchor="w").grid(row=2, column=0, sticky="w", pady=2)
         self.ov_opacity = tk.IntVar(value=int(ov.get("notes_opacity", 215)))
         ttk.Scale(ng, from_=40, to=255, variable=self.ov_opacity, orient="horizontal", length=150).grid(

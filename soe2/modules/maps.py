@@ -7,7 +7,7 @@ class MapLibrary(Module):
     blurb = "Every map, tower, citadel and pinnacle fight - rank them S to D or Avoid, share your ranks, see the community's."
 
     def build(self, body):
-        self.app.build_map_library(body).pack(fill="both", expand=True, padx=10, pady=10)
+        self.app.build_map_library(body).pack(fill="both", expand=True, padx=8, pady=8)
 
     def on_show(self):
         self.app.ml_fill()

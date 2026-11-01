@@ -61,43 +61,43 @@ class AboutPage:
     def build_about(self, wrap):
         from .whatsnew import notes_between
         P1, P2 = C["panel"], C["panel2"]
-        head = tk.Frame(wrap, bg="#1a2a4c", padx=16, pady=14, highlightthickness=1, highlightbackground=C["line"])
-        head.pack(fill="x", pady=(0, 10))
+        head = tk.Frame(wrap, bg="#1a2a4c", padx=16, pady=16, highlightthickness=1, highlightbackground=C["line"])
+        head.pack(fill="x", pady=(0, 8))
         tk.Label(head, text="StashOfExile2", bg="#1a2a4c", fg="#ffffff", font=(FONT_TITLE, 18, "bold"),
                  anchor="w").pack(fill="x")
         tk.Label(head, text=f"Version {pretty_version()}  ·  a toolkit for Path of Exile 2  ·  free and open source "
                             "(GPL-3.0)", bg="#1a2a4c", fg="#9fb6dd", anchor="w").pack(fill="x")
         btns = tk.Frame(head, bg="#1a2a4c")
-        btns.pack(fill="x", pady=(10, 0))
+        btns.pack(fill="x", pady=(8, 0))
         self.about_discord = tk.Label(btns, text="  💬  Join the Discord  ", bg=DISCORD, fg="#ffffff", cursor="hand2",
-                                      font=("Segoe UI", 11, "bold"), padx=8, pady=6)
+                                      font=("Segoe UI", 12, "bold"), padx=8, pady=8)
         self.about_discord.pack(side="left")
         self.about_discord.bind("<Button-1>", lambda e: open_link(DISCORD_URL))
         self.about_discord.bind("<Enter>", lambda e: self.about_discord.config(bg="#4752c4"))
         self.about_discord.bind("<Leave>", lambda e: self.about_discord.config(bg=DISCORD))
-        ttk.Button(btns, text="GitHub page", command=lambda: open_link(GITHUB_URL)).pack(side="left", padx=(10, 0))
+        ttk.Button(btns, text="GitHub page", command=lambda: open_link(GITHUB_URL), style="Quiet.TButton").pack(side="left", padx=(8, 0))
         ttk.Button(btns, text="Quick start guide", command=lambda: self.show_quickstart(force=True)).pack(side="left",
-                                                                                                      padx=(6, 0))
+                                                                                                      padx=(8, 0))
         tk.Label(wrap, text="The Discord is the place for questions, ideas and bug reports. Code, releases and the "
                             "roadmap are on GitHub.", bg=P1, fg=C["muted"], font=("Segoe UI", 9), anchor="w",
-                 justify="left", wraplength=620).pack(fill="x", pady=(0, 10))
+                 justify="left", wraplength=620).pack(fill="x", pady=(0, 8))
 
-        box = tk.Frame(wrap, bg=P2, padx=14, pady=10, highlightthickness=1, highlightbackground=C["line"])
-        box.pack(fill="x", pady=(0, 10))
-        tk.Label(box, text=f"What's new in {pretty_version()}", bg=P2, fg=C["accent"], font=("Segoe UI", 11, "bold"),
+        box = tk.Frame(wrap, bg=P2, padx=16, pady=8, highlightthickness=1, highlightbackground=C["line"])
+        box.pack(fill="x", pady=(0, 8))
+        tk.Label(box, text=f"What's new in {pretty_version()}", bg=P2, fg=C["accent"], font=("Segoe UI", 12, "bold"),
                  anchor="w").pack(fill="x")
         notes = dict(notes_between(None, APP_VERSION)).get(APP_VERSION) or ["(nothing listed)"]
         for line in notes:
             tk.Label(box, text="•  " + line, bg=P2, fg=C["text"], anchor="w", justify="left", wraplength=600,
-                     font=("Segoe UI", 9)).pack(fill="x", pady=(3, 0))
+                     font=("Segoe UI", 9)).pack(fill="x", pady=(4, 0))
         more = tk.Label(box, text="Every version's notes", bg=P2, fg="#6ea8ff", cursor="hand2",
                         font=("Segoe UI", 9, "underline"), anchor="w")
-        more.pack(fill="x", pady=(6, 0))
+        more.pack(fill="x", pady=(8, 0))
         more.bind("<Button-1>", lambda e: self.show_whatsnew(True))
 
-        box = tk.Frame(wrap, bg=P2, padx=14, pady=10, highlightthickness=1, highlightbackground=C["line"])
-        box.pack(fill="x", pady=(0, 10))
-        tk.Label(box, text="About this app", bg=P2, fg=C["accent"], font=("Segoe UI", 11, "bold"),
+        box = tk.Frame(wrap, bg=P2, padx=16, pady=8, highlightthickness=1, highlightbackground=C["line"])
+        box.pack(fill="x", pady=(0, 8))
+        tk.Label(box, text="About this app", bg=P2, fg=C["accent"], font=("Segoe UI", 12, "bold"),
                  anchor="w").pack(fill="x")
         for line in (
                 "Written with AI (Claude), and open about it. Anyone may use it, change it and share it under the "
@@ -107,7 +107,7 @@ class AboutPage:
                 "Game data comes from RePoE; prices from the official trade site and poe.ninja. Not affiliated with "
                 "or endorsed by Grinding Gear Games."):
             tk.Label(box, text=line, bg=P2, fg=C["text"], anchor="w", justify="left", wraplength=600,
-                     font=("Segoe UI", 9)).pack(fill="x", pady=(3, 0))
+                     font=("Segoe UI", 9)).pack(fill="x", pady=(4, 0))
 
     # ================================================================ quick start (first start)
     def show_quickstart(self, force=False):
@@ -135,15 +135,15 @@ class AboutPage:
         self.qs_title.pack(fill="x")
         self.qs_step = tk.Label(head, text="", bg="#1a2a4c", fg="#9fb6dd", anchor="w")
         self.qs_step.pack(fill="x")
-        foot = tk.Frame(inner, bg=P1, padx=16, pady=10)
+        foot = tk.Frame(inner, bg=P1, padx=16, pady=8)
         foot.pack(fill="x", side="bottom")
-        self.qs_next = ttk.Button(foot, text="Next", style="Accent.TButton", command=lambda: self.quickstart_go(1))
+        self.qs_next = ttk.Button(foot, text="Next", style="Primary.TButton", command=lambda: self.quickstart_go(1))
         self.qs_next.pack(side="right")
-        self.qs_back = ttk.Button(foot, text="Back", command=lambda: self.quickstart_go(-1))
-        self.qs_back.pack(side="right", padx=6)
-        ttk.Button(foot, text="Skip", command=self.quickstart_done).pack(side="left")
-        self.qs_body = tk.Frame(inner, bg=P2, padx=18, pady=14, highlightthickness=1, highlightbackground=C["line"])
-        self.qs_body.pack(fill="both", expand=True, padx=12, pady=(10, 0))
+        self.qs_back = ttk.Button(foot, text="Back", command=lambda: self.quickstart_go(-1), style="Quiet.TButton")
+        self.qs_back.pack(side="right", padx=8)
+        ttk.Button(foot, text="Skip", command=self.quickstart_done, style="Quiet.TButton").pack(side="left")
+        self.qs_body = tk.Frame(inner, bg=P2, padx=16, pady=16, highlightthickness=1, highlightbackground=C["line"])
+        self.qs_body.pack(fill="both", expand=True, padx=12, pady=(8, 0))
         self.qs_i = 0
         self.quickstart_go(0)
         card.lift()
@@ -162,18 +162,18 @@ class AboutPage:
             w.destroy()
         for line in lines:
             tk.Label(self.qs_body, text=line, bg=P2, fg=C["text"], anchor="w", justify="left", wraplength=560,
-                     font=("Segoe UI", 11)).pack(fill="x", pady=(0, 10))
+                     font=("Segoe UI", 10)).pack(fill="x", pady=(0, 8))
         if self.qs_i == n - 1:
             row = tk.Frame(self.qs_body, bg=P2)
-            row.pack(fill="x", pady=(6, 0))
-            tk.Label(row, text="League", bg=P2, fg=C["accent"], font=("Segoe UI", 11, "bold")).pack(side="left")
+            row.pack(fill="x", pady=(8, 0))
+            tk.Label(row, text="League", bg=P2, fg=C["accent"], font=("Segoe UI", 12, "bold")).pack(side="left")
             vals = list(getattr(self, "league_box", {}) and self.league_box["values"] or ()) or [self.league_var.get()]
             self.wn_league = ttk.Combobox(row, textvariable=self.league_var, state="readonly", width=28, values=vals)
-            self.wn_league.pack(side="left", padx=10)
+            self.wn_league.pack(side="left", padx=8)
             self.wn_league.bind("<<ComboboxSelected>>", self.on_league)
             d = tk.Label(self.qs_body, text="  💬  Join the Discord  ", bg=DISCORD, fg="#ffffff", cursor="hand2",
-                         font=("Segoe UI", 11, "bold"), pady=6)
-            d.pack(anchor="w", pady=(14, 0))
+                         font=("Segoe UI", 12, "bold"), pady=8)
+            d.pack(anchor="w", pady=(16, 0))
             d.bind("<Button-1>", lambda e: open_link(DISCORD_URL))
         self.qs_back.config(state="normal" if self.qs_i else "disabled")
         self.qs_next.config(text="Done" if self.qs_i == n - 1 else "Next")

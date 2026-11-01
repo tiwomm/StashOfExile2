@@ -43,9 +43,9 @@ class SearchOptsPage:
                          font=("Segoe UI", 9, "bold"), anchor="w")
         arrow.pack(side="left")
         if changed:
-            tk.Label(head, text="changed for this item", bg=P2, fg=C["good"], font=("Segoe UI", 8)).pack(side="left",
+            tk.Label(head, text="changed for this item", bg=P2, fg=C["good"], font=("Segoe UI", 9)).pack(side="left",
                                                                                                    padx=8)
-            rs = tk.Label(head, text="reset", bg=P2, fg="#6ea8ff", cursor="hand2", font=("Segoe UI", 8, "underline"))
+            rs = tk.Label(head, text="reset", bg=P2, fg="#6ea8ff", cursor="hand2", font=("Segoe UI", 9, "underline"))
             rs.pack(side="right")
             rs.bind("<Button-1>", lambda e: self.search_opts_reset(rec))
 
@@ -58,7 +58,7 @@ class SearchOptsPage:
         box = tk.Frame(parent, bg=P1, padx=12, pady=8, highlightthickness=1, highlightbackground=C["line"])
         box.pack(fill="x")
         tk.Label(box, text="Narrow the searches for this item only. Then press Search with these values.", bg=P1,
-                 fg=C["muted"], font=("Segoe UI", 8), anchor="w", justify="left", wraplength=wrap - 40).pack(fill="x")
+                 fg=C["muted"], font=("Segoe UI", 9), anchor="w", justify="left", wraplength=wrap - 40).pack(fill="x")
         g = tk.Frame(box, bg=P1)
         g.pack(fill="x", pady=(4, 0))
         g.columnconfigure(1, weight=1)
@@ -66,7 +66,7 @@ class SearchOptsPage:
 
         def label(text):
             tk.Label(g, text=text, bg=P1, fg=C["text"], anchor="w").grid(row=row[0], column=0, sticky="w", pady=2,
-                                                                          padx=(0, 10))
+                                                                          padx=(0, 8))
 
         def choice(text, key, choices):
             label(text)
@@ -103,9 +103,9 @@ class SearchOptsPage:
                     if o.get():
                         self.search_opt_set(rec, k, _int(v.get()), redraw=False)
                 ttk.Checkbutton(f, variable=on, command=flip).pack(side="left")
-                ent.pack(side="left", padx=(2, 6))
+                ent.pack(side="left", padx=(2, 8))
                 val.trace_add("write", typed)
-                tk.Label(f, text=f"(this one: {have})", bg=P1, fg=C["muted"], font=("Segoe UI", 8)).pack(side="left")
+                tk.Label(f, text=f"(this one: {have})", bg=P1, fg=C["muted"], font=("Segoe UI", 9)).pack(side="left")
                 row[0] += 1
 
     def search_opt_set(self, rec, key, value, redraw=True):

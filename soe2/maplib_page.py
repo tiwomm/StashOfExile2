@@ -16,14 +16,14 @@ class MapLibraryPage:
         P1 = C["panel"]
         page = tk.Frame(body, bg=P1)
         bar = tk.Frame(page, bg=P1)
-        bar.pack(fill="x", pady=(0, 6))
-        tk.Label(bar, text="Search", bg=P1, fg=C["muted"]).pack(side="left", padx=(0, 6))
+        bar.pack(fill="x", pady=(0, 8))
+        tk.Label(bar, text="Search", bg=P1, fg=C["muted"]).pack(side="left", padx=(0, 8))
         self.ml_q = tk.StringVar()
         self.ml_q.trace_add("write", lambda *_a: self.root.after_idle(self.ml_fill))
         ttk.Entry(bar, textvariable=self.ml_q, width=18).pack(side="left")
 
         def pick(label, var, values, width):
-            tk.Label(bar, text=label, bg=P1, fg=C["muted"]).pack(side="left", padx=(12, 6))
+            tk.Label(bar, text=label, bg=P1, fg=C["muted"]).pack(side="left", padx=(12, 8))
             cb = ttk.Combobox(bar, textvariable=var, values=values, state="readonly", width=width)
             cb.pack(side="left")
             cb.bind("<<ComboboxSelected>>", lambda e: (self.ml_fill(), self.root.after(20, self.root.focus_set)))
@@ -37,8 +37,8 @@ class MapLibraryPage:
         exp.pack(side="right")
 
         rbar = tk.Frame(page, bg=P1)
-        rbar.pack(fill="x", pady=(0, 6))
-        tk.Label(rbar, text="Rank the selected:", bg=P1, fg=C["muted"]).pack(side="left", padx=(0, 6))
+        rbar.pack(fill="x", pady=(0, 8))
+        tk.Label(rbar, text="Rank the selected:", bg=P1, fg=C["muted"]).pack(side="left", padx=(0, 8))
         for r in ML.RANKS + ("Clear",):
             ttk.Button(rbar, text=r if r != "Avoid" else "✖ Avoid", width=-7,
                        command=lambda rr=r: self.ml_set(None if rr == "Clear" else rr)).pack(side="left", padx=(0, 4))
@@ -71,7 +71,7 @@ class MapLibraryPage:
         tk.Label(page, text="Rank maps S (best) to D, or ✖ Avoid - right-click, the buttons, or press S A B C D / X. "
                             "Your ranks also count toward the Community column (anonymous). Areas the game adds later "
                             "are learned the first time you enter them (in italics).", bg=P1, fg=C["muted"],
-                 font=("Segoe UI", 8), anchor="w", justify="left", wraplength=760).pack(fill="x", pady=(4, 0))
+                 font=("Segoe UI", 9), anchor="w", justify="left", wraplength=760).pack(fill="x", pady=(4, 0))
         return page
 
     # ---------------- the list
@@ -233,7 +233,7 @@ class MapLibraryPage:
             ttk.Button(row, text=label, width=16, command=lambda m=mode: (res.update(mode=m), win.destroy())).pack(
                 side="left")
             tk.Label(row, text=why, bg=P1, fg=C["muted"]).pack(side="left", padx=8)
-        ttk.Button(f, text="Cancel", command=win.destroy).pack(anchor="e", pady=(12, 0))
+        ttk.Button(f, text="Cancel", command=win.destroy, style="Quiet.TButton").pack(anchor="e", pady=(12, 0))
         win.bind("<Escape>", lambda e: win.destroy())
         place_near(self.root, win, self.root.winfo_pointerx() - 150, self.root.winfo_pointery() - 80)
         self.ml_dialog = win

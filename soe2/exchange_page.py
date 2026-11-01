@@ -30,9 +30,9 @@ class ExchangePage:
 
     def build_arbitrage(self, page):
         P1, P2 = C["panel"], C["panel2"]
-        head = tk.Frame(page, bg=P1, padx=14)                 # 2.26.0: BETA until it's fully developed
-        head.pack(fill="x", pady=(10, 0))
-        tk.Label(head, text="BETA", bg="#3a2a10", fg="#ffcf40", font=("Segoe UI", 8, "bold"), padx=6, pady=1,
+        head = tk.Frame(page, bg=P1, padx=16)                 # 2.26.0: BETA until it's fully developed
+        head.pack(fill="x", pady=(8, 0))
+        tk.Label(head, text="BETA", bg="#3a2a10", fg="#ffcf40", font=("Segoe UI", 9, "bold"), padx=8, pady=1,
                  highlightthickness=1, highlightbackground="#7a6428").pack(side="left")
         tk.Label(head, text="How to use: press Refresh. It reads the last finished hours of Grinding Gear Games' "
                             "Currency Exchange history (a few seconds). Rows appear when three trades in a row would "
@@ -43,9 +43,9 @@ class ExchangePage:
                             "trades that would end with more than you started, at those hours' average rates. It's a "
                             "lead to check in game, not a sure profit: every trade costs gold, others see the same gap, "
                             "and rates move.", bg=P1, fg=C["muted"], justify="left", anchor="w", wraplength=640,
-                 padx=14).pack(fill="x", pady=(10, 4))
-        bar = tk.Frame(page, bg=P1, padx=14)
-        bar.pack(fill="x", pady=(2, 6))
+                 padx=16).pack(fill="x", pady=(8, 4))
+        bar = tk.Frame(page, bg=P1, padx=16)
+        bar.pack(fill="x", pady=(2, 8))
         self.arb_back = tk.StringVar(value=SETTINGS.get("arb_back", "Last 3 hours"))
         cb = ttk.Combobox(bar, textvariable=self.arb_back, values=list(LOOKBACK), state="readonly", width=12)
         cb.pack(side="left")
@@ -61,13 +61,13 @@ class ExchangePage:
         tk.Label(bar, text="div traded", bg=P1, fg=C["muted"]).pack(side="left", padx=4)
         for v in (self.arb_edge, self.arb_depth):
             v.trace_add("write", lambda *a: self.root.after_idle(self.arb_opts_changed))
-        self.arb_btn = ttk.Button(bar, text="Refresh", style="Accent.TButton", command=self.arb_refresh)
+        self.arb_btn = ttk.Button(bar, text="Refresh", style="Primary.TButton", command=self.arb_refresh)
         self.arb_btn.pack(side="right")
         # 2.23.0: live scan - GGG publishes each hour when it ends; the app reads it as soon as it's out
         self.arb_live = tk.BooleanVar(value=bool(SETTINGS.get("arb_live")))
         ttk.Checkbutton(bar, text="Live scan", variable=self.arb_live,
-                        command=self.arb_live_changed).pack(side="right", padx=(0, 10))
-        self.arb_status = tk.Label(page, text="", bg=P1, fg=C["muted"], anchor="w", padx=14, justify="left")
+                        command=self.arb_live_changed).pack(side="right", padx=(0, 8))
+        self.arb_status = tk.Label(page, text="", bg=P1, fg=C["muted"], anchor="w", padx=16, justify="left")
         self.arb_status.pack(fill="x")
         tf = tk.Frame(page, bg=P1)                      # (packed last: the boxes below keep their room)
         cols = (("route", "Loop", 360, "w"), ("gain", "Gain", 70, "e"), ("depth", "Traded (div)", 104, "e"),
@@ -88,18 +88,18 @@ class ExchangePage:
         self.arb_steps = tk.Label(page, text="Pick a row to see the three trades.", bg=P2, fg=C["text"], anchor="nw",
                                   justify="left", font=(MONO, 9), padx=12, pady=8, highlightthickness=1,
                                   highlightbackground=C["line"])
-        self.arb_steps.pack(side="bottom", fill="x", padx=14, pady=(6, 6))
+        self.arb_steps.pack(side="bottom", fill="x", padx=16, pady=(8, 8))
         self.arb_steps.bind("<Configure>", lambda e: self.arb_steps.config(wraplength=max(300, e.width - 24)))
         # ---- a flip you see in game
-        fl = tk.Frame(page, bg=P2, padx=14, pady=10, highlightthickness=1, highlightbackground=C["line"])
-        fl.pack(side="bottom", fill="x", padx=14, pady=(0, 10), before=self.arb_steps)
+        fl = tk.Frame(page, bg=P2, padx=16, pady=8, highlightthickness=1, highlightbackground=C["line"])
+        fl.pack(side="bottom", fill="x", padx=16, pady=(0, 8), before=self.arb_steps)
         tk.Label(fl, text="Check a flip you see in game", bg=P2, fg=C["accent"], font=("Segoe UI", 10, "bold"),
                  anchor="w").pack(fill="x")
         tk.Label(fl, text="On the Currency Exchange, hover the market ratio and hold Alt: it lists what people are "
                           "offering both ways. Type the two prices for one item here.", bg=P2, fg=C["muted"],
                  anchor="w", justify="left", wraplength=600).pack(fill="x")
         row = tk.Frame(fl, bg=P2)
-        row.pack(fill="x", pady=(6, 0))
+        row.pack(fill="x", pady=(8, 0))
         self.flip_buy, self.flip_sell, self.flip_qty = tk.StringVar(), tk.StringVar(), tk.StringVar(value="100")
         self.flip_item, self.flip_cur = tk.StringVar(value="the item"), tk.StringVar(value="Exalted Orb")
         tk.Label(row, text="I can buy 1", bg=P2, fg=C["text"]).pack(side="left")
@@ -115,12 +115,12 @@ class ExchangePage:
         tk.Label(row2, text="How many I'd flip", bg=P2, fg=C["text"]).pack(side="left")
         ttk.Entry(row2, textvariable=self.flip_qty, width=6).pack(side="left", padx=4)
         self.flip_out = tk.Label(fl, text="", bg=P2, fg=C["text"], anchor="w", justify="left", font=(MONO, 9))
-        self.flip_out.pack(fill="x", pady=(6, 0))
+        self.flip_out.pack(fill="x", pady=(8, 0))
         self.flip_out.bind("<Configure>", lambda e: self.flip_out.config(wraplength=max(300, e.width - 10)))
         for v in (self.flip_buy, self.flip_sell, self.flip_qty, self.flip_item, self.flip_cur):
             v.trace_add("write", lambda *a: self.flip_draw())
         self.flip_draw()
-        tf.pack(fill="both", expand=True, padx=14, pady=(4, 0))
+        tf.pack(fill="both", expand=True, padx=16, pady=(4, 0))
         if SETTINGS.get("arb_live"):                         # 2.23.0: Live scan was left on
             self.root.after(3000, lambda: self.arb_live_tick(first=True))
 

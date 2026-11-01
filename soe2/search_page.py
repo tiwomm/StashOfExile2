@@ -13,34 +13,34 @@ class SearchPage:
     def build_search_window(self, body):
         P1, P2 = C["panel"], C["panel2"]
         self.gs_active, self.gs_shown, self.gs_job, self.gs_last = None, PAGE, None, []
-        top = tk.Frame(body, bg=P1, padx=12, pady=10)
+        top = tk.Frame(body, bg=P1, padx=12, pady=8)
         top.pack(fill="x")
         d = gamesearch.load()
         head = tk.Frame(top, bg=P1)
         head.pack(fill="x")
         tk.Label(head, text="Game search", bg=P1, fg=C["text"], font=(FONT_TITLE, 16, "bold")).pack(side="left")
         tk.Label(head, text=f"game data {d['version']} · {len(d['rows']):,} entries", bg=P1, fg=C["muted"],
-                 font=("Consolas", 9)).pack(side="left", padx=10, pady=(6, 0))
+                 font=("Consolas", 9)).pack(side="left", padx=8, pady=(8, 0))
         row = tk.Frame(top, bg=P1)
         row.pack(fill="x", pady=(8, 0))
         self.gs_q = tk.StringVar()
         self.gs_entry = tk.Entry(row, textvariable=self.gs_q, bg=C["odd"], fg=C["text"], insertbackground=C["text"],
                                  relief="flat", highlightthickness=1, highlightbackground=C["line"],
-                                 highlightcolor=C["accent"], font=("Segoe UI", 13))
-        self.gs_entry.pack(side="left", fill="x", expand=True, ipady=6)
+                                 highlightcolor=C["accent"], font=("Segoe UI", 12))
+        self.gs_entry.pack(side="left", fill="x", expand=True, ipady=8)
         ttk.Button(row, text="Clear", command=self.gs_clear).pack(side="left", padx=(8, 0))
         tk.Label(top, text='Every word must match.  -word leaves things out.  "exact phrase" for phrases.', bg=P1,
-                 fg=C["muted"], font=("Segoe UI", 9), anchor="w").pack(fill="x", pady=(6, 0))
+                 fg=C["muted"], font=("Segoe UI", 9), anchor="w").pack(fill="x", pady=(8, 0))
         self.gs_chips = tk.Frame(top, bg=P1, height=30)
         self.gs_chips.pack(fill="x", pady=(8, 0))
         self.gs_chips.bind("<Configure>", lambda e: self._gs_flow())
         self.gs_summary = tk.Label(body, text="", bg=P1, fg=C["muted"], anchor="w", padx=12)
         self.gs_summary.pack(fill="x")
         res = tk.Frame(body, bg=P1)
-        res.pack(fill="both", expand=True, padx=12, pady=(4, 10))
+        res.pack(fill="both", expand=True, padx=12, pady=(4, 8))
         sb = ttk.Scrollbar(res, orient="vertical")
         sb.pack(side="right", fill="y")
-        t = tk.Text(res, bg=P2, fg=C["text"], relief="flat", wrap="word", padx=14, pady=10, cursor="arrow",
+        t = tk.Text(res, bg=P2, fg=C["text"], relief="flat", wrap="word", padx=16, pady=8, cursor="arrow",
                     highlightthickness=1, highlightbackground=C["line"], yscrollcommand=sb.set, font=("Segoe UI", 10))
         t.pack(side="left", fill="both", expand=True)
         sb.config(command=t.yview)
@@ -50,9 +50,9 @@ class SearchPage:
         t.tag_configure("txt", lmargin1=0, lmargin2=0, spacing1=2)
         t.tag_configure("kw", foreground=C["steel"], font=("Segoe UI", 9, "italic"))
         t.tag_configure("mark", background="#6a5418", foreground="#ffffff")
-        t.tag_configure("sep", font=("Segoe UI", 4))
+        t.tag_configure("sep", font=("Segoe UI", 9))
         t.tag_configure("more", foreground=C["accent"], font=("Segoe UI", 10, "bold"), underline=True)
-        t.tag_configure("empty", foreground=C["muted"], font=("Segoe UI", 11), justify="center")
+        t.tag_configure("empty", foreground=C["muted"], font=("Segoe UI", 10), justify="center")
         t.tag_configure("emo", foreground="#d9b8ff", font=("Segoe UI", 10, "bold"))       # 2.17.0: Anoints
         t.tag_configure("price", foreground=C["good"], font=("Segoe UI", 10))
         t.tag_configure("total", foreground="#ffd9a8", font=("Segoe UI", 10, "bold"))
@@ -311,7 +311,7 @@ class SearchPage:
         for g, label in [(None, f"All  {total:,}")] + [(g, f"{g}  {counts.get(g, 0):,}") for g in order]:
             on = self.gs_active == g
             zero = g is not None and not counts.get(g)
-            b = tk.Label(f, text=label, padx=10, pady=3, cursor="hand2", font=("Segoe UI", 9, "bold" if on else "normal"),
+            b = tk.Label(f, text=label, padx=8, pady=4, cursor="hand2", font=("Segoe UI", 9, "bold" if on else "normal"),
                          bg="#2c4a84" if on else "#111a2c", fg="#ffffff" if on else (C["steel"] if zero else "#cfdaf0"),
                          highlightthickness=1, highlightbackground=C["accent"] if on else C["line"])
             b.bind("<Button-1>", lambda e, gg=g: self.gs_pick(gg))
