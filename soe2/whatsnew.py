@@ -25,7 +25,12 @@ NOTES = {
         "New: Money Makers - farming strats shared by the community, all in the same layout, rated by Thoughts per "
         "Click (how much thinking) and Clicks per hour (how busy your hands are). New strats arrive by themselves.",
         "Money Makers > Run tracker: Start / End each run, type the profit if you like, see runs and divines per hour.",
-        "Add your own strats, and press Share to send one to everyone (opens a filled-in GitHub form).",
+        "Add your own strats, and press Share to send one to everyone (opens a filled-in GitHub form). "
+        "Download Format saves the layout as a text file you can fill in with Notepad, then Import.",
+        "Browse strats by what they are (Mapping › Breach, Crafting › Tablet crafting ...), search by tag, and "
+        "filter by waystone tier and effort. Strats list tablets, waystones, atlas setup and craft steps.",
+        "Money Makers > Lucrative Strats: quick one-line money makers. Tablet Crafting: what to do with each tablet, "
+        "the valuable tablet mods with a stash regex and a trade link, and Check my tablet (copy one with Ctrl+C).",
     ],
     "2.27.0": [
         "Chat commands moved: Settings > Chat commands (it's no longer in Utilities).",
