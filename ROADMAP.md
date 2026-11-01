@@ -1,6 +1,6 @@
 # StashOfExile2 roadmap
 
-**Current version: 2.33.1**
+**Current version: 2.34.0**
 
 Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds features, 2.10.1 only fixes. Each step below is one release; we work through them top to bottom.
 
@@ -54,20 +54,25 @@ Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds f
 | 2.32.0 | Map library: every endgame area (maps, citadels, pinnacles, league areas), ranks S-D / Avoid, export / import, community ranks; the tracker counts pinnacles and learns new areas. |
 | 2.33.0 | Child tools: one layout rule for the whole app (below). Map library under Session tracker; Mod book, Under the hood, Market Insights under Price checks. |
 | 2.33.1 | Map library: ✖ Avoid button no longer cut off. |
+| 2.34.0 | Polish 1: design tokens (4 text sizes, one spacing scale, colour roles), button types (primary / secondary / quiet / danger), readable text in every theme and accent (WCAG AA, checked on every PR). |
 
 ## ▶ Next up
 
+Order (decided 2.34.0): the Polish basics first, so new features are built on them; then the features; then the polish that touches every window; Linux last.
+
 | Version | Plan |
 |---|---|
-| 2.34.0 | **Polish 1 - Foundation:** design tokens (one spacing scale of 4 / 8 / 12 / 16 / 24, four text sizes, colour roles), one button hierarchy (primary / secondary / quiet / danger), contrast check of every theme (see Accessibility below). Nothing changes in what the app does. |
-| 2.35.0 | **Polish 2 - Responsive:** windows reflow when narrow (toolbars wrap, side panels drop under the list, sensible minimum sizes), sharp on every monitor (per-monitor DPI), a text size setting (100-150 %). |
-| 2.36.0 | **Polish 3 - Hover, focus, micro-interactions:** the same hover and pressed look on every button, row, icon and tab; a visible keyboard focus ring everywhere; short (120-180 ms) fades for popups and toasts, never on lists; a "Reduce motion" setting that turns them off. |
-| 2.37.0 | **Polish 4 - Context menus:** right-click menus where you'd expect them: Price checks rows (Re-price, Copy name, Open on trade site, Mark listed / sold, Delete), Wealth, Favorites, Game search, Insights, Notes. Every menu also opens with the Menu key / Shift+F10. |
-| 2.38.0 | **Polish 5 - Toasts:** one toast system for the whole app (info / success / warning / error, each with an icon, not colour alone), stacked inside the app window, pause while hovered, time based on text length, never steals focus, last 20 kept in Settings > Advanced. Replaces the separate toast / status-line messages where they matter. |
-| 2.39.0 | **Polish 6 - Visual hierarchy:** the suggestions below, window by window, with before / after screenshots in each PR. |
-| Later | Sidekick / Exiled Exchange-style pricing for more item types; public stash order test tool; Ancients price helper; Linux build. |
+| 2.35.0 | **Polish 2 - Toasts:** one toast system for the whole app (info / success / warning / error, each with an icon, not colour alone), stacked inside the app window, pause while hovered, time based on text length, never steals focus, last 20 kept in Settings > Advanced. Replaces the separate toast / status-line messages where they matter. |
+| 2.36.0 | **Polish 3 - Context menus:** right-click menus where you'd expect them: Price checks rows (Re-price, Copy name, Open on trade site, Mark listed / sold, Delete), Wealth, Favorites, Game search, Insights, Notes. Every menu also opens with the Menu key / Shift+F10. |
+| 2.37.0 | **Ancients price helper:** our own version of the idea (read the exchange list from your screen, price it with poe.ninja), with credit - their code has no licence, so none of it is copied. |
+| 2.38.0 | **More item types priced (Sidekick / Exiled Exchange-style):** a pricing engine for item types the app only guesses today. Their licences are checked first; logic is ported, not code, with credit. |
+| 2.39.0 | **Public stash order test tool.** |
+| 2.40.0 | **Polish 4 - Responsive:** windows reflow when narrow (toolbars wrap, side panels drop under the list, sensible minimum sizes), sharp on every monitor (per-monitor DPI), a text size setting (100-150 %). |
+| 2.41.0 | **Polish 5 - Hover, focus, micro-interactions:** the same hover and pressed look on every button, row, icon and tab; a visible keyboard focus ring everywhere; short (120-180 ms) fades for popups and toasts, never on lists; a "Reduce motion" setting that turns them off. |
+| 2.42.0 | **Polish 6 - Visual hierarchy:** the suggestions below, window by window, with before / after screenshots in each PR. |
+| Last | **Linux build** (Hyprland / Wayland first) - the groundwork is in place (session_linux_handover.txt). |
 
-### Visual hierarchy - suggestions (for 2.39.0)
+### Visual hierarchy - suggestions (for 2.42.0)
 
 - **One primary action per window**, in the accent colour (Price checks: Re-price all, Regex: Copy, Wealth: Refresh). Everything else is secondary or quiet.
 - **Big number, small label:** totals and prices large; their labels small and muted. The same chip style for every status (Priced, Require Review, time left).
@@ -102,6 +107,8 @@ Every new feature goes in one of three places:
 - **Top-level tool:** you open it on its own (dock, Toolkit menu, desktop icon). Now: Price checks, Wealth, Money Makers, Regex, Game search, Exchange rates, Calculator, Session tracker, Notes, Settings.
 - **Child tool:** built on one top-level tool's data. It is a button in the parent's title bar and sits indented under the parent in the Toolkit menu. Its window is called "Parent › Child". It is not on the dock. Now: Session tracker › Map library; Price checks › Mod book, Under the hood, Market Insights.
 - **Tab:** a different view of the same thing, inside one window (e.g. Money Makers › Official / Mine / Community).
+
+**Look (2.34.0):** use the tokens in `soe2/style.py`: text sizes `SMALL 9 / BODY 10 / HEAD 12 / TITLE 16`, spacing `4 / 8 / 12 / 16 / 24` (0-2 only for hairlines), colours by `role()`. Buttons: `Primary.TButton` (one main action per area), plain `TButton`, `Quiet.TButton` (cancel, back, small helpers), `Danger.TButton` (deletes or clears). `tools/check_tokens.py` and `tools/check_contrast.py` run on every PR.
 
 There's only one level of nesting: a child tool has no children of its own. In code, `parent = "<key>"` on the module does it.
 

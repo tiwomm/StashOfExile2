@@ -1,0 +1,24 @@
+# Quick checks on every pull request (2.34.0): the version agrees everywhere, the code stays on the design tokens,
+# and every theme / accent keeps WCAG AA text contrast. Each is one script in tools/ - run them yourself the same way.
+name: Checks
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  checks:
+    runs-on: windows-latest
+    env:
+      PYTHONUTF8: "1"
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Version agrees everywhere
+        run: python tools/check_version.py
+      - name: Design tokens (text sizes, spacing)
+        run: python tools/check_tokens.py
+      - name: Contrast (WCAG AA, every theme and accent)
+        run: python tools/check_contrast.py

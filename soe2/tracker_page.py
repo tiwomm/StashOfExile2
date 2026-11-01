@@ -58,18 +58,18 @@ class TrackerPage:
         self.tk_reader, self.tk_waiting_count, self.tk_finishing = None, False, False
         self.tk_overlay = None
         # ---- top: start / pause, and where the log is
-        top = tk.Frame(body, bg=P2, padx=14, pady=10, highlightthickness=1, highlightbackground=C["line"])
-        top.pack(fill="x", padx=10, pady=(10, 6))
-        self.tk_start_btn = ttk.Button(top, text="▶ Start tracking", style="Accent.TButton", command=self.tracker_toggle)
+        top = tk.Frame(body, bg=P2, padx=16, pady=8, highlightthickness=1, highlightbackground=C["line"])
+        top.pack(fill="x", padx=8, pady=(8, 8))
+        self.tk_start_btn = ttk.Button(top, text="▶ Start tracking", style="Primary.TButton", command=self.tracker_toggle)
         self.tk_start_btn.pack(side="left")
         self.tk_pause_btn = ttk.Button(top, text="Pause", command=self.tracker_pause_toggle, state="disabled")
-        self.tk_pause_btn.pack(side="left", padx=6)
-        self.tk_state = tk.Label(top, text="Not tracking", bg=P2, fg=C["muted"], font=("Segoe UI", 11, "bold"))
+        self.tk_pause_btn.pack(side="left", padx=8)
+        self.tk_state = tk.Label(top, text="Not tracking", bg=P2, fg=C["muted"], font=("Segoe UI", 12, "bold"))
         self.tk_state.pack(side="left", padx=12)
         self.tk_ov_btn = ttk.Button(top, text="Show timer", command=self.tracker_overlay_toggle)
         self.tk_ov_btn.pack(side="right")
-        self.tk_keys_lbl = tk.Label(top, text="", bg=P2, fg=C["muted"], font=("Segoe UI", 8))       # 2.10.0
-        self.tk_keys_lbl.pack(side="right", padx=10)
+        self.tk_keys_lbl = tk.Label(top, text="", bg=P2, fg=C["muted"], font=("Segoe UI", 9))       # 2.10.0
+        self.tk_keys_lbl.pack(side="right", padx=8)
         self.tracker_keys_hint()
         self.tk_strip = tk.Frame(body, bg="#2a2110", padx=12, pady=8, highlightthickness=1, highlightbackground="#7a6428")
         self.tk_strip_lbl = tk.Label(self.tk_strip, text="", bg="#2a2110", fg=C["text"], anchor="w", justify="left",
@@ -79,7 +79,7 @@ class TrackerPage:
         self.tk_strip_btns.pack(side="right")
         lrow = tk.Frame(body, bg=P1)
         lrow.pack(fill="x", padx=12)
-        self.tk_log_lbl = tk.Label(lrow, text="", bg=P1, fg=C["muted"], anchor="w", font=("Segoe UI", 8))
+        self.tk_log_lbl = tk.Label(lrow, text="", bg=P1, fg=C["muted"], anchor="w", font=("Segoe UI", 9))
         self.tk_log_lbl.pack(side="left", fill="x", expand=True)
         # 2.0 beta 21: only shown when Client.txt can't be found (right-click the line above to pick another one)
         self.tk_pick_btn = ttk.Button(lrow, text="Find Client.txt…", command=self.tracker_pick_log)
@@ -87,27 +87,27 @@ class TrackerPage:
 
         # ---- the numbers
         nums = tk.Frame(body, bg=P1)
-        nums.pack(fill="x", padx=10, pady=(8, 6))
+        nums.pack(fill="x", padx=8, pady=(8, 8))
         self.tk_nums = {}
         for i, (k, label) in enumerate((("time", "Session"), ("where", "Where you are"), ("map", "This map"),
                                         ("maps", "Maps"), ("avg", "Average map"), ("best", "Fastest map"),
                                         ("profit", "Profit"), ("ph", "Profit / hour"))):
-            f = tk.Frame(nums, bg=P2, padx=10, pady=6, highlightthickness=1, highlightbackground=C["line"])
-            f.grid(row=i // 4, column=i % 4, sticky="nsew", padx=(0, 6), pady=(0, 6))
-            tk.Label(f, text=label, bg=P2, fg=C["muted"], font=("Segoe UI", 8)).pack(anchor="w")
+            f = tk.Frame(nums, bg=P2, padx=8, pady=8, highlightthickness=1, highlightbackground=C["line"])
+            f.grid(row=i // 4, column=i % 4, sticky="nsew", padx=(0, 8), pady=(0, 8))
+            tk.Label(f, text=label, bg=P2, fg=C["muted"], font=("Segoe UI", 9)).pack(anchor="w")
             v = tk.Label(f, text="-", bg=P2, fg=C["text"], font=("Segoe UI", 10 if k == "where" else 13, "bold"), anchor="w")
             v.pack(anchor="w")
             self.tk_nums[k] = v
         for c in range(4):
             nums.columnconfigure(c, weight=1, uniform="n")
         # ---- 2.10.0: alerts while you play (Delirium, Breach) on the main page
-        self.build_alerts_panel(body).pack(fill="x", padx=10, pady=(0, 6))
+        self.build_alerts_panel(body).pack(fill="x", padx=8, pady=(0, 8))
 
         # ---- this session's maps / past sessions
         self.tk_view = SegBar(body, ["This session's maps", "Map stats", "Past sessions", "Options"],
                               command=lambda v: self.tracker_view(),
                               size=9, pad=(12, 4))
-        self.tk_view.pack(anchor="w", padx=10, pady=(4, 6))
+        self.tk_view.pack(anchor="w", padx=8, pady=(4, 8))
         self.tk_pages = {}
         pm = tk.Frame(body, bg=P1)
         tv = ttk.Treeview(pm, columns=("n", "map", "lvl", "time", "entries", "deaths", "rank"), show="headings",
@@ -136,17 +136,17 @@ class TrackerPage:
         prow.pack(fill="x")
         tk.Label(prow, text="Double-click a session to write a note (e.g. 'T15 Breach + Delirium'). Delete removes "
                             "the selected ones (Ctrl+Z undoes).", bg=P1,
-                 fg=C["muted"], font=("Segoe UI", 8), anchor="w").pack(side="left")
+                 fg=C["muted"], font=("Segoe UI", 9), anchor="w").pack(side="left")
         ttk.Button(prow, text="Export CSV", command=self.tracker_export_sessions).pack(side="right", pady=(4, 0))
-        self.undo_button(prow, "tracker").pack(side="right", padx=6, pady=(4, 0))
+        self.undo_button(prow, "tracker").pack(side="right", padx=8, pady=(4, 0))
         self.tk_pages["Past sessions"] = ph
         self.tk_pages["Map stats"] = self._tracker_stats_page(body)
         po = ScrollArea(body, bg=P1)                   # 2.4.0: scrolls when the window is short
         self._tracker_options(po.inner)
         self.tk_pages["Options"] = po
         tk.Label(body, text="Reads only Path of Exile 2's own log file (Client.txt) on your PC: never the game's memory, "
-                            "never its servers, never sends keys or clicks.", bg=P1, fg=C["steel"], font=("Segoe UI", 8),
-                 anchor="w").pack(side="bottom", fill="x", padx=12, pady=(0, 6))
+                            "never its servers, never sends keys or clicks.", bg=P1, fg=C["steel"], font=("Segoe UI", 9),
+                 anchor="w").pack(side="bottom", fill="x", padx=12, pady=(0, 8))
         self.tracker_view()
         self.tracker_fill_history()
         self.root.after(1000, self.tracker_tick)
@@ -170,7 +170,7 @@ class TrackerPage:
         split.columnconfigure(1, weight=2, uniform="s")
         split.rowconfigure(0, weight=1)
         left = tk.Frame(split, bg=P1)
-        left.grid(row=0, column=0, sticky="nsew", padx=(0, 6))
+        left.grid(row=0, column=0, sticky="nsew", padx=(0, 8))
         cols = (("map", "Map", 170, "w"), ("runs", "Runs", 50, "e"), ("best", "Best", 65, "e"),
                 ("avg", "Average", 70, "e"), ("deaths", "Deaths", 55, "e"), ("last", "Last run", 90, "w"))
         tv = ttk.Treeview(left, columns=[c[0] for c in cols], show="headings", height=6, selectmode="browse")
@@ -183,7 +183,7 @@ class TrackerPage:
         tv.pack(fill="both", expand=True)
         tv.bind("<<TreeviewSelect>>", lambda e: self.tracker_board())
         self.tk_stats = tv
-        right = tk.Frame(split, bg=P2, highlightthickness=1, highlightbackground=C["line"], padx=10, pady=8)
+        right = tk.Frame(split, bg=P2, highlightthickness=1, highlightbackground=C["line"], padx=8, pady=8)
         right.grid(row=0, column=1, sticky="nsew")
         self.tk_board_title = tk.Label(right, text="Leaderboard", bg=P2, fg=C["accent"], anchor="w",
                                        font=("Segoe UI", 10, "bold"))
@@ -200,10 +200,10 @@ class TrackerPage:
         self.tk_board = bv
         tk.Label(right, text="Your fastest runs of the map you pick on the left. Time = time inside the map (hideout "
                              "visits in between don't count); visits under 30 seconds aren't counted.",
-                 bg=P2, fg=C["muted"], font=("Segoe UI", 8), anchor="w", justify="left", wraplength=320).pack(fill="x", pady=(4, 0))
+                 bg=P2, fg=C["muted"], font=("Segoe UI", 9), anchor="w", justify="left", wraplength=320).pack(fill="x", pady=(4, 0))
         # ---- 2.7.0: maps per day
-        day = tk.Frame(page, bg=P2, highlightthickness=1, highlightbackground=C["line"], padx=10, pady=6)
-        day.pack(fill="x", pady=(6, 0))
+        day = tk.Frame(page, bg=P2, highlightthickness=1, highlightbackground=C["line"], padx=8, pady=8)
+        day.pack(fill="x", pady=(8, 0))
         tk.Label(day, text="Maps per day (last 14 days)", bg=P2, fg=C["accent"], font=("Segoe UI", 10, "bold"),
                  anchor="w").pack(fill="x")
         self.tk_daily = tk.Canvas(day, height=110, bg=P2, highlightthickness=0)
@@ -313,7 +313,7 @@ class TrackerPage:
 
     def _tracker_options(self, po):
         cfg, P2 = self.tracker_cfg(), C["panel2"]
-        box = tk.Frame(po, bg=P2, padx=14, pady=10, highlightthickness=1, highlightbackground=C["line"])
+        box = tk.Frame(po, bg=P2, padx=16, pady=8, highlightthickness=1, highlightbackground=C["line"])
         box.pack(fill="x")
         tk.Label(box, text="Options", bg=P2, fg=C["accent"], font=("Segoe UI", 10, "bold")).grid(
             row=0, column=0, columnspan=3, sticky="w")
@@ -328,44 +328,44 @@ class TrackerPage:
         self.tk_auto = tk.BooleanVar(value=bool(cfg.get("autostart")))           # 2.14.0
         ttk.Checkbutton(box, text="Start tracking when StashOfExile2 starts", variable=self.tk_auto,
                         command=self.tracker_options_changed).grid(row=7, column=0, columnspan=3, sticky="w",
-                                                                   pady=(6, 0))
+                                                                   pady=(8, 0))
         self.tk_lock = tk.BooleanVar(value=bool(cfg.get("locked")))
         ttk.Checkbutton(box, text="Lock it (can't be moved or resized by accident)", variable=self.tk_lock,
-                        command=self.tracker_options_changed).grid(row=3, column=0, columnspan=3, sticky="w", pady=(6, 0))
+                        command=self.tracker_options_changed).grid(row=3, column=0, columnspan=3, sticky="w", pady=(8, 0))
         ch = tk.Frame(box, bg=P2)                       # 2.7.0: whose deaths count
         ch.grid(row=5, column=0, columnspan=3, sticky="w", pady=(8, 0))
         tk.Label(ch, text="Your character name", bg=P2, fg=C["text"]).pack(side="left")
         self.tk_char = tk.StringVar(value=cfg.get("character", ""))
-        ttk.Entry(ch, textvariable=self.tk_char, width=22).pack(side="left", padx=(10, 0))
+        ttk.Entry(ch, textvariable=self.tk_char, width=22).pack(side="left", padx=(8, 0))
         self.tk_char.trace_add("write", lambda *a: self.tracker_char_set())
-        self.tk_char_hint = tk.Label(box, text="", bg=P2, fg=C["muted"], font=("Segoe UI", 8), anchor="w",
+        self.tk_char_hint = tk.Label(box, text="", bg=P2, fg=C["muted"], font=("Segoe UI", 9), anchor="w",
                                      justify="left", wraplength=600)
         self.tk_char_hint.grid(row=6, column=0, columnspan=3, sticky="w")
         self.tracker_char_hint()
         op = tk.Frame(box, bg=P2)                       # 2.3.0: own row - it used to sit on top of its label
-        op.grid(row=4, column=0, columnspan=3, sticky="w", pady=(6, 0))
+        op.grid(row=4, column=0, columnspan=3, sticky="w", pady=(8, 0))
         tk.Label(op, text="Opacity", bg=P2, fg=C["text"]).pack(side="left")
         self.tk_opacity = tk.IntVar(value=int(cfg.get("opacity", 225)))
         ttk.Scale(op, from_=60, to=255, variable=self.tk_opacity, orient="horizontal", length=160,
-                  command=lambda _v: self.tracker_options_changed()).pack(side="left", padx=(10, 0))
+                  command=lambda _v: self.tracker_options_changed()).pack(side="left", padx=(8, 0))
         tk.Label(op, text="(lower = see more of the game through it)", bg=P2, fg=C["muted"],
                  font=("Segoe UI", 9)).pack(side="left", padx=(8, 0))
-        box2 = tk.Frame(po, bg=P2, padx=14, pady=10, highlightthickness=1, highlightbackground=C["line"])
-        box2.pack(fill="x", pady=(6, 0))
+        box2 = tk.Frame(po, bg=P2, padx=16, pady=8, highlightthickness=1, highlightbackground=C["line"])
+        box2.pack(fill="x", pady=(8, 0))
         tk.Label(box2, text="Hotkeys (work while the game is in front; also on the Hotkeys list in Settings)", bg=P2,
                  fg=C["accent"], font=("Segoe UI", 10, "bold")).grid(row=0, column=0, columnspan=4, sticky="w")
         self.tk_key_vars = {}
         for i, (k, label) in enumerate((("key_toggle", "Start / stop"), ("key_pause", "Pause / resume"))):
-            tk.Label(box2, text=label, bg=P2, fg=C["text"]).grid(row=1, column=i * 2, sticky="w", padx=(0, 6))
+            tk.Label(box2, text=label, bg=P2, fg=C["text"]).grid(row=1, column=i * 2, sticky="w", padx=(0, 8))
             v = tk.StringVar(value=cfg.get(k, ""))
             self.tk_key_vars[k] = v
-            KeyCapture(box2, v, width=12, on_change=lambda t: self.tracker_save_keys()).grid(row=1, column=i * 2 + 1, sticky="w", padx=(0, 18))
+            KeyCapture(box2, v, width=12, on_change=lambda t: self.tracker_save_keys()).grid(row=1, column=i * 2 + 1, sticky="w", padx=(0, 16))
         self.tk_key_msg = tk.Label(box2, text="Click a box and press the key. Esc keeps the old one; Backspace or "
-                                              "right-click clears it.", bg=P2, fg=C["muted"], font=("Segoe UI", 8))
+                                              "right-click clears it.", bg=P2, fg=C["muted"], font=("Segoe UI", 9))
         self.tk_key_msg.grid(row=2, column=0, columnspan=5, sticky="w", pady=(4, 0))
         # ---- 2.4.0: profit explained, with its one setting next to it
-        box3 = tk.Frame(po, bg=P2, padx=14, pady=10, highlightthickness=1, highlightbackground=C["line"])
-        box3.pack(fill="x", pady=(6, 0))
+        box3 = tk.Frame(po, bg=P2, padx=16, pady=8, highlightthickness=1, highlightbackground=C["line"])
+        box3.pack(fill="x", pady=(8, 0))
         tk.Label(box3, text="Profit / hour", bg=P2, fg=C["accent"], font=("Segoe UI", 10, "bold"),
                  anchor="w").pack(fill="x")
         tk.Label(box3, text=PROFIT_HOW, bg=P2, fg=C["text"], anchor="w", justify="left", wraplength=620,
@@ -375,10 +375,10 @@ class TrackerPage:
                         variable=self.tk_ask, command=self.tracker_options_changed).pack(anchor="w")
         tk.Label(box3, text="Without it, only what changed in your synced stash tabs counts - currency in your "
                             "inventory or counted by hand would be left out.", bg=P2, fg=C["muted"],
-                 font=("Segoe UI", 8), anchor="w", justify="left", wraplength=620).pack(fill="x", padx=(22, 0))
+                 font=("Segoe UI", 9), anchor="w", justify="left", wraplength=620).pack(fill="x", padx=(24, 0))
         self.tk_profit_state = tk.Label(box3, text="", bg=P2, fg=C["good"], anchor="w", justify="left",
                                         wraplength=620, font=("Segoe UI", 9))
-        self.tk_profit_state.pack(fill="x", pady=(6, 0))
+        self.tk_profit_state.pack(fill="x", pady=(8, 0))
         self.tk_profit_btn = ttk.Button(box3, text="Set up Wealth", command=self.tracker_setup_wealth)
         self.tracker_profit_state()
 
@@ -413,7 +413,7 @@ class TrackerPage:
             self.tracker_profit_state()
         for name, f in self.tk_pages.items():
             if name == self.tk_view.get():
-                f.pack(fill="both", expand=True, padx=10, pady=(0, 6))
+                f.pack(fill="both", expand=True, padx=8, pady=(0, 8))
             else:
                 f.pack_forget()
 
@@ -475,7 +475,7 @@ class TrackerPage:
                                         "(or the same folders in your Steam library on another drive).",
                                    fg=C["good"], justify="left")
             if not self.tk_pick_btn.winfo_ismapped():
-                self.tk_pick_btn.pack(side="right", anchor="n")
+                self.tk_pick_btn.pack(side="right", anchor="n", before=self.tk_log_lbl)   # 2.34.0: keeps its room
             return False
         self.tk_pick_btn.pack_forget()
         self.tk_reader = LogReader(path)
@@ -674,7 +674,7 @@ class TrackerPage:
         profit = (end_now - start_now) if (start_now is not None and end_now is not None) else None
         s.stop(end_value=end_now, profit=profit)
         self.tk_sessions.add(s)
-        self.tk_start_btn.config(text="▶ Start tracking", style="Accent.TButton")
+        self.tk_start_btn.config(text="▶ Start tracking", style="Primary.TButton")
         self.tk_pause_btn.config(state="disabled", text="Pause")
         ph = s.per_hour()
         msg = (f"Session done: {fmt_time(s.elapsed())}, {s.map_count()} map{'s' if s.map_count() != 1 else ''}"
@@ -692,10 +692,10 @@ class TrackerPage:
             w.destroy()
         self.tk_strip_lbl.config(text=text)
         for i, (label, fn) in enumerate(actions):
-            ttk.Button(self.tk_strip_btns, text=label, command=fn, style="Accent.TButton" if i == 0 else "TButton").pack(
-                side="left", padx=(6, 0))
+            ttk.Button(self.tk_strip_btns, text=label, command=fn, style="Primary.TButton" if i == 0 else "TButton").pack(
+                side="left", padx=(8, 0))
         if not self.tk_strip.winfo_ismapped():
-            self.tk_strip.pack(fill="x", padx=10, pady=(0, 6), after=self.tk_start_btn.master)
+            self.tk_strip.pack(fill="x", padx=8, pady=(0, 8), after=self.tk_start_btn.master)
 
     def _tk_strip_close(self):
         self.tk_strip.pack_forget()
@@ -847,13 +847,13 @@ class TrackerPage:
                           min_size=(140, 60), on_close=self.tracker_overlay_toggle, on_lock=lock, on_moved=moved,
                           drag_body=True, follow_game=True, no_activate=True)
         w.withdraw()
-        inner = tk.Frame(w.body, bg=BODY_BG, padx=10, pady=4)
+        inner = tk.Frame(w.body, bg=BODY_BG, padx=8, pady=4)
         inner.pack(fill="both", expand=True)
         self.tk_ov_lbls = {}
         for k, _label in LINE_NAMES:
             if cfg["lines"].get(k):
                 lab = tk.Label(inner, text="", bg=BODY_BG, fg=fg if k == "session" else "#e8eefc",
-                               font=("Segoe UI", 15 if k == "session" else 10, "bold" if k in ("session", "profit") else "normal"),
+                               font=("Segoe UI", 16 if k == "session" else 10, "bold" if k in ("session", "profit") else "normal"),
                                anchor="w")
                 lab.pack(fill="x")
                 self.tk_ov_lbls[k] = lab
@@ -866,15 +866,15 @@ class TrackerPage:
             BB = "#16213a"
             bar = tk.Frame(w.body, bg=BB, padx=8, pady=2)
             bar.pack(side="bottom", fill="x", before=inner)
-            tk.Label(bar, text="Helpers:", bg=BB, fg="#8b96b0", font=("Segoe UI", 8)).pack(side="left", padx=(0, 6))
+            tk.Label(bar, text="Helpers:", bg=BB, fg="#8b96b0", font=("Segoe UI", 9)).pack(side="left", padx=(0, 8))
             for i, k in enumerate(("breach", "delirium", "ritual")):
                 if i:
-                    tk.Label(bar, text="|", bg=BB, fg="#3a4560", font=("Segoe UI", 8)).pack(side="left", padx=4)
+                    tk.Label(bar, text="|", bg=BB, fg="#3a4560", font=("Segoe UI", 9)).pack(side="left", padx=4)
                 cell = tk.Frame(bar, bg=BB, cursor="hand2")
                 cell.pack(side="left")
                 dot = tk.Label(cell, text="\u25cf", bg=BB, fg="#ff5c5c", font=("Segoe UI", 9), cursor="hand2")
                 dot.pack(side="left")
-                lab = tk.Label(cell, text=k.title(), bg=BB, fg="#cfd8ea", font=("Segoe UI", 8, "bold"),
+                lab = tk.Label(cell, text=k.title(), bg=BB, fg="#cfd8ea", font=("Segoe UI", 9, "bold"),
                                cursor="hand2")
                 lab.pack(side="left", padx=(2, 0))
                 for wd in (cell, dot, lab):                    # a click switches that helper on / off

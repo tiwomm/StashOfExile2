@@ -40,7 +40,7 @@ class InsightsPage:
 
     def build_insights_window(self, body):
         P1, P2 = C["panel"], C["panel2"]
-        top = tk.Frame(body, bg=P1, padx=12, pady=10)
+        top = tk.Frame(body, bg=P1, padx=12, pady=8)
         top.pack(fill="x")
         tk.Label(top, text="Market Insights", bg=P1, fg=C["text"], font=(FONT_TITLE, 16, "bold")).pack(side="left")
         self.ins_kind = SegBar(top, KINDS, command=lambda v: self.refresh_insights(), size=9, pad=(12, 4))
@@ -52,21 +52,21 @@ class InsightsPage:
                  justify="left", wraplength=760).pack(fill="x")
         # 2.4.0: details of the row you pick (bottom)
         det = tk.Frame(body, bg=P2, padx=12, pady=8, highlightthickness=1, highlightbackground=C["line"])
-        det.pack(side="bottom", fill="x", padx=14, pady=(0, 10))
+        det.pack(side="bottom", fill="x", padx=16, pady=(0, 8))
         dbar = tk.Frame(det, bg=P2)
         dbar.pack(side="right", anchor="n")
         self.ins_det_btns = {
             "open": ttk.Button(dbar, text="Show in Price checks", command=self.ins_open_record),
             "again": ttk.Button(dbar, text="Price it again", command=self.ins_price_again),
             "trade": ttk.Button(dbar, text="Open the search", command=self.ins_open_search)}
-        self.undo_button(dbar, "insights").pack(side="bottom", pady=(6, 0))
+        self.undo_button(dbar, "insights").pack(side="bottom", pady=(8, 0))
         self.ins_det = tk.Label(det, text="Pick a row to see its details.", bg=P2, fg=C["muted"], anchor="nw",
                                 justify="left", font=("Segoe UI", 9))
         self.ins_det.pack(side="left", fill="both", expand=True)
         self.ins_det.bind("<Configure>", lambda e: self.ins_det.config(wraplength=max(300, e.width - 10)))
         self.ins_pick = None
         grid = tk.Frame(body, bg=P1)
-        grid.pack(fill="both", expand=True, padx=10, pady=(6, 10))
+        grid.pack(fill="both", expand=True, padx=8, pady=(8, 8))
         grid.columnconfigure(0, weight=1, uniform="g")
         grid.columnconfigure(1, weight=1, uniform="g")
         grid.rowconfigure(0, weight=1)
@@ -74,10 +74,10 @@ class InsightsPage:
         self.ins_tables = {}
 
         def table(r, c, key, title, hint, cols, colspan=1):
-            f = tk.Frame(grid, bg=P2, padx=10, pady=8, highlightthickness=1, highlightbackground=C["line"])
+            f = tk.Frame(grid, bg=P2, padx=8, pady=8, highlightthickness=1, highlightbackground=C["line"])
             f.grid(row=r, column=c, columnspan=colspan, sticky="nsew", padx=4, pady=4)
             tk.Label(f, text=title, bg=P2, fg=C["accent"], font=("Segoe UI", 10, "bold"), anchor="w").pack(fill="x")
-            tk.Label(f, text=hint, bg=P2, fg=C["muted"], font=("Segoe UI", 8), anchor="w", justify="left").pack(fill="x")
+            tk.Label(f, text=hint, bg=P2, fg=C["muted"], font=("Segoe UI", 9), anchor="w", justify="left").pack(fill="x")
             box = tk.Frame(f, bg=P2)
             box.pack(fill="both", expand=True, pady=(4, 0))
             tv = ttk.Treeview(box, columns=[k for k, *_ in cols], show="headings", height=5)
@@ -332,7 +332,7 @@ class InsightsPage:
             pass
         box = tk.Frame(w, bg="#0b0b0e", highlightthickness=2, highlightbackground="#7a5a2e")
         box.pack()
-        top = tk.Frame(box, bg="#1d1712", padx=18, pady=6)
+        top = tk.Frame(box, bg="#1d1712", padx=16, pady=8)
         top.pack(fill="x")
         for h in head:
             tk.Label(top, text=h, bg="#1d1712", fg=fg, font=("Fontin SmallCaps", 13, "bold")).pack()
@@ -342,9 +342,9 @@ class InsightsPage:
             tk.Label(body, text=m, bg="#0b0b0e", fg="#8888ff" if mods else "#7f7f7f", font=("Segoe UI", 10),
                      wraplength=420, justify="center").pack()
         tk.Frame(box, bg="#5a4630", height=1).pack(fill="x", padx=12)
-        tk.Label(box, text=price, bg="#0b0b0e", fg="#ffd9a8", font=("Segoe UI", 10, "bold"), pady=6).pack()
+        tk.Label(box, text=price, bg="#0b0b0e", fg="#ffd9a8", font=("Segoe UI", 10, "bold"), pady=8).pack()
         if foot:
-            tk.Label(box, text=foot, bg="#0b0b0e", fg="#7f7f7f", font=("Segoe UI", 8)).pack(pady=(0, 6))
+            tk.Label(box, text=foot, bg="#0b0b0e", fg="#7f7f7f", font=("Segoe UI", 9)).pack(pady=(0, 8))
         from .style import place_near                  # 2.25.2: on the monitor the mouse is on, not the main one
         place_near(self.root, w, x, y)
         w.deiconify()

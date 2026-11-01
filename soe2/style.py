@@ -15,6 +15,25 @@ C = {   # Xfire-style steel blue and navy, with orange for actions and gold for 
     "rare": "#ffff77", "magic": "#8f9bff", "sel": "#1b4a96", "odd": "#0b111c", "stripe": "#16213a", "key": "#26354f",
     "warn_bg": "#2a2110", "bad_bg": "#34171a", "ok_bg": "#10281c",
 }
+_BASE = dict(C)                       # (as shipped - tools/check_contrast.py starts each theme from it)
+
+
+# ------------------------------------------------------------------ design tokens (2.34.0, Polish 1)
+# Every new widget uses these. tools/check_tokens.py (CI + test) keeps the code on them.
+SPACE = (4, 8, 12, 16, 24)            # padding / gaps; 0-2 are allowed too, for hairlines and joined edges
+XS, S_, M, L, XL = SPACE
+SMALL, BODY, HEAD, TITLE = 9, 10, 12, 16     # the four text sizes: notes / chips, normal, section heads, window titles
+DISPLAY = (18, 20, 22, 28)            # not text: icon glyphs and the big numbers (timer, totals)
+ROLE = {                              # colour roles -> which C colour plays them
+    "surface": "bg", "surface_raised": "panel", "surface_high": "panel2", "border": "line",
+    "text": "text", "text_muted": "muted", "primary": "accent", "money": "good",
+    "success": "green", "danger": "red", "info": "blue", "selected": "sel",
+}
+
+
+def role(name):
+    """The colour for a role (follows the theme and accent)."""
+    return C[ROLE[name]]
 
 
 FONT_TITLE = "Palatino Linotype"      # a serif close to the game's Fontin; falls back automatically if missing
@@ -34,6 +53,21 @@ def mix(a, b, t):
     """Colour between a and b ('#rrggbb'), t from 0 (a) to 1 (b)."""
     ra, rb = _rgb(a), _rgb(b)
     return "#%02x%02x%02x" % tuple(round(x + (y - x) * max(0, min(1, t))) for x, y in zip(ra, rb))
+
+
+def contrast(a, b):
+    """WCAG contrast ratio of two '#rrggbb' colours (1 to 21)."""
+    def lum(c):
+        r, g, b_ = (v / 255 for v in _rgb(c))
+        f = lambda v: v / 12.92 if v <= 0.03928 else ((v + 0.055) / 1.055) ** 2.4
+        return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b_)
+    la, lb = sorted((lum(a), lum(b)), reverse=True)
+    return (la + 0.05) / (lb + 0.05)
+
+
+def text_on(bg, light="#fff7ea", dark="#1a1206"):
+    """2.34.0: light or dark text, whichever reads better on bg (WCAG AA)."""
+    return light if contrast(light, bg) >= contrast(dark, bg) else dark
 
 
 def hotkey_blocked(state, platform=None):
@@ -82,7 +116,7 @@ def setup_style(root):
     s.map("Treeview.Heading", background=[("active", "#2f4a7c")])
     s.configure("TNotebook", background=C["bg"], borderwidth=1, bordercolor=C["line"], lightcolor=C["bg"],
                 darkcolor=C["bg"], tabmargins=(0, 6, 0, 0))
-    s.configure("TNotebook.Tab", background=C["bg"], foreground=C["muted"], padding=(24, 10),
+    s.configure("TNotebook.Tab", background=C["bg"], foreground=C["muted"], padding=(24, 8),
                 font=("Segoe UI", 10, "bold"), borderwidth=1, bordercolor=C["bg"], lightcolor=C["bg"],
                 darkcolor=C["bg"], focuscolor=C["bg"])
     s.map("TNotebook.Tab",
@@ -114,22 +148,45 @@ def setup_style(root):
     s.configure("TSpinbox", fieldbackground=C["odd"], background="#25395f", foreground=C["text"],
                 arrowcolor="#cfe0ff", bordercolor=C["line"], lightcolor="#4f6c9e", darkcolor="#15233d")
     # raised steel buttons: the light edge top-left and dark edge bottom-right make the bevel
-    s.configure("TButton", background="#25395f", foreground="#e6eeff", padding=(12, 6), borderwidth=1, relief="raised",
+    s.configure("TButton", background="#25395f", foreground="#e6eeff", padding=(12, 8), borderwidth=1, relief="raised",
                 bordercolor="#0b1424", lightcolor="#5578b4", darkcolor="#16233f", focuscolor="#25395f",
                 font=("Segoe UI", 10))
     s.map("TButton", background=[("pressed", "#1b2c4d"), ("active", "#2f4a7c")],
           lightcolor=[("pressed", "#16233f"), ("active", "#6c90cc")], darkcolor=[("pressed", "#5578b4")],
           foreground=[("active", "#ffffff"), ("disabled", C["muted"])], relief=[("pressed", "sunken")])
-    a = C["accent"]                     # 2.0.0: the accent button follows Settings > Appearance > Accent colour
+    a = C["accent"]                     # 2.0.0: the primary (accent) button follows Settings > Appearance > Accent colour
     btn, dark, light = mix(a, "#000000", 0.15), mix(a, "#000000", 0.38), mix(a, "#ffffff", 0.35)
-    s.configure("Accent.TButton", background=btn, foreground="#fff7ea" if sum(_rgb(a)) < 600 else "#1a1206",
+    _THEME["keep"] |= {btn, dark, light, mix(a, "#ffffff", 0.08), mix(a, "#ffffff", 0.5), mix(a, "#000000", 0.65)}
+    s.configure("Primary.TButton", background=btn, foreground=text_on(btn),
                 bordercolor=mix(a, "#000000", 0.65), lightcolor=light, darkcolor=dark, focuscolor=btn,
                 font=("Segoe UI", 10, "bold"))
-    s.map("Accent.TButton", background=[("pressed", dark), ("active", mix(a, "#ffffff", 0.08)), ("disabled", C["panel2"])],
+    s.map("Primary.TButton", background=[("pressed", dark), ("active", mix(a, "#ffffff", 0.08)), ("disabled", C["panel2"])],
           lightcolor=[("pressed", dark), ("active", mix(a, "#ffffff", 0.5))], darkcolor=[("pressed", light)],
           foreground=[("disabled", C["muted"])])
+    s.configure("Accent.TButton", **{k: s.lookup("Primary.TButton", k) for k in
+                ("background", "foreground", "bordercolor", "lightcolor", "darkcolor", "focuscolor", "font")})
+    s.map("Accent.TButton", **{k: s.map("Primary.TButton", k) for k in ("background", "lightcolor", "darkcolor", "foreground")})
+    # (Accent.TButton = the old name of Primary, kept so nothing breaks)
+    # 2.34.0 button hierarchy: Primary (one per area: the main thing to do), TButton = secondary, Quiet (cancel, back,
+    # small helpers - no bevel), Danger (deletes or clears something)
+    s.configure("Quiet.TButton", background=C["panel"], foreground=C["steel"], relief="flat", borderwidth=1,
+                bordercolor=C["panel"], lightcolor=C["panel"], darkcolor=C["panel"], focuscolor=C["panel"],
+                padding=(12, 8), font=("Segoe UI", BODY))
+    s.map("Quiet.TButton", background=[("pressed", C["odd"]), ("active", C["panel2"])],
+          bordercolor=[("active", C["line"])], lightcolor=[("active", C["panel2"])], darkcolor=[("active", C["panel2"])],
+          foreground=[("active", C["text"]), ("disabled", C["muted"])])
+    r = C["red"]
+    dbg = mix(r, "#000000", 0.55)
+    _THEME["keep"] |= {dbg}
+    s.configure("Danger.TButton", background=dbg, foreground="#ffe9e6", bordercolor=mix(r, "#000000", 0.8),
+                lightcolor=mix(r, "#000000", 0.3), darkcolor=mix(r, "#000000", 0.7), focuscolor=dbg,
+                font=("Segoe UI", BODY))
+    s.map("Danger.TButton", background=[("pressed", mix(r, "#000000", 0.7)), ("active", mix(r, "#000000", 0.42)),
+                                        ("disabled", C["panel2"])],
+          lightcolor=[("pressed", mix(r, "#000000", 0.7)), ("active", mix(r, "#000000", 0.15))],
+          foreground=[("active", "#ffffff"), ("disabled", C["muted"])], relief=[("pressed", "sunken")])
     s.configure("TEntry", fieldbackground=C["odd"], foreground=C["text"], borderwidth=1, bordercolor=C["line"],
-                lightcolor="#15233d", darkcolor="#070b13", padding=5)
+                lightcolor="#15233d", darkcolor="#070b13", padding=4)
     s.configure("Vertical.TScrollbar", background="#2c4170", troughcolor=C["odd"], borderwidth=1, bordercolor="#15233d",
                 arrowcolor="#9fb6dd", lightcolor="#4f6c9e", darkcolor="#15233d")
     s.map("Vertical.TScrollbar", background=[("active", "#3c5a96")])
@@ -203,9 +260,9 @@ class Toast:
             pass
         outer = tk.Frame(w, bg=color, padx=2, pady=2)
         outer.pack()
-        card = tk.Frame(outer, bg=C["panel"], padx=14, pady=10)
+        card = tk.Frame(outer, bg=C["panel"], padx=16, pady=8)
         card.pack()
-        tk.Label(card, text=title, bg=C["panel"], fg=color, font=("Segoe UI", 11, "bold"), anchor="w").pack(fill="x")
+        tk.Label(card, text=title, bg=C["panel"], fg=color, font=("Segoe UI", 12, "bold"), anchor="w").pack(fill="x")
         for ln in lines:
             tk.Label(card, text=ln, bg=C["panel"], fg=C["text"], font=("Segoe UI", 10), anchor="w",
                      justify="left").pack(fill="x")
@@ -229,7 +286,7 @@ class SegBar(tk.Frame):
     """A row of joined toggle buttons (2.0 beta 7), like  [ Total | Daily ].  One is picked at a time; the picked one is
     lit with an orange line under it. command(value) is called when you pick another."""
 
-    def __init__(self, parent, options, value=None, command=None, bg=None, size=10, pad=(14, 5)):
+    def __init__(self, parent, options, value=None, command=None, bg=None, size=10, pad=(16, 4)):
         super().__init__(parent, bg=C["line"], padx=1, pady=1)
         self.command, self.value, self.btns = command, value if value is not None else options[0], {}
         self.size, self.pad = size, pad
@@ -278,7 +335,7 @@ class SegBook(tk.Frame):
         super().__init__(parent, bg=bg or C["panel"], **kw)
         self.top = tk.Frame(self, bg=bg or C["panel"])
         self.top.pack(fill="x", pady=(0, 8))
-        self.bar = SegBar(self.top, ["-"], command=self._picked, size=10, pad=(18, 6))
+        self.bar = SegBar(self.top, ["-"], command=self._picked, size=10, pad=(16, 8))
         self.bar.pack(side="left")
         for w in self.bar.winfo_children():
             w.destroy()
@@ -433,7 +490,7 @@ class KeyCapture(tk.Label):
     TIMEOUT_MS = 15000
 
     def __init__(self, parent, variable, width=12, on_change=None, **kw):
-        super().__init__(parent, width=width, anchor="w", padx=6, cursor="hand2", takefocus=1,
+        super().__init__(parent, width=width, anchor="w", padx=8, cursor="hand2", takefocus=1,
                          bg=C["odd"], fg=C["text"], font=("Consolas", 9), highlightthickness=1,
                          highlightbackground=C["line"], highlightcolor=C["accent"], **kw)
         self.var, self.on_change, self.waiting, self._alt = variable, on_change, False, False
@@ -602,7 +659,7 @@ def apply_look(theme="midnight", accent="orange", scale=100, root=None):
     _THEME.update(hue=hue, sat=sat, cache={}, made=set())
     _THEME["keep"] = {v.lower() for k, v in C.items() if k in ("rare", "magic", "blue", "purple", "green", "red",
                                                                  "orange", "good", "accent")}
-    _THEME["keep"] |= {old_accent.lower(), "#6ea8ff", "#ffffff"}
+    _THEME["keep"] |= {old_accent.lower(), "#6ea8ff", "#ffffff", "#ffe9e6"}
     if not getattr(tk.Misc, "_soe2_themed", False):          # every colour given to Tk goes through theme_color
         orig = tk.Misc._options
 

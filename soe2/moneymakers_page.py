@@ -31,8 +31,8 @@ class MoneyMakersPage:
         self.mm_strats, self.mm_sel, self.mm_sort = [], None, ("thoughts_per_click", False)
         self.mm_run = None                                   # {"strat", "start"} while a run is going
         self.mm_page = SegBar(body, ["Strats", "Lucrative Strats", "Tablet Crafting", "Run tracker"],
-                              command=lambda v: self.mm_show_page(), size=10, pad=(16, 5))
-        self.mm_page.pack(anchor="w", padx=10, pady=(8, 0))
+                              command=lambda v: self.mm_show_page(), size=10, pad=(16, 4))
+        self.mm_page.pack(anchor="w", padx=8, pady=(8, 0))
         self.mm_pages = {name: tk.Frame(body, bg=P1) for name in self.mm_page.btns}
         self.mm_strat_page, self.mm_run_page = self.mm_pages["Strats"], self.mm_pages["Run tracker"]
         self.mm_build_strats(self.mm_strat_page)
@@ -58,24 +58,24 @@ class MoneyMakersPage:
     # ---------------- the strats list
     def mm_build_strats(self, page):
         P1, P2 = C["panel"], C["panel2"]
-        bar = tk.Frame(page, bg=P1, padx=10, pady=8)
+        bar = tk.Frame(page, bg=P1, padx=8, pady=8)
         bar.pack(fill="x")
         # 2.30.0: where the strats come from - the curated Official list, the Community board, or your own
         self.mm_view = SegBar(bar, list(VIEWS), command=lambda v: self.mm_view_changed(), size=10, pad=(12, 4))
-        self.mm_view.pack(side="left", padx=(0, 14))
+        self.mm_view.pack(side="left", padx=(0, 16))
         self.mm_board, self.mm_board_ones, self.mm_official = [], [], self._mm_official_cache()
-        tk.Label(bar, text="Search", bg=P1, fg=C["muted"]).pack(side="left", padx=(0, 6))
+        tk.Label(bar, text="Search", bg=P1, fg=C["muted"]).pack(side="left", padx=(0, 8))
         self.mm_q = tk.StringVar()
         self.mm_q.trace_add("write", lambda *_a: self.root.after_idle(self.mm_fill))
         ttk.Entry(bar, textvariable=self.mm_q, width=22).pack(side="left")
         self.mm_acct = ttk.Button(bar, text="", command=self.mm_account_click)
         self.mm_acct.pack(side="right")
-        ttk.Button(bar, text="↻ Refresh", command=self.mm_refresh).pack(side="right", padx=(0, 6))
+        ttk.Button(bar, text="↻ Refresh", command=self.mm_refresh).pack(side="right", padx=(0, 8))
         self.mm_live_lbl = tk.Label(bar, text="", bg=P1, fg=C["muted"], font=("Segoe UI", 9))
         self.mm_live_lbl.pack(side="right", padx=8)
         self.mm_account_paint()
-        fbar = tk.Frame(page, bg=P1, padx=10)
-        fbar.pack(fill="x", pady=(0, 6))
+        fbar = tk.Frame(page, bg=P1, padx=8)
+        fbar.pack(fill="x", pady=(0, 8))
 
         def pick(label, var, values, width, first=False):
             tk.Label(fbar, text=label, bg=P1, fg=C["muted"]).pack(side="left", padx=(0 if first else 12, 6))
@@ -96,11 +96,11 @@ class MoneyMakersPage:
         self.mm_cat = tk.StringVar(value="")                 # picked in the browser on the left ("" = all)
         self.mm_type = tk.StringVar(value="")
 
-        bar2 = tk.Frame(page, bg=P1, padx=10)
-        bar2.pack(fill="x", pady=(0, 6))
+        bar2 = tk.Frame(page, bg=P1, padx=8)
+        bar2.pack(fill="x", pady=(0, 8))
         for text, cmd in (("⬇ Download Format", self.mm_download_format), ("Import file…", self.mm_import),
                           ("+ Add my own", self.mm_add)):
-            ttk.Button(bar2, text=text, command=cmd).pack(side="right", padx=(6, 0))
+            ttk.Button(bar2, text=text, command=cmd).pack(side="right", padx=(8, 0))
         leg = tk.Label(bar2, text="🧠 Thinking: Autopilot · Easy · Moderate · Hard · Big brain      "
                                   "🖱 Clicks per hour: Chill · Steady · Busy · Frantic",
                        bg=P1, fg="#ffd9a8", font=("Segoe UI", 9), anchor="w", justify="left")
@@ -108,7 +108,7 @@ class MoneyMakersPage:
         leg.bind("<Configure>", lambda e: leg.config(wraplength=max(200, e.width - 4)))
 
         pane = ttk.PanedWindow(page, orient="horizontal")
-        pane.pack(fill="both", expand=True, padx=10, pady=(0, 10))
+        pane.pack(fill="both", expand=True, padx=8, pady=(0, 8))
         # 2.28.0: browse by what the strat IS - Category > Type (Mapping > Breach), with counts
         nav = tk.Frame(pane, bg=P1)
         pane.add(nav, weight=0)
@@ -144,23 +144,23 @@ class MoneyMakersPage:
 
         right = tk.Frame(pane, bg=P2, highlightthickness=1, highlightbackground=C["line"])
         pane.add(right, weight=2)
-        acts = tk.Frame(right, bg=P2, padx=10, pady=8)
+        acts = tk.Frame(right, bg=P2, padx=8, pady=8)
         acts.pack(fill="x")
         self.mm_btns = {}
-        for key, text, cmd, style in (("track", "▶ Track runs", self.mm_track, "Accent.TButton"),
+        for key, text, cmd, style in (("track", "▶ Track runs", self.mm_track, "Primary.TButton"),
                                       ("vote", "▲ Upvote", self.mm_vote, "TButton"),
                                       ("post", "📤 Post to Community", self.mm_post, "TButton"),
                                       ("regex", "Copy regex", self.mm_copy_regex, "TButton"),
                                       ("more", "⋯ More", self.mm_more, "TButton")):
             self.mm_btns[key] = ttk.Button(acts, text=text, command=cmd, style=style)
-        self.mm_detail = tk.Text(right, bg=P2, fg=C["text"], relief="flat", wrap="word", padx=12, pady=6,
+        self.mm_detail = tk.Text(right, bg=P2, fg=C["text"], relief="flat", wrap="word", padx=12, pady=8,
                                  font=("Segoe UI", 10), highlightthickness=0, cursor="arrow")
         dsb = ttk.Scrollbar(right, orient="vertical", command=self.mm_detail.yview)
         self.mm_detail.configure(yscrollcommand=dsb.set)
         dsb.pack(side="right", fill="y")
         self.mm_detail.pack(fill="both", expand=True)
         t = self.mm_detail
-        t.tag_configure("title", font=("Segoe UI", 14, "bold"), foreground=C["text"], spacing3=2)
+        t.tag_configure("title", font=("Segoe UI", 16, "bold"), foreground=C["text"], spacing3=2)
         t.tag_configure("meta", foreground=C["muted"], font=("Segoe UI", 9))
         t.tag_configure("summary", font=("Segoe UI", 10, "italic"), spacing1=6, spacing3=6)
         t.tag_configure("h", font=("Segoe UI", 10, "bold"), foreground=C["accent"], spacing1=10, spacing3=2)
@@ -208,7 +208,7 @@ class MoneyMakersPage:
         for w in (self.mm_bsort_lab, self.mm_bsort_box):
             w.pack_forget()
         if community:
-            self.mm_bsort_lab.pack(side="left", padx=(12, 6))
+            self.mm_bsort_lab.pack(side="left", padx=(12, 8))
             self.mm_bsort_box.pack(side="left")
             self.mm_board_fetch()
         self.mm_sel = None
@@ -354,7 +354,7 @@ class MoneyMakersPage:
         if post:
             self.mm_btns["vote"].config(text=f"{'▲ Upvoted' if post.get('voted') else '▲ Upvote'} ({post.get('score', 0)})")
         for key in show:
-            self.mm_btns[key].pack(side="left", padx=(0, 6))
+            self.mm_btns[key].pack(side="left", padx=(0, 8))
         t.insert("end", MM.type_text(s).upper() + "\n", "kicker")
         t.insert("end", s["name"] + "\n", "title")
         t.insert("end", f"by {post.get('author', {}).get('name') or s.get('author', '?')} · game {s.get('patch', '?')} · "
@@ -765,7 +765,7 @@ class MoneyMakersPage:
         self.mm_form_win = win
         sa = ScrollArea(win, P1)
         sa.pack(fill="both", expand=True)
-        f = tk.Frame(sa.inner, bg=P1, padx=14, pady=10)
+        f = tk.Frame(sa.inner, bg=P1, padx=16, pady=8)
         f.pack(fill="both", expand=True)
         f.columnconfigure(1, weight=1)
         v = {}
@@ -774,7 +774,7 @@ class MoneyMakersPage:
         def head(text):
             nonlocal r
             tk.Label(f, text=text, bg=P1, fg=C["accent"], font=("Segoe UI", 10, "bold"), anchor="w").grid(
-                row=r, column=0, columnspan=2, sticky="w", pady=(10, 2))
+                row=r, column=0, columnspan=2, sticky="w", pady=(8, 2))
             r += 1
 
         def entry(key, label, value, width=40):
@@ -802,7 +802,7 @@ class MoneyMakersPage:
             v[key] = {}
             for i, opt in enumerate(options):
                 var = tk.BooleanVar(value=opt in (picked or []))
-                ttk.Checkbutton(box, text=opt, variable=var).grid(row=i // 4, column=i % 4, sticky="w", padx=(0, 14))
+                ttk.Checkbutton(box, text=opt, variable=var).grid(row=i // 4, column=i % 4, sticky="w", padx=(0, 16))
                 v[key][opt] = var
             r += 1
 
@@ -915,10 +915,10 @@ class MoneyMakersPage:
             win.destroy()
             self.mm_show_mine(out["id"])
 
-        btns = tk.Frame(win, bg=P1, padx=14, pady=8)
+        btns = tk.Frame(win, bg=P1, padx=16, pady=8)
         btns.pack(fill="x", side="bottom", before=sa)
-        ttk.Button(btns, text="Save", style="Accent.TButton", command=save).pack(side="right")
-        ttk.Button(btns, text="Cancel", command=win.destroy).pack(side="right", padx=6)
+        ttk.Button(btns, text="Save", style="Primary.TButton", command=save).pack(side="right")
+        ttk.Button(btns, text="Cancel", command=win.destroy, style="Quiet.TButton").pack(side="right", padx=8)
         win.bind("<Escape>", lambda e: win.destroy())
         self.mm_form_save = save
         self.mm_form_vars = v
@@ -930,8 +930,8 @@ class MoneyMakersPage:
     # ---------------- the run tracker (its own, simple)
     def mm_build_runs(self, page):
         P1, P2 = C["panel"], C["panel2"]
-        top = tk.Frame(page, bg=P2, padx=14, pady=12, highlightthickness=1, highlightbackground=C["line"])
-        top.pack(fill="x", padx=10, pady=(10, 8))
+        top = tk.Frame(page, bg=P2, padx=16, pady=12, highlightthickness=1, highlightbackground=C["line"])
+        top.pack(fill="x", padx=8, pady=(8, 8))
         tk.Label(top, text="Strat", bg=P2, fg=C["muted"]).grid(row=0, column=0, sticky="w")
         self.mm_run_strat = tk.StringVar(value="(no strat)")
         self.mm_run_box = ttk.Combobox(top, textvariable=self.mm_run_strat, state="readonly", width=40)
@@ -940,7 +940,7 @@ class MoneyMakersPage:
                                                                self.root.after(20, self.root.focus_set)))
         self.mm_clock = tk.Label(top, text="0:00", bg=P2, fg=C["text"], font=(MONO, 28, "bold"))
         self.mm_clock.grid(row=0, column=2, rowspan=2, padx=24)
-        self.mm_go = ttk.Button(top, text="▶ Start run", style="Accent.TButton", command=self.mm_run_toggle)
+        self.mm_go = ttk.Button(top, text="▶ Start run", style="Primary.TButton", command=self.mm_run_toggle)
         self.mm_go.grid(row=0, column=3, rowspan=2, sticky="ns")
         tk.Label(top, text="Profit this run (div)", bg=P2, fg=C["muted"]).grid(row=1, column=0, sticky="w",
                                                                                 pady=(8, 0))
@@ -950,12 +950,12 @@ class MoneyMakersPage:
         tk.Label(top, text="Start when you enter the map (or start the block), end when you're done and have sold or "
                            "counted the loot. Type the profit any time before you end the run - or leave it empty.",
                  bg=P2, fg=C["muted"], font=("Segoe UI", 9), wraplength=700, justify="left").grid(
-            row=2, column=0, columnspan=4, sticky="w", pady=(10, 0))
+            row=2, column=0, columnspan=4, sticky="w", pady=(8, 0))
 
-        self.mm_summary = tk.Label(page, text="", bg=P1, fg="#ffd9a8", font=("Segoe UI", 11, "bold"), anchor="w")
-        self.mm_summary.pack(fill="x", padx=12, pady=(0, 6))
+        self.mm_summary = tk.Label(page, text="", bg=P1, fg="#ffd9a8", font=("Segoe UI", 12, "bold"), anchor="w")
+        self.mm_summary.pack(fill="x", padx=12, pady=(0, 8))
         box = tk.Frame(page, bg=P1)
-        box.pack(fill="both", expand=True, padx=10, pady=(0, 6))
+        box.pack(fill="both", expand=True, padx=8, pady=(0, 8))
         cols = (("when", "When", 140, "w"), ("strat", "Strat", 220, "w"), ("time", "Time", 80, "center"),
                 ("profit", "Profit", 90, "center"))
         self.mm_runs_tree = ttk.Treeview(box, columns=[c[0] for c in cols], show="headings", selectmode="extended")
@@ -968,8 +968,8 @@ class MoneyMakersPage:
         self.mm_runs_tree.pack(side="left", fill="both", expand=True)
         self.mm_runs_tree.bind("<Delete>", lambda e: self.mm_runs_delete())
         bot = tk.Frame(page, bg=P1)
-        bot.pack(fill="x", padx=10, pady=(0, 10))
-        ttk.Button(bot, text="Delete selected runs", command=self.mm_runs_delete).pack(side="left")
+        bot.pack(fill="x", padx=8, pady=(0, 8))
+        ttk.Button(bot, text="Delete selected runs", command=self.mm_runs_delete, style="Danger.TButton").pack(side="left")
 
     def mm_run_names(self):
         names = {s["id"]: s["name"] for s in MM.all_strats()}
@@ -1053,21 +1053,21 @@ class MoneyMakersPage:
     # ---------------- Lucrative Strats: simple one-liners
     def mm_build_oneliners(self, page):
         P1 = C["panel"]
-        bar = tk.Frame(page, bg=P1, padx=10, pady=8)
+        bar = tk.Frame(page, bg=P1, padx=8, pady=8)
         bar.pack(fill="x")
-        tk.Label(bar, text="Search", bg=P1, fg=C["muted"]).pack(side="left", padx=(0, 6))
+        tk.Label(bar, text="Search", bg=P1, fg=C["muted"]).pack(side="left", padx=(0, 8))
         self.mm_one_q = tk.StringVar()
         self.mm_one_q.trace_add("write", lambda *_a: self.root.after_idle(self.mm_one_fill))
         ttk.Entry(bar, textvariable=self.mm_one_q, width=26).pack(side="left")
-        for text, cmd, style in (("+ Add a one-liner", self.mm_one_add, "Accent.TButton"),
+        for text, cmd, style in (("+ Add a one-liner", self.mm_one_add, "Primary.TButton"),
                                  ("📤 Post", self.mm_one_post, "TButton"), ("▲ Upvote", self.mm_one_vote, "TButton"),
                                  ("Copy text", self.mm_one_copy, "TButton")):
-            ttk.Button(bar, text=text, command=cmd, style=style).pack(side="right", padx=(6, 0))
+            ttk.Button(bar, text=text, command=cmd, style=style).pack(side="right", padx=(8, 0))
         tk.Label(page, text="Quick money makers in one line - no guide needed. Official ones come with the app, "
                             "Community ones from other players; 📤 Post shares yours.", bg=P1, fg=C["muted"],
-                 font=("Segoe UI", 9), anchor="w").pack(fill="x", padx=12, pady=(0, 6))
+                 font=("Segoe UI", 9), anchor="w").pack(fill="x", padx=12, pady=(0, 8))
         box = tk.Frame(page, bg=P1)
-        box.pack(fill="both", expand=True, padx=10, pady=(0, 6))
+        box.pack(fill="both", expand=True, padx=8, pady=(0, 8))
         cols = (("text", "Strat", 560, "w"), ("mech", "Type / tags", 150, "w"), ("score", "▲", 44, "center"),
                 ("by", "By", 110, "w"), ("origin", "From", 90, "center"))
         self.mm_one_tree = ttk.Treeview(box, columns=[c[0] for c in cols], show="headings", selectmode="browse")
@@ -1210,8 +1210,8 @@ class MoneyMakersPage:
     def mm_build_tablets(self, page):
         P1, P2 = C["panel"], C["panel2"]
         pane = ttk.PanedWindow(page, orient="horizontal")
-        pane.pack(fill="both", expand=True, padx=10, pady=10)
-        left = tk.Frame(pane, bg=P2, padx=14, pady=10, highlightthickness=1, highlightbackground=C["line"])
+        pane.pack(fill="both", expand=True, padx=8, pady=8)
+        left = tk.Frame(pane, bg=P2, padx=16, pady=8, highlightthickness=1, highlightbackground=C["line"])
         pane.add(left, weight=2)
         tk.Label(left, text="HOW TO CRAFT A TABLET", bg=P2, fg=C["steel"], font=("Segoe UI", 9, "bold"),
                  anchor="w").pack(fill="x")
@@ -1221,7 +1221,7 @@ class MoneyMakersPage:
             tk.Label(row, text=str(i), bg=C["accent"], fg="#10141c", font=("Segoe UI", 10, "bold"), width=2).pack(
                 side="left", anchor="n")
             col = tk.Frame(row, bg=P2)
-            col.pack(side="left", fill="x", expand=True, padx=(10, 0))
+            col.pack(side="left", fill="x", expand=True, padx=(8, 0))
             tk.Label(col, text=when, bg=P2, fg=C["text"], font=("Segoe UI", 10, "bold"), anchor="w").pack(fill="x")
             lab = tk.Label(col, text=what, bg=P2, fg=C["muted"], font=("Segoe UI", 9), anchor="w", justify="left")
             lab.pack(fill="x")
@@ -1230,8 +1230,8 @@ class MoneyMakersPage:
         tk.Label(left, text="CHECK YOUR TABLET", bg=P2, fg=C["steel"], font=("Segoe UI", 9, "bold"),
                  anchor="w").pack(fill="x")
         tk.Label(left, text="Hover a tablet in game, press Ctrl+C, then:", bg=P2, fg=C["muted"],
-                 font=("Segoe UI", 9), anchor="w").pack(fill="x", pady=(2, 6))
-        ttk.Button(left, text="Check my tablet", style="Accent.TButton", command=self.mm_tab_check).pack(anchor="w")
+                 font=("Segoe UI", 9), anchor="w").pack(fill="x", pady=(2, 8))
+        ttk.Button(left, text="Check my tablet", style="Primary.TButton", command=self.mm_tab_check).pack(anchor="w")
         self.mm_tab_advice = tk.Label(left, text="", bg=P2, fg=C["text"], font=("Segoe UI", 10, "bold"), anchor="w",
                                       justify="left")
         self.mm_tab_advice.pack(fill="x", pady=(8, 0))
@@ -1240,8 +1240,8 @@ class MoneyMakersPage:
         right = tk.Frame(pane, bg=P1)
         pane.add(right, weight=3)
         bar = tk.Frame(right, bg=P1)
-        bar.pack(fill="x", pady=(0, 6))
-        tk.Label(bar, text="Tablet", bg=P1, fg=C["muted"]).pack(side="left", padx=(0, 6))
+        bar.pack(fill="x", pady=(0, 8))
+        tk.Label(bar, text="Tablet", bg=P1, fg=C["muted"]).pack(side="left", padx=(0, 8))
         self.mm_tab_type = tk.StringVar(value="All")
         cb = ttk.Combobox(bar, textvariable=self.mm_tab_type, values=MM.TABLET_TYPES, state="readonly", width=11)
         cb.pack(side="left")
@@ -1253,7 +1253,7 @@ class MoneyMakersPage:
         tk.Label(right, text="Valuable = ★ in your Mod book, or listings with it cost at least your Valuable mod "
                              "price. Prices are what the app learned from your price checks. Double-click a mod to "
                              "check its price on the trade site.", bg=P1, fg=C["muted"], font=("Segoe UI", 9),
-                 anchor="w", justify="left", wraplength=560).pack(fill="x", pady=(0, 6))
+                 anchor="w", justify="left", wraplength=560).pack(fill="x", pady=(0, 8))
         box = tk.Frame(right, bg=P1)
         box.pack(fill="both", expand=True)
         cols = (("star", "★", 30, "center"), ("mod", "Mod", 300, "w"), ("where", "Tablet", 90, "w"),

@@ -40,23 +40,23 @@ class WealthSetup:
                             app_colours=True, lockable=False, on_close=self.wealth_setup_close)
         self._ws_win = win
         P1 = C["panel"]
-        head = tk.Frame(win.body, bg=P1, padx=16, pady=10)
+        head = tk.Frame(win.body, bg=P1, padx=16, pady=8)
         head.pack(fill="x")
         self._ws_dots = []
         for i, name in enumerate(STEPS):
-            lab = tk.Label(head, text=f"{i + 1}  {name}", bg=P1, fg=C["muted"], font=("Segoe UI", 9, "bold"), padx=6)
+            lab = tk.Label(head, text=f"{i + 1}  {name}", bg=P1, fg=C["muted"], font=("Segoe UI", 9, "bold"), padx=8)
             lab.pack(side="left")
             self._ws_dots.append(lab)
-        self._ws_body = tk.Frame(win.body, bg=P1, padx=18, pady=6)
+        self._ws_body = tk.Frame(win.body, bg=P1, padx=16, pady=8)
         self._ws_body.pack(fill="both", expand=True)
-        foot = tk.Frame(win.body, bg=P1, padx=16, pady=10)
+        foot = tk.Frame(win.body, bg=P1, padx=16, pady=8)
         foot.pack(fill="x", side="bottom")
-        self._ws_back = ttk.Button(foot, text="‹ Back", command=lambda: self.wealth_setup_show(self._ws_step - 1))
+        self._ws_back = ttk.Button(foot, text="‹ Back", command=lambda: self.wealth_setup_show(self._ws_step - 1), style="Quiet.TButton")
         self._ws_back.pack(side="left")
-        self._ws_next = ttk.Button(foot, text="Next ›", style="Accent.TButton",
+        self._ws_next = ttk.Button(foot, text="Next ›", style="Primary.TButton",
                                    command=lambda: self.wealth_setup_show(self._ws_step + 1))
         self._ws_next.pack(side="right")
-        self._ws_skip = ttk.Button(foot, text="Skip this step", command=lambda: self.wealth_setup_show(self._ws_step + 1))
+        self._ws_skip = ttk.Button(foot, text="Skip this step", command=lambda: self.wealth_setup_show(self._ws_step + 1), style="Quiet.TButton")
         self._ws_skip.pack(side="right", padx=8)
         SETTINGS["wealth_setup_seen"] = True
         save_json("settings.json", SETTINGS)
@@ -95,24 +95,24 @@ class WealthSetup:
     def _ws_text(self, parent, text, **kw):
         lab = tk.Label(parent, text=text, bg=C["panel"], fg=kw.pop("fg", C["text"]), justify="left", anchor="w",
                        wraplength=580, font=kw.pop("font", ("Segoe UI", 10)), **kw)
-        lab.pack(fill="x", pady=(0, 6))
+        lab.pack(fill="x", pady=(0, 8))
         return lab
 
     def _ws_count(self, body):
-        self._ws_text(body, "Count your currency", fg=C["accent"], font=("Segoe UI", 13, "bold"))
+        self._ws_text(body, "Count your currency", fg=C["accent"], font=("Segoe UI", 12, "bold"))
         self._ws_text(body, "Currency is most of what people own, and it's the quickest part. Press Start counting, "
                             "then in game hover each currency stack in your stash and press Ctrl+C. Stacks of the "
                             "same currency add up. Come back here and press Finish when you're done.")
         row = tk.Frame(body, bg=C["panel"])
         row.pack(fill="x", pady=(4, 8))
-        self._ws_count_btn = ttk.Button(row, text="Start counting", style="Accent.TButton", command=self._ws_count_go)
+        self._ws_count_btn = ttk.Button(row, text="Start counting", style="Primary.TButton", command=self._ws_count_go)
         self._ws_count_btn.pack(side="left")
         self._ws_count_lbl = tk.Label(row, text="", bg=C["panel"], fg=C["muted"])
-        self._ws_count_lbl.pack(side="left", padx=10)
+        self._ws_count_lbl.pack(side="left", padx=8)
         box = tk.Frame(body, bg=C["panel2"], highlightthickness=1, highlightbackground=C["line"])
         box.pack(fill="both", expand=True)
         self._ws_list = tk.Label(box, text="", bg=C["panel2"], fg=C["text"], justify="left", anchor="nw",
-                                 font=("Segoe UI", 10), padx=10, pady=8)
+                                 font=("Segoe UI", 10), padx=8, pady=8)
         self._ws_list.pack(fill="both", expand=True)
         self._ws_count_tick()
 
@@ -150,7 +150,7 @@ class WealthSetup:
             self.root.after(700, self._ws_count_tick)
 
     def _ws_tab(self, body):
-        self._ws_text(body, "Add a stash tab (optional)", fg=C["accent"], font=("Segoe UI", 13, "bold"))
+        self._ws_text(body, "Add a stash tab (optional)", fg=C["accent"], font=("Segoe UI", 12, "bold"))
         self._ws_text(body, "For things that aren't currency - tablets, waystones, gear - the app can read a stash "
                             "tab through the trade site (the game has no other way for tools to see your stash). "
                             "In game:")
@@ -181,12 +181,12 @@ class WealthSetup:
         tk.Label(lk, text="(your trade-site search for that price - it fills in the boxes above)", bg=C["panel"],
                  fg=C["muted"], font=("Segoe UI", 9)).pack(anchor="w")
         row = tk.Frame(body, bg=C["panel"])
-        row.pack(fill="x", pady=(6, 0))
-        ttk.Button(row, text="Add the tab and check it", style="Accent.TButton", command=self._ws_add).pack(side="left")
+        row.pack(fill="x", pady=(8, 0))
+        ttk.Button(row, text="Add the tab and check it", style="Primary.TButton", command=self._ws_add).pack(side="left")
         self._ws_tab_msg = tk.Label(row, text=f"{len(WEALTH.tabs)} tab{'s' if len(WEALTH.tabs) != 1 else ''} set up."
                                     if WEALTH.tabs else "", bg=C["panel"], fg=C["muted"], justify="left",
                                     wraplength=380, anchor="w")
-        self._ws_tab_msg.pack(side="left", padx=10, fill="x", expand=True)
+        self._ws_tab_msg.pack(side="left", padx=8, fill="x", expand=True)
 
     def _ws_add(self):
         if self.w_link.get().strip():
@@ -242,7 +242,7 @@ class WealthSetup:
     def _ws_done(self, body):
         from .wealth import wealth_rows, WPRICES
         rows, total, _p = wealth_rows(WEALTH.all_items(), WPRICES, WEALTH.overrides)
-        self._ws_text(body, "All set", fg=C["accent"], font=("Segoe UI", 13, "bold"))
+        self._ws_text(body, "All set", fg=C["accent"], font=("Segoe UI", 12, "bold"))
         self._ws_text(body, f"Right now you're worth about {fmt_div(total)}." if rows else
                             "Nothing counted yet - you can come back to this any time.",
                       font=("Segoe UI", 12, "bold"), fg=C["good"])

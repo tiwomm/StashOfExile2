@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU GPL v3.0 (see LICENSE). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.33.1
+VERSION 2.34.0
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,6 +19,18 @@ VERSION 2.33.1
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.34.0
+       Polish 1 - Foundation. Design tokens in style.py: SPACE (4 8 12 16 24; 0-2 for hairlines), text sizes SMALL 9 /
+       BODY 10 / HEAD 12 / TITLE 16 (+ DISPLAY 18-28 for glyphs and big numbers), ROLE + role() colour roles. Every
+       font size and padding in soe2 moved onto them (tools/check_tokens.py --fix; canvas create_text and "# token-ok"
+       lines are left alone). Button hierarchy: Primary.TButton (was Accent.TButton - kept as an alias), TButton,
+       Quiet.TButton (flat), Danger.TButton (dark red; Delete, Clear list, Remove ...). Contrast: style.contrast() /
+       text_on() - the primary button's text is light or dark by WCAG contrast (light text on orange / gold / lime /
+       teal / ice was 1.9-3.4 : 1); accent-derived button colours are no longer recoloured by themes (Ice accent).
+       tools/check_contrast.py: every text pair, every theme x accent >= 4.5 : 1. .github/workflows/checks.yml runs
+       check_version, check_tokens and check_contrast on every PR. Roadmap reordered: Toasts 2.35, Context menus 2.36,
+       Ancients helper 2.37, more item types 2.38, stash order tool 2.39, Responsive 2.40, Hover / focus 2.41, Visual
+       hierarchy 2.42, Linux last.
   2.33.1
        Map library: the "✖ Avoid" rank button was cut off (ttk width -7 = at least 7, grows to fit).
   2.33.0
@@ -1061,7 +1073,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.33.1"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.34.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 

@@ -369,18 +369,18 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
 
         # ---- status line (above the taskbar): messages, exchange rates, trade-site limits
         strip = self.shell.strip
-        self.limit_lbl = tk.Label(strip, text="", bg=C["bg"], fg=C["muted"], padx=14, cursor="hand2", font=(MONO, 9))
+        self.limit_lbl = tk.Label(strip, text="", bg=C["bg"], fg=C["muted"], padx=16, cursor="hand2", font=(MONO, 9))
         self.limit_lbl.pack(side="right")
         self.limit_lbl.bind("<Button-1>", self.open_limits)
-        self.rates_lbl = tk.Label(strip, text="Rates: …", bg=C["bg"], fg=C["muted"], padx=10, cursor="hand2", font=(MONO, 9))
+        self.rates_lbl = tk.Label(strip, text="Rates: …", bg=C["bg"], fg=C["muted"], padx=8, cursor="hand2", font=(MONO, 9))
         self.rates_lbl.pack(side="right")
         self.rates_lbl.bind("<Button-1>", self.open_rates)
-        self.status = tk.Label(strip, text="Starting...", anchor="w", bg=C["bg"], fg=C["muted"], padx=14, pady=4)
+        self.status = tk.Label(strip, text="Starting...", anchor="w", bg=C["bg"], fg=C["muted"], padx=16, pady=4)
         self.status.pack(side="left", fill="x", expand=True)
 
         # ---- taskbar, right side: league (opens Settings), utilities, always on top, clock
         tb = "#111b30"
-        self.league_chip = tk.Label(self.shell.task_right, text="", bg="#162544", fg=C["good"], padx=10, pady=3,
+        self.league_chip = tk.Label(self.shell.task_right, text="", bg="#162544", fg=C["good"], padx=8, pady=4,
                                     cursor="hand2", font=("Segoe UI", 9, "bold"), highlightthickness=1,
                                     highlightbackground="#3d5582")
         self.shell.add_status(self.league_chip)
@@ -388,8 +388,8 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         self.league_var.trace_add("write", lambda *a: self._league_chip())
         self._league_chip()
         self.shell.make_task_dots()
-        self.pin_lbl = tk.Label(self.shell.task_right, text="📌", bg=tb, font=("Segoe UI Emoji", 11), cursor="hand2")
-        self.pin_lbl.pack(side="left", padx=(6, 0), before=self.shell.clock)
+        self.pin_lbl = tk.Label(self.shell.task_right, text="📌", bg=tb, font=("Segoe UI Emoji", 10), cursor="hand2")
+        self.pin_lbl.pack(side="left", padx=(8, 0), before=self.shell.clock)
         self.pin_lbl.bind("<Button-1>", lambda e: (self.top_var.set(not self.top_var.get()), self.on_top_toggle()))
         self._top_label()
         from . import shell as _shell
@@ -441,26 +441,26 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
                                                               f"  (you had {pretty_version(seen)})"),
                  bg="#1a2a4c", fg="#9fb6dd", anchor="w").pack(fill="x")
         if welcome:                                             # first start: pick your league right away
-            lrow = tk.Frame(inner, bg=P2, padx=16, pady=10, highlightthickness=1, highlightbackground=C["accent"])
-            lrow.pack(fill="x", padx=12, pady=(10, 0))
+            lrow = tk.Frame(inner, bg=P2, padx=16, pady=8, highlightthickness=1, highlightbackground=C["accent"])
+            lrow.pack(fill="x", padx=12, pady=(8, 0))
             tk.Label(lrow, text="Which league do you play?", bg=P2, fg=C["accent"],
-                     font=("Segoe UI", 11, "bold")).pack(side="left")
+                     font=("Segoe UI", 12, "bold")).pack(side="left")
             self.wn_league = ttk.Combobox(lrow, textvariable=self.league_var, state="readonly", width=28,
                                           values=list(self.league_box["values"] or ()) or [self.league_var.get()])
-            self.wn_league.pack(side="left", padx=10)
+            self.wn_league.pack(side="left", padx=8)
             self.wn_league.bind("<<ComboboxSelected>>", self.on_league)
             tk.Label(inner, text="The newest league is picked for you. Prices come from this league; you can change "
-                                 "it any time in Settings.", bg=P1, fg=C["muted"], font=("Segoe UI", 8),
-                     anchor="w", padx=14).pack(fill="x", pady=(3, 0))
-        foot = tk.Frame(inner, bg=P1, padx=16, pady=10)
+                                 "it any time in Settings.", bg=P1, fg=C["muted"], font=("Segoe UI", 9),
+                     anchor="w", padx=16).pack(fill="x", pady=(4, 0))
+        foot = tk.Frame(inner, bg=P1, padx=16, pady=8)
         foot.pack(fill="x", side="bottom")
-        ttk.Button(foot, text="Got it", style="Accent.TButton", command=self.close_whatsnew).pack(side="right")
+        ttk.Button(foot, text="Got it", style="Primary.TButton", command=self.close_whatsnew).pack(side="right")
         tk.Label(foot, text="Shows once per version. Toolkit menu > What's new brings it back.", bg=P1, fg=C["muted"],
-                 font=("Segoe UI", 8)).pack(side="left")
+                 font=("Segoe UI", 9)).pack(side="left")
         t = tk.Text(inner, bg=P2, fg=C["text"], relief="flat", wrap="word", padx=16, pady=12, highlightthickness=0,
                     font=("Segoe UI", 10), cursor="arrow")
-        t.pack(fill="both", expand=True, padx=12, pady=(10, 0))
-        t.tag_configure("h", foreground=C["accent"], font=("Segoe UI", 11, "bold"), spacing1=8, spacing3=4)
+        t.pack(fill="both", expand=True, padx=12, pady=(8, 0))
+        t.tag_configure("h", foreground=C["accent"], font=("Segoe UI", 12, "bold"), spacing1=8, spacing3=4)
         t.tag_configure("p", spacing3=6, lmargin1=0, lmargin2=0)
         t.tag_configure("li", spacing3=5, lmargin1=8, lmargin2=22)
         if welcome or force:
@@ -521,56 +521,56 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
     def build_checks(self, body):
         self.checks_body = body
         # ---- the summary line: total value of the list + priced / needs review
-        summ = tk.Frame(body, bg=C["panel2"], padx=12, pady=6)
+        summ = tk.Frame(body, bg=C["panel2"], padx=12, pady=8)
         summ.pack(fill="x")
         self.tot_lbl = tk.Label(summ, text="", bg=C["panel2"], fg="#9fb6dd", font=("Segoe UI", 9, "bold"))
-        self.tot_val = tk.Label(summ, text="", bg=C["panel2"], fg=C["good"], font=("Segoe UI", 17, "bold"))
-        self.chip_priced = tk.Label(summ, text="", bg="#0f2038", fg=C["green"], font=("Segoe UI", 9, "bold"), padx=10, pady=3,
+        self.tot_val = tk.Label(summ, text="", bg=C["panel2"], fg=C["good"], font=("Segoe UI", 16, "bold"))
+        self.chip_priced = tk.Label(summ, text="", bg="#0f2038", fg=C["green"], font=("Segoe UI", 9, "bold"), padx=8, pady=4,
                                     highlightthickness=1, highlightbackground="#3f7a58")
-        self.chip_review = tk.Label(summ, text="", bg="#2a2110", fg=C["good"], font=("Segoe UI", 9, "bold"), padx=10, pady=3,
+        self.chip_review = tk.Label(summ, text="", bg="#2a2110", fg=C["good"], font=("Segoe UI", 9, "bold"), padx=8, pady=4,
                                     highlightthickness=1, highlightbackground="#7a6428")
         # 2.26.0: "pricing 12 items - about 1:30 left", next to the other two (was only in the status line)
-        self.chip_eta = tk.Label(summ, text="", bg="#10203a", fg="#8fc4ff", font=("Segoe UI", 9, "bold"), padx=10,
-                                 pady=3, highlightthickness=1, highlightbackground="#3f5f8f")
+        self.chip_eta = tk.Label(summ, text="", bg="#10203a", fg="#8fc4ff", font=("Segoe UI", 9, "bold"), padx=8,
+                                 pady=4, highlightthickness=1, highlightbackground="#3f5f8f")
         self.tot_lbl.pack(side="left")
         self.tot_val.pack(side="left", padx=(8, 0))
         self.chip_review.pack(side="right")
         self.chip_priced.pack(side="right", padx=(0, 8))
         # 2.26.4: what the stars in Valuable mods mean - up top where it is seen (was a small line under the list)
         self.vmods_legend = tk.Label(summ, text="Valuable mods:  ★ = a mod your Mod book rates valuable  (★★★ = three)",
-                                     bg="#2a2110", fg="#ffd9a8", font=("Segoe UI", 9, "bold"), padx=10, pady=3,
+                                     bg="#2a2110", fg="#ffd9a8", font=("Segoe UI", 9, "bold"), padx=8, pady=4,
                                      highlightthickness=1, highlightbackground="#7a6428")
-        self.vmods_legend.pack(side="left", padx=(18, 0))
+        self.vmods_legend.pack(side="left", padx=(16, 0))
         # 2.31.0: how much the community Mod book knows (shown once there is something)
-        self.cm_chip = tk.Label(summ, text="", bg="#10203a", fg="#8fc4ff", font=("Segoe UI", 9), padx=10, pady=3,
+        self.cm_chip = tk.Label(summ, text="", bg="#10203a", fg="#8fc4ff", font=("Segoe UI", 9), padx=8, pady=4,
                                 highlightthickness=1, highlightbackground="#3f5f8f")
         self.root.after(3000, self.cm_paint)
 
         # ---- the two toolbar rows
         tb = tk.Frame(body, bg=C["panel"], highlightthickness=1, highlightbackground=C["line"])
-        tb.pack(fill="x", padx=8, pady=(6, 6))
+        tb.pack(fill="x", padx=8, pady=(8, 8))
         self.price_tb = tb
-        bar = tk.Frame(tb, bg=C["panel"], padx=10, pady=7)
+        bar = tk.Frame(tb, bg=C["panel"], padx=8, pady=8)
         bar.pack(fill="x")
         tk.Frame(tb, bg=C["line"], height=1).pack(fill="x", padx=8)
-        bar2 = tk.Frame(tb, bg=C["panel"], padx=10, pady=7)
+        bar2 = tk.Frame(tb, bg=C["panel"], padx=8, pady=8)
         bar2.pack(fill="x")
         lab = dict(bg=C["panel"], fg=C["muted"])
         ttk.Button(bar, text="Export CSV", command=self.export).pack(side="right")          # right side first: never squeezed out
-        ttk.Button(bar, text="Clear list", command=self.clear).pack(side="right", padx=8)
+        ttk.Button(bar, text="Clear list", command=self.clear, style="Danger.TButton").pack(side="right", padx=8)
         self.pause_btn = ttk.Button(bar, text="Pause", command=self.toggle_pause, width=8)
         self.pause_btn.pack(side="right")
-        ttk.Button(bar2, text="Re-price all", style="Accent.TButton", command=self.reprice_all).pack(side="right")
+        ttk.Button(bar2, text="Re-price all", style="Primary.TButton", command=self.reprice_all).pack(side="right")
         self.remove_btn = ttk.Button(bar2, text="✖ Mark removed", command=lambda: self.mark_selected("removed"))
         self.remove_btn.pack(side="right", padx=8)
-        self.delete_btn = ttk.Button(bar2, text="🗑 Delete", command=self.remove_selected)      # 2.0 beta 19
+        self.delete_btn = ttk.Button(bar2, text="🗑 Delete", command=self.remove_selected, style="Danger.TButton")      # 2.0 beta 19
         self.delete_btn.pack(side="right", padx=(0, 8), before=self.remove_btn)
         self.mark_btn = ttk.Button(bar2, text="✔ Mark listed", command=lambda: self.mark_selected("listed"))
         self.mark_btn.pack(side="right")
-        self.undo_btn = ttk.Button(bar2, text="↺ Undo", command=self.undo_mark, state="disabled", width=7)
+        self.undo_btn = ttk.Button(bar2, text="↺ Undo", command=self.undo_mark, state="disabled", width=7, style="Quiet.TButton")
         self.undo_btn.pack(side="right", padx=(0, 8))
         self.undo = []                                   # [(record id, previous mark, previous listed-at)] of the last mark
-        tk.Label(bar, text="Valuable mod ≥", **lab).pack(side="left", padx=(0, 6))
+        tk.Label(bar, text="Valuable mod ≥", **lab).pack(side="left", padx=(0, 8))
         self.good_var = tk.StringVar(value=str(SETTINGS["good_div"]))
         sp = ttk.Spinbox(bar, from_=0.05, to=500, increment=0.25, width=6, textvariable=self.good_var,
                          command=self.on_good)
@@ -580,7 +580,7 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         tk.Label(bar, text="div", **lab).pack(side="left", padx=(4, 0))
         self.pop_var = tk.BooleanVar(value=SETTINGS["popups"])
         self.snd_var = tk.BooleanVar(value=SETTINGS["sound"])
-        ttk.Checkbutton(bar, text="Popups", variable=self.pop_var, style="Bar.TCheckbutton", command=self.on_toggles).pack(side="left", padx=(14, 4))
+        ttk.Checkbutton(bar, text="Popups", variable=self.pop_var, style="Bar.TCheckbutton", command=self.on_toggles).pack(side="left", padx=(16, 4))
         ttk.Checkbutton(bar, text="Sound", variable=self.snd_var, style="Bar.TCheckbutton", command=self.on_toggles).pack(side="left", padx=4)
         # 2.31.0: "Ctrl+Alt+C only" left the toolbar - Settings > Hotkeys > "Also add items copied another way"
         self.hk_var = tk.BooleanVar(value=SETTINGS.get("hotkey_only", True))
@@ -588,13 +588,13 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         ttk.Checkbutton(bar, text="Copy name on click", variable=self.copy_var, style="Bar.TCheckbutton",
                         command=self.on_toggles).pack(side="left", padx=4)
 
-        tk.Label(bar2, text="Listings", **lab).pack(side="left", padx=(0, 6))
+        tk.Label(bar2, text="Listings", **lab).pack(side="left", padx=(0, 8))
         self.status_var = tk.StringVar(value=SETTINGS["status"])
         sbox = ttk.Combobox(bar2, textvariable=self.status_var, values=[l for l, _ in STATUS_OPTIONS],
                             state="readonly", width=22)
         sbox.pack(side="left")
         sbox.bind("<<ComboboxSelected>>", self.on_listing_rules)
-        tk.Label(bar2, text="Listed within", **lab).pack(side="left", padx=(14, 6))
+        tk.Label(bar2, text="Listed within", **lab).pack(side="left", padx=(16, 8))
         self.age_var = tk.StringVar(value=SETTINGS["age"])
         abox = ttk.Combobox(bar2, textvariable=self.age_var, values=[a[0] for a in AGE_OPTIONS],
                             state="readonly", width=10)
@@ -609,16 +609,16 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         kbf = tk.Frame(body, bg=C["panel"])
         kbf.pack(fill="x", side="bottom")
         self.build_keybar(kbf)
-        self.banner = tk.Label(body, text="", anchor="w", padx=14, pady=8, font=("Segoe UI", 10, "bold"), justify="left")
+        self.banner = tk.Label(body, text="", anchor="w", padx=16, pady=8, font=("Segoe UI", 10, "bold"), justify="left")
 
         # ---- the list filters (2.0 beta 3), then the list and the side panel
         items_tab = tk.Frame(body, bg=C["panel"])
         items_tab.pack(fill="both", expand=True, padx=8, pady=(0, 4))
         self.checks_area = items_tab                       # cards and banners go just above it
-        frow = tk.Frame(items_tab, bg=C["panel"], padx=4, pady=6)
+        frow = tk.Frame(items_tab, bg=C["panel"], padx=4, pady=8)
         frow.pack(fill="x")
         flab = dict(bg=C["panel"], fg=C["muted"])
-        tk.Label(frow, text="Show", **flab).pack(side="left", padx=(0, 6))
+        tk.Label(frow, text="Show", **flab).pack(side="left", padx=(0, 8))
         vbox = ttk.Combobox(frow, textvariable=self.view_var, values=VIEWS, state="readonly", width=12)
         vbox.pack(side="left")
         vbox.bind("<<ComboboxSelected>>", self.on_view)
@@ -644,7 +644,7 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
                             width=20)
         ubox.pack(side="right")
         ubox.bind("<<ComboboxSelected>>", lambda e: (self.on_price_unit(), self.root.after(20, self.root.focus_set)))
-        tk.Label(frow, text="Prices in", **flab).pack(side="right", padx=(12, 6))
+        tk.Label(frow, text="Prices in", **flab).pack(side="right", padx=(12, 8))
         self.cat_count = tk.Label(frow, text="", **flab)
         self.cat_count.pack(side="right")
         self.pane = ttk.PanedWindow(items_tab, orient="horizontal")        # drag the divider to resize
@@ -716,7 +716,7 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
     # ---------------- the Mod book window: what the app learned + your mod rules
     def build_modbook(self, book_tab):
         self.mb_nb = SegBook(book_tab)                         # real buttons, not notebook tabs (2.0 beta 7)
-        self.mb_nb.pack(fill="both", expand=True, padx=10, pady=10)
+        self.mb_nb.pack(fill="both", expand=True, padx=8, pady=8)
         memory_tab = tk.Frame(self.mb_nb, bg=C["panel"])
         rules_tab = tk.Frame(self.mb_nb, bg=C["panel"])
         jrules_tab = tk.Frame(self.mb_nb, bg=C["panel"])
@@ -728,15 +728,15 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         self.mb_nb.add(wrules_tab, text="Waystone rules")
         self.mb_nb.add(rrules_tab, text="Relic rules")
         self.mb_nb.bind("<<NotebookTabChanged>>", lambda e: (self.refresh_rules(), self.refresh_memory()))
-        mbar = tk.Frame(memory_tab, bg=C["panel"], padx=10, pady=10)
+        mbar = tk.Frame(memory_tab, bg=C["panel"], padx=8, pady=8)
         mbar.pack(fill="x")
-        tk.Label(mbar, text="Show", bg=C["panel"], fg=C["muted"]).pack(side="left", padx=(0, 6))
+        tk.Label(mbar, text="Show", bg=C["panel"], fg=C["muted"]).pack(side="left", padx=(0, 8))
         self.MEM_VIEWS = ["Mod priority", "Single mods", "Mod combinations", "Old mod book"]
         self.mem_view = tk.StringVar(value=self.MEM_VIEWS[0])
         mv = ttk.Combobox(mbar, textvariable=self.mem_view, values=self.MEM_VIEWS, state="readonly", width=18)
         mv.pack(side="left")
         mv.bind("<<ComboboxSelected>>", lambda e: (self.refresh_memory(True), self.root.after(20, self.root.focus_set)))
-        tk.Label(mbar, text="Filter", bg=C["panel"], fg=C["muted"]).pack(side="left", padx=(18, 6))
+        tk.Label(mbar, text="Filter", bg=C["panel"], fg=C["muted"]).pack(side="left", padx=(16, 8))
         self.mem_filter = tk.StringVar()
         self.mem_filter.trace_add("write", lambda *a: self.refresh_memory(True))
         ttk.Entry(mbar, textvariable=self.mem_filter, width=24).pack(side="left")
@@ -746,7 +746,7 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         self.mem_frame = tk.Frame(memory_tab, bg=C["panel"])
         self.mem_frame.pack(fill="both", expand=True)
         self.mem_tv = None
-        self.mem_empty = tk.Label(memory_tab, bg=C["panel"], fg=C["muted"], font=("Segoe UI", 11), justify="center", wraplength=640)
+        self.mem_empty = tk.Label(memory_tab, bg=C["panel"], fg=C["muted"], font=("Segoe UI", 10), justify="center", wraplength=640)
         self.build_rules_page(rules_tab, "tablet")
         self.build_rules_page(jrules_tab, "jewel")
         self.build_rules_page(wrules_tab, "waystone")
@@ -759,11 +759,11 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         P1, P2 = C["panel"], C["panel2"]
         from .style import ScrollArea
         self.set_nb = SegBook(body)
-        self.set_nb.pack(fill="both", expand=True, padx=10, pady=(10, 0))
+        self.set_nb.pack(fill="both", expand=True, padx=8, pady=(8, 0))
         pages = {}
         for name in ("General", "Appearance", "Hotkeys", "Chat commands", "Advanced", "About"):
             sa = ScrollArea(self.set_nb, P1)
-            wrap = tk.Frame(sa.inner, bg=P1, padx=6, pady=4)
+            wrap = tk.Frame(sa.inner, bg=P1, padx=8, pady=4)
             wrap.pack(fill="both", expand=True)
             self.set_nb.add(sa, text=name)
             pages[name] = (sa, wrap)
@@ -771,12 +771,12 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         self.settings_pages = pages
 
         def section(page, title, note=""):
-            f = tk.Frame(pages[page][1], bg=P2, padx=14, pady=10, highlightthickness=1, highlightbackground=C["line"])
-            f.pack(fill="x", pady=(0, 10))
-            tk.Label(f, text=title, bg=P2, fg=C["accent"], font=("Segoe UI", 11, "bold"), anchor="w").pack(fill="x")
+            f = tk.Frame(pages[page][1], bg=P2, padx=16, pady=8, highlightthickness=1, highlightbackground=C["line"])
+            f.pack(fill="x", pady=(0, 8))
+            tk.Label(f, text=title, bg=P2, fg=C["accent"], font=("Segoe UI", 12, "bold"), anchor="w").pack(fill="x")
             if note:
                 tk.Label(f, text=note, bg=P2, fg=C["muted"], font=("Segoe UI", 9), anchor="w", justify="left",
-                         wraplength=600).pack(fill="x", pady=(2, 6))
+                         wraplength=600).pack(fill="x", pady=(2, 8))
             row = tk.Frame(f, bg=P2)
             row.pack(fill="x")
             return row
@@ -787,15 +787,15 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         row = section("General", "League and search pace", "The league is used everywhere: Price checks, Wealth and "
                                                            "the session tracker. Pace = how fast the trade site is "
                                                            "searched (slower = fewer waits from its limits).")
-        tk.Label(row, text="League", bg=P2, fg=C["text"]).pack(side="left", padx=(0, 6))
+        tk.Label(row, text="League", bg=P2, fg=C["text"]).pack(side="left", padx=(0, 8))
         self.league_box = ttk.Combobox(row, textvariable=self.league_var, state="readonly", width=24)
         self.league_box.pack(side="left")
         self.league_box.bind("<<ComboboxSelected>>", self.on_league)
-        tk.Label(row, text="Pace", bg=P2, fg=C["text"]).pack(side="left", padx=(18, 6))
+        tk.Label(row, text="Pace", bg=P2, fg=C["text"]).pack(side="left", padx=(16, 8))
         pace = ttk.Combobox(row, textvariable=self.pace_var, values=list(PACES), state="readonly", width=10)
         pace.pack(side="left")
         pace.bind("<<ComboboxSelected>>", self.on_pace)
-        ttk.Button(row, text="Exchange rates…", command=self.open_rates).pack(side="left", padx=(18, 0))
+        ttk.Button(row, text="Exchange rates…", command=self.open_rates).pack(side="left", padx=(16, 0))
         for cb in (self.league_box, pace):
             cb.bind("<<ComboboxSelected>>", lambda e: self.root.after(20, self.root.focus_set), add="+")
 
@@ -813,17 +813,17 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         self.mark_var = tk.BooleanVar(value=SETTINGS.get("copy_marker", True))
         ttk.Checkbutton(row, text="Mark where I pressed Ctrl+Alt+C", variable=self.mark_var,
                         command=self.on_copy_marker).pack(side="left")
-        tk.Label(row, text="for", bg=P2, fg=C["text"]).pack(side="left", padx=(14, 4))
+        tk.Label(row, text="for", bg=P2, fg=C["text"]).pack(side="left", padx=(16, 4))
         self.mark_secs = tk.StringVar(value=str(SETTINGS.get("copy_marker_secs", 10)))
         sp = ttk.Spinbox(row, from_=1, to=600, textvariable=self.mark_secs, width=5, command=self.on_copy_marker)
         sp.pack(side="left")
         sp.bind("<FocusOut>", lambda e: self.on_copy_marker())
-        tk.Label(row, text="seconds", bg=P2, fg=C["text"]).pack(side="left", padx=(4, 14))
+        tk.Label(row, text="seconds", bg=P2, fg=C["text"]).pack(side="left", padx=(4, 16))
         self.mark_hold = tk.BooleanVar(value=bool(SETTINGS.get("copy_marker_hold")))
         ttk.Checkbutton(row, text="Keep them until I double-tap Esc", variable=self.mark_hold,
                         command=self.on_copy_marker).pack(side="left")
         from .copymark import COLOURS                       # 2.25.0: the +'s colour
-        tk.Label(row, text="Colour", bg=P2, fg=C["text"]).pack(side="left", padx=(14, 4))
+        tk.Label(row, text="Colour", bg=P2, fg=C["text"]).pack(side="left", padx=(16, 4))
         self.mark_colour = tk.StringVar(value=SETTINGS.get("copy_marker_colour", "Gold"))
         mc = ttk.Combobox(row, textvariable=self.mark_colour, values=list(COLOURS), state="readonly", width=9)
         mc.pack(side="left")
@@ -871,7 +871,7 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
 
         row = section("Appearance", "Wallpaper", "Any picture for the desktop background (it is scaled to fill).")
         ttk.Button(row, text="Choose wallpaper…", command=self.pick_wallpaper).pack(side="left")
-        ttk.Button(row, text="Default", command=lambda: self.shell.set_wallpaper(None)).pack(side="left", padx=6)
+        ttk.Button(row, text="Default", command=lambda: self.shell.set_wallpaper(None), style="Quiet.TButton").pack(side="left", padx=8)
 
         from .shell import windows_24h
         row = section("Appearance", "Clock", "The clock at the bottom right shows your PC's own time. It starts out "
@@ -897,11 +897,11 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
                 ("accent", "Accent colour", {k: v[0] for k, v in ACCENTS.items()}, "orange"),
                 ("ui_scale", "Text size", {90: "Smaller (90%)", 100: "Normal (100%)", 115: "Bigger (115%)",
                                            130: "Biggest (130%)"}, 100))):
-            tk.Label(grid, text=label, bg=P2, fg=C["text"]).grid(row=r, column=0, sticky="w", padx=(0, 10), pady=3)
+            tk.Label(grid, text=label, bg=P2, fg=C["text"]).grid(row=r, column=0, sticky="w", padx=(0, 8), pady=4)
             cur = SETTINGS.get(key, default)
             v = tk.StringVar(value=options.get(cur, options[default]))
             cb = ttk.Combobox(grid, textvariable=v, values=list(options.values()), state="readonly", width=26)
-            cb.grid(row=r, column=1, sticky="w", pady=3)
+            cb.grid(row=r, column=1, sticky="w", pady=4)
             cb.bind("<<ComboboxSelected>>", lambda e, k=key, o=options, vv=v: self.on_look(k, o, vv))
             self.look_vars[key] = v
         if THEMES:
@@ -912,11 +912,11 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
             self.draw_look_swatch()
         brow = tk.Frame(row, bg=P2)
         brow.pack(fill="x", pady=(8, 0))
-        self.look_restart = ttk.Button(brow, text="Restart now", style="Accent.TButton", command=self.restart_app,
+        self.look_restart = ttk.Button(brow, text="Restart now", style="Primary.TButton", command=self.restart_app,
                                        state="disabled")
         self.look_restart.pack(side="left")
         self.look_msg = tk.Label(brow, text="", bg=P2, fg=C["muted"])
-        self.look_msg.pack(side="left", padx=10)
+        self.look_msg.pack(side="left", padx=8)
         self.splash_var = tk.BooleanVar(value=bool(SETTINGS.get("splash", True)))
         ttk.Checkbutton(row, text="Show the start-up screen", variable=self.splash_var,
                         command=lambda: (SETTINGS.__setitem__("splash", bool(self.splash_var.get())),
@@ -930,9 +930,9 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         self.hk_frame = row
         self.hk_vars = {}
         row2 = tk.Frame(row.master, bg=P2)
-        row2.pack(fill="x", pady=(6, 0))
+        row2.pack(fill="x", pady=(8, 0))
         self.hk_msg = tk.Label(row2, text="", bg=P2, fg=C["muted"], anchor="w", justify="left")
-        self.hk_msg.pack(side="left", padx=10)
+        self.hk_msg.pack(side="left", padx=8)
         self.fill_hotkeys()
         row = section("Hotkeys", "Other ways of copying", "Price checks only adds items you copy with your own "
                                                           "Ctrl+Alt+C, so other tools (like Sidekick's Ctrl+D) don't "
@@ -959,7 +959,7 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         row = section("Advanced", "Your data", "Settings, price-check lists, the Mod book, Wealth and sessions are "
                                                "kept here, shared by every version of the app.")
         tk.Label(row, text=str(DATA_DIR), bg=P2, fg=C["text"], font=(MONO, 9)).pack(side="left")
-        ttk.Button(row, text="Open folder", command=lambda: self.open_path(DATA_DIR)).pack(side="left", padx=10)
+        ttk.Button(row, text="Open folder", command=lambda: self.open_path(DATA_DIR), style="Quiet.TButton").pack(side="left", padx=8)
 
     def dlg_parent(self):
         """The window a question / file box belongs to: the window in front (2.0 beta 21)."""
@@ -1130,10 +1130,10 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
                 tk.Label(f, text=key_label(key) if key else "-", bg=P2, fg=col, anchor="w", font=(MONO, 9)).grid(
                     row=i, column=1, sticky="w")
             tk.Label(f, text=where if where != "fixed" else "always on - the game's own copy, can't be changed",
-                     bg=P2, fg=C["muted"], font=("Segoe UI", 8)).grid(row=i, column=2, sticky="w", padx=(12, 0))
+                     bg=P2, fg=C["muted"], font=("Segoe UI", 9)).grid(row=i, column=2, sticky="w", padx=(12, 0))
             if kid == "checks:quick_copy_key" and key:              # 2.0 beta 21: a warning and the way back
                 i_w = len(self.all_hotkeys()) + 1
-                warn = tk.Frame(f, bg="#2a2110", padx=8, pady=6, highlightthickness=1, highlightbackground="#7a6428")
+                warn = tk.Frame(f, bg="#2a2110", padx=8, pady=8, highlightthickness=1, highlightbackground="#7a6428")
                 warn.grid(row=i_w, column=0, columnspan=3, sticky="we", pady=(8, 0))
                 tk.Label(warn, text="⚠ One-key copy is experimental. Ctrl+Alt+C is the reliable way to copy items: if "
                                     "copies go missing or keys seem stuck in game, reset it.", bg="#2a2110",
@@ -1219,7 +1219,7 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         self.key_state = kb.create_text(x, 18, text="Auto-pricing", anchor="w", fill="#cfe0ff", font=("Segoe UI", 9, "bold"))
         x = kb.bbox(self.key_state)[2] + 22
         for cap, text, name in self.HOTKEYS:
-            lb = tk.Label(kb, text=cap, bg=C["key"], fg="#eaf2ff", font=(MONO, 9, "bold"), padx=7, pady=1, bd=2,
+            lb = tk.Label(kb, text=cap, bg=C["key"], fg="#eaf2ff", font=(MONO, 9, "bold"), padx=8, pady=1, bd=2,
                           relief="raised", cursor="hand2" if name != "add" else "arrow")
             wid = kb.create_window(x, 18, window=lb, anchor="w")
             kb.update_idletasks()
@@ -1678,21 +1678,21 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         self.rates_win = win
         # 2.4.0: three tabs - Rates, Exchange Helper, Arbitrage (exchange_page.py)
         self.rates_view = SegBar(win, ["Rates", "Exchange Helper", "Arbitrage"], command=lambda v: self.rates_show_page(),
-                                 size=10, pad=(16, 5))
-        self.rates_view.pack(anchor="w", padx=14, pady=(10, 0))
+                                 size=10, pad=(16, 4))
+        self.rates_view.pack(anchor="w", padx=16, pady=(8, 0))
         self.rates_pages = {k: tk.Frame(win, bg=C["panel"]) for k in ("Rates", "Exchange Helper", "Arbitrage")}
         w = self.rates_pages["Rates"]
         w.pack(fill="both", expand=True)
-        top = tk.Frame(w, bg=C["panel"], padx=14, pady=10)
+        top = tk.Frame(w, bg=C["panel"], padx=16, pady=8)
         top.pack(fill="x")
         self.rates_status = tk.Label(top, text="", bg=C["panel"], fg=C["text"], anchor="w", justify="left", wraplength=360)
         self.rates_status.pack(side="left", fill="x", expand=True)
-        ttk.Button(top, text="Refresh now", style="Accent.TButton", command=self.refresh_rates_now).pack(side="right")
+        ttk.Button(top, text="Refresh now", style="Primary.TButton", command=self.refresh_rates_now).pack(side="right")
         self.rates_auto_var = tk.BooleanVar(value=SETTINGS.get("rates_auto", True))
         ttk.Checkbutton(w, text="Check for new rates every hour", variable=self.rates_auto_var, style="Bar.TCheckbutton",
-                        command=self.on_rates_auto).pack(anchor="w", padx=14)
-        conv = tk.Frame(w, bg=C["panel2"], padx=14, pady=10, highlightthickness=1, highlightbackground=C["line"])
-        conv.pack(fill="x", padx=14, pady=10)
+                        command=self.on_rates_auto).pack(anchor="w", padx=16)
+        conv = tk.Frame(w, bg=C["panel2"], padx=16, pady=8, highlightthickness=1, highlightbackground=C["line"])
+        conv.pack(fill="x", padx=16, pady=8)
         row = tk.Frame(conv, bg=C["panel2"])
         row.pack(fill="x")
         tk.Label(row, text="What is", bg=C["panel2"], fg=C["muted"]).pack(side="left")
@@ -1701,7 +1701,7 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         if len(sel) == 1 and self.records.get(int(sel[0]), {}).get("est"):
             start = _num(self.records[int(sel[0])]["est"])
         self.conv_var = tk.StringVar(value=start or "8.5")
-        ttk.Entry(row, textvariable=self.conv_var, width=9).pack(side="left", padx=6)
+        ttk.Entry(row, textvariable=self.conv_var, width=9).pack(side="left", padx=8)
         tk.Label(row, text="divines worth in the other currencies?", bg=C["panel2"], fg=C["muted"]).pack(side="left")
         self.conv_out = tk.Label(conv, text="", bg=C["panel2"], fg=C["good"], font=(MONO, 10, "bold"), anchor="w", justify="left",
                                  wraplength=580)
@@ -1709,8 +1709,8 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         self.conv_var.trace_add("write", lambda *a: self.draw_rates())
         # ---- 2.2.0: what to post on the in-game Currency Exchange (2.4.0: its own tab, "Exchange Helper")
         hp = self.rates_pages["Exchange Helper"]
-        ex = tk.Frame(hp, bg=C["panel2"], padx=14, pady=10, highlightthickness=1, highlightbackground=C["line"])
-        ex.pack(fill="x", padx=14, pady=10)
+        ex = tk.Frame(hp, bg=C["panel2"], padx=16, pady=8, highlightthickness=1, highlightbackground=C["line"])
+        ex.pack(fill="x", padx=16, pady=8)
         tk.Label(ex, text="Exchange Helper", bg=C["panel2"], fg=C["accent"], font=("Segoe UI", 10, "bold"),
                  anchor="w").pack(fill="x")
         tk.Label(ex, text="Pick what you're selling and what you want: it shows the ratio to post on the Currency "
@@ -1720,38 +1720,38 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         er.pack(fill="x", pady=(4, 0))
         tk.Label(er, text="I sell", bg=C["panel2"], fg=C["muted"]).pack(side="left")
         self.ex_amt = tk.StringVar(value="10")
-        ttk.Entry(er, textvariable=self.ex_amt, width=7).pack(side="left", padx=6)
+        ttk.Entry(er, textvariable=self.ex_amt, width=7).pack(side="left", padx=8)
         self.ex_have = tk.StringVar(value="Divine Orb")
         self.ex_want = tk.StringVar(value="Exalted Orb")
         self.ex_boxes = []
         for i, var in enumerate((self.ex_have, self.ex_want)):
             if i:
-                tk.Label(er, text="for", bg=C["panel2"], fg=C["muted"]).pack(side="left", padx=(6, 6))
+                tk.Label(er, text="for", bg=C["panel2"], fg=C["muted"]).pack(side="left", padx=(8, 8))
             cb = ttk.Combobox(er, textvariable=var, state="readonly", width=22)
             cb.pack(side="left")
             cb.bind("<<ComboboxSelected>>", lambda e: self.draw_exchange())
             self.ex_boxes.append(cb)
-        ttk.Button(er, text="⇄", width=3, command=self.ex_swap).pack(side="left", padx=6)
+        ttk.Button(er, text="⇄", width=3, command=self.ex_swap, style="Quiet.TButton").pack(side="left", padx=8)
         self.ex_out = tk.Label(ex, text="", bg=C["panel2"], fg=C["text"], font=(MONO, 10), anchor="w", justify="left")
         self.ex_out.pack(fill="x", pady=(8, 0))
         tk.Label(ex, text="The Currency Exchange only takes whole numbers, so these are the closest whole-number "
                           "ratios to the market. Rates are from poe.ninja and move during the day.",
-                 bg=C["panel2"], fg=C["muted"], font=("Segoe UI", 8), anchor="w", justify="left",
-                 wraplength=560).pack(fill="x", pady=(6, 0))
+                 bg=C["panel2"], fg=C["muted"], font=("Segoe UI", 9), anchor="w", justify="left",
+                 wraplength=560).pack(fill="x", pady=(8, 0))
         self.ex_amt.trace_add("write", lambda *a: self.draw_exchange())
         cols = [("cur", "Currency", 200, "w"), ("worth", "Worth (divines)", 120, "e"), ("per", "1 divine buys", 120, "e"),
                 ("vol", "Traded (div)", 110, "e")]
         tk.Label(w, text="Rates come from poe.ninja's public exchange overview (they refresh about hourly) and are approximate. "
                          "Listings priced in a currency not in this list are left out of the price and flagged.",
-                 bg=C["panel"], fg=C["muted"], wraplength=600, justify="left", padx=14, pady=8).pack(side="bottom", fill="x")
+                 bg=C["panel"], fg=C["muted"], wraplength=600, justify="left", padx=16, pady=8).pack(side="bottom", fill="x")
         tv = ttk.Treeview(w, columns=[c[0] for c in cols], show="headings")
         for cid, title, width, anchor in cols:
             tv.heading(cid, text=title)
             tv.column(cid, width=width, anchor=anchor, stretch=(cid == "cur"))
         sb = ttk.Scrollbar(w, orient="vertical", command=tv.yview)
         tv.configure(yscrollcommand=sb.set)
-        sb.pack(side="right", fill="y", padx=(0, 6))
-        tv.pack(fill="both", expand=True, padx=(14, 0))
+        sb.pack(side="right", fill="y", padx=(0, 8))
+        tv.pack(fill="both", expand=True, padx=(16, 0))
         tv.tag_configure("odd", background=C["odd"])
         tv.tag_configure("thin", foreground=C["muted"])
         self.rates_tv = tv
@@ -1860,7 +1860,7 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
                           opacity=255, body_bg=C["panel"], app_colours=True, lockable=False)
         w.attributes("-topmost", bool(SETTINGS.get("on_top", True)))     # stays above the main window (1.35)
         self.limit_win = w
-        self.limit_body = tk.Frame(w.body, bg=C["panel"], padx=20, pady=16)
+        self.limit_body = tk.Frame(w.body, bg=C["panel"], padx=16, pady=16)
         self.limit_body.pack()
         self.draw_limits()
 
@@ -1871,7 +1871,7 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         for c in self.limit_body.winfo_children():
             c.destroy()
         for cls in ("search", "fetch"):
-            tk.Label(self.limit_body, text=cls.title(), bg=C["panel"], fg=C["text"], font=("Segoe UI", 11, "bold"),
+            tk.Label(self.limit_body, text=cls.title(), bg=C["panel"], fg=C["text"], font=("Segoe UI", 12, "bold"),
                      anchor="w").pack(fill="x", pady=(8, 2))
             for h, mx, per in LIMITER.usage(cls):
                 row = tk.Frame(self.limit_body, bg=C["panel"])
@@ -2125,7 +2125,7 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
             w.attributes("-topmost", True)
         except tk.TclError:
             pass
-        box = tk.Frame(w, bg=C["panel2"], padx=14, pady=10, highlightthickness=2, highlightbackground=colour)
+        box = tk.Frame(w, bg=C["panel2"], padx=16, pady=8, highlightthickness=2, highlightbackground=colour)
         box.pack(fill="both")
         if title:
             tk.Label(box, text=title, bg=C["panel2"], fg=colour, font=("Segoe UI", 10, "bold"), anchor="w").pack(fill="x")
@@ -2143,7 +2143,7 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
                 self._app_toast = None
         ttk.Button(btns, text="OK", command=close).pack(side="right")
         for label, fn in actions:
-            ttk.Button(btns, text=label, command=lambda f=fn: (close(), f())).pack(side="right", padx=(0, 6))
+            ttk.Button(btns, text=label, command=lambda f=fn: (close(), f())).pack(side="right", padx=(0, 8))
         w.update_idletasks()                                 # 2.25.3: in the middle of the app, a little above centre
         rx, ry = self.root.winfo_rootx(), self.root.winfo_rooty()
         rw, rh = max(400, self.root.winfo_width()), max(300, self.root.winfo_height())
@@ -2163,8 +2163,8 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
             except Exception:
                 pass
         outer = tk.Frame(self.checks_body, bg=C["steel"], padx=1, pady=1)
-        outer.pack(before=self.checks_area, fill="x", padx=10, pady=(0, 6))
-        card = tk.Frame(outer, bg=C["panel2"], padx=14, pady=8)
+        outer.pack(before=self.checks_area, fill="x", padx=8, pady=(0, 8))
+        card = tk.Frame(outer, bg=C["panel2"], padx=16, pady=8)
         card.pack(fill="x")
         btns = tk.Frame(card, bg=C["panel2"])
         btns.pack(side="right", padx=(12, 0))
@@ -2177,7 +2177,7 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
             if getattr(self, "_info_card", None) is outer:
                 self._info_card = None
         for label, fn in actions:
-            ttk.Button(btns, text=label, command=lambda f=fn: (close(), f())).pack(side="left", padx=(0, 6))
+            ttk.Button(btns, text=label, command=lambda f=fn: (close(), f())).pack(side="left", padx=(0, 8))
         ttk.Button(btns, text="OK", command=close).pack(side="left")
         lbl = tk.Label(card, text=text, bg=C["panel2"], fg=C["text"], anchor="w", justify="left", font=("Segoe UI", 10))
         lbl.pack(side="left", fill="x", expand=True)
@@ -2209,24 +2209,24 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         kind = item.get("class", "Tablet").lower()                         # "tablet" or "jewel"
         self.shell.open("checks")
         outer = tk.Frame(self.checks_body, bg=C["accent"], padx=2, pady=2)
-        outer.pack(before=self.checks_area, fill="x", padx=10, pady=(0, 6))
-        card = tk.Frame(outer, bg=C["panel"], padx=14, pady=10)
+        outer.pack(before=self.checks_area, fill="x", padx=8, pady=(0, 8))
+        card = tk.Frame(outer, bg=C["panel"], padx=16, pady=8)
         card.pack(fill="x")
         top = tk.Frame(card, bg=C["panel"])
         top.pack(fill="x")
-        tk.Label(top, text="Same item again?", bg=C["panel"], fg=C["accent"], font=(FONT_TITLE, 14, "bold")).pack(side="left")
+        tk.Label(top, text="Same item again?", bg=C["panel"], fg=C["accent"], font=(FONT_TITLE, 16, "bold")).pack(side="left")
         more = len(self.dup_pending) - 1
         if more > 0:
             tk.Label(top, text=f"   (+{more} more waiting)", bg=C["panel"], fg=C["muted"], font=("Segoe UI", 9)).pack(side="left")
         ttk.Button(top, text=f"Different {kind} - add it", command=lambda: self.dup_answer(True)).pack(side="right")
-        ttk.Button(top, text="Same item - skip it", style="Accent.TButton", command=lambda: self.dup_answer(False)).pack(side="right", padx=(0, 8))
+        ttk.Button(top, text="Same item - skip it", style="Primary.TButton", command=lambda: self.dup_answer(False)).pack(side="right", padx=(0, 8))
         tk.Label(card, text=f"{item['name']}  -  {item['base']}", bg=C["panel"], fg=C["rare"] if item["rarity"] == "Rare" else C["magic"],
-                 font=("Segoe UI", 11, "bold"), anchor="w").pack(fill="x", pady=(4, 2))
+                 font=("Segoe UI", 12, "bold"), anchor="w").pack(fill="x", pady=(4, 2))
         tk.Label(card, text="   ·   ".join(pretty(m["text"]) for m in item["mods"]), bg=C["panel"], fg=C["text"], font=("Segoe UI", 9),
                  anchor="w", justify="left", wraplength=1100).pack(fill="x")
         here = "already in your list" + (f" ({n} times)" if n > 1 else "") + (f" - priced {fmt_div(rec['est'])}" if rec.get("est") is not None else "")
         tk.Label(card, text=f"An item with the exact same name and mods is {here}.", bg=C["panel"], fg=C["muted"], anchor="w",
-                 font=("Segoe UI", 9)).pack(fill="x", pady=(6, 0))
+                 font=("Segoe UI", 9)).pack(fill="x", pady=(8, 0))
         self.dup_win = outer
         self.root.title(f"? Same item again? - {APP_TITLE}")
         if sys.platform == "win32":                       # flash the taskbar button, without taking focus from the game
@@ -2773,26 +2773,26 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         ns = types.SimpleNamespace(cat=cat, keys={}, filt=tk.StringVar())
         self.rt[cat] = ns
         ns.filt.trace_add("write", lambda *a: self.refresh_rules(cat))
-        rbar = tk.Frame(tab, bg=C["panel"], padx=10, pady=10)
+        rbar = tk.Frame(tab, bg=C["panel"], padx=8, pady=8)
         rbar.pack(fill="x")
-        tk.Label(rbar, text="Filter", bg=C["panel"], fg=C["muted"]).pack(side="left", padx=(0, 6))
+        tk.Label(rbar, text="Filter", bg=C["panel"], fg=C["muted"]).pack(side="left", padx=(0, 8))
         ttk.Entry(rbar, textvariable=ns.filt, width=18).pack(side="left")
-        ttk.Button(rbar, text="Export rules", command=self.export_rules).pack(side="left", padx=(14, 0))
-        ttk.Button(rbar, text="Import rules", command=self.import_rules).pack(side="left", padx=(6, 0))
+        ttk.Button(rbar, text="Export rules", command=self.export_rules).pack(side="left", padx=(16, 0))
+        ttk.Button(rbar, text="Import rules", command=self.import_rules).pack(side="left", padx=(8, 0))
         if cat not in SCOPED_CATS and any(mod_cat(k) == cat for k in COMMUNITY):   # (votes imported before 2.20.0)
-            ttk.Button(rbar, text="Remove imported", command=self.clear_imported_rules).pack(side="left", padx=(6, 0))
+            ttk.Button(rbar, text="Remove imported", command=self.clear_imported_rules, style="Danger.TButton").pack(side="left", padx=(8, 0))
         if cat not in SCOPED_CATS:                       # 2.20.0: tiers decide what's left out first
-            tbar = tk.Frame(tab, bg=C["panel"], padx=10)
+            tbar = tk.Frame(tab, bg=C["panel"], padx=8)
             tbar.pack(fill="x")
-            tk.Label(tbar, text="Tier for selected:", bg=C["panel"], fg=C["muted"]).pack(side="left", padx=(0, 6))
+            tk.Label(tbar, text="Tier for selected:", bg=C["panel"], fg=C["muted"]).pack(side="left", padx=(0, 8))
             for t in TIER_ORDER:
                 ttk.Button(tbar, text=t, width=3, command=lambda t=t: self.tiers_selected(t)).pack(side="left", padx=(0, 4))
-            ttk.Button(tbar, text="Auto", command=lambda: self.tiers_selected(None)).pack(side="left", padx=(4, 0))
+            ttk.Button(tbar, text="Auto", command=lambda: self.tiers_selected(None), style="Quiet.TButton").pack(side="left", padx=(4, 0))
             tk.Label(tbar, text="S matters most, D least. When no listing has all of an item's mods, the D-tier mods "
                                 "are left out first, then C. Not set: High = A, Normal = C.",
-                     bg=C["panel"], fg=C["muted"], font=("Segoe UI", 8)).pack(side="left", padx=12)
+                     bg=C["panel"], fg=C["muted"], font=("Segoe UI", 9)).pack(side="left", padx=12)
         for imp in ("ignore", "normal", "high"):
-            ttk.Button(rbar, text=IMPACT_LABEL[imp], command=lambda i=imp: self.rules_selected(i)).pack(side="right", padx=(6, 0))
+            ttk.Button(rbar, text=IMPACT_LABEL[imp], command=lambda i=imp: self.rules_selected(i)).pack(side="right", padx=(8, 0))
         tk.Label(rbar, text="Set selected to:", bg=C["panel"], fg=C["muted"]).pack(side="right", padx=8)
         if cat in SCOPED_CATS:                           # 2.6.0: what these rules are for
             tk.Label(tab, text={"waystone": "Waystones are priced on their numbers (pack size, rarity ...), not their "
@@ -3587,18 +3587,18 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         if rec is None:
             n = len(self.tree.selection()) if hasattr(self, "tree") else 0
             tk.Label(d, text=f"{n} items selected" if n > 1 else "Select an item\nto see its mods",
-                     bg=P2, fg=C["muted"], font=("Segoe UI", 11), justify="left", anchor="nw").pack(fill="x")
+                     bg=P2, fg=C["muted"], font=("Segoe UI", 10), justify="left", anchor="nw").pack(fill="x")
             return
         it = rec["item"]
         col = C["rare"] if it["rarity"] == "Rare" else C["magic"]
 
-        def box(parent, edge=None, pad=(14, 10)):
+        def box(parent, edge=None, pad=(16, 8)):
             return tk.Frame(parent, bg=P1, padx=pad[0], pady=pad[1], highlightthickness=1, highlightbackground=edge or C["line"])
 
         # ---- title row: tablet type chip and the Copy button
         trow = tk.Frame(d, bg=P2)
-        trow.pack(fill="x", pady=(0, 6))
-        tk.Label(trow, text=it["base"].upper(), bg="#1b2b4a", fg="#cfe0ff", font=("Segoe UI", 8, "bold"), padx=9, pady=3,
+        trow.pack(fill="x", pady=(0, 8))
+        tk.Label(trow, text=it["base"].upper(), bg="#1b2b4a", fg="#cfe0ff", font=("Segoe UI", 9, "bold"), padx=8, pady=4,
                  highlightthickness=1, highlightbackground=C["gold_dim"]).pack(side="left")
         ttk.Button(trow, text="Copy name  [C]", command=lambda: self.copy_name(rec, True)).pack(side="right")
         tk.Label(d, text=it["name"], bg=P2, fg=col, font=("Segoe UI", 16, "bold"), anchor="w",
@@ -3630,7 +3630,7 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
             head.pack(fill="x")
             left = tk.Frame(head, bg=P1)
             left.pack(side="left", fill="x", expand=True)
-            tk.Label(left, text="ESTIMATED VALUE", bg=P1, fg=C["muted"], font=("Segoe UI", 8, "bold"), anchor="w").pack(fill="x")
+            tk.Label(left, text="ESTIMATED VALUE", bg=P1, fg=C["muted"], font=("Segoe UI", 9, "bold"), anchor="w").pack(fill="x")
             tk.Label(left, text=big, bg=P1, fg=C["red"] if (nomatch or manual or not rec["prices"]) else C["good"],
                      font=(MONO, 22, "bold"), anchor="w").pack(fill="x")
             cf = rec.get("conf")
@@ -3639,13 +3639,13 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
                 right = tk.Frame(head, bg=P1)
                 right.pack(side="right", anchor="n")
                 tk.Label(right, text="Rough guess", bg=C["warn_bg"], fg=C["good"], font=("Segoe UI", 10, "bold"),
-                         padx=10, pady=3, highlightthickness=1, highlightbackground=C["good"]).pack(anchor="e")
+                         padx=8, pady=4, highlightthickness=1, highlightbackground=C["good"]).pack(anchor="e")
                 cf = None
             if cf and cf != "-":
                 tint = {"High": (C["ok_bg"], C["green"]), "Medium": (C["warn_bg"], C["good"]), "Low": (C["bad_bg"], C["red"])}.get(cf, (P2, C["muted"]))
                 right = tk.Frame(head, bg=P1)
                 right.pack(side="right", anchor="n")
-                tk.Label(right, text=f"{cf} Confidence", bg=tint[0], fg=tint[1], font=("Segoe UI", 10, "bold"), padx=10, pady=3,
+                tk.Label(right, text=f"{cf} Confidence", bg=tint[0], fg=tint[1], font=("Segoe UI", 10, "bold"), padx=8, pady=4,
                          highlightthickness=1, highlightbackground=tint[1]).pack(anchor="e")
                 if rec.get("spread"):
                     tk.Label(right, text=f"Spread: {rec['spread']:.0f}x", bg=P1, fg=C["muted"], font=(MONO, 9)).pack(anchor="e", pady=(4, 0))
@@ -3659,19 +3659,19 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
                 g.pack(fill="x", pady=(4, 0))
             why = rec.get("conf_why") or []
             if cf and cf not in ("-", "High") and why:
-                wb = tk.Frame(card, bg=C["warn_bg"], padx=10, pady=7, highlightthickness=1, highlightbackground="#7a6428")
+                wb = tk.Frame(card, bg=C["warn_bg"], padx=8, pady=8, highlightthickness=1, highlightbackground="#7a6428")
                 wb.pack(fill="x", pady=(8, 0))
                 tk.Label(wb, text="⚠  " + "; ".join(why) + ".", bg=C["warn_bg"], fg="#f0dca0", anchor="w", font=("Segoe UI", 9),
                          wraplength=wrap-70, justify="left").pack(fill="x")
             elif cf == "High" and why:
                 tk.Label(card, text="Confidence: " + "; ".join(why), bg=P1, fg=C["green"], font=("Segoe UI", 9, "bold"), anchor="w",
-                         wraplength=wrap-31, justify="left").pack(fill="x", pady=(6, 0))
+                         wraplength=wrap-31, justify="left").pack(fill="x", pady=(8, 0))
             if rec.get("est") is not None and not nomatch and not manual and not rec.get("skip"):
                 eq, opt = RATES.equivalents(rec["est"]), RATES.list_options(rec["est"])
                 if eq or opt:
-                    lb = tk.Frame(card, bg=P2, padx=10, pady=6, highlightthickness=1, highlightbackground=C["line"])
+                    lb = tk.Frame(card, bg=P2, padx=8, pady=8, highlightthickness=1, highlightbackground=C["line"])
                     lb.pack(fill="x", pady=(8, 0))
-                    tk.Label(lb, text="IF YOU LIST IT", bg=P2, fg=C["steel"], font=("Segoe UI", 8, "bold"), anchor="w").pack(fill="x")
+                    tk.Label(lb, text="IF YOU LIST IT", bg=P2, fg=C["steel"], font=("Segoe UI", 9, "bold"), anchor="w").pack(fill="x")
                     if eq:
                         tk.Label(lb, text="≈ " + "  ·  ".join(f"{_amt(a)} {cur}" for cur, a in eq), bg=P2, fg=C["text"], font=("Segoe UI", 9),
                                  anchor="w", wraplength=wrap-60, justify="left").pack(fill="x", pady=(2, 0))
@@ -3679,7 +3679,7 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
                         tk.Label(lb, text="Round to:  " + opt, bg=P2, fg=C["good"], font=("Segoe UI", 9, "bold"), anchor="w",
                                  wraplength=wrap-60, justify="left").pack(fill="x", pady=(2, 0))
             if rec.get("uses_note") and not nomatch and not manual:      # 1.45: a used tablet, priced by its uses left
-                ub = tk.Frame(card, bg=C["warn_bg"], padx=10, pady=7, highlightthickness=1, highlightbackground="#7a6428")
+                ub = tk.Frame(card, bg=C["warn_bg"], padx=8, pady=8, highlightthickness=1, highlightbackground="#7a6428")
                 ub.pack(fill="x", pady=(8, 0))
                 tk.Label(ub, text="✂  " + rec["uses_note"], bg=C["warn_bg"], fg="#f0dca0", anchor="w", font=("Segoe UI", 9),
                          wraplength=wrap-70, justify="left").pack(fill="x")
@@ -3695,31 +3695,31 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
             if nomatch:
                 tk.Label(card, text="None of the searches found a matching Instant Buyout listing, so no price is guessed. "
                                     "Try ticking off a mod below, or check the trade site by hand.",
-                         bg=P1, fg=C["text"], anchor="w", wraplength=wrap-31, justify="left").pack(fill="x", pady=(6, 0))
+                         bg=P1, fg=C["text"], anchor="w", wraplength=wrap-31, justify="left").pack(fill="x", pady=(8, 0))
             elif manual:
                 tk.Label(card, text=(("Not searched: " + rec["manual_why"] + ". Please price it by hand.") if rec.get("manual_why") else
                                      "The listings that match this tablet are priced wildly differently, so any single number "
                                      "would be a guess. Please price it by hand: open a search below and look at the listings."),
-                         bg=P1, fg=C["text"], anchor="w", wraplength=wrap-31, justify="left").pack(fill="x", pady=(6, 0))
+                         bg=P1, fg=C["text"], anchor="w", wraplength=wrap-31, justify="left").pack(fill="x", pady=(8, 0))
                 tk.Label(card, text="cheapest: " + ",  ".join(fmt_price(p) for p in rec["prices"][:5]),
                          bg=P1, fg=C["text"], anchor="w", wraplength=wrap-31, justify="left").pack(fill="x", pady=(4, 0))
             elif rec["prices"]:
                 tk.Label(card, text="cheapest: " + ",  ".join(fmt_price(p) for p in rec["prices"][:5]),
                          bg=P1, fg=C["text"], anchor="w", wraplength=wrap-31, justify="left").pack(fill="x", pady=(4, 0))
             if rec.get("qid"):
-                ttk.Button(card, text="Open on trade site  [O]", style="Accent.TButton", command=self.open_trade).pack(fill="x", pady=(10, 0))
+                ttk.Button(card, text="Open on trade site  [O]", style="Primary.TButton", command=self.open_trade).pack(fill="x", pady=(8, 0))
             stages = rec.get("stages") or []
             if stages:
                 tk.Label(d, text="HOW THIS PRICE WAS CALCULATED", bg=P2, fg=C["steel"], font=("Segoe UI", 9, "bold"),
-                         anchor="w").pack(fill="x", pady=(10, 4))
+                         anchor="w").pack(fill="x", pady=(8, 4))
                 for i, s_ in enumerate(stages, 1):
                     v = s_.get("verify") or {}
-                    sc = box(d, pad=(10, 6))
+                    sc = box(d, pad=(8, 8))
                     sc.pack(fill="x", pady=2)
                     top = tk.Frame(sc, bg=P1)
                     top.pack(fill="x")
                     link = tk.Label(top, text="open ↗", bg=P1, fg=C["accent"], cursor="hand2", font=("Segoe UI", 9, "bold"))
-                    link.pack(side="right", padx=(6, 0))
+                    link.pack(side="right", padx=(8, 0))
                     link.bind("<Button-1>", lambda _e, q=s_["qid"]: self.open_qid(q))
                     tk.Label(top, text=f"{i}. {s_['name']}", bg=P1, fg=C["text"] if s_.get("weight") else C["muted"],
                              font=("Segoe UI", 10, "bold"), anchor="w", wraplength=wrap-110, justify="left").pack(side="left", fill="x", expand=True)
@@ -3734,11 +3734,11 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
                         right = fmt_div(s_["est"]) + (f" · weight {s_['weight']:g}" if s_.get("weight") else " · not used")
                     tk.Label(bot, text=right, bg=P1, fg=C["good"] if s_.get("weight") else C["muted"], font=(MONO, 9, "bold")).pack(side="right")
         elif st == "error":
-            tk.Label(card, text="Couldn't price this", bg=P1, fg=C["red"], font=("Segoe UI", 13, "bold"), anchor="w").pack(fill="x")
+            tk.Label(card, text="Couldn't price this", bg=P1, fg=C["red"], font=("Segoe UI", 12, "bold"), anchor="w").pack(fill="x")
             tk.Label(card, text=rec["label"], bg=P1, fg=C["muted"], anchor="w", wraplength=wrap-31, justify="left").pack(fill="x")
         else:
             tk.Label(card, text="Pricing…" if st == "pricing" else "Waiting in line…", bg=P1, fg=C["muted"],
-                     font=("Segoe UI", 13), anchor="w").pack(fill="x")
+                     font=("Segoe UI", 12), anchor="w").pack(fill="x")
 
         head_txt = (f"TOTALS AND MODIFIERS ({len(it['mods'])})" if it.get("gear") else
                     f"{it['base'].upper().replace(' TABLET', '')} MODIFIERS ({len(it['mods'])})")
@@ -3747,14 +3747,14 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
                   "Min / Max: the values searched for  (this item only)" if it.get("gear") else
                   "☑ counts in the price search     ★ key mod     Min / Max: the values searched for  (this item only)")
         tk.Label(d, text=legend,
-                 bg=P2, fg=C["muted"], font=("Segoe UI", 8), anchor="w", wraplength=wrap, justify="left").pack(fill="x", pady=(0, 4))
+                 bg=P2, fg=C["muted"], font=("Segoe UI", 9), anchor="w", wraplength=wrap, justify="left").pack(fill="x", pady=(0, 4))
         for m in it["mods"]:
             med = MARKET.mod_median(it["base"], m.get("sid")) if m.get("sid") else None
             good = med is not None and med >= SETTINGS["good_div"]
             imp = mod_impact(rec, m)
             li = learned_info(norm(m["text"]))
             key = imp == "high" or (good and imp != "ignore")
-            row = tk.Frame(d, bg=P1, padx=10, pady=5, highlightthickness=1,
+            row = tk.Frame(d, bg=P1, padx=8, pady=4, highlightthickness=1,
                            highlightbackground=C["good"] if key else C["line"])
             row.pack(fill="x", pady=1)
             top = tk.Frame(row, bg=P1)
@@ -3764,8 +3764,8 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
             ttk.Checkbutton(top, variable=on_var, style="Mod.TCheckbutton", cursor="hand2",
                             command=lambda mm=m, v=on_var: self.toggle_mod(rec, mm, v.get())).pack(side="left")
             star = tk.Label(top, text="★" if imp == "high" else "☆", bg=P1, cursor="hand2",
-                            fg=C["good"] if imp == "high" else C["muted"], font=("Segoe UI", 13))
-            star.pack(side="right", padx=(6, 0))                   # click: mark / unmark as a key (high-impact) mod
+                            fg=C["good"] if imp == "high" else C["muted"], font=("Segoe UI", 12))
+            star.pack(side="right", padx=(8, 0))                   # click: mark / unmark as a key (high-impact) mod
             star.bind("<Button-1>", lambda _e, mm=m, cur=imp: self.set_item_impact(
                 rec, mm, "normal" if cur == "high" else "high"))
             tk.Label(top, text=m.get("shown") or pretty(m["text"]),
@@ -3773,27 +3773,27 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
                      fg=C["muted"] if imp == "ignore" else C["text"] if m.get("sid") or not rec["resolved"] else C["red"],
                      anchor="w", wraplength=wrap-131, justify="left").pack(side="left", fill="x", expand=True)
             meta = tk.Frame(row, bg=P1)
-            meta.pack(fill="x", pady=(3, 0))
+            meta.pack(fill="x", pady=(4, 0))
             rp = m.get("roll")
             if rp is not None:
                 cv = tk.Canvas(meta, width=90, height=8, bg=C["line"], highlightthickness=0)
                 cv.pack(side="left")
                 colr = C["green"] if rp >= 0.8 else C["good"] if rp >= 0.4 else C["red"]
                 cv.create_rectangle(0, 0, max(3, int(90 * rp)), 8, fill=colr, outline="")
-                tk.Label(meta, text=f"{round(rp * 100)}%", bg=P1, fg=C["muted"], font=("Segoe UI", 9)).pack(side="left", padx=(6, 8))
+                tk.Label(meta, text=f"{round(rp * 100)}%", bg=P1, fg=C["muted"], font=("Segoe UI", 9)).pack(side="left", padx=(8, 8))
             if m["tier"]:
-                tk.Label(meta, text=f"T{m['tier']}", bg=P1, fg=C["muted"], font=("Segoe UI", 9)).pack(side="left", padx=(0, 6))
+                tk.Label(meta, text=f"T{m['tier']}", bg=P1, fg=C["muted"], font=("Segoe UI", 9)).pack(side="left", padx=(0, 8))
             for fl in sorted(m["flags"]):
-                tk.Label(meta, text=fl, bg=P1, fg=FLAG_COLORS.get(fl, C["muted"]), font=("Segoe UI", 9, "bold")).pack(side="left", padx=(0, 6))
+                tk.Label(meta, text=fl, bg=P1, fg=FLAG_COLORS.get(fl, C["muted"]), font=("Segoe UI", 9, "bold")).pack(side="left", padx=(0, 8))
             if m.get("value") is not None and not m.get("novalue") and (m.get("sid") or not rec["resolved"]):
                 self.value_boxes(rec, m, row, imp)
             if m.get("note"):
-                tk.Label(row, text=m["note"], bg=P1, fg=C["muted"], font=("Segoe UI", 8), anchor="w",
+                tk.Label(row, text=m["note"], bg=P1, fg=C["muted"], font=("Segoe UI", 9), anchor="w",
                          wraplength=wrap-51, justify="left").pack(fill="x")
             if rec["resolved"] and not m.get("sid"):
                 tk.Label(meta, text="not found on trade site", bg=P1, fg=C["red"], font=("Segoe UI", 9)).pack(side="left")
                 if m.get("guess"):
-                    tk.Label(row, text=f"closest: {m['guess']}", bg=P1, fg=C["muted"], font=("Segoe UI", 8),
+                    tk.Label(row, text=f"closest: {m['guess']}", bg=P1, fg=C["muted"], font=("Segoe UI", 9),
                              anchor="w", wraplength=wrap-51, justify="left").pack(fill="x")
             elif med is not None:
                 tk.Label(meta, text=f"listings ask ~{fmt_div(med)}", bg=P1, fg=C["good"] if good else C["muted"],
@@ -3803,16 +3803,16 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
 
         self.search_filters_box(rec, d, wrap)                 # 2.4.1: seller, currency, corrupted, gear numbers
         if rec.get("opts") or any(m.get("value") is not None and not m.get("novalue") for m in it["mods"]):
-            ttk.Button(d, text="Search with these values  [Enter]", style="Accent.TButton",
-                       command=lambda: self.reprice([rec["id"]])).pack(fill="x", pady=(6, 0))
+            ttk.Button(d, text="Search with these values  [Enter]", style="Primary.TButton",
+                       command=lambda: self.reprice([rec["id"]])).pack(fill="x", pady=(8, 0))
         # ---- tracking: has this one been listed yet?
         ign = sum(1 for m in it["mods"] if mod_impact(rec, m) == "ignore")
         if ign:
             tk.Label(d, text=f"{ign} low-impact mod{'s' if ign != 1 else ''} left out of the price search",
-                     bg=P2, fg=C["muted"], font=("Segoe UI", 9), anchor="w").pack(fill="x", pady=(6, 0))
+                     bg=P2, fg=C["muted"], font=("Segoe UI", 9), anchor="w").pack(fill="x", pady=(8, 0))
         mark = rec.get("mark", "new")
         bx = box(d)
-        bx.pack(fill="x", pady=(10, 0))
+        bx.pack(fill="x", pady=(8, 0))
         tk.Label(bx, text="LISTING STATUS", bg=P1, fg=C["steel"], font=("Segoe UI", 9, "bold"), anchor="w").pack(fill="x")
         cur_txt = {"new": "Not listed yet",
                    "listed": "✔ Listed" + (f" for {rec['list_price']}" if rec.get("list_price") else ""),
@@ -3820,33 +3820,33 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
                    "removed": "✖ Removed (reforged / changed)"}[mark]
         tk.Label(bx, text=cur_txt, bg=P1, font=("Segoe UI", 12, "bold"), anchor="w",
                  fg={"new": C["text"], "listed": C["green"], "sold": "#7fe0c0", "removed": C["muted"]}[mark]
-                 ).pack(fill="x", pady=(2, 6))
+                 ).pack(fill="x", pady=(2, 8))
         prow = tk.Frame(bx, bg=P1)
-        prow.pack(fill="x", pady=(0, 6))
-        tk.Label(prow, text="Listed at", bg=P1, fg=C["muted"]).pack(side="left", padx=(0, 6))
+        prow.pack(fill="x", pady=(0, 8))
+        tk.Label(prow, text="Listed at", bg=P1, fg=C["muted"]).pack(side="left", padx=(0, 8))
         suggest = rec.get("list_price") or (fmt_div(rec["est"]) if rec.get("est") is not None and not rec.get("skip") else "")
         self.price_var = tk.StringVar(value=suggest)
         ttk.Entry(prow, textvariable=self.price_var, width=16).pack(side="left")
         if mark == "listed":
-            ttk.Button(bx, text="↺ Unmark listed (back to not listed)", style="Accent.TButton",
+            ttk.Button(bx, text="↺ Unmark listed (back to not listed)", style="Primary.TButton",
                        command=lambda: self.mark_selected("new")).pack(fill="x", pady=2)
         else:
-            ttk.Button(bx, text="✔ Mark as listed", style="Accent.TButton",
+            ttk.Button(bx, text="✔ Mark as listed", style="Primary.TButton",
                        command=lambda: self.mark_selected("listed")).pack(fill="x", pady=2)
         # 2.21.0: what it really sold for - the Mod book learns from real sales
         srow = tk.Frame(bx, bg=P1)
         srow.pack(fill="x", pady=(8, 2))
-        tk.Label(srow, text="Sold for", bg=P1, fg=C["muted"]).pack(side="left", padx=(0, 6))
+        tk.Label(srow, text="Sold for", bg=P1, fg=C["muted"]).pack(side="left", padx=(0, 8))
         self.sold_var = tk.StringVar(value=rec.get("sold_price") or "")
         se = ttk.Entry(srow, textvariable=self.sold_var, width=16)
         se.pack(side="left")
         se.bind("<Return>", lambda e: self.mark_selected("sold"))
         if mark == "sold":
-            ttk.Button(srow, text="↺ Unmark sold", command=lambda: self.mark_selected("new")).pack(side="left", padx=6)
+            ttk.Button(srow, text="↺ Unmark sold", command=lambda: self.mark_selected("new")).pack(side="left", padx=8)
         else:
-            ttk.Button(srow, text="💰 Mark as sold", command=lambda: self.mark_selected("sold")).pack(side="left", padx=6)
+            ttk.Button(srow, text="💰 Mark as sold", command=lambda: self.mark_selected("sold")).pack(side="left", padx=8)
         tk.Label(bx, text="A real sale teaches the Mod book what these mods are worth.", bg=P1, fg=C["muted"],
-                 font=("Segoe UI", 8), anchor="w").pack(fill="x")
+                 font=("Segoe UI", 9), anchor="w").pack(fill="x")
         if mark == "removed":
             ttk.Button(bx, text="↺ Unmark removed (back to not listed)", command=lambda: self.mark_selected("new")).pack(fill="x", pady=2)
         else:
@@ -3869,15 +3869,15 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         vb = tk.Frame(row, bg=P1)
         vb.pack(fill="x", pady=(4, 0))
         tk.Label(vb, text=f"your roll {m['value']:g}", bg=P1,
-                 fg=C["muted"], font=("Segoe UI", 9)).pack(side="left", padx=(0, 10))
+                 fg=C["muted"], font=("Segoe UI", 9)).pack(side="left", padx=(0, 8))
         boxes = {}
         for key in ("min", "max"):
-            tk.Label(vb, text=key.title(), bg=P1, fg=C["muted"], font=("Segoe UI", 9)).pack(side="left", padx=(0, 3))
+            tk.Label(vb, text=key.title(), bg=P1, fg=C["muted"], font=("Segoe UI", 9)).pack(side="left", padx=(0, 4))
             v = tk.StringVar(value="" if cur.get(key) is None else f"{cur[key]:g}")
             e = tk.Entry(vb, textvariable=v, width=6, bg=C["odd"], fg=C["text"], insertbackground=C["text"],
                          relief="flat", highlightthickness=1, highlightbackground=C["line"], highlightcolor=C["accent"],
                          font=("Segoe UI", 10), disabledbackground=C["panel2"])
-            e.pack(side="left", padx=(0, 10))
+            e.pack(side="left", padx=(0, 8))
             if imp == "ignore":
                 e.config(state="disabled")                # not searched at all, so its value can't matter
             boxes[key] = (v, e)

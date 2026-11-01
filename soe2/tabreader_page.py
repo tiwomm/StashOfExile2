@@ -20,27 +20,27 @@ class TabReaderPage:
         cfg = SETTINGS.setdefault("pctab", {})
         if cfg.get("mode") not in MODES:
             cfg["mode"] = MODES[0]
-        mrow = tk.Frame(tb, bg=P1, padx=10, pady=6)
+        mrow = tk.Frame(tb, bg=P1, padx=8, pady=8)
         mrow.pack(fill="x", before=tb.winfo_children()[0])
         tk.Label(mrow, text="Add items from", bg=P1, fg=C["muted"]).pack(side="left", padx=(0, 8))
         self.pc_mode = SegBar(mrow, MODES, value=cfg["mode"], command=lambda v: self.pctab_mode(),
-                              size=9, pad=(12, 3))
+                              size=9, pad=(12, 4))
         self.pc_mode.pack(side="left")
         # 2.31.0: Stash tab is BETA - a good idea that doesn't work well in practice yet
-        tk.Label(mrow, text="BETA", bg="#3a2a10", fg="#ffcf40", font=("Segoe UI", 7, "bold"), padx=5, pady=0,
+        tk.Label(mrow, text="BETA", bg="#3a2a10", fg="#ffcf40", font=("Segoe UI", 9, "bold"), padx=4, pady=0,
                  highlightthickness=1, highlightbackground="#7a6428").pack(side="left", padx=(4, 0))
-        self.pc_mode_hint = tk.Label(mrow, text="", bg=P1, fg=C["muted"], font=("Segoe UI", 8))
-        self.pc_mode_hint.pack(side="left", padx=10)
+        self.pc_mode_hint = tk.Label(mrow, text="", bg=P1, fg=C["muted"], font=("Segoe UI", 9))
+        self.pc_mode_hint.pack(side="left", padx=8)
         # ---- the Stash tab row (shown in that mode)
-        row = tk.Frame(tb, bg=P1, padx=10, pady=4)
+        row = tk.Frame(tb, bg=P1, padx=8, pady=4)
         self.pc_tabrow = row
         self.pc_tabrow_after = mrow
         tk.Label(row, text="Account", bg=P1, fg=C["muted"]).pack(side="left")
         self.pc_acc = tk.StringVar(value=SETTINGS.get("wealth_account", ""))
-        ttk.Entry(row, textvariable=self.pc_acc, width=18).pack(side="left", padx=(6, 12))
+        ttk.Entry(row, textvariable=self.pc_acc, width=18).pack(side="left", padx=(8, 12))
         tk.Label(row, text="Tab's price", bg=P1, fg=C["muted"]).pack(side="left")
         self.pc_amt = tk.StringVar(value=str(cfg.get("amount") or ""))
-        ttk.Entry(row, textvariable=self.pc_amt, width=9).pack(side="left", padx=(6, 4))
+        ttk.Entry(row, textvariable=self.pc_amt, width=9).pack(side="left", padx=(8, 4))
         self.pc_cur = tk.StringVar(value=dict(WEALTH_CURRENCIES).get(cfg.get("currency") or "divine", "Divine Orb"))
         cb = ttk.Combobox(row, textvariable=self.pc_cur, values=[n for _c, n in WEALTH_CURRENCIES], state="readonly",
                           width=24)
@@ -48,13 +48,13 @@ class TabReaderPage:
         cb.pack(side="left")
         self.pc_stop = ttk.Button(row, text="Stop", command=self.pctab_stop, state="disabled")
         self.pc_stop.pack(side="right")
-        self.pc_read_btn = ttk.Button(row, text="Read tab", style="Accent.TButton", command=self.pctab_read)
-        self.pc_read_btn.pack(side="right", padx=(0, 6))
+        self.pc_read_btn = ttk.Button(row, text="Read tab", style="Primary.TButton", command=self.pctab_read)
+        self.pc_read_btn.pack(side="right", padx=(0, 8))
         self.pc_to_wealth = tk.Label(row, text="＋ Count it in Wealth", bg=P1, fg="#6ea8ff", cursor="hand2",
                                      font=("Segoe UI", 9, "underline"))          # 2.18.0: the same tab in Wealth
         self.pc_to_wealth.bind("<Button-1>", lambda e: self.pctab_to_wealth())
         how = tk.Label(row, text="ⓘ How", bg=P1, fg="#6ea8ff", cursor="hand2", font=("Segoe UI", 9, "underline"))
-        how.pack(side="right", padx=(0, 10))
+        how.pack(side="right", padx=(0, 8))
         how.bind("<Button-1>", lambda e: self.pctab_explain())
         self.pc_beta = tk.Label(tb, text="⚠ BETA: reading a stash tab may not work as intended and is of limited "
                                          "use - many tabs read only partly. Ctrl+Alt+C on each item is the reliable "
@@ -76,7 +76,7 @@ class TabReaderPage:
             self.empty_lbl.config(text=self.empty_text)
         if mode == "Stash tab":
             self.pc_tabrow.pack(fill="x", after=self.pc_tabrow_after)
-            self.pc_beta.pack(fill="x", after=self.pc_tabrow, padx=10, pady=(2, 0))
+            self.pc_beta.pack(fill="x", after=self.pc_tabrow, padx=8, pady=(2, 0))
             self.pc_msg.pack(fill="x", after=self.pc_beta)
             self.pc_mode_hint.config(text="reads a public stash tab and adds what it can (Ctrl+Alt+C still works)")
             if not self.pc_msg.cget("text"):
@@ -96,7 +96,7 @@ class TabReaderPage:
         have = any(t["amount"] == cfg.get("amount") and t["currency"] == cfg.get("currency") for t in WEALTH.tabs)
         if cfg.get("amount") and cfg.get("read_ok") and not have:
             if not self.pc_to_wealth.winfo_ismapped():
-                self.pc_to_wealth.pack(side="right", padx=(0, 10))
+                self.pc_to_wealth.pack(side="right", padx=(0, 8))
         else:
             self.pc_to_wealth.pack_forget()
 

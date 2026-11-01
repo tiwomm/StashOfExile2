@@ -115,13 +115,13 @@ class OverlayWindow(tk.Toplevel):
         self.bar.pack(fill="x")
         self.bar.configure(cursor="" if self.locked else "fleur")
         self.bar.create_text(8, BAR_H // 2, text=f"{icon}  {title}", anchor="w", fill=title_fg,
-                             font=("Segoe UI", 8, "bold"))
+                             font=("Segoe UI", 9, "bold"))
         self._btns = []
         buttons = [("×", self._close, "#7a2a20")]
         if lockable:
             buttons.append(("🔒" if self.locked else "🔓", self._toggle_lock, btn_bg))
         for txt, cmd, bg in buttons:
-            b = tk.Label(self.bar, text=txt, bg=bg, fg=title_fg, font=("Segoe UI", 7, "bold"), width=2,
+            b = tk.Label(self.bar, text=txt, bg=bg, fg=title_fg, font=("Segoe UI", 9, "bold"), width=2,
                          highlightthickness=1, highlightbackground=btn_line, cursor="hand2")
             b.bind("<Button-1>", lambda e, c=cmd: c())
             self._btns.append(self.bar.create_window(0, BAR_H // 2, window=b, anchor="e"))

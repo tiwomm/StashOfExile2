@@ -53,15 +53,15 @@ class RegexPage:
         # ---- 2.4.0: two pages - building a search, and your Favorites
         outer = tab
         self.rx_page = SegBar(outer, ["Build a search", "★ Favorites"], command=lambda v: self.rx_show_page(),
-                              size=10, pad=(16, 5))
-        self.rx_page.pack(anchor="w", padx=10, pady=(8, 0))
+                              size=10, pad=(16, 4))
+        self.rx_page.pack(anchor="w", padx=8, pady=(8, 0))
         self.rx_fav_page = tk.Frame(outer, bg=P1)
         self.rx_build_page = tab = tk.Frame(outer, bg=P1)
         tab.pack(fill="both", expand=True)
         self.rx_build_favorites(self.rx_fav_page)
 
         # ---- top row: what to search, add to favorites
-        top = tk.Frame(tab, bg=P1, padx=10, pady=8)
+        top = tk.Frame(tab, bg=P1, padx=8, pady=8)
         top.pack(fill="x")
         for k in R.KINDS:
             ttk.Radiobutton(top, text=KIND_NAMES[k], value=k, variable=self.rx_kind,
@@ -69,26 +69,26 @@ class RegexPage:
         ttk.Button(top, text="☆ Add to Favorites", command=self.rx_save_preset).pack(side="right")
         self.rx_preset = tk.StringVar()                  # (the favorite last opened or saved, for its name)
         # 2.2.0: the Regex key - one key in game puts a search on the clipboard
-        hk = tk.Frame(tab, bg=P1, padx=10)
-        hk.pack(fill="x", pady=(0, 6))
+        hk = tk.Frame(tab, bg=P1, padx=8)
+        hk.pack(fill="x", pady=(0, 8))
         tk.Label(hk, text="Regex key", bg=P1, fg=C["text"]).pack(side="left")
         self.rx_key_var = tk.StringVar(value=SETTINGS.get("regex_key", ""))
-        KeyCapture(hk, self.rx_key_var, width=14, on_change=self.rx_key_set).pack(side="left", padx=6)
+        KeyCapture(hk, self.rx_key_var, width=14, on_change=self.rx_key_set).pack(side="left", padx=8)
         tk.Label(hk, text="copies", bg=P1, fg=C["muted"]).pack(side="left")
         self.rx_hk_var = tk.StringVar()
         self.rx_hk_box = ttk.Combobox(hk, textvariable=self.rx_hk_var, state="readonly", width=34)
-        self.rx_hk_box.pack(side="left", padx=6)
+        self.rx_hk_box.pack(side="left", padx=8)
         self.rx_hk_box.bind("<<ComboboxSelected>>", lambda e: self.rx_hotkey_pick())
         tk.Label(hk, text="- press it in game, then Ctrl+F and Ctrl+V in your stash.", bg=P1, fg=C["muted"],
                  font=("Segoe UI", 9)).pack(side="left")
 
         # ---- the search string
         res = tk.Frame(tab, bg=P2, padx=12, pady=8, highlightthickness=1, highlightbackground=C["line"])
-        res.pack(fill="x", padx=10)
+        res.pack(fill="x", padx=8)
         btns = tk.Frame(res, bg=P2)
-        btns.pack(side="right", anchor="n", padx=(10, 0))
-        ttk.Button(btns, text="Copy", style="Accent.TButton", command=self.rx_copy, width=10).pack(side="left")
-        ttk.Button(btns, text="Reset", command=self.rx_reset, width=8).pack(side="left", padx=6)
+        btns.pack(side="right", anchor="n", padx=(8, 0))
+        ttk.Button(btns, text="Copy", style="Primary.TButton", command=self.rx_copy, width=10).pack(side="left")
+        ttk.Button(btns, text="Reset", command=self.rx_reset, width=8).pack(side="left", padx=8)
         ttk.Button(btns, text="Test on copied item", command=self.rx_paste_test).pack(side="left")
         self.rx_out = tk.Text(res, height=2, bg=C["odd"], fg=C["good"], relief="flat", highlightthickness=1,
                               highlightbackground=C["line"], font=(MONO, 10), wrap="char")
@@ -106,12 +106,12 @@ class RegexPage:
 
         # ---- option cards (rebuilt per item type)
         self.rx_cards = tk.Frame(tab, bg=P1)
-        self.rx_cards.pack(fill="x", padx=10, pady=(8, 0))
+        self.rx_cards.pack(fill="x", padx=8, pady=(8, 0))
 
         # ---- the two mod lists
         fbar = tk.Frame(tab, bg=P1)
-        fbar.pack(fill="x", padx=10, pady=(8, 4))
-        tk.Label(fbar, text="Filter mods", bg=P1, fg=C["muted"]).pack(side="left", padx=(0, 6))
+        fbar.pack(fill="x", padx=8, pady=(8, 4))
+        tk.Label(fbar, text="Filter mods", bg=P1, fg=C["muted"]).pack(side="left", padx=(0, 8))
         self.rx_q = tk.StringVar()
         self.rx_q.trace_add("write", lambda *a: self.root.after_idle(self.rx_filter))
         ttk.Entry(fbar, textvariable=self.rx_q, width=30).pack(side="left")
@@ -122,27 +122,27 @@ class RegexPage:
         self.rx_info.pack(side="right")
         # 2.0 beta 20: the Mod book's view of each mod
         vbar = tk.Frame(tab, bg=P1)
-        vbar.pack(fill="x", padx=10, pady=(0, 4))
+        vbar.pack(fill="x", padx=8, pady=(0, 4))
         tk.Label(vbar, text="★ = valuable in your Mod book (your rules, or learned from prices). Right-click a mod to rate it.", bg=P1,
                  fg="#ffd9a8", font=("Segoe UI", 9)).pack(side="left")
         self.rx_val_first = tk.BooleanVar(value=bool(self.rx_state.get("_val_first", True)))
         self.rx_only_val = tk.BooleanVar(value=False)
         ttk.Checkbutton(vbar, text="★ first", variable=self.rx_val_first,
-                        command=self.rx_val_opts).pack(side="left", padx=(14, 0))
+                        command=self.rx_val_opts).pack(side="left", padx=(16, 0))
         ttk.Checkbutton(vbar, text="Only ★", variable=self.rx_only_val,
-                        command=self.rx_filter).pack(side="left", padx=(10, 0))
+                        command=self.rx_filter).pack(side="left", padx=(8, 0))
         self.rx_val_btn = ttk.Button(vbar, text="★ Select valuable", command=self.rx_select_valuable)
-        self.rx_val_btn.pack(side="left", padx=(14, 0))
+        self.rx_val_btn.pack(side="left", padx=(16, 0))
         lists = tk.Frame(tab, bg=P1)
-        lists.pack(fill="both", expand=True, padx=10, pady=(0, 8))
+        lists.pack(fill="both", expand=True, padx=8, pady=(0, 8))
         lists.columnconfigure(0, weight=1, uniform="l")
         lists.columnconfigure(1, weight=1, uniform="l")
         lists.rowconfigure(0, weight=1)
         self.rx_lists = {}
         for col, side, title in ((0, "want", "I WANT THESE MODS"), (1, "avoid", "I DON'T WANT ANY OF THESE MODS")):
             box = tk.Frame(lists, bg=P2, highlightthickness=1, highlightbackground=C["line"])
-            box.grid(row=0, column=col, sticky="nsew", padx=(0, 5) if col == 0 else (5, 0))
-            hdr = tk.Frame(box, bg=P2, padx=10, pady=6)
+            box.grid(row=0, column=col, sticky="nsew", padx=(0, 4) if col == 0 else (5, 0))
+            hdr = tk.Frame(box, bg=P2, padx=8, pady=8)
             hdr.pack(fill="x")
             tk.Label(hdr, text=title, bg=P2, fg=C["steel"], font=("Segoe UI", 9, "bold")).pack(side="left")
             cnt = tk.Label(hdr, text="", bg=P2, fg=C["good"], font=("Segoe UI", 9, "bold"))
@@ -150,11 +150,11 @@ class RegexPage:
             if side == "want":
                 self.rx_match = {}
                 for val, label in ((True, "All"), (False, "Any")):
-                    b = tk.Label(hdr, text=label, padx=10, pady=2, cursor="hand2", font=("Segoe UI", 9, "bold"))
+                    b = tk.Label(hdr, text=label, padx=8, pady=2, cursor="hand2", font=("Segoe UI", 9, "bold"))
                     b.pack(side="right")
                     b.bind("<Button-1>", lambda e, v=val: self.rx_set_all(v))
                     self.rx_match[val] = b
-                tk.Label(hdr, text="Match", bg=P2, fg=C["muted"]).pack(side="right", padx=(0, 6))
+                tk.Label(hdr, text="Match", bg=P2, fg=C["muted"]).pack(side="right", padx=(0, 8))
             self.rx_lists[side] = {"tree": self._rx_tree(box, side), "rows": {}, "count": cnt}
         self.rx_editor = None
         self.rx_kind_changed(save=False)
@@ -166,7 +166,7 @@ class RegexPage:
         st = ttk.Style(self.root)
         st.configure("Rx.Treeview", background=C["panel2"], fieldbackground=C["panel2"], foreground=C["text"],
                      rowheight=26, borderwidth=0, font=("Segoe UI", 10))
-        st.configure("Rx.Treeview.Heading", padding=(6, 4))
+        st.configure("Rx.Treeview.Heading", padding=(8, 4))
         st.map("Rx.Treeview", background=[], foreground=[])
         tv = ttk.Treeview(box, columns=("val", "star", "mod", "where"), show="headings", selectmode="none",
                           style="Rx.Treeview")
@@ -290,7 +290,7 @@ class RegexPage:
             self.rx_schedule_opts()
 
         def card(title, col):
-            f = tk.Frame(box, bg=P2, padx=12, pady=6, highlightthickness=1, highlightbackground=C["line"])
+            f = tk.Frame(box, bg=P2, padx=12, pady=8, highlightthickness=1, highlightbackground=C["line"])
             f.grid(row=0, column=col, sticky="nsew", padx=(0 if col == 0 else 5, 0 if col == 2 else 5))
             tk.Label(f, text=title, bg=P2, fg=C["steel"], font=("Segoe UI", 9, "bold"), anchor="w").grid(
                 row=0, column=0, columnspan=4, sticky="w", pady=(0, 2))
@@ -299,7 +299,7 @@ class RegexPage:
         def check(parent, key, label, row, col=0, value=None):
             v = tk.BooleanVar(value=bool(o.get(key)) if value is None else value)
             self.rx_vars[key] = v
-            ttk.Checkbutton(parent, text=label, variable=v, command=changed).grid(row=row, column=col, sticky="w", pady=0, padx=(0, 10))
+            ttk.Checkbutton(parent, text=label, variable=v, command=changed).grid(row=row, column=col, sticky="w", pady=0, padx=(0, 8))
 
         def number(parent, key, label, row, col=0):
             tk.Label(parent, text=label, bg=P2, fg=C["text"], anchor="w").grid(row=row, column=col, sticky="w", pady=1)
@@ -773,14 +773,14 @@ class RegexPage:
 
     def rx_build_favorites(self, page):
         P1 = C["panel"]
-        bar = tk.Frame(page, bg=P1, padx=10, pady=8)
+        bar = tk.Frame(page, bg=P1, padx=8, pady=8)
         bar.pack(fill="x")
         for text, fn, accent in (("Copy", self.rx_fav_copy, True), ("Open in the builder", self.rx_fav_open, False),
                                  ("Use for the Regex key", self.rx_fav_hotkey, False), ("Rename…", self.rx_fav_rename, False),
                                  ("Delete", lambda: self.rx_fav_delete(self.rx_fav_tv.selection()), False)):
-            ttk.Button(bar, text=text, command=fn, style="Accent.TButton" if accent else "TButton").pack(side="left",
-                                                                                                    padx=(0, 6))
-        self.undo_button(bar, "regex").pack(side="left", padx=(0, 6))
+            ttk.Button(bar, text=text, command=fn, style="Primary.TButton" if accent else "TButton").pack(side="left",
+                                                                                                    padx=(0, 8))
+        self.undo_button(bar, "regex").pack(side="left", padx=(0, 8))
         self.rx_fav_msg = tk.Label(page, text="Your saved searches, all item types together. 📋 Copy (or double-click) "
                                               "copies one; Delete removes the selected ones (Ctrl+Z undoes). They're kept in "
                                               "the app's data folder, so updates don't touch them.",
@@ -788,7 +788,7 @@ class RegexPage:
         self.rx_fav_msg.pack(fill="x")
         self.rx_fav_msg.bind("<Configure>", lambda e: self.rx_fav_msg.config(wraplength=max(300, e.width - 24)))
         tf = tk.Frame(page, bg=P1)
-        tf.pack(fill="both", expand=True, padx=10, pady=(6, 10))
+        tf.pack(fill="both", expand=True, padx=8, pady=(8, 8))
         cols = (("copy", "", 70, "center"), ("name", "Name", 200, "w"), ("kind", "For", 90, "w"),
                 ("search", "Search", 420, "w"), ("len", "Length", 60, "e"))
         tv = ttk.Treeview(tf, columns=[c[0] for c in cols], show="headings")
@@ -805,7 +805,7 @@ class RegexPage:
         self.rx_fav_tv = tv
         self.list_register("regex", tv, delete=self.rx_fav_delete)
         self.rx_fav_empty = tk.Label(tf, text="No Favorites yet.\nBuild a search, then press ☆ Add to Favorites.",
-                                     bg=P1, fg=C["muted"], font=("Segoe UI", 11), justify="center")
+                                     bg=P1, fg=C["muted"], font=("Segoe UI", 10), justify="center")
 
     def rx_fav_search(self, f):
         want = list((f["state"].get("want") or {}).items())
