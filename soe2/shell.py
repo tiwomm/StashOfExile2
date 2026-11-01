@@ -161,10 +161,27 @@ class DeskWindow(tk.Toplevel):
         self._d = {}
 
     # ---- title bar
+    def add_child(self, text, cmd):
+        """2.33.0: a child tool's button in this (parent) window's title bar, left of the window buttons."""
+        b = tk.Label(self.bar, text=text, bg="#22345a", fg="#e8eefc", font=("Segoe UI", 9, "bold"), padx=8,
+                     highlightthickness=1, highlightbackground="#5b77ad", cursor="hand2")
+        b.bind("<Button-1>", lambda e: cmd())
+        b.bind("<Enter>", lambda e: b.config(bg="#2f4a7c"))
+        b.bind("<Leave>", lambda e: b.config(bg="#22345a"))
+        self.child_btns = getattr(self, "child_btns", []) + [(b, self.bar.create_window(0, 15, window=b, anchor="e"))]
+        self._bar_resized()
+        return b
+
     def _bar_resized(self, _e=None):
         w = self.bar.winfo_width()
         for n, item in enumerate(self.btns):
             self.bar.coords(item, w - 6 - n * 30, 15)
+        x = w - 6 - len(self.btns) * 30 - 8
+        for b, item in getattr(self, "child_btns", []):
+            if not b.winfo_ismapped() and getattr(b, "_off", False):
+                continue
+            self.bar.coords(item, x, 15)
+            x -= b.winfo_reqwidth() + 6
 
     def set_active(self, on):
         if self.utility:
@@ -739,8 +756,38 @@ class Shell:
         return not getattr(mod, "labs", False) or self.labs_on()
 
     def listed(self, mod):
-        """On the dock, the Toolkit menu and the desktop (hidden ones open from inside other windows)."""
-        return self.visible(mod) and not getattr(mod, "hidden", False)
+        """On the dock, the Toolkit menu and the desktop (hidden ones open from inside other windows; child tools
+        (2.33.0) live under their parent - its title bar and indented in the Toolkit menu)."""
+        return self.visible(mod) and not getattr(mod, "hidden", False) and not getattr(mod, "parent", None)
+
+    def children(self, key):
+        """2.33.0: the child tools of a module (visible ones, in order)."""
+        return [m for m in self.modules.values() if getattr(m, "parent", None) == key and self.visible(m)
+                and not getattr(m, "hidden", False)]
+
+    def link_children(self):
+        """2.33.0: once every module is registered - each child tool gets a button in its parent's title bar, and
+        its window is titled "Parent › Child"."""
+        for mod in self.modules.values():
+            par = getattr(mod, "parent", None)
+            if not par or par not in self.windows:
+                continue
+            pw, cw = self.windows[par], self.windows[mod.key]
+            ptitle = self.modules[par].title
+            cw.title = f"{ptitle} › {mod.title}"
+            cw.bar.itemconfigure(cw.lbl, text=f"{mod.icon}  {ptitle} › {mod.title}")
+            b = pw.add_child(f"{mod.icon} {mod.title}", lambda k=mod.key: self.open(k))
+            b._mod = mod
+        self.paint_children()
+
+    def paint_children(self):
+        """Labs child tools (Market Insights) show only while Labs is on."""
+        for w in self.windows.values():
+            for b, item in getattr(w, "child_btns", []):
+                on = self.visible(b._mod) if hasattr(b, "_mod") else True
+                w.bar.itemconfigure(item, state="normal" if on else "hidden")
+                b._off = not on
+            w._bar_resized()
 
     def set_labs(self, on):
         self.S["labs"] = bool(on)
@@ -754,6 +801,7 @@ class Shell:
         if self.cfg.get("desktop_icons"):
             self.draw_icons()
         self.refresh_taskbar()
+        self.paint_children()
 
     # ---- modules
     def register(self, mod):
@@ -1179,10 +1227,14 @@ class Shell:
                 for w in c.winfo_children()[1:]:
                     w.destroy()
             words = q.get().strip().lower()
+            def hit(mod):
+                return not words or words in (mod.title + " " + getattr(mod, "blurb", "")).lower()
+
             for k, mod in self.modules.items():
                 if mod.kind not in lists or not self.listed(mod):
                     continue
-                if words and words not in (mod.title + " " + getattr(mod, "blurb", "")).lower():
+                kids = [c for c in self.children(k) if hit(c)]
+                if not hit(mod) and not kids:
                     continue
                 st = mod.status() if hasattr(mod, "status") else None
                 dot = ("● " if mod.kind == "utility" else "")
@@ -1194,6 +1246,13 @@ class Shell:
                 row.bind("<Enter>", lambda ev, r=row: r.config(bg=C["sel"]))
                 row.bind("<Leave>", lambda ev, r=row: r.config(bg=P1))
                 row.bind("<Button-1>", lambda ev, kk=k: self.open(kk))
+                for c in kids:                          # 2.33.0: its child tools, indented under it
+                    sub = tk.Label(lists[mod.kind], text=f"↳  {c.icon}  {c.title}" + ("  ·beta" if getattr(c, "labs", False) else ""),
+                                   bg=P1, anchor="w", padx=26, pady=4, fg=C["muted"], cursor="hand2", font=("Segoe UI", 9))
+                    sub.pack(fill="x")
+                    sub.bind("<Enter>", lambda ev, r=sub: r.config(bg=C["sel"], fg=C["text"]))
+                    sub.bind("<Leave>", lambda ev, r=sub: r.config(bg=P1, fg=C["muted"]))
+                    sub.bind("<Button-1>", lambda ev, kk=c.key: self.open(kk))
         q.trace_add("write", fill)
         fill()
         foot = tk.Frame(m, bg=P1, highlightthickness=0)
@@ -1213,7 +1272,8 @@ class Shell:
     def _menu_enter(self, words):
         words = words.strip().lower()
         for k, mod in self.modules.items():
-            if mod.kind in TILE and self.listed(mod) and (not words or words in mod.title.lower()):
+            if mod.kind in TILE and (self.listed(mod) or getattr(mod, "parent", None) and self.visible(mod)) \
+                    and (not words or words in mod.title.lower()):
                 self.open(k)
                 return
 
