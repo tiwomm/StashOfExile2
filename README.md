@@ -14,6 +14,7 @@ Hover an item in game and press **Ctrl+Alt+C**. It goes into a list and is price
 - **Regex:** builds stash-search strings for tablets, waystones, relics, jewels and gear (at least, ranges, at most), with saved Favorites.
 - **Exchange rates:** poe.ninja rates, an Exchange Helper, and an Arbitrage tab for uneven Currency Exchange rates.
 - **Map library:** every map, citadel and pinnacle fight, ranked S to D or Avoid by you and the community; share ranks as a file. Opens from the Session tracker's title bar.
+- **Expedition Remnant Price Checker:** open a remnant's reward list, press a key, and each reward gets its poe.ninja price next to it (the best one ★). In Session tracker › Alerts and the timer's Helpers bar. The idea comes from [PoE Ancients Price Helper](https://github.com/pedro-quiterio/PoeAncientsPriceHelper) by Pedro Quitério. None of its code is used, because it isn't open source.
 - **Session tracker:** time, maps and deaths per session with a timer over the game, plus Delirium, Breach (Hiveblood) and Ritual alerts.
 - **Utilities:** chat command keys, a sticky note, a calculator.
 - **Labs (off by default):** Wealth (stash value over time), Market Insights and an offline game-data search (with every anoint, its Liquid Emotions and their poe.ninja prices).

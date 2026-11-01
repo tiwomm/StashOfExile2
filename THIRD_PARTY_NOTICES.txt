@@ -68,3 +68,13 @@ Icons (2.0 beta 13): the app icon (stashofexile2.ico and the picture inside the 
 pictures in soe2/templates are small crops of the game's screen that the Delirium alert compares with your own
 screen; they are not shown anywhere. Path of Exile 2 is a trademark of Grinding Gear Games; StashOfExile2 is a fan-made
 tool and is not affiliated with or endorsed by Grinding Gear Games.
+
+------------------------------------------------------------------------------
+Credit for an idea (no code, text or images used): the Expedition Remnant Price Checker (soe2/remnant.py, 2.37.0)
+follows the idea of PoE Ancients Price Helper by Pedro Quitério
+(https://github.com/pedro-quiterio/PoeAncientsPriceHelper). That project has no open-source licence, so nothing from it
+is copied; StashOfExile2's version is written from scratch.
+
+------------------------------------------------------------------------------
+The Windows build reads screen text with Windows' own OCR (Windows.Media.Ocr) through PyWinRT
+(https://github.com/pywinrt/pywinrt, the winrt-* packages), MIT License, Copyright (c) the PyWinRT authors.

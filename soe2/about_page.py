@@ -108,6 +108,14 @@ class AboutPage:
                 "or endorsed by Grinding Gear Games."):
             tk.Label(box, text=line, bg=P2, fg=C["text"], anchor="w", justify="left", wraplength=600,
                      font=("Segoe UI", 9)).pack(fill="x", pady=(4, 0))
+        # 2.37.0: credit for an idea (no code used - that project isn't open source)
+        from .remnant import CREDIT_NAME, CREDIT_URL
+        cr = tk.Label(box, text=f"Expedition Remnant Price Checker: the idea comes from {CREDIT_NAME} - thank you! "
+                                "None of its code is used (it isn't open source); this is our own version. "
+                                "Its GitHub page ›", bg=P2, fg=C["blue"], anchor="w", justify="left", wraplength=600,
+                      font=("Segoe UI", 9), cursor="hand2")
+        cr.pack(fill="x", pady=(4, 0))
+        cr.bind("<Button-1>", lambda e: open_link(CREDIT_URL))
 
     # ================================================================ quick start (first start)
     def show_quickstart(self, force=False):

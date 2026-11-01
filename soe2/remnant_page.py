@@ -1,0 +1,217 @@
+"""Expedition Remnant Price Checker in the app (2.37.0): the "Remnant" helper next to Delirium, Breach and Ritual -
+its row in Session tracker > Alerts, its cell in the timer's Helpers bar, its key, and the price tags over the game.
+The reading and matching are in remnant.py. Idea: PoE Ancients Price Helper by Pedro Quitério (no code from it)."""
+import threading
+import time
+import tkinter as tk
+
+from . import remnant as RM
+from .config import save_json, SETTINGS
+from .pricefmt import fmt_div
+
+TRANSPARENT = "#010203"
+TAG_BG, TAG_BEST = "#101826", "#2a2108"
+
+
+class RemnantPage:
+    def remnant_cfg(self):
+        c = SETTINGS.setdefault("remnant", {})
+        c.setdefault("on", False)
+        c.setdefault("key", RM.DEFAULT_KEY)
+        c.setdefault("sound", True)
+        return c
+
+    def remnant_status(self):
+        """off / on / warn (switched on but Windows' text reader can't be used)."""
+        if not self.remnant_cfg().get("on"):
+            return "off"
+        if getattr(self, "rm_problem", None) is None:
+            self.rm_problem = RM.ocr_available()
+        return "warn" if self.rm_problem else "on"
+
+    def remnant_text(self, row):
+        c = self.remnant_cfg()
+        from .overlay import key_label
+        if not c.get("on"):
+            return row["what"]
+        if self.remnant_status() == "warn":
+            return f"Can't read the screen: {self.rm_problem}."
+        last = getattr(self, "rm_last", "")
+        return (f"On - open a remnant's reward list and press {key_label(c.get('key') or RM.DEFAULT_KEY)}"
+                + (f"  ·  {last}" if last else ""))
+
+    def remnant_toggle(self, want):
+        c = self.remnant_cfg()
+        c["on"] = bool(want)
+        save_json("settings.json", SETTINGS)
+        self.rm_problem = None
+        if not want:
+            self.remnant_hide()
+        st = self.remnant_status()
+        return f"Can't read the screen: {self.rm_problem}." if want and st == "warn" else None
+
+    # ---------------- the key (keyboard watcher thread)
+    def remnant_on_key(self, vk, ctrl, alt, shift):
+        c = SETTINGS.get("remnant") or {}
+        if not c.get("on"):
+            return False
+        from .overlay import game_active, parse_key
+        k = parse_key(c.get("key") or RM.DEFAULT_KEY)
+        if k and k == (vk, ctrl, alt, shift):
+            self.ui_q.put(("remnant_check",))
+            return bool(game_active())
+        return False
+
+    # ---------------- one check: picture -> OCR -> prices -> tags
+    def ev_remnant_check(self):
+        if getattr(self, "rm_win", None) is not None:          # the key again: tags off
+            self.remnant_hide()
+            return
+        if getattr(self, "rm_busy", False):
+            return
+        self.rm_busy = True
+        from .alerts_page import game_rect
+        g = game_rect()
+        rect = (g[0], g[1], g[0] + g[2], g[1] + g[3]) if g else (0, 0, self.root.winfo_screenwidth(),
+                                                                  self.root.winfo_screenheight())
+        league = SETTINGS.get("league", "")
+
+        def work():
+            err, rows = "", []
+            try:
+                img = RM.grab(rect)
+                lines = RM.ocr(img)
+                rows = self.remnant_price(lines, league)
+            except RM.OcrUnavailable as e:
+                err = str(e)
+            except Exception as e:
+                err = f"{e.__class__.__name__}: {e}"
+                self.log_error("Expedition Remnant Price Checker")
+            self.ui_q.put(("remnant_done", rect, rows, err))
+        threading.Thread(target=work, daemon=True).start()
+
+    @staticmethod
+    def remnant_names_values(league):
+        """(Names, value_of) from the poe.ninja prices Wealth uses (fetched if over an hour old)."""
+        from .wealth import NINJA_EXCHANGE_TYPES, NINJA_ITEM_TYPES, WPRICES
+        try:
+            WPRICES.ensure(league)
+        except Exception:
+            pass
+        names = []
+        for typ in NINJA_EXCHANGE_TYPES:
+            names += [ln[1] for ln in (WPRICES.parts.get(typ) or {}).get("lines", [])]
+        for typ in NINJA_ITEM_TYPES:
+            names += [ln[0] for ln in (WPRICES.parts.get(typ) or {}).get("lines", [])]
+
+        def value_of(name):
+            v = WPRICES.named(name)
+            if v is not None:
+                return v
+            cands = getattr(WPRICES, "uniques", {}).get(name.lower()) or []
+            return max(cands, key=lambda c: c[2])[1] if cands else None
+        return RM.Names(names), value_of
+
+    def remnant_price(self, lines, league):
+        names, value_of = self.remnant_names_values(league)
+        return RM.price_lines(lines, names, value_of)
+
+    def ev_remnant_done(self, rect, rows, err):
+        self.rm_busy = False
+        if err:
+            self.rm_problem = err if "text reader" in err or "Windows" in err else self.rm_problem
+            self.rm_last = "couldn't read the screen"
+            self.app_toast(err, "Expedition Remnant Price Checker", kind="error")
+        elif not rows:
+            self.rm_last = "no rewards found on screen"
+            self.app_toast("No remnant rewards found on the screen. Open a remnant's reward list first, then press the "
+                           "key.", "Expedition Remnant Price Checker", kind="warning")
+        else:
+            self.remnant_show(rect, rows)
+            best = next((r for r in rows if r.get("best")), None)
+            self.rm_last = f"{time.strftime('%H:%M')}: {len(rows)} priced" + (f", best {best['name']}" if best else "")
+            if best and best["total"] >= 1 and self.remnant_cfg().get("sound", True):
+                try:
+                    import winsound
+                    winsound.MessageBeep(winsound.MB_ICONASTERISK)
+                except Exception:
+                    self.root.bell()
+        try:
+            self.alerts_refresh()
+            self.alerts_overlay_redraw()
+        except Exception:
+            pass
+
+    # ---------------- the tags over the game
+    def remnant_show(self, rect, rows, secs=RM.SHOW_SECS):
+        self.remnant_hide()
+        l_, t, r, b = rect
+        win = tk.Toplevel(self.root)
+        win.overrideredirect(True)
+        win.attributes("-topmost", True)
+        win.configure(bg=TRANSPARENT)
+        try:
+            win.attributes("-transparentcolor", TRANSPARENT)
+        except tk.TclError:
+            pass
+        win.geometry(f"{r - l_}x{b - t}+{l_}+{t}")
+        cv = tk.Canvas(win, bg=TRANSPARENT, highlightthickness=0, width=r - l_, height=b - t)
+        cv.pack(fill="both", expand=True)
+        ui = max(0.7, (b - t) / 1440.0)
+        size = -int(18 * ui)
+        for row in rows:
+            x0, y0, x1, y1 = row["box"]
+            if row["total"] is None:
+                txt, fg = "no price", "#9aa6bd"
+            else:
+                txt = fmt_div(row["total"])
+                if row["qty"] > 1:
+                    txt = f"{txt}  ({row['qty']} × {fmt_div(row['each'])})"
+                fg = "#ffd25a" if row.get("best") else "#e8eefc"
+            if row.get("best"):
+                txt = "★ " + txt
+            if row.get("label"):                               # (the Test: an example line to tag)
+                cv.create_text(x0, (y0 + y1) // 2, text=row["label"], anchor="w", fill="#c8b98a",
+                               font=("Segoe UI", size))
+            item = cv.create_text(x1 + 14, (y0 + y1) // 2, text=txt, anchor="w", fill=fg,
+                                  font=("Segoe UI", size, "bold"))
+            bx = cv.bbox(item)
+            if bx:
+                pad = 4
+                rect_id = cv.create_rectangle(bx[0] - pad * 2, bx[1] - pad, bx[2] + pad * 2, bx[3] + pad,
+                                              fill=TAG_BEST if row.get("best") else TAG_BG,
+                                              outline="#ffd25a" if row.get("best") else "#3d5582")
+                cv.tag_lower(rect_id, item)
+        win.update_idletasks()
+        try:
+            from .alerts_page import click_through, force_topmost
+            click_through(win)
+            force_topmost(win)
+        except Exception:
+            pass
+        self.rm_win = win
+        self.root.after(int(secs * 1000), lambda: getattr(self, "rm_win", None) is win and self.remnant_hide())
+
+    def remnant_hide(self):
+        w, self.rm_win = getattr(self, "rm_win", None), None
+        if w is not None:
+            try:
+                w.destroy()
+            except tk.TclError:
+                pass
+
+    def remnant_test(self):
+        """Test: example tags in the middle of the screen (no picture, no OCR)."""
+        sw, sh = self.root.winfo_screenwidth(), self.root.winfo_screenheight()
+        x, y = sw // 2 - 260, sh // 2 - 90
+        rows = [{"name": "Orb of Alchemy", "qty": 3, "each": 0.004, "total": 0.012, "box": (x, y, x + 200, y + 24)},
+                {"name": "Greater Rune of Leadership", "qty": 1, "each": 0.6, "total": 0.6,
+                 "box": (x, y + 60, x + 300, y + 84)},
+                {"name": "Divine Orb", "qty": 1, "each": 1.0, "total": 1.0, "box": (x, y + 120, x + 140, y + 144)}]
+        for r in rows:
+            r["best"] = r["name"] == "Divine Orb"
+            r["label"] = r["name"] + (f" x{r['qty']}" if r["qty"] > 1 else "")
+        self.remnant_show((0, 0, sw, sh), rows, secs=6)
+        self.rm_last = "test: example tags for 6 seconds"
+        return ("Example price tags show in the middle of your screen for 6 seconds. (Idea: PoE Ancients Price Helper "
+                "by Pedro Quitério - see Settings > About.)")
