@@ -26,8 +26,12 @@ VERSION HISTORY
        its key (Ctrl+Alt+R, Settings > Hotkeys) takes one picture of the game window, reads it with Windows.Media.Ocr
        (PyWinRT winrt-* packages, --collect-submodules winrt), matches lines to poe.ninja names (WPRICES, all exchange
        types + uniques; split_qty for "x3" / "3x"; difflib >= 0.84), and draws click-through price tags right of each
-       line (amount x each, best one ★, "no price"); the key again or 30 s takes them off. No calibration: only lines
-       that match an item get a tag. Off Windows / without an OCR language it says why (status warn). CI checks.yml
+       line (amount x each, best one ★, "no price"); the key again or 30 s takes them off. Auto (on by default):
+       a light watcher looks at where the reward book opens - remnant.AREA, in game heights from the top-left (the
+       game scales its UI by height and anchors the book left; measured on the user's 2560x1440 screenshot) - every
+       0.7 s while the game is in front; only when that spot is mostly parchment (parchment_share >= 0.35, from a
+       40x40 thumbnail) and changed does it read the text; tags come and go with the book. A key press that finds the
+       list elsewhere (UI scale) learns that spot (learn_area). Client.txt logs nothing for remnants. Off Windows / without an OCR language it says why (status warn). CI checks.yml
        runs remnant.selftest() on Windows (informational). Credit: the idea is PoE Ancients Price Helper by Pedro
        Quitério (github.com/pedro-quiterio/PoeAncientsPriceHelper) - not open source, so no code, text or images
        from it; credited in About, README, THIRD_PARTY_NOTICES and the code.

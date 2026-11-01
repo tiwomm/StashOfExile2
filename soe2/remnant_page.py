@@ -19,6 +19,8 @@ class RemnantPage:
         c.setdefault("on", False)
         c.setdefault("key", RM.DEFAULT_KEY)
         c.setdefault("sound", True)
+        c.setdefault("auto", True)                  # Auto: watch where the book opens; tags come and go by themselves
+        c.setdefault("area", None)                  # None = RM.AREA; set only when a key press found it elsewhere
         return c
 
     def remnant_status(self):
@@ -37,8 +39,12 @@ class RemnantPage:
         if self.remnant_status() == "warn":
             return f"Can't read the screen: {self.rm_problem}."
         last = getattr(self, "rm_last", "")
-        return (f"On - open a remnant's reward list and press {key_label(c.get('key') or RM.DEFAULT_KEY)}"
-                + (f"  ·  {last}" if last else ""))
+        key = key_label(c.get("key") or RM.DEFAULT_KEY)
+        if c.get("auto"):
+            head = f"On - Auto: prices show by themselves when a remnant's reward book opens ({key} works too)"
+        else:
+            head = f"On - open a remnant's reward list and press {key}"
+        return head + (f"  ·  {last}" if last else "")
 
     def remnant_toggle(self, want):
         c = self.remnant_cfg()
@@ -48,7 +54,101 @@ class RemnantPage:
         if not want:
             self.remnant_hide()
         st = self.remnant_status()
+        self.remnant_auto_sync()
         return f"Can't read the screen: {self.rm_problem}." if want and st == "warn" else None
+
+    def remnant_auto_changed(self, on):
+        self.remnant_cfg()["auto"] = bool(on)
+        save_json("settings.json", SETTINGS)
+        self.remnant_auto_sync()
+        try:
+            self.alerts_refresh()
+        except Exception:
+            pass
+
+    # ---------------- Auto: a light watcher on the learned area
+    def remnant_auto_sync(self):
+        """Start / stop the watcher to match the settings (on + Auto + an area learned + OCR works)."""
+        c = self.remnant_cfg()
+        want = bool(c.get("on") and c.get("auto") and self.remnant_status() == "on")
+        running = getattr(self, "rm_auto_gen", 0) and getattr(self, "rm_auto_alive", False)
+        if want and not running:
+            self.rm_auto_gen = getattr(self, "rm_auto_gen", 0) + 1
+            self.rm_auto_alive = True
+            threading.Thread(target=self._remnant_watch, args=(self.rm_auto_gen,), daemon=True).start()
+        elif not want and running:
+            self.rm_auto_gen += 1                      # the thread sees a newer generation and stops
+            self.rm_auto_alive = False
+            if getattr(self, "rm_auto_shown", False):
+                self.remnant_hide()
+
+    def _remnant_watch(self, gen):
+        from .alerts_page import game_rect
+        from .overlay import game_active
+        last, misses = None, 0
+        try:
+            while gen == getattr(self, "rm_auto_gen", 0):
+                time.sleep(RM.AUTO_POLL)
+                c = SETTINGS.get("remnant") or {}
+                area = c.get("area") or RM.AREA
+                if not game_active() or getattr(self, "rm_busy", False):
+                    continue
+                g = game_rect()
+                if not g:
+                    continue
+                rect = (g[0], g[1], g[0] + g[2], g[1] + g[3])
+                ar = RM.area_rect(area, rect)
+                try:
+                    img = RM.grab(ar)
+                    if RM.parchment_share(img) < RM.PARCHMENT:     # no book there: nothing to read (cheap)
+                        lines, last = [], None
+                        misses += 1
+                        if misses == RM.AUTO_GONE:
+                            self.ui_q.put(("remnant_auto", rect, []))
+                        continue
+                    th = RM.thumb(img)
+                    if not RM.changed(last, th):
+                        continue
+                    last = th
+                    lines = RM.shift(RM.ocr(img), ar[0] - rect[0], ar[1] - rect[1])
+                    rows = self.remnant_price(lines, SETTINGS.get("league", ""))
+                except RM.OcrUnavailable:
+                    break
+                except Exception:
+                    continue
+                misses = 0 if rows else misses + 1
+                if rows or misses >= RM.AUTO_GONE:
+                    self.ui_q.put(("remnant_auto", rect, rows))
+        finally:
+            if gen == getattr(self, "rm_auto_gen", 0):
+                self.rm_auto_alive = False
+
+    def ev_remnant_auto(self, rect, rows):
+        sig = tuple((r["name"], r["qty"]) for r in rows)
+        if rows:
+            if sig != getattr(self, "rm_auto_sig", None) or getattr(self, "rm_win", None) is None:
+                self.remnant_show(rect, rows, secs=None)
+                self.rm_auto_shown = True
+                self.rm_auto_sig = sig
+                self.remnant_note(rows, auto=True)
+        elif getattr(self, "rm_auto_shown", False):
+            self.remnant_hide()
+            self.rm_auto_sig = None
+        try:
+            self.alerts_refresh()
+        except Exception:
+            pass
+
+    def remnant_note(self, rows, auto=False):
+        best = next((r for r in rows if r.get("best")), None)
+        self.rm_last = (f"{time.strftime('%H:%M')}: {len(rows)} priced" + (f", best {best['name']}" if best else "")
+                        + (" (Auto)" if auto else ""))
+        if best and best["total"] >= 1 and self.remnant_cfg().get("sound", True):
+            try:
+                import winsound
+                winsound.MessageBeep(winsound.MB_ICONASTERISK)
+            except Exception:
+                self.root.bell()
 
     # ---------------- the key (keyboard watcher thread)
     def remnant_on_key(self, vk, ctrl, alt, shift):
@@ -64,8 +164,8 @@ class RemnantPage:
 
     # ---------------- one check: picture -> OCR -> prices -> tags
     def ev_remnant_check(self):
-        if getattr(self, "rm_win", None) is not None:          # the key again: tags off
-            self.remnant_hide()
+        if getattr(self, "rm_win", None) is not None and not getattr(self, "rm_auto_shown", False):
+            self.remnant_hide()                                # the key again: tags off
             return
         if getattr(self, "rm_busy", False):
             return
@@ -113,8 +213,13 @@ class RemnantPage:
         return RM.Names(names), value_of
 
     def remnant_price(self, lines, league):
-        names, value_of = self.remnant_names_values(league)
-        return RM.price_lines(lines, names, value_of)
+        from .wealth import WPRICES
+        key = (league, getattr(WPRICES, "ts", 0))
+        cache = getattr(self, "rm_names", None)
+        if not cache or cache[0] != key or time.time() - cache[3] > 600:     # (Auto reads often: build names once)
+            names, value_of = self.remnant_names_values(league)
+            cache = self.rm_names = ((league, getattr(WPRICES, "ts", 0)), names, value_of, time.time())
+        return RM.price_lines(lines, cache[1], cache[2])
 
     def ev_remnant_done(self, rect, rows, err):
         self.rm_busy = False
@@ -128,14 +233,13 @@ class RemnantPage:
                            "key.", "Expedition Remnant Price Checker", kind="warning")
         else:
             self.remnant_show(rect, rows)
-            best = next((r for r in rows if r.get("best")), None)
-            self.rm_last = f"{time.strftime('%H:%M')}: {len(rows)} priced" + (f", best {best['name']}" if best else "")
-            if best and best["total"] >= 1 and self.remnant_cfg().get("sound", True):
-                try:
-                    import winsound
-                    winsound.MessageBeep(winsound.MB_ICONASTERISK)
-                except Exception:
-                    self.root.bell()
+            self.remnant_note(rows)
+            c = self.remnant_cfg()                     # found somewhere Auto doesn't look (UI scale)? look there
+            if not RM.inside(rows, c.get("area") or RM.AREA, rect):
+                c["area"] = RM.learn_area(rows, rect)
+                save_json("settings.json", SETTINGS)
+            self.rm_auto_sig = tuple((r["name"], r["qty"]) for r in rows)
+            self.remnant_auto_sync()
         try:
             self.alerts_refresh()
             self.alerts_overlay_redraw()
@@ -190,9 +294,12 @@ class RemnantPage:
         except Exception:
             pass
         self.rm_win = win
-        self.root.after(int(secs * 1000), lambda: getattr(self, "rm_win", None) is win and self.remnant_hide())
+        self.rm_auto_shown = False
+        if secs:                                               # (Auto's tags stay until the list closes)
+            self.root.after(int(secs * 1000), lambda: getattr(self, "rm_win", None) is win and self.remnant_hide())
 
     def remnant_hide(self):
+        self.rm_auto_shown = False
         w, self.rm_win = getattr(self, "rm_win", None), None
         if w is not None:
             try:

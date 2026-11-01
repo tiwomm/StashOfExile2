@@ -149,6 +149,8 @@ class AlertsPage:
             self.root.after(1500, self.breach_start)
         if self.ritual_cfg().get("on"):
             self.root.after(2500, self.ritual_start)
+        if self.remnant_cfg().get("on"):                 # 2.37.0: the Remnant Auto watcher
+            self.root.after(3000, self.remnant_auto_sync)
 
     # ================================================================ the panel (Session tracker, main page)
     def build_alerts_panel(self, parent):
@@ -171,8 +173,8 @@ class AlertsPage:
                                      "(reads Client.txt)", lambda: self.breach_alert(test=True)),
                 ("ritual", "Ritual", "reads the Ritual counter (0/3 ...) from your screen; reminds you if you leave a "
                                      "map after starting its rituals but not finishing them", self.alerts_test_ritual),
-                ("remnant", "Remnant", "Expedition Remnant Price Checker: a key on a remnant's reward list prices "
-                                       "each reward (reads your screen once per press)", self.alerts_test_remnant)):
+                ("remnant", "Remnant", "Expedition Remnant Price Checker: each reward in a remnant's book gets its "
+                                       "poe.ninja price, by itself (Auto) or with its key", self.alerts_test_remnant)):
             row = tk.Frame(box, bg=P2)
             row.pack(fill="x", pady=(8, 0))
             dot = tk.Label(row, text="●", bg=P2, fg=DOT["off"], font=("Segoe UI", 10))
@@ -188,6 +190,14 @@ class AlertsPage:
                 self.al_leave = tk.BooleanVar(value=bool(self.breach_cfg().get("leave_reminder", True)))
                 ttk.Checkbutton(row, text="Remind me when I leave the map", variable=self.al_leave,
                                 command=self.alerts_leave_changed).pack(side="left", padx=(4, 0))
+            if key == "remnant":                   # 2.37.0: Auto - the list is found and priced by itself
+                self.al_rauto = tk.BooleanVar(value=bool(self.remnant_cfg().get("auto")))
+                ab = ttk.Checkbutton(row, text="Auto (no key needed)", variable=self.al_rauto,
+                                     command=lambda: self.remnant_auto_changed(self.al_rauto.get()))
+                ab.pack(side="left", padx=(4, 0))
+                Tooltip(ab, "Prices show by themselves when a remnant's reward book opens: the app watches the spot "
+                            "where it opens (scaled to your resolution, like the Delirium watcher) - no box to draw. "
+                            "Off: only the key prices it.")
             if key == "ritual":                    # 2.14.0
                 self.al_rleave = tk.BooleanVar(value=bool(self.ritual_cfg().get("leave_reminder", True)))
                 ttk.Checkbutton(row, text="Remind me when I leave the map", variable=self.al_rleave,
