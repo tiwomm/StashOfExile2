@@ -21,6 +21,10 @@ NEXT = [
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.40.1": [
+        "Stash tab reads every item, even hundreds of the same kind (a tab of 455 waystones read 234 before). Wealth "
+        "syncs read big tabs completely too.",
+    ],
     "2.40.0": [
         "Runeshape tips: while a remnant's prices show, a small list next to them rates every runeshape for loot, "
         "S to D (S: Opulent, Power, Oath). Switch it off in Session tracker > Alerts (Runeshape tips).",

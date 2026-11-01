@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU GPL v3.0 (see LICENSE). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.40.0
+VERSION 2.40.1
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,6 +19,13 @@ VERSION 2.40.0
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.40.1
+       Stash tab (and Wealth) read every item of a big tab. The user's tab: 455 listings, 2.40.0 read 234 - 201 and
+       220 rare tier-15 waystones were each one item-level slice of over 100 (one search returns 100). wealth_children
+       now goes further when a slice is still too big: every single item level ("82+" -> 82 ... ILVL_TOP 86), then
+       corrupted / not (misc_filters), then the same slice read from its other end (sort indexed desc, "__sort") -
+       that last one is an extra view, so the slice's own 100 are kept too (both_ends). test_v2401: a stand-in trade
+       site with the real filters reproduces 234 on 2.40.0 and reads all 455 now (51 searches).
   2.40.0
        Runeshape tips: next to the remnant price tags, a small click-through box "Runeshapes - community picks" with
        the S and A tier runeshapes for loot (remnant.RUNE_TIERS: S Opulent, Power, Oath; A Time, Death, Soul, Bond -
@@ -1171,7 +1178,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.40.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.40.1"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 

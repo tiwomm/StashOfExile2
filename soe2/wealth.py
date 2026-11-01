@@ -81,6 +81,7 @@ WEALTH_RARITIES = ["normal", "magic", "rare", "unique"]
 
 
 WEALTH_ILVLS = [(None, 44), (45, 64), (65, 74), (75, 79), (80, 81), (82, None)]
+ILVL_TOP = 86                      # 2.40.1: the highest item level split one by one ("82+" -> 82, 83 ... 86)
 
 
 NINJA_ECON = (os.environ.get("SOE2_NINJA") or "https://poe.ninja") + "/poe2/api/economy"
@@ -127,6 +128,18 @@ def wealth_children(extra, level):
             v = {k: n for k, n in (("min", lo), ("max", hi)) if n is not None}
             out.append((with_("ilvl", v), "ilvl", f"ilvl {lo or 1}-{hi}" if hi else f"ilvl {lo}+"))
         return out
+    # 2.40.1: still over 100 (the user's tab: 201 and 220 rare tier-15 waystones in one item-level range)
+    if level == "ilvl":                            # every single item level in the range
+        r = extra.get("ilvl") or {}
+        lo, hi = int(r.get("min") or 1), int(r.get("max") or ILVL_TOP)
+        if hi - lo >= 1:
+            return [(with_("ilvl", {"min": n, "max": n}), "ilvl1", f"ilvl {n}") for n in range(lo, hi + 1)]
+        level = "ilvl1"
+    if level == "ilvl1":                           # corrupted or not (every item is one or the other)
+        return [(with_("misc_filters/corrupted", {"option": o}), "corrupt", "corrupted" if o == "true" else "not corrupted")
+                for o in ("false", "true")]
+    if level == "corrupt":                         # the same slice read from its other end: the newest 100 as well
+        return [(with_("__sort", {"indexed": "desc"}), "sorted", "newest first")]
     return []
 
 
@@ -135,16 +148,19 @@ def wealth_query(account, tab, extra):
                                              "sale_type": {"option": "any"},          # 2.38.0: as the site's own link
                                              "price": {"option": tab["currency"], "min": tab["amount"], "max": tab["amount"]}}}}
     query = {"status": {"option": "any"}, "filters": filters}
+    sort = {"price": "asc"}
     for k, v in (extra or {}).items():             # 2.40.0: "__type" = the base type; "group/filter" = another group
         if k == "__type":
             query["type"] = v
+        elif k == "__sort":                        # 2.40.1: read the same slice from the other end
+            sort = dict(v)
         elif "/" in k:
             g, f = k.split("/", 1)
             filters.setdefault(g, {"filters": {}})["filters"][f] = v
         else:
             filters.setdefault("type_filters", {"filters": {}})["filters"][k] = v
     # status "any": Premium tab listings are whisper listings, so they are not "securable" (instant buyout)
-    return {"query": query, "sort": {"price": "asc"}}
+    return {"query": query, "sort": sort}
 
 
 _BASES = {}
@@ -793,12 +809,16 @@ class WealthJobs:
         if level == "top":
             t["total"], t["qid"] = total, qid
         kids = wealth_children(extra, level) if total > len(ids) and ids else []
-        if kids:
+        both_ends = len(kids) == 1 and kids[0][1] == "sorted"     # 2.40.1: an extra view, not a split
+        if kids and both_ends:
+            ex, lv, lab = kids[0]
+            self.add(WEALTH_PRIO, "wealth_search", sid, tab_id, ex, lv, f"{label}, {lab}" if label else lab)
+        if kids and not both_ends:
             for ex, lv, lab in kids:
                 self.add(WEALTH_PRIO, "wealth_search", sid, tab_id, ex, lv, f"{label}, {lab}" if label else lab)
             return
-        if total > len(ids):
-            t["warnings"].append(f"{label or 'The tab'}: {total} items but only {len(ids)} can be read. "
+        if total > (2 * len(ids) if level == "sorted" else len(ids)) and not both_ends:
+            t["warnings"].append(f"{label or 'The tab'}: {total} items but only {2 * len(ids) if level == 'sorted' else len(ids)} can be read. "
                                  f"Move some to another tab with its own price.")
         new = [i for i in ids if i not in t["seen"]]
         t["seen"].update(new)

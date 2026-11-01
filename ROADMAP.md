@@ -2,7 +2,7 @@
 
 > **GGG ToS safety check - read first.** One key press = one action, only when you press it · nothing acts in the game by itself (watchers only look and show) · never touch the game's memory, code or traffic · the mouse is never moved or clicked for you · it reads only your clipboard, Client.txt, screen pixels, the trade site (within its limits) and poe.ninja. Every change must pass all of [TOS.md](TOS.md) (`tools/check_tos.py` checks the code on every PR).
 
-**Current version: 2.40.0**
+**Current version: 2.40.1**
 
 Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds features, 2.10.1 only fixes. Each step below is one release; we work through them top to bottom.
 
@@ -64,6 +64,7 @@ Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds f
 | 2.39.0 | In-game clock: time and date on the Session timer (12 / 24-hour setting), switch in Settings > Appearance > Clock. |
 | 2.39.1 | Remnant checker: rewards poe.ninja doesn't list show "no price"; a similar name can't lend its price. |
 | 2.40.0 | Runeshape tips next to the remnant prices (every runeshape, S to D); Stash tab reads whole tabs (not 20); Ritual leave-map reminder fixed; banners see-through in every theme; Stash tab currency kept. |
+| 2.40.1 | Stash tab and Wealth read every item of big tabs (hundreds of the same kind). |
 
 ## ▶ Next up
 

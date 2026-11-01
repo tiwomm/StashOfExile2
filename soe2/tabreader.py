@@ -75,12 +75,16 @@ class TabReaderJobs:
             PCTAB["found"], PCTAB["qid"] = total, qid
             PCTAB["log"].append(f"search: {total} listing(s) at that price")
         kids = wealth_children(extra, level) if total > len(ids) and ids else []
-        if kids:                                       # more than one search can return: split it up, like Wealth
+        both_ends = len(kids) == 1 and kids[0][1] == "sorted"     # 2.40.1: an extra view, not a split
+        if kids and both_ends:
+            ex, lv, lab = kids[0]
+            self.add(PCTAB_PRIO, "pctab_search", gen, ex, lv, f"{label}, {lab}" if label else lab)
+        if kids and not both_ends:                                       # more than one search can return: split it up, like Wealth
             for ex, lv, lab in kids:
                 self.add(PCTAB_PRIO, "pctab_search", gen, ex, lv, f"{label}, {lab}" if label else lab)
             return
-        if total > len(ids):
-            PCTAB["warnings"].append(f"{label or 'The tab'} has {total} items, but only {len(ids)} can be read.")
+        if total > (2 * len(ids) if level == "sorted" else len(ids)) and not both_ends:
+            PCTAB["warnings"].append(f"{label or 'The tab'} has {total} items, but only {2 * len(ids) if level == 'sorted' else len(ids)} can be read.")
         new = [i for i in ids if i not in PCTAB["seen"]]
         PCTAB["seen"].update(new)
         for i in range(0, len(new), 10):
