@@ -879,7 +879,8 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
 
         from .shell import windows_24h
         row = section("Appearance", "Clock", "The clock at the bottom right shows your PC's own time. It starts out "
-                                             "the way your Windows clock is set.")
+                                             "the way your Windows clock is set. The Session timer can show it "
+                                             "too, so you see the time in game.")
         fmt = SETTINGS.get("clock_format", "auto")
         if fmt not in ("12", "24"):
             fmt = "24" if windows_24h() else "12"
@@ -888,6 +889,9 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
                           values=["12-hour (3:45 PM)", "24-hour (15:45)"])
         cb.pack(side="left")
         cb.bind("<<ComboboxSelected>>", lambda e: self.on_clock())
+        self.ingame_clock_var = tk.BooleanVar(value=bool(self.tracker_cfg().get("clock", True)))     # 2.39.0
+        ttk.Checkbutton(row, text="Also show it on the Session timer (in game)", variable=self.ingame_clock_var,
+                        command=self.on_ingame_clock).pack(side="left", padx=(16, 0))
 
         from .style import ACCENTS, THEMES
         row = section("Appearance", "Look of the app", "Colours and text size for every window. Changes take effect "
@@ -1123,6 +1127,15 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         save_json("settings.json", SETTINGS)
         if self.shell.clock is not None:
             self.shell.clock.config(text=_shell.clock_text())
+        if getattr(self, "tk_overlay", None) is not None:              # 2.39.0: the timer's clock follows it too
+            self.tracker_overlay_draw(self.tracker_numbers())
+
+    def on_ingame_clock(self):
+        """2.39.0: the clock + date line on the Session timer, on or off."""
+        self.tracker_cfg()["clock"] = bool(self.ingame_clock_var.get())
+        self.tracker_save()
+        if getattr(self, "tk_overlay", None) is not None:
+            self.tracker_overlay_build()
 
     def on_update_options(self, which="update"):
         if which == "update" and self.auto_update_var.get():     # installing automatically includes checking
