@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU GPL v3.0 (see LICENSE). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.44.0
+VERSION 2.45.0
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,6 +19,18 @@ VERSION 2.44.0
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.45.0
+       Money Makers > Farm Ledger (was Run tracker; ledger.py = data + figures + CSV, ledger_page.py = UI). A SETUP =
+       strat (optional) + waystone + tablets / other items (count, runs each lasts) + atlas trees and notes + other
+       costs; a change after logs = a new VERSION (what_changed). Items: Ctrl+Alt+C while the setup is open; priced by
+       the price checker out of sight (record src "ledger", removed once priced; never loaded back) or your own price;
+       then "which mods matter?" (key_mods). Runs: counted from Client.txt (breach_area -> fl_area: a new map = a run,
+       back through a portal isn't; log_wanted includes it) or a key (Ctrl+Alt+N). Every N runs (per setup) the loot
+       box (parchment OverlayWindow) opens back in the hideout: Ctrl+Alt+C drops land in it as "7 Divine Orb" lines,
+       priced item by item from poe.ninja (Wealth's prices, remnant_names_values); type the loot or the profit and the
+       other follows; Later / Skip. Sheet: logs or loot, sort, filter (words, >1 / <0), double-click edits, Σ row,
+       Ctrl+C rows; figures; chart; compare (setups, or one setup's versions); CSV (CSV_LOG_HEAD), every drop, setup
+       file (.json), summary. The Run tracker's runs move in as "Imported runs". test_v2450.
   2.44.0
        Overlays (was Session tracker): everything over the game in one window, one tab each - Session timer (the old
        tracker page), Mechanic Helper (the old Alerts panel), Notes (was its own window: the Notes module is hidden and
@@ -1207,7 +1219,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.44.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.45.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 

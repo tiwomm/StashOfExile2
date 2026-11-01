@@ -29,16 +29,15 @@ class MoneyMakersPage:
     def build_money_window(self, body):
         P1 = C["panel"]
         self.mm_strats, self.mm_sel, self.mm_sort = [], None, ("thoughts_per_click", False)
-        self.mm_run = None                                   # {"strat", "start"} while a run is going
-        self.mm_page = SegBar(body, ["Strats", "Lucrative Strats", "Tablet Crafting", "Run tracker"],
+        self.mm_page = SegBar(body, ["Strats", "Lucrative Strats", "Tablet Crafting", "Farm Ledger"],
                               command=lambda v: self.mm_show_page(), size=10, pad=(16, 4))
         self.mm_page.pack(anchor="w", padx=8, pady=(8, 0))
         self.mm_pages = {name: tk.Frame(body, bg=P1) for name in self.mm_page.btns}
-        self.mm_strat_page, self.mm_run_page = self.mm_pages["Strats"], self.mm_pages["Run tracker"]
+        self.mm_strat_page, self.mm_run_page = self.mm_pages["Strats"], self.mm_pages["Farm Ledger"]
         self.mm_build_strats(self.mm_strat_page)
         self.mm_build_oneliners(self.mm_pages["Lucrative Strats"])
         self.mm_build_tablets(self.mm_pages["Tablet Crafting"])
-        self.mm_build_runs(self.mm_run_page)
+        self.build_ledger(self.mm_run_page)                  # 2.45.0: Farm Ledger (was Run tracker: ledger_page.py)
         self.mm_strat_page.pack(fill="both", expand=True)
         self.mm_reload()
 
@@ -48,8 +47,8 @@ class MoneyMakersPage:
             if name != cur:
                 f.pack_forget()
         self.mm_pages[cur].pack(fill="both", expand=True)
-        if cur == "Run tracker":
-            self.mm_runs_refresh()
+        if cur == "Farm Ledger":
+            self.fl_refresh()
         elif cur == "Tablet Crafting":
             self.mm_tab_fill()
         elif cur == "Lucrative Strats":
@@ -147,7 +146,7 @@ class MoneyMakersPage:
         acts = tk.Frame(right, bg=P2, padx=8, pady=8)
         acts.pack(fill="x")
         self.mm_btns = {}
-        for key, text, cmd, style in (("track", "▶ Track runs", self.mm_track, "Primary.TButton"),
+        for key, text, cmd, style in (("track", "▶ Farm Ledger", self.mm_track, "Primary.TButton"),
                                       ("vote", "▲ Upvote", self.mm_vote, "TButton"),
                                       ("post", "📤 Post to Community", self.mm_post, "TButton"),
                                       ("regex", "Copy regex", self.mm_copy_regex, "TButton"),
@@ -428,7 +427,7 @@ class MoneyMakersPage:
             return
         post, me = s.get("_post") or {}, B.signed_in() or {}
         m = tk.Menu(self.root, tearoff=0, bg=C["panel2"], fg=C["text"], activebackground="#2c4a84")
-        m.add_command(label="▶ Track runs", command=self.mm_track)
+        m.add_command(label="▶ Track it in the Farm Ledger", command=self.mm_track)
         if s.get("regex"):
             m.add_command(label="Copy regex", command=self.mm_copy_regex)
         if post:
@@ -928,127 +927,13 @@ class MoneyMakersPage:
         return win
 
     # ---------------- the run tracker (its own, simple)
-    def mm_build_runs(self, page):
-        P1, P2 = C["panel"], C["panel2"]
-        top = tk.Frame(page, bg=P2, padx=16, pady=12, highlightthickness=1, highlightbackground=C["line"])
-        top.pack(fill="x", padx=8, pady=(8, 8))
-        tk.Label(top, text="Strat", bg=P2, fg=C["muted"]).grid(row=0, column=0, sticky="w")
-        self.mm_run_strat = tk.StringVar(value="(no strat)")
-        self.mm_run_box = ttk.Combobox(top, textvariable=self.mm_run_strat, state="readonly", width=40)
-        self.mm_run_box.grid(row=0, column=1, sticky="w", padx=(8, 0))
-        self.mm_run_box.bind("<<ComboboxSelected>>", lambda e: (self.mm_runs_refresh(),
-                                                               self.root.after(20, self.root.focus_set)))
-        self.mm_clock = tk.Label(top, text="0:00", bg=P2, fg=C["text"], font=(MONO, 28, "bold"))
-        self.mm_clock.grid(row=0, column=2, rowspan=2, padx=24)
-        self.mm_go = ttk.Button(top, text="▶ Start run", style="Primary.TButton", command=self.mm_run_toggle)
-        self.mm_go.grid(row=0, column=3, rowspan=2, sticky="ns")
-        tk.Label(top, text="Profit this run (div)", bg=P2, fg=C["muted"]).grid(row=1, column=0, sticky="w",
-                                                                                pady=(8, 0))
-        self.mm_profit = tk.StringVar()
-        ttk.Entry(top, textvariable=self.mm_profit, width=10).grid(row=1, column=1, sticky="w", padx=(8, 0),
-                                                                    pady=(8, 0))
-        tk.Label(top, text="Start when you enter the map (or start the block), end when you're done and have sold or "
-                           "counted the loot. Type the profit any time before you end the run - or leave it empty.",
-                 bg=P2, fg=C["muted"], font=("Segoe UI", 9), wraplength=700, justify="left").grid(
-            row=2, column=0, columnspan=4, sticky="w", pady=(8, 0))
-
-        self.mm_summary = tk.Label(page, text="", bg=P1, fg="#ffd9a8", font=("Segoe UI", 12, "bold"), anchor="w")
-        self.mm_summary.pack(fill="x", padx=12, pady=(0, 8))
-        box = tk.Frame(page, bg=P1)
-        box.pack(fill="both", expand=True, padx=8, pady=(0, 8))
-        cols = (("when", "When", 140, "w"), ("strat", "Strat", 220, "w"), ("time", "Time", 80, "center"),
-                ("profit", "Profit", 90, "center"))
-        self.mm_runs_tree = ttk.Treeview(box, columns=[c[0] for c in cols], show="headings", selectmode="extended")
-        for cid, title, w, anchor in cols:
-            self.mm_runs_tree.heading(cid, text=title)
-            self.mm_runs_tree.column(cid, width=w, anchor=anchor, stretch=cid == "strat")
-        sb = ttk.Scrollbar(box, orient="vertical", command=self.mm_runs_tree.yview)
-        self.mm_runs_tree.configure(yscrollcommand=sb.set)
-        sb.pack(side="right", fill="y")
-        self.mm_runs_tree.pack(side="left", fill="both", expand=True)
-        self.mm_runs_tree.bind("<Delete>", lambda e: self.mm_runs_delete())
-        bot = tk.Frame(page, bg=P1)
-        bot.pack(fill="x", padx=8, pady=(0, 8))
-        ttk.Button(bot, text="Delete selected runs", command=self.mm_runs_delete, style="Danger.TButton").pack(side="left")
-
-    def mm_run_names(self):
-        names = {s["id"]: s["name"] for s in MM.all_strats()}
-        return names
-
-    def mm_runs_refresh(self):
-        names = self.mm_run_names()
-        self.mm_run_ids = {"(no strat)": None}
-        for sid, name in sorted(names.items(), key=lambda kv: kv[1].lower()):
-            self.mm_run_ids[name] = sid
-        self.mm_run_box.config(values=list(self.mm_run_ids))
-        if self.mm_run_strat.get() not in self.mm_run_ids:
-            self.mm_run_strat.set("(no strat)")
-        items = MM.runs()
-        sid = self.mm_run_ids.get(self.mm_run_strat.get())
-        tv = self.mm_runs_tree
-        tv.delete(*tv.get_children())
-        for i, rr in reversed(list(enumerate(items))):
-            if sid and rr.get("strat") != sid:
-                continue
-            p = rr.get("profit")
-            tv.insert("", "end", iid=str(i), values=(time.strftime("%Y-%m-%d %H:%M", time.localtime(rr["start"])),
-                                                     names.get(rr.get("strat"), "(no strat)"),
-                                                     _hms(rr["end"] - rr["start"]),
-                                                     "" if p is None else f"{p:g} div"))
-        st = MM.stats(items, sid)
-        if st["runs"]:
-            pph = st["profit_per_hour"]
-            text = (f"{st['runs']} runs · {_hms(st['avg_secs'])} each · {st['per_hour']:.1f} runs / hour"
-                    + (f" · {st['profit']:g} div total · {pph:.1f} div / hour" if pph is not None else ""))
-        else:
-            text = "No runs yet - press ▶ Start run."
-        self.mm_summary.config(text=text)
-
-    def mm_run_toggle(self):
-        if self.mm_run is None:
-            sid = getattr(self, "mm_run_ids", {}).get(self.mm_run_strat.get())
-            self.mm_run = {"strat": sid, "start": time.time()}
-            self.mm_go.config(text="■ End run")
-            self.mm_tick()
-            return
-        txt = self.mm_profit.get().strip().replace(",", ".")
-        try:
-            profit = float(txt) if txt else None
-        except ValueError:
-            self._say("Profit: a number of divines (e.g. 2.5), or leave it empty.", 6)
-            return
-        items = MM.runs()
-        items.append({"strat": self.mm_run["strat"], "start": self.mm_run["start"], "end": time.time(),
-                      "profit": profit})
-        MM.save_runs(items)
-        self.mm_run = None
-        self.mm_profit.set("")
-        self.mm_go.config(text="▶ Start run")
-        self.mm_clock.config(text="0:00")
-        self.mm_runs_refresh()
-
-    def mm_tick(self):
-        if self.mm_run is None:
-            return
-        self.mm_clock.config(text=_hms(time.time() - self.mm_run["start"]))
-        self.root.after(1000, self.mm_tick)
-
-    def mm_runs_delete(self):
-        sel = {int(i) for i in self.mm_runs_tree.selection()}
-        if sel:
-            MM.save_runs([r for i, r in enumerate(MM.runs()) if i not in sel])
-            self.mm_runs_refresh()
-
     def mm_track(self):
+        """A strat's "▶ Farm Ledger": its setup there (made if there's none yet)."""
         s = self.mm_current()
-        self.mm_page.pick("Run tracker", notify=False)
+        self.mm_page.pick("Farm Ledger", notify=False)
         self.mm_show_page()
         if s:
-            self.mm_runs_refresh()
-            name = next((n for n, i in self.mm_run_ids.items() if i == s["id"]), None)
-            if name and self.mm_run is None:
-                self.mm_run_strat.set(name)
-                self.mm_runs_refresh()
+            self.fl_for_strat(s["id"])
 
     # ---------------- Lucrative Strats: simple one-liners
     def mm_build_oneliners(self, page):
