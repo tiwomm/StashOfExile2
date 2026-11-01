@@ -21,6 +21,14 @@ NEXT = [
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.32.0": [
+        "New: Map library (Toolkit, or 🗺 in the Session tracker) - every map, tower, citadel, pinnacle fight and league "
+        "area. Rank them S to D or ✖ Avoid; your rank shows on the in-game timer.",
+        "The Session tracker now counts pinnacle fights (Simulacrum, Arbiter, Breach, Ritual ...) and special maps, and "
+        "learns new areas the first time you enter them. Hideouts are never counted.",
+        "Share your map ranks as a file (⋯ Share), or take the community's - on import you choose Replace all, Add and "
+        "update, or Add new only.",
+    ],
     "2.31.0": [
         "Community Mod book: everyone's price checks pool their mod prices (anonymously, once an hour), so stars and "
         "estimates get better for everyone - most of all early in a league. Your own rules always win.",

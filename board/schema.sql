@@ -67,3 +67,8 @@ CREATE TABLE IF NOT EXISTS contributors (
   cid TEXT PRIMARY KEY,               -- sha256 of the install's random id
   last INTEGER NOT NULL, batches INTEGER NOT NULL DEFAULT 0
 );
+-- 2.32.0: map ranks (Session tracker > Map library). A player's own ranks count as their vote.
+CREATE TABLE IF NOT EXISTS map_votes (
+  name TEXT NOT NULL, cid TEXT NOT NULL, rank TEXT NOT NULL, updated INTEGER NOT NULL,
+  PRIMARY KEY (name, cid)
+);

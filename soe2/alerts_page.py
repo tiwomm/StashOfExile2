@@ -438,7 +438,7 @@ class AlertsPage:
                             self.breach_set_pending(None)          # spent (the tree was opened)
                             self.breach_dismiss()
                         elif kind == "area":
-                            self.breach_area(gl_area_kind(data.get("area"), data.get("seed")))
+                            self.breach_area(gl_area_kind(data.get("area"), data.get("seed"), data.get("level", 0)))
         except Exception:
             self.log_error("breach alert")
         if self.log_wanted():

@@ -116,16 +116,12 @@ def parse(line):
     return None
 
 
-def area_kind(area, seed):
-    """'map' (an endgame map), 'hideout', 'town' or 'other' (campaign, trials, ...)."""
-    a = area or ""
-    if a.startswith("Hideout"):
-        return "hideout"
-    if a.startswith("Map") and seed != 1:
-        return "map"
-    if seed == 1:
-        return "town"
-    return "other"
+def area_kind(area, seed, level=0):
+    """'map' (anything the tracker counts as a run: maps, towers, unique maps, citadels, pinnacle fights, league
+    areas - see maplib), 'hideout', 'town' or 'other' (campaign ...). 2.32.0: from the Map library; claimable
+    hideouts ("MapHideout...") are hideouts now, not maps."""
+    from .maplib import area_kind as kind
+    return kind(area, seed, level)
 
 
 class LogReader:

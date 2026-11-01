@@ -7,7 +7,7 @@ py -m pip install --upgrade requests pystray pillow pyinstaller mss numpy opencv
 if errorlevel 1 goto fail
 echo Building StashOfExile2.exe - this takes a few minutes...
 py -m PyInstaller --noconfirm --clean --onefile --windowed --name StashOfExile2 --icon stashofexile2.ico --collect-submodules soe2 ^
-  --add-data "tabs.txt;." --add-data "jewels.txt;." --add-data "gamedata.json;." --add-data "regexdata.json;." --add-data "default_rules.json;." --add-data "searchdata.json;." --add-data "anointdata.json;." --add-data "cxnames.json;." --add-data "moneymakers.json;." --add-data "stashofexile2.ico;." ^
+  --add-data "tabs.txt;." --add-data "jewels.txt;." --add-data "gamedata.json;." --add-data "regexdata.json;." --add-data "default_rules.json;." --add-data "searchdata.json;." --add-data "anointdata.json;." --add-data "cxnames.json;." --add-data "moneymakers.json;." --add-data "mapdata.json;." --add-data "stashofexile2.ico;." ^
   --add-data "soe2\templates;soe2\templates" --add-data "soe2\ritual_glyphs.json;soe2" --hidden-import pystray._win32 --hidden-import PIL._tkinter_finder ^
   --hidden-import cv2 --hidden-import mss --hidden-import numpy stashofexile2.py
 if errorlevel 1 goto fail
