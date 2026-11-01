@@ -255,7 +255,7 @@ def setup_style(root):
     s.configure("Sash", sashthickness=7, gripcount=0, background=C["line"])
 
 
-def monitor_rect(root, x, y):
+def monitor_rect(root, x, y, full=False):
     """2.25.2: (left, top, right, bottom) of the monitor holding the point (x, y) - its work area, without the
     taskbar. Popups are kept on THAT monitor; winfo_screenwidth() is only the main monitor, which pushed popups over
     to it when the app was on another one."""
@@ -275,8 +275,8 @@ def monitor_rect(root, x, y):
             mi = MONITORINFO()
             mi.cbSize = ctypes.sizeof(MONITORINFO)
             if h and u.GetMonitorInfoW(h, ctypes.byref(mi)):
-                r = mi.rcWork
-                return r.left, r.top, r.right, r.bottom
+                r = mi.rcMonitor if full else mi.rcWork     # 2.50.0: full = the whole screen (the game is
+                return r.left, r.top, r.right, r.bottom         # full screen: windows over it may sit on the taskbar)
         except Exception:
             pass
     return 0, 0, root.winfo_screenwidth(), root.winfo_screenheight()

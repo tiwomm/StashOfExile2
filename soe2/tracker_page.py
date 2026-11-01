@@ -974,12 +974,11 @@ class TrackerPage:
         self.tk_ov_lbls = {k: CanvasText(cv, it, P["bg"]) for k, it in items.items()}
         if not cfg.get("locked"):
             w.draggable(cv)
-        if cfg.get("clock", True):                 # the clock on the title bar, like the mockup - or, with a centred
-            on_bar = P["align"] != "center" and not P.get("plate")      # title, at the top right of the page
-            clk = None if on_bar else cv.create_text(0, 10, text="", anchor="ne", fill=P["muted"], font=(P["font"], 9),
-                                                     justify="right")
-            if clk is not None:
-                cv.bind("<Configure>", lambda e: cv.coords(clk, e.width - 10, 10), add="+")
+        if cfg.get("clock", True):                 # the clock on the title bar, like the mockup - or, when it doesn't
+            on_bar = P["align"] != "center" and not P.get("plate")      # fit there (2.50.0: it ran into "Session")
+            clk = cv.create_text(0, 10, text="", anchor="ne", fill=P["muted"], font=(P["font"], 9),   # or the title is
+                                 justify="right")                                                   # centred, top right
+            cv.bind("<Configure>", lambda e: cv.coords(clk, e.width - 10, 10), add="+")
 
             class _Clock:
                 text = ""
@@ -989,10 +988,10 @@ class TrackerPage:
 
                 def config(self_, text="", **_kw):
                     self_.text = text
-                    if clk is None:
-                        w.bar_note(" · ".join(text.splitlines()))
-                    else:
-                        cv.itemconfigure(clk, text=text)
+                    fits = on_bar and w.bar_note(" · ".join(text.splitlines()))
+                    if not fits:
+                        w.bar_note("")
+                    cv.itemconfigure(clk, text="" if fits else text)
             self.tk_ov_clock = _Clock()
 
     # ---------------- the Helpers bar (2.38.0: its own small window, shown with the timer, moved on its own)
@@ -1072,14 +1071,15 @@ class TrackerPage:
         cv = w.canvas_body()
         fnt = (P["font"], 10, "bold")
         f = tkfont.Font(root=cv, family=P["font"], size=10, weight="bold")
-        widths = {k: f.measure("Ritual 3/3" if k == "ritual" else k.title()) + 34 for k in self.HELPERS}
+        widths = {k: f.measure("Ritual 3/3" if k == "ritual" else k.title()) + 40 for k in self.HELPERS}
         x, h, gap = 8, 30, 6
         for k in self.HELPERS:
             tag = f"cell_{k}"
             cv.create_rectangle(x, 6, x + widths[k], 6 + h, fill=P["cell_bg"], outline=P["cell_line"], tags=(tag,))
-            dot = cv.create_text(x + 12, 6 + h // 2, text=P["off_icon"], fill=P["off"], font=("Segoe UI Symbol", 9),
+            # 2.50.0: bigger, bright icons - the 9 pt dark diamonds read as black on parchment
+            dot = cv.create_text(x + 14, 6 + h // 2, text=P["off_icon"], fill=P["off"], font=("Segoe UI Symbol", 12),
                                  tags=(tag,))
-            lab = cv.create_text(x + 24, 6 + h // 2, text=k.title(), anchor="w", fill=P["text"], font=fnt, tags=(tag,))
+            lab = cv.create_text(x + 28, 6 + h // 2, text=k.title(), anchor="w", fill=P["text"], font=fnt, tags=(tag,))
             cv.tag_bind(tag, "<Button-1>", lambda e, k=k: self.tracker_helper_click(k))
             cv.tag_bind(tag, "<Enter>", lambda e: cv.configure(cursor="hand2"))
             cv.tag_bind(tag, "<Leave>", lambda e: cv.configure(cursor=""))
@@ -1099,7 +1099,9 @@ class TrackerPage:
         try:
             w.update_idletasks()
             bw, bh = max(w.winfo_reqwidth(), 120), max(w.winfo_reqheight(), 30)
-            l_, t, r, b = monitor_rect(self.root, cfg["x"] + 10, cfg["y"] + 10)
+            # 2.50.0: the whole screen, not its work area - the bar moved up a few pixels when locked at the very
+            # bottom edge (the game is full screen; the Windows taskbar's strip is fine to sit on)
+            l_, t, r, b = monitor_rect(self.root, hx + 10, hy + 10, full=True)
         except Exception:
             return
         if first and hy + bh > b:

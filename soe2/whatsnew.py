@@ -25,6 +25,8 @@ NOTES = {
         "Overlays › Appearance (was Look) says what opacity does and shows it in %.",
         "The Mechanic Helper bar is its own thing now: switch it on in Overlays › Mechanic Helper and it shows over "
         "the game whether the Session timer is running or not.",
+        "Fix: the Mechanic Helper icons are bigger and clearly green (on) / red (off); the Session timer's clock no "
+        "longer runs into its title; overlays stay at the very bottom of the screen when you lock them.",
     ],
     "2.49.0": [
         "Settings is the cog at the top of the dock; the Toolkit menu is at the left end of the taskbar, like Start.",
