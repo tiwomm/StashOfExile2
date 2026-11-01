@@ -24,7 +24,12 @@ VERSION HISTORY
        to each slider; runeshape tips only on the Mechanic Helper tab. The Mechanic Helper bar stands on its own (the
        user: "a different bar, independent of the session tracker"): "Show the Mechanic Helper bar over the game"
        shows it timer or not (tracker_helpers_sync at start and on the switch; tracker_helpers_paint). Notes' own
-       colour card: "Colours and font (Classic style)". test_v2490 (more checks), v2380 / v2430 / v2440 updated.
+       colour card: "Colours and font (Classic style)". Fixes from the user's screenshot: the Mechanic Helper icons
+       were 9 pt and a dark green that read as black - now 12 pt, brighter green / red on parchment; the clock ran
+       into "Session" on a narrow timer - OverlayWindow.bar_note says when it doesn't fit, and the clock goes to the
+       top right of the page; the bar moved up a few pixels when locked at the screen's bottom edge - it was kept
+       inside the work area (without the Windows taskbar); now the whole screen (style.monitor_rect(full=True)).
+       test_v2490 (more checks), v2380 / v2430 / v2440 updated.
   2.49.0
        Settings (a cog) is the first thing on the dock; Toolkit (the menu) sits at the left end of the taskbar, where a
        Start button would be (shell: dock tag "settings", taskbar tag "tkbtn"; with the dock hidden Settings shows on
