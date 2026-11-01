@@ -205,9 +205,25 @@ class AlertsPage:
         self.alerts_refresh()
         return box
 
-    def alerts_toggle(self, key):
-        r = self.al_rows[key]
-        want = bool(r["on"].get())
+    def alerts_toggle(self, key, want=None):
+        """On / off for one helper. want=None: what its box in the Alerts panel says. 2.26.0: the timer's Helpers bar
+        switches them too (the panel may not even be built then)."""
+        rows = getattr(self, "al_rows", None) or {}
+
+        class _Box:                                           # the panel's box, or a stand-in when it isn't built
+            def __init__(self, v):
+                self.v = v
+
+            def get(self):
+                return self.v
+
+            def set(self, v):
+                self.v = v
+        r = rows.get(key) or {"on": _Box(bool(want)), "note": ""}
+        if want is None:
+            want = bool(r["on"].get())
+        else:
+            r["on"].set(bool(want))
         if key == "breach":
             self.breach_cfg()["on"] = want
             save_json("settings.json", SETTINGS)
@@ -231,7 +247,8 @@ class AlertsPage:
             r["note"] = err or ""
             if err and want:
                 r["on"].set(False)
-        self.alerts_refresh()
+        if rows:
+            self.alerts_refresh()
         self.alerts_overlay_redraw()
 
     def alerts_sound(self, key):

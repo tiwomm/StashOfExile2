@@ -525,6 +525,9 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
                                     highlightthickness=1, highlightbackground="#3f7a58")
         self.chip_review = tk.Label(summ, text="", bg="#2a2110", fg=C["good"], font=("Segoe UI", 9, "bold"), padx=10, pady=3,
                                     highlightthickness=1, highlightbackground="#7a6428")
+        # 2.26.0: "pricing 12 items - about 1:30 left", next to the other two (was only in the status line)
+        self.chip_eta = tk.Label(summ, text="", bg="#10203a", fg="#8fc4ff", font=("Segoe UI", 9, "bold"), padx=10,
+                                 pady=3, highlightthickness=1, highlightbackground="#3f5f8f")
         self.tot_lbl.pack(side="left")
         self.tot_val.pack(side="left", padx=(8, 0))
         self.chip_review.pack(side="right")
@@ -922,10 +925,10 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
                                                     "did with them) and the app's log files - no account name, no "
                                                     "Wealth data. Send it along with what you saw.")
         ttk.Button(row, text="Make a problem report…", command=self.problem_report).pack(side="left")
-        row = section("Advanced", "Slowness recorder", "The app feels slow? Press Start, then use the app the way that "
-                                                       "feels slow for a few minutes. Every time the window gets stuck, "
-                                                       "it writes down which part of the app was busy (perf_log.txt in "
-                                                       "your data folder). It stops by itself after 5 minutes.")
+        row = section("Advanced", "Lag finder", "The app feels slow? Press Start, then use the app the way that feels "
+                                                "slow for a few minutes. Every time the window hitches, it writes down "
+                                                "which part of the app was busy (perf_log.txt in your data folder). It "
+                                                "stops by itself after 5 minutes.")
         self.perf_btn = ttk.Button(row, text="Start (5 minutes)", command=self.perf_toggle)
         self.perf_btn.pack(side="left")
         self.perf_msg = tk.Label(row, text="", bg=P2, fg=C["muted"])
@@ -936,7 +939,7 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         ttk.Button(row, text="Open folder", command=lambda: self.open_path(DATA_DIR)).pack(side="left", padx=10)
 
     def perf_toggle(self):
-        """2.25.4: Settings > Advanced > Slowness recorder (perflog.py)."""
+        """2.25.4: Settings > Advanced > Lag finder (perflog.py; 2.26.0 renamed from "Slowness recorder")."""
         from .perflog import PERF
         if PERF.on:
             PERF.stop()
@@ -951,11 +954,11 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         if PERF.on:
             left = max(0, int(PERF.until - time.time()))
             self.perf_btn.config(text="Stop")
-            self.perf_msg.config(text=f"recording - {left // 60}:{left % 60:02d} left, {PERF.stalls} stall(s) so far")
+            self.perf_msg.config(text=f"watching - {left // 60}:{left % 60:02d} left, {PERF.stalls} hitch(es) so far")
             self.root.after(1000, self.perf_show)
         else:
             self.perf_btn.config(text="Start (5 minutes)")
-            self.perf_msg.config(text=(f"done: {PERF.stalls} stall(s), the longest {PERF.worst * 1000:.0f} ms - in "
+            self.perf_msg.config(text=(f"done: {PERF.stalls} hitch(es), the longest {PERF.worst * 1000:.0f} ms - in "
                                        f"perf_log.txt") if PERF.lines else "")
 
     def dlg_parent(self):
@@ -3265,12 +3268,22 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
             self.batch_done()
         if not n_items:
             self.done_times.clear()
+        chip = getattr(self, "chip_eta", None)
         if n_items:
             eta = ""
             if len(self.done_times) >= 3:
                 per = (self.done_times[-1] - self.done_times[0]) / (len(self.done_times) - 1)
                 eta = f" - about {mmss(n_items * per + LIMITER.state()['blocked'])} left"
             parts.append(f"pricing {n_items} item{'s' if n_items != 1 else ''}{eta}")
+            if chip is not None:                             # 2.26.0: up top, next to Priced / Require Review
+                chip.config(text=f"⏳ Pricing {n_items}" + (f" · {eta.replace(' - about ', '~')}" if eta else ""))
+                if not chip.winfo_manager():
+                    if self.chip_priced.winfo_manager():
+                        chip.pack(side="right", padx=(0, 8), after=self.chip_priced)
+                    else:
+                        chip.pack(side="right", padx=(0, 8))
+        elif chip is not None and chip.winfo_manager():
+            chip.pack_forget()
         book = f"Mod book: {MARKET.mods_known()} mods learned"
         parts.append(book)
         self.status.config(text="   ·   ".join(parts) if (n_items or self.status_text) else f"Ready   ·   {book}")
