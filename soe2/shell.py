@@ -1015,6 +1015,9 @@ class Shell:
         keep = getattr(self.app, "keep_on_top", None)         # e.g. the welcome card on the first start
         if keep:
             keep()
+        toasts = getattr(self.app, "toasts", None)            # 2.35.0: toasts stay above every window
+        if toasts is not None:
+            toasts._lift_soon()
         if self.active != key:
             if self.active in self.windows:
                 self.windows[self.active].set_active(False)

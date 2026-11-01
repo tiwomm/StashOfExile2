@@ -100,6 +100,8 @@ class InsightsPage:
         mine.bind("<Double-1>", lambda e: self.ins_open_record())
         mine.bind("<ButtonRelease-1>", lambda e: self.ins_preview_at("mine", e), add="+")   # 2.18.0: item preview
         self.list_register("insights", mine, delete=self.ins_forget)
+        mine.menu_actions = lambda sel: [("Show in Price checks", lambda: (self.ins_show("mine"), self.ins_open_record())),
+                                         ("Price it again", lambda: (self.ins_show("mine"), self.ins_price_again()))]
         table(0, 1, "mods", "Mods worth the most", "What the Mod book learned: the typical asking price of listings "
                                                     "with this mod. ★ = valuable in your Mod book.",
               (("mod", "Mod", 220, "w"), ("base", "On", 90, "w"), ("med", "Typical", 70, "e"), ("n", "Seen", 45, "e")))
@@ -108,6 +110,8 @@ class InsightsPage:
               (("price", "Asking", 90, "e"), ("name", "Item", 200, "w"), ("mods", "Mods", 360, "w"),
                ("when", "Seen", 70, "w")), colspan=2)
         self.list_register("insights", self.ins_tables["seen"][0])
+        self.ins_tables["seen"][0].menu_actions = lambda sel: [            # 2.36.0
+            ("Open the search", lambda: (self.ins_show("seen"), self.ins_open_search()))]
         self.ins_tables["seen"][0].bind("<ButtonRelease-1>", lambda e: self.ins_preview_at("seen", e), add="+")
         body.bind("<Unmap>", lambda e: self.ins_preview_close(), add="+")
         self.list_register("insights", self.ins_tables["mods"][0])

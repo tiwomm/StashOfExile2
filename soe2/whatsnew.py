@@ -21,6 +21,17 @@ NEXT = [
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.36.0": [
+        "Right-click a row for what you'd want to do with it: in Price checks Re-price, Copy name, Open on trade site, "
+        "Mark listed / sold / removed; in Market Insights and Regex Favorites their own actions too.",
+        "The Menu key (or Shift+F10) opens the same menu from the keyboard, on lists and text boxes alike.",
+    ],
+    "2.35.0": [
+        "One kind of message popup for the whole app: in the app's bottom-right corner, with an icon for info, done, "
+        "warning or problem. They stay up longer for longer text, wait while your mouse is on them, and never take "
+        "your keyboard.",
+        "Missed one? Settings > Advanced > Recent messages keeps the last 20.",
+    ],
     "2.34.0": [
         "A cleaner, steadier look: the same text sizes and spacing everywhere, and buttons that tell you what they do - "
         "the main action in your accent colour, deleting and clearing in red, small helpers quiet.",

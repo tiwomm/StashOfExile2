@@ -1,6 +1,6 @@
 # StashOfExile2 roadmap
 
-**Current version: 2.34.0**
+**Current version: 2.36.0**
 
 Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds features, 2.10.1 only fixes. Each step below is one release; we work through them top to bottom.
 
@@ -55,6 +55,8 @@ Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds f
 | 2.33.0 | Child tools: one layout rule for the whole app (below). Map library under Session tracker; Mod book, Under the hood, Market Insights under Price checks. |
 | 2.33.1 | Map library: ✖ Avoid button no longer cut off. |
 | 2.34.0 | Polish 1: design tokens (4 text sizes, one spacing scale, colour roles), button types (primary / secondary / quiet / danger), readable text in every theme and accent (WCAG AA, checked on every PR). |
+| 2.35.0 | Polish 2: one toast system (info / success / warning / error with icons, stacked in the app, pause on hover, timed by length, never steal focus); last 20 in Settings > Advanced. |
+| 2.36.0 | Polish 3: right-click menus with each list's own actions (Price checks, Market Insights, Regex Favorites); the Menu key / Shift+F10 opens them from the keyboard. |
 
 ## ▶ Next up
 
@@ -62,8 +64,6 @@ Order (decided 2.34.0): the Polish basics first, so new features are built on th
 
 | Version | Plan |
 |---|---|
-| 2.35.0 | **Polish 2 - Toasts:** one toast system for the whole app (info / success / warning / error, each with an icon, not colour alone), stacked inside the app window, pause while hovered, time based on text length, never steals focus, last 20 kept in Settings > Advanced. Replaces the separate toast / status-line messages where they matter. |
-| 2.36.0 | **Polish 3 - Context menus:** right-click menus where you'd expect them: Price checks rows (Re-price, Copy name, Open on trade site, Mark listed / sold, Delete), Wealth, Favorites, Game search, Insights, Notes. Every menu also opens with the Menu key / Shift+F10. |
 | 2.37.0 | **Ancients price helper:** our own version of the idea (read the exchange list from your screen, price it with poe.ninja), with credit - their code has no licence, so none of it is copied. |
 | 2.38.0 | **More item types priced (Sidekick / Exiled Exchange-style):** a pricing engine for item types the app only guesses today. Their licences are checked first; logic is ported, not code, with credit. |
 | 2.39.0 | **Public stash order test tool.** |
@@ -108,7 +108,9 @@ Every new feature goes in one of three places:
 - **Child tool:** built on one top-level tool's data. It is a button in the parent's title bar and sits indented under the parent in the Toolkit menu. Its window is called "Parent › Child". It is not on the dock. Now: Session tracker › Map library; Price checks › Mod book, Under the hood, Market Insights.
 - **Tab:** a different view of the same thing, inside one window (e.g. Money Makers › Official / Mine / Community).
 
-**Look (2.34.0):** use the tokens in `soe2/style.py`: text sizes `SMALL 9 / BODY 10 / HEAD 12 / TITLE 16`, spacing `4 / 8 / 12 / 16 / 24` (0-2 only for hairlines), colours by `role()`. Buttons: `Primary.TButton` (one main action per area), plain `TButton`, `Quiet.TButton` (cancel, back, small helpers), `Danger.TButton` (deletes or clears). `tools/check_tokens.py` and `tools/check_contrast.py` run on every PR.
+**Look (2.34.0):** messages to the player go through `app_toast(text, title, kind=...)` (2.35.0); a list's own right-click actions go in `tree.menu_actions` (2.36.0).
+
+**Tokens:** use the tokens in `soe2/style.py`: text sizes `SMALL 9 / BODY 10 / HEAD 12 / TITLE 16`, spacing `4 / 8 / 12 / 16 / 24` (0-2 only for hairlines), colours by `role()`. Buttons: `Primary.TButton` (one main action per area), plain `TButton`, `Quiet.TButton` (cancel, back, small helpers), `Danger.TButton` (deletes or clears). `tools/check_tokens.py` and `tools/check_contrast.py` run on every PR.
 
 There's only one level of nesting: a child tool has no children of its own. In code, `parent = "<key>"` on the module does it.
 

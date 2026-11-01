@@ -42,6 +42,7 @@ from .pricefmt import fmt_div, fmt_price, parse_price
 from .wealth import WEALTH, parse_stack, WPRICES
 from .engine import Engine
 from . import gear, waystone
+from .toasts import Toasts
 from .style import C, FLAG_COLORS, FONT_TITLE, hotkey_blocked, MONO, Plate, SegBook, SegBar, setup_style, Toast, KeyCapture
 from .winsys import ICON_B64, KeyWatch, Tray
 from .wealth_page import WealthPage
@@ -108,6 +109,7 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         self.engine = Engine(self.records, self.ui_q)
         gamedata.set_fallback(self.trade_stat_lookup)          # 1.40: learn unknown mod wordings from the trade site
         self.toast = Toast(root)
+        self.toasts = Toasts(root)                 # 2.35.0: the app's toasts (in-app); self.toast = over the game
         self.sort_col, self.sort_rev = None, False
         self.last_clip = ""
         self.status_text, self.status_until = MODBOOK_NOTE, time.time() + 25
@@ -652,6 +654,7 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         left = tk.Frame(self.pane, bg=C["panel"])
         self.pane.add(left, weight=1)
         self.tree = ttk.Treeview(left, columns=[c[0] for c in self.COLS], show="headings", selectmode="extended")
+        self.tree.menu_actions = self.checks_menu_actions          # 2.36.0: right-click / Menu key
         for cid, title, w, anchor in self.COLS:
             self.tree.heading(cid, text=title, command=lambda c=cid: self.sort_by(c))
             self.tree.column(cid, width=max(int(SETTINGS.get("col_widths", {}).get(cid, w)), 95 if cid == "conf" else 0), minwidth=50,
@@ -956,10 +959,47 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
                                                     "did with them) and the app's log files - no account name, no "
                                                     "Wealth data. Send it along with what you saw.")
         ttk.Button(row, text="Make a problem report…", command=self.problem_report).pack(side="left")
+        row = section("Advanced", "Recent messages", "The last 20 messages the app showed you (they go away "
+                                                     "by themselves, so they're kept here). Hover one to keep it up.")
+        self.build_toast_log(row)
         row = section("Advanced", "Your data", "Settings, price-check lists, the Mod book, Wealth and sessions are "
                                                "kept here, shared by every version of the app.")
         tk.Label(row, text=str(DATA_DIR), bg=P2, fg=C["text"], font=(MONO, 9)).pack(side="left")
         ttk.Button(row, text="Open folder", command=lambda: self.open_path(DATA_DIR), style="Quiet.TButton").pack(side="left", padx=8)
+
+    def build_toast_log(self, parent):
+        """2.35.0: Settings > Advanced > Recent messages - the toast history, newest first."""
+        from .toasts import KINDS
+        P2 = C["panel2"]
+        box = tk.Frame(parent, bg=P2)
+        box.pack(fill="x", expand=True)
+        tv = ttk.Treeview(box, columns=("when", "kind", "msg"), show="headings", height=6, selectmode="browse")
+        for cid, title, w, st in (("when", "When", 90, False), ("kind", "", 34, False), ("msg", "Message", 520, True)):
+            tv.heading(cid, text=title)
+            tv.column(cid, width=w, minwidth=30, stretch=st, anchor="center" if cid == "kind" else "w")
+        tv.pack(side="left", fill="x", expand=True)
+        btns = tk.Frame(box, bg=P2)
+        btns.pack(side="left", anchor="n", padx=(8, 0))
+        self.toast_tv = tv
+
+        def fill():
+            if not tv.winfo_exists():
+                return
+            tv.delete(*tv.get_children())
+            for n, h in enumerate(reversed(self.toasts.history)):
+                msg = " - ".join(x for x in (h.get("title"), " ".join(str(h.get("text", "")).split())) if x)
+                tv.insert("", "end", iid=str(n), values=(time.strftime("%H:%M:%S", time.localtime(h.get("ts", 0))),
+                                                        KINDS.get(h.get("kind"), KINDS["info"])[0], msg))
+            if not tv.get_children():
+                tv.insert("", "end", values=("", "", "No messages yet."))
+
+        def clear():
+            self.toasts.history.clear()
+            save_json("toasts.json", [])
+            fill()
+        ttk.Button(btns, text="Clear", command=clear, style="Quiet.TButton").pack(fill="x")
+        self.toasts.on_history = fill
+        fill()
 
     def dlg_parent(self):
         """The window a question / file box belongs to: the window in front (2.0 beta 21)."""
@@ -1318,12 +1358,13 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
                                secs=120)
             return
         if kind != "ok":
-            messagebox.showinfo("Check for updates", data if kind == "none" else "Could not check for updates.\n\n" + data)
+            self.app_toast(data if kind == "none" else "Could not check for updates.\n" + data, "Check for updates",
+                           kind="info" if kind == "none" else "warning")
             self._say(data if kind == "none" else "Update check failed.")
             return
         tag = data.get("tag_name", "")
         if not is_newer(tag, APP_VERSION):
-            messagebox.showinfo("Check for updates", f"You are up to date (version {pretty_version()}).")
+            self.app_toast(f"You are up to date (version {pretty_version()}).", "Check for updates", kind="success")
             self._say("You have the newest version.")
             return
         asset = pick_asset(data)
@@ -2108,50 +2149,21 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
             self.lib_check()
         self.info_card(msg)
 
-    def app_toast(self, text, title="", actions=(), secs=15, colour="#e0a030"):
-        """2.18.0: a small popup in the middle of the app (2.25.3; was its bottom-right corner) - seen whichever
-        window you're in. Goes away
-        after `secs`, with OK, or with one of its buttons."""
-        old = getattr(self, "_app_toast", None)
-        if old is not None:
-            try:
-                old.destroy()
-            except Exception:
-                pass
-        w = tk.Toplevel(self.root)
-        w.withdraw()
-        w.overrideredirect(True)
-        try:
-            w.attributes("-topmost", True)
-        except tk.TclError:
-            pass
-        box = tk.Frame(w, bg=C["panel2"], padx=16, pady=8, highlightthickness=2, highlightbackground=colour)
-        box.pack(fill="both")
-        if title:
-            tk.Label(box, text=title, bg=C["panel2"], fg=colour, font=("Segoe UI", 10, "bold"), anchor="w").pack(fill="x")
-        tk.Label(box, text=text, bg=C["panel2"], fg=C["text"], font=("Segoe UI", 9), wraplength=340, justify="left",
-                 anchor="w").pack(fill="x", pady=(4, 8))
-        btns = tk.Frame(box, bg=C["panel2"])
-        btns.pack(fill="x")
-
-        def close():
-            try:
-                w.destroy()
-            except Exception:
-                pass
-            if getattr(self, "_app_toast", None) is w:
-                self._app_toast = None
-        ttk.Button(btns, text="OK", command=close).pack(side="right")
-        for label, fn in actions:
-            ttk.Button(btns, text=label, command=lambda f=fn: (close(), f())).pack(side="right", padx=(0, 8))
-        w.update_idletasks()                                 # 2.25.3: in the middle of the app, a little above centre
-        rx, ry = self.root.winfo_rootx(), self.root.winfo_rooty()
-        rw, rh = max(400, self.root.winfo_width()), max(300, self.root.winfo_height())
-        w.geometry(f"+{rx + (rw - w.winfo_reqwidth()) // 2}+{ry + max(40, (rh - w.winfo_reqheight()) // 3)}")
-        w.deiconify()
-        self._app_toast = w
-        self.root.after(secs * 1000, lambda: close() if getattr(self, "_app_toast", None) is w else None)
-        return w
+    def app_toast(self, text, title="", actions=(), secs=None, colour=None, kind=None):
+        """2.18.0, 2.35.0: one of the app's toasts (soe2/toasts.py) - stacked in the app's bottom-right corner, with an
+        icon per kind, paused while hovered, timed by text length, never taking the keyboard. kind: info / success /
+        warning / error (guessed from the old colour or the text when not given). Returns the toast's window."""
+        if kind is None:
+            low = (text or "").lower()
+            if colour in (C["red"], "#ff6b5e") or low.startswith(("couldn't", "could not", "error", "failed")):
+                kind = "error"
+            elif colour in (C["green"], "#5fd38a") or low.startswith(("done", "saved", "copied", "✔")):
+                kind = "success"
+            else:
+                kind = "info"
+        t = self.toasts.show(text, title, kind, actions, secs if secs and secs > 20 else None)
+        self._app_toast = t["win"]
+        return t["win"]
 
     def info_card(self, text, actions=(), secs=25):
         """A note above the list you can't miss (the status line is easy to miss). Replaces the previous one; goes
@@ -2972,7 +2984,7 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         tiers = {k: t for k, t in TIERS.items() if (scoped(k) == cat if cat in SCOPED_CATS else
                                                    not scoped(k) and mod_cat(k) == cat)}
         if not rules and not tiers:
-            messagebox.showinfo("Export rules", f"You haven't set any {cat} mod rules yet.")
+            self.app_toast(f"You haven't set any {cat} mod rules yet.", "Export rules")
             return
         path = filedialog.asksaveasfilename(defaultextension=".json", initialfile=f"my_{cat}_mod_rules.json",
                                             filetypes=[("Mod rules", "*.json")])
@@ -2987,7 +2999,7 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
                            "category": cat, "rules": rules, "tiers": tiers,
                            "high": high}, f, indent=1, ensure_ascii=False)        # "high": what older versions read
         except Exception as e:
-            messagebox.showerror("Export rules", f"Could not save the file: {e}")
+            self.app_toast(f"Could not save the file: {e}", "Export rules", kind="error")
             return
         n = {i: sum(1 for v in rules.values() if v == i) for i in IMPACTS}
         self._say(f"Exported {len(rules)} {cat} rules ({n['high']} high, {n['normal']} normal, {n['ignore']} ignored)"
@@ -3076,14 +3088,14 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         if unknown:
             msg += f" {len(unknown)} unknown mod(s) skipped."
         if bad:
-            messagebox.showwarning("Import rules", "Some files were refused:\n\n" + "\n".join(bad))
+            self.app_toast("Some files were refused:\n" + "\n".join(bad), "Import rules", kind="warning")
         self._say(msg, 30)
 
     def clear_imported_rules(self):
         cat = self.rules_cat()
         mine = [k for k in COMMUNITY if mod_cat(k) == cat]
         if not mine:
-            messagebox.showinfo("Remove imported", f"Nothing imported for {cat} mods.")
+            self.app_toast(f"Nothing imported for {cat} mods.", "Remove imported")
             return
         if not messagebox.askyesno("Remove imported", f"Remove the {len(mine)} imported {cat} mods? Your own rules are not touched."):
             return
@@ -3452,6 +3464,19 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         self.update_mark_buttons()
         if rec and SETTINGS.get("auto_copy"):
             self.copy_name(rec)
+
+    def checks_menu_actions(self, sel):
+        """2.36.0: the Price checks rows' own right-click actions (Delete / Copy come from the standard list menu)."""
+        rids = [int(i) for i in sel if str(i).isdigit() and int(i) in self.records]
+        one = self.records[rids[0]] if len(rids) == 1 else None
+        n = f" ({len(rids)})" if len(rids) > 1 else ""
+        return [(f"Re-price{n}", lambda: self.reprice(rids), bool(rids)),
+                ("Copy name", lambda: self.copy_name(one, True), one is not None, "C"),
+                ("Open on trade site", self.open_trade, bool(one and one.get("qid")), "O"),
+                None,
+                (f"✔ Mark listed{n}", lambda: self.mark_selected("listed"), bool(rids)),
+                (f"💰 Mark sold{n}", lambda: self.mark_selected("sold"), bool(rids)),
+                (f"✖ Mark removed{n}", lambda: self.mark_selected("removed"), bool(rids))]
 
     def open_trade(self):
         sel = self.tree.selection()

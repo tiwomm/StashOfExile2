@@ -804,6 +804,10 @@ class RegexPage:
         tv.bind("<ButtonRelease-1>", self.rx_fav_click, add="+")      # 2.21.0: a Copy button on every row
         self.rx_fav_tv = tv
         self.list_register("regex", tv, delete=self.rx_fav_delete)
+        tv.menu_actions = lambda sel: [("📋 Copy the search", self.rx_fav_copy, len(sel) == 1),     # 2.36.0
+                                       ("Open in Build a search", self.rx_fav_open, len(sel) == 1),
+                                       ("Use for the Regex key", self.rx_fav_hotkey, len(sel) == 1),
+                                       ("Rename…", self.rx_fav_rename, len(sel) == 1)]
         self.rx_fav_empty = tk.Label(tf, text="No Favorites yet.\nBuild a search, then press ☆ Add to Favorites.",
                                      bg=P1, fg=C["muted"], font=("Segoe UI", 10), justify="center")
 
@@ -855,7 +859,7 @@ class RegexPage:
         self.root.clipboard_append(s)
         self._say(f"Copied \"{f['name']}\" ({len(s)} characters). In game: open the stash, Ctrl+F, Ctrl+V.", 8)
         self.app_toast(f"\"{f['name']}\" is on the clipboard. In game: open the stash, Ctrl+F, Ctrl+V.",
-                       title="✓ Copied", secs=4, colour=C["green"])
+                       title="Copied", kind="success")
 
     def rx_fav_open(self):
         f = (self._rx_fav_sel() or [None])[0]
