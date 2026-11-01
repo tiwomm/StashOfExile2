@@ -1,6 +1,6 @@
 {
  "schema": 2,
- "revision": 1,
+ "revision": 2,
  "strats": [
   {
    "id": "example-ritual-omens",
@@ -54,5 +54,6 @@
     "Low budget"
    ]
   }
- ]
+ ],
+ "board_url": "https://soe2-board.stashofexile2.workers.dev"
 }
