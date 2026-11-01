@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU GPL v3.0 (see LICENSE). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.26.1
+VERSION 2.26.2
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,6 +19,17 @@ VERSION 2.26.1
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.26.2
+       (1) Regex: switching item type kept freezing (Lag finder: rx_build_lists destroying ~650 gear rows, up to
+           0.8 s each time). Each type's rows are now built once and kept (canvas window swap); the other types are
+           built in the background 25 rows at a time after Regex opens (rx_warm); rows only repaint when their colour
+           changes. A switch: gear 920 ms -> ~180 ms, also the first time. Rows know their own type (a background
+           row's placeholder used to land in the showing type's search).
+       (2) The window really opens maximised again: the first "normal" size while the window appeared was saved
+           and wiped the "maximised" flag before it was used (since 2.23.1). Nothing is recorded until the start-up
+           restore is done (_win_restored).
+       (3) Price checks "Pricing 215" has a time from the start: the remembered seconds per item
+           (SETTINGS price_secs_avg), or a guess from the pace's search allowance, until 3 items are done.
   2.26.1
        Fixed: "No module named 'cv2'" after changing the theme. restart_app started the new copy with this copy's
        PyInstaller environment, so it reused this copy's unpacked folder - deleted as this one closed - and cv2 (the
@@ -942,7 +953,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.26.1"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.26.2"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 

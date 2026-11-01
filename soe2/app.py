@@ -3257,6 +3257,13 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
             except Exception:
                 pass
 
+    def pace_secs_per_item(self):
+        """2.26.2: a first guess at how long one item takes, before any has finished: the pace's search allowance
+        (searches per 5 minutes) and about two searches an item."""
+        from .net import PACES
+        cap = PACES.get(SETTINGS.get("pace"), PACES["Balanced"]).get("cap300") or 8
+        return 300 / cap * 2
+
     def update_status(self):
         if self.status_text and time.time() > self.status_until:
             self.status_text = ""
@@ -3276,8 +3283,14 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         chip = getattr(self, "chip_eta", None)
         if n_items:
             eta = ""
+            per = None
             if len(self.done_times) >= 3:
                 per = (self.done_times[-1] - self.done_times[0]) / (len(self.done_times) - 1)
+                old = SETTINGS.get("price_secs_avg")                # 2.26.2: remembered for next time
+                SETTINGS["price_secs_avg"] = round(per if not old else 0.8 * old + 0.2 * per, 1)
+            else:                                                   # 2.26.2: no "pricing 215" without a time - an
+                per = SETTINGS.get("price_secs_avg") or self.pace_secs_per_item()   # estimate from the start
+            if per:
                 eta = f" - about {mmss(n_items * per + LIMITER.state()['blocked'])} left"
             parts.append(f"pricing {n_items} item{'s' if n_items != 1 else ''}{eta}")
             if chip is not None:                             # 2.26.0: up top, next to Priced / Require Review
@@ -4011,8 +4024,8 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
 
     def _note_window(self, e):
         """Remember the window's place and size as it moves (the normal size, not maximised)."""
-        if e.widget is not self.root:
-            return
+        if e.widget is not self.root or not getattr(self, "_win_restored", False):
+            return                    # 2.26.2: not while it opens - the first "normal" event wiped "maximised"
         try:
             st = self.root.state()
         except tk.TclError:
@@ -4036,12 +4049,13 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         """Maximised last time -> maximised again. 2.25.4: only once the window is really on screen (asking before
         that did nothing on Windows, so it opened at the plain size), and checked: if Tk didn't, Windows is asked."""
         if not (SETTINGS.get("main_window") or {}).get("zoomed"):
+            self._win_restored = True                                # from now on, moves and sizes are kept
             return
         try:
             if not self.root.winfo_viewable() or SPLASH[0] is not None:
                 if tries < 60:                                       # up to ~15 s (the start-up screen)
                     self.root.after(250, lambda: self.restore_zoom(tries + 1))
-                return
+                    return
             if self.root.state() != "zoomed":
                 self.root.state("zoomed")
             self.root.update_idletasks()
@@ -4050,6 +4064,7 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
                 ctypes.windll.user32.ShowWindow(self._hwnd(), 3)     # SW_MAXIMIZE
         except Exception:
             pass
+        self.root.after(500, lambda: setattr(self, "_win_restored", True))
 
     def on_close(self):
         self.save_widths()
