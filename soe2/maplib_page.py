@@ -40,7 +40,7 @@ class MapLibraryPage:
         rbar.pack(fill="x", pady=(0, 6))
         tk.Label(rbar, text="Rank the selected:", bg=P1, fg=C["muted"]).pack(side="left", padx=(0, 6))
         for r in ML.RANKS + ("Clear",):
-            ttk.Button(rbar, text=r if r != "Avoid" else "✖ Avoid", width=7 if r != "Clear" else 6,
+            ttk.Button(rbar, text=r if r != "Avoid" else "✖ Avoid", width=-7,
                        command=lambda rr=r: self.ml_set(None if rr == "Clear" else rr)).pack(side="left", padx=(0, 4))
 
         box = tk.Frame(page, bg=P1)

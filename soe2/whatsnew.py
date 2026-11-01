@@ -21,6 +21,9 @@ NEXT = [
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.33.1": [
+        "Map library: the ✖ Avoid button is no longer cut off.",
+    ],
     "2.33.0": [
         "Tools that belong to another tool now sit in its title bar: 🗺 Map library in the Session tracker; Mod book, "
         "Under the hood and Market Insights in Price checks. The Toolkit menu shows them under their parent.",
