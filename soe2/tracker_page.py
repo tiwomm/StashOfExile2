@@ -108,8 +108,6 @@ class TrackerPage:
                               command=lambda v: self.tracker_view(),
                               size=9, pad=(12, 4))
         self.tk_view.pack(anchor="w", padx=10, pady=(4, 6))
-        ttk.Button(self.tk_view.master, text="🗺 Map library", command=lambda: self.shell.open("maps")).place(
-            in_=self.tk_view, relx=1.0, x=12, rely=0.5, anchor="w")             # 2.32.0: its own window
         self.tk_pages = {}
         pm = tk.Frame(body, bg=P1)
         tv = ttk.Treeview(pm, columns=("n", "map", "lvl", "time", "entries", "deaths", "rank"), show="headings",

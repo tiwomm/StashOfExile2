@@ -4,7 +4,7 @@ from . import Module
 class ModBook(Module):
     key, title, icon = "modbook", "Mod book", "📖"
     blurb = "What the app learned about mod prices, and your tablet / jewel mod rules."
-    hidden = True                      # 2.0 beta 21: works on its own; opened from Settings > Advanced
+    parent = "checks"                  # 2.33.0: a child tool of Price checks (was hidden; Settings > Advanced opens it too)
 
     def build(self, body):
         self.app.build_modbook(body)

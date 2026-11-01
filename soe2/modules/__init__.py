@@ -16,6 +16,15 @@
     on_show()    - its window was opened or brought back
     status()     - utilities: True (on) / False (off) / "warn" (needs attention) -> the dots on the dock and taskbar
 
+How the app is organised (2.33.0 - the rule for every module, see ROADMAP.md):
+  * top level (dock, desktop, Toolkit menu): things you open on their own;
+  * a child tool (parent = "<key>") is built on ONE module's data and used while working in it. It is never on the
+    dock; it is a button in the parent window's title bar, sits indented under the parent in the Toolkit menu, and
+    its window is titled "Parent › Child";
+  * tabs inside a window are for views of the same thing that fit in one window; anything that needs its own lists
+    and actions becomes a child tool.
+  hidden = True is only for windows that are opened from inside another window and belong nowhere else.
+
 The shell (shell.py) hosts them; to add one, write a file here and add its class to MODULES."""
 
 
@@ -27,6 +36,7 @@ class Module:
     kind = "module"
     blurb = ""
     hidden = False
+    parent = None       # 2.33.0: a child tool's parent module (see "How the app is organised" below)
 
     def __init__(self, app):
         self.app = app

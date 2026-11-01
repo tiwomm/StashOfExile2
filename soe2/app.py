@@ -357,6 +357,7 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         self.page_key["Price breakdown"] = "library"
         for m in self.mods:
             m.body = self.shell.register(m)
+        self.shell.link_children()                                # 2.32.0: child tools under their parent
         _splash_step(i=1)
         for m in self.mods:
             _splash_step(f"Building {m.title}", i=1)
