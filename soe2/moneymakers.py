@@ -17,7 +17,7 @@ from datetime import date
 
 from .config import APP_DIR, RESOURCE_DIR, P, load_json, save_json
 
-SCHEMA = 1
+SCHEMA = 2          # 2.29.0: category + type, tag groups, effort words (2.28.0 wrote 1 - migrate() converts it)
 FILE = "moneymakers.json"
 MINE = "my_strats.json"
 RUNS = "money_runs.json"
@@ -185,19 +185,65 @@ def _read(path):
         return None
 
 
+def _newness(d):
+    return d.get("schema", 1), d.get("revision", 0)
+
+
 def shared():
-    """-> the newest copy of the community file (bundled or fetched), or an empty one."""
+    """-> the newest copy of the community file (bundled or fetched), or an empty one. Strats in an older layout
+    are converted (migrate)."""
     best = None
     for path in (P(FILE), os.path.join(RESOURCE_DIR, FILE), os.path.join(APP_DIR, FILE)):
         d = _read(path)
-        if d and d.get("schema", 1) <= SCHEMA and (best is None or d.get("revision", 0) > best.get("revision", 0)):
+        if d and d.get("schema", 1) <= SCHEMA and (best is None or _newness(d) > _newness(best)):
             best = d
-    return best or {"schema": SCHEMA, "revision": 0, "strats": []}
+    best = best or {"schema": SCHEMA, "revision": 0, "strats": []}
+    if best.get("schema", 1) < SCHEMA:
+        best = dict(best, strats=[migrate(x) for x in best["strats"]])
+    return best
+
+
+# ---- 2.28.0 (schema 1) -> 2.29.0
+_OLD_MECH_CATS = ("Breach", "Delirium", "Ritual", "Expedition", "Abyss")
+_OLD_FARM = {"City area farm": "City area farm", "Sacred Bloom farm": "Sacred Bloom farm", "League start": "League start",
+             "Juiced mapping": "Juiced maps", "Low-tier mapping": "Low-tier maps"}
+
+
+def migrate(s):
+    """A strat written by 2.28.0 -> the 2.29.0 layout: a mechanic category becomes Mapping > that mechanic,
+    typed clicks become a band, profit / investment get their new names, free tags that match the tag list stay
+    (others move into Tips so nothing is lost)."""
+    if not isinstance(s, dict) or ("type" in s and isinstance(s.get("clicks_per_hour"), str)):
+        return s
+    s = dict(s)
+    cat = s.get("category")
+    if cat in _OLD_MECH_CATS:
+        s["category"], s["type"] = "Mapping", cat
+    elif cat in TAXONOMY:
+        s.setdefault("type", {"Mapping": "Juiced mapping", "Bossing": "Map bosses", "Crafting": "Gear crafting",
+                              "Trading": "Buy low, sell high"}.get(cat, "Other"))
+    else:
+        s["category"], s["type"] = "Other", "Other"
+    if not isinstance(s.get("clicks_per_hour"), str) or s["clicks_per_hour"] not in CLICKS:
+        s["clicks_per_hour"] = click_band(s.get("clicks_per_hour", 600)) or "Steady"
+    for old, new in (("profit_per_hour", "est_profit"), ("investment", "est_cost")):
+        if old in s:
+            s.setdefault(new, s.pop(old))
+    tags, extra = [], []
+    for t in list(s.get("tags") or []) + list(s.pop("mechanics", None) or []):
+        (tags if t in ALL_TAGS else extra).append(t)
+    tags += [_OLD_FARM[f] for f in s.pop("farm_types", None) or [] if f in _OLD_FARM]
+    if s.pop("league_start", False):
+        tags.append("League start")
+    s["tags"] = list(dict.fromkeys(t for t in tags if t != s.get("type") or t == "example"))
+    if extra:
+        s["tips"] = list(s.get("tips") or []) + ["Tags: " + ", ".join(extra)]
+    return {k: v for k, v in s.items() if k in ORDER or k == "origin"}
 
 
 def mine():
     d = load_json(MINE, [])
-    return [s for s in d if isinstance(s, dict)] if isinstance(d, list) else []
+    return [migrate(s) for s in d if isinstance(s, dict)] if isinstance(d, list) else []
 
 
 def save_mine(items):
@@ -256,7 +302,7 @@ def fetch_live(get=None, force=False, now=None):
     if d.get("schema", 1) > SCHEMA:
         return "error", "New strats need a newer version of the app - update it (Settings > About)."
     have = shared()
-    if d.get("revision", 0) <= have.get("revision", 0):
+    if _newness(d) <= _newness(have):
         return "same", len(have["strats"])
     save_json(FILE, d)
     return "new", len(d["strats"]) + len(d.get("oneliners") or [])

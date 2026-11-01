@@ -1,6 +1,6 @@
 # StashOfExile2 roadmap
 
-**Current version: 2.28.0**
+**Current version: 2.29.0**
 
 Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds features, 2.10.1 only fixes. Each step below is one release; we work through them top to bottom.
 
@@ -46,22 +46,23 @@ Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds f
 | 2.26.3 | Updates no longer hang with a flashing console window. |
 | 2.26.4 | Regex Jewels / Gear fast (list widget); star legend up top; "Clear filters" button. |
 | 2.27.0 | Chat commands is a tab in Settings (no longer a Utilities window). |
-| 2.28.0 | Money Makers: community strats in one layout (Category › Type browser, tag groups, tablets, waystones, atlas, craft steps, tiers 1-16, est. cost / profit, Thinking and Clicks per hour picked from lists), Download Format (.txt), live updates from GitHub, Share; Lucrative Strats; Tablet Crafting quick reference; simple run tracker. |
+| 2.28.0 | Money Makers: community strats in one layout (Thoughts per Click, Clicks per hour), live updates from GitHub, own strats + Share, simple run tracker. |
+| 2.29.0 | Money Makers reworked: Category › Type browser + tag groups, effort in words, tablet / waystone / atlas / craft sections, waystone tiers, Download Format (.txt), Lucrative Strats, Tablet Crafting quick reference. |
 
 ## ▶ Next up
 
 | Version | Plan |
 |---|---|
-| 2.29.0 | Map library with ranks, import / export. |
-| 2.30.0 | **Polish 1 - Foundation:** design tokens (one spacing scale of 4 / 8 / 12 / 16 / 24, four text sizes, colour roles), one button hierarchy (primary / secondary / quiet / danger), contrast check of every theme (see Accessibility below). Nothing changes in what the app does. |
-| 2.31.0 | **Polish 2 - Responsive:** windows reflow when narrow (toolbars wrap, side panels drop under the list, sensible minimum sizes), sharp on every monitor (per-monitor DPI), a text size setting (100-150 %). |
-| 2.32.0 | **Polish 3 - Hover, focus, micro-interactions:** the same hover and pressed look on every button, row, icon and tab; a visible keyboard focus ring everywhere; short (120-180 ms) fades for popups and toasts, never on lists; a "Reduce motion" setting that turns them off. |
-| 2.33.0 | **Polish 4 - Context menus:** right-click menus where you'd expect them: Price checks rows (Re-price, Copy name, Open on trade site, Mark listed / sold, Delete), Wealth, Favorites, Game search, Insights, Notes. Every menu also opens with the Menu key / Shift+F10. |
-| 2.34.0 | **Polish 5 - Toasts:** one toast system for the whole app (info / success / warning / error, each with an icon, not colour alone), stacked inside the app window, pause while hovered, time based on text length, never steals focus, last 20 kept in Settings > Advanced. Replaces the separate toast / status-line messages where they matter. |
-| 2.35.0 | **Polish 6 - Visual hierarchy:** the suggestions below, window by window, with before / after screenshots in each PR. |
+| 2.30.0 | Map library with ranks, import / export. |
+| 2.31.0 | **Polish 1 - Foundation:** design tokens (one spacing scale of 4 / 8 / 12 / 16 / 24, four text sizes, colour roles), one button hierarchy (primary / secondary / quiet / danger), contrast check of every theme (see Accessibility below). Nothing changes in what the app does. |
+| 2.32.0 | **Polish 2 - Responsive:** windows reflow when narrow (toolbars wrap, side panels drop under the list, sensible minimum sizes), sharp on every monitor (per-monitor DPI), a text size setting (100-150 %). |
+| 2.33.0 | **Polish 3 - Hover, focus, micro-interactions:** the same hover and pressed look on every button, row, icon and tab; a visible keyboard focus ring everywhere; short (120-180 ms) fades for popups and toasts, never on lists; a "Reduce motion" setting that turns them off. |
+| 2.34.0 | **Polish 4 - Context menus:** right-click menus where you'd expect them: Price checks rows (Re-price, Copy name, Open on trade site, Mark listed / sold, Delete), Wealth, Favorites, Game search, Insights, Notes. Every menu also opens with the Menu key / Shift+F10. |
+| 2.35.0 | **Polish 5 - Toasts:** one toast system for the whole app (info / success / warning / error, each with an icon, not colour alone), stacked inside the app window, pause while hovered, time based on text length, never steals focus, last 20 kept in Settings > Advanced. Replaces the separate toast / status-line messages where they matter. |
+| 2.36.0 | **Polish 6 - Visual hierarchy:** the suggestions below, window by window, with before / after screenshots in each PR. |
 | Later | Sidekick / Exiled Exchange-style pricing for more item types; public stash order test tool; Ancients price helper; Linux build. |
 
-### Visual hierarchy - suggestions (for 2.35.0)
+### Visual hierarchy - suggestions (for 2.36.0)
 
 - **One primary action per window**, in the accent colour (Price checks: Re-price all, Regex: Copy, Wealth: Refresh). Everything else is secondary or quiet.
 - **Big number, small label:** totals and prices large; their labels small and muted. The same chip style for every status (Priced, Require Review, time left).

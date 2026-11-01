@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU GPL v3.0 (see LICENSE). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.28.0
+VERSION 2.29.0
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,24 +19,30 @@ VERSION 2.28.0
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.29.0
+       Money Makers rebuilt to the user's original Task 11 (2.28.0 shipped the first draft). SCHEMA 2:
+       what a strat IS = category + type (TAXONOMY: Mapping > Breach, Crafting > Tablet crafting ...), shown in a
+       browser with counts; everything else = tags (TAG_GROUPS: Also uses, Farm type - City area / Sacred Bloom
+       ..., Budget, Play style - checkboxes); tag search matches the type too. Effort picked from lists: Thinking
+       (Autopilot / Easy / Moderate / Hard / Big brain = thoughts_per_click 1-5) and Clicks per hour (Chill /
+       Steady / Busy / Frantic) - no dots, no typed numbers. Dedicated sections: tablets, waystones, atlas /
+       master setup, craft steps; waystone tiers 1-16 (filter); est_cost / est_profit (were investment /
+       profit_per_hour). "Download Format" = the blank layout as .txt for Notepad (to_text / from_text; Import and
+       build_strats.py read .txt). New tabs: Lucrative Strats (one-liners: strats/oneliners.json,
+       my_lucrative.json, lucrative.yml form) and Tablet Crafting (trans/aug -> 2 bad: alch / 2 good: regal +
+       exalt -> 4 junk: keep to reforge; Check my tablet from the clipboard; valuable tablet mods from Mod book +
+       learned prices + regex data; regex copy; trade link per mod). MM.migrate() converts 2.28.0 strats (yours,
+       and a cached shared file); a 2.28.0 app refuses the schema-2 file from GitHub and says to update.
   2.28.0
        Money Makers (modules/money.py, moneymakers.py, moneymakers_page.py): community strats in ONE standard layout
        (schema 1, strats/README.md; validate() is shared by the app, tools/build_strats.py and CI .github/workflows/
        strats.yml). Strats live as one JSON file each in strats/ -> moneymakers.json (bundled) -> also fetched from
        GitHub main (raw) when the window opens, at most every 12 h, or with "Check for new strats" - newest
        "revision" wins, a file for a newer schema is refused. So a merged strat reaches everyone without a release.
-       What a strat IS = Category > Type (TAXONOMY: Mapping > Breach, Crafting > Tablet crafting ...), shown in a
-       browser on the left with counts; everything else = tags in groups (TAG_GROUPS: Also uses, Farm type,
-       Budget, Play style - checkboxes). Tag search matches the type too. Effort is picked, never typed: Thinking
-       (Autopilot / Easy / Moderate / Hard / Big brain, stored 1-5 as thoughts_per_click) and Clicks per hour
-       (Chill / Steady / Busy / Frantic). Dedicated optional sections: tablets, waystones, atlas / master setup,
-       craft steps; waystone tiers 1-16 (filter); est. cost / est. profit. "Download Format" saves the blank layout as a .txt (Notepad; to_text / from_text, also
-       accepted by build_strats.py and Import). Your own strats (my_strats.json): add / edit / import / export,
-       Share = a GitHub issue form (strategy.yml) filled in by URL. Tabs: Lucrative Strats (one-liners,
-       strats/oneliners.json + my_lucrative.json, lucrative.yml issue form); Tablet Crafting (the trans/aug ->
-       alch or regal+exalt -> reforge flow, Check my tablet from the clipboard, valuable tablet mods from the Mod
-       book + learned prices + regex data, regex copy, trade-site link per mod); Run tracker of its own
-       (money_runs.json): Start / End run, optional profit, runs and div per hour, "Your runs" on the strat.
+       Rated by Thoughts per Click (1-5) and Clicks per hour (Chill/Steady/Busy/Frantic bands). Your own strats
+       (my_strats.json): add / edit / import / export, Share = a GitHub issue form (.github/ISSUE_TEMPLATE/
+       strategy.yml) filled in by URL. Run tracker of its own (money_runs.json): Start / End run, optional profit,
+       runs per hour, div per hour; "Your runs" shows on the strat.
   2.27.0
        Chat commands left Utilities: it is a tab in Settings now (build_chat_window on the "Chat commands" page;
        modules/chat.py removed; shell.open("chat") opens that tab, so old saved layouts and links still work).
@@ -994,7 +1000,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.28.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.29.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
