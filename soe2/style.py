@@ -339,10 +339,11 @@ class SegBar(tk.Frame):
     """A row of joined toggle buttons (2.0 beta 7), like  [ Total | Daily ].  One is picked at a time; the picked one is
     lit with an orange line under it. command(value) is called when you pick another."""
 
-    def __init__(self, parent, options, value=None, command=None, bg=None, size=10, pad=(16, 4)):
+    def __init__(self, parent, options, value=None, command=None, bg=None, size=10, pad=(16, 4), badges=None):
         super().__init__(parent, bg=C["line"], padx=1, pady=1)
         self.command, self.value, self.btns = command, value if value is not None else options[0], {}
         self.size, self.pad = size, pad
+        self.badges = dict(badges or {})            # 2.38.0: {"Stash tab": "BETA"} - a small tag inside that button
         for i, opt in enumerate(options):
             self._add(opt, i)
         self.paint()
@@ -350,11 +351,23 @@ class SegBar(tk.Frame):
     def _add(self, opt, i):
         f = tk.Frame(self, bg=C["line"])
         f.pack(side="left", padx=(1 if i else 0, 0))
-        lab = tk.Label(f, text=opt, font=("Segoe UI", self.size, "bold"), padx=self.pad[0], pady=self.pad[1], cursor="hand2")
-        lab.pack()
+        top = tk.Frame(f, bg=C["line"])
+        top.pack(fill="x")
+        badge = self.badges.get(opt)
+        lab = tk.Label(top, text=opt, font=("Segoe UI", self.size, "bold"), padx=self.pad[0], pady=self.pad[1],
+                       cursor="hand2")
+        lab.pack(side="left", fill="both", expand=True)
+        tag = None
+        if badge:                                   # inside the button, so it reads as "this option is BETA"
+            lab.config(padx=0)
+            lab.pack_configure(padx=(self.pad[0], 4))
+            tag = tk.Label(top, text=badge, bg="#3a2a10", fg="#ffcf40", font=("Segoe UI", SMALL - 2, "bold"), padx=4,
+                           pady=0, cursor="hand2", highlightthickness=1, highlightbackground="#7a6428")
+            tag.pack(side="left", padx=(0, self.pad[0]))
+            tag.bind("<Enter>", lambda e, o=opt: self.paint(hover=o))
         line = tk.Frame(f, height=2)
         line.pack(fill="x")
-        for w in (lab, line):
+        for w in (lab, line, top) + ((tag,) if tag else ()):
             w.bind("<Button-1>", lambda e, o=opt: self.pick(o))
         lab.bind("<Enter>", lambda e, o=opt: self.paint(hover=o))
         lab.bind("<Leave>", lambda e: self.paint())
@@ -365,6 +378,7 @@ class SegBar(tk.Frame):
             on = opt == self.value
             bg = "#2c4a84" if on else ("#1b2a48" if opt == hover else "#111a2c")
             lab.config(bg=bg, fg="#ffffff" if on else "#9fb0cc")
+            lab.master.config(bg=bg)                # (the row that also holds a badge)
             line.config(bg=C["accent"] if on else bg)
 
     def pick(self, opt, notify=True):

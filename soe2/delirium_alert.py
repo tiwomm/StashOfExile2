@@ -20,7 +20,9 @@ Usage:
   python delirium_alert.py --test-alert   just show the banner for 5 s
   python delirium_alert.py --test-image some_screenshot.png   check detection on a file
   python delirium_alert.py --grab     save a full screenshot (to re-crop templates)
-"""
+
+ToS (TOS.md): this only LOOKS at the screen (a capture, like a screenshot) and SHOWS something; it never presses,
+clicks, types or sends anything to the game, and never reads the game's memory or traffic."""
 
 import argparse
 import sys

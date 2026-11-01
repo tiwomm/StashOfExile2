@@ -1,6 +1,7 @@
 """Expedition Remnant Price Checker in the app (2.37.0): the "Remnant" helper next to Delirium, Breach and Ritual -
 its row in Session tracker > Alerts, its cell in the timer's Helpers bar, its key, and the price tags over the game.
 The reading and matching are in remnant.py. Idea: PoE Ancients Price Helper by Pedro Quitério (no code from it)."""
+import sys
 import threading
 import time
 import tkinter as tk
@@ -9,8 +10,24 @@ from . import remnant as RM
 from .config import save_json, SETTINGS
 from .pricefmt import fmt_div
 
-TRANSPARENT = "#010203"
 TAG_BG, TAG_BEST = "#101826", "#2a2108"
+
+
+def no_capture(win):
+    """Windows 10 2004+: leave this window out of screen captures (WDA_EXCLUDEFROMCAPTURE), so the Auto watcher -
+    and any screenshot - sees the game, not our tags. Only hides it from captures; it changes nothing in the game."""
+    if sys.platform != "win32":
+        return
+    try:
+        import ctypes
+        u = ctypes.windll.user32
+        u.GetParent.restype = ctypes.c_void_p
+        u.GetParent.argtypes = [ctypes.c_void_p]
+        h = u.GetParent(win.winfo_id()) or win.winfo_id()
+        u.SetWindowDisplayAffinity.argtypes = [ctypes.c_void_p, ctypes.c_uint]
+        u.SetWindowDisplayAffinity(h, 0x11)
+    except Exception:
+        pass
 
 
 class RemnantPage:
@@ -247,22 +264,41 @@ class RemnantPage:
             pass
 
     # ---------------- the tags over the game
+    # 2.38.0: one small, solid, click-through window per tag. (2.37.0 drew them on ONE window as big as the game, made
+    # see-through with a colour key; on some PCs the colour key isn't honoured and that window showed black over the
+    # whole game - and Auto, seeing its own black window, hid and showed it again and again.) Each tag is also hidden
+    # from screen capture (Windows 10 2004+), so the watcher never reads its own tags.
     def remnant_show(self, rect, rows, secs=RM.SHOW_SECS):
         self.remnant_hide()
         l_, t, r, b = rect
-        win = tk.Toplevel(self.root)
-        win.overrideredirect(True)
-        win.attributes("-topmost", True)
-        win.configure(bg=TRANSPARENT)
-        try:
-            win.attributes("-transparentcolor", TRANSPARENT)
-        except tk.TclError:
-            pass
-        win.geometry(f"{r - l_}x{b - t}+{l_}+{t}")
-        cv = tk.Canvas(win, bg=TRANSPARENT, highlightthickness=0, width=r - l_, height=b - t)
-        cv.pack(fill="both", expand=True)
         ui = max(0.7, (b - t) / 1440.0)
-        size = -int(18 * ui)
+        size = -int(16 * ui)
+        wins = []
+
+        def tag(x, y_mid, text, fg, bg, edge, bold=True):
+            w = tk.Toplevel(self.root)
+            w.withdraw()
+            w.overrideredirect(True)
+            try:
+                w.attributes("-topmost", True)
+            except tk.TclError:
+                pass
+            lab = tk.Label(w, text=text, fg=fg, bg=bg, font=("Segoe UI", size, "bold" if bold else "normal"),
+                           padx=8, pady=2, highlightthickness=1, highlightbackground=edge)
+            lab.pack()
+            w.update_idletasks()
+            hh = w.winfo_reqheight()
+            w.geometry(f"+{int(x)}+{int(y_mid - hh / 2)}")
+            w.deiconify()
+            try:
+                from .alerts_page import click_through, force_topmost
+                click_through(w)
+                force_topmost(w)
+            except Exception:
+                pass
+            no_capture(w)
+            wins.append(w)
+
         for row in rows:
             x0, y0, x1, y1 = row["box"]
             if row["total"] is None:
@@ -274,34 +310,20 @@ class RemnantPage:
                 fg = "#ffd25a" if row.get("best") else "#e8eefc"
             if row.get("best"):
                 txt = "★ " + txt
+            mid = t + (y0 + y1) / 2
             if row.get("label"):                               # (the Test: an example line to tag)
-                cv.create_text(x0, (y0 + y1) // 2, text=row["label"], anchor="w", fill="#c8b98a",
-                               font=("Segoe UI", size))
-            item = cv.create_text(x1 + 14, (y0 + y1) // 2, text=txt, anchor="w", fill=fg,
-                                  font=("Segoe UI", size, "bold"))
-            bx = cv.bbox(item)
-            if bx:
-                pad = 4
-                rect_id = cv.create_rectangle(bx[0] - pad * 2, bx[1] - pad, bx[2] + pad * 2, bx[3] + pad,
-                                              fill=TAG_BEST if row.get("best") else TAG_BG,
-                                              outline="#ffd25a" if row.get("best") else "#3d5582")
-                cv.tag_lower(rect_id, item)
-        win.update_idletasks()
-        try:
-            from .alerts_page import click_through, force_topmost
-            click_through(win)
-            force_topmost(win)
-        except Exception:
-            pass
-        self.rm_win = win
+                tag(l_ + x0, mid, row["label"], "#c8b98a", "#1a140c", "#5a4a2a", bold=False)
+            tag(l_ + x1 + 14, mid, txt, fg, TAG_BEST if row.get("best") else TAG_BG,
+                "#ffd25a" if row.get("best") else "#3d5582")
+        self.rm_win = wins or None
         self.rm_auto_shown = False
-        if secs:                                               # (Auto's tags stay until the list closes)
-            self.root.after(int(secs * 1000), lambda: getattr(self, "rm_win", None) is win and self.remnant_hide())
+        if secs and wins:                                      # (Auto's tags stay until the list closes)
+            self.root.after(int(secs * 1000), lambda: getattr(self, "rm_win", None) is wins and self.remnant_hide())
 
     def remnant_hide(self):
         self.rm_auto_shown = False
-        w, self.rm_win = getattr(self, "rm_win", None), None
-        if w is not None:
+        wins, self.rm_win = getattr(self, "rm_win", None), None
+        for w in wins or ():
             try:
                 w.destroy()
             except tk.TclError:

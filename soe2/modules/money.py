@@ -3,6 +3,7 @@ from . import Module
 
 class MoneyMakers(Module):
     key, title, short, icon, kind = "money", "Money Makers", "Money", "🪙", "module"
+    beta = True                     # 2.38.0: tagged BETA (still shown with Labs off)
     blurb = "Farming strats from the community, rated by effort (Thoughts per Click, Clicks per hour), and a run tracker."
 
     def build(self, body):
