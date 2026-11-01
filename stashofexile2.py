@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU GPL v3.0 (see LICENSE). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.29.0
+VERSION 2.29.1
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,6 +19,15 @@ VERSION 2.29.0
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.29.1
+       Fixed: updating opened console windows over and over ("Pinging 127.0.0.1 ..."). 2.26.3's swap .bat waited
+       with ping and was started with CREATE_NO_WINDOW | DETACHED_PROCESS - Windows ignores NO_WINDOW with
+       DETACHED, so cmd had no console and every ping / move opened a new one. The .bat is gone: the downloaded
+       exe is started as  StashOfExile2_update.exe --finish-update <old exe>  (updates.finish_update): it waits
+       for the old exe to close, copies itself over it (taskkill /t of what's left after 15 s), starts it and
+       ends; after 2 minutes it gives up, writes update_log.txt and runs the new version from where it is.
+       At start-up cleanup_update deletes StashOfExile2_update.exe and any old .bat. Note: updating FROM an older
+       version still runs that version's .bat one last time.
   2.29.0
        Money Makers rebuilt to the user's original Task 11 (2.28.0 shipped the first draft). SCHEMA 2:
        what a strat IS = category + type (TAXONOMY: Mapping > Breach, Crafting > Tablet crafting ...), shown in a
@@ -1000,7 +1009,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.29.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.29.1"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
@@ -1010,6 +1019,9 @@ def main():
         sys.argv.remove("--restarted")
         import time
         time.sleep(1.2)                                           # let the old window save and close first
+    if len(sys.argv) > 2 and sys.argv[1] == "--finish-update":  # 2.29.1: the new exe swaps itself in (no .bat)
+        from soe2.updates import finish_update
+        sys.exit(finish_update(sys.argv[2]))
     if len(sys.argv) > 1 and sys.argv[1] == "--ritual":         # 2.14.0: the Ritual watcher helper (started by the app)
         from soe2.ritual_alert import main as ritual
         sys.exit(ritual(sys.argv[2:]))

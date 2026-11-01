@@ -21,6 +21,10 @@ NEXT = [
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.29.1": [
+        "Fixed: updating no longer opens black windows (\"Pinging 127.0.0.1\") over and over - the new version "
+        "now installs itself, with no windows at all.",
+    ],
     "2.29.0": [
         "Money Makers, reworked: browse strats by what they are (Mapping › Breach, Crafting › Tablet crafting ...), "
         "search by tag, and filter by waystone tier and effort. Effort is shown in words (Thinking: Easy ... Big "

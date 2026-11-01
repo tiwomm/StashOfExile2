@@ -27,7 +27,7 @@ from .config import (
 from .clipboard import clip_seq, read_clipboard_text
 from .util import _amt, _num, mmss
 from .net import _STATUS_HOOK, fmt_stamp, LIMITER, PACES, per_text
-from .updates import download_asset, FROZEN, latest_release, pick_asset, REPO, SWAP_BAT, is_newer, vtuple
+from .updates import clean_env, cleanup_update, download_asset, FROZEN, latest_release, pick_asset, REPO, is_newer, vtuple
 from .rates import RATES
 from .mods import (
     auto_impact, COMMUNITY, COMMUNITY_ACTIVE, COMMUNITY_DISAGREE, default_impact, impact_key, IMPACT_LABEL,
@@ -1071,8 +1071,7 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
             # 2.26.1: a fresh start of the one-file exe. Without this the new copy reused THIS copy's unpacked
             # folder (PyInstaller passes it on to child processes), which is deleted when this one closes - then
             # cv2 (Delirium / Ritual helpers) and the data files were gone: "No module named 'cv2'".
-            env = {k: v for k, v in os.environ.items() if not k.startswith(("_PYI_", "_MEIPASS"))}
-            env["PYINSTALLER_RESET_ENVIRONMENT"] = "1"
+            env = clean_env()
             subprocess.Popen(cmd, close_fds=True, creationflags=flags, cwd=APP_DIR, env=env)
         except Exception as e:
             return self._say(f"Couldn't restart by itself ({e}); close and open the app to see the change.", 10)
@@ -1382,13 +1381,10 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
             messagebox.showinfo("Update", f"Downloaded to:\n{dest}\n\nClose this program and start that file to use the new version.")
             return
         old = sys.executable
-        bat = os.path.join(os.path.dirname(old), "StashOfExile2_update.bat")
         try:
-            with open(bat, "w", encoding="utf-8") as f:
-                f.write(SWAP_BAT.format(old=old, new=dest, image=os.path.basename(old)))
             import subprocess
-            env = dict(os.environ, PYINSTALLER_RESET_ENVIRONMENT="1")
-            subprocess.Popen(["cmd", "/c", bat], creationflags=0x08000000 | 0x00000008, close_fds=True, env=env)
+            # 2.29.1: the new exe does the swap itself (no .bat, no console windows) - see updates.finish_update
+            subprocess.Popen([dest, "--finish-update", old], close_fds=True, env=clean_env())
         except Exception as e:
             messagebox.showerror("Update", f"The new version was downloaded to:\n{dest}\n\nbut could not be installed automatically ({e}).\n"
                                            "Close this program and replace the old file with it yourself.")
@@ -4117,6 +4113,8 @@ def _splash_step(text=None, i=None):
 
 
 def main():
+    if FROZEN and sys.platform == "win32":                # 2.29.1: remove what an update left behind
+        threading.Thread(target=cleanup_update, args=(APP_DIR,), daemon=True).start()
     root = tk.Tk(className="StashOfExile2")      # 2.10.0: window managers (Hyprland) see class "Stashofexile2"
     if SETTINGS.get("splash", True):
         try:
