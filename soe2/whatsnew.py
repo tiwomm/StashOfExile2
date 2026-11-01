@@ -21,6 +21,10 @@ NEXT = [
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.26.1": [
+        "Fixed: after changing the theme (the app restarts itself), the Delirium alert could fail with "
+        "\"No module named 'cv2'\".",
+    ],
     "2.26.0": [
         "Session tracker timer: \"Helpers: ● Breach | ● Delirium | ● Ritual\" - green is on, red is off. Click one "
         "to switch it; ⚙ opens their options.",
