@@ -499,6 +499,13 @@ class Market:
             new.pop(sid, None)
         for sid, st in high.items():
             new[sid] = {"tier": "high", "lift": st["lift"], "n": st["n"], "from": None}
+        try:                                               # 2.31.0: what everyone's price checks pooled
+            from .communitymods import learned_highs
+            for sid, info in learned_highs(self.cur(), float(SETTINGS.get("good_div", 0.5)), HIGH_LIFT).items():
+                if sid not in decided and sid not in new:   # your own data for this league decides first
+                    new[sid] = info
+        except Exception:
+            pass
         LEARNED.clear()                                    # in place: other modules hold this dict
         LEARNED.update(new)
         rebuild_community(self)

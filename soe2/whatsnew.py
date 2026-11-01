@@ -21,6 +21,15 @@ NEXT = [
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.31.0": [
+        "Community Mod book: everyone's price checks pool their mod prices (anonymously, once an hour), so stars and "
+        "estimates get better for everyone - most of all early in a league. Your own rules always win.",
+        "Price checks shows how many community prices there are and how many you added. Settings > General turns "
+        "sharing off; you still get everyone else's prices.",
+        "Removed: the Ritual Capture button and the Lag finder.",
+        "Price checks: Stash tab is marked BETA (it often reads tabs only partly - Ctrl+Alt+C is the reliable way).",
+        "The \"Ctrl+Alt+C only\" box left the toolbar: Settings > Hotkeys > \"Also add items copied another way\".",
+    ],
     "2.30.0": [
         "Money Makers > Strats: Official, Community and Mine. Community is a board where players post their strats, "
         "upvote the good ones and report junk. No account needed: just pick a name the first time.",
