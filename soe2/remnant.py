@@ -35,11 +35,13 @@ JUNK = re.compile(r"[^\w' ()\-:,.]+")
 
 # ================================================================ runeshape tips (2.40.0)
 # A small cheat sheet shown next to the price tags while a remnant's book is open. Runeshapes are SYMBOLS in game
-# (their names only show when you hover one), so the app can't tell which ones a remnant has - this just lists the
-# ones players rate best for loot. Community opinion, not measured - from guides gathered Nov 2026:
-#   epoe.io Expedition guide (Larky's farming priorities: S Opulent, Oath, Power; A Death, Soul, Time; skip Bond),
-#   timesaver.gg Aldur's Saga guide (Power, Death, Bond; Opulent and Oath community picks), game8 (effects).
-# Bond: reports differ (one guide picks it, one says skip - maybe bugged), so it's marked.
+# (their names only show when you hover one), so the app can't tell which ones a remnant has - this lists how players
+# rate them for loot. Sources gathered Nov 2026:
+#   epoe.io Expedition guide (Larky's farming priorities: S Opulent, Oath, Power; A Death, Soul, Time; skip Bond;
+#   "danger" runes Moon, Toxic, Bloodletting; arena hazards Earth; Life flagged for poor loot; Protective awkward),
+#   timesaver.gg Aldur's Saga guide (Power, Death, Bond; Opulent and Oath community picks), game8 (all 33 effects).
+# S and A are the guides' picks. B-D are grouped from those notes and each rune's effect: B = some upside (more
+# kills, XP), C = only makes monsters tougher, D = hazards / dangerous. Bond: reports differ, so it's marked.
 RUNE_TIPS_UPDATED = "Nov 2026"
 RUNE_TIERS = [
     ("S", "Opulent", "rarer monsters - more loot"),
@@ -49,7 +51,35 @@ RUNE_TIERS = [
     ("A", "Death", "slain monsters merge, stronger"),
     ("A", "Soul", "union of souls"),
     ("A", "Bond", "rares pass on mods - mixed reports"),
+    ("B", "Rebirth", "monsters may rebirth - more kills"),
+    ("B", "Wisdom", "more experience"),
+    ("B", "Ward", "monsters get runic ward"),
+    ("C", "Life", "shared life - poor loot reported"),
+    ("C", "Protective", "Verisium shields - awkward"),
+    ("C", "Stone", "armoured, hard to stun"),
+    ("C", "Rage", "monsters enrage"),
+    ("C", "Momentum", "faster monsters"),
+    ("C", "Adaptive", "adaptation"),
+    ("C", "Arcane", "energy shield, nova"),
+    ("C", "Vision", "reflects curses / shock / chill"),
+    ("C", "Fire", "extra fire damage"),
+    ("C", "Cold", "extra cold damage"),
+    ("C", "Lightning", "extra lightning damage"),
+    ("C", "Electrocuting", "electrocute, shocked ground"),
+    ("C", "Volcanic", "ignite, burning ground"),
+    ("C", "Tempest", "shock / chill on all damage"),
+    ("C", "Prismatic", "always shock, random element"),
+    ("C", "Cyclonic", "exposure, armour break, wither"),
+    ("C", "Celestial", "elemental explosions on death"),
+    ("D", "Bloodletting", "life leech, corrupted blood"),
+    ("D", "Toxic", "poison, toxic volatiles"),
+    ("D", "Earth", "earthen spires (hazard)"),
+    ("D", "Moon", "moon beams (hazard)"),
+    ("D", "Sky", "elemental tornados (hazard)"),
+    ("D", "Tidal", "tidal waves (hazard)"),
 ]
+TIER_LOOK = {"S": ("#2a2108", "#ffd25a"), "A": ("#16213a", "#9fc2ff"), "B": ("#13241a", "#7fd9a0"),
+             "C": ("#1c1c24", "#b4bccb"), "D": ("#2a1012", "#ff8a80")}
 
 
 class OcrUnavailable(Exception):

@@ -22,9 +22,11 @@ NEXT = [
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
     "2.40.0": [
-        "Runeshape tips: while a remnant's prices show, a small list next to them shows the runeshapes players rate "
-        "best for loot - S: Opulent, Power, Oath; A: Time, Death, Soul, Bond. Switch it off in Session tracker > "
-        "Alerts (Runeshape tips).",
+        "Runeshape tips: while a remnant's prices show, a small list next to them rates every runeshape for loot, "
+        "S to D (S: Opulent, Power, Oath). Switch it off in Session tracker > Alerts (Runeshape tips).",
+        "Fix: the Ritual reminder when you leave a map with rituals unfinished works again - the Ritual watcher was "
+        "stopping the moment it started. Going back into the same map also keeps its count.",
+        "Fix: Breach and Ritual banners show see-through text again (they had a black box with some themes).",
         "Fix: Stash tab's currency (e.g. Mirror of Kalandra) really stays now - it went back to Divine Orb when the app "
         "started - and its name no longer stays highlighted after you pick it.",
     ],

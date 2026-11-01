@@ -32,6 +32,18 @@ VERSION HISTORY
        ids have names (KNOWN_CURRENCY_NAMES), Read uses the saved id when the box shows its name (pctab_cur_id), and
        the box is set again when the list arrives (engine -> "currencies_loaded"). After a pick the text is no
        longer left highlighted (selection_clear, focus to its window).
+       Fix: Breach / Ritual banners had a black box instead of see-through text (like END DELIRIUM). Themes recolour
+       every colour handed to Tk, and the banners' key #010203 counts as a dark blue - under Amethyst the window
+       became #020103 while the key stayed #010203. The key is now never recoloured (style._THEME keep). (Likely
+       also the cause of 2.37.0's black remnant screen.) The Delirium banner runs in its own process, so it was fine.
+       Fix: the Ritual "leave the map" reminder never fired - the user's ritual_log.txt showed the watcher stopping
+       the second it started, every time: in the exe its stdin wasn't the app's pipe, so it read "end of input" and
+       quit. Now (delirium_runner): in the exe the pipes are opened from the OS handles whenever they are pipes; the
+       app passes --parent <pid> and holds a named mark (utilities.app_mark); a helper whose pipe ends while the app
+       is still there keeps watching and quits when the app goes (after_stdin_ends). Same for the Delirium helper.
+       Also: going back into the same map (same area + seed) no longer forgets its ritual count (rt_where).
+       Runeshape tips list every runeshape (33): S / A players' picks with what they do, then B / C / D grouped by
+       effect (B some upside, C only tougher monsters, D hazards) on one line each.
   2.39.1
        Expedition Remnant Price Checker: rewards poe.ninja doesn't list (the user's Warding Rune of Obsession - 15
        other Warding runes are listed, not that one) got no tag at all; and a look-alike was only just kept out

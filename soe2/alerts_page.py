@@ -484,7 +484,8 @@ class AlertsPage:
                             self.breach_set_pending(None)          # spent (the tree was opened)
                             self.breach_dismiss()
                         elif kind == "area":
-                            self.breach_area(gl_area_kind(data.get("area"), data.get("seed"), data.get("level", 0)))
+                            self.breach_area(gl_area_kind(data.get("area"), data.get("seed"), data.get("level", 0)),
+                                             (data.get("area"), data.get("seed")))
         except Exception:
             self.log_error("breach alert")
         if self.log_wanted():
@@ -500,7 +501,7 @@ class AlertsPage:
             cfg["pending"] = level
             save_json("settings.json", SETTINGS)
 
-    def breach_area(self, kind):
+    def breach_area(self, kind, where=None):
         """2.11.0: leaving a map (to your hideout or a town) with Hiveblood still waiting -> one reminder per exit,
         every exit, until the Genesis Tree has been opened."""
         before, self.br_area = self.br_area, kind
@@ -515,7 +516,11 @@ class AlertsPage:
                             lambda g=got: self.breach_alert(level="ritual", sub=f"{g[0]} of {g[1]} done - go back "
                                                                                  f"through your portal"))
         if kind == "map" and before != "map":
-            self.rt_map = None                             # a new map: its own count
+            # a new map: its own count. 2.40.0: back into the SAME map (same area and seed - through your portal)
+            # keeps it, so a quick in-and-out still reminds you
+            if where is None or where != getattr(self, "rt_where", None):
+                self.rt_map = None
+            self.rt_where = where
 
     # ================================================================ Breach: the banner
     def breach_alert(self, text="Stored Hiveblood is almost at the maximum!", test=False, level=None, sub=None):

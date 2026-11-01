@@ -341,22 +341,30 @@ class RemnantPage:
         small = size                                           # (as big as the tags: read at a glance)
         box = tk.Frame(w, bg="#101826", highlightthickness=1, highlightbackground="#5b77ad", padx=8, pady=4)
         box.pack()
-        tk.Label(box, text="Runeshapes - community picks", bg="#101826", fg="#e8eefc",
+        tk.Label(box, text="Runeshapes for loot", bg="#101826", fg="#e8eefc",
                  font=("Segoe UI", small, "bold"), anchor="w").pack(fill="x")
-        for tier in ("S", "A"):
-            for tr, name, why in RM.RUNE_TIERS:
-                if tr != tier:
-                    continue
+        for tier in ("S", "A", "B", "C", "D"):                 # 2.40.0: every runeshape, best first
+            names = [(n, why) for tr, n, why in RM.RUNE_TIERS if tr == tier]
+            bg, fg = RM.TIER_LOOK[tier]
+            if tier in ("S", "A"):                            # the picks: one line each, with what they do
+                for name, why in names:
+                    row = tk.Frame(box, bg="#101826")
+                    row.pack(fill="x")
+                    tk.Label(row, text=tier, bg=bg, fg=fg, font=("Segoe UI", small, "bold"), width=2).pack(side="left", pady=1)
+                    tk.Label(row, text=name, bg="#101826", fg="#e8eefc", font=("Segoe UI", small, "bold"), width=8,
+                             anchor="w").pack(side="left", padx=(8, 0))
+                    tk.Label(row, text=why, bg="#101826", fg="#9aa6bd", font=("Segoe UI", small),
+                             anchor="w").pack(side="left")
+            else:                                             # the rest: one wrapped line of names per tier
                 row = tk.Frame(box, bg="#101826")
-                row.pack(fill="x")
-                tk.Label(row, text=tr, bg="#2a2108" if tr == "S" else "#16213a",
-                         fg="#ffd25a" if tr == "S" else "#9fc2ff", font=("Segoe UI", small, "bold"),
-                         width=2).pack(side="left", pady=1)
-                tk.Label(row, text=name, bg="#101826", fg="#e8eefc", font=("Segoe UI", small, "bold"), width=8,
-                         anchor="w").pack(side="left", padx=(8, 0))
-                tk.Label(row, text=why, bg="#101826", fg="#9aa6bd", font=("Segoe UI", small),
-                         anchor="w").pack(side="left")
-        tk.Label(box, text=f"for loot · players' opinion ({RM.RUNE_TIPS_UPDATED})", bg="#101826", fg="#6f7c96",
+                row.pack(fill="x", pady=(2, 0))
+                tk.Label(row, text=tier, bg=bg, fg=fg, font=("Segoe UI", small, "bold"), width=2).pack(side="left",
+                                                                                                    anchor="n")
+                tk.Label(row, text="  ·  ".join(n for n, _w in names), bg="#101826", fg=fg if tier != "C" else "#9aa6bd",
+                         font=("Segoe UI", small), anchor="w", justify="left",
+                         wraplength=int(abs(size) * 24)).pack(side="left", padx=(8, 0))
+        tk.Label(box, text=f"S-A: players' picks · B-D: grouped by effect ({RM.RUNE_TIPS_UPDATED})", bg="#101826",
+                 fg="#6f7c96",
                  font=("Segoe UI", small), anchor="w").pack(fill="x", pady=(2, 0))
         w.update_idletasks()
         try:
