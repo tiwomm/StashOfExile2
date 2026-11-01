@@ -26,6 +26,12 @@ VERSION HISTORY
        in game, so the app can't tell which a remnant has - it's a cheat sheet. Sources (Nov 2026): epoe.io
        Expedition guide (Larky's priorities), timesaver.gg Aldur's Saga guide, game8 runeshape list. Alerts row:
        "Runeshape tips" switch (remnant cfg "tips", on).
+       Fix: Stash tab's currency still went back to Divine Orb - the real cause: the box is built before the trade
+       site's full currency list arrives, and Mirror isn't in the short built-in list, so a saved "mirror" showed as
+       "Divine Orb" and Read tab then searched in divines. Now the name is saved too (pctab currency_name), known
+       ids have names (KNOWN_CURRENCY_NAMES), Read uses the saved id when the box shows its name (pctab_cur_id), and
+       the box is set again when the list arrives (engine -> "currencies_loaded"). After a pick the text is no
+       longer left highlighted (selection_clear, focus to its window).
   2.39.1
        Expedition Remnant Price Checker: rewards poe.ninja doesn't list (the user's Warding Rune of Obsession - 15
        other Warding runes are listed, not that one) got no tag at all; and a look-alike was only just kept out

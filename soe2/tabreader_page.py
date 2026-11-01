@@ -8,6 +8,13 @@ from .style import C, SegBar
 from .tabreader import PCTAB
 from .wealth import parse_price_text, parse_trade_link, WEALTH_CURRENCIES
 
+# 2.40.0: names for trade-site currency ids that aren't in the built-in list (it is replaced by the site's own list a
+# moment after start; until then the box still shows the right name)
+KNOWN_CURRENCY_NAMES = {"mirror": "Mirror of Kalandra", "divine": "Divine Orb", "exalted": "Exalted Orb",
+                        "chaos": "Chaos Orb", "vaal": "Vaal Orb", "regal": "Regal Orb", "annul": "Orb of Annulment",
+                        "alch": "Orb of Alchemy", "transmute": "Orb of Transmutation", "aug": "Orb of Augmentation",
+                        "chance": "Orb of Chance", "artificers": "Artificer's Orb", "wisdom": "Scroll of Wisdom"}
+
 MODES = ["Manual Add", "Stash tab"]          # 2.8.1: "Manual Add" was called "Ctrl+Alt+C"
 
 
@@ -40,12 +47,17 @@ class TabReaderPage:
         tk.Label(row, text="Tab's price", bg=P1, fg=C["muted"]).pack(side="left")
         self.pc_amt = tk.StringVar(value=str(cfg.get("amount") or ""))
         ttk.Entry(row, textvariable=self.pc_amt, width=9).pack(side="left", padx=(8, 4))
-        self.pc_cur = tk.StringVar(value=dict(WEALTH_CURRENCIES).get(cfg.get("currency") or "divine", "Divine Orb"))
+        # 2.40.0: the box is built before the trade site's full currency list arrives, so a saved Mirror of Kalandra
+        # isn't in the list yet - it showed "Divine Orb", and Read tab then searched in divines. Show the saved name.
+        cid = cfg.get("currency") or "divine"
+        self.pc_cur = tk.StringVar(value=dict(WEALTH_CURRENCIES).get(cid) or cfg.get("currency_name")
+                                   or KNOWN_CURRENCY_NAMES.get(cid) or "Divine Orb")
         cb = ttk.Combobox(row, textvariable=self.pc_cur, values=[n for _c, n in WEALTH_CURRENCIES], state="readonly",
                           width=24)
         cb.config(postcommand=lambda c=cb: c.config(values=[n for _c, n in WEALTH_CURRENCIES]))   # 2.16.0: full list
         cb.pack(side="left")
         cb.bind("<<ComboboxSelected>>", lambda e: self.pctab_cur_picked(), add="+")
+        self.pc_cur_box = cb
         self.pc_stop = ttk.Button(row, text="Stop", command=self.pctab_stop, state="disabled")
         self.pc_stop.pack(side="right")
         self.pc_read_btn = ttk.Button(row, text="Read tab", style="Primary.TButton", command=self.pctab_read)
@@ -121,11 +133,40 @@ class TabReaderPage:
     def pctab_cur_picked(self):
         """2.38.0: keep the tab's currency as soon as it's picked (not only on Read tab), and give the keyboard back
         so nothing else can change it."""
-        cur = next((c for c, n in WEALTH_CURRENCIES if n == self.pc_cur.get()), None)
+        cur = self.pctab_cur_id()
         if cur:
-            SETTINGS.setdefault("pctab", {})["currency"] = cur
+            cfg = SETTINGS.setdefault("pctab", {})
+            cfg.update(currency=cur, currency_name=self.pc_cur.get())     # 2.40.0: the name too (see the box)
             save_json("settings.json", SETTINGS)
-        self.root.after(20, self.root.focus_set)
+        cb = getattr(self, "pc_cur_box", None)
+
+        def done():                                    # 2.40.0: no lingering highlight; the keyboard leaves the box
+            try:
+                cb.selection_clear()
+                cb.winfo_toplevel().focus_set()
+            except (tk.TclError, AttributeError):
+                self.root.focus_set()
+        self.root.after(20, done)
+
+    def ev_currencies_loaded(self):
+        """2.40.0: the trade site's full currency list arrived - show the saved currency by its name."""
+        cfg = SETTINGS.get("pctab") or {}
+        name = dict(WEALTH_CURRENCIES).get(cfg.get("currency"))
+        if name and getattr(self, "pc_cur", None) is not None and self.pc_cur.get() != name:
+            self.pc_cur.set(name)
+            cfg["currency_name"] = name
+
+    def pctab_cur_id(self):
+        """The currency id for what the box shows - from the trade site's list, or the saved one when the box shows
+        the saved name (the list may not be loaded yet)."""
+        name = self.pc_cur.get()
+        cur = next((c for c, n in WEALTH_CURRENCIES if n == name), None)
+        cfg = SETTINGS.get("pctab") or {}
+        if cur is None and name and name == cfg.get("currency_name"):
+            cur = cfg.get("currency")
+        if cur is None:
+            cur = next((c for c, n in KNOWN_CURRENCY_NAMES.items() if n == name), None)
+        return cur
 
     def pctab_read(self):
         acc = self.pc_acc.get().strip()
@@ -139,11 +180,14 @@ class TabReaderPage:
             amount, cur = info["amount"], info["currency"]
             self.pc_amt.set(str(amount))
             self.pc_cur.set(dict(WEALTH_CURRENCIES).get(cur, cur))
+            SETTINGS.setdefault("pctab", {})["currency_name"] = self.pc_cur.get()
         else:
             amount, cur = parse_price_text(txt)
-            cur = cur or next((c for c, n in WEALTH_CURRENCIES if n == self.pc_cur.get()), "divine")
+            cur = cur or self.pctab_cur_id() or "divine"
         cfg = SETTINGS.setdefault("pctab", {})
         cfg.update(amount=amount, currency=cur)
+        if dict(WEALTH_CURRENCIES).get(cur):
+            cfg["currency_name"] = dict(WEALTH_CURRENCIES)[cur]
         from .market import remember_marker
         remember_marker(amount, cur)                   # 2.18.0: never counted as someone's price
         if acc:
