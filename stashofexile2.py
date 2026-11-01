@@ -44,6 +44,12 @@ VERSION HISTORY
        Also: going back into the same map (same area + seed) no longer forgets its ritual count (rt_where).
        Runeshape tips list every runeshape (33): S / A players' picks with what they do, then B / C / D grouped by
        effect (B some upside, C only tougher monsters, D hazards) on one line each.
+       Stash tab reads the whole tab (it stopped at 20): reading was queued BEHIND the pricing it creates (prio 4 vs
+       0-2), so after two fetches (20 items) pricing those 20 took every trade-site request and the rest waited for
+       minutes. tabreader.PCTAB_PRIO = -1: the whole tab is read first (progress "read X of Y"), then priced. And
+       tabs with over 100 of one kind (one search returns at most 100): wealth_children splits rarity -> base before
+       item level - waystones by tier 1-16 (map_filters), tablets / jewels by base type (from tabs.txt / jewels.txt,
+       query "type"). wealth_query takes "__type" and "group/filter" keys. Wealth syncs split the same way.
   2.39.1
        Expedition Remnant Price Checker: rewards poe.ninja doesn't list (the user's Warding Rune of Obsession - 15
        other Warding runes are listed, not that one) got no tag at all; and a look-alike was only just kept out

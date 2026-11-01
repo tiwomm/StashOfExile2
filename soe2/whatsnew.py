@@ -27,6 +27,9 @@ NOTES = {
         "Fix: the Ritual reminder when you leave a map with rituals unfinished works again - the Ritual watcher was "
         "stopping the moment it started. Going back into the same map also keeps its count.",
         "Fix: Breach and Ritual banners show see-through text again (they had a black box with some themes).",
+        "Stash tab reads the whole tab now (it seemed to stop at 20 items): it reads everything first, then prices "
+        "it, and tabs with more than 100 tablets, jewels or waystones are split by type / tier so all of them are "
+        "found.",
         "Fix: Stash tab's currency (e.g. Mirror of Kalandra) really stays now - it went back to Divine Orb when the app "
         "started - and its name no longer stays highlighted after you pick it.",
     ],
