@@ -70,24 +70,24 @@ class CalcPage:
     def build_calc_window(self, body):
         P1, P2 = C["panel"], C["panel2"]
         self.calc_last = None
-        wrap = tk.Frame(body, bg=P1, padx=12, pady=10)
+        wrap = tk.Frame(body, bg=P1, padx=12, pady=8)
         wrap.pack(fill="both", expand=True)
         self.calc_var = tk.StringVar()
         ent = tk.Entry(wrap, textvariable=self.calc_var, bg=C["odd"], fg=C["text"], insertbackground=C["text"],
                        relief="flat", highlightthickness=1, highlightbackground=C["line"], highlightcolor=C["accent"],
-                       font=(MONO, 14), justify="right")
-        ent.pack(fill="x", ipady=6)
+                       font=(MONO, 16), justify="right")
+        ent.pack(fill="x", ipady=8)
         ent.bind("<Return>", lambda e: self.calc_go())
         ent.bind("<KP_Enter>", lambda e: self.calc_go())
         ent.bind("<Escape>", lambda e: (self.calc_var.set(""), "break")[1])
         self.calc_entry = ent
         self.calc_out = tk.Label(wrap, text="0", bg=P1, fg=C["good"], font=(MONO, 20, "bold"), anchor="e")
-        self.calc_out.pack(fill="x", pady=(6, 2))
+        self.calc_out.pack(fill="x", pady=(8, 2))
         self.calc_msg = tk.Label(wrap, text="Type a sum and press Enter.  12k = 12,000   5% = 0.05   ans = last answer",
-                                 bg=P1, fg=C["muted"], font=("Segoe UI", 8), anchor="e")
+                                 bg=P1, fg=C["muted"], font=("Segoe UI", 9), anchor="e")
         self.calc_msg.pack(fill="x")
         keys = tk.Frame(wrap, bg=P1)
-        keys.pack(fill="x", pady=(8, 6))
+        keys.pack(fill="x", pady=(8, 8))
         rows = (("7", "8", "9", "÷", "C"), ("4", "5", "6", "×", "("), ("1", "2", "3", "-", ")"),
                 ("0", ".", "k", "+", "="))
         for r, row in enumerate(rows):
@@ -96,7 +96,7 @@ class CalcPage:
                 keys.columnconfigure(c, weight=1, uniform="k")
                 accent = k == "="
                 b = tk.Label(keys, text=k, bg=C["accent"] if accent else "#22345a", fg="#ffffff",
-                             font=("Segoe UI", 12, "bold"), pady=6, cursor="hand2", highlightthickness=1,
+                             font=("Segoe UI", 12, "bold"), pady=8, cursor="hand2", highlightthickness=1,
                              highlightbackground="#5b77ad")
                 b.grid(row=r, column=c, sticky="nsew", padx=2, pady=2)
                 b.bind("<Button-1>", lambda e, kk=k: self.calc_key(kk))
@@ -104,7 +104,7 @@ class CalcPage:
         hist.pack(fill="both", expand=True)
         top = tk.Frame(hist, bg=P2)
         top.pack(fill="x")
-        tk.Label(top, text="HISTORY (click one to use it again)", bg=P2, fg=C["steel"], font=("Segoe UI", 8, "bold"),
+        tk.Label(top, text="HISTORY (click one to use it again)", bg=P2, fg=C["steel"], font=("Segoe UI", 9, "bold"),
                  padx=8, pady=4).pack(side="left")
         self.calc_hist = tk.Listbox(hist, bg=P2, fg=C["text"], relief="flat", highlightthickness=0, height=5,
                                     font=(MONO, 10), selectbackground="#2c4a84", activestyle="none")

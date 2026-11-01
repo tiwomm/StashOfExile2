@@ -157,7 +157,7 @@ class AlertsPage:
         head.pack(fill="x")
         tk.Label(head, text="Alerts while you play", bg=P2, fg=C["accent"], font=("Segoe UI", 10, "bold")).pack(side="left")
         tk.Label(head, text="they work over the game whenever the app runs, session or not", bg=P2, fg=C["muted"],
-                 font=("Segoe UI", 8)).pack(side="left", padx=10)
+                 font=("Segoe UI", 9)).pack(side="left", padx=8)
         self.al_bar = tk.BooleanVar(value=bool(self.tracker_cfg().get("alerts_bar", True)))
         ttk.Checkbutton(head, text="On / off bar in the timer", variable=self.al_bar,
                         command=self.alerts_bar_changed).pack(side="right")
@@ -170,8 +170,8 @@ class AlertsPage:
                 ("ritual", "Ritual", "reads the Ritual counter (0/3 ...) from your screen; reminds you if you leave a "
                                      "map after starting its rituals but not finishing them", self.alerts_test_ritual)):
             row = tk.Frame(box, bg=P2)
-            row.pack(fill="x", pady=(6, 0))
-            dot = tk.Label(row, text="●", bg=P2, fg=DOT["off"], font=("Segoe UI", 11))
+            row.pack(fill="x", pady=(8, 0))
+            dot = tk.Label(row, text="●", bg=P2, fg=DOT["off"], font=("Segoe UI", 10))
             dot.pack(side="left")
             on = tk.BooleanVar(value=False)
             ttk.Checkbutton(row, text=name, variable=on, width=9,
@@ -187,8 +187,8 @@ class AlertsPage:
                 self.al_rleave = tk.BooleanVar(value=bool(self.ritual_cfg().get("leave_reminder", True)))
                 ttk.Checkbutton(row, text="Remind me when I leave the map", variable=self.al_rleave,
                                 command=self.alerts_ritual_leave_changed).pack(side="left", padx=(4, 0))
-            st = tk.Label(box, text=what, bg=P2, fg=C["muted"], anchor="w", justify="left", font=("Segoe UI", 8))
-            st.pack(fill="x", padx=(24, 6))                   # 2.11.0: its own line, so it never gets cut off
+            st = tk.Label(box, text=what, bg=P2, fg=C["muted"], anchor="w", justify="left", font=("Segoe UI", 9))
+            st.pack(fill="x", padx=(24, 8))                   # 2.11.0: its own line, so it never gets cut off
             st.bind("<Configure>", lambda e, l=st: l.config(wraplength=max(200, e.width - 10)))
             self.al_rows[key] = {"dot": dot, "on": on, "sound": snd, "status": st, "what": what, "note": ""}
         self.al_rows["breach"]["on"].set(bool(self.breach_cfg().get("on")))

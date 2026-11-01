@@ -134,7 +134,7 @@ class ListKeys:
 
     def undo_button(self, parent, key, **pack):
         from tkinter import ttk
-        b = ttk.Button(parent, text="↶ Undo", command=lambda: self.undo_last(key), state="disabled")
+        b = ttk.Button(parent, text="↶ Undo", command=lambda: self.undo_last(key), state="disabled", style="Quiet.TButton")
         self.__dict__.setdefault("_undo_btns", {}).setdefault(key, []).append(b)
         return b
 

@@ -17,13 +17,13 @@ class LibraryPage:
 
     def build_library_page(self, tab):
         lab = dict(bg=C["panel"], fg=C["muted"])
-        bar = tk.Frame(tab, bg=C["panel"], padx=10, pady=10)
+        bar = tk.Frame(tab, bg=C["panel"], padx=8, pady=8)
         bar.pack(fill="x")
-        tk.Label(bar, text="Search", **lab).pack(side="left", padx=(0, 6))
+        tk.Label(bar, text="Search", **lab).pack(side="left", padx=(0, 8))
         self.lib_q = tk.StringVar()
         self.lib_q.trace_add("write", lambda *a: self.root.after_idle(self.lib_fill))
         ttk.Entry(bar, textvariable=self.lib_q, width=30).pack(side="left")
-        self.lib_info = tk.Label(bar, text="", anchor="w", padx=14, **lab)
+        self.lib_info = tk.Label(bar, text="", anchor="w", padx=16, **lab)
         self.lib_info.pack(side="left", fill="x", expand=True)
 
         purpose = tk.Label(tab, text="Part of Price checks, for the curious: how the price checker reads an item. Paste a "
@@ -31,14 +31,14 @@ class LibraryPage:
                            "base, which bases it is compared with, and which trade-site search each mod turns into. On the "
                            "left, every base by class and group, and every mod the trade site can search for. You never "
                            "need this to price things.",
-                 bg=C["panel"], fg=C["muted"], anchor="w", justify="left", wraplength=1100, padx=10,
+                 bg=C["panel"], fg=C["muted"], anchor="w", justify="left", wraplength=1100, padx=8,
                  font=("Segoe UI", 9))
-        purpose.pack(fill="x", pady=(0, 6))
+        purpose.pack(fill="x", pady=(0, 8))
         purpose.bind("<Configure>", lambda e: purpose.config(wraplength=max(300, e.width - 24)))
         pane = ttk.PanedWindow(tab, orient="horizontal")
-        pane.pack(fill="both", expand=True, padx=10, pady=(0, 8))
+        pane.pack(fill="both", expand=True, padx=8, pady=(0, 8))
         left = tk.Frame(pane, bg=C["panel"])
-        right = tk.Frame(pane, bg=C["panel2"], padx=12, pady=10, highlightthickness=1, highlightbackground=C["line"])
+        right = tk.Frame(pane, bg=C["panel2"], padx=12, pady=8, highlightthickness=1, highlightbackground=C["line"])
         pane.add(left, weight=3)
         pane.add(right, weight=2)
 
@@ -78,15 +78,15 @@ class LibraryPage:
         self.lib_stats.pack(side="left", fill="both", expand=True)
 
         P2 = C["panel2"]
-        tk.Label(right, text="Check an item", bg=P2, fg=C["text"], font=("Segoe UI", 11, "bold"), anchor="w").pack(fill="x")
+        tk.Label(right, text="Check an item", bg=P2, fg=C["text"], font=("Segoe UI", 12, "bold"), anchor="w").pack(fill="x")
         tk.Label(right, text="Copy any item in game (Ctrl+C or Ctrl+Alt+C) and paste it here to see how the app reads it. Price check prices it the same way Ctrl+Alt+C in game does.",
-                 bg=P2, fg=C["muted"], anchor="w", justify="left", wraplength=420, font=("Segoe UI", 9)).pack(fill="x", pady=(2, 6))
+                 bg=P2, fg=C["muted"], anchor="w", justify="left", wraplength=420, font=("Segoe UI", 9)).pack(fill="x", pady=(2, 8))
         btns = tk.Frame(right, bg=P2)
-        btns.pack(fill="x", pady=(0, 6))
-        ttk.Button(btns, text="Paste from clipboard", style="Accent.TButton", command=self.lib_paste).pack(side="left")
-        ttk.Button(btns, text="Check", command=self.lib_check).pack(side="left", padx=6)
+        btns.pack(fill="x", pady=(0, 8))
+        ttk.Button(btns, text="Paste from clipboard", style="Primary.TButton", command=self.lib_paste).pack(side="left")
+        ttk.Button(btns, text="Check", command=self.lib_check).pack(side="left", padx=8)
         ttk.Button(btns, text="Price check", command=self.lib_price).pack(side="left")
-        ttk.Button(btns, text="Clear", command=lambda: (self.lib_in.delete("1.0", "end"), self.lib_check())).pack(side="left", padx=6)
+        ttk.Button(btns, text="Clear", command=lambda: (self.lib_in.delete("1.0", "end"), self.lib_check())).pack(side="left", padx=8)
         self.lib_in = tk.Text(right, height=9, bg=C["odd"], fg=C["text"], insertbackground=C["text"], relief="flat",
                               highlightthickness=1, highlightbackground=C["line"], font=(MONO, 9), wrap="none")
         self.lib_in.pack(fill="x")
