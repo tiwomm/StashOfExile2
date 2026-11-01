@@ -1,10 +1,9 @@
 """The Money Makers community board (2.30.0): talks to the board server (board/ - a Cloudflare Worker).
 
-Signing in: the app makes a random "state", opens <board>/auth/start?state=... in the browser (Discord asks the
-player to allow it), and polls <board>/auth/poll until the server has the session token. The token is kept in the
-data folder (board_session.json) and sent as "Authorization: Bearer ..."; nothing else about the player is stored.
+No logins: the first time you post, vote or report, the app joins the board with a display name and keeps the key
+it gets back (board_session.json in the data folder), sent as "Authorization: Bearer ...". Admins type the board's
+admin key once (Become admin).
 Every call returns (ok, data or error text) and never raises, so a server that's down never breaks the window."""
-import secrets
 import time
 
 from .config import SETTINGS, load_json, save_json
@@ -66,31 +65,38 @@ def call(method, path, params=None, body=None, get=None):
     except Exception:
         data = {}
     if r.status_code == 401 and tok and path != "/auth/logout":
-        save_json(SESSION, {})                                # signed out on the server (expired / banned)
-        return False, "You're signed out - press Sign in with Discord again."
+        save_json(SESSION, {})                                # the key stopped working (expired / banned)
+        return False, "Your board account isn't valid any more - join again with a name."
     if r.status_code >= 400:
         return False, data.get("error") or f"The board answered {r.status_code}."
     return True, data
 
 
-# ---------------------------------------------------------------- sign in with Discord
-def login_start():
-    """-> (state, the URL to open in the browser)."""
-    state = secrets.token_hex(24)
-    return state, f"{url()}/auth/start?state={state}"
-
-
-def login_poll(state):
-    """-> "waiting" / "done" (the session is saved) / an error text."""
-    ok, d = call("GET", "/auth/poll", {"state": state})
-    if not ok:
-        return d
-    if d.get("waiting"):
-        return "waiting"
-    if d.get("token"):
+# ---------------------------------------------------------------- joining (no login)
+def join(name):
+    """-> (True, user) or (False, why). Keeps the key the board hands out."""
+    ok, d = call("POST", "/auth/join", body={"name": name})
+    if ok and d.get("token"):
         save_json(SESSION, {"token": d["token"], "user": d.get("user") or {}, "since": time.time()})
-        return "done"
-    return "Sign-in didn't finish."
+        return True, d.get("user") or {}
+    return False, d if not ok else "The board didn't answer."
+
+
+def _keep_user(res):
+    ok, d = res
+    if ok and d.get("user"):
+        s = session()
+        s["user"] = d["user"]
+        save_json(SESSION, s)
+    return res
+
+
+def rename(name):
+    return _keep_user(call("POST", "/auth/rename", body={"name": name}))
+
+
+def become_admin(key):
+    return _keep_user(call("POST", "/auth/admin", body={"key": key}))
 
 
 # ---------------------------------------------------------------- posts
