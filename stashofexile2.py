@@ -29,7 +29,9 @@ VERSION HISTORY
        into "Session" on a narrow timer - OverlayWindow.bar_note says when it doesn't fit, and the clock goes to the
        top right of the page; the bar moved up a few pixels when locked at the screen's bottom edge - it was kept
        inside the work area (without the Windows taskbar); now the whole screen (style.monitor_rect(full=True)).
-       test_v2490 (more checks), v2380 / v2430 / v2440 updated.
+       Report a bug (the user: it reached Discord): no name / contact box, Tab moves to the next box (text boxes
+       typed a tab), the buttons are packed first at the bottom so a short window squeezes the preview instead.
+       test_v2490 (more checks), test_v2480, v2380 / v2430 / v2440 updated.
   2.49.0
        Settings (a cog) is the first thing on the dock; Toolkit (the menu) sits at the left end of the taskbar, where a
        Start button would be (shell: dock tag "settings", taskbar tag "tkbtn"; with the dock hidden Settings shows on

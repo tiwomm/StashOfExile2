@@ -27,6 +27,7 @@ NOTES = {
         "the game whether the Session timer is running or not.",
         "Fix: the Mechanic Helper icons are bigger and clearly green (on) / red (off); the Session timer's clock no "
         "longer runs into its title; overlays stay at the very bottom of the screen when you lock them.",
+        "Report a bug: Tab moves to the next box, the buttons are never cut off, and there's no name box.",
     ],
     "2.49.0": [
         "Settings is the cog at the top of the dock; the Toolkit menu is at the left end of the taskbar, like Start.",
