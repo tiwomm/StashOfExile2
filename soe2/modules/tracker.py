@@ -2,11 +2,13 @@ from . import Module
 
 
 class Tracker(Module):
-    key, title, short, icon, kind = "tracker", "Session tracker", "Session", "⏱", "utility"
-    blurb = "Time, maps and profit per session, with a timer over the game. Also the Delirium and Breach alerts."
+    # 2.44.0: "Overlays" (was Session tracker) - the Session timer, the Mechanic Helper, Notes and their Look in one
+    # window. The key stays "tracker" (saved window places, older settings).
+    key, title, short, icon, kind = "tracker", "Overlays", "Overlays", "⏱", "utility"
+    blurb = "Over the game: the Session timer (time, maps, profit), the Mechanic Helper, Notes - and how they look."
 
     def build(self, body):
-        self.app.build_tracker_window(body)
+        self.app.build_overlays_hub(body)
 
     def on_show(self):
         self.app.tracker_fill_history()

@@ -34,9 +34,9 @@ QUICKSTART = [
         "worth right now.",
     ]),
     ("While you map", [
-        "Session tracker: time, maps and deaths per session, with a small timer over the game. Ctrl+Alt+S starts "
-        "and stops it in game.",
-        "Its Alerts panel can warn you when your Hiveblood is almost full (Breach) and when you finish a map with "
+        "Overlays › Session timer: time, maps and deaths per session, with a small timer over the game. Ctrl+Alt+S "
+        "starts and stops it in game.",
+        "Overlays › Mechanic Helper can warn you when your Hiveblood is almost full (Breach) and when you finish a map with "
         "Delirium still on.",
     ]),
     ("Pick your league and say hi", [
