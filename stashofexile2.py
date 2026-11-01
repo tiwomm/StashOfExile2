@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU GPL v3.0 (see LICENSE). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.47.0
+VERSION 2.48.0
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,6 +19,15 @@ VERSION 2.47.0
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.48.0
+       Taskbar (there whatever window is open; feedback_page.py): "⬆ Update x.y.z" when GitHub has a newer release
+       (a quiet look 15 s after start and every 6 h, plus every other update check; click = Check for updates, which
+       asks first) and "🐞 Report a bug": a form (title, what happened, steps, expected, optional contact, optional
+       last 40 lines of error_log.txt) that shows exactly what is sent. It goes to the board server's POST /bugs,
+       which opens a GitHub issue with its own token (Worker secret GITHUB_TOKEN from the repo secret
+       BUGS_GITHUB_TOKEN; 5 a day per address, table bug_limits) and posts to Discord (DISCORD_WEBHOOK). Without the
+       token, GitHub's new-issue page opens filled in. .github/workflows/issues-discord.yml posts every other new
+       issue to Discord. test_v2480.
   2.47.0
        Overlays › Look: the four PoE2 looks of the 2.43.0 mockups, all to choose from - Runeshape parchment (default),
        Relic tooltip, Carved frame, Quiet HUD - plus Classic dark (overlaywin LOOKS / PALETTES, skinned()). The user:
@@ -1241,7 +1250,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.47.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.48.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
