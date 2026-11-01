@@ -23,7 +23,7 @@ NEXT = [
 NOTES = {
     "2.30.0": [
         "Money Makers > Strats: Official, Community and Mine. Community is a board where players post their strats, "
-        "upvote the good ones and report junk - sign in with Discord to post, vote or report.",
+        "upvote the good ones and report junk. No account needed: just pick a name the first time.",
         "Post one of yours with 📤 Post to Community; the best ones get promoted to the Official list.",
         "Lucrative Strats shows Community one-liners too, with upvotes.",
     ],

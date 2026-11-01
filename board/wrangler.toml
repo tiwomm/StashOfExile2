@@ -5,7 +5,8 @@ compatibility_date = "2026-10-01"
 
 [vars]
 REPORT_HIDE = "3"          # distinct reports that hide a post until an admin looks at it
-POSTS_PER_DAY = "10"       # per user
+POSTS_PER_DAY = "10"       # per player
+JOINS_PER_DAY = "5"        # new board accounts per internet address per day
 
 [[d1_databases]]
 binding = "DB"

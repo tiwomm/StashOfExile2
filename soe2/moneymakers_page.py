@@ -500,12 +500,28 @@ class MoneyMakersPage:
             self.mm_one_fill()
 
     def mm_need_login(self, why):
+        """No login: the first time you post / vote / report, pick a name and the board gives this install a key."""
         if B.signed_in():
             return False
         if not B.configured():
             self.app_toast("The community board isn't set up yet.", "Community")
             return True
-        self.app_toast(f"Sign in with Discord to {why}.", "Community", actions=[("Sign in with Discord", self.mm_signin)])
+        return not self.mm_join(why)
+
+    def mm_join(self, why="use the Community board", name=None):
+        from tkinter import simpledialog
+        if name is None:
+            name = simpledialog.askstring("Community board", f"To {why}, pick a name other players will see "
+                                          "(2-24 letters or numbers). No account or password needed.",
+                                          parent=self.root)
+        if not name:
+            return False
+        ok, d = B.join(name.strip())
+        self.mm_account_paint()
+        if not ok:
+            self.app_toast(d, "Community")
+            return False
+        self._say(f"You're on the board as {d.get('name', name)}.", 6)
         return True
 
     def mm_board_result(self, res, done_text=None, keep=None):
@@ -571,52 +587,55 @@ class MoneyMakersPage:
             self.mm_view_changed()
         self.mm_reload(keep=(sid + "|mine") if sid else None)
 
-    # ---------------- sign in with Discord
+    # ---------------- your board name (no login)
     def mm_account_paint(self):
         me = B.signed_in()
         self.mm_acct.config(text=(f"👤 {me.get('name', '?')}" + (" (admin)" if me.get("admin") else "") + " ▾")
-                            if me else "Sign in with Discord")
+                            if me else "👤 Join the board")
 
     def mm_account_click(self):
         if not B.signed_in():
-            return self.mm_signin()
+            return self.mm_join()
         m = tk.Menu(self.root, tearoff=0, bg=C["panel2"], fg=C["text"], activebackground="#2c4a84")
-        m.add_command(label="My posts", command=lambda: (self.mm_view.pick("Community", notify=False),
-                                                         self.mm_view_changed(), self.mm_q.set("")))
-        m.add_command(label="Sign out", command=lambda: (B.sign_out(), self.mm_account_paint(), self.mm_board_fetch()))
+        m.add_command(label="Change my name…", command=self.mm_rename)
+        if not (B.signed_in() or {}).get("admin"):
+            m.add_command(label="Become admin… (needs the board's admin key)", command=self.mm_admin_key)
+        m.add_separator()
+        m.add_command(label="Leave the board (forget this account)", command=self.mm_leave)
         b = self.mm_acct
         m.tk_popup(b.winfo_rootx(), b.winfo_rooty() + b.winfo_height())
 
-    def mm_signin(self, open_browser=True):
-        """Opens Discord in your browser; the app waits (up to 3 minutes) until you've allowed it."""
-        if not B.configured():
-            self.app_toast("The community board isn't set up yet.", "Community")
-            return None
-        state, link = B.login_start()
-        if open_browser:
-            webbrowser.open(link)
-        self.mm_acct.config(text="Waiting for Discord…")
-        self._mm_login = {"state": state, "until": time.time() + 180}
-        self.root.after(2000, self._mm_login_poll)
-        return state, link
-
-    def _mm_login_poll(self):
-        lg = getattr(self, "_mm_login", None)
-        if not lg:
-            return
-        res = B.login_poll(lg["state"])
-        if res == "waiting" and time.time() < lg["until"]:
-            self.root.after(2000, self._mm_login_poll)
-            return
-        self._mm_login = None
-        self.mm_account_paint()
-        if res == "done":
-            self._say(f"Signed in as {B.signed_in().get('name', '?')}.", 6)
+    def mm_rename(self, name=None):
+        from tkinter import simpledialog
+        name = name or simpledialog.askstring("Community board", "Your new name:", parent=self.root)
+        if name:
+            ok, d = B.rename(name.strip())
+            self.app_toast("Done." if ok else d, "Community") if not ok else self._say("Name changed.", 4)
+            self.mm_account_paint()
             self.mm_board_fetch()
-        else:
-            self.app_toast("Sign-in didn't finish. " + ("It took too long." if res == "waiting" else res), "Community")
 
-    # ---------------- live updates from GitHub
+    def mm_admin_key(self, key=None):
+        from tkinter import simpledialog
+        key = key or simpledialog.askstring("Community board", "The board's admin key (the ADMIN_KEY secret):",
+                                            parent=self.root, show="•")
+        if key:
+            ok, d = B.become_admin(key)
+            self.mm_account_paint()
+            if ok:
+                self._say("You're an admin on the board now (right-click a post for the admin tools).", 8)
+                self.mm_board_fetch()
+            else:
+                self.app_toast(d, "Community")
+            return ok
+
+    def mm_leave(self):
+        from tkinter import messagebox
+        if messagebox.askyesno("Community board", "Forget this board account? Your posts stay, but you can't edit "
+                                                  "them from a new account.", parent=self.root):
+            B.sign_out()
+            self.mm_account_paint()
+            self.mm_board_fetch()
+
     def mm_on_show(self):
         self.mm_check_live(force=False)
         self.mm_account_paint()

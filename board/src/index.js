@@ -1,18 +1,20 @@
 // StashOfExile2 - Money Makers community board (2.30.0). A Cloudflare Worker with a D1 database.
 //
-// Players sign in with Discord (the app opens /auth/start in the browser and polls /auth/poll), post strats and
-// one-liners in the standard layout (checked with schema.json, written by tools/build_strats.py from the app's own
-// rules), upvote and report. Posts are live at once; enough reports hide one until an admin looks at it. Admins
-// (Discord ids in the ADMIN_IDS secret) hide, delete, ban and promote - promoted posts join the Official list.
+// No logins: the first time a player posts, votes or reports, the app joins with a display name (POST /auth/join) and
+// keeps the key it gets back. New accounts are limited per internet address per day (JOINS_PER_DAY) so votes can't be
+// stuffed. Posts (strats and one-liners in the standard layout - checked with schema.json, written by
+// tools/build_strats.py from the app's own rules) are live at once; enough reports hide one until an admin looks.
+// Admins (anyone who entered the ADMIN_KEY secret in the app) hide, delete, ban and promote - promoted posts join the
+// Official list.
 //
-// Secrets / vars: DISCORD_CLIENT_ID, DISCORD_CLIENT_SECRET, ADMIN_IDS (comma list), REPORT_HIDE, POSTS_PER_DAY,
-// DISCORD_API (tests only: a fake Discord). Nothing about players is stored beyond their Discord id, name and avatar.
+// Secrets / vars: ADMIN_KEY, REPORT_HIDE, POSTS_PER_DAY, JOINS_PER_DAY. Stored per player: a made-up id and the
+// display name. Internet addresses are only kept as a hash with the day, to count new accounts.
 import RULES from "./schema.json";
 
 const DAY = 86400;
 const MAX_BODY = 24000;
 const SESSION_DAYS = 180;
-const DISCORD = "https://discord.com/api";
+const NAME = /^[\p{L}\p{N} _.\-]{2,24}$/u;
 
 // ------------------------------------------------------------------ the standard layout (same rules as the app)
 const slug = (t) => String(t).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 60) || "strat";
@@ -86,16 +88,21 @@ async function sha256(text) {
   return [...new Uint8Array(d)].map((b) => b.toString(16).padStart(2, "0")).join("");
 }
 const randomHex = (n) => [...crypto.getRandomValues(new Uint8Array(n))].map((b) => b.toString(16).padStart(2, "0")).join("");
-const admins = (env) => String(env.ADMIN_IDS || "").split(",").map((x) => x.trim()).filter(Boolean);
+function sameText(a, b) {                  // constant-time compare for the admin key
+  a = String(a); b = String(b);
+  let d = a.length ^ b.length;
+  for (let i = 0; i < Math.max(a.length, b.length); i++) d |= (a.charCodeAt(i) || 0) ^ (b.charCodeAt(i) || 0);
+  return d === 0;
+}
 
 async function who(req, env) {
   const m = /^Bearer\s+([a-f0-9]{64})$/i.exec(req.headers.get("authorization") || "");
   if (!m) return null;
   const row = await env.DB.prepare(
-    "SELECT u.id, u.name, u.avatar, u.banned FROM sessions s JOIN users u ON u.id = s.user_id WHERE s.hash = ? AND s.expires > ?",
+    "SELECT u.id, u.name, u.admin, u.banned FROM sessions s JOIN users u ON u.id = s.user_id WHERE s.hash = ? AND s.expires > ?",
   ).bind(await sha256(m[1]), now()).first();
   if (!row) return null;
-  return { ...row, admin: admins(env).includes(row.id) };
+  return { ...row, admin: !!row.admin, banned: !!row.banned };
 }
 
 async function readBody(req) {
@@ -116,52 +123,40 @@ const SELECT = `SELECT p.*, u.name AS author_name, %VOTED% AS voted FROM posts p
 const selectFor = (me) => SELECT.replace("%VOTED%", me
   ? "EXISTS(SELECT 1 FROM votes v WHERE v.post_id = p.id AND v.user_id = ?1)" : "0");
 
-// ------------------------------------------------------------------ sign in with Discord
-async function authStart(url, env) {
-  const state = url.searchParams.get("state") || "";
-  if (!/^[a-f0-9]{32,64}$/.test(state)) return fail(400, "bad state");
-  await env.DB.prepare("DELETE FROM logins WHERE created < ?").bind(now() - 900).run();
-  await env.DB.prepare("INSERT OR REPLACE INTO logins (state, created) VALUES (?, ?)").bind(state, now()).run();
-  const q = new URLSearchParams({
-    client_id: env.DISCORD_CLIENT_ID, response_type: "code", scope: "identify", state, prompt: "none",
-    redirect_uri: `${url.origin}/auth/callback`,
-  });
-  return Response.redirect(`https://discord.com/oauth2/authorize?${q}`, 302);
+// ------------------------------------------------------------------ joining (no login)
+async function join(req, env) {
+  const { name } = await readBody(req);
+  const clean = String(name || "").trim();
+  if (!NAME.test(clean)) return fail(400, "Pick a name of 2-24 letters, numbers, spaces, _ . or -.");
+  const day = new Date().toISOString().slice(0, 10);
+  const ip = await sha256((req.headers.get("cf-connecting-ip") || "local") + "|" + day);
+  await env.DB.prepare("DELETE FROM joins WHERE day <> ?").bind(day).run();
+  const seen = await env.DB.prepare("SELECT n FROM joins WHERE ip = ?").bind(ip).first();
+  if (seen && seen.n >= Number(env.JOINS_PER_DAY || 5)) return fail(429, "Too many new board accounts from here today - try tomorrow.");
+  await env.DB.prepare("INSERT INTO joins (ip, n, day) VALUES (?, 1, ?) ON CONFLICT(ip) DO UPDATE SET n = n + 1").bind(ip, day).run();
+  const id = "u" + randomHex(8), token = randomHex(32);
+  await env.DB.batch([
+    env.DB.prepare("INSERT INTO users (id, name, created) VALUES (?, ?, ?)").bind(id, clean, now()),
+    env.DB.prepare("INSERT INTO sessions (hash, user_id, created, expires) VALUES (?, ?, ?, ?)")
+      .bind(await sha256(token), id, now(), now() + SESSION_DAYS * DAY),
+  ]);
+  return json({ token, user: { id, name: clean, admin: false } }, 201);
 }
 
-async function authCallback(url, env) {
-  const state = url.searchParams.get("state") || "", code = url.searchParams.get("code") || "";
-  const login = await env.DB.prepare("SELECT * FROM logins WHERE state = ? AND created > ?").bind(state, now() - 900).first();
-  if (!login || !code) return page("Sign-in didn't work", "Go back to StashOfExile2 and press Sign in with Discord again.");
-  const api = env.DISCORD_API || DISCORD;
-  const tok = await fetch(`${api}/oauth2/token`, {
-    method: "POST", headers: { "content-type": "application/x-www-form-urlencoded" },
-    body: new URLSearchParams({
-      client_id: env.DISCORD_CLIENT_ID, client_secret: env.DISCORD_CLIENT_SECRET, grant_type: "authorization_code",
-      code, redirect_uri: `${url.origin}/auth/callback`,
-    }),
-  }).then((r) => (r.ok ? r.json() : null)).catch(() => null);
-  const me = tok?.access_token ? await fetch(`${api}/users/@me`, { headers: { authorization: `Bearer ${tok.access_token}` } })
-    .then((r) => (r.ok ? r.json() : null)).catch(() => null) : null;
-  if (!me?.id) return page("Sign-in didn't work", "Discord didn't answer. Go back to StashOfExile2 and try again.");
-  const name = String(me.global_name || me.username || "player").slice(0, 40);
-  await env.DB.prepare(`INSERT INTO users (id, name, avatar, created) VALUES (?1, ?2, ?3, ?4)
-    ON CONFLICT(id) DO UPDATE SET name = ?2, avatar = ?3`).bind(me.id, name, me.avatar || null, now()).run();
-  const token = randomHex(32);
-  await env.DB.prepare("INSERT INTO sessions (hash, user_id, created, expires) VALUES (?, ?, ?, ?)")
-    .bind(await sha256(token), me.id, now(), now() + SESSION_DAYS * DAY).run();
-  await env.DB.prepare("UPDATE logins SET token = ?, user_id = ? WHERE state = ?").bind(token, me.id, state).run();
-  return page(`Signed in as ${name.replace(/[<>&"]/g, "")}`, "You can close this tab and go back to StashOfExile2.");
+async function rename(req, env, me) {
+  const { name } = await readBody(req);
+  const clean = String(name || "").trim();
+  if (!NAME.test(clean)) return fail(400, "Pick a name of 2-24 letters, numbers, spaces, _ . or -.");
+  await env.DB.prepare("UPDATE users SET name = ? WHERE id = ?").bind(clean, me.id).run();
+  return json({ user: { id: me.id, name: clean, admin: me.admin } });
 }
 
-async function authPoll(url, env) {
-  const state = url.searchParams.get("state") || "";
-  const login = await env.DB.prepare("SELECT l.token, u.id, u.name FROM logins l LEFT JOIN users u ON u.id = l.user_id WHERE l.state = ?")
-    .bind(state).first();
-  if (!login) return fail(404, "no sign-in in progress");
-  if (!login.token) return json({ waiting: true }, 202);
-  await env.DB.prepare("DELETE FROM logins WHERE state = ?").bind(state).run();
-  return json({ token: login.token, user: { id: login.id, name: login.name, admin: admins(env).includes(login.id) } });
+async function becomeAdmin(req, env, me) {
+  const { key } = await readBody(req);
+  if (!env.ADMIN_KEY || String(env.ADMIN_KEY).length < 8 || !sameText(key, env.ADMIN_KEY))
+    return fail(403, "That isn't the admin key.");
+  await env.DB.prepare("UPDATE users SET admin = 1 WHERE id = ?").bind(me.id).run();
+  return json({ user: { id: me.id, name: me.name, admin: true } });
 }
 
 // ------------------------------------------------------------------ posts
@@ -286,10 +281,7 @@ async function ban(req, env, me, userId) {
   if (!me.admin) return fail(403, "admins only");
   const { banned } = await readBody(req);
   await env.DB.prepare("UPDATE users SET banned = ? WHERE id = ?").bind(banned === false ? 0 : 1, userId).run();
-  if (banned !== false) {
-    await env.DB.prepare("UPDATE posts SET hidden = 1 WHERE author_id = ?").bind(userId).run();
-    await env.DB.prepare("DELETE FROM sessions WHERE user_id = ?").bind(userId).run();
-  }
+  if (banned !== false) await env.DB.prepare("UPDATE posts SET hidden = 1 WHERE author_id = ?").bind(userId).run();
   return json({ ok: true });
 }
 
@@ -309,9 +301,7 @@ export default {
     const m = /^\/posts\/(\d+)(?:\/(vote|report|admin))?$/.exec(path);
     try {
       if (path === "/" || path === "/health") return json({ ok: true, schema: RULES.schema });
-      if (path === "/auth/start") return authStart(url, env);
-      if (path === "/auth/callback") return authCallback(url, env);
-      if (path === "/auth/poll") return authPoll(url, env);
+      if (path === "/auth/join" && req.method === "POST") return join(req, env);
       if (path === "/official") return official(env);
       const me = await who(req, env);
       if (path === "/me") return me ? json({ user: me }) : fail(401, "sign in first");
@@ -325,7 +315,9 @@ export default {
         const row = await getPost(env, me, Number(m[1]));
         return row && (!row.hidden || me?.admin || row.author_id === me?.id) ? json({ post: present(row, me) }) : fail(404, "not found");
       }
-      if (!me) return fail(401, "Sign in with Discord first.");
+      if (!me) return fail(401, "Join the board first.");
+      if (path === "/auth/rename" && req.method === "POST") return rename(req, env, me);
+      if (path === "/auth/admin" && req.method === "POST") return becomeAdmin(req, env, me);
       if (me.banned) return fail(403, "This account can't post on the board.");
       if (path === "/posts" && req.method === "POST") return createPost(req, env, me);
       if (m && !m[2] && req.method === "PUT") return updatePost(req, env, me, Number(m[1]));
@@ -333,7 +325,7 @@ export default {
       if (m && m[2] === "vote" && req.method === "POST") return vote(req, env, me, Number(m[1]));
       if (m && m[2] === "report" && req.method === "POST") return report(req, env, me, Number(m[1]));
       if (m && m[2] === "admin" && req.method === "POST") return adminPost(req, env, me, Number(m[1]));
-      const b = /^\/users\/(\d+)\/ban$/.exec(path);
+      const b = /^\/users\/([a-z0-9]{1,40})\/ban$/.exec(path);
       if (b && req.method === "POST") return ban(req, env, me, b[1]);
       return fail(404, "not found");
     } catch (e) {
