@@ -21,7 +21,8 @@ from .wealth import WEALTH, wealth_key, WPRICES
 DEFAULTS = {"overlay": True, "locked": False, "x": 60, "y": 260, "w": 230, "h": 190, "opacity": 225,
             "lines": {"session": True, "map": True, "maps": True, "avg": True, "profit": True, "gold": False},
             "key_toggle": "", "key_pause": "", "ask_count": True, "log_path": "",
-            "character": "", "character_guess": "", "alerts_bar": True, "autostart": False}
+            "character": "", "character_guess": "", "alerts_bar": True, "autostart": False,
+            "clock": True}                         # 2.39.0: the in-game clock on the timer (Settings > Appearance > Clock)
 DEFAULT_KEYS = {"key_toggle": "Ctrl+Alt+S", "key_pause": "Ctrl+Alt+P"}       # 2.10.0: set once, change them in Options
 LINE_NAMES = [("session", "Session time"), ("map", "This map's time"), ("maps", "Maps done"), ("avg", "Average map"),
               ("profit", "Profit")]        # (2.3.0: "gold from selling" is gone - it can't be read reliably)
@@ -851,12 +852,24 @@ class TrackerPage:
         inner = tk.Frame(w.body, bg=BODY_BG, padx=8, pady=4)
         inner.pack(fill="both", expand=True)
         self.tk_ov_lbls = {}
+        self.tk_ov_clock = None
+        top = tk.Frame(inner, bg=BODY_BG)          # the session time, and (2.39.0) the clock on the same row
+        top.pack(fill="x")
+        if not cfg.get("locked"):
+            w.draggable(top)
+        if cfg.get("clock", True):                 # 2.39.0: clock + date like the app's taskbar clock, small, at the
+            self.tk_ov_clock = tk.Label(top, text="", bg=BODY_BG, fg="#9fb0cc", font=("Segoe UI", 9),   # right -
+                                        anchor="ne", justify="right")                                 # no extra line
+            self.tk_ov_clock.pack(side="right", anchor="n", padx=(8, 0))
+            if not cfg.get("locked"):
+                w.draggable(self.tk_ov_clock)
         for k, _label in LINE_NAMES:
             if cfg["lines"].get(k):
-                lab = tk.Label(inner, text="", bg=BODY_BG, fg=fg if k == "session" else "#e8eefc",
+                lab = tk.Label(top if k == "session" else inner, text="", bg=BODY_BG,
+                               fg=fg if k == "session" else "#e8eefc",
                                font=("Segoe UI", 16 if k == "session" else 10, "bold" if k in ("session", "profit") else "normal"),
                                anchor="w")
-                lab.pack(fill="x")
+                lab.pack(side="left", fill="x", expand=True) if k == "session" else lab.pack(fill="x")
                 self.tk_ov_lbls[k] = lab
                 if not cfg.get("locked"):
                     w.draggable(lab)
@@ -967,6 +980,12 @@ class TrackerPage:
                  }
         for k, lab in self.tk_ov_lbls.items():
             lab.config(text=texts.get(k, ""))
+        if getattr(self, "tk_ov_clock", None) is not None:
+            from .shell import clock_text
+            try:
+                self.tk_ov_clock.config(text=clock_text())          # time, and the date under it
+            except tk.TclError:
+                pass
         if getattr(self, "tk_ov_alerts", None):
             states = self.alert_states()
             for k, (dot, lab) in self.tk_ov_alerts.items():
