@@ -827,12 +827,13 @@ class TrackerPage:
 
     def tracker_overlay_build(self):
         """The timer over the game: the shared over-the-game window (overlaywin.py, same look as Notes)."""
-        from .overlaywin import OverlayWindow, BODY_BG
+        from .overlaywin import OverlayWindow, pal
         cfg = self.tracker_cfg()
         if self.tk_overlay is not None:
             self._tracker_store_geo()
             self.tk_overlay.destroy()
-        fg = "#ffd9a8"
+        P = pal()                                  # 2.43.0: parchment (or the classic dark look)
+        BODY_BG, fg = P["bg"], P["big"]
 
         def moved(x, y, ww, hh):
             cfg.update(x=x, y=y, w=ww, h=hh)
@@ -858,7 +859,7 @@ class TrackerPage:
         if not cfg.get("locked"):
             w.draggable(top)
         if cfg.get("clock", True):                 # 2.39.0: clock + date like the app's taskbar clock, small, at the
-            self.tk_ov_clock = tk.Label(top, text="", bg=BODY_BG, fg="#9fb0cc", font=("Segoe UI", 9),   # right -
+            self.tk_ov_clock = tk.Label(top, text="", bg=BODY_BG, fg=P["muted"], font=(P["font"], 9),   # right -
                                         anchor="ne", justify="right")                                 # no extra line
             self.tk_ov_clock.pack(side="right", anchor="n", padx=(8, 0))
             if not cfg.get("locked"):
@@ -866,8 +867,8 @@ class TrackerPage:
         for k, _label in LINE_NAMES:
             if cfg["lines"].get(k):
                 lab = tk.Label(top if k == "session" else inner, text="", bg=BODY_BG,
-                               fg=fg if k == "session" else "#e8eefc",
-                               font=("Segoe UI", 16 if k == "session" else 10, "bold" if k in ("session", "profit") else "normal"),
+                               fg=fg if k == "session" else P["text"],
+                               font=(P["font"], 18 if k == "session" else 10, "bold" if k in ("session", "profit") else "normal"),
                                anchor="w")
                 lab.pack(side="left", fill="x", expand=True) if k == "session" else lab.pack(fill="x")
                 self.tk_ov_lbls[k] = lab
@@ -882,13 +883,14 @@ class TrackerPage:
 
     # ---------------- the Helpers bar (2.38.0: its own small window, shown with the timer, moved on its own)
     HELPERS = ("breach", "delirium", "ritual", "remnant")
-    HELPER_W = {"ritual": 10}                      # room for "Ritual 2/3", so the bar never changes size
+    HELPER_W = {"ritual": 11}                      # room for "Ritual 2/3", so the bar never changes size
 
     def tracker_helpers_build(self):
         """● Breach | ● Delirium | ● Ritual | ● Remnant  ⚙ - one fixed-size bar (as big as its content, never cut
         off), shown and hidden with the Session timer but placed, moved and locked on its own."""
-        from .overlaywin import OverlayWindow
+        from .overlaywin import OverlayWindow, pal
         cfg = self.tracker_cfg()
+        P = pal()
         self.tracker_helpers_destroy()
         self.tk_ov_alerts = {}
         if not cfg.get("alerts_bar", True):
@@ -914,30 +916,31 @@ class TrackerPage:
                 self.al_bar.set(False)
             self.tracker_save()
             self.tracker_helpers_destroy()
-        w = OverlayWindow(self.root, "Helpers", "\u25c9", (hx, hy, None, None), opacity=int(cfg.get("opacity", 225)),
+        w = OverlayWindow(self.root, "Mechanic Helper", "\u25c9", (hx, hy, None, None),
+                          opacity=int(cfg.get("hopacity", cfg.get("opacity", 225))),
                           locked=bool(cfg.get("hlocked")), min_size=(120, 30), on_close=close, on_lock=lock,
                           on_moved=moved, drag_body=True, follow_game=True, no_activate=True, resizable=False)
         w.withdraw()
-        BB = "#16213a"
+        BB = P["bg"]
         bar = tk.Frame(w.body, bg=BB, padx=8, pady=4)
         bar.pack(fill="both", expand=True)
         for i, k in enumerate(self.HELPERS):
             if i:
-                tk.Label(bar, text="|", bg=BB, fg="#3a4560", font=("Segoe UI", 9)).pack(side="left", padx=4)
+                tk.Label(bar, text="|", bg=BB, fg=P["line"], font=("Segoe UI", 9)).pack(side="left", padx=4)
             cell = tk.Frame(bar, bg=BB, cursor="hand2")
             cell.pack(side="left")
-            dot = tk.Label(cell, text="\u25cf", bg=BB, fg="#ff5c5c", font=("Segoe UI", 9), cursor="hand2")
+            dot = tk.Label(cell, text="\u25c6", bg=BB, fg=P["off"], font=("Segoe UI", 9), cursor="hand2")
             dot.pack(side="left")
-            lab = tk.Label(cell, text=k.title(), bg=BB, fg="#cfd8ea", font=("Segoe UI", 9, "bold"), cursor="hand2",
-                           width=self.HELPER_W.get(k, len(k)), anchor="w")
+            lab = tk.Label(cell, text=k.title(), bg=BB, fg=P["text"], font=(P["font"], 10, "bold"), cursor="hand2",
+                           width=self.HELPER_W.get(k, len(k) + 1), anchor="w")
             lab.pack(side="left", padx=(2, 0))
             for wd in (cell, dot, lab):                        # a click switches that helper on / off
                 wd.bind("<Button-1>", lambda e, k=k: self.tracker_helper_click(k))
             self.tk_ov_alerts[k] = (dot, lab)
-        cog = tk.Label(bar, text="\u2699", bg=BB, fg="#8b96b0", font=("Segoe UI Symbol", 10), cursor="hand2")
+        cog = tk.Label(bar, text="\u2699", bg=BB, fg=P["muted"], font=("Segoe UI Symbol", 10), cursor="hand2")
         cog.pack(side="left", padx=(12, 0))
         cog.bind("<Button-1>", lambda e: self.tracker_helpers_settings())
-        Tooltip(cog, "Helpers' options (Session tracker > Alerts)")
+        Tooltip(cog, "Mechanic Helper options (Session tracker > Alerts)")
         self.tk_helpers = w
         self._helpers_on_screen(w, hx, hy, first)
         w.show()
@@ -1018,8 +1021,10 @@ class TrackerPage:
                     from .utilities import RITUAL
                     if RITUAL.seen == "ok" and RITUAL.count:
                         txt = f"Ritual {RITUAL.count[0]}/{RITUAL.count[1]}"
-                dot.config(fg={"on": "#5ee08a", "off": "#ff5c5c", "warn": "#ffb347"}[st])   # green on, red off
-                lab.config(text=txt, fg="#e8eefc" if st != "off" else "#8b96b0")
+                from .overlaywin import pal
+                P = pal()
+                dot.config(fg=P[st], text="\u25c6" if st != "off" else "\u25c7")   # green on (filled), red off (hollow)
+                lab.config(text=txt, fg=P["text"] if st != "off" else P["muted"])
 
     def tracker_helper_click(self, key):
         """2.26.0: a click on a helper in the timer's bar switches it on / off."""

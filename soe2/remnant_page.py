@@ -78,6 +78,14 @@ class RemnantPage:
     def remnant_tips_changed(self, on):
         self.remnant_cfg()["tips"] = bool(on)
         save_json("settings.json", SETTINGS)
+        for name in ("al_rtips", "rm_tips_var"):               # 2.43.0: Alerts and Settings show the same switch
+            v = getattr(self, name, None)
+            if v is not None and bool(v.get()) != bool(on):
+                v.set(bool(on))
+        wins = getattr(self, "rm_win", None)                  # an open book: the tips come or go now
+        if wins and getattr(self, "rm_auto_shown", False) and getattr(self, "rm_kept", None):
+            self.rm_auto_sig = None
+            self.ev_remnant_auto(self.rm_rect, list(self.rm_kept.values()))
 
     def remnant_auto_changed(self, on):
         self.remnant_cfg()["auto"] = bool(on)
@@ -138,14 +146,16 @@ class RemnantPage:
                     break
                 except Exception:
                     continue
-                misses = 0 if rows else misses + 1
-                if rows or misses >= RM.AUTO_GONE:
-                    self.ui_q.put(("remnant_auto", rect, rows))
+                misses = 0                       # 2.43.0: the book is still open - a read with fewer rows (the
+                if rows:                         # game's tooltip over a reward) never takes tags away; only the
+                    self.ui_q.put(("remnant_auto", rect, rows))      # book closing does
         finally:
             if gen == getattr(self, "rm_auto_gen", 0):
                 self.rm_auto_alive = False
 
     def ev_remnant_auto(self, rect, rows):
+        rows = self.remnant_keep(rows)
+        self.rm_rect = rect
         sig = tuple((r["name"], r["qty"]) for r in rows)
         if rows:
             if sig != getattr(self, "rm_auto_sig", None) or getattr(self, "rm_win", None) is None:
@@ -160,6 +170,25 @@ class RemnantPage:
             self.alerts_refresh()
         except Exception:
             pass
+
+    def remnant_keep(self, rows):
+        """2.43.0: while the book stays open, the tags stay. Hovering a reward puts the game's tooltip over part of the
+        book, so a read finds fewer rewards - their tags used to vanish under the mouse. Now a read only adds rewards
+        (or updates the ones it sees); the book closing (rows = []) clears them."""
+        if not rows:
+            self.rm_kept = {}
+            return rows
+        kept = getattr(self, "rm_kept", None) or {}
+        if not getattr(self, "rm_auto_shown", False):
+            kept = {}
+        for r in rows:
+            kept[(r["name"], r["qty"])] = r
+        self.rm_kept = kept
+        out = sorted(kept.values(), key=lambda r: r["box"][1])
+        if any(r.get("best") for r in out):                          # one best: the dearest
+            top = max((r for r in out if r["total"] is not None), key=lambda r: r["total"], default=None)
+            out = [dict(r, best=r is top) for r in out]
+        return out
 
     def remnant_note(self, rows, auto=False):
         best = next((r for r in rows if r.get("best")), None)
@@ -288,6 +317,7 @@ class RemnantPage:
             w.update_idletasks()
             hh = w.winfo_reqheight()
             w.geometry(f"+{int(x)}+{int(y_mid - hh / 2)}")
+            w.rm_x = int(x)                                    # 2.43.0: for the tips' place (winfo_x is 0 until shown)
             w.deiconify()
             try:
                 from .alerts_page import click_through, force_topmost
@@ -323,10 +353,12 @@ class RemnantPage:
 
     def _remnant_tips(self, wins, rect, size, no_capture):
         """2.40.0: "Runeshapes - community picks" next to the tags (right of the furthest one, at the book's top),
-        click-through and left out of captures like them. It comes and goes with the tags (same list)."""
+        click-through and left out of captures like them. It comes and goes with the tags (same list).
+        2.43.0: shown as soon as the book's prices are, and stays while the book is open (it was placed from where
+        the tags were on screen - nowhere yet the first time, so it only came with a later redraw)."""
         l_, t, r, b = rect
         try:
-            right = max(w.winfo_x() + w.winfo_reqwidth() for w in wins)
+            right = max(getattr(w, "rm_x", w.winfo_x()) + w.winfo_reqwidth() for w in wins)
         except tk.TclError:
             return
         x = right + 24
@@ -339,32 +371,36 @@ class RemnantPage:
         except tk.TclError:
             pass
         small = size                                           # (as big as the tags: read at a glance)
-        box = tk.Frame(w, bg="#101826", highlightthickness=1, highlightbackground="#5b77ad", padx=8, pady=4)
+        from .overlaywin import pal, parchment                # 2.43.0: parchment, like the book beside it
+        P = pal()
+        BG, TXT, MUT = (P["bg"], P["text"], P["muted"]) if parchment() else ("#101826", "#e8eefc", "#9aa6bd")
+        EDGE_ = "#2a1f16" if parchment() else "#5b77ad"
+        box = tk.Frame(w, bg=BG, highlightthickness=4 if parchment() else 1, highlightbackground=EDGE_, padx=8, pady=4)
         box.pack()
-        tk.Label(box, text="Runeshapes for loot", bg="#101826", fg="#e8eefc",
+        tk.Label(box, text="Runeshapes for loot", bg=BG, fg=TXT,
                  font=("Segoe UI", small, "bold"), anchor="w").pack(fill="x")
         for tier in ("S", "A", "B", "C", "D"):                 # 2.40.0: every runeshape, best first
             names = [(n, why) for tr, n, why in RM.RUNE_TIERS if tr == tier]
             bg, fg = RM.TIER_LOOK[tier]
             if tier in ("S", "A"):                            # the picks: one line each, with what they do
                 for name, why in names:
-                    row = tk.Frame(box, bg="#101826")
+                    row = tk.Frame(box, bg=BG)
                     row.pack(fill="x")
                     tk.Label(row, text=tier, bg=bg, fg=fg, font=("Segoe UI", small, "bold"), width=2).pack(side="left", pady=1)
-                    tk.Label(row, text=name, bg="#101826", fg="#e8eefc", font=("Segoe UI", small, "bold"), width=8,
+                    tk.Label(row, text=name, bg=BG, fg=TXT, font=("Segoe UI", small, "bold"), width=8,
                              anchor="w").pack(side="left", padx=(8, 0))
-                    tk.Label(row, text=why, bg="#101826", fg="#9aa6bd", font=("Segoe UI", small),
+                    tk.Label(row, text=why, bg=BG, fg=MUT, font=("Segoe UI", small),
                              anchor="w").pack(side="left")
             else:                                             # the rest: one wrapped line of names per tier
-                row = tk.Frame(box, bg="#101826")
+                row = tk.Frame(box, bg=BG)
                 row.pack(fill="x", pady=(2, 0))
                 tk.Label(row, text=tier, bg=bg, fg=fg, font=("Segoe UI", small, "bold"), width=2).pack(side="left",
                                                                                                     anchor="n")
-                tk.Label(row, text="  ·  ".join(n for n, _w in names), bg="#101826", fg=fg if tier != "C" else "#9aa6bd",
+                tk.Label(row, text="  ·  ".join(n for n, _w in names), bg=BG, fg=MUT if tier == "C" else TXT if parchment() else fg,
                          font=("Segoe UI", small), anchor="w", justify="left",
                          wraplength=int(abs(size) * 24)).pack(side="left", padx=(8, 0))
-        tk.Label(box, text=f"S-A: players' picks · B-D: grouped by effect ({RM.RUNE_TIPS_UPDATED})", bg="#101826",
-                 fg="#6f7c96",
+        tk.Label(box, text=f"S-A: players' picks · B-D: grouped by effect ({RM.RUNE_TIPS_UPDATED})", bg=BG,
+                 fg=MUT,
                  font=("Segoe UI", small), anchor="w").pack(fill="x", pady=(2, 0))
         w.update_idletasks()
         try:
