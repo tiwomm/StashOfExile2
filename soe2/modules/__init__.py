@@ -56,5 +56,6 @@ def load(app):
     from .calc import Calculator
     from .insights import Insights
     from .money import MoneyMakers
+    from .maps import MapLibrary
     return [cls(app) for cls in (PriceChecks, Wealth, ModBook, Library, Regex, Search, Tracker, Notes,
-                                 Rates, Calculator, Insights, MoneyMakers, Settings)]
+                                 Rates, Calculator, Insights, MoneyMakers, MapLibrary, Settings)]

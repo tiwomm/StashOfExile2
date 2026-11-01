@@ -1,0 +1,1051 @@
+{
+ "version": 1,
+ "source": "RePoE world_areas.json",
+ "areas": {
+  "Abyss_Boss1": {
+   "name": "Lightless Void",
+   "kind": "Pinnacle",
+   "level": 79
+  },
+  "Abyss_Boss2": {
+   "name": "Dark Domain",
+   "kind": "Pinnacle",
+   "level": 79
+  },
+  "Abyss_Depths1": {
+   "name": "Abyssal Depths",
+   "kind": "League area",
+   "level": 22
+  },
+  "Abyss_Depths2": {
+   "name": "Abyssal Depths",
+   "kind": "League area",
+   "level": 22
+  },
+  "Abyss_Depths3": {
+   "name": "Abyssal Depths",
+   "kind": "League area",
+   "level": 22
+  },
+  "Abyss_Hub": {
+   "name": "The Well of Souls",
+   "kind": "League area",
+   "level": 22
+  },
+  "Abyss_Intro": {
+   "name": "Lightless Passage",
+   "kind": "League area",
+   "level": 22
+  },
+  "Abyss_Pinnacle": {
+   "name": "The Well of Souls",
+   "kind": "Pinnacle",
+   "level": 79
+  },
+  "BreachDomain_01": {
+   "name": "Twisted Domain",
+   "kind": "Pinnacle",
+   "level": 79
+  },
+  "ChayulaLeague": {
+   "name": "Monastery of the Keepers",
+   "kind": "League area",
+   "level": 65
+  },
+  "ChayulaLeague_Tower": {
+   "name": "Hive Fortress",
+   "kind": "League area",
+   "level": 65
+  },
+  "ChayulaLeague_TowerBoss": {
+   "name": "Hive Colony",
+   "kind": "Pinnacle",
+   "level": 65
+  },
+  "Delirium_Act1Town": {
+   "name": "Simulacrum of Delusion",
+   "kind": "Pinnacle",
+   "level": 80
+  },
+  "Delirium_Act2Reveal": {
+   "name": "Garukhan's Tomb",
+   "kind": "League area",
+   "level": 65
+  },
+  "Delirium_Act3Town": {
+   "name": "Sunken Pyramid",
+   "kind": "League area",
+   "level": 65
+  },
+  "Delirium_HungerBoss": {
+   "name": "Loathsome Mire",
+   "kind": "Pinnacle",
+   "level": 80
+  },
+  "EndgameDoodad_BeastGroundZero": {
+   "name": "The Chained Beast",
+   "kind": "League area",
+   "level": 65
+  },
+  "EndgameDoodad_MeteorCrater": {
+   "name": "The Fallen Star",
+   "kind": "League area",
+   "level": 65
+  },
+  "ExpeditionLeagueBoss": {
+   "name": "Kalguuran Tomb",
+   "kind": "Pinnacle",
+   "level": 80
+  },
+  "ExpeditionLogBook_Atoll": {
+   "name": "Barren Atoll",
+   "kind": "League area",
+   "level": 65
+  },
+  "ExpeditionLogBook_Basin": {
+   "name": "Stagnant Basin",
+   "kind": "League area",
+   "level": 65
+  },
+  "ExpeditionLogBook_Digsite": {
+   "name": "Exhumed Ruins",
+   "kind": "League area",
+   "level": 65
+  },
+  "ExpeditionLogBook_Gully": {
+   "name": "Sloughed Gully",
+   "kind": "League area",
+   "level": 65
+  },
+  "ExpeditionLogBook_Heath": {
+   "name": "Moor of Fallen Skies",
+   "kind": "League area",
+   "level": 65
+  },
+  "ExpeditionLogBook_Peninsula": {
+   "name": "Craggy Peninsula",
+   "kind": "League area",
+   "level": 65
+  },
+  "ExpeditionLogBook_Prairie": {
+   "name": "Grazed Prairie",
+   "kind": "League area",
+   "level": 65
+  },
+  "ExpeditionLogBook_Reef": {
+   "name": "Bleached Shoals",
+   "kind": "League area",
+   "level": 65
+  },
+  "ExpeditionLogBook_Tropical": {
+   "name": "Lush Isle",
+   "kind": "League area",
+   "level": 65
+  },
+  "ExpeditionLogBook_Tundra": {
+   "name": "Frigid Bluffs",
+   "kind": "League area",
+   "level": 65
+  },
+  "ExpeditionLogBook_Wastes": {
+   "name": "Scorched Cay",
+   "kind": "League area",
+   "level": 65
+  },
+  "ExpeditionSubArea_BlackKnightBoss": {
+   "name": "Tomb of the Fallen Knight",
+   "kind": "Pinnacle",
+   "level": 80
+  },
+  "ExpeditionSubArea_Catacomb": {
+   "name": "Derelict Catacombs",
+   "kind": "League area",
+   "level": 65
+  },
+  "ExpeditionSubArea_Cavern": {
+   "name": "Smuggler's Den",
+   "kind": "League area",
+   "level": 65
+  },
+  "ExpeditionSubArea_Fissure": {
+   "name": "Stale Crevice",
+   "kind": "League area",
+   "level": 65
+  },
+  "ExpeditionSubArea_Kalguur": {
+   "name": "Runic Catacombs",
+   "kind": "League area",
+   "level": 65
+  },
+  "ExpeditionSubArea_Laboratory": {
+   "name": "Decayed Laboratory",
+   "kind": "League area",
+   "level": 65
+  },
+  "ExpeditionSubArea_Lair": {
+   "name": "Rancid Nest",
+   "kind": "League area",
+   "level": 65
+  },
+  "ExpeditionSubArea_MedvedBoss": {
+   "name": "Sprawling Jungle",
+   "kind": "League area",
+   "level": 65
+  },
+  "ExpeditionSubArea_OlrothBoss": {
+   "name": "Obscure Island",
+   "kind": "League area",
+   "level": 65
+  },
+  "ExpeditionSubArea_Pond": {
+   "name": "Famed Pond",
+   "kind": "League area",
+   "level": 65
+  },
+  "ExpeditionSubArea_Precursor": {
+   "name": "Ancient Cache",
+   "kind": "League area",
+   "level": 65
+  },
+  "ExpeditionSubArea_Sanctuary": {
+   "name": "Tranquil Chamber",
+   "kind": "League area",
+   "level": 65
+  },
+  "ExpeditionSubArea_Siren": {
+   "name": "Hidden Aquifer",
+   "kind": "League area",
+   "level": 65
+  },
+  "ExpeditionSubArea_UhtredBoss": {
+   "name": "Secluded Temple",
+   "kind": "League area",
+   "level": 65
+  },
+  "ExpeditionSubArea_Vein": {
+   "name": "Gilded Deposit",
+   "kind": "League area",
+   "level": 65
+  },
+  "ExpeditionSubArea_Volcano": {
+   "name": "Sulphur Mines",
+   "kind": "League area",
+   "level": 65
+  },
+  "ExpeditionSubArea_VoranaBoss": {
+   "name": "Mournful Cliffside",
+   "kind": "League area",
+   "level": 65
+  },
+  "IncursionHubEndgame": {
+   "name": "Vaal Ruins",
+   "kind": "League area",
+   "level": 65
+  },
+  "IncursionTemplePresent": {
+   "name": "Lost Temple",
+   "kind": "League area",
+   "level": 65
+  },
+  "MapAlpineRidge": {
+   "name": "Alpine Ridge",
+   "kind": "Tower",
+   "level": 65
+  },
+  "MapAridPlains": {
+   "name": "Arid Plains",
+   "kind": "Map",
+   "level": 65
+  },
+  "MapArroyo": {
+   "name": "Arroyo",
+   "kind": "Map",
+   "level": 65
+  },
+  "MapAugury": {
+   "name": "Augury",
+   "kind": "Map",
+   "level": 65
+  },
+  "MapAzmerianRanges": {
+   "name": "Azmerian Ranges",
+   "kind": "Map",
+   "level": 65
+  },
+  "MapBackwash": {
+   "name": "Backwash",
+   "kind": "Map",
+   "level": 65
+  },
+  "MapBastille": {
+   "name": "Bastille",
+   "kind": "Map",
+   "level": 65
+  },
+  "MapBazaar": {
+   "name": "Bazaar",
+   "kind": "Map",
+   "level": 65
+  },
+  "MapBloodwood": {
+   "name": "Bloodwood",
+   "kind": "Map",
+   "level": 65
+  },
+  "MapBloomingField": {
+   "name": "Blooming Field",
+   "kind": "Map",
+   "level": 65
+  },
+  "MapBluff": {
+   "name": "Bluff",
+   "kind": "Tower",
+   "level": 65
+  },
+  "MapBurialBog": {
+   "name": "Burial Bog",
+   "kind": "Map",
+   "level": 65
+  },
+  "MapCaldera": {
+   "name": "Caldera",
+   "kind": "Map",
+   "level": 65
+  },
+  "MapCanyon": {
+   "name": "Canyon",
+   "kind": "Map",
+   "level": 65
+  },
+  "MapCavernCity": {
+   "name": "Sacred Reservoir",
+   "kind": "Map",
+   "level": 65
+  },
+  "MapCenotes": {
+   "name": "Cenotes",
+   "kind": "Map",
+   "level": 65
+  },
+  "MapChannel": {
+   "name": "Channel",
+   "kind": "Map",
+   "level": 65
+  },
+  "MapChasm": {
+   "name": "Chasm",
+   "kind": "Map",
+   "level": 65
+  },
+  "MapCliffside": {
+   "name": "Cliffside",
+   "kind": "Map",
+   "level": 65
+  },
+  "MapCreek": {
+   "name": "Creek",
+   "kind": "Map",
+   "level": 65
+  },
+  "MapCrimsonShores": {
+   "name": "Crimson Shores",
+   "kind": "Map",
+   "level": 65
+  },
+  "MapCrypt": {
+   "name": "Crypt",
+   "kind": "Map",
+   "level": 65
+  },
+  "MapDecay": {
+   "name": "Decay",
+   "kind": "Map",
+   "level": 65
+  },
+  "MapDeforestation": {
+   "name": "Deforestation",
+   "kind": "Map",
+   "level": 65
+  },
+  "MapDerelictMansion": {
+   "name": "Derelict Mansion",
+   "kind": "Map",
+   "level": 65
+  },
+  "MapDeserted": {
+   "name": "Deserted",
+   "kind": "Map",
+   "level": 65
+  },
+  "MapEpitaph": {
+   "name": "Epitaph",
+   "kind": "Map",
+   "level": 65
+  },
+  "MapExcavation": {
+   "name": "Digsite",
+   "kind": "Map",
+   "level": 65
+  },
+  "MapFlotsam": {
+   "name": "Flotsam",
+   "kind": "Map",
+   "level": 65
+  },
+  "MapForge": {
+   "name": "Forge",
+   "kind": "Map",
+   "level": 65
+  },
+  "MapFortress": {
+   "name": "Fortress",
+   "kind": "Map",
+   "level": 65
+  },
+  "MapFrozenFalls": {
+   "name": "Frozen Falls",
+   "kind": "Map",
+   "level": 65
+  },
+  "MapGeode": {
+   "name": "Geode",
+   "kind": "Map",
+   "level": 65
+  },
+  "MapGreenhouse": {
+   "name": "Greenhouse",
+   "kind": "Map",
+   "level": 65
+  },
+  "MapGrimhaven": {
+   "name": "Grimhaven",
+   "kind": "Map",
+   "level": 65
+  },
+  "MapHeadland": {
+   "name": "Headland",
+   "kind": "Map",
+   "level": 65
+  },
+  "MapHiddenGrotto": {
+   "name": "Hidden Grotto",
+   "kind": "Map",
+   "level": 65
+  },
+  "MapHive": {
+   "name": "Hive",
+   "kind": "Map",
+   "level": 65
+  },
+  "MapIceCave": {
+   "name": "Ice Cave",
+   "kind": "Map",
+   "level": 65
+  },
+  "MapInferno": {
+   "name": "Inferno",
+   "kind": "Map",
+   "level": 65
+  },
+  "MapKarst": {
+   "name": "Karst",
+   "kind": "Map",
+   "level": 65
+  },
+  "MapLoftySummit": {
+   "name": "Lofty Summit",
+   "kind": "Map",
+   "level": 65
+  },
+  "MapLostTowers": {
+   "name": "Lost Towers",
+   "kind": "Tower",
+   "level": 65
+  },
+  "MapMarrow": {
+   "name": "Marrow",
+   "kind": "Map",
+   "level": 65
+  },
+  "MapMesa": {
+   "name": "Mesa",
+   "kind": "Tower",
+   "level": 65
+  },
+  "MapMezzanine": {
+   "name": "Mezzanine",
+   "kind": "Map",
+   "level": 65
+  },
+  "MapMineshaft": {
+   "name": "Mineshaft",
+   "kind": "Map",
+   "level": 65
+  },
+  "MapMire": {
+   "name": "Mire",
+   "kind": "Map",
+   "level": 65
+  },
+  "MapMonument": {
+   "name": "The Monument",
+   "kind": "Map",
+   "level": 65
+  },
+  "MapMortuary": {
+   "name": "Mortuary",
+   "kind": "Map",
+   "level": 65
+  },
+  "MapMothersoul_Female": {
+   "name": "The Matriarch Halls",
+   "kind": "Unique map",
+   "level": 65
+  },
+  "MapMothersoul_Male": {
+   "name": "The Patriarch Halls",
+   "kind": "Unique map",
+   "level": 65
+  },
+  "MapNecropolis": {
+   "name": "Necropolis",
+   "kind": "Map",
+   "level": 65
+  },
+  "MapOasis": {
+   "name": "Oasis",
+   "kind": "Map",
+   "level": 65
+  },
+  "MapOrbalasCrossing": {
+   "name": "Orbala's Crossing",
+   "kind": "Map",
+   "level": 65
+  },
+  "MapOrnateChambers": {
+   "name": "Ornate Chambers",
+   "kind": "Map",
+   "level": 65
+  },
+  "MapOutlands": {
+   "name": "Outlands",
+   "kind": "Map",
+   "level": 65
+  },
+  "MapOvergrown": {
+   "name": "Overgrown",
+   "kind": "Map",
+   "level": 65
+  },
+  "MapPenitentiary": {
+   "name": "Penitentiary",
+   "kind": "Map",
+   "level": 65
+  },
+  "MapPit": {
+   "name": "Pit",
+   "kind": "Map",
+   "level": 65
+  },
+  "MapPlantation": {
+   "name": "Plantation",
+   "kind": "Map",
+   "level": 65
+  },
+  "MapPort": {
+   "name": "Port",
+   "kind": "Map",
+   "level": 65
+  },
+  "MapPrecipice": {
+   "name": "Precipice",
+   "kind": "Map",
+   "level": 65
+  },
+  "MapPrecursorTower": {
+   "name": "Precursor Tower",
+   "kind": "Tower",
+   "level": 65
+  },
+  "MapPrecursorTowerDesert": {
+   "name": "Precursor Tower",
+   "kind": "Tower",
+   "level": 65
+  },
+  "MapPrecursorTowerForest": {
+   "name": "Precursor Tower",
+   "kind": "Tower",
+   "level": 65
+  },
+  "MapPrecursorTowerGrass": {
+   "name": "Precursor Tower",
+   "kind": "Tower",
+   "level": 65
+  },
+  "MapPrecursorTowerMountain": {
+   "name": "Precursor Tower",
+   "kind": "Tower",
+   "level": 65
+  },
+  "MapPrecursorTowerSwamp": {
+   "name": "Precursor Tower",
+   "kind": "Tower",
+   "level": 65
+  },
+  "MapRavine": {
+   "name": "Ravine",
+   "kind": "Map",
+   "level": 65
+  },
+  "MapRazedFields": {
+   "name": "Razed Fields",
+   "kind": "Map",
+   "level": 65
+  },
+  "MapReservoir": {
+   "name": "Reservoir",
+   "kind": "Map",
+   "level": 65
+  },
+  "MapRiverhold": {
+   "name": "Riverhold",
+   "kind": "Map",
+   "level": 65
+  },
+  "MapRiverside": {
+   "name": "Riverside",
+   "kind": "Map",
+   "level": 65
+  },
+  "MapRockpools": {
+   "name": "Rockpools",
+   "kind": "Map",
+   "level": 65
+  },
+  "MapRugosa": {
+   "name": "Rugosa",
+   "kind": "Map",
+   "level": 65
+  },
+  "MapRupture": {
+   "name": "Rupture",
+   "kind": "Map",
+   "level": 65
+  },
+  "MapRustbowl": {
+   "name": "Rustbowl",
+   "kind": "Map",
+   "level": 65
+  },
+  "MapSanctuary": {
+   "name": "Sanctuary",
+   "kind": "Map",
+   "level": 65
+  },
+  "MapSandspit": {
+   "name": "Sandspit",
+   "kind": "Map",
+   "level": 65
+  },
+  "MapSavanna": {
+   "name": "Savannah",
+   "kind": "Map",
+   "level": 65
+  },
+  "MapSeepage": {
+   "name": "Seepage",
+   "kind": "Map",
+   "level": 65
+  },
+  "MapSevenWaters": {
+   "name": "Confluence",
+   "kind": "Map",
+   "level": 65
+  },
+  "MapSinkhole": {
+   "name": "Sinkhole",
+   "kind": "Map",
+   "level": 65
+  },
+  "MapSinterRift": {
+   "name": "Sinter Rift",
+   "kind": "Map",
+   "level": 65
+  },
+  "MapSlash": {
+   "name": "Slash",
+   "kind": "Map",
+   "level": 65
+  },
+  "MapSlick": {
+   "name": "Slick",
+   "kind": "Map",
+   "level": 65
+  },
+  "MapSnowfall": {
+   "name": "Snowfall",
+   "kind": "Map",
+   "level": 65
+  },
+  "MapSpiderWoods": {
+   "name": "Spider Woods",
+   "kind": "Map",
+   "level": 65
+  },
+  "MapSpring_": {
+   "name": "Spring",
+   "kind": "Map",
+   "level": 65
+  },
+  "MapSteamingSprings": {
+   "name": "Steaming Springs",
+   "kind": "Map",
+   "level": 65
+  },
+  "MapSteppe": {
+   "name": "Steppe",
+   "kind": "Map",
+   "level": 65
+  },
+  "MapStronghold": {
+   "name": "Stronghold",
+   "kind": "Map",
+   "level": 65
+  },
+  "MapSulphuricCaverns": {
+   "name": "Sulphuric Caverns",
+   "kind": "Map",
+   "level": 65
+  },
+  "MapSump": {
+   "name": "Sump",
+   "kind": "Map",
+   "level": 65
+  },
+  "MapSunTemple": {
+   "name": "Sun Temple",
+   "kind": "Map",
+   "level": 65
+  },
+  "MapSwampTower": {
+   "name": "Sinking Spire",
+   "kind": "Tower",
+   "level": 65
+  },
+  "MapSwarm": {
+   "name": "Swarm",
+   "kind": "Map",
+   "level": 65
+  },
+  "MapTerrace": {
+   "name": "Terrace",
+   "kind": "Map",
+   "level": 65
+  },
+  "MapTrenches": {
+   "name": "Trenches",
+   "kind": "Map",
+   "level": 65
+  },
+  "MapUberBoss_CopperCitadel": {
+   "name": "The Copper Citadel",
+   "kind": "Citadel",
+   "level": 80
+  },
+  "MapUberBoss_Delirium": {
+   "name": "The Withered Willow",
+   "kind": "Pinnacle",
+   "level": 79
+  },
+  "MapUberBoss_Divinity": {
+   "name": "The Origin Tower",
+   "kind": "Pinnacle",
+   "level": 79
+  },
+  "MapUberBoss_FallenStar": {
+   "name": "Ruins of Kingsmarch",
+   "kind": "Pinnacle",
+   "level": 79
+  },
+  "MapUberBoss_IronCitadel": {
+   "name": "The Iron Citadel",
+   "kind": "Citadel",
+   "level": 80
+  },
+  "MapUberBoss_JadeCitadel": {
+   "name": "The Jade Isles",
+   "kind": "Citadel",
+   "level": 65
+  },
+  "MapUberBoss_Monolith": {
+   "name": "The Burning Monolith",
+   "kind": "Pinnacle",
+   "level": 74
+  },
+  "MapUberBoss_Ritual": {
+   "name": "Caer Tarth",
+   "kind": "Pinnacle",
+   "level": 79
+  },
+  "MapUberBoss_StoneCitadel": {
+   "name": "The Stone Citadel",
+   "kind": "Citadel",
+   "level": 80
+  },
+  "MapUniqueCastaway": {
+   "name": "Castaway",
+   "kind": "Unique map",
+   "level": 65
+  },
+  "MapUniqueFreight_": {
+   "name": "Freight",
+   "kind": "Unique map",
+   "level": 65
+  },
+  "MapUniqueInitialTower": {
+   "name": "Precursor Tower",
+   "kind": "Unique map",
+   "level": 65
+  },
+  "MapUniqueLake": {
+   "name": "The Fractured Lake",
+   "kind": "Unique map",
+   "level": 65
+  },
+  "MapUniqueMegalith": {
+   "name": "The Ezomyte Megaliths",
+   "kind": "Unique map",
+   "level": 65
+  },
+  "MapUniqueMerchant01_Chimeral": {
+   "name": "Merchant's Campsite",
+   "kind": "Unique map",
+   "level": 65
+  },
+  "MapUniqueMerchant01_Oasis": {
+   "name": "Jado's Campsite",
+   "kind": "Unique map",
+   "level": 65
+  },
+  "MapUniqueMerchant01_Sandswept": {
+   "name": "Merchant's Campsite",
+   "kind": "Unique map",
+   "level": 65
+  },
+  "MapUniqueMerchant02_Crimson": {
+   "name": "Merchant's Campsite",
+   "kind": "Unique map",
+   "level": 65
+  },
+  "MapUniqueMerchant02_Farmland": {
+   "name": "Merchant's Campsite",
+   "kind": "Unique map",
+   "level": 65
+  },
+  "MapUniqueMerchant03_Beach": {
+   "name": "Moment of Zen",
+   "kind": "Unique map",
+   "level": 65
+  },
+  "MapUniqueMerchant03_Raft": {
+   "name": "Moment of Zen",
+   "kind": "Unique map",
+   "level": 65
+  },
+  "MapUniqueMerchant03_Tropical": {
+   "name": "Moment of Zen",
+   "kind": "Unique map",
+   "level": 65
+  },
+  "MapUniqueMerchant04_PirateShip": {
+   "name": "The Voyage",
+   "kind": "Unique map",
+   "level": 65
+  },
+  "MapUniqueReactor_01": {
+   "name": "Western Gateway",
+   "kind": "Unique map",
+   "level": 65
+  },
+  "MapUniqueReactor_02": {
+   "name": "Ancient Gateway",
+   "kind": "Unique map",
+   "level": 65
+  },
+  "MapUniqueReactor_03": {
+   "name": "Eastern Gateway",
+   "kind": "Unique map",
+   "level": 65
+  },
+  "MapUniqueReactor_04": {
+   "name": "Site of the Chosen",
+   "kind": "Unique map",
+   "level": 65
+  },
+  "MapUniqueSelenite": {
+   "name": "The Silent Cave",
+   "kind": "Unique map",
+   "level": 65
+  },
+  "MapUniqueUntaintedParadise": {
+   "name": "Untainted Paradise",
+   "kind": "Unique map",
+   "level": 65
+  },
+  "MapUniqueVault": {
+   "name": "Vaults of Kamasa",
+   "kind": "Unique map",
+   "level": 65
+  },
+  "MapUniqueWildwood": {
+   "name": "The Viridian Wildwood",
+   "kind": "Unique map",
+   "level": 65
+  },
+  "MapVaalCity": {
+   "name": "Vaal City",
+   "kind": "Map",
+   "level": 65
+  },
+  "MapVaalFactory": {
+   "name": "The Assembly",
+   "kind": "Map",
+   "level": 65
+  },
+  "MapVaalFoundry": {
+   "name": "Molten Vault",
+   "kind": "Map",
+   "level": 65
+  },
+  "MapVaalVault": {
+   "name": "Sealed Vault",
+   "kind": "Map",
+   "level": 65
+  },
+  "MapVaalVillage": {
+   "name": "Vaal Village",
+   "kind": "Map",
+   "level": 65
+  },
+  "MapVoidReliquary": {
+   "name": "The Reliquary Vault",
+   "kind": "Unique map",
+   "level": 65
+  },
+  "MapWaywardIsle": {
+   "name": "Wayward Isle",
+   "kind": "Map",
+   "level": 65
+  },
+  "MapWetlands": {
+   "name": "Wetlands",
+   "kind": "Map",
+   "level": 65
+  },
+  "MapWillow": {
+   "name": "Willow",
+   "kind": "Map",
+   "level": 65
+  },
+  "MapWoodland": {
+   "name": "Woodland",
+   "kind": "Map",
+   "level": 65
+  },
+  "Map_HildaCampsite": {
+   "name": "Hilda's Campsite",
+   "kind": "Unique map",
+   "level": 65
+  },
+  "PrecursorVault": {
+   "name": "Precursor Vault",
+   "kind": "League area",
+   "level": 65
+  },
+  "RitualLeagueBoss": {
+   "name": "Crux of Nothingness",
+   "kind": "Pinnacle",
+   "level": 80
+  },
+  "Sanctum_1": {
+   "name": "Trial of the Sekhemas",
+   "kind": "League area",
+   "level": 22
+  },
+  "Sanctum_1_Foyer_1": {
+   "name": "Trial of the Sekhemas",
+   "kind": "League area",
+   "level": 22
+  },
+  "Sanctum_1_Foyer_2": {
+   "name": "Trial of the Sekhemas",
+   "kind": "League area",
+   "level": 22
+  },
+  "Sanctum_1_Foyer_3": {
+   "name": "Trial of the Sekhemas",
+   "kind": "League area",
+   "level": 22
+  },
+  "Sanctum_2": {
+   "name": "Trial of the Sekhemas",
+   "kind": "League area",
+   "level": 22
+  },
+  "Sanctum_2_Foyer_1": {
+   "name": "Trial of the Sekhemas",
+   "kind": "League area",
+   "level": 22
+  },
+  "Sanctum_2_Foyer_2": {
+   "name": "Trial of the Sekhemas",
+   "kind": "League area",
+   "level": 22
+  },
+  "Sanctum_2_Foyer_3": {
+   "name": "Trial of the Sekhemas",
+   "kind": "League area",
+   "level": 22
+  },
+  "Sanctum_3": {
+   "name": "Trial of the Sekhemas",
+   "kind": "League area",
+   "level": 22
+  },
+  "Sanctum_3_Foyer_1": {
+   "name": "Trial of the Sekhemas",
+   "kind": "League area",
+   "level": 22
+  },
+  "Sanctum_3_Foyer_2": {
+   "name": "Trial of the Sekhemas",
+   "kind": "League area",
+   "level": 22
+  },
+  "Sanctum_3_Foyer_3": {
+   "name": "Trial of the Sekhemas",
+   "kind": "League area",
+   "level": 22
+  },
+  "Sanctum_4": {
+   "name": "Trial of the Sekhemas",
+   "kind": "League area",
+   "level": 22
+  },
+  "Sanctum_4_Foyer_1": {
+   "name": "Trial of the Sekhemas",
+   "kind": "League area",
+   "level": 22
+  },
+  "Sanctum_4_Foyer_2": {
+   "name": "Trial of the Sekhemas",
+   "kind": "League area",
+   "level": 22
+  },
+  "Sanctum_4_Foyer_3": {
+   "name": "Trial of the Sekhemas",
+   "kind": "League area",
+   "level": 22
+  }
+ }
+}
