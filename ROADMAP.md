@@ -2,7 +2,7 @@
 
 > **GGG ToS safety check - read first.** One key press = one action, only when you press it · nothing acts in the game by itself (watchers only look and show) · never touch the game's memory, code or traffic · the mouse is never moved or clicked for you · it reads only your clipboard, Client.txt, screen pixels, the trade site (within its limits) and poe.ninja. Every change must pass all of [TOS.md](TOS.md) (`tools/check_tos.py` checks the code on every PR).
 
-**Current version: 2.39.0**
+**Current version: 2.39.1**
 
 Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds features, 2.10.1 only fixes. Each step below is one release; we work through them top to bottom.
 
@@ -62,6 +62,7 @@ Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds f
 | 2.37.0 | Expedition Remnant Price Checker: a remnant's reward book gets a poe.ninja price on each reward (best ★), by itself (Auto watcher, scaled to your resolution) or with a key; a helper in Session tracker › Alerts and the timer's Helpers bar. Idea credited to PoE Ancients Price Helper by Pedro Quitério (no code used). |
 | 2.38.0 | GGG ToS safety check (TOS.md, at the top of every guide, `tools/check_tos.py` on every PR and release); Remnant tags fixed (no black screen); the Helpers bar is its own window; Money Makers and Stash tab tagged BETA. |
 | 2.39.0 | In-game clock: time and date on the Session timer (12 / 24-hour setting), switch in Settings > Appearance > Clock. |
+| 2.39.1 | Remnant checker: rewards poe.ninja doesn't list show "no price"; a similar name can't lend its price. |
 
 ## ▶ Next up
 
