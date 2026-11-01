@@ -1,6 +1,6 @@
 # StashOfExile2 roadmap
 
-**Current version: 2.27.0**
+**Current version: 2.28.0**
 
 Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds features, 2.10.1 only fixes. Each step below is one release; we work through them top to bottom.
 
@@ -46,12 +46,12 @@ Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds f
 | 2.26.3 | Updates no longer hang with a flashing console window. |
 | 2.26.4 | Regex Jewels / Gear fast (list widget); star legend up top; "Clear filters" button. |
 | 2.27.0 | Chat commands is a tab in Settings (no longer a Utilities window). |
+| 2.28.0 | Money Makers: community strats in one layout (Thoughts per Click, Clicks per hour), live updates from GitHub, own strats + Share, simple run tracker. |
 
 ## ▶ Next up
 
 | Version | Plan |
 |---|---|
-| 2.28.0 | Money Makers: farming guides, tablet crafting reference, run tracker. Each strat gets a difficulty rating in **Thoughts per Click** (fewer = easier) and **Clicks per hour**, so you can sort and filter strats by effort. |
 | 2.29.0 | Map library with ranks, import / export. |
 | 2.30.0 | **Polish 1 - Foundation:** design tokens (one spacing scale of 4 / 8 / 12 / 16 / 24, four text sizes, colour roles), one button hierarchy (primary / secondary / quiet / danger), contrast check of every theme (see Accessibility below). Nothing changes in what the app does. |
 | 2.31.0 | **Polish 2 - Responsive:** windows reflow when narrow (toolbars wrap, side panels drop under the list, sensible minimum sizes), sharp on every monitor (per-monitor DPI), a text size setting (100-150 %). |
