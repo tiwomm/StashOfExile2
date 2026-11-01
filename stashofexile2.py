@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU GPL v3.0 (see LICENSE). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.26.3
+VERSION 2.26.4
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,6 +19,13 @@ VERSION 2.26.3
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.26.4
+       Regex: both mod lists are a ttk.Treeview now (was a frame + labels + entry per mod). Tk laid out and drew
+       hundreds of frame rows slowly on Windows - Jewels (207) and Gear (327) still lagged after the 2.26.2 cache.
+       Filling a list takes 15-50 ms. Click a row to select it; click its Value cell to type 50 / 50-80 / <80 in a
+       box over the cell (rx_edit / rx_set_value). The background row building (rx_warm) is gone.
+       Price checks: the star legend moved up top, into the summary row. "Show all" is now "✕ Clear filters"
+       (clears Category / Rarity / Type) and is only active when one of them is set.
   2.26.3
        Fixed: an update could hang with a console window flashing over and over. (1) The swap script waited with
        "timeout", which needs a console - run hidden it opened a new console every try; it waits with ping now.
@@ -963,7 +970,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.26.3"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.26.4"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 

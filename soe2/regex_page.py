@@ -22,6 +22,10 @@ def _blank():
     return {"want": {}, "avoid": [], "all": False, "opts": {}}
 
 
+def _val_text(cur):
+    return "" if cur is None else f"{cur:g}" if isinstance(cur, (int, float)) else str(cur)
+
+
 def _rng(m):
     if m.get("min") is None or "#" not in m["line"]:
         return ""
@@ -111,7 +115,7 @@ class RegexPage:
         self.rx_q = tk.StringVar()
         self.rx_q.trace_add("write", lambda *a: self.root.after_idle(self.rx_filter))
         ttk.Entry(fbar, textvariable=self.rx_q, width=30).pack(side="left")
-        tk.Label(fbar, text="Click a mod to select it (click again to remove it). In \"I want\", type in its box: 50 = at "
+        tk.Label(fbar, text="Click a mod to select it (click again to remove it). In \"I want\", click its Value to type: 50 = at "
                             "least 50, 50-80 = from 50 to 80, <80 = at most 80. \"I don't want\" leaves items with "
                             "that mod out.", bg=P1, fg=C["muted"], font=("Segoe UI", 9)).pack(side="left", padx=12)
         self.rx_info = tk.Label(fbar, text="", bg=P1, fg=C["muted"])
@@ -151,32 +155,102 @@ class RegexPage:
                     b.bind("<Button-1>", lambda e, v=val: self.rx_set_all(v))
                     self.rx_match[val] = b
                 tk.Label(hdr, text="Match", bg=P2, fg=C["muted"]).pack(side="right", padx=(0, 6))
-            canvas = tk.Canvas(box, bg=P2, highlightthickness=0)
-            sb = ttk.Scrollbar(box, orient="vertical", command=canvas.yview)
-            inner = tk.Frame(canvas, bg=P2)
-            win = canvas.create_window((0, 0), window=inner, anchor="nw")
-            inner.bind("<Configure>", lambda e, c=canvas: c.configure(scrollregion=c.bbox("all")))
-            canvas.bind("<Configure>", lambda e, c=canvas, w=win: c.itemconfigure(w, width=e.width))
-            canvas.configure(yscrollcommand=sb.set)
-            sb.pack(side="right", fill="y")
-            canvas.pack(side="left", fill="both", expand=True)
-            for w in (canvas, inner):
-                w.bind("<Enter>", lambda e, c=canvas: self._rx_wheel(c))
-            self.rx_lists[side] = {"canvas": canvas, "inner": inner, "rows": {}, "count": cnt, "win": win,
-                                   "kinds": {}}
+            self.rx_lists[side] = {"tree": self._rx_tree(box, side), "rows": {}, "count": cnt}
+        self.rx_editor = None
         self.rx_kind_changed(save=False)
-        self.root.after(1500, self.rx_warm)                  # 2.26.2: the other item types, in the background
 
-    # ---------------- scrolling with the mouse wheel over a list
-    def _rx_wheel(self, canvas):
-        def wheel(e):
-            if getattr(e, "num", None) in (4, 5):
-                canvas.yview_scroll(-1 if e.num == 4 else 1, "units")
+    # ---------------- 2.26.4: each list is one fast list widget (a Treeview), not a frame per mod
+    def _rx_tree(self, box, side):
+        """Hundreds of frame rows (650 gear mods) were slow to lay out and draw on Windows - switching to Jewels or
+        Gear lagged. A Treeview draws only the rows on screen."""
+        st = ttk.Style(self.root)
+        st.configure("Rx.Treeview", background=C["panel2"], fieldbackground=C["panel2"], foreground=C["text"],
+                     rowheight=26, borderwidth=0, font=("Segoe UI", 10))
+        st.configure("Rx.Treeview.Heading", padding=(6, 4))
+        st.map("Rx.Treeview", background=[], foreground=[])
+        tv = ttk.Treeview(box, columns=("val", "star", "mod", "where"), show="headings", selectmode="none",
+                          style="Rx.Treeview")
+        for c, title, w, anchor, stretch in (("val", "Value" if side == "want" else "Range", 78, "center", False),
+                                             ("star", "★", 30, "center", False), ("mod", "Mod", 320, "w", True),
+                                             ("where", "Where", 120, "w", False)):
+            tv.heading(c, text=title, anchor=anchor)
+            tv.column(c, width=w, minwidth=120 if c == "mod" else w, stretch=stretch, anchor=anchor)
+        bold = ("Segoe UI", 10, "bold")
+        tv.tag_configure("want_on", background=SEL_BG, foreground=C["green"], font=bold)
+        tv.tag_configure("avoid_on", background=SEL_BG, foreground=C["red"], font=bold)
+        tv.tag_configure("high", foreground="#ffd9a8")
+        tv.tag_configure("ignore", foreground=C["muted"])
+        tv.tag_configure("plain", foreground=C["text"])
+        sb = ttk.Scrollbar(box, orient="vertical", command=tv.yview)
+
+        def scrolled(a, b):
+            sb.set(a, b)
+            self._rx_edit_place()                            # the value box follows its row
+        tv.configure(yscrollcommand=scrolled)
+        sb.pack(side="right", fill="y")
+        tv.pack(side="left", fill="both", expand=True)
+        tv.bind("<Button-1>", lambda e, s=side: self._rx_click(e, s))
+        tv.bind("<Button-3>", lambda e, s=side: self._rx_right(e, s))
+        tv.bind("<Configure>", lambda e: self.root.after_idle(self._rx_edit_place))
+        return tv
+
+    def _rx_click(self, e, side):
+        tv = self.rx_lists[side]["tree"]
+        if tv.identify_region(e.x, e.y) != "cell":
+            return None                                      # headings: resizing a column still works
+        mid = tv.identify_row(e.y)
+        r = self.rx_lists[side]["rows"].get(mid)
+        if r:
+            if side == "want" and tv.identify_column(e.x) == "#1" and "#" in r["mod"]["line"]:
+                self.rx_edit(mid)                            # the Value cell: type 50 / 50-80 / <80
             else:
-                canvas.yview_scroll(int(-e.delta / 120) or (-1 if e.delta > 0 else 1), "units")
-        canvas.bind_all("<MouseWheel>", wheel)
-        canvas.bind_all("<Button-4>", wheel)
-        canvas.bind_all("<Button-5>", wheel)
+                self.rx_toggle(mid, side)
+        return "break"
+
+    def _rx_right(self, e, side):
+        tv = self.rx_lists[side]["tree"]
+        r = self.rx_lists[side]["rows"].get(tv.identify_row(e.y))
+        if r:
+            self.rx_rate_menu(e, r["mod"])
+
+    # ---------------- the value box (one, over the Value cell being edited)
+    def rx_edit(self, mid):
+        self._rx_edit_close()
+        tv = self.rx_lists["want"]["tree"]
+        tv.see(mid)
+        cur = self._rx()["want"].get(mid)
+        var = tk.StringVar(value=_val_text(cur))
+        ent = tk.Entry(tv, textvariable=var, justify="center", bg=C["odd"], fg=C["text"], relief="flat",
+                       insertbackground=C["text"], highlightthickness=2, highlightbackground=C["accent"],
+                       highlightcolor=C["accent"], font=("Segoe UI", 10))
+        self.rx_editor = {"entry": ent, "var": var, "mid": mid}
+        var.trace_add("write", lambda *_a: self.rx_set_value(mid, var.get()))
+        for key in ("<Return>", "<KP_Enter>", "<Escape>", "<FocusOut>"):
+            ent.bind(key, lambda e: self.root.after_idle(self._rx_edit_close))
+        self.root.update_idletasks()
+        self._rx_edit_place()
+        ent.focus_set()
+        ent.select_range(0, "end")
+        return ent
+
+    def _rx_edit_place(self):
+        ed = getattr(self, "rx_editor", None)
+        if not ed or not ed["entry"].winfo_exists():
+            return
+        bb = self.rx_lists["want"]["tree"].bbox(ed["mid"], "val")
+        if not bb:
+            ed["entry"].place_forget()                       # its row scrolled out of sight
+            return
+        x, y, w, h = bb
+        ed["entry"].place(x=x + 2, y=y + 1, width=w - 4, height=h - 2)
+
+    def _rx_edit_close(self):
+        ed, self.rx_editor = getattr(self, "rx_editor", None), None
+        if ed:
+            try:
+                ed["entry"].destroy()
+            except tk.TclError:
+                pass
 
     # ---------------- state
     def _rx(self):
@@ -352,120 +426,24 @@ class RegexPage:
 
     # ---------------- the two mod lists
     def rx_build_lists(self):
-        """The two mod lists for the item type picked. 2.26.2: each type's rows are built once and kept - switching
-        type swaps which set the list shows. Destroying and rebuilding ~650 gear rows each time froze the app for up
-        to a second on Windows (found with the Lag finder)."""
+        """The two mod lists for the item type picked (2.26.4: filling a Treeview takes a few milliseconds, even for
+        650 gear mods)."""
+        self._rx_edit_close()
         kind = self.rx_kind.get()
         for side, L in self.rx_lists.items():
-            cache = L["kinds"]
-            canvas = L["canvas"]
-            if kind not in cache:
-                self._rx_new_set(side, kind)
-            inner, rows = cache[kind]
-            if len(rows) < len(R.mods(kind)):                # still being built in the background: finish it now
-                for m in R.mods(kind):
-                    if m["id"] not in rows:
-                        rows[m["id"]] = self._rx_make_row(side, inner, m, kind)
-            self._rx_sync_rows(side, rows)                   # a favorite may have changed this type's values
-            canvas.itemconfigure(L["win"], window=inner)
-            L["inner"], L["rows"] = inner, rows
-            canvas.configure(scrollregion=canvas.bbox("all"))
-            canvas.yview_moveto(0)
+            tv = L["tree"]
+            old = [i for i in L["rows"] if tv.exists(i)]
+            if old:
+                tv.delete(*old)                              # (the hidden ones too)
+            rows = {}
+            for m in R.mods(kind):
+                where = [] if kind == "waystone" else [t for t in m["tags"] if t != "Any"]
+                txt = m["text"]
+                rows[m["id"]] = {"mod": m, "text": txt[:1].upper() + txt[1:], "where": ", ".join(where)}
+                tv.insert("", "end", iid=m["id"], values=("", "", rows[m["id"]]["text"], rows[m["id"]]["where"]))
+            L["rows"] = rows
+            tv.yview_moveto(0)
         self.rx_refresh_values()
-
-    def _rx_new_set(self, side, kind):
-        """An empty set of rows for one item type (its own frame inside the list)."""
-        L = self.rx_lists[side]
-        canvas = L["canvas"]
-        if not L["kinds"] and not L["inner"].winfo_children():
-            inner = L["inner"]                               # the first type uses the frame made with the list
-        else:
-            inner = tk.Frame(canvas, bg=C["panel2"])
-            inner.bind("<Configure>", lambda e, c=canvas: c.configure(scrollregion=c.bbox("all")))
-            inner.bind("<Enter>", lambda e, c=canvas: self._rx_wheel(c))
-        L["kinds"][kind] = (inner, {})
-        return L["kinds"][kind]
-
-    def rx_warm(self):
-        """2.26.2: after the Regex window opens, build the other item types' rows a few at a time while nothing else
-        happens, so even the first switch to Gear (650 rows) is quick."""
-        if not hasattr(self, "rx_lists"):
-            return
-        for kind in R.KINDS:
-            for side, L in self.rx_lists.items():
-                if kind not in L["kinds"]:
-                    self._rx_new_set(side, kind)
-                inner, rows = L["kinds"][kind]
-                todo = [m for m in R.mods(kind) if m["id"] not in rows]
-                if todo:
-                    for m in todo[:25]:
-                        rows[m["id"]] = self._rx_make_row(side, inner, m, kind)
-                    self.root.after(30, self.rx_warm)        # the next few in a moment (the window stays smooth)
-                    return
-
-    def _rx_sync_rows(self, side, rows):
-        """A kept row's value box shows what this type's search says now."""
-        if side != "want":
-            return
-        st = self._rx()
-        for mid, r in rows.items():
-            ent, var = r.get("entry"), r.get("var")
-            if ent is None or var is None:
-                continue
-            cur = st["want"].get(mid)
-            want = "" if cur is None else f"{cur:g}" if isinstance(cur, (int, float)) else str(cur)
-            if getattr(ent, "_ph", False):
-                if want:
-                    ent._ph = False
-                    ent.delete(0, "end")
-                    ent.config(fg=C["text"])
-                    var.set(want)
-            elif var.get() != want:
-                var.set(want)
-                if not want:
-                    ent._show_ph()
-
-    def _rx_make_row(self, side, parent, m, kind=None):
-        """One mod's row. kind (2.26.2): the item type it belongs to - rows of other types are built in the background,
-        and their boxes must change THAT type's search, not the one showing."""
-        kind = kind or self.rx_kind.get()
-        P2 = C["panel2"]
-        row = tk.Frame(parent, bg=P2, padx=6, pady=2, cursor="hand2")
-        rng = _rng(m)
-        ent = None
-        if side == "want":
-            st = self.rx_state.get(kind) or self._rx()
-            cur = st["want"].get(m["id"])
-            v = tk.StringVar(value="" if cur is None else f"{cur:g}" if isinstance(cur, (int, float)) else str(cur))
-            if "#" in m["line"]:
-                ent = tk.Entry(row, textvariable=v, width=7, justify="center", bg=C["odd"], fg=C["text"], relief="flat",
-                               insertbackground=C["text"], highlightthickness=1, highlightbackground=C["line"],
-                               font=("Segoe UI", 9))
-                ent.pack(side="left", padx=(0, 8))
-                self._rx_placeholder(ent, v, rng)
-                v.trace_add("write", lambda *_a, i=m["id"], var=v, k=kind: self.rx_value(i, var, k))
-            else:
-                tk.Frame(row, bg=P2, width=62, height=1).pack(side="left", padx=(0, 8))
-        else:
-            tk.Label(row, text=rng, bg=P2, fg=C["muted"], width=8, font=("Segoe UI", 9)).pack(side="left", padx=(0, 4))
-        star = tk.Label(row, text="", bg=P2, fg=C["accent"], width=2, font=("Segoe UI Symbol", 10, "bold"))
-        star.pack(side="left", padx=(0, 2))
-        where = [t for t in m["tags"] if t != "Any"]
-        if self.rx_kind.get() == "waystone":
-            where = []
-        txt = m["text"].replace("#", "#")
-        lab = tk.Label(row, text=txt[0].upper() + txt[1:], bg=P2, fg=C["text"], anchor="w", justify="left",
-                       font=("Segoe UI", 10))
-        lab.pack(side="left", fill="x", expand=True)
-        tag = None
-        if where:
-            tag = tk.Label(row, text=", ".join(where), bg=P2, fg=C["steel"], font=("Segoe UI", 8))
-            tag.pack(side="right", padx=(6, 0))
-        for w in (row, lab, star) + ((tag,) if tag else ()):
-            w.bind("<Button-1>", lambda e, i=m["id"], s=side: self.rx_toggle(i, s))
-            w.bind("<Button-3>", lambda e, mm=m: self.rx_rate_menu(e, mm))
-        return {"row": row, "label": lab, "tag": tag, "entry": ent, "mod": m, "star": star,
-                "var": v if side == "want" else None}
 
     # ---------------- what the Mod book says about each mod (2.0 beta 20)
     @staticmethod
@@ -490,15 +468,9 @@ class RegexPage:
         if not hasattr(self, "rx_lists"):
             return
         self.rx_worths = {}
-        for side, L in self.rx_lists.items():
-            for mid, r in L["rows"].items():
-                if mid not in self.rx_worths:
-                    self.rx_worths[mid] = self.rx_worth(r["mod"], self.rx_kind.get())
-                imp, _why = self.rx_worths[mid]
-                star = "★" if imp == "high" else ""
-                if r.get("_star") != star:                     # 2.26.2: only when it changes
-                    r["_star"] = star
-                    r["star"].config(text=star)
+        kind = self.rx_kind.get()
+        for mid, r in self.rx_lists["want"]["rows"].items():
+            self.rx_worths[mid] = self.rx_worth(r["mod"], kind)
         n = sum(1 for imp, _w in self.rx_worths.values() if imp == "high")
         if hasattr(self, "rx_val_btn"):
             self.rx_val_btn.config(text=f"★ Select valuable ({n})", state="normal" if n else "disabled")
@@ -533,64 +505,38 @@ class RegexPage:
         self.rx_update()
         self.rx_save()
 
-    def _rx_placeholder(self, ent, var, text):
-        """Grey value range in an empty box (like poe2.re); gone as soon as you type."""
-        def show(_e=None):
-            if not ent.winfo_exists():                       # the list was rebuilt meanwhile
-                return
-            if not var.get() and text:
-                ent._ph = True                               # first: the insert below must not count as a value
-                ent.delete(0, "end")
-                ent.insert(0, text)
-                ent.config(fg=C["muted"])
-
-        def hide(_e=None):
-            if getattr(ent, "_ph", False):
-                ent._ph = False
-                ent.delete(0, "end")
-                ent.config(fg=C["text"])
-        ent._ph = False
-        ent._show_ph = show
-        ent.bind("<FocusIn>", hide)
-        ent.bind("<FocusOut>", show)
-        self.root.after_idle(show)
-
-    def rx_value(self, mid, var, kind=None):
-        kind = kind or self.rx_kind.get()
-        rows = (self.rx_lists["want"]["kinds"].get(kind) or (None, {}))[1] or self.rx_lists["want"]["rows"]
-        ent = rows.get(mid, {}).get("entry")
-        if ent is None or getattr(ent, "_ph", False):
-            return                                           # the grey placeholder (or a box being built)
-        txt = var.get().strip()
-        st = self.rx_state.setdefault(kind, _blank()) if kind != self.rx_kind.get() else self._rx()
+    def rx_set_value(self, mid, txt):
+        """A mod's value: 50 = at least 50, 50-80, <80 (2.21.0). Typing one selects the mod; an empty box keeps it
+        selected with any value. -> False when it can't be read (the box turns red)."""
+        txt = str(txt or "").strip()
+        st = self._rx()
+        ed = getattr(self, "rx_editor", None)
+        ent = ed["entry"] if ed and ed["mid"] == mid else None
         if txt:
             try:
-                lo, hi = R.value_spec(txt)                   # 2.21.0: 50, 50-80 or <80
+                lo, hi = R.value_spec(txt)
             except ValueError:
-                ent and ent.config(highlightbackground=C["red"])
-                return
-            ent and ent.config(highlightbackground=C["line"])
-            val = lo if hi is None else txt.replace(" ", "")   # a plain minimum stays a number (older favorites)
-            st["want"][mid] = val                            # typing a value selects the mod
+                if ent:
+                    ent.config(highlightbackground=C["red"], highlightcolor=C["red"])
+                return False
+            if ent:
+                ent.config(highlightbackground=C["accent"], highlightcolor=C["accent"])
+            st["want"][mid] = lo if hi is None else txt.replace(" ", "")   # a plain minimum stays a number
             if mid in st["avoid"]:
                 st["avoid"].remove(mid)
         elif mid in st["want"]:
             st["want"][mid] = None
-        if kind != self.rx_kind.get():                       # another type's box (kept rows): just keep the value
-            return self.rx_save()
         self.rx_paint(mid)
         self.rx_update()
         self.rx_save()
+        return True
 
     def rx_toggle(self, mid, side):
+        self._rx_edit_close()
         st = self._rx()
         if side == "want":
             if mid in st["want"]:
                 del st["want"][mid]
-                ent = self.rx_lists["want"]["rows"][mid]["entry"]
-                if ent is not None and not getattr(ent, "_ph", False):
-                    ent.delete(0, "end")
-                    ent._show_ph()
             else:
                 st["want"][mid] = None
                 if mid in st["avoid"]:
@@ -607,21 +553,26 @@ class RegexPage:
 
     def rx_paint(self, mid):
         st = self._rx()
+        imp = getattr(self, "rx_worths", {}).get(mid, ("normal", ""))[0]
+        star = "★" if imp == "high" else ""
         for side, L in self.rx_lists.items():
             r = L["rows"].get(mid)
             if not r:
                 continue
+            m = r["mod"]
             on = (mid in st["want"]) if side == "want" else (mid in st["avoid"])
-            bg = SEL_BG if on else C["panel2"]
-            imp = getattr(self, "rx_worths", {}).get(mid, ("normal", ""))[0]
-            fg = (C["green"] if side == "want" else C["red"]) if on else \
-                ("#ffd9a8" if imp == "high" else C["muted"] if imp == "ignore" else C["text"])
-            if r.get("_paint") == (bg, fg, on):                # 2.26.2: unchanged - no repainting 650 rows
+            tag = (side + "_on") if on else imp if imp in ("high", "ignore") else "plain"
+            if side == "want":
+                cur = st["want"].get(mid)
+                val = _val_text(cur) if cur is not None else ("" if "#" not in m["line"] else
+                                                             f"({_rng(m)})" if _rng(m) else "✎")
+            else:
+                val = _rng(m)
+            key = (tag, val, star)
+            if r.get("_paint") == key:                       # unchanged
                 continue
-            r["_paint"] = (bg, fg, on)
-            for w in (r["row"], r["label"], r["star"]) + ((r["tag"],) if r["tag"] else ()):
-                w.config(bg=bg)
-            r["label"].config(fg=fg, font=("Segoe UI", 10, "bold") if on else ("Segoe UI", 10))
+            r["_paint"] = key
+            L["tree"].item(mid, values=(val, star, r["text"], r["where"]), tags=(tag,))
         for side, L in self.rx_lists.items():
             n = len(st["want"]) if side == "want" else len(st["avoid"])
             L["count"].config(text=f"{n} selected" if n else "")
@@ -653,24 +604,31 @@ class RegexPage:
             if slots & {"Helmet", "Gloves", "Boots", "Body Armour"}:
                 slots.add("Armour")
         for side, L in self.rx_lists.items():
+            tv = L["tree"]
             rows = list(L["rows"].items())
             if first:                                        # ★ mods at the top (2.0 beta 20)
                 rows.sort(key=lambda kv: rank.get(worths.get(kv[0], ("normal",))[0], 1))
-            for _mid, r in rows:
-                r["row"].pack_forget()
+            keep = []
             for mid, r in rows:
                 m = r["mod"]
-                ok = not q or q in m["text"] or q in " ".join(m["tags"]).lower()
+                if q and q not in m["text"] and q not in " ".join(m["tags"]).lower():
+                    continue
                 if only and worths.get(mid, ("normal",))[0] != "high":
-                    ok = False
+                    continue
                 if slots and not slots & set(m["tags"]):
-                    ok = False
-                if ok:
-                    r["row"].pack(fill="x")
-                    shown += side == "want"
+                    continue
+                keep.append(mid)
+            if tuple(keep) != tv.get_children():
+                tv.detach(*L["rows"])
+                for i, mid in enumerate(keep):
+                    tv.move(mid, "", i)
+            if side == "want":
+                shown = len(keep)
+        self._rx_edit_place()
         total = len(R.mods(self.rx_kind.get()))
         err = R.load().get("error")
-        self.rx_info.config(text=err or (f"{shown} of {total} mods" if q else f"{total} mods"), fg=C["red"] if err else C["muted"])
+        self.rx_info.config(text=err or (f"{shown} of {total} mods" if shown != total else f"{total} mods"),
+                            fg=C["red"] if err else C["muted"])
 
     def rx_reset(self):
         self.rx_state[self.rx_kind.get()] = _blank()
