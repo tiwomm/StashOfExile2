@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU GPL v3.0 (see LICENSE). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.48.0
+VERSION 2.49.0
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,6 +19,11 @@ VERSION 2.48.0
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.49.0
+       Settings (a cog) is the first thing on the dock; Toolkit (the menu) sits at the left end of the taskbar, where a
+       Start button would be (shell: dock tag "settings", taskbar tag "tkbtn"; with the dock hidden Settings shows on
+       the taskbar too). Every ttk.Checkbutton is a modern switch (style.switches: a "Switch.indicator" image element
+       in the TCheckbutton / Bar. / Mod. layouts - same widgets and variables, Pillow-drawn, theme colours). test_v2490.
   2.48.0
        Taskbar (there whatever window is open; feedback_page.py): "⬆ Update x.y.z" when GitHub has a newer release
        (a quiet look 15 s after start and every 6 h, plus every other update check; click = Check for updates, which
@@ -1250,7 +1255,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.48.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.49.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 

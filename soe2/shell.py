@@ -481,25 +481,25 @@ class Shell:
         self.task_right = tk.Frame(self.task, bg="#111b30")
         self.task_right_id = self.task.create_window(0, TASK_H // 2, window=self.task_right, anchor="e")
         self.task.bind("<Configure>", lambda e: self.task.coords(self.task_right_id, e.width - 8, TASK_H // 2), add="+")
-        # Settings sits at the left end of the taskbar, under the dock (2.0 beta 15: where a Start button would be)
+        # 2.49.0 (the user): Toolkit sits at the left end of the taskbar - where a Start button would be - and opens
+        # the Toolkit menu; Settings moved to the top of the dock (a cog). With the dock hidden, Settings shows here too.
         t = self.task
-        t.create_rectangle(8, 6, DOCK_W - 8, TASK_H - 6, fill="#1c2a47", outline="#3d5582", tags=("settings", "setbox"))
-        t.create_text(DOCK_W // 2, TASK_H // 2, text="⚙  Settings", fill="#cfdaf0", font=("Segoe UI", 9, "bold"),
-                      tags=("settings", "settxt"))
+        t.create_rectangle(8, 6, DOCK_W - 8, TASK_H - 6, fill="#3a2a12", outline=C["accent"], tags=("tkbtn", "tkbox"))
+        t.create_text(DOCK_W // 2, TASK_H // 2, text="◆  Toolkit", fill="#ffd9a8", font=("Segoe UI", 9, "bold"),
+                      tags=("tkbtn", "tktxt"))
+        t.tag_bind("tkbtn", "<Button-1>", lambda e: self.toggle_menu())
+        t.tag_bind("tkbtn", "<Enter>", lambda e: (t.config(cursor="hand2"), t.itemconfigure("tkbox", fill="#4e3816")))
+        t.tag_bind("tkbtn", "<Leave>", lambda e: (t.config(cursor=""), t.itemconfigure("tkbox", fill="#3a2a12")))
+        x0 = DOCK_W
+        t.create_rectangle(x0, 6, x0 + DOCK_W - 16, TASK_H - 6, fill="#1c2a47", outline="#3d5582",
+                           tags=("settings", "setbox"), state="hidden")
+        t.create_text(x0 + (DOCK_W - 16) // 2, TASK_H // 2, text="⚙  Settings", fill="#cfdaf0",
+                      font=("Segoe UI", 9, "bold"), tags=("settings", "settxt"), state="hidden")
         t.tag_bind("settings", "<Button-1>", lambda e: self.open("settings"))
         t.tag_bind("settings", "<Enter>", lambda e: (t.config(cursor="hand2"), t.itemconfigure("setbox", fill="#2c4c8a",
                                                                                               outline=C["accent"])))
         t.tag_bind("settings", "<Leave>", lambda e: (t.config(cursor=""), t.itemconfigure("setbox", fill="#1c2a47",
                                                                                           outline="#3d5582")))
-        # Toolkit on the taskbar too, while the dock is hidden (2.0 beta 21: Appearance > Launcher)
-        x0 = DOCK_W
-        t.create_rectangle(x0, 6, x0 + DOCK_W - 16, TASK_H - 6, fill="#3a2a12", outline=C["accent"],
-                           tags=("tkbtn", "tkbox"), state="hidden")
-        t.create_text(x0 + (DOCK_W - 16) // 2, TASK_H // 2, text="◆  Toolkit", fill="#ffd9a8",
-                      font=("Segoe UI", 9, "bold"), tags=("tkbtn",), state="hidden")
-        t.tag_bind("tkbtn", "<Button-1>", lambda e: self.toggle_menu())
-        t.tag_bind("tkbtn", "<Enter>", lambda e: (t.config(cursor="hand2"), t.itemconfigure("tkbox", fill="#4e3816")))
-        t.tag_bind("tkbtn", "<Leave>", lambda e: (t.config(cursor=""), t.itemconfigure("tkbox", fill="#3a2a12")))
         self.strip = tk.Frame(root, bg=C["bg"])
         self.strip.pack(side="bottom", fill="x")
         self.dock = tk.Canvas(root, bg="#0e1522", width=DOCK_W, highlightthickness=0, bd=0)
@@ -512,7 +512,7 @@ class Shell:
         self.desk.bind("<Configure>", self._desk_resized)
         self.root.bind("<Configure>", lambda e: e.widget is self.root and self._follow_soon(), add="+")
         self.icons = []
-        self.orb = self.dock                    # clicks on the orb are part of the dock canvas (tag "orb")
+        self.orb = self.task                    # 2.49.0: the Toolkit button is on the taskbar canvas (tag "tkbtn")
         self.dock_btns, self.dots, self._dock_hover = {}, {}, None
         self.dock.bind("<Configure>", lambda e: self.draw_dock())
         self.menu = None
@@ -831,21 +831,20 @@ class Shell:
         d.delete("all")
         H = max(200, d.winfo_height())
         cx = DOCK_W // 2
-        # the Toolkit button (the app's own icon): opens the Toolkit menu
-        img = self.app_icon(3)
+        # 2.49.0: Settings at the top of the dock - a cog (the Toolkit menu is on the taskbar, like a Start button)
         t = 44
-        self._round_rect(d, cx - t // 2 + 1, 10, cx + t // 2 + 1, 10 + t + 2, 10, fill="#05080e", outline="", tags=("orb",))
-        self._orb_tile = self._round_rect(d, cx - t // 2, 8, cx + t // 2, 8 + t, 10, fill="#3a2a12", outline=C["accent"],
-                                          width=1, tags=("orb",))
-        if img is not None:
-            d.create_image(cx, 8 + t // 2, image=img, tags=("orb",))
-        else:
-            d.create_text(cx, 8 + t // 2, text="◆", fill=C["accent"], font=("Segoe UI Symbol", 18), tags=("orb",))
-        d.create_text(cx, 8 + t + 11, text="Toolkit", fill="#ffd9a8", font=("Segoe UI", 8, "bold"), tags=("orb",))
+        self._round_rect(d, cx - t // 2 + 1, 10, cx + t // 2 + 1, 10 + t + 2, 10, fill="#05080e", outline="",
+                         tags=("settings",))
+        self._orb_tile = self._round_rect(d, cx - t // 2, 8, cx + t // 2, 8 + t, 10, fill="#1c2a47", outline="#3d5582",
+                                          width=1, tags=("settings",))
+        d.create_text(cx, 8 + t // 2, text="⚙", fill="#cfdaf0", font=("Segoe UI Symbol", 22), tags=("settings",))
+        d.create_text(cx, 8 + t + 11, text="Settings", fill="#cfdaf0", font=("Segoe UI", 8, "bold"), tags=("settings",))
         d.create_line(10, 8 + t + 24, DOCK_W - 10, 8 + t + 24, fill="#26365a")
-        d.tag_bind("orb", "<Button-1>", lambda e: self.toggle_menu())
-        d.tag_bind("orb", "<Enter>", lambda e: (d.config(cursor="hand2"), d.itemconfigure(self._orb_tile, fill="#4e3816")))
-        d.tag_bind("orb", "<Leave>", lambda e: (d.config(cursor=""), d.itemconfigure(self._orb_tile, fill="#3a2a12")))
+        d.tag_bind("settings", "<Button-1>", lambda e: self.open("settings"))
+        d.tag_bind("settings", "<Enter>", lambda e: (d.config(cursor="hand2"),
+                                                     d.itemconfigure(self._orb_tile, fill="#2c4c8a", outline=C["accent"])))
+        d.tag_bind("settings", "<Leave>", lambda e: (d.config(cursor=""),
+                                                     d.itemconfigure(self._orb_tile, fill="#1c2a47", outline="#3d5582")))
         for k in list(self.dock_btns):
             self.dock_btns[k] = None
         for k in list(self.dots):
@@ -1304,7 +1303,7 @@ class Shell:
             self.dock.pack_forget()
             self.dock_sep.pack_forget()
         state = "hidden" if dock else "normal"
-        self.task.itemconfigure("tkbtn", state=state)
+        self.task.itemconfigure("settings", state=state)          # 2.49.0: Settings joins Toolkit on the taskbar
         self.task.coords("inner", DOCK_W + 6 + (0 if dock else DOCK_W - 10), TASK_H // 2)
         self.save()
         self.draw_icons()
