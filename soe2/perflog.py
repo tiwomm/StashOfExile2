@@ -1,4 +1,4 @@
-"""Slowness recorder (2.25.4): Settings > Advanced > "Record slowness". For a few minutes, a watcher thread notes every
+"""Lag finder (2.25.4, "Slowness recorder" until 2.26.0): Settings > Advanced > Lag finder. For a few minutes, a watcher thread notes every
 time the window stops responding for more than STALL seconds and writes WHICH code was running at that moment
 (the window thread's stack) to perf_log.txt in the data folder - so a slow spot on someone's own PC can be found and
 fixed instead of guessed at. Nothing leaves the PC; it stops by itself."""
@@ -29,7 +29,7 @@ class PerfLog:
         self.on, self.until, self.stalls, self.worst = True, time.time() + minutes * 60, 0, 0.0
         self.main_id = threading.get_ident()
         self.beat = time.time()
-        self.lines = [f"{time.strftime('%Y-%m-%d %H:%M:%S')}  slowness recorder on for {minutes} min "
+        self.lines = [f"{time.strftime('%Y-%m-%d %H:%M:%S')}  Lag finder on for {minutes} min "
                       f"(stuck > {STALL * 1000:.0f} ms is written down)"]
         self._root = root
         self._heartbeat()

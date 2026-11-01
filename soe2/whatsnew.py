@@ -16,11 +16,19 @@ INTRO = [
 
 # What's being worked on (2.4.0: not shown in the app any more - kept for ROADMAP.md / the developer).
 NEXT = [
-    "2.26.0: Money Makers with Thoughts per Click and Clicks per hour (see ROADMAP.md).",
+    "2.27.0: Money Makers with Thoughts per Click and Clicks per hour (see ROADMAP.md).",
 ]
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.26.0": [
+        "Session tracker timer: \"Helpers: ● Breach | ● Delirium | ● Ritual\" - green is on, red is off. Click one "
+        "to switch it; ⚙ opens their options.",
+        "Price checks: the time left while pricing shows up top, next to Priced and Require Review.",
+        "Exchange rates > Arbitrage (BETA) finds loops again (Grinding Gear Games changed how the history names "
+        "items). Press Refresh; gains that look too good to be true are left out.",
+        "Settings > Advanced: the Lag finder (was \"Slowness recorder\").",
+    ],
     "2.25.4": [
         "Fixed: maximised when you closed it -> maximised again when you open it.",
         "Settings > Advanced > Slowness recorder: if the app feels slow, press Start and use it for a few minutes - "

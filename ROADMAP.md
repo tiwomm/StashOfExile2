@@ -1,6 +1,6 @@
 # StashOfExile2 roadmap
 
-**Current version: 2.25.4**
+**Current version: 2.26.0**
 
 Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds features, 2.10.1 only fixes. Each step below is one release; we work through them top to bottom.
 
@@ -40,13 +40,14 @@ Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds f
 | 2.25.2 | Popups open on the monitor you're using. |
 | 2.25.3 | Waystone previews show real numbers; app popups open in the middle of the app. |
 | 2.25.4 | Maximised stays maximised; Slowness recorder (Settings > Advanced). |
+| 2.26.0 | Timer's Helpers bar (click to switch, ⚙ to options); pricing time-left chip; Arbitrage works again (BETA); Lag finder. |
 
 ## ▶ Next up
 
 | Version | Plan |
 |---|---|
-| 2.26.0 | Money Makers: farming guides, tablet crafting reference, run tracker. Each strat gets a difficulty rating in **Thoughts per Click** (fewer = easier) and **Clicks per hour**, so you can sort and filter strats by effort. |
-| 2.27.0 | Map library with ranks, import / export. |
+| 2.27.0 | Money Makers: farming guides, tablet crafting reference, run tracker. Each strat gets a difficulty rating in **Thoughts per Click** (fewer = easier) and **Clicks per hour**, so you can sort and filter strats by effort. |
+| 2.28.0 | Map library with ranks, import / export. |
 | Later | Sidekick / Exiled Exchange-style pricing for more item types; public stash order test tool; Ancients price helper; Linux build. |
 
 ## 💤 Parked (not planned unless something changes)

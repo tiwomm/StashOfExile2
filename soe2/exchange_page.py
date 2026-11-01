@@ -26,8 +26,18 @@ def _n(x):
 class ExchangePage:
     """Mixed into App."""
 
+    MAX_EDGE = 0.30          # 2.26.0: a "gain" above this is almost always thin, one-sided hourly data, not a real gap
+
     def build_arbitrage(self, page):
         P1, P2 = C["panel"], C["panel2"]
+        head = tk.Frame(page, bg=P1, padx=14)                 # 2.26.0: BETA until it's fully developed
+        head.pack(fill="x", pady=(10, 0))
+        tk.Label(head, text="BETA", bg="#3a2a10", fg="#ffcf40", font=("Segoe UI", 8, "bold"), padx=6, pady=1,
+                 highlightthickness=1, highlightbackground="#7a6428").pack(side="left")
+        tk.Label(head, text="How to use: press Refresh. It reads the last finished hours of Grinding Gear Games' "
+                            "Currency Exchange history (a few seconds). Rows appear when three trades in a row would "
+                            "end with more than you started.", bg=P1, fg=C["text"], font=("Segoe UI", 9),
+                 justify="left", anchor="w", wraplength=560).pack(side="left", padx=8, fill="x", expand=True)
         tk.Label(page, text="Markets on the Currency Exchange that priced the same thing differently in the last few "
                             "hours - from Grinding Gear Games' own hourly trade history. Each row is a loop of three "
                             "trades that would end with more than you started, at those hours' average rates. It's a "
@@ -169,8 +179,9 @@ class ExchangePage:
 
     # ---- names
     def arb_name(self, cid):
-        if cid in A.HUB_NAMES:
-            return A.HUB_NAMES[cid]
+        n = A.item_name(cid)                                 # 2.26.0: game ids -> names (cxnames.json)
+        if n:
+            return n
         try:
             from .wealth import WPRICES
             for part in (WPRICES.parts or {}).values():
@@ -179,7 +190,7 @@ class ExchangePage:
                     return n
         except Exception:
             pass
-        return cid.replace("-", " ").title()
+        return cid.rsplit("/", 1)[-1].replace("-", " ").title()
 
     # ---- refresh
     def arb_opts_changed(self):
@@ -227,6 +238,8 @@ class ExchangePage:
         except ValueError:
             depth = 5.0
         loops = A.find_loops(tot, edge, depth) if tot else []
+        wild = [lp for lp in loops if lp["edge"] > self.MAX_EDGE]          # 2.26.0: too good to be true
+        loops = [lp for lp in loops if lp["edge"] <= self.MAX_EDGE]
         if hours:
             self.arb_live_notify(loops, max(hours))
         tv = self.arb_tv
@@ -250,7 +263,11 @@ class ExchangePage:
             last = max(hours)
             txt = (f"{len(tot)} markets traded in {league}, {len(hours)} finished hour{'s' if len(hours) != 1 else ''} "
                    f"(up to {_t.strftime('%H:%M', _t.localtime(last + 3600))}). {len(loops)} uneven loop"
-                   f"{'s' if len(loops) != 1 else ''} at these settings. Highlighted rows were uneven in every one of those hours.")
+                   f"{'s' if len(loops) != 1 else ''} at these settings. Highlighted rows were uneven in every one of those hours."
+                   + (f" {len(wild)} more claimed over {self.MAX_EDGE * 100:.0f} % - left out: that's thin, one-sided "
+                      f"trading in the hourly numbers, not a real gap." if wild else "")
+                   + ("" if loops else " None right now is normal: the exchange is usually even. Try a lower gain "
+                                       "(1 %) or a smaller amount traded (0)."))
             fg = C["muted"]
         self.arb_status.config(text=txt, fg=fg, wraplength=640)
         self.arb_steps.config(text="Pick a row to see the three trades." if loops else "")

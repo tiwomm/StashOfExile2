@@ -858,15 +858,27 @@ class TrackerPage:
         if not cfg.get("locked"):
             w.draggable(inner)
         self.tk_ov_alerts = {}
-        if cfg.get("alerts_bar", True):          # 2.10.0: a small bar: are the Delirium / Breach alerts on?
-            bar = tk.Frame(w.body, bg="#16213a", padx=10, pady=2)
+        if cfg.get("alerts_bar", True):          # 2.26.0: "Helpers: ● Breach | ● Delirium | ● Ritual  ⚙"
+            BB = "#16213a"
+            bar = tk.Frame(w.body, bg=BB, padx=8, pady=2)
             bar.pack(side="bottom", fill="x", before=inner)
-            for k in ("delirium", "breach", "ritual"):
-                lab = tk.Label(bar, text="", bg="#16213a", fg="#6b7690", font=("Segoe UI", 8, "bold"), anchor="w")
-                lab.pack(side="left", padx=(0, 12))
-                self.tk_ov_alerts[k] = lab
-                if not cfg.get("locked"):
-                    w.draggable(lab)
+            tk.Label(bar, text="Helpers:", bg=BB, fg="#8b96b0", font=("Segoe UI", 8)).pack(side="left", padx=(0, 6))
+            for i, k in enumerate(("breach", "delirium", "ritual")):
+                if i:
+                    tk.Label(bar, text="|", bg=BB, fg="#3a4560", font=("Segoe UI", 8)).pack(side="left", padx=4)
+                cell = tk.Frame(bar, bg=BB, cursor="hand2")
+                cell.pack(side="left")
+                dot = tk.Label(cell, text="\u25cf", bg=BB, fg="#ff5c5c", font=("Segoe UI", 9), cursor="hand2")
+                dot.pack(side="left")
+                lab = tk.Label(cell, text=k.title(), bg=BB, fg="#cfd8ea", font=("Segoe UI", 8, "bold"),
+                               cursor="hand2")
+                lab.pack(side="left", padx=(2, 0))
+                for wd in (cell, dot, lab):                    # a click switches that helper on / off
+                    wd.bind("<Button-1>", lambda e, k=k: self.tracker_helper_click(k))
+                self.tk_ov_alerts[k] = (dot, lab)
+            cog = tk.Label(bar, text="\u2699", bg=BB, fg="#8b96b0", font=("Segoe UI Symbol", 10), cursor="hand2")
+            cog.pack(side="right")
+            cog.bind("<Button-1>", lambda e: self.tracker_helpers_settings())
             if not cfg.get("locked"):
                 w.draggable(bar)
         self.tk_overlay = w
@@ -888,14 +900,33 @@ class TrackerPage:
             lab.config(text=texts.get(k, ""))
         if getattr(self, "tk_ov_alerts", None):
             states = self.alert_states()
-            for k, lab in self.tk_ov_alerts.items():
+            for k, (dot, lab) in self.tk_ov_alerts.items():
                 st = states.get(k, "off")
-                txt = f"\u25cf {k.title()} {st}"
+                txt = k.title()
                 if k == "ritual" and st == "on":                   # 2.14.0: the live count
                     from .utilities import RITUAL
                     if RITUAL.seen == "ok" and RITUAL.count:
-                        txt = f"\u25cf Ritual {RITUAL.count[0]}/{RITUAL.count[1]}"
-                lab.config(text=txt, fg={"on": "#5ee08a", "off": "#6b7690", "warn": "#ffb347"}[st])
+                        txt = f"Ritual {RITUAL.count[0]}/{RITUAL.count[1]}"
+                dot.config(fg={"on": "#5ee08a", "off": "#ff5c5c", "warn": "#ffb347"}[st])   # green on, red off
+                lab.config(text=txt, fg="#e8eefc" if st != "off" else "#8b96b0")
+
+    def tracker_helper_click(self, key):
+        """2.26.0: a click on a helper in the timer's bar switches it on / off."""
+        on = self.alert_states().get(key, "off") != "off"
+        try:
+            self.alerts_toggle(key, not on)
+        except Exception:
+            self.log_error(f"switching {key} from the timer")
+        self.tracker_overlay_draw(self.tracker_numbers())
+
+    def tracker_helpers_settings(self):
+        """2.26.0: the ⚙ on the timer's bar - the Session tracker window, where the helpers' options are."""
+        self.shell.open("tracker")
+        try:
+            self.root.deiconify()
+            self.root.lift()
+        except Exception:
+            pass
 
     # ---------------- hotkeys (fed by the keyboard watcher, on its own thread)
     def tracker_on_key(self, vk, ctrl, alt, shift):

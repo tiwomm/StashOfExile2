@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU GPL v3.0 (see LICENSE). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.25.4
+VERSION 2.26.0
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,6 +19,17 @@ VERSION 2.25.4
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.26.0
+       (1) Session tracker timer: the bar is "Helpers: ● Breach | ● Delirium | ● Ritual  ⚙" - a green dot is on,
+           red off (amber: on but not working); click a helper to switch it on / off (alerts_toggle(key, want) now
+           works without the Alerts panel being built); ⚙ opens the Session tracker window with their options.
+       (2) Price checks: "⏳ Pricing 12 · ~1:30 left" chip next to Priced / Require Review (was only at the bottom).
+       (3) Arbitrage FIX + BETA: GGG's history now names items by game id ("Metadata/Items/Currency/
+           CurrencyModValues" = Divine Orb), so the three hubs never matched and no loop was ever found (0 of 1,449
+           markets on the author's data; 347 after). arbitrage.HUB_IDS maps them back; cxnames.json
+           (tools/build_cxnames.py, RePoE) names everything. A BETA badge and how-to on the tab; "gains" over 30 %
+           are left out (thin one-sided hourly data) and the status says how many.
+       (4) Settings > Advanced: "Slowness recorder" is now "Lag finder".
   2.25.4
        (1) Maximised last time -> maximised again: restore_zoom waits until the window is on screen and the start-up
            screen is gone (asking earlier did nothing on Windows: the author's settings said zoomed, yet it opened
@@ -926,7 +937,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.25.4"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.26.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
