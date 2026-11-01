@@ -21,6 +21,13 @@ NEXT = [
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.37.0": [
+        "New: Expedition Remnant Price Checker. Open a remnant's reward list and press Ctrl+Alt+R: every reward gets "
+        "its poe.ninja price right next to it, the best one ★. Switch it on in Session tracker > Alerts or click "
+        "\"Remnant\" in the timer's Helpers bar.",
+        "The idea comes from PoE Ancients Price Helper by Pedro Quitério - thank you! None of its code is used; this "
+        "is our own version (see Settings > About).",
+    ],
     "2.36.0": [
         "Right-click a row for what you'd want to do with it: in Price checks Re-price, Copy name, Open on trade site, "
         "Mark listed / sold / removed; in Market Insights and Regex Favorites their own actions too.",
