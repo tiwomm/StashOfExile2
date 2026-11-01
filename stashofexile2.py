@@ -28,6 +28,8 @@ VERSION HISTORY
        monitor unplugged, another resolution) is pulled back on (tracker_page._helpers_on_screen, monitor_rect).
        Expedition Remnant Price Checker tags use short units, no space: 16ex, 20c, 29d (pricefmt.fmt_short). It makes no
        sound any more (the user asked): no beep, no Sound box on its Alerts row.
+       Fix (2.38.0): blocking the wheel on dropdowns with "break" also stopped the page around them scrolling
+       (Settings); the TCombobox wheel binding is now replaced with a no-op, so the page scrolls, the pick stays.
   2.38.0
        GGG ToS safety check: TOS.md (the 7 rules), a copy at the top of README / ROADMAP / board, strats and linux
        READMEs / both handovers, notes in every screen watcher; tools/check_tos.py (game-memory / injection APIs,

@@ -354,8 +354,9 @@ def install(app):
     # 2.38.0: the mouse wheel never changes a dropdown. On Windows Tk sends the wheel to the box that has the keyboard,
     # not the one under the mouse, so after picking e.g. Mirror of Kalandra, scrolling the list below quietly changed
     # the pick (Stash tab's currency "went back"). Pick with a click or the arrow keys.
+    # (Replacing the class binding - not "break" - so the page around it still scrolls with the wheel.)
     for seq in ("<MouseWheel>", "<Button-4>", "<Button-5>"):
-        root.bind_class("TCombobox", seq, lambda e: "break")
+        root.bind_class("TCombobox", seq, lambda e: None)
     root.bind_class("Treeview", "<Button-3>", lambda e: list_menu(app, e), add="+")
     for seq in ("<Shift-F10>", "<KeyPress-App>", "<KeyPress-Menu>"):    # 2.36.0: menus without a mouse
         try:
