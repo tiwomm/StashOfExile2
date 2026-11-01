@@ -101,6 +101,67 @@ class Plate(tk.Canvas):
             self.on_resize(w, h)
 
 
+_SWITCH = {}
+
+
+def _switch_img(root, on, hover=False, disabled=False, w=34, h=18, gap=8):
+    """One picture of the switch: a rounded track (accent when on), a round knob (right when on). Drawn 4x and scaled
+    down, so it's smooth. Pillow; without it a plain Tk drawing."""
+    def col(c):
+        try:
+            return theme_color(c)
+        except Exception:
+            return c
+    track = col(C["accent"]) if on else col("#2b3d5f")
+    if hover and not disabled:
+        track = col("#ffc37a") if on else col("#3d5582")
+    knob = "#ffffff" if on else col("#8fa3c7")
+    alpha = 110 if disabled else 255
+    try:
+        from PIL import Image, ImageDraw, ImageTk
+        k = 4
+        im = Image.new("RGBA", ((w + gap) * k, h * k), (0, 0, 0, 0))
+        d = ImageDraw.Draw(im)
+
+        def rgba(c):
+            c = c.lstrip("#")
+            return tuple(int(c[i:i + 2], 16) for i in (0, 2, 4)) + (alpha,)
+        d.rounded_rectangle((0, 0, w * k - 1, h * k - 1), radius=h * k // 2, fill=rgba(track))
+        r = (h - 6) * k // 2
+        cx = (w - h // 2) * k if on else (h // 2) * k
+        cy = h * k // 2
+        d.ellipse((cx - r, cy - r, cx + r, cy + r), fill=rgba(knob))
+        im = im.resize((w + gap, h), Image.LANCZOS)
+        return ImageTk.PhotoImage(im, master=root)
+    except Exception:
+        img = tk.PhotoImage(master=root, width=w + gap, height=h)
+        img.put(track, to=(h // 2, 2, w - h // 2, h - 2))
+        x0 = w - h + 3 if on else 3
+        img.put(knob, to=(x0, 3, x0 + h - 6, h - 3))
+        return img
+
+
+def switches(root, s):
+    """2.49.0 (the user: "anywhere there's a checkbox... a modern slider in its place"): every ttk.Checkbutton
+    (TCheckbutton and its Bar. / Mod. styles) shows a switch instead of a tick box. Same widgets, same variables."""
+    imgs = {(on, hv, ds): _switch_img(root, on, hv, ds) for on in (0, 1) for hv in (0, 1) for ds in (0, 1)}
+    _SWITCH[id(root)] = imgs                 # (kept, or Tk drops the pictures)
+    try:
+        s.element_create("Switch.indicator", "image", imgs[(0, 0, 0)],
+                         ("disabled", "selected", imgs[(1, 0, 1)]), ("disabled", imgs[(0, 0, 1)]),
+                         ("active", "selected", imgs[(1, 1, 0)]), ("selected", imgs[(1, 0, 0)]),
+                         ("active", imgs[(0, 1, 0)]), sticky="w")
+    except tk.TclError:
+        return                                # (already made for this root)
+    layout = [("Checkbutton.padding", {"sticky": "nswe", "children": [
+        ("Switch.indicator", {"side": "left", "sticky": ""}),
+        ("Checkbutton.focus", {"side": "left", "sticky": "w", "children": [
+            ("Checkbutton.label", {"sticky": "nswe"})]})]})]
+    for name in ("TCheckbutton", "Bar.TCheckbutton", "Mod.TCheckbutton"):
+        s.layout(name, layout)
+        s.configure(name, padding=(0, 2))
+
+
 def setup_style(root):
     root.configure(bg=C["bg"])
     s = ttk.Style(root)
@@ -145,6 +206,7 @@ def setup_style(root):
     s.map("Bar.TCheckbutton", background=[("active", C["panel"])])
     s.configure("Mod.TCheckbutton", background=C["panel"], foreground=C["text"])
     s.map("Mod.TCheckbutton", background=[("active", C["panel"])])
+    switches(root, s)                         # 2.49.0: every on / off box is a modern switch
     s.configure("TSpinbox", fieldbackground=C["odd"], background="#25395f", foreground=C["text"],
                 arrowcolor="#cfe0ff", bordercolor=C["line"], lightcolor="#4f6c9e", darkcolor="#15233d")
     # raised steel buttons: the light edge top-left and dark edge bottom-right make the bevel

@@ -21,6 +21,10 @@ NEXT = [
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.49.0": [
+        "Settings is the cog at the top of the dock; the Toolkit menu is at the left end of the taskbar, like Start.",
+        "Every on / off option is a switch now.",
+    ],
     "2.48.0": [
         "The taskbar shows ⬆ Update when a new version is out - whatever window you're in.",
         "🐞 Report a bug on the taskbar: describe it, see exactly what's sent, and it lands on GitHub for the "
