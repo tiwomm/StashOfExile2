@@ -1,0 +1,28 @@
+name: New issues to Discord
+# 2.48.0: every new GitHub issue (from the app's Report a bug, or opened on GitHub) is posted to Discord. Needs the
+# DISCORD_WEBHOOK repo secret (Discord: Server Settings > Integrations > Webhooks > New Webhook > Copy Webhook URL);
+# without it this skips quietly. App reports already tell Discord from the board server, so those are skipped here.
+on:
+  issues:
+    types: [opened]
+permissions: {}
+jobs:
+  tell-discord:
+    runs-on: ubuntu-latest
+    if: ${{ !contains(github.event.issue.labels.*.name, 'from the app') }}
+    steps:
+      - name: Post to Discord
+        env:
+          HOOK: ${{ secrets.DISCORD_WEBHOOK }}
+          TITLE: ${{ github.event.issue.title }}
+          URL: ${{ github.event.issue.html_url }}
+          NUM: ${{ github.event.issue.number }}
+          WHO: ${{ github.event.issue.user.login }}
+        run: |
+          if [ -z "$HOOK" ]; then echo "No DISCORD_WEBHOOK secret - skipping."; exit 0; fi
+          python3 - <<'PY'
+          import json, os, urllib.request
+          msg = {"content": f"📋 New issue #{os.environ['NUM']} by {os.environ['WHO']}: {os.environ['TITLE']}\n{os.environ['URL']}"}
+          req = urllib.request.Request(os.environ["HOOK"], data=json.dumps(msg).encode(), headers={"content-type": "application/json"})
+          urllib.request.urlopen(req, timeout=20)
+          PY
