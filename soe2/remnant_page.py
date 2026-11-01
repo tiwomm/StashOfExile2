@@ -38,6 +38,7 @@ class RemnantPage:
         c.pop("sound", None)                        # 2.39.0: no sound (the tags are enough)
         c.setdefault("auto", True)                  # Auto: watch where the book opens; tags come and go by themselves
         c.setdefault("area", None)                  # None = RM.AREA; set only when a key press found it elsewhere
+        c.setdefault("tips", True)                  # 2.40.0: the runeshape cheat sheet next to the tags
         return c
 
     def remnant_status(self):
@@ -73,6 +74,10 @@ class RemnantPage:
         st = self.remnant_status()
         self.remnant_auto_sync()
         return f"Can't read the screen: {self.rm_problem}." if want and st == "warn" else None
+
+    def remnant_tips_changed(self, on):
+        self.remnant_cfg()["tips"] = bool(on)
+        save_json("settings.json", SETTINGS)
 
     def remnant_auto_changed(self, on):
         self.remnant_cfg()["auto"] = bool(on)
@@ -309,10 +314,68 @@ class RemnantPage:
                 tag(l_ + x0, mid, row["label"], "#c8b98a", "#1a140c", "#5a4a2a", bold=False)
             tag(l_ + x1 + 14, mid, txt, fg, TAG_BEST if row.get("best") else TAG_BG,
                 "#ffd25a" if row.get("best") else "#3d5582")
+        if wins and self.remnant_cfg().get("tips", True):
+            self._remnant_tips(wins, rect, size, no_capture)
         self.rm_win = wins or None
         self.rm_auto_shown = False
         if secs and wins:                                      # (Auto's tags stay until the list closes)
             self.root.after(int(secs * 1000), lambda: getattr(self, "rm_win", None) is wins and self.remnant_hide())
+
+    def _remnant_tips(self, wins, rect, size, no_capture):
+        """2.40.0: "Runeshapes - community picks" next to the tags (right of the furthest one, at the book's top),
+        click-through and left out of captures like them. It comes and goes with the tags (same list)."""
+        l_, t, r, b = rect
+        try:
+            right = max(w.winfo_x() + w.winfo_reqwidth() for w in wins)
+        except tk.TclError:
+            return
+        x = right + 24
+        y = t + int(RM.AREA[1] * (b - t))
+        w = tk.Toplevel(self.root)
+        w.withdraw()
+        w.overrideredirect(True)
+        try:
+            w.attributes("-topmost", True)
+        except tk.TclError:
+            pass
+        small = size                                           # (as big as the tags: read at a glance)
+        box = tk.Frame(w, bg="#101826", highlightthickness=1, highlightbackground="#5b77ad", padx=8, pady=4)
+        box.pack()
+        tk.Label(box, text="Runeshapes - community picks", bg="#101826", fg="#e8eefc",
+                 font=("Segoe UI", small, "bold"), anchor="w").pack(fill="x")
+        for tier in ("S", "A"):
+            for tr, name, why in RM.RUNE_TIERS:
+                if tr != tier:
+                    continue
+                row = tk.Frame(box, bg="#101826")
+                row.pack(fill="x")
+                tk.Label(row, text=tr, bg="#2a2108" if tr == "S" else "#16213a",
+                         fg="#ffd25a" if tr == "S" else "#9fc2ff", font=("Segoe UI", small, "bold"),
+                         width=2).pack(side="left", pady=1)
+                tk.Label(row, text=name, bg="#101826", fg="#e8eefc", font=("Segoe UI", small, "bold"), width=8,
+                         anchor="w").pack(side="left", padx=(8, 0))
+                tk.Label(row, text=why, bg="#101826", fg="#9aa6bd", font=("Segoe UI", small),
+                         anchor="w").pack(side="left")
+        tk.Label(box, text=f"for loot · players' opinion ({RM.RUNE_TIPS_UPDATED})", bg="#101826", fg="#6f7c96",
+                 font=("Segoe UI", small), anchor="w").pack(fill="x", pady=(2, 0))
+        w.update_idletasks()
+        try:
+            from .style import monitor_rect
+            ml, mt, mr, mb = monitor_rect(self.root, x, y)
+            x = min(x, mr - w.winfo_reqwidth())
+        except Exception:
+            pass
+        w.geometry(f"+{int(x)}+{int(y)}")
+        w.deiconify()
+        try:
+            from .alerts_page import click_through, force_topmost
+            click_through(w)
+            force_topmost(w)
+        except Exception:
+            pass
+        no_capture(w)
+        w.rm_tips = True
+        wins.append(w)
 
     def remnant_hide(self):
         self.rm_auto_shown = False

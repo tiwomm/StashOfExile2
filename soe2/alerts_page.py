@@ -197,6 +197,12 @@ class AlertsPage:
                 ab = ttk.Checkbutton(row, text="Auto (no key needed)", variable=self.al_rauto,
                                      command=lambda: self.remnant_auto_changed(self.al_rauto.get()))
                 ab.pack(side="left", padx=(4, 0))
+                self.al_rtips = tk.BooleanVar(value=bool(self.remnant_cfg().get("tips", True)))      # 2.40.0
+                tb_ = ttk.Checkbutton(row, text="Runeshape tips", variable=self.al_rtips,
+                                      command=lambda: self.remnant_tips_changed(self.al_rtips.get()))
+                tb_.pack(side="left", padx=(4, 0))
+                Tooltip(tb_, "A small list next to the prices: the runeshapes players rate best for loot (S and A "
+                             "tier). It shows and goes with the prices.")
                 Tooltip(ab, "Prices show by themselves when a remnant's reward book opens: the app watches the spot "
                             "where it opens (scaled to your resolution, like the Delirium watcher) - no box to draw. "
                             "Off: only the key prices it.")
