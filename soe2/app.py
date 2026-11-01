@@ -900,8 +900,8 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
 
         # 2.44.0: the look of the windows over the game lives in Overlays › Look (with the things it changes)
         row = section("Appearance", "Over the game", "The Session timer, the Mechanic Helper bar and Notes have their "
-                                                     "own look and opacity, in Overlays › Look.")
-        ttk.Button(row, text="Open Overlays › Look", command=lambda: self.ovh_open("Look")).pack(side="left")
+                                                     "own style and opacity, in Overlays › Appearance.")
+        ttk.Button(row, text="Open Overlays › Appearance", command=lambda: self.ovh_open("Appearance")).pack(side="left")
 
         from .style import ACCENTS, THEMES
         row = section("Appearance", "Look of the app", "Colours and text size for every window. Changes take effect "
@@ -1140,7 +1140,7 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         if getattr(self, "tk_overlay", None) is not None:              # 2.39.0: the timer's clock follows it too
             self.tracker_overlay_draw(self.tracker_numbers())
 
-    # ---- 2.43.0: the look of the windows over the game (2.44.0: Overlays › Look)
+    # ---- 2.43.0: the look of the windows over the game (2.44.0: Overlays › Look; 2.49.0: › Appearance)
     def build_overlay_look(self, parent):
         P2 = C["panel2"]
 
@@ -1155,27 +1155,33 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
             row.pack(fill="x")
             return row
         from .overlaywin import LOOKS, LOOK
-        row = section("Appearance", "Style and opacity", "For the Session timer, the Mechanic Helper bar and Notes. "
-                                                         "Move each one by its title bar; its lock keeps it in place. "
-                                                         "Lower opacity = see more of the game through it.")
+        row = section("Appearance", "Style", "How the Session timer, the Mechanic Helper bar and Notes look over the "
+                                             "game - all three together. Move each one by its title bar; its lock "
+                                             "keeps it in place.")
         self.ov_look_var = tk.StringVar(value=LOOKS[LOOK[0]])
         lk = ttk.Combobox(row, textvariable=self.ov_look_var, values=list(LOOKS.values()), state="readonly", width=30)
         lk.pack(side="left")
         lk.bind("<<ComboboxSelected>>", lambda e: self.on_ov_look())
-        grid = tk.Frame(row.master, bg=P2)
-        grid.pack(fill="x", pady=(8, 0))
-        self.ov_op_vars = {}
-        for i, (key, label) in enumerate((("session", "Session timer"), ("helper", "Mechanic Helper"),
+        # 2.49.0 (the user): say what opacity does - and show the number
+        row = section("Appearance", "Opacity", "How solid each window is over the game. 100% = fully solid: nothing of "
+                                               "the game shows through it. Lower = more see-through: the whole window "
+                                               "fades, text and all, so you can see the game behind it - handy where "
+                                               "it sits over the map or the minimap. 24% is the lowest, so it never "
+                                               "disappears. Changes show at once.")
+        grid = tk.Frame(row, bg=P2)
+        grid.pack(fill="x")
+        self.ov_op_vars, self.ov_op_pct = {}, {}
+        for i, (key, label) in enumerate((("session", "Session timer"), ("helper", "Mechanic Helper bar"),
                                           ("notes", "Notes"))):
             tk.Label(grid, text=label, bg=P2, fg=C["text"]).grid(row=i, column=0, sticky="w", padx=(0, 8), pady=2)
             v = tk.IntVar(value=self.ov_opacity_get(key))
             self.ov_op_vars[key] = v
             ttk.Scale(grid, from_=60, to=255, variable=v, orient="horizontal", length=200,
                       command=lambda _v, k=key: self.on_ov_opacity(k)).grid(row=i, column=1, sticky="w")
-        self.rm_tips_var = tk.BooleanVar(value=bool((SETTINGS.get("remnant") or {}).get("tips", True)))
-        ttk.Checkbutton(row.master, text="Runeshape tips next to the remnant prices (while a remnant's book is open)",
-                        variable=self.rm_tips_var,
-                        command=lambda: self.remnant_tips_changed(self.rm_tips_var.get())).pack(anchor="w", pady=(8, 0))
+            pct = tk.Label(grid, text=f"{round(v.get() * 100 / 255)}%", bg=P2, fg=C["muted"], font=(MONO, 9), width=5,
+                           anchor="e")
+            pct.grid(row=i, column=2, sticky="e", padx=(8, 0))
+            self.ov_op_pct[key] = pct
 
     def ov_opacity_get(self, key):
         t = self.tracker_cfg()
@@ -1187,6 +1193,8 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
 
     def on_ov_opacity(self, key):
         v = int(float(self.ov_op_vars[key].get()))
+        if getattr(self, "ov_op_pct", None) and key in self.ov_op_pct:
+            self.ov_op_pct[key].config(text=f"{round(v * 100 / 255)}%")
         t = self.tracker_cfg()
         if key == "session":
             t["opacity"] = v
@@ -1224,6 +1232,9 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         save_json("settings.json", SETTINGS)
         if getattr(self, "tk_overlay", None) is not None:
             self.tracker_overlay_build()
+        if getattr(self, "tk_helpers", None) is not None:          # 2.49.0: the bar has its own window
+            self.tracker_helpers_build()
+            self.tracker_helpers_paint()
         try:
             self.overlay.restyle()
         except Exception:
