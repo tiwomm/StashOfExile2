@@ -72,3 +72,6 @@ CREATE TABLE IF NOT EXISTS map_votes (
   name TEXT NOT NULL, cid TEXT NOT NULL, rank TEXT NOT NULL, updated INTEGER NOT NULL,
   PRIMARY KEY (name, cid)
 );
+
+-- 2.48.0: bug reports from the app (POST /bugs) - only a per-address count per day, to stop floods
+CREATE TABLE IF NOT EXISTS bug_limits (ip TEXT PRIMARY KEY, n INTEGER NOT NULL, day TEXT NOT NULL);
