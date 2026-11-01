@@ -1,5 +1,7 @@
 # Money Makers strats
 
+> **GGG ToS safety check - read first.** One key press = one action, only when you press it · nothing acts in the game by itself (watchers only look and show) · never touch the game's memory, code or traffic · the mouse is never moved or clicked for you · it reads only your clipboard, Client.txt, screen pixels, the trade site (within its limits) and poe.ninja. Every change must pass all of [TOS.md](../TOS.md) (`tools/check_tos.py` checks the code on every PR).
+
 Each strat is **one file** in this folder, in the standard layout below: a `.json` file, or the plain-text `.txt`
 layout the app saves with **⬇ Download Format** (opens in Notepad). One-liners for **Lucrative Strats** go in
 `oneliners.json`. `tools/build_strats.py` checks every file and builds `moneymakers.json`, which ships with the app

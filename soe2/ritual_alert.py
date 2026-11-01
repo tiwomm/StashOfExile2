@@ -12,7 +12,10 @@ never slows the app, and talks to the app over its stdin / stdout:
 How the counter is read: find the icon by template matching (soe2/templates/ritual_icon.png, scaled to the game's
 height), take the black box right of it, keep the bright text pixels and cut them into glyphs at the empty columns;
 the middle one is "/", and each digit (0 - 4) is recognised from its shape (holes, width, which edges are filled).
-A reading counts only when it's seen twice in a row and makes sense (total 3 or 4, done <= total)."""
+A reading counts only when it's seen twice in a row and makes sense (total 3 or 4, done <= total).
+
+ToS (TOS.md): this only LOOKS at the screen (a capture, like a screenshot) and SHOWS something; it never presses,
+clicks, types or sends anything to the game, and never reads the game's memory or traffic."""
 import os
 import sys
 import threading

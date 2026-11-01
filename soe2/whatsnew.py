@@ -21,6 +21,17 @@ NEXT = [
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.38.0": [
+        "Fix: the Expedition Remnant Price Checker could black out the game and flicker. Each price is now its own "
+        "small tag, and the watcher never sees its own tags.",
+        "The Helpers bar (Breach, Delirium, Ritual, Remnant) is its own small window: never cut off, shows with the "
+        "Session timer, and you can move it anywhere.",
+        "Money Makers is tagged BETA, and Stash tab's BETA tag now sits inside its button.",
+        "Fix: Stash tab's currency no longer jumps back to Divine Orb - scrolling the mouse wheel no longer changes "
+        "any dropdown (pick with a click or the arrow keys).",
+        "Every feature is checked against Grinding Gear Games' rules: one key press = one action, nothing acts in the "
+        "game by itself, nothing touches the game. See TOS.md on GitHub.",
+    ],
     "2.37.0": [
         "New: Expedition Remnant Price Checker. Open a remnant's reward book and every reward gets its poe.ninja price "
         "right next to it, the best one ★ - by itself (Auto, no box to draw) or with Ctrl+Alt+R. Switch it on in "

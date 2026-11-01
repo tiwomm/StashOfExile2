@@ -23,12 +23,11 @@ class TabReaderPage:
         mrow = tk.Frame(tb, bg=P1, padx=8, pady=8)
         mrow.pack(fill="x", before=tb.winfo_children()[0])
         tk.Label(mrow, text="Add items from", bg=P1, fg=C["muted"]).pack(side="left", padx=(0, 8))
+        # 2.31.0: Stash tab is BETA - a good idea that doesn't work well in practice yet (2.38.0: the tag sits inside
+        # its button - next to the bar it read as a label for the hint text)
         self.pc_mode = SegBar(mrow, MODES, value=cfg["mode"], command=lambda v: self.pctab_mode(),
-                              size=9, pad=(12, 4))
+                              size=9, pad=(12, 4), badges={"Stash tab": "BETA"})
         self.pc_mode.pack(side="left")
-        # 2.31.0: Stash tab is BETA - a good idea that doesn't work well in practice yet
-        tk.Label(mrow, text="BETA", bg="#3a2a10", fg="#ffcf40", font=("Segoe UI", 9, "bold"), padx=4, pady=0,
-                 highlightthickness=1, highlightbackground="#7a6428").pack(side="left", padx=(4, 0))
         self.pc_mode_hint = tk.Label(mrow, text="", bg=P1, fg=C["muted"], font=("Segoe UI", 9))
         self.pc_mode_hint.pack(side="left", padx=8)
         # ---- the Stash tab row (shown in that mode)
@@ -46,6 +45,7 @@ class TabReaderPage:
                           width=24)
         cb.config(postcommand=lambda c=cb: c.config(values=[n for _c, n in WEALTH_CURRENCIES]))   # 2.16.0: full list
         cb.pack(side="left")
+        cb.bind("<<ComboboxSelected>>", lambda e: self.pctab_cur_picked(), add="+")
         self.pc_stop = ttk.Button(row, text="Stop", command=self.pctab_stop, state="disabled")
         self.pc_stop.pack(side="right")
         self.pc_read_btn = ttk.Button(row, text="Read tab", style="Primary.TButton", command=self.pctab_read)
@@ -117,6 +117,15 @@ class TabReaderPage:
             "Merchant's tab: those "
             "sell instantly. Press Read tab: every item on it is added here and priced. Items already in the list are "
             "skipped. A new tab listing can take a minute to show on the trade site. The same tab works for Wealth."))
+
+    def pctab_cur_picked(self):
+        """2.38.0: keep the tab's currency as soon as it's picked (not only on Read tab), and give the keyboard back
+        so nothing else can change it."""
+        cur = next((c for c, n in WEALTH_CURRENCIES if n == self.pc_cur.get()), None)
+        if cur:
+            SETTINGS.setdefault("pctab", {})["currency"] = cur
+            save_json("settings.json", SETTINGS)
+        self.root.after(20, self.root.focus_set)
 
     def pctab_read(self):
         acc = self.pc_acc.get().strip()

@@ -28,6 +28,11 @@ TASK_H = 40
 MIN_W, MIN_H = 320, 200
 
 
+def is_beta(mod):
+    """2.38.0: tagged BETA - a Labs one (hidden unless Labs is on) or one marked beta (always shown)."""
+    return bool(getattr(mod, "labs", False) or getattr(mod, "beta", False))
+
+
 CLOCK = {"format": "auto"}       # 2.0 beta 21: "auto" (like Windows), "12" or "24" (Settings > Appearance)
 
 
@@ -807,7 +812,7 @@ class Shell:
     def register(self, mod):
         """Give a module its window and its dock button. -> the window's body (where the module draws)."""
         self.modules[mod.key] = mod
-        title = mod.title + ("  (beta)" if getattr(mod, "labs", False) else "")
+        title = mod.title + ("  (beta)" if is_beta(mod) else "")
         win = DeskWindow(self, mod.key, title, mod.icon, utility=mod.kind == "utility")
         win.title = mod.title
         self.windows[mod.key] = win
@@ -897,7 +902,7 @@ class Shell:
             d.create_text(cx, y + tile + 11, text=m.short or m.title if len(m.title) > 13 else m.title,
                           fill="#eef3ff", font=("Segoe UI", 9), width=DOCK_W - 6, tags=(tag, tag + "_lbl"))
         self.dock_btns[m.key] = t
-        if getattr(m, "labs", False):                    # a Labs (experimental) one: a small BETA tag
+        if is_beta(m):                                   # Labs or beta (2.38.0): a small BETA tag
             d.create_rectangle(x0 - 2, y + tile - 11, x0 + 22, y + tile - 1, fill=C["accent"], outline="", tags=(tag,))
             d.create_text(x0 + 10, y + tile - 6, text="BETA", fill="#1a1206", font=("Segoe UI", 6, "bold"), tags=(tag,))
         if util:
@@ -1241,7 +1246,7 @@ class Shell:
                     continue
                 st = mod.status() if hasattr(mod, "status") else None
                 dot = ("● " if mod.kind == "utility" else "")
-                row = tk.Label(lists[mod.kind], text=f"{dot}{mod.icon}  {mod.title}" + ("  ·beta" if getattr(mod, "labs", False) else ""), bg=P1, anchor="w", padx=8, pady=8,
+                row = tk.Label(lists[mod.kind], text=f"{dot}{mod.icon}  {mod.title}" + ("  ·beta" if is_beta(mod) else ""), bg=P1, anchor="w", padx=8, pady=8,
                                fg=C["text"], cursor="hand2", font=("Segoe UI", 10))
                 if mod.kind == "utility":
                     row.config(fg=C["green"] if st is True else C["text"])
@@ -1250,7 +1255,7 @@ class Shell:
                 row.bind("<Leave>", lambda ev, r=row: r.config(bg=P1))
                 row.bind("<Button-1>", lambda ev, kk=k: self.open(kk))
                 for c in kids:                          # 2.33.0: its child tools, indented under it
-                    sub = tk.Label(lists[mod.kind], text=f"↳  {c.icon}  {c.title}" + ("  ·beta" if getattr(c, "labs", False) else ""),
+                    sub = tk.Label(lists[mod.kind], text=f"↳  {c.icon}  {c.title}" + ("  ·beta" if is_beta(c) else ""),
                                    bg=P1, anchor="w", padx=24, pady=4, fg=C["muted"], cursor="hand2", font=("Segoe UI", 9))
                     sub.pack(fill="x")
                     sub.bind("<Enter>", lambda ev, r=sub: r.config(bg=C["sel"], fg=C["text"]))

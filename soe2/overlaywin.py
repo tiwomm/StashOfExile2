@@ -87,11 +87,12 @@ def resync():
 class OverlayWindow(tk.Toplevel):
     def __init__(self, root, title, icon, geo, *, opacity=230, locked=False, body_bg=BODY_BG, min_size=(140, 60),
                  on_close=None, on_lock=None, on_moved=None, drag_body=False, app_colours=False, lockable=True,
-                 follow_game=False, no_activate=False):
+                 follow_game=False, no_activate=False, resizable=True):
         """geo = (x, y, w, h); w / h None = as big as the content. app_colours: the blue title bar of the app's own
         windows (for small pop-ups of the app) instead of the utility colours (things shown over the game).
         follow_game: only visible while the game (or the window itself) is in front; show() / hide() say whether you want it.
-        no_activate: clicking it never takes the keyboard away from the game (for windows you don't type in)."""
+        no_activate: clicking it never takes the keyboard away from the game (for windows you don't type in).
+        resizable=False: always the size of its content (2.38.0: the Helpers bar)."""
         super().__init__(root, bg=BORDER_OFF, highlightthickness=1, highlightbackground=OUTLINE)
         self.overrideredirect(True)
         try:
@@ -139,7 +140,8 @@ class OverlayWindow(tk.Toplevel):
             self.draggable(self.bar)
             if drag_body:
                 self.draggable(self.body)
-            self._edges()
+            if resizable:
+                self._edges()
 
     # ---- showing / hiding
     def show(self):

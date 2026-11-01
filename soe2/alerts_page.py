@@ -163,7 +163,7 @@ class AlertsPage:
         tk.Label(head, text="they work over the game whenever the app runs, session or not", bg=P2, fg=C["muted"],
                  font=("Segoe UI", 9)).pack(side="left", padx=8)
         self.al_bar = tk.BooleanVar(value=bool(self.tracker_cfg().get("alerts_bar", True)))
-        ttk.Checkbutton(head, text="On / off bar in the timer", variable=self.al_bar,
+        ttk.Checkbutton(head, text="Helpers bar (with the timer)", variable=self.al_bar,
                         command=self.alerts_bar_changed).pack(side="right")
         self.al_rows = {}
         for key, name, what, test in (
@@ -324,8 +324,9 @@ class AlertsPage:
     def alerts_bar_changed(self):
         self.tracker_cfg()["alerts_bar"] = bool(self.al_bar.get())
         self.tracker_save()
-        if getattr(self, "tk_overlay", None) is not None:
-            self.tracker_overlay_build()
+        if getattr(self, "tk_overlay", None) is not None:          # 2.38.0: just the Helpers bar's own window
+            self.tracker_helpers_build()
+            self.tracker_overlay_draw(self.tracker_numbers())
 
     def alerts_test_delirium(self):
         err = self.dl_do_test()

@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU GPL v3.0 (see LICENSE). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.37.0
+VERSION 2.38.0
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,6 +19,25 @@ VERSION 2.37.0
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.38.0
+       GGG ToS safety check: TOS.md (the 7 rules), a copy at the top of README / ROADMAP / board, strats and linux
+       READMEs / both handovers, notes in every screen watcher; tools/check_tos.py (game-memory / injection APIs,
+       mouse automation, packet tools, input-automation imports, SendInput outside overlay.py, mouse INPUT, a
+       screen-capturing file that can send keys) runs in checks.yml on every PR and in release.yml before a build.
+       Remnant price tags: one small solid click-through window per tag, left out of screen captures
+       (SetWindowDisplayAffinity WDA_EXCLUDEFROMCAPTURE) - 2.37.0's single game-sized colour-keyed window showed
+       black on the user's PC, and Auto, capturing its own black window, toggled it on and off.
+       Helpers bar: its own OverlayWindow (resizable=False: as big as its content, never cut off; "Remnant" was),
+       shown and hidden with the Session timer, placed / locked / closed on its own (tracker cfg hx, hy, hlocked;
+       × = alerts_bar off). tracker_helpers_build / _destroy; style.Tooltip on its ⚙.
+       BETA tags: Module.beta (tag, still shown; labs = tag + hidden unless Labs) - Money Makers; shell.is_beta.
+       SegBar badges={"Stash tab": "BETA"}: the tag sits inside the Stash tab button (it was a loose label next to
+       the bar, read as part of the hint).
+       Fix: Stash tab's currency "went back" (to Divine) after picking e.g. Mirror of Kalandra - on Windows Tk sends
+       the mouse wheel to the focused dropdown, so scrolling anywhere changed it (and it was only saved on Read).
+       listkit: the wheel never changes a TCombobox; the tab's currency is saved when picked and focus moves off.
+       The tab search adds sale_type "any", like the site's own link. (The site shows 20 at a time with "Show
+       more"; the reader always took all 100 a search returns and splits bigger searches, so it reads more.)
   2.37.0
        Expedition Remnant Price Checker (remnant.py, remnant_page.py). A
        helper like Delirium / Breach / Ritual: its row in Session tracker > Alerts (on / off, dot, Sound, Test, status
@@ -1104,7 +1123,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.37.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.38.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 

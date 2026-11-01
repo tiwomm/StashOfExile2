@@ -14,7 +14,7 @@ from .config import save_json, SETTINGS
 from .gamelog import find_log, LogReader
 from .overlay import game_active, key_label, parse_key
 from .pricefmt import fmt_div
-from .style import ScrollArea, C, FONT_TITLE, KeyCapture, SegBar
+from .style import ScrollArea, C, FONT_TITLE, KeyCapture, SegBar, Tooltip
 from .tracker import fmt_time, Session, Sessions, value_at
 from .wealth import WEALTH, wealth_key, WPRICES
 
@@ -813,6 +813,7 @@ class TrackerPage:
             self._tracker_store_geo()
             self.tk_overlay.destroy()
             self.tk_overlay = None
+        self.tracker_helpers_destroy()                         # (comes and goes with the timer)
         self.tk_ov_btn.config(text="Show timer")
 
     def _tracker_store_geo(self):
@@ -861,33 +862,79 @@ class TrackerPage:
                     w.draggable(lab)
         if not cfg.get("locked"):
             w.draggable(inner)
-        self.tk_ov_alerts = {}
-        if cfg.get("alerts_bar", True):          # 2.26.0: "Helpers: ● Breach | ● Delirium | ● Ritual  ⚙"
-            BB = "#16213a"
-            bar = tk.Frame(w.body, bg=BB, padx=8, pady=2)
-            bar.pack(side="bottom", fill="x", before=inner)
-            tk.Label(bar, text="Helpers:", bg=BB, fg="#8b96b0", font=("Segoe UI", 9)).pack(side="left", padx=(0, 8))
-            for i, k in enumerate(("breach", "delirium", "ritual", "remnant")):
-                if i:
-                    tk.Label(bar, text="|", bg=BB, fg="#3a4560", font=("Segoe UI", 9)).pack(side="left", padx=4)
-                cell = tk.Frame(bar, bg=BB, cursor="hand2")
-                cell.pack(side="left")
-                dot = tk.Label(cell, text="\u25cf", bg=BB, fg="#ff5c5c", font=("Segoe UI", 9), cursor="hand2")
-                dot.pack(side="left")
-                lab = tk.Label(cell, text=k.title(), bg=BB, fg="#cfd8ea", font=("Segoe UI", 9, "bold"),
-                               cursor="hand2")
-                lab.pack(side="left", padx=(2, 0))
-                for wd in (cell, dot, lab):                    # a click switches that helper on / off
-                    wd.bind("<Button-1>", lambda e, k=k: self.tracker_helper_click(k))
-                self.tk_ov_alerts[k] = (dot, lab)
-            cog = tk.Label(bar, text="\u2699", bg=BB, fg="#8b96b0", font=("Segoe UI Symbol", 10), cursor="hand2")
-            cog.pack(side="right")
-            cog.bind("<Button-1>", lambda e: self.tracker_helpers_settings())
-            if not cfg.get("locked"):
-                w.draggable(bar)
         self.tk_overlay = w
+        self.tracker_helpers_build()               # 2.38.0: the Helpers bar is its own window now
         self.tracker_overlay_draw(self.tracker_numbers())
         w.show()                                   # only while the game (or the app) is in front (2.0 beta 15)
+
+    # ---------------- the Helpers bar (2.38.0: its own small window, shown with the timer, moved on its own)
+    HELPERS = ("breach", "delirium", "ritual", "remnant")
+    HELPER_W = {"ritual": 10}                      # room for "Ritual 2/3", so the bar never changes size
+
+    def tracker_helpers_build(self):
+        """● Breach | ● Delirium | ● Ritual | ● Remnant  ⚙ - one fixed-size bar (as big as its content, never cut
+        off), shown and hidden with the Session timer but placed, moved and locked on its own."""
+        from .overlaywin import OverlayWindow
+        cfg = self.tracker_cfg()
+        self.tracker_helpers_destroy()
+        self.tk_ov_alerts = {}
+        if not cfg.get("alerts_bar", True):
+            return
+        hx, hy = cfg.get("hx"), cfg.get("hy")
+        if hx is None or hy is None:                     # first time: right under the timer
+            hx, hy = cfg["x"], cfg["y"] + cfg["h"] + 8
+
+        def moved(x, y, _w, _h):
+            cfg.update(hx=x, hy=y)
+            self.tracker_save()
+
+        def lock(on):
+            cfg["hlocked"] = bool(on)
+            self.tracker_save()
+            self.tracker_helpers_build()
+            self.tracker_overlay_draw(self.tracker_numbers())
+
+        def close():                                     # × = no Helpers bar (Alerts panel: "Helpers bar")
+            cfg["alerts_bar"] = False
+            if getattr(self, "al_bar", None) is not None:
+                self.al_bar.set(False)
+            self.tracker_save()
+            self.tracker_helpers_destroy()
+        w = OverlayWindow(self.root, "Helpers", "\u25c9", (hx, hy, None, None), opacity=int(cfg.get("opacity", 225)),
+                          locked=bool(cfg.get("hlocked")), min_size=(120, 30), on_close=close, on_lock=lock,
+                          on_moved=moved, drag_body=True, follow_game=True, no_activate=True, resizable=False)
+        w.withdraw()
+        BB = "#16213a"
+        bar = tk.Frame(w.body, bg=BB, padx=8, pady=4)
+        bar.pack(fill="both", expand=True)
+        for i, k in enumerate(self.HELPERS):
+            if i:
+                tk.Label(bar, text="|", bg=BB, fg="#3a4560", font=("Segoe UI", 9)).pack(side="left", padx=4)
+            cell = tk.Frame(bar, bg=BB, cursor="hand2")
+            cell.pack(side="left")
+            dot = tk.Label(cell, text="\u25cf", bg=BB, fg="#ff5c5c", font=("Segoe UI", 9), cursor="hand2")
+            dot.pack(side="left")
+            lab = tk.Label(cell, text=k.title(), bg=BB, fg="#cfd8ea", font=("Segoe UI", 9, "bold"), cursor="hand2",
+                           width=self.HELPER_W.get(k, len(k)), anchor="w")
+            lab.pack(side="left", padx=(2, 0))
+            for wd in (cell, dot, lab):                        # a click switches that helper on / off
+                wd.bind("<Button-1>", lambda e, k=k: self.tracker_helper_click(k))
+            self.tk_ov_alerts[k] = (dot, lab)
+        cog = tk.Label(bar, text="\u2699", bg=BB, fg="#8b96b0", font=("Segoe UI Symbol", 10), cursor="hand2")
+        cog.pack(side="left", padx=(12, 0))
+        cog.bind("<Button-1>", lambda e: self.tracker_helpers_settings())
+        Tooltip(cog, "Helpers' options (Session tracker > Alerts)")
+        self.tk_helpers = w
+        w.show()
+
+    def tracker_helpers_destroy(self):
+        w, self.tk_helpers = getattr(self, "tk_helpers", None), None
+        self.tk_ov_alerts = {}
+        if w is not None:
+            try:
+                w.destroy()
+            except tk.TclError:
+                pass
 
     @staticmethod
     def _ov_rank(where):
