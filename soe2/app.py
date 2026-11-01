@@ -152,6 +152,7 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         root.protocol("WM_DELETE_WINDOW", self.on_close)
         self.keys.start()
         self.start_utilities()                       # 2.0: chat commands & notes listen to the same keyboard watcher
+        root.after(15000, self.cm_start)             # 2.31.0: the community Mod book (hourly)
         self.dup_pending, self.dup_win, self.own_clip = [], None, ""
         self.tray = Tray(lambda what: self.ui_q.put(("tray", what)))
         self.in_tray = False
@@ -538,6 +539,10 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
                                      bg="#2a2110", fg="#ffd9a8", font=("Segoe UI", 9, "bold"), padx=10, pady=3,
                                      highlightthickness=1, highlightbackground="#7a6428")
         self.vmods_legend.pack(side="left", padx=(18, 0))
+        # 2.31.0: how much the community Mod book knows (shown once there is something)
+        self.cm_chip = tk.Label(summ, text="", bg="#10203a", fg="#8fc4ff", font=("Segoe UI", 9), padx=10, pady=3,
+                                highlightthickness=1, highlightbackground="#3f5f8f")
+        self.root.after(3000, self.cm_paint)
 
         # ---- the two toolbar rows
         tb = tk.Frame(body, bg=C["panel"], highlightthickness=1, highlightbackground=C["line"])
@@ -575,8 +580,8 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         self.snd_var = tk.BooleanVar(value=SETTINGS["sound"])
         ttk.Checkbutton(bar, text="Popups", variable=self.pop_var, style="Bar.TCheckbutton", command=self.on_toggles).pack(side="left", padx=(14, 4))
         ttk.Checkbutton(bar, text="Sound", variable=self.snd_var, style="Bar.TCheckbutton", command=self.on_toggles).pack(side="left", padx=4)
+        # 2.31.0: "Ctrl+Alt+C only" left the toolbar - Settings > Hotkeys > "Also add items copied another way"
         self.hk_var = tk.BooleanVar(value=SETTINGS.get("hotkey_only", True))
-        ttk.Checkbutton(bar, text="Ctrl+Alt+C only", variable=self.hk_var, style="Bar.TCheckbutton", command=self.on_toggles).pack(side="left", padx=4)
         self.copy_var = tk.BooleanVar(value=SETTINGS["auto_copy"])
         ttk.Checkbutton(bar, text="Copy name on click", variable=self.copy_var, style="Bar.TCheckbutton",
                         command=self.on_toggles).pack(side="left", padx=4)
@@ -792,6 +797,14 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         for cb in (self.league_box, pace):
             cb.bind("<<ComboboxSelected>>", lambda e: self.root.after(20, self.root.focus_set), add="+")
 
+        # 2.31.0: the community Mod book
+        row = section("General", "Community Mod book", "Every player's price checks pool their mod prices, so the stars "
+                                                        "and estimates get better for everyone - most of all early in a "
+                                                        "league. Once an hour: mods and prices only, no account names or items. "
+                                                        "You always get everyone else's prices, sharing or not.")
+        self.cm_share_var = tk.BooleanVar(value=bool(SETTINGS.get("share_prices", True)))
+        ttk.Checkbutton(row, text="Share my mod prices (anonymous)", variable=self.cm_share_var,
+                        command=self.cm_share_changed).pack(side="left")
         row = section("General", "Copy marker", "After Ctrl+Alt+C, a small + shows where your mouse was, so you can "
                                                 "see which items you've already copied. It only draws on the screen: "
                                                 "nothing is sent to the game.")
@@ -919,6 +932,13 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         self.hk_msg = tk.Label(row2, text="", bg=P2, fg=C["muted"], anchor="w", justify="left")
         self.hk_msg.pack(side="left", padx=10)
         self.fill_hotkeys()
+        row = section("Hotkeys", "Other ways of copying", "Price checks only adds items you copy with your own "
+                                                          "Ctrl+Alt+C, so other tools (like Sidekick's Ctrl+D) don't "
+                                                          "fill your list. Tick this to also add items copied any other "
+                                                          "way, e.g. a plain Ctrl+C.")
+        self.any_copy_var = tk.BooleanVar(value=not SETTINGS.get("hotkey_only", True))
+        ttk.Checkbutton(row, text="Also add items copied another way", variable=self.any_copy_var,
+                        command=self.on_any_copy).pack(side="left")
 
         # ======== Advanced
         row = section("Advanced", "Mod book", "What the price checker has learned about each mod from real "
@@ -934,41 +954,10 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
                                                     "did with them) and the app's log files - no account name, no "
                                                     "Wealth data. Send it along with what you saw.")
         ttk.Button(row, text="Make a problem report…", command=self.problem_report).pack(side="left")
-        row = section("Advanced", "Lag finder", "The app feels slow? Press Start, then use the app the way that feels "
-                                                "slow for a few minutes. Every time the window hitches, it writes down "
-                                                "which part of the app was busy (perf_log.txt in your data folder). It "
-                                                "stops by itself after 5 minutes.")
-        self.perf_btn = ttk.Button(row, text="Start (5 minutes)", command=self.perf_toggle)
-        self.perf_btn.pack(side="left")
-        self.perf_msg = tk.Label(row, text="", bg=P2, fg=C["muted"])
-        self.perf_msg.pack(side="left", padx=10)
         row = section("Advanced", "Your data", "Settings, price-check lists, the Mod book, Wealth and sessions are "
                                                "kept here, shared by every version of the app.")
         tk.Label(row, text=str(DATA_DIR), bg=P2, fg=C["text"], font=(MONO, 9)).pack(side="left")
         ttk.Button(row, text="Open folder", command=lambda: self.open_path(DATA_DIR)).pack(side="left", padx=10)
-
-    def perf_toggle(self):
-        """2.25.4: Settings > Advanced > Lag finder (perflog.py; 2.26.0 renamed from "Slowness recorder")."""
-        from .perflog import PERF
-        if PERF.on:
-            PERF.stop()
-        else:
-            PERF.start(self.root, 5)
-        self.perf_show()
-
-    def perf_show(self):
-        from .perflog import PERF
-        if not getattr(self, "perf_btn", None) or not self.perf_btn.winfo_exists():
-            return
-        if PERF.on:
-            left = max(0, int(PERF.until - time.time()))
-            self.perf_btn.config(text="Stop")
-            self.perf_msg.config(text=f"watching - {left // 60}:{left % 60:02d} left, {PERF.stalls} hitch(es) so far")
-            self.root.after(1000, self.perf_show)
-        else:
-            self.perf_btn.config(text="Start (5 minutes)")
-            self.perf_msg.config(text=(f"done: {PERF.stalls} hitch(es), the longest {PERF.worst * 1000:.0f} ms - in "
-                                       f"perf_log.txt") if PERF.lines else "")
 
     def dlg_parent(self):
         """The window a question / file box belongs to: the window in front (2.0 beta 21)."""
@@ -1367,6 +1356,70 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
             ok, msg, verified = download_asset(asset, dest, prog)
             self.ui_q.put(("update_downloaded", ok, msg, dest, verified))
         threading.Thread(target=work, daemon=True).start()
+
+    # ---------------- 2.31.0: the community Mod book (communitymods.py)
+    def cm_start(self):
+        from . import communitymods as CM
+        from . import board as BRD
+        if not BRD.configured():
+            self.root.after(CM.EVERY * 1000, self.cm_start)       # the board may get switched on later
+            return
+        if not SETTINGS.get("share_notice_seen"):
+            SETTINGS["share_notice_seen"] = True
+            save_json("settings.json", SETTINGS)
+            self.app_toast("StashOfExile2 pools mod prices anonymously, so everyone's prices get better - especially "
+                           "early in a league. Only mods and prices are sent once an hour: no account names, no items.\n\n"
+                           "You can change this any time in Settings > General.", "Community Mod book",
+                           actions=[("Don't share", self.cm_opt_out)], secs=60)
+        self.root.after(60000, self.cm_tick)
+
+    def cm_opt_out(self):
+        SETTINGS["share_prices"] = False
+        save_json("settings.json", SETTINGS)
+        if hasattr(self, "cm_share_var"):
+            self.cm_share_var.set(False)
+        self._say("Mod prices won't be shared. You still get everyone else's.", 6)
+
+    def cm_tick(self):
+        from . import communitymods as CM
+        threading.Thread(target=self._cm_work, daemon=True).start()
+        self.root.after(CM.EVERY * 1000, self.cm_tick)
+
+    def _cm_work(self):
+        from . import communitymods as CM
+        try:
+            res = CM.sync(MARKET, dict(RULES))
+        except Exception:
+            res = None
+        if res and res[1][0]:
+            self.ui_q.put(("cm_synced",))
+
+    def ev_cm_synced(self):
+        MARKET.refresh_learned()                     # pooled prices + ratings join what the Mod book knows
+        try:
+            self.refresh_all()
+            self.refresh_rules()
+        except Exception:
+            pass
+        self.cm_paint()
+
+    def cm_paint(self):
+        from . import communitymods as CM
+        chip = getattr(self, "cm_chip", None)
+        if chip is None:
+            return
+        n, mine = CM.stats_count(), CM.helped()
+        if not n and not mine:
+            chip.pack_forget()
+            return
+        chip.config(text=f"🌐 Community: {n:,} mod prices" + (f"  ·  you added {mine:,}" if mine else ""))
+        if not chip.winfo_manager():
+            chip.pack(side="right", padx=(0, 8))
+
+    def cm_share_changed(self):
+        SETTINGS["share_prices"] = bool(self.cm_share_var.get())
+        SETTINGS["share_notice_seen"] = True
+        save_json("settings.json", SETTINGS)
 
     def ev_update_downloaded(self, ok, msg, dest, verified):
         self._upd_done()
@@ -1840,7 +1893,11 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         SETTINGS["popups"] = self.pop_var.get()
         SETTINGS["sound"] = self.snd_var.get()
         SETTINGS["auto_copy"] = self.copy_var.get()
-        SETTINGS["hotkey_only"] = self.hk_var.get()
+        save_json("settings.json", SETTINGS)
+
+    def on_any_copy(self):
+        SETTINGS["hotkey_only"] = not self.any_copy_var.get()
+        self.hk_var.set(SETTINGS["hotkey_only"])
         save_json("settings.json", SETTINGS)
 
     # ---------------- clipboard + events
@@ -1917,7 +1974,7 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
             return True
         if text.lstrip().startswith("Item Class:"):
             self.status_text = ("Ignored an item copy that wasn't made with your Ctrl+Alt+C (Sidekick?). "
-                                "Wrong? untick \"Ctrl+Alt+C only\" on the toolbar")
+                                "Wrong? Settings > Hotkeys > \"Also add items copied another way\"")
             self.status_until = time.time() + 8
         return False
 
@@ -2867,11 +2924,15 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
             kd = kinds.get(k, set())
             li = learned_info(k)
             if li and li["tier"] == "high":
-                learned = ("High (carried over from " + li["from"] + ")") if li.get("from") else f"High ({li['lift']:.1f}x, {li['n']} listings)"
+                learned = (f"High (community: {li['lift']:.1f}x, {li['n']} listings)" if li.get("from") == "community" else
+                           ("High (carried over from " + li["from"] + ")") if li.get("from") else
+                           f"High ({li['lift']:.1f}x, {li['n']} listings)")
                 if RULES.get(k) == "ignore":
                     learned = "⚠ " + learned + " - you ignore it"
             elif k in COMMUNITY_ACTIVE:
-                learned = f"Shared by {len(COMMUNITY[k]['from'])}"
+                from .mods import BOARD_RATED
+                learned = (f"Community ★ ({BOARD_RATED[k][0]} of {BOARD_RATED[k][1]} players)" if k in BOARD_RATED
+                           else f"Shared by {len(COMMUNITY[k]['from'])}")
             elif k in COMMUNITY_DISAGREE:
                 learned = "Shared - your data disagrees"
             else:
@@ -4082,6 +4143,14 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
     def on_close(self):
         self.save_widths()
         self.save_session()
+        try:                                         # 2.31.0: send this hour's mod prices before going
+            from . import communitymods as CM
+            if SETTINGS.get("share_notice_seen") and CM.sharing():
+                t = threading.Thread(target=lambda: CM.push(MARKET, dict(RULES)), daemon=True)
+                t.start()
+                t.join(4)
+        except Exception:
+            pass
         try:                                         # 2.0 beta 9: a running session is kept (without a profit)
             s = getattr(self, "tk_session", None)
             if s is not None and s.ended is None:

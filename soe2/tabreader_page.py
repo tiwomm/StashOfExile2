@@ -26,6 +26,9 @@ class TabReaderPage:
         self.pc_mode = SegBar(mrow, MODES, value=cfg["mode"], command=lambda v: self.pctab_mode(),
                               size=9, pad=(12, 3))
         self.pc_mode.pack(side="left")
+        # 2.31.0: Stash tab is BETA - a good idea that doesn't work well in practice yet
+        tk.Label(mrow, text="BETA", bg="#3a2a10", fg="#ffcf40", font=("Segoe UI", 7, "bold"), padx=5, pady=0,
+                 highlightthickness=1, highlightbackground="#7a6428").pack(side="left", padx=(4, 0))
         self.pc_mode_hint = tk.Label(mrow, text="", bg=P1, fg=C["muted"], font=("Segoe UI", 8))
         self.pc_mode_hint.pack(side="left", padx=10)
         # ---- the Stash tab row (shown in that mode)
@@ -53,6 +56,11 @@ class TabReaderPage:
         how = tk.Label(row, text="ⓘ How", bg=P1, fg="#6ea8ff", cursor="hand2", font=("Segoe UI", 9, "underline"))
         how.pack(side="right", padx=(0, 10))
         how.bind("<Button-1>", lambda e: self.pctab_explain())
+        self.pc_beta = tk.Label(tb, text="⚠ BETA: reading a stash tab may not work as intended and is of limited "
+                                         "use - many tabs read only partly. Ctrl+Alt+C on each item is the reliable "
+                                         "way.", bg="#2a2110", fg="#ffcf40", anchor="w", justify="left", padx=12,
+                                pady=4, font=("Segoe UI", 9))
+        self.pc_beta.bind("<Configure>", lambda e: self.pc_beta.config(wraplength=max(300, e.width - 24)))
         self.pc_msg = tk.Label(tb, text="", bg=P1, fg=C["muted"], anchor="w", justify="left", padx=12,
                                font=("Segoe UI", 9))
         self.pc_msg.bind("<Configure>", lambda e: self.pc_msg.config(wraplength=max(300, e.width - 24)))
@@ -68,14 +76,16 @@ class TabReaderPage:
             self.empty_lbl.config(text=self.empty_text)
         if mode == "Stash tab":
             self.pc_tabrow.pack(fill="x", after=self.pc_tabrow_after)
-            self.pc_msg.pack(fill="x", after=self.pc_tabrow)
-            self.pc_mode_hint.config(text="reads a public stash tab and adds everything on it (Ctrl+Alt+C still works)")
+            self.pc_beta.pack(fill="x", after=self.pc_tabrow, padx=10, pady=(2, 0))
+            self.pc_msg.pack(fill="x", after=self.pc_beta)
+            self.pc_mode_hint.config(text="reads a public stash tab and adds what it can (Ctrl+Alt+C still works)")
             if not self.pc_msg.cget("text"):
                 self.pc_msg.config(text="Make a Premium stash tab public and give the whole tab one price nobody would "
                                         "pay (like 37882 Divine Orbs). Type that price here and press Read tab.",
                                    fg=C["muted"])
         else:
             self.pc_tabrow.pack_forget()
+            self.pc_beta.pack_forget()
             self.pc_msg.pack_forget()
             self.pc_mode_hint.config(text="hover an item in game and press Ctrl+Alt+C")
 

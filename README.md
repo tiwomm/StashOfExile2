@@ -9,7 +9,7 @@ Hover an item in game and press **Ctrl+Alt+C**. It goes into a list and is price
 ## What it does
 
 - **Price checks:** bulk pricing for tablets, jewels and waystones, with a confidence rating and filters per item. Other gear gets a rough guess only.
-- **Mod book:** learns which mods are worth money from the listings it sees.
+- **Mod book:** learns which mods are worth money from the listings it sees, and from what every player's price checks pool together (anonymous, can be switched off).
 - **Money Makers:** community farming strats in one layout (Notepad-friendly template), rated by Thoughts per Click and Clicks per hour, updated from GitHub; post and upvote on the Community board (no login); Lucrative one-liners; Tablet Crafting quick reference; simple run tracker. Strat format: [strats/README.md](strats/README.md).
 - **Regex:** builds stash-search strings for tablets, waystones, relics, jewels and gear (at least, ranges, at most), with saved Favorites.
 - **Exchange rates:** poe.ninja rates, an Exchange Helper, and an Arbitrage tab for uneven Currency Exchange rates.
