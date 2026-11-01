@@ -5,10 +5,10 @@ layout the app saves with **⬇ Download Format** (opens in Notepad). One-liners
 `oneliners.json`. `tools/build_strats.py` checks every file and builds `moneymakers.json`, which ships with the app
 **and** is fetched from `main` by the app (at most every 12 h), so a merged strat reaches everyone without a new release.
 
-**Add a strat:** open a [Strategy issue](https://github.com/tiwomm/StashOfExile2/issues/new?template=strategy.yml)
-(the app's **Share** button fills it in), attach a `.txt` from Download Format, or send a PR with a new file copied
-from `_template.json`. One-liners: [Lucrative strat issue](https://github.com/tiwomm/StashOfExile2/issues/new?template=lucrative.yml).
-Files starting with `_` are ignored.
+**Sharing:** players post straight from the app to the **Community** board (sign in with Discord), upvote and
+report there - see `board/README.md`. Admins **promote** the best posts and they join the Official list. Strats in
+this folder are the hand-curated part of the Official list: copy `_template.json` (or fill in the app's
+**Download Format** `.txt`) and send a PR. Files starting with `_` are ignored.
 
 **What a strat is** = one **Category** and one **Type** inside it. Breach farming is `Mapping` › `Breach`: the
 type is the main thing you farm, the category is how you do it. Everything else goes in **tags**.
