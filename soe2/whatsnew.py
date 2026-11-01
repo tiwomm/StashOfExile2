@@ -26,6 +26,7 @@ NOTES = {
         "your 12 / 24-hour setting; switch it off in Settings > Appearance > Clock.",
         "Fix: the Helpers bar could open below the bottom of the screen when the timer sits low. It now opens above "
         "the timer when there's no room under it, and always stays on the screen.",
+        "Remnant price tags are shorter: 16ex, 20c, 29d.",
     ],
     "2.38.0": [
         "Fix: the Expedition Remnant Price Checker could black out the game and flicker. Each price is now its own "
