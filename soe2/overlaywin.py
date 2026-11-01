@@ -34,7 +34,7 @@ _P = {"title_size": 10, "align": "w", "texture": False, "on_icon": "\u25c6", "of
       "plate": False, "frame2": None, "cell_bg": None, "cell_line": None}
 PALETTES = {
     "parchment": dict(_P, leather="#2a1f16", edge="#000000", border=5, bg="#d8c49a", band="#d8c49a", head="#4a3520",
-                      text="#2e2216", muted="#5d4630", line="#a88a5c", on="#1f5a1a", off="#a3281b", warn="#6e4404",
+                      text="#2e2216", muted="#5d4630", line="#a88a5c", on="#1f8a1c", off="#c0261b", warn="#a86a00",
                       field="#e6d6b0", big="#2e2216", font=SERIF, texture=True, cell_bg="#ead9b2", cell_line="#a88a5c"),
     "relic": dict(_P, leather="#6e5b3a", edge="#000000", border=1, bg="#0c0a08", band="#17130e", head="#e6d39f",
                   text="#e9e2cf", muted="#a89a7c", line="#6e5b3a", on="#62c45a", off="#d24b3a", warn="#e0a352",
@@ -417,9 +417,22 @@ class OverlayWindow(tk.Toplevel):
         self._place_btns()
 
     def bar_note(self, text):
-        """Small text on the title bar, left of its buttons (the Session timer's clock)."""
-        if self.parch:
-            self.bar.itemconfigure(self.bar_note_item, text=text)
+        """Small text on the title bar, left of its buttons (the Session timer's clock). -> False when it doesn't fit
+        between the title and the buttons (2.50.0: it ran into "Session" on a narrow timer) - nothing is shown then."""
+        if not self.parch:
+            return False
+        from tkinter import font as tkfont
+        try:
+            w = max(self.bar.winfo_width(), int(self.bar.cget("width")))
+            title_end = 10 + tkfont.Font(root=self.bar, family=self.P["font"], size=self.P["title_size"],
+                                         weight="bold").measure(self._title)
+            need = tkfont.Font(root=self.bar, family=self.P["font"], size=9).measure(text)
+            right = w - 10 - len(self._btns) * 22
+        except tk.TclError:
+            return False
+        fits = not text or right - need >= title_end + 12
+        self.bar.itemconfigure(self.bar_note_item, text=text if fits else "")
+        return fits
 
     def canvas_body(self):
         """A canvas filling the body, with the skin's background (the parchment texture): draw text straight on it."""
