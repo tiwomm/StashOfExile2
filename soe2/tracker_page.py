@@ -896,10 +896,18 @@ class TrackerPage:
                           min_size=(140, 60), on_close=self.tracker_overlay_toggle, on_lock=lock, on_moved=moved,
                           drag_body=True, follow_game=True, no_activate=True)
         w.withdraw()
-        inner = tk.Frame(w.body, bg=BODY_BG, padx=8, pady=4)
-        inner.pack(fill="both", expand=True)
         self.tk_ov_lbls = {}
         self.tk_ov_clock = None
+        self.tk_ov_cv = None
+        if w.parch:                                # 2.47.0: the mockups' layout, drawn on the skin's background
+            self._tracker_ov_canvas(w, cfg, P)
+            self.tk_overlay = w
+            self.tracker_helpers_build()
+            self.tracker_overlay_draw(self.tracker_numbers())
+            w.show()
+            return
+        inner = tk.Frame(w.body, bg=BODY_BG, padx=8, pady=4)
+        inner.pack(fill="both", expand=True)
         top = tk.Frame(inner, bg=BODY_BG)          # the session time, and (2.39.0) the clock on the same row
         top.pack(fill="x")
         if not cfg.get("locked"):
@@ -926,6 +934,60 @@ class TrackerPage:
         self.tracker_helpers_build()               # 2.38.0: the Helpers bar is its own window now
         self.tracker_overlay_draw(self.tracker_numbers())
         w.show()                                   # only while the game (or the app) is in front (2.0 beta 15)
+
+    def _tracker_ov_canvas(self, w, cfg, P):
+        """2.47.0 (the user: "the example you showed me looked so nice and clean"): Session on the title bar with the
+        clock at its right; the big time; then two columns - Map 9:54 | Oasis, Maps 1 | Avg 9:54, Profit."""
+        from .overlaywin import CanvasText
+        cv = w.canvas_body()
+        self.tk_ov_cv = cv
+        f_big, f_row, f_bold = (P["font"], 20, "bold"), (P["font"], 10), (P["font"], 10, "bold")
+        items = {"session": cv.create_text(12, 8, text="", anchor="nw", fill=P["big"], font=f_big)}
+        lines = cfg["lines"]
+        rows = []
+        if lines.get("map"):
+            rows.append(("map", "where"))
+        if lines.get("maps") or lines.get("avg"):
+            rows.append(("maps" if lines.get("maps") else None, "avg" if lines.get("avg") else None))
+        for k in ("profit", "gold"):
+            if lines.get(k):
+                rows.append((k, None))
+        for left, right in rows:
+            if left:
+                items[left] = cv.create_text(12, 0, text="", anchor="w", fill=P["text"],
+                                             font=f_bold if left == "profit" else f_row)
+            if right:
+                items[right] = cv.create_text(0, 0, text="", anchor="e", fill=P["text"],
+                                              font=f_bold if right == "where" else f_row)
+
+        def layout(_e=None):
+            wd = max(cv.winfo_width(), 120)
+            y = 46
+            for left, right in rows:
+                if left:
+                    cv.coords(items[left], 12, y)
+                if right:
+                    cv.coords(items[right], wd - 12, y)
+                y += 20
+        cv.bind("<Configure>", layout, add="+")
+        layout()
+        self.tk_ov_lbls = {k: CanvasText(cv, it, P["bg"]) for k, it in items.items()}
+        if not cfg.get("locked"):
+            w.draggable(cv)
+        if cfg.get("clock", True):                 # the clock on the title bar, like the mockup - or, with a centred
+            on_bar = P["align"] != "center" and not P.get("plate")      # title, at the top right of the page
+            clk = None if on_bar else cv.create_text(0, 10, text="", anchor="ne", fill=P["muted"], font=(P["font"], 9),
+                                                     justify="right")
+            if clk is not None:
+                cv.bind("<Configure>", lambda e: cv.coords(clk, e.width - 10, 10), add="+")
+
+            class _Clock:
+                def config(self_, text="", **_kw):
+                    if clk is None:
+                        w.bar_note(" · ".join(text.splitlines()))
+                    else:
+                        cv.itemconfigure(clk, text=text)
+            self.tk_ov_clock = _Clock()
 
     # ---------------- the Helpers bar (2.38.0: its own small window, shown with the timer, moved on its own)
     HELPERS = ("breach", "delirium", "ritual", "remnant")
@@ -967,6 +1029,12 @@ class TrackerPage:
                           locked=bool(cfg.get("hlocked")), min_size=(120, 30), on_close=close, on_lock=lock,
                           on_moved=moved, drag_body=True, follow_game=True, no_activate=True, resizable=False)
         w.withdraw()
+        if w.parch:                                      # 2.47.0: drawn cells, like the mockups
+            self._helpers_canvas(w, P)
+            self.tk_helpers = w
+            self._helpers_on_screen(w, hx, hy, first)
+            w.show()
+            return
         BB = P["bg"]
         bar = tk.Frame(w.body, bg=BB, padx=8, pady=4)
         bar.pack(fill="both", expand=True)
@@ -990,6 +1058,31 @@ class TrackerPage:
         self.tk_helpers = w
         self._helpers_on_screen(w, hx, hy, first)
         w.show()
+
+    def _helpers_canvas(self, w, P):
+        """One cell per helper - an icon (◆ on / ◇ off; ✓ / ✕ on the Quiet HUD) and its name - then ⚙."""
+        from tkinter import font as tkfont
+        from .overlaywin import CanvasText
+        cv = w.canvas_body()
+        fnt = (P["font"], 10, "bold")
+        f = tkfont.Font(root=cv, family=P["font"], size=10, weight="bold")
+        widths = {k: f.measure("Ritual 3/3" if k == "ritual" else k.title()) + 34 for k in self.HELPERS}
+        x, h, gap = 8, 30, 6
+        for k in self.HELPERS:
+            tag = f"cell_{k}"
+            cv.create_rectangle(x, 6, x + widths[k], 6 + h, fill=P["cell_bg"], outline=P["cell_line"], tags=(tag,))
+            dot = cv.create_text(x + 12, 6 + h // 2, text=P["off_icon"], fill=P["off"], font=("Segoe UI Symbol", 9),
+                                 tags=(tag,))
+            lab = cv.create_text(x + 24, 6 + h // 2, text=k.title(), anchor="w", fill=P["text"], font=fnt, tags=(tag,))
+            cv.tag_bind(tag, "<Button-1>", lambda e, k=k: self.tracker_helper_click(k))
+            cv.tag_bind(tag, "<Enter>", lambda e: cv.configure(cursor="hand2"))
+            cv.tag_bind(tag, "<Leave>", lambda e: cv.configure(cursor=""))
+            self.tk_ov_alerts[k] = (CanvasText(cv, dot, P["cell_bg"]), CanvasText(cv, lab, P["cell_bg"]))
+            x += widths[k] + gap
+        cog = cv.create_text(x + 8, 6 + h // 2, text="\u2699", fill=P["muted"], font=("Segoe UI Symbol", 12),
+                             tags=("cog",))
+        cv.tag_bind("cog", "<Button-1>", lambda e: self.tracker_helpers_settings())
+        cv.configure(width=x + 24, height=h + 12)
 
     def _helpers_on_screen(self, w, hx, hy, first):
         """2.39.0: never off the screen. The timer often sits at the bottom of the screen, and "right under it" was
@@ -1050,6 +1143,9 @@ class TrackerPage:
                  "profit": "Profit  " + (n["profit"] if s is not None and n.get("profit", "")[:1] in "+-"
                                          else "at stop" if s is not None and s.start_value is not None else "-"),
                  }
+        if getattr(self, "tk_ov_cv", None) is not None:    # 2.47.0: the skins' two columns
+            where = n.get("where") if live and n.get("where") not in ("-", None) else ""
+            texts.update(map=f"Map  {n.get('map', '-')}", where=(where + self._ov_rank(where or None)).strip())
         for k, lab in self.tk_ov_lbls.items():
             lab.config(text=texts.get(k, ""))
         if getattr(self, "tk_ov_clock", None) is not None:
@@ -1069,7 +1165,7 @@ class TrackerPage:
                         txt = f"Ritual {RITUAL.count[0]}/{RITUAL.count[1]}"
                 from .overlaywin import pal
                 P = pal()
-                dot.config(fg=P[st], text="\u25c6" if st != "off" else "\u25c7")   # green on (filled), red off (hollow)
+                dot.config(fg=P[st], text=P["on_icon"] if st != "off" else P["off_icon"])   # green on, red off
                 lab.config(text=txt, fg=P["text"] if st != "off" else P["muted"])
 
     def tracker_helper_click(self, key):
