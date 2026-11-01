@@ -21,6 +21,13 @@ NEXT = [
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.45.0": [
+        "Money Makers > Farm Ledger (was Run tracker): does a farming setup really make money? Add your waystone and "
+        "tablets with Ctrl+Alt+C (priced for you, or type your own price) and your atlas trees.",
+        "Every few runs (you pick how many) a box asks for the loot: Ctrl+Alt+C each drop in game and see what it's "
+        "worth item by item (poe.ninja), minus what the runs cost.",
+        "A spreadsheet of your logs, divines per hour, return on cost, a chart, setups side by side, and CSV export.",
+    ],
     "2.44.0": [
         "Session tracker is now Overlays: the Session timer, the Mechanic Helper, Notes and their Look (style and "
         "opacity) are tabs in one window, each with its own options.",
