@@ -34,6 +34,34 @@ KEEP_HOURS = 48
 GAP = 1.5                       # seconds between two requests
 HUBS = ("divine", "exalted", "chaos")
 HUB_NAMES = {"divine": "Divine Orb", "exalted": "Exalted Orb", "chaos": "Chaos Orb"}
+# 2.26.0: the history now names items by their game id; the three hubs are turned back into the short names the
+# loop finder works with (old cached hours used the short names already). Before this, no loop was ever found.
+HUB_IDS = {"Metadata/Items/Currency/CurrencyModValues": "divine",
+           "Metadata/Items/Currency/CurrencyAddModToRare": "exalted",
+           "Metadata/Items/Currency/CurrencyRerollRare": "chaos"}
+_NAMES = {}
+
+
+def item_name(cid):
+    """A Currency Exchange id -> its name (cxnames.json, from RePoE), or None."""
+    if cid in HUB_NAMES:
+        return HUB_NAMES[cid]
+    if not _NAMES:
+        import json
+        from .config import APP_DIR, P
+        try:
+            from .config import RESOURCE_DIR
+        except ImportError:
+            RESOURCE_DIR = APP_DIR
+        for path in (P("cxnames.json"), os.path.join(RESOURCE_DIR, "cxnames.json"), os.path.join(APP_DIR, "cxnames.json")):
+            try:
+                with open(path, encoding="utf-8") as f:
+                    _NAMES.update(json.load(f))
+                break
+            except (OSError, ValueError):
+                continue
+        _NAMES.setdefault("_loaded", "1")
+    return _NAMES.get(cid)
 
 
 def hour_now(now=None):
@@ -126,6 +154,7 @@ def combine(hours_markets):
     tot = {}
     for markets in hours_markets:
         for a, b, va, vb in markets:
+            a, b = HUB_IDS.get(a, a), HUB_IDS.get(b, b)
             if a > b:
                 a, b, va, vb = b, a, vb, va
             t = tot.setdefault((a, b), [0.0, 0.0])
