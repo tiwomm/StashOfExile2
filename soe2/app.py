@@ -71,7 +71,7 @@ from .config import PAGE_CHECKS       # 1.40: was "Items"
 class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, ExchangePage, WealthSetup, WealthPage, LibraryPage, RegexPage, UtilitiesPage, TrackerPage, SearchPage, CalcPage, InsightsPage):
     COLS = [("added", "#", 46, "e"), ("name", "Item", 220, "w"), ("type", "Type", 110, "w"), ("mark", "Status", 90, "center"),
             ("est", "Est. value", 110, "e"), ("conf", "Confidence", 95, "center"), ("listings", "Listings", 70, "e"), ("priced", "Priced at", 130, "w"),
-            ("match", "How it was priced", 300, "w"), ("vmods", "★ Valuable", 80, "center")]
+            ("match", "How it was priced", 300, "w"), ("vmods", "Valuable mods", 100, "center")]
     # 2.24.0: "★ Valuable" (how many of the item's mods your Mod book rates High) is the last column in the data, so
     # older code reading values by position keeps working, but it's shown right after the item's name
     SHOW_COLS = ("added", "name", "vmods", "type", "mark", "est", "conf", "listings", "priced", "match")
@@ -642,6 +642,11 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
             self.tree.column(cid, width=max(int(SETTINGS.get("col_widths", {}).get(cid, w)), 95 if cid == "conf" else 0), minwidth=50,
                              anchor=anchor, stretch=(cid == "match"))
         self.tree["displaycolumns"] = self.SHOW_COLS
+        # 2.26.2: what the stars mean (under the list)
+        self.vmods_legend = tk.Label(left, text="Valuable mods:  ★ = one mod your Mod book rates valuable (★★★ = three "
+                                                "of them).  Gold rows have at least one.  Set them in Mod book > rules.",
+                                     bg=C["panel"], fg=C["muted"], font=("Segoe UI", 8), anchor="w", padx=6)
+        self.vmods_legend.pack(side="bottom", fill="x")
         sb = ttk.Scrollbar(left, orient="vertical", command=self.tree.yview)
         self.tree.configure(yscrollcommand=sb.set)
         sb.pack(side="right", fill="y")
