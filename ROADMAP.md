@@ -1,6 +1,6 @@
 # StashOfExile2 roadmap
 
-**Current version: 2.26.2**
+**Current version: 2.26.3**
 
 Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds features, 2.10.1 only fixes. Each step below is one release; we work through them top to bottom.
 
@@ -43,6 +43,7 @@ Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds f
 | 2.26.0 | Timer's Helpers bar (click to switch, ⚙ to options); pricing time-left chip; Arbitrage works again (BETA); Lag finder. |
 | 2.26.1 | Fix: restarting after a theme change no longer breaks the Delirium / Ritual helpers. |
 | 2.26.2 | Regex type switching without freezes; maximised really stays maximised; time left from the start. |
+| 2.26.3 | Updates no longer hang with a flashing console window. |
 
 ## ▶ Next up
 
