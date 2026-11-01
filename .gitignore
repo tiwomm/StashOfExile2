@@ -6,3 +6,12 @@ dist/
 *.zip
 __pycache__/
 *.pyc
+
+# Screenshots / pictures in the top folder are never part of the app. Images the app needs live in soe2/templates/
+# (and the .ico); anything else stays out of the repository and out of pull requests.
+/*.png
+/*.jpg
+/*.jpeg
+/*.gif
+/*.webp
+/*.bmp
