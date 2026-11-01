@@ -187,8 +187,6 @@ class AlertsPage:
                 self.al_rleave = tk.BooleanVar(value=bool(self.ritual_cfg().get("leave_reminder", True)))
                 ttk.Checkbutton(row, text="Remind me when I leave the map", variable=self.al_rleave,
                                 command=self.alerts_ritual_leave_changed).pack(side="left", padx=(4, 0))
-                ttk.Button(row, text="Capture", command=self.alerts_ritual_capture, width=8).pack(side="right",
-                                                                                                padx=(0, 6))
             st = tk.Label(box, text=what, bg=P2, fg=C["muted"], anchor="w", justify="left", font=("Segoe UI", 8))
             st.pack(fill="x", padx=(24, 6))                   # 2.11.0: its own line, so it never gets cut off
             st.bind("<Configure>", lambda e, l=st: l.config(wraplength=max(200, e.width - 10)))
@@ -270,27 +268,6 @@ class AlertsPage:
 
     def alerts_test_ritual(self):
         self.breach_alert(test=True, level="ritual", sub="1 of 3 done (a test)")
-
-    def alerts_ritual_capture(self):
-        """Saves a picture of where the counter should be (data folder / ritual), for fixing a reading."""
-        from .utilities import RITUAL
-        r = self.al_rows["ritual"]
-        if not RITUAL.running():
-            r["note"] = "Switch Ritual on first."
-            return self.alerts_refresh()
-        RITUAL.captured = None
-        RITUAL.capture()
-        r["note"] = "Taking a picture of the bottom-right of the game…"
-        self.alerts_refresh()
-
-        def done(n=0):
-            if RITUAL.captured or n > 10:
-                r["note"] = (f"Saved: {RITUAL.captured} - a problem report (Settings > Advanced) includes it."
-                             if RITUAL.captured else "The picture couldn't be taken (is the game open?).")
-                self.alerts_refresh()
-            else:
-                self.root.after(300, lambda: done(n + 1))
-        self.root.after(300, done)
 
     # ---- Ritual helper
     def ritual_start(self):
@@ -400,8 +377,8 @@ class AlertsPage:
             d, t = RITUAL.count
             return f"On - this map: {d} of {t} rituals done" + (" ✔" if d >= t else "")
         if RITUAL.seen == "unread":
-            return ("On - the Ritual counter is on screen but couldn't be read. Press Capture while it shows, then "
-                    "make a problem report so it can be fixed.")
+            return ("On - the Ritual counter is on screen but couldn't be read. Make a problem report "
+                    "(Settings > Advanced) while it shows so it can be fixed.")
         return "On - watching for the Ritual counter (it shows in maps with Ritual)"
 
     def ritual_seen(self):

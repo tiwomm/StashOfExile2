@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU GPL v3.0 (see LICENSE). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.30.0
+VERSION 2.31.0
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,6 +19,23 @@ VERSION 2.30.0
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.31.0
+       Community Mod book (communitymods.py; board /mods/batch, /mods/stats, /mods/ratings). Once an hour (and on
+       close) the app sends a SUMMARY of the listings its price checks stored since the last time: per (base, mod)
+       count + median, per base the same - no ids, names or items - plus changed Mod book rules as votes. Keyed by a
+       random install id (contrib_id; the board keeps its sha256), one batch per 45 min, weight per batch capped,
+       so one install can't swing a price; summaries (not listings) keep D1 writes inside the free plan. The server
+       keeps a weighted mean of ln(median) per (league, base, mod) and per base -> pooled median + lift. On by
+       default after a one-time notice (Don't share = SETTINGS share_prices False; Settings > General switch);
+       reading works either way. Used where your own data is silent: refresh_learned adds pooled highs
+       (n >= 12, 3 summaries, lift >= HIGH_LIFT, median >= Valuable mod) as LEARNED "from": "community" unless this
+       league's own data decides the mod; rebuild_community adds mods >= 60 % of >= 3 players rate High
+       (BOARD_RATED). Your rules always win. Price checks shows "🌐 Community: N mod prices · you added M"; the Mod
+       book says "High (community ...)" / "Community ★ (x of y players)".
+       Removed: the Ritual "Capture" button (Session tracker) and Settings > Advanced > Lag finder (perflog.py).
+       Price checks: "Stash tab" is marked BETA with a warning note (pc_beta: may not work as intended, limited use);
+       the "Ctrl+Alt+C only" toolbar box moved to Settings > Hotkeys as "Also add items copied another way" (the
+       same SETTINGS hotkey_only, shown the other way round, off by default).
   2.30.0
        Money Makers: a Community board instead of GitHub issues for sharing. Server = board/ (Cloudflare Worker +
        D1, deployed by .github/workflows/board.yml with repo secrets - board/README.md has the setup). No login
@@ -1023,7 +1040,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.30.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.31.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 

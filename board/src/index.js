@@ -7,6 +7,8 @@
 // Admins (anyone who entered the ADMIN_KEY secret in the app) hide, delete, ban and promote - promoted posts join the
 // Official list.
 //
+// 2.31.0: also the community Mod book (/mods/*): hourly anonymous price summaries and Mod book rules as votes.
+//
 // Secrets / vars: ADMIN_KEY, REPORT_HIDE, POSTS_PER_DAY, JOINS_PER_DAY. Stored per player: a made-up id and the
 // display name. Internet addresses are only kept as a hash with the day, to count new accounts.
 import RULES from "./schema.json";
@@ -293,6 +295,77 @@ async function official(env) {
   return json(out);
 }
 
+// ------------------------------------------------------------------ 2.31.0: the community Mod book
+const BATCH_EVERY = 45 * 60;                 // one summary per install per 45 minutes at most (the app sends hourly)
+const MAX_PAIRS = 600, MAX_VOTES = 400, W_CAP = 10;
+const SID = /^[a-z_]+\.[A-Za-z0-9_.]{1,80}$/, KEY = /^.{2,200}$/s, VOTE = ["high", "normal", "ignore"];
+const okPrice = (m) => typeof m === "number" && isFinite(m) && m > 0.0005 && m < 100000;
+const okText = (t, n = 80) => typeof t === "string" && t.length > 0 && t.length <= n;
+
+async function modBatch(req, env) {
+  const body = await readBody(req);
+  const cidRaw = String(body.cid || "");
+  if (!/^[a-f0-9]{32}$/.test(cidRaw)) return fail(400, "bad cid");
+  const league = String(body.league || "").slice(0, 60);
+  const cid = await sha256(cidRaw), t = now();
+  const seen = await env.DB.prepare("SELECT last FROM contributors WHERE cid = ?").bind(cid).first();
+  if (seen && t - seen.last < BATCH_EVERY) return fail(429, "too soon");
+  const stmts = [env.DB.prepare(`INSERT INTO contributors (cid, last, batches) VALUES (?1, ?2, 1)
+    ON CONFLICT(cid) DO UPDATE SET last = ?2, batches = batches + 1`).bind(cid, t)];
+  let used = 0;
+  if (league) {
+    for (const p of (Array.isArray(body.prices) ? body.prices : []).slice(0, MAX_PAIRS)) {
+      if (!okText(p?.base) || !SID.test(String(p?.sid)) || !okPrice(p?.med) || !(p?.n >= 1)) continue;
+      const w = Math.min(Number(p.n) || 1, W_CAP);
+      stmts.push(env.DB.prepare(`INSERT INTO mod_prices (league, base, sid, n, w, slog, batches, updated)
+        VALUES (?1, ?2, ?3, ?4, ?5, ?6, 1, ?7) ON CONFLICT(league, base, sid) DO UPDATE SET n = n + ?4, w = w + ?5,
+        slog = slog + ?6, batches = batches + 1, updated = ?7`)
+        .bind(league, p.base, p.sid, Math.min(Math.floor(p.n), 500), w, w * Math.log(p.med), t));
+      used++;
+    }
+    for (const b of (Array.isArray(body.bases) ? body.bases : []).slice(0, 100)) {
+      if (!okText(b?.base) || !okPrice(b?.med) || !(b?.n >= 1)) continue;
+      const w = Math.min(Number(b.n) || 1, W_CAP * 3);
+      stmts.push(env.DB.prepare(`INSERT INTO base_prices (league, base, n, w, slog, batches, updated)
+        VALUES (?1, ?2, ?3, ?4, ?5, 1, ?6) ON CONFLICT(league, base) DO UPDATE SET n = n + ?3, w = w + ?4,
+        slog = slog + ?5, batches = batches + 1, updated = ?6`)
+        .bind(league, b.base, Math.min(Math.floor(b.n), 2000), w, w * Math.log(b.med), t));
+    }
+  }
+  let votes = 0;
+  for (const v of (Array.isArray(body.votes) ? body.votes : []).slice(0, MAX_VOTES)) {
+    if (!KEY.test(String(v?.key ?? ""))) continue;
+    if (v.value === null) stmts.push(env.DB.prepare("DELETE FROM mod_votes WHERE key = ? AND cid = ?").bind(v.key, cid));
+    else if (VOTE.includes(v.value)) stmts.push(env.DB.prepare(`INSERT INTO mod_votes (key, cid, value, updated)
+      VALUES (?1, ?2, ?3, ?4) ON CONFLICT(key, cid) DO UPDATE SET value = ?3, updated = ?4`).bind(v.key, cid, v.value, t));
+    else continue;
+    votes++;
+  }
+  await env.DB.batch(stmts);
+  return json({ ok: true, prices: used, votes });
+}
+
+async function modStats(url, env) {
+  const league = String(url.searchParams.get("league") || "").slice(0, 60);
+  const bases = await env.DB.prepare("SELECT base, n, w, slog, batches FROM base_prices WHERE league = ?").bind(league).all();
+  const rows = await env.DB.prepare("SELECT base, sid, n, w, slog, batches FROM mod_prices WHERE league = ? AND n >= 3")
+    .bind(league).all();
+  const typical = {};
+  for (const b of bases.results) if (b.w > 0) typical[b.base] = b.slog / b.w;
+  const out = rows.results.map((r) => {
+    const lm = r.slog / r.w, base = typical[r.base];
+    return [r.base, r.sid, r.n, Math.round(Math.exp(lm) * 1000) / 1000,
+      base === undefined ? null : Math.round(Math.exp(lm - base) * 100) / 100, r.batches];
+  });
+  return json({ league, stats: out, players: (await env.DB.prepare("SELECT COUNT(*) AS n FROM contributors").first()).n });
+}
+
+async function modRatings(env) {
+  const rows = await env.DB.prepare(`SELECT key, SUM(value = 'high') AS high, SUM(value = 'normal') AS normal,
+    SUM(value = 'ignore') AS ignore FROM mod_votes GROUP BY key HAVING COUNT(*) >= 2`).all();
+  return json({ ratings: rows.results.map((r) => [r.key, r.high, r.normal, r.ignore]) });
+}
+
 // ------------------------------------------------------------------ routing
 export default {
   async fetch(req, env) {
@@ -303,6 +376,9 @@ export default {
       if (path === "/" || path === "/health") return json({ ok: true, schema: RULES.schema });
       if (path === "/auth/join" && req.method === "POST") return join(req, env);
       if (path === "/official") return official(env);
+      if (path === "/mods/batch" && req.method === "POST") return modBatch(req, env);
+      if (path === "/mods/stats") return modStats(url, env);
+      if (path === "/mods/ratings") return modRatings(env);
       const me = await who(req, env);
       if (path === "/me") return me ? json({ user: me }) : fail(401, "sign in first");
       if (path === "/auth/logout" && req.method === "POST") {
