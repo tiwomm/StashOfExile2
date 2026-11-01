@@ -63,7 +63,7 @@ Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds f
 | 2.38.0 | GGG ToS safety check (TOS.md, at the top of every guide, `tools/check_tos.py` on every PR and release); Remnant tags fixed (no black screen); the Helpers bar is its own window; Money Makers and Stash tab tagged BETA. |
 | 2.39.0 | In-game clock: time and date on the Session timer (12 / 24-hour setting), switch in Settings > Appearance > Clock. |
 | 2.39.1 | Remnant checker: rewards poe.ninja doesn't list show "no price"; a similar name can't lend its price. |
-| 2.40.0 | Runeshape tips next to the remnant prices: the S and A tier runeshapes players rate best for loot. |
+| 2.40.0 | Runeshape tips next to the remnant prices (every runeshape, S to D); Stash tab reads whole tabs (not 20); Ritual leave-map reminder fixed; banners see-through in every theme; Stash tab currency kept. |
 
 ## ▶ Next up
 

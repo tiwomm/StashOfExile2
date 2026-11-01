@@ -6,8 +6,9 @@ one price nobody would pay (e.g. 37882 Divine Orbs). That odd price is how the a
 it searches your account's listings at exactly that price, reads them, and turns each into the same text a Ctrl+Alt+C
 copy gives (wealth.item_text). Each one is then priced like any other item.
 
-Only when you press Read tab; searches and fetches share the trade site's limits with everything else, one at a time,
-behind your own price checks. Items already in the list are skipped. Your own marker listings can't distort prices:
+Only when you press Read tab; searches and fetches share the trade site's limits with everything else, one at a time.
+2.40.0: the whole tab is read first, then its items are priced (reading went behind the pricing it created, so a tab
+seemed to stop at 20 items). Items already in the list are skipped. Your own marker listings can't distort prices:
 they're far above anything real, and price searches sort cheapest first."""
 import re
 import time
@@ -21,7 +22,10 @@ from .wealth import _txt, item_text, wealth_children, wealth_query
 PCTAB = {"gen": 0, "running": False, "cancel": False, "msg": "", "found": 0, "read": 0, "error": "", "warnings": [],
          "qid": None, "skipped": {}, "log": []}
 LOG_FILE = "tab_reader_log.txt"        # 2.8.1: what happened to every listing of the last read (for problem reports)
-PCTAB_PRIO = 4                     # behind the item pricing it creates (0-2), ahead of a Wealth sync (5-9)
+# 2.40.0: AHEAD of the item pricing it creates (prices are 0-2). It used to be behind (4): after the first two fetches
+# (20 items) the pricing of those 20 took every trade-site request, and the rest of the tab waited minutes - it looked
+# like a tab could only read 20 items. Now the whole tab is read first (a few dozen fetches), then everything is priced.
+PCTAB_PRIO = -1
 
 
 def account_ok(acc):
@@ -85,7 +89,8 @@ class TabReaderJobs:
     def do_pctab_fetch(self, gen, qid, ids):
         if not self._pctab_live(gen):
             return
-        PCTAB["msg"] = f"Reading items… ({PCTAB['read']} so far)"
+        PCTAB["msg"] = (f"Reading items… ({PCTAB['read']} of {PCTAB['found']})" if PCTAB.get("found")
+                        else f"Reading items… ({PCTAB['read']} so far)")
         try:
             res = call("GET", f"{BASE}/fetch/{','.join(ids)}", params={"query": qid})
         except Exception as e:

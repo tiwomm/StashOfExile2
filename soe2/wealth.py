@@ -113,7 +113,15 @@ def wealth_children(extra, level):
         level = "sub"
     if level == "sub":
         return [(with_("rarity", {"option": r}), "rarity", r) for r in WEALTH_RARITIES]
-    if level == "rarity":
+    if level == "rarity":                          # 2.40.0: tablets / jewels / waystones by base (or tier) first
+        cat = extra.get("category", {}).get("option")
+        if cat == "map.waystone":
+            return [(with_("map_filters/map_tier", {"min": t, "max": t}), "base", f"tier {t}") for t in range(1, 17)]
+        bases = split_bases(cat)
+        if bases:
+            return [(with_("__type", b), "base", b) for b in bases]
+        level = "base"
+    if level == "base":
         out = []
         for lo, hi in WEALTH_ILVLS:
             v = {k: n for k, n in (("min", lo), ("max", hi)) if n is not None}
@@ -126,10 +134,47 @@ def wealth_query(account, tab, extra):
     filters = {"trade_filters": {"filters": {"account": {"input": account.strip()},
                                              "sale_type": {"option": "any"},          # 2.38.0: as the site's own link
                                              "price": {"option": tab["currency"], "min": tab["amount"], "max": tab["amount"]}}}}
-    if extra:
-        filters["type_filters"] = {"filters": dict(extra)}
+    query = {"status": {"option": "any"}, "filters": filters}
+    for k, v in (extra or {}).items():             # 2.40.0: "__type" = the base type; "group/filter" = another group
+        if k == "__type":
+            query["type"] = v
+        elif "/" in k:
+            g, f = k.split("/", 1)
+            filters.setdefault(g, {"filters": {}})["filters"][f] = v
+        else:
+            filters.setdefault("type_filters", {"filters": {}})["filters"][k] = v
     # status "any": Premium tab listings are whisper listings, so they are not "securable" (instant buyout)
-    return {"query": {"status": {"option": "any"}, "filters": filters}, "sort": {"price": "asc"}}
+    return {"query": query, "sort": {"price": "asc"}}
+
+
+_BASES = {}
+
+
+def split_bases(cat):
+    """2.40.0: the base types a search can be split by (one search returns at most 100): the tablets in tabs.txt,
+    the jewels in jewels.txt (each section there starts with the base's name, then "Base Prefix")."""
+    f = {"map.tablet": "tabs.txt", "jewel": "jewels.txt"}.get(cat)
+    if not f:
+        return []
+    if f not in _BASES:
+        names = []
+        try:
+            from .config import RESOURCE_DIR, APP_DIR
+            for folder in (RESOURCE_DIR, APP_DIR):
+                path = os.path.join(folder, f)
+                if os.path.exists(path):
+                    with open(path, encoding="utf-8") as fh:
+                        prev = ""
+                        for ln in fh:
+                            ln = ln.rstrip("\n")
+                            if ln.startswith("Base Prefix") and prev and not prev.startswith("#"):
+                                names.append(prev.strip())
+                            prev = ln
+                    break
+        except Exception:
+            names = []
+        _BASES[f] = [n for i, n in enumerate(names) if n and n not in names[:i]]
+    return list(_BASES[f])
 
 
 def wealth_trade_url(league, qid):
