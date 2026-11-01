@@ -184,7 +184,9 @@ class AlertsPage:
             nb.pack(side="left", padx=(4, 0))
             Tooltip(nb, what)                       # 2.37.0: what it does - the line under a row shows only while on
             snd = tk.BooleanVar(value=True)
-            ttk.Checkbutton(row, text="Sound", variable=snd, command=lambda k=key: self.alerts_sound(k)).pack(side="left")
+            if key != "remnant":                   # 2.39.0: the Remnant price tags make no sound
+                ttk.Checkbutton(row, text="Sound", variable=snd,
+                                command=lambda k=key: self.alerts_sound(k)).pack(side="left")
             ttk.Button(row, text="Test", command=test, width=6).pack(side="right")
             if key == "breach":                    # 2.11.0
                 self.al_leave = tk.BooleanVar(value=bool(self.breach_cfg().get("leave_reminder", True)))
@@ -211,7 +213,6 @@ class AlertsPage:
         self.al_rows["ritual"]["on"].set(bool(self.ritual_cfg().get("on")))
         self.al_rows["ritual"]["sound"].set(bool(self.ritual_cfg().get("sound", True)))
         self.al_rows["remnant"]["on"].set(bool(self.remnant_cfg().get("on")))          # 2.37.0
-        self.al_rows["remnant"]["sound"].set(bool(self.remnant_cfg().get("sound", True)))
         try:
             from .utilities import DELIRIUM
             self.al_rows["delirium"]["sound"].set(bool(DELIRIUM.get_sound()))
@@ -271,8 +272,8 @@ class AlertsPage:
 
     def alerts_sound(self, key):
         r = self.al_rows[key]
-        if key in ("breach", "ritual", "remnant"):
-            cfg = {"breach": self.breach_cfg, "ritual": self.ritual_cfg, "remnant": self.remnant_cfg}[key]()
+        if key in ("breach", "ritual"):
+            cfg = {"breach": self.breach_cfg, "ritual": self.ritual_cfg}[key]()
             cfg["sound"] = bool(r["sound"].get())
             save_json("settings.json", SETTINGS)
         else:
