@@ -1094,6 +1094,8 @@ class TrackerPage:
     def tracker_on_key(self, vk, ctrl, alt, shift):
         if self.remnant_on_key(vk, ctrl, alt, shift):                   # 2.37.0: Expedition Remnant Price Checker
             return True
+        if self.fl_on_key(vk, ctrl, alt, shift):                       # 2.45.0: Farm Ledger "a run is done"
+            return True
         cfg = SETTINGS.get("tracker") or {}
         for key, action in (("key_toggle", "toggle"), ("key_pause", "pause")):
             k = parse_key(cfg.get(key) or "")
@@ -1125,7 +1127,9 @@ class TrackerPage:
                 ("Session timer: start / stop", tc.get("key_toggle", ""), "Overlays › Session timer", "tracker:key_toggle"),
                 ("Session timer: pause / resume", tc.get("key_pause", ""), "Overlays › Session timer", "tracker:key_pause"),
                 ("Expedition Remnant Price Checker (in game)", self.remnant_cfg().get("key", ""),
-                 "Overlays › Mechanic Helper", "remnant:key")]
+                 "Overlays › Mechanic Helper", "remnant:key"),
+                ("Farm Ledger: a run is done (setups counted by key)", SETTINGS.get("ledger_key") or "Ctrl+Alt+N",
+                 "Money Makers › Farm Ledger", None)]
         for c in oc.get("commands", []) or []:
             rows.append((f"Chat: {c.get('cmd', '')}", c.get("key", ""), "Settings > Chat commands", None))
         return rows

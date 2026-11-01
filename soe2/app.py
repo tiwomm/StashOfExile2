@@ -61,6 +61,7 @@ from .insights_page import InsightsPage
 from .moneymakers_page import MoneyMakersPage
 from .maplib_page import MapLibraryPage
 from .remnant_page import RemnantPage         # 2.37.0: Expedition Remnant Price Checker
+from .ledger_page import LedgerPage           # 2.45.0: Money Makers > Farm Ledger
 from .utilities_page import UtilitiesPage
 from .tracker_page import TrackerPage
 from .search_page import SearchPage
@@ -72,7 +73,7 @@ from .shell import Shell
 from .config import PAGE_CHECKS       # 1.40: was "Items"
 
 
-class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, ExchangePage, WealthSetup, WealthPage, LibraryPage, RegexPage, UtilitiesPage, TrackerPage, SearchPage, CalcPage, InsightsPage, MoneyMakersPage, MapLibraryPage, RemnantPage):
+class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, ExchangePage, WealthSetup, WealthPage, LibraryPage, RegexPage, UtilitiesPage, TrackerPage, SearchPage, CalcPage, InsightsPage, MoneyMakersPage, MapLibraryPage, RemnantPage, LedgerPage):
     COLS = [("added", "#", 46, "e"), ("name", "Item", 220, "w"), ("type", "Type", 110, "w"), ("mark", "Status", 90, "center"),
             ("est", "Est. value", 110, "e"), ("conf", "Confidence", 95, "center"), ("listings", "Listings", 70, "e"), ("priced", "Priced at", 130, "w"),
             ("match", "How it was priced", 300, "w"), ("vmods", "Valuable mods", 100, "center")]
@@ -2175,6 +2176,11 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         """Only a real Ctrl+Alt+C copy of an item we haven't already got becomes a new row."""
         if not SETTINGS.get("listen", True):
             return
+        if text.lstrip().startswith("Item Class:"):               # 2.45.0: the Farm Ledger's loot box / setup takes it
+            if self.fl_capturing():
+                return self.fl_take_clip(text)
+            if self.fl_ed_open() and self.fl_ed_take(text):
+                return None
         if not text.lstrip().startswith("Item Class:"):          # something else on the clipboard
             if text != self.own_clip:                            # (our own "copy name" isn't worth mentioning)
                 self.status_text, self.status_until = "Heard a copy, but it isn't an item (ignored)", time.time() + 6
@@ -2496,6 +2502,8 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
             self.status_text = ""
 
     def ev_error(self, kind, msg, rid):
+        if kind in ("price", "resolve") and rid in self.records and self.records[rid].get("src") == "ledger":
+            return self.fl_priced(rid, error=msg)
         if kind in ("price", "resolve") and rid in self.records:
             rec = self.records[rid]
             said = re.search(r"server said: '(.*)'", msg)
@@ -2527,6 +2535,8 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         rec = self.records.get(rid)
         if not rec:
             return
+        if rec.get("src") == "ledger":                        # 2.45.0: a Farm Ledger setup item, priced out of sight
+            return self.fl_priced(rid)
         if rid == getattr(self, "lib_rid", None):            # priced from the Item library: show it there too
             self.lib_price_show()
         self.update_row(rid)
@@ -2893,6 +2903,8 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
                     m["flags"] = set(m.get("flags", []))
                 r["prices"] = [tuple(p) for p in r.get("prices", [])]
                 r.setdefault("mark", "new")
+                if r.get("src") == "ledger":                  # (a Farm Ledger item that was still being priced)
+                    continue
                 self.records[int(r["id"])] = r
                 if r.get("state") in ("queued", "pricing"):      # was still waiting when the app closed
                     r["state"] = "queued"

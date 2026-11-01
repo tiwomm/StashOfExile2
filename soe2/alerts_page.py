@@ -134,7 +134,8 @@ class AlertsPage:
 
     def log_wanted(self):
         """Client.txt is followed while Breach or Ritual needs it (Ritual: to know when you leave a map)."""
-        return bool(self.breach_cfg().get("on") or self.ritual_cfg().get("on"))
+        return bool(self.breach_cfg().get("on") or self.ritual_cfg().get("on")
+                    or (hasattr(self, "fl_counting") and self.fl_counting()))     # 2.45.0: the Farm Ledger's runs
 
     def alerts_init(self):
         """At start-up (start_utilities): the Breach watcher runs whether or not the tracker window was opened."""
@@ -505,6 +506,10 @@ class AlertsPage:
         """2.11.0: leaving a map (to your hideout or a town) with Hiveblood still waiting -> one reminder per exit,
         every exit, until the Genesis Tree has been opened."""
         before, self.br_area = self.br_area, kind
+        try:
+            self.fl_area(kind, where, before)                # 2.45.0: the Farm Ledger counts its runs
+        except Exception:
+            self.log_error("Farm Ledger run counting")
         cfg = self.breach_cfg()
         left = before == "map" and kind in ("hideout", "town")
         if left and cfg.get("on") and cfg.get("pending") and cfg.get("leave_reminder", True):
