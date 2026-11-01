@@ -25,6 +25,7 @@ NOTES = {
         "Regex: switching between tablets, waystones, jewels, gear ... no longer freezes the app.",
         "Fixed: maximised when you closed it -> maximised when you open it (for real this time).",
         "Price checks shows the time left right from the start, not only after a few items are done.",
+        "Price checks: the column is called \"Valuable mods\", and a line under the list explains the stars.",
     ],
     "2.26.1": [
         "Fixed: after changing the theme (the app restarts itself), the Delirium alert could fail with "

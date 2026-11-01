@@ -30,6 +30,8 @@ VERSION HISTORY
            restore is done (_win_restored).
        (3) Price checks "Pricing 215" has a time from the start: the remembered seconds per item
            (SETTINGS price_secs_avg), or a guess from the pace's search allowance, until 3 items are done.
+       (4) Price checks: the column is "Valuable mods" (no ★ in the heading) and a legend under the list says what
+           the stars mean.
   2.26.1
        Fixed: "No module named 'cv2'" after changing the theme. restart_app started the new copy with this copy's
        PyInstaller environment, so it reused this copy's unpacked folder - deleted as this one closed - and cv2 (the
