@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU GPL v3.0 (see LICENSE). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.40.1
+VERSION 2.41.0
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,6 +19,12 @@ VERSION 2.40.1
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.41.0
+       Waystone prices: the user's corrupted T15 (IIR 28, pack 27, drop chance 150) showed 18 div, Medium - the
+       search found 3 listings (8, 18, 20) and took the middle one, with Listings set to "Any" (offline / whisper
+       sellers' asks count; the user's own search was Instant Buyout). Now a thin waystone result (under 5) is priced
+       at the cheapest real offer (trade.cheapest_real: price fixers under a fifth of the median left out), never
+       "High"; and Listings: Any is called out in the label and lowers High to Medium. test_v2410.
   2.40.1
        Stash tab (and Wealth) read every item of a big tab. The user's tab: 455 listings, 2.40.0 read 234 - 201 and
        220 rare tier-15 waystones were each one item-level slice of over 100 (one search returns 100). wealth_children
@@ -1178,7 +1184,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.40.1"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.41.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 

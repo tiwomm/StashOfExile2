@@ -15,7 +15,7 @@ from .net import call, STATUS
 from .rates import RATES
 from .mods import DUPS, find_stat, norm, pretty, vfilter
 from . import gear, waystone
-from .trade import (
+from .trade import (cheapest_real,
     _flt, build_sidtext, estimate, fetch_rich, listing_rules, mod_impact, search_ids, unconvertible,
     uses_filter, verify_listings,
 )
@@ -507,6 +507,14 @@ class Engine(TabReaderJobs, WealthJobs, threading.Thread):
             label += " · ⚠ listings priced in " + ", ".join(skipped) + " left out (no exchange rate)"
         ratio, lo, hi = spread_of([chosen], league)
         est, wide = chosen["est"], False
+        if item.get("waystone") and thin and chosen["prices"]:     # 2.41.0: few listings - the cheapest real offer
+            low = cheapest_real(chosen["prices"], league)
+            if low is not None and est is not None and low < est:
+                est = low
+                label += " · few listings: priced at the cheapest"
+        status_any = SETTINGS.get("status") == "Any"               # 2.41.0: say when offline sellers count
+        if status_any:
+            label += " · Listings: Any counts offline / whisper-only sellers (Instant Buyout is closer to real sales)"
         spread = SETTINGS.get("spread_warn") or 0
         rough = bool(spread and ratio and ratio >= spread)
         if rough:                                          # 2.3.0: a rough price instead of no price
@@ -514,6 +522,12 @@ class Engine(TabReaderJobs, WealthJobs, threading.Thread):
                      f"look by hand · " + label)
         conf, why = confidence(chosen["n"], step > 0, False, ratio, verify_tot["unverifiable"], verify_tot["bad"],
                                chosen.get("age_h"), False, skipped)
+        if status_any and conf == "High":
+            conf = "Medium"
+        if status_any:
+            why = list(why) + ["Listings: Any - offline sellers' asks count too"]
+        if item.get("waystone") and thin and conf == "High":         # (a handful of listings is never "High")
+            conf = "Medium"
         if rough:
             conf = "Low"
         return dict(blank, label=label, total=chosen["total"], prices=chosen["prices"], qid=chosen["qid"], est=est,
