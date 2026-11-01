@@ -166,10 +166,8 @@ class TabReaderPage:
             lab.bind("<Button-3>", lambda e, tid=t["id"]: self.pctab_tab_menu(e, tid))
             Tooltip(lab, f"{t['name']}: priced {t.get('amount') or '?'} {t.get('currency_name') or t.get('currency')}"
                          " in game · right-click to rename or delete")
-        add = tk.Label(self.pc_tabsrow, text="＋ Tab", bg=P1, fg="#6ea8ff", cursor="hand2",
-                       font=("Segoe UI", 9, "underline"))
+        add = ttk.Button(self.pc_tabsrow, text="＋ Tab", command=self.pctab_new, style="Quiet.TButton")   # 2.47.0
         add.pack(side="left", padx=(8, 0))
-        add.bind("<Button-1>", lambda e: self.pctab_new())
         Tooltip(add, "Another stash tab, with its own price and its own list")
 
     def pctab_empty_text(self):

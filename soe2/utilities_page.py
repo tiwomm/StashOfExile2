@@ -262,8 +262,8 @@ class UtilitiesPage:
         self.ov_vars = getattr(self, "ov_vars", {})
         ng = tk.Frame(parent, bg=P2)
         ng.pack(fill="x", pady=(2, 0))
-        from .overlaywin import parchment
-        if parchment():                                   # 2.43.0
+        from .overlaywin import skinned
+        if skinned():                                     # 2.43.0 (2.47.0: every PoE2 look)
             tk.Label(parent, text="The colours are used with the Classic look (Settings > Appearance > Over the game).",
                      bg=P2, fg=C["muted"], font=("Segoe UI", 9), anchor="w").pack(fill="x", before=ng)
         self.ov_swatch = {}
