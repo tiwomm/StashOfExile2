@@ -21,6 +21,12 @@ NEXT = [
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.46.0": [
+        "Strat guides are CSV files now (open them in Excel or Google Sheets) - Download Format, Export and Import. "
+        "Older .txt guides still import.",
+        "Farm Ledger > Export > Strat guide: turn your setup and its numbers into a guide to share.",
+        "Money Makers checks once a day what a strat's waystone and tablets cost on the trade site (\"Cost now\").",
+    ],
     "2.45.0": [
         "Money Makers > Farm Ledger (was Run tracker): does a farming setup really make money? Add your waystone and "
         "tablets with Ctrl+Alt+C (priced for you, or type your own price) and your atlas trees.",

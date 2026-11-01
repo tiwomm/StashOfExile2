@@ -173,7 +173,9 @@
   "tips",
   "risks",
   "regex",
-  "sources"
+  "sources",
+  "items",
+  "ledger"
  ],
  "one_order": [
   "id",

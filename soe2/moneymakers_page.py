@@ -373,6 +373,7 @@ class MoneyMakersPage:
         t.insert("end", MM.money_text(s.get("est_profit"), " / h") + "     ", "stat")
         t.insert("end", "Est. cost  ", "h")
         t.insert("end", MM.money_text(s.get("est_cost")) + "\n", "stat")
+        self.mm_cost_lines(t, s)                                  # 2.46.0: what it costs today
         if s.get("waystone_tiers"):
             t.insert("end", "Waystone tiers  ", "h")
             t.insert("end", MM.tiers_text(s["waystone_tiers"]) + "\n", "stat")
@@ -382,12 +383,19 @@ class MoneyMakersPage:
             if got:
                 t.insert("end", group + "  ", "h")
                 t.insert("end", " · ".join(got) + "\n", "chip")
-        mine = MM.stats(MM.runs(), s["id"])
-        if mine["runs"]:
-            pph = mine["profit_per_hour"]
-            t.insert("end", "Your runs  ", "h")
-            t.insert("end", f"{mine['runs']} runs, {_hms(mine['avg_secs'])} each"
-                            + (f", {pph:.1f} div / h" if pph is not None else "") + "\n", "stat")
+        from . import ledger as L                                 # 2.45.0: your Farm Ledger numbers for it
+        d = self.fl_data()
+        sids = {x["id"] for x in d["setups"] if x.get("strat") == s["id"]}
+        f = L.figures([l for l in d["logs"] if l["setup"] in sids]) if sids else None
+        if f and f["runs"]:
+            t.insert("end", "Your Farm Ledger  ", "h")
+            t.insert("end", f"{f['runs']} runs" + (f", {_hms(f['avg_run'])} each" if f["avg_run"] else "")
+                            + (f", {f['per_hour']:.1f} div / h" if f["per_hour"] is not None else "") + "\n", "stat")
+        if s.get("ledger"):
+            lg = s["ledger"]
+            t.insert("end", "Author's Farm Ledger  ", "h")
+            t.insert("end", ", ".join(f"{v:g} {k.replace('_div', 'd').replace('_', ' ')}" for k, v in lg.items()) + "\n",
+                     "meta")
         for key, title in (("requirements", "Requirements"), ("tablets", "Tablets"), ("waystones", "Waystones"),
                            ("atlas", "Atlas / master setup"), ("craft_steps", "Craft steps"), ("setup", "Other setup"),
                            ("steps", "Steps"),
@@ -437,6 +445,9 @@ class MoneyMakersPage:
         else:
             m.add_command(label="Copy to Mine (to change it)", command=self.mm_copy_mine)
         m.add_command(label="Export…", command=self.mm_export)
+        if s.get("items"):                                         # 2.46.0
+            m.add_command(label="Check what it costs now", command=lambda: (self.mm_cost_check(True, s["id"]),
+                                                                             self.mm_show_detail(s)))
         if s["origin"] == "mine" or post.get("mine"):
             m.add_separator()
             m.add_command(label="Edit", command=self.mm_edit)
@@ -635,8 +646,70 @@ class MoneyMakersPage:
             self.mm_account_paint()
             self.mm_board_fetch()
 
+    # ---------------- 2.46.0: what a strat costs today (stratcost.py: one search per item, once a day)
+    def mm_costs(self):
+        if getattr(self, "_mm_costs", None) is None:
+            from .stratcost import costs
+            self._mm_costs = costs()
+        return self._mm_costs
+
+    def mm_cost_check(self, force=False, only=None):
+        """Queue the strats whose cost wasn't checked today (or one strat now: force=True, only=its id)."""
+        from .stratcost import due
+        league = SETTINGS.get("league") or ""
+        if not league:
+            return 0
+        n = 0
+        for s in MM.all_strats():
+            if only and s["id"] != only:
+                continue
+            if s.get("items") and (force or due(s, self.mm_costs(), league)):
+                if s["id"] in getattr(self, "_mm_cost_busy", set()):
+                    continue
+                self._mm_cost_busy = getattr(self, "_mm_cost_busy", set()) | {s["id"]}
+                self.engine.strat_cost_start(s, league)
+                n += 1
+        return n
+
+    def ev_strat_cost(self, sid, i, price, info):
+        c = self.mm_costs().setdefault(sid, {})
+        c.setdefault("prices", {})[str(i)] = price
+        c.setdefault("info", {})[str(i)] = info
+
+    def ev_strat_cost_finished(self, sid, league):
+        from .stratcost import save_costs
+        c = self.mm_costs().setdefault(sid, {})
+        c.update(at=time.time(), league=league)
+        save_costs(self.mm_costs())
+        self._mm_cost_busy = getattr(self, "_mm_cost_busy", set()) - {sid}
+        cur = self.mm_current()
+        if cur and cur["id"] == sid:
+            self.mm_show_detail(cur)
+
+    def mm_cost_lines(self, t, s):
+        if not s.get("items"):
+            return
+        now = MM.cost_now(s, self.mm_costs())
+        busy = s["id"] in getattr(self, "_mm_cost_busy", set())
+        t.insert("end", "Cost now  ", "h")
+        if now:
+            total, parts, at = now
+            ago = max(0, time.time() - (at or time.time()))
+            when = "today" if ago < 86400 else f"{int(ago // 86400)} days ago"
+            t.insert("end", f"{total:.2f} div a run", "stat")
+            t.insert("end", f"  (trade site, checked {when}{' - checking again…' if busy else ''})\n", "meta")
+            for name, each, per in parts:
+                t.insert("end", f"• {name}: {each:.2f} each → {per:.3f} a run\n", "li")
+        else:
+            t.insert("end", "checking the trade site…\n" if busy else
+                     "not checked yet (once a day while Money Makers is open)\n", "meta")
+
     def mm_on_show(self):
         self.mm_check_live(force=False)
+        try:
+            self.mm_cost_check()                                  # 2.46.0: once a day, strats that list their items
+        except Exception:
+            self.log_error("checking what strats cost")
         self.mm_account_paint()
         if B.configured() and not getattr(self, "_mm_official_asked", False):
             self._mm_official_asked = True
@@ -680,39 +753,50 @@ class MoneyMakersPage:
         s = self.mm_current()
         if not s:
             return
-        path = filedialog.asksaveasfilename(parent=self.root, defaultextension=".txt", initialfile=s["id"] + ".txt",
-                                            filetypes=[("Strat (text, opens in Notepad)", "*.txt"),
+        path = filedialog.asksaveasfilename(parent=self.root, defaultextension=".csv", initialfile=s["id"] + ".csv",
+                                            filetypes=[("Strat guide (CSV - Excel, Google Sheets)", "*.csv"),
                                                        ("Strat (JSON)", "*.json")])
-        if path:
-            with open(path, "w", encoding="utf-8", newline="\r\n") as f:
-                if path.lower().endswith(".json"):
-                    json.dump(MM.tidy(s), f, indent=2, ensure_ascii=False)
-                else:
-                    f.write(MM.to_text(s))
-            self._say(f"Saved {path}", 6)
+        return self.mm_write_strat(s, path)
 
-    def mm_download_format(self, path=None):
-        """The blank standard layout as a .txt file (opens in Notepad on any Windows PC): fill it in, then Import
-        file… - or attach it to a Strategy issue on GitHub to share it."""
-        path = path or filedialog.asksaveasfilename(parent=self.root, defaultextension=".txt",
-                                                    initialfile="money-maker-strat-template.txt",
-                                                    filetypes=[("Strat (text, opens in Notepad)", "*.txt")])
+    def mm_write_strat(self, s, path):
+        """2.46.0: a strat guide is a CSV file (the same layout as the Farm Ledger's numbers); JSON for the repo."""
         if not path:
             return None
-        with open(path, "w", encoding="utf-8", newline="\r\n") as f:
-            f.write(MM.to_text(None))
-        self.app_toast(f"Saved the strat template:\n{path}\n\nOpen it in Notepad, fill it in, then press Import "
-                       "file… here (or attach it to a Strategy issue on GitHub to share it).", "Download Format")
+        if path.lower().endswith(".json"):
+            with open(path, "w", encoding="utf-8") as f:
+                json.dump(MM.tidy(s), f, indent=2, ensure_ascii=False)
+        elif path.lower().endswith(".txt"):
+            with open(path, "w", encoding="utf-8", newline="\r\n") as f:
+                f.write(MM.to_text(s))
+        else:
+            with open(path, "w", encoding="utf-8-sig", newline="") as f:      # (Excel reads UTF-8 with the BOM)
+                f.write(MM.to_csv(s))
+        self._say(f"Saved {path}", 6)
+        return path
+
+    def mm_download_format(self, path=None):
+        """The blank standard layout as a CSV file (2.46.0; opens in Excel / Google Sheets, the "note" column says
+        what goes in each row): fill it in, then Import file… - or attach it to a Strategy issue on GitHub."""
+        path = path or filedialog.asksaveasfilename(parent=self.root, defaultextension=".csv",
+                                                    initialfile="money-maker-strat-template.csv",
+                                                    filetypes=[("Strat guide (CSV)", "*.csv")])
+        if not path:
+            return None
+        with open(path, "w", encoding="utf-8-sig", newline="") as f:
+            f.write(MM.to_csv(None))
+        self.app_toast(f"Saved the strat template:\n{path}\n\nOpen it in Excel or Google Sheets, fill in the value "
+                       "column (the note column says what goes there), then press Import file… here (or attach it to "
+                       "a Strategy issue on GitHub to share it).", "Download Format")
         return path
 
     def mm_import(self, path=None):
-        path = path or filedialog.askopenfilename(parent=self.root, filetypes=[("Strat", "*.txt *.json")])
+        path = path or filedialog.askopenfilename(parent=self.root, filetypes=[("Strat", "*.csv *.txt *.json")])
         if not path:
             return None
         try:
             with open(path, encoding="utf-8-sig") as f:
                 raw = f.read()
-            d = json.loads(raw) if raw.lstrip().startswith(("{", "[")) else MM.from_text(raw)
+            d = MM.read_any(raw)                                     # 2.46.0: CSV, the older .txt, or JSON
         except Exception as e:
             self.app_toast(f"Couldn't read that file ({e.__class__.__name__}).", "Import strat")
             return None

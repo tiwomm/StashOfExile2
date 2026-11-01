@@ -70,7 +70,7 @@ LISTS = ("tags", "requirements", "tablets", "waystones", "atlas", "craft_steps",
 ORDER = ("id", "name", "author", "updated", "patch", "category", "type", "summary", "thoughts_per_click",
          "clicks_per_hour", "tags", "waystone_tiers", "est_cost", "est_profit",
          "requirements", "tablets", "waystones", "atlas", "craft_steps", "setup", "steps", "loot", "tips", "risks",
-         "regex", "sources")
+         "regex", "sources", "items", "ledger")
 # Lucrative Strats: one-liners
 ONE_ORDER = ("id", "text", "author", "updated", "category", "type", "tags")
 
@@ -151,6 +151,12 @@ def validate(s):
     src = s.get("sources")
     if src is not None and (not isinstance(src, list) or not all(isinstance(x, dict) and x.get("url") for x in src)):
         out.append("sources must be a list of {\"title\", \"url\"}")
+    it = s.get("items")                       # 2.46.0: what the strat runs, with the mods that matter (cost check)
+    if it is not None and (not isinstance(it, list) or not all(isinstance(x, dict) and x.get("base") for x in it)):
+        out.append("items must be a list of {\"kind\", \"base\", \"count\", \"lasts\", \"key_mods\"}")
+    lg = s.get("ledger")
+    if lg is not None and (not isinstance(lg, dict) or not all(isinstance(v, (int, float)) for v in lg.values())):
+        out.append("ledger must be numbers: " + ", ".join(LEDGER_FIELDS))
     unknown = set(s) - set(ORDER) - {"origin"}
     if unknown:
         out.append("unknown field(s): " + ", ".join(sorted(unknown)))
@@ -578,3 +584,165 @@ def stat_id(line):
             return TEXT2SID[k]
     close = difflib.get_close_matches(key, list(TEXT2SID), n=1, cutoff=0.92)
     return TEXT2SID[close[0]] if close else None
+
+
+# ---------------------------------------------------------------- 2.46.0: strat guides as CSV
+# One layout for every Money Makers CSV: a strat guide is "section, field, value, note" rows - opens in Excel / Google
+# Sheets, diffs well, and its numbers use the Farm Ledger's CSV column names (ledger.CSV_LOG_HEAD), so a guide made
+# from your Farm Ledger and your Ledger's CSV say the same thing the same way.
+CSV_HEAD = ("section", "field", "value", "note")
+CSV_MAGIC = "stashofexile2 strat"
+LEDGER_FIELDS = ("runs", "minutes", "cost_per_run_div", "loot_per_run_div", "profit_per_run_div", "div_per_hour")
+_CSV_STRAT = (("name", "Name - needed"), ("id", "lower-case-with-dashes; empty = made from the name"),
+              ("author", "needed"), ("updated", "YYYY-MM-DD"), ("patch", "game version, e.g. 0.4"),
+              ("summary", "one line - needed"), ("category", " | ".join(CATEGORIES)),
+              ("type", "a type of the category (strats/README.md)"),
+              ("thinking", " | ".join(w for w, _d in THINKING.values())), ("clicks_per_hour", " | ".join(CLICKS)),
+              ("waystone_tiers", "e.g. 14-16"), ("est_cost_div", "divines a run"),
+              ("est_profit_div", "divines an hour, e.g. 5-10"), ("regex", "a stash search"))
+_CSV_LISTS = ("requirements", "tablets", "waystones", "atlas", "craft_steps", "setup", "steps", "loot", "tips", "risks")
+_ITEM_FIELDS = ("kind", "base", "name", "count", "lasts", "key_mod")
+
+
+def to_csv(s=None):
+    """A strat (or, with None, the blank template) as CSV rows."""
+    import csv
+    import io
+    s = s or {}
+    buf = io.StringIO()
+    w = csv.writer(buf)
+    w.writerow(CSV_HEAD)
+    w.writerow(("#", CSV_MAGIC, str(SCHEMA), "one row per value; lists: one row each, numbered"))
+    for key, note in _CSV_STRAT:
+        if key == "thinking":
+            v = s.get("thoughts_per_click")
+            v = THINKING[v][0] if v in THINKING else (v or "")
+        elif key == "waystone_tiers":
+            wt = s.get("waystone_tiers")
+            v = "" if not isinstance(wt, dict) else str(wt["min"]) if wt["min"] == wt["max"] else f"{wt['min']}-{wt['max']}"
+        elif key == "est_cost_div":
+            ec = s.get("est_cost")
+            v = "" if not isinstance(ec, dict) else f"{ec.get('amount', ''):g}"
+        elif key == "est_profit_div":
+            ep = s.get("est_profit")
+            v = "" if not isinstance(ep, dict) else money_text(ep).replace(" div", "")
+        elif key == "updated":
+            v = s.get("updated") or date.today().isoformat()
+        else:
+            v = s.get(key, "")
+        w.writerow(("strat", key, "" if v is None else v, note if not s else ""))
+    tags = s.get("tags") or []
+    for group, opts in TAG_GROUPS.items():
+        mine = [t for t in tags if t in opts]
+        for t in mine:
+            w.writerow(("tag", group, t, ""))
+        if not s:
+            w.writerow(("tag", group, "", " | ".join(opts)))
+    for key in _CSV_LISTS:
+        for n, line in enumerate(s.get(key) or ([""] if not s and key in ("steps", "tablets") else []), 1):
+            w.writerow((key, n, line, ""))
+    for n, src in enumerate(s.get("sources") or [], 1):
+        w.writerow(("source", n, src.get("url", ""), src.get("title", "")))
+    for n, it in enumerate(s.get("items") or [], 1):
+        for f in _ITEM_FIELDS[:-1]:
+            if it.get(f) not in (None, ""):
+                w.writerow(("item", f"{n}:{f}", it[f], ""))
+        for m in it.get("key_mods") or []:
+            w.writerow(("item", f"{n}:key_mod", m, ""))
+    for k in LEDGER_FIELDS:
+        if k in (s.get("ledger") or {}):
+            w.writerow(("ledger", k, f"{s['ledger'][k]:g}", "from the Farm Ledger"))
+    return buf.getvalue()
+
+
+def is_csv(text):
+    return str(text).lstrip("\ufeff").startswith("section,field,value")
+
+
+def from_csv(text):
+    """CSV rows -> a strat (check it with validate)."""
+    import csv
+    import io
+    s, items = {}, {}
+    for r in csv.DictReader(io.StringIO(str(text).lstrip("\ufeff"))):
+        sec, field, val = (r.get("section") or "").strip(), (r.get("field") or "").strip(), (r.get("value") or "").strip()
+        if not sec or sec == "#" or val == "":
+            continue
+        if sec == "strat":
+            if field == "thinking":
+                s["thoughts_per_click"] = _WORD2THINK.get(val.split(" - ")[0].lower()) or (int(val) if val.isdigit() else val)
+            elif field == "clicks_per_hour":
+                s[field] = click_band(val) or val
+            elif field == "waystone_tiers":
+                try:
+                    lo, hi = _num_range(val.lower().replace("t", ""))
+                    s[field] = {"min": int(lo), "max": int(hi)}
+                except (TypeError, ValueError):
+                    s[field] = val
+            elif field == "est_cost_div":
+                try:
+                    s["est_cost"] = {"amount": _num_range(val)[0], "unit": "div"}
+                except (TypeError, ValueError):
+                    s["est_cost"] = val
+            elif field == "est_profit_div":
+                try:
+                    lo, hi = _num_range(val)
+                    s["est_profit"] = {"low": lo, "high": hi, "unit": "div"}
+                except (TypeError, ValueError):
+                    s["est_profit"] = val
+            elif field in ("name", "id", "author", "updated", "patch", "summary", "category", "type", "regex"):
+                s[field] = val
+        elif sec == "tag":
+            s.setdefault("tags", []).append(val)
+        elif sec in _CSV_LISTS:
+            s.setdefault(sec, []).append(val)
+        elif sec == "source":
+            s.setdefault("sources", []).append({"title": (r.get("note") or val).strip(), "url": val})
+        elif sec == "item" and ":" in field:
+            n, f = field.split(":", 1)
+            it = items.setdefault(n, {})
+            if f == "key_mod":
+                it.setdefault("key_mods", []).append(val)
+            elif f in ("count", "lasts"):
+                try:
+                    it[f] = int(float(val))
+                except ValueError:
+                    pass
+            elif f in _ITEM_FIELDS:
+                it[f] = val
+        elif sec == "ledger" and field in LEDGER_FIELDS:
+            try:
+                s.setdefault("ledger", {})[field] = float(val)
+            except ValueError:
+                pass
+    if items:
+        s["items"] = [dict(items[k], key_mods=items[k].get("key_mods", []))
+                      for k in sorted(items, key=lambda x: int(x) if x.isdigit() else 0)]
+    if s.get("name") and not s.get("id"):
+        s["id"] = slug(s["name"])
+    return {k: v for k, v in s.items() if v not in (None, "", [])}
+
+
+def read_any(raw):
+    """A strat file's text (CSV, the older .txt layout, or JSON) -> what's in it."""
+    if is_csv(raw):
+        return from_csv(raw)
+    if raw.lstrip().startswith(("{", "[")):
+        return json.loads(raw)
+    return from_text(raw)
+
+
+def cost_now(s, costs):
+    """2.46.0: what a run of this strat costs today, from the daily check -> (divines, parts, checked at) or None."""
+    c = (costs or {}).get(s.get("id"))
+    if not c or not s.get("items"):
+        return None
+    total, parts = 0.0, []
+    for i, it in enumerate(s["items"]):
+        p = (c.get("prices") or {}).get(str(i))
+        if p is None:
+            continue
+        per = p * max(1, int(it.get("count") or 1)) / max(1, int(it.get("lasts") or 1))
+        total += per
+        parts.append((it.get("name") or it["base"], p, per))
+    return (total, parts, c.get("at")) if parts else None
