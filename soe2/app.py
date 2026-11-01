@@ -335,7 +335,7 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
     def build(self):
         r = self.root
         r.configure(bg=C["bg"])
-        self.PAGES = [PAGE_CHECKS, "Wealth", "Mod book", "Regex", "Chat commands", "Notes",
+        self.PAGES = [PAGE_CHECKS, "Wealth", "Mod book", "Regex", "Notes",
                       "Settings"]
         self.page_var = tk.StringVar(value=PAGE_CHECKS)           # the window in front (kept for older code)
         self.top_var = tk.BooleanVar(value=SETTINGS.get("on_top", True))
@@ -348,7 +348,7 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         self.parent_dialogs()
         self.mods = modules.load(self)
         self.page_key = {m.title: m.key for m in self.mods}
-        self.page_key["Utilities"] = "chat"                       # 2.0 beta 6 name
+        self.page_key["Utilities"] = "notes"                      # 2.0 beta 6 name
         self.page_key["Item library"] = "library"                 # its names before 2.0 beta 13
         self.page_key["Item inspector"] = "library"
         self.page_key["Price breakdown"] = "library"
@@ -753,7 +753,7 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         self.set_nb = SegBook(body)
         self.set_nb.pack(fill="both", expand=True, padx=10, pady=(10, 0))
         pages = {}
-        for name in ("General", "Appearance", "Hotkeys", "Advanced", "About"):
+        for name in ("General", "Appearance", "Hotkeys", "Chat commands", "Advanced", "About"):
             sa = ScrollArea(self.set_nb, P1)
             wrap = tk.Frame(sa.inner, bg=P1, padx=6, pady=4)
             wrap.pack(fill="both", expand=True)
@@ -774,6 +774,7 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
             return row
 
         self.build_about(pages["About"][1])                      # 2.10.0
+        self.build_chat_window(pages["Chat commands"][1])        # 2.27.0: was its own Utilities window
         # ======== General
         row = section("General", "League and search pace", "The league is used everywhere: Price checks, Wealth and "
                                                            "the session tracker. Pace = how fast the trade site is "

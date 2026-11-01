@@ -930,6 +930,9 @@ class Shell:
 
     # ---- open / focus
     def open(self, key, save=True):
+        if key == "chat":                          # 2.27.0: Chat commands is a tab in Settings now
+            self.app.open_settings_tab("Chat commands")
+            return
         win = self.windows.get(key)
         if not win:
             return

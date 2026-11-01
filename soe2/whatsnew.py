@@ -21,6 +21,9 @@ NEXT = [
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.27.0": [
+        "Chat commands moved: Settings > Chat commands (it's no longer in Utilities).",
+    ],
     "2.26.4": [
         "Regex: Jewels and Gear items open fast now. Click a mod to pick it; click its Value cell to type a value.",
         "Price checks: what the ★ stars mean is shown up top.",
