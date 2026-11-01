@@ -163,7 +163,7 @@ class AlertsPage:
         tk.Label(head, text="they work over the game whenever the app runs, session or not", bg=P2, fg=C["muted"],
                  font=("Segoe UI", 9)).pack(side="left", padx=8)
         self.al_bar = tk.BooleanVar(value=bool(self.tracker_cfg().get("alerts_bar", True)))
-        ttk.Checkbutton(head, text="Helpers bar (with the timer)", variable=self.al_bar,
+        ttk.Checkbutton(head, text="Mechanic Helper bar (with the timer)", variable=self.al_bar,
                         command=self.alerts_bar_changed).pack(side="right")
         self.al_rows = {}
         for key, name, what, test in (

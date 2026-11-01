@@ -262,6 +262,10 @@ class UtilitiesPage:
         self.ov_vars = getattr(self, "ov_vars", {})
         ng = tk.Frame(parent, bg=P2)
         ng.pack(fill="x", pady=(2, 0))
+        from .overlaywin import parchment
+        if parchment():                                   # 2.43.0
+            tk.Label(parent, text="The colours are used with the Classic look (Settings > Appearance > Over the game).",
+                     bg=P2, fg=C["muted"], font=("Segoe UI", 9), anchor="w").pack(fill="x", before=ng)
         self.ov_swatch = {}
         for r, (label, key, default) in enumerate((("Background", "notes_bg", "1A1A2E"), ("Text colour", "notes_fg", "E2C97E"))):
             tk.Label(ng, text=label, bg=P2, fg=C["text"], anchor="w").grid(row=r, column=0, sticky="w", padx=(0, 8), pady=2)

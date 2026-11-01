@@ -330,15 +330,22 @@ class Overlay:
         """Switched on (it may still be out of sight while the game isn't in front)."""
         return self.notes is not None and self.notes.winfo_exists() and getattr(self.notes, "wanted", True)
 
+    def note_colours(self):
+        """(background, text): the remnant book's parchment (2.43.0), or your own colours with the Classic look."""
+        from .overlaywin import pal, parchment
+        if parchment():
+            return pal()["bg"], pal()["text"]
+        return self._colour("notes_bg", "1A1A2E"), self._colour("notes_fg", "E2C97E")
+
     def _colour(self, key, default):
         v = str(self.cfg.get(key) or default).lstrip("#")
         return "#" + v if re.fullmatch(r"[0-9A-Fa-f]{6}", v) else "#" + default
 
     def _build_notes(self):
         """The sticky note: the shared over-the-game window (overlaywin.py) with your colours inside it."""
-        from .overlaywin import OverlayWindow
+        from .overlaywin import OverlayWindow, pal, parchment
         c = self.cfg
-        bg, fg = self._colour("notes_bg", "1A1A2E"), self._colour("notes_fg", "E2C97E")
+        bg, fg = self.note_colours()
 
         def moved(x, y, ww, hh):
             c.update(notes_x=x, notes_y=y, notes_w=ww, notes_h=hh)
@@ -353,7 +360,7 @@ class Overlay:
         self.notes_tabbar = tk.Frame(w.body, bg=bg)
         self.notes_tabbar.pack(fill="x")
         text = tk.Text(w.body, bg=bg, fg=fg, insertbackground=fg, relief="flat", highlightthickness=0, wrap="word",
-                       font=("Consolas", int(c.get("notes_font", 11))), padx=8, pady=4)
+                       font=(pal()["font"] if parchment() else "Consolas", int(c.get("notes_font", 11))), padx=8, pady=4)
         text.pack(fill="both", expand=True)
         tabs, i = self.note_tabs(), self.note_index()
         text.insert("1.0", tabs[i]["text"])
@@ -390,7 +397,7 @@ class Overlay:
             return
         for w_ in bar.winfo_children():
             w_.destroy()
-        bg, fg = self._colour("notes_bg", "1A1A2E"), self._colour("notes_fg", "E2C97E")
+        bg, fg = self.note_colours()
         cur = self.note_index()
         for i, t in enumerate(self.note_tabs()):
             on = i == cur

@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU GPL v3.0 (see LICENSE). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.42.0
+VERSION 2.43.0
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,6 +19,17 @@ VERSION 2.42.0
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.43.0
+       The windows over the game look like the Expedition remnant's reward book (the user picked mockup C):
+       parchment in a dark leather binding, ink text, a serif title (overlaywin LOOKS / pal(); Classic dark kept as a
+       choice). Session timer, Notes and the Helpers bar - now "Mechanic Helper" (on = filled green diamond, off =
+       hollow red). Settings > Appearance > Over the game: the look, an opacity slider each (timer, helper - new
+       cfg hopacity - and Notes), applied at once; still moved by the title bar and locked with its lock.
+       Remnant: hovering a reward put the game's tooltip over the book, the next read found fewer rewards and their
+       tags vanished under the mouse. Now tags only come or update while the book is open (remnant_keep); the book
+       closing clears them. The runeshape tips were placed from where the tags were on screen - nowhere yet on the
+       first show - so they only came with a later redraw; now placed from the tags' own positions, shown with the
+       first prices, parchment too, and switched on / off in Settings as well. test_v2430.
   2.42.0
        Price checks: separate lists. Manual Add (Ctrl+Alt+C copies) and Stash tab results no longer mix: each record
        has a src ("manual" or "tab:<id>") and the list shows only the one picked. Stash tab gets its own tabs (one
@@ -1190,7 +1201,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.42.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.43.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 

@@ -18,6 +18,29 @@ EDGE = 4
 OUTLINE = "#5b77ad"              # the same 1px outline as the app's windows
 BODY_BG = "#0d1424"
 
+# ---- 2.43.0: the look of the windows over the game (Settings > Appearance > Over the game). "parchment" is like the
+# Expedition remnant's reward book: parchment in a dark leather binding, ink text. "classic" is the dark look of 2.42.
+LOOKS = {"parchment": "Parchment (like the remnant book)", "classic": "Classic dark"}
+LOOK = ["parchment"]
+SERIF = "Palatino Linotype"
+PALETTES = {
+    "parchment": {"leather": "#2a1f16", "bg": "#dccaa0", "head": "#4a3520", "text": "#2e2216", "muted": "#5d4630",
+                  "line": "#a88a5c", "on": "#1f5a1a", "off": "#a3281b", "warn": "#6e4404", "field": "#e8dab8",
+                  "big": "#2e2216", "font": SERIF},
+    "classic": {"leather": BORDER_OFF, "bg": BODY_BG, "head": "#ffe2b8", "text": "#e8eefc", "muted": "#9fb0cc",
+                "line": "#8a6a3a", "on": "#5ee08a", "off": "#ff5c5c", "warn": "#ffb347", "field": BODY_BG,
+                "big": "#ffd9a8", "font": "Segoe UI"},
+}
+
+
+def pal():
+    """The colours (and font) of the windows over the game, for their content."""
+    return PALETTES.get(LOOK[0], PALETTES["parchment"])
+
+
+def parchment():
+    return LOOK[0] == "parchment"
+
 # ---- over-the-game windows only show while the game is in front (2.0 beta 15)
 GAME_ONLY = [True]                # Settings > Window: "only while Path of Exile 2 is in front"
 GAME_TITLE = ["Path of Exile 2"]  # the Chat commands window's game title
@@ -85,6 +108,13 @@ def resync():
 
 
 class OverlayWindow(tk.Toplevel):
+    def set_opacity(self, opacity):
+        """2.43.0: Settings > Appearance > Over the game: applied at once."""
+        try:
+            self.attributes("-alpha", max(0.15, min(1.0, int(opacity) / 255)))
+        except Exception:
+            pass
+
     def __init__(self, root, title, icon, geo, *, opacity=230, locked=False, body_bg=BODY_BG, min_size=(140, 60),
                  on_close=None, on_lock=None, on_moved=None, drag_body=False, app_colours=False, lockable=True,
                  follow_game=False, no_activate=False, resizable=True):
@@ -93,7 +123,13 @@ class OverlayWindow(tk.Toplevel):
         follow_game: only visible while the game (or the window itself) is in front; show() / hide() say whether you want it.
         no_activate: clicking it never takes the keyboard away from the game (for windows you don't type in).
         resizable=False: always the size of its content (2.38.0: the Helpers bar)."""
-        super().__init__(root, bg=BORDER_OFF, highlightthickness=1, highlightbackground=OUTLINE)
+        parch = parchment() and not app_colours           # 2.43.0: the remnant book's look
+        P = pal()
+        if parch:
+            body_bg = P["bg"]
+        super().__init__(root, bg=P["leather"] if parch else BORDER_OFF, highlightthickness=1,
+                         highlightbackground="#000000" if parch else OUTLINE)
+        self.parch = parch
         self.overrideredirect(True)
         try:
             self.attributes("-topmost", True)
@@ -109,21 +145,29 @@ class OverlayWindow(tk.Toplevel):
         self.on_moved, self.on_lock, self.on_close = on_moved, on_lock, on_close
         edge = 0 if self.locked else EDGE
         inner = tk.Frame(self, bg=body_bg)
+        if parch:                                         # the leather binding shows round the page, locked or not
+            edge = EDGE
         inner.pack(fill="both", expand=True, padx=edge, pady=edge)
         title_fg, btn_bg, btn_line, accent = (("#ffffff", "#22345a", "#5b77ad", C["accent"]) if app_colours else
+                                              (P["head"], P["bg"], P["bg"], P["line"]) if parch else
                                               ("#ffe2b8", "#3a3020", "#6a5a3a", "#8a6a3a"))
-        self.bar = GradientBar(inner, BAR_H, TITLE_ON if app_colours else UTIL_TITLE)
+        if parch:                                         # (wide enough for its title and buttons)
+            from tkinter import font as tkfont
+            need = tkfont.Font(root=root, family=SERIF, size=10, weight="bold").measure(title) + 16 + 24 * (2 if lockable else 1)
+            self.bar = tk.Canvas(inner, height=BAR_H, width=need, bg=P["bg"], highlightthickness=0)
+        else:
+            self.bar = GradientBar(inner, BAR_H, TITLE_ON if app_colours else UTIL_TITLE)
         self.bar.pack(fill="x")
         self.bar.configure(cursor="" if self.locked else "fleur")
-        self.bar.create_text(8, BAR_H // 2, text=f"{icon}  {title}", anchor="w", fill=title_fg,
-                             font=("Segoe UI", 9, "bold"))
+        self.bar.create_text(8, BAR_H // 2, text=title if parch else f"{icon}  {title}", anchor="w", fill=title_fg,
+                             font=(SERIF, 10, "bold") if parch else ("Segoe UI", 9, "bold"))
         self._btns = []
-        buttons = [("×", self._close, "#7a2a20")]
+        buttons = [("×", self._close, btn_bg if parch else "#7a2a20")]
         if lockable:
             buttons.append(("🔒" if self.locked else "🔓", self._toggle_lock, btn_bg))
         for txt, cmd, bg in buttons:
-            b = tk.Label(self.bar, text=txt, bg=bg, fg=title_fg, font=("Segoe UI", 9, "bold"), width=2,
-                         highlightthickness=1, highlightbackground=btn_line, cursor="hand2")
+            b = tk.Label(self.bar, text=txt, bg=bg, fg=P["muted"] if parch else title_fg, font=("Segoe UI", 9, "bold"),
+                         width=2, highlightthickness=0 if parch else 1, highlightbackground=btn_line, cursor="hand2")
             b.bind("<Button-1>", lambda e, c=cmd: c())
             self._btns.append(self.bar.create_window(0, BAR_H // 2, window=b, anchor="e"))
         self.bar.bind("<Configure>", self._place_btns, add="+")
@@ -244,7 +288,7 @@ class OverlayWindow(tk.Toplevel):
                             ("sw", "bottom_left_corner", dict(x=0, rely=1, y=-k, width=EDGE, height=k)),
                             ("se", "bottom_right_corner", dict(relx=1, x=-k, rely=1, y=-EDGE, width=k, height=EDGE)),
                             ("se", "bottom_right_corner", dict(relx=1, x=-EDGE, rely=1, y=-k, width=EDGE, height=k))):
-            h = tk.Frame(self, bg=BORDER_OFF, cursor=cur)
+            h = tk.Frame(self, bg=pal()["leather"] if self.parch else BORDER_OFF, cursor=cur)
             h.place(**kw)
             self.resizer(h, sd)
 

@@ -21,6 +21,14 @@ NEXT = [
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.43.0": [
+        "New look for the Session timer, Notes and the Mechanic Helper bar (was Helpers): parchment, like the "
+        "remnant's reward book. Prefer the old dark look? Settings > Appearance > Over the game.",
+        "Settings > Appearance > Over the game: how see-through each of them is. They still move by their title bar "
+        "and lock with the lock.",
+        "Remnant prices stay while the book is open - hovering a reward no longer makes its price vanish. The "
+        "runeshape tips show with the first prices, and can be switched off in Settings too.",
+    ],
     "2.42.0": [
         "Price checks: Manual Add and Stash tab now keep separate lists - switch between them at the top.",
         "Stash tab has its own tabs, one per stash tab you price (each remembers its price). Press ＋ Tab to add "
