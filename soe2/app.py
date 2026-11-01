@@ -2093,7 +2093,8 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         if not item:
             self.not_priceable_yet(text)
             return
-        same = [r for r in self.records.values() if self.item_sig(r["item"]) == self.item_sig(item)]
+        same = [r for r in self.records.values() if self.item_sig(r["item"]) == self.item_sig(item)
+                and r.get("src", "manual") == "manual"]           # 2.42.0: your own list (not a stash tab's)
         if same:                                                 # exact same name + exact same mods: ask
             self.dup_pending.append((text, item, same[-1], len(same)))
             if not self.dup_win:
@@ -2295,15 +2296,19 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         """A copied item the price checker can price: tablets and jewels (their own checker), or any gear (1.41)."""
         return parse_item(text) or waystone.parse_waystone(text) or gear.parse_gear(text)
 
-    def add_item_text(self, text):
+    def add_item_text(self, text, src=None):
         item = self.read_any(text)
         if not item:
             return None
+        src = src or "manual"                  # 2.42.0: which list it belongs to ("manual" or "tab:<id>")
+        if src == "manual" and self.list_src() != "manual" and hasattr(self, "pc_mode"):
+            self.pc_mode.pick("Manual Add")     # a Ctrl+Alt+C while a stash tab's list shows: show yours
+            self.pctab_mode()
         rid = self.next_id
         self.next_id += 1
         self.records[rid] = {"id": rid, "item": item, "state": "queued", "label": "", "total": 0,
                              "prices": [], "est": None, "qid": None, "time": time.time(), "resolved": False,
-                             "mark": "new", "raw": text}
+                             "mark": "new", "raw": text, "src": src}
         self.dirty = True
         self.batch_ids.add(rid)
         self.root.title(APP_TITLE)
@@ -2446,7 +2451,11 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
     # ---------------- tracking: listed / removed, names, views
     def visible(self, rec):
         want = self.VIEW_MARK.get(SETTINGS.get("view", "Not yet listed"))
-        return (want is None or rec.get("mark", "new") == want) and self.cat_ok(rec)
+        return (rec.get("src", "manual") == self.list_src()             # 2.42.0: this list only
+                and (want is None or rec.get("mark", "new") == want) and self.cat_ok(rec))
+
+    def in_list(self, rec):
+        return rec.get("src", "manual") == self.list_src()
 
     # ---------------- list filters by category / rarity / type (2.0 beta 3)
     ALL_CATS = "All items"
@@ -2486,7 +2495,7 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         if not hasattr(self, "cat_box"):
             return
         want = self.VIEW_MARK.get(SETTINGS.get("view", "Not yet listed"))
-        recs = [r for r in self.records.values() if want is None or r.get("mark", "new") == want]
+        recs = [r for r in self.records.values() if (want is None or r.get("mark", "new") == want) and self.in_list(r)]
         cats = {}
         for r in recs:
             c, ra, t = self.rec_cat(r)
@@ -2506,7 +2515,8 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         self.rar_box.configure(state=state)
         self.type_box.configure(state=state)
         shown = sum(1 for r in self.records.values() if self.visible(r))
-        self.cat_count.config(text=f"Showing {shown} of {len(self.records)} items" if self.records else "")
+        mine = sum(1 for r in self.records.values() if self.in_list(r))
+        self.cat_count.config(text=f"Showing {shown} of {mine} items" if mine else "")
 
     def on_cat(self, changed="cat"):
         if changed == "cat":
@@ -2547,7 +2557,8 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
             self.empty_lbl.place_forget()
         else:
             self.empty_lbl.config(text=("Nothing in this view." + (" Press Clear filters to see every item." if self.cat_var.get() != self.ALL_CATS else ""))
-                                  if self.records else self.empty_text)
+                                  if any(self.in_list(r) for r in self.records.values())
+                                  else self.pctab_empty_text() if self.list_src() != "manual" else self.empty_text)
             self.empty_lbl.place(relx=0.5, rely=0.45, anchor="center")
         self.update_total()
 
@@ -2733,7 +2744,7 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
             self.engine.add(2 if rec["resolved"] else 1, "price" if rec["resolved"] else "resolve", rid)
 
     def reprice_all(self):
-        self.reprice([rid for rid, r in self.records.items() if r.get("mark", "new") == "new"])
+        self.reprice([rid for rid, r in self.records.items() if r.get("mark", "new") == "new" and self.in_list(r)])
 
     def on_listing_rules(self, _e=None):
         SETTINGS["status"], SETTINGS["age"] = self.status_var.get(), self.age_var.get()
@@ -3539,9 +3550,22 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
                   f"{'them' if n != 1 else 'it'} back.", 12)
 
     def clear(self):
-        if self.records and not messagebox.askyesno("Clear list", "Remove all items from the list?\n(The mod book is kept.)"):
+        """Clear the list you're looking at (2.42.0: Manual Add, or one stash tab's list - the others stay)."""
+        mine = [rid for rid, r in self.records.items() if self.in_list(r)]
+        src = self.list_src()
+        what = "this tab's list" if src != "manual" else "the Manual Add list"
+        if mine and not messagebox.askyesno("Clear list", f"Remove all items from {what}?\n(The mod book is kept.)"):
             return
-        self.records.clear()
+        for rid in mine:
+            del self.records[rid]
+        if src != "manual":                          # (the rest below is about your own copies)
+            self.dirty = True
+            self.tree.delete(*self.tree.get_children())
+            self.update_total()
+            self.show_detail(None)
+            if hasattr(self, "pctab_bar"):
+                self.pctab_bar()
+            return
         if hasattr(self, "cat_var"):
             self.cat_var.set(self.ALL_CATS)
         self.dup_pending.clear()

@@ -21,6 +21,11 @@ NEXT = [
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.42.0": [
+        "Price checks: Manual Add and Stash tab now keep separate lists - switch between them at the top.",
+        "Stash tab has its own tabs, one per stash tab you price (each remembers its price). Press ＋ Tab to add "
+        "one; right-click a tab to rename or delete it.",
+    ],
     "2.41.0": [
         "Waystone prices are more realistic: when only a few match, the price is the cheapest real offer (not the "
         "middle one), and it never says High confidence from a handful of listings.",

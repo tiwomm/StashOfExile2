@@ -4,7 +4,7 @@ import tkinter as tk
 from tkinter import ttk
 
 from .config import save_json, SETTINGS
-from .style import C, SegBar
+from .style import C, SegBar, Tooltip
 from .tabreader import PCTAB
 from .wealth import parse_price_text, parse_trade_link, WEALTH_CURRENCIES
 
@@ -37,6 +37,9 @@ class TabReaderPage:
         self.pc_mode.pack(side="left")
         self.pc_mode_hint = tk.Label(mrow, text="", bg=P1, fg=C["muted"], font=("Segoe UI", 9))
         self.pc_mode_hint.pack(side="left", padx=8)
+        # ---- 2.42.0: your stash tabs, one list each (shown in Stash tab mode)
+        self.pc_tabsrow = tk.Frame(tb, bg=P1, padx=8, pady=0)
+        self.pctab_tabs()                                # (moves an older single tab into the list)
         # ---- the Stash tab row (shown in that mode)
         row = tk.Frame(tb, bg=P1, padx=8, pady=4)
         self.pc_tabrow = row
@@ -84,10 +87,12 @@ class TabReaderPage:
         cfg["mode"] = mode
         if save:
             save_json("settings.json", SETTINGS)
-        if not self.records and hasattr(self, "empty_lbl"):
-            self.empty_lbl.config(text=self.empty_text)
+        if hasattr(self, "empty_lbl") and not any(r.get("src", "manual") == self.list_src() for r in self.records.values()):
+            self.empty_lbl.config(text=self.empty_text if self.list_src() == "manual" else self.pctab_empty_text())
         if mode == "Stash tab":
-            self.pc_tabrow.pack(fill="x", after=self.pc_tabrow_after)
+            self.pc_tabsrow.pack(fill="x", after=self.pc_tabrow_after)
+            self.pctab_bar()
+            self.pc_tabrow.pack(fill="x", after=self.pc_tabsrow)
             self.pc_beta.pack(fill="x", after=self.pc_tabrow, padx=8, pady=(2, 0))
             self.pc_msg.pack(fill="x", after=self.pc_beta)
             self.pc_mode_hint.config(text="reads a public stash tab and adds what it can (Ctrl+Alt+C still works)")
@@ -96,10 +101,152 @@ class TabReaderPage:
                                         "pay (like 37882 Divine Orbs). Type that price here and press Read tab.",
                                    fg=C["muted"])
         else:
+            self.pc_tabsrow.pack_forget()
             self.pc_tabrow.pack_forget()
             self.pc_beta.pack_forget()
             self.pc_msg.pack_forget()
             self.pc_mode_hint.config(text="hover an item in game and press Ctrl+Alt+C")
+
+        if hasattr(self, "tree") and save:                # 2.42.0: each mode has its own list
+            self.list_switched()
+
+    # ---------------- 2.42.0: separate lists - Manual Add, and one per stash tab
+    def list_src(self):
+        """Which list the Price checks window shows: "manual", or "tab:<id>" for a stash tab."""
+        cfg = SETTINGS.get("pctab") or {}
+        if cfg.get("mode") != "Stash tab":
+            return "manual"
+        t = self.pctab_current()
+        return f"tab:{t['id']}" if t else "manual"
+
+    def list_switched(self):
+        try:
+            self.cat_var.set(self.ALL_CATS)
+            self.rar_var.set("All")
+            self.type_var.set("All")
+            self.rebuild_tree()
+            self.cat_refresh()
+            self.clear_btn_state()
+        except Exception:
+            pass
+
+    def pctab_tabs(self):
+        """[{id, name, amount, currency, currency_name}] - your stash tabs. An older single tab becomes "Tab 1"."""
+        cfg = SETTINGS.setdefault("pctab", {})
+        tabs = cfg.get("tabs")
+        if not isinstance(tabs, list) or not tabs:
+            tabs = [{"id": "t1", "name": "Tab 1", "amount": cfg.get("amount"), "currency": cfg.get("currency") or "divine",
+                     "currency_name": cfg.get("currency_name")}]
+            cfg["tabs"], cfg["current"] = tabs, "t1"
+        if cfg.get("current") not in [t["id"] for t in tabs]:
+            cfg["current"] = tabs[0]["id"]
+        return tabs
+
+    def pctab_current(self):
+        cfg = SETTINGS.get("pctab") or {}
+        return next((t for t in self.pctab_tabs() if t["id"] == cfg.get("current")), None)
+
+    def pctab_bar(self):
+        """The row of your tabs: pick one to see its list and its price; ＋ adds one; right-click renames / deletes."""
+        for w in self.pc_tabsrow.winfo_children():
+            w.destroy()
+        P1 = C["panel"]
+        tabs = self.pctab_tabs()
+        tk.Label(self.pc_tabsrow, text="Your tabs", bg=P1, fg=C["muted"]).pack(side="left", padx=(0, 8))
+        names = [t["name"] for t in tabs]
+        counts = {}
+        for r in getattr(self, "records", {}).values():
+            counts[r.get("src", "manual")] = counts.get(r.get("src", "manual"), 0) + 1
+        label = {t["name"]: f"{t['name']} ({counts.get('tab:' + t['id'], 0)})" for t in tabs}
+        cur = self.pctab_current()
+        self.pc_tabs = SegBar(self.pc_tabsrow, [label[n] for n in names], value=label[cur["name"]],
+                              command=lambda v: self.pctab_pick(v), size=9, pad=(12, 4))
+        self.pc_tabs.pack(side="left")
+        for t, (lab, _line) in zip(tabs, [self.pc_tabs.btns[label[n]] for n in names]):
+            lab.bind("<Button-3>", lambda e, tid=t["id"]: self.pctab_tab_menu(e, tid))
+            Tooltip(lab, f"{t['name']}: priced {t.get('amount') or '?'} {t.get('currency_name') or t.get('currency')}"
+                         " in game · right-click to rename or delete")
+        add = tk.Label(self.pc_tabsrow, text="＋ Tab", bg=P1, fg="#6ea8ff", cursor="hand2",
+                       font=("Segoe UI", 9, "underline"))
+        add.pack(side="left", padx=(8, 0))
+        add.bind("<Button-1>", lambda e: self.pctab_new())
+        Tooltip(add, "Another stash tab, with its own price and its own list")
+
+    def pctab_empty_text(self):
+        t = self.pctab_current()
+        return (f"{t['name'] if t else 'This tab'} has nothing in its list yet.\n"
+                "Type the price the tab has in game, then press Read tab.")
+
+    def pctab_pick(self, label):
+        tabs = self.pctab_tabs()
+        t = next((t for t in tabs if label.startswith(t["name"] + " (") or label == t["name"]), None)
+        if not t:
+            return
+        cfg = SETTINGS.setdefault("pctab", {})
+        cfg["current"] = t["id"]
+        save_json("settings.json", SETTINGS)
+        self.pc_amt.set(str(t.get("amount") or ""))
+        self.pc_cur.set(dict(WEALTH_CURRENCIES).get(t.get("currency")) or t.get("currency_name")
+                        or KNOWN_CURRENCY_NAMES.get(t.get("currency"), "Divine Orb"))
+        self.pc_msg.config(text="", fg=C["muted"])
+        self.list_switched()
+
+    def pctab_new(self):
+        tabs = self.pctab_tabs()
+        n = len(tabs) + 1
+        while any(t["name"] == f"Tab {n}" for t in tabs):
+            n += 1
+        tid = f"t{max([int(t['id'][1:]) for t in tabs if t['id'][1:].isdigit()] + [0]) + 1}"
+        tabs.append({"id": tid, "name": f"Tab {n}", "amount": None, "currency": "divine", "currency_name": "Divine Orb"})
+        SETTINGS["pctab"]["current"] = tid
+        save_json("settings.json", SETTINGS)
+        self.pc_amt.set("")
+        self.pc_cur.set("Divine Orb")
+        self.pctab_bar()
+        self.list_switched()
+        self.pc_msg.config(text=f"Tab {n}: give that stash tab its own price in game, type it here and press Read tab.",
+                           fg=C["muted"])
+
+    def pctab_tab_menu(self, e, tid):
+        m = tk.Menu(self.root, tearoff=0, bg=C["panel2"], fg=C["text"], activebackground="#2c4a84",
+                    activeforeground="#ffffff")
+        m.add_command(label="Rename…", command=lambda: self.pctab_rename(tid))
+        m.add_command(label="Delete this tab and its list", command=lambda: self.pctab_delete(tid),
+                      state="normal" if len(self.pctab_tabs()) > 1 else "disabled")
+        m.tk_popup(e.x_root, e.y_root)
+
+    def pctab_rename(self, tid):
+        from tkinter import simpledialog
+        t = next((t for t in self.pctab_tabs() if t["id"] == tid), None)
+        if not t:
+            return
+        name = simpledialog.askstring("Rename tab", "Name:", initialvalue=t["name"], parent=self.dlg_parent())
+        name = (name or "").strip()[:24]
+        if name and not any(o["name"] == name for o in self.pctab_tabs() if o is not t):
+            t["name"] = name
+            save_json("settings.json", SETTINGS)
+            self.pctab_bar()
+
+    def pctab_delete(self, tid):
+        from tkinter import messagebox
+        tabs = self.pctab_tabs()
+        t = next((t for t in tabs if t["id"] == tid), None)
+        if not t or len(tabs) < 2:
+            return
+        n = sum(1 for r in self.records.values() if r.get("src") == f"tab:{tid}")
+        if n and not messagebox.askyesno("Delete tab", f"Delete {t['name']} and its {n} item(s) from the list?",
+                                         parent=self.dlg_parent()):
+            return
+        for rid in [rid for rid, r in self.records.items() if r.get("src") == f"tab:{tid}"]:
+            del self.records[rid]
+        tabs.remove(t)
+        cfg = SETTINGS["pctab"]
+        if cfg.get("current") == tid:
+            cfg["current"] = tabs[0]["id"]
+        self.dirty = True
+        save_json("settings.json", SETTINGS)
+        self.pctab_pick(tabs[0]["name"])
+        self.pctab_bar()
 
     def pctab_wealth_link(self):
         """Show "Count it in Wealth" once a tab was read and Wealth doesn't have it yet."""
@@ -186,6 +333,10 @@ class TabReaderPage:
             cur = cur or self.pctab_cur_id() or "divine"
         cfg = SETTINGS.setdefault("pctab", {})
         cfg.update(amount=amount, currency=cur)
+        t = self.pctab_current()                       # 2.42.0: this tab's price
+        if t is not None:
+            t.update(amount=amount, currency=cur, currency_name=self.pc_cur.get())
+            PCTAB["src"] = f"tab:{t['id']}"
         if dict(WEALTH_CURRENCIES).get(cur):
             cfg["currency_name"] = dict(WEALTH_CURRENCIES)[cur]
         from .market import remember_marker
@@ -223,18 +374,17 @@ class TabReaderPage:
         st.setdefault("failed", 0)
         first = " / ".join(l for l in text.splitlines()[2:4] if l and not l.startswith("--"))
         try:
-            if hash(text.strip()) in self.seen_texts:
-                st["already"] += 1
-                return PCTAB["log"].append(f"already in the list: {first}")
+            src = PCTAB.get("src") or self.list_src()     # 2.42.0: into this tab's own list
             item = self.read_any(text)
             if not item:
                 st["unreadable"] += 1
                 return PCTAB["log"].append(f"the price checker can't read it: {first}\n    " +
                                           text.replace("\n", "\n    "))
-            if any(self.item_sig(r["item"]) == self.item_sig(item) for r in self.records.values()):
+            if any(self.item_sig(r["item"]) == self.item_sig(item) for r in self.records.values()
+                   if r.get("src", "manual") == src):
                 st["already"] += 1
-                return PCTAB["log"].append(f"already in the list: {first}")
-            if self.add_item_text(text):
+                return PCTAB["log"].append(f"already in this tab's list: {first}")
+            if self.add_item_text(text, src=src):
                 st["added"] += 1
                 PCTAB["log"].append(f"added: {first}")
             else:
@@ -247,6 +397,13 @@ class TabReaderPage:
             self.log_error("adding an item from the stash tab")
 
     def pctab_finished(self, stopped=False):
+        try:
+            self.root.after(50, self.pctab_bar)        # 2.42.0: the tab's count on its button
+        except Exception:
+            pass
+        self._pctab_finished(stopped)
+
+    def _pctab_finished(self, stopped=False):
         st = getattr(self, "_pctab", {"added": 0, "already": 0, "unreadable": 0})
         self.pc_read_btn.config(state="normal")
         self.pc_stop.config(state="disabled")
