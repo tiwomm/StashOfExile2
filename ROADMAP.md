@@ -1,6 +1,6 @@
 # StashOfExile2 roadmap
 
-**Current version: 2.33.0**
+**Current version: 2.33.1**
 
 Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds features, 2.10.1 only fixes. Each step below is one release; we work through them top to bottom.
 
@@ -53,6 +53,7 @@ Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds f
 | 2.31.0 | Community Mod book: pooled mod prices (anonymous, hourly) and community ratings; Stash tab marked BETA; Ritual Capture, Lag finder and the toolbar "Ctrl+Alt+C only" box removed. |
 | 2.32.0 | Map library: every endgame area (maps, citadels, pinnacles, league areas), ranks S-D / Avoid, export / import, community ranks; the tracker counts pinnacles and learns new areas. |
 | 2.33.0 | Child tools: one layout rule for the whole app (below). Map library under Session tracker; Mod book, Under the hood, Market Insights under Price checks. |
+| 2.33.1 | Map library: ✖ Avoid button no longer cut off. |
 
 ## ▶ Next up
 
