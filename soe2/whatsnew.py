@@ -21,6 +21,11 @@ NEXT = [
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.48.0": [
+        "The taskbar shows ⬆ Update when a new version is out - whatever window you're in.",
+        "🐞 Report a bug on the taskbar: describe it, see exactly what's sent, and it lands on GitHub for the "
+        "developer.",
+    ],
     "2.47.0": [
         "Overlays › Look has four Path of Exile 2 styles: Runeshape parchment (now with real grunge, and the clean "
         "layout from the mockup), Relic tooltip, Carved frame and Quiet HUD - or the old Classic dark.",

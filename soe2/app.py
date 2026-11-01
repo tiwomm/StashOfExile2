@@ -62,6 +62,7 @@ from .moneymakers_page import MoneyMakersPage
 from .maplib_page import MapLibraryPage
 from .remnant_page import RemnantPage         # 2.37.0: Expedition Remnant Price Checker
 from .ledger_page import LedgerPage           # 2.45.0: Money Makers > Farm Ledger
+from .feedback_page import FeedbackPage       # 2.48.0: the update badge and Report a bug (taskbar)
 from .utilities_page import UtilitiesPage
 from .tracker_page import TrackerPage
 from .search_page import SearchPage
@@ -73,7 +74,7 @@ from .shell import Shell
 from .config import PAGE_CHECKS       # 1.40: was "Items"
 
 
-class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, ExchangePage, WealthSetup, WealthPage, LibraryPage, RegexPage, UtilitiesPage, TrackerPage, SearchPage, CalcPage, InsightsPage, MoneyMakersPage, MapLibraryPage, RemnantPage, LedgerPage):
+class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, ExchangePage, WealthSetup, WealthPage, LibraryPage, RegexPage, UtilitiesPage, TrackerPage, SearchPage, CalcPage, InsightsPage, MoneyMakersPage, MapLibraryPage, RemnantPage, LedgerPage, FeedbackPage):
     COLS = [("added", "#", 46, "e"), ("name", "Item", 220, "w"), ("type", "Type", 110, "w"), ("mark", "Status", 90, "center"),
             ("est", "Est. value", 110, "e"), ("conf", "Confidence", 95, "center"), ("listings", "Listings", 70, "e"), ("priced", "Priced at", 130, "w"),
             ("match", "How it was priced", 300, "w"), ("vmods", "Valuable mods", 100, "center")]
@@ -393,6 +394,7 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         self.league_chip.bind("<Button-1>", lambda e: self.shell.open("settings"))
         self.league_var.trace_add("write", lambda *a: self._league_chip())
         self._league_chip()
+        self.build_feedback()                                  # 2.48.0: ⬆ Update badge, 🐞 Report a bug
         self.shell.make_task_dots()
         self.pin_lbl = tk.Label(self.shell.task_right, text="📌", bg=tb, font=("Segoe UI Emoji", 10), cursor="hand2")
         self.pin_lbl.pack(side="left", padx=(8, 0), before=self.shell.clock)
@@ -1451,6 +1453,8 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
 
     def ev_update(self, kind, data):
         self._upd_done()
+        if kind == "ok" and hasattr(self, "upd_badge"):            # 2.48.0: the taskbar badge follows every check
+            self.ev_update_badge(data.get("tag_name"))
         mode = getattr(self, "_upd_mode", "ask")
         if mode != "ask":                                   # automatic check at start: quiet unless there is news
             if kind != "ok" or not is_newer(data.get("tag_name", ""), APP_VERSION):

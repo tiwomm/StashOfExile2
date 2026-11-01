@@ -381,6 +381,40 @@ async function modRatings(env) {
   return json({ ratings: rows.results.map((r) => [r.key, r.high, r.normal, r.ignore]) });
 }
 
+// ------------------------------------------------------------------ bug reports (2.48.0)
+// The app's "Report a bug" posts here; the Worker opens a GitHub issue with its own token (the GITHUB_TOKEN secret -
+// the app never holds one) and, with a DISCORD_WEBHOOK secret, tells Discord. No sign-in; BUGS_PER_DAY per address.
+async function bugReport(req, env) {
+  if (!env.GITHUB_TOKEN) return fail(503, "Bug reports aren't set up on the board yet.");
+  const b = await readBody(req);
+  const title = String(b.title || "").trim().slice(0, 120);
+  const text = String(b.body || "").trim().slice(0, 20000);
+  const version = String(b.version || "?").slice(0, 30);
+  if (title.length < 4 || text.length < 10) return fail(400, "Say what happened (a title and a few words).");
+  const day = new Date().toISOString().slice(0, 10);
+  const ip = await sha256((req.headers.get("cf-connecting-ip") || "local") + "|bug|" + day);
+  await env.DB.prepare("DELETE FROM bug_limits WHERE day <> ?").bind(day).run();
+  const seen = await env.DB.prepare("SELECT n FROM bug_limits WHERE ip = ?").bind(ip).first();
+  if (seen && seen.n >= Number(env.BUGS_PER_DAY || 5)) return fail(429, "That's a lot of reports today - try tomorrow.");
+  await env.DB.prepare("INSERT INTO bug_limits (ip, n, day) VALUES (?, 1, ?) ON CONFLICT(ip) DO UPDATE SET n = n + 1").bind(ip, day).run();
+  const repo = env.GITHUB_REPO || "tiwomm/StashOfExile2";
+  const r = await fetch(`https://api.github.com/repos/${repo}/issues`, {
+    method: "POST",
+    headers: { authorization: `Bearer ${env.GITHUB_TOKEN}`, accept: "application/vnd.github+json",
+      "user-agent": "soe2-board", "content-type": "application/json" },
+    body: JSON.stringify({ title: `[Bug] ${title}`, labels: ["bug", "from the app"],
+      body: `${text}\n\n---\nSent from StashOfExile2 ${version} (Report a bug).` }),
+  });
+  if (!r.ok) return fail(502, `GitHub said ${r.status}.`);
+  const issue = await r.json();
+  if (env.DISCORD_WEBHOOK) {
+    await fetch(env.DISCORD_WEBHOOK, { method: "POST", headers: { "content-type": "application/json" },
+      body: JSON.stringify({ content: `🐞 New bug report #${issue.number} (v${version}): ${title}\n${issue.html_url}` }) })
+      .catch(() => {});
+  }
+  return json({ number: issue.number, url: issue.html_url }, 201);
+}
+
 // ------------------------------------------------------------------ routing
 export default {
   async fetch(req, env) {
@@ -395,6 +429,7 @@ export default {
       if (path === "/mods/stats") return modStats(url, env);
       if (path === "/mods/ratings") return modRatings(env);
       if (path === "/maps/ratings") return mapRatings(env);
+      if (path === "/bugs" && req.method === "POST") return bugReport(req, env);
       const me = await who(req, env);
       if (path === "/me") return me ? json({ user: me }) : fail(401, "sign in first");
       if (path === "/auth/logout" && req.method === "POST") {

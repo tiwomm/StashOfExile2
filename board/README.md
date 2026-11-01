@@ -33,6 +33,8 @@ accounts.
    | `CLOUDFLARE_ACCOUNT_ID` | the Account ID from step 3 |
    | `D1_ID` | the Database ID from step 2 |
    | `ADMIN_KEY` | a long password you make up (at least 8 characters). In the app, use 👤 › Become admin. |
+   | `BUGS_GITHUB_TOKEN` | 2.48.0, optional: lets the app's **🐞 Report a bug** open GitHub issues. GitHub › Settings › Developer settings › Personal access tokens › **Fine-grained** › Generate: only this repository, permission **Issues: Read and write**, nothing else. Without it, Report a bug opens GitHub's new-issue page in the player's browser instead. |
+   | `DISCORD_WEBHOOK` | 2.48.0, optional: tells your Discord about every new issue (from the app or opened on GitHub). Discord › Server Settings › Integrations › Webhooks › New Webhook › pick the channel › **Copy Webhook URL**. |
 
 5. **Deploy.** It runs by itself when `board/` changes on main. To run it by hand, go to
    **Actions › Deploy community board › Run workflow**.
@@ -54,6 +56,7 @@ Put test values in `board/.dev.vars`, e.g. `ADMIN_KEY=...`, `REPORT_HIDE=2`, `JO
 
 | Call | What |
 |---|---|
+| `POST /bugs` `{title, body, version}` | 2.48.0: a bug report → a GitHub issue `{number, url}` (needs the `GITHUB_TOKEN` Worker secret; 5 a day per address) |
 | `POST /auth/join` `{name}` | a new board account → `{token, user}`. Send `Authorization: Bearer <token>` after that. |
 | `POST /auth/rename` `{name}` · `POST /auth/admin` `{key}` · `POST /auth/logout` | your account |
 | `GET /posts?kind=strat\|one&sort=top\|new&category&type&tag&q&limit&offset` | the board |

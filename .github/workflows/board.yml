@@ -47,3 +47,12 @@ jobs:
         run: |
           if [ -n "$ADMIN_KEY" ]; then printf '%s' "$ADMIN_KEY" | npx wrangler secret put ADMIN_KEY;
           else echo "No ADMIN_KEY secret: nobody can become admin until you add one."; fi
+      - name: Bug reports (2.48.0)
+        if: steps.ready.outputs.go == 'yes'
+        env:
+          BUGS_GITHUB_TOKEN: ${{ secrets.BUGS_GITHUB_TOKEN }}
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+        run: |
+          if [ -n "$BUGS_GITHUB_TOKEN" ]; then printf '%s' "$BUGS_GITHUB_TOKEN" | npx wrangler secret put GITHUB_TOKEN;
+          else echo "No BUGS_GITHUB_TOKEN secret: Report a bug opens GitHub in the browser instead."; fi
+          if [ -n "$DISCORD_WEBHOOK" ]; then printf '%s' "$DISCORD_WEBHOOK" | npx wrangler secret put DISCORD_WEBHOOK; fi
