@@ -112,16 +112,24 @@ def download_asset(asset, dest, progress=None):
     return True, "ok", verified
 
 
+# 2.26.3: runs hidden. It waits with ping (timeout needs a console: run hidden, it opened a new console window on
+# every try). After 15 s it force-closes what's left of the old exe (a helper's inner process could keep the file
+# locked forever), and after 90 tries it gives up quietly and writes why to update_log.txt next to the exe.
 SWAP_BAT = """@echo off
 set "OLD={old}"
 set "NEW={new}"
+set "IMG={image}"
 set /a n=0
 :wait
 set /a n+=1
-if %n% gtr 90 exit /b 1
-timeout /t 1 /nobreak >nul
+if %n% gtr 90 goto fail
+ping -n 2 127.0.0.1 >nul
+if %n% equ 15 taskkill /f /t /im "%IMG%" >nul 2>&1
 move /y "%NEW%" "%OLD%" >nul 2>&1
 if errorlevel 1 goto wait
 start "" "%OLD%"
+(goto) 2>nul & del "%~f0"
+:fail
+echo %date% %time% the update could not replace "%OLD%" (still in use) - the new version is "%NEW%">>"%~dp0update_log.txt"
 (goto) 2>nul & del "%~f0"
 """

@@ -1381,7 +1381,7 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         bat = os.path.join(os.path.dirname(old), "StashOfExile2_update.bat")
         try:
             with open(bat, "w", encoding="utf-8") as f:
-                f.write(SWAP_BAT.format(old=old, new=dest))
+                f.write(SWAP_BAT.format(old=old, new=dest, image=os.path.basename(old)))
             import subprocess
             env = dict(os.environ, PYINSTALLER_RESET_ENVIRONMENT="1")
             subprocess.Popen(["cmd", "/c", bat], creationflags=0x08000000 | 0x00000008, close_fds=True, env=env)
@@ -1390,6 +1390,7 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
                                            "Close this program and replace the old file with it yourself.")
             return
         self.on_close()
+        os._exit(0)                                  # 2.26.3: really gone (no thread left keeping the exe in use)
 
     def bind_hotkeys(self):
         """C, O, F2 and Esc work only while THIS window is focused (the game uses those keys too).
