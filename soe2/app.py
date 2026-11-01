@@ -1059,7 +1059,12 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
             else:
                 cmd = [sys.executable, os.path.join(APP_DIR, "stashofexile2.py"), "--restarted"]
             flags = 0x00000008 | 0x00000200 if sys.platform == "win32" else 0     # detached, own process group
-            subprocess.Popen(cmd, close_fds=True, creationflags=flags, cwd=APP_DIR)
+            # 2.26.1: a fresh start of the one-file exe. Without this the new copy reused THIS copy's unpacked
+            # folder (PyInstaller passes it on to child processes), which is deleted when this one closes - then
+            # cv2 (Delirium / Ritual helpers) and the data files were gone: "No module named 'cv2'".
+            env = {k: v for k, v in os.environ.items() if not k.startswith(("_PYI_", "_MEIPASS"))}
+            env["PYINSTALLER_RESET_ENVIRONMENT"] = "1"
+            subprocess.Popen(cmd, close_fds=True, creationflags=flags, cwd=APP_DIR, env=env)
         except Exception as e:
             return self._say(f"Couldn't restart by itself ({e}); close and open the app to see the change.", 10)
         self.on_close()
