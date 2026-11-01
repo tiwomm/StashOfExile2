@@ -1,45 +1,37 @@
 # Money Makers Community board
 
-The server behind **Money Makers › Community** (2.30.0): players sign in with Discord, post strats and one-liners,
-upvote and report. Posts are live at once; 3 reports hide one until an admin looks at it. Admins can hide, delete,
-ban and **promote**, and promoted posts join everyone's **Official** list.
+The server behind **Money Makers › Community** (2.30.0). Players post strats and one-liners, upvote them and report
+them, with no login: the first time someone posts, votes or reports, the app asks for a display name and the board
+gives that install its own key. At most 5 new accounts a day are allowed per internet address, so votes can't be
+stuffed.
 
-It is a Cloudflare Worker (`src/index.js`) with a D1 database (`schema.sql`). The free plan covers it
-(100,000 requests a day). It stores only a player's Discord id, name and avatar.
+Posts are live at once; 3 reports hide one until an admin looks at it. Admins type the admin key once in the app.
+They can then hide, delete, ban and **promote**, and promoted posts join everyone's **Official** list.
 
-## One-time setup (about 15 minutes)
+It is a Cloudflare Worker (`src/index.js`) with a D1 database (`schema.sql`), and the free plan covers it. It stores a
+made-up player id and the display name. Internet addresses are only kept as a hash with the date, to count new
+accounts.
 
-1. **Cloudflare account.** Sign up free at <https://dash.cloudflare.com>. Open **Workers & Pages** once and
-   pick your `workers.dev` subdomain. Your board will live at `https://soe2-board.<subdomain>.workers.dev`.
-2. **Database.** In the dashboard, go to **Storage & Databases › D1 › Create**, name it `soe2-board`, and
-   copy its **Database ID**.
-3. **API token.** Go to **My Profile › API Tokens › Create Token** and use the **Edit Cloudflare Workers**
-   template. Add the permission **Account › D1 › Edit**, create the token, and copy it. Also copy your
-   **Account ID** (it's on the Workers & Pages overview, on the right).
-4. **Discord app.** At <https://discord.com/developers/applications>, click **New Application** and name it
-   `StashOfExile2`. Then, under **OAuth2**:
-   - Copy the **Client ID**.
-   - Click **Reset Secret** and copy the **Client Secret**.
-   - Under **Redirects**, add `https://soe2-board.<subdomain>.workers.dev/auth/callback`.
-5. **Your Discord id (to be admin).** In Discord, turn on **Settings › Advanced › Developer Mode**, then
-   right-click your own name and choose **Copy User ID**.
-6. **GitHub secrets.** In the repo, go to **Settings › Secrets and variables › Actions › New repository secret**
-   and add each of these:
+## One-time setup
+
+1. **Cloudflare account** (free). Open **Workers & Pages** once and pick your `workers.dev` subdomain.
+2. **Database.** Go to **Storage & Databases › D1 › Create**, name it `soe2-board`, and copy the Database ID.
+3. **API token.** Go to **My Profile › API Tokens › Create Token** and use the **Edit Cloudflare Workers** template.
+   Add the permission **Account › D1 › Edit**. Set Account Resources to your account and Zone Resources to all zones.
+   Copy the token, and copy your **Account ID** (Workers & Pages overview, on the right).
+4. **GitHub secrets.** Go to **Settings › Secrets and variables › Actions** and add:
 
    | Name | Value |
    |---|---|
    | `CLOUDFLARE_API_TOKEN` | the token from step 3 |
    | `CLOUDFLARE_ACCOUNT_ID` | the Account ID from step 3 |
    | `D1_ID` | the Database ID from step 2 |
-   | `DISCORD_CLIENT_ID` | from step 4 |
-   | `DISCORD_CLIENT_SECRET` | from step 4 |
-   | `ADMIN_IDS` | your Discord user id. For more admins, separate ids with commas. |
+   | `ADMIN_KEY` | a long password you make up (at least 8 characters). In the app, use 👤 › Become admin. |
 
-7. **Deploy.** Go to **Actions › Deploy community board › Run workflow**. After that it redeploys by itself
-   whenever `board/` changes on main.
-8. **Switch it on in the app.** Put the address (`https://soe2-board.<subdomain>.workers.dev`) in
-   `board/url.txt`, run `py tools/build_strats.py`, and merge to main. Every app picks it up within 12 hours,
-   with no new release needed.
+5. **Deploy.** It runs by itself when `board/` changes on main. To run it by hand, go to
+   **Actions › Deploy community board › Run workflow**.
+6. **The address** goes in `board/url.txt` (then run `py tools/build_strats.py` and merge). Apps pick it up within
+   12 hours.
 
 ## Running it locally (for testing)
 
@@ -50,20 +42,17 @@ npx wrangler d1 execute soe2-board --local --file schema.sql
 npx wrangler dev
 ```
 
-Put test values in `board/.dev.vars` (`DISCORD_CLIENT_ID=...`, `DISCORD_CLIENT_SECRET=...`, `ADMIN_IDS=...`).
-`DISCORD_API=http://127.0.0.1:5299` points sign-in at a fake Discord for the app's tests.
+Put test values in `board/.dev.vars`, e.g. `ADMIN_KEY=...`, `REPORT_HIDE=2`, `JOINS_PER_DAY=50`.
 
 ## API (what the app calls)
 
 | Call | What |
 |---|---|
-| `GET /auth/start?state=…` → Discord → `/auth/callback` | sign in; the app polls `GET /auth/poll?state=…` for its token |
+| `POST /auth/join` `{name}` | a new board account → `{token, user}`. Send `Authorization: Bearer <token>` after that. |
+| `POST /auth/rename` `{name}` · `POST /auth/admin` `{key}` · `POST /auth/logout` | your account |
 | `GET /posts?kind=strat\|one&sort=top\|new&category&type&tag&q&limit&offset` | the board |
 | `POST /posts` `{kind, data}` | post (10 a day each) |
 | `PUT` / `DELETE /posts/{id}` | change or delete your own post |
 | `POST /posts/{id}/vote` `{up}` · `POST /posts/{id}/report` `{reason}` | upvote, report |
 | `POST /posts/{id}/admin` `{action: hide\|unhide\|promote\|unpromote}` · `POST /users/{id}/ban` | admins |
 | `GET /official` | promoted posts (part of the Official list) |
-
-Posts are checked against the same standard layout as the app (`src/schema.json`, written by
-`tools/build_strats.py`).
