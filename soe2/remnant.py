@@ -33,6 +33,25 @@ QTY = re.compile(r"(?:^|\s)(?:[x×х]\s?(\d{1,4})|(\d{1,4})\s?[x×х])(?=\s|$)",
 JUNK = re.compile(r"[^\w' ()\-:,.]+")
 
 
+# ================================================================ runeshape tips (2.40.0)
+# A small cheat sheet shown next to the price tags while a remnant's book is open. Runeshapes are SYMBOLS in game
+# (their names only show when you hover one), so the app can't tell which ones a remnant has - this just lists the
+# ones players rate best for loot. Community opinion, not measured - from guides gathered Nov 2026:
+#   epoe.io Expedition guide (Larky's farming priorities: S Opulent, Oath, Power; A Death, Soul, Time; skip Bond),
+#   timesaver.gg Aldur's Saga guide (Power, Death, Bond; Opulent and Oath community picks), game8 (effects).
+# Bond: reports differ (one guide picks it, one says skip - maybe bugged), so it's marked.
+RUNE_TIPS_UPDATED = "Nov 2026"
+RUNE_TIERS = [
+    ("S", "Opulent", "rarer monsters - more loot"),
+    ("S", "Power", "stronger runic mods (harder)"),
+    ("S", "Oath", "monsters summon allies"),
+    ("A", "Time", "slain monsters may return rarer"),
+    ("A", "Death", "slain monsters merge, stronger"),
+    ("A", "Soul", "union of souls"),
+    ("A", "Bond", "rares pass on mods - mixed reports"),
+]
+
+
 class OcrUnavailable(Exception):
     pass
 
