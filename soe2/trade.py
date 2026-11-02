@@ -82,6 +82,8 @@ def mod_impact(rec, mod):
         return ov
     if mod.get("covered"):                  # gear (1.41): already counted in a total, or an implicit / rune
         return "ignore"
+    if mod.get("auto") in IMPACTS:          # 2.72.0: gear - filler and low-tier affixes left out
+        return mod["auto"]
     if mod.get("kind") == "Total":          # gear totals (defences, DPS, pseudo totals) are must-haves
         return "high"
     if (rec.get("item") or {}).get("gear"):

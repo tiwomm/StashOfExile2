@@ -130,6 +130,6 @@ def needs_manual_price(rec):
     Used by Price checks and Wealth's magic / rare pricing alike."""
     if rec.get("est") is None:
         return False
-    it = rec.get("item") or {}
-    guess = it.get("gear") and not it.get("waystone") and it.get("rarity") != "Unique"
-    return rec.get("conf") == "Low" or bool(guess and rec.get("conf") not in (None, "", "-"))
+    # 2.72.0: gear is priced like everything else - a number once the searches are good enough (Medium / High),
+    # "Price manually" when they aren't (Low). It used to be "Price manually" for every non-unique piece of gear.
+    return rec.get("conf") == "Low"
