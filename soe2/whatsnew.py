@@ -21,6 +21,10 @@ NEXT = [
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.67.2": [
+        "The XP bar overlay is tidier: the Breach / Delirium / Ritual / Remnant switches sit in their own row on top, "
+        "your time and maps in the row under it.",
+    ],
     "2.67.1": [
         "Money Makers › Tablet Crafting is now called Tablet Craft Helper.",
     ],
