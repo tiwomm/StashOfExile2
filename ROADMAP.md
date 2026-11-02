@@ -4,7 +4,7 @@
 
 > **Who we build for - read second.** Path of Exile players are utilitarian: they love data and information, problem solving and creative thinking. So every feature shows its numbers *and how they were worked out*, lets you sort, filter, compare and export them (CSV), keeps power-user depth (keys, versions, raw data) one click away instead of hiding it, explains in plain words, and leaves the decision to the player. Pretty is welcome; vague is not.
 
-**Current version: 2.67.1**
+**Current version: 2.67.2**
 
 Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds features, 2.10.1 only fixes. Each step below is one release; we work through them top to bottom.
 
@@ -102,6 +102,7 @@ Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds f
 | 2.66.2 | The Panel redone: heavy dark-metal frame with filigree corners, framed header banner, stats in a 2 x 2 grid with icons and big gold numbers. |
 | 2.67.0 | Overlay: the Panel and the XP-bar Game bar only (switches in both); Notes in the overlay's look. Farm Tracker: one mods-matter question at a time, centered; no valuable-mods pop-up; Trade search + Copy regex per item. |
 | 2.67.1 | Money Makers › Tablet Crafting renamed Tablet Craft Helper. |
+| 2.67.2 | The XP bar overlay in two rows: the switches on top, the numbers under them. |
 
 ## ▶ Next up
 
