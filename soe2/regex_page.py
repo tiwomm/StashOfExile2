@@ -55,6 +55,8 @@ class RegexPage:
         self.rx_page = SegBar(outer, ["Build a search", "★ Favorites"], command=lambda v: self.rx_show_page(),
                               size=10, pad=(16, 4))
         self.rx_page.pack(anchor="w", padx=8, pady=(8, 0))
+        if getattr(self, "shell", None) is not None:          # 2.64.0: its tabs are listed in the sidebar
+            self.shell.register_tabs("regex", self.rx_page)
         self.rx_fav_page = tk.Frame(outer, bg=P1)
         self.rx_build_page = tab = tk.Frame(outer, bg=P1)
         tab.pack(fill="both", expand=True)
