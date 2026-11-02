@@ -1646,7 +1646,7 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         r = self.root
         for seq, fn, needs_text_ok in (("c", self.hk_copy, False), ("C", self.hk_copy, False), ("o", self.hk_trade, False),
                                        ("O", self.hk_trade, False), ("F2", self.toggle_pause, True),
-                                       ("Escape", self.hk_min, False)):
+                                       ("Escape", self.hk_esc, False)):
             r.bind_all(f"<KeyPress-{seq}>", lambda e, f=fn, ok=needs_text_ok: self.on_hotkey(e, f, ok))   # every window
         for seq, act in (("<Control-a>", "all"), ("<Control-A>", "all"), ("<Control-z>", "undo"),
                          ("<Control-Z>", "undo"), ("<KeyPress-Delete>", "delete")):
@@ -1694,6 +1694,11 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
             return                                                       # you're typing in a box
         fn()
         return "break"
+
+    def hk_esc(self):
+        """Esc: 2.55.1 - first closes an item box (Price checks / Insights), else minimizes as before."""
+        if not self.ins_preview_dismiss():
+            self.hk_min()
 
     def hk_copy(self):
         sel = self.tree.selection() if self._on_checks() else ()
@@ -3643,14 +3648,14 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
 
     def pc_preview_at(self, e):
         """2.53.0: a click on a Price checks row (Manual Add or a stash tab's list) shows the item's box - name, mods,
-        price - like Insights does. A click on it, Esc or 20 s closes it. Ctrl / Shift clicks (picking many) don't."""
+        price - like Insights does. 2.55.1: Esc, Space, a click anywhere else (or on the same row again) or 20 s closes it. Ctrl / Shift clicks (picking many) don't."""
         if e.state & 0x0005 or self.tree.identify_region(e.x, e.y) not in ("cell", "tree"):
             return self.ins_preview_close()
         try:
             rec = self.records.get(int(self.tree.identify_row(e.y)))
         except (TypeError, ValueError):
             rec = None
-        if not rec:
+        if not rec or self.ins_pop_toggled_off(rec):
             return self.ins_preview_close()
         self.ins_preview("pc", rec, e.x_root + 18, e.y_root + 10)
 

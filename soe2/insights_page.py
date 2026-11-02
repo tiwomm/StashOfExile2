@@ -328,7 +328,7 @@ class InsightsPage:
         tv = self.ins_tables[key][0]
         iid = tv.identify_row(e.y)
         obj = (self.ins_rowmap if key == "mine" else self.ins_seenmap).get(iid)
-        if not obj:
+        if not obj or self.ins_pop_toggled_off(obj):
             return self.ins_preview_close()
         self.ins_preview(key, obj, e.x_root + 18, e.y_root + 10)
 
@@ -374,10 +374,50 @@ class InsightsPage:
         from .style import place_near                  # 2.25.2: on the monitor the mouse is on, not the main one
         place_near(self.root, w, x, y)
         w.deiconify()
-        w.bind("<Button-1>", lambda e: self.ins_preview_close())
+        # (2.55.1: a click ON the box keeps it - Esc, Space or a click anywhere else closes it)
         w.bind("<Escape>", lambda e: self.ins_preview_close())
+        w.bind("<space>", lambda e: self.ins_preview_close())
         self.ins_pop = w
+        self.ins_pop_for = id(obj)
+        self._ins_pop_hooks()
         self.ins_pop_job = self.root.after(20000, self.ins_preview_close)   # never left lying around
+
+    def _ins_pop_hooks(self):
+        """2.55.1 (the user): the item box goes away with Esc or Space, or a click anywhere that isn't on it. Set up
+        once, on every window; they do nothing while no box shows (Esc then minimizes as before: app.hk_esc)."""
+        if getattr(self, "_ins_hooked", False):
+            return
+        self._ins_hooked = True
+
+        def key(_e):
+            return "break" if self.ins_preview_dismiss() else None
+
+        def click(e):
+            w = getattr(self, "ins_pop", None)
+            if w is None:
+                return
+            try:
+                inside = str(e.widget).startswith(str(w))
+            except Exception:
+                inside = False
+            if not inside:
+                self._ins_just_closed = (getattr(self, "ins_pop_for", None), time.time())
+                self.ins_preview_close()
+        self.root.bind_all("<KeyPress-space>", key, add="+")
+        self.root.bind_all("<ButtonPress-1>", click, add="+")
+        self.root.bind_all("<ButtonPress-3>", click, add="+")
+
+    def ins_pop_toggled_off(self, obj):
+        """The click that just closed the box was on the same item: leave it closed (a second click hides it)."""
+        last, self._ins_just_closed = getattr(self, "_ins_just_closed", None), None
+        return bool(last) and last[0] == id(obj) and time.time() - last[1] < 0.6
+
+    def ins_preview_dismiss(self):
+        """Close the item box if one shows. -> True when it did (so the key that did it does nothing else)."""
+        if getattr(self, "ins_pop", None) is None:
+            return False
+        self.ins_preview_close()
+        return True
 
     def ins_preview_close(self):
         job, self.__dict__["ins_pop_job"] = getattr(self, "ins_pop_job", None), None
