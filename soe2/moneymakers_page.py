@@ -10,7 +10,7 @@ from tkinter import filedialog, ttk
 from . import board as B
 from . import moneymakers as MM
 from .config import SETTINGS, save_json
-from .style import C, MONO, SegBar, place_near
+from .style import C, MONO, SegBar, Tooltip, place_near
 
 ORIGIN = {"community": "Official", "mine": "Mine", "example": "Example", "board": "Community"}
 VIEWS = ("Official", "Community", "Mine")
@@ -81,13 +81,18 @@ class MoneyMakersPage:
             cb = ttk.Combobox(fbar, textvariable=var, values=values, state="readonly", width=width)
             cb.pack(side="left")
             cb.bind("<<ComboboxSelected>>", lambda e: (self.mm_fill(), self.root.after(20, self.root.focus_set)))
+            return cb
         self.mm_tag, self.mm_tier = tk.StringVar(value="Any"), tk.StringVar(value="Any")
         self.mm_max, self.mm_cmax = tk.StringVar(value="Any"), tk.StringVar(value="Any")
         tag_values = ["Any"] + [t for g in MM.TAG_GROUPS.values() for t in g]
         pick("Tag", self.mm_tag, tag_values, 15, first=True)
         pick("Waystone tier", self.mm_tier, ("Any",) + tuple(str(i) for i in range(1, 17)), 4)
-        pick("🧠 Thinking at most", self.mm_max, ["Any"] + [w for w, _d in MM.THINKING.values()], 10)
-        pick("🖱 Clicks at most", self.mm_cmax, ["Any"] + list(MM.CLICKS), 8)
+        # 2.54.0 (the user): named like the fields - "Thoughts per click" and "Clicks per hour"; each still shows the
+        # level picked and the easier / calmer ones
+        Tooltip(pick("🧠 Thoughts per click", self.mm_max, ["Any"] + [w for w, _d in MM.THINKING.values()], 10),
+                "How much thinking a strat needs. Shows the level you pick and the easier ones.")
+        Tooltip(pick("🖱 Clicks per hour", self.mm_cmax, ["Any"] + list(MM.CLICKS), 8),
+                "How busy your hands are. Shows the pace you pick and the calmer ones.")
         self.mm_bsort = tk.StringVar(value="Top")
         self.mm_bsort_lab = tk.Label(fbar, text="Sort", bg=P1, fg=C["muted"])
         self.mm_bsort_box = ttk.Combobox(fbar, textvariable=self.mm_bsort, values=("Top", "New"), state="readonly", width=5)
@@ -100,7 +105,7 @@ class MoneyMakersPage:
         for text, cmd in (("⬇ Download Format", self.mm_download_format), ("Import file…", self.mm_import),
                           ("+ Add my own", self.mm_add)):
             ttk.Button(bar2, text=text, command=cmd).pack(side="right", padx=(8, 0))
-        leg = tk.Label(bar2, text="🧠 Thinking: Autopilot · Easy · Moderate · Hard · Big brain      "
+        leg = tk.Label(bar2, text="🧠 Thoughts per click: Autopilot · Easy · Moderate · Hard · Big brain      "
                                   "🖱 Clicks per hour: Chill · Steady · Busy · Frantic",
                        bg=P1, fg="#ffd9a8", font=("Segoe UI", 9), anchor="w", justify="left")
         leg.pack(side="left", fill="x", expand=True)
@@ -124,7 +129,7 @@ class MoneyMakersPage:
         pane.add(left, weight=3)
         self.mm_pane = pane
         cols = (("name", "Strat", 170, "w"), ("type", "Type", 110, "w"),
-                ("thoughts_per_click", "🧠 Thinking", 84, "center"), ("clicks_per_hour", "🖱 Clicks/h", 80, "center"),
+                ("thoughts_per_click", "🧠 Thoughts/click", 104, "center"), ("clicks_per_hour", "🖱 Clicks/h", 80, "center"),
                 ("profit", "Est. profit/h", 92, "center"), ("score", "▲", 44, "center"), ("origin", "By", 90, "w"))
         self.mm_tree = ttk.Treeview(left, columns=[c[0] for c in cols], show="headings", selectmode="browse")
         for cid, title, w, anchor in cols:
@@ -363,7 +368,7 @@ class MoneyMakersPage:
         t.insert("end", s.get("summary", "") + "\n", "summary")
         tpc, cph = s.get("thoughts_per_click", 0), s.get("clicks_per_hour", "")
         word, why = MM.THINKING.get(tpc, ("?", ""))
-        t.insert("end", "🧠 Thinking  ", "h")
+        t.insert("end", "🧠 Thoughts per click  ", "h")
         t.insert("end", word, "stat")
         t.insert("end", f"  {why}\n", "meta")
         t.insert("end", "🖱 Clicks per hour  ", "h")
@@ -916,7 +921,7 @@ class MoneyMakersPage:
         cat_cb.bind("<<ComboboxSelected>>", cat_changed)
         head("Effort")
         think = [f"{w} - {d}" for w, d in MM.THINKING.values()]
-        combo("tpc", "🧠 Thinking *", think, think[s.get("thoughts_per_click", 2) - 1])
+        combo("tpc", "🧠 Thoughts per click *", think, think[s.get("thoughts_per_click", 2) - 1])
         clicks = [f"{w} - {d}" for w, d in MM.CLICKS.items()]
         cur = next((c for c in clicks if c.startswith(str(s.get("clicks_per_hour")) + " ")), clicks[1])
         combo("cph", "🖱 Clicks per hour *", clicks, cur)
