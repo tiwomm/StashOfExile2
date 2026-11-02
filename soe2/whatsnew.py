@@ -21,6 +21,11 @@ NEXT = [
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.57.0": [
+        "Every key is set in one place: Settings › Hotkeys, grouped by what it's for. Chat command keys and the Farm "
+        "Ledger's \"a run is done\" key can now be changed there.",
+        "Regex, Notes, the Session timer and Chat commands show their key with a button to change it in Hotkeys.",
+    ],
     "2.56.2": [
         "Expedition remnant price tags are smaller and calmer: plain text in your overlay style's colors (on the "
         "parchment texture with Runeshape parchment). They show up about twice as fast and go as soon as the book "
