@@ -21,6 +21,11 @@ NEXT = [
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.71.0": [
+        "Money Makers › Strats: filter buttons for what a strat is, how much thinking and how many clicks it takes.",
+        "Strats show as cards with their estimated profit per hour - Cards / List switches back to the table.",
+        "Pick a strat to see Your numbers from the Strat Tracker, and ▶ Track in Strat Tracker to start.",
+    ],
     "2.70.1": [
         "Overlay: \"Hide timer\" is now a \"Timer over the game\" switch - it hides only the timer.",
         "Overlay › Options › On the overlay: switch off any part you don't want over the game - each number, where "
