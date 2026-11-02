@@ -186,12 +186,9 @@ class TrackerPage:
                           "Click one on the overlay to switch it on or off.", bg=P1, fg=C["muted"],
                  font=("Segoe UI", 9), anchor="w", justify="left", wraplength=640).pack(fill="x", pady=(2, 8))
         self.build_alerts_panel(mh).pack(fill="x")
-        nt = tk.Frame(po.inner, bg=P1)
-        nt.pack(fill="x", pady=(12, 0))
-        tk.Label(nt, text="NOTES", bg=P1, fg=C["muted"], font=("Segoe UI", 9, "bold"), anchor="w").pack(fill="x")
-        self.build_notes_window(nt)
+        # 2.68.1: no Notes section - Notes is part of the overlay (its Notes ▾), always there
         self.ovh_pages = getattr(self, "ovh_pages", {})
-        self.ovh_pages.update({"Mechanic Helper": mh, "Notes": nt})
+        self.ovh_pages.update({"Mechanic Helper": mh})
         tk.Label(body, text="Reads only Path of Exile 2's own log file (Client.txt) on your PC: never the game's memory, "
                             "never its servers, never sends keys or clicks.", bg=P1, fg=C["steel"], font=("Segoe UI", 9),
                  anchor="w").pack(side="bottom", fill="x", padx=12, pady=(0, 8))

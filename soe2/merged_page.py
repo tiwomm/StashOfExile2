@@ -255,7 +255,7 @@ class MergedOverlay:
 
     def merged_close(self):
         """× on the one window: everything in it goes (the timer, the switches' bar, the note) - each comes back from
-        its own place (Show timer, Overlays › Mechanic Helper, the notes key)."""
+        its own place (Show timer, Overlays › Mechanic Helper)."""
         cfg = self.tracker_cfg()
         cfg["overlay"] = False
         cfg["alerts_bar"] = False
@@ -269,7 +269,7 @@ class MergedOverlay:
         self.merged_destroy()
         if getattr(self, "tk_ov_btn", None) is not None:
             self.tk_ov_btn.config(text="Show timer")
-        self._say("Overlay closed. Show it again from Overlays (Show timer, Mechanic Helper, or the notes key).", 8)
+        self._say("Overlay closed. Show it again from Overlay (Show timer), or with F6.", 8)
 
     # ---------------------------------------------------------------- pieces
     def _mg_halo(self, P):

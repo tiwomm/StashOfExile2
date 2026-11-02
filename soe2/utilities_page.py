@@ -277,45 +277,6 @@ class UtilitiesPage:
         if getattr(self, "chat_hideout_kc", None) is not None:
             self.root.after(20, self.chat_key_marks)
 
-    # ---------------- the Notes window
-    def build_notes_window(self, body):
-        P2 = C["panel2"]
-        ov = self._ensure_overlay().cfg
-        self.ov_vars = getattr(self, "ov_vars", {})
-        self.notes_on = tk.BooleanVar(value=bool(ov.get("notes_enabled")))
-        self.notes_st = self._util_head(
-            body, self.notes_on, "On", self.notes_toggle,
-            "A note on the overlay (Panel), or dropped down under it (Strip, Minimal). It hides while the game is "
-            "closed and comes back with it. What you type on it is saved by itself. Tabs on the note: + adds one, "
-            "double-click renames, right-click deletes. F6 (Settings › Hotkeys) hides the whole overlay, note too.")
-        c1 = self._card(body, "Show / hide")
-        g = tk.Frame(c1, bg=P2)
-        g.pack(fill="x", pady=(4, 0))
-        # 2.59.0: no notes key - the note is part of the overlay; F6 shows / hides all of it
-        self.ov_vars["notes_key"] = tk.StringVar(value="")
-        ttk.Button(g, text="Show / hide the note now", command=lambda: self.overlay.toggle_notes()).grid(
-            row=0, column=0, sticky="w")
-        # 2.58.0: no "Font and Colors" card - the note follows the overlay style (Settings › Appearance)
-        lk = tk.Frame(body, bg=C["panel"])
-        lk.pack(fill="x", padx=8, pady=(0, 8))
-        tk.Label(lk, text="Its colors, font, text size and opacity follow the overlay style.", bg=C["panel"],
-                 fg=C["muted"], font=("Segoe UI", 9)).pack(side="left")
-        ttk.Button(lk, text="Settings › Appearance", style="Quiet.TButton",
-                   command=self.appearance_open).pack(side="left", padx=8)
-        c3 = self._card(body, "Position")
-        lrow = tk.Frame(c3, bg=P2)
-        lrow.pack(fill="x", pady=(4, 0))
-        # 2.59.0: no lock of its own - the overlay's one lock (Timer options, or the 🔒 on it) covers the note
-        tk.Label(lrow, text="Locked with the overlay (Lock it, above).", bg=P2, fg=C["muted"],
-                 font=("Segoe UI", 9)).pack(side="left")
-        ttk.Button(lrow, text="Put it back in the corner", command=self.note_reset, style="Quiet.TButton").pack(side="right")
-        tk.Label(c3, text="Drag the note by its top bar and resize it from any edge; it remembers where you leave it.",
-                 bg=P2, fg=C["muted"], font=("Segoe UI", 9), anchor="w").pack(fill="x", pady=(8, 0))
-        brow = tk.Frame(body, bg=C["panel"])
-        brow.pack(fill="x", padx=8, pady=(0, 8))
-        self.ov_msg2 = tk.Label(brow, text="", bg=C["panel"], fg=C["muted"], anchor="w")
-        self.ov_msg2.pack(side="left", fill="x", expand=True, padx=8)
-
     def open_settings_tab(self, name):
         self.shell.open("settings")
         try:
@@ -328,15 +289,10 @@ class UtilitiesPage:
         self.overlay.set_chat(self.chat_on.get())
         self.util_refresh()
 
-    def notes_toggle(self):
-        self.overlay.set_notes(self.notes_on.get())
-        self.util_refresh()
-
     def ov_toggle(self):
         """Both on / off (2.0 beta 6 had one switch)."""
         on = bool(getattr(self, "ov_on", None) and self.ov_on.get())
         self.chat_on.set(on)
-        self.notes_on.set(on)
         self.overlay.set_enabled(on)
         self.util_refresh()
 
@@ -370,7 +326,7 @@ class UtilitiesPage:
         self.overlay.restyle(store=False)
         self.overlay.save_settings()
         DELIRIUM.set_title(cfg["poe_title"])
-        for lbl in (self.ov_msg, self.ov_msg2):
+        for lbl in (self.ov_msg,):
             lbl.config(text=("Saved. Not understood: " + ", ".join(bad)) if bad else "Saved.",
                        fg=C["red"] if bad else C["green"])
         self.util_refresh()
@@ -388,26 +344,6 @@ class UtilitiesPage:
         self._ov_save_job = None
         if len(getattr(self, "ov_cmd_vars", [])) == MAX_COMMANDS:
             self.ov_save()
-
-    def note_reset(self):
-        """2.0.0: no pixel boxes any more - put the note back at the top left, at its first size."""
-        self.overlay.cfg.update(notes_x=50, notes_y=50, notes_w=300, notes_h=200)
-        self.overlay.restyle(store=False)
-        self.overlay.save_settings()
-        self.ov_msg2.config(text="The note is back at the top left.", fg=C["green"])
-
-    def _note_geo_refresh(self):
-        """Show where the note is now (you may have dragged it), unless you are typing in those boxes."""
-        try:
-            focus = str(self.root.focus_get() or "")
-        except Exception:
-            focus = ""
-        if not hasattr(self, "note_geo") or "entry" in focus.lower():
-            return
-        self.overlay._store_geometry() if self.overlay.notes_shown() else None
-        for key, v in self.note_geo.items():
-            if v.get() != str(self.overlay.cfg.get(key, "")):
-                v.set(str(self.overlay.cfg.get(key, "")))
 
     def app_in_front(self):
         """Is one of the app's own windows the one in front? (keyboard watcher thread: Win32 only, no Tk calls)"""
@@ -482,12 +418,4 @@ class UtilitiesPage:
             n = sum(1 for a in self.overlay.bindings.values() if a[0] == "chat")
             st, col = f"On: {n} key{'s' if n != 1 else ''} active", C["green"]
         self.chat_st.config(text=st, fg=col)
-        if not cfg.get("notes_enabled"):
-            st, col = "Off", C["muted"]
-        else:
-            vis = self.overlay.notes_shown()
-            st, col = ("On: showing over the game" if vis else "On: hidden (its key brings it back)"), C["green"]
-        self.notes_st.config(text=st, fg=col)
-        self._note_geo_refresh()
         self.chat_on.set(bool(cfg.get("chat_enabled")))
-        self.notes_on.set(bool(cfg.get("notes_enabled")))
