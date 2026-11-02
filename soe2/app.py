@@ -837,12 +837,7 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         self.mark_hold = tk.BooleanVar(value=bool(SETTINGS.get("copy_marker_hold")))
         ttk.Checkbutton(row, text="Keep them until I double-tap Esc", variable=self.mark_hold,
                         command=self.on_copy_marker).pack(side="left")
-        from .copymark import COLOURS                       # 2.25.0: the +'s colour
-        tk.Label(row, text="Color", bg=P2, fg=C["text"]).pack(side="left", padx=(16, 4))
-        self.mark_colour = tk.StringVar(value=SETTINGS.get("copy_marker_colour", "Gold"))
-        mc = ttk.Combobox(row, textvariable=self.mark_colour, values=list(COLOURS), state="readonly", width=9)
-        mc.pack(side="left")
-        mc.bind("<<ComboboxSelected>>", lambda e: self.on_copy_marker(preview=True))
+        # (2.58.0: its color follows the overlay style - Settings › Appearance; it had its own color box here)
 
         row = section("General", "Window", "Always on top keeps StashOfExile2 in front of the game (and brings it "
                                            "back if something minimises it). The 📌 on the taskbar does the same. "
@@ -874,6 +869,8 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
                         variable=self.auto_update_var, command=lambda: self.on_update_options("update")).pack(anchor="w")
 
         # ======== Appearance
+        tk.Label(pages["Appearance"][1], text="THE APP", bg=P1, fg=C["muted"], font=("Segoe UI", 9, "bold"),
+                 anchor="w").pack(fill="x", pady=(0, 4))
         row = section("Appearance", "Launcher", "How you open things: the dock on the left, icons on the desktop, or "
                                                 "both. One of them is always there. With the dock hidden, Toolkit "
                                                 "moves to the taskbar.")
@@ -905,10 +902,6 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
                    command=lambda: (self.ovh_open("Session timer"), self.tk_view.pick("Options"))).pack(
             side="left", padx=(16, 0))
 
-        # 2.44.0: the look of the windows over the game lives in Overlays › Look (with the things it changes)
-        row = section("Appearance", "Over the game", "The Session timer, the Mechanic Helper bar and Notes have their "
-                                                     "own style and opacity, in Overlays › Appearance.")
-        ttk.Button(row, text="Open Overlays › Appearance", command=lambda: self.ovh_open("Appearance")).pack(side="left")
 
         from .style import ACCENTS, THEMES
         row = section("Appearance", "Look of the app", "Colors and text size for every window. Changes take effect "
@@ -946,6 +939,12 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         ttk.Checkbutton(row, text="Show the start-up screen", variable=self.splash_var,
                         command=lambda: (SETTINGS.__setitem__("splash", bool(self.splash_var.get())),
                                          save_json("settings.json", SETTINGS))).pack(anchor="w", pady=(8, 0))
+
+        # 2.58.0 (one Appearance tab, the user): every look in one place - over the game too (was Overlays › Appearance)
+        self.ov_look_top = tk.Label(pages["Appearance"][1], text="OVER THE GAME", bg=P1, fg=C["muted"],
+                                    font=("Segoe UI", 9, "bold"), anchor="w")
+        self.ov_look_top.pack(fill="x", pady=(8, 4))
+        self.build_overlay_look(pages["Appearance"][1])
 
         # ======== Hotkeys
         row = section("Hotkeys", "Hotkeys", "Every key the app listens for - this is the only place keys are set. Click a box and press the "
@@ -1153,7 +1152,7 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
 
         def section(_page, title, note=""):
             f = tk.Frame(parent, bg=P2, padx=16, pady=8, highlightthickness=1, highlightbackground=C["line"])
-            f.pack(fill="x", padx=8, pady=(8, 0))
+            f.pack(fill="x", pady=(0, 8))
             tk.Label(f, text=title, bg=P2, fg=C["accent"], font=("Segoe UI", 12, "bold"), anchor="w").pack(fill="x")
             if note:
                 tk.Label(f, text=note, bg=P2, fg=C["muted"], font=("Segoe UI", 9), anchor="w", justify="left",
@@ -1162,9 +1161,10 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
             row.pack(fill="x")
             return row
         from .overlaywin import LOOKS, LOOK
-        row = section("Appearance", "Style", "How the Session timer, the Mechanic Helper and Notes look over the "
-                                             "game - all three together. Codex: dark stone with bronze corners. "
-                                             "Minimal: just the time, the map and the four switches.")
+        row = section("Appearance", "Style", "How everything over the game looks - the Session timer, the Mechanic "
+                                             "Helper, Notes, remnant price tags and the copy marker. Codex: dark "
+                                             "stone with bronze corners. Minimal: just the time, the map and the four "
+                                             "switches.")
         self.ov_look_var = tk.StringVar(value=LOOKS[LOOK[0]])
         lk = ttk.Combobox(row, textvariable=self.ov_look_var, values=list(LOOKS.values()), state="readonly", width=30)
         lk.pack(side="left")
@@ -1205,6 +1205,43 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
                        anchor="e")
         pct.grid(row=0, column=2, sticky="e", padx=(8, 0))
         self.ov_op_pct = {"all": pct}
+        row = section("Appearance", "Notes", "The note uses the style's colors and font; only its text size is "
+                                             "yours.")
+        tk.Label(row, text="Text size", bg=P2, fg=C["text"]).pack(side="left")
+        self.notes_font_var = tk.IntVar(value=int(self._ensure_overlay().cfg.get("notes_font", 11)))
+        ttk.Spinbox(row, from_=8, to=24, textvariable=self.notes_font_var, width=5,
+                    command=self.on_notes_font).pack(side="left", padx=8)
+        self.notes_font_var.trace_add("write", lambda *_a: self.root.after(300, self.on_notes_font))
+
+    @staticmethod
+    def marker_colour():
+        """2.58.0: the copy marker's color comes from the overlay style (its warm color; a bright one for the
+        light parchment, which would be dark ink on the game)."""
+        from .overlaywin import pal
+        P = pal()
+        return "#e0a352" if P.get("texture") else P.get("warn") or "#ffd25a"
+
+    def appearance_open(self):
+        """2.58.0: Settings › Appearance, scrolled to Over the game (every look lives there)."""
+        self.shell.open("settings")
+        try:
+            self.set_nb.select(self.set_nb.titles.index("Appearance"))
+            sa = self.settings_pages["Appearance"][0]
+            self.root.update_idletasks()
+            top = getattr(self, "ov_look_top", None)               # straight to OVER THE GAME
+            h = max(1, sa.inner.winfo_height())
+            sa.canvas.yview_moveto((top.winfo_y() / h) if top is not None else 0)
+        except (ValueError, AttributeError, tk.TclError, KeyError):
+            pass
+
+    def on_notes_font(self):
+        """2.58.0: Notes' text size, with the other looks (the note's colors and font come from the style)."""
+        try:
+            self.overlay.cfg["notes_font"] = max(8, min(24, int(self.notes_font_var.get())))
+        except (ValueError, tk.TclError):
+            return
+        self.overlay.save_settings()
+        self.overlay.restyle()
 
     def ov_opacity_get(self, key="session"):
         """The opacity of the windows over the game (2.56.1: one for all; the timer's is the one kept)."""
@@ -1787,15 +1824,13 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
 
     def on_copy_marker(self, preview=False):
         SETTINGS["copy_marker"] = bool(self.mark_var.get())
-        if hasattr(self, "mark_colour"):
-            SETTINGS["copy_marker_colour"] = self.mark_colour.get()
-        if preview:                                          # show the new colour next to the box for 2 s
+        if preview:                                          # show it next to the box for 2 s
             try:
-                from .copymark import COLOURS, CopyMarker
+                from .copymark import CopyMarker
                 if getattr(self, "copy_marker", None) is None:
                     self.copy_marker = CopyMarker(self.root)
                 self.copy_marker.show(self.root.winfo_pointerx() + 30, self.root.winfo_pointery(), secs=2,
-                                      colour=COLOURS.get(SETTINGS["copy_marker_colour"], COLOURS["Gold"]))
+                                      colour=self.marker_colour())
             except Exception:
                 pass
         try:
@@ -2233,9 +2268,7 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
                 secs = max(1, min(600, int(float(SETTINGS.get("copy_marker_secs") or 10))))
             except (TypeError, ValueError):
                 secs = 10
-            from .copymark import COLOURS
-            self.copy_marker.show(x, y, secs=None if hold else secs,
-                                  colour=COLOURS.get(SETTINGS.get("copy_marker_colour"), COLOURS["Gold"]))
+            self.copy_marker.show(x, y, secs=None if hold else secs, colour=self.marker_colour())
         except Exception:
             self.log_error("showing the copy marker")
 
