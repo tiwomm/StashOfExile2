@@ -282,8 +282,13 @@ def from_base(b):
         sa = hls(ahex)[2]
         sat = ts * (min(1.6, s / sa) if sa > 0.02 else 1)
         return from_hls(th, max(0.03, min(0.97, tl + (l_ - la) * ST.flip)), sat)   # (never pure white / black)
-    if ST.theme is not None and ST.theme.light and l_ > 0.78:     # light text on a light pack -> dark text,
-        return from_hls(h, 0.08 + (1 - l_) * 0.6, min(s, 0.55))    # each shade its own
+    if ST.theme is not None and ST.theme.light:
+        if l_ > 0.55:                         # light / bright text (white, gold, amber ...) on a light pack -> a dark
+            return from_hls(h, max(0.1, min(0.36, 0.08 + (1 - l_) * 0.6)), min(s, 0.75))   # shade of the same hue
+        if l_ < 0.22:                         # dark leftovers (near-black browns / greys) -> the pack's surfaces
+            la, ahex, key = min(ST.anchors, key=lambda a: abs(a[0] - l_))
+            th, tl, ts = hls(ST.C[key])
+            return from_hls(th, max(0.03, min(0.97, tl + (l_ - la) * ST.flip)), ts)
     return b
 
 

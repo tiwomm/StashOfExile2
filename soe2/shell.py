@@ -26,6 +26,8 @@ EDGE = 5                        # the resize border around every window
 BORDER_ON, BORDER_OFF = "#2c4372", "#1c2840"
 TASK_H = 40
 MIN_W, MIN_H = 320, 200
+PAGES = True                    # 2.62.0: one tool at a time, filling the main area (a sidebar picks it) - no
+                                # floating windows; the pages are still real windows (see DeskWindow) placed over it
 
 
 def is_beta(mod):
@@ -117,7 +119,7 @@ class DeskWindow(tk.Toplevel):
         self._hwnd_seen = None
         self.shell, self.key, self.title, self.icon, self.utility = shell, key, title, icon, utility
         self.inner = tk.Frame(self, bg=C["panel"])
-        self.inner.pack(fill="both", expand=True, padx=EDGE, pady=EDGE)
+        self.inner.pack(fill="both", expand=True, padx=0 if PAGES else EDGE, pady=0 if PAGES else EDGE)
         self.state_ = "closed"                 # closed / open / minimised
         self.maxed = False
         self.geo = None                        # [x, y, w, h] on the desktop (kept while closed / minimised / maximised)
@@ -133,21 +135,24 @@ class DeskWindow(tk.Toplevel):
             self.lbl = self.bar.create_text(10, 15, text=f"{icon}  {title}", anchor="w", fill=_th.bar_text("title"),
                                             font=(_th.head_font(), 10, "bold"))
         self.btns = []
-        for txt, cmd, bg in (("×", self.close, "#7a2a20"), ("□", self.toggle_max, "#22345a"), ("_", self.minimise, "#22345a")):
+        for txt, cmd, bg in (() if PAGES else (("×", self.close, "#7a2a20"), ("□", self.toggle_max, "#22345a"),
+                                                ("_", self.minimise, "#22345a"))):
             b = tk.Label(self.bar, text=txt, bg=bg, fg="#cfe0ff", font=("Segoe UI", 9, "bold"), width=2,
                          highlightthickness=1, highlightbackground="#5b77ad", cursor="hand2")
             b.bind("<Button-1>", lambda e, c=cmd: c())
             self.btns.append(self.bar.create_window(0, 15, window=b, anchor="e"))
         self.bar.bind("<Configure>", self._bar_resized, add="+")
-        self.bar.bind("<ButtonPress-1>", self._press)
-        self.bar.bind("<B1-Motion>", self._drag)
-        self.bar.bind("<ButtonRelease-1>", lambda e: self._drop())
-        self.bar.bind("<Double-1>", lambda e: self.toggle_max())
+        if not PAGES:                                  # (a page doesn't move - the sidebar picks it)
+            self.bar.bind("<ButtonPress-1>", self._press)
+            self.bar.bind("<B1-Motion>", self._drag)
+            self.bar.bind("<ButtonRelease-1>", lambda e: self._drop())
+            self.bar.bind("<Double-1>", lambda e: self.toggle_max())
         self.body = tk.Frame(self.inner, bg=C["panel"])
         self.body.pack(fill="both", expand=True)
         self.grip = tk.Label(self.inner, text="◢", bg=C["panel"], fg=C["steel"], font=("Segoe UI", 9),
                              cursor="bottom_right_corner")
-        self.grip.place(relx=1.0, rely=1.0, anchor="se")
+        if not PAGES:
+            self.grip.place(relx=1.0, rely=1.0, anchor="se")
         self._resize_bind(self.grip, "se")
         # resize from any edge or corner, like a normal window
         c = 14
@@ -162,14 +167,16 @@ class DeskWindow(tk.Toplevel):
                 ("sw", "bottom_left_corner", dict(x=0, rely=1, y=-c, width=EDGE, height=c)),
                 ("se", "bottom_right_corner", dict(relx=1, x=-EDGE, rely=1, y=-c, width=EDGE, height=c))):
             h = tk.Frame(self, bg=BORDER_OFF, cursor=cur)
-            h.place(**kw)
+            if not PAGES:
+                h.place(**kw)
             self._resize_bind(h, side)
             self.handles[side] = h
         for side, kw in (("nw", dict(x=0, y=0, width=EDGE, height=c)), ("ne", dict(relx=1, x=-EDGE, y=0, width=EDGE, height=c)),
                          ("sw", dict(x=0, rely=1, y=-EDGE, width=c, height=EDGE)),
                          ("se", dict(relx=1, x=-c, rely=1, y=-EDGE, width=c, height=EDGE))):
             h = tk.Frame(self, bg=BORDER_OFF, cursor=self.handles[side].cget("cursor"))      # the other arm of each corner
-            h.place(**kw)
+            if not PAGES:
+                h.place(**kw)
             self._resize_bind(h, side)
             self.handles[side + "2"] = h
         self.bind("<ButtonPress-1>", self._clicked, add="+")
@@ -428,8 +435,17 @@ class DeskWindow(tk.Toplevel):
         except tk.TclError:
             pass
 
+    def page_fill(self):
+        """2.62.0: a page covers the whole main area."""
+        self.place_at(0, 0, max(MIN_W, self.shell.desk.winfo_width()), max(MIN_H, self.shell.desk.winfo_height()))
+
     def open(self):
         if self.state_ == "open":
+            return
+        if PAGES:
+            self.page_fill()
+            self._show()
+            self.state_ = "open"
             return
         if self.maxed:
             self.place_at(0, 0, self.shell.desk.winfo_width(), self.shell.desk.winfo_height())
@@ -442,12 +458,20 @@ class DeskWindow(tk.Toplevel):
         """The app's window moved or changed size: follow it."""
         if self.state_ != "open":
             return
-        if self.maxed:
+        if PAGES:
+            self.page_fill()
+        elif self.maxed:
             self.place_at(0, 0, self.shell.desk.winfo_width(), self.shell.desk.winfo_height())
         elif self._g:
             self.place_at(*self.shell.fit(self._g))          # 2.10.0: shrinks / moves to stay inside the app
 
     def minimise(self):
+        if PAGES:                                      # 2.62.0: there is nothing under a page - minimize the app
+            try:
+                self.shell.root.iconify()
+            except tk.TclError:
+                pass
+            return
         self.geo = self.current_geo()
         self.withdraw()
         self.state_ = "minimised"
@@ -460,6 +484,8 @@ class DeskWindow(tk.Toplevel):
         self.shell.after_change(self.key)
 
     def toggle_max(self):
+        if PAGES:
+            return
         if self.maxed:
             self.maxed = False
             self.place_at(*(self.geo or self.shell.default_geo(self)))
@@ -485,7 +511,8 @@ class Shell:
         self.taskbtns = {}
         # ---- layout: taskbar at the bottom, status strip above it, dock on the left, desktop fills the rest
         self.task = GradientBar(root, TASK_H, ("#1c2a47", "#0b1222"))
-        self.task.pack(side="bottom", fill="x")
+        if not PAGES:                               # 2.62.0: no taskbar - the sidebar and the status bar replace it
+            self.task.pack(side="bottom", fill="x")
         self.task_inner = tk.Frame(self.task, bg="#111b30")
         self.task.create_window(DOCK_W + 6, TASK_H // 2, window=self.task_inner, anchor="w", tags="inner")
         self.task_right = tk.Frame(self.task, bg="#111b30")
@@ -513,10 +540,20 @@ class Shell:
                                                                                           outline="#3d5582")))
         self.strip = tk.Frame(root, bg=C["bg"])
         self.strip.pack(side="bottom", fill="x")
+        if PAGES:                                   # 2.62.0: the status bar: messages, rates, limits | league ... clock
+            tk.Frame(root, bg=C["line"], height=1).pack(side="bottom", fill="x")
+            self.task_right = tk.Frame(self.strip, bg=C["bg"])
+            self.task_right.pack(side="right", padx=(8, 8))
         self.dock = tk.Canvas(root, bg="#0e1522", width=DOCK_W, highlightthickness=0, bd=0)
-        self.dock.pack(side="left", fill="y")
         self.dock_sep = tk.Frame(root, bg="#3d5582", width=1)
-        self.dock_sep.pack(side="left", fill="y")
+        if PAGES:
+            from .sidebar import Sidebar
+            self.sidebar = Sidebar(self, root)
+            self.sidebar.pack(side="left", fill="y")
+        else:
+            self.sidebar = None
+            self.dock.pack(side="left", fill="y")
+            self.dock_sep.pack(side="left", fill="y")
         self.desk = tk.Canvas(root, bg="#0a0c12", highlightthickness=0, bd=0)
         self.desk.pack(side="left", fill="both", expand=True)
         self._wall_img, self._wall_job, self._wall_size = None, None, None
@@ -524,6 +561,8 @@ class Shell:
         self.root.bind("<Configure>", lambda e: e.widget is self.root and self._follow_soon(), add="+")
         self.icons = []
         self.orb = self.task                    # 2.49.0: the Toolkit button is on the taskbar canvas (tag "tkbtn")
+        if self.sidebar is not None:            # 2.62.0: ... and in the sidebar now
+            self.orb = self.sidebar
         self.dock_btns, self.dots, self._dock_hover = {}, {}, None
         self.dock.bind("<Configure>", lambda e: self.draw_dock())
         self.menu = None
@@ -867,6 +906,9 @@ class Shell:
 
     # ---- the dock: the orb, then desktop-style icons (tile + name) for every module and utility, Settings at the bottom
     def draw_dock(self):
+        if self.sidebar is not None:                # 2.62.0: the sidebar is the launcher
+            self.sidebar.redraw()
+            return
         d = self.dock
         d.delete("all")
         H = max(200, d.winfo_height())
@@ -966,6 +1008,9 @@ class Shell:
 
     def paint_dock(self):
         """Tile colors: lighter under the mouse, an orange edge while its window is open."""
+        if self.sidebar is not None:
+            self.sidebar.redraw()
+            return
         d = self.dock
         for k, t in self.dock_btns.items():
             if t is None:
@@ -988,6 +1033,9 @@ class Shell:
         if not opened:
             opened = ["checks"] if "checks" in self.windows else list(self.windows)[:1]
         order = sorted(opened, key=lambda k: saved.get(k, {}).get("z", 0))
+        if PAGES:                                   # 2.62.0: the page you were on last time
+            page = self.cfg.get("page")
+            order = [page if page in self.windows and self.visible(self.modules[page]) else order[-1]]
         for k in order:
             self.open(k, save=False)
         for k, v in saved.items():
@@ -1034,6 +1082,12 @@ class Shell:
         if not self.visible(self.modules[key]):            # a Labs one while Labs is off
             self.app._say(f"{self.modules[key].title} is a Labs (beta) feature: turn on Labs in Settings to use it.", 8)
             return
+        if PAGES:                                           # 2.62.0: one page at a time
+            for k, w in self.windows.items():
+                if k != key and w.state_ != "closed":
+                    w.geo = w.current_geo()
+                    w.withdraw()
+                    w.state_ = "closed"
         win.open()
         self.focus(key)
         self._opened_at = time.time()             # a click that opened this window mustn't bring its own window back on top
@@ -1117,6 +1171,11 @@ class Shell:
             nxt = next((k for k in reversed(order) if k in self.windows and self.windows[k].state_ == "open"), None)
             if nxt:                                               # the window that was under it comes forward
                 self.focus(nxt)
+            elif PAGES:                                           # 2.62.0: the page you were on before comes back
+                back = next((k for k in reversed(order) if k != key and k in self.windows
+                             and self.visible(self.modules[k])), "checks" if key != "checks" else None)
+                if back:
+                    self.open(back, save=False)
         self.refresh_taskbar()
         self.save_layout()
 
@@ -1132,12 +1191,16 @@ class Shell:
                       "z": (getattr(self, "zorder", []).index(k) + 1 if k in getattr(self, "zorder", []) else 1)
                       if w.state_ == "open" else 0}
         self.cfg["windows"] = out
+        if self.active:
+            self.cfg["page"] = self.active
         self.save()
 
     # ---- taskbar
     def refresh_taskbar(self):
-        if self.dock_btns:
+        if self.dock_btns or self.sidebar is not None:
             self.paint_dock()
+        if PAGES:
+            return
         for b in list(self.taskbtns.values()):
             b.destroy()
         self.taskbtns = {}
@@ -1211,6 +1274,9 @@ class Shell:
             if self.clock is not None:
                 self.clock.config(text=clock_text())
             self.refresh_dots()
+            if self.sidebar is not None:                         # (the utilities' running dots)
+                self.sidebar.redraw()
+                self.sidebar.set_compact(self.root.winfo_width() < 1100)
         except Exception:
             pass
         try:
@@ -1230,6 +1296,8 @@ class Shell:
         if self.menu is not None:
             self.menu.destroy()
             self.menu = None
+            if self.sidebar is not None:
+                self.sidebar.redraw()
 
     def _place_menu(self):
         if self.menu is not None:
@@ -1336,6 +1404,9 @@ class Shell:
 
     def set_launcher(self, mode):
         """2.0 beta 21: how you open things - the dock, desktop icons, or both (one of them is always there)."""
+        if PAGES:                                   # 2.62.0: the sidebar is always there; no desktop to put icons on
+            self.cfg["desktop_icons"] = False
+            return
         mode = mode if mode in dict(self.LAUNCHERS) else "dock"
         self.cfg["launcher"] = mode
         self.cfg["desktop_icons"] = mode in ("icons", "both")

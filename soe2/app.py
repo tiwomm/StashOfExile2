@@ -1002,19 +1002,21 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         # ======== Appearance
         tk.Label(pages["Appearance"][1], text="THE APP", bg=P1, fg=C["muted"], font=("Segoe UI", 9, "bold"),
                  anchor="w").pack(fill="x", pady=(0, 4))
-        row = section("Appearance", "Launcher", "How you open things: the dock on the left, icons on the desktop, or "
-                                                "both. One of them is always there. With the dock hidden, Toolkit "
-                                                "moves to the taskbar.")
+        from .shell import PAGES as _PAGES
         self.launcher_var = tk.StringVar(value=dict(self.shell.LAUNCHERS).get(self.shell.cfg.get("launcher", "dock")))
-        lb = ttk.Combobox(row, textvariable=self.launcher_var, values=[t for _k, t in self.shell.LAUNCHERS],
-                          state="readonly", width=22)
-        lb.pack(side="left")
-        lb.bind("<<ComboboxSelected>>", lambda e: self.on_launcher())
         self.icons_var = tk.BooleanVar(value=bool(self.shell.cfg.get("desktop_icons")))     # (older code / tests)
+        if not _PAGES:                     # 2.62.0: the sidebar is the launcher and pages cover the desktop
+            row = section("Appearance", "Launcher", "How you open things: the dock on the left, icons on the desktop, or "
+                                                    "both. One of them is always there. With the dock hidden, Toolkit "
+                                                    "moves to the taskbar.")
+            lb = ttk.Combobox(row, textvariable=self.launcher_var, values=[t for _k, t in self.shell.LAUNCHERS],
+                              state="readonly", width=22)
+            lb.pack(side="left")
+            lb.bind("<<ComboboxSelected>>", lambda e: self.on_launcher())
 
-        row = section("Appearance", "Wallpaper", "Any picture for the desktop background (it is scaled to fill).")
-        ttk.Button(row, text="Choose wallpaper…", command=self.pick_wallpaper).pack(side="left")
-        ttk.Button(row, text="Default", command=lambda: self.shell.set_wallpaper(None), style="Quiet.TButton").pack(side="left", padx=8)
+            row = section("Appearance", "Wallpaper", "Any picture for the desktop background (it is scaled to fill).")
+            ttk.Button(row, text="Choose wallpaper…", command=self.pick_wallpaper).pack(side="left")
+            ttk.Button(row, text="Default", command=lambda: self.shell.set_wallpaper(None), style="Quiet.TButton").pack(side="left", padx=8)
 
         from .shell import windows_24h
         row = section("Appearance", "Clock", "The clock at the bottom right shows your PC's own time. It starts out "
