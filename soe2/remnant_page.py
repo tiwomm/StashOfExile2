@@ -10,7 +10,6 @@ from . import remnant as RM
 from .config import save_json, SETTINGS
 from .pricefmt import fmt_short
 
-TAG_BG, TAG_BEST = "#101826", "#2a2108"
 
 
 def no_capture(win):
@@ -163,8 +162,8 @@ class RemnantPage:
                 self.rm_auto_shown = True
                 self.rm_auto_sig = sig
                 self.remnant_note(rows, auto=True)
-        elif getattr(self, "rm_auto_shown", False):
-            self.remnant_hide()
+        elif getattr(self, "rm_auto_shown", False) or getattr(self, "rm_win", None) is not None:
+            self.remnant_hide()                  # 2.56.2: the book closed - every tag goes (the key's too)
             self.rm_auto_sig = None
         try:
             self.alerts_refresh()
@@ -297,13 +296,24 @@ class RemnantPage:
     # whole game - and Auto, seeing its own black window, hid and showed it again and again.) Each tag is also hidden
     # from screen capture (Windows 10 2004+), so the watcher never reads its own tags.
     def remnant_show(self, rect, rows, secs=RM.SHOW_SECS):
+        """2.56.2 (the user: "very bold and large ... more compact, less intrusive"): smaller, plain-weight tags in
+        the overlay style's own colors (Overlays › Appearance › Style), on its texture when it has one (the runeshape
+        parchment), a thin edge; the best one in the style's warm color with a ★."""
         self.remnant_hide()
+        from tkinter import font as tkfont
+        from .overlaywin import pal, skinned, texture
+        P = pal()
         l_, t, r, b = rect
         ui = max(0.7, (b - t) / 1440.0)
-        size = -int(16 * ui)
+        size = -max(11, int(14 * ui))                      # (2.56.2: was 16 * ui, bold)
         wins = []
+        BG, TXT, MUT = P["bg"], P["text"], P["muted"]
+        BEST = P["warn"] if skinned() else "#ffd25a"
+        EDGE, EDGE_BEST = (P["line"], BEST) if skinned() else ("#3d5582", "#ffd25a")
+        if P.get("texture"):                           # on parchment: dark ink, the warm edge says "best"
+            BEST = P["head"]
 
-        def tag(x, y_mid, text, fg, bg, edge, bold=True):
+        def tag(x, y_mid, text, fg, edge, bold=False):
             w = tk.Toplevel(self.root)
             w.withdraw()
             w.overrideredirect(True)
@@ -311,8 +321,14 @@ class RemnantPage:
                 w.attributes("-topmost", True)
             except tk.TclError:
                 pass
-            lab = tk.Label(w, text=text, fg=fg, bg=bg, font=("Segoe UI", size, "bold" if bold else "normal"),
-                           padx=8, pady=2, highlightthickness=1, highlightbackground=edge)
+            fnt = ("Segoe UI", size, "bold" if bold else "normal")
+            f = tkfont.Font(root=w, family="Segoe UI", size=size, weight="bold" if bold else "normal")
+            tw, th = f.measure(text) + 12, f.metrics("linespace") + 4
+            img = texture(w, tw, th, seed=5, calm=True) if P.get("texture") else None
+            lab = tk.Label(w, text=text, fg=fg, bg=BG, font=fnt, highlightthickness=1, highlightbackground=edge,
+                           **({"image": img, "compound": "center", "width": tw, "height": th, "padx": 0, "pady": 0}
+                              if img is not None else {"padx": 6, "pady": 1}))
+            lab.image = img
             lab.pack()
             w.update_idletasks()
             hh = w.winfo_reqheight()
@@ -331,19 +347,18 @@ class RemnantPage:
         for row in rows:
             x0, y0, x1, y1 = row["box"]
             if row["total"] is None:                           # (2.40.0: also a reward poe.ninja doesn't list)
-                txt, fg = "no price", "#9aa6bd"
+                txt, fg = "no price", MUT
             else:
                 txt = fmt_short(row["total"])                   # 2.39.0: 16ex, 20c, 29d
                 if row["qty"] > 1:
-                    txt = f"{txt}  ({row['qty']} × {fmt_short(row['each'])})"
-                fg = "#ffd25a" if row.get("best") else "#e8eefc"
+                    txt = f"{txt} ({row['qty']}×{fmt_short(row['each'])})"
+                fg = BEST if row.get("best") else TXT
             if row.get("best"):
                 txt = "★ " + txt
             mid = t + (y0 + y1) / 2
             if row.get("label"):                               # (the Test: an example line to tag)
-                tag(l_ + x0, mid, row["label"], "#c8b98a", "#1a140c", "#5a4a2a", bold=False)
-            tag(l_ + x1 + 14, mid, txt, fg, TAG_BEST if row.get("best") else TAG_BG,
-                "#ffd25a" if row.get("best") else "#3d5582")
+                tag(l_ + x0, mid, row["label"], MUT, EDGE)
+            tag(l_ + x1 + 10, mid, txt, fg, EDGE_BEST if row.get("best") else EDGE, bold=bool(row.get("best")))
         if wins and self.remnant_cfg().get("tips", True):
             self._remnant_tips(wins, rect, size, no_capture)
         self.rm_win = wins or None
@@ -370,7 +385,7 @@ class RemnantPage:
             w.attributes("-topmost", True)
         except tk.TclError:
             pass
-        small = size                                           # (as big as the tags: read at a glance)
+        small = -max(9, int(abs(size) * 0.9))                   # 2.56.2: a touch smaller than the tags
         from .overlaywin import pal, parchment, skinned       # 2.43.0: parchment, like the book beside it
         P = pal()
         BG, TXT, MUT = (P["bg"], P["text"], P["muted"]) if skinned() else ("#101826", "#e8eefc", "#9aa6bd")
@@ -378,7 +393,7 @@ class RemnantPage:
         box = tk.Frame(w, bg=BG, highlightthickness=max(1, P["border"]) if skinned() else 1, highlightbackground=EDGE_,
                        padx=8, pady=4)
         box.pack()
-        tk.Label(box, text="Runeshapes for loot", bg=BG, fg=TXT,
+        tk.Label(box, text="Runeshapes for loot", bg=BG, fg=P["head"] if skinned() else TXT,
                  font=("Segoe UI", small, "bold"), anchor="w").pack(fill="x")
         for tier in ("S", "A", "B", "C", "D"):                 # 2.40.0: every runeshape, best first
             names = [(n, why) for tr, n, why in RM.RUNE_TIERS if tr == tier]
@@ -388,7 +403,7 @@ class RemnantPage:
                     row = tk.Frame(box, bg=BG)
                     row.pack(fill="x")
                     tk.Label(row, text=tier, bg=bg, fg=fg, font=("Segoe UI", small, "bold"), width=2).pack(side="left", pady=1)
-                    tk.Label(row, text=name, bg=BG, fg=TXT, font=("Segoe UI", small, "bold"), width=8,
+                    tk.Label(row, text=name, bg=BG, fg=TXT, font=("Segoe UI", small), width=8,
                              anchor="w").pack(side="left", padx=(8, 0))
                     tk.Label(row, text=why, bg=BG, fg=MUT, font=("Segoe UI", small),
                              anchor="w").pack(side="left")
@@ -404,6 +419,14 @@ class RemnantPage:
                  fg=MUT,
                  font=("Segoe UI", small), anchor="w").pack(fill="x", pady=(2, 0))
         w.update_idletasks()
+        if P.get("texture") and skinned():                    # 2.56.2: the parchment shows round the lines
+            from .overlaywin import texture
+            img = texture(w, w.winfo_reqwidth(), w.winfo_reqheight(), seed=9, calm=True)
+            if img is not None:
+                bgl = tk.Label(box, image=img, bd=0)
+                bgl.image = img
+                bgl.place(x=-8, y=-4, relwidth=1, relheight=1, width=16, height=8)
+                bgl.lower()
         try:
             from .style import monitor_rect
             ml, mt, mr, mb = monitor_rect(self.root, x, y)
