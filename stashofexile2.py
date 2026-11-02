@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU GPL v3.0 (see LICENSE). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.61.0
+VERSION 2.61.1
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,6 +19,13 @@ VERSION 2.61.0
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.61.1
+       Chat commands: the Key column is a key box again (KeyCapture, like Settings › Hotkeys) and Go to hideout has
+       one too - click, press the key, right-click clears. chat_key_set saves (ov_save), refreshes the Hotkeys page,
+       and chat_key_marks paints a box red and names the hotkey that already uses its key. ov_save keeps every
+       row in its place (row n = command n = the Hotkeys page's cmd:n) and keeps a command that has no key yet -
+       before, a command without a key was dropped when saved. test_v2611; test_v2570 allows key boxes on the
+       Chat commands page.
   2.61.0
        The app window's own (Windows) title bar follows the theme: winsys.set_titlebar (DWM: immersive dark mode
        20 / 19 on Windows 10; caption 35, text 36 and border 34 colors on Windows 11; SetWindowPos FRAMECHANGED),
@@ -1396,7 +1403,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.61.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.61.1"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
