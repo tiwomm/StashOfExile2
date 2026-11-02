@@ -12,6 +12,7 @@ from . import ledger as L
 from . import moneymakers as MM
 from .config import SETTINGS, save_json
 from .pricefmt import fmt_short
+from .chrome import section as chrome_section
 from .style import C, MONO, ScrollArea, SegBar, Tooltip
 
 
@@ -47,6 +48,47 @@ LOG_COLS = (("n", "#", 40, "e"), ("when", "When", 120, "w"), ("v", "Ver.", 44, "
 LOOT_COLS = (("item", "Item", 260, "w"), ("qty", "Dropped", 80, "e"), ("total", "Worth", 90, "e"),
              ("share", "Share", 80, "e"), ("per", "Per run", 80, "e"))
 EDITABLE = {"runs": "runs", "cost": "cost", "loot": "loot", "profit": "profit", "note": "note"}
+
+
+class Steps:
+    """2.70.0: a short form in steps - numbered steps along the top (click one to go there), one page at a time.
+    col: bg / band / text / muted / accent colors (the app's theme, or the overlay's palette)."""
+
+    def __init__(self, parent, names, col, on_change=None, font="Segoe UI"):
+        self.names, self.col, self.on_change, self.font = list(names), col, on_change, font
+        self.bar = tk.Frame(parent, bg=col["band"], padx=8, pady=8)
+        self.pills = []
+        for i, n in enumerate(self.names):
+            if i:
+                tk.Label(self.bar, text="›", bg=col["band"], fg=col["muted"], font=(font, 10)).pack(side="left", padx=2)
+            lb = tk.Label(self.bar, text=f"{i + 1}  {n}", bg=col["band"], fg=col["muted"], font=(font, 10),
+                          cursor="hand2", padx=8, pady=2)
+            lb.pack(side="left")
+            lb.bind("<Button-1>", lambda e, i=i: self.go(i))
+            self.pills.append(lb)
+        self.body = tk.Frame(parent, bg=col["bg"])
+        self.frames = [tk.Frame(self.body, bg=col["bg"]) for _ in self.names]
+        self.cur, self.seen = 0, {0}
+
+    def go(self, i):
+        i = max(0, min(len(self.frames) - 1, i))
+        for f in self.frames:
+            f.pack_forget()
+        self.frames[i].pack(fill="both", expand=True)
+        self.cur = i
+        self.seen.add(i)
+        c = self.col
+        for j, lb in enumerate(self.pills):
+            now = j == i
+            lb.config(text=("✓ " if j in self.seen and not now and j < i else "") + f"{j + 1}  {self.names[j]}",
+                      fg=c["accent"] if now else (c["text"] if j in self.seen else c["muted"]),
+                      font=(self.font, 10, "bold") if now else (self.font, 10))
+        if self.on_change:
+            self.on_change(i)
+        return i
+
+    def last(self):
+        return self.cur == len(self.frames) - 1
 
 
 class SetupCards(tk.Frame):
@@ -1200,32 +1242,66 @@ class LedgerPage:
         self.fl_box, self.fl_box_p = w, p
         bg, fg, mut = P["bg"], P["text"], P["muted"]
         font = (P["font"], 10)
-        body = tk.Frame(w.body, bg=bg, padx=12, pady=8)
-        body.pack(fill="both", expand=True)
+        # 2.70.0: three short steps - how many runs, the loot, the profit
+        st = self.fl_box_steps = Steps(w.body, ("Runs", "Loot", "Profit"),
+                                       {"bg": bg, "band": P.get("band", bg), "text": fg, "muted": mut,
+                                        "accent": P.get("head", fg)}, on_change=self._fl_box_step, font=P["font"])
+        st.bar.pack(fill="x")
+        brow = tk.Frame(w.body, bg=bg, padx=12, pady=8)
+        brow.pack(fill="x", side="bottom")
+        self.fl_box_next = ttk.Button(brow, text="Next ›", style="Primary.TButton", command=self.fl_box_forward,
+                                      width=8)
+        self.fl_box_next.pack(side="right")
+        self.fl_box_back = ttk.Button(brow, text="‹ Back", command=lambda: st.go(st.cur - 1), width=7)
+        self.fl_box_back.pack(side="right", padx=(0, 8))
+        ttk.Button(brow, text="Later", command=self.fl_box_later, style="Quiet.TButton", width=6).pack(side="left")
+        ttk.Button(brow, text="Skip", command=self.fl_box_skip, style="Quiet.TButton", width=6).pack(side="left",
+                                                                                                    padx=(8, 0))
+        for b_ in brow.winfo_children():
+            t_ = b_.cget("text")
+            Tooltip(b_, {"Later": "Ask again after your next run", "Skip": "These runs count for time, not money",
+                         "Next ›": "Next step (Enter)"}.get(t_, t_))
+        st.body.pack(fill="both", expand=True, padx=12, pady=(8, 0))
+        f1, f2, f3 = st.frames
         secs = time.time() - p.get("start", time.time())
-        top = tk.Frame(body, bg=bg)
+        # ---- 1: runs
+        tk.Label(f1, text="How many runs does this log cover?", bg=bg, fg=fg, font=(P["font"], 12, "bold"),
+                 anchor="w").pack(fill="x", pady=(4, 8))
+        top = tk.Frame(f1, bg=bg)
         top.pack(fill="x")
-        tk.Label(top, text="Runs", bg=bg, fg=fg, font=(P["font"], 12, "bold")).pack(side="left")
+        tk.Label(top, text="Runs", bg=bg, fg=fg, font=(P["font"], 11)).pack(side="left")
         self.fl_box_runs = tk.StringVar(value=str(max(1, p.get("runs", 0)) if not p.get("manual") else max(1, p.get("runs", 0) or 1)))
-        ttk.Spinbox(top, from_=1, to=999, textvariable=self.fl_box_runs, width=4,
-                    command=self.fl_box_recalc).pack(side="left", padx=(8, 8))
+        self.fl_box_runs_box = ttk.Spinbox(top, from_=1, to=999, textvariable=self.fl_box_runs, width=4,
+                                           command=self.fl_box_recalc)
+        self.fl_box_runs_box.pack(side="left", padx=(8, 8))
         self.fl_box_runs.trace_add("write", lambda *a: self.fl_box_recalc())
         tk.Label(top, text=f"since your last log · {_hms(secs)}", bg=bg, fg=mut, font=font).pack(side="left")
-        tk.Label(body, text="Loot - Ctrl+Alt+C each drop in game (or a stash full of them), paste, or type "
-                            "\"7 Divine Orb\":", bg=bg, fg=mut, font=(P["font"], 9), anchor="w", justify="left",
-                 wraplength=440).pack(fill="x", pady=(8, 2))
-        self.fl_box_text = tk.Text(body, height=4, bg=P["field"], fg=fg, insertbackground=fg, relief="flat",
+        tk.Label(f1, text=("Counted by itself from the maps you entered - change it if it's off." if not p.get("manual")
+                           else "Type how many runs since your last log."), bg=bg, fg=mut, font=(P["font"], 9),
+                 anchor="w", justify="left", wraplength=420).pack(fill="x", pady=(12, 0))
+        self.fl_box_runs_cost = tk.Label(f1, text="", bg=bg, fg=fg, font=(P["font"], 10), anchor="w")
+        self.fl_box_runs_cost.pack(fill="x", pady=(12, 0))
+        # ---- 2: loot
+        tk.Label(f2, text="What dropped?", bg=bg, fg=fg, font=(P["font"], 12, "bold"), anchor="w").pack(fill="x",
+                                                                                                   pady=(4, 2))
+        tk.Label(f2, text="Ctrl+Alt+C each drop in game (or a stash full of them), paste, or type \"7 Divine Orb\". "
+                          "Each one is priced with poe.ninja.", bg=bg, fg=mut, font=(P["font"], 9), anchor="w",
+                 justify="left", wraplength=420).pack(fill="x", pady=(0, 8))
+        self.fl_box_text = tk.Text(f2, height=4, bg=P["field"], fg=fg, insertbackground=fg, relief="flat",
                                    highlightthickness=1, highlightbackground=P["line"], font=font, wrap="word")
         self.fl_box_text.pack(fill="x")
         self.fl_box_text.bind("<<Modified>>", self._fl_box_typed)
-        self.fl_box_rows = tk.Frame(body, bg=bg)
+        self.fl_box_rows = tk.Frame(f2, bg=bg)
         self.fl_box_rows.pack(fill="both", expand=True, pady=(8, 0))
-        sums = tk.Frame(body, bg=bg)
-        sums.pack(fill="x", pady=(8, 0))
+        # ---- 3: profit
+        tk.Label(f3, text="This log", bg=bg, fg=fg, font=(P["font"], 12, "bold"), anchor="w").pack(fill="x",
+                                                                                              pady=(4, 8))
+        sums = tk.Frame(f3, bg=bg)
+        sums.pack(fill="x")
         self.fl_box_vars = {}
         for i, (key, label) in enumerate((("loot", "Loot worth"), ("cost", "Cost"), ("profit", "Profit"))):
             tk.Label(sums, text=label, bg=bg, fg=fg, font=(P["font"], 10, "bold" if key == "profit" else "normal"),
-                     anchor="w").grid(row=i, column=0, sticky="w", pady=1)
+                     anchor="w").grid(row=i, column=0, sticky="w", pady=2)
             v = tk.StringVar()
             self.fl_box_vars[key] = v
             e = ttk.Entry(sums, textvariable=v, width=10)
@@ -1237,25 +1313,40 @@ class LedgerPage:
             self.fl_box_vars[key + "_note"] = note
         self.fl_box_vars["loot"].trace_add("write", lambda *a: self.fl_box_typed_total("loot"))
         self.fl_box_vars["profit"].trace_add("write", lambda *a: self.fl_box_typed_total("profit"))
-        nrow = tk.Frame(body, bg=bg)
-        nrow.pack(fill="x", pady=(8, 0))
+        nrow = tk.Frame(f3, bg=bg)
+        nrow.pack(fill="x", pady=(12, 0))
         tk.Label(nrow, text="Note", bg=bg, fg=fg, font=font).pack(side="left")
         self.fl_box_note = tk.StringVar()
         ttk.Entry(nrow, textvariable=self.fl_box_note).pack(side="left", fill="x", expand=True, padx=(8, 0))
-        brow = tk.Frame(body, bg=bg)
-        brow.pack(fill="x", pady=(8, 0))
-        ttk.Button(brow, text="Log it", style="Primary.TButton", command=self.fl_box_log).pack(side="right")
-        ttk.Button(brow, text="Skip", command=self.fl_box_skip, style="Quiet.TButton").pack(side="right", padx=(0, 8))
-        ttk.Button(brow, text="Later", command=self.fl_box_later, style="Quiet.TButton").pack(side="right", padx=(0, 8))
-        for b_ in brow.winfo_children():
-            t_ = b_.cget("text")
-            Tooltip(b_, {"Later": "Ask again after your next run", "Skip": "These runs count for time, not money",
-                         "Log it": "Save this log (Enter)"}.get(t_, t_))
+        w.bind("<Return>", lambda e: None if isinstance(e.widget, tk.Text) else self.fl_box_forward())
         self.fl_box_items, self._fl_box_typing = [], None
         self._fl_box_set = False
         self.fl_box_recalc()
+        st.go(0)
         w.show()
         return w
+
+    # 2.70.0: the loot box's steps
+    def _fl_box_step(self, i):
+        st = self.fl_box_steps
+        self.fl_box_back.state(["disabled"] if i == 0 else ["!disabled"])
+        self.fl_box_next.config(text="Log it" if st.last() else "Next ›")
+        if i == 1:
+            self.root.after(30, lambda: self._fl_box_focus(self.fl_box_text))
+
+    def _fl_box_focus(self, w):
+        try:
+            w.focus_set()
+        except tk.TclError:
+            pass
+
+    def fl_box_forward(self):
+        st = getattr(self, "fl_box_steps", None)
+        if st is None or getattr(self, "fl_box", None) is None:
+            return None
+        if st.last():
+            return self.fl_box_log()
+        return st.go(st.cur + 1)
 
     def fl_capturing(self):
         """Ctrl+Alt+C copies go to the loot box while it's open (accept_clip)."""
@@ -1273,6 +1364,9 @@ class LedgerPage:
             return
         cur = t.get("1.0", "end-1c")
         t.insert("end", ("\n" if cur and not cur.endswith("\n") else "") + "\n".join(f"{q} {n}" for n, q in drops) + "\n")
+        st = getattr(self, "fl_box_steps", None)
+        if st is not None and st.cur != 1:                   # 2.70.0: show the loot step
+            st.go(1)
         self._say("Added to the Strat Tracker's loot: " + ", ".join(f"{q}× {n}" for n, q in drops), 3)
 
     def _fl_box_typed(self, _e=None):
@@ -1346,6 +1440,10 @@ class LedgerPage:
                 row=13, column=1, sticky="w")
         box.columnconfigure(1, weight=1)
         cost, per, runs, unknown = self.fl_box_cost()
+        rc = getattr(self, "fl_box_runs_cost", None)
+        if rc is not None:                                   # 2.70.0: step 1 shows what those runs cost
+            rc.config(text=(f"These {runs} runs cost" if runs != 1 else "This run costs") +
+                           f" {cost:.2f} div ({per:.3f} a run, from your setup)")
         self._fl_box_set = True
         self.fl_box_vars["cost"].set(f"{cost:.2f}")
         self.fl_box_vars["cost_note"].config(text=f"{runs} × {per:.2f} from your setup" +
@@ -1447,58 +1545,88 @@ class LedgerPage:
         win.title(f"Strat Tracker - {s['name']}")
         win.configure(bg=P1)
         win.transient(self.root)
+        W, H = 900, 600
         try:                                                 # 2.67.0: centered on the app, not the screen's corner
             rx, ry, rw, rh = self.root.winfo_rootx(), self.root.winfo_rooty(), self.root.winfo_width(), self.root.winfo_height()
-            win.geometry(f"1060x640+{rx + max(0, (rw - 1060) // 2)}+{ry + max(0, (rh - 640) // 3)}")
+            win.geometry(f"{W}x{H}+{rx + max(0, (rw - W) // 2)}+{ry + max(0, (rh - H) // 3)}")
         except tk.TclError:
-            win.geometry("1060x640")
-        self.fl_ed, self.fl_ed_s = win, s
+            win.geometry(f"{W}x{H}")
+        self.fl_ed, self.fl_ed_s, self.fl_ed_new = win, s, bool(new)
         self.fl_ed_ver = _json.loads(_json.dumps(L.version(s)))           # edited as a copy; Save decides the version
-        top = tk.Frame(win, bg=P2, padx=16, pady=8)
-        top.pack(fill="x")
-        tk.Label(top, text="Name", bg=P2, fg=C["muted"]).pack(side="left")
+        # 2.70.0: five short steps, the cost of one run always in sight at the right
+        st = self.fl_ed_steps = Steps(win, ("Name & strat", "Waystone", "Tablets & more", "Atlas", "Logging"),
+                                      {"bg": P1, "band": P2, "text": C["text"], "muted": C["muted"],
+                                       "accent": C["accent"]}, on_change=self._fl_ed_step)
+        st.bar.pack(fill="x")
+        nav = tk.Frame(win, bg=P2, padx=16, pady=8)
+        nav.pack(fill="x", side="bottom")
+        ttk.Button(nav, text="Cancel", style="Quiet.TButton", command=win.destroy).pack(side="left")
+        self.fl_ed_next = ttk.Button(nav, text="Next ›", style="Primary.TButton", command=self.fl_ed_forward)
+        self.fl_ed_next.pack(side="right")
+        self.fl_ed_back = ttk.Button(nav, text="‹ Back", command=lambda: st.go(st.cur - 1))
+        self.fl_ed_back.pack(side="right", padx=(0, 8))
+        self.fl_ed_save_btn = ttk.Button(nav, text="Save", style="Quiet.TButton", command=self.fl_ed_save)
+        if not new:                                          # editing: Save from any step
+            self.fl_ed_save_btn.pack(side="right", padx=(0, 16))
+        main = tk.Frame(win, bg=P1)
+        main.pack(fill="both", expand=True, padx=12, pady=12)
+        side_o, side = chrome_section(main, "Cost of one run")
+        side_o.pack(side="right", fill="y", padx=(12, 0))
+        side_o.configure(width=270)
+        side_o.pack_propagate(False)
+        self.fl_ed_cost_big = tk.Label(side, text="", bg=P2, fg=C["good"], font=("Segoe UI", 20, "bold"), anchor="w")
+        self.fl_ed_cost_big.pack(fill="x")
+        tk.Label(side, text="a run, from the items you add", bg=P2, fg=C["muted"], font=("Segoe UI", 9),
+                 anchor="w").pack(fill="x", pady=(0, 8))
+        self.fl_ed_cost_lbl = tk.Label(side, text="", bg=P2, fg=C["text"], font=(MONO, 9), anchor="nw",
+                                       justify="left", wraplength=230)
+        self.fl_ed_cost_lbl.pack(fill="both", expand=True)
+        st.body.pack(in_=main, side="left", fill="both", expand=True)
+        st.body.lift(main)                                   # (made before main: keep it above main's background)
+        f1, f2, f3, f4, f5 = st.frames
+
+        def head(f, title, hint):
+            o, inner = chrome_section(f, title, hint, wrap=True)
+            o.pack(fill="both", expand=True)
+            return inner
+        # ---- 1: name & strat
+        g = head(f1, "Name & strat", "Give the setup a name you'll recognize. Pick the strat it follows, if it "
+                                     "follows one - its guide, items and atlas come along when you upload it.")
+        r = tk.Frame(g, bg=P2)
+        r.pack(fill="x", pady=(0, 8))
+        tk.Label(r, text="Name", bg=P2, fg=C["muted"], width=6, anchor="w").pack(side="left")
         self.fl_ed_name = tk.StringVar(value=s["name"])
-        ttk.Entry(top, textvariable=self.fl_ed_name, width=28).pack(side="left", padx=(8, 16))
-        tk.Label(top, text="Strat", bg=P2, fg=C["muted"]).pack(side="left")
+        self.fl_ed_name_entry = ttk.Entry(r, textvariable=self.fl_ed_name, width=36)
+        self.fl_ed_name_entry.pack(side="left", padx=(8, 0))
+        r = tk.Frame(g, bg=P2)
+        r.pack(fill="x")
+        tk.Label(r, text="Strat", bg=P2, fg=C["muted"], width=6, anchor="w").pack(side="left")
         strats = sorted(MM.all_strats(), key=lambda x: x["name"].lower())
         self.fl_ed_strats = {"(none - my own idea)": None, **{x["name"]: x["id"] for x in strats}}
         cur = next((n for n, i in self.fl_ed_strats.items() if i == s.get("strat")), "(none - my own idea)")
         self.fl_ed_strat = tk.StringVar(value=cur)
-        cb = ttk.Combobox(top, textvariable=self.fl_ed_strat, values=list(self.fl_ed_strats), state="readonly", width=34)
+        cb = ttk.Combobox(r, textvariable=self.fl_ed_strat, values=list(self.fl_ed_strats), state="readonly", width=40)
         cb.pack(side="left", padx=(8, 0))
         cb.bind("<<ComboboxSelected>>", lambda e: self.root.after(20, win.focus_set))
-        ttk.Button(top, text="Save", style="Primary.TButton", command=self.fl_ed_save).pack(side="right")
-        ttk.Button(top, text="Cancel", style="Quiet.TButton", command=win.destroy).pack(side="right", padx=(0, 8))
-        cols = tk.Frame(win, bg=P1)
-        cols.pack(fill="both", expand=True, padx=8, pady=8)
+        # ---- 2 + 3: the items (Ctrl+Alt+C in game goes to the right step by itself)
         self.fl_ed_cols = {}
-        for i, (kind, title, hint) in enumerate((("waystones", "Waystone", "one copy of the kind you run"),
-                                                 ("tablets", "Tablets & more", "runs each one lasts"))):
-            f = tk.Frame(cols, bg=P2, padx=8, pady=8, highlightthickness=1, highlightbackground=C["line"])
-            f.grid(row=0, column=i, sticky="nsew", padx=(0, 8))
-            h = tk.Frame(f, bg=P2)
-            h.pack(fill="x")
-            tk.Label(h, text=title, bg=P2, fg=C["accent"], font=("Segoe UI", 10, "bold")).pack(side="left")
-            tk.Label(h, text=hint, bg=P2, fg=C["muted"], font=("Segoe UI", 9)).pack(side="left", padx=8)
-            drop = tk.Label(f, text="Ctrl+Alt+C it in game - or click here to paste",
-                            bg=C["panel"], fg=C["muted"], font=("Segoe UI", 9), pady=8, cursor="hand2",
-                            highlightthickness=1, highlightbackground=C["gold_dim"])
-            drop.pack(fill="x", pady=(8, 8))
+        for f, kind, title, hint in ((f2, "waystones", "Waystone", "One copy of the kind of waystone you run - "
+                                      "Ctrl+Alt+C it in game. Then pick the numbers that make it work."),
+                                     (f3, "tablets", "Tablets & more", "Each tablet (and anything else you use up), "
+                                      "and how many runs it lasts. Ctrl+Alt+C each one in game.")):
+            g = head(f, title, hint)
+            drop = tk.Label(g, text="Ctrl+Alt+C it in game - or click here to paste", bg=P1, fg=C["muted"],
+                            font=("Segoe UI", 9), pady=8, cursor="hand2", highlightthickness=1,
+                            highlightbackground=C["gold_dim"])
+            drop.pack(fill="x", pady=(0, 8))
             drop.bind("<Button-1>", lambda e, k=kind: self.fl_ed_paste(k))
-            lst = tk.Frame(f, bg=P2)
-            lst.pack(fill="both", expand=True)
-            self.fl_ed_cols[kind] = lst
-            cols.columnconfigure(i, weight=1, uniform="c")
-        cols.rowconfigure(0, weight=1)
-        # ---- atlas + logging
-        right = tk.Frame(cols, bg=P1)
-        right.grid(row=0, column=2, sticky="nsew")
-        cols.columnconfigure(2, weight=1, uniform="c")
-        a = tk.Frame(right, bg=P2, padx=8, pady=8, highlightthickness=1, highlightbackground=C["line"])
-        a.pack(fill="x")
-        tk.Label(a, text="Atlas", bg=P2, fg=C["accent"], font=("Segoe UI", 10, "bold"), anchor="w").pack(fill="x")
+            sa = ScrollArea(g, bg=P2)
+            sa.pack(fill="both", expand=True)
+            self.fl_ed_cols[kind] = sa.inner
+        # ---- 4: atlas
+        a = head(f4, "Atlas", "The atlas trees this setup runs, with their points - and a link or notes.")
         self.fl_ed_trees = tk.Frame(a, bg=P2)
-        self.fl_ed_trees.pack(fill="x", pady=(4, 4))
+        self.fl_ed_trees.pack(fill="x", pady=(0, 4))
         add = tk.Frame(a, bg=P2)
         add.pack(fill="x")
         self.fl_ed_tree_name = tk.StringVar(value=L.ATLAS_TREES[1])
@@ -1508,16 +1636,16 @@ class LedgerPage:
         tk.Label(add, text="points", bg=P2, fg=C["muted"]).pack(side="left")
         ttk.Button(add, text="Add", command=self.fl_ed_add_tree, style="Quiet.TButton").pack(side="left", padx=(8, 0))
         tk.Label(a, text="Atlas link or notes (masters, the order you take nodes …)", bg=P2, fg=C["muted"],
-                 font=("Segoe UI", 9), anchor="w").pack(fill="x", pady=(8, 2))
-        self.fl_ed_notes = tk.Text(a, height=3, bg=C["panel"], fg=C["text"], insertbackground=C["text"],
+                 font=("Segoe UI", 9), anchor="w").pack(fill="x", pady=(16, 2))
+        self.fl_ed_notes = tk.Text(a, height=5, bg=C["panel"], fg=C["text"], insertbackground=C["text"],
                                    relief="flat", font=("Segoe UI", 9), wrap="word")
         self.fl_ed_notes.pack(fill="x")
         self.fl_ed_notes.insert("1.0", self.fl_ed_ver["atlas"].get("notes", ""))
-        g = tk.Frame(right, bg=P2, padx=8, pady=8, highlightthickness=1, highlightbackground=C["line"])
-        g.pack(fill="x", pady=(8, 0))
-        tk.Label(g, text="Logging", bg=P2, fg=C["accent"], font=("Segoe UI", 10, "bold"), anchor="w").pack(fill="x")
+        # ---- 5: logging
+        g = head(f5, "Logging", "When the Strat Tracker asks for your loot, how runs are counted, and what else "
+                                "a run costs.")
         er = tk.Frame(g, bg=P2)
-        er.pack(fill="x", pady=(4, 4))
+        er.pack(fill="x", pady=(0, 8))
         tk.Label(er, text="Ask for the loot every", bg=P2, fg=C["text"]).pack(side="left")
         self.fl_ed_every = tk.StringVar(value=str(s.get("every", L.EVERY)))
         ttk.Spinbox(er, from_=1, to=100, textvariable=self.fl_ed_every, width=4).pack(side="left", padx=4)
@@ -1525,21 +1653,37 @@ class LedgerPage:
         self.fl_ed_counting = tk.StringVar(value=s.get("counting", "auto"))
         for k, label in L.COUNTING.items():
             ttk.Radiobutton(g, text=label if k == "auto" else f"{label} ({self.fl_key_label()})",
-                            variable=self.fl_ed_counting, value=k).pack(anchor="w")
+                            variable=self.fl_ed_counting, value=k, style="Card.TRadiobutton").pack(anchor="w", pady=1)
         xr = tk.Frame(g, bg=P2)
-        xr.pack(fill="x", pady=(8, 0))
+        xr.pack(fill="x", pady=(12, 0))
         tk.Label(xr, text="Other costs a run", bg=P2, fg=C["text"]).pack(side="left")
         self.fl_ed_extra = tk.StringVar(value=f"{self.fl_ed_ver.get('extra') or 0:g}")
         ttk.Entry(xr, textvariable=self.fl_ed_extra, width=6).pack(side="left", padx=4)
         tk.Label(xr, text="div", bg=P2, fg=C["text"]).pack(side="left")
         self.fl_ed_extra.trace_add("write", lambda *a: self.fl_ed_cost())
-        self.fl_ed_cost_lbl = tk.Label(g, text="", bg=P2, fg=C["good"], font=(MONO, 10, "bold"), anchor="w",
-                                       justify="left")
-        self.fl_ed_cost_lbl.pack(fill="x", pady=(8, 0))
+        win.bind("<Return>", lambda e: None if isinstance(e.widget, tk.Text) else self.fl_ed_forward())
         self.fl_ed_fill()
+        st.go(0)
         if new:
-            win.after(50, lambda: self._say("New setup: name it, then Ctrl+Alt+C your waystone and tablets in game.", 8))
+            win.after(50, lambda: (self.fl_ed_name_entry.focus_set(), self.fl_ed_name_entry.select_range(0, "end")))
         return win
+
+    # 2.70.0: the steps
+    def _fl_ed_step(self, i):
+        st = self.fl_ed_steps
+        self.fl_ed_back.state(["disabled"] if i == 0 else ["!disabled"])
+        self.fl_ed_next.config(text="Save" if st.last() else "Next ›")
+
+    def fl_ed_forward(self):
+        st = getattr(self, "fl_ed_steps", None)
+        if st is None:
+            return None
+        if st.cur == 0 and not self.fl_ed_name.get().strip():
+            self._say("Give the setup a name first.", 5)
+            return None
+        if st.last():
+            return self.fl_ed_save()
+        return st.go(st.cur + 1)
 
     def fl_ed_open(self):
         w = getattr(self, "fl_ed", None)
@@ -1587,7 +1731,7 @@ class LedgerPage:
         mods = tk.Label(card, text=("★ " + " · ".join(key)) if key else
                         (" · ".join((e.get("mods") or [])[:3]) or "no mods read"),
                         bg=P1, fg=C["good"] if key else C["magic"], font=("Segoe UI", 9), anchor="w", justify="left",
-                        wraplength=280)
+                        wraplength=480)
         mods.pack(fill="x")
         r = tk.Frame(card, bg=P1)
         r.pack(fill="x", pady=(4, 0))
@@ -1657,10 +1801,15 @@ class LedgerPage:
         n = _num(self.fl_ed_extra.get())
         self.fl_ed_ver["extra"] = n if isinstance(n, float) else 0.0
         per, parts, unknown = L.cost_per_run(self.fl_ed_ver)
-        lines = [f"Cost of one run: {per:.3f}d"] + [f"  {lab}: {v:.3f}" for lab, v in parts]
+        lines = [f"Cost of one run: {per:.3f}d"] + [f"{lab}: {v:.3f}" for lab, v in parts]
         if unknown:
-            lines.append(f"  {unknown} item(s) still without a price")
-        self.fl_ed_cost_lbl.config(text="\n".join(lines))
+            lines.append(f"\n{unknown} item(s) still without a price - type it on the item")
+        self.fl_ed_cost_lbl.config(text="\n".join(lines[1:]) or "Add your waystone and tablets - their part of "
+                                                                 "a run shows here.")
+        self.fl_ed_cost_lbl.full = "\n".join(lines)
+        big = getattr(self, "fl_ed_cost_big", None)
+        if big is not None:
+            big.config(text=f"{per:.3f} div")
 
     def fl_ed_remove(self, e):
         for k in ("waystones", "tablets", "others"):
@@ -1709,6 +1858,9 @@ class LedgerPage:
             e["mods"] = [p["shown"] for p in e["props"]]
             e["key_mods"] = []
         self.fl_ed_ver[k].append(e)
+        st = getattr(self, "fl_ed_steps", None)
+        if st is not None:                                   # 2.70.0: show it where it landed
+            st.go(1 if k == "waystones" else 2)
         self.fl_ed_fill()
         self.fl_price_entry(e)
         if e["mods"]:

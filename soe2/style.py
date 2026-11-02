@@ -230,6 +230,9 @@ def _setup_style(root, TH):
     s.map("TCheckbutton", background=[("active", C["bg"])])
     s.configure("Bar.TCheckbutton", background=C["panel"], foreground=C["text"], font=("Segoe UI", 10))
     s.map("Bar.TCheckbutton", background=[("active", C["panel"])])
+    s.configure("Card.TRadiobutton", background=C["panel2"], foreground=C["text"], font=("Segoe UI", 10),
+                indicatorbackground=C["panel"], indicatorforeground=C["accent"])   # 2.70.0: on a section's panel
+    s.map("Card.TRadiobutton", background=[("active", C["panel2"])])
     s.configure("Mod.TCheckbutton", background=C["panel"], foreground=C["text"])
     s.map("Mod.TCheckbutton", background=[("active", C["panel"])])
     switches(root, s)                         # 2.49.0: every on / off box is a modern switch
