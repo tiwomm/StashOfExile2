@@ -34,9 +34,9 @@ QUICKSTART = [
         "worth right now.",
     ]),
     ("While you map", [
-        "Overlays › Session timer: time, maps and deaths per session, with a small timer over the game. Ctrl+Alt+S "
-        "starts and stops it in game.",
-        "Overlays › Mechanic Helper can warn you when your Hiveblood is almost full (Breach) and when you finish a map with "
+        "Overlay: time, maps and deaths per session, with a small timer over the game. Ctrl+Alt+S starts and stops "
+        "it in game; F6 hides or shows the whole overlay.",
+        "Overlay › Mechanic Helper can warn you when your Hiveblood is almost full (Breach) and when you finish a map with "
         "Delirium still on.",
     ]),
     ("Pick your league and say hi", [
@@ -175,10 +175,9 @@ class AboutPage:
             row = tk.Frame(self.qs_body, bg=P2)
             row.pack(fill="x", pady=(8, 0))
             tk.Label(row, text="League", bg=P2, fg=C["accent"], font=("Segoe UI", 12, "bold")).pack(side="left")
-            vals = list(getattr(self, "league_box", {}) and self.league_box["values"] or ()) or [self.league_var.get()]
-            self.wn_league = ttk.Combobox(row, textvariable=self.league_var, state="readonly", width=28, values=vals)
+            self.wn_league = self.league_link(row, P2)          # 2.59.0: set in Settings › General
             self.wn_league.pack(side="left", padx=8)
-            self.wn_league.bind("<<ComboboxSelected>>", self.on_league)
+            tk.Label(row, text="(click to change)", bg=P2, fg=C["muted"], font=("Segoe UI", 9)).pack(side="left")
             d = tk.Label(self.qs_body, text="  💬  Join the Discord  ", bg=DISCORD, fg="#ffffff", cursor="hand2",
                          font=("Segoe UI", 12, "bold"), pady=8)
             d.pack(anchor="w", pady=(16, 0))

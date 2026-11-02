@@ -12,7 +12,7 @@ from tkinter import filedialog, ttk
 from .config import save_json, SETTINGS
 from .gamelog import find_log, LogReader
 from .overlay import game_active, key_label, parse_key
-from .style import ScrollArea, C, FONT_TITLE, SegBar, Tooltip
+from .style import ScrollArea, C, FONT_TITLE, SegBar
 from .tracker import fmt_time, Session, Sessions
 
 DEFAULTS = {"overlay": True, "locked": False, "x": 60, "y": 260, "w": 230, "h": 190, "opacity": 225,
@@ -21,7 +21,8 @@ DEFAULTS = {"overlay": True, "locked": False, "x": 60, "y": 260, "w": 230, "h": 
             "character": "", "character_guess": "", "alerts_bar": True, "autostart": False,
             "clock": True,
             "merged": True, "layout": "panel"}   # 2.39.0 clock; 2.55.0: one overlay window (merged_page.py)
-DEFAULT_KEYS = {"key_toggle": "Ctrl+Alt+S", "key_pause": "Ctrl+Alt+P"}       # 2.10.0: set once, change them in Options
+DEFAULT_KEYS = {"key_toggle": "Ctrl+Alt+S", "key_pause": "Ctrl+Alt+P",
+                "key_overlay": "F6"}           # 2.59.0 (the user): F6 shows / hides the whole overlay       # 2.10.0: set once, change them in Options
 # 2.54.0 (the user): the Session timer times your play; money lives in one place, Money Makers › Farm Ledger.
 # Profit (Wealth at Stop minus at Start) is gone from here: its tiles, overlay line, options and Stop count.
 LINE_NAMES = [("session", "Session time"), ("map", "This map's time"), ("maps", "Maps done"), ("avg", "Average map")]
@@ -46,53 +47,38 @@ class TrackerPage:
         save_json("settings.json", SETTINGS)
 
     # ---------------- 2.44.0: Overlays - everything shown over the game, in one window
-    # 2.58.0 (one Appearance tab): the overlays' look moved to Settings › Appearance (it was this hub's 4th tab)
-    OVH_TABS = ("Session timer", "Mechanic Helper", "Notes")
+    # 2.59.0 (the user): one screen, "Overlay" - no tabs. The session (start, numbers, maps, past sessions) on top;
+    # Options holds every option of the overlay: the timer, the Mechanic Helper and Notes. Looks: Settings › Appearance.
+    OVH_TABS = ("Overlay",)
 
     def build_overlays_hub(self, body):
-        """Overlays (was Session tracker): one tab per thing over the game - each with its own switch, key, place and
-        options - and Look for all of them (parchment / classic, how see-through each one is)."""
         P1 = C["panel"]
-        self.ovh_bar = SegBar(body, list(self.OVH_TABS), command=lambda v: self.ovh_show(), size=10, pad=(16, 4))
-        self.ovh_bar.pack(anchor="w", padx=8, pady=(8, 0))
-        tk.Frame(body, height=1, bg=C["line"]).pack(fill="x", padx=8)
-        host = tk.Frame(body, bg=P1)
-        host.pack(fill="both", expand=True)
-        self.ovh_pages = {}
-        page = tk.Frame(host, bg=P1)
-        self.ovh_pages["Session timer"] = page
+        self.ovh_bar = None
+        page = tk.Frame(body, bg=P1)
+        page.pack(fill="both", expand=True)
+        self.ovh_pages = {"Overlay": page, "Session timer": page}
         self.build_tracker_window(page)
-        for name in self.OVH_TABS[1:]:
-            sa = ScrollArea(host, P1)
-            self.ovh_pages[name] = sa
-            inner = sa.inner
-            if name == "Mechanic Helper":
-                tk.Label(inner, text="Small helpers for league mechanics. They only watch and show - they never act in "
-                                     "the game. Click one on the Mechanic Helper bar to switch it on or off.",
-                         bg=P1, fg=C["muted"], font=("Segoe UI", 9), anchor="w", justify="left",
-                         wraplength=640).pack(fill="x", padx=12, pady=(8, 8))
-                self.build_alerts_panel(inner).pack(fill="x", padx=8, pady=(0, 8))
-            elif name == "Notes":
-                self.build_notes_window(inner)
-        self.ovh_show()
 
     def ovh_show(self):
-        cur = self.ovh_bar.get()
-        for name, f in self.ovh_pages.items():
-            if name == cur:
-                f.pack(fill="both", expand=True)
-            else:
-                f.pack_forget()
+        pass
 
     def ovh_open(self, tab):
-        """Open Overlays at one tab (Settings' link, the old Notes window, the ⚙ on the Mechanic Helper bar).
-        "Appearance" (2.58.0) is Settings › Appearance now."""
+        """Open the Overlay screen: the Mechanic Helper or Notes part of its Options (the ⚙ on the overlay, old links).
+        "Appearance" is Settings › Appearance."""
         if tab == "Appearance":
             return self.appearance_open()
         self.shell.open("tracker")
-        if getattr(self, "ovh_bar", None) is not None:
-            self.ovh_bar.pick(tab, notify=False)
-            self.ovh_show()
+        if tab in ("Mechanic Helper", "Notes", "Options") and getattr(self, "tk_view", None) is not None:
+            self.tk_view.pick("Options")
+            self.tracker_view()
+            part = self.ovh_pages.get(tab)
+            sa = self.tk_pages.get("Options")
+            if part is not None and sa is not None:
+                try:
+                    self.root.update_idletasks()
+                    sa.canvas.yview_moveto(part.winfo_y() / max(1, sa.inner.winfo_height()))
+                except tk.TclError:
+                    pass
 
     def build_tracker_window(self, body):
         cfg = self.tracker_cfg()
@@ -124,9 +110,10 @@ class TrackerPage:
         lrow.pack(fill="x", padx=12)
         self.tk_log_lbl = tk.Label(lrow, text="", bg=P1, fg=C["muted"], anchor="w", font=("Segoe UI", 9))
         self.tk_log_lbl.pack(side="left", fill="x", expand=True)
-        # 2.0 beta 21: only shown when Client.txt can't be found (right-click the line above to pick another one)
-        self.tk_pick_btn = ttk.Button(lrow, text="Find Client.txt…", command=self.tracker_pick_log)
-        self.tk_log_lbl.bind("<Button-3>", lambda e: self.tracker_pick_log())
+        # 2.0 beta 21: only shown when Client.txt can't be found. 2.59.0: the file is set in Settings › General › Game
+        self.tk_pick_btn = ttk.Button(lrow, text="Set Client.txt in Settings › General",
+                                      command=lambda: self.settings_open("General", "game"))
+        self.tk_log_lbl.bind("<Button-3>", lambda e: self.settings_open("General", "game"))
 
         # ---- the numbers
         nums = tk.Frame(body, bg=P1)
@@ -190,6 +177,21 @@ class TrackerPage:
         po = ScrollArea(body, bg=P1)                   # 2.4.0: scrolls when the window is short
         self._tracker_options(po.inner)
         self.tk_pages["Options"] = po
+        # 2.59.0: every option of the overlay on this one screen - the Mechanic Helper and Notes too
+        mh = tk.Frame(po.inner, bg=P1)
+        mh.pack(fill="x", pady=(12, 0))
+        tk.Label(mh, text="MECHANIC HELPER", bg=P1, fg=C["muted"], font=("Segoe UI", 9, "bold"), anchor="w").pack(
+            fill="x")
+        tk.Label(mh, text="Small helpers for league mechanics. They only watch and show - they never act in the game. "
+                          "Click one on the overlay to switch it on or off.", bg=P1, fg=C["muted"],
+                 font=("Segoe UI", 9), anchor="w", justify="left", wraplength=640).pack(fill="x", pady=(2, 8))
+        self.build_alerts_panel(mh).pack(fill="x")
+        nt = tk.Frame(po.inner, bg=P1)
+        nt.pack(fill="x", pady=(12, 0))
+        tk.Label(nt, text="NOTES", bg=P1, fg=C["muted"], font=("Segoe UI", 9, "bold"), anchor="w").pack(fill="x")
+        self.build_notes_window(nt)
+        self.ovh_pages = getattr(self, "ovh_pages", {})
+        self.ovh_pages.update({"Mechanic Helper": mh, "Notes": nt})
         tk.Label(body, text="Reads only Path of Exile 2's own log file (Client.txt) on your PC: never the game's memory, "
                             "never its servers, never sends keys or clicks.", bg=P1, fg=C["steel"], font=("Segoe UI", 9),
                  anchor="w").pack(side="bottom", fill="x", padx=12, pady=(0, 8))
@@ -361,7 +363,7 @@ class TrackerPage:
         cfg, P2 = self.tracker_cfg(), C["panel2"]
         box = tk.Frame(po, bg=P2, padx=16, pady=8, highlightthickness=1, highlightbackground=C["line"])
         box.pack(fill="x")
-        tk.Label(box, text="Options", bg=P2, fg=C["accent"], font=("Segoe UI", 10, "bold")).grid(
+        tk.Label(box, text="Timer", bg=P2, fg=C["accent"], font=("Segoe UI", 10, "bold")).grid(
             row=0, column=0, columnspan=3, sticky="w")
         tk.Label(box, text="What the small timer over the game shows:", bg=P2, fg=C["muted"], font=("Segoe UI", 9)).grid(
             row=0, column=0, columnspan=3, sticky="e")
@@ -375,7 +377,7 @@ class TrackerPage:
         ttk.Checkbutton(box, text="Start tracking when StashOfExile2 starts", variable=self.tk_auto,
                         command=self.tracker_options_changed).grid(row=7, column=0, columnspan=3, sticky="w",
                                                                    pady=(8, 0))
-        self.tk_lock = tk.BooleanVar(value=bool(cfg.get("locked")))
+        self.tk_lock = tk.BooleanVar(value=bool(cfg.get("mlocked")))      # 2.59.0: ONE lock for the whole overlay
         lk = tk.Frame(box, bg=P2)
         lk.grid(row=3, column=0, columnspan=3, sticky="w", pady=(8, 0))
         ttk.Checkbutton(lk, text="Lock it (can't be moved or resized by accident)", variable=self.tk_lock,
@@ -396,7 +398,7 @@ class TrackerPage:
         op = tk.Frame(box, bg=P2)                       # 2.3.0: own row - it used to sit on top of its label
         op.grid(row=4, column=0, columnspan=3, sticky="w", pady=(8, 0))
         # 2.52.0 (the user: opacity was here AND in Appearance): one place for how every overlay looks
-        tk.Label(op, text="Style and opacity of the timer:", bg=P2, fg=C["text"]).pack(side="left")
+        tk.Label(op, text="Style, layout and opacity of the overlay:", bg=P2, fg=C["text"]).pack(side="left")
         ttk.Button(op, text="Settings › Appearance", style="Quiet.TButton",
                    command=self.appearance_open).pack(side="left", padx=(8, 0))
         box2 = tk.Frame(po, bg=P2, padx=16, pady=8, highlightthickness=1, highlightbackground=C["line"])
@@ -408,7 +410,7 @@ class TrackerPage:
         self.tk_key_msg = tk.Label(box2, text="", bg=P2, fg=C["text"], font=("Segoe UI", 9), anchor="w", justify="left")
         self.tk_key_msg.grid(row=1, column=0, columnspan=3, sticky="w")
         ttk.Button(box2, text="Change in Settings › Hotkeys", style="Quiet.TButton",
-                   command=lambda: self.hotkeys_open("tracker:key_toggle")).grid(row=1, column=3, sticky="w", padx=(12, 0))
+                   command=lambda: self.hotkeys_open("tracker:key_overlay")).grid(row=1, column=3, sticky="w", padx=(12, 0))
         self._tk_keys_text()
 
 
@@ -425,17 +427,29 @@ class TrackerPage:
         cfg = self.tracker_cfg()
         for k, v in self.tk_line_vars.items():
             cfg["lines"][k] = bool(v.get())
-        cfg["locked"] = bool(self.tk_lock.get())
         cfg["autostart"] = bool(self.tk_auto.get())
+        self.overlay_lock(bool(self.tk_lock.get()))
+
+    def overlay_lock(self, on):
+        """2.59.0: one lock for everything over the game (the timer, the switches, Notes) - the 🔒 on the overlay and
+        Lock it in Options are the same switch."""
+        cfg = self.tracker_cfg()
+        cfg["mlocked"] = cfg["locked"] = bool(on)
+        self.overlay.cfg["notes_locked"] = bool(on)
+        if getattr(self, "tk_lock", None) is not None and bool(self.tk_lock.get()) != bool(on):
+            self.tk_lock.set(bool(on))
         self.tracker_save()
-        if self.tk_overlay is not None:
-            self.tracker_overlay_build()
+        self.overlay.save_settings()
+        self.merged_build()
+        if self.overlay.notes is not None:                  # a dropped-down note (Strip, Minimal)
+            self.overlay.restyle()
 
     def _tk_keys_text(self):
         from .overlay import key_label
         cfg = self.tracker_cfg()
         if getattr(self, "tk_key_msg", None) is not None:
-            self.tk_key_msg.config(text=f"Start / stop: {key_label(cfg.get('key_toggle')) or 'none'}     "
+            self.tk_key_msg.config(text=f"Show / hide the overlay: {key_label(cfg.get('key_overlay')) or 'none'}     "
+                                        f"Start / stop: {key_label(cfg.get('key_toggle')) or 'none'}     "
                                         f"Pause / resume: {key_label(cfg.get('key_pause')) or 'none'}")
 
     def tracker_save_keys(self):
@@ -466,10 +480,29 @@ class TrackerPage:
         p = filedialog.askopenfilename(parent=self.root, title="Find Path of Exile 2's Client.txt (in its logs folder)",
                                        filetypes=[("Client.txt", "Client.txt"), ("Text", "*.txt"), ("All files", "*.*")])
         if p:
-            self.tracker_cfg()["log_path"] = p
-            self.tracker_save()
-            self.tk_reader = None
+            self.tracker_set_log(p)
+
+    def tracker_set_log(self, p):
+        """2.59.0: Settings › General › Game sets the game's log file ('' = find it by itself)."""
+        self.tracker_cfg()["log_path"] = p
+        self.tracker_save()
+        self.tk_reader = None
+        if getattr(self, "tk_log_lbl", None) is not None:
             self.tracker_open_log()
+        self.game_log_text()
+
+    def game_log_text(self):
+        lbl = getattr(self, "log_path_lbl", None)
+        if lbl is None:
+            return
+        mine = self.tracker_cfg().get("log_path") or ""
+        found = find_log(mine or None)
+        txt = (f"{found}" + ("" if mine else "  (found by itself)")) if found else \
+            "Not found - press Change… and pick Client.txt in the game's logs folder."
+        try:
+            lbl.config(text=txt, fg=C["text"] if found else C["red"])
+        except tk.TclError:
+            pass
 
     def tracker_open_log(self):
         """-> True if the log is being followed."""
@@ -632,6 +665,8 @@ class TrackerPage:
             self.tracker_toggle()
         elif what == "pause":
             self.tracker_pause_toggle()
+        elif what == "overlay":
+            self.overlay_hide_toggle()
 
     def _tracker_finish_now(self):
         s = self.tk_session
@@ -761,274 +796,25 @@ class TrackerPage:
         self.tk_ov_btn.config(text="Hide timer")
 
     def tracker_overlay_hide(self):
-        if self.merged_on():                       # 2.55.0: the timer leaves the one window (the rest stays)
-            self.mg_timer = False
-            self.tk_overlay = None
-            self.merged_build()
-            self.tk_ov_btn.config(text="Show timer")
-            return
-        if self.tk_overlay is not None:
-            self._tracker_store_geo()
-            self.tk_overlay.destroy()
-            self.tk_overlay = None
-        # (2.49.0: the Mechanic Helper bar stays - it has its own switch)
+        """The timer leaves the overlay window (the switches and Notes stay)."""
+        self.mg_timer = False
+        self.tk_overlay = None
+        self.merged_build()
         self.tk_ov_btn.config(text="Show timer")
 
-    def _tracker_store_geo(self):
-        w = self.tk_overlay
-        try:
-            if w is not None and w.winfo_ismapped() and w.winfo_width() > 1:
-                self.tracker_cfg().update(x=w.winfo_x(), y=w.winfo_y(), w=w.winfo_width(), h=w.winfo_height())
-        except Exception:
-            pass
-
     def tracker_overlay_build(self):
-        """The timer over the game: the shared over-the-game window (overlaywin.py, same look as Notes)."""
-        from .overlaywin import OverlayWindow, pal
-        cfg = self.tracker_cfg()
-        if self.merged_on():                       # 2.55.0: one window for the timer, the switches and Notes
-            self.mg_timer = True
-            return self.merged_build()
-        if self.tk_overlay is not None:
-            self._tracker_store_geo()
-            self.tk_overlay.destroy()
-        P = pal()                                  # 2.43.0: parchment (or the classic dark look)
-        BODY_BG, fg = P["bg"], P["big"]
+        """The timer over the game: part of the one overlay window (merged_page.py; 2.59.0: always one window)."""
+        self.mg_timer = True
+        return self.merged_build()
 
-        def moved(x, y, ww, hh):
-            cfg.update(x=x, y=y, w=ww, h=hh)
-            self.tracker_save()
-
-        def lock(on):
-            cfg["locked"] = bool(on)
-            if getattr(self, "tk_lock", None) is not None:
-                self.tk_lock.set(bool(on))
-            self.tracker_save()
-            self.tracker_overlay_build()
-        w = OverlayWindow(self.root, "Session", "⏱", (cfg["x"], cfg["y"], cfg["w"], cfg["h"]),
-                          opacity=int(cfg.get("opacity", 225)), locked=bool(cfg.get("locked")),
-                          min_size=(140, 60), on_close=self.tracker_overlay_toggle, on_lock=lock, on_moved=moved,
-                          drag_body=True, follow_game=True, no_activate=True)
-        w.withdraw()
-        self.tk_ov_lbls = {}
-        self.tk_ov_clock = None
-        self.tk_ov_cv = None
-        if w.parch:                                # 2.47.0: the mockups' layout, drawn on the skin's background
-            self._tracker_ov_canvas(w, cfg, P)
-            self.tk_overlay = w
-            self.tracker_helpers_sync()
-            self.tracker_overlay_draw(self.tracker_numbers())
-            w.show()
-            return
-        inner = tk.Frame(w.body, bg=BODY_BG, padx=8, pady=4)
-        inner.pack(fill="both", expand=True)
-        top = tk.Frame(inner, bg=BODY_BG)          # the session time, and (2.39.0) the clock on the same row
-        top.pack(fill="x")
-        if not cfg.get("locked"):
-            w.draggable(top)
-        if cfg.get("clock", True):                 # 2.39.0: clock + date like the app's taskbar clock, small, at the
-            self.tk_ov_clock = tk.Label(top, text="", bg=BODY_BG, fg=P["muted"], font=(P["font"], 9),   # right -
-                                        anchor="ne", justify="right")                                 # no extra line
-            self.tk_ov_clock.pack(side="right", anchor="n", padx=(8, 0))
-            if not cfg.get("locked"):
-                w.draggable(self.tk_ov_clock)
-        for k, _label in LINE_NAMES:
-            if cfg["lines"].get(k):
-                lab = tk.Label(top if k == "session" else inner, text="", bg=BODY_BG,
-                               fg=fg if k == "session" else P["text"],
-                               font=(P["font"], 18 if k == "session" else 10, "bold" if k == "session" else "normal"),
-                               anchor="w")
-                lab.pack(side="left", fill="x", expand=True) if k == "session" else lab.pack(fill="x")
-                self.tk_ov_lbls[k] = lab
-                if not cfg.get("locked"):
-                    w.draggable(lab)
-        if not cfg.get("locked"):
-            w.draggable(inner)
-        self.tk_overlay = w
-        self.tracker_helpers_sync()                # 2.49.0: its own window, with its own switch
-        self.tracker_overlay_draw(self.tracker_numbers())
-        w.show()                                   # only while the game (or the app) is in front (2.0 beta 15)
-
-    def _tracker_ov_canvas(self, w, cfg, P):
-        """2.47.0 (the user: "the example you showed me looked so nice and clean"): Session on the title bar with the
-        clock at its right; the big time; then two columns - Map 9:54 | Oasis, Maps 1 | Avg 9:54, Profit."""
-        from .overlaywin import CanvasText
-        cv = w.canvas_body()
-        self.tk_ov_cv = cv
-        # 2.51.0 (the user: "barely legible"): a size up and a halo round every letter. 2.53.0 ("a bit too harsh now"):
-        # the rows back to plain weight, only the time and Profit bold, a thinner and softer halo
-        f_big, f_row = (P["font"], 20, "bold"), (P["font"], 10)
-        items = {"session": cv.create_text(12, 6, text="", anchor="nw", fill=P["big"], font=f_big)}
-        lines = cfg["lines"]
-        rows = []
-        if lines.get("map"):
-            rows.append(("map", "where"))
-        if lines.get("maps") or lines.get("avg"):
-            rows.append(("maps" if lines.get("maps") else None, "avg" if lines.get("avg") else None))
-        for left, right in rows:
-            if left:
-                items[left] = cv.create_text(12, 0, text="", anchor="w", fill=P["text"],
-                                             font=f_row)
-            if right:
-                items[right] = cv.create_text(0, 0, text="", anchor="e", fill=P["text"], font=f_row)
-
-        halo = P.get("halo") if P.get("texture") else None
-        self.tk_ov_lbls = {k: CanvasText(cv, it, P["bg"], halo=halo) for k, it in items.items()}
-        lbl = self.tk_ov_lbls
-
-        def layout(_e=None):
-            wd = max(cv.winfo_width(), 120)
-            y = 48
-            for left, right in rows:
-                if left:
-                    lbl[left].place(12, y)
-                if right:
-                    lbl[right].place(wd - 12, y)
-                y += 21
-        cv.bind("<Configure>", layout, add="+")
-        layout()
-        if not cfg.get("locked"):
-            w.draggable(cv)
-        if cfg.get("clock", True):                 # the clock on the title bar, like the mockup - or, when it doesn't
-            on_bar = P["align"] != "center" and not P.get("plate")      # fit there (2.50.0: it ran into "Session")
-            clk = cv.create_text(0, 10, text="", anchor="ne", fill=P["muted"], font=(P["font"], 9),   # or the title is
-                                 justify="right")                                                   # centred, top right
-            cv.bind("<Configure>", lambda e: cv.coords(clk, e.width - 10, 10), add="+")
-
-            class _Clock:
-                text = ""
-
-                def cget(self_, key):
-                    return self_.text if key == "text" else ""
-
-                def config(self_, text="", **_kw):
-                    self_.text = text
-                    fits = on_bar and w.bar_note(" · ".join(text.splitlines()))
-                    if not fits:
-                        w.bar_note("")
-                    cv.itemconfigure(clk, text="" if fits else text)
-            self.tk_ov_clock = _Clock()
-
-    # ---------------- the Helpers bar (2.38.0: its own small window, shown with the timer, moved on its own)
+    # ---------------- the Mechanic Helper switches (2.59.0: part of the one overlay window)
     HELPERS = ("breach", "delirium", "ritual", "remnant")
     HELPER_W = {"ritual": 11}                      # room for "Ritual 2/3", so the bar never changes size
 
     def tracker_helpers_build(self):
-        """● Breach | ● Delirium | ● Ritual | ● Remnant  ⚙ - one fixed-size bar (as big as its content, never cut
-        off), shown and hidden with the Session timer but placed, moved and locked on its own."""
-        from .overlaywin import OverlayWindow, pal
-        cfg = self.tracker_cfg()
-        P = pal()
+        """The four mechanic switches: part of the one overlay window (2.59.0: always one window)."""
         self.tracker_helpers_destroy()
-        if self.merged_on():                             # 2.55.0: the switches live in the one window
-            return self.merged_build()
-        self.tk_ov_alerts = {}
-        if not cfg.get("alerts_bar", True):
-            return
-        hx, hy = cfg.get("hx"), cfg.get("hy")
-        first = hx is None or hy is None
-        if first:                                        # first time: right under the timer (2.39.0: or above it)
-            hx, hy = cfg["x"], cfg["y"] + cfg["h"] + 8
-
-        def moved(x, y, _w, _h):
-            cfg.update(hx=x, hy=y)
-            self.tracker_save()
-
-        def lock(on):
-            cfg["hlocked"] = bool(on)
-            self.tracker_save()
-            self.tracker_helpers_build()
-            self.tracker_overlay_draw(self.tracker_numbers())
-
-        def close():                                     # × = no Helpers bar (Alerts panel: "Helpers bar")
-            cfg["alerts_bar"] = False
-            if getattr(self, "al_bar", None) is not None:
-                self.al_bar.set(False)
-            self.tracker_save()
-            self.tracker_helpers_destroy()
-        w = OverlayWindow(self.root, "Mechanic Helper", "\u25c9", (hx, hy, None, None),
-                          opacity=int(cfg.get("hopacity", cfg.get("opacity", 225))),
-                          locked=bool(cfg.get("hlocked")), min_size=(120, 30), on_close=close, on_lock=lock,
-                          on_moved=moved, drag_body=True, follow_game=True, no_activate=True, resizable=False)
-        w.withdraw()
-        if w.parch:                                      # 2.47.0: drawn cells, like the mockups
-            self._helpers_canvas(w, P)
-            self.tk_helpers = w
-            self._helpers_on_screen(w, hx, hy, first)
-            w.show()
-            return
-        BB = P["bg"]
-        bar = tk.Frame(w.body, bg=BB, padx=8, pady=4)
-        bar.pack(fill="both", expand=True)
-        for i, k in enumerate(self.HELPERS):
-            if i:
-                tk.Label(bar, text="|", bg=BB, fg=P["line"], font=("Segoe UI", 9)).pack(side="left", padx=4)
-            cell = tk.Frame(bar, bg=BB, cursor="hand2")
-            cell.pack(side="left")
-            dot = tk.Label(cell, text="\u25c6", bg=BB, fg=P["off"], font=("Segoe UI", 9), cursor="hand2")
-            dot.pack(side="left")
-            lab = tk.Label(cell, text=k.title(), bg=BB, fg=P["text"], font=(P["font"], 10, "bold"), cursor="hand2",
-                           width=self.HELPER_W.get(k, len(k) + 1), anchor="w")
-            lab.pack(side="left", padx=(2, 0))
-            for wd in (cell, dot, lab):                        # a click switches that helper on / off
-                wd.bind("<Button-1>", lambda e, k=k: self.tracker_helper_click(k))
-            self.tk_ov_alerts[k] = (dot, lab)
-        cog = tk.Label(bar, text="\u2699", bg=BB, fg=P["muted"], font=("Segoe UI Symbol", 10), cursor="hand2")
-        cog.pack(side="left", padx=(12, 0))
-        cog.bind("<Button-1>", lambda e: self.tracker_helpers_settings())
-        Tooltip(cog, "Mechanic Helper options (Overlays › Mechanic Helper)")
-        self.tk_helpers = w
-        self._helpers_on_screen(w, hx, hy, first)
-        w.show()
-
-    def _helpers_canvas(self, w, P):
-        """One cell per helper - an icon (◆ on / ◇ off; ✓ / ✕ on the Quiet HUD) and its name - then ⚙."""
-        from tkinter import font as tkfont
-        from .overlaywin import CanvasText
-        cv = w.canvas_body()
-        fnt = (P["font"], 10, "bold")
-        f = tkfont.Font(root=cv, family=P["font"], size=10, weight="bold")
-        widths = {k: f.measure("Ritual 3/3" if k == "ritual" else k.title()) + 40 for k in self.HELPERS}
-        x, h, gap = 8, 30, 6
-        for k in self.HELPERS:
-            tag = f"cell_{k}"
-            cv.create_rectangle(x, 6, x + widths[k], 6 + h, fill=P["cell_bg"], outline=P["cell_line"], tags=(tag,))
-            # 2.50.0: bigger, bright icons - the 9 pt dark diamonds read as black on parchment
-            dot = cv.create_text(x + 14, 6 + h // 2, text=P["off_icon"], fill=P["off"], font=("Segoe UI Symbol", 12),
-                                 tags=(tag,))
-            lab = cv.create_text(x + 28, 6 + h // 2, text=k.title(), anchor="w", fill=P["text"], font=fnt, tags=(tag,))
-            cv.tag_bind(tag, "<Button-1>", lambda e, k=k: self.tracker_helper_click(k))
-            cv.tag_bind(tag, "<Enter>", lambda e: cv.configure(cursor="hand2"))
-            cv.tag_bind(tag, "<Leave>", lambda e: cv.configure(cursor=""))
-            self.tk_ov_alerts[k] = (CanvasText(cv, dot, P["cell_bg"]), CanvasText(cv, lab, P["cell_bg"]))
-            x += widths[k] + gap
-        cog = cv.create_text(x + 8, 6 + h // 2, text="\u2699", fill=P["muted"], font=("Segoe UI Symbol", 12),
-                             tags=("cog",))
-        cv.tag_bind("cog", "<Button-1>", lambda e: self.tracker_helpers_settings())
-        cv.configure(width=x + 24, height=h + 12)
-
-    def _helpers_on_screen(self, w, hx, hy, first):
-        """2.39.0: never off the screen. The timer often sits at the bottom of the screen, and "right under it" was
-        below the screen's edge - the bar was there, just invisible. First time: under the timer if it fits, else
-        above it. Any saved place that's off the screen (a monitor unplugged, another resolution) comes back on."""
-        from .style import monitor_rect
-        cfg = self.tracker_cfg()
-        try:
-            w.update_idletasks()
-            bw, bh = max(w.winfo_reqwidth(), 120), max(w.winfo_reqheight(), 30)
-            # 2.50.0: the whole screen, not its work area - the bar moved up a few pixels when locked at the very
-            # bottom edge (the game is full screen; the Windows taskbar's strip is fine to sit on)
-            l_, t, r, b = monitor_rect(self.root, hx + 10, hy + 10, full=True)
-        except Exception:
-            return
-        if first and hy + bh > b:
-            hy = cfg["y"] - bh - 8
-        hx = max(l_, min(int(hx), r - bw))
-        hy = max(t, min(int(hy), b - bh))
-        if (hx, hy) != (cfg.get("hx"), cfg.get("hy")):
-            cfg.update(hx=hx, hy=hy)
-            self.tracker_save()
-        w.geometry(f"+{hx}+{hy}")
+        return self.merged_build()
 
     def tracker_helpers_destroy(self):
         w, self.tk_helpers = getattr(self, "tk_helpers", None), None
@@ -1099,17 +885,8 @@ class TrackerPage:
         """2.49.0 (the user: "it's a different bar, independent of the session tracker"): the bar shows whenever its
         switch is on - timer or not, session or not - and only while the game is in front (like every overlay)."""
         on = bool(self.tracker_cfg().get("alerts_bar", True))
-        if self.merged_on():                             # 2.55.0: in the one window
-            if getattr(self, "tk_helpers", None) is not None:
-                self.tracker_helpers_destroy()
-            if on != bool(getattr(self, "mg_built", {}).get("helpers")) or (on and getattr(self, "mg_win", None) is None):
-                self.merged_build()
-            self.tracker_helpers_paint()
-            return
-        if on and getattr(self, "tk_helpers", None) is None:
-            self.tracker_helpers_build()
-        elif not on and getattr(self, "tk_helpers", None) is not None:
-            self.tracker_helpers_destroy()
+        if on != bool(getattr(self, "mg_built", {}).get("helpers")) or (on and getattr(self, "mg_win", None) is None):
+            self.merged_build()
         self.tracker_helpers_paint()
 
     def tracker_helper_click(self, key):
@@ -1137,7 +914,7 @@ class TrackerPage:
         if self.fl_on_key(vk, ctrl, alt, shift):                       # 2.45.0: Farm Ledger "a run is done"
             return True
         cfg = SETTINGS.get("tracker") or {}
-        for key, action in (("key_toggle", "toggle"), ("key_pause", "pause")):
+        for key, action in (("key_toggle", "toggle"), ("key_pause", "pause"), ("key_overlay", "overlay")):
             k = parse_key(cfg.get(key) or "")
             if k and k == (vk, ctrl, alt, shift):
                 self.ui_q.put(("tracker", action))
@@ -1166,7 +943,7 @@ class TrackerPage:
                 ("Copy your stash search (in game)", SETTINGS.get("regex_key", ""), "Regex", "checks:regex_key"),
                 ("Session timer: start / stop", tc.get("key_toggle", ""), "Overlays", "tracker:key_toggle"),
                 ("Session timer: pause / resume", tc.get("key_pause", ""), "Overlays", "tracker:key_pause"),
-                ("Show / hide notes", oc.get("notes_key", ""), "Overlays", "overlay:notes_key"),
+                ("Show / hide the overlay", tc.get("key_overlay", ""), "Overlays", "tracker:key_overlay"),
                 ("Expedition Remnant Price Checker (in game)", self.remnant_cfg().get("key", ""), "Overlays",
                  "remnant:key"),
                 ("Farm Ledger: a run is done (setups counted by key)", SETTINGS.get("ledger_key") or "Ctrl+Alt+N",

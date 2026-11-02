@@ -44,9 +44,7 @@ class TabReaderPage:
         row = tk.Frame(tb, bg=P1, padx=8, pady=4)
         self.pc_tabrow = row
         self.pc_tabrow_after = mrow
-        tk.Label(row, text="Account", bg=P1, fg=C["muted"]).pack(side="left")
-        self.pc_acc = tk.StringVar(value=SETTINGS.get("wealth_account", ""))
-        ttk.Entry(row, textvariable=self.pc_acc, width=18).pack(side="left", padx=(8, 12))
+        self.acc_link(row, P1).pack(side="left", padx=(0, 12))   # 2.59.0: set in Settings › Price checking
         tk.Label(row, text="Tab's price", bg=P1, fg=C["muted"]).pack(side="left")
         self.pc_amt = tk.StringVar(value=str(cfg.get("amount") or ""))
         ttk.Entry(row, textvariable=self.pc_amt, width=9).pack(side="left", padx=(8, 4))

@@ -230,12 +230,7 @@ class WealthPage:
         arow = tk.Frame(self.w_setup, bg=P2)
         arow.pack(fill="x")
         tk.Label(arow, text="Your priced tabs", bg=P2, fg=C["text"], font=("Segoe UI", 12, "bold")).pack(side="left")
-        tk.Label(arow, text="Account", **lab2).pack(side="left", padx=(16, 8))
-        self.w_acc = tk.StringVar(value=SETTINGS.get("wealth_account", ""))
-        acc = ttk.Entry(arow, textvariable=self.w_acc, width=24)
-        acc.pack(side="left")
-        acc.bind("<FocusOut>", lambda e: self.wealth_save_account())
-        acc.bind("<Return>", lambda e: (self.wealth_save_account(), self.root.focus_set()))
+        self.acc_link(arow, P2).pack(side="left", padx=(16, 8))   # 2.59.0: set in Settings › Price checking
         ttk.Button(arow, text="Done", command=self.wealth_toggle_edit).pack(side="right")
         self.w_help = tk.Label(self.w_setup, text="In game, make a Premium stash tab public and price the whole tab at "
                                                   "something nobody would pay, like 37882 Divine Orbs. Add that price "
@@ -752,10 +747,8 @@ class WealthPage:
 
     # ---------------- actions
     def wealth_save_account(self):
-        v = self.w_acc.get().strip()
-        if v != SETTINGS.get("wealth_account", ""):
-            SETTINGS["wealth_account"] = v
-            save_json("settings.json", SETTINGS)
+        self.pc_vars()
+        self.on_account()                     # 2.59.0: the one account (Settings › Price checking)
 
     def wealth_next_amount(self):
         used = [t["amount"] for t in WEALTH.tabs]
