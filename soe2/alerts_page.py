@@ -331,6 +331,8 @@ class AlertsPage:
 
     def alerts_bar_changed(self):
         self.tracker_cfg()["alerts_bar"] = bool(self.al_bar.get())
+        if getattr(self, "tk_switches_var", None) is not None:      # 2.70.1: the same switch in On the overlay
+            self.tk_switches_var.set(bool(self.al_bar.get()))
         self.tracker_save()
         self.tracker_helpers_sync()                                # 2.49.0: on its own, timer or not
 

@@ -256,7 +256,8 @@ class Overlay:
         if "enabled" in self.cfg:              # 2.0 beta 7: one switch became two (chat commands / notes)
             on = bool(self.cfg.pop("enabled"))
             self.cfg["chat_enabled"] = on
-        self.cfg["notes_enabled"] = True       # 2.68.1: Notes is part of the overlay (its Notes ▾) - always there
+        if not self.cfg.get("notes_choice"):   # 2.68.1: Notes is part of the overlay (its Notes ▾); 2.70.1: unless
+            self.cfg["notes_enabled"] = True   # you switched it off in Overlay › Options › On the overlay
         self.cfg.pop("notes_key", None)
         if not self.cfg.get("imported_ahk"):
             old = read_ahk_config()

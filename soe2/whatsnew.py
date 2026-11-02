@@ -21,6 +21,11 @@ NEXT = [
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.70.1": [
+        "Overlay: \"Hide timer\" is now a \"Timer over the game\" switch - it hides only the timer.",
+        "Overlay › Options › On the overlay: switch off any part you don't want over the game - each number, where "
+        "you are, the clock, Notes, the Mechanic Helper switches.",
+    ],
     "2.70.0": [
         "Strat Tracker: setting up a strat is now 5 short steps - Name & strat, Waystone, Tablets & more, Atlas, "
         "Logging - with the cost of one run always showing at the right.",
