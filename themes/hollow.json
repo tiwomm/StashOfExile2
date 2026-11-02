@@ -212,5 +212,17 @@
   "on": "accent",
   "off": "#1c1627",
   "lcd_bg": "#040207"
+ },
+ "nav": {
+  "bg": "surface_raised",
+  "marker": "glow",
+  "marker_color": "accent",
+  "sel_bg": "#2a1846",
+  "hover_bg": "#181222",
+  "text": "text",
+  "sel_text": "#fbf8ff",
+  "group": "#7f6aa3",
+  "texture": "veins",
+  "texture_color": "#6b3fb0"
  }
 }

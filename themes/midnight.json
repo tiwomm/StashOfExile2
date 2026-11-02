@@ -92,5 +92,15 @@
   "style": "bar",
   "on": "good",
   "off": "surface_high"
+ },
+ "nav": {
+  "bg": "surface_raised",
+  "marker": "bar",
+  "marker_color": "accent",
+  "sel_bg": "#1b2f55",
+  "hover_bg": "#16213a",
+  "text": "text",
+  "sel_text": "#ffffff",
+  "group": "text_muted"
  }
 }
