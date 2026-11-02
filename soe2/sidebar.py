@@ -17,6 +17,7 @@ class Sidebar(tk.Canvas):
         super().__init__(parent, width=WIDE, highlightthickness=0, bd=0, bg=C["panel2"])
         self.shell = shell
         self.hover, self.compact, self._rows = None, False, []
+        self.folded = set()                    # 2.65.0: open tools folded shut by a click
         TH.self_painted(self)
         TH.subscribe(lambda t: self.redraw(), owner=self)
         self.bind("<Configure>", lambda e: self.redraw())
@@ -25,16 +26,16 @@ class Sidebar(tk.Canvas):
         self.bind("<Button-1>", self._click)
 
     # ---- what is listed
-    def items(self, fold=False):
-        """Rows top to bottom. 2.64.0: a page's own tabs are rows too, under it ({"tab": title, "of": key, "depth"}).
-        fold: only the open page's tabs (when everything doesn't fit)."""
+    def items(self):
+        """Rows top to bottom. 2.65.0: only the tools at first; the open one unfolds to show what's under it - its
+        child tools and its tabs (2.64.0: {"tab": title, "of": key, "depth"}). A click on the open one folds it."""
         sh = self.shell
         act = sh.active
         act_par = getattr(sh.modules.get(act), "parent", None)
         out = []
 
         def tabs(m, depth):
-            if self.compact or (fold and m.key not in (act, act_par)):
+            if self.compact or m.key != act:
                 return
             for t in sh.tab_titles(m.key):
                 out.append({"key": f"{m.key}::{t}", "tab": t, "of": m.key, "depth": depth})
@@ -45,15 +46,18 @@ class Sidebar(tk.Canvas):
             out.append({"group": label})
             for m in mods:
                 out.append({"key": m.key, "mod": m})
+                if m.key not in (act, act_par) or m.key in self.folded:
+                    continue
                 tabs(m, 1)
                 for c in sh.children(m.key):
                     out.append({"key": c.key, "mod": c, "child": True})
-                    tabs(c, 2)
+                    if c.key not in self.folded:
+                        tabs(c, 2)
         return out
 
-    def _fits(self, rows, h):
-        need = 8 + sum(28 if "group" in r else 26 if "tab" in r else 32 for r in rows)
-        return need <= h - 2 * (30 + 2) - 28
+    def has_more(self, key):
+        """Does this tool unfold (child tools or tabs)?"""
+        return bool(self.shell.children(key) or self.shell.tab_titles(key))
 
     def set_compact(self, on):
         if on != self.compact:
@@ -85,7 +89,18 @@ class Sidebar(tk.Canvas):
             key, title = k.split("::", 1)
             self.shell.open_tab(key, title)
         elif k:
-            self.shell.open(k)
+            sh = self.shell
+            par = getattr(sh.modules.get(sh.active), "parent", None)
+            if k in (sh.active, par) and k != "settings" and self.has_more(k):    # the open one: fold / unfold
+                self.folded.symmetric_difference_update({k})
+                self.redraw()
+                return
+            self.folded.discard(k)
+            home = sh.tab_home(k)
+            if home:                                             # its own page (Regex: Build a search)
+                sh.open_tab(k, home)
+            else:
+                sh.open(k)
 
     # ---- drawing (the theme's own nav style: bar, glow, pill, gem, bracket, arrow, step)
     def redraw(self):
@@ -115,8 +130,6 @@ class Sidebar(tk.Canvas):
         self._rows = []
         active = self.shell.active
         rows = self.items()
-        if not self._fits(rows, h):
-            rows = self.items(fold=True)
         for it in rows + [{"group": None}, {"key": "_toolkit", "title": "Toolkit", "icon": "◆"},
                                   {"key": "settings", "title": "Settings", "icon": "⚙"}]:
             if "group" in it:
@@ -142,8 +155,9 @@ class Sidebar(tk.Canvas):
             icon = mod.icon if mod is not None else it["icon"]
             y0, y1 = y, y + rh
             x0, x1 = (6, w - 6) if not self.compact else (4, w - 4)
-            has_tabs = mod is not None and bool(self.shell.tab_titles(k)) and not self.compact
-            sel = (k == active and not has_tabs) or (k == "_toolkit" and self.shell.menu is not None)
+            on_tab = (mod is not None and not self.compact and k not in self.folded
+                      and self.shell.tab_current(k) in self.shell.tab_titles(k))
+            sel = (k == active and not on_tab) or (k == "_toolkit" and self.shell.menu is not None)
             if sel:
                 self._marker(mk, x0, y0, x1, y1, acc, sel_bg, bg)
             elif k == self.hover:
@@ -152,7 +166,7 @@ class Sidebar(tk.Canvas):
                 else:
                     self.create_rectangle(x0, y0, x1, y1, fill=hov_bg, outline="")
             cy = (y0 + y1) // 2
-            opened = has_tabs and k == active                  # its tab carries the marker; the page name is bold
+            opened = on_tab and k == active                    # its tab carries the marker; the page name is bold
             fg = sel_txt if sel or opened else txt
             if self.compact:
                 self.create_text((x0 + x1) // 2, cy, text=icon, font=("Segoe UI Emoji", 12), fill=fg)
@@ -164,6 +178,13 @@ class Sidebar(tk.Canvas):
                                  font=("Segoe UI Emoji", 12 if not it.get("child") else 10), fill=fg)
                 self.create_text(x0 + 40 + ind, cy, text=title, anchor="w", fill=fg,
                                  font=("Segoe UI", 10 if not it.get("child") else 9, "bold" if sel or opened else "normal"))
+                more = mod is not None and not it.get("child") and self.has_more(k)
+                if more:                                       # 2.65.0: ▸ folded / ▾ open
+                    par = getattr(self.shell.modules.get(active), "parent", None)
+                    unfolded = k in (active, par) and k not in self.folded
+                    self.create_text(x1 - 4, cy, text="▾" if unfolded else "▸", anchor="e", fill=grp,
+                                     font=("Segoe UI Symbol", 9))
+                    x1 -= 14
                 if mod is not None and getattr(mod, "kind", "") == "utility" and not it.get("child"):
                     st = None
                     try:

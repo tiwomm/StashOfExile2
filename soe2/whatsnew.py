@@ -21,6 +21,15 @@ NEXT = [
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.65.0": [
+        "Two new overlay layouts in the game's own bar look (Settings › Appearance › Layout): \"Game bar - on the "
+        "XP bar\" sits right on top of the experience bar, and \"Game bar - beside the orbs\" splits it - your "
+        "time and map right of the life orb, the switches, Notes and clock left of the mana orb.",
+        "They fit themselves to the game window. A different UI scale? Unlock and drag them; \"Fit to the game\" "
+        "puts them back.",
+        "The sidebar is tidier: only the tools are listed, and the one you open unfolds to show what's under it. "
+        "Click it again to fold it. Regex lists just Favorites under it.",
+    ],
     "2.64.0": [
         "Each tool's tabs are now listed in the sidebar right under it (↳) - for example Money Makers ↳ Strats, "
         "Lucrative Strats, Tablet Crafting, Farm Tracker; Regex ↳ Favorites; Mod book ↳ its rule tabs. Click one "

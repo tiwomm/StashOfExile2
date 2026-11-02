@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU GPL v3.0 (see LICENSE). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.64.0
+VERSION 2.65.0
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,6 +19,21 @@ VERSION 2.64.0
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.65.0
+       Game bar overlay layouts (merged_page HUD = xpbar / orbs): "Game bar - on the XP bar" (one window between
+       the orb panels, resting on the XP bar: time | map | maps · avg | the four switches, short names | Notes |
+       clock, lock) and "Game bar - beside the orbs" (two windows: right of the life orb the time, Maps · Avg,
+       map and area; left of the mana orb the switches 2 x 2, Notes, clock, lock). Placed from HUD_SPOTS - parts
+       of the game window's height, from its edges (PoE2 16:9, UI scale 100 %) via alerts_page.game_rect (else
+       the screen); fonts grow with the game height (_hf). Their own look whatever the style: PALETTES["gamebar"]
+       (not in LOOKS) - dark stone shade, bronze rim with a pale highlight, end studs, gold serif text
+       (_hud_frame). OverlayWindow(palette=) for that; tracker_helpers_paint uses mg_P. Unlocked they drag and
+       keep their place (cfg hud_pos per layout); Settings › Appearance › "↺ Fit to the game" (hud_fit) puts
+       them back. mg_win2 (the second half) is destroyed, hidden (F6) and faded with the first; Notes opens above
+       the bar. Sidebar: only the tools at first - the open one unfolds (its child tools and tabs, ▸ / ▾);
+       a click on the open one folds it (Sidebar.folded). Shell.register_tabs(home=): a tab that is the page
+       itself, not listed (Regex: Build a search; only ★ Favorites under it). test_v2650; test_v2620 /
+       test_v2640 for the folding.
   2.64.0
        A page's tabs are listed in the sidebar under the page (↳), not along its top: Shell.register_tabs(key, bar)
        hides a SegBar (pack_forget; command and pick wrapped so the sidebar follows) or a SegBook's button row
@@ -1438,7 +1453,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.64.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.65.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 

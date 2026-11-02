@@ -59,6 +59,13 @@ PALETTES = {
                 text="#f3e3bd", muted="#d9c79e", line="#7a5a2e", on="#6fd36a", off="#e5604c", warn="#e0a352",
                 field="#0a0907", big="#f3e3bd", font=SERIF, rules=True, on_icon="\u2713", off_icon="\u2715",
                 cell_bg="#0a0907", cell_line="#0a0907"),
+    # 2.65.0: the Game bar layouts (on the XP bar / beside the orbs) - the game's own bottom bar: dark stone, a
+    # bronze rim with a pale highlight, warm gold serif text. Not in LOOKS: those two layouts always use it.
+    "gamebar": dict(_P, leather="#000000", edge="#000000", border=1, bg="#100e0b", band="#100e0b", head="#b8a174",
+                    text="#dccca4", muted="#a39272", line="#4a3d27", on="#6fcf6a", off="#d9654f", warn="#e0a352",
+                    field="#14110d", big="#f0e3bd", font=SERIF, cell_bg="#16130f", cell_line="#3a3122",
+                    on_bg="#17200f", on_line="#3d5a32", bg_top="#24201a", rim="#7d6539", rim_hi="#c9ad72",
+                    rim_lo="#2c2416"),
     "classic": dict(_P, leather=BORDER_OFF, edge=OUTLINE, border=0, bg=BODY_BG, band=BODY_BG, head="#ffe2b8",
                     text="#e8eefc", muted="#9fb0cc", line="#8a6a3a", on="#5ee08a", off="#ff5c5c", warn="#ffb347",
                     field=BODY_BG, big="#ffd9a8", font="Segoe UI", on_icon="\u25cf", off_icon="\u25cf"),
@@ -288,15 +295,15 @@ class OverlayWindow(tk.Toplevel):
 
     def __init__(self, root, title, icon, geo, *, opacity=230, locked=False, body_bg=BODY_BG, min_size=(140, 60),
                  on_close=None, on_lock=None, on_moved=None, drag_body=False, app_colours=False, lockable=True,
-                 follow_game=False, no_activate=False, resizable=True, titlebar=True, resize_axes="xy"):
+                 follow_game=False, no_activate=False, resizable=True, titlebar=True, resize_axes="xy", palette=None):
         """geo = (x, y, w, h); w / h None = as big as the content. app_colours: the blue title bar of the app's own
         windows (for small pop-ups of the app) instead of the utility colors (things shown over the game).
         follow_game: only visible while the game (or the window itself) is in front; show() / hide() say whether you want it.
         no_activate: clicking it never takes the keyboard away from the game (for windows you don't type in).
         resizable=False: always the size of its content (2.38.0: the Helpers bar).
         titlebar=False (2.55.0): no title bar - the Minimal look and the Strip layout draw their own lock and ×."""
-        parch = skinned() and not app_colours             # 2.43.0 / 2.47.0: a PoE2-style skin
-        P = pal()
+        parch = (skinned() or palette is not None) and not app_colours   # 2.43.0 / 2.47.0: a PoE2-style skin
+        P = palette or pal()                              # 2.65.0: a layout may bring its own (the Game bar)
         if parch:
             body_bg = P["bg"]
         super().__init__(root, bg=P["leather"] if parch else BORDER_OFF, highlightthickness=1,
@@ -574,7 +581,7 @@ class OverlayWindow(tk.Toplevel):
                             ("se", "bottom_right_corner", dict(relx=1, x=-k, rely=1, y=-EDGE, width=k, height=EDGE)),
                             ("se", "bottom_right_corner", dict(relx=1, x=-EDGE, rely=1, y=-k, width=EDGE, height=k)))
                             if self.resize_axes != "x" or e[0] in ("e", "w")):
-            h = tk.Frame(self, bg=pal()["leather"] if self.parch else BORDER_OFF, cursor=cur)
+            h = tk.Frame(self, bg=self.P["leather"] if self.parch else BORDER_OFF, cursor=cur)
             h.place(**kw)
             self.resizer(h, sd)
 
