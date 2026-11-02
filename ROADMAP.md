@@ -4,7 +4,7 @@
 
 > **Who we build for - read second.** Path of Exile players are utilitarian: they love data and information, problem solving and creative thinking. So every feature shows its numbers *and how they were worked out*, lets you sort, filter, compare and export them (CSV), keeps power-user depth (keys, versions, raw data) one click away instead of hiding it, explains in plain words, and leaves the decision to the player. Pretty is welcome; vague is not.
 
-**Current version: 2.53.0**
+**Current version: 2.54.0**
 
 Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds features, 2.10.1 only fixes. Each step below is one release; we work through them top to bottom.
 
@@ -80,6 +80,7 @@ Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds f
 | 2.51.0 | Mod book › Manual feed: teach it an item's price (counts as 1-10 listings, optional High rating, before / after, undo, CSV). A more readable Session timer. |
 | 2.52.0 | Menus tidied: each setting in one place (opacity in Overlays › Appearance; the timer's clock switch in its Options). |
 | 2.53.0 | Price checks: click a row for the item's box (as in Insights). A softer Session timer. US spelling everywhere (Font and Colors). |
+| 2.54.0 | Money Makers filters: Thoughts per click, Clicks per hour. Profit leaves the Session timer: money is tracked in one place, the Farm Ledger. |
 
 ## ▶ Next up
 
@@ -87,11 +88,13 @@ Order (decided 2.34.0): the Polish basics first, so new features are built on th
 
 | Version | Plan |
 |---|---|
-| 2.54.0 | **More item types priced (Sidekick / Exiled Exchange-style):** a pricing engine for item types the app only guesses today. Their licenses are checked first; logic is ported, not code, with credit. |
-| 2.55.0 | **Public stash order test tool.** |
-| 2.56.0 | **Polish 4 - Responsive:** windows reflow when narrow (toolbars wrap, side panels drop under the list, sensible minimum sizes), sharp on every monitor (per-monitor DPI), a text size setting (100-150 %). |
-| 2.57.0 | **Polish 5 - Hover, focus, micro-interactions:** the same hover and pressed look on every button, row, icon and tab; a visible keyboard focus ring everywhere; short (120-180 ms) fades for popups and toasts, never on lists; a "Reduce motion" setting that turns them off. |
-| 2.58.0 | **Polish 6 - Visual hierarchy:** the suggestions below, window by window, with before / after screenshots in each PR. |
+| 2.55.0 | **One merged overlay:** Session timer, Mechanic Helper and Notes in one window (a Merged switch splits them back). Styles: Codex (new), Minimal (new), Runeshape parchment, Relic tooltip, Carved frame, Quiet HUD, Classic dark; Layout: Panel or Strip (top edge), for any style. |
+| 2.56.0 | **Farm Ledger and strats redesign:** modern, clean, easy for the average player. Mockups first, then the build. |
+| 2.57.0 | **More item types priced (Sidekick / Exiled Exchange-style):** a pricing engine for item types the app only guesses today. Their licenses are checked first; logic is ported, not code, with credit. |
+| 2.58.0 | **Public stash order test tool.** |
+| 2.59.0 | **Polish 4 - Responsive:** windows reflow when narrow (toolbars wrap, side panels drop under the list, sensible minimum sizes), sharp on every monitor (per-monitor DPI), a text size setting (100-150 %). |
+| 2.60.0 | **Polish 5 - Hover, focus, micro-interactions:** the same hover and pressed look on every button, row, icon and tab; a visible keyboard focus ring everywhere; short (120-180 ms) fades for popups and toasts, never on lists; a "Reduce motion" setting that turns them off. |
+| 2.61.0 | **Polish 6 - Visual hierarchy:** the suggestions below, window by window, with before / after screenshots in each PR. |
 | Last | **Linux build** (Hyprland / Wayland first) - the groundwork is in place (session_linux_handover.txt). |
 
 ### Visual hierarchy - suggestions (for 2.47.0)

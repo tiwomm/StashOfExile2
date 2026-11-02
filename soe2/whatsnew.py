@@ -21,6 +21,12 @@ NEXT = [
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.54.0": [
+        "Money Makers: the filters are named like the fields - 🧠 Thoughts per click and 🖱 Clicks per hour (each shows "
+        "the level you pick and the easier / calmer ones).",
+        "The Session timer no longer shows profit: it times your play. Money is tracked in one place - Money Makers › "
+        "Farm Ledger (there's a link on the Session timer).",
+    ],
     "2.53.0": [
         "Price checks: click an item (Manual Add or a stash tab's list) to see its box - name, mods and price - like "
         "in Insights. Click it or press Esc to close it.",
