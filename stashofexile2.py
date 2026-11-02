@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU GPL v3.0 (see LICENSE). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.72.2
+VERSION 2.73.0
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,6 +19,17 @@ VERSION 2.72.2
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.73.0
+       League Focus part 1 (focus.py, plan_page.py; mockups A-K). Overlay ↳ Game Plan (module "plan"): goals by
+       phase - league start / when I reach maps / long term - each with when to poke ("in town or my hideout", "when I
+       reach this phase", "once a week", "never") and an optional target in divines (progress from Wealth's last
+       snapshot); ▸ picks the one on the overlay's focus line (else the first open goal from the current phase on);
+       the stockpile (have = your Wealth count, now = poe.ninja or the bulk exchange: cheap / ok / done); the farm
+       plan (strats from Money Makers, in order); the build lock; the poke settings (the pokes come in 2.73.1).
+       Every switch is a toggle (Card.TCheckbutton). Overlay: the focus line ("NOW" + the goal + a progress bar) in
+       the Panel (its own row) and the XP bar (in where-you-are's place); a Focus switch on the bar next to the
+       Mechanic Helper's (bar_chips). Options › On the overlay: League Focus and Focus line, and ON THE BAR -
+       Mechanic Helper switches, Focus switch, Notes ▾ (bar_cfg) - a feature off the bar keeps working.
   2.72.2
        Notes: right-click on a note's tab opens a menu (it used to close the tab at once): Rename (right on the tab -
        Enter keeps it, Esc cancels; double-click does the same), New note, Duplicate, Move left / right, Copy its
@@ -1608,7 +1619,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.72.2"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.73.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
