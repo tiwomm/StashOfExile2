@@ -21,7 +21,7 @@ import tkinter as tk
 POE_TITLE = "Path of Exile 2"
 
 DEFAULTS = {
-    "chat_enabled": False, "notes_enabled": False, "hideout_key": "F1", "notes_key": "F6", "poe_title": POE_TITLE,
+    "chat_enabled": False, "notes_enabled": True, "hideout_key": "F1", "poe_title": POE_TITLE,
     "commands": [],                                  # [{"name", "key", "cmd"}], up to 8
     "notes_visible": True, "notes_locked": False, "notes_text": "Your notes here...", "notes_x": 50, "notes_y": 50, "notes_w": 300,
     "notes_h": 220, "notes_bg": "1A1A2E", "notes_fg": "E2C97E", "notes_opacity": 215, "notes_font": 11,
@@ -215,7 +215,7 @@ def read_ahk_config(path=None):
         except Exception:
             return default
     out = {}
-    for sec, key, name, conv in (("Hotkeys", "Hideout", "hideout_key", str), ("Hotkeys", "Notes", "notes_key", str),
+    for sec, key, name, conv in (("Hotkeys", "Hideout", "hideout_key", str),
                                  ("General", "PoeTitle", "poe_title", str), ("Notes", "X", "notes_x", int),
                                  ("Notes", "Y", "notes_y", int), ("Notes", "W", "notes_w", int), ("Notes", "H", "notes_h", int),
                                  ("Notes", "BgColor", "notes_bg", str), ("Notes", "FgColor", "notes_fg", str),
@@ -255,7 +255,9 @@ class Overlay:
             self.cfg.setdefault(k, v if not isinstance(v, list) else list(v))
         if "enabled" in self.cfg:              # 2.0 beta 7: one switch became two (chat commands / notes)
             on = bool(self.cfg.pop("enabled"))
-            self.cfg["chat_enabled"] = self.cfg["notes_enabled"] = on
+            self.cfg["chat_enabled"] = on
+        self.cfg["notes_enabled"] = True       # 2.68.1: Notes is part of the overlay (its Notes ▾) - always there
+        self.cfg.pop("notes_key", None)
         if not self.cfg.get("imported_ahk"):
             old = read_ahk_config()
             if old:
@@ -603,9 +605,8 @@ class Overlay:
         self.save_settings()
 
     def set_enabled(self, on):
-        """Both at once (kept for older callers)."""
+        """Kept for older callers (2.68.1: only the chat commands - Notes is always part of the overlay)."""
         self.set_chat(on)
-        self.set_notes(on)
 
     def close(self):
         if self.notes is not None:

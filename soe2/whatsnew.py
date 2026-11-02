@@ -21,6 +21,10 @@ NEXT = [
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.68.1": [
+        "Notes is simply part of the overlay now - open it from Notes ▾ on the overlay, F6 hides it with the rest. "
+        "Its separate settings and the old notes key are gone.",
+    ],
     "2.68.0": [
         "Farm Tracker is now Strat Tracker.",
         "Strat Tracker: for a waystone, \"which numbers make this setup work?\" now lists its Pack Size, Item "
