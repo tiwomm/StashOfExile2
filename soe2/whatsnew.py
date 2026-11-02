@@ -21,6 +21,11 @@ NEXT = [
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.56.2": [
+        "Expedition remnant price tags are smaller and calmer: plain text in your overlay style's colors (on the "
+        "parchment texture with Runeshape parchment). They show up about twice as fast and go as soon as the book "
+        "closes; the key's tags stay 12 seconds (was 30).",
+    ],
     "2.56.1": [
         "Strip layout: drag its left or right edge to make it wider or narrower - the area name and your note's line "
         "get the room. It never gets narrower than what it shows.",

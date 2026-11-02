@@ -25,7 +25,7 @@ import sys
 CREDIT_NAME = "PoE Ancients Price Helper by Pedro Quitério"
 CREDIT_URL = "https://github.com/pedro-quiterio/PoeAncientsPriceHelper"
 DEFAULT_KEY = "Ctrl+Alt+R"
-SHOW_SECS = 30
+SHOW_SECS = 12                    # 2.56.2 (the user: "on screen too long"): was 30
 MATCH = 0.84                      # how close an OCR'd line must be to an item name (difflib ratio)
 LAST_WORD = 0.75                  # ... and its last word to the name's last word (2.40.0)
 
@@ -171,8 +171,8 @@ def price_lines(lines, names, value_of):
 # left, so the area is kept in units of the game's height from its top-left corner - right for any resolution or
 # aspect ratio (16:9, 21:9 ...), the same way the Delirium and Ritual watchers find their spot.
 AREA = (0.02, 0.10, 0.53, 0.66)   # x0, y0, x1, y1 in game heights
-AUTO_POLL = 0.7                   # seconds between looks (only while the game is in front)
-AUTO_GONE = 2                     # looks without the book = it was closed: tags off
+AUTO_POLL = 0.35                  # seconds between looks (only while the game is in front; 2.56.2: was 0.7)
+AUTO_GONE = 2                     # looks without the book = it was closed: tags off (~0.7 s)
 PARCHMENT = 0.35                  # share of the area that must look like the book's light parchment before reading
 
 
