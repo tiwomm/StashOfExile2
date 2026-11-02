@@ -354,10 +354,18 @@ class Overlay:
             return bool(self.cfg.get("notes_visible")) and bool(self.cfg.get("notes_enabled"))
         return self.notes is not None and self.notes.winfo_exists() and getattr(self.notes, "wanted", True)
 
+    def note_palette(self):
+        """2.67.0: the note in the overlay's own look (the Panel's: dark leather, a metal frame, antique gold)."""
+        from .overlaywin import pal, _seed
+        from . import hudart, themes as TH
+        P = hudart.card_palette(pal())
+        _seed(TH, P)
+        return P
+
     def note_colours(self):
-        """(background, text): the remnant book's parchment (2.43.0), or your own colors with the Classic look."""
-        from .overlaywin import pal                       # 2.58.0: every look, Classic too - no own note colors
-        return pal()["field"], pal()["text"]
+        """(background, text) of the note's page."""
+        P = self.note_palette()
+        return P["field"], P["text"]
 
     def _colour(self, key, default):
         v = str(self.cfg.get(key) or default).lstrip("#")
@@ -372,26 +380,37 @@ class Overlay:
         def moved(x, y, ww, hh):
             c.update(notes_x=x, notes_y=y, notes_w=ww, notes_h=hh)
             self.save_settings()
+        P = self.note_palette()
         w = OverlayWindow(self.root, "Notes", "📌",
                           (c["notes_x"], c["notes_y"], c["notes_w"], c["notes_h"]),
                           opacity=int(c.get("notes_opacity", 215)), locked=bool(c.get("notes_locked")), body_bg=bg,
                           min_size=(NOTE_MIN_W, NOTE_MIN_H), on_close=self.hide_notes, on_lock=self.set_locked,
-                          on_moved=moved, follow_game=True)
+                          on_moved=moved, follow_game=True, palette=P)
         w.withdraw()                           # show_notes() shows it
         host = w.body
-        if w.parch:                            # 2.47.0: a page on the skin's background (the parchment shows round it)
+        if w.parch:                            # 2.67.0: the page inside the overlay's metal frame (drawn to its size)
+            from . import hudart
             cv = w.canvas_body()
             host = tk.Frame(cv, bg=bg)
-            win_id = cv.create_window(8, 4, window=host, anchor="nw")
-            cv.bind("<Configure>", lambda e: cv.itemconfigure(win_id, width=max(40, e.width - 16),
-                                                              height=max(30, e.height - 12)), add="+")
+            pad = 16
+            win_id = cv.create_window(pad, pad, window=host, anchor="nw")
+
+            def fit(e):
+                cv.itemconfigure(win_id, width=max(40, e.width - 2 * pad), height=max(30, e.height - 2 * pad))
+                art = hudart.card(cv, max(40, e.width), max(40, e.height), None, [], 0)
+                cv.delete("noteart")
+                if art is not None:
+                    cv.create_image(0, 0, image=art, anchor="nw", tags=("noteart",))
+                    cv.tag_lower("noteart")
+                    cv._note_art = art
+            cv.bind("<Configure>", fit, add="+")
             if not c.get("notes_locked"):
                 w.draggable(cv)
         # 2.23.0: tabs - several pages on one note (click a tab, + adds one, double-click renames, right-click deletes)
         self.notes_tabbar = tk.Frame(host, bg=bg)
         self.notes_tabbar.pack(fill="x")
         text = tk.Text(host, bg=bg, fg=fg, insertbackground=fg, relief="flat", highlightthickness=0, wrap="word",
-                       font=(pal()["font"], int(c.get("notes_font", 11))), padx=8, pady=4,
+                       font=(P["font"], int(c.get("notes_font", 11))), padx=8, pady=4,
                        spacing1=2, spacing3=2)
         text.pack(fill="both", expand=True)
         tabs, i = self.note_tabs(), self.note_index()

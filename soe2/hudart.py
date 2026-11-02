@@ -282,9 +282,13 @@ def card(root, w, h, banner, grids, foot_y):
     """The Panel's background, drawn whole: wood under a heavy dark-metal frame with filigree corners; the header
     banner (banner = (y0, y1)) in its own gold-lined frame with pointed ends; each grid (x0, y0, x1, y1, rows,
     cols) a near-black leather panel split by thin divider lines; a rule over the footer. -> PhotoImage."""
-    key = ("card3", w, h, tuple(banner), tuple(map(tuple, grids)), foot_y)
+    key = ("card3", w, h, tuple(banner or ()), tuple(map(tuple, grids)), foot_y)
     if key in _CACHE:
         return _CACHE[key]
+    old = [k_ for k_ in _CACHE if k_[0] == "card3"]
+    if len(old) > 12:                                        # (a note being resized makes many sizes)
+        for k_ in old[:-6]:
+            _CACHE.pop(k_, None)
     try:
         from PIL import Image, ImageDraw
     except Exception:
@@ -311,26 +315,36 @@ def card(root, w, h, banner, grids, foot_y):
     d.rectangle((fw, fw, W - fw - 1, H - fw - 1), outline=K, width=t)
     d.rectangle((fw + t, fw + t, W - fw - t - 1, H - fw - t - 1), outline=AGOLD_LO, width=t)
     # the header banner: leather, a double gold frame, pointed ends, small lozenges at the points
-    by0, by1 = banner[0] * SS, banner[1] * SS
+    by0, by1 = (banner[0] * SS, banner[1] * SS) if banner else (0, 0)
     bx0, bx1 = fw + 6 * t, W - fw - 6 * t
     tip = (by1 - by0) * 0.45
     shape = [(bx0 + tip, by0), (bx1 - tip, by0), (bx1, (by0 + by1) / 2), (bx1 - tip, by1), (bx0 + tip, by1),
              (bx0, (by0 + by1) / 2)]
     mask = Image.new("L", (W, H), 0)
-    ImageDraw.Draw(mask).polygon(shape, fill=255)
+    if banner:
+        ImageDraw.Draw(mask).polygon(shape, fill=255)
     lea = Image.new("RGB", (W, H))
     ld = ImageDraw.Draw(lea)
     for y in range(int(by0), int(by1) + 1):
         ld.line((0, y, W, y), fill=_lerp((40, 34, 30), LEATHER_BOT, (y - by0) / max(1, by1 - by0)))
     img.paste(lea, (0, 0), mask)
     d = ImageDraw.Draw(img, "RGBA")
-    d.line(shape + [shape[0]], fill=K, width=3 * t)
-    d.line(shape + [shape[0]], fill=AGOLD, width=t)
+    for _x in ([] if banner else [0]):                      # no banner: the whole inside is one leather panel
+        ix0, iy0, ix1, iy1 = fw + 2 * t, fw + 2 * t, W - fw - 2 * t, H - fw - 2 * t
+        for y in range(int(iy0), int(iy1)):
+            d.line((ix0, y, ix1, y), fill=_lerp(LEATHER_TOP, LEATHER_BOT, (y - iy0) / max(1, iy1 - iy0)))
+    if not banner:
+        shape = []
+    if shape:
+        d.line(shape + [shape[0]], fill=K, width=3 * t)
+    if shape:
+        d.line(shape + [shape[0]], fill=AGOLD, width=t)
     ins = 3 * t
     inner = [(bx0 + tip + ins * 0.4, by0 + ins), (bx1 - tip - ins * 0.4, by0 + ins), (bx1 - ins * 1.6, (by0 + by1) / 2),
              (bx1 - tip - ins * 0.4, by1 - ins), (bx0 + tip + ins * 0.4, by1 - ins), (bx0 + ins * 1.6, (by0 + by1) / 2)]
-    d.line(inner + [inner[0]], fill=AGOLD_LO, width=t)
-    for x in (bx0, bx1):
+    if shape:
+        d.line(inner + [inner[0]], fill=AGOLD_LO, width=t)
+    for x in ((bx0, bx1) if shape else ()):
         s = 3 * t
         cy = (by0 + by1) / 2
         d.polygon([(x, cy - s), (x + s, cy), (x, cy + s), (x - s, cy)], fill=AGOLD, outline=K)
