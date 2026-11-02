@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU GPL v3.0 (see LICENSE). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.56.2
+VERSION 2.57.0
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,6 +19,13 @@ VERSION 2.56.2
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.57.0
+       Settings cleanup 1 (the user OK'd the Settings Organization mockups; standard rule 3): every key is set in
+       Settings › Hotkeys only. all_hotkeys' third field is now its group (Price checks, Regex, Overlays, Money Makers,
+       Chat commands) - headings on the page; ledger_key editable (checks:ledger_key); each chat command with a
+       command gets an editable row (cmd:<i>, saved on overlay.cfg commands). Regex (_rx_key_text), Notes Show / hide
+       card (_notes_key_text), Session timer Options (_tk_keys_text) and Chat commands (_chat_keys_text, key column
+       read-only) show their key with a button: hotkeys_open(kid) opens Hotkeys and lights that row up. test_v2570.
   2.56.2
        Remnant tags (the user: too long on screen, too slow to show, too bold and big): AUTO_POLL 0.7 -> 0.35 s (shows
        about twice as fast; gone ~0.7 s after the book closes), SHOW_SECS 30 -> 12 for the key, and a closed book
@@ -1342,7 +1349,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.56.2"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.57.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 

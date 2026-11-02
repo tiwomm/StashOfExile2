@@ -189,12 +189,16 @@ class UtilitiesPage:
         c1 = self._card(body, "Keys")
         g = tk.Frame(c1, bg=P2)
         g.pack(fill="x", pady=(4, 0))
-        for r, (label, key) in enumerate((("Go to hideout", "hideout_key"), ("Game window title", "poe_title"))):
-            tk.Label(g, text=label, bg=P2, fg=C["text"], anchor="w").grid(row=r, column=0, sticky="w", padx=(0, 8))
-            self._ov_entry(g, key, r, 1, 18 if key == "poe_title" else 10)
-        tk.Label(g, text="Click a key box and press the key you want (with Ctrl / Alt / Shift if you like). "
-                         "Esc keeps the old one; Backspace or right-click clears it.", bg=P2, fg=C["muted"], font=("Segoe UI", 9)).grid(
-            row=2, column=0, columnspan=3, sticky="w", pady=(2, 0))
+        tk.Label(g, text="Game window title", bg=P2, fg=C["text"], anchor="w").grid(row=0, column=0, sticky="w",
+                                                                                 padx=(0, 8))
+        self._ov_entry(g, "poe_title", 0, 1, 18)
+        # 2.57.0: every key (Go to hideout and each command's) is set in Settings › Hotkeys
+        self.ov_vars["hideout_key"] = tk.StringVar(value=ov.get("hideout_key", ""))
+        self.chat_keys_lbl = tk.Label(g, text="", bg=P2, fg=C["text"], anchor="w")
+        self.chat_keys_lbl.grid(row=1, column=0, columnspan=2, sticky="w", pady=(4, 0))
+        ttk.Button(g, text="Set the keys in Settings › Hotkeys", style="Quiet.TButton",
+                   command=lambda: self.hotkeys_open("overlay:hideout_key")).grid(row=1, column=2, sticky="w",
+                                                                                 pady=(4, 0))
         c2 = self._card(body, "Your chat commands", expand=True)
         cg = tk.Frame(c2, bg=P2)
         cg.pack(fill="x", pady=(4, 0))
@@ -207,8 +211,9 @@ class UtilitiesPage:
             row = []
             for col, (k, w) in enumerate((("name", 14), ("key", 8), ("cmd", 34))):
                 v = tk.StringVar(value=c.get(k, ""))
-                if k == "key":
-                    KeyCapture(cg, v, width=12, on_change=lambda t: self.root.after(10, self.ov_save)).grid(row=i + 1, column=col, sticky="w", padx=(0, 8), pady=1)
+                if k == "key":                          # 2.57.0: shown here, set in Settings › Hotkeys
+                    tk.Label(cg, textvariable=v, bg=P2, fg=C["text"], font=("Consolas", 9), width=12,
+                             anchor="w").grid(row=i + 1, column=col, sticky="w", padx=(0, 8), pady=1)
                     row.append(v)
                     continue
                 tk.Entry(cg, textvariable=v, width=w, bg=C["odd"], fg=C["text"], insertbackground=C["text"], relief="flat",
@@ -221,6 +226,25 @@ class UtilitiesPage:
         ttk.Button(brow, text="Save & apply", style="Primary.TButton", command=self.ov_save).pack(side="left")
         self.ov_msg = tk.Label(brow, text="", bg=C["panel"], fg=C["muted"], anchor="w")
         self.ov_msg.pack(side="left", fill="x", expand=True, padx=8)
+        self._chat_keys_text()
+
+    def _notes_key_text(self):
+        from .overlay import key_label
+        k = self.overlay.cfg.get("notes_key", "")
+        self.ov_vars["notes_key"].set(k)
+        if getattr(self, "notes_key_lbl", None) is not None:
+            self.notes_key_lbl.config(text=f"Key: {key_label(k) if k else 'none'}")
+
+    def _chat_keys_text(self):
+        from .overlay import key_label
+        ov = self.overlay.cfg
+        k = ov.get("hideout_key", "")
+        self.ov_vars["hideout_key"].set(k)
+        for n, c in enumerate(ov.get("commands", []) or []):
+            if n < len(getattr(self, "ov_cmd_vars", [])):
+                self.ov_cmd_vars[n][1].set(c.get("key", ""))
+        if getattr(self, "chat_keys_lbl", None) is not None:
+            self.chat_keys_lbl.config(text=f"Go to hideout: {key_label(k) if k else 'none'}")
 
     # ---------------- the Notes window
     def build_notes_window(self, body):
@@ -234,12 +258,17 @@ class UtilitiesPage:
             "the game is closed and comes back with it. Drag it by its top bar and resize it from any edge, or type "
             "its place and size below. What you type on it is saved by itself; every option is here. Tabs on the "
             "note: + adds one, double-click renames, right-click deletes.")
-        c1 = self._card(body, "Key")
+        c1 = self._card(body, "Show / hide")
         g = tk.Frame(c1, bg=P2)
         g.pack(fill="x", pady=(4, 0))
-        tk.Label(g, text="Show / hide notes", bg=P2, fg=C["text"], anchor="w").grid(row=0, column=0, sticky="w", padx=(0, 8))
-        self._ov_entry(g, "notes_key", 0, 1, 10)
+        # 2.57.0: the key is set in Settings › Hotkeys (shown here)
+        self.ov_vars["notes_key"] = tk.StringVar(value=self.overlay.cfg.get("notes_key", ""))
+        self.notes_key_lbl = tk.Label(g, text="", bg=P2, fg=C["text"], anchor="w")
+        self.notes_key_lbl.grid(row=0, column=0, sticky="w", padx=(0, 8))
+        ttk.Button(g, text="Change key…", style="Quiet.TButton",
+                   command=lambda: self.hotkeys_open("overlay:notes_key")).grid(row=0, column=1, sticky="w", padx=(0, 8))
         ttk.Button(g, text="Show / hide now", command=lambda: self.overlay.toggle_notes()).grid(row=0, column=2, sticky="w")
+        self._notes_key_text()
         c2 = self._card(body, "Font and Colors")
         self.build_notes_look(c2)
         c3 = self._card(body, "Position")
