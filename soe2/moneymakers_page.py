@@ -262,7 +262,7 @@ class MoneyMakersPage:
         return sorted(out, key=k, reverse=rev)
 
     def mm_nav_fill(self):
-        """The Category > Type browser, with how many strats each has (types with none are greyed)."""
+        """The Category > Type browser, with how many strats each has (types with none are grayed)."""
         nav = self.mm_nav
         cur = nav.selection()[0] if nav.selection() else "all"
         nav.delete(*nav.get_children())

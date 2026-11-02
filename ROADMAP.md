@@ -4,7 +4,7 @@
 
 > **Who we build for - read second.** Path of Exile players are utilitarian: they love data and information, problem solving and creative thinking. So every feature shows its numbers *and how they were worked out*, lets you sort, filter, compare and export them (CSV), keeps power-user depth (keys, versions, raw data) one click away instead of hiding it, explains in plain words, and leaves the decision to the player. Pretty is welcome; vague is not.
 
-**Current version: 2.52.0**
+**Current version: 2.53.0**
 
 Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds features, 2.10.1 only fixes. Each step below is one release; we work through them top to bottom.
 
@@ -79,6 +79,7 @@ Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds f
 | 2.50.0 | Overlays › Appearance (was Look) explains opacity with a %; runeshape tips only on Mechanic Helper; the Mechanic Helper bar stands on its own. |
 | 2.51.0 | Mod book › Manual feed: teach it an item's price (counts as 1-10 listings, optional High rating, before / after, undo, CSV). A more readable Session timer. |
 | 2.52.0 | Menus tidied: each setting in one place (opacity in Overlays › Appearance; the timer's clock switch in its Options). |
+| 2.53.0 | Price checks: click a row for the item's box (as in Insights). A softer Session timer. US spelling everywhere (Font and Colors). |
 
 ## ▶ Next up
 
@@ -86,18 +87,18 @@ Order (decided 2.34.0): the Polish basics first, so new features are built on th
 
 | Version | Plan |
 |---|---|
-| 2.53.0 | **More item types priced (Sidekick / Exiled Exchange-style):** a pricing engine for item types the app only guesses today. Their licences are checked first; logic is ported, not code, with credit. |
-| 2.54.0 | **Public stash order test tool.** |
-| 2.55.0 | **Polish 4 - Responsive:** windows reflow when narrow (toolbars wrap, side panels drop under the list, sensible minimum sizes), sharp on every monitor (per-monitor DPI), a text size setting (100-150 %). |
-| 2.56.0 | **Polish 5 - Hover, focus, micro-interactions:** the same hover and pressed look on every button, row, icon and tab; a visible keyboard focus ring everywhere; short (120-180 ms) fades for popups and toasts, never on lists; a "Reduce motion" setting that turns them off. |
-| 2.57.0 | **Polish 6 - Visual hierarchy:** the suggestions below, window by window, with before / after screenshots in each PR. |
+| 2.54.0 | **More item types priced (Sidekick / Exiled Exchange-style):** a pricing engine for item types the app only guesses today. Their licenses are checked first; logic is ported, not code, with credit. |
+| 2.55.0 | **Public stash order test tool.** |
+| 2.56.0 | **Polish 4 - Responsive:** windows reflow when narrow (toolbars wrap, side panels drop under the list, sensible minimum sizes), sharp on every monitor (per-monitor DPI), a text size setting (100-150 %). |
+| 2.57.0 | **Polish 5 - Hover, focus, micro-interactions:** the same hover and pressed look on every button, row, icon and tab; a visible keyboard focus ring everywhere; short (120-180 ms) fades for popups and toasts, never on lists; a "Reduce motion" setting that turns them off. |
+| 2.58.0 | **Polish 6 - Visual hierarchy:** the suggestions below, window by window, with before / after screenshots in each PR. |
 | Last | **Linux build** (Hyprland / Wayland first) - the groundwork is in place (session_linux_handover.txt). |
 
 ### Visual hierarchy - suggestions (for 2.47.0)
 
-- **One primary action per window**, in the accent colour (Price checks: Re-price all, Regex: Copy, Wealth: Refresh). Everything else is secondary or quiet.
+- **One primary action per window**, in the accent color (Price checks: Re-price all, Regex: Copy, Wealth: Refresh). Everything else is secondary or quiet.
 - **Big number, small label:** totals and prices large; their labels small and muted. The same chip style for every status (Priced, Require Review, time left).
-- **Group toolbars** into labelled clusters; move rarely used actions into a "⋯ More" menu so the main row stays short.
+- **Group toolbars** into labeled clusters; move rarely used actions into a "⋯ More" menu so the main row stays short.
 - **Gold means value only** (prices, ★ valuable mods). Headings and highlights use the accent or white instead.
 - **Numbers line up:** right-aligned, same-width digits in price and count columns.
 - **Empty states** say what to do next, with the button to do it ("Nothing in the list yet - hover an item and press Ctrl+Alt+C").

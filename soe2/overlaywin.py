@@ -1,5 +1,5 @@
 """One look for every small window shown over the game (2.0 beta 13): Notes, the Session timer, and anything added
-later. Same frame as the app's own windows: a thin title bar (utility colours), a 1px border, resize edges and a
+later. Same frame as the app's own windows: a thin title bar (utility colors), a 1px border, resize edges and a
 lock button. Callers put their content in .body and get told when the window was moved or resized.
 
     w = OverlayWindow(root, "Notes", "📌", (x, y, w, h), opacity=215, locked=False,
@@ -36,7 +36,7 @@ PALETTES = {
     "parchment": dict(_P, leather="#2a1f16", edge="#000000", border=5, bg="#d8c49a", band="#d8c49a", head="#4a3520",
                       text="#2e2216", muted="#5d4630", line="#a88a5c", on="#1f8a1c", off="#c0261b", warn="#a86a00",
                       field="#e6d6b0", big="#2e2216", font=SERIF, texture=True, cell_bg="#ead9b2", cell_line="#a88a5c",
-                      halo="#f1e5c8"),
+                      halo="#e6d6b2"),
     "relic": dict(_P, leather="#6e5b3a", edge="#000000", border=1, bg="#0c0a08", band="#17130e", head="#e6d39f",
                   text="#e9e2cf", muted="#a89a7c", line="#6e5b3a", on="#62c45a", off="#d24b3a", warn="#e0a352",
                   field="#14110d", big="#f2e6c4", font=SERIF, align="center", cell_bg="#0c0a08", cell_line="#2c251b"),
@@ -55,7 +55,7 @@ PALETTES = {
 
 
 def pal():
-    """The colours, font and shape of the windows over the game, for their content."""
+    """The colors, font and shape of the windows over the game, for their content."""
     return PALETTES.get(LOOK[0], PALETTES["parchment"])
 
 
@@ -72,7 +72,7 @@ _TEX = {}
 
 
 def texture(root, w, h, seed=7, calm=False):
-    """2.47.0: a grungy parchment (the user: "too clean") - made here, no image file: the base colour, fibres and
+    """2.47.0: a grungy parchment (the user: "too clean") - made here, no image file: the base color, fibres and
     grain, a few stains and darker, burnt edges. A Tk PhotoImage (None without Pillow)."""
     key = (w // 16 * 16 + 16, h // 16 * 16 + 16, seed, calm)
     if key in _TEX:
@@ -136,7 +136,7 @@ class CanvasText:
         self.halos = []
         if halo:                                  # 2.51.0: a soft outline in the page colour round every letter,
             x, y = canvas.coords(item)            # so ink stays readable on the texture and over the game behind it
-            for dx, dy in ((-1, 0), (1, 0), (0, -1), (0, 1), (-1, -1), (1, 1), (-1, 1), (1, -1)):
+            for dx, dy in ((-1, 0), (1, 0), (0, -1), (0, 1)):     # 2.53.0: no diagonals - softer
                 h = canvas.create_text(x + dx, y + dy, text=canvas.itemcget(item, "text"), fill=halo,
                                        font=canvas.itemcget(item, "font"), anchor=canvas.itemcget(item, "anchor"),
                                        justify=canvas.itemcget(item, "justify"))
@@ -255,7 +255,7 @@ class OverlayWindow(tk.Toplevel):
                  on_close=None, on_lock=None, on_moved=None, drag_body=False, app_colours=False, lockable=True,
                  follow_game=False, no_activate=False, resizable=True):
         """geo = (x, y, w, h); w / h None = as big as the content. app_colours: the blue title bar of the app's own
-        windows (for small pop-ups of the app) instead of the utility colours (things shown over the game).
+        windows (for small pop-ups of the app) instead of the utility colors (things shown over the game).
         follow_game: only visible while the game (or the window itself) is in front; show() / hide() say whether you want it.
         no_activate: clicking it never takes the keyboard away from the game (for windows you don't type in).
         resizable=False: always the size of its content (2.38.0: the Helpers bar)."""
@@ -415,7 +415,7 @@ class OverlayWindow(tk.Toplevel):
         return (BAR_H + (6 if self.P.get("plate") else 0)) // 2
 
     def _paint_title(self, _e=None):
-        """The title as the skin draws it: left (parchment, hud), centred on a gold band (relic) or on a raised
+        """The title as the skin draws it: left (parchment, hud), centered on a gold band (relic) or on a raised
         plate (carved), with a small diamond."""
         P, c = self.P, self.bar
         w = max(c.winfo_width(), int(c.cget("width")))

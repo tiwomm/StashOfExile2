@@ -1,7 +1,7 @@
 """One toast system for the whole app (2.35.0, Polish 2).
 
 Toasts stack in the bottom-right corner of the app window, newest at the bottom. Each kind has its own icon as well as
-its own colour (never colour alone): info ℹ, success ✔, warning ⚠, error ✖. A toast:
+its own color (never color alone): info ℹ, success ✔, warning ⚠, error ✖. A toast:
   * stays up longer for longer text (errors and toasts with buttons longer still),
   * pauses while the mouse is over it,
   * never takes the keyboard (no focus, and on Windows it never activates),
