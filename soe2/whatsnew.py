@@ -21,6 +21,12 @@ NEXT = [
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.56.1": [
+        "Strip layout: drag its left or right edge to make it wider or narrower - the area name and your note's line "
+        "get the room. It never gets narrower than what it shows.",
+        "An overlay past the edge of the screen (a locked strip, say) comes back on the screen by itself.",
+        "One opacity slider for everything over the game (Overlays › Appearance).",
+    ],
     "2.56.0": [
         "Farm Ledger, redone: your setups as cards, the answer in plain words (\"Makes about 10.3 div an hour\"), "
         "the key numbers, where the money comes from, and a strip that shows runs counted since your last log.",

@@ -29,7 +29,7 @@ BODY_BG = "#0d1424"
 #              numbers - modern and clean but PoE
 #   minimal    2.55.0: just the basics - time, map time and the four switches, no title bar
 LOOKS = {"parchment": "Runeshape parchment (default)", "codex": "Codex", "minimal": "Minimal",
-         "relic": "Relic tooltip", "carved": "Carved frame", "hud": "Quiet HUD", "classic": "Classic dark (2.42)"}
+         "relic": "Relic tooltip", "carved": "Carved frame", "hud": "Quiet HUD", "classic": "Classic dark"}
 LOOK = ["parchment"]
 SERIF = "Palatino Linotype"
 _P = {"halo": "#000000", "title_size": 10, "align": "w", "texture": False, "on_icon": "\u25c6", "off_icon": "\u25c7", "rules": False,
@@ -275,7 +275,7 @@ class OverlayWindow(tk.Toplevel):
 
     def __init__(self, root, title, icon, geo, *, opacity=230, locked=False, body_bg=BODY_BG, min_size=(140, 60),
                  on_close=None, on_lock=None, on_moved=None, drag_body=False, app_colours=False, lockable=True,
-                 follow_game=False, no_activate=False, resizable=True, titlebar=True):
+                 follow_game=False, no_activate=False, resizable=True, titlebar=True, resize_axes="xy"):
         """geo = (x, y, w, h); w / h None = as big as the content. app_colours: the blue title bar of the app's own
         windows (for small pop-ups of the app) instead of the utility colors (things shown over the game).
         follow_game: only visible while the game (or the window itself) is in front; show() / hide() say whether you want it.
@@ -320,6 +320,7 @@ class OverlayWindow(tk.Toplevel):
                                               (P["head"], P["band"], P["band"], P["line"]) if parch else
                                               ("#ffe2b8", "#3a3020", "#6a5a3a", "#8a6a3a"))
         self._title = title
+        self.resize_axes = resize_axes                    # 2.56.1: "x" = only wider / narrower (the Strip)
         self.has_bar = bool(titlebar)
         self._btns = []
         if not titlebar:
@@ -547,7 +548,7 @@ class OverlayWindow(tk.Toplevel):
     # ---- resizing from every edge and corner
     def _edges(self):
         k = 14
-        for sd, cur, kw in (("n", "sb_v_double_arrow", dict(x=0, y=0, relwidth=1, height=EDGE)),
+        for sd, cur, kw in (e for e in (("n", "sb_v_double_arrow", dict(x=0, y=0, relwidth=1, height=EDGE)),
                             ("s", "sb_v_double_arrow", dict(x=0, rely=1, y=-EDGE, relwidth=1, height=EDGE)),
                             ("w", "sb_h_double_arrow", dict(x=0, y=0, width=EDGE, relheight=1)),
                             ("e", "sb_h_double_arrow", dict(relx=1, x=-EDGE, y=0, width=EDGE, relheight=1)),
@@ -558,7 +559,8 @@ class OverlayWindow(tk.Toplevel):
                             ("sw", "bottom_left_corner", dict(x=0, rely=1, y=-EDGE, width=k, height=EDGE)),
                             ("sw", "bottom_left_corner", dict(x=0, rely=1, y=-k, width=EDGE, height=k)),
                             ("se", "bottom_right_corner", dict(relx=1, x=-k, rely=1, y=-EDGE, width=k, height=EDGE)),
-                            ("se", "bottom_right_corner", dict(relx=1, x=-EDGE, rely=1, y=-k, width=EDGE, height=k))):
+                            ("se", "bottom_right_corner", dict(relx=1, x=-EDGE, rely=1, y=-k, width=EDGE, height=k)))
+                            if self.resize_axes != "x" or e[0] in ("e", "w")):
             h = tk.Frame(self, bg=pal()["leather"] if self.parch else BORDER_OFF, cursor=cur)
             h.place(**kw)
             self.resizer(h, sd)
@@ -578,6 +580,8 @@ class OverlayWindow(tk.Toplevel):
         dx, dy, sd = e.x_root - self._size["x0"], e.y_root - self._size["y0"], self._size["sd"]
         if "e" in sd:
             ww = max(mw, ww + dx)
+        if self.resize_axes == "x":
+            sd = "".join(c for c in sd if c in "ew")
         if "s" in sd:
             hh = max(mh, hh + dy)
         if "w" in sd:
