@@ -17,7 +17,7 @@ from .chrome import SectionBar, Viewport, section as chrome_section
 from .tracker import fmt_time, Session, Sessions
 
 DEFAULTS = {"overlay": True, "locked": False, "x": 60, "y": 260, "w": 230, "h": 190, "opacity": 225,
-            "lines": {"session": True, "map": True, "maps": True, "avg": True},   # 2.54.0: no profit (Strat Tracker has it)
+            "lines": {"session": True, "map": True, "maps": True, "avg": True, "where": True},   # 2.70.1: where   # 2.54.0: no profit (Strat Tracker has it)
             "key_toggle": "", "key_pause": "", "ask_count": True, "log_path": "",
             "character": "", "character_guess": "", "alerts_bar": True, "autostart": False,
             "clock": True,
@@ -26,7 +26,8 @@ DEFAULT_KEYS = {"key_toggle": "Ctrl+Alt+S", "key_pause": "Ctrl+Alt+P",
                 "key_overlay": "F6"}           # 2.59.0: F6 shows / hides the whole overlay       # 2.10.0: set once, change them in Options
 # 2.54.0: the Session timer times your play; money lives in one place, Money Makers › Strat Tracker.
 # Profit (Wealth at Stop minus at Start) is gone from here: its tiles, overlay line, options and Stop count.
-LINE_NAMES = [("session", "Session time"), ("map", "This map's time"), ("maps", "Maps done"), ("avg", "Average map")]
+LINE_NAMES = [("session", "Session timer"), ("map", "This map's time"), ("maps", "Maps done"), ("avg", "Average map"),
+              ("where", "Where you are")]
 
 
 class _BarTitle:
@@ -52,6 +53,10 @@ class TrackerPage:
             cfg.setdefault(k, copy.deepcopy(v))
         for k, v in DEFAULTS["lines"].items():
             cfg["lines"].setdefault(k, v)
+        if not cfg.get("ov_2701"):                   # 2.70.1: no Hide timer button any more - each part has its switch
+            cfg["ov_2701"] = True
+            cfg["overlay"] = True
+            cfg["alerts_bar"] = True                 # (the overlay's × used to switch these off without saying so)
         if not cfg.get("keys_210"):                  # 2.10.0: start / stop and pause get a key (only if you had none)
             cfg["keys_210"] = True
             for k, v in DEFAULT_KEYS.items():
@@ -111,8 +116,11 @@ class TrackerPage:
         self.tk_pause_btn.pack(side="left", padx=8)
         self.tk_state = tk.Label(top, text="Not tracking", bg=P2, fg=C["muted"], font=("Segoe UI", 12, "bold"))
         self.tk_state.pack(side="left", padx=12)
-        self.tk_ov_btn = ttk.Button(top, text="Show timer", command=self.tracker_overlay_toggle)
-        self.tk_ov_btn.pack(side="right")
+        # 2.70.1: a switch for the timer only (was "Hide timer", which hid every number); the rest: Options
+        self.tk_timer_var = tk.BooleanVar(value=bool(cfg["lines"].get("session", True)))
+        self.tk_timer_sw = ttk.Checkbutton(top, text="Timer over the game", variable=self.tk_timer_var,
+                                           command=self.tracker_timer_switch, style="Card.TCheckbutton")
+        self.tk_timer_sw.pack(side="right")
         self.tk_keys_lbl = tk.Label(top, text="", bg=P2, fg=C["muted"], font=("Segoe UI", 9))       # 2.10.0
         self.tk_keys_lbl.pack(side="right", padx=8)
         self.tracker_keys_hint()
@@ -213,7 +221,7 @@ class TrackerPage:
         self.root.after(1000, self.tracker_tick)
         if cfg.get("autostart"):                         # 2.14.0: a session starts with the app (once Client.txt is read)
             self.root.after(4000, self.tracker_autostart)
-        # (the timer shows while a session runs - beta 10; Show timer brings it up any time)
+        # (the numbers show while a session runs - beta 10; 2.70.1: each part has its switch in Options)
 
     # ---------------- 2.1.0: statistics for every map you ran, with a leaderboard of your fastest runs
     def _tracker_stats_page(self, body):
@@ -370,28 +378,43 @@ class TrackerPage:
 
     def _tracker_options(self, po):
         cfg, P2 = self.tracker_cfg(), C["panel2"]
-        bxo, box = chrome_section(po, "Timer")                                 # 2.69.0
-        bxo.pack(fill="x")
-        tk.Label(box, text="What the small timer over the game shows:", bg=P2, fg=C["muted"], font=("Segoe UI", 9)).grid(
-            row=0, column=0, columnspan=3, sticky="e")
+        # 2.70.1: one switch per part of the overlay - switch off what you don't want over the game
+        swo, sw = chrome_section(po, "On the overlay", "Switch off what you don't want over the game. Its look, "
+                                                       "layout and opacity: Settings › Appearance.")
+        swo.pack(fill="x")
+        grid = tk.Frame(sw, bg=P2)
+        grid.pack(fill="x")
         self.tk_line_vars = {}
-        for i, (k, label) in enumerate(LINE_NAMES):
-            v = tk.BooleanVar(value=bool(cfg["lines"].get(k)))
+        sws = []
+        for k, label in LINE_NAMES:
+            v = self.tk_timer_var if k == "session" and getattr(self, "tk_timer_var", None) is not None else \
+                tk.BooleanVar(value=bool(cfg["lines"].get(k, True)))
             self.tk_line_vars[k] = v
-            ttk.Checkbutton(box, text=label, variable=v, command=self.tracker_options_changed).grid(
-                row=1 + i // 3, column=i % 3, sticky="w", padx=(0, 16))
+            sws.append((label, v, self.tracker_options_changed))
+        self.ingame_clock_var = tk.BooleanVar(value=bool(cfg.get("clock", True)))     # 2.39.0 (2.52.0: was in Settings)
+        sws.append(("Clock", self.ingame_clock_var, self.on_ingame_clock))
+        self.tk_notes_var = tk.BooleanVar(value=bool(self._ensure_overlay().cfg.get("notes_enabled", True)))
+        sws.append(("Notes", self.tk_notes_var, self.tracker_notes_switch))
+        self.tk_switches_var = tk.BooleanVar(value=bool(cfg.get("alerts_bar", True)))
+        sws.append(("Mechanic Helper switches", self.tk_switches_var, self.tracker_switches_switch))
+        self.tk_ov_switches = {}
+        for i, (label, v, fn) in enumerate(sws):
+            cb = ttk.Checkbutton(grid, text=label, variable=v, command=fn, style="Card.TCheckbutton")
+            cb.grid(row=i // 3, column=i % 3, sticky="w", padx=(0, 24), pady=2)
+            self.tk_ov_switches[label] = cb
+        for c in range(3):
+            grid.columnconfigure(c, uniform="sw")
+        bxo, box = chrome_section(po, "Session")                               # 2.69.0
+        bxo.pack(fill="x", pady=(8, 0))
         self.tk_auto = tk.BooleanVar(value=bool(cfg.get("autostart")))           # 2.14.0
         ttk.Checkbutton(box, text="Start tracking when StashOfExile2 starts", variable=self.tk_auto,
-                        command=self.tracker_options_changed).grid(row=7, column=0, columnspan=3, sticky="w",
-                                                                   pady=(8, 0))
+                        command=self.tracker_options_changed, style="Card.TCheckbutton").grid(
+            row=7, column=0, columnspan=3, sticky="w", pady=(8, 0))
         self.tk_lock = tk.BooleanVar(value=bool(cfg.get("mlocked")))      # 2.59.0: ONE lock for the whole overlay
         lk = tk.Frame(box, bg=P2)
-        lk.grid(row=3, column=0, columnspan=3, sticky="w", pady=(8, 0))
-        ttk.Checkbutton(lk, text="Lock it (can't be moved or resized by accident)", variable=self.tk_lock,
-                        command=self.tracker_options_changed).pack(side="left")
-        self.ingame_clock_var = tk.BooleanVar(value=bool(cfg.get("clock", True)))     # 2.39.0 (2.52.0: was in Settings)
-        ttk.Checkbutton(lk, text="Clock and date on the timer", variable=self.ingame_clock_var,
-                        command=self.on_ingame_clock).pack(side="left", padx=(16, 0))
+        lk.grid(row=3, column=0, columnspan=3, sticky="w")
+        ttk.Checkbutton(lk, text="Lock the overlay (can't be moved or resized by accident)", variable=self.tk_lock,
+                        command=self.tracker_options_changed, style="Card.TCheckbutton").pack(side="left")
         ch = tk.Frame(box, bg=P2)                       # 2.7.0: whose deaths count
         ch.grid(row=5, column=0, columnspan=3, sticky="w", pady=(8, 0))
         tk.Label(ch, text="Your character name", bg=P2, fg=C["text"]).pack(side="left")
@@ -433,7 +456,30 @@ class TrackerPage:
         for k, v in self.tk_line_vars.items():
             cfg["lines"][k] = bool(v.get())
         cfg["autostart"] = bool(self.tk_auto.get())
-        self.overlay_lock(bool(self.tk_lock.get()))
+        self.overlay_lock(bool(self.tk_lock.get()))           # (saves, and redraws the overlay with its parts)
+
+    # 2.70.1: the overlay's switches
+    def tracker_timer_switch(self):
+        """Timer over the game: the session's time only - the other numbers, the switches and Notes stay."""
+        if getattr(self, "tk_line_vars", None) is None:
+            self.tracker_cfg()["lines"]["session"] = bool(self.tk_timer_var.get())
+            self.tracker_save()
+            return self.merged_build()
+        return self.tracker_options_changed()
+
+    def tracker_notes_switch(self):
+        on = bool(self.tk_notes_var.get())
+        self.overlay.cfg["notes_choice"] = True                # (kept as you set it, not switched back on at start)
+        self.overlay.set_notes(on)
+        self.merged_build()
+
+    def tracker_switches_switch(self):
+        on = bool(self.tk_switches_var.get())
+        self.tracker_cfg()["alerts_bar"] = on
+        if getattr(self, "al_bar", None) is not None:
+            self.al_bar.set(on)
+        self.tracker_save()
+        self.tracker_helpers_sync()
 
     def overlay_lock(self, on):
         """2.59.0: one lock for everything over the game (the timer, the switches, Notes) - the 🔒 on the overlay and
@@ -710,7 +756,7 @@ class TrackerPage:
         self.tracker_fill_maps()
         self.tracker_draw()
         self._say("Session started.", 8)
-        if self.tk_overlay is None and self.tracker_cfg().get("overlay"):
+        if self.tk_overlay is None:                    # 2.70.1: what shows is up to its switches (Options)
             self.tracker_overlay_show()
 
     def tracker_pause_toggle(self):
@@ -879,14 +925,12 @@ class TrackerPage:
 
     def tracker_overlay_show(self):
         self.tracker_overlay_build()
-        self.tk_ov_btn.config(text="Hide timer")
 
     def tracker_overlay_hide(self):
         """The timer leaves the overlay window (the switches and Notes stay)."""
         self.mg_timer = False
         self.tk_overlay = None
         self.merged_build()
-        self.tk_ov_btn.config(text="Show timer")
 
     def tracker_overlay_build(self):
         """The timer over the game: part of the one overlay window (merged_page.py; 2.59.0: always one window)."""
@@ -934,13 +978,15 @@ class TrackerPage:
             return
         s = self.tk_session
         live = s is not None and s.ended is None
+        show_where = bool(self.tracker_cfg()["lines"].get("where", True))       # 2.70.1
         texts = {"session": n.get("time", "0:00") if live else "not tracking",
-                 "map": f"Map  {n.get('map', '-')}" + (f"   {n.get('where', '')}" if live and n.get("where") not in ("-", None) else "")
+                 "map": f"Map  {n.get('map', '-')}" + (f"   {n.get('where', '')}" if show_where and live and
+                                                       n.get("where") not in ("-", None) else "")
                         + self._ov_rank(n.get("where") if live else None),
                  "maps": f"Maps  {n.get('maps', '0')}", "avg": f"Avg  {n.get('avg', '-')}",
                  }
         if getattr(self, "tk_ov_cv", None) is not None:    # 2.47.0: the skins' two columns
-            where = n.get("where") if live and n.get("where") not in ("-", None) else ""
+            where = n.get("where") if show_where and live and n.get("where") not in ("-", None) else ""
             texts.update(map=f"Map  {n.get('map', '-')}", where=(where + self._ov_rank(where or None)).strip())
         for k, lab in self.tk_ov_lbls.items():
             lab.config(text=texts.get(k, ""))
@@ -970,7 +1016,7 @@ class TrackerPage:
     def tracker_helpers_sync(self):
         """2.49.0 (feedback: "it's a different bar, independent of the session tracker"): the bar shows whenever its
         switch is on - timer or not, session or not - and only while the game is in front (like every overlay)."""
-        on = bool(self.tracker_cfg().get("alerts_bar", True)) or bool(getattr(self, "mg_timer", False))   # (2.67.0)
+        on = bool(self.tracker_cfg().get("alerts_bar", True))         # 2.70.1: its own switch, timer or not
         if on != bool(getattr(self, "mg_built", {}).get("helpers")) or (on and getattr(self, "mg_win", None) is None):
             self.merged_build()
         self.tracker_helpers_paint()
