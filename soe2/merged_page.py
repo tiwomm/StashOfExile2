@@ -653,7 +653,6 @@ class MergedOverlay:
             if not cfg.get("mlocked"):
                 w.draggable(cv)
             W, H = ww - 2, hh - 2
-            self._hud_frame(cv, P, W, H)
             if part == "all":
                 self._hud_row(w, cv, P, want, W, H)
             elif part == "timer":
@@ -682,71 +681,110 @@ class MergedOverlay:
         return max(7, round(n * getattr(self, "_hud_k", 1.0)))
 
     def _hud_frame(self, cv, P, W, H):
-        """The game bar's look: dark stone with a soft top-to-bottom shade, a bronze rim with a pale highlight along
-        the top, a dark line at the bottom, small bronze studs at both ends."""
-        from .themes import mix
-        steps = max(1, H)
-        for i in range(steps):
-            cv.create_line(0, i, W, i, fill=mix(P["bg_top"], P["bg"], i / steps), tags=("hudbg",))
+        """The game bar's plate (hudart: carved stone, bevelled bronze frame, end caps with an amber gem, a
+        recessed well). -> the left / right edges of the well, where content goes."""
+        from . import hudart
+        img = hudart.plate(cv, W, H)
+        m = hudart.cap_width(H) + 8
+        if img is not None:
+            cv.create_image(0, 0, image=img, anchor="nw", tags=("hudbg",))
+            cv._hud_img = img
+            return m, W - m
+        from .themes import mix                              # (no Pillow: a plain shaded bar)
+        for i in range(max(1, H)):
+            cv.create_line(0, i, W, i, fill=mix(P["bg_top"], P["bg"], i / max(1, H)), tags=("hudbg",))
         cv.create_line(0, 0, W, 0, fill=P["rim"], tags=("hudbg",))
         cv.create_line(1, 1, W - 1, 1, fill=P["rim_hi"], tags=("hudbg",))
-        cv.create_line(0, 2, W, 2, fill=P["rim_lo"], tags=("hudbg",))
         cv.create_line(0, H - 1, W, H - 1, fill=P["rim_lo"], tags=("hudbg",))
-        for x in (6, W - 7):
-            cy = H // 2
-            cv.create_polygon(x, cy - 4, x + 4, cy, x, cy + 4, x - 4, cy, fill=P["rim"], outline=P["rim_lo"],
-                              tags=("hudbg",))
-            cv.create_line(x - 1, cy - 2, x, cy - 3, fill=P["rim_hi"], tags=("hudbg",))
+        return 16, W - 16
 
     def _hud_sep(self, cv, P, x, H):
-        cv.create_line(x, 6, x, H - 4, fill=P["line"], tags=("mg",))
+        from . import hudart
+        img = hudart.divider(cv, max(10, H - 14))
+        if img is not None:
+            cv.create_image(x, H // 2, image=img, tags=("mg",))
+        else:
+            cv.create_line(x, 7, x, H - 7, fill=P["line"], tags=("mg",))
+
+    def _hud_cell(self, cv, P, k, x0, y0, x1, y1, label_cls, font):
+        """One switch in a recessed socket: lit when on. Click switches it (as everywhere)."""
+        from . import hudart
+        tag = f"mgcell_{k}"
+        w_, h_ = max(8, x1 - x0), max(8, y1 - y0)
+        off_img, on_img = hudart.socket(cv, w_, h_, False), hudart.socket(cv, w_, h_, True)
+        if off_img is None:
+            return self._mg_cell(cv, P, k, x0, y0, x1, y1, label_cls=label_cls, label_font=font)
+        sock = cv.create_image(x0, y0, image=off_img, anchor="nw", tags=("mg", tag))
+        mid = (y0 + y1) // 2
+        dot = cv.create_text(x0 + 6 + self._hf(5), mid, text=P["off_icon"], fill=P["off"],
+                             font=("Segoe UI Symbol", self._hf(10)), tags=("mg", tag))
+        lab = cv.create_text(x0 + 9 + self._hf(12), mid, text=k.title(), anchor="w", fill=P["text"], font=font,
+                             tags=("mg", tag))
+        cv.tag_bind(tag, "<Button-1>", lambda e, k=k: self.tracker_helper_click(k))
+        cv.tag_bind(tag, "<Enter>", lambda e: cv.configure(cursor="hand2"))
+        cv.tag_bind(tag, "<Leave>", lambda e: cv.configure(cursor=""))
+        d = CanvasText(cv, dot, P["cell_bg"])
+        lt = label_cls(cv, lab, P["cell_bg"])
+        lt.key = k
+
+        def relit(d=d):
+            on = cv.itemcget(d.item, "text") == P["on_icon"]
+            cv.itemconfigure(sock, image=on_img if on else off_img)
+        d.on_change = relit
+        cv._hud_socks = getattr(cv, "_hud_socks", []) + [off_img, on_img]
+        self.tk_ov_alerts[k] = (d, lt)
+
+    def _hud_cell_w(self, cv, P, k, short):
+        fb = tkfont.Font(root=cv, family=P["font"], size=self._hf(9))
+        return fb.measure(SHORT[k] if short else ("Ritual 3/3" if k == "ritual" else k.title())) + 16 + self._hf(12)
 
     def _hud_cells(self, cv, P, x, y0, y1, short, cols=4, cw=None):
         """The four switches in a row (short names when space is tight) or a 2 x 2 grid. -> right edge."""
-        fb = tkfont.Font(root=cv, family=P["font"], size=self._hf(9))
+        lc, font = (_Short if short else CanvasText), (P["font"], self._hf(9))
         if cols == 4:
             for k in self.HELPERS:
-                w_ = (fb.measure(SHORT[k] if short else ("Ritual 3/3" if k == "ritual" else k.title())) + 17 + self._hf(13))
-                self._mg_cell(cv, P, k, x, y0, x + w_, y1, label_cls=_Short if short else CanvasText,
-                              label_font=(P["font"], self._hf(9)))
+                w_ = self._hud_cell_w(cv, P, k, short)
+                self._hud_cell(cv, P, k, x, y0, x + w_, y1, lc, font)
                 x += w_ + 4
             return x
-        rh = (y1 - y0 - 3) // 2
+        rh = (y1 - y0 - 4) // 2
         for i, k in enumerate(self.HELPERS):
-            cx, cy = x + (i % 2) * (cw + 4), y0 + (i // 2) * (rh + 3)
-            self._mg_cell(cv, P, k, cx, cy, cx + cw, cy + rh, label_cls=_Short if short else CanvasText,
-                          label_font=(P["font"], self._hf(9)))
-        return x + 2 * cw + 4
+            cx, cy = x + (i % 2) * (cw + 5), y0 + (i // 2) * (rh + 4)
+            self._hud_cell(cv, P, k, cx, cy, cx + cw, cy + rh, lc, font)
+        return x + 2 * cw + 5
+
+    def _hud_clock(self, w, cv, P, x, y):
+        self._mg_clock(w, cv, P, x, y, anchor="e", on_bar=False)
+        self.tk_ov_clock.config = (lambda fn: (lambda text="", **kw: fn(text=text.splitlines()[0]
+                                                                        if text else "")))(self.tk_ov_clock.config)
 
     def _hud_row(self, w, cv, P, want, W, H):
         """On the XP bar: one line - time | map | maps · avg | switches | Notes ▾ ... clock 🔒."""
         cfg = self.tracker_cfg()
+        lft, rgt = self._hud_frame(cv, P, W, H)
         mid = H // 2 + 1
         f = (P["font"], self._hf(10))
         fm = tkfont.Font(root=cv, family=P["font"], size=self._hf(10))
-        gx = self._mg_glyphs(w, cv, P, W - 14, mid)
+        gx = self._mg_glyphs(w, cv, P, rgt, mid)
         right = gx
         if want["timer"] and cfg.get("clock", True):
-            self._mg_clock(w, cv, P, gx - 2, mid, anchor="e", on_bar=False)
-            self.tk_ov_clock.config = (lambda fn: (lambda text="", **kw: fn(text=text.splitlines()[0]
-                                                                            if text else "")))(self.tk_ov_clock.config)
-            right = gx - fm.measure("00:00 PM") - 10
-        x = 16
+            self._hud_clock(w, cv, P, gx - 2, mid)
+            right = gx - fm.measure("00:00 PM") - 12
+        x = lft
+        cy0, cy1 = 7, H - 7
         if want["timer"]:
             self._mg_text(cv, P, x, mid, "session", (P["font"], self._hf(13), "bold"), fill=P["big"])
             fb_ = tkfont.Font(root=cv, family=P["font"], size=self._hf(13), weight="bold")
             x += max(fb_.measure("0:00:00"), fb_.measure("not tracking")) + 10
             self._hud_sep(cv, P, x, H)
-            x += 10
+            x += 12
             self._mg_text(cv, P, x, mid, "map", f)
             x += fm.measure("Map  00:00") + 8
-            room = right - x
             need_rest = (fm.measure("Maps  000") + fm.measure("Avg  00:00") + 24 if (
                 cfg["lines"].get("maps") or cfg["lines"].get("avg")) else 0)
-            cells_w = sum(tkfont.Font(root=cv, family=P["font"], size=self._hf(9)).measure(SHORT[k]) + 21 + self._hf(13) for k in self.HELPERS) \
-                if want["helpers"] else 0
+            cells_w = sum(self._hud_cell_w(cv, P, k, True) + 4 for k in self.HELPERS) + 24 if want["helpers"] else 0
             notes_w = fm.measure("Notes  ▾") + 16 if self.overlay.cfg.get("notes_enabled") else 0
-            where_w = room - need_rest - cells_w - notes_w - 20
+            where_w = right - x - need_rest - cells_w - notes_w - 24
             if where_w > 40:
                 wt = self._mg_text(cv, P, x, mid, "where", f, fill=P["muted"], cls=_Trunc)
                 wt.limit = max(4, int(where_w / ((fm.measure("m") or 8) * 0.8)))
@@ -756,44 +794,57 @@ class MergedOverlay:
                 self._mg_text(cv, P, x + fm.measure("Maps  000") + 8, mid, "avg", f)
                 x += need_rest - 10
             self._hud_sep(cv, P, x, H)
-            x += 8
+            x += 12
         if want["helpers"]:
-            x = self._hud_cells(cv, P, x, 5, H - 3, short=True)
-            self._hud_sep(cv, P, x + 2, H)
-            x += 10
+            x = self._hud_cells(cv, P, x, cy0, cy1, short=True)
+            self._hud_sep(cv, P, x + 4, H)
+            x += 14
         if self.overlay.cfg.get("notes_enabled") and x < right - 40:
             self._mg_notes_button(w, cv, P, x, mid, anchor="w")
 
     def _hud_timer(self, cv, P, W, H):
-        """Right of the life orb: the time and Maps · Avg on top, the map and where you are under it."""
+        """Right of the life orb: the time and Maps · Avg on top, a divider, the map and where you are under it."""
         cfg = self.tracker_cfg()
-        top, low = H // 3 + 1, H * 3 // 4
-        self._mg_text(cv, P, 16, top, "session", (P["font"], self._hf(13), "bold"), fill=P["big"])
+        lft, rgt = self._hud_frame(cv, P, W, H)
+        top, low = H * 0.36, H * 0.70
+        self._mg_text(cv, P, lft, top, "session", (P["font"], self._hf(14), "bold"), fill=P["big"])
         fm = tkfont.Font(root=cv, family=P["font"], size=self._hf(10))
         if cfg["lines"].get("avg"):
-            self._mg_text(cv, P, W - 16, top, "avg", (P["font"], self._hf(10)), anchor="e")
+            self._mg_text(cv, P, rgt, top, "avg", (P["font"], self._hf(10)), anchor="e")
         if cfg["lines"].get("maps"):
-            self._mg_text(cv, P, W - 16 - (fm.measure("Avg  00:00") + 12 if cfg["lines"].get("avg") else 0), top,
+            self._mg_text(cv, P, rgt - (fm.measure("Avg  00:00") + 12 if cfg["lines"].get("avg") else 0), top,
                           "maps", (P["font"], self._hf(10)), anchor="e")
+        self._hud_rule(cv, P, lft, rgt, H * 0.53)
         if cfg["lines"].get("map", True):
-            self._mg_text(cv, P, 16, low, "map", (P["font"], self._hf(10)))
-            wt = self._mg_text(cv, P, 16 + fm.measure("Map  00:00") + 10, low, "where", (P["font"], self._hf(10)),
+            self._mg_text(cv, P, lft, low, "map", (P["font"], self._hf(10)))
+            wt = self._mg_text(cv, P, lft + fm.measure("Map  00:00") + 10, low, "where", (P["font"], self._hf(10)),
                                fill=P["muted"], cls=_Trunc)
-            wt.limit = max(6, int((W - 40 - fm.measure("Map  00:00")) / ((fm.measure("m") or 8) * 0.8)))
+            wt.limit = max(6, int((rgt - lft - fm.measure("Map  00:00") - 10) / ((fm.measure("m") or 8) * 0.8)))
+
+    def _hud_rule(self, cv, P, x0, x1, y):
+        """A thin bronze rule that fades out at both ends, a small lozenge in the middle."""
+        from .themes import mix
+        n = 24
+        seg = (x1 - x0) / n
+        for i in range(n):
+            a = 1 - abs((i + 0.5) / n - 0.5) * 2
+            cv.create_line(x0 + i * seg, y, x0 + (i + 1) * seg, y, fill=mix(P["bg"], P["rim"], a ** 0.7), tags=("mg",))
+        cx = (x0 + x1) / 2
+        cv.create_polygon(cx, y - 3, cx + 3, y, cx, y + 3, cx - 3, y, fill=P["rim"], outline=P["rim_lo"], tags=("mg",))
 
     def _hud_rest(self, w, cv, P, want, W, H):
         """Left of the mana orb: the four switches (2 x 2), then Notes, the clock and the lock."""
         cfg = self.tracker_cfg()
+        lft, rgt = self._hud_frame(cv, P, W, H)
         fm = tkfont.Font(root=cv, family=P["font"], size=self._hf(10))
-        side = max(fm.measure("00:00 PM"), fm.measure("Notes  ▾")) + 34
-        top, low = H // 3 + 1, H * 3 // 4
-        gx = self._mg_glyphs(w, cv, P, W - 14, low)
+        side = max(fm.measure("00:00 PM"), fm.measure("Notes  ▾")) + 30
+        top, low = H * 0.36, H * 0.70
+        gx = self._mg_glyphs(w, cv, P, rgt, low)
         if want["timer"] and cfg.get("clock", True):
-            self._mg_clock(w, cv, P, W - 14, top, anchor="e", on_bar=False)
-            self.tk_ov_clock.config = (lambda fn: (lambda text="", **kw: fn(text=text.splitlines()[0]
-                                                                            if text else "")))(self.tk_ov_clock.config)
+            self._hud_clock(w, cv, P, rgt, top)
         if self.overlay.cfg.get("notes_enabled"):
             self._mg_notes_button(w, cv, P, gx - 2, low, anchor="e")
         if want["helpers"]:
-            cw = max(60, (W - 16 - side - 8 - 4) // 2)
-            self._hud_cells(cv, P, 14, 6, H - 4, short=cw < 86, cols=2, cw=cw)
+            cw = max(56, (rgt - lft - side - 12 - 5) // 2)
+            x = self._hud_cells(cv, P, lft, 9, H - 9, short=cw < 86, cols=2, cw=cw)
+            self._hud_sep(cv, P, x + 4, H)
