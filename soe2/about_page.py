@@ -15,7 +15,12 @@ DISCORD_URL = "https://discord.gg/Ta8EVnxx4T"
 DISCORD = "#5865F2"
 
 # (title, lines). Plain words: what it's for, then how to start.
+THEME_PAGE = "Pick your look"
 QUICKSTART = [
+    (THEME_PAGE, [
+        "Choose how the app looks - click one and it changes right away. You can change it any time in "
+        "Settings › Appearance.",
+    ]),
     ("Welcome to StashOfExile2", [
         "A free toolkit that runs next to Path of Exile 2: it prices your items, keeps track of your maps and warns "
         "you about things that are easy to miss in game.",
@@ -171,6 +176,12 @@ class AboutPage:
         for line in lines:
             tk.Label(self.qs_body, text=line, bg=P2, fg=C["text"], anchor="w", justify="left", wraplength=560,
                      font=("Segoe UI", 10)).pack(fill="x", pady=(0, 8))
+        want_h = 600 if title == THEME_PAGE else 420             # 2.61.0: the theme cards need more room
+        if getattr(self, "_wn_h", None) != want_h:
+            self._wn_h = want_h
+            self.whatsnew_follow()
+        if title == THEME_PAGE:                                  # 2.61.0: a fresh install starts by picking a theme
+            self.theme_cards(self.qs_body, "quickstart", cols=4, scale=0.78)
         if self.qs_i == n - 1:
             row = tk.Frame(self.qs_body, bg=P2)
             row.pack(fill="x", pady=(8, 0))
