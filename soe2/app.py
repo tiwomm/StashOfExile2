@@ -2753,6 +2753,12 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         lbl.bind("<Configure>", lambda e: lbl.config(wraplength=max(300, e.width - 10)))
         self._info_card = outer
         self.root.after(secs * 1000, lambda o=outer: getattr(self, "_info_card", None) is o and close())
+        sh = getattr(self, "shell", None)
+        if sh is not None and sh.active != "checks":         # 2.62.0: on another page - say it there too
+            try:
+                self.app_toast(text, actions=list(actions) + [("Show", lambda: sh.open("checks"))], secs=secs)
+            except Exception:
+                pass
 
     @staticmethod
     def item_sig(item):

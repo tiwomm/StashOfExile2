@@ -134,7 +134,7 @@ class Sidebar(tk.Canvas):
                 if it.get("child"):
                     self.create_text(x0 + 10, cy, text="↳", anchor="w", font=("Segoe UI", 9), fill=grp)
                 self.create_text(x0 + 12 + ind + (6 if mk == "gem" else 0), cy, text=icon, anchor="w",
-                                 font=("Segoe UI Emoji", 11 if not it.get("child") else 9), fill=fg)
+                                 font=("Segoe UI Emoji", 12 if not it.get("child") else 10), fill=fg)
                 self.create_text(x0 + 40 + ind, cy, text=title, anchor="w", fill=fg,
                                  font=("Segoe UI", 10 if not it.get("child") else 9, "bold" if sel else "normal"))
                 if mod is not None and getattr(mod, "kind", "") == "utility" and not it.get("child"):
