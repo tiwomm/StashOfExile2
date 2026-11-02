@@ -21,6 +21,11 @@ NEXT = [
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.73.1": [
+        "League Focus pokes: your plan now reminds you over the game - a nudge in your own words, \"you reached "
+        "maps\" with what you planned for it, cheap stockpile prices, a heads-up before you reroll, and a check-in "
+        "every 45 min of play. Only in town, never more than you allow - tune it in Overlay ↳ Game Plan › Pokes.",
+    ],
     "2.73.0": [
         "League Focus: Overlay ↳ Game Plan - set your league goals by phase, a stockpile to buy while it's cheap, your "
         "farm plan and a build lock once, then forget it.",
