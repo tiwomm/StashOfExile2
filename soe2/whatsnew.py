@@ -21,6 +21,13 @@ NEXT = [
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.69.1": [
+        "Community data sharing is now opt-in: the app asks once, and nothing is shared until you say yes. Change it "
+        "any time in Settings › General › Community data sharing. It covers mod prices, map ranks and the strats "
+        "you upload.",
+        "Strat Tracker: 📤 Upload puts your setup and its numbers on the community strats in Money Makers.",
+        "Toolkit: the Check for updates button isn't cut off any more.",
+    ],
     "2.69.0": [
         "Every tool now has the same look as Price checks: each part sits under a header strip in its own framed "
         "panel - Settings, Wealth, Regex, Exchange rates, Game search, Market Insights, Money Makers, Map library, "
