@@ -21,6 +21,12 @@ NEXT = [
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.64.0": [
+        "Each tool's tabs are now listed in the sidebar right under it (↳) - for example Money Makers ↳ Strats, "
+        "Lucrative Strats, Tablet Crafting, Farm Tracker; Regex ↳ Favorites; Mod book ↳ its rule tabs. Click one "
+        "to go straight there. On a short window only the open tool's tabs are listed.",
+        "Farm Ledger is now called Farm Tracker.",
+    ],
     "2.63.0": [
         "Price checks has a cleaner layout: the list and the item each sit under their own header, the list says "
         "how many items it shows and how it's sorted, and the buttons for the picked rows sit right under the list.",

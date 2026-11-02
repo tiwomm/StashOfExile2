@@ -25,9 +25,19 @@ class Sidebar(tk.Canvas):
         self.bind("<Button-1>", self._click)
 
     # ---- what is listed
-    def items(self):
+    def items(self, fold=False):
+        """Rows top to bottom. 2.64.0: a page's own tabs are rows too, under it ({"tab": title, "of": key, "depth"}).
+        fold: only the open page's tabs (when everything doesn't fit)."""
         sh = self.shell
+        act = sh.active
+        act_par = getattr(sh.modules.get(act), "parent", None)
         out = []
+
+        def tabs(m, depth):
+            if self.compact or (fold and m.key not in (act, act_par)):
+                return
+            for t in sh.tab_titles(m.key):
+                out.append({"key": f"{m.key}::{t}", "tab": t, "of": m.key, "depth": depth})
         for kind, label in GROUPS:
             mods = [m for m in sh.modules.values() if m.kind == kind and sh.listed(m)]
             if not mods:
@@ -35,9 +45,15 @@ class Sidebar(tk.Canvas):
             out.append({"group": label})
             for m in mods:
                 out.append({"key": m.key, "mod": m})
+                tabs(m, 1)
                 for c in sh.children(m.key):
                     out.append({"key": c.key, "mod": c, "child": True})
+                    tabs(c, 2)
         return out
+
+    def _fits(self, rows, h):
+        need = 8 + sum(28 if "group" in r else 26 if "tab" in r else 32 for r in rows)
+        return need <= h - 2 * (30 + 2) - 28
 
     def set_compact(self, on):
         if on != self.compact:
@@ -65,6 +81,9 @@ class Sidebar(tk.Canvas):
         k = self._hit(e.y)
         if k == "_toolkit":
             self.shell.toggle_menu()
+        elif k and "::" in k:                                  # one of a page's tabs
+            key, title = k.split("::", 1)
+            self.shell.open_tab(key, title)
         elif k:
             self.shell.open(k)
 
@@ -95,7 +114,10 @@ class Sidebar(tk.Canvas):
         rh, y = 30, 8
         self._rows = []
         active = self.shell.active
-        for it in self.items() + [{"group": None}, {"key": "_toolkit", "title": "Toolkit", "icon": "◆"},
+        rows = self.items()
+        if not self._fits(rows, h):
+            rows = self.items(fold=True)
+        for it in rows + [{"group": None}, {"key": "_toolkit", "title": "Toolkit", "icon": "◆"},
                                   {"key": "settings", "title": "Settings", "icon": "⚙"}]:
             if "group" in it:
                 if it["group"] is None:                       # the bottom: Toolkit and Settings
@@ -112,12 +134,16 @@ class Sidebar(tk.Canvas):
                 y += 22
                 continue
             k = it["key"]
+            if "tab" in it:                                    # 2.64.0: a page's tab, under it
+                y = self._tab_row(it, y, w, mk, acc, sel_bg, bg, hov_bg, txt, sel_txt, grp, t, nav)
+                continue
             mod = it.get("mod")
             title = mod.title if mod is not None else it["title"]
             icon = mod.icon if mod is not None else it["icon"]
             y0, y1 = y, y + rh
             x0, x1 = (6, w - 6) if not self.compact else (4, w - 4)
-            sel = k == active or (k == "_toolkit" and self.shell.menu is not None)
+            has_tabs = mod is not None and bool(self.shell.tab_titles(k)) and not self.compact
+            sel = (k == active and not has_tabs) or (k == "_toolkit" and self.shell.menu is not None)
             if sel:
                 self._marker(mk, x0, y0, x1, y1, acc, sel_bg, bg)
             elif k == self.hover:
@@ -126,7 +152,8 @@ class Sidebar(tk.Canvas):
                 else:
                     self.create_rectangle(x0, y0, x1, y1, fill=hov_bg, outline="")
             cy = (y0 + y1) // 2
-            fg = sel_txt if sel else txt
+            opened = has_tabs and k == active                  # its tab carries the marker; the page name is bold
+            fg = sel_txt if sel or opened else txt
             if self.compact:
                 self.create_text((x0 + x1) // 2, cy, text=icon, font=("Segoe UI Emoji", 12), fill=fg)
             else:
@@ -136,7 +163,7 @@ class Sidebar(tk.Canvas):
                 self.create_text(x0 + 12 + ind + (6 if mk == "gem" else 0), cy, text=icon, anchor="w",
                                  font=("Segoe UI Emoji", 12 if not it.get("child") else 10), fill=fg)
                 self.create_text(x0 + 40 + ind, cy, text=title, anchor="w", fill=fg,
-                                 font=("Segoe UI", 10 if not it.get("child") else 9, "bold" if sel else "normal"))
+                                 font=("Segoe UI", 10 if not it.get("child") else 9, "bold" if sel or opened else "normal"))
                 if mod is not None and getattr(mod, "kind", "") == "utility" and not it.get("child"):
                     st = None
                     try:
@@ -149,6 +176,23 @@ class Sidebar(tk.Canvas):
                     self.create_text(x1 - 6, cy, text="BETA", anchor="e", font=("Segoe UI", 7, "bold"), fill=acc)
             self._rows.append((k, y0, y1))
             y = y1 + 2
+
+    def _tab_row(self, it, y, w, mk, acc, sel_bg, bg, hov_bg, txt, sel_txt, grp, t, nav):
+        k, rh = it["key"], 24
+        y0, y1 = y, y + rh
+        x0, x1 = 6, w - 6
+        sel = self.shell.active == it["of"] and self.shell.tab_current(it["of"]) == it["tab"]
+        ind = 14 * (it["depth"] - 1)
+        if sel:
+            self._marker(mk, x0 + 18 + ind, y0, x1, y1, acc, sel_bg, bg)
+        elif k == self.hover:
+            self.create_rectangle(x0 + 18 + ind, y0, x1, y1, fill=hov_bg, outline="")
+        cy = (y0 + y1) // 2
+        self.create_text(x0 + 10 + ind, cy, text="↳", anchor="w", font=("Segoe UI", 9), fill=grp)
+        self.create_text(x0 + 28 + ind + (8 if sel and mk == "gem" else 0), cy, text=it["tab"], anchor="w",
+                         fill=sel_txt if sel else txt, font=("Segoe UI", 9, "bold" if sel else "normal"))
+        self._rows.append((k, y0, y1))
+        return y1 + 2
 
     def _marker(self, mk, x0, y0, x1, y1, acc, sbg, bg):
         mix = TH.mix

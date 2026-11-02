@@ -1,7 +1,7 @@
-"""Money Makers > Farm Ledger (2.45.0, was Run tracker): the window, the setup editor, the log box (in the app and
+"""Money Makers > Farm Tracker (2.45.0, was Run tracker): the window, the setup editor, the log box (in the app and
 over the game) and the run counting. Data and every calculation live in ledger.py.
 
-The Session timer times your play; the Farm Ledger measures one farming SETUP - what a run costs, what its loot is
+The Session timer times your play; the Farm Tracker measures one farming SETUP - what a run costs, what its loot is
 worth, and whether it beats your other setups. ToS: it only reads your copies (Ctrl+Alt+C, which you press) and
 Client.txt, and shows a box; it never acts in the game."""
 import time
@@ -151,7 +151,7 @@ class LedgerPage:
     # ================================================================ the page
     def build_ledger(self, page):
         """2.56.0 (feedback: "a bit confusing ... modern, clean, functional, ease of use for the average user"; the
-        Farm Ledger Redesign mockups): your setups as cards on the left; on the right the setup's name and what it
+        Farm Tracker Redesign mockups): your setups as cards on the left; on the right the setup's name and what it
         is, ONE main button (Log loot), whether runs are being counted, then the verdict in plain words ("Makes about
         10.3 div an hour"), the figures, where the money comes from, profit per log, and the sheet. No setup yet:
         three steps and a button."""
@@ -292,14 +292,14 @@ class LedgerPage:
         self.fl_refresh()
 
     def _fl_empty_page(self, parent):
-        """First time: what the Farm Ledger does, in three steps, and one button."""
+        """First time: what the Farm Tracker does, in three steps, and one button."""
         P1, P2 = C["panel"], C["panel2"]
         f = tk.Frame(parent, bg=P1)
         inner = tk.Frame(f, bg=P1)
         inner.place(relx=0.5, rely=0.42, anchor="center")
         tk.Label(inner, text="Does a farming setup really make money?", bg=P1, fg="#ffffff",
                  font=("Segoe UI", 18, "bold")).pack()
-        tk.Label(inner, text="The Farm Ledger works it out from your own runs: what a run costs, what its loot is "
+        tk.Label(inner, text="The Farm Tracker works it out from your own runs: what a run costs, what its loot is "
                              "worth, and how many divines an hour that makes.", bg=P1, fg=C["text"],
                  font=("Segoe UI", 10), wraplength=560, justify="center").pack(pady=(8, 16))
         steps = tk.Frame(inner, bg=P1)
@@ -843,7 +843,7 @@ class LedgerPage:
         m.add_command(label="CSV - logs (Excel, Google Sheets)", command=lambda: self.fl_export("logs"))
         m.add_command(label="CSV - every drop", command=lambda: self.fl_export("loot"))
         m.add_command(label="CSV - logs of every setup", command=lambda: self.fl_export("all"))
-        m.add_command(label="Setup file (.json) - for a friend's Farm Ledger", command=lambda: self.fl_export("json"))
+        m.add_command(label="Setup file (.json) - for a friend's Farm Tracker", command=lambda: self.fl_export("json"))
         m.add_command(label="Strat guide (CSV) - share this setup as a strat", command=lambda: self.fl_export("strat"))
         m.add_command(label="Copy summary (for Discord)", command=self.fl_copy_summary)
         m.add_separator()
@@ -980,7 +980,7 @@ class LedgerPage:
         if not cols:
             return None
         win = tk.Toplevel(self.root)
-        win.title("Farm Ledger - compare")
+        win.title("Farm Tracker - compare")
         win.configure(bg=C["panel"])
         win.transient(self.root)
         rows = (("Runs", "runs", lambda f: str(f["runs"]), max),
@@ -1053,7 +1053,7 @@ class LedgerPage:
                     if getattr(self, "br_reader", None) is None:
                         self.breach_start()           # (follows Client.txt - log_wanted() now says yes)
                 except Exception:
-                    self.log_error("starting the Farm Ledger's map counting")
+                    self.log_error("starting the Farm Tracker's map counting")
         self.fl_save()
         self.fl_refresh()
 
@@ -1155,7 +1155,7 @@ class LedgerPage:
         def moved(x, y, w, h):
             SETTINGS["ledger_box"] = (x, y, w, h)
             save_json("settings.json", SETTINGS)
-        w = OverlayWindow(self.root, f"Farm Ledger · {s['name']}", "✎", geo, opacity=250, on_close=self.fl_box_later,
+        w = OverlayWindow(self.root, f"Farm Tracker · {s['name']}", "✎", geo, opacity=250, on_close=self.fl_box_later,
                           on_moved=moved, lockable=False, min_size=(380, 420), follow_game=not in_app)
         self.fl_box, self.fl_box_p = w, p
         bg, fg, mut = P["bg"], P["text"], P["muted"]
@@ -1233,7 +1233,7 @@ class LedgerPage:
             return
         cur = t.get("1.0", "end-1c")
         t.insert("end", ("\n" if cur and not cur.endswith("\n") else "") + "\n".join(f"{q} {n}" for n, q in drops) + "\n")
-        self._say("Added to the Farm Ledger's loot: " + ", ".join(f"{q}× {n}" for n, q in drops), 3)
+        self._say("Added to the Farm Tracker's loot: " + ", ".join(f"{q}× {n}" for n, q in drops), 3)
 
     def _fl_box_typed(self, _e=None):
         t = self.fl_box_text
@@ -1404,7 +1404,7 @@ class LedgerPage:
             except tk.TclError:
                 pass
         win = tk.Toplevel(self.root)
-        win.title(f"Farm Ledger - {s['name']}")
+        win.title(f"Farm Tracker - {s['name']}")
         win.configure(bg=P1)
         win.transient(self.root)
         win.geometry("1060x640")

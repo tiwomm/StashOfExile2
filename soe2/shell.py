@@ -508,6 +508,7 @@ class Shell:
         self.cfg.setdefault("desktop_icons", False)
         self.cfg.setdefault("launcher", "both" if self.cfg.get("desktop_icons") else "dock")     # 2.0 beta 21
         self.windows, self.modules, self.active = {}, {}, None
+        self.tabs = {}                                   # 2.64.0: module key -> its tab bar (listed in the sidebar)
         self.taskbtns = {}
         # ---- layout: taskbar at the bottom, status strip above it, dock on the left, desktop fills the rest
         self.task = GradientBar(root, TASK_H, ("#1c2a47", "#0b1222"))
@@ -843,6 +844,58 @@ class Shell:
         """On the dock, the Toolkit menu and the desktop (hidden ones open from inside other windows; child tools
         (2.33.0) live under their parent - its title bar and indented in the Toolkit menu)."""
         return self.visible(mod) and not getattr(mod, "hidden", False) and not getattr(mod, "parent", None)
+
+    # ---- 2.64.0: a page's own tabs live in the sidebar, under the page (↳), not along its top
+    def register_tabs(self, key, bar):
+        """bar: a SegBar or a SegBook whose tabs switch the page's content. Its row is hidden; the sidebar lists the
+        tabs under the module and picks them."""
+        self.tabs[key] = bar
+        top = getattr(bar, "top", None)                 # SegBook: its button row
+        if top is not None:
+            top.pack_forget()
+            bar.bind("<<NotebookTabChanged>>", lambda e: self._tabs_changed(), add="+")
+        else:
+            bar.pack_forget()
+            orig = bar.command
+            bar.command = lambda v, f=orig: (f(v) if f else None, self._tabs_changed())
+            real_pick = bar.pick
+
+            def pick(opt, notify=True, _p=real_pick):
+                _p(opt, notify)
+                self._tabs_changed()
+            bar.pick = pick
+
+    def _tabs_changed(self):
+        sb = getattr(self, "sidebar", None)
+        if sb is not None:
+            sb.redraw()
+
+    def tab_titles(self, key):
+        bar = self.tabs.get(key)
+        if bar is None:
+            return []
+        return list(bar.titles) if hasattr(bar, "titles") else list(bar.btns)
+
+    def tab_current(self, key):
+        bar = self.tabs.get(key)
+        if bar is None:
+            return None
+        if hasattr(bar, "titles"):
+            return bar.titles[bar.cur] if bar.cur is not None else None
+        return bar.value
+
+    def open_tab(self, key, title):
+        """Open the module's page on one of its tabs."""
+        self.open(key)
+        bar = self.tabs.get(key)
+        if bar is None:
+            return
+        if hasattr(bar, "titles"):
+            if title in bar.titles:
+                bar.select(bar.titles.index(title))
+        elif title in bar.btns:
+            bar.pick(title)
+        self._tabs_changed()
 
     def children(self, key):
         """2.33.0: the child tools of a module (visible ones, in order)."""
