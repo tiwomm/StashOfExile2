@@ -21,6 +21,14 @@ NEXT = [
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.62.0": [
+        "A new layout: every tool is listed by name in the sidebar on the left (sub-tools indented under theirs with "
+        "↳), and the one you pick fills the window - one at a time, no more floating windows.",
+        "The bar along the bottom holds the messages, exchange rates, trade-limit meters, league and clock. Toolkit "
+        "and Settings are at the bottom of the sidebar.",
+        "Frost Pane (the light theme) is easier to read: no more pale gold or white text on light panels, and no "
+        "dark patches left over.",
+    ],
     "2.61.1": [
         "Chat commands: set each command's key right on that page again - click the Key box and press the key. If "
         "another hotkey already uses it, the box turns red and says which one.",

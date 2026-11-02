@@ -4,7 +4,7 @@
 
 > **Who we build for - read second.** Path of Exile players are utilitarian: they love data and information, problem solving and creative thinking. So every feature shows its numbers *and how they were worked out*, lets you sort, filter, compare and export them (CSV), keeps power-user depth (keys, versions, raw data) one click away instead of hiding it, explains in plain words, and leaves the decision to the player. Pretty is welcome; vague is not.
 
-**Current version: 2.61.1**
+**Current version: 2.62.0**
 
 Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds features, 2.10.1 only fixes. Each step below is one release; we work through them top to bottom.
 
@@ -93,6 +93,7 @@ Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds f
 | 2.60.0 | **Theme packs:** ten themes for the whole app (Emberforge default, Midnight Steel = the old look), swapped live in Settings › Appearance; bevelled buttons, list headings and title bars per theme; meters for the trade limits and mod rolls; an item card with Item / How it's priced / Raw in Price checks; a new icon. Themes are JSON (themes/); your own go in the data folder's themes folder. |
 | 2.61.0 | The app window's own title bar in the theme's colors (Windows 11; dark / light on Windows 10). A fresh install starts by picking a theme. |
 | 2.61.1 | Chat command keys are set on the Chat commands page again, with a warning when a key is taken; a command without a key is kept. |
+| 2.62.0 | **Pages (redesign step 1):** a text sidebar (groups, ↳ sub-tools, Toolkit + Settings at the bottom); one tool fills the window at a time; a status bar instead of the taskbar; Frost Pane readability. |
 
 ## ▶ Next up
 
@@ -102,13 +103,15 @@ Order (decided 2.34.0): the Polish basics first, so new features are built on th
 
 | Version | Plan |
 |---|---|
-| 2.62.0 | **Farm Ledger part 2:** the setup as a short 5-step form with the cost of one run shown live; the log-loot box in 3 steps. |
-| 2.63.0 | **Strats browser redone:** filter buttons, strats as cards, a detail panel with Track in Farm Ledger and your own numbers. |
-| 2.64.0 | **More item types priced (Sidekick / Exiled Exchange-style):** a pricing engine for item types the app only guesses today. Their licenses are checked first; logic is ported, not code, with credit. |
-| 2.65.0 | **Public stash order test tool.** |
-| 2.66.0 | **Polish 4 - Responsive:** windows reflow when narrow (toolbars wrap, side panels drop under the list, sensible minimum sizes), sharp on every monitor (per-monitor DPI), a text size setting (100-150 %). |
-| 2.67.0 | **Polish 5 - Hover, focus, micro-interactions:** the same hover and pressed look on every button, row, icon and tab; a visible keyboard focus ring everywhere; short (120-180 ms) fades for popups and toasts, never on lists; a "Reduce motion" setting that turns them off. |
-| 2.68.0 | **Polish 6 - Visual hierarchy:** the suggestions below, window by window, with before / after screenshots in each PR. |
+| 2.63.0 | **Redesign step 2 - Price checks like the mockup:** a two-row toolbar (actions + search, filters), section headers, the list in a recessed panel, the item card panel on the right. |
+| 2.64.0 | **Redesign step 3:** the other tools in the same panel / section style (more steps as needed). |
+| 2.65.0 | **Farm Ledger part 2:** the setup as a short 5-step form with the cost of one run shown live; the log-loot box in 3 steps. |
+| 2.66.0 | **Strats browser redone:** filter buttons, strats as cards, a detail panel with Track in Farm Ledger and your own numbers. |
+| 2.67.0 | **More item types priced (Sidekick / Exiled Exchange-style):** a pricing engine for item types the app only guesses today. Their licenses are checked first; logic is ported, not code, with credit. |
+| 2.68.0 | **Public stash order test tool.** |
+| 2.69.0 | **Polish 4 - Responsive:** windows reflow when narrow (toolbars wrap, side panels drop under the list, sensible minimum sizes), sharp on every monitor (per-monitor DPI), a text size setting (100-150 %). |
+| 2.70.0 | **Polish 5 - Hover, focus, micro-interactions:** the same hover and pressed look on every button, row, icon and tab; a visible keyboard focus ring everywhere; short (120-180 ms) fades for popups and toasts, never on lists; a "Reduce motion" setting that turns them off. |
+| 2.71.0 | **Polish 6 - Visual hierarchy:** the suggestions below, window by window, with before / after screenshots in each PR. |
 | Last | **Linux build** (Hyprland / Wayland first) - the groundwork is in place (session_linux_handover.txt). |
 
 ### Visual hierarchy - suggestions (for 2.47.0)
