@@ -571,7 +571,7 @@ class MoneyMakersPage:
 
     def mm_post(self):
         s = self.mm_current()
-        if not s or s["origin"] != "mine" or self.mm_need_login("post"):
+        if not s or s["origin"] != "mine" or not self.cm_need_sharing(self.mm_post) or self.mm_need_login("post"):
             return None
         data = {k: v for k, v in MM.tidy(s).items() if k not in ("id", "author")}
         self._mm_bg(lambda: B.post("strat", data),
@@ -1130,7 +1130,7 @@ class MoneyMakersPage:
         if not o or o["origin"] != "mine":
             self._say("Pick one of your own one-liners (From: Mine) to post it.", 6)
             return None
-        if self.mm_need_login("post"):
+        if not self.cm_need_sharing(self.mm_one_post) or self.mm_need_login("post"):
             return None
         data = {k: v for k, v in MM.tidy_one(o).items() if k not in ("id", "author")}
         self._mm_bg(lambda: B.post("one", data), lambda r: self.mm_board_result(r, "Posted to the Community board."))

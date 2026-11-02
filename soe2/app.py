@@ -45,6 +45,7 @@ from . import gear, waystone
 from .toasts import Toasts
 from .style import C, FLAG_COLORS, FONT_TITLE, hotkey_blocked, MONO, Plate, SegBook, SegBar, setup_style, Toast, KeyCapture
 from .chrome import SectionBar, Viewport, section as chrome_section
+from .communitymods import WHAT as CM_WHAT
 from .winsys import ICON_B64, KeyWatch, Tray
 from .wealth_page import WealthPage
 from .wealth_setup import WealthSetup
@@ -990,12 +991,11 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         self.game_log_text()
 
         # 2.31.0: the community Mod book
-        row = section("General", "Community Mod book", "Every player's price checks pool their mod prices, so the stars "
-                                                        "and estimates get better for everyone - most of all early in a "
-                                                        "league. Once an hour: mods and prices only, no account names or items. "
-                                                        "You always get everyone else's prices, sharing or not.")
-        self.cm_share_var = tk.BooleanVar(value=bool(SETTINGS.get("share_prices", True)))
-        ttk.Checkbutton(row, text="Share my mod prices (anonymous)", variable=self.cm_share_var,
+        # 2.69.1: Community data sharing (was "Community Mod book"): off until you say yes
+        row = section("General", "Community data sharing", CM_WHAT + " You always get everyone else's data, sharing or "
+                                                           "not.")
+        self.cm_share_var = tk.BooleanVar(value=self.cm_sharing())
+        ttk.Checkbutton(row, text="Share anonymous data with the community", variable=self.cm_share_var,
                         command=self.cm_share_changed).pack(side="left")
         row = section("General", "Window", "Always on top keeps StashOfExile2 in front of the game (and brings it "
                                            "back if something minimizes it). The 📌 on the taskbar does the same. "
@@ -1830,21 +1830,83 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         if not BRD.configured():
             self.root.after(CM.EVERY * 1000, self.cm_start)       # the board may get switched on later
             return
-        if not SETTINGS.get("share_notice_seen"):
-            SETTINGS["share_notice_seen"] = True
-            save_json("settings.json", SETTINGS)
-            self.app_toast("StashOfExile2 pools mod prices anonymously, so everyone's prices get better - especially "
-                           "early in a league. Only mods and prices are sent once an hour: no account names, no items.\n\n"
-                           "You can change this any time in Settings > General.", "Community Mod book",
-                           actions=[("Don't share", self.cm_opt_out)], secs=60)
+        if not self.cm_asked():
+            self.cm_ask()
         self.root.after(60000, self.cm_tick)
 
-    def cm_opt_out(self):
-        SETTINGS["share_prices"] = False
+    # 2.69.1: sharing is opt-in - the first run asks; nothing is sent until you say yes
+    def cm_sharing(self):
+        from . import communitymods as CM
+        return CM.sharing()
+
+    def cm_asked(self):
+        return bool(SETTINGS.get("share_asked"))
+
+    def cm_set_sharing(self, on, say=True):
+        SETTINGS["share_prices"] = bool(on)
+        SETTINGS["share_asked"] = True
         save_json("settings.json", SETTINGS)
         if hasattr(self, "cm_share_var"):
-            self.cm_share_var.set(False)
-        self._say("Mod prices won't be shared. You still get everyone else's.", 6)
+            self.cm_share_var.set(bool(on))
+        w = getattr(self, "cm_ask_win", None)
+        if w is not None:
+            try:
+                w.destroy()
+            except tk.TclError:
+                pass
+            self.cm_ask_win = None
+        if say:
+            self._say("Thanks - you're sharing anonymous data with the community." if on else
+                      "Nothing will be shared. You still get everyone else's data.", 6)
+
+    def cm_opt_out(self):
+        self.cm_set_sharing(False)
+
+    def cm_ask(self, then=None):
+        """The first-run question (and the one before an upload while sharing is off). A small window in the middle
+        of the app; closing it without an answer asks again next time. then(on) runs after an answer."""
+        old = getattr(self, "cm_ask_win", None)
+        if old is not None and old.winfo_exists():
+            old.lift()
+            return old
+        P2 = C["panel2"]
+        w = self.cm_ask_win = tk.Toplevel(self.root, bg=P2)
+        w.title("Community data sharing")
+        w.transient(self.root)
+        w.resizable(False, False)
+        box = tk.Frame(w, bg=P2, padx=16, pady=16)
+        box.pack(fill="both", expand=True)
+        tk.Label(box, text="Share anonymous data with the community?", bg=P2, fg=C["text"],
+                 font=("Segoe UI", 12, "bold"), anchor="w").pack(fill="x")
+        tk.Label(box, text=CM_WHAT + "\n\nYou get everyone else's data either way. You can change this any time "
+                 "in Settings › General › Community data sharing.", bg=P2, fg=C["muted"], justify="left",
+                 wraplength=440, anchor="w").pack(fill="x", pady=(8, 16))
+        row = tk.Frame(box, bg=P2)
+        row.pack(fill="x")
+
+        def answer(on):
+            self.cm_set_sharing(on)
+            if then:
+                then(on)
+        ttk.Button(row, text="Share", style="Primary.TButton", command=lambda: answer(True)).pack(side="right")
+        ttk.Button(row, text="No thanks", command=lambda: answer(False)).pack(side="right", padx=(0, 8))
+        w.protocol("WM_DELETE_WINDOW", lambda: (w.destroy(), setattr(self, "cm_ask_win", None)))
+        try:
+            w.update_idletasks()
+            hx, hy, hw, hh = self.root.winfo_rootx(), self.root.winfo_rooty(), self.root.winfo_width(), self.root.winfo_height()
+            w.geometry(f"+{hx + max(0, (hw - w.winfo_reqwidth()) // 2)}+{hy + max(0, (hh - w.winfo_reqheight()) // 3)}")
+            w.lift()
+        except tk.TclError:
+            pass
+        return w
+
+    def cm_need_sharing(self, then):
+        """Before anything goes up to the community board: sharing must be on. -> True when it is (run it now);
+        otherwise asks, and then(…) runs if you say Share."""
+        if self.cm_sharing():
+            return True
+        self.cm_ask(lambda on: on and then())
+        return False
 
     def cm_tick(self):
         from . import communitymods as CM
@@ -1883,9 +1945,7 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
             chip.pack(side="right", padx=(0, 8))
 
     def cm_share_changed(self):
-        SETTINGS["share_prices"] = bool(self.cm_share_var.get())
-        SETTINGS["share_notice_seen"] = True
-        save_json("settings.json", SETTINGS)
+        self.cm_set_sharing(bool(self.cm_share_var.get()), say=False)
 
     def ev_update_downloaded(self, ok, msg, dest, verified):
         self._upd_done()
@@ -4966,7 +5026,7 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         self.save_session()
         try:                                         # 2.31.0: send this hour's mod prices before going
             from . import communitymods as CM
-            if SETTINGS.get("share_notice_seen") and CM.sharing():
+            if CM.sharing():
                 t = threading.Thread(target=lambda: CM.push(MARKET, dict(RULES)), daemon=True)
                 t.start()
                 t.join(4)
