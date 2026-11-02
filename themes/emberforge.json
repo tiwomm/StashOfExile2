@@ -230,5 +230,17 @@
   "on": "accent_2",
   "off": "#1e2226",
   "lcd_bg": "#070809"
+ },
+ "nav": {
+  "bg": "surface_raised",
+  "marker": "glow",
+  "marker_color": "accent",
+  "sel_bg": "#3a2212",
+  "hover_bg": "#1e2226",
+  "text": "text",
+  "sel_text": "#ffffff",
+  "group": "accent_2",
+  "texture": "embers",
+  "texture_color": "#ff7b2e"
  }
 }

@@ -202,5 +202,15 @@
   "on": "accent",
   "off": "#16302b",
   "lcd_bg": "#050808"
+ },
+ "nav": {
+  "bg": "surface_raised",
+  "marker": "bracket",
+  "marker_color": "accent",
+  "sel_bg": "#0f2a25",
+  "hover_bg": "#142122",
+  "text": "text",
+  "sel_text": "#effffa",
+  "group": "accent_2"
  }
 }

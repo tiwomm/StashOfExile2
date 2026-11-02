@@ -287,5 +287,17 @@
   "on": "#37b54a",
   "off": "#e6e6e6",
   "lcd_bg": "#ffffff"
+ },
+ "nav": {
+  "bg": "#f7f9fc",
+  "marker": "pill",
+  "marker_color": "accent",
+  "sel_bg": "#dcebfc",
+  "sel_border": "#7da2ce",
+  "hover_bg": "#eef6fd",
+  "hover_border": "#b8d6f0",
+  "text": "text",
+  "sel_text": "#0b1622",
+  "group": "#1d4f8c"
  }
 }
