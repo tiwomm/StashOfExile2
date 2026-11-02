@@ -21,6 +21,12 @@ NEXT = [
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.55.0": [
+        "One overlay window: the Session timer, the Mechanic Helper and Notes together over the game. Turn \"One "
+        "window\" off in Overlays › Appearance for three separate windows.",
+        "Two new styles: Codex (dark stone, bronze corners) and Minimal (just the time, the map and the four switches).",
+        "Layout: Panel (a card) or Strip (one thin bar for the top edge - Notes drop down from it), with any style.",
+    ],
     "2.54.1": [
         "Mod book › Manual feed: the price is optional. Without one, the item is kept and the mods you tick are rated "
         "High. \"Counts as N listings\" is gone: a fed item is one price, like any listing.",
