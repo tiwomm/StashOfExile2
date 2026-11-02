@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU GPL v3.0 (see LICENSE). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.66.1
+VERSION 2.66.2
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,6 +19,14 @@ VERSION 2.66.1
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.66.2
+       The Panel again, from a written breakdown of the look: deep charcoal / dark wood / near-black leather (no
+       red); a heavy dark-metal frame with a thin antique-gold line and filigree corners (hudart._filigree); a
+       header banner with its own double gold frame and pointed ends (SESSION in antique-gold small caps, the
+       area / league small under it); the stats in ONE leather panel split into a 2 x 2 grid by thin divider
+       lines (a stud where they cross) - a small cream icon and a big gold number per cell (_Num: "Maps 7" -> 7,
+       "--:--" when not tracking); the switches in a second 2 x 2 grid, a soft gold glow in the cell when on
+       (hudart.glow); a thin rule over the clock / Notes / lock. hudart.card(w, h, banner, grids, foot_y).
   2.66.1
        The Panel redrawn to match the game's Treasurer window (feedback: 2.66.0's card didn't look like it): a
        dark wood frame with a raised ridge, a charcoal title band with cut corners and a pale metal top edge,
@@ -1492,7 +1500,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.66.1"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.66.2"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 

@@ -4,7 +4,7 @@
 
 > **Who we build for - read second.** Path of Exile players are utilitarian: they love data and information, problem solving and creative thinking. So every feature shows its numbers *and how they were worked out*, lets you sort, filter, compare and export them (CSV), keeps power-user depth (keys, versions, raw data) one click away instead of hiding it, explains in plain words, and leaves the decision to the player. Pretty is welcome; vague is not.
 
-**Current version: 2.66.1**
+**Current version: 2.66.2**
 
 Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds features, 2.10.1 only fixes. Each step below is one release; we work through them top to bottom.
 
@@ -99,6 +99,7 @@ Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds f
 | 2.65.0 | **Game bar overlay layouts:** on the XP bar, or split beside the life and mana orbs, in the game's own bar look, fitted to the game window (Fit to the game after a drag). The sidebar unfolds only the open tool; Regex lists just Favorites. |
 | 2.66.0 | The overlay in two game-styled looks: the Panel (like the game's vendor windows) and the Game bar - no Style list, no Strip / Minimal. Game bar in PoE2's own HUD style (pewter frame, arched gem end caps, flask-slot sockets); Game search ↳ Anoints; slimmer halves beside the orbs; no Fit button. A click on a tool's row goes back to its own page from a tab or sub-tool. |
 | 2.66.1 | The Panel redrawn to match the game's Treasurer window (small-caps title band, red league band, gold numbers in charcoal boxes). |
+| 2.66.2 | The Panel redone: heavy dark-metal frame with filigree corners, framed header banner, stats in a 2 x 2 grid with icons and big gold numbers. |
 
 ## ▶ Next up
 

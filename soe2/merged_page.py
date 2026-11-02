@@ -49,6 +49,21 @@ class _Trunc(CanvasText):
     configure = config
 
 
+class _Num(CanvasText):
+    """The Panel's numbers: the value only - its icon says what it is ("Maps 7" -> "7", "Avg 6:01" -> "6:01")."""
+
+    def config(self, **kw):
+        if "text" in kw:
+            import re
+            m = re.match(r"^\s*(?:Map|Maps|Avg)\s+(.*)$", str(kw["text"]))
+            if m:
+                kw["text"] = m.group(1)
+            elif "tracking" in str(kw["text"]):              # (no session running)
+                kw["text"] = "--:--"
+        super().config(**kw)
+    configure = config
+
+
 class _Sub(_Trunc):
     """The Panel's red subtitle: where you are, or the league when the game hasn't said yet."""
     limit = 30
@@ -412,85 +427,80 @@ class MergedOverlay:
             x += f.measure(t_)
 
     def _mg_card(self, w, cv, P, want):
-        """A card like the game's Treasurer window: SESSION in small caps on a charcoal band, the area (or the
-        league) in red on a maroon band under it, then the time, map time, Maps and Avg in charcoal boxes - a cream
-        icon, a gold number - the four switches in boxes that light up, and the clock, Notes ▾ and the lock."""
+        """The Panel: a heavy dark-metal frame with filigree corners; a header banner (SESSION in antique gold small
+        caps, where you are under it); the time, this map's time, maps done and the average in a 2 x 2 grid split by
+        thin lines - a small cream icon, a big gold number; the switches in a second 2 x 2 grid (a gold glow when
+        on); the clock, Notes ▾ and the lock under a thin rule."""
         from . import hudart
         cfg = self.tracker_cfg()
         k = getattr(self, "_hud_k", 1.0)
         W = int(300 * k)
-        m, gap = int(6 * k), int(4 * k)
-        b0 = m
-        b1 = b0 + int(30 * k)
-        b2 = b1 + int(24 * k)
-        cw = (W - 2 * m - gap) // 2
-        ch = int(38 * k)
+        fw = int(12 * k)                                     # frame + its gold line
+        gx0, gx1 = fw + int(4 * k), W - fw - int(4 * k)
         cx = W // 2
-        self._smallcaps(cv, P, cx, (b0 + b1) / 2 + 1, "Session" if want["timer"] else "Mechanics", 14, P["head"])
+        by0, by1 = fw + int(4 * k), fw + int(4 * k) + int(46 * k)
+        self._smallcaps(cv, P, cx, by0 + (by1 - by0) * 0.38, "Session" if want["timer"] else "Mechanics", 14, P["head"])
         if want["timer"]:
-            self._mg_text(cv, P, cx, (b1 + b2) / 2, "where", (P["hfont"], self._hf(10), "bold"), fill=P["sub"],
+            self._mg_text(cv, P, cx, by0 + (by1 - by0) * 0.74, "where", (P["hfont"], self._hf(9)), fill=P["sub"],
                           anchor="center", cls=_Sub).config(text="")
         else:
-            cv.create_text(cx, (b1 + b2) / 2, text="CLICK ONE TO SWITCH IT", fill=P["sub"],
-                           font=(P["hfont"], self._hf(9), "bold"), tags=("mg",))
-        y = b2 + gap + int(2 * k)
-        boxes = []
+            cv.create_text(cx, by0 + (by1 - by0) * 0.74, text="CLICK ONE TO SWITCH IT", fill=P["sub"],
+                           font=(P["hfont"], self._hf(8)), tags=("mg",))
+        y = by1 + int(8 * k)
+        grids = []
+        colw = (gx1 - gx0) // 2
         if want["timer"]:
             cells = [("session", "\u23f1")]
-            for key, icon in (("map", "\u2691"), ("maps", "\u2211"), ("avg", "\u2248")):
+            for key, icon in (("map", "\u231b"), ("maps", "\u2691"), ("avg", "\u2248")):
                 if cfg["lines"].get(key, key == "map"):
                     cells.append((key, icon))
+            rows = (len(cells) + 1) // 2
+            rh = int(40 * k)
+            grids.append((gx0, y, gx1, y + rows * rh, rows, 2 if len(cells) > 1 else 1))
             for i, (key, icon) in enumerate(cells):
-                x0, y0 = m + (i % 2) * (cw + gap), y + (i // 2) * (ch + gap)
-                boxes.append((x0, y0, cw, ch))
-                cv.create_text(x0 + int(18 * k), y0 + ch // 2, text=icon, fill=P["icon"],
-                               font=("Segoe UI Symbol", self._hf(14)), tags=("mg",))
-                self._mg_text(cv, P, x0 + int(36 * k), y0 + ch // 2, key,
-                              (P["font"], self._hf(13 if key == "session" else 12), "bold"), fill=P["big"])
-            y += ((len(cells) + 1) // 2) * (ch + gap)
+                x0, y0 = gx0 + (i % 2) * colw, y + (i // 2) * rh
+                cv.create_text(x0 + int(16 * k), y0 + rh // 2, text=icon, fill=P["icon"],
+                               font=("Segoe UI Symbol", self._hf(13)), tags=("mg",))
+                self._mg_text(cv, P, x0 + int(32 * k), y0 + rh // 2, key,
+                              (P["font"], self._hf(15 if key == "session" else 14), "bold"), fill=P["big"],
+                              cls=_Num)
+            y += rows * rh + int(8 * k)
         if want["helpers"]:
-            sh = int(30 * k)
+            rh = int(30 * k)
+            grids.append((gx0, y, gx1, y + 2 * rh, 2, 2))
             for i, kk in enumerate(self.HELPERS):
-                x0, y0 = m + (i % 2) * (cw + gap), y + (i // 2) * (sh + gap)
-                self._card_switch(cv, P, kk, x0, y0, cw, sh)
-            y += 2 * (sh + gap)
-        fy = y + int(9 * k)
-        gx = self._mg_glyphs(w, cv, P, W - m - int(6 * k), fy)
+                x0, y0 = gx0 + (i % 2) * colw, y + (i // 2) * rh
+                self._card_switch(cv, P, kk, x0, y0, colw, rh)
+            y += 2 * rh + int(6 * k)
+        foot = y + int(2 * k)
+        fy = foot + int(11 * k)
+        gx = self._mg_glyphs(w, cv, P, gx1 - int(4 * k), fy)
         if self.overlay.cfg.get("notes_enabled"):
             self._mg_notes_button(w, cv, P, gx - 4, fy, anchor="e")
         if want["timer"] and cfg.get("clock", True):
-            self._mg_clock(w, cv, P, m + int(6 * k), fy, anchor="w", on_bar=False)
+            self._mg_clock(w, cv, P, gx0 + int(4 * k), fy, anchor="w", on_bar=False)
             self.tk_ov_clock.config = (lambda fn: (lambda text="", **kw: fn(text=text.splitlines()[0]
                                                                             if text else "")))(self.tk_ov_clock.config)
-        H = fy + int(14 * k)
-        imgs = []
-        for x0, y0, bw, bh in boxes:
-            im = hudart.box(cv, bw, bh, False)
-            if im is not None:
-                cv.create_image(x0, y0, image=im, anchor="nw", tags=("mgbox",))
-                imgs.append(im)
-        cv.tag_lower("mgbox")
-        art = hudart.card(cv, W, H, (b0, b1, b2))
+        H = fy + int(12 * k) + fw
+        art = hudart.card(cv, W, H, (by0, by1), grids, foot)
         if art is not None:
             cv.create_image(0, 0, image=art, anchor="nw", tags=("hudbg",))
             cv.tag_lower("hudbg")
-            imgs.append(art)
-        cv._card_imgs = imgs
+            cv._card_imgs = [art]
         cv.configure(width=W, height=H)
 
     def _card_switch(self, cv, P, k, x0, y0, bw, bh):
-        """One mechanic switch in a box (lit when on); a click switches it."""
+        """One mechanic switch in its grid cell: a diamond and its name; the cell glows gold when it's on."""
         from . import hudart
         tag = f"mgcell_{k}"
-        off_img, on_img = hudart.box(cv, bw, bh, False), hudart.box(cv, bw, bh, True)
-        if off_img is None:
-            return self._mg_cell(cv, P, k, x0, y0, x0 + bw, y0 + bh, label_font=(P["font"], self._hf(10)))
-        sock = cv.create_image(x0, y0, image=off_img, anchor="nw", tags=("mg", tag))
+        g = hudart.glow(cv, bw - 4, bh - 4)
+        lit = cv.create_image(x0 + 2, y0 + 2, image=g, anchor="nw", state="hidden", tags=("mg", tag)) if g else None
+        hit = cv.create_rectangle(x0, y0, x0 + bw, y0 + bh, outline="", fill="", tags=("mg", tag))
         mid = y0 + bh // 2
-        dot = cv.create_text(x0 + self._hf(14), mid, text=P["off_icon"], fill=P["off"],
+        dot = cv.create_text(x0 + self._hf(16), mid, text=P["off_icon"], fill=P["off"],
                              font=("Segoe UI Symbol", self._hf(11)), tags=("mg", tag))
         lab = cv.create_text(x0 + self._hf(30), mid, text=k.title(), anchor="w", fill=P["text"],
-                             font=(P["font"], self._hf(11), "bold"), tags=("mg", tag))
+                             font=(P["font"], self._hf(11)), tags=("mg", tag))
         cv.tag_bind(tag, "<Button-1>", lambda e, k=k: self.tracker_helper_click(k))
         cv.tag_bind(tag, "<Enter>", lambda e: cv.configure(cursor="hand2"))
         cv.tag_bind(tag, "<Leave>", lambda e: cv.configure(cursor=""))
@@ -499,11 +509,13 @@ class MergedOverlay:
         lt.key = k
 
         def relit(d=d):
-            on = cv.itemcget(d.item, "text") == P["on_icon"]
-            cv.itemconfigure(sock, image=on_img if on else off_img)
+            if lit is not None:
+                on = cv.itemcget(d.item, "text") == P["on_icon"]
+                cv.itemconfigure(lit, state="normal" if on else "hidden")
         d.on_change = relit
-        cv._hud_socks = getattr(cv, "_hud_socks", []) + [off_img, on_img]
+        cv._hud_socks = getattr(cv, "_hud_socks", []) + [g]
         self.tk_ov_alerts[k] = (d, lt)
+        _ = hit
 
     # ---------------------------------------------------------------- 2.65.0: Game bar (on the XP bar / beside the orbs)
     def _mg_hud_build(self, want):
