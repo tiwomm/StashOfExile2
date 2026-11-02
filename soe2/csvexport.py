@@ -33,16 +33,12 @@ def write_sessions(path, sessions):
     n = 0
     with open(path, "w", newline="", encoding="utf-8") as f:
         w = csv.writer(f)
-        w.writerow(["started", "ended", "length_seconds", "length", "maps", "average_map_seconds", "deaths",
-                    "wealth_at_start_div", "wealth_at_end_div", "profit_div", "profit_per_hour_div", "note"])
+        # 2.54.0: no wealth / profit columns - profit is tracked in Money Makers › Farm Ledger (its own CSV)
+        w.writerow(["started", "ended", "length_seconds", "length", "maps", "average_map_seconds", "deaths", "note"])
         for s in sessions:
             avg = s.avg_map_time()
-            ph = s.per_hour()
             w.writerow([_when(s.started), _when(s.ended), round(s.elapsed()), fmt_time(s.elapsed()), s.map_count(),
-                        "" if avg is None else round(avg), s.deaths,
-                        "" if s.start_value is None else round(s.start_value, 3),
-                        "" if s.end_value is None else round(s.end_value, 3),
-                        "" if s.profit is None else round(s.profit, 3), "" if ph is None else round(ph, 3), s.note])
+                        "" if avg is None else round(avg), s.deaths, s.note])
             n += 1
     return n
 

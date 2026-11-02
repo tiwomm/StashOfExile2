@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU GPL v3.0 (see LICENSE). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.53.0
+VERSION 2.54.0
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,6 +19,13 @@ VERSION 2.53.0
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.54.0
+       Money Makers filters renamed like the fields (the user): "🧠 Thoughts per click" and "🖱 Clicks per hour" (were
+       "Thinking at most" / "Clicks at most"; still "this level or easier", said in a tooltip); column "Thoughts/click".
+       Profit leaves the Session timer (the user: it clashed with the Farm Ledger - money in ONE place): no Profit /
+       Profit per hour tiles, overlay line, Options box (PROFIT_HOW, ask_count count-first), Wealth snapshot at Start,
+       or profit columns in Past sessions and the sessions CSV. Stop ends at once. A line + "Open Farm Ledger" button
+       (tracker_open_ledger). Old sessions keep their saved profit in sessions.json; it's just not shown. test_v2540.
   2.53.0
        Price checks: a click on a row (Manual Add or a stash tab's list) shows the item's box - the same one Insights
        draws (ins_preview, key "pc": name in its rarity color, mods as in game - an advanced copy's { } lines and
@@ -1292,7 +1299,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.53.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.54.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
