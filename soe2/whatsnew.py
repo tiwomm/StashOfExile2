@@ -21,6 +21,12 @@ NEXT = [
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.65.1": [
+        "The Game bar layouts look like part of the game now: carved stone in a bronze frame, ornate end caps with "
+        "an amber gem, and the switches in sockets that light up when on.",
+        "Fixed: clicking a tool in the sidebar while you're on one of its tabs or sub-tools (Regex from Favorites, "
+        "Overlay from Map library) now takes you back to it. Click it again to fold it.",
+    ],
     "2.65.0": [
         "Two new overlay layouts in the game's own bar look (Settings › Appearance › Layout): \"Game bar - on the "
         "XP bar\" sits right on top of the experience bar, and \"Game bar - beside the orbs\" splits it - your "

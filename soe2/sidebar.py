@@ -90,13 +90,13 @@ class Sidebar(tk.Canvas):
             self.shell.open_tab(key, title)
         elif k:
             sh = self.shell
-            par = getattr(sh.modules.get(sh.active), "parent", None)
-            if k in (sh.active, par) and k != "settings" and self.has_more(k):    # the open one: fold / unfold
+            home = sh.tab_home(k)
+            on_own = sh.active == k and (not home or sh.tab_current(k) == home)
+            if on_own and k != "settings" and self.has_more(k):  # already on its own page: fold / unfold
                 self.folded.symmetric_difference_update({k})
                 self.redraw()
                 return
-            self.folded.discard(k)
-            home = sh.tab_home(k)
+            self.folded.discard(k)                               # else its own page (from a child or a tab)
             if home:                                             # its own page (Regex: Build a search)
                 sh.open_tab(k, home)
             else:
