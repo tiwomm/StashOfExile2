@@ -27,6 +27,9 @@ VERSION HISTORY
        swap. A fresh install starts the quick start on "Pick your look" (about_page THEME_PAGE): the theme cards
        (App.theme_cards, now shared with Settings › Appearance; look_card_sets) - click = live. check_contrast
        also checks the title bar. test_v2610; test_v2100 / v200b13 count the new first page.
+       Fix (2.60.0): on / off switches went blank after going back to a theme used before - switches() made new
+       pictures for a look whose element already existed, and the element's own pictures were freed. Now each
+       look's pictures are made once and kept; the switch colors come straight from the theme's palette.
   2.60.0
        Theme packs (from the theme mockups; Emberforge the default; made-up names; the same icons in every
        theme; theme only in Settings › Appearance). soe2/themes.py: packs = themes/*.json (+ %APPDATA% themes),
