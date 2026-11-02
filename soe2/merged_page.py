@@ -20,7 +20,7 @@ HUD = ("xpbar",)                 # 2.65.0: fitted to the game's own bottom bar, 
 # Where the game's bottom bar leaves room, as parts of the game window's height (PoE2 at 16:9, UI scale 100 %;
 # the orbs' panels are anchored to the left and right edges, the XP bar runs between them). (x0, x1, bottom, h)
 #   x0 / x1 >= 0: from the left edge, < 0: from the right edge; bottom: up from the bottom edge.
-HUD_SPOTS = {"xpbar": [(0.535, -0.535, 0.0205, 0.026)]}
+HUD_SPOTS = {"xpbar": [(0.535, -0.535, 0.0205, 0.046)]}   # 2.67.2: two rows (switches on top)
 SHORT = {"breach": "Brch", "delirium": "Deli", "ritual": "Ritl", "remnant": "Remn"}
 
 
@@ -591,13 +591,15 @@ class MergedOverlay:
         cv.create_line(0, H - 1, W, H - 1, fill=P["rim_lo"], tags=("hudbg",))
         return 16, W - 16
 
-    def _hud_sep(self, cv, P, x, H):
+    def _hud_sep(self, cv, P, x, H, cy=None, h=None):
         from . import hudart
-        img = hudart.divider(cv, max(10, H - 14), P)
+        h = h or max(10, H - 14)
+        cy = H // 2 if cy is None else cy
+        img = hudart.divider(cv, h, P)
         if img is not None:
-            cv.create_image(x, H // 2, image=img, tags=("mg",))
+            cv.create_image(x, cy, image=img, tags=("mg",))
         else:
-            cv.create_line(x, 7, x, H - 7, fill=P["line"], tags=("mg",))
+            cv.create_line(x, cy - h // 2, x, cy + h // 2, fill=P["line"], tags=("mg",))
 
     def _hud_cell(self, cv, P, k, x0, y0, x1, y1, label_cls, font):
         """One switch in a recessed socket: lit when on. Click switches it (as everywhere)."""
@@ -652,47 +654,55 @@ class MergedOverlay:
                                                                         if text else "")))(self.tk_ov_clock.config)
 
     def _hud_row(self, w, cv, P, want, W, H):
-        """On the XP bar: one line - time | map | maps · avg | switches | Notes ▾ ... clock 🔒."""
+        """On the XP bar (2.67.2: two rows, feedback "too cluttered"): the four switches on top, with Notes ▾;
+        under a thin rule the time | the map and where you are | Maps · Avg ... the clock and the lock."""
+        from .themes import mix
         cfg = self.tracker_cfg()
         lft, rgt = self._hud_frame(cv, P, W, H)
-        mid = H // 2 + 1
+        two = want["helpers"]
+        top_mid = int(H * 0.30)
+        mid = int(H * 0.70) if two else H // 2 + 1
         f = (P["font"], self._hf(10))
         fm = tkfont.Font(root=cv, family=P["font"], size=self._hf(10))
+        if two:                                              # ---- row 1: the switches, centered; Notes at the end
+            ch = int(H * 0.30)
+            short = sum(self._hud_cell_w(cv, P, k, False) + 6 for k in self.HELPERS) > (rgt - lft) * 0.75
+            total = sum(self._hud_cell_w(cv, P, k, short) + 6 for k in self.HELPERS) - 6
+            x0 = lft + max(0, ((rgt - lft) - total) // 2)
+            self._hud_cells(cv, P, x0, top_mid - ch // 2, top_mid + ch // 2, short=short)
+            if self.overlay.cfg.get("notes_enabled"):
+                self._mg_notes_button(w, cv, P, rgt, top_mid, anchor="e")
+            ry = int(H * 0.50)                               # a thin rule between the rows, fading at the ends
+            n = 32
+            seg = (rgt - lft) / n
+            for i in range(n):
+                a_ = 1 - abs((i + 0.5) / n - 0.5) * 2
+                cv.create_line(lft + i * seg, ry, lft + (i + 1) * seg, ry, fill=mix(P["bg"], P["rim"], a_ ** 0.8),
+                               tags=("mg",))
+        # ---- row 2 (or the only row): the numbers
         gx = self._mg_glyphs(w, cv, P, rgt, mid)
         right = gx
         if want["timer"] and cfg.get("clock", True):
             self._hud_clock(w, cv, P, gx - 2, mid)
-            right = gx - fm.measure("00:00 PM") - 12
+            right = gx - fm.measure("00:00 PM") - 14
         x = lft
-        cy0, cy1 = 7, H - 7
         if want["timer"]:
             self._mg_text(cv, P, x, mid, "session", (P["font"], self._hf(13), "bold"), fill=P["big"])
             fb_ = tkfont.Font(root=cv, family=P["font"], size=self._hf(13), weight="bold")
             x += max(fb_.measure("0:00:00"), fb_.measure("not tracking")) + 10
-            self._hud_sep(cv, P, x, H)
-            x += 12
+            self._hud_sep(cv, P, x, H, cy=mid, h=int(H * 0.34) if two else None)
+            x += 14
             self._mg_text(cv, P, x, mid, "map", f)
-            x += fm.measure("Map  00:00") + 8
-            need_rest = (fm.measure("Maps  000") + fm.measure("Avg  00:00") + 24 if (
+            x += fm.measure("Map  00:00") + 10
+            need_rest = (fm.measure("Maps  000") + fm.measure("Avg  00:00") + 30 if (
                 cfg["lines"].get("maps") or cfg["lines"].get("avg")) else 0)
-            cells_w = sum(self._hud_cell_w(cv, P, k, True) + 4 for k in self.HELPERS) + 24 if want["helpers"] else 0
-            notes_w = fm.measure("Notes  ▾") + 16 if self.overlay.cfg.get("notes_enabled") else 0
-            if right - x - need_rest - cells_w - notes_w - 24 < 0:      # 2.67.0: the switches come first
-                need_rest = 0
-            where_w = right - x - need_rest - cells_w - notes_w - 24
+            where_w = right - x - need_rest - 16
             if where_w > 40:
                 wt = self._mg_text(cv, P, x, mid, "where", f, fill=P["muted"], cls=_Trunc)
                 wt.limit = max(4, int(where_w / ((fm.measure("m") or 8) * 0.8)))
                 x += where_w
             if need_rest:
                 self._mg_text(cv, P, x, mid, "maps", f)
-                self._mg_text(cv, P, x + fm.measure("Maps  000") + 8, mid, "avg", f)
-                x += need_rest - 10
-            self._hud_sep(cv, P, x, H)
-            x += 12
-        if want["helpers"]:
-            x = self._hud_cells(cv, P, x, cy0, cy1, short=True)
-            self._hud_sep(cv, P, x + 4, H)
-            x += 14
-        if self.overlay.cfg.get("notes_enabled") and x < right - 40:
+                self._mg_text(cv, P, x + fm.measure("Maps  000") + 12, mid, "avg", f)
+        elif not two and self.overlay.cfg.get("notes_enabled"):
             self._mg_notes_button(w, cv, P, x, mid, anchor="w")
