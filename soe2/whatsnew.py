@@ -21,6 +21,10 @@ NEXT = [
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.66.2": [
+        "The Panel, redone: a heavy dark-metal frame with gold filigree corners, a framed header banner, and your "
+        "numbers in big antique gold in a clean 2 x 2 grid with a small icon each.",
+    ],
     "2.66.1": [
         "The Panel now looks like the game's Treasurer window: the title in small caps on a dark band, the league "
         "or area in red under it, and your numbers in gold in dark boxes.",
