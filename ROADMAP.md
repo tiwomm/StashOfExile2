@@ -4,7 +4,7 @@
 
 > **Who we build for - read second.** Path of Exile players are utilitarian: they love data and information, problem solving and creative thinking. So every feature shows its numbers *and how they were worked out*, lets you sort, filter, compare and export them (CSV), keeps power-user depth (keys, versions, raw data) one click away instead of hiding it, explains in plain words, and leaves the decision to the player. Pretty is welcome; vague is not.
 
-**Current version: 2.71.0**
+**Current version: 2.72.0**
 
 Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds features, 2.10.1 only fixes. Each step below is one release; we work through them top to bottom.
 
@@ -112,6 +112,7 @@ Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds f
 | 2.70.0 | Strat Tracker part 2: the setup in 5 short steps with the cost of one run always in sight; the log-loot box in 3 steps (Runs, Loot, Profit). |
 | 2.70.1 | Overlay: a Timer over the game switch (timer only) instead of Hide timer; On the overlay - a switch for each part (numbers, where you are, clock, Notes, Mechanic Helper switches). |
 | 2.71.0 | Strats browser redone: filter buttons, strats as cards (List stays), Your numbers and Track in Strat Tracker in the strat's panel. |
+| 2.72.0 | Gear priced properly: filler / low-tier mods left out of the search, a real price when the listings back it up; uniques by roll; crafting bases by item level. |
 
 ## ▶ Next up
 
@@ -121,7 +122,7 @@ Order (decided 2.34.0): the Polish basics first, so new features are built on th
 
 | Version | Plan |
 |---|---|
-| 2.72.0 | **More item types priced (Sidekick / Exiled Exchange-style):** a pricing engine for item types the app only guesses today. Their licenses are checked first; logic is ported, not code, with credit. |
+| 2.72.1 | **Stackables by bulk exchange:** stackable items poe.ninja doesn't list are priced from the trade site's bulk exchange (Wealth, and a stack copied in Price checks). |
 | 2.73.0 | **Public stash order test tool.** |
 | 2.74.0 | **Polish 4 - Responsive:** windows reflow when narrow (toolbars wrap, side panels drop under the list, sensible minimum sizes), sharp on every monitor (per-monitor DPI), a text size setting (100-150 %). |
 | 2.75.0 | **Polish 5 - Hover, focus, micro-interactions:** the same hover and pressed look on every button, row, icon and tab; a visible keyboard focus ring everywhere; short (120-180 ms) fades for popups and toasts, never on lists; a "Reduce motion" setting that turns them off. |
