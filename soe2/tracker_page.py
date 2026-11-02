@@ -19,7 +19,8 @@ DEFAULTS = {"overlay": True, "locked": False, "x": 60, "y": 260, "w": 230, "h": 
             "lines": {"session": True, "map": True, "maps": True, "avg": True},   # 2.54.0: no profit (Farm Ledger has it)
             "key_toggle": "", "key_pause": "", "ask_count": True, "log_path": "",
             "character": "", "character_guess": "", "alerts_bar": True, "autostart": False,
-            "clock": True}                         # 2.39.0: the in-game clock on the timer (Settings > Appearance > Clock)
+            "clock": True,
+            "merged": True, "layout": "panel"}            # 2.55.0: one overlay window (merged_page.py), Panel / Strip                         # 2.39.0: the in-game clock on the timer (Settings > Appearance > Clock)
 DEFAULT_KEYS = {"key_toggle": "Ctrl+Alt+S", "key_pause": "Ctrl+Alt+P"}       # 2.10.0: set once, change them in Options
 # 2.54.0 (the user): the Session timer times your play; money lives in one place, Money Makers › Farm Ledger.
 # Profit (Wealth at Stop minus at Start) is gone from here: its tiles, overlay line, options and Stop count.
@@ -752,6 +753,12 @@ class TrackerPage:
         self.tk_ov_btn.config(text="Hide timer")
 
     def tracker_overlay_hide(self):
+        if self.merged_on():                       # 2.55.0: the timer leaves the one window (the rest stays)
+            self.mg_timer = False
+            self.tk_overlay = None
+            self.merged_build()
+            self.tk_ov_btn.config(text="Show timer")
+            return
         if self.tk_overlay is not None:
             self._tracker_store_geo()
             self.tk_overlay.destroy()
@@ -771,6 +778,9 @@ class TrackerPage:
         """The timer over the game: the shared over-the-game window (overlaywin.py, same look as Notes)."""
         from .overlaywin import OverlayWindow, pal
         cfg = self.tracker_cfg()
+        if self.merged_on():                       # 2.55.0: one window for the timer, the switches and Notes
+            self.mg_timer = True
+            return self.merged_build()
         if self.tk_overlay is not None:
             self._tracker_store_geo()
             self.tk_overlay.destroy()
@@ -902,6 +912,8 @@ class TrackerPage:
         cfg = self.tracker_cfg()
         P = pal()
         self.tracker_helpers_destroy()
+        if self.merged_on():                             # 2.55.0: the switches live in the one window
+            return self.merged_build()
         self.tk_ov_alerts = {}
         if not cfg.get("alerts_bar", True):
             return
@@ -1079,6 +1091,13 @@ class TrackerPage:
         """2.49.0 (the user: "it's a different bar, independent of the session tracker"): the bar shows whenever its
         switch is on - timer or not, session or not - and only while the game is in front (like every overlay)."""
         on = bool(self.tracker_cfg().get("alerts_bar", True))
+        if self.merged_on():                             # 2.55.0: in the one window
+            if getattr(self, "tk_helpers", None) is not None:
+                self.tracker_helpers_destroy()
+            if on != bool(getattr(self, "mg_built", {}).get("helpers")) or (on and getattr(self, "mg_win", None) is None):
+                self.merged_build()
+            self.tracker_helpers_paint()
+            return
         if on and getattr(self, "tk_helpers", None) is None:
             self.tracker_helpers_build()
         elif not on and getattr(self, "tk_helpers", None) is not None:

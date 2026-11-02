@@ -6,7 +6,6 @@ lock button. Callers put their content in .body and get told when the window was
                       on_close=..., on_lock=lambda locked: ..., on_moved=lambda x, y, w, h: ...)
     tk.Text(w.body, ...).pack(fill="both", expand=True)
 """
-import os
 import sys
 import tkinter as tk
 
@@ -26,17 +25,29 @@ BODY_BG = "#0d1424"
 #   relic      item / relic tooltips: near-black glass, a gold title band, a thin bronze rule
 #   carved     Inventory / Currency Exchange: stone panel, double bronze frame, a raised title plate
 #   hud        the area info top right: almost no box, a dark band between two gold hairlines, game-orange text
-LOOKS = {"parchment": "Runeshape parchment (default)", "relic": "Relic tooltip", "carved": "Carved frame",
-         "hud": "Quiet HUD", "classic": "Classic dark (2.42)"}
+#   codex      2.55.0 (the user loved the mockups): obsidian panel, bronze corner marks, small caps headings, clean
+#              numbers - modern and clean but PoE
+#   minimal    2.55.0: just the basics - time, map time and the four switches, no title bar
+LOOKS = {"parchment": "Runeshape parchment (default)", "codex": "Codex", "minimal": "Minimal",
+         "relic": "Relic tooltip", "carved": "Carved frame", "hud": "Quiet HUD", "classic": "Classic dark (2.42)"}
 LOOK = ["parchment"]
 SERIF = "Palatino Linotype"
 _P = {"halo": "#000000", "title_size": 10, "align": "w", "texture": False, "on_icon": "\u25c6", "off_icon": "\u25c7", "rules": False,
-      "plate": False, "frame2": None, "cell_bg": None, "cell_line": None}
+      "plate": False, "frame2": None, "cell_bg": None, "cell_line": None, "caps": False, "corners": None,
+      "minimal": False, "hfont": None, "on_bg": None, "on_line": None}
 PALETTES = {
     "parchment": dict(_P, leather="#2a1f16", edge="#000000", border=5, bg="#d8c49a", band="#d8c49a", head="#4a3520",
                       text="#2e2216", muted="#5d4630", line="#a88a5c", on="#1f8a1c", off="#c0261b", warn="#a86a00",
                       field="#e6d6b0", big="#2e2216", font=SERIF, texture=True, cell_bg="#ead9b2", cell_line="#a88a5c",
                       halo="#e6d6b2"),
+    "codex": dict(_P, leather="#3b3126", edge="#000000", border=1, bg="#151311", band="#1a1714", head="#c9a96a",
+                  text="#efe6d2", muted="#a3957e", line="#2a231b", on="#6fcf6a", off="#e0705f", warn="#e0a352",
+                  field="#110f0d", big="#efe6d2", font="Segoe UI", hfont=SERIF, title_size=9, caps=True,
+                  corners="#c9a96a", cell_bg="#1a1714", cell_line="#2f281f", on_bg="#18200f", on_line="#3d5a32"),
+    "minimal": dict(_P, leather="#3b3126", edge="#000000", border=1, bg="#110f0d", band="#110f0d", head="#a3957e",
+                    text="#efe6d2", muted="#a3957e", line="#2a231b", on="#6fcf6a", off="#e0705f", warn="#e0a352",
+                    field="#110f0d", big="#efe6d2", font="Segoe UI", title_size=8, caps=True, minimal=True,
+                    cell_bg="#110f0d", cell_line="#110f0d"),
     "relic": dict(_P, leather="#6e5b3a", edge="#000000", border=1, bg="#0c0a08", band="#17130e", head="#e6d39f",
                   text="#e9e2cf", muted="#a89a7c", line="#6e5b3a", on="#62c45a", off="#d24b3a", warn="#e0a352",
                   field="#14110d", big="#f2e6c4", font=SERIF, align="center", cell_bg="#0c0a08", cell_line="#2c251b"),
@@ -66,6 +77,17 @@ def parchment():
 def skinned():
     """One of the PoE2-style looks (not Classic): content is drawn on a canvas, like the mockups."""
     return LOOK[0] in PALETTES and LOOK[0] != "classic"
+
+
+def corner_marks(canvas, w, h, color, top=False, size=10):
+    """2.55.0 Codex: small L-shaped bronze marks in the corners, like a PoE item frame. h None = top only."""
+    canvas.delete("corners")
+    for x0, sx in ((1, 1), (w - 2, -1)):
+        if top:
+            canvas.create_line(x0, size, x0, 1, x0 + sx * size, 1, fill=color, width=2, tags="corners")
+        if h is not None:
+            canvas.create_line(x0, h - 1 - size, x0, h - 2, x0 + sx * size, h - 2, fill=color, width=2, tags="corners")
+    canvas.tag_raise("corners")
 
 
 _TEX = {}
@@ -253,12 +275,13 @@ class OverlayWindow(tk.Toplevel):
 
     def __init__(self, root, title, icon, geo, *, opacity=230, locked=False, body_bg=BODY_BG, min_size=(140, 60),
                  on_close=None, on_lock=None, on_moved=None, drag_body=False, app_colours=False, lockable=True,
-                 follow_game=False, no_activate=False, resizable=True):
+                 follow_game=False, no_activate=False, resizable=True, titlebar=True):
         """geo = (x, y, w, h); w / h None = as big as the content. app_colours: the blue title bar of the app's own
         windows (for small pop-ups of the app) instead of the utility colors (things shown over the game).
         follow_game: only visible while the game (or the window itself) is in front; show() / hide() say whether you want it.
         no_activate: clicking it never takes the keyboard away from the game (for windows you don't type in).
-        resizable=False: always the size of its content (2.38.0: the Helpers bar)."""
+        resizable=False: always the size of its content (2.38.0: the Helpers bar).
+        titlebar=False (2.55.0): no title bar - the Minimal look and the Strip layout draw their own lock and ×."""
         parch = skinned() and not app_colours             # 2.43.0 / 2.47.0: a PoE2-style skin
         P = pal()
         if parch:
@@ -297,6 +320,21 @@ class OverlayWindow(tk.Toplevel):
                                               (P["head"], P["band"], P["band"], P["line"]) if parch else
                                               ("#ffe2b8", "#3a3020", "#6a5a3a", "#8a6a3a"))
         self._title = title
+        self.has_bar = bool(titlebar)
+        self._btns = []
+        if not titlebar:
+            self.bar = None
+            self.body = tk.Frame(inner, bg=body_bg)
+            self.body.pack(fill="both", expand=True)
+            self._drag, self._size = {}, {}
+            self.wanted, self.follow_game, self.no_activate, self._noact_done = True, follow_game, no_activate, False
+            if follow_game:
+                _LIVE.append(self)
+                if _JOB[0] is None:
+                    _JOB[0] = root.after(TICK_MS, _tick, root)
+            if not self.locked and resizable:
+                self._edges()
+            return
         if parch:                                         # (wide enough for its title and buttons)
             from tkinter import font as tkfont
             self._tfont = (P["font"], P["title_size"], "bold")
@@ -404,6 +442,8 @@ class OverlayWindow(tk.Toplevel):
 
     # ---- title bar buttons
     def _place_btns(self, _e=None):
+        if self.bar is None:
+            return
         w = self.bar.winfo_width()
         step = 22 if self.parch else 24
         for n, item in enumerate(self._btns):
@@ -418,6 +458,8 @@ class OverlayWindow(tk.Toplevel):
         """The title as the skin draws it: left (parchment, hud), centered on a gold band (relic) or on a raised
         plate (carved), with a small diamond."""
         P, c = self.P, self.bar
+        if c is None:
+            return
         w = max(c.winfo_width(), int(c.cget("width")))
         mid = self._bar_mid()
         c.delete("title")
@@ -431,16 +473,19 @@ class OverlayWindow(tk.Toplevel):
             c.create_polygon(10, mid, 14, mid - 4, 18, mid, 14, mid + 4, fill="#a8874e", tags="title")
             c.create_text(w // 2, mid, text=self._title.upper(), fill=P["head"], font=self._tfont, tags="title")
         else:
-            txt = self._title.upper() if P.get("rules") else self._title
+            txt = self._title.upper() if (P.get("rules") or P.get("caps")) else self._title
             c.create_text(10, mid, text=txt, anchor="w", fill=P["head"], font=self._tfont, tags="title")
             if not P.get("rules"):
-                c.create_line(8, mid * 2 - 1, w - 8, mid * 2 - 1, fill=P["line"], tags="title")
+                c.create_line(8 if not P.get("corners") else 0, mid * 2 - 1, w - (8 if not P.get("corners") else 0),
+                              mid * 2 - 1, fill=P["line"], tags="title")
+        if P.get("corners"):                              # 2.55.0 Codex: bronze marks in the top corners
+            corner_marks(c, w, None, P["corners"], top=True)
         self._place_btns()
 
     def bar_note(self, text):
         """Small text on the title bar, left of its buttons (the Session timer's clock). -> False when it doesn't fit
         between the title and the buttons (2.50.0: it ran into "Session" on a narrow timer) - nothing is shown then."""
-        if not self.parch:
+        if not self.parch or self.bar is None:
             return False
         from tkinter import font as tkfont
         try:
@@ -461,6 +506,10 @@ class OverlayWindow(tk.Toplevel):
         cv.pack(fill="both", expand=True)
         if self.P.get("texture"):
             paint_texture(cv, seed=11, calm=True)
+        if self.parch and self.P.get("corners"):          # 2.55.0 Codex: the bottom corner marks (and the top ones
+            def marks(e):                                 # when there's no title bar)
+                corner_marks(cv, e.width, e.height, self.P["corners"], top=self.bar is None)
+            cv.bind("<Configure>", marks, add="+")
         return cv
 
     def _close(self):

@@ -64,6 +64,7 @@ from .remnant_page import RemnantPage         # 2.37.0: Expedition Remnant Price
 from .ledger_page import LedgerPage           # 2.45.0: Money Makers > Farm Ledger
 from .feedback_page import FeedbackPage       # 2.48.0: the update badge and Report a bug (taskbar)
 from .feed_page import FeedPage               # 2.51.0: Mod book › Manual feed
+from .merged_page import MergedOverlay        # 2.55.0: one overlay window for timer, Mechanic Helper and Notes
 from .utilities_page import UtilitiesPage
 from .tracker_page import TrackerPage
 from .search_page import SearchPage
@@ -75,7 +76,7 @@ from .shell import Shell
 from .config import PAGE_CHECKS       # 1.40: was "Items"
 
 
-class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, ExchangePage, WealthSetup, WealthPage, LibraryPage, RegexPage, UtilitiesPage, TrackerPage, SearchPage, CalcPage, InsightsPage, MoneyMakersPage, MapLibraryPage, RemnantPage, LedgerPage, FeedbackPage, FeedPage):
+class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, ExchangePage, WealthSetup, WealthPage, LibraryPage, RegexPage, UtilitiesPage, TrackerPage, SearchPage, CalcPage, InsightsPage, MoneyMakersPage, MapLibraryPage, RemnantPage, LedgerPage, FeedbackPage, FeedPage, MergedOverlay):
     COLS = [("added", "#", 46, "e"), ("name", "Item", 220, "w"), ("type", "Type", 110, "w"), ("mark", "Status", 90, "center"),
             ("est", "Est. value", 110, "e"), ("conf", "Confidence", 95, "center"), ("listings", "Listings", 70, "e"), ("priced", "Priced at", 130, "w"),
             ("match", "How it was priced", 300, "w"), ("vmods", "Valuable mods", 100, "center")]
@@ -1161,13 +1162,30 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
             row.pack(fill="x")
             return row
         from .overlaywin import LOOKS, LOOK
-        row = section("Appearance", "Style", "How the Session timer, the Mechanic Helper bar and Notes look over the "
-                                             "game - all three together. Move each one by its title bar; its lock "
-                                             "keeps it in place.")
+        row = section("Appearance", "Style", "How the Session timer, the Mechanic Helper and Notes look over the "
+                                             "game - all three together. Codex: dark stone with bronze corners. "
+                                             "Minimal: just the time, the map and the four switches.")
         self.ov_look_var = tk.StringVar(value=LOOKS[LOOK[0]])
         lk = ttk.Combobox(row, textvariable=self.ov_look_var, values=list(LOOKS.values()), state="readonly", width=30)
         lk.pack(side="left")
         lk.bind("<<ComboboxSelected>>", lambda e: self.on_ov_look())
+        # 2.55.0: one window (merged) and its layout
+        from .merged_page import LAYOUTS
+        row = section("Appearance", "One window", "The Session timer, the Mechanic Helper and Notes together in one "
+                                                  "window over the game. Turn it off for three separate windows. "
+                                                  "Panel: a card you place anywhere. Strip: one thin bar, made for "
+                                                  "the top edge of the screen (Notes drop down from it).")
+        tcfg = self.tracker_cfg()
+        self.ov_merged_var = tk.BooleanVar(value=bool(tcfg.get("merged", True)))
+        ttk.Checkbutton(row, text="One window (merged)", variable=self.ov_merged_var,
+                        command=lambda: self.merged_set(merged=self.ov_merged_var.get())).pack(side="left")
+        tk.Label(row, text="Layout", bg=P2, fg=C["text"]).pack(side="left", padx=(24, 8))
+        self.ov_layout_var = tk.StringVar(value=LAYOUTS.get(tcfg.get("layout", "panel"), LAYOUTS["panel"]))
+        lc = ttk.Combobox(row, textvariable=self.ov_layout_var, values=list(LAYOUTS.values()), state="readonly",
+                          width=24)
+        lc.pack(side="left")
+        lc.bind("<<ComboboxSelected>>", lambda e: self.merged_set(
+            layout=next((k for k, t in LAYOUTS.items() if t == self.ov_layout_var.get()), "panel")))
         # 2.49.0 (the user): say what opacity does - and show the number
         row = section("Appearance", "Opacity", "How solid each window is over the game. 100% = fully solid: nothing of "
                                                "the game shows through it. Lower = more see-through: the whole window "
@@ -1233,6 +1251,9 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         SETTINGS["overlay_look"] = key
         overlaywin.LOOK[0] = key
         save_json("settings.json", SETTINGS)
+        if self.merged_on():                                       # 2.55.0: the one window
+            self.merged_set()
+            return
         if getattr(self, "tk_overlay", None) is not None:
             self.tracker_overlay_build()
         if getattr(self, "tk_helpers", None) is not None:          # 2.49.0: the bar has its own window
