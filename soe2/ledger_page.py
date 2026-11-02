@@ -4,7 +4,6 @@ over the game) and the run counting. Data and every calculation live in ledger.p
 The Session timer times your play; the Farm Ledger measures one farming SETUP - what a run costs, what its loot is
 worth, and whether it beats your other setups. ToS: it only reads your copies (Ctrl+Alt+C, which you press) and
 Client.txt, and shows a box; it never acts in the game."""
-import threading
 import time
 import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
@@ -13,7 +12,7 @@ from . import ledger as L
 from . import moneymakers as MM
 from .config import SETTINGS, save_json
 from .pricefmt import fmt_short
-from .style import C, MONO, SegBar, Tooltip
+from .style import C, MONO, ScrollArea, SegBar, Tooltip
 
 
 def _hms(secs):
@@ -39,14 +38,98 @@ def _num(text):
         return False
 
 
-KPIS = (("runs", "Runs"), ("avg", "Avg run"), ("cost", "Cost/run"), ("loot", "Loot/run"),
-        ("profit", "Profit/run"), ("ph", "Div/hour"), ("roi", "ROI"))
+# 2.56.0: Div / hour is the verdict's big number; these are the tiles next to it
+TILES = (("profit", "Profit / run", "loot − cost"), ("roi", "Return on cost", "loot ÷ cost"),
+         ("avg", "Average run", ""), ("loot", "Loot / run", ""), ("cost", "Cost / run", ""), ("runs", "Runs", ""))
 LOG_COLS = (("n", "#", 40, "e"), ("when", "When", 120, "w"), ("v", "Ver.", 44, "center"), ("runs", "Runs", 50, "e"),
             ("time", "Time", 70, "e"), ("cost", "Cost", 66, "e"), ("loot", "Loot", 70, "e"), ("profit", "Profit", 74, "e"),
             ("ppr", "Profit/run", 78, "e"), ("dph", "d/h", 60, "e"), ("note", "Note", 220, "w"))
 LOOT_COLS = (("item", "Item", 260, "w"), ("qty", "Dropped", 80, "e"), ("total", "Worth", 90, "e"),
              ("share", "Share", 80, "e"), ("per", "Per run", 80, "e"))
 EDITABLE = {"runs": "runs", "cost": "cost", "loot": "loot", "profit": "profit", "note": "note"}
+
+
+class SetupCards(tk.Frame):
+    """2.56.0: your setups as cards (name, what it is, its div / hour; a dot while its runs are counted). Click picks,
+    Ctrl+click picks several (for Compare), right-click is the setup's menu. Answers like the list it replaced:
+    selection(), selection_set(), exists()."""
+
+    def __init__(self, parent, page, bg):
+        super().__init__(parent, bg=bg)
+        self.page, self.bg = page, bg
+        self.area = ScrollArea(self, bg=bg)
+        self.area.pack(fill="both", expand=True)
+        self.cards, self.sel = {}, []
+
+    def clear(self):
+        for c in self.cards.values():
+            c[0].destroy()
+        self.cards = {}
+
+    def add(self, sid, name, sub, ph, counting=False):
+        f = tk.Frame(self.area.inner, bg=C["panel"], padx=8, pady=8, highlightthickness=1,
+                     highlightbackground=C["line"], cursor="hand2")
+        f.pack(fill="x", pady=(0, 8))
+        top = tk.Frame(f, bg=C["panel"])
+        top.pack(fill="x")
+        n = tk.Label(top, text=name, bg=C["panel"], fg="#ffffff", font=("Segoe UI", 10, "bold"), anchor="w")
+        n.pack(side="left")
+        bits = [f, top, n]
+        if counting:
+            dot = tk.Label(top, text="● counting", bg=C["panel"], fg=C["green"], font=("Segoe UI", 9))
+            dot.pack(side="right")
+            bits.append(dot)
+        s = tk.Label(f, text=sub, bg=C["panel"], fg=C["muted"], font=("Segoe UI", 9), anchor="w")
+        s.pack(fill="x")
+        row = tk.Frame(f, bg=C["panel"])
+        row.pack(fill="x", pady=(2, 0))
+        v = tk.Label(row, text="-" if ph is None else f"{ph:.1f}", bg=C["panel"],
+                     fg=C["accent"] if ph is not None and ph >= 0 else C["red"] if ph is not None else C["muted"],
+                     font=("Segoe UI", 16, "bold"))
+        v.pack(side="left")
+        u = tk.Label(row, text="div / hour" if ph is not None else "not enough runs yet", bg=C["panel"],
+                     fg=C["muted"], font=("Segoe UI", 9))
+        u.pack(side="left", padx=(8, 0), pady=(4, 0))
+        bits += [s, row, v, u]
+        for w in bits:
+            w.bind("<Button-1>", lambda e, i=sid: self._click(i, e))
+            w.bind("<Button-3>", lambda e, i=sid: self._menu(i, e))
+        self.cards[sid] = (f, bits)
+
+    def _click(self, sid, e):
+        if e.state & 0x0004:                                   # Ctrl: pick several
+            sel = [i for i in self.sel if i != sid] if sid in self.sel else self.sel + [sid]
+            self.selection_set(sel or [sid])
+        else:
+            self.selection_set([sid])
+            self.page.fl_pick()
+
+    def _menu(self, sid, e):
+        self.selection_set([sid])
+        self.page.fl_pick()
+        self.page.fl_setup_menu(e)
+
+    def selection(self):
+        return tuple(self.sel)
+
+    def selection_set(self, ids):
+        ids = [ids] if isinstance(ids, str) else list(ids)
+        self.sel = [i for i in ids if i in self.cards]
+        for sid, (f, bits) in self.cards.items():
+            on = sid in self.sel
+            bg = C["panel2"] if on else C["panel"]
+            f.config(highlightbackground=C["accent"] if on else C["line"])
+            for w in bits:
+                try:
+                    w.config(bg=bg)
+                except tk.TclError:
+                    pass
+
+    def exists(self, sid):
+        return sid in self.cards
+
+    def get_children(self):
+        return tuple(self.cards)
 
 
 class LedgerPage:
@@ -67,83 +150,111 @@ class LedgerPage:
 
     # ================================================================ the page
     def build_ledger(self, page):
+        """2.56.0 (the user: "a bit confusing ... modern, clean, functional, ease of use for the average user"; the
+        Farm Ledger Redesign mockups): your setups as cards on the left; on the right the setup's name and what it
+        is, ONE main button (Log loot), whether runs are being counted, then the verdict in plain words ("Makes about
+        10.3 div an hour"), the figures, where the money comes from, profit per log, and the sheet. No setup yet:
+        three steps and a button."""
         P1, P2 = C["panel"], C["panel2"]
         self.fl_view_v = None                                   # None: the setup's current version; else one version
-        strip = tk.Frame(page, bg=P1)
-        strip.pack(fill="x", padx=8, pady=(8, 4))
-        tk.Label(strip, text="Does this setup really make money?", bg=P1, fg=C["accent"],
-                 font=("Segoe UI", 10, "bold")).pack(side="left")
-        why = tk.Label(strip, text="The Session timer times your play. The Farm Ledger measures one farming setup: "
-                                   "what a run costs, what its loot is worth, and how it compares.", bg=P1,
-                       fg=C["muted"], font=("Segoe UI", 9), anchor="w", justify="left")
-        why.pack(side="left", padx=8, fill="x", expand=True)
-        why.bind("<Configure>", lambda e: why.config(wraplength=max(200, e.width - 8)))
         body = tk.Frame(page, bg=P1)
-        body.pack(fill="both", expand=True)
-        # ---- left: your setups
-        left = tk.Frame(body, bg=P2, padx=8, pady=8, highlightthickness=1, highlightbackground=C["line"])
+        body.pack(fill="both", expand=True, pady=(8, 0))
+        # ---- left: your setups (cards)
+        left = tk.Frame(body, bg=P2, padx=8, pady=8, highlightthickness=1, highlightbackground=C["line"], width=250)
         left.pack(side="left", fill="y", padx=(8, 0), pady=(0, 8))
+        left.pack_propagate(False)
         lh = tk.Frame(left, bg=P2)
         lh.pack(fill="x")
-        tk.Label(lh, text="YOUR SETUPS", bg=P2, fg=C["muted"], font=("Segoe UI", 9, "bold")).pack(side="left")
+        tk.Label(lh, text="MY SETUPS", bg=P2, fg=C["muted"], font=("Segoe UI", 9, "bold")).pack(side="left")
         ttk.Button(lh, text="＋ New", command=self.fl_new, style="Quiet.TButton").pack(side="right")
-        self.fl_list = ttk.Treeview(left, columns=("name", "runs", "ph"), show="headings", height=12,
-                                    selectmode="extended")
-        for cid, title, w, a in (("name", "Setup", 150, "w"), ("runs", "Runs", 50, "e"), ("ph", "d/h", 54, "e")):
-            self.fl_list.heading(cid, text=title)
-            self.fl_list.column(cid, width=w, anchor=a, stretch=cid == "name")
-        self.fl_list.pack(fill="y", expand=True, pady=(8, 8))
-        self.fl_list.bind("<<TreeviewSelect>>", lambda e: self.fl_pick())
-        self.fl_list.bind("<Button-3>", self.fl_list_menu)
-        ttk.Button(left, text="Compare selected", command=self.fl_compare).pack(fill="x")
-        tk.Label(left, text="Ctrl+click to pick several.\nA changed tablet or atlas makes\na new version: old numbers\n"
-                            "stay with the old one.", bg=P2, fg=C["muted"], font=("Segoe UI", 9), justify="left",
-                 anchor="w").pack(fill="x", pady=(8, 0))
+        self.fl_list = SetupCards(left, self, bg=P2)
+        self.fl_list.pack(fill="both", expand=True, pady=(8, 8))
+        ttk.Button(left, text="Compare setups", command=self.fl_compare).pack(fill="x")
+        tk.Label(left, text="Ctrl+click cards to compare a few. Right-click a card: rename, duplicate, delete.",
+                 bg=P2, fg=C["muted"], font=("Segoe UI", 9), justify="left", anchor="w", wraplength=226).pack(
+            fill="x", pady=(8, 0))
+        # ---- right: no setup yet
+        self.fl_empty = self._fl_empty_page(body)
         # ---- right: the setup
         main = tk.Frame(body, bg=P1)
-        main.pack(side="left", fill="both", expand=True, padx=8, pady=(0, 8))
+        self.fl_main = main
+        main.pack(side="left", fill="both", expand=True, padx=12, pady=(0, 8))
         head = tk.Frame(main, bg=P1)
         head.pack(fill="x")
         names = tk.Frame(head, bg=P1)
-        names.pack(side="left")
+        names.pack(side="left", fill="x", expand=True)
         self.fl_title = tk.Label(names, text="", bg=P1, fg="#ffffff", font=("Segoe UI", 16, "bold"), anchor="w")
         self.fl_title.pack(anchor="w")
         self.fl_sub = tk.Label(names, text="", bg=P1, fg=C["muted"], font=("Segoe UI", 9), anchor="w", justify="left")
-        self.fl_sub.pack(anchor="w")
+        self.fl_sub.pack(anchor="w", fill="x")
+        self.fl_sub.bind("<Configure>", lambda e: self.fl_sub.config(wraplength=max(200, e.width - 4)))
         btns = tk.Frame(main, bg=P1)                            # (its own row: never cut off in a narrow window)
         btns.pack(fill="x", pady=(8, 0))
+        ttk.Button(btns, text="Log loot", style="Primary.TButton", command=self.fl_log_now).pack(side="right")
+        ttk.Button(btns, text="Edit setup", command=self.fl_edit).pack(side="right", padx=(0, 8))
+        self.fl_export_btn = ttk.Button(btns, text="Export ▾", command=self.fl_export_menu, style="Quiet.TButton")
+        self.fl_export_btn.pack(side="right", padx=(0, 8))
+        tk.Label(btns, text="Numbers from", bg=P1, fg=C["muted"], font=("Segoe UI", 9)).pack(side="left")
         self.fl_ver_var = tk.StringVar()
         self.fl_ver_box = ttk.Combobox(btns, textvariable=self.fl_ver_var, state="readonly", width=16)
-        self.fl_ver_box.pack(side="left", padx=(0, 8))
+        self.fl_ver_box.pack(side="left", padx=(8, 8))
         self.fl_ver_box.bind("<<ComboboxSelected>>", lambda e: (self.fl_ver_picked(),
                                                                self.root.after(20, self.root.focus_set)))
-        Tooltip(self.fl_ver_box, "Show one version's numbers, or all of them")
-        ttk.Button(btns, text="Edit setup", command=self.fl_edit).pack(side="left", padx=(0, 8))
-        self.fl_export_btn = ttk.Button(btns, text="Export ▾", command=self.fl_export_menu)
-        self.fl_export_btn.pack(side="left", padx=(0, 8))
-        self.fl_count_btn = ttk.Button(btns, text="▶ Start counting", command=self.fl_count_toggle)
-        self.fl_count_btn.pack(side="left", padx=(0, 8))
-        ttk.Button(btns, text="✎ Log loot", style="Primary.TButton", command=self.fl_log_now).pack(side="right")
-        # ---- the figures
-        kp = tk.Frame(main, bg=P1)
-        kp.pack(fill="x", pady=(8, 8))
-        self.fl_kpi = {}
-        for i, (k, label) in enumerate(KPIS):
-            f = tk.Frame(kp, bg=P2, padx=8, pady=4, highlightthickness=1,
-                         highlightbackground=C["accent"] if k == "ph" else C["line"])
-            f.grid(row=0, column=i, sticky="nsew", padx=(0, 8))
-            tk.Label(f, text=label.upper(), bg=P2, fg=C["accent"] if k == "ph" else C["muted"],
-                     font=("Segoe UI", 9, "bold")).pack(anchor="w")
+        Tooltip(self.fl_ver_box, "A changed tablet or atlas makes a new version: show one version's numbers, or all")
+        # ---- counting runs
+        st = tk.Frame(main, bg="#10203a", padx=12, pady=8, highlightthickness=1, highlightbackground="#22426e")
+        st.pack(fill="x", pady=(8, 0))
+        self.fl_count_btn = ttk.Button(st, text="▶ Start counting", command=self.fl_count_toggle, style="Quiet.TButton")
+        self.fl_count_btn.pack(side="right")
+        self.fl_dots = tk.Canvas(st, width=10, height=8, bg="#10203a", highlightthickness=0)
+        self.fl_dots.pack(side="right", padx=(8, 12))
+        self.fl_status = tk.Label(st, text="", bg="#10203a", fg=C["text"], font=("Segoe UI", 9), anchor="w",
+                                  justify="left")
+        self.fl_status.pack(side="left", fill="x", expand=True)
+        self.fl_status.bind("<Configure>", lambda e: self.fl_status.config(wraplength=max(200, e.width - 4)))
+        # ---- the verdict, and the figures
+        vrow = tk.Frame(main, bg=P1)
+        vrow.pack(fill="x", pady=(8, 0))
+        verdict = tk.Frame(vrow, bg=P2, padx=16, pady=12, highlightthickness=1, highlightbackground=C["line"])
+        verdict.pack(side="left", fill="both", expand=True)
+        tk.Label(verdict, text="THE VERDICT", bg=P2, fg=C["muted"], font=("Segoe UI", 9, "bold"), anchor="w").pack(
+            fill="x")
+        line = tk.Frame(verdict, bg=P2)
+        line.pack(fill="x", pady=(2, 2))
+        self.fl_v_pre = tk.Label(line, text="", bg=P2, fg="#ffffff", font=("Segoe UI", 16, "bold"))
+        self.fl_v_pre.pack(side="left")
+        ph_v = tk.Label(line, text="-", bg=P2, fg=C["accent"], font=("Segoe UI", 16, "bold"))
+        ph_v.pack(side="left")
+        self.fl_v_post = tk.Label(line, text="", bg=P2, fg=C["accent"], font=("Segoe UI", 16, "bold"))
+        self.fl_v_post.pack(side="left")
+        self.fl_v_why = tk.Label(verdict, text="", bg=P2, fg=C["text"], font=("Segoe UI", 10), anchor="w",
+                                 justify="left")
+        self.fl_v_why.pack(fill="x")
+        ph_s = tk.Label(verdict, text="", bg=P2, fg=C["muted"], font=("Segoe UI", 9), anchor="w", justify="left")
+        ph_s.pack(fill="x", pady=(4, 0))
+        for lab in (self.fl_v_why, ph_s):
+            lab.bind("<Configure>", lambda e, l=lab: l.config(wraplength=max(200, e.width - 4)))
+        self.fl_kpi = {"ph": (ph_v, ph_s)}
+        grid = tk.Frame(vrow, bg=P1)
+        grid.pack(side="left", fill="y", padx=(8, 0))
+        for i, (k, label, note) in enumerate(TILES):
+            f = tk.Frame(grid, bg=P2, padx=8, pady=2, highlightthickness=1, highlightbackground=C["line"])
+            f.grid(row=i // 2, column=i % 2, sticky="nsew", padx=(0, 8), pady=(0, 8))
+            grid.columnconfigure(i % 2, weight=1, uniform="t", minsize=112)
+            tk.Label(f, text=label, bg=P2, fg=C["muted"], font=("Segoe UI", 9), anchor="w").pack(anchor="w")
             v = tk.Label(f, text="-", bg=P2, fg=C["text"], font=(MONO, 12, "bold"), anchor="w")
             v.pack(anchor="w")
-            s = tk.Label(f, text="", bg=P2, fg=C["muted"], font=("Segoe UI", 9), anchor="w")
+            s = tk.Label(f, text=note, bg=P2, fg=C["muted"], font=("Segoe UI", 9), anchor="w")
             s.pack(anchor="w")
             self.fl_kpi[k] = (v, s)
-            kp.columnconfigure(i, weight=1, uniform="k")
-        # ---- the chart: profit per log (bars), in total (line)
-        self.fl_chart = tk.Canvas(main, height=96, bg=C["panel"], highlightthickness=1,
-                                  highlightbackground=C["line"])
-        self.fl_chart.pack(fill="x")
+        # ---- where the money comes from | profit per log
+        crow = tk.Frame(main, bg=P1)
+        crow.pack(fill="both", expand=True, pady=(4, 0))
+        self.fl_money = tk.Canvas(crow, height=110, bg=P2, highlightthickness=1, highlightbackground=C["line"])
+        self.fl_money.pack(side="left", fill="both", expand=True)
+        self.fl_money.bind("<Configure>", lambda e: self.fl_draw_money())
+        self.fl_chart = tk.Canvas(crow, height=110, bg=P2, highlightthickness=1, highlightbackground=C["line"])
+        self.fl_chart.pack(side="left", fill="both", expand=True, padx=(8, 0))
         self.fl_chart.bind("<Configure>", lambda e: self.fl_draw_chart())
         # ---- the sheet
         bar = tk.Frame(main, bg=P1)
@@ -160,7 +271,7 @@ class LedgerPage:
                  font=("Segoe UI", 9)).pack(side="right")
         box = tk.Frame(main, bg=P1)
         box.pack(fill="both", expand=True)
-        self.fl_tree = ttk.Treeview(box, show="headings", selectmode="extended")
+        self.fl_tree = ttk.Treeview(box, show="headings", selectmode="extended", height=5)
         sb = ttk.Scrollbar(box, orient="vertical", command=self.fl_tree.yview)
         self.fl_tree.configure(yscrollcommand=sb.set)
         sb.pack(side="right", fill="y")
@@ -173,35 +284,79 @@ class LedgerPage:
         self.fl_tree.bind("<Control-c>", lambda e: self.fl_copy_rows())
         self.fl_tree.bind("<Button-3>", self.fl_log_menu)
         self.fl_sort = ("when", True)
-        self.fl_status = tk.Label(main, text="", bg=P1, fg=C["muted"], font=("Segoe UI", 9), anchor="w")
-        self.fl_status.pack(fill="x", pady=(4, 0))
+        # the sheet keeps its room in a short window (the verdict and charts give way first)
+        for w, kw in ((box, dict(side="bottom", fill="x")), (bar, dict(side="bottom", fill="x",
+                                                                                     pady=(8, 4)))):
+            w.pack_forget()
+            w.pack(before=vrow, **kw)
         self.fl_refresh()
+
+    def _fl_empty_page(self, parent):
+        """First time: what the Farm Ledger does, in three steps, and one button."""
+        P1, P2 = C["panel"], C["panel2"]
+        f = tk.Frame(parent, bg=P1)
+        inner = tk.Frame(f, bg=P1)
+        inner.place(relx=0.5, rely=0.42, anchor="center")
+        tk.Label(inner, text="Does a farming setup really make money?", bg=P1, fg="#ffffff",
+                 font=("Segoe UI", 18, "bold")).pack()
+        tk.Label(inner, text="The Farm Ledger works it out from your own runs: what a run costs, what its loot is "
+                             "worth, and how many divines an hour that makes.", bg=P1, fg=C["text"],
+                 font=("Segoe UI", 10), wraplength=560, justify="center").pack(pady=(8, 16))
+        steps = tk.Frame(inner, bg=P1)
+        steps.pack()
+        for i, (t, d) in enumerate((("Make a setup", "Ctrl+Alt+C your waystone and tablets in game. The app prices "
+                                                     "them, so it knows what one run costs."),
+                                    ("Just play", "Runs are counted by themselves from the game's log file. Nothing "
+                                                  "acts in the game."),
+                                    ("Log your loot", "Every few runs a box asks for your drops (Ctrl+Alt+C each). You "
+                                                      "get profit per run and div / hour."))):
+            c = tk.Frame(steps, bg=P2, padx=16, pady=12, highlightthickness=1, highlightbackground=C["line"],
+                         width=220, height=150)
+            c.grid(row=0, column=i, padx=8, sticky="n")
+            c.pack_propagate(False)
+            tk.Label(c, text=str(i + 1), bg=C["accent"], fg="#1a1206", font=("Segoe UI", 12, "bold"), width=2).pack(
+                anchor="w")
+            tk.Label(c, text=t, bg=P2, fg="#ffffff", font=("Segoe UI", 12, "bold"), anchor="w").pack(fill="x",
+                                                                                                   pady=(8, 2))
+            tk.Label(c, text=d, bg=P2, fg=C["muted"], font=("Segoe UI", 9), wraplength=190, justify="left",
+                     anchor="w").pack(fill="x")
+        b = tk.Frame(inner, bg=P1)
+        b.pack(pady=(16, 0))
+        ttk.Button(b, text="Make my first setup", style="Primary.TButton", command=self.fl_new).pack(side="left")
+        ttk.Button(b, text="Start from a strat", command=self._fl_to_strats).pack(side="left", padx=(8, 0))
+        ttk.Button(b, text="Import a CSV…", style="Quiet.TButton", command=self.fl_import_csv).pack(side="left",
+                                                                                                 padx=(8, 0))
+        return f
+
+    def _fl_to_strats(self):
+        self.mm_page.pick("Strats", notify=False)
+        self.mm_show_page()
 
     # ================================================================ filling it
     def fl_refresh(self):
         if not hasattr(self, "fl_list"):
             return
         d = self.fl_data()
-        tv = self.fl_list
-        sel = set(tv.selection())
-        tv.delete(*tv.get_children())
+        cards = self.fl_list
+        sel = set(cards.selection())
+        cards.clear()
+        pend = (d.get("pending") or {}).get("setup")
         for s in d["setups"]:
             f = L.figures(L.logs_of(d, s["id"]))
-            ph = f["per_hour"]
-            tv.insert("", "end", iid=s["id"], values=(s["name"] + (" ●" if (d.get("pending") or {}).get("setup") == s["id"] else ""),
-                                                      f["runs"], "-" if ph is None else f"{ph:.1f}"))
+            strat = next((x for x in MM.all_strats() if x["id"] == s.get("strat")), None)
+            what = (strat.get("type") or strat["name"]) if strat else "your own"
+            cards.add(s["id"], s["name"], f"{what} · {f['runs']} runs · {f['logs']} logs", f["per_hour"],
+                      counting=pend == s["id"])
         cur = self.fl_setup()
-        keep = [i for i in sel if tv.exists(i)]
+        keep = [i for i in sel if cards.exists(i)]
         if cur and not (len(keep) > 1 and cur["id"] in keep):       # (several picked for Compare: keep them)
             keep = [cur["id"]]
-        self._fl_selecting = True
-        tv.selection_set(keep)
-        self.root.after_idle(lambda: setattr(self, "_fl_selecting", False))
+        cards.selection_set(keep)
         self.fl_fill_setup()
 
     def fl_pick(self):
         sel = self.fl_list.selection()
-        if not sel or getattr(self, "_fl_selecting", False):
+        if not sel:
             return
         d = self.fl_data()
         if d.get("current") != sel[0]:
@@ -218,17 +373,15 @@ class LedgerPage:
 
     def fl_fill_setup(self):
         s = self.fl_setup()
-        d = self.fl_data()
         if not s:
+            self.fl_main.pack_forget()
+            self.fl_empty.pack(side="left", fill="both", expand=True, padx=12, pady=(0, 8))
             self.fl_title.config(text="No setup yet")
-            self.fl_sub.config(text="Press ＋ New: name it, pick its strat, Ctrl+Alt+C your waystone and tablets.")
-            for v, sub in self.fl_kpi.values():
-                v.config(text="-")
-                sub.config(text="")
             self.fl_fill_sheet()
-            self.fl_draw_chart()
-            self.fl_paint_status()
             return
+        if not self.fl_main.winfo_ismapped():
+            self.fl_empty.pack_forget()
+            self.fl_main.pack(side="left", fill="both", expand=True, padx=12, pady=(0, 8))
         ver = L.version(s)
         strat = next((x for x in MM.all_strats() if x["id"] == s.get("strat")), None)
         self.fl_title.config(text=f"{s['name']}   v{ver['v']}")
@@ -237,40 +390,101 @@ class LedgerPage:
         if ver["waystones"]:
             w = ver["waystones"][0]
             chips.append(f"Waystone {('T' + str(w['tier'])) if w.get('tier') else w['name']}"
-                         + (f" · {len(w['mods'])} mods" if w.get("mods") else ""))
+                         + (f" ({len(w['mods'])} mods)" if w.get("mods") else ""))
         if ver["tablets"]:
-            chips.append(" · ".join(f"{t.get('count', 1)}× {t['base'] or t['name']}" for t in ver["tablets"]))
+            chips.append(", ".join(f"{t.get('count', 1)}× {t['base'] or t['name']}" for t in ver["tablets"]))
         if ver["atlas"]["trees"]:
-            chips.append("Atlas: " + " · ".join(f"{t['name']} {t.get('points', 0)}" for t in ver["atlas"]["trees"]))
+            chips.append("Atlas: " + ", ".join(f"{t['name']} {t.get('points', 0)}" for t in ver["atlas"]["trees"]))
         line = (f"Strat: {strat['name']}" if strat else "Your own setup (no strat)") + \
-            f"   ·   cost a run {_d(cost)}" + (f" ({unknown} without a price)" if unknown else "")
-        self.fl_sub.config(text=line + ("\n" + "    ".join(chips) if chips else "\nEdit setup: add your waystone and tablets"))
+            f"  ·  a run costs {_d(cost)}" + (f" ({unknown} without a price)" if unknown else "")
+        self.fl_sub.config(text=line + ("  ·  " + "  ·  ".join(chips) if chips else
+                                        "  ·  Edit setup: add your waystone and tablets"))
         vers = ["All versions"] + [f"v{x['v']}" + (" (now)" if x["v"] == ver["v"] else "") for x in s["versions"]]
         self.fl_ver_box.config(values=vers)
         self.fl_ver_var.set(vers[0] if self.fl_view_v is None else
                             next((x for x in vers if x.startswith(f"v{self.fl_view_v}")), vers[0]))
         f = L.figures(self.fl_logs_shown())
         k = self.fl_kpi
+        ph, pr = f["per_hour"], f["profit_run"]
+        # ---- the verdict, in plain words
+        if ph is None:
+            self.fl_v_pre.config(text="Not enough logged yet" if f["runs"] else "No runs logged yet")
+            k["ph"][0].config(text="")
+            self.fl_v_post.config(text="")
+            self.fl_v_why.config(text="Play a few runs with this setup, then press Log loot and copy your drops. "
+                                      f"One run costs {_d(cost)}.")
+        else:
+            self.fl_v_pre.config(text="Makes about " if ph >= 0 else "Loses about ")
+            k["ph"][0].config(text=f"{abs(ph):.1f}" if ph < 0 else f"{ph:.1f}", fg=C["accent"] if ph >= 0 else C["red"])
+            self.fl_v_post.config(text=" div an hour", fg=C["accent"] if ph >= 0 else C["red"])
+            why = (f"Every run costs {_d(f['cost_run'])} and brings back {_d(f['loot_run'])} of loot: "
+                   f"{_d(pr, True)} {'profit' if (pr or 0) >= 0 else 'loss'} a run.")
+            best = self._fl_rank(s, ph)
+            self.fl_v_why.config(text=why + (f" {best}" if best else ""))
+        bad = sum(1 for l in self.fl_logs_shown() if not l.get("skipped") and (l.get("profit") or 0) < 0)
+        k["ph"][1].config(text=(f"From {f['runs']} runs in {f['logs']} log{'s' if f['logs'] != 1 else ''}"
+                                + (f" · {bad} log{'s' if bad != 1 else ''} lost money" if bad else "")
+                                + " · prices from poe.ninja" + (f" · {self.fl_best_other(s, ph)}"
+                                                                 if self.fl_best_other(s, ph) else ""))
+                          if f["runs"] else "")
+        # ---- the figures
         k["runs"][0].config(text=str(f["runs"]))
         k["runs"][1].config(text=f"{f['logs']} logs")
         k["avg"][0].config(text=_hms(f["avg_run"]) if f["avg_run"] else "-")
-        k["avg"][1].config(text=f"fastest {_hms(f['fastest'])}" if f["fastest"] else "")
+        k["avg"][1].config(text=f"fastest {_hms(f['fastest'])}" if f["fastest"] else "a run, on average")
         k["cost"][0].config(text=_d(f["cost_run"]) if f["cost_run"] is not None else _d(cost))
         k["cost"][1].config(text="logged" if f["cost_run"] is not None else "from the setup")
         k["loot"][0].config(text=_d(f["loot_run"]))
-        k["loot"][1].config(text=f"median {_d(f['loot_run_median'])}" if f["loot_run_median"] is not None else "")
-        pr = f["profit_run"]
+        k["loot"][1].config(text=f"median {_d(f['loot_run_median'])}" if f["loot_run_median"] is not None
+                            else "a run, on average")
         k["profit"][0].config(text=_d(pr, True), fg=C["green"] if (pr or 0) > 0 else C["red"] if (pr or 0) < 0 else C["text"])
-        k["profit"][1].config(text=f"±{f['spread']:.2f} spread" if f["spread"] is not None else "")
-        ph = f["per_hour"]
-        k["ph"][0].config(text="-" if ph is None else f"{ph:.1f}", fg=C["good"] if (ph or 0) >= 0 else C["red"])
-        best = self.fl_best_other(s, ph)
-        k["ph"][1].config(text=best)
+        k["profit"][1].config(text=f"loot − cost · ±{f['spread']:.2f}" if f["spread"] is not None else "loot − cost")
         k["roi"][0].config(text="-" if f["roi"] is None else f"{f['roi'] * 100:.0f}%")
-        k["roi"][1].config(text="loot ÷ cost")
         self.fl_fill_sheet()
         self.fl_draw_chart()
+        self.fl_draw_money()
         self.fl_paint_status()
+
+    def _fl_rank(self, s, ph):
+        """"Your best setup so far." / "Your 2nd best of 3." - against your other setups with numbers."""
+        d = self.fl_data()
+        others = [L.figures(L.logs_of(d, x["id"]))["per_hour"] for x in d["setups"] if x["id"] != s["id"]]
+        others = [x for x in others if x is not None]
+        if not others or self.fl_view_v is not None:
+            return ""
+        place = 1 + sum(1 for x in others if x > ph)
+        return "Your best setup so far." if place == 1 else \
+            f"Your {place}{'nd' if place == 2 else 'rd' if place == 3 else 'th'} best of {len(others) + 1}."
+
+    def fl_draw_money(self):
+        """Where the money comes from: the top drops as bars, the rest together."""
+        cv = getattr(self, "fl_money", None)
+        if cv is None:
+            return
+        cv.delete("all")
+        w = max(200, cv.winfo_width())
+        cv.create_text(10, 10, text="WHERE THE MONEY COMES FROM", anchor="nw", fill=C["muted"],
+                       font=("Segoe UI", 9, "bold"))
+        rows = L.loot_table(self.fl_logs_shown())
+        if not rows:
+            cv.create_text(w // 2, 64, text="Your drops show here once you log loot", fill=C["muted"],
+                           font=("Segoe UI", 9))
+            return
+        top = rows[:3]
+        rest = rows[3:]
+        if rest:
+            top = top + [{"name": f"Everything else ({len(rest)})", "total": sum(g["total"] for g in rest),
+                          "share": sum(g["share"] for g in rest), "_rest": True}]
+        y, name_w, val_w = 34, min(150, w // 3), 70
+        for g in top:
+            cv.create_text(10, y, text=g["name"][:22], anchor="w", fill=C["muted"] if g.get("_rest") else C["text"],
+                           font=("Segoe UI", 9))
+            x0, x1 = 10 + name_w, w - val_w - 10
+            cv.create_rectangle(x0, y - 4, x1, y + 4, fill=C["line"], width=0)
+            cv.create_rectangle(x0, y - 4, x0 + max(2, (x1 - x0) * g["share"]), y + 4,
+                                fill=C["steel"] if g.get("_rest") else C["accent"], width=0)
+            cv.create_text(w - 10, y, text=f"{g['total']:.2f} div", anchor="e", fill=C["text"], font=(MONO, 9))
+            y += 20
 
     def fl_best_other(self, s, ph):
         """vs this setup's version before, or your best other setup."""
@@ -399,23 +613,39 @@ class LedgerPage:
                        anchor="e", fill=C["muted"], font=("Segoe UI", 9))
 
     def fl_paint_status(self):
+        """The strip under the buttons: are runs being counted, how many since the last log (dots), when the box
+        opens."""
         d, s = self.fl_data(), self.fl_setup()
         p = d.get("pending")
+        every = int(s.get("every", L.EVERY)) if s else L.EVERY
+        done = 0
         if p and s and p.get("setup") == s["id"]:
-            how = "Counting maps from Client.txt" if s.get("counting", "auto") == "auto" else \
-                f"Press {self.fl_key_label()} after each run"
-            txt = f"● {how}  ·  this log: {p.get('runs', 0)} of {s.get('every', L.EVERY)} runs  ·  " \
-                  f"the loot box opens when you're back in your hideout after the last one"
+            done = int(p.get("runs", 0))
+            how = "Counting runs by itself" if s.get("counting", "auto") == "auto" else \
+                f"Counting: press {self.fl_key_label()} after each run"
+            txt = f"● {how}  ·  {done} run{'s' if done != 1 else ''} since your last log  ·  the loot box opens " \
+                  f"after {every}, back in your hideout"
             self.fl_count_btn.config(text="■ Stop counting")
+            fg = C["green"]
         elif p:
             other = L.setup(d, p.get("setup"))
             txt = f"Counting runs for {other['name'] if other else 'another setup'} - pick it to see it."
             self.fl_count_btn.config(text="▶ Count this one")
+            fg = C["text"]
         else:
-            txt = "Not counting. ▶ Start counting when you start farming with this setup (the box asks for the loot " \
-                  f"every {s.get('every', L.EVERY) if s else L.EVERY} runs)."
+            txt = f"Not counting. Press Start counting when you farm with this setup - the loot box opens every " \
+                  f"{every} runs."
             self.fl_count_btn.config(text="▶ Start counting")
-        self.fl_status.config(text=txt)
+            fg = C["muted"]
+        self.fl_status.config(text=txt, fg=fg)
+        cv = getattr(self, "fl_dots", None)
+        if cv is not None:                                       # one dash per run of this log
+            n = max(1, min(every, 20))
+            cv.delete("all")
+            cv.config(width=n * 22)
+            for i in range(n):
+                cv.create_rectangle(i * 22, 1, i * 22 + 18, 7, width=0,
+                                    fill=C["accent"] if i < done else "#2c3d60")
 
     # ================================================================ setups
     def fl_new(self):
@@ -444,11 +674,10 @@ class LedgerPage:
         return s
 
     def fl_list_menu(self, e):
-        iid = self.fl_list.identify_row(e.y)
-        if not iid:
-            return
-        self.fl_list.selection_set(iid)
-        self.fl_pick()
+        """(kept for older callers)"""
+        return self.fl_setup_menu(e)
+
+    def fl_setup_menu(self, e):
         m = tk.Menu(self.root, tearoff=0, bg=C["panel2"], fg=C["text"], activebackground="#2c4a84",
                     activeforeground="#ffffff")
         m.add_command(label="Edit setup…", command=self.fl_edit)
@@ -761,6 +990,17 @@ class LedgerPage:
                 ("Profit / run", "profit_run", lambda f: _d(f["profit_run"], True), max),
                 ("Div / hour", "per_hour", lambda f: "-" if f["per_hour"] is None else f"{f['per_hour']:.1f}", max),
                 ("Spread", "spread", lambda f: "-" if f["spread"] is None else f"±{f['spread']:.2f}", min))
+        ranked = sorted([c for c in cols if c[1]["per_hour"] is not None], key=lambda c: -c[1]["per_hour"])
+        if len(ranked) >= 2:                                   # 2.56.0: the answer first, in words
+            a_, b_ = ranked[0], ranked[1]
+            say = f"{a_[0]} makes {a_[1]['per_hour'] - b_[1]['per_hour']:.1f} div an hour more than {b_[0]}."
+            if a_[1]["spread"] is not None and b_[1]["spread"] is not None and b_[1]["spread"] < a_[1]["spread"]:
+                say += f" {b_[0]} is steadier: its logs swing less."
+        else:
+            say = "Log loot on at least two of them to see which makes more."
+        self.fl_compare_say = say
+        tk.Label(win, text=say, bg=C["panel"], fg="#ffffff", font=("Segoe UI", 12, "bold"), padx=16, pady=8,
+                 anchor="w", justify="left", wraplength=640).pack(fill="x", pady=(8, 0))
         g = tk.Frame(win, bg=C["panel"], padx=16, pady=16)
         g.pack(fill="both", expand=True)
         for j, (title, *_r) in enumerate(cols):

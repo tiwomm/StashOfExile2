@@ -21,6 +21,11 @@ NEXT = [
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.56.0": [
+        "Farm Ledger, redone: your setups as cards, the answer in plain words (\"Makes about 10.3 div an hour\"), "
+        "the key numbers, where the money comes from, and a strip that shows runs counted since your last log.",
+        "New to the Farm Ledger? It starts with three steps and one button. Compare now says which setup wins.",
+    ],
     "2.55.1": [
         "The item box (click an item in Price checks or Insights) closes with Esc, Space, or a click anywhere else - "
         "or click the same item again. A click on the box keeps it.",
