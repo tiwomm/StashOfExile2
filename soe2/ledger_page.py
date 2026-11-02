@@ -1,7 +1,7 @@
-"""Money Makers > Farm Tracker (2.45.0, was Run tracker): the window, the setup editor, the log box (in the app and
+"""Money Makers > Strat Tracker (2.45.0, was Run tracker): the window, the setup editor, the log box (in the app and
 over the game) and the run counting. Data and every calculation live in ledger.py.
 
-The Session timer times your play; the Farm Tracker measures one farming SETUP - what a run costs, what its loot is
+The Session timer times your play; the Strat Tracker measures one farming SETUP - what a run costs, what its loot is
 worth, and whether it beats your other setups. ToS: it only reads your copies (Ctrl+Alt+C, which you press) and
 Client.txt, and shows a box; it never acts in the game."""
 import time
@@ -151,7 +151,7 @@ class LedgerPage:
     # ================================================================ the page
     def build_ledger(self, page):
         """2.56.0 (feedback: "a bit confusing ... modern, clean, functional, ease of use for the average user"; the
-        Farm Tracker Redesign mockups): your setups as cards on the left; on the right the setup's name and what it
+        Strat Tracker Redesign mockups): your setups as cards on the left; on the right the setup's name and what it
         is, ONE main button (Log loot), whether runs are being counted, then the verdict in plain words ("Makes about
         10.3 div an hour"), the figures, where the money comes from, profit per log, and the sheet. No setup yet:
         three steps and a button."""
@@ -292,14 +292,14 @@ class LedgerPage:
         self.fl_refresh()
 
     def _fl_empty_page(self, parent):
-        """First time: what the Farm Tracker does, in three steps, and one button."""
+        """First time: what the Strat Tracker does, in three steps, and one button."""
         P1, P2 = C["panel"], C["panel2"]
         f = tk.Frame(parent, bg=P1)
         inner = tk.Frame(f, bg=P1)
         inner.place(relx=0.5, rely=0.42, anchor="center")
         tk.Label(inner, text="Does a farming setup really make money?", bg=P1, fg="#ffffff",
                  font=("Segoe UI", 18, "bold")).pack()
-        tk.Label(inner, text="The Farm Tracker works it out from your own runs: what a run costs, what its loot is "
+        tk.Label(inner, text="The Strat Tracker works it out from your own runs: what a run costs, what its loot is "
                              "worth, and how many divines an hour that makes.", bg=P1, fg=C["text"],
                  font=("Segoe UI", 10), wraplength=560, justify="center").pack(pady=(8, 16))
         steps = tk.Frame(inner, bg=P1)
@@ -843,7 +843,7 @@ class LedgerPage:
         m.add_command(label="CSV - logs (Excel, Google Sheets)", command=lambda: self.fl_export("logs"))
         m.add_command(label="CSV - every drop", command=lambda: self.fl_export("loot"))
         m.add_command(label="CSV - logs of every setup", command=lambda: self.fl_export("all"))
-        m.add_command(label="Setup file (.json) - for a friend's Farm Tracker", command=lambda: self.fl_export("json"))
+        m.add_command(label="Setup file (.json) - for a friend's Strat Tracker", command=lambda: self.fl_export("json"))
         m.add_command(label="Strat guide (CSV) - share this setup as a strat", command=lambda: self.fl_export("strat"))
         m.add_command(label="Copy summary (for Discord)", command=self.fl_copy_summary)
         m.add_separator()
@@ -980,7 +980,7 @@ class LedgerPage:
         if not cols:
             return None
         win = tk.Toplevel(self.root)
-        win.title("Farm Tracker - compare")
+        win.title("Strat Tracker - compare")
         win.configure(bg=C["panel"])
         win.transient(self.root)
         rows = (("Runs", "runs", lambda f: str(f["runs"]), max),
@@ -1053,7 +1053,7 @@ class LedgerPage:
                     if getattr(self, "br_reader", None) is None:
                         self.breach_start()           # (follows Client.txt - log_wanted() now says yes)
                 except Exception:
-                    self.log_error("starting the Farm Tracker's map counting")
+                    self.log_error("starting the Strat Tracker's map counting")
         self.fl_save()
         self.fl_refresh()
 
@@ -1155,7 +1155,7 @@ class LedgerPage:
         def moved(x, y, w, h):
             SETTINGS["ledger_box"] = (x, y, w, h)
             save_json("settings.json", SETTINGS)
-        w = OverlayWindow(self.root, f"Farm Tracker · {s['name']}", "✎", geo, opacity=250, on_close=self.fl_box_later,
+        w = OverlayWindow(self.root, f"Strat Tracker · {s['name']}", "✎", geo, opacity=250, on_close=self.fl_box_later,
                           on_moved=moved, lockable=False, min_size=(380, 420), follow_game=not in_app)
         self.fl_box, self.fl_box_p = w, p
         bg, fg, mut = P["bg"], P["text"], P["muted"]
@@ -1233,7 +1233,7 @@ class LedgerPage:
             return
         cur = t.get("1.0", "end-1c")
         t.insert("end", ("\n" if cur and not cur.endswith("\n") else "") + "\n".join(f"{q} {n}" for n, q in drops) + "\n")
-        self._say("Added to the Farm Tracker's loot: " + ", ".join(f"{q}× {n}" for n, q in drops), 3)
+        self._say("Added to the Strat Tracker's loot: " + ", ".join(f"{q}× {n}" for n, q in drops), 3)
 
     def _fl_box_typed(self, _e=None):
         t = self.fl_box_text
@@ -1404,7 +1404,7 @@ class LedgerPage:
             except tk.TclError:
                 pass
         win = tk.Toplevel(self.root)
-        win.title(f"Farm Tracker - {s['name']}")
+        win.title(f"Strat Tracker - {s['name']}")
         win.configure(bg=P1)
         win.transient(self.root)
         try:                                                 # 2.67.0: centered on the app, not the screen's corner
@@ -1488,7 +1488,7 @@ class LedgerPage:
                             variable=self.fl_ed_counting, value=k).pack(anchor="w")
         xr = tk.Frame(g, bg=P2)
         xr.pack(fill="x", pady=(8, 0))
-        tk.Label(xr, text="Other costs a run (omens …)", bg=P2, fg=C["text"]).pack(side="left")
+        tk.Label(xr, text="Other costs a run", bg=P2, fg=C["text"]).pack(side="left")
         self.fl_ed_extra = tk.StringVar(value=f"{self.fl_ed_ver.get('extra') or 0:g}")
         ttk.Entry(xr, textvariable=self.fl_ed_extra, width=6).pack(side="left", padx=4)
         tk.Label(xr, text="div", bg=P2, fg=C["text"]).pack(side="left")
@@ -1574,7 +1574,7 @@ class LedgerPage:
                       font=("Segoe UI", 9, "underline"), anchor="w")
         km.pack(fill="x", pady=(2, 0))
         km.bind("<Button-1>", lambda ev: self.fl_key_mods(e))
-        if e.get("key_mods") and kind != "others":        # 2.67.0: search for more of it, on the site or in your stash
+        if (e.get("key_mods") or kind == "waystones") and kind != "others":        # 2.67.0: search for more of it, on the site or in your stash
             lr = tk.Frame(card, bg=P1)
             lr.pack(fill="x", pady=(2, 0))
             for text, fn, tip in (("🔗 Trade search", self.fl_open_search,
@@ -1661,6 +1661,13 @@ class LedgerPage:
         if kind == "tablets" and k == "waystones":
             k = "waystones"
         e = L.new_entry(it, k)
+        if k == "waystones":                                 # 2.67.3: a waystone's value is its endgame numbers
+            from . import waystone as WS                     # (the trade site's Endgame Filters), not its mods
+            wi = WS.parse_waystone(text)
+            props = [m for m in (wi or {}).get("mods", []) if m.get("endgame") and m.get("value")]
+            e["props"] = [{"shown": m["shown"], "fid": m["sid"].split(":", 1)[1], "value": m["value"]} for m in props]
+            e["mods"] = [p["shown"] for p in e["props"]]
+            e["key_mods"] = []
         self.fl_ed_ver[k].append(e)
         self.fl_ed_fill()
         self.fl_price_entry(e)
@@ -1728,11 +1735,12 @@ class LedgerPage:
         win = tk.Toplevel(self.root)
         win.title("The mods that matter")
         win.configure(bg=C["panel"])
-        win.transient(self.root)
+        win.transient(self.fl_ed if self.fl_ed_open() else self.root)     # (2.67.3: over the setup window)
         f = tk.Frame(win, bg=C["panel"], padx=16, pady=12)
         f.pack(fill="both", expand=True)
-        tk.Label(f, text=f"{e['name']}: which mods make this setup work?", bg=C["panel"], fg=C["accent"],
-                 font=("Segoe UI", 10, "bold"), anchor="w").pack(fill="x")
+        way = bool(e.get("props"))
+        tk.Label(f, text=f"{e['name']}: which {'numbers' if way else 'mods'} make this setup work?", bg=C["panel"],
+                 fg=C["accent"], font=("Segoe UI", 10, "bold"), anchor="w").pack(fill="x")
         tk.Label(f, text="Tick the ones you'd pay for (pack size, rarity, +1 Breach …). They're shown on the setup and "
                          "used to check what it costs.", bg=C["panel"], fg=C["muted"], font=("Segoe UI", 9),
                  wraplength=420, justify="left", anchor="w").pack(fill="x", pady=(2, 8))
@@ -1746,6 +1754,13 @@ class LedgerPage:
             q = getattr(self, "fl_km_queue", [])
             if q:
                 self.root.after(50, lambda: self.fl_key_mods(q.pop(0)))
+            elif self.fl_ed_open():                          # 2.67.3: the setup window stays in front
+                try:
+                    self.fl_ed.deiconify()
+                    self.fl_ed.lift()
+                    self.fl_ed.focus_force()
+                except tk.TclError:
+                    pass
 
         def close():
             win.destroy()
@@ -1767,7 +1782,7 @@ class LedgerPage:
         return win
 
     def _fl_center(self, win):
-        """Put a small window in the middle of the app (or of the Farm Tracker's setup window, when it's open)."""
+        """Put a small window in the middle of the app (or of the Strat Tracker's setup window, when it's open)."""
         try:
             win.update_idletasks()
             host = self.fl_ed if self.fl_ed_open() else self.root
@@ -1790,6 +1805,8 @@ class LedgerPage:
         from .trade import uses_stat_id
         keys = [m for m in (e.get("key_mods") or []) if "uses remaining" not in m.lower()]
         tablet = "tablet" in str(e.get("cls") or "").lower() or str(e.get("base") or "").endswith("Tablet")
+        if e.get("props") is not None:                       # a waystone: its tier and the endgame numbers ticked
+            return self._fl_waystone_search(e, keys)
         url = None
         table = getattr(getattr(self, "engine", None), "table", None)
         if table:
@@ -1825,6 +1842,32 @@ class LedgerPage:
                 if first in RX.TABLET_TYPES:
                     opts["types"] = [first]
             rx, _notes = RX.build(kind, [(i, None) for i in ids], [], want_all=True, options=opts)
+        return url, rx
+
+    REGEX_PROPS = {"map_iir": "item_rarity", "map_bonus": "drop_chance", "map_packsize": "pack_size",
+                   "map_rare_monsters": "monster_rarity", "map_magic_monsters": "effectiveness"}
+
+    def _fl_waystone_search(self, e, keys):
+        """A waystone: the trade site's Endgame Filters (its tier, and each number you ticked at your value or more),
+        and the stash search for the same."""
+        import json as _json
+        from urllib.parse import quote
+        from . import regex as RX
+        picked = [p for p in e.get("props") or [] if p["shown"] in keys]
+        tier = e.get("tier")
+        mp = {"map_tier": {"min": tier, "max": tier}} if tier else {}
+        for p in picked:
+            mp[p["fid"]] = {"min": p["value"]}
+        q = {"query": {"status": {"option": "securable"}, "stats": [{"type": "and", "filters": []}],
+                       "filters": {"map_filters": {"filters": mp}}}, "sort": {"price": "asc"}}
+        league = SETTINGS.get("league") or "Standard"
+        url = (f"https://www.pathofexile.com/trade2/search/poe2/{quote(league)}"
+               f"?q={quote(_json.dumps(q, separators=(',', ':')))}")
+        opts = {"tier_min": tier, "tier_max": tier} if tier else {}
+        for p in picked:
+            if p["fid"] in self.REGEX_PROPS:
+                opts[self.REGEX_PROPS[p["fid"]]] = int(p["value"])
+        rx, _notes = RX.build("waystone", [], [], options=opts)
         return url, rx
 
     def fl_open_search(self, e):

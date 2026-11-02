@@ -62,7 +62,7 @@ from .insights_page import InsightsPage
 from .moneymakers_page import MoneyMakersPage
 from .maplib_page import MapLibraryPage
 from .remnant_page import RemnantPage         # 2.37.0: Expedition Remnant Price Checker
-from .ledger_page import LedgerPage           # 2.45.0: Money Makers > Farm Tracker
+from .ledger_page import LedgerPage           # 2.45.0: Money Makers > Strat Tracker
 from .feedback_page import FeedbackPage       # 2.48.0: the update badge and Report a bug (taskbar)
 from .feed_page import FeedPage               # 2.51.0: Mod book › Manual feed
 from .merged_page import MergedOverlay        # 2.55.0: one overlay window for timer, Mechanic Helper and Notes
@@ -2633,7 +2633,7 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         """Only a real Ctrl+Alt+C copy of an item we haven't already got becomes a new row."""
         if not SETTINGS.get("listen", True):
             return
-        if text.lstrip().startswith("Item Class:"):               # 2.45.0: the Farm Tracker's loot box / setup takes it
+        if text.lstrip().startswith("Item Class:"):               # 2.45.0: the Strat Tracker's loot box / setup takes it
             if self.fd_capturing():                               # 2.51.0: Mod book › Manual feed, while it shows
                 return self.fd_take_clip(text)
             if self.fl_capturing():
@@ -2988,7 +2988,7 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         self.update_row(rid)
         self.refresh_detail_if_selected(rid)
         goods = self.good_mods(self.records[rid])
-        if goods and SETTINGS["popups"] and self.records[rid].get("src") != "ledger":   # 2.67.0: not for the Farm Tracker's own items
+        if goods and SETTINGS["popups"] and self.records[rid].get("src") != "ledger":   # 2.67.0: not for the Strat Tracker's own items
             lines = [pretty(m["text"]) + (f"  -  listings with it ask about {fmt_div(med)}" if med is not None else "  -  learned as valuable")
                      for m, med in goods[:4]]
             self.toast.show(f"★ {len(goods)} valuable mod{'s' if len(goods) > 1 else ''}", lines, C["good"],
@@ -2998,7 +2998,7 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         rec = self.records.get(rid)
         if not rec:
             return
-        if rec.get("src") == "ledger":                        # 2.45.0: a Farm Tracker setup item, priced out of sight
+        if rec.get("src") == "ledger":                        # 2.45.0: a Strat Tracker setup item, priced out of sight
             return self.fl_priced(rid)
         if rid == getattr(self, "lib_rid", None):            # priced from the Item library: show it there too
             self.lib_price_show()
@@ -3417,7 +3417,7 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
                     m["flags"] = set(m.get("flags", []))
                 r["prices"] = [tuple(p) for p in r.get("prices", [])]
                 r.setdefault("mark", "new")
-                if r.get("src") == "ledger":                  # (a Farm Tracker item that was still being priced)
+                if r.get("src") == "ledger":                  # (a Strat Tracker item that was still being priced)
                     continue
                 self.records[int(r["id"])] = r
                 if r.get("state") in ("queued", "pricing"):      # was still waiting when the app closed
