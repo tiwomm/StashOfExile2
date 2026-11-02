@@ -235,3 +235,116 @@ def divider(root, h, P=None):
     d.line([(cx - s, cy), (cx, cy - s), (cx + s, cy)], fill=GOLD, width=t)
     img = img.resize((w, h), Image.LANCZOS)
     return _photo(img, root, key)
+
+
+# ---------------------------------------------------------------- 2.67.0: the Panel, like the game's vendor windows
+# (the Treasurer's ledger: a dark oxblood frame with bronze edges and scrollwork, a raised header plate with the title
+# in pale small caps and a red subtitle, stats in dark boxes with gold numbers)
+OX_TOP, OX_BOT = (46, 20, 16), (20, 8, 6)
+PLATE_TOP, PLATE_BOT = (78, 30, 24), (36, 12, 9)
+BOX_TOP, BOX_BOT = (14, 8, 7), (24, 13, 11)
+BRONZE_HI, BRONZE, BRONZE_LO = (214, 176, 120), (150, 112, 70), (78, 52, 30)
+MAROON, MAROON_LO = (104, 40, 32), (52, 20, 15)
+
+
+def card_palette(base):
+    """The Panel's text colors: pale title, red subtitle, gold numbers."""
+    P = dict(base)
+    P.update(bg="#170a08", field="#120908", text="#ead9b0", muted="#a8927a", big="#f2d77a", head="#f1e6cc",
+             sub="#e0574f", line="#5a2a20", on="#f0c860", off="#8a7460", warn="#e0a352", cell_bg="#120908",
+             cell_line="#5a2a20", rim="#966f46", rim_hi="#d6b078", rim_lo="#4e341e", bg_top="#2e1410",
+             on_icon="◆", off_icon="◇", font="Palatino Linotype", hfont="Palatino Linotype", poe=True)
+    return P
+
+
+def _curl(d, cx, cy, r, sx, t, col):
+    """A scroll curl: a spiral-ish pair of arcs ending in a small ball."""
+    a0, a1 = (90, 360) if sx > 0 else (180, 450)
+    d.arc((cx - r, cy - r, cx + r, cy + r), a0, a1, fill=col, width=t)
+    r2 = r * 0.55
+    d.arc((cx - r2, cy - r2 * 1.1, cx + r2, cy + r2 * 0.9), a0 + 90, a1, fill=col, width=t)
+    d.ellipse((cx - t * 1.3, cy - t * 1.3, cx + t * 1.3, cy + t * 1.3), fill=col)
+
+
+def card(root, w, h, hh):
+    """The Panel: frame, header plate (hh px high) with scrollwork at both ends, a rule under it. -> PhotoImage."""
+    key = ("card", w, h, hh)
+    if key in _CACHE:
+        return _CACHE[key]
+    try:
+        from PIL import Image, ImageDraw
+    except Exception:
+        return None
+    W, H, t = w * SS, h * SS, SS
+    img = _stone(W, H, w * 3 + h, OX_TOP, OX_BOT)
+    d = ImageDraw.Draw(img, "RGBA")
+    # frame: black, bronze bevel, black, a maroon inner line
+    d.rectangle((0, 0, W - 1, H - 1), outline=K, width=t)
+    d.rectangle((t, t, W - t - 1, H - t - 1), outline=BRONZE, width=t)
+    d.line((t, t, W - t, t), fill=BRONZE_HI, width=t)
+    d.line((t, t, t, H - t), fill=BRONZE_HI, width=t)
+    d.rectangle((2 * t, 2 * t, W - 2 * t - 1, H - 2 * t - 1), outline=BRONZE_LO, width=t)
+    d.rectangle((3 * t, 3 * t, W - 3 * t - 1, H - 3 * t - 1), outline=K, width=t)
+    d.rectangle((4 * t, 4 * t, W - 4 * t - 1, H - 4 * t - 1), outline=MAROON, width=t)
+    # header plate
+    HH = hh * SS
+    px0, px1, py0, py1 = 9 * t, W - 9 * t, 6 * t, HH
+    for y in range(py0, py1):
+        d.line((px0, y, px1, y), fill=_lerp(PLATE_TOP, PLATE_BOT, (y - py0) / max(1, py1 - py0)))
+    d.rectangle((px0, py0, px1, py1), outline=BRONZE, width=t)
+    d.line((px0 + t, py0 + t, px1 - t, py0 + t), fill=BRONZE_HI, width=t)
+    d.line((px0 + t, py1 - t, px1 - t, py1 - t), fill=K, width=t)
+    d.rectangle((px0 + 2 * t, py0 + 2 * t, px1 - 2 * t, py1 - 2 * t), outline=MAROON_LO, width=t)
+    # scrollwork at both ends of the plate, and small spikes on the frame beside it
+    my = (py0 + py1) / 2
+    for sx, x in ((1, px0 + 7 * t), (-1, px1 - 7 * t)):
+        r = (py1 - py0) * 0.24
+        _curl(d, x, my - r * 0.25, r, sx, t, BRONZE_HI)
+        d.line((x + sx * r * 0.2, my + r * 0.9, x + sx * r * 2.4, my + r * 0.9), fill=BRONZE, width=t)
+        d.ellipse((x + sx * r * 2.4 - t * 1.4, my + r * 0.9 - t * 1.4, x + sx * r * 2.4 + t * 1.4, my + r * 0.9 + t * 1.4),
+                  fill=BRONZE_HI)
+    for x in (2 * t, W - 2 * t):
+        s = -1 if x < W / 2 else 1
+        d.polygon([(x, my - 4 * t), (x + s * 3 * t, my), (x, my + 4 * t)], fill=BRONZE, outline=K)
+    # a rule under the plate with a lozenge in the middle
+    ry = py1 + 4 * t
+    for i in range(W // 2):
+        a = int(220 * (1 - abs(i - W / 4) / (W / 4)) ** 0.6) if W > 0 else 0
+        d.point((W / 4 + i, ry), fill=BRONZE + (a,))
+    cx = W / 2
+    s = 3 * t
+    d.polygon([(cx, ry - s), (cx + s, ry), (cx, ry + s), (cx - s, ry)], fill=BRONZE, outline=K)
+    # bottom corner curls
+    for sx, x in ((1, 8 * t), (-1, W - 8 * t)):
+        _curl(d, x + sx * 3 * t, H - 9 * t, 4 * t, sx, t, BRONZE)
+    img = img.resize((w, h), Image.LANCZOS)
+    return _photo(img, root, key)
+
+
+def box(root, w, h, on=False):
+    """A stat / switch box: dark, a maroon edge, a thin bronze lip; a warm glow and a gold edge when on."""
+    key = ("box", w, h, bool(on))
+    if key in _CACHE:
+        return _CACHE[key]
+    try:
+        from PIL import Image, ImageDraw, ImageFilter
+    except Exception:
+        return None
+    W, H, t = w * SS, h * SS, SS
+    img = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img)
+    top, bot = ((40, 26, 10), (60, 38, 14)) if on else (BOX_TOP, BOX_BOT)
+    for y in range(H):
+        d.line((0, y, W, y), fill=_lerp(top, bot, y / max(1, H - 1)) + (255,))
+    if on:
+        glow = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+        ImageDraw.Draw(glow).ellipse((W * 0.05, H * 0.3, W * 0.95, H * 1.5), fill=GOLD + (100,))
+        img = Image.alpha_composite(img, glow.filter(ImageFilter.GaussianBlur(H * 0.3)))
+        d = ImageDraw.Draw(img)
+    for i in range(2 * t):
+        d.line((t, i + t, W - t, i + t), fill=(0, 0, 0, int(200 * (1 - i / (2 * t)))))
+    d.rectangle((0, 0, W - 1, H - 1), outline=K, width=t)
+    d.rectangle((t, t, W - t - 1, H - t - 1), outline=GOLD if on else MAROON, width=t)
+    d.line((2 * t, H - 2 * t, W - 2 * t, H - 2 * t), fill=(GOLD_HI if on else BRONZE_LO) + (190,), width=t)
+    img = img.resize((w, h), Image.LANCZOS)
+    return _photo(img, root, key)

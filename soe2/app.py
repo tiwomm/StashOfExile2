@@ -109,12 +109,6 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         root.configure(bg=C["bg"])
         self.paint_titlebar()                            # 2.61.0: Windows' own title bar in the theme's colors
         root.after(1500, self.paint_titlebar)            # (again once the window is really on screen)
-        # 2.66.0: the windows over the game use the theme; the old Minimal style is now a Layout
-        if SETTINGS.get("overlay_look") == "minimal" and not SETTINGS.get("ov_look_266"):
-            tr = SETTINGS.setdefault("tracker", {})
-            if tr.get("layout", "panel") == "panel":
-                tr["layout"] = "minimal"
-        SETTINGS["ov_look_266"] = 1
         setup_style(root)
         self.records, self.next_id = {}, 1
         self.ui_q = queue.Queue()
@@ -1406,8 +1400,8 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
             return row
         # 2.66.0: no Style list - everything over the game is drawn in the app's theme (Settings › Appearance ›
         # Theme). The Layout says the shape.
-        row = section("Appearance", "Overlay layout", "The overlay (timer, Mechanic Helper, Notes) and the remnant "
-                                                      "price tags use your theme's colors. Pick the overlay's shape:")
+        row = section("Appearance", "Overlay layout", "The overlay (timer, Mechanic Helper) in the game's own style. "
+                                                      "Notes and the remnant price tags use your theme's colors.")
         from .merged_page import LAYOUTS
         g = tk.Frame(row, bg=P2)
         g.pack(fill="x")
@@ -1417,10 +1411,9 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         lc.grid(row=0, column=1, sticky="w", pady=2)
         lc.bind("<<ComboboxSelected>>", lambda e: self.merged_set(
             layout=next((k for k, t in LAYOUTS.items() if t == self.ov_layout_var.get()), "panel")))
-        tk.Label(g, text="Panel: a card you place anywhere, Notes inside.  Strip: one thin bar for the top edge.  "
-                         "Minimal: just the time, the map and the switches.\nGame bar: fitted to the game's bottom "
-                         "bar - on the XP bar, or split beside the life and mana orbs. Unlocked, you can drag it; "
-                         "picking the layout again puts it back.",
+        tk.Label(g, text="Panel: a card like the game's vendor windows - place it anywhere.\nGame bar: fitted to the "
+                         "game's bottom bar - on the XP bar, or split beside the life and mana orbs. Unlocked, you "
+                         "can drag it; picking the layout again puts it back. Both are drawn in the game's own style.",
                  bg=P2, fg=C["muted"], font=("Segoe UI", 9), justify="left", wraplength=620).grid(
             row=1, column=0, columnspan=2, sticky="w", pady=(4, 0))
         # 2.49.0: say what opacity does - and show the number
