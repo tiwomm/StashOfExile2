@@ -31,7 +31,14 @@ VERSION HISTORY
        a sapphire one on the mana side, a crest, square sockets like the flask / skill slots glowing gold when
        on, double dividers); hudart.palette() gives its cream / gold text in Palatino Linotype. Game search ↳
        Anoints: Anoints left the category chips for its own page (register_tabs("search", gs_tabs,
-       home="Search")); the search leaves anoints out; gs_pick(ANOINTS) still lands there. Beside the orbs: each half only as wide as it shows
+       home="Search")); the search leaves anoints out; gs_pick(ANOINTS) still lands there.
+       Layouts cut to two looks, both the game's own: Panel (rebuilt like the game's vendor windows - the
+       Treasurer's ledger: hudart.card / box / card_palette - an oxblood frame with bronze edges and scrollwork, a
+       header plate with SESSION and the area (or the league) in red, the time, map time, Maps and Avg in dark
+       boxes with gold numbers, the four switches in boxes that glow when on, a footer with clock, Notes ▾ and the
+       lock) and the Game bar (XP bar / beside the orbs). Strip and Minimal are gone (an old one shows as the
+       Panel); the note always opens as its own window (merged_embeds_notes False); _mg_panel / _mg_mini /
+       _mg_strip removed. Beside the orbs: each half only as wide as it shows
        (_hud_snug), against its orb; smaller end caps; the timer half is time + Avg / map, area, Maps. No
        "Fit to the game" button: picking a Game bar layout again starts it fitted (merged_set drops its
        hud_pos). Plus 2.65.1 below (never released on its own).

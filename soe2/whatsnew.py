@@ -22,8 +22,9 @@ NEXT = [
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
     "2.66.0": [
-        "Everything over the game now uses your theme (Settings › Appearance › Theme) - no separate overlay styles "
-        "to clash with it. Minimal is now one of the Layouts.",
+        "The overlay comes in two looks, both straight out of the game: the Panel, styled like the game's vendor "
+        "windows (a header plate, your stats in gold, the switches in boxes that glow when on), and the Game bar. "
+        "The old styles, Strip and Minimal are gone - one less thing to set up.",
         "The Game bar layouts look like part of the game's own bar: dark stone in a pewter frame, arched end caps "
         "with a red gem by the life orb and a blue one by the mana orb, and the switches in slots like your flasks "
         "and skills that glow gold when on.",
