@@ -21,6 +21,10 @@ NEXT = [
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.69.3": [
+        "Session: if the game closes or crashes while you're tracking, the session pauses and asks whether to end "
+        "it. The time after the game closed isn't counted, and opening the game again picks the session back up.",
+    ],
     "2.69.2": [
         "Overlay: when the session is paused, a small PAUSED tag shows next to the time instead of running into "
         "the numbers beside it.",
