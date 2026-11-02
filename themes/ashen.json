@@ -1,0 +1,232 @@
+{
+ "schema": 1,
+ "id": "ashen",
+ "name": "Ashen Rite",
+ "order": 10,
+ "description": "Ash black, bone and blood red.",
+ "colors": {
+  "chassis": "#070505",
+  "surface": "#100b0b",
+  "surface_raised": "#171010",
+  "surface_sunken": "#060404",
+  "surface_high": "#221717",
+  "border": "#342222",
+  "border_light": "#523535",
+  "border_dark": "#000000",
+  "shadow": "#000000",
+  "text": "#ebdfd2",
+  "text_muted": "#a08878",
+  "text_strong": "#fff8f0",
+  "text_disabled": "#5c4a42",
+  "accent": "#f0524a",
+  "accent_2": "#e9cfa8",
+  "selection": "#3b1414",
+  "selection_text": "#fff4ec",
+  "hover": "#1e1414",
+  "stripe": "#0b0707",
+  "good": "#8fcf6a",
+  "warn": "#efb04a",
+  "bad": "#ff5a4e",
+  "money": "#efc864",
+  "link": "#e9cfa8"
+ },
+ "fonts": {
+  "head": [
+   "Sylfaen",
+   "Georgia",
+   "DejaVu Serif"
+  ],
+  "num": [
+   "Sylfaen",
+   "Georgia",
+   "DejaVu Serif"
+  ]
+ },
+ "bars": {
+  "title": {
+   "fill": [
+    [
+     0,
+     "#2a1414"
+    ],
+    [
+     0.6,
+     "#160c0c"
+    ],
+    [
+     1,
+     "#0a0606"
+    ]
+   ],
+   "top": "#5a2a26",
+   "bottom": "#d8342c",
+   "text": "#f2e2cf",
+   "texture": "ash",
+   "texture_color": "#d8342c"
+  },
+  "title_off": {
+   "fill": [
+    [
+     0,
+     "#170b0b"
+    ],
+    [
+     0.6,
+     "#0c0707"
+    ],
+    [
+     1,
+     "#060303"
+    ]
+   ],
+   "top": "#5a2a26",
+   "bottom": "#d8342c",
+   "text": "text_muted",
+   "texture": "none",
+   "texture_color": "#d8342c"
+  }
+ },
+ "buttons": {
+  "normal": {
+   "fill": [
+    [
+     0,
+     "#2e2020"
+    ],
+    [
+     0.5,
+     "#211717"
+    ],
+    [
+     1,
+     "#160f0f"
+    ]
+   ],
+   "hover": [
+    [
+     0,
+     "#3e1c1a"
+    ],
+    [
+     0.5,
+     "#2c1413"
+    ],
+    [
+     1,
+     "#1d0e0e"
+    ]
+   ],
+   "pressed": [
+    [
+     0,
+     "#0b0707"
+    ],
+    [
+     1,
+     "#221717"
+    ]
+   ],
+   "border": "#000000",
+   "hover_border": "#d8342c",
+   "inner": "#4a3434",
+   "radius": 0,
+   "text": "text",
+   "text_hover": "text_strong"
+  },
+  "primary": {
+   "fill": [
+    [
+     0,
+     "#ff7a70"
+    ],
+    [
+     0.5,
+     "#f0524a"
+    ],
+    [
+     1,
+     "#c4302a"
+    ]
+   ],
+   "hover": [
+    [
+     0,
+     "#ff8c84"
+    ],
+    [
+     0.5,
+     "#f6625a"
+    ],
+    [
+     1,
+     "#d03a33"
+    ]
+   ],
+   "pressed": [
+    [
+     0,
+     "#a8261f"
+    ],
+    [
+     1,
+     "#d03a33"
+    ]
+   ],
+   "border": "#2a0504",
+   "hover_border": "#2a0504",
+   "inner": "#ffb3a8",
+   "radius": 0,
+   "text": "#1a0504",
+   "text_hover": "#1a0504"
+  },
+  "heading": {
+   "fill": [
+    [
+     0,
+     "#221717"
+    ],
+    [
+     1,
+     "#150e0e"
+    ]
+   ],
+   "hover": [
+    [
+     0,
+     "#2c1a1a"
+    ],
+    [
+     1,
+     "#1a1010"
+    ]
+   ],
+   "pressed": [
+    [
+     0,
+     "#1a1010"
+    ],
+    [
+     1,
+     "#2c1a1a"
+    ]
+   ],
+   "border": "#000000",
+   "hover_border": "#000000",
+   "inner": "#3a2626",
+   "radius": 0,
+   "text": "#d6bfa2",
+   "text_hover": "#ff7a6e"
+  }
+ },
+ "card": {
+  "header": "rite",
+  "border": "#523535",
+  "sep": "#3a2626"
+ },
+ "meter": {
+  "style": "orbs",
+  "on": "accent",
+  "off": "#221717",
+  "lcd_bg": "#060404"
+ }
+}

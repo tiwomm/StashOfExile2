@@ -1,0 +1,206 @@
+{
+ "schema": 1,
+ "id": "jade",
+ "name": "Jade Circuit",
+ "order": 6,
+ "description": "Obsidian and jade phosphor with crimson, like an old terminal.",
+ "colors": {
+  "chassis": "#06090a",
+  "surface": "#0c1213",
+  "surface_raised": "#111a1b",
+  "surface_sunken": "#050808",
+  "surface_high": "#1a2526",
+  "border": "#1f3030",
+  "border_light": "#2c4644",
+  "border_dark": "#020303",
+  "shadow": "#000000",
+  "text": "#cfe5de",
+  "text_muted": "#6f8f86",
+  "text_strong": "#effffa",
+  "text_disabled": "#3f544f",
+  "accent": "#3ee6b8",
+  "accent_2": "#f2585c",
+  "selection": "#0f3a31",
+  "selection_text": "#effffa",
+  "hover": "#142122",
+  "stripe": "#081011",
+  "good": "#3ee6b8",
+  "warn": "#f2c14e",
+  "bad": "#f2585c",
+  "money": "#f2d06b",
+  "link": "#56c8ff"
+ },
+ "fonts": {
+  "head": [
+   "Bahnschrift SemiBold",
+   "Bahnschrift",
+   "Segoe UI Semibold",
+   "DejaVu Sans"
+  ],
+  "num": [
+   "Consolas",
+   "DejaVu Sans Mono"
+  ]
+ },
+ "bars": {
+  "title": {
+   "fill": [
+    [
+     0,
+     "#142021"
+    ],
+    [
+     1,
+     "#0a1011"
+    ]
+   ],
+   "top": "#2c4644",
+   "bottom": "#3ee6b8",
+   "text": "#effffa",
+   "texture": "scanline"
+  },
+  "title_off": {
+   "fill": [
+    [
+     0,
+     "#0b1212"
+    ],
+    [
+     1,
+     "#060909"
+    ]
+   ],
+   "top": "#2c4644",
+   "bottom": "#3ee6b8",
+   "text": "text_muted",
+   "texture": "none"
+  }
+ },
+ "buttons": {
+  "normal": {
+   "fill": [
+    [
+     0,
+     "#18242a"
+    ],
+    [
+     1,
+     "#101819"
+    ]
+   ],
+   "hover": [
+    [
+     0,
+     "#173a33"
+    ],
+    [
+     1,
+     "#0f2420"
+    ]
+   ],
+   "pressed": [
+    [
+     0,
+     "#08100f"
+    ],
+    [
+     1,
+     "#122321"
+    ]
+   ],
+   "border": "#2c4644",
+   "hover_border": "#3ee6b8",
+   "inner": "#22383a",
+   "radius": 0,
+   "text": "text",
+   "text_hover": "#effffa"
+  },
+  "primary": {
+   "fill": [
+    [
+     0,
+     "#4cf0c3"
+    ],
+    [
+     1,
+     "#25b98f"
+    ]
+   ],
+   "hover": [
+    [
+     0,
+     "#6ff5d1"
+    ],
+    [
+     1,
+     "#2ccc9e"
+    ]
+   ],
+   "pressed": [
+    [
+     0,
+     "#1c9373"
+    ],
+    [
+     1,
+     "#2ccc9e"
+    ]
+   ],
+   "border": "#021410",
+   "hover_border": "#021410",
+   "inner": "#a8fbe4",
+   "radius": 0,
+   "text": "#1a0d03",
+   "text_hover": "#1a0d03"
+  },
+  "heading": {
+   "fill": [
+    [
+     0,
+     "#111a1b"
+    ],
+    [
+     1,
+     "#0c1314"
+    ]
+   ],
+   "hover": [
+    [
+     0,
+     "#142324"
+    ],
+    [
+     1,
+     "#0e1718"
+    ]
+   ],
+   "pressed": [
+    [
+     0,
+     "#0a1011"
+    ],
+    [
+     1,
+     "#0e1718"
+    ]
+   ],
+   "border": "#1f3030",
+   "hover_border": "#1f3030",
+   "inner": "#162324",
+   "radius": 0,
+   "text": "#5fb39c",
+   "text_hover": "accent"
+  }
+ },
+ "card": {
+  "header": "notch",
+  "border": "#2c4644",
+  "sep": "#1f3030"
+ },
+ "meter": {
+  "style": "ticks",
+  "on": "accent",
+  "off": "#16302b",
+  "lcd_bg": "#050808"
+ }
+}

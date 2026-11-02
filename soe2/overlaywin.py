@@ -18,14 +18,14 @@ OUTLINE = "#5b77ad"              # the same 1px outline as the app's windows
 BODY_BG = "#0d1424"
 
 # ---- 2.43.0 / 2.47.0: the look of the windows over the game (Overlays › Look). Four PoE2-style skins from the
-# 2.43.0 mockups - the user picked C, Runeshape parchment (the default) and wanted all four to choose from - plus the
+# 2.43.0 mockups - C, Runeshape parchment, became the default, with all four to choose from - plus the
 # Classic dark look of 2.42.
 #   parchment  the Expedition remnant's reward book: grungy parchment (made by texture(), no image file) in a dark
 #              leather binding, ink text, serif title, diamond icons
 #   relic      item / relic tooltips: near-black glass, a gold title band, a thin bronze rule
 #   carved     Inventory / Currency Exchange: stone panel, double bronze frame, a raised title plate
 #   hud        the area info top right: almost no box, a dark band between two gold hairlines, game-orange text
-#   codex      2.55.0 (the user loved the mockups): obsidian panel, bronze corner marks, small caps headings, clean
+#   codex      2.55.0 (from the mockups): obsidian panel, bronze corner marks, small caps headings, clean
 #              numbers - modern and clean but PoE
 #   minimal    2.55.0: just the basics - time, map time and the four switches, no title bar
 LOOKS = {"parchment": "Runeshape parchment (default)", "codex": "Codex", "minimal": "Minimal",
@@ -65,6 +65,19 @@ PALETTES = {
 }
 
 
+def _keep_overlay_colors():
+    """2.60.0: the looks over the game keep their own colors in every app theme (not "classic" - that one is the
+    app's look and follows the theme)."""
+    from . import themes as _th
+    for name, p in PALETTES.items():
+        if name != "classic":
+            _th.KEEP.update(v.lower() for v in p.values() if _th.is_hex(v))
+    _th.KEEP.difference_update({"#000000", "#ffffff"})
+
+
+_keep_overlay_colors()
+
+
 def pal():
     """The colors, font and shape of the windows over the game, for their content."""
     return PALETTES.get(LOOK[0], PALETTES["parchment"])
@@ -94,7 +107,7 @@ _TEX = {}
 
 
 def texture(root, w, h, seed=7, calm=False):
-    """2.47.0: a grungy parchment (the user: "too clean") - made here, no image file: the base color, fibres and
+    """2.47.0: a grungy parchment (feedback: "too clean") - made here, no image file: the base color, fibres and
     grain, a few stains and darker, burnt edges. A Tk PhotoImage (None without Pillow)."""
     key = (w // 16 * 16 + 16, h // 16 * 16 + 16, seed, calm)
     if key in _TEX:
@@ -114,7 +127,7 @@ def texture(root, w, h, seed=7, calm=False):
             r, g, b = px[x, y]
             px[x, y] = (r + n, g + n, b + n - 2)
     d = ImageDraw.Draw(img, "RGBA")
-    # 2.51.0 calm: where text sits (the user: "barely legible") - lighter grain, faint stains and fibres
+    # 2.51.0 calm: where text sits (feedback: "barely legible") - lighter grain, faint stains and fibres
     for _ in range(max(6, W * H // 6000)):                 # stains
         cx, cy, rr = rnd.randint(0, W), rnd.randint(0, H), rnd.randint(8, 40)
         d.ellipse((cx - rr, cy - rr * 0.7, cx + rr, cy + rr * 0.7),

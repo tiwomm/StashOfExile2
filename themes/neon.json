@@ -1,0 +1,230 @@
+{
+ "schema": 1,
+ "id": "neon",
+ "name": "Neon Chassis",
+ "order": 3,
+ "description": "Dark slate metal, brushed bars, neon green and cyan - a 2000s gaming client.",
+ "colors": {
+  "chassis": "#101317",
+  "surface": "#181c21",
+  "surface_raised": "#20252b",
+  "surface_sunken": "#0b0e11",
+  "surface_high": "#2a3038",
+  "border": "#2d343c",
+  "border_light": "#424b55",
+  "border_dark": "#050607",
+  "shadow": "#000000",
+  "text": "#cdd6de",
+  "text_muted": "#8c98a4",
+  "text_strong": "#f4f8fb",
+  "text_disabled": "#505962",
+  "accent": "#39e58c",
+  "accent_2": "#29d3f0",
+  "selection": "#123a2a",
+  "selection_text": "#eafff3",
+  "hover": "#232a31",
+  "stripe": "#0f1316",
+  "good": "#39e58c",
+  "warn": "#f2b33d",
+  "bad": "#ff5757",
+  "money": "#ffd45e",
+  "link": "#29d3f0"
+ },
+ "fonts": {
+  "head": [
+   "Tahoma",
+   "Segoe UI",
+   "DejaVu Sans"
+  ],
+  "num": [
+   "Lucida Console",
+   "Consolas",
+   "DejaVu Sans Mono"
+  ]
+ },
+ "bars": {
+  "title": {
+   "fill": [
+    [
+     0,
+     "#4a525c"
+    ],
+    [
+     0.5,
+     "#2c323a"
+    ],
+    [
+     1,
+     "#1b1f24"
+    ]
+   ],
+   "top": "#6b7581",
+   "bottom": "#050607",
+   "text": "text_strong",
+   "texture": "brushed"
+  },
+  "title_off": {
+   "fill": [
+    [
+     0,
+     "#292d33"
+    ],
+    [
+     0.5,
+     "#181c20"
+    ],
+    [
+     1,
+     "#0f1114"
+    ]
+   ],
+   "top": "#6b7581",
+   "bottom": "#050607",
+   "text": "text_muted",
+   "texture": "none"
+  }
+ },
+ "buttons": {
+  "normal": {
+   "fill": [
+    [
+     0,
+     "#454e58"
+    ],
+    [
+     0.5,
+     "#30373f"
+    ],
+    [
+     1,
+     "#22282e"
+    ]
+   ],
+   "hover": [
+    [
+     0,
+     "#4c5660"
+    ],
+    [
+     0.5,
+     "#353d46"
+    ],
+    [
+     1,
+     "#262c33"
+    ]
+   ],
+   "pressed": [
+    [
+     0,
+     "#15191d"
+    ],
+    [
+     1,
+     "#2a3038"
+    ]
+   ],
+   "border": "#050607",
+   "hover_border": "#39e58c",
+   "inner": "#6b7581",
+   "radius": 0,
+   "text": "text",
+   "text_hover": "#eafff3"
+  },
+  "primary": {
+   "fill": [
+    [
+     0,
+     "#57f0a2"
+    ],
+    [
+     0.5,
+     "#2fd47f"
+    ],
+    [
+     1,
+     "#1fa864"
+    ]
+   ],
+   "hover": [
+    [
+     0,
+     "#74f5b4"
+    ],
+    [
+     0.5,
+     "#3ae08a"
+    ],
+    [
+     1,
+     "#25b56d"
+    ]
+   ],
+   "pressed": [
+    [
+     0,
+     "#178350"
+    ],
+    [
+     1,
+     "#25b56d"
+    ]
+   ],
+   "border": "#03130a",
+   "hover_border": "#03130a",
+   "inner": "#b4fad6",
+   "radius": 0,
+   "text": "#1a0d03",
+   "text_hover": "#1a0d03"
+  },
+  "heading": {
+   "fill": [
+    [
+     0,
+     "#363d46"
+    ],
+    [
+     1,
+     "#22272d"
+    ]
+   ],
+   "hover": [
+    [
+     0,
+     "#3e4650"
+    ],
+    [
+     1,
+     "#272c33"
+    ]
+   ],
+   "pressed": [
+    [
+     0,
+     "#1b1f24"
+    ],
+    [
+     1,
+     "#272c33"
+    ]
+   ],
+   "border": "#050607",
+   "hover_border": "#050607",
+   "inner": "#525b66",
+   "radius": 0,
+   "text": "#9fb0bf",
+   "text_hover": "accent"
+  }
+ },
+ "card": {
+  "header": "plate",
+  "border": "#3a424b",
+  "sep": "#2d343c"
+ },
+ "meter": {
+  "style": "segments",
+  "on": "accent",
+  "off": "#14181c",
+  "lcd_bg": "#030806"
+ }
+}

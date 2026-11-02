@@ -22,8 +22,8 @@ DEFAULTS = {"overlay": True, "locked": False, "x": 60, "y": 260, "w": 230, "h": 
             "clock": True,
             "merged": True, "layout": "panel"}   # 2.39.0 clock; 2.55.0: one overlay window (merged_page.py)
 DEFAULT_KEYS = {"key_toggle": "Ctrl+Alt+S", "key_pause": "Ctrl+Alt+P",
-                "key_overlay": "F6"}           # 2.59.0 (the user): F6 shows / hides the whole overlay       # 2.10.0: set once, change them in Options
-# 2.54.0 (the user): the Session timer times your play; money lives in one place, Money Makers › Farm Ledger.
+                "key_overlay": "F6"}           # 2.59.0: F6 shows / hides the whole overlay       # 2.10.0: set once, change them in Options
+# 2.54.0: the Session timer times your play; money lives in one place, Money Makers › Farm Ledger.
 # Profit (Wealth at Stop minus at Start) is gone from here: its tiles, overlay line, options and Stop count.
 LINE_NAMES = [("session", "Session time"), ("map", "This map's time"), ("maps", "Maps done"), ("avg", "Average map")]
 
@@ -47,7 +47,7 @@ class TrackerPage:
         save_json("settings.json", SETTINGS)
 
     # ---------------- 2.44.0: Overlays - everything shown over the game, in one window
-    # 2.59.0 (the user): one screen, "Overlay" - no tabs. The session (start, numbers, maps, past sessions) on top;
+    # 2.59.0: one screen, "Overlay" - no tabs. The session (start, numbers, maps, past sessions) on top;
     # Options holds every option of the overlay: the timer, the Mechanic Helper and Notes. Looks: Settings › Appearance.
     OVH_TABS = ("Overlay",)
 
@@ -397,7 +397,7 @@ class TrackerPage:
         self.tracker_char_hint()
         op = tk.Frame(box, bg=P2)                       # 2.3.0: own row - it used to sit on top of its label
         op.grid(row=4, column=0, columnspan=3, sticky="w", pady=(8, 0))
-        # 2.52.0 (the user: opacity was here AND in Appearance): one place for how every overlay looks
+        # 2.52.0 (feedback: opacity was here AND in Appearance): one place for how every overlay looks
         tk.Label(op, text="Style, layout and opacity of the overlay:", bg=P2, fg=C["text"]).pack(side="left")
         ttk.Button(op, text="Settings › Appearance", style="Quiet.TButton",
                    command=self.appearance_open).pack(side="left", padx=(8, 0))
@@ -882,7 +882,7 @@ class TrackerPage:
                 lab.config(text=txt, fg=P["text"] if st != "off" else P["muted"])
 
     def tracker_helpers_sync(self):
-        """2.49.0 (the user: "it's a different bar, independent of the session tracker"): the bar shows whenever its
+        """2.49.0 (feedback: "it's a different bar, independent of the session tracker"): the bar shows whenever its
         switch is on - timer or not, session or not - and only while the game is in front (like every overlay)."""
         on = bool(self.tracker_cfg().get("alerts_bar", True))
         if on != bool(getattr(self, "mg_built", {}).get("helpers")) or (on and getattr(self, "mg_win", None) is None):
@@ -933,7 +933,7 @@ class TrackerPage:
         ov = getattr(self, "overlay", None)
         oc = ov.cfg if ov else {}
         tc = self.tracker_cfg()
-        # 2.57.0 (the user: every key in Settings › Hotkeys, nowhere else): the third field is the group the key
+        # 2.57.0 (feedback: every key in Settings › Hotkeys, nowhere else): the third field is the group the key
         # belongs to (a heading on the Hotkeys page); every key but Ctrl+Alt+C is set here and only here
         rows = [("Add the item under the mouse to Price checks", "Ctrl+Alt+C", "Price checks", None),
                 ("One-key copy (experimental, in game)", SETTINGS.get("quick_copy_key", ""), "Price checks",

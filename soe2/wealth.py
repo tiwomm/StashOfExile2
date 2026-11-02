@@ -128,7 +128,7 @@ def wealth_children(extra, level):
             v = {k: n for k, n in (("min", lo), ("max", hi)) if n is not None}
             out.append((with_("ilvl", v), "ilvl", f"ilvl {lo or 1}-{hi}" if hi else f"ilvl {lo}+"))
         return out
-    # 2.40.1: still over 100 (the user's tab: 201 and 220 rare tier-15 waystones in one item-level range)
+    # 2.40.1: still over 100 (a player's tab: 201 and 220 rare tier-15 waystones in one item-level range)
     if level == "ilvl":                            # every single item level in the range
         r = extra.get("ilvl") or {}
         lo, hi = int(r.get("min") or 1), int(r.get("max") or ILVL_TOP)

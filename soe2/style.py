@@ -142,19 +142,20 @@ def _switch_img(root, on, hover=False, disabled=False, w=34, h=18, gap=8):
 
 
 def switches(root, s):
-    """2.49.0 (the user: "anywhere there's a checkbox... a modern slider in its place"): every ttk.Checkbutton
+    """2.49.0 (feedback: "anywhere there's a checkbox... a modern slider in its place"): every ttk.Checkbutton
     (TCheckbutton and its Bar. / Mod. styles) shows a switch instead of a tick box. Same widgets, same variables."""
     imgs = {(on, hv, ds): _switch_img(root, on, hv, ds) for on in (0, 1) for hv in (0, 1) for ds in (0, 1)}
-    _SWITCH[id(root)] = imgs                 # (kept, or Tk drops the pictures)
+    name = "Switch.indicator.%s" % (theme_color(C["accent"]) + theme_color(C["line"])).replace("#", "")
+    _SWITCH[(id(root), name)] = imgs          # (kept, or Tk drops the pictures)
     try:
-        s.element_create("Switch.indicator", "image", imgs[(0, 0, 0)],
+        s.element_create(name, "image", imgs[(0, 0, 0)],
                          ("disabled", "selected", imgs[(1, 0, 1)]), ("disabled", imgs[(0, 0, 1)]),
                          ("active", "selected", imgs[(1, 1, 0)]), ("selected", imgs[(1, 0, 0)]),
                          ("active", imgs[(0, 1, 0)]), sticky="w")
     except tk.TclError:
-        return                                # (already made for this root)
+        pass                                  # (already made for this look - 2.60.0: still lay it out again)
     layout = [("Checkbutton.padding", {"sticky": "nswe", "children": [
-        ("Switch.indicator", {"side": "left", "sticky": ""}),
+        (name, {"side": "left", "sticky": ""}),
         ("Checkbutton.focus", {"side": "left", "sticky": "w", "children": [
             ("Checkbutton.label", {"sticky": "nswe"})]})]})]
     for name in ("TCheckbutton", "Bar.TCheckbutton", "Mod.TCheckbutton"):
@@ -163,20 +164,40 @@ def switches(root, s):
 
 
 def setup_style(root):
+    """The ttk styles, from the running theme pack (2.60.0). Called at start and again after a live theme swap."""
+    from . import themes as TH
+    _STYLE_LOG["quiet"] = True
+    try:
+        with TH.raw():                  # every color here is the running pack's already
+            _setup_style(root, TH)
+    finally:
+        _STYLE_LOG["quiet"] = False
+
+
+def _setup_style(root, TH):
     root.configure(bg=C["bg"])
     s = ttk.Style(root)
     s.theme_use("clam")
+    t = TH.ST.theme
+    ns = "%s_%s" % (t.id, C["accent"].lstrip("#"))          # element names: per pack + accent (ttk can't remake one)
     s.configure(".", background=C["bg"], foreground=C["text"], fieldbackground=C["odd"],
                 bordercolor=C["line"], lightcolor=C["bg"], darkcolor=C["bg"], troughcolor=C["odd"])
+    # ---- list headings: a bevelled face from the pack
+    hh = 34
+    head = ns + ".Treeheading.face"
+    TH.make_element(root, s, head, t, "heading", hh, [("pressed", "p"), ("active", "h")])
+    s.layout("Treeview.Heading", [(head, {"sticky": "nswe", "children": [("Treeheading.padding", {
+        "sticky": "nswe", "children": [("Treeheading.image", {"side": "right", "sticky": ""}),
+                                       ("Treeheading.text", {"sticky": "we"})]})]})])
     s.configure("Treeview", background=C["panel"], fieldbackground=C["panel"], foreground=C["text"],
                 rowheight=30, borderwidth=0, font=("Segoe UI", 10))
-    s.configure("Treeview.Heading", background="#22365a", foreground="#cfe0ff", relief="raised",
-                font=("Segoe UI", 9, "bold"), padding=(8, 8), borderwidth=1, bordercolor="#0b1424",
-                lightcolor="#4f6c9e", darkcolor="#15233d")
-    s.map("Treeview", background=[("selected", C["sel"])], foreground=[("selected", "#ffffff")])
-    s.map("Treeview.Heading", background=[("active", "#2f4a7c")])
+    s.configure("Treeview.Heading", foreground=TH.text_of(t, "heading", "text", C["text"]),
+                font=("Segoe UI", 9, "bold"), padding=(8, 8))
+    sel_fg = t.c("selection_text", "#ffffff")
+    s.map("Treeview", background=[("selected", C["sel"])], foreground=[("selected", sel_fg)])
+    s.map("Treeview.Heading", foreground=[("active", TH.text_of(t, "heading", "text_hover", t.c("text_strong")))])
     s.configure("TNotebook", background=C["bg"], borderwidth=1, bordercolor=C["line"], lightcolor=C["bg"],
-                darkcolor=C["bg"], tabmargins=(0, 6, 0, 0))
+                darkcolor=C["bg"], tabmargins=(0, 8, 0, 0))
     s.configure("TNotebook.Tab", background=C["bg"], foreground=C["muted"], padding=(24, 8),
                 font=("Segoe UI", 10, "bold"), borderwidth=1, bordercolor=C["bg"], lightcolor=C["bg"],
                 darkcolor=C["bg"], focuscolor=C["bg"])
@@ -193,13 +214,17 @@ def setup_style(root):
     s.layout("TNotebook.Tab", [("Notebook.tab", {"sticky": "nswe", "children": [
         ("Notebook.padding", {"side": "top", "sticky": "nswe", "children": [
             ("Notebook.label", {"side": "top", "sticky": ""})]})]})])         # same as default minus the focus ring
-    s.configure("TCombobox", fieldbackground=C["odd"], background="#25395f", foreground=C["text"],
-                arrowcolor="#cfe0ff", bordercolor=C["line"], lightcolor="#4f6c9e", darkcolor="#15233d", padding=4)
+    nb = TH.button_spec(t, "normal")
+    face_mid = TH.grad_at(t.grad(nb["fill"]), 0.5)
+    field = dict(fieldbackground=C["odd"], foreground=C["text"], bordercolor=C["line"],
+                 lightcolor=mix(C["odd"], "#000000", 0.4), darkcolor=C["gold_dim"], insertcolor=C["text"])
+    s.configure("TCombobox", background=face_mid, arrowcolor=C["text"], padding=4, **field)
     s.map("TCombobox", fieldbackground=[("readonly", C["odd"])], foreground=[("readonly", C["text"])],
-          background=[("active", "#2f4a7c")])
+          background=[("active", TH.grad_at(t.grad(nb["hover"]), 0.5))], bordercolor=[("focus", C["accent"])])
     root.option_add("*TCombobox*Listbox.background", C["panel2"])
     root.option_add("*TCombobox*Listbox.foreground", C["text"])
     root.option_add("*TCombobox*Listbox.selectBackground", C["sel"])
+    root.option_add("*TCombobox*Listbox.selectForeground", sel_fg)
     s.configure("TCheckbutton", background=C["bg"], foreground=C["text"], font=("Segoe UI", 10))
     s.map("TCheckbutton", background=[("active", C["bg"])])
     s.configure("Bar.TCheckbutton", background=C["panel"], foreground=C["text"], font=("Segoe UI", 10))
@@ -207,51 +232,46 @@ def setup_style(root):
     s.configure("Mod.TCheckbutton", background=C["panel"], foreground=C["text"])
     s.map("Mod.TCheckbutton", background=[("active", C["panel"])])
     switches(root, s)                         # 2.49.0: every on / off box is a modern switch
-    s.configure("TSpinbox", fieldbackground=C["odd"], background="#25395f", foreground=C["text"],
-                arrowcolor="#cfe0ff", bordercolor=C["line"], lightcolor="#4f6c9e", darkcolor="#15233d")
-    # raised steel buttons: the light edge top-left and dark edge bottom-right make the bevel
-    s.configure("TButton", background="#25395f", foreground="#e6eeff", padding=(12, 8), borderwidth=1, relief="raised",
-                bordercolor="#0b1424", lightcolor="#5578b4", darkcolor="#16233f", focuscolor="#25395f",
-                font=("Segoe UI", 10))
-    s.map("TButton", background=[("pressed", "#1b2c4d"), ("active", "#2f4a7c")],
-          lightcolor=[("pressed", "#16233f"), ("active", "#6c90cc")], darkcolor=[("pressed", "#5578b4")],
-          foreground=[("active", "#ffffff"), ("disabled", C["muted"])], relief=[("pressed", "sunken")])
-    a = C["accent"]                     # 2.0.0: the primary (accent) button follows Settings > Appearance > Accent colour
-    btn, dark, light = mix(a, "#000000", 0.15), mix(a, "#000000", 0.38), mix(a, "#ffffff", 0.35)
-    _THEME["keep"] |= {btn, dark, light, mix(a, "#ffffff", 0.08), mix(a, "#ffffff", 0.5), mix(a, "#000000", 0.65)}
-    s.configure("Primary.TButton", background=btn, foreground=text_on(btn),
-                bordercolor=mix(a, "#000000", 0.65), lightcolor=light, darkcolor=dark, focuscolor=btn,
-                font=("Segoe UI", 10, "bold"))
-    s.map("Primary.TButton", background=[("pressed", dark), ("active", mix(a, "#ffffff", 0.08)), ("disabled", C["panel2"])],
-          lightcolor=[("pressed", dark), ("active", mix(a, "#ffffff", 0.5))], darkcolor=[("pressed", light)],
-          foreground=[("disabled", C["muted"])])
-    s.configure("Accent.TButton", **{k: s.lookup("Primary.TButton", k) for k in
-                ("background", "foreground", "bordercolor", "lightcolor", "darkcolor", "focuscolor", "font")})
-    s.map("Accent.TButton", **{k: s.map("Primary.TButton", k) for k in ("background", "lightcolor", "darkcolor", "foreground")})
-    # (Accent.TButton = the old name of Primary, kept so nothing breaks)
-    # 2.34.0 button hierarchy: Primary (one per area: the main thing to do), TButton = secondary, Quiet (cancel, back,
-    # small helpers - no bevel), Danger (deletes or clears something)
+    s.configure("TSpinbox", background=face_mid, arrowcolor=C["text"], **field)
+    s.map("TSpinbox", bordercolor=[("focus", C["accent"])])
+    # ---- buttons: bevelled faces drawn from the pack (gradient, light inner edge, round corners on some packs)
+    bh = 34
+    for style_name, spec, states in (
+            ("TButton", "normal", [("disabled", "d"), ("pressed", "p"), ("active", "h")]),
+            ("Primary.TButton", "primary", [("disabled", "d"), ("pressed", "p"), ("active", "h")]),
+            ("Danger.TButton", "danger", [("disabled", "d"), ("pressed", "p"), ("active", "h")])):
+        el = "%s.%s.face" % (ns, style_name.split(".")[0] if "." in style_name else "Button")
+        TH.make_element(root, s, el, t, spec, bh, states)
+        s.layout(style_name, [(el, {"sticky": "nswe", "children": [("Button.padding", {"sticky": "nswe", "children": [
+            ("Button.label", {"sticky": "nswe"})]})]})])
+    face = TH.grad_at(t.grad(TH.button_spec(t, "primary")["fill"]), 0.5)
+    pri_text = TH.text_of(t, "primary", "text", text_on(face))
+    s.configure("TButton", foreground=TH.text_of(t, "normal", "text", C["text"]), padding=(12, 8),
+                font=("Segoe UI", 10), anchor="center")
+    s.map("TButton", foreground=[("disabled", C["muted"]), ("active", TH.text_of(t, "normal", "text_hover", t.c("text_strong")))])
+    s.configure("Primary.TButton", foreground=pri_text, padding=(12, 8), font=("Segoe UI", 10, "bold"), anchor="center")
+    s.map("Primary.TButton", foreground=[("disabled", C["muted"]), ("active", TH.text_of(t, "primary", "text_hover", pri_text))])
+    s.layout("Accent.TButton", s.layout("Primary.TButton"))   # (Accent.TButton = the old name of Primary)
+    s.configure("Accent.TButton", foreground=pri_text, padding=(12, 8), font=("Segoe UI", 10, "bold"), anchor="center")
+    s.map("Accent.TButton", foreground=[("disabled", C["muted"])])
+    dface = TH.grad_at(t.grad(TH.button_spec(t, "danger")["fill"]), 0.5)
+    s.configure("Danger.TButton", foreground=TH.text_of(t, "danger", "text", text_on(dface, "#ffe9e6")), padding=(12, 8),
+                font=("Segoe UI", BODY), anchor="center")
+    s.map("Danger.TButton", foreground=[("disabled", C["muted"])])
+    # 2.34.0 button hierarchy: Primary (one per area), TButton = secondary, Quiet (no bevel), Danger (deletes)
     s.configure("Quiet.TButton", background=C["panel"], foreground=C["steel"], relief="flat", borderwidth=1,
                 bordercolor=C["panel"], lightcolor=C["panel"], darkcolor=C["panel"], focuscolor=C["panel"],
                 padding=(12, 8), font=("Segoe UI", BODY))
     s.map("Quiet.TButton", background=[("pressed", C["odd"]), ("active", C["panel2"])],
           bordercolor=[("active", C["line"])], lightcolor=[("active", C["panel2"])], darkcolor=[("active", C["panel2"])],
           foreground=[("active", C["text"]), ("disabled", C["muted"])])
-    r = C["red"]
-    dbg = mix(r, "#000000", 0.55)
-    _THEME["keep"] |= {dbg}
-    s.configure("Danger.TButton", background=dbg, foreground="#ffe9e6", bordercolor=mix(r, "#000000", 0.8),
-                lightcolor=mix(r, "#000000", 0.3), darkcolor=mix(r, "#000000", 0.7), focuscolor=dbg,
-                font=("Segoe UI", BODY))
-    s.map("Danger.TButton", background=[("pressed", mix(r, "#000000", 0.7)), ("active", mix(r, "#000000", 0.42)),
-                                        ("disabled", C["panel2"])],
-          lightcolor=[("pressed", mix(r, "#000000", 0.7)), ("active", mix(r, "#000000", 0.15))],
-          foreground=[("active", "#ffffff"), ("disabled", C["muted"])], relief=[("pressed", "sunken")])
-    s.configure("TEntry", fieldbackground=C["odd"], foreground=C["text"], borderwidth=1, bordercolor=C["line"],
-                lightcolor="#15233d", darkcolor="#070b13", padding=4)
-    s.configure("Vertical.TScrollbar", background="#2c4170", troughcolor=C["odd"], borderwidth=1, bordercolor="#15233d",
-                arrowcolor="#9fb6dd", lightcolor="#4f6c9e", darkcolor="#15233d")
-    s.map("Vertical.TScrollbar", background=[("active", "#3c5a96")])
+    s.configure("TEntry", padding=4, **field)
+    s.map("TEntry", bordercolor=[("focus", C["accent"])])
+    for o in ("Vertical", "Horizontal"):
+        s.configure(o + ".TScrollbar", background=face_mid, troughcolor=C["odd"], borderwidth=1,
+                    bordercolor=t.c("border_dark"), arrowcolor=C["steel"], lightcolor=C["gold_dim"],
+                    darkcolor=t.c("border_dark"))
+        s.map(o + ".TScrollbar", background=[("active", TH.grad_at(t.grad(nb["hover"]), 0.5))])
     s.configure("Sash", sashthickness=7, gripcount=0, background=C["line"])
 
 
@@ -735,71 +755,47 @@ class KeyCapture(tk.Label):
 # A theme recolours the whole app in one place: every colour handed to Tk passes through theme_color(), which moves the
 # app's steel-blue / navy tones to the theme's hue (lightness kept, so contrast stays the same). Colours that mean
 # something (item rarities, green / red, gold for money, the accent) are left alone. Applied at start-up.
-import colorsys
 import re as _re
 
-THEMES = {          # name: (label, hue in degrees or None, saturation factor)
-    "midnight": ("Midnight blue (default)", None, 1.0),
-    "ember": ("Ember (warm brown)", 26, 0.75),
-    "forest": ("Forest (green)", 150, 0.7),
-    "amethyst": ("Amethyst (purple)", 272, 0.85),
-    "crimson": ("Crimson (dark red)", 352, 0.7),
-    "graphite": ("Graphite (gray)", 215, 0.12),
-}
-ACCENTS = {         # name: (label, colour)
-    "orange": ("Orange (default)", "#ffa63d"),
+# ------------------------------------------------------------------ 2.60.0: theme packs (soe2/themes.py, themes/*.json)
+from . import themes as _themes
+
+THEMES = {t.id: (t.name, None, 1.0) for t in _themes.ordered()}     # id: (label, -, -) - the old shape, kept
+ACCENTS = {         # name: (label, colour) - optional: overrides the pack's own accent
+    "orange": ("Orange", "#ffa63d"),
     "gold": ("Gold", "#f2c94c"),
     "teal": ("Teal", "#3fd0c0"),
     "rose": ("Rose", "#ff7a9c"),
     "ice": ("Ice blue", "#7cc7ff"),
     "lime": ("Lime", "#a8e05f"),
 }
-_THEME = {"hue": None, "sat": 1.0, "keep": set(), "cache": {}}
-_HEX = _re.compile(r"^#[0-9a-fA-F]{6}$")
+THEME_ACCENT = "theme"                 # SETTINGS accent: "theme" = the pack's own (default from 2.60.0)
+_STYLE_LOG = {"quiet": False, "calls": {}}     # ttk style calls made outside setup_style - replayed after a swap
+_THEME = {"keep": set()}               # (old name, kept for code that adds to it)
 
 
 def theme_color(c):
-    """A color as the current theme shows it."""
-    if _THEME["hue"] is None or not isinstance(c, str) or not _HEX.match(c):
-        return c
-    low = c.lower()
-    hit = _THEME["cache"].get(low)
-    if hit:
-        return hit
-    out = low
-    if low not in _THEME["keep"] and low not in _THEME.setdefault("made", set()):   # (made: already recoloured)
-        r, g, b = (int(low[i:i + 2], 16) / 255 for i in (1, 3, 5))
-        h, l_, s = colorsys.rgb_to_hls(r, g, b)
-        if 0.50 <= h <= 0.72 and s > 0.06:                     # the app's blues (180° - 260°)
-            r, g, b = colorsys.hls_to_rgb(_THEME["hue"] / 360, l_, min(1, s * _THEME["sat"]))
-            out = "#%02x%02x%02x" % tuple(round(v * 255) for v in (r, g, b))
-    _THEME["cache"][low] = out
-    _THEME["made"].add(out)
-    return out
+    """A color as the running theme shows it (every color given to Tk passes here)."""
+    return _themes.tone(c)
 
 
-def apply_look(theme="midnight", accent="orange", scale=100, root=None):
-    """Call once at start-up, before any window is built."""
+def _accent(accent):
+    if not accent or accent == THEME_ACCENT:
+        return None
+    return ACCENTS.get(accent, (None, None))[1]
+
+
+def apply_look(theme=None, accent=THEME_ACCENT, scale=100, root=None):
+    """Call once at start-up, before any window is built. relook() swaps it later, live."""
     import tkinter.ttk as _ttk
-    old_accent = C["accent"]
-    acc = ACCENTS.get(accent, ACCENTS["orange"])[1]
-    C["accent"] = acc
-    _, hue, sat = THEMES.get(theme, THEMES["midnight"])
-    _THEME.update(hue=hue, sat=sat, cache={}, made=set())
-    _THEME["keep"] = {v.lower() for k, v in C.items() if k in ("rare", "magic", "blue", "purple", "green", "red",
-                                                                 "orange", "good", "accent")}
-    _THEME["keep"] |= {old_accent.lower(), "#6ea8ff", "#ffffff", "#ffe9e6"}
-    # 2.40.0: the see-through key of the banners over the game (alerts_page.TRANSPARENT) must never be recoloured -
-    # it's a dark blue to the theme, so Amethyst etc. turned the window's background #020103 while the key stayed
-    # #010203: the Breach / Ritual banners (and 2.37.0's remnant tags) showed a black box instead of see-through.
-    _THEME["keep"] |= {"#010203"}
+    if not _themes.ST.base:
+        _themes.init(C, _BASE)
+    _themes.set_theme(_themes.packs()[_themes.pick_id(theme)], _accent(accent))
     if not getattr(tk.Misc, "_soe2_themed", False):          # every colour given to Tk goes through theme_color
         orig = tk.Misc._options
 
         def _options(self, cnf, kw=None):
             res = orig(self, cnf, kw)
-            if _THEME["hue"] is None:
-                return res
             return tuple(theme_color(v) if isinstance(v, str) else v for v in res)
         tk.Misc._options = _options
         oa = tk.Misc.option_add
@@ -818,6 +814,18 @@ def apply_look(theme="midnight", accent="orange", scale=100, root=None):
             return tuple(hexes.sub(lambda m_: theme_color(m_.group(0)), v) if isinstance(v, str) else v
                          for v in fm(*a, **k))
         _ttk._format_optdict, _ttk._format_mapdict = _fo, _fm
+        sc, sm = _ttk.Style.configure, _ttk.Style.map
+
+        def _sc(self, style, query_opt=None, **kw):            # 2.60.0: remember style calls made outside
+            if kw and query_opt is None and not _STYLE_LOG["quiet"]:   # setup_style, to make them again after a swap
+                _STYLE_LOG["calls"].setdefault(("configure", style), {}).update(kw)
+            return sc(self, style, query_opt, **kw)
+
+        def _sm(self, style, query_opt=None, **kw):
+            if kw and query_opt is None and not _STYLE_LOG["quiet"]:
+                _STYLE_LOG["calls"].setdefault(("map", style), {}).update(kw)
+            return sm(self, style, query_opt, **kw)
+        _ttk.Style.configure, _ttk.Style.map = _sc, _sm
         tk.Misc._soe2_themed = True
     if root is not None and scale and scale != 100 and not getattr(root, "_soe2_scaled", False):
         root._soe2_scaled = True                               # text size: Tk draws point sizes bigger / smaller
@@ -826,3 +834,29 @@ def apply_look(theme="midnight", accent="orange", scale=100, root=None):
             root.tk.call("tk", "scaling", base * scale / 100)
         except Exception:
             pass
+    return _themes.ST.theme
+
+
+def relook(root, theme, accent=THEME_ACCENT):
+    """2.60.0: swap the theme while the app runs - every window, list, canvas and menu is re-colored in place."""
+    import time as _t
+    t0 = _t.time()
+    old = _themes.snapshot()
+    _themes.set_theme(_themes.packs()[_themes.pick_id(theme)], _accent(accent))
+    tr = _themes._translator(old)
+    n = _themes.walk(root, tr)
+    setup_style(root)
+    s = ttk.Style(root)
+    _STYLE_LOG["quiet"] = True
+    try:
+        for (how, style), kw in list(_STYLE_LOG["calls"].items()):
+            kw = ({k: (tr(("style", style, k), v) if _themes.is_hex(v) else v) for k, v in kw.items()}
+                  if how == "configure" else kw)
+            try:
+                (s.configure if how == "configure" else s.map)(style, **kw)
+            except Exception:
+                pass
+    finally:
+        _STYLE_LOG["quiet"] = False
+    _themes.notify()
+    return n, _t.time() - t0

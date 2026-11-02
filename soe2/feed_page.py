@@ -1,4 +1,4 @@
-"""Mod book › Manual feed (2.51.0). The user: "take the information from an already expensive tablet, paste it into the
+"""Mod book › Manual feed (2.51.0). The idea: "take the information from an already expensive tablet, paste it into the
 program with the price, and the program learns that as an expensive tablet - manual feed the learning system on top
 of the way it already works."
 

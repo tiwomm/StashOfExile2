@@ -25,7 +25,7 @@ import sys
 CREDIT_NAME = "PoE Ancients Price Helper by Pedro Quitério"
 CREDIT_URL = "https://github.com/pedro-quiterio/PoeAncientsPriceHelper"
 DEFAULT_KEY = "Ctrl+Alt+R"
-SHOW_SECS = 12                    # 2.56.2 (the user: "on screen too long"): was 30
+SHOW_SECS = 12                    # 2.56.2 (feedback: "on screen too long"): was 30
 MATCH = 0.84                      # how close an OCR'd line must be to an item name (difflib ratio)
 LAST_WORD = 0.75                  # ... and its last word to the name's last word (2.40.0)
 
@@ -166,7 +166,7 @@ def price_lines(lines, names, value_of):
 
 
 # ================================================================ Auto: where the list is (like the other watchers)
-# The remnant's reward book opens at the left of the game (seen on a 2000x1125 screenshot from the user, Nov 2026:
+# The remnant's reward book opens at the left of the game (seen on a 2000x1125 screenshot, Nov 2026:
 # reward lines at x 44-560, y 110-740). The game scales its UI with the window's HEIGHT and anchors this panel to the
 # left, so the area is kept in units of the game's height from its top-left corner - right for any resolution or
 # aspect ratio (16:9, 21:9 ...), the same way the Delirium and Ritual watchers find their spot.

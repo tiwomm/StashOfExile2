@@ -1,0 +1,236 @@
+{
+ "schema": 1,
+ "id": "crypt",
+ "name": "Gilded Crypt",
+ "order": 5,
+ "description": "Gothic stone and leather, warm gold, deep recessed lists.",
+ "colors": {
+  "chassis": "#070605",
+  "surface": "#120f0c",
+  "surface_raised": "#1a1510",
+  "surface_sunken": "#080706",
+  "surface_high": "#2a2118",
+  "border": "#3a2e20",
+  "border_light": "#6b5434",
+  "border_dark": "#000000",
+  "shadow": "#000000",
+  "text": "#d9c9a6",
+  "text_muted": "#8f7d5f",
+  "text_strong": "#f3e3be",
+  "text_disabled": "#5a4d39",
+  "accent": "#d2a24c",
+  "accent_2": "#b3271f",
+  "selection": "#33240f",
+  "selection_text": "#ffe7b0",
+  "hover": "#211a12",
+  "stripe": "#0d0b09",
+  "good": "#6fbf4a",
+  "warn": "#e0a040",
+  "bad": "#f05a4a",
+  "money": "#e8c060",
+  "link": "#c9a35a"
+ },
+ "fonts": {
+  "head": [
+   "Palatino Linotype",
+   "Book Antiqua",
+   "Georgia",
+   "DejaVu Serif"
+  ],
+  "num": [
+   "Palatino Linotype",
+   "Book Antiqua",
+   "Georgia",
+   "DejaVu Serif"
+  ]
+ },
+ "bars": {
+  "title": {
+   "fill": [
+    [
+     0,
+     "#2e241a"
+    ],
+    [
+     0.5,
+     "#1d1711"
+    ],
+    [
+     1,
+     "#0e0b08"
+    ]
+   ],
+   "top": "#8a6a3a",
+   "top2": "#3d2f1c",
+   "bottom": "#8a6a3a",
+   "bottom2": "#3d2f1c",
+   "text": "#e8c878",
+   "texture": "stone"
+  },
+  "title_off": {
+   "fill": [
+    [
+     0,
+     "#19140e"
+    ],
+    [
+     0.5,
+     "#100d09"
+    ],
+    [
+     1,
+     "#080604"
+    ]
+   ],
+   "top": "#8a6a3a",
+   "top2": "#3d2f1c",
+   "bottom": "#8a6a3a",
+   "bottom2": "#3d2f1c",
+   "text": "text_muted",
+   "texture": "none"
+  }
+ },
+ "buttons": {
+  "normal": {
+   "fill": [
+    [
+     0,
+     "#3e3122"
+    ],
+    [
+     0.5,
+     "#2a2117"
+    ],
+    [
+     1,
+     "#1a140e"
+    ]
+   ],
+   "hover": [
+    [
+     0,
+     "#4d3c28"
+    ],
+    [
+     0.5,
+     "#33281b"
+    ],
+    [
+     1,
+     "#1f1811"
+    ]
+   ],
+   "pressed": [
+    [
+     0,
+     "#120e0a"
+    ],
+    [
+     1,
+     "#2a2117"
+    ]
+   ],
+   "border": "#6b5434",
+   "hover_border": "#d2a24c",
+   "inner": "#5e4a30",
+   "radius": 0,
+   "text": "#e0cfa8",
+   "text_hover": "#ffe7b0"
+  },
+  "primary": {
+   "fill": [
+    [
+     0,
+     "#e6be6a"
+    ],
+    [
+     0.5,
+     "#c08f3c"
+    ],
+    [
+     1,
+     "#8f6526"
+    ]
+   ],
+   "hover": [
+    [
+     0,
+     "#f0cd80"
+    ],
+    [
+     0.5,
+     "#cf9d47"
+    ],
+    [
+     1,
+     "#9c6f2b"
+    ]
+   ],
+   "pressed": [
+    [
+     0,
+     "#7a551f"
+    ],
+    [
+     1,
+     "#a8782f"
+    ]
+   ],
+   "border": "#2a1a08",
+   "hover_border": "#2a1a08",
+   "inner": "#f7e0a6",
+   "radius": 0,
+   "text": "#1a1006",
+   "text_hover": "#1a1006"
+  },
+  "heading": {
+   "fill": [
+    [
+     0,
+     "#2a2117"
+    ],
+    [
+     1,
+     "#16110c"
+    ]
+   ],
+   "hover": [
+    [
+     0,
+     "#33281b"
+    ],
+    [
+     1,
+     "#1b150f"
+    ]
+   ],
+   "pressed": [
+    [
+     0,
+     "#120e0a"
+    ],
+    [
+     1,
+     "#1b150f"
+    ]
+   ],
+   "border": "#000000",
+   "hover_border": "#000000",
+   "inner": "#4a3a26",
+   "radius": 0,
+   "text": "#c9a35a",
+   "text_hover": "#f3d58a"
+  }
+ },
+ "card": {
+  "header": "ornate",
+  "border": "#6b5434",
+  "sep": "#4a3a26"
+ },
+ "meter": {
+  "style": "runes",
+  "on": "#d2a24c",
+  "off": "#1f1912",
+  "lcd_bg": "#080706"
+ }
+}

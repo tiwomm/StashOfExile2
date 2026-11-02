@@ -21,6 +21,14 @@ NEXT = [
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.60.0": [
+        "Themes: ten looks for the whole app in Settings › Appearance - click one and it changes at once, nothing "
+        "restarts. Emberforge (iron, embers and blue rune-glow) is the new default; Midnight Steel is the old look.",
+        "Bevelled buttons, list headings and title bars drawn by each theme. Icons and layout stay the same.",
+        "The trade limits at the bottom right are meters now (and in the limits window); mod rolls too.",
+        "Price checks: the item shows as a card at the top of the side panel, with tabs Item / How it's priced / Raw.",
+        "A new app icon: a stash chest with a toolbox lid.",
+    ],
     "2.59.0": [
         "The overlay is always one window. Pick Style and Layout (Panel or Strip) in Settings › Appearance.",
         "Session timer is now Overlay: the timer, Mechanic Helper and Notes on one screen. F6 shows / hides the whole "

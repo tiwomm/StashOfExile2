@@ -104,8 +104,7 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         root.minsize(1000, 560)
         root.bind("<Configure>", self._note_window, add="+")
         from .style import apply_look                   # 2.0.0: Settings > Appearance (theme, accent, text size)
-        apply_look(SETTINGS.get("theme", "midnight"), SETTINGS.get("accent", "orange"),
-                   int(SETTINGS.get("ui_scale", 100) or 100), root)
+        apply_look(*look_settings(), root)
         root.configure(bg=C["bg"])
         from . import overlaywin as _ow                  # 2.43.0: the look of the windows over the game
         _ow.LOOK[0] = SETTINGS.get("overlay_look") if SETTINGS.get("overlay_look") in _ow.LOOKS else "parchment"
@@ -378,9 +377,22 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
 
         # ---- status line (above the taskbar): messages, exchange rates, trade-site limits
         strip = self.shell.strip
+        from . import themes as _th
         self.limit_lbl = tk.Label(strip, text="", bg=C["bg"], fg=C["muted"], padx=16, cursor="hand2", font=(MONO, 9))
-        self.limit_lbl.pack(side="right")
-        self.limit_lbl.bind("<Button-1>", self.open_limits)
+        self.limit_lbl.bind("<Button-1>", self.open_limits)      # (2.60.0: the meters below say it; kept for code)
+        self.limit_meters, self.limit_counts = {}, {}             # 2.60.0: the trade limits as the theme's meters
+        tk.Frame(strip, bg=C["bg"], width=8).pack(side="right")
+        for cls in ("fetch", "search"):
+            cnt = tk.Label(strip, text="", bg=C["bg"], fg=C["muted"], cursor="hand2", font=(MONO, 9))
+            cnt.pack(side="right", padx=(4, 0))
+            m = _th.Meter(strip, 0.0, width=72, height=14, bg=C["bg"])
+            m.pack(side="right", padx=(4, 0))
+            lab = tk.Label(strip, text=cls.title(), bg=C["bg"], fg=C["muted"], cursor="hand2", font=("Segoe UI", 9))
+            lab.pack(side="right", padx=(16, 0))
+            for w in (cnt, m, lab):
+                w.bind("<Button-1>", self.open_limits)
+            m.configure(cursor="hand2")
+            self.limit_meters[cls], self.limit_counts[cls] = m, cnt
         self.rates_lbl = tk.Label(strip, text="Rates: …", bg=C["bg"], fg=C["muted"], padx=8, cursor="hand2", font=(MONO, 9))
         self.rates_lbl.pack(side="right")
         self.rates_lbl.bind("<Button-1>", self.open_rates)
@@ -1021,15 +1033,37 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
 
 
         from .style import ACCENTS, THEMES
-        row = section("Appearance", "Look of the app", "Colors and text size for every window. Changes take effect "
-                                                       "when the app restarts (Restart now does it for you; your "
-                                                       "windows and lists are kept).")
+        from . import themes as _th
+        row = section("Appearance", "Theme", "The look of every window. Click one - it changes at once, nothing "
+                                             "restarts. Every theme keeps the same icons and layout; only colors, "
+                                             "bevels and textures change. Your own: put a .json in the themes "
+                                             "folder of your data folder (Settings › Advanced › Your data).")
+        self.set_anchors["theme"] = row.master
+        self.look_vars = {"theme": tk.StringVar(value=THEMES.get(SETTINGS.get("theme"), (_th.DEFAULT,))[0])}
+        gal = tk.Frame(row, bg=P2)
+        gal.pack(fill="x")
+        self.look_cards = {}
+        for n, t in enumerate(_th.ordered()):
+            card = tk.Frame(gal, bg=P2, highlightthickness=2, highlightbackground=P2, cursor="hand2")
+            card.grid(row=n // 4, column=n % 4, padx=(0, 8), pady=(0, 8), sticky="nw")
+            cv = _th.self_painted(tk.Canvas(card, width=168, height=92, highlightthickness=0, bd=0, cursor="hand2"))
+            cv.pack()
+            _th.preview(cv, t)
+            name = tk.Label(card, text=t.name, bg=P2, fg=C["text"], font=("Segoe UI", 10, "bold"), anchor="w")
+            name.pack(fill="x", pady=(4, 0))
+            tip = t.data.get("description", "")
+            if tip:
+                from .style import Tooltip
+                Tooltip(card, tip)
+            for w in (card, cv, name):
+                w.bind("<Button-1>", lambda e, tid=t.id: self.pick_theme(tid))
+            self.look_cards[t.id] = card
+        self._paint_look_cards()
         grid = tk.Frame(row, bg=P2)
-        grid.pack(fill="x")
-        self.look_vars = {}
+        grid.pack(fill="x", pady=(8, 0))
         for r, (key, label, options, default) in enumerate((
-                ("theme", "Theme", {k: v[0] for k, v in THEMES.items()}, "midnight"),
-                ("accent", "Accent color", {k: v[0] for k, v in ACCENTS.items()}, "orange"),
+                ("accent", "Accent color", {"theme": "The theme's own", **{k: v[0] for k, v in ACCENTS.items()}},
+                 "theme"),
                 ("ui_scale", "Text size", {90: "Smaller (90%)", 100: "Normal (100%)", 115: "Bigger (115%)",
                                            130: "Biggest (130%)"}, 100))):
             tk.Label(grid, text=label, bg=P2, fg=C["text"]).grid(row=r, column=0, sticky="w", padx=(0, 8), pady=4)
@@ -1039,25 +1073,20 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
             cb.grid(row=r, column=1, sticky="w", pady=4)
             cb.bind("<<ComboboxSelected>>", lambda e, k=key, o=options, vv=v: self.on_look(k, o, vv))
             self.look_vars[key] = v
-        if THEMES:
-            sw = tk.Frame(grid, bg=P2)
-            sw.grid(row=0, column=2, rowspan=2, sticky="w", padx=(16, 0))
-            self.look_swatch = tk.Canvas(sw, width=150, height=40, bg=P2, highlightthickness=0)
-            self.look_swatch.pack()
-            self.draw_look_swatch()
         brow = tk.Frame(row, bg=P2)
         brow.pack(fill="x", pady=(8, 0))
         self.look_restart = ttk.Button(brow, text="Restart now", style="Primary.TButton", command=self.restart_app,
                                        state="disabled")
         self.look_restart.pack(side="left")
-        self.look_msg = tk.Label(brow, text="", bg=P2, fg=C["muted"])
+        self.look_msg = tk.Label(brow, text="Text size changes after a restart (your windows and lists are kept).",
+                                 bg=P2, fg=C["muted"])
         self.look_msg.pack(side="left", padx=8)
         self.splash_var = tk.BooleanVar(value=bool(SETTINGS.get("splash", True)))
         ttk.Checkbutton(row, text="Show the start-up screen", variable=self.splash_var,
                         command=lambda: (SETTINGS.__setitem__("splash", bool(self.splash_var.get())),
                                          save_json("settings.json", SETTINGS))).pack(anchor="w", pady=(8, 0))
 
-        # 2.58.0 (one Appearance tab, the user): every look in one place - over the game too (was Overlays › Appearance)
+        # 2.58.0 (one Appearance tab): every look in one place - over the game too (was Overlays › Appearance)
         self.ov_look_top = tk.Label(pages["Appearance"][1], text="OVER THE GAME", bg=P1, fg=C["muted"],
                                     font=("Segoe UI", 9, "bold"), anchor="w")
         self.ov_look_top.pack(fill="x", pady=(8, 4))
@@ -1206,31 +1235,55 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
             return
         SETTINGS[key] = value
         save_json("settings.json", SETTINGS)
-        self.draw_look_swatch()
-        self.look_restart.config(state="normal")
-        self.look_msg.config(text="Saved - restart to see it everywhere.", fg=C["good"])
+        if key == "ui_scale":
+            self.look_restart.config(state="normal")
+            self.look_msg.config(text="Saved - restart to see the new text size.", fg=C["good"])
+            return
+        self.relook()
+
+    def pick_theme(self, tid):
+        """2.60.0: a theme card in Settings › Appearance - swapped live."""
+        from .style import THEMES
+        SETTINGS["theme"] = tid
+        save_json("settings.json", SETTINGS)
+        if "theme" in getattr(self, "look_vars", {}):
+            self.look_vars["theme"].set(THEMES.get(tid, (tid,))[0])
+        self.relook()
+
+    def relook(self):
+        from .style import relook
+        n, secs = relook(self.root, SETTINGS.get("theme"), SETTINGS.get("accent", "theme"))
+        self._paint_look_cards()
+        if getattr(self, "mg_win", None) is not None:          # the overlay over the game: built again in its style
+            try:
+                self.merged_set()
+            except Exception:
+                pass
+        if getattr(self, "shown_rec", None) is not None or hasattr(self, "detail"):
+            try:
+                self.show_detail(self.shown_rec)
+            except Exception:
+                pass
+        if hasattr(self, "update_limit_ui"):
+            try:
+                self.update_limit_ui()
+            except Exception:
+                pass
+        self.look_stats = (n, secs)             # (tests read it: how many widgets, how long)
+
+    def _paint_look_cards(self):
+        cur = SETTINGS.get("theme")
+        for tid, card in getattr(self, "look_cards", {}).items():
+            on = tid == cur
+            try:
+                card.config(highlightbackground=C["accent"] if on else C["panel2"])
+                card.winfo_children()[1].config(fg=C["accent"] if on else C["text"])
+            except (tk.TclError, IndexError):
+                pass
 
     def draw_look_swatch(self):
-        """A little preview of the chosen theme and accent (drawn without the running theme)."""
-        from .style import ACCENTS, THEMES
-        import colorsys
-        c = getattr(self, "look_swatch", None)
-        if c is None:
-            return
-        _, hue, sat = THEMES.get(SETTINGS.get("theme", "midnight"), THEMES["midnight"])
-
-        def tone(col):
-            if hue is None:
-                return col
-            r, g, b = (int(col[i:i + 2], 16) / 255 for i in (1, 3, 5))
-            h, l_, s = colorsys.rgb_to_hls(r, g, b)
-            r, g, b = colorsys.hls_to_rgb(hue / 360, l_, min(1, s * sat))
-            return "#%02x%02x%02x" % tuple(round(v * 255) for v in (r, g, b))
-        acc = ACCENTS.get(SETTINGS.get("accent", "orange"), ACCENTS["orange"])[1]
-        c.delete("all")
-        for i, col in enumerate(("#090e17", "#0e1522", "#131c2e", "#2b3d5f", "#5b77ad")):
-            c.tk.call(c._w, "create", "rectangle", i * 24, 0, i * 24 + 22, 40, "-fill", tone(col), "-outline", "")
-        c.tk.call(c._w, "create", "rectangle", 122, 0, 150, 40, "-fill", acc, "-outline", "")
+        """(2.0.0's swatch - the theme cards show each look now)"""
+        return None
 
     def restart_app(self):
         """Close and start again (2.0.0: for Appearance changes). Windows, lists and settings are saved first."""
@@ -1288,7 +1341,7 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
                                              "stone with bronze corners. Minimal: just the time, the map and the four "
                                              "switches.")
         self.ov_look_var = tk.StringVar(value=LOOKS[LOOK[0]])
-        # 2.59.0 (the user): always one window - no "One window" switch; Layout is a dropdown under Style
+        # 2.59.0: always one window - no "One window" switch; Layout is a dropdown under Style
         from .merged_page import LAYOUTS
         g = tk.Frame(row, bg=P2)
         g.pack(fill="x")
@@ -1304,14 +1357,14 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
             layout=next((k for k, t in LAYOUTS.items() if t == self.ov_layout_var.get()), "panel")))
         tk.Label(g, text="Panel: a card you place anywhere. Strip: one thin bar, made for the top edge of the screen.",
                  bg=P2, fg=C["muted"], font=("Segoe UI", 9)).grid(row=2, column=0, columnspan=2, sticky="w", pady=(4, 0))
-        # 2.49.0 (the user): say what opacity does - and show the number
+        # 2.49.0: say what opacity does - and show the number
         row = section("Appearance", "Opacity", "How solid each window is over the game. 100% = fully solid: nothing of "
                                                "the game shows through it. Lower = more see-through: the whole window "
                                                "fades, text and all, so you can see the game behind it - handy where "
                                                "it sits over the map or the minimap. 24% is the lowest, so it never "
                                                "disappears. Changes show at once. Hard to read over a busy spot? 95-100% "
                                                "reads best - text on a see-through window takes on the game behind it.")
-        # 2.56.1 (the user): ONE opacity for everything over the game (it was one slider each)
+        # 2.56.1: ONE opacity for everything over the game (it was one slider each)
         grid = tk.Frame(row, bg=P2)
         grid.pack(fill="x")
         tk.Label(grid, text="Opacity", bg=P2, fg=C["text"]).grid(row=0, column=0, sticky="w", padx=(0, 8), pady=2)
@@ -2124,8 +2177,15 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
             h, mx, per = max(LIMITER.usage(cls), key=lambda u: u[0] / u[1])
             worst = max(worst, h / mx)
             parts.append(f"{cls.title()} {h}/{mx} ({per_text(per)})")
+            m = getattr(self, "limit_meters", {}).get(cls)
+            if m is not None:
+                r = min(1.0, h / mx)
+                hot = st["blocked"] > 0 or r >= 0.8
+                m.set(r, on=C["red"] if hot else None)
+                self.limit_counts[cls].config(text=f"{h}/{mx} ({per_text(per)})",
+                                              fg=C["red"] if hot else C["muted"])
         dot = C["red"] if (st["blocked"] > 0 or worst >= 0.8) else C["good"] if worst >= 0.5 else C["green"]
-        self.limit_lbl.config(text="●  " + "    ".join(parts) + "   ", fg=dot)
+        self.limit_lbl.config(text="    ".join(p.split(" ", 1)[1] for p in parts) + "   ", fg=dot)
 
     # ---------------- exchange rates
     def rates_tick(self):
@@ -2379,11 +2439,10 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
                 row.pack(fill="x", pady=2)
                 tk.Label(row, text=f"{h} / {mx}  in {per_text(per)}", bg=C["panel"], fg=C["muted"], width=24,
                          anchor="w").pack(side="left")
-                cv = tk.Canvas(row, width=160, height=8, bg=C["line"], highlightthickness=0)
-                cv.pack(side="left")
                 ratio = min(1.0, h / mx)
-                cv.create_rectangle(0, 0, max(2, int(160 * ratio)), 8, outline="",
-                                    fill=C["red"] if ratio >= 0.8 else C["good"] if ratio >= 0.5 else C["green"])
+                from . import themes as _th                  # 2.60.0: the theme's meter
+                _th.Meter(row, ratio, width=160, height=14,
+                          on=C["red"] if ratio >= 0.8 else C["good"] if ratio >= 0.5 else None).pack(side="left")
         st = LIMITER.state()
         note = "Counts include requests from other tools on the same account or IP (e.g. Sidekick)."
         if st["penalties"]:
@@ -4128,14 +4187,22 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         def box(parent, edge=None, pad=(16, 8)):
             return tk.Frame(parent, bg=P1, padx=pad[0], pady=pad[1], highlightthickness=1, highlightbackground=edge or C["line"])
 
-        # ---- title row: tablet type chip and the Copy button
+        # ---- 2.60.0: the item card (the theme draws its name band) and the tabs Item / How it's priced / Raw
+        self._detail_card(d, rec, it, wrap)
+        tab = SETTINGS.get("detail_tab", "Item")
+        if tab not in ("Item", "How it's priced", "Raw"):
+            tab = "Item"
         trow = tk.Frame(d, bg=P2)
-        trow.pack(fill="x", pady=(0, 8))
-        tk.Label(trow, text=it["base"].upper(), bg="#1b2b4a", fg="#cfe0ff", font=("Segoe UI", 9, "bold"), padx=8, pady=4,
-                 highlightthickness=1, highlightbackground=C["gold_dim"]).pack(side="left")
+        trow.pack(fill="x", pady=(8, 8))
+        SegBar(trow, ["Item", "How it's priced", "Raw"], value=tab, size=9, pad=(12, 4),
+               command=lambda v: (SETTINGS.__setitem__("detail_tab", v), self.show_detail(rec))).pack(side="left")
         ttk.Button(trow, text="Copy name  [C]", command=lambda: self.copy_name(rec, True)).pack(side="right")
-        tk.Label(d, text=it["name"], bg=P2, fg=col, font=("Segoe UI", 16, "bold"), anchor="w",
-                 wraplength=wrap-11, justify="left").pack(fill="x")
+        if tab == "Raw":
+            self._detail_raw(d, rec, wrap)
+            return
+        if tab == "How it's priced":
+            self._detail_how(d, rec, wrap)
+            return
         if it["corrupted"]:
             tk.Label(d, text="corrupted", bg=P2, fg=C["red"], anchor="w").pack(fill="x")
         if it.get("gear"):                                   # 1.41: how this piece of gear is searched
@@ -4165,7 +4232,7 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
             left.pack(side="left", fill="x", expand=True)
             tk.Label(left, text="ESTIMATED VALUE", bg=P1, fg=C["muted"], font=("Segoe UI", 9, "bold"), anchor="w").pack(fill="x")
             tk.Label(left, text=big, bg=P1, fg=C["red"] if (nomatch or manual or not rec["prices"]) else C["good"],
-                     font=(MONO, 22, "bold"), anchor="w").pack(fill="x")
+                     font=(MONO, 16, "bold"), anchor="w").pack(fill="x")      # (2.60.0: smaller - the card shows it big)
             cf = rec.get("conf")
             guess = it.get("gear") and not it.get("waystone") and it.get("rarity") != "Unique"
             if cf and cf != "-" and guess:                      # 2.0 beta 21: say plainly that gear is a guess
@@ -4243,36 +4310,153 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
                 ttk.Button(card, text="Open on trade site  [O]", style="Primary.TButton", command=self.open_trade).pack(fill="x", pady=(8, 0))
             stages = rec.get("stages") or []
             if stages:
-                tk.Label(d, text="HOW THIS PRICE WAS CALCULATED", bg=P2, fg=C["steel"], font=("Segoe UI", 9, "bold"),
-                         anchor="w").pack(fill="x", pady=(8, 4))
-                for i, s_ in enumerate(stages, 1):
-                    v = s_.get("verify") or {}
-                    sc = box(d, pad=(8, 8))
-                    sc.pack(fill="x", pady=2)
-                    top = tk.Frame(sc, bg=P1)
-                    top.pack(fill="x")
-                    link = tk.Label(top, text="open ↗", bg=P1, fg=C["accent"], cursor="hand2", font=("Segoe UI", 9, "bold"))
-                    link.pack(side="right", padx=(8, 0))
-                    link.bind("<Button-1>", lambda _e, q=s_["qid"]: self.open_qid(q))
-                    tk.Label(top, text=f"{i}. {s_['name']}", bg=P1, fg=C["text"] if s_.get("weight") else C["muted"],
-                             font=("Segoe UI", 10, "bold"), anchor="w", wraplength=wrap-110, justify="left").pack(side="left", fill="x", expand=True)
-                    bot = tk.Frame(sc, bg=P1)
-                    bot.pack(fill="x")
-                    res = f"{s_['n']} listing{'s' if s_['n'] != 1 else ''} found"
-                    if v.get("bad") and not v.get("unverifiable"):
-                        res += f" · {v['bad']} dropped (lacked a mod)"
-                    tk.Label(bot, text=res, bg=P1, fg=C["muted"], font=("Segoe UI", 9), anchor="w").pack(side="left")
-                    right = ""
-                    if s_.get("est") is not None and s_["n"]:
-                        right = fmt_div(s_["est"]) + (f" · weight {s_['weight']:g}" if s_.get("weight") else " · not used")
-                    tk.Label(bot, text=right, bg=P1, fg=C["good"] if s_.get("weight") else C["muted"], font=(MONO, 9, "bold")).pack(side="right")
+                link = tk.Label(d, text=f"How this price was worked out ({len(stages)} search"
+                                        f"{'es' if len(stages) != 1 else ''})  ›", bg=P2, fg=C["accent"],
+                                cursor="hand2", font=("Segoe UI", 9, "bold"), anchor="w")
+                link.pack(fill="x", pady=(8, 0))
+                link.bind("<Button-1>", lambda _e: (SETTINGS.__setitem__("detail_tab", "How it's priced"),
+                                                    self.show_detail(rec)))
         elif st == "error":
             tk.Label(card, text="Couldn't price this", bg=P1, fg=C["red"], font=("Segoe UI", 12, "bold"), anchor="w").pack(fill="x")
             tk.Label(card, text=rec["label"], bg=P1, fg=C["muted"], anchor="w", wraplength=wrap-31, justify="left").pack(fill="x")
         else:
             tk.Label(card, text="Pricing…" if st == "pricing" else "Waiting in line…", bg=P1, fg=C["muted"],
                      font=("Segoe UI", 12), anchor="w").pack(fill="x")
+        self._detail_mods(d, rec, it, wrap)
 
+    def _detail_card(self, d, rec, it, wrap):
+        """2.60.0: the item as a card - its name band in the theme's style, rarity colors, level, the price."""
+        from . import themes as _th
+        P2 = C["panel2"]
+        rar = (it.get("rarity") or "").lower()
+        t = _th.ST.theme
+        col = {"rare": C["rare"], "magic": C["magic"], "unique": t.c("unique", "#af6025")}.get(rar, C["text"])
+        w = max(240, wrap + 32)
+        lines = [x for x in (f"Item Level {it['ilvl']}" if it.get("ilvl") else "",
+                             "Corrupted" if it.get("corrupted") else "") if x]
+        st, big, sub = rec["state"], "", ""
+        if st == "done" and not rec.get("nomatch") and not rec.get("manual"):
+            if rec.get("est") is not None:
+                big = fmt_div(rec["est"])
+            elif rec.get("prices"):
+                big = fmt_price(rec["prices"][0])
+            cf = rec.get("conf")
+            sub = "  ·  ".join(x for x in ((f"{cf} confidence" if cf and cf != "-" else ""),
+                                           (f"{rec['total']} listings" if rec.get("total") is not None else "")) if x)
+        elif st == "done":
+            big = "No match" if rec.get("nomatch") else "Check by hand"
+        elif st == "error":
+            big = "Couldn't price"
+        else:
+            big = "Pricing…" if st == "pricing" else "Waiting in line…"
+        h = 64 + 18 * len(lines) + (34 if big else 0) + (18 if sub else 0) + 8
+        cv = tk.Canvas(d, width=w, height=h, bg=P2, highlightthickness=0, bd=0)
+        cv.pack(fill="x")
+        with _th.raw():
+            bg = C["odd"]
+            cv.create_rectangle(0, 0, w - 1, h - 1, fill=bg, outline=t.c(t.part("card", "border", default="border_light")))
+            name_c = _th.card_header(cv, 4, 4, w - 5, 54, col, bg)
+            cv.create_text(w // 2, 20, text=it["name"], fill=name_c, font=(_th.head_font(), 12, "bold"),
+                           width=w - 24, justify="center")
+            if it.get("base") and it["base"] != it["name"]:
+                cv.create_text(w // 2, 40, text=it["base"], fill=_th.mix(name_c, C["text"], .45), font=("Segoe UI", 10))
+            y = 64
+            for ln in lines:
+                cv.create_text(w // 2, y + 6, text=ln, font=("Segoe UI", 9),
+                               fill=C["red"] if ln == "Corrupted" else C["muted"])
+                y += 18
+            if big:
+                cv.create_line(16, y, w - 16, y, fill=t.c(t.part("card", "sep", default="border")))
+                good = st == "done" and big not in ("No match", "Check by hand")
+                cv.create_text(w // 2, y + 18, text=big, font=(MONO, 16, "bold"),
+                               fill=C["good"] if good else (C["red"] if st in ("done", "error") else C["muted"]))
+                y += 34
+            if sub:
+                cv.create_text(w // 2, y + 6, text=sub, font=("Segoe UI", 9), fill=C["muted"])
+        self.detail_card = cv
+        return cv
+
+    def _detail_how(self, d, rec, wrap):
+        """2.60.0: How it's priced - what was searched, why this confidence, each search."""
+        P2 = C["panel2"]
+        if rec["state"] != "done":
+            tk.Label(d, text="Not priced yet - the searches show here when it is.", bg=P2, fg=C["muted"],
+                     anchor="w").pack(fill="x")
+            return
+        for txt, fg in ((rec.get("label"), C["text"]), ("; ".join(rec.get("conf_why") or []), C["muted"]),
+                        (rec.get("memory"), C["muted"]), (rec.get("model"), C["muted"])):
+            if txt:
+                tk.Label(d, text=txt, bg=P2, fg=fg, anchor="w", wraplength=wrap, justify="left",
+                         font=("Segoe UI", 9 if fg == C["muted"] else 10)).pack(fill="x", pady=(0, 4))
+        if rec.get("prices"):
+            tk.Label(d, text="cheapest: " + ",  ".join(fmt_price(p) for p in rec["prices"][:8]), bg=P2,
+                     fg=C["text"], anchor="w", wraplength=wrap, justify="left").pack(fill="x", pady=(0, 4))
+        if not rec.get("stages"):
+            tk.Label(d, text="No trade searches were needed for this one.", bg=P2, fg=C["muted"],
+                     anchor="w").pack(fill="x", pady=(8, 0))
+        self._detail_stages(d, rec, wrap)
+        if rec.get("qid"):
+            ttk.Button(d, text="Open on trade site  [O]", style="Primary.TButton",
+                       command=self.open_trade).pack(fill="x", pady=(8, 0))
+
+    def _detail_raw(self, d, rec, wrap):
+        """2.60.0: the item text exactly as the game copied it."""
+        P2 = C["panel2"]
+        raw = (rec.get("raw") or "").strip()
+        if not raw:
+            tk.Label(d, text="No copied text kept for this item.", bg=P2, fg=C["muted"], anchor="w").pack(fill="x")
+            return
+        n = raw.count("\n") + 1
+        tx = tk.Text(d, height=min(40, n + 1), bg=C["odd"], fg=C["text"], font=(MONO, 9), relief="flat",
+                     highlightthickness=1, highlightbackground=C["line"], wrap="word", padx=8, pady=8)
+        tx.insert("1.0", raw)
+        tx.config(state="disabled")
+        tx.pack(fill="x")
+
+        def copy():
+            self.root.clipboard_clear()
+            self.root.clipboard_append(raw)
+            self.app_toast("Copied the item text", kind="success")
+        ttk.Button(d, text="Copy the item text", command=copy).pack(anchor="w", pady=(8, 0))
+
+    def _detail_stages(self, d, rec, wrap):
+        """The searches behind a price, one card each (2.60.0: the "How it's priced" tab)."""
+        P2, P1 = C["panel2"], C["panel"]
+
+        def box(parent, edge=None, pad=(16, 8)):
+            return tk.Frame(parent, bg=P1, padx=pad[0], pady=pad[1], highlightthickness=1, highlightbackground=edge or C["line"])
+        stages = rec.get("stages") or []
+        if stages:
+            tk.Label(d, text="HOW THIS PRICE WAS CALCULATED", bg=P2, fg=C["steel"], font=("Segoe UI", 9, "bold"),
+                     anchor="w").pack(fill="x", pady=(8, 4))
+            for i, s_ in enumerate(stages, 1):
+                v = s_.get("verify") or {}
+                sc = box(d, pad=(8, 8))
+                sc.pack(fill="x", pady=2)
+                top = tk.Frame(sc, bg=P1)
+                top.pack(fill="x")
+                link = tk.Label(top, text="open ↗", bg=P1, fg=C["accent"], cursor="hand2", font=("Segoe UI", 9, "bold"))
+                link.pack(side="right", padx=(8, 0))
+                link.bind("<Button-1>", lambda _e, q=s_["qid"]: self.open_qid(q))
+                tk.Label(top, text=f"{i}. {s_['name']}", bg=P1, fg=C["text"] if s_.get("weight") else C["muted"],
+                         font=("Segoe UI", 10, "bold"), anchor="w", wraplength=wrap-110, justify="left").pack(side="left", fill="x", expand=True)
+                bot = tk.Frame(sc, bg=P1)
+                bot.pack(fill="x")
+                res = f"{s_['n']} listing{'s' if s_['n'] != 1 else ''} found"
+                if v.get("bad") and not v.get("unverifiable"):
+                    res += f" · {v['bad']} dropped (lacked a mod)"
+                tk.Label(bot, text=res, bg=P1, fg=C["muted"], font=("Segoe UI", 9), anchor="w").pack(side="left")
+                right = ""
+                if s_.get("est") is not None and s_["n"]:
+                    right = fmt_div(s_["est"]) + (f" · weight {s_['weight']:g}" if s_.get("weight") else " · not used")
+                tk.Label(bot, text=right, bg=P1, fg=C["good"] if s_.get("weight") else C["muted"], font=(MONO, 9, "bold")).pack(side="right")
+
+    def _detail_mods(self, d, rec, it, wrap):
+        """The item's mods with their switches, ★, rolls and Min / Max boxes."""
+        P2, P1 = C["panel2"], C["panel"]
+
+        def box(parent, edge=None, pad=(16, 8)):
+            return tk.Frame(parent, bg=P1, padx=pad[0], pady=pad[1], highlightthickness=1, highlightbackground=edge or C["line"])
         head_txt = (f"TOTALS AND MODIFIERS ({len(it['mods'])})" if it.get("gear") else
                     f"{it['base'].upper().replace(' TABLET', '')} MODIFIERS ({len(it['mods'])})")
         tk.Label(d, text=head_txt, bg=P2, fg=C["steel"], font=("Segoe UI", 9, "bold"), anchor="w").pack(fill="x", pady=(12, 0))
@@ -4309,10 +4493,9 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
             meta.pack(fill="x", pady=(4, 0))
             rp = m.get("roll")
             if rp is not None:
-                cv = tk.Canvas(meta, width=90, height=8, bg=C["line"], highlightthickness=0)
-                cv.pack(side="left")
                 colr = C["green"] if rp >= 0.8 else C["good"] if rp >= 0.4 else C["red"]
-                cv.create_rectangle(0, 0, max(3, int(90 * rp)), 8, fill=colr, outline="")
+                from . import themes as _th                  # 2.60.0: the roll as the theme's meter
+                _th.Meter(meta, rp, width=90, height=12, on=colr).pack(side="left")
                 tk.Label(meta, text=f"{round(rp * 100)}%", bg=P1, fg=C["muted"], font=("Segoe UI", 9)).pack(side="left", padx=(8, 8))
             if m["tier"]:
                 tk.Label(meta, text=f"T{m['tier']}", bg=P1, fg=C["muted"], font=("Segoe UI", 9)).pack(side="left", padx=(0, 8))
@@ -4707,6 +4890,20 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
 SPLASH = [None]          # the start-up screen while the app is built (2.0.0)
 
 
+def look_settings():
+    """(theme, accent, text size) from settings. 2.60.0: theme packs - everyone starts on Emberforge once (the
+    user's pick); the old default accent (orange) becomes "the theme's own"."""
+    from . import themes as _th
+    if not SETTINGS.get("theme_packs"):
+        SETTINGS["theme_packs"] = 1
+        SETTINGS["theme"] = _th.DEFAULT
+        if SETTINGS.get("accent", "orange") == "orange":
+            SETTINGS["accent"] = "theme"
+        save_json("settings.json", SETTINGS)
+    return (_th.pick_id(SETTINGS.get("theme")), SETTINGS.get("accent", "theme"),
+            int(SETTINGS.get("ui_scale", 100) or 100))
+
+
 def _splash_step(text=None, i=None):
     s = SPLASH[0]
     if s is not None:
@@ -4724,8 +4921,7 @@ def main():
         try:
             from .splash import Splash
             from .style import apply_look
-            apply_look(SETTINGS.get("theme", "midnight"), SETTINGS.get("accent", "orange"),
-                       int(SETTINGS.get("ui_scale", 100) or 100), root)
+            apply_look(*look_settings(), root)
             SPLASH[0] = Splash(root, ICON_B64, pretty_version(), SETTINGS.get("league") or "")
         except Exception:
             SPLASH[0] = None

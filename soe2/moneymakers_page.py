@@ -87,7 +87,7 @@ class MoneyMakersPage:
         tag_values = ["Any"] + [t for g in MM.TAG_GROUPS.values() for t in g]
         pick("Tag", self.mm_tag, tag_values, 15, first=True)
         pick("Waystone tier", self.mm_tier, ("Any",) + tuple(str(i) for i in range(1, 17)), 4)
-        # 2.54.0 (the user): named like the fields - "Thoughts per click" and "Clicks per hour"; each still shows the
+        # 2.54.0: named like the fields - "Thoughts per click" and "Clicks per hour"; each still shows the
         # level picked and the easier / calmer ones
         Tooltip(pick("🧠 Thoughts per click", self.mm_max, ["Any"] + [w for w, _d in MM.THINKING.values()], 10),
                 "How much thinking a strat needs. Shows the level you pick and the easier ones.")

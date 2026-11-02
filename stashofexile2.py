@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU GPL v3.0 (see LICENSE). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.59.0
+VERSION 2.60.0
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,8 +19,25 @@ VERSION 2.59.0
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.60.0
+       Theme packs (from the theme mockups; Emberforge the default; made-up names; the same icons in every
+       theme; theme only in Settings › Appearance). soe2/themes.py: packs = themes/*.json (+ %APPDATA% themes),
+       "extends", DEFAULTS; set_theme rewrites style.C in place from the pack's roles (LEGACY); tone() (=
+       style.theme_color, hooked into every color given to Tk) maps C values to the pack, the app's other steel blues
+       by lightness onto palette anchors, light text onto light packs, keeps rarity colors and the banners' #010203.
+       Live swap: style.relook() - walk() re-colors every widget option, canvas item, text / tree tag and menu entry
+       (MEM remembers what each one stands for, so swaps never drift), setup_style() again, other ttk style calls
+       replayed (_STYLE_LOG), themes.notify() for self-painted canvases (title bars, meters). ttk faces = bevelled
+       PhotoImage elements per pack (no PNG files): TButton, Primary, Danger, list headings; switches per look.
+       Shell: title bars / Toolkit menu head painted by the pack (gradient + texture, no ornaments), Toolkit button
+       follows the accent, Shell.relook. Meters (themes.Meter: segments / bar / runes / ticks / orbs): trade limits in
+       the status strip and the limits window, mod rolls. Price checks side panel: item card (pack's name band) +
+       Item / How it's priced / Raw (SETTINGS detail_tab). Settings › Appearance: theme cards (live), accent "The
+       theme's own" + the old six, text size (restart). look_settings() migrates once (theme_packs). New icon
+       (tools/make_icon.py): chest with a toolbox lid and a hex-nut lock. check_contrast: every pack x accent.
+       test_v2600; test_v200 / v2400 updated.
   2.59.0
-       Settings cleanup 3+4 (the user: one window only, one Overlay screen, F6, then the rest of the standard).
+       Settings cleanup 3+4 (feedback: one window only, one Overlay screen, F6, then the rest of the standard).
        merged_page: always one window (merged_on() True; merged_set(layout) only; LAYOUTS Panel / Strip; no × glyph;
        overlay_hide_toggle + mg_hidden). Separate timer / helper windows and _tracker_ov_canvas gone. Overlays hub:
        no tabs (ovh_bar None), module title "Overlay", one Options screen with Timer, MECHANIC HELPER and NOTES;
@@ -39,20 +56,20 @@ VERSION HISTORY
        (build_notes_look, ov_pick, _ov_swatch gone); note_colours() = pal() field / text for every look, the font
        the style's. Copy marker: no color box; marker_colour() from the style. test_v2580; old tests updated.
   2.57.0
-       Settings cleanup 1 (the user OK'd the Settings Organization mockups; standard rule 3): every key is set in
+       Settings cleanup 1 (the Settings Organization mockups; standard rule 3): every key is set in
        Settings › Hotkeys only. all_hotkeys' third field is now its group (Price checks, Regex, Overlays, Money Makers,
        Chat commands) - headings on the page; ledger_key editable (checks:ledger_key); each chat command with a
        command gets an editable row (cmd:<i>, saved on overlay.cfg commands). Regex (_rx_key_text), Notes Show / hide
        card (_notes_key_text), Session timer Options (_tk_keys_text) and Chat commands (_chat_keys_text, key column
        read-only) show their key with a button: hotkeys_open(kid) opens Hotkeys and lights that row up. test_v2570.
   2.56.2
-       Remnant tags (the user: too long on screen, too slow to show, too bold and big): AUTO_POLL 0.7 -> 0.35 s (shows
+       Remnant tags (feedback: too long on screen, too slow to show, too bold and big): AUTO_POLL 0.7 -> 0.35 s (shows
        about twice as fast; gone ~0.7 s after the book closes), SHOW_SECS 30 -> 12 for the key, and a closed book
        now clears the key's tags too. Tags: 14 px x UI scale (min 11; was 16, bold), plain weight (best bold + ★),
        colors from the overlay style (pal(): bg / text / muted / line, best = warn, on parchment head ink), the
        parchment texture behind the text (texture(calm)); tips box a touch smaller, textured. test_v2370 format.
   2.56.1
-       Strip (the user): resizable left / right only (OverlayWindow resize_axes="x": e / w edges, no height change),
+       Strip: resizable left / right only (OverlayWindow resize_axes="x": e / w edges, no height change),
        width saved as tracker cfg "sw"; _mg_strip_widths gives the smallest width that shows everything (mg_strip_min
        = the window's min width); extra room goes to the area name (up to 120 px) and the note's first line.
        _mg_on_screen: every merged window is moved fully onto its screen when built (a locked strip past the edge
@@ -60,7 +77,7 @@ VERSION HISTORY
        sets the timer, the Mechanic Helper bar, Notes and the one window. "Classic dark (2.42)" -> "Classic dark".
        test_v2550 extended; v230 / v2430 / v2490 for the one slider.
   2.56.0
-       Farm Ledger redone, part 1 (the user OK'd the Farm Ledger Redesign mockups): SetupCards (cards with name, what,
+       Farm Ledger redone, part 1 (the Farm Ledger Redesign mockups): SetupCards (cards with name, what,
        runs/logs, div/hour, a counting dot; click picks, Ctrl+click several, right-click = fl_setup_menu; answers
        selection / selection_set / exists like the old list). Header + one primary Log loot; the counting strip
        (fl_status + fl_dots, a dash per run of this log). THE VERDICT: "Makes / Loses about X div an hour" (fl_kpi
@@ -69,12 +86,12 @@ VERSION HISTORY
        No setup: _fl_empty_page (3 steps, Make my first setup / Start from a strat / Import a CSV). Compare says who
        wins first (fl_compare_say). test_v2560; test_v2450 takes a maximized screenshot too.
   2.55.1
-       The item box (ins_preview, Price checks + Insights; the user): Esc, Space or a click anywhere that isn't on it
+       The item box (ins_preview, Price checks + Insights): Esc, Space or a click anywhere that isn't on it
        closes it (_ins_pop_hooks: bind_all space / ButtonPress-1/3, set up once; app.hk_esc closes it before Esc
        minimizes). The same row clicked again leaves it closed (ins_pop_toggled_off). A click ON the box keeps it.
        test_v2530 extended.
   2.55.0
-       One overlay window (merged_page.py, MergedOverlay; the user loved the mockups and wanted every style): the
+       One overlay window (merged_page.py, MergedOverlay; from the mockups, every style kept): the
        Session timer, the Mechanic Helper and Notes in one OverlayWindow. tracker cfg "merged" (default on) and "layout"
        (panel / strip); "mx"/"my" (+ "mw"/"mh" with Notes in it), "mlocked". Parts show while on: the timer (mg_timer,
        Show timer / a session), the switches (alerts_bar), Notes (notes_visible; embedded in Panel - the Overlay's own
@@ -84,14 +101,14 @@ VERSION HISTORY
        on_bg / on_line) and minimal (no title bar: OverlayWindow titlebar=False; lock and × drawn; short names).
        Strip: no title bar, one 40 px row. Overlays › Appearance: "One window" switch and Layout. test_v2550.
   2.54.1
-       Manual feed (the user): the price is optional - no price keeps the item with no listing (fed.div NULL, 0
+       Manual feed: the price is optional - no price keeps the item with no listing (fed.div NULL, 0
        copies) and only rates the ticked mods High; no price and nothing ticked says there's nothing to learn. "Counts
        as N listings" is gone (it made no sense): Market.feed writes ONE listing per priced item. Fed list / CSV lose
        the counts column. test_v2510 updated.
   2.54.0
-       Money Makers filters renamed like the fields (the user): "🧠 Thoughts per click" and "🖱 Clicks per hour" (were
+       Money Makers filters renamed like the fields: "🧠 Thoughts per click" and "🖱 Clicks per hour" (were
        "Thinking at most" / "Clicks at most"; still "this level or easier", said in a tooltip); column "Thoughts/click".
-       Profit leaves the Session timer (the user: it clashed with the Farm Ledger - money in ONE place): no Profit /
+       Profit leaves the Session timer (feedback: it clashed with the Farm Ledger - money in ONE place): no Profit /
        Profit per hour tiles, overlay line, Options box (PROFIT_HOW, ask_count count-first), Wealth snapshot at Start,
        or profit columns in Past sessions and the sessions CSV. Stop ends at once. A line + "Open Farm Ledger" button
        (tracker_open_ledger). Old sessions keep their saved profit in sessions.json; it's just not shown. test_v2540.
@@ -99,23 +116,23 @@ VERSION HISTORY
        Price checks: a click on a row (Manual Add or a stash tab's list) shows the item's box - the same one Insights
        draws (ins_preview, key "pc": name in its rarity color, mods as in game - an advanced copy's { } lines and
        (min-max) ranges dropped - price, when added, listings seen). Ctrl / Shift clicks don't; a click on it, Esc
-       or 20 s closes it (app.pc_preview_at). The Session timer softer (the user: 2.51's text "a bit too harsh"):
+       or 20 s closes it (app.pc_preview_at). The Session timer softer (feedback: 2.51's text "a bit too harsh"):
        rows 10 plain, the time 20 bold, Profit bold; the halo thinner (4 sides, no corners) and nearer the page
        (#e6d6b2). US spelling in every user-facing text (colour -> color, grey -> gray ...); Notes' card "Font and
        Colors". test_v2530.
   2.52.0
-       Menus tidied (the user: opacity was in the Session timer's options AND in Appearance): every setting in one
+       Menus tidied (feedback: opacity was in the Session timer's options AND in Appearance): every setting in one
        place. Opacity only in Overlays › Appearance - the Session timer's Options and Notes' card link there (no
        tk_opacity / ov_opacity any more). The clock-on-the-timer switch moved from Settings > Appearance > Clock to
        Overlays › Session timer › Options (next to Lock); Settings links there. Notes' card: "Font and Colors".
   2.51.0
-       Mod book › Manual feed (feed_page.py; the user: paste an already expensive tablet with its price so the app
+       Mod book › Manual feed (feed_page.py; idea: paste an already expensive tablet with its price so the app
        learns it - on top of how it learns now). Ctrl+Alt+C (while the tab shows) or paste an item, type its price
        (parse_price: 8, 8 div, 35c, 2 ex), pick how much it counts (1-10 listings; MIN_WITH = 8 decides a mod) and
        Feed it: Market.feed stores it in table 'fed' and as listings 'fed:<sig>:<n>' at that price - the listings
        Market.stats learns from, like save_sale; never expire (seen refreshed at start); feeding the same item again
        replaces it. Optional: rate its ticked mods High (set_rules). Each mod shows what the Mod book thinks before /
-       after (Market.standing). Fed so far: list, Forget (unfeed), CSV. Readability (the user: the timer was "barely
+       after (Market.standing). Fed so far: list, Forget (unfeed), CSV. Readability (feedback: the timer was "barely
        legible"): a halo in the page color round every letter on the parchment (CanvasText halo), a calmer texture
        under the text (texture calm), the timer's text a size up and bold; the Opacity note says 95-100% reads best.
        test_v2510.
@@ -124,12 +141,12 @@ VERSION HISTORY
        to each slider; runeshape tips only on the Mechanic Helper tab. The Mechanic Helper bar stands on its own (the
        user: "a different bar, independent of the session tracker"): "Show the Mechanic Helper bar over the game"
        shows it timer or not (tracker_helpers_sync at start and on the switch; tracker_helpers_paint). Notes' own
-       color card: "Colors and font (Classic style)". Fixes from the user's screenshot: the Mechanic Helper icons
+       color card: "Colors and font (Classic style)". Fixes from a screenshot: the Mechanic Helper icons
        were 9 pt and a dark green that read as black - now 12 pt, brighter green / red on parchment; the clock ran
        into "Session" on a narrow timer - OverlayWindow.bar_note says when it doesn't fit, and the clock goes to the
        top right of the page; the bar moved up a few pixels when locked at the screen's bottom edge - it was kept
        inside the work area (without the Windows taskbar); now the whole screen (style.monitor_rect(full=True)).
-       Report a bug (the user: it reached Discord): no name / contact box, Tab moves to the next box (text boxes
+       Report a bug (feedback: it reached Discord): no name / contact box, Tab moves to the next box (text boxes
        typed a tab), the buttons are packed first at the bottom so a short window squeezes the preview instead.
        test_v2490 (more checks), test_v2480, v2380 / v2430 / v2440 updated.
   2.49.0
@@ -148,7 +165,7 @@ VERSION HISTORY
        issue to Discord. test_v2480.
   2.47.0
        Overlays › Look: the four PoE2 looks of the 2.43.0 mockups, all to choose from - Runeshape parchment (default),
-       Relic tooltip, Carved frame, Quiet HUD - plus Classic dark (overlaywin LOOKS / PALETTES, skinned()). The user:
+       Relic tooltip, Carved frame, Quiet HUD - plus Classic dark (overlaywin LOOKS / PALETTES, skinned()). Feedback:
        the 2.43.0 parchment didn't match mockup C and was "too clean". Now: a grungy parchment made at run time
        (overlaywin.texture: grain, fibres, stains, burnt edges - Pillow, no image file), drawn titles and buttons on
        canvases (no flat boxes on the texture), the mockup's Session layout (title + clock on the bar, the big time,
@@ -187,7 +204,7 @@ VERSION HISTORY
        Appearance, which now links here). The ⚙ on the Mechanic Helper bar opens its tab; Settings > Hotkeys says
        "Overlays › ...". Module key stays "tracker". test_v2440.
   2.43.0
-       The windows over the game look like the Expedition remnant's reward book (the user picked mockup C):
+       The windows over the game look like the Expedition remnant's reward book (mockup C):
        parchment in a dark leather binding, ink text, a serif title (overlaywin LOOKS / pal(); Classic dark kept as a
        choice). Session timer, Notes and the Helpers bar - now "Mechanic Helper" (on = filled green diamond, off =
        hollow red). Settings > Appearance > Over the game: the look, an opacity slider each (timer, helper - new
@@ -204,13 +221,13 @@ VERSION HISTORY
        "Name (count)". Clear and Reprice act on the list showing. A copy while a tab list shows switches to Manual Add.
        The old single tab setting becomes "Tab 1". test_v2420.
   2.41.0
-       Waystone prices: the user's corrupted T15 (IIR 28, pack 27, drop chance 150) showed 18 div, Medium - the
+       Waystone prices: a player's corrupted T15 (IIR 28, pack 27, drop chance 150) showed 18 div, Medium - the
        search found 3 listings (8, 18, 20) and took the middle one, with Listings set to "Any" (offline / whisper
-       sellers' asks count; the user's own search was Instant Buyout). Now a thin waystone result (under 5) is priced
+       sellers' asks count; a player's own search was Instant Buyout). Now a thin waystone result (under 5) is priced
        at the cheapest real offer (trade.cheapest_real: price fixers under a fifth of the median left out), never
        "High"; and Listings: Any is called out in the label and lowers High to Medium. test_v2410.
   2.40.1
-       Stash tab (and Wealth) read every item of a big tab. The user's tab: 455 listings, 2.40.0 read 234 - 201 and
+       Stash tab (and Wealth) read every item of a big tab. A player's tab: 455 listings, 2.40.0 read 234 - 201 and
        220 rare tier-15 waystones were each one item-level slice of over 100 (one search returns 100). wealth_children
        now goes further when a slice is still too big: every single item level ("82+" -> 82 ... ILVL_TOP 86), then
        corrupted / not (misc_filters), then the same slice read from its other end (sort indexed desc, "__sort") -
@@ -233,7 +250,7 @@ VERSION HISTORY
        every color handed to Tk, and the banners' key #010203 counts as a dark blue - under Amethyst the window
        became #020103 while the key stayed #010203. The key is now never recoloured (style._THEME keep). (Likely
        also the cause of 2.37.0's black remnant screen.) The Delirium banner runs in its own process, so it was fine.
-       Fix: the Ritual "leave the map" reminder never fired - the user's ritual_log.txt showed the watcher stopping
+       Fix: the Ritual "leave the map" reminder never fired - a player's ritual_log.txt showed the watcher stopping
        the second it started, every time: in the exe its stdin wasn't the app's pipe, so it read "end of input" and
        quit. Now (delirium_runner): in the exe the pipes are opened from the OS handles whenever they are pipes; the
        app passes --parent <pid> and holds a named mark (utilities.app_mark); a helper whose pipe ends while the app
@@ -248,7 +265,7 @@ VERSION HISTORY
        item level - waystones by tier 1-16 (map_filters), tablets / jewels by base type (from tabs.txt / jewels.txt,
        query "type"). wealth_query takes "__type" and "group/filter" keys. Wealth syncs split the same way.
   2.39.1
-       Expedition Remnant Price Checker: rewards poe.ninja doesn't list (the user's Warding Rune of Obsession - 15
+       Expedition Remnant Price Checker: rewards poe.ninja doesn't list (a player's Warding Rune of Obsession - 15
        other Warding runes are listed, not that one) got no tag at all; and a look-alike was only just kept out
        ("... of Obsession" vs "... of Protection" = 0.824, cutoff 0.84). Now a match also needs the last word to
        match (remnant.same_ending, >= 0.75 - OCR slips still pass), and a line with an amount ("1x ...") that
@@ -261,7 +278,7 @@ VERSION HISTORY
        at the bottom of the screen. Now under it if it fits, else above it; any saved place off the screen (a
        monitor unplugged, another resolution) is pulled back on (tracker_page._helpers_on_screen, monitor_rect).
        Expedition Remnant Price Checker tags use short units, no space: 16ex, 20c, 29d (pricefmt.fmt_short). It makes no
-       sound any more (the user asked): no beep, no Sound box on its Alerts row.
+       sound any more (by request): no beep, no Sound box on its Alerts row.
        Fix (2.38.0): blocking the wheel on dropdowns with "break" also stopped the page around them scrolling
        (Settings); the TCombobox wheel binding is now replaced with a no-op, so the page scrolls, the pick stays.
   2.38.0
@@ -271,7 +288,7 @@ VERSION HISTORY
        screen-capturing file that can send keys) runs in checks.yml on every PR and in release.yml before a build.
        Remnant price tags: one small solid click-through window per tag, left out of screen captures
        (SetWindowDisplayAffinity WDA_EXCLUDEFROMCAPTURE) - 2.37.0's single game-sized color-keyed window showed
-       black on the user's PC, and Auto, capturing its own black window, toggled it on and off.
+       black on a player's PC, and Auto, capturing its own black window, toggled it on and off.
        Helpers bar: its own OverlayWindow (resizable=False: as big as its content, never cut off; "Remnant" was),
        shown and hidden with the Session timer, placed / locked / closed on its own (tracker cfg hx, hy, hlocked;
        × = alerts_bar off). tracker_helpers_build / _destroy; style.Tooltip on its ⚙.
@@ -292,7 +309,7 @@ VERSION HISTORY
        types + uniques; split_qty for "x3" / "3x"; difflib >= 0.84), and draws click-through price tags right of each
        line (amount x each, best one ★, "no price"); the key again or 30 s takes them off. Auto (on by default):
        a light watcher looks at where the reward book opens - remnant.AREA, in game heights from the top-left (the
-       game scales its UI by height and anchors the book left; measured on the user's 2560x1440 screenshot) - every
+       game scales its UI by height and anchors the book left; measured on a player's 2560x1440 screenshot) - every
        0.7 s while the game is in front; only when that spot is mostly parchment (parchment_share >= 0.35, from a
        40x40 thumbnail) and changed does it read the text; tags come and go with the book. A key press that finds the
        list elsewhere (UI scale) learns that spot (learn_area). Client.txt logs nothing for remnants. Off Windows / without an OCR language it says why (status warn). CI checks.yml
@@ -388,7 +405,7 @@ VERSION HISTORY
        At start-up cleanup_update deletes StashOfExile2_update.exe and any old .bat. Note: updating FROM an older
        version still runs that version's .bat one last time.
   2.29.0
-       Money Makers rebuilt to the user's original Task 11 (2.28.0 shipped the first draft). SCHEMA 2:
+       Money Makers rebuilt to the original Task 11 plan (2.28.0 shipped the first draft). SCHEMA 2:
        what a strat IS = category + type (TAXONOMY: Mapping > Breach, Crafting > Tablet crafting ...), shown in a
        browser with counts; everything else = tags (TAG_GROUPS: Also uses, Farm type - City area / Sacred Bloom
        ..., Budget, Play style - checkboxes); tag search matches the type too. Effort picked from lists: Thinking
@@ -588,7 +605,7 @@ VERSION HISTORY
        (4) A stash tab's price can be in any of 24 currencies (wealth.TAB_CURRENCY_NAMES): their trade-site ids come
            from the site's own /data/static list (trade_static.json, once a day); without it the 7 built-in ones stay.
   2.15.0
-       (1) Ritual: the user's four Capture pictures (0/4, 1/4, 3/4, 4/4) showed 3/4 couldn't be read - the box also
+       (1) Ritual: a player's four Capture pictures (0/4, 1/4, 3/4, 4/4) showed 3/4 couldn't be read - the box also
            caught the icon's edge and the frame's ornament, gluing the glyphs together. Only the main band of text rows
            is used now (text_band). All six real pictures read right, and the real game 0, 1, 3 and 4 are in
            ritual_glyphs.json (only 2 still comes from fonts).
@@ -601,7 +618,7 @@ VERSION HISTORY
            Python, where stdin / stdout exist, so they didn't catch it.
        (2) The helper keeps a small log (data folder / ritual / ritual_log.txt): game size, where it looks, readings,
            and once a minute how well the icon matched when it found nothing.
-       (3) ritual_glyphs.json now includes the real game "1" (from the user's 1/3 capture); the reader reads the
+       (3) ritual_glyphs.json now includes the real game "1" (from a player's 1/3 capture); the reader reads the
            user's real 0/3 and 1/3 cut-outs.
   2.14.0
        (1) Ritual watcher (soe2/ritual_alert.py): the game doesn't log Ritual progress, so - like the Delirium alert -
@@ -644,7 +661,7 @@ VERSION HISTORY
            kept in SETTINGS breach_alert.pending, so it survives a restart.
        (2) The window / keyboard recorder (diag.py) is gone: it found the 2.10.2 fix and isn't needed any more.
   2.10.2
-       (1) The real cause of windows vanishing on resize, found with diag_log.txt on the user's PC: every maximize,
+       (1) The real cause of windows vanishing on resize, found with diag_log.txt on a player's PC: every maximize,
            restore or snap made Tk rebuild each desktop window's Win32 window (new HWND each time), because they were
            transient() to the app's window - and the rebuilt one had no owner, so it fell behind the app. On Windows
            they're no longer transient (own_by_app sets the owner); and any rebuilt window is spotted (check_owner:
@@ -1368,7 +1385,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.59.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.60.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
