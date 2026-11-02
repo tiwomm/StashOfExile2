@@ -13,7 +13,6 @@ import time
 import tkinter as tk
 from tkinter import filedialog, ttk
 
-from .config import SETTINGS
 from .market import MARKET
 from .mods import MIN_WITH, HIGH_LIFT, SCOPED_CATS, norm, rule_key, sid_for_line
 from .pricefmt import parse_price
@@ -39,8 +38,9 @@ class FeedPage:
         tk.Label(top, text="Teach the Mod book a price", bg=P1, fg=C["accent"], font=("Segoe UI", 12, "bold"),
                  anchor="w").pack(fill="x")
         tk.Label(top, text="Know what an item is worth - an expensive tablet you saw sell, one the trade site hardly "
-                           "shows? Ctrl+Alt+C it in game (or paste it), type its price and Feed it. It joins the "
-                           "listings the Mod book learns from, like a sale; the numbers below show what changed.",
+                           "shows? Ctrl+Alt+C it in game (or paste it), type its price if you know it, and Feed it. "
+                           "With a price it joins the listings the Mod book learns from, like a sale; the numbers "
+                           "below show what changed. No price? Tick the mods that matter and they're rated High.",
                  bg=P1, fg=C["muted"], font=("Segoe UI", 9), wraplength=720, justify="left", anchor="w").pack(fill="x")
         body = tk.Frame(tab, bg=P1, padx=12)
         body.pack(fill="both", expand=True)
@@ -56,7 +56,7 @@ class FeedPage:
         ttk.Button(left, text="Paste from clipboard", command=self.fd_paste, style="Quiet.TButton").pack(anchor="w")
         g = tk.Frame(left, bg=P2)
         g.pack(fill="x", pady=(8, 0))
-        tk.Label(g, text="Price", bg=P2, fg=C["text"]).grid(row=0, column=0, sticky="w", pady=2)
+        tk.Label(g, text="Price (optional)", bg=P2, fg=C["text"]).grid(row=0, column=0, sticky="w", pady=2)
         self.fd_price = tk.StringVar()
         pe = ttk.Entry(g, textvariable=self.fd_price, width=12)
         pe.grid(row=0, column=1, sticky="w", padx=(8, 8))
@@ -64,13 +64,7 @@ class FeedPage:
         self.fd_price_lbl = tk.Label(g, text="", bg=P2, fg=C["muted"], font=("Segoe UI", 9))
         self.fd_price_lbl.grid(row=0, column=2, sticky="w")
         self.fd_price.trace_add("write", lambda *a: self._fd_price_show())
-        tk.Label(g, text="Counts as", bg=P2, fg=C["text"]).grid(row=1, column=0, sticky="w", pady=2)
-        self.fd_copies = tk.StringVar(value=str(SETTINGS.get("feed_copies", 3)))
-        sp = ttk.Spinbox(g, from_=1, to=MARKET.FEED_MAX, textvariable=self.fd_copies, width=4)
-        sp.grid(row=1, column=1, sticky="w", padx=(8, 8))
-        tk.Label(g, text="listings", bg=P2, fg=C["muted"], font=("Segoe UI", 9)).grid(row=1, column=2, sticky="w")
-        Tooltip(sp, f"How much it counts. A mod needs {MIN_WITH} listings before the Mod book decides about it; a price "
-                    "you trust can count for a few. 1 = like any one listing.")
+        # (2.54.1: "Counts as N listings" is gone - one fed item is one price, like any listing)
         tk.Label(g, text="Note", bg=P2, fg=C["text"]).grid(row=2, column=0, sticky="w", pady=2)
         self.fd_note = tk.StringVar()
         ttk.Entry(g, textvariable=self.fd_note, width=26).grid(row=2, column=1, columnspan=2, sticky="w", padx=(8, 0))
@@ -107,7 +101,7 @@ class FeedPage:
         ttk.Button(h, text="Forget selected", command=self.fd_forget, style="Danger.TButton").pack(side="right",
                                                                                                 padx=(0, 8))
         fcols = (("when", "When", 110, "w"), ("item", "Item", 200, "w"), ("price", "Price", 80, "e"),
-                 ("copies", "Counts", 60, "center"), ("mods", "Mods", 340, "w"))
+                 ("mods", "Mods", 400, "w"))
         self.fd_list = ttk.Treeview(right, columns=[c[0] for c in fcols], show="headings", height=8)
         for cid, title, w, a in fcols:
             self.fd_list.heading(cid, text=title)
@@ -130,7 +124,7 @@ class FeedPage:
         self.fd_text.delete("1.0", "end")
         self.fd_text.insert("1.0", text.strip())
         self.fd_read()
-        self._say("Manual feed: item read - type its price and press Feed it.", 5)
+        self._say("Manual feed: item read - type its price (optional) and press Feed it.", 5)
 
     def fd_paste(self):
         try:
@@ -198,16 +192,16 @@ class FeedPage:
             self.fd_msg.config(text="Paste or Ctrl+Alt+C an item first.", fg=C["red"])
             return None
         txt = self.fd_price.get().strip()
-        div = parse_price(txt)
-        if not div:
-            self.fd_msg.config(text="Type its price (8, 8 div, 35c, 2 ex ...).", fg=C["red"])
+        div = parse_price(txt) if txt else None          # 2.54.1: the price is optional
+        if txt and not div:
+            self.fd_msg.config(text="Can't read that price (8, 8 div, 35c, 2 ex ...) - or leave it empty.", fg=C["red"])
             return None
-        try:
-            copies = max(1, min(MARKET.FEED_MAX, int(self.fd_copies.get())))
-        except ValueError:
-            copies = 3
-        SETTINGS["feed_copies"] = copies
-        sig = MARKET.feed(item, div, copies, txt, self.fd_note.get().strip())
+        ticked = self.fd_rate.get() and any(r["rate"] for r in self.fd_rows)
+        if div is None and not ticked:
+            self.fd_msg.config(text="Type a price, or tick the mods to rate High - without either there's nothing to "
+                                    "learn.", fg=C["red"])
+            return None
+        sig = MARKET.feed(item, div, 1, txt, self.fd_note.get().strip())
         if not sig:
             self.fd_msg.config(text=f"Couldn't save it: {MARKET.last_error or MARKET.db_error}", fg=C["red"])
             return None
@@ -234,7 +228,8 @@ class FeedPage:
             self.fd_tv.set(str(i), "after", _st_text(a) + ("  ▲ now High" if became_high else ""))
             if became_high:
                 self.fd_tv.item(str(i), tags=("up",))
-        self.fd_msg.config(text=f"Fed: {item['name']} at {div:.2f} div, counting as {copies} listing(s)."
+        self.fd_msg.config(text=(f"Fed: {item['name']} at {div:.2f} div." if div is not None else
+                                 f"Kept: {item['name']}, no price.")
                                 + (f" {up} mod(s) became High." if up else "")
                                 + (f" Rated High by you: {len(rated)}." if rated else "")
                                 + ("" if up or rated else f" A mod becomes High with {MIN_WITH}+ listings, ×{HIGH_LIFT:g} "
@@ -259,7 +254,8 @@ class FeedPage:
         tv.delete(*tv.get_children())
         for f in MARKET.fed():
             tv.insert("", "end", iid=f["sig"], values=(time.strftime("%b %d %H:%M", time.localtime(f["ts"])), f["name"],
-                                                       f"{f['div']:.2f}d", f["copies"], " · ".join(f["lines"])[:200]))
+                                                       f"{f['div']:.2f}d" if f["div"] is not None else "-",
+                                                       " · ".join(f["lines"])[:200]))
 
     def fd_forget(self):
         sel = self.fd_list.selection()
@@ -276,10 +272,11 @@ class FeedPage:
             return None
         buf = io.StringIO()
         w = csv.writer(buf)
-        w.writerow(("when", "base", "item", "price_div", "price_typed", "counts_as", "note", "mods"))
+        w.writerow(("when", "base", "item", "price_div", "price_typed", "note", "mods"))
         for f in MARKET.fed():
             w.writerow((time.strftime("%Y-%m-%d %H:%M", time.localtime(f["ts"])), f["base"], f["name"],
-                        f"{f['div']:.4f}", f["price_txt"], f["copies"], f["note"] or "", "; ".join(f["lines"])))
+                        "" if f["div"] is None else f"{f['div']:.4f}", f["price_txt"], f["note"] or "",
+                        "; ".join(f["lines"])))
         with open(path, "w", encoding="utf-8-sig", newline="") as fh:
             fh.write(buf.getvalue())
         self._say(f"Saved {path}", 6)

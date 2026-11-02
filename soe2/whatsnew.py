@@ -21,6 +21,10 @@ NEXT = [
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.54.1": [
+        "Mod book › Manual feed: the price is optional. Without one, the item is kept and the mods you tick are rated "
+        "High. \"Counts as N listings\" is gone: a fed item is one price, like any listing.",
+    ],
     "2.54.0": [
         "Money Makers: the filters are named like the fields - 🧠 Thoughts per click and 🖱 Clicks per hour (each shows "
         "the level you pick and the easier / calmer ones).",
