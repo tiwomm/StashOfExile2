@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU GPL v3.0 (see LICENSE). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.55.1
+VERSION 2.56.0
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,6 +19,15 @@ VERSION 2.55.1
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.56.0
+       Farm Ledger redone, part 1 (the user OK'd the Farm Ledger Redesign mockups): SetupCards (cards with name, what,
+       runs/logs, div/hour, a counting dot; click picks, Ctrl+click several, right-click = fl_setup_menu; answers
+       selection / selection_set / exists like the old list). Header + one primary Log loot; the counting strip
+       (fl_status + fl_dots, a dash per run of this log). THE VERDICT: "Makes / Loses about X div an hour" (fl_kpi
+       "ph"), why in words, how it ranks (_fl_rank). TILES: profit, return on cost, average run, loot, cost, runs.
+       fl_draw_money: where the money comes from (top 3 drops + the rest). The sheet keeps its room in a short window.
+       No setup: _fl_empty_page (3 steps, Make my first setup / Start from a strat / Import a CSV). Compare says who
+       wins first (fl_compare_say). test_v2560; test_v2450 takes a maximized screenshot too.
   2.55.1
        The item box (ins_preview, Price checks + Insights; the user): Esc, Space or a click anywhere that isn't on it
        closes it (_ins_pop_hooks: bind_all space / ButtonPress-1/3, set up once; app.hk_esc closes it before Esc
@@ -1319,7 +1328,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.55.1"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.56.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
