@@ -598,6 +598,19 @@ def paint_bar(cv, kind="title", tag="grad"):
     with raw():
         return _paint_bar(cv, kind, tag)
 
+def window_colors():
+    """(caption, text, border) for the app window's own title bar (2.61.0). A pack may set "window":
+    {"caption", "text", "border"}; otherwise the bottom of its title-bar gradient, its bar text, its light border."""
+    t = ST.theme
+    w = t.part("window") or {}
+    spec = t.part("bars", "title")
+    stops = t.grad(spec["fill"])
+    cap = t.c(w["caption"]) if w.get("caption") else grad_at(stops, 0.85)
+    txt = t.c(w["text"]) if w.get("text") else t.c(spec.get("text", "#ffffff"))
+    edge = t.c(w["border"]) if w.get("border") else t.c("border_light")
+    return cap, txt, edge
+
+
 def bar_text(kind="title"):
     t = ST.theme
     spec = t.part("bars", kind) or t.part("bars", "title")

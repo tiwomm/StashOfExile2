@@ -48,6 +48,8 @@ def pairs():
                 fg = TH.text_of(t, spec, "text" if k == "fill" else "text_hover", C["text"])
             out.append((f"{name} ({k})", fg, face))
     out.append(("quiet button", C["steel"], C["panel"]))
+    cap, txt, _edge = TH.window_colors()
+    out.append(("app window title bar (2.61.0)", txt, cap))
     for kind in ("title", "title_off"):
         spec = t.part("bars", kind)
         out.append((f"{kind} bar", t.c(spec.get("text", "#ffffff")), TH.grad_at(t.grad(spec["fill"]), 0.5)))

@@ -21,6 +21,11 @@ NEXT = [
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.61.0": [
+        "The app window's own title bar now takes the theme's colors too (Windows 11; on Windows 10 it turns dark "
+        "or light to match).",
+        "A fresh install starts by letting you pick a theme - you can change it any time in Settings › Appearance.",
+    ],
     "2.60.0": [
         "Themes: ten looks for the whole app in Settings › Appearance - click one and it changes at once, nothing "
         "restarts. Emberforge (iron, embers and blue rune-glow) is the new default; Midnight Steel is the old look.",
