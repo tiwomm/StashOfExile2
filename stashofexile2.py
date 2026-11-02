@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU GPL v3.0 (see LICENSE). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.61.1
+VERSION 2.62.0
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,6 +19,19 @@ VERSION 2.61.1
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.62.0
+       Pages (redesign step 1 of the mockup style): shell.PAGES - one tool at a time, filling the main area. Each
+       module keeps its own real window (DeskWindow) but as a page: placed over the whole desk (page_fill), no
+       edge / window buttons / resize handles / drag; Shell.open withdraws the other page; after_change brings the
+       previous page back; finish opens the last page (cfg "page"); minimise = minimize the app (Esc). soe2/sidebar.py
+       (Sidebar canvas, self-painted from the pack's "nav": bar / glow / pill / gem / bracket / arrow / step marker,
+       texture): groups Modules / Tools / In game, child tools indented with ↳, utilities' running dots, BETA tags,
+       Toolkit + Settings at the bottom, icons only under 1100 px. No dock and no taskbar: the status strip is the
+       status bar (task_right moved into it: Report a bug, league, utility dots, pin, clock). Launcher and Wallpaper
+       left Settings › Appearance. info_card also toasts when Price checks isn't the page. Light packs: bright
+       text (white, gold, amber) becomes a dark shade of its hue, near-black leftovers follow the pack's surfaces.
+       Packs carry "nav" (from the mockups). test_v2620; shell tests moved to pages (harness side_texts /
+       side_click).
   2.61.1
        Chat commands: the Key column is a key box again (KeyCapture, like Settings › Hotkeys) and Go to hideout has
        one too - click, press the key, right-click clears. chat_key_set saves (ov_save), refreshes the Hotkeys page,
@@ -1403,7 +1416,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.61.1"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.62.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
