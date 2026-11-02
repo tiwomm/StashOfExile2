@@ -20,7 +20,7 @@ DEFAULTS = {"overlay": True, "locked": False, "x": 60, "y": 260, "w": 230, "h": 
             "key_toggle": "", "key_pause": "", "ask_count": True, "log_path": "",
             "character": "", "character_guess": "", "alerts_bar": True, "autostart": False,
             "clock": True,
-            "merged": True, "layout": "panel"}            # 2.55.0: one overlay window (merged_page.py), Panel / Strip                         # 2.39.0: the in-game clock on the timer (Settings > Appearance > Clock)
+            "merged": True, "layout": "panel"}   # 2.39.0 clock; 2.55.0: one overlay window (merged_page.py)
 DEFAULT_KEYS = {"key_toggle": "Ctrl+Alt+S", "key_pause": "Ctrl+Alt+P"}       # 2.10.0: set once, change them in Options
 # 2.54.0 (the user): the Session timer times your play; money lives in one place, Money Makers › Farm Ledger.
 # Profit (Wealth at Stop minus at Start) is gone from here: its tiles, overlay line, options and Stop count.

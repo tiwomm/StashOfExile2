@@ -232,7 +232,7 @@ class MergedOverlay:
         mid = (y0 + y1) // 2
         if icon_only_row:                                   # Minimal: the icon over a short name
             dot = cv.create_text((x0 + x1) // 2, y0 + 10, text=P["off_icon"], fill=P["off"],
-                                 font=("Segoe UI Symbol", 11), tags=("mg", tag))
+                                 font=("Segoe UI Symbol", 10), tags=("mg", tag))
             lab = cv.create_text((x0 + x1) // 2, y1 - 9, text=SHORT[k], fill=P["text"], font=label_font,
                                  tags=("mg", tag))
         else:
