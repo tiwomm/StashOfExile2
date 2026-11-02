@@ -21,6 +21,10 @@ NEXT = [
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.66.1": [
+        "The Panel now looks like the game's Treasurer window: the title in small caps on a dark band, the league "
+        "or area in red under it, and your numbers in gold in dark boxes.",
+    ],
     "2.66.0": [
         "The overlay comes in two looks, both straight out of the game: the Panel, styled like the game's vendor "
         "windows (a header plate, your stats in gold, the switches in boxes that glow when on), and the Game bar. "

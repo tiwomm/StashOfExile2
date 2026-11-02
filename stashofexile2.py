@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU GPL v3.0 (see LICENSE). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.66.0
+VERSION 2.66.1
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,6 +19,13 @@ VERSION 2.66.0
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.66.1
+       The Panel redrawn to match the game's Treasurer window (feedback: 2.66.0's card didn't look like it): a
+       dark wood frame with a raised ridge, a charcoal title band with cut corners and a pale metal top edge,
+       SESSION in real small caps (_smallcaps: big first letter, smaller capitals), a dark maroon band under it
+       with the area / league in red capitals (_Sub), stats in rounded charcoal boxes with a soft lit rim, cream
+       icons and big gold numbers, the switches in the same boxes (gold rim and glow when on). No scrollwork.
+       hudart.card(w, h, bands) / box() / card_palette() redone.
   2.66.0
        One look over the game: the app's theme. overlaywin.theme_palette() builds the overlay palette from the
        running pack (surfaces, text, accent, border, good / bad, heading font; metal for the Game bar from the
@@ -1485,7 +1492,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.66.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.66.1"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
