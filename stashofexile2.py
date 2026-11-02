@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU GPL v3.0 (see LICENSE). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.63.0
+VERSION 2.64.0
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,6 +19,16 @@ VERSION 2.63.0
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.64.0
+       A page's tabs are listed in the sidebar under the page (↳), not along its top: Shell.register_tabs(key, bar)
+       hides a SegBar (pack_forget; command and pick wrapped so the sidebar follows) or a SegBook's button row
+       (<<NotebookTabChanged>>); tab_titles / tab_current / open_tab. Sidebar.items lists them as rows
+       ("<key>::<title>", depth 1 under a page, 2 under a child tool), a smaller row with the theme's marker; the
+       page's own row goes bold instead. When everything doesn't fit, only the open page's tabs are listed
+       (_fits / fold); none in the narrow icon sidebar. Registered: Money Makers (Strats, Lucrative Strats, Tablet
+       Crafting, Farm Tracker), Regex (Build a search, ★ Favorites), Exchange rates (Rates, Exchange Helper,
+       Arbitrage), Mod book (its six tabs). Farm Ledger is called Farm Tracker everywhere it's shown. ROADMAP's
+       "How the app is organised" has the rule. test_v2640; tests renamed to Farm Tracker.
   2.63.0
        Price checks, redesign step 2: soe2/chrome.py (SectionBar - a header strip painted from the pack's
        "bars.section", title left, note right; Viewport - the sunken frame from "panels.viewport"; both redraw
@@ -1428,7 +1438,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.63.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.64.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 

@@ -588,8 +588,8 @@ def stat_id(line):
 
 # ---------------------------------------------------------------- 2.46.0: strat guides as CSV
 # One layout for every Money Makers CSV: a strat guide is "section, field, value, note" rows - opens in Excel / Google
-# Sheets, diffs well, and its numbers use the Farm Ledger's CSV column names (ledger.CSV_LOG_HEAD), so a guide made
-# from your Farm Ledger and your Ledger's CSV say the same thing the same way.
+# Sheets, diffs well, and its numbers use the Farm Tracker's CSV column names (ledger.CSV_LOG_HEAD), so a guide made
+# from your Farm Tracker and your Ledger's CSV say the same thing the same way.
 CSV_HEAD = ("section", "field", "value", "note")
 CSV_MAGIC = "stashofexile2 strat"
 LEDGER_FIELDS = ("runs", "minutes", "cost_per_run_div", "loot_per_run_div", "profit_per_run_div", "div_per_hour")
@@ -651,7 +651,7 @@ def to_csv(s=None):
             w.writerow(("item", f"{n}:key_mod", m, ""))
     for k in LEDGER_FIELDS:
         if k in (s.get("ledger") or {}):
-            w.writerow(("ledger", k, f"{s['ledger'][k]:g}", "from the Farm Ledger"))
+            w.writerow(("ledger", k, f"{s['ledger'][k]:g}", "from the Farm Tracker"))
     return buf.getvalue()
 
 

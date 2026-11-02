@@ -16,14 +16,14 @@ from .style import ScrollArea, C, FONT_TITLE, SegBar
 from .tracker import fmt_time, Session, Sessions
 
 DEFAULTS = {"overlay": True, "locked": False, "x": 60, "y": 260, "w": 230, "h": 190, "opacity": 225,
-            "lines": {"session": True, "map": True, "maps": True, "avg": True},   # 2.54.0: no profit (Farm Ledger has it)
+            "lines": {"session": True, "map": True, "maps": True, "avg": True},   # 2.54.0: no profit (Farm Tracker has it)
             "key_toggle": "", "key_pause": "", "ask_count": True, "log_path": "",
             "character": "", "character_guess": "", "alerts_bar": True, "autostart": False,
             "clock": True,
             "merged": True, "layout": "panel"}   # 2.39.0 clock; 2.55.0: one overlay window (merged_page.py)
 DEFAULT_KEYS = {"key_toggle": "Ctrl+Alt+S", "key_pause": "Ctrl+Alt+P",
                 "key_overlay": "F6"}           # 2.59.0: F6 shows / hides the whole overlay       # 2.10.0: set once, change them in Options
-# 2.54.0: the Session timer times your play; money lives in one place, Money Makers › Farm Ledger.
+# 2.54.0: the Session timer times your play; money lives in one place, Money Makers › Farm Tracker.
 # Profit (Wealth at Stop minus at Start) is gone from here: its tiles, overlay line, options and Stop count.
 LINE_NAMES = [("session", "Session time"), ("map", "This map's time"), ("maps", "Maps done"), ("avg", "Average map")]
 
@@ -131,9 +131,9 @@ class TrackerPage:
             nums.columnconfigure(c, weight=1, uniform="n")
         led = tk.Frame(body, bg=P1)                    # 2.54.0: where the money went
         led.pack(fill="x", padx=8, pady=(0, 4))
-        tk.Label(led, text="Profit is tracked per farming setup in Money Makers › Farm Ledger.", bg=P1, fg=C["muted"],
+        tk.Label(led, text="Profit is tracked per farming setup in Money Makers › Farm Tracker.", bg=P1, fg=C["muted"],
                  font=("Segoe UI", 9)).pack(side="left")
-        ttk.Button(led, text="Open Farm Ledger", style="Quiet.TButton",
+        ttk.Button(led, text="Open Farm Tracker", style="Quiet.TButton",
                    command=self.tracker_open_ledger).pack(side="left", padx=8)
         # (2.10.0's "Alerts while you play" panel is the Mechanic Helper tab since 2.44.0: build_overlays_hub)
 
@@ -647,9 +647,9 @@ class TrackerPage:
         self.tracker_finish()
 
     def tracker_open_ledger(self):
-        """2.54.0: Money Makers › Farm Ledger, where profit is tracked."""
+        """2.54.0: Money Makers › Farm Tracker, where profit is tracked."""
         self.shell.open("money")
-        self.mm_page.pick("Farm Ledger", notify=False)
+        self.mm_page.pick("Farm Tracker", notify=False)
         self.mm_show_page()
 
     def tracker_after_count(self):
@@ -911,7 +911,7 @@ class TrackerPage:
     def tracker_on_key(self, vk, ctrl, alt, shift):
         if self.remnant_on_key(vk, ctrl, alt, shift):                   # 2.37.0: Expedition Remnant Price Checker
             return True
-        if self.fl_on_key(vk, ctrl, alt, shift):                       # 2.45.0: Farm Ledger "a run is done"
+        if self.fl_on_key(vk, ctrl, alt, shift):                       # 2.45.0: Farm Tracker "a run is done"
             return True
         cfg = SETTINGS.get("tracker") or {}
         for key, action in (("key_toggle", "toggle"), ("key_pause", "pause"), ("key_overlay", "overlay")):
@@ -946,7 +946,7 @@ class TrackerPage:
                 ("Show / hide the overlay", tc.get("key_overlay", ""), "Overlays", "tracker:key_overlay"),
                 ("Expedition Remnant Price Checker (in game)", self.remnant_cfg().get("key", ""), "Overlays",
                  "remnant:key"),
-                ("Farm Ledger: a run is done (setups counted by key)", SETTINGS.get("ledger_key") or "Ctrl+Alt+N",
+                ("Farm Tracker: a run is done (setups counted by key)", SETTINGS.get("ledger_key") or "Ctrl+Alt+N",
                  "Money Makers", "checks:ledger_key"),
                 ("Go to hideout", oc.get("hideout_key", ""), "Chat commands", "overlay:hideout_key")]
         for i, c in enumerate(oc.get("commands", []) or []):
