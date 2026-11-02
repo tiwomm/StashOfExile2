@@ -21,6 +21,14 @@ NEXT = [
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.67.0": [
+        "Overlay layouts: the Panel and the Game bar on the XP bar - and the XP bar now has the Breach / Delirium / "
+        "Ritual / Remnant switches too. Notes match the overlay's look and still move and resize.",
+        "Farm Tracker: \"The mods that matter\" asks about one item at a time, in the middle of the setup window "
+        "(no more pile in the screen's corner), and the \"valuable mods\" pop-up no longer shows for setup items.",
+        "Farm Tracker: each item now has a Trade search (that base, the mods that matter, 10+ uses remaining) and a "
+        "Copy regex for your stash.",
+    ],
     "2.66.2": [
         "The Panel, redone: a heavy dark-metal frame with gold filigree corners, a framed header banner, and your "
         "numbers in big antique gold in a clean 2 x 2 grid with a small icon each.",

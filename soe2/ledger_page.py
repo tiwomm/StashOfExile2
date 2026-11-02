@@ -1407,7 +1407,11 @@ class LedgerPage:
         win.title(f"Farm Tracker - {s['name']}")
         win.configure(bg=P1)
         win.transient(self.root)
-        win.geometry("1060x640")
+        try:                                                 # 2.67.0: centered on the app, not the screen's corner
+            rx, ry, rw, rh = self.root.winfo_rootx(), self.root.winfo_rooty(), self.root.winfo_width(), self.root.winfo_height()
+            win.geometry(f"1060x640+{rx + max(0, (rw - 1060) // 2)}+{ry + max(0, (rh - 640) // 3)}")
+        except tk.TclError:
+            win.geometry("1060x640")
         self.fl_ed, self.fl_ed_s = win, s
         self.fl_ed_ver = _json.loads(_json.dumps(L.version(s)))           # edited as a copy; Save decides the version
         top = tk.Frame(win, bg=P2, padx=16, pady=8)
@@ -1570,6 +1574,18 @@ class LedgerPage:
                       font=("Segoe UI", 9, "underline"), anchor="w")
         km.pack(fill="x", pady=(2, 0))
         km.bind("<Button-1>", lambda ev: self.fl_key_mods(e))
+        if e.get("key_mods") and kind != "others":        # 2.67.0: search for more of it, on the site or in your stash
+            lr = tk.Frame(card, bg=P1)
+            lr.pack(fill="x", pady=(2, 0))
+            for text, fn, tip in (("🔗 Trade search", self.fl_open_search,
+                                   "Opens the trade site: this base with the mods that matter"
+                                   + (", 10+ uses remaining" if kind == "tablets" else "")),
+                                  ("⧉ Copy regex", self.fl_copy_regex,
+                                   "Copies a stash search for the mods that matter (paste it in your stash)")):
+                lb = tk.Label(lr, text=text, bg=P1, fg=C["blue"], cursor="hand2", font=("Segoe UI", 9, "underline"))
+                lb.pack(side="left", padx=(0, 12))
+                lb.bind("<Button-1>", lambda ev, f=fn: f(e))
+                Tooltip(lb, tip)
 
     def fl_price_text(self, e):
         p = L.entry_price(e)
@@ -1695,8 +1711,19 @@ class LedgerPage:
 
     def fl_key_mods(self, e):
         """Which mods make it work? Starred mods are what the setup needs (shown on the card; 2.46.0 checks their cost
-        every day)."""
+        every day). 2.67.0: one at a time, centered on the app (several copied items wait their turn instead of
+        piling up in the screen's corner)."""
         if not e.get("mods"):
+            return None
+        cur = getattr(self, "fl_km_win", None)
+        try:
+            busy = cur is not None and cur.winfo_exists()
+        except tk.TclError:
+            busy = False
+        if busy:
+            q = self.__dict__.setdefault("fl_km_queue", [])
+            if e not in q:
+                q.append(e)
             return None
         win = tk.Toplevel(self.root)
         win.title("The mods that matter")
@@ -1715,17 +1742,109 @@ class LedgerPage:
             ttk.Checkbutton(f, text=m, variable=v).pack(anchor="w")
             vars_.append((m, v))
 
+        def nxt():
+            q = getattr(self, "fl_km_queue", [])
+            if q:
+                self.root.after(50, lambda: self.fl_key_mods(q.pop(0)))
+
+        def close():
+            win.destroy()
+            nxt()
+
         def ok():
             e["key_mods"] = [m for m, v in vars_ if v.get()]
             win.destroy()
             if self.fl_ed_open():
                 self.fl_ed_fill()
+            nxt()
         b = tk.Frame(f, bg=C["panel"])
         b.pack(fill="x", pady=(12, 0))
         ttk.Button(b, text="Done", style="Primary.TButton", command=ok).pack(side="right")
-        ttk.Button(b, text="Skip", style="Quiet.TButton", command=win.destroy).pack(side="right", padx=(0, 8))
+        ttk.Button(b, text="Skip", style="Quiet.TButton", command=close).pack(side="right", padx=(0, 8))
+        win.protocol("WM_DELETE_WINDOW", close)
         self.fl_km_win, self.fl_km_vars, self.fl_km_ok = win, vars_, ok
+        self._fl_center(win)
         return win
+
+    def _fl_center(self, win):
+        """Put a small window in the middle of the app (or of the Farm Tracker's setup window, when it's open)."""
+        try:
+            win.update_idletasks()
+            host = self.fl_ed if self.fl_ed_open() else self.root
+            hx, hy, hw, hh = host.winfo_rootx(), host.winfo_rooty(), host.winfo_width(), host.winfo_height()
+            ww, wh = win.winfo_reqwidth(), win.winfo_reqheight()
+            win.geometry(f"+{hx + max(0, (hw - ww) // 2)}+{hy + max(0, (hh - wh) // 3)}")
+            win.lift()
+            win.focus_force()
+        except tk.TclError:
+            pass
+
+    # ---------------- 2.67.0: a trade search and a stash regex for the mods that matter
+    def fl_entry_search(self, e):
+        """-> (trade site URL or None, stash-search regex or "") for a setup item: its base, the mods you ticked as
+        mattering, and (tablets) at least 10 uses remaining."""
+        import json as _json
+        from urllib.parse import quote
+        from . import regex as RX
+        from .mods import find_stat
+        from .trade import uses_stat_id
+        keys = [m for m in (e.get("key_mods") or []) if "uses remaining" not in m.lower()]
+        tablet = "tablet" in str(e.get("cls") or "").lower() or str(e.get("base") or "").endswith("Tablet")
+        url = None
+        table = getattr(getattr(self, "engine", None), "table", None)
+        if table:
+            flt = []
+            for t in keys:
+                try:
+                    sid = find_stat(t, (), table)[0]
+                except Exception:
+                    sid = None
+                if sid:
+                    flt.append({"id": sid})
+            if tablet:
+                us = uses_stat_id(table)
+                if us:
+                    flt.append({"id": us, "value": {"min": 10}})
+            q = {"query": {"status": {"option": "securable"}, "type": e.get("base") or e.get("name"),
+                           "stats": [{"type": "and", "filters": flt}]}, "sort": {"price": "asc"}}
+            league = SETTINGS.get("league") or "Standard"
+            url = (f"https://www.pathofexile.com/trade2/search/poe2/{quote(league)}"
+                   f"?q={quote(_json.dumps(q, separators=(',', ':')))}")
+        kind = "tablet" if tablet else "waystone" if "waystone" in str(e.get("cls") or "").lower() else None
+        rx = ""
+        if kind:
+            ids = []
+            for t in keys:
+                for i in RX.matching_mods(kind, t):
+                    if i not in ids:
+                        ids.append(i)
+            opts = {}
+            if tablet:
+                opts["uses"] = 10
+                first = str(e.get("base") or "").split(" ")[0]
+                if first in RX.TABLET_TYPES:
+                    opts["types"] = [first]
+            rx, _notes = RX.build(kind, [(i, None) for i in ids], [], want_all=True, options=opts)
+        return url, rx
+
+    def fl_open_search(self, e):
+        url, _rx = self.fl_entry_search(e)
+        if not url:
+            return self._say("The trade site's mod list isn't loaded yet - try again in a moment.", 6)
+        import webbrowser
+        webbrowser.open(url)
+
+    def fl_copy_regex(self, e):
+        _url, rx = self.fl_entry_search(e)
+        if not rx:
+            return self._say("No stash search for these mods.", 6)
+        try:
+            self.root.clipboard_clear()
+            self.root.clipboard_append(rx)
+            self.last_clip = self.own_clip = rx
+        except tk.TclError:
+            pass
+        self._say(f"Copied the stash search: {rx}", 8)
 
     def fl_ed_save(self):
         d, s = self.fl_data(), self.fl_ed_s

@@ -1,7 +1,7 @@
 """One overlay (2.55.0, from the mockups): the Session timer, the Mechanic Helper and Notes in ONE window
 over the game. 2.67.0: two looks, both the game's own - the Panel (a card like the game's vendor windows: header
-plate, stats in boxes, the switches) and the Game bar (on the XP bar, or split beside the life and mana orbs, in the
-HUD's own frame). Notes opens as its own window from Notes ▾.
+plate, stats in a grid, the switches) and the Game bar (on the XP bar, in the HUD's own frame). 2.67.0: the four
+switches are in both whenever the timer shows. Notes opens as its own window from Notes ▾.
 
 Which parts show: the timer while it's shown (Show timer, or a session running - as before), the switches while the
 Mechanic Helper's switch is on. One window holds whatever is on; when nothing is, it's gone. ToS: it only shows
@@ -13,16 +13,14 @@ from .overlaywin import CanvasText, OverlayWindow, pal
 
 # 2.66.0: one look (the app's theme); the layout says the shape - Minimal moved here from the old Style list
 # 2.67.0 (feedback: "get rid of all of the other options"): the Panel in the game's vendor-window style (the
-# Treasurer's ledger) and the Game bar on the XP bar / beside the orbs. Strip and Minimal are gone (-> Panel).
-LAYOUTS = {"panel": "Panel", "xpbar": "Game bar - on the XP bar", "orbs": "Game bar - beside the orbs"}
-HUD = ("xpbar", "orbs")          # 2.65.0: fitted to the game's own bottom bar, in its look
+# Treasurer's ledger) and the Game bar on the XP bar. Strip, Minimal and beside-the-orbs are gone (-> Panel).
+LAYOUTS = {"panel": "Panel", "xpbar": "Game bar - on the XP bar"}      # 2.67.0: beside the orbs is gone
+HUD = ("xpbar",)                 # 2.65.0: fitted to the game's own bottom bar, in its look
 
 # Where the game's bottom bar leaves room, as parts of the game window's height (PoE2 at 16:9, UI scale 100 %;
 # the orbs' panels are anchored to the left and right edges, the XP bar runs between them). (x0, x1, bottom, h)
 #   x0 / x1 >= 0: from the left edge, < 0: from the right edge; bottom: up from the bottom edge.
-HUD_SPOTS = {"xpbar": [(0.535, -0.535, 0.0205, 0.026)],
-             "orbs": [(0.215, 0.525, 0.138, 0.046), (-0.525, -0.215, 0.138, 0.046)]}
-# 2.66.0 (feedback: too wide): beside the orbs each half is only as wide as what it shows, from the orb's side
+HUD_SPOTS = {"xpbar": [(0.535, -0.535, 0.0205, 0.026)]}
 SHORT = {"breach": "Brch", "delirium": "Deli", "ritual": "Ritl", "remnant": "Remn"}
 
 
@@ -120,7 +118,7 @@ class MergedOverlay:
     def merged_wants(self):
         oc = self.overlay.cfg
         return {"timer": bool(getattr(self, "mg_timer", False)),
-                "helpers": bool(self.tracker_cfg().get("alerts_bar", True)),
+                "helpers": bool(self.tracker_cfg().get("alerts_bar", True)) or bool(getattr(self, "mg_timer", False)),
                 "notes": self.merged_embeds_notes() and bool(oc.get("notes_enabled")) and bool(oc.get("notes_visible"))}
 
     def merged_set(self, layout=None):
@@ -530,13 +528,7 @@ class MergedOverlay:
         _seed(TH, P)
         self.mg_P = P
         spots = self.hud_spots(layout)
-        if layout == "orbs":                                # 2.66.0: as wide as what each half shows
-            spots = self._hud_snug(spots, want, P)
-        parts = [("all", spots[0])] if layout == "xpbar" else [("timer", spots[0]), ("rest", spots[1])]
-        if layout == "orbs" and not want["timer"]:
-            parts = [("rest", spots[1])]
-        elif layout == "orbs" and not want["helpers"] and not self.overlay.cfg.get("notes_enabled"):
-            parts = [("timer", spots[0])]
+        parts = [("all", spots[0])]
         self.tk_ov_lbls, self.tk_ov_alerts, self.tk_ov_clock, self.tk_ov_cv = {}, {}, None, None
         wins = []
         for part, (x, y, ww, hh) in parts:
@@ -558,14 +550,8 @@ class MergedOverlay:
             if not cfg.get("mlocked"):
                 w.draggable(cv)
             W, H = ww - 2, hh - 2
-            self._hud_ends = {"all": ("crimson", "sapphire"), "timer": ("crimson", "crimson")}.get(part,
-                                                                                                ("sapphire", "sapphire"))
-            if part == "all":
-                self._hud_row(w, cv, P, want, W, H)
-            elif part == "timer":
-                self._hud_timer(cv, P, W, H)
-            else:
-                self._hud_rest(w, cv, P, want, W, H)
+            self._hud_ends = ("crimson", "sapphire")
+            self._hud_row(w, cv, P, want, W, H)
             wins.append(w)
             if self.tk_ov_cv is None:
                 self.tk_ov_cv = cv
@@ -586,36 +572,6 @@ class MergedOverlay:
     def _hf(self, n):
         """A font size for the Game bar, grown with the game window (made for 1080 px high)."""
         return max(7, round(n * getattr(self, "_hud_k", 1.0)))
-
-    def _hud_snug(self, spots, want, P):
-        """Beside the orbs: each half's width from its content, kept against its orb (left half grows right, the
-        right half grows left)."""
-        from . import hudart
-        cfg = self.tracker_cfg()
-        fm = tkfont.Font(root=self.root, family=P["font"], size=self._hf(10))
-        fb = tkfont.Font(root=self.root, family=P["font"], size=self._hf(13), weight="bold")
-        out = []
-        for i, (x, y, w, h) in enumerate(spots):
-            m = 2 * (hudart.cap_width(h) + 14)
-            if i == 0:
-                need = max(max(fb.measure("0:00:00"), fb.measure("not tracking")) + 16 + fm.measure("Avg  00:00"),
-                           fm.measure("Map  00:00") + 8 + fm.measure("Mmmmm") + 8 + fm.measure("Maps  00"))
-            else:
-                side = max(fm.measure("00:00 PM"), fm.measure("Notes  ▾") + 22) + 8
-                cells = (2 * max(56, max(self._hud_cell_w_root(P, k) for k in self.HELPERS)) + 5 + 12
-                         if want["helpers"] else 0)
-                need = side + cells
-            nw = int(min(w, max(need + m, 0.13 * h / 0.046)))
-            saved = ((cfg.get("hud_pos") or {}).get("orbs") or [None, None])
-            moved = i < len(saved) and saved[i]
-            if i == 1 and not moved:
-                x = x + w - nw
-            out.append((x, y, nw, h))
-        return out
-
-    def _hud_cell_w_root(self, P, k):
-        fb = tkfont.Font(root=self.root, family=P["font"], size=self._hf(9))
-        return fb.measure(SHORT[k]) + 16 + self._hf(12)
 
     def _hud_frame(self, cv, P, W, H):
         """The game bar's plate (hudart: carved stone, bevelled bronze frame, end caps with an amber gem, a
@@ -721,6 +677,8 @@ class MergedOverlay:
                 cfg["lines"].get("maps") or cfg["lines"].get("avg")) else 0)
             cells_w = sum(self._hud_cell_w(cv, P, k, True) + 4 for k in self.HELPERS) + 24 if want["helpers"] else 0
             notes_w = fm.measure("Notes  ▾") + 16 if self.overlay.cfg.get("notes_enabled") else 0
+            if right - x - need_rest - cells_w - notes_w - 24 < 0:      # 2.67.0: the switches come first
+                need_rest = 0
             where_w = right - x - need_rest - cells_w - notes_w - 24
             if where_w > 40:
                 wt = self._mg_text(cv, P, x, mid, "where", f, fill=P["muted"], cls=_Trunc)
@@ -738,52 +696,3 @@ class MergedOverlay:
             x += 14
         if self.overlay.cfg.get("notes_enabled") and x < right - 40:
             self._mg_notes_button(w, cv, P, x, mid, anchor="w")
-
-    def _hud_timer(self, cv, P, W, H):
-        """Right of the life orb: the time and Avg on top, a rule, then the map, where you are and Maps."""
-        cfg = self.tracker_cfg()
-        lft, rgt = self._hud_frame(cv, P, W, H)
-        top, low = H * 0.36, H * 0.70
-        self._mg_text(cv, P, lft, top, "session", (P["font"], self._hf(13), "bold"), fill=P["big"])
-        fm = tkfont.Font(root=cv, family=P["font"], size=self._hf(10))
-        if cfg["lines"].get("avg"):
-            self._mg_text(cv, P, rgt, top, "avg", (P["font"], self._hf(10)), anchor="e")
-        self._hud_rule(cv, P, lft, rgt, H * 0.53)
-        end = rgt
-        if cfg["lines"].get("maps"):
-            self._mg_text(cv, P, rgt, low, "maps", (P["font"], self._hf(10)), anchor="e")
-            end = rgt - fm.measure("Maps  00") - 8
-        if cfg["lines"].get("map", True):
-            self._mg_text(cv, P, lft, low, "map", (P["font"], self._hf(10)))
-            x = lft + fm.measure("Map  00:00") + 8
-            if end - x > 30:
-                wt = self._mg_text(cv, P, x, low, "where", (P["font"], self._hf(10)), fill=P["muted"], cls=_Trunc)
-                wt.limit = max(4, int((end - x) / ((fm.measure("m") or 8) * 0.8)))
-
-    def _hud_rule(self, cv, P, x0, x1, y):
-        """A thin bronze rule that fades out at both ends, a small lozenge in the middle."""
-        from .themes import mix
-        n = 24
-        seg = (x1 - x0) / n
-        for i in range(n):
-            a = 1 - abs((i + 0.5) / n - 0.5) * 2
-            cv.create_line(x0 + i * seg, y, x0 + (i + 1) * seg, y, fill=mix(P["bg"], P["rim"], a ** 0.7), tags=("mg",))
-        cx = (x0 + x1) / 2
-        cv.create_polygon(cx, y - 3, cx + 3, y, cx, y + 3, cx - 3, y, fill=P["rim"], outline=P["rim_lo"], tags=("mg",))
-
-    def _hud_rest(self, w, cv, P, want, W, H):
-        """Left of the mana orb: the four switches (2 x 2), then Notes, the clock and the lock."""
-        cfg = self.tracker_cfg()
-        lft, rgt = self._hud_frame(cv, P, W, H)
-        fm = tkfont.Font(root=cv, family=P["font"], size=self._hf(10))
-        side = max(fm.measure("00:00 PM"), fm.measure("Notes  ▾") + 22) + 8
-        top, low = H * 0.36, H * 0.70
-        gx = self._mg_glyphs(w, cv, P, rgt, low)
-        if want["timer"] and cfg.get("clock", True):
-            self._hud_clock(w, cv, P, rgt, top)
-        if self.overlay.cfg.get("notes_enabled"):
-            self._mg_notes_button(w, cv, P, gx - 2, low, anchor="e")
-        if want["helpers"]:
-            cw = max(56, (rgt - lft - side - 12 - 5) // 2)
-            x = self._hud_cells(cv, P, lft, 9, H - 9, short=cw < 86, cols=2, cw=cw)
-            self._hud_sep(cv, P, x + 4, H)

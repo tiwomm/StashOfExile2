@@ -884,7 +884,7 @@ class TrackerPage:
     def tracker_helpers_sync(self):
         """2.49.0 (feedback: "it's a different bar, independent of the session tracker"): the bar shows whenever its
         switch is on - timer or not, session or not - and only while the game is in front (like every overlay)."""
-        on = bool(self.tracker_cfg().get("alerts_bar", True))
+        on = bool(self.tracker_cfg().get("alerts_bar", True)) or bool(getattr(self, "mg_timer", False))   # (2.67.0)
         if on != bool(getattr(self, "mg_built", {}).get("helpers")) or (on and getattr(self, "mg_win", None) is None):
             self.merged_build()
         self.tracker_helpers_paint()

@@ -1411,9 +1411,9 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         lc.grid(row=0, column=1, sticky="w", pady=2)
         lc.bind("<<ComboboxSelected>>", lambda e: self.merged_set(
             layout=next((k for k, t in LAYOUTS.items() if t == self.ov_layout_var.get()), "panel")))
-        tk.Label(g, text="Panel: a card like the game's vendor windows - place it anywhere.\nGame bar: fitted to the "
-                         "game's bottom bar - on the XP bar, or split beside the life and mana orbs. Unlocked, you "
-                         "can drag it; picking the layout again puts it back. Both are drawn in the game's own style.",
+        tk.Label(g, text="Panel: a card like the game's vendor windows - place it anywhere.\nGame bar: rests on the "
+                         "game's XP bar. Unlocked, you can drag it; picking the layout again puts it back. Both are "
+                         "drawn in the game's own style, with the Breach / Delirium / Ritual / Remnant switches.",
                  bg=P2, fg=C["muted"], font=("Segoe UI", 9), justify="left", wraplength=620).grid(
             row=1, column=0, columnspan=2, sticky="w", pady=(4, 0))
         # 2.49.0: say what opacity does - and show the number
@@ -2988,7 +2988,7 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         self.update_row(rid)
         self.refresh_detail_if_selected(rid)
         goods = self.good_mods(self.records[rid])
-        if goods and SETTINGS["popups"]:
+        if goods and SETTINGS["popups"] and self.records[rid].get("src") != "ledger":   # 2.67.0: not for the Farm Tracker's own items
             lines = [pretty(m["text"]) + (f"  -  listings with it ask about {fmt_div(med)}" if med is not None else "  -  learned as valuable")
                      for m, med in goods[:4]]
             self.toast.show(f"★ {len(goods)} valuable mod{'s' if len(goods) > 1 else ''}", lines, C["good"],
