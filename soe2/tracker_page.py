@@ -877,7 +877,7 @@ class TrackerPage:
                     if RITUAL.seen == "ok" and RITUAL.count:
                         txt = f"Ritual {RITUAL.count[0]}/{RITUAL.count[1]}"
                 from .overlaywin import pal
-                P = pal()
+                P = getattr(self, "mg_P", None) or pal()      # 2.65.0: the Game bar brings its own colors
                 dot.config(fg=P[st], text=P["on_icon"] if st != "off" else P["off_icon"])   # green on, red off
                 lab.config(text=txt, fg=P["text"] if st != "off" else P["muted"])
 

@@ -846,10 +846,14 @@ class Shell:
         return self.visible(mod) and not getattr(mod, "hidden", False) and not getattr(mod, "parent", None)
 
     # ---- 2.64.0: a page's own tabs live in the sidebar, under the page (↳), not along its top
-    def register_tabs(self, key, bar):
+    def register_tabs(self, key, bar, home=None):
         """bar: a SegBar or a SegBook whose tabs switch the page's content. Its row is hidden; the sidebar lists the
-        tabs under the module and picks them."""
+        tabs under the module and picks them. home (2.65.0): a tab that is the page itself - not listed; a click on
+        the page's own row opens it (Regex: Build a search, with ↳ Favorites under it)."""
         self.tabs[key] = bar
+        self.tab_homes = getattr(self, "tab_homes", {})
+        if home:
+            self.tab_homes[key] = home
         top = getattr(bar, "top", None)                 # SegBook: its button row
         if top is not None:
             top.pack_forget()
@@ -871,10 +875,15 @@ class Shell:
             sb.redraw()
 
     def tab_titles(self, key):
+        """The tabs listed under a page (not its home tab)."""
         bar = self.tabs.get(key)
         if bar is None:
             return []
-        return list(bar.titles) if hasattr(bar, "titles") else list(bar.btns)
+        home = getattr(self, "tab_homes", {}).get(key)
+        return [t for t in (bar.titles if hasattr(bar, "titles") else bar.btns) if t != home]
+
+    def tab_home(self, key):
+        return getattr(self, "tab_homes", {}).get(key)
 
     def tab_current(self, key):
         bar = self.tabs.get(key)

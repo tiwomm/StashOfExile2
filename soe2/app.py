@@ -1420,8 +1420,15 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         lc.grid(row=1, column=1, sticky="w", pady=2)
         lc.bind("<<ComboboxSelected>>", lambda e: self.merged_set(
             layout=next((k for k, t in LAYOUTS.items() if t == self.ov_layout_var.get()), "panel")))
-        tk.Label(g, text="Panel: a card you place anywhere. Strip: one thin bar, made for the top edge of the screen.",
-                 bg=P2, fg=C["muted"], font=("Segoe UI", 9)).grid(row=2, column=0, columnspan=2, sticky="w", pady=(4, 0))
+        # 2.65.0: the Game bar layouts sit on the game's own bottom bar - put them back there after a drag
+        self.ov_hud_fit = ttk.Button(g, text="↺ Fit to the game", style="Quiet.TButton", command=self.hud_fit)
+        self.ov_hud_fit.grid(row=1, column=2, sticky="w", padx=(8, 0))
+        tk.Label(g, text="Panel: a card you place anywhere. Strip: one thin bar, made for the top edge of the screen.\n"
+                         "Game bar: in the game's own bar look, fitted to its bottom bar - on the XP bar, or split "
+                         "beside the life and mana orbs (time on the left; switches, Notes and clock on the right). "
+                         "Unlocked, you can drag it; Fit to the game puts it back.",
+                 bg=P2, fg=C["muted"], font=("Segoe UI", 9), justify="left", wraplength=620).grid(
+            row=2, column=0, columnspan=3, sticky="w", pady=(4, 0))
         # 2.49.0: say what opacity does - and show the number
         row = section("Appearance", "Opacity", "How solid each window is over the game. 100% = fully solid: nothing of "
                                                "the game shows through it. Lower = more see-through: the whole window "
@@ -1490,7 +1497,7 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         t["opacity"] = t["hopacity"] = v
         self.overlay.cfg["notes_opacity"] = v
         for w in (getattr(self, "tk_overlay", None), getattr(self, "tk_helpers", None),
-                  getattr(self.overlay, "notes", None), getattr(self, "mg_win", None)):
+                  getattr(self.overlay, "notes", None), getattr(self, "mg_win", None), getattr(self, "mg_win2", None)):
             try:
                 if w is not None and w.winfo_exists():
                     w.set_opacity(v)
