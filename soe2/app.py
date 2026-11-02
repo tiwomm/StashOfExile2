@@ -44,7 +44,7 @@ from .engine import Engine
 from . import gear, waystone
 from .toasts import Toasts
 from .style import C, FLAG_COLORS, FONT_TITLE, hotkey_blocked, MONO, Plate, SegBook, SegBar, setup_style, Toast, KeyCapture
-from .chrome import SectionBar, Viewport
+from .chrome import SectionBar, Viewport, section as chrome_section
 from .winsys import ICON_B64, KeyWatch, Tray
 from .wealth_page import WealthPage
 from .wealth_setup import WealthSetup
@@ -916,12 +916,8 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         self.settings_pages = pages
 
         def section(page, title, note=""):
-            f = tk.Frame(pages[page][1], bg=P2, padx=16, pady=8, highlightthickness=1, highlightbackground=C["line"])
-            f.pack(fill="x", pady=(0, 8))
-            tk.Label(f, text=title, bg=P2, fg=C["accent"], font=("Segoe UI", 12, "bold"), anchor="w").pack(fill="x")
-            if note:
-                tk.Label(f, text=note, bg=P2, fg=C["muted"], font=("Segoe UI", 9), anchor="w", justify="left",
-                         wraplength=600).pack(fill="x", pady=(2, 8))
+            outer, f = chrome_section(pages[page][1], title, note)    # 2.69.0: header strip + sunken frame
+            outer.pack(fill="x", pady=(0, 8))
             row = tk.Frame(f, bg=P2)
             row.pack(fill="x")
             return row
@@ -1389,12 +1385,8 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         P2 = C["panel2"]
 
         def section(_page, title, note=""):
-            f = tk.Frame(parent, bg=P2, padx=16, pady=8, highlightthickness=1, highlightbackground=C["line"])
-            f.pack(fill="x", pady=(0, 8))
-            tk.Label(f, text=title, bg=P2, fg=C["accent"], font=("Segoe UI", 12, "bold"), anchor="w").pack(fill="x")
-            if note:
-                tk.Label(f, text=note, bg=P2, fg=C["muted"], font=("Segoe UI", 9), anchor="w", justify="left",
-                         wraplength=600).pack(fill="x", pady=(2, 8))
+            outer, f = chrome_section(parent, title, note)            # 2.69.0: header strip + sunken frame
+            outer.pack(fill="x", pady=(0, 8))
             row = tk.Frame(f, bg=P2)
             row.pack(fill="x")
             return row
@@ -2106,6 +2098,7 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         w = anchor if isinstance(anchor, tk.Misc) else getattr(self, "set_anchors", {}).get(anchor)
         if w is None:
             return
+        w = getattr(w, "section_outer", w)                 # 2.69.0: the whole section (its strip and frame)
         try:
             sa = self.settings_pages[page][0]
             self.root.update_idletasks()
@@ -2134,6 +2127,9 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         for page, (_sa, wrap) in self.settings_pages.items():
             for f in wrap.winfo_children():
                 acc = words(f, [])
+                title = getattr(f, "section_title", None)     # 2.69.0: the title is drawn on the header strip
+                if title:
+                    acc.insert(0, title)
                 if acc:
                     out.append((page, f, acc[0].strip()[:60], " ".join(acc).lower() + " " + page.lower()))
         return out
@@ -2305,8 +2301,8 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
                       cursor="hand2", font=("Segoe UI", 9, "underline"))     # 2.59.0: the switch lives in Settings
         lk.pack(anchor="w", padx=16)
         lk.bind("<Button-1>", lambda e: self.settings_open("Tools", "rates"))
-        conv = tk.Frame(w, bg=C["panel2"], padx=16, pady=8, highlightthickness=1, highlightbackground=C["line"])
-        conv.pack(fill="x", padx=16, pady=8)
+        cvo, conv = chrome_section(w, "Convert")              # 2.69.0: header strip + sunken frame
+        cvo.pack(fill="x", padx=16, pady=8)
         row = tk.Frame(conv, bg=C["panel2"])
         row.pack(fill="x")
         tk.Label(row, text="What is", bg=C["panel2"], fg=C["muted"]).pack(side="left")
@@ -2323,10 +2319,8 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         self.conv_var.trace_add("write", lambda *a: self.draw_rates())
         # ---- 2.2.0: what to post on the in-game Currency Exchange (2.4.0: its own tab, "Exchange Helper")
         hp = self.rates_pages["Exchange Helper"]
-        ex = tk.Frame(hp, bg=C["panel2"], padx=16, pady=8, highlightthickness=1, highlightbackground=C["line"])
-        ex.pack(fill="x", padx=16, pady=8)
-        tk.Label(ex, text="Exchange Helper", bg=C["panel2"], fg=C["accent"], font=("Segoe UI", 10, "bold"),
-                 anchor="w").pack(fill="x")
+        exo, ex = chrome_section(hp, "Exchange Helper")
+        exo.pack(fill="x", padx=16, pady=8)
         tk.Label(ex, text="Pick what you're selling and what you want: it shows the ratio to post on the Currency "
                           "Exchange, and what you'd get.", bg=C["panel2"], fg=C["muted"], anchor="w", justify="left",
                  wraplength=560).pack(fill="x")
@@ -2358,14 +2352,17 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         tk.Label(w, text="Rates come from poe.ninja's public exchange overview (they refresh about hourly) and are approximate. "
                          "Listings priced in a currency not in this list are left out of the price and flagged.",
                  bg=C["panel"], fg=C["muted"], wraplength=600, justify="left", padx=16, pady=8).pack(side="bottom", fill="x")
-        tv = ttk.Treeview(w, columns=[c[0] for c in cols], show="headings")
+        SectionBar(w, "Rates").pack(fill="x", padx=16)         # 2.69.0: the list under its strip, sunken
+        rvp = Viewport(w)
+        rvp.pack(fill="both", expand=True, padx=16)
+        tv = ttk.Treeview(rvp.body, columns=[c[0] for c in cols], show="headings")
         for cid, title, width, anchor in cols:
             tv.heading(cid, text=title)
             tv.column(cid, width=width, anchor=anchor, stretch=(cid == "cur"))
-        sb = ttk.Scrollbar(w, orient="vertical", command=tv.yview)
+        sb = ttk.Scrollbar(rvp.body, orient="vertical", command=tv.yview)
         tv.configure(yscrollcommand=sb.set)
-        sb.pack(side="right", fill="y", padx=(0, 8))
-        tv.pack(fill="both", expand=True, padx=(16, 0))
+        sb.pack(side="right", fill="y")
+        tv.pack(fill="both", expand=True)
         tv.tag_configure("odd", background=C["odd"])
         tv.tag_configure("thin", foreground=C["muted"])
         self.rates_tv = tv
@@ -3465,14 +3462,19 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
                      font=("Segoe UI", 9)).pack(fill="x")
         ns.info = tk.Label(tab, bg=C["panel"], fg=C["muted"], anchor="w", padx=12)
         ns.info.pack(fill="x")
-        ns.tv = ttk.Treeview(tab, columns=("impact", "tier", "learned", "type", "mod", "on"), show="headings",
+        SectionBar(tab, {"tablet": "Tablet mods", "jewel": "Jewel mods", "waystone": "Waystone mods",
+                         "relic": "Relic mods"}.get(cat, "Mods")).pack(fill="x", padx=8)     # 2.69.0
+        rvp = Viewport(tab)
+        rvp.pack(fill="both", expand=True, padx=8, pady=(0, 8))
+        rtab = rvp.body
+        ns.tv = ttk.Treeview(rtab, columns=("impact", "tier", "learned", "type", "mod", "on"), show="headings",
                              selectmode="extended")
         for cid, title, w, anchor in (("impact", "Impact", 100, "w"), ("tier", "Tier", 50, "center"),
                                       ("learned", "Learned from data", 190, "w"), ("type", "Type", 80, "w"),
                                       ("mod", "Mod", 420, "w"), ("on", "Found on", 220 if cat == "tablet" else 300, "w")):
             ns.tv.heading(cid, text=title)
             ns.tv.column(cid, width=w, anchor=anchor, stretch=(cid == "mod"))
-        rsb = ttk.Scrollbar(tab, orient="vertical", command=ns.tv.yview)
+        rsb = ttk.Scrollbar(rtab, orient="vertical", command=ns.tv.yview)
         ns.tv.configure(yscrollcommand=rsb.set)
         rsb.pack(side="right", fill="y")
         ns.tv.pack(fill="both", expand=True)

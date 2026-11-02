@@ -11,6 +11,7 @@ from datetime import datetime
 from tkinter import messagebox
 from tkinter import ttk
 from .config import save_json, SETTINGS
+from .chrome import SectionBar, Viewport, section as chrome_section
 from .util import _amt, _num
 from .net import fmt_stamp
 from .rates import RATES
@@ -71,16 +72,15 @@ class WealthPage:
         cards.columnconfigure(0, weight=3, uniform="c")
         cards.columnconfigure(1, weight=2, uniform="c")
 
-        def card(col):
-            f = tk.Frame(cards, bg=P2, padx=16, pady=8, highlightthickness=1, highlightbackground=C["line"])
-            f.grid(row=0, column=col, sticky="nsew", padx=(0, 4) if col == 0 else (5, 0))
+        def card(col, title):                               # 2.69.0: header strip + sunken frame, like Price checks
+            outer, f = chrome_section(cards, title, padx=12, pady=8)
+            outer.grid(row=0, column=col, sticky="nsew", padx=(0, 4) if col == 0 else (4, 0))
             return f
-        c1 = card(0)
+        c1 = card(0, "Wealth")
         head = tk.Frame(c1, bg=P2)
         head.pack(fill="x")
-        tk.Label(head, text="Wealth", bg=P2, fg=C["text"], font=(FONT_TITLE, 16, "bold")).pack(side="left")
         how = tk.Label(head, text="ⓘ How it works", bg=P2, fg="#6ea8ff", cursor="hand2", font=("Segoe UI", 9, "underline"))
-        how.pack(side="left", padx=(8, 0))                        # 2.0 beta 21
+        how.pack(side="left")                                     # 2.0 beta 21
         how.bind("<Button-1>", lambda e: self.wealth_guide())
         setup = tk.Label(head, text="▶ Set up step by step", bg=P2, fg="#6ea8ff", cursor="hand2",
                          font=("Segoe UI", 9, "underline"))
@@ -106,10 +106,9 @@ class WealthPage:
         self.w_facts = tk.Label(c1, text="", bg=P2, fg=C["muted"], anchor="w", justify="left", font=("Segoe UI", 9))
         self.w_facts.pack(fill="x")
 
-        c2 = card(1)
+        c2 = card(1, "Breakdown")
         head2 = tk.Frame(c2, bg=P2)
         head2.pack(fill="x")
-        tk.Label(head2, text="Breakdown", bg=P2, fg=C["text"], font=(FONT_TITLE, 16, "bold")).pack(side="left")
         self.w_bd_mode = SegBar(head2, ["Divines", "Percent"], command=lambda v: self.wealth_breakdown(), size=9, pad=(8, 4))
         self.w_bd_mode.pack(side="right")
         self.w_bd_note = tk.Label(c2, text="", bg=P2, fg=C["muted"], anchor="w", font=("Segoe UI", 9))
@@ -123,6 +122,7 @@ class WealthPage:
         side = tk.Frame(main, bg=P1, width=196)
         side.pack(side="left", fill="y", padx=(0, 8))
         side.pack_propagate(False)
+        SectionBar(side, "Sources").pack(fill="x", pady=(0, 8))     # 2.69.0
         self.w_side_mode = SegBar(side, ["Tabs", "Snapshots"], command=lambda v: self.wealth_side(), size=10, pad=(16, 4))
         self.w_side_mode.pack(anchor="w", pady=(0, 8))
         self.w_side_tabs = tk.Frame(side, bg=C["accent"], padx=2, pady=2)
@@ -296,9 +296,12 @@ class WealthPage:
                                   wraplength=640, font=("Segoe UI", 9))
         self.w_tabinfo.pack(fill="x", pady=(4, 0))
 
-        # ---- every item
-        itf = tk.Frame(right, bg=P1)
-        itf.pack(fill="both", expand=True)
+        # ---- every item (2.69.0: under its header strip, in a sunken frame)
+        self.w_items_head = SectionBar(right, "Items")
+        self.w_items_head.pack(fill="x")
+        ivp = Viewport(right, bg_key="panel")
+        ivp.pack(fill="both", expand=True)
+        itf = ivp.body
         self.w_itf = itf
         self.w_items = ttk.Treeview(itf, columns=[c[0] for c in self.W_COLS], show="headings", selectmode="extended",
                                     height=3)            # grows with the window; small so the page never asks for more room
@@ -428,7 +431,7 @@ class WealthPage:
             ttk.Button(self.w_cstrip_btns, text=label, command=fn,
                        style="Primary.TButton" if i == accent else "TButton").pack(side="left", padx=(8, 0))
         if not self.w_cstrip.winfo_ismapped():
-            self.w_cstrip.pack(fill="x", pady=(0, 8), before=self.w_setup if self.w_setup.winfo_ismapped() else self.w_itf)
+            self.w_cstrip.pack(fill="x", pady=(0, 8), before=self.w_setup if self.w_setup.winfo_ismapped() else self.w_items_head)
 
     def _w_strip_close(self):
         self.w_cstrip.pack_forget()
@@ -499,7 +502,7 @@ class WealthPage:
                                            "Regal Orb", "Orb of Alchemy", "Gemcutter's Prism"})
         self.w_man_box.config(values=names)
         if not self.w_manual.winfo_ismapped():
-            self.w_manual.pack(fill="x", pady=(0, 8), before=self.w_itf)
+            self.w_manual.pack(fill="x", pady=(0, 8), before=self.w_items_head)
         self.w_man_box.focus_set()
 
     def wealth_manual_set(self):
@@ -765,7 +768,7 @@ class WealthPage:
         so the item list gets the room."""
         want_setup = self.w_editing or (not WEALTH.tabs and not WEALTH.holdings)
         if want_setup and not self.w_setup.winfo_ismapped():
-            self.w_setup.pack(fill="x", pady=(0, 8), before=self.w_itf)
+            self.w_setup.pack(fill="x", pady=(0, 8), before=self.w_items_head)
         elif not want_setup and self.w_setup.winfo_ismapped():
             self.w_setup.pack_forget()
         self.w_edit_lbl.config(text="✓ Done editing tabs" if self.w_editing else "✎ Edit synced tabs")

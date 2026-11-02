@@ -13,6 +13,7 @@ from .valuelog import VALUE_LOG, sig_of
 from .mods import impact_key, JEWEL_BASE, norm, SIDTEXT
 from .pricefmt import fmt_div
 from .style import C, FONT_TITLE, SegBar
+from .chrome import SectionBar, Viewport, section as chrome_section
 
 KINDS = ["Tablets", "Waystones", "Jewels", "Relics"]
 
@@ -51,8 +52,8 @@ class InsightsPage:
                             "for this page.", bg=P1, fg=C["muted"], anchor="w", padx=12, font=("Segoe UI", 9),
                  justify="left", wraplength=760).pack(fill="x")
         # 2.4.0: details of the row you pick (bottom)
-        det = tk.Frame(body, bg=P2, padx=12, pady=8, highlightthickness=1, highlightbackground=C["line"])
-        det.pack(side="bottom", fill="x", padx=16, pady=(0, 8))
+        deto, det = chrome_section(body, "Details", padx=12, pady=8)          # 2.69.0
+        deto.pack(side="bottom", fill="x", padx=16, pady=(0, 8))
         dbar = tk.Frame(det, bg=P2)
         dbar.pack(side="right", anchor="n")
         self.ins_det_btns = {
@@ -74,9 +75,8 @@ class InsightsPage:
         self.ins_tables = {}
 
         def table(r, c, key, title, hint, cols, colspan=1):
-            f = tk.Frame(grid, bg=P2, padx=8, pady=8, highlightthickness=1, highlightbackground=C["line"])
-            f.grid(row=r, column=c, columnspan=colspan, sticky="nsew", padx=4, pady=4)
-            tk.Label(f, text=title, bg=P2, fg=C["accent"], font=("Segoe UI", 10, "bold"), anchor="w").pack(fill="x")
+            fo, f = chrome_section(grid, title, padx=8, pady=8)                # 2.69.0
+            fo.grid(row=r, column=c, columnspan=colspan, sticky="nsew", padx=4, pady=4)
             tk.Label(f, text=hint, bg=P2, fg=C["muted"], font=("Segoe UI", 9), anchor="w", justify="left").pack(fill="x")
             box = tk.Frame(f, bg=P2)
             box.pack(fill="both", expand=True, pady=(4, 0))

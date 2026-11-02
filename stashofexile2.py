@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU GPL v3.0 (see LICENSE). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.68.1
+VERSION 2.69.0
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,6 +19,14 @@ VERSION 2.68.1
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.69.0
+       Redesign step 3: every tool's parts sit under the theme's header strips in sunken frames, like Price checks
+       (chrome.section(parent, title, note) -> (outer, inner)): every Settings section, Wealth (Totals, Sources,
+       Items), Regex (Your search, each option card, want / avoid), Exchange rates (Convert, Exchange Helper,
+       Rates), Game search results, Market Insights, Under the hood, Money Makers (Browse, Strats, the detail,
+       How to craft), Map library, Mod book, Overlay (Session, Leaderboard, Maps per day, Timer, Hotkeys),
+       Calculator history, Feed and Library. Settings search and its links still land on the section
+       (section_outer / section_title).
   2.68.1
        Notes is part of the overlay now (its Notes ▾, F6 with the rest): the Notes section on the Overlay page is
        gone (on / off switch, Show / hide, "Put it back in the corner", the "its key brings it back" status), and
@@ -1533,7 +1541,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.68.1"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.69.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
