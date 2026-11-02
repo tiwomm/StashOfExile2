@@ -600,13 +600,13 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         frow = bar2
         flab = dict(bg=C["panel"], fg=C["muted"])
         tk.Label(frow, text="Show", **flab).pack(side="left", padx=(0, 8))
-        vbox = ttk.Combobox(frow, textvariable=self.view_var, values=VIEWS, state="readonly", width=12)
+        vbox = ttk.Combobox(frow, textvariable=self.view_var, values=VIEWS, state="readonly", width=11)
         vbox.pack(side="left")
         vbox.bind("<<ComboboxSelected>>", self.on_view)
         self.cat_var, self.rar_var, self.type_var = tk.StringVar(value=self.ALL_CATS), tk.StringVar(value="All"), tk.StringVar(value="All")
-        self.cat_box = ttk.Combobox(frow, textvariable=self.cat_var, state="readonly", width=14)
+        self.cat_box = ttk.Combobox(frow, textvariable=self.cat_var, state="readonly", width=13)
         self.rar_box = ttk.Combobox(frow, textvariable=self.rar_var, state="readonly", width=8)
-        self.type_box = ttk.Combobox(frow, textvariable=self.type_var, state="readonly", width=13)
+        self.type_box = ttk.Combobox(frow, textvariable=self.type_var, state="readonly", width=11)
         for label, box, pad in (("Category", self.cat_box, 14), ("Rarity", self.rar_box, 10), ("Type", self.type_box, 10)):
             tk.Label(frow, text=label, **flab).pack(side="left", padx=(pad, 6))
             box.pack(side="left")
