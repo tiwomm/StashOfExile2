@@ -190,28 +190,34 @@ class UtilitiesPage:
         g.pack(fill="x", pady=(4, 0))
         # 2.59.0: the game window title is set in Settings › General › Game
         self.ov_vars["poe_title"] = tk.StringVar(value=ov.get("poe_title", "") or "Path of Exile 2")
-        # 2.57.0: every key (Go to hideout and each command's) is set in Settings › Hotkeys
+        # 2.61.1: the keys are set right here again (click the box, press the key) - and in Settings › Hotkeys;
+        # a key that something else already uses turns red and says what has it
+        from .style import KeyCapture
         self.ov_vars["hideout_key"] = tk.StringVar(value=ov.get("hideout_key", ""))
-        self.chat_keys_lbl = tk.Label(g, text="", bg=P2, fg=C["text"], anchor="w")
-        self.chat_keys_lbl.grid(row=1, column=0, columnspan=2, sticky="w", pady=(4, 0))
-        ttk.Button(g, text="Set the keys in Settings › Hotkeys", style="Quiet.TButton",
-                   command=lambda: self.hotkeys_open("overlay:hideout_key")).grid(row=1, column=2, sticky="w",
-                                                                                 pady=(4, 0))
+        self.chat_keys_lbl = tk.Label(g, text="Go to hideout", bg=P2, fg=C["text"], anchor="w")
+        self.chat_keys_lbl.grid(row=1, column=0, sticky="w", pady=(4, 0), padx=(0, 8))
+        self.chat_hideout_kc = KeyCapture(g, self.ov_vars["hideout_key"], width=14,
+                                          on_change=lambda t: self.root.after(10, self.chat_key_set))
+        self.chat_hideout_kc.grid(row=1, column=1, sticky="w", pady=(4, 0))
+        tk.Label(g, text="Click a key box and press the key; right-click clears it. All keys: Settings › Hotkeys.",
+                 bg=P2, fg=C["muted"], font=("Segoe UI", 9), anchor="w").grid(row=2, column=0, columnspan=3,
+                                                                              sticky="w", pady=(4, 0))
         c2 = self._card(body, "Your chat commands", expand=True)
         cg = tk.Frame(c2, bg=P2)
         cg.pack(fill="x", pady=(4, 0))
         for col, t in enumerate(("Name", "Key", "Command (e.g. /leave  /dnd  /invite Name)")):
             tk.Label(cg, text=t, bg=P2, fg=C["muted"], font=("Segoe UI", 9, "bold"), anchor="w").grid(row=0, column=col, sticky="w")
         cmds = ov.get("commands", [])
-        self.ov_cmd_vars = []
+        self.ov_cmd_vars, self.chat_key_boxes = [], []
         for i in range(MAX_COMMANDS):
             c = cmds[i] if i < len(cmds) else {}
             row = []
             for col, (k, w) in enumerate((("name", 14), ("key", 8), ("cmd", 34))):
                 v = tk.StringVar(value=c.get(k, ""))
-                if k == "key":                          # 2.57.0: shown here, set in Settings › Hotkeys
-                    tk.Label(cg, textvariable=v, bg=P2, fg=C["text"], font=("Consolas", 9), width=12,
-                             anchor="w").grid(row=i + 1, column=col, sticky="w", padx=(0, 8), pady=1)
+                if k == "key":                          # 2.61.1: set here (or in Settings › Hotkeys)
+                    kc = KeyCapture(cg, v, width=12, on_change=lambda t: self.root.after(10, self.chat_key_set))
+                    kc.grid(row=i + 1, column=col, sticky="w", padx=(0, 8), pady=1)
+                    self.chat_key_boxes.append(kc)
                     row.append(v)
                     continue
                 tk.Entry(cg, textvariable=v, width=w, bg=C["odd"], fg=C["text"], insertbackground=C["text"], relief="flat",
@@ -225,17 +231,51 @@ class UtilitiesPage:
         self.ov_msg = tk.Label(brow, text="Changes save by themselves.", bg=C["panel"], fg=C["muted"], anchor="w")
         self.ov_msg.pack(side="left", fill="x", expand=True, padx=8)
         self._chat_keys_text()
+        self.root.after(50, self.chat_key_marks)
+
+    def chat_key_set(self):
+        """2.61.1: a chat key was set in a box here - save, keep Settings › Hotkeys in step, warn about clashes."""
+        self.ov_save()
+        if hasattr(self, "hk_frame"):
+            try:
+                self.fill_hotkeys()
+            except Exception:
+                pass
+        self.chat_key_marks()
+
+    def chat_key_marks(self):
+        """Paint a key box red when another hotkey uses the same key, and say which one has it."""
+        from .overlay import key_label, parse_key
+        uses = {}
+        for what, key, _w, kid in self.all_hotkeys():
+            k = parse_key(key) if key and key != "Ctrl+Alt+C" else ((0x43, True, True, False) if key == "Ctrl+Alt+C" else None)
+            if k:
+                uses.setdefault(k, []).append((what, kid))
+        boxes = [("overlay:hideout_key", getattr(self, "chat_hideout_kc", None), self.ov_vars.get("hideout_key"))]
+        boxes += [(f"cmd:{i}", kc, self.ov_cmd_vars[i][1]) for i, kc in enumerate(getattr(self, "chat_key_boxes", []))]
+        msgs = []
+        for kid, kc, var in boxes:
+            if kc is None or not kc.winfo_exists():
+                continue
+            k = parse_key(var.get()) if var.get().strip() else None
+            others = [w for w, oid in uses.get(k, []) if oid != kid] if k else []
+            if others and not kc.waiting:
+                kc.config(fg=C["red"], highlightbackground=C["red"])
+                msgs.append(f"{key_label(var.get())} is already used by \"{others[0]}\"")
+        if msgs and getattr(self, "ov_msg", None) is not None:
+            self.ov_msg.config(text="⚠ " + "; ".join(msgs) + " - pick another key, or right-click one to clear it.",
+                               fg=C["red"])
+        return msgs
 
     def _chat_keys_text(self):
-        from .overlay import key_label
         ov = self.overlay.cfg
         k = ov.get("hideout_key", "")
         self.ov_vars["hideout_key"].set(k)
         for n, c in enumerate(ov.get("commands", []) or []):
             if n < len(getattr(self, "ov_cmd_vars", [])):
                 self.ov_cmd_vars[n][1].set(c.get("key", ""))
-        if getattr(self, "chat_keys_lbl", None) is not None:
-            self.chat_keys_lbl.config(text=f"Go to hideout: {key_label(k) if k else 'none'}")
+        if getattr(self, "chat_hideout_kc", None) is not None:
+            self.root.after(20, self.chat_key_marks)
 
     # ---------------- the Notes window
     def build_notes_window(self, body):
@@ -309,12 +349,13 @@ class UtilitiesPage:
             cfg[key] = k
         cfg["poe_title"] = self.ov_vars["poe_title"].get().strip() or "Path of Exile 2"
         cmds = []
-        for name, key, cmd in self.ov_cmd_vars:
-            k, c = key.get().strip(), cmd.get().strip()
-            if k and c:
-                if not parse_key(k):
-                    bad.append(k)
-                cmds.append({"name": name.get().strip(), "key": k, "cmd": c})
+        for name, key, cmd in self.ov_cmd_vars:            # 2.61.1: every row keeps its place (row n = command n,
+            n_, k, c = name.get().strip(), key.get().strip(), cmd.get().strip()   # the Hotkeys page's cmd:n), and a
+            if k and not parse_key(k):                     # command is kept before it has a key
+                bad.append(k)
+            cmds.append({"name": n_, "key": k, "cmd": c})
+        while cmds and not any(cmds[-1].values()):
+            cmds.pop()
         cfg["commands"] = cmds
         self.overlay._store_geometry()                      # what you dragged / typed on the note so far
         if hasattr(self, "note_geo"):
