@@ -5,7 +5,7 @@ import sys
 import threading
 import time
 import tkinter as tk
-from tkinter import colorchooser, ttk
+from tkinter import ttk
 
 from .config import DATA_DIR, save_json, SETTINGS
 from .overlay import MAX_COMMANDS, Overlay, parse_key
@@ -269,8 +269,13 @@ class UtilitiesPage:
                    command=lambda: self.hotkeys_open("overlay:notes_key")).grid(row=0, column=1, sticky="w", padx=(0, 8))
         ttk.Button(g, text="Show / hide now", command=lambda: self.overlay.toggle_notes()).grid(row=0, column=2, sticky="w")
         self._notes_key_text()
-        c2 = self._card(body, "Font and Colors")
-        self.build_notes_look(c2)
+        # 2.58.0: no "Font and Colors" card - the note follows the overlay style (Settings › Appearance)
+        lk = tk.Frame(body, bg=C["panel"])
+        lk.pack(fill="x", padx=8, pady=(0, 8))
+        tk.Label(lk, text="Its colors, font, text size and opacity follow the overlay style.", bg=C["panel"],
+                 fg=C["muted"], font=("Segoe UI", 9)).pack(side="left")
+        ttk.Button(lk, text="Settings › Appearance", style="Quiet.TButton",
+                   command=self.appearance_open).pack(side="left", padx=8)
         c3 = self._card(body, "Position")
         lrow = tk.Frame(c3, bg=P2)
         lrow.pack(fill="x", pady=(4, 0))
@@ -285,35 +290,6 @@ class UtilitiesPage:
         ttk.Button(brow, text="Save & apply", style="Primary.TButton", command=self.ov_save).pack(side="left")
         self.ov_msg2 = tk.Label(brow, text="", bg=C["panel"], fg=C["muted"], anchor="w")
         self.ov_msg2.pack(side="left", fill="x", expand=True, padx=8)
-
-    def build_notes_look(self, parent):
-        """The note's colors, opacity and font size (in the Notes window; Save & apply puts them on the note)."""
-        P2 = C["panel2"]
-        ov = self._ensure_overlay().cfg
-        self.ov_vars = getattr(self, "ov_vars", {})
-        ng = tk.Frame(parent, bg=P2)
-        ng.pack(fill="x", pady=(2, 0))
-        from .overlaywin import skinned
-        if skinned():                                     # 2.43.0 (2.47.0: every PoE2 look)
-            tk.Label(parent, text="The colors are used with the Classic look (Settings > Appearance > Over the game).",
-                     bg=P2, fg=C["muted"], font=("Segoe UI", 9), anchor="w").pack(fill="x", before=ng)
-        self.ov_swatch = {}
-        for r, (label, key, default) in enumerate((("Background", "notes_bg", "1A1A2E"), ("Text color", "notes_fg", "E2C97E"))):
-            tk.Label(ng, text=label, bg=P2, fg=C["text"], anchor="w").grid(row=r, column=0, sticky="w", padx=(0, 8), pady=2)
-            sw = tk.Label(ng, text="", width=3, bg=self.overlay._colour(key, default), relief="flat",
-                          highlightthickness=1, highlightbackground=C["line"])
-            sw.grid(row=r, column=1, sticky="w")
-            self.ov_swatch[key] = sw
-            v = self._ov_entry(ng, key, r, 2, 8)
-            v.trace_add("write", lambda *_a, k=key: self._ov_swatch(k))
-            ttk.Button(ng, text="Pick…", command=lambda k=key: self.ov_pick(k), style="Quiet.TButton").grid(row=r, column=3, sticky="w")
-        # 2.52.0: opacity lives in Overlays › Appearance only (it was here too)
-        tk.Label(ng, text="Opacity", bg=P2, fg=C["text"], anchor="w").grid(row=2, column=0, sticky="w", pady=2)
-        ttk.Button(ng, text="Overlays › Appearance", style="Quiet.TButton",
-                   command=lambda: self.ovh_open("Appearance")).grid(row=2, column=1, columnspan=3, sticky="w")
-        tk.Label(ng, text="Font size", bg=P2, fg=C["text"], anchor="w").grid(row=3, column=0, sticky="w", pady=2)
-        self.ov_font = tk.IntVar(value=int(ov.get("notes_font", 11)))
-        ttk.Spinbox(ng, from_=8, to=24, textvariable=self.ov_font, width=5).grid(row=3, column=1, columnspan=2, sticky="w")
 
     def open_settings_tab(self, name):
         self.shell.open("settings")
@@ -355,12 +331,6 @@ class UtilitiesPage:
                     bad.append(k)
                 cmds.append({"name": name.get().strip(), "key": k, "cmd": c})
         cfg["commands"] = cmds
-        for key in ("notes_bg", "notes_fg"):
-            cfg[key] = self.ov_vars[key].get().strip().lstrip("#") or cfg.get(key)
-        try:
-            cfg["notes_font"] = max(8, min(24, int(self.ov_font.get())))
-        except (ValueError, tk.TclError):
-            pass
         self.overlay._store_geometry()                      # what you dragged / typed on the note so far
         if hasattr(self, "note_geo"):
             for key, v in self.note_geo.items():
@@ -400,23 +370,6 @@ class UtilitiesPage:
         for key, v in self.note_geo.items():
             if v.get() != str(self.overlay.cfg.get(key, "")):
                 v.set(str(self.overlay.cfg.get(key, "")))
-
-    def _ov_swatch(self, key):
-        v = self.ov_vars[key].get().strip().lstrip("#")
-        if len(v) == 6:
-            try:
-                self.ov_swatch[key].config(bg="#" + v)
-            except tk.TclError:
-                pass
-
-    def ov_pick(self, key):
-        cur = "#" + (self.ov_vars[key].get().strip().lstrip("#") or "000000")
-        try:
-            _rgb, hexv = colorchooser.askcolor(color=cur, parent=self.root, title="Pick a color")
-        except tk.TclError:
-            hexv = None
-        if hexv:
-            self.ov_vars[key].set(hexv.lstrip("#").upper())
 
     def app_in_front(self):
         """Is one of the app's own windows the one in front? (keyboard watcher thread: Win32 only, no Tk calls)"""

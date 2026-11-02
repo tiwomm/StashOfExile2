@@ -4,7 +4,7 @@
 
 > **Who we build for - read second.** Path of Exile players are utilitarian: they love data and information, problem solving and creative thinking. So every feature shows its numbers *and how they were worked out*, lets you sort, filter, compare and export them (CSV), keeps power-user depth (keys, versions, raw data) one click away instead of hiding it, explains in plain words, and leaves the decision to the player. Pretty is welcome; vague is not.
 
-**Current version: 2.57.0**
+**Current version: 2.58.0**
 
 Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds features, 2.10.1 only fixes. Each step below is one release; we work through them top to bottom.
 
@@ -88,6 +88,7 @@ Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds f
 | 2.56.1 | Strip: drag it wider or narrower (never under what it shows); always back on the screen, locked or not. One opacity slider. "Classic dark". |
 | 2.56.2 | Remnant price tags: smaller, plain weight, in the overlay style's colors and texture; show up faster, go when the book closes. |
 | 2.57.0 | Settings cleanup 1 - every key is set in Settings › Hotkeys only (grouped; chat command and Farm Ledger keys editable); other pages show their key with a link. |
+| 2.58.0 | Settings cleanup 2 - one Appearance tab: the overlays' look moved into Settings › Appearance (with Notes text size); Notes and the copy marker follow the style. |
 
 ## ▶ Next up
 
@@ -97,7 +98,6 @@ Order (decided 2.34.0): the Polish basics first, so new features are built on th
 
 | Version | Plan |
 |---|---|
-| 2.58.0 | **Settings cleanup 2 - one Appearance tab:** every look in Settings › Appearance (the app, and over the game: style, one window, layout, opacity, Notes text size). Notes and the copy marker follow the style - no own colors. |
 | 2.59.0 | **Settings cleanup 3 - Price checking page:** valuable mod, popups, sound, copy on click, listings, prices in and the account move from the Price checks toolbar (and Wealth) to Settings › Price checking; pages get a ⚙ link. |
 | 2.60.0 | **Settings cleanup 4 - the rest of the standard:** game log file and window title in General, one league place, one lock for every overlay, no Save & apply, hidden settings in Advanced, a search box in Settings, Tools pages (Rates, Regex, Money Makers). |
 | 2.61.0 | **Farm Ledger part 2:** the setup as a short 5-step form with the cost of one run shown live; the log-loot box in 3 steps. |

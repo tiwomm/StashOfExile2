@@ -46,7 +46,8 @@ class TrackerPage:
         save_json("settings.json", SETTINGS)
 
     # ---------------- 2.44.0: Overlays - everything shown over the game, in one window
-    OVH_TABS = ("Session timer", "Mechanic Helper", "Notes", "Appearance")      # 2.49.0: was "Look"
+    # 2.58.0 (one Appearance tab): the overlays' look moved to Settings › Appearance (it was this hub's 4th tab)
+    OVH_TABS = ("Session timer", "Mechanic Helper", "Notes")
 
     def build_overlays_hub(self, body):
         """Overlays (was Session tracker): one tab per thing over the game - each with its own switch, key, place and
@@ -73,8 +74,6 @@ class TrackerPage:
                 self.build_alerts_panel(inner).pack(fill="x", padx=8, pady=(0, 8))
             elif name == "Notes":
                 self.build_notes_window(inner)
-            else:
-                self.build_overlay_look(inner)
         self.ovh_show()
 
     def ovh_show(self):
@@ -86,7 +85,10 @@ class TrackerPage:
                 f.pack_forget()
 
     def ovh_open(self, tab):
-        """Open Overlays at one tab (Settings' link, the old Notes window, the ⚙ on the Mechanic Helper bar)."""
+        """Open Overlays at one tab (Settings' link, the old Notes window, the ⚙ on the Mechanic Helper bar).
+        "Appearance" (2.58.0) is Settings › Appearance now."""
+        if tab == "Appearance":
+            return self.appearance_open()
         self.shell.open("tracker")
         if getattr(self, "ovh_bar", None) is not None:
             self.ovh_bar.pick(tab, notify=False)
@@ -395,8 +397,8 @@ class TrackerPage:
         op.grid(row=4, column=0, columnspan=3, sticky="w", pady=(8, 0))
         # 2.52.0 (the user: opacity was here AND in Appearance): one place for how every overlay looks
         tk.Label(op, text="Style and opacity of the timer:", bg=P2, fg=C["text"]).pack(side="left")
-        ttk.Button(op, text="Overlays › Appearance", style="Quiet.TButton",
-                   command=lambda: self.ovh_open("Appearance")).pack(side="left", padx=(8, 0))
+        ttk.Button(op, text="Settings › Appearance", style="Quiet.TButton",
+                   command=self.appearance_open).pack(side="left", padx=(8, 0))
         box2 = tk.Frame(po, bg=P2, padx=16, pady=8, highlightthickness=1, highlightbackground=C["line"])
         box2.pack(fill="x", pady=(8, 0))
         # 2.57.0: keys are set in Settings › Hotkeys only - here they're shown, with the way there
