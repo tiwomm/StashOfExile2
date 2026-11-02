@@ -20,7 +20,6 @@ class UtilitiesPage:
         if getattr(self, "overlay", None) is None:
             self.overlay = Overlay(self.root, SETTINGS, lambda: save_json("settings.json", SETTINGS),
                                    open_settings=self.open_utilities)
-            self.overlay.lock_listener = lambda on: getattr(self, "note_lock", None) is not None and self.note_lock.set(on)
             self.overlay.merged_host = self              # 2.55.0: Notes can sit inside the one overlay window
         return self.overlay
 
@@ -189,9 +188,8 @@ class UtilitiesPage:
         c1 = self._card(body, "Keys")
         g = tk.Frame(c1, bg=P2)
         g.pack(fill="x", pady=(4, 0))
-        tk.Label(g, text="Game window title", bg=P2, fg=C["text"], anchor="w").grid(row=0, column=0, sticky="w",
-                                                                                 padx=(0, 8))
-        self._ov_entry(g, "poe_title", 0, 1, 18)
+        # 2.59.0: the game window title is set in Settings › General › Game
+        self.ov_vars["poe_title"] = tk.StringVar(value=ov.get("poe_title", "") or "Path of Exile 2")
         # 2.57.0: every key (Go to hideout and each command's) is set in Settings › Hotkeys
         self.ov_vars["hideout_key"] = tk.StringVar(value=ov.get("hideout_key", ""))
         self.chat_keys_lbl = tk.Label(g, text="", bg=P2, fg=C["text"], anchor="w")
@@ -219,21 +217,14 @@ class UtilitiesPage:
                 tk.Entry(cg, textvariable=v, width=w, bg=C["odd"], fg=C["text"], insertbackground=C["text"], relief="flat",
                          highlightthickness=1, highlightbackground=C["line"]).grid(row=i + 1, column=col, sticky="w",
                                                                                   padx=(0, 8), pady=1)
+                v.trace_add("write", lambda *_a: self.ov_save_soon())   # 2.59.0: saves as you type
                 row.append(v)
             self.ov_cmd_vars.append(row)
         brow = tk.Frame(body, bg=C["panel"])
         brow.pack(fill="x", padx=8, pady=(0, 8))
-        ttk.Button(brow, text="Save & apply", style="Primary.TButton", command=self.ov_save).pack(side="left")
-        self.ov_msg = tk.Label(brow, text="", bg=C["panel"], fg=C["muted"], anchor="w")
+        self.ov_msg = tk.Label(brow, text="Changes save by themselves.", bg=C["panel"], fg=C["muted"], anchor="w")
         self.ov_msg.pack(side="left", fill="x", expand=True, padx=8)
         self._chat_keys_text()
-
-    def _notes_key_text(self):
-        from .overlay import key_label
-        k = self.overlay.cfg.get("notes_key", "")
-        self.ov_vars["notes_key"].set(k)
-        if getattr(self, "notes_key_lbl", None) is not None:
-            self.notes_key_lbl.config(text=f"Key: {key_label(k) if k else 'none'}")
 
     def _chat_keys_text(self):
         from .overlay import key_label
@@ -254,21 +245,16 @@ class UtilitiesPage:
         self.notes_on = tk.BooleanVar(value=bool(ov.get("notes_enabled")))
         self.notes_st = self._util_head(
             body, self.notes_on, "On", self.notes_toggle,
-            "A sticky note over the game. Show / hide it with its key (in game) or the button below. It hides while "
-            "the game is closed and comes back with it. Drag it by its top bar and resize it from any edge, or type "
-            "its place and size below. What you type on it is saved by itself; every option is here. Tabs on the "
-            "note: + adds one, double-click renames, right-click deletes.")
+            "A note on the overlay (Panel), or dropped down under it (Strip, Minimal). It hides while the game is "
+            "closed and comes back with it. What you type on it is saved by itself. Tabs on the note: + adds one, "
+            "double-click renames, right-click deletes. F6 (Settings › Hotkeys) hides the whole overlay, note too.")
         c1 = self._card(body, "Show / hide")
         g = tk.Frame(c1, bg=P2)
         g.pack(fill="x", pady=(4, 0))
-        # 2.57.0: the key is set in Settings › Hotkeys (shown here)
-        self.ov_vars["notes_key"] = tk.StringVar(value=self.overlay.cfg.get("notes_key", ""))
-        self.notes_key_lbl = tk.Label(g, text="", bg=P2, fg=C["text"], anchor="w")
-        self.notes_key_lbl.grid(row=0, column=0, sticky="w", padx=(0, 8))
-        ttk.Button(g, text="Change key…", style="Quiet.TButton",
-                   command=lambda: self.hotkeys_open("overlay:notes_key")).grid(row=0, column=1, sticky="w", padx=(0, 8))
-        ttk.Button(g, text="Show / hide now", command=lambda: self.overlay.toggle_notes()).grid(row=0, column=2, sticky="w")
-        self._notes_key_text()
+        # 2.59.0 (the user): no notes key - the note is part of the overlay; F6 shows / hides all of it
+        self.ov_vars["notes_key"] = tk.StringVar(value="")
+        ttk.Button(g, text="Show / hide the note now", command=lambda: self.overlay.toggle_notes()).grid(
+            row=0, column=0, sticky="w")
         # 2.58.0: no "Font and Colors" card - the note follows the overlay style (Settings › Appearance)
         lk = tk.Frame(body, bg=C["panel"])
         lk.pack(fill="x", padx=8, pady=(0, 8))
@@ -279,15 +265,14 @@ class UtilitiesPage:
         c3 = self._card(body, "Position")
         lrow = tk.Frame(c3, bg=P2)
         lrow.pack(fill="x", pady=(4, 0))
-        self.note_lock = tk.BooleanVar(value=bool(ov.get("notes_locked")))
-        ttk.Checkbutton(lrow, text="Lock it (can't be moved or resized by accident)", variable=self.note_lock,
-                        command=lambda: self.overlay.set_locked(self.note_lock.get())).pack(side="left")
+        # 2.59.0: no lock of its own - the overlay's one lock (Timer options, or the 🔒 on it) covers the note
+        tk.Label(lrow, text="Locked with the overlay (Lock it, above).", bg=P2, fg=C["muted"],
+                 font=("Segoe UI", 9)).pack(side="left")
         ttk.Button(lrow, text="Put it back in the corner", command=self.note_reset, style="Quiet.TButton").pack(side="right")
         tk.Label(c3, text="Drag the note by its top bar and resize it from any edge; it remembers where you leave it.",
                  bg=P2, fg=C["muted"], font=("Segoe UI", 9), anchor="w").pack(fill="x", pady=(8, 0))
         brow = tk.Frame(body, bg=C["panel"])
         brow.pack(fill="x", padx=8, pady=(0, 8))
-        ttk.Button(brow, text="Save & apply", style="Primary.TButton", command=self.ov_save).pack(side="left")
         self.ov_msg2 = tk.Label(brow, text="", bg=C["panel"], fg=C["muted"], anchor="w")
         self.ov_msg2.pack(side="left", fill="x", expand=True, padx=8)
 
@@ -317,7 +302,7 @@ class UtilitiesPage:
 
     def ov_save(self):
         cfg, bad = self.overlay.cfg, []
-        for key in ("hideout_key", "notes_key"):
+        for key in ("hideout_key",):
             k = self.ov_vars[key].get().strip()
             if k and not parse_key(k):
                 bad.append(k)
@@ -340,16 +325,28 @@ class UtilitiesPage:
                     bad.append(f"{key[6:]} '{v.get()}'")
                     continue
                 cfg[key] = max(140 if key == "notes_w" else 80 if key == "notes_h" else -10000, n)
-        if hasattr(self, "note_lock"):
-            cfg["notes_locked"] = bool(self.note_lock.get())
         self.overlay.rebind()
         self.overlay.restyle(store=False)
         self.overlay.save_settings()
         DELIRIUM.set_title(cfg["poe_title"])
         for lbl in (self.ov_msg, self.ov_msg2):
-            lbl.config(text=("Saved. Not understood: " + ", ".join(bad)) if bad else "Saved and applied.",
+            lbl.config(text=("Saved. Not understood: " + ", ".join(bad)) if bad else "Saved.",
                        fg=C["red"] if bad else C["green"])
         self.util_refresh()
+
+    def ov_save_soon(self):
+        """2.59.0: no Save & apply - a chat command saves a moment after you stop typing."""
+        if getattr(self, "_ov_save_job", None):
+            try:
+                self.root.after_cancel(self._ov_save_job)
+            except tk.TclError:
+                pass
+        self._ov_save_job = self.root.after(700, self._ov_save_now)
+
+    def _ov_save_now(self):
+        self._ov_save_job = None
+        if len(getattr(self, "ov_cmd_vars", [])) == MAX_COMMANDS:
+            self.ov_save()
 
     def note_reset(self):
         """2.0.0: no pixel boxes any more - put the note back at the top left, at its first size."""

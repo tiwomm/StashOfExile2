@@ -6,7 +6,7 @@ over the game, in any style (Overlays › Appearance › Style) and either layou
            NOTES first line ▾ (opens the note right under the bar) | the clock, lock and ×
 
 The Minimal style is always compact: the time and clock, Map, the four switches with short names, a Notes button.
-The Merged switch (on by default) splits it back into the three windows of 2.54 and before.
+(2.59.0: always one window - the Merged switch and the separate windows are gone.)
 
 Which parts show: the timer while it's shown (Show timer, or a session running - as before), the switches while the
 Mechanic Helper's switch is on, Notes while they're shown (the notes key, or Overlays › Notes). One window holds
@@ -16,7 +16,7 @@ from tkinter import font as tkfont
 
 from .overlaywin import CanvasText, OverlayWindow, pal
 
-LAYOUTS = {"panel": "Panel", "strip": "Strip (along the top edge)"}
+LAYOUTS = {"panel": "Panel", "strip": "Strip"}
 SHORT = {"breach": "Brch", "delirium": "Deli", "ritual": "Ritl", "remnant": "Remn"}
 PANEL_W, MINI_W = 290, 224
 
@@ -49,7 +49,8 @@ class MergedOverlay:
 
     # ---------------------------------------------------------------- settings
     def merged_on(self):
-        return bool(self.tracker_cfg().get("merged", True))
+        """2.59.0 (the user): always one window - the separate windows of 2.54 are gone."""
+        return True
 
     def merged_layout(self):
         v = self.tracker_cfg().get("layout", "panel")
@@ -65,19 +66,12 @@ class MergedOverlay:
                 "helpers": bool(self.tracker_cfg().get("alerts_bar", True)),
                 "notes": self.merged_embeds_notes() and bool(oc.get("notes_enabled")) and bool(oc.get("notes_visible"))}
 
-    def merged_set(self, merged=None, layout=None):
-        """Overlays › Appearance: the Merged switch or the Layout changed - rebuild everything over the game."""
+    def merged_set(self, layout=None):
+        """Settings › Appearance: the style or the Layout changed - rebuild the overlay (and a dropped-down note)."""
         cfg = self.tracker_cfg()
-        timer = getattr(self, "mg_timer", False) or getattr(self, "tk_overlay", None) is not None
+        timer = getattr(self, "mg_timer", False)
         notes_on = bool(self.overlay.cfg.get("notes_enabled")) and bool(self.overlay.cfg.get("notes_visible"))
         self.merged_destroy()
-        if getattr(self, "tk_overlay", None) is not None:          # a separate timer
-            try:
-                self._tracker_store_geo()
-                self.tk_overlay.destroy()
-            except tk.TclError:
-                pass
-            self.tk_overlay = None
         self.tracker_helpers_destroy()
         if self.overlay.notes is not None:
             try:
@@ -86,23 +80,13 @@ class MergedOverlay:
             except tk.TclError:
                 pass
             self.overlay.notes = None
-        if merged is not None:
-            cfg["merged"] = bool(merged)
         if layout in LAYOUTS:
             cfg["layout"] = layout
         self.tracker_save()
         self.mg_timer = timer
-        if self.merged_on():
-            self.merged_build()
-            if notes_on and not self.merged_embeds_notes():
-                self.overlay.show_notes()
-        else:
-            self.mg_timer = False
-            if timer:
-                self.tracker_overlay_build()
-            self.tracker_helpers_sync()
-            if notes_on:
-                self.overlay.show_notes()
+        self.merged_build()
+        if notes_on and not self.merged_embeds_notes():
+            self.overlay.show_notes()
 
     # ---------------------------------------------------------------- the window
     def merged_destroy(self):
@@ -153,9 +137,7 @@ class MergedOverlay:
             self.tracker_save()
 
         def lock(on):
-            cfg["mlocked"] = bool(on)
-            self.tracker_save()
-            self.merged_build()
+            self.overlay_lock(on)
         geo = (x, y, cfg.get("mw", PANEL_W) if notes else None, cfg.get("mh", 420) if notes else None)
         w = OverlayWindow(self.root, title, "⏱", geo, opacity=int(cfg.get("opacity", 225)),
                           locked=bool(cfg.get("mlocked")), min_size=(220, 200) if notes else (120, 30),
@@ -181,9 +163,29 @@ class MergedOverlay:
         self.tracker_helpers_paint()
         if strip:
             w.min_size = (getattr(self, "mg_strip_min", 300), 30)
+        if getattr(self, "mg_hidden", False):               # hidden with F6: built, kept out of sight
+            w.hide()
+            return w
         w.show()
         self._mg_on_screen(w)
         return w
+
+    def overlay_hide_toggle(self):
+        """2.59.0 (the user): F6 (Settings › Hotkeys) hides the whole overlay - timer, switches, Notes - and shows it
+        again, as it was. Nothing is switched off; it's only out of sight."""
+        self.mg_hidden = not getattr(self, "mg_hidden", False)
+        w = getattr(self, "mg_win", None)
+        note = self.overlay.notes if getattr(self.overlay, "notes", None) is not None else None
+        for win in (w, note):
+            if win is None:
+                continue
+            try:
+                win.hide() if self.mg_hidden else win.show()
+            except tk.TclError:
+                pass
+        if not self.mg_hidden and w is not None:
+            self._mg_on_screen(w)
+        return self.mg_hidden
 
     def _mg_on_screen(self, w):
         """2.56.1 (the user: a locked strip past the screen's edge couldn't be reached): always all on the screen it
@@ -307,10 +309,10 @@ class MergedOverlay:
         return clk
 
     def _mg_glyphs(self, w, cv, P, x, y):
-        """Lock and × drawn on the canvas (Minimal and Strip have no title bar). -> x left of them."""
+        """The lock drawn on the canvas (Minimal and Strip have no title bar). -> x left of it. (2.59.0, the user: no
+        × - it was easy to hit by mistake and the overlay vanished; F6 shows / hides it.)"""
         locked = bool(self.tracker_cfg().get("mlocked"))
-        for txt, cmd, tag in (("×", self.merged_close, "mg_x"), ("🔒" if locked else "🔓", lambda: w._toggle_lock(),
-                                                                      "mg_lock")):
+        for txt, cmd, tag in (("🔒" if locked else "🔓", lambda: w._toggle_lock(), "mg_lock"),):
             cv.create_text(x, y, text=txt, anchor="e", fill=P["muted"], font=("Segoe UI Symbol", 10, "bold"),
                            tags=("mg", tag))
             cv.tag_bind(tag, "<Button-1>", lambda e, c=cmd: c())

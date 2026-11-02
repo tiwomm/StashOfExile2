@@ -279,7 +279,7 @@ class Overlay:
         """(vk, ctrl, alt, shift) -> what to do."""
         b = {}
         if self.cfg.get("notes_enabled"):
-            k = parse_key(self.cfg.get("notes_key"))
+            k = None                            # 2.59.0: no notes key - F6 shows / hides the whole overlay
             if k:
                 b[k] = ("notes",)
         if self.cfg.get("chat_enabled"):
@@ -312,6 +312,10 @@ class Overlay:
 
     def show_notes(self):
         c = self.cfg
+        if self.merged_host is not None and getattr(self.merged_host, "mg_hidden", False):
+            c["notes_visible"] = True                 # 2.59.0: the overlay is hidden (F6) - it comes back with it
+            self.save_settings()
+            return
         if self._embedded():                   # 2.55.0: inside the one overlay window
             c["notes_visible"] = True
             self.save_settings()
@@ -493,7 +497,9 @@ class Overlay:
         return True
 
     def set_locked(self, on):
-        """The lock on the note's title bar (or the Notes window): no moving or resizing while locked."""
+        """The lock on the note's title bar: 2.59.0 - the overlay's one lock (the app's overlay_lock)."""
+        if self.merged_host is not None and hasattr(self.merged_host, "overlay_lock"):
+            return self.merged_host.overlay_lock(on)
         self.cfg["notes_locked"] = bool(on)
         self.save_settings()
         self.restyle()
