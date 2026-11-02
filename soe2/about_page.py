@@ -1,6 +1,6 @@
 """Settings > About (2.10.0) and the first-start quick start guide.
 
-About: version, what's new in this version, the GitHub page, the Discord (feedback and help), the licence and credits.
+About: version, what's new in this version, the GitHub page, the Discord (feedback and help), the license and credits.
 Quick start: a few short pages shown once, the first time the app starts (Settings > About brings it back)."""
 import tkinter as tk
 import webbrowser
@@ -101,7 +101,7 @@ class AboutPage:
                  anchor="w").pack(fill="x")
         for line in (
                 "Written with AI (Claude), and open about it. Anyone may use it, change it and share it under the "
-                "GPL-3.0 licence.",
+                "GPL-3.0 license.",
                 "It only reads your clipboard, the game's log file (Client.txt) and your screen - never the game's "
                 "memory - and it respects the trade site's limits. One key press = one action.",
                 "Game data comes from RePoE; prices from the official trade site and poe.ninja. Not affiliated with "

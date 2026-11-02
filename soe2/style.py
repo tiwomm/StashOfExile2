@@ -1,4 +1,4 @@
-"""Colours, fonts and widget styles.
+"""Colors, fonts and widget styles.
 
 Part of StashOfExile2. Split out of the single-file app in 1.37 (see the launcher's VERSION HISTORY)."""
 
@@ -32,7 +32,7 @@ ROLE = {                              # colour roles -> which C colour plays the
 
 
 def role(name):
-    """The colour for a role (follows the theme and accent)."""
+    """The color for a role (follows the theme and accent)."""
     return C[ROLE[name]]
 
 
@@ -50,13 +50,13 @@ def _rgb(c):
 
 
 def mix(a, b, t):
-    """Colour between a and b ('#rrggbb'), t from 0 (a) to 1 (b)."""
+    """Color between a and b ('#rrggbb'), t from 0 (a) to 1 (b)."""
     ra, rb = _rgb(a), _rgb(b)
     return "#%02x%02x%02x" % tuple(round(x + (y - x) * max(0, min(1, t))) for x, y in zip(ra, rb))
 
 
 def contrast(a, b):
-    """WCAG contrast ratio of two '#rrggbb' colours (1 to 21)."""
+    """WCAG contrast ratio of two '#rrggbb' colors (1 to 21)."""
     def lum(c):
         r, g, b_ = (v / 255 for v in _rgb(c))
         f = lambda v: v / 12.92 if v <= 0.03928 else ((v + 0.055) / 1.055) ** 2.4
@@ -744,7 +744,7 @@ THEMES = {          # name: (label, hue in degrees or None, saturation factor)
     "forest": ("Forest (green)", 150, 0.7),
     "amethyst": ("Amethyst (purple)", 272, 0.85),
     "crimson": ("Crimson (dark red)", 352, 0.7),
-    "graphite": ("Graphite (grey)", 215, 0.12),
+    "graphite": ("Graphite (gray)", 215, 0.12),
 }
 ACCENTS = {         # name: (label, colour)
     "orange": ("Orange (default)", "#ffa63d"),
@@ -759,7 +759,7 @@ _HEX = _re.compile(r"^#[0-9a-fA-F]{6}$")
 
 
 def theme_color(c):
-    """A colour as the current theme shows it."""
+    """A color as the current theme shows it."""
     if _THEME["hue"] is None or not isinstance(c, str) or not _HEX.match(c):
         return c
     low = c.lower()

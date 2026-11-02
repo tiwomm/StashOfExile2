@@ -5,7 +5,7 @@ Passive, read-only screen watcher. It takes screenshots of small parts of
 your screen, looks for a few images, and shows a big "END DELIRIUM" banner:
 
   1. The Delirium fast-forward arrows   -> Delirium is running in this map
-  2. EITHER the "MAP COMPLETED" popup (bottom centre)
+  2. EITHER the "MAP COMPLETED" popup (bottom center)
      OR "Map Completed" under Map Objectives (right side) -> map boss is dead
 
 It never reads game memory, never touches the game process or its files,
@@ -274,8 +274,8 @@ def load_splinter(size):
 
 
 def indicator_images(size):
-    """On-screen icon per state, on a solid key colour with hard edges
-    (Windows colour-key transparency can't do soft edges)."""
+    """On-screen icon per state, on a solid key color with hard edges
+    (Windows color-key transparency can't do soft edges)."""
     from PIL import Image, ImageEnhance, ImageFilter
     pad = 2
     spl = load_splinter(size)
@@ -303,7 +303,7 @@ def indicator_images(size):
 
 
 def tray_images():
-    """Tray icon per state: splinter with a coloured badge in the corner."""
+    """Tray icon per state: splinter with a colored badge in the corner."""
     from PIL import Image, ImageDraw
     out = {}
     base = Image.new("RGBA", (64, 64), (0, 0, 0, 0))

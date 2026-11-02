@@ -239,7 +239,7 @@ class UtilitiesPage:
         tk.Label(g, text="Show / hide notes", bg=P2, fg=C["text"], anchor="w").grid(row=0, column=0, sticky="w", padx=(0, 8))
         self._ov_entry(g, "notes_key", 0, 1, 10)
         ttk.Button(g, text="Show / hide now", command=lambda: self.overlay.toggle_notes()).grid(row=0, column=2, sticky="w")
-        c2 = self._card(body, "Font and colours")
+        c2 = self._card(body, "Font and Colors")
         self.build_notes_look(c2)
         c3 = self._card(body, "Position")
         lrow = tk.Frame(c3, bg=P2)
@@ -257,7 +257,7 @@ class UtilitiesPage:
         self.ov_msg2.pack(side="left", fill="x", expand=True, padx=8)
 
     def build_notes_look(self, parent):
-        """The note's colours, opacity and font size (in the Notes window; Save & apply puts them on the note)."""
+        """The note's colors, opacity and font size (in the Notes window; Save & apply puts them on the note)."""
         P2 = C["panel2"]
         ov = self._ensure_overlay().cfg
         self.ov_vars = getattr(self, "ov_vars", {})
@@ -265,10 +265,10 @@ class UtilitiesPage:
         ng.pack(fill="x", pady=(2, 0))
         from .overlaywin import skinned
         if skinned():                                     # 2.43.0 (2.47.0: every PoE2 look)
-            tk.Label(parent, text="The colours are used with the Classic look (Settings > Appearance > Over the game).",
+            tk.Label(parent, text="The colors are used with the Classic look (Settings > Appearance > Over the game).",
                      bg=P2, fg=C["muted"], font=("Segoe UI", 9), anchor="w").pack(fill="x", before=ng)
         self.ov_swatch = {}
-        for r, (label, key, default) in enumerate((("Background", "notes_bg", "1A1A2E"), ("Text colour", "notes_fg", "E2C97E"))):
+        for r, (label, key, default) in enumerate((("Background", "notes_bg", "1A1A2E"), ("Text color", "notes_fg", "E2C97E"))):
             tk.Label(ng, text=label, bg=P2, fg=C["text"], anchor="w").grid(row=r, column=0, sticky="w", padx=(0, 8), pady=2)
             sw = tk.Label(ng, text="", width=3, bg=self.overlay._colour(key, default), relief="flat",
                           highlightthickness=1, highlightbackground=C["line"])
@@ -382,7 +382,7 @@ class UtilitiesPage:
     def ov_pick(self, key):
         cur = "#" + (self.ov_vars[key].get().strip().lstrip("#") or "000000")
         try:
-            _rgb, hexv = colorchooser.askcolor(color=cur, parent=self.root, title="Pick a colour")
+            _rgb, hexv = colorchooser.askcolor(color=cur, parent=self.root, title="Pick a color")
         except tk.TclError:
             hexv = None
         if hexv:

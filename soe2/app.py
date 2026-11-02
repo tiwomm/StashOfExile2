@@ -682,6 +682,7 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         self.tree.tag_configure("sold", foreground="#7fe0c0")              # 2.21.0
         self.tree.bind("<<TreeviewSelect>>", self._on_select_soon)
         self.tree.bind("<Double-1>", lambda e: self.open_trade())
+        self.tree.bind("<ButtonRelease-1>", self.pc_preview_at, add="+")   # 2.53.0: the item's box, as in game
         self.empty_lbl = tk.Label(left, bg=C["panel"], fg=C["muted"], font=("Segoe UI", 12), justify="center",
                                   text=self.empty_text)
         self.empty_lbl.place(relx=0.5, rely=0.45, anchor="center")
@@ -836,7 +837,7 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         ttk.Checkbutton(row, text="Keep them until I double-tap Esc", variable=self.mark_hold,
                         command=self.on_copy_marker).pack(side="left")
         from .copymark import COLOURS                       # 2.25.0: the +'s colour
-        tk.Label(row, text="Colour", bg=P2, fg=C["text"]).pack(side="left", padx=(16, 4))
+        tk.Label(row, text="Color", bg=P2, fg=C["text"]).pack(side="left", padx=(16, 4))
         self.mark_colour = tk.StringVar(value=SETTINGS.get("copy_marker_colour", "Gold"))
         mc = ttk.Combobox(row, textvariable=self.mark_colour, values=list(COLOURS), state="readonly", width=9)
         mc.pack(side="left")
@@ -909,7 +910,7 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         ttk.Button(row, text="Open Overlays › Appearance", command=lambda: self.ovh_open("Appearance")).pack(side="left")
 
         from .style import ACCENTS, THEMES
-        row = section("Appearance", "Look of the app", "Colours and text size for every window. Changes take effect "
+        row = section("Appearance", "Look of the app", "Colors and text size for every window. Changes take effect "
                                                        "when the app restarts (Restart now does it for you; your "
                                                        "windows and lists are kept).")
         grid = tk.Frame(row, bg=P2)
@@ -917,7 +918,7 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         self.look_vars = {}
         for r, (key, label, options, default) in enumerate((
                 ("theme", "Theme", {k: v[0] for k, v in THEMES.items()}, "midnight"),
-                ("accent", "Accent colour", {k: v[0] for k, v in ACCENTS.items()}, "orange"),
+                ("accent", "Accent color", {k: v[0] for k, v in ACCENTS.items()}, "orange"),
                 ("ui_scale", "Text size", {90: "Smaller (90%)", 100: "Normal (100%)", 115: "Bigger (115%)",
                                            130: "Biggest (130%)"}, 100))):
             tk.Label(grid, text=label, bg=P2, fg=C["text"]).grid(row=r, column=0, sticky="w", padx=(0, 8), pady=4)
@@ -2273,7 +2274,7 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         elif g.get("rarity") == "Normal" and g.get("class") in ("tablet", "jewel", "waystone"):
             why = "a normal (white) one has no mods to price"
         elif g.get("class") in ("tablet", "jewel") and g.get("rarity") in ("Magic", "Rare"):
-            why = ("its name line wasn't recognised (the copied text is saved in unpriced_items.txt in the data "
+            why = ("its name line wasn't recognized (the copied text is saved in unpriced_items.txt in the data "
                    "folder)")
         elif not g.get("base"):
             why = "its base type isn't in the library"
@@ -2290,7 +2291,7 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
     def app_toast(self, text, title="", actions=(), secs=None, colour=None, kind=None):
         """2.18.0, 2.35.0: one of the app's toasts (soe2/toasts.py) - stacked in the app's bottom-right corner, with an
         icon per kind, paused while hovered, timed by text length, never taking the keyboard. kind: info / success /
-        warning / error (guessed from the old colour or the text when not given). Returns the toast's window."""
+        warning / error (guessed from the old color or the text when not given). Returns the toast's window."""
         if kind is None:
             low = (text or "").lower()
             if colour in (C["red"], "#ff6b5e") or low.startswith(("couldn't", "could not", "error", "failed")):
@@ -3618,6 +3619,19 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         self.update_mark_buttons()
         if rec and SETTINGS.get("auto_copy"):
             self.copy_name(rec)
+
+    def pc_preview_at(self, e):
+        """2.53.0: a click on a Price checks row (Manual Add or a stash tab's list) shows the item's box - name, mods,
+        price - like Insights does. A click on it, Esc or 20 s closes it. Ctrl / Shift clicks (picking many) don't."""
+        if e.state & 0x0005 or self.tree.identify_region(e.x, e.y) not in ("cell", "tree"):
+            return self.ins_preview_close()
+        try:
+            rec = self.records.get(int(self.tree.identify_row(e.y)))
+        except (TypeError, ValueError):
+            rec = None
+        if not rec:
+            return self.ins_preview_close()
+        self.ins_preview("pc", rec, e.x_root + 18, e.y_root + 10)
 
     def checks_menu_actions(self, sel):
         """2.36.0: the Price checks rows' own right-click actions (Delete / Copy come from the standard list menu)."""

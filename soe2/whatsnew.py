@@ -21,6 +21,12 @@ NEXT = [
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.53.0": [
+        "Price checks: click an item (Manual Add or a stash tab's list) to see its box - name, mods and price - like "
+        "in Insights. Click it or press Esc to close it.",
+        "The Session timer's text is softer: plain rows, only the time and Profit bold, a lighter outline.",
+        "US spelling everywhere (Notes: \"Font and Colors\").",
+    ],
     "2.52.0": [
         "Tidier menus: every setting lives in one place. Opacity is only in Overlays › Appearance; the clock on the "
         "Session timer is switched in Overlays › Session timer › Options.",
@@ -147,8 +153,8 @@ NOTES = {
     ],
     "2.34.0": [
         "A cleaner, steadier look: the same text sizes and spacing everywhere, and buttons that tell you what they do - "
-        "the main action in your accent colour, deleting and clearing in red, small helpers quiet.",
-        "Every theme and accent colour now has readable text (checked against the WCAG accessibility standard). Buttons "
+        "the main action in your accent color, deleting and clearing in red, small helpers quiet.",
+        "Every theme and accent color now has readable text (checked against the WCAG accessibility standard). Buttons "
         "with a bright accent (gold, lime, teal, ice) use dark text now.",
     ],
     "2.33.1": [
@@ -247,7 +253,7 @@ NOTES = {
         "seconds.",
     ],
     "2.25.0": [
-        "Copy marker: double-tap Esc clears the + marks (when you keep them). Pick the +'s colour in Settings > "
+        "Copy marker: double-tap Esc clears the + marks (when you keep them). Pick the +'s color in Settings > "
         "General > Copy marker.",
     ],
     "2.24.0": [
@@ -337,7 +343,7 @@ NOTES = {
         "until you do. Switch it off with \"Remind me when I leave the map\" in the Session tracker's Alerts.",
     ],
     "2.10.2": [
-        "Fixed: windows disappearing behind the app when you maximise, restore, snap or resize it.",
+        "Fixed: windows disappearing behind the app when you maximize, restore, snap or resize it.",
         "Fixed (likely): typing stopping in boxes after the app was resized.",
     ],
     "2.10.1": [
@@ -442,10 +448,10 @@ NOTES = {
         "The clock is 12-hour or 24-hour (Settings > Appearance); it starts out the way your Windows clock is set.",
     ],
     "2.0.0": [
-        "Pick how the app looks: Settings > Appearance > Look of the app has themes, accent colours and text size.",
+        "Pick how the app looks: Settings > Appearance > Look of the app has themes, accent colors and text size.",
         "A start-up screen shows while the app loads (you can turn it off in Settings > Appearance).",
         "Check for updates only ever offers a newer version.",
-        "The sticky note's colours are set in the Notes window. Move and resize the note by dragging it.",
+        "The sticky note's colors are set in the Notes window. Move and resize the note by dragging it.",
     ],
     "2.0.0-beta.22": [
         "Price checks: the # column shows the order you copied items in. Press \"Order added\" to go back to it "

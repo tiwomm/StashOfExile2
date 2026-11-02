@@ -5,11 +5,11 @@
     does what it normally does. One key press = one chat command, like the "thanks for the trade" chat macro
     GGG staff have long allowed (and Sidekick's hideout key).
   - Sticky notes: a small always-on-top note window over the game (F6 shows / hides it). Drag it by its header,
-    resize it from the corner, set its colours, opacity and font size. It saves itself, and hides while the game
+    resize it from the corner, set its colors, opacity and font size. It saves itself, and hides while the game
     is closed.
 
 Settings live in settings.json ("overlay"). On first use, your POE2 Overlay config (%APPDATA%/POE2Overlay/config.ini)
-is read in, so notes, commands and colours carry over."""
+is read in, so notes, commands and colors carry over."""
 import configparser
 import os
 import re
@@ -331,7 +331,7 @@ class Overlay:
         return self.notes is not None and self.notes.winfo_exists() and getattr(self.notes, "wanted", True)
 
     def note_colours(self):
-        """(background, text): the remnant book's parchment (2.43.0), or your own colours with the Classic look."""
+        """(background, text): the remnant book's parchment (2.43.0), or your own colors with the Classic look."""
         from .overlaywin import pal, skinned
         if skinned():                                     # 2.47.0: every PoE2 look: its own page colours
             return pal()["field"], pal()["text"]
@@ -342,7 +342,7 @@ class Overlay:
         return "#" + v if re.fullmatch(r"[0-9A-Fa-f]{6}", v) else "#" + default
 
     def _build_notes(self):
-        """The sticky note: the shared over-the-game window (overlaywin.py) with your colours inside it."""
+        """The sticky note: the shared over-the-game window (overlaywin.py) with your colors inside it."""
         from .overlaywin import OverlayWindow, pal, skinned
         c = self.cfg
         bg, fg = self.note_colours()
@@ -506,7 +506,7 @@ class Overlay:
             pass
 
     def restyle(self, store=True):
-        """Colours / opacity / font / size changed in the Notes window: rebuild the note (where it is, unless the new
+        """Colors / opacity / font / size changed in the Notes window: rebuild the note (where it is, unless the new
         place and size are already in the settings: store=False)."""
         vis = self.notes_shown()
         if self.notes is not None and self.notes.winfo_exists():

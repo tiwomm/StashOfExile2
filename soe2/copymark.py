@@ -22,7 +22,7 @@ class CopyMarker:
         self.marks = []
 
     def show(self, x, y, number=None, secs=MARK_SECS, colour=RING):
-        """A ring centred on (x, y) (screen pixels, Tk's coordinates) for `secs`. -> the window."""
+        """A ring centered on (x, y) (screen pixels, Tk's coordinates) for `secs`. -> the window."""
         while len(self.marks) >= MAX_MARKS:
             self._close(self.marks[0])
         pad = 4
