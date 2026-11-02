@@ -11,6 +11,7 @@ from . import board as B
 from . import moneymakers as MM
 from .config import SETTINGS, save_json
 from .style import C, MONO, SegBar, Tooltip, place_near
+from .chrome import SectionBar, Viewport, section as chrome_section
 
 ORIGIN = {"community": "Official", "mine": "Mine", "example": "Example", "board": "Community"}
 VIEWS = ("Official", "Community", "Mine")
@@ -116,8 +117,12 @@ class MoneyMakersPage:
         pane = ttk.PanedWindow(page, orient="horizontal")
         pane.pack(fill="both", expand=True, padx=8, pady=(0, 8))
         # 2.28.0: browse by what the strat IS - Category > Type (Mapping > Breach), with counts
-        nav = tk.Frame(pane, bg=P1)
-        pane.add(nav, weight=0)
+        navo = tk.Frame(pane, bg=P1)                         # 2.69.0: each list under a strip, sunken
+        pane.add(navo, weight=0)
+        SectionBar(navo, "Browse").pack(fill="x")
+        nvp = Viewport(navo)
+        nvp.pack(fill="both", expand=True)
+        nav = nvp.body
         self.mm_nav = ttk.Treeview(nav, columns=("n",), show="tree headings", selectmode="browse", height=8)
         self.mm_nav.heading("#0", text="Browse", anchor="w")
         self.mm_nav.heading("n", text="#")
@@ -127,8 +132,13 @@ class MoneyMakersPage:
         self.mm_nav.tag_configure("cat", font=("Segoe UI", 10, "bold"))
         self.mm_nav.pack(fill="both", expand=True)
         self.mm_nav.bind("<<TreeviewSelect>>", lambda e: self.mm_nav_pick())
-        left = tk.Frame(pane, bg=P1)
-        pane.add(left, weight=3)
+        lfo = tk.Frame(pane, bg=P1)
+        pane.add(lfo, weight=3)
+        self.mm_list_head = SectionBar(lfo, "Strats")
+        self.mm_list_head.pack(fill="x")
+        lvp = Viewport(lfo)
+        lvp.pack(fill="both", expand=True)
+        left = lvp.body
         self.mm_pane = pane
         cols = (("name", "Strat", 170, "w"), ("type", "Type", 110, "w"),
                 ("thoughts_per_click", "🧠 Thoughts/click", 104, "center"), ("clicks_per_hour", "🖱 Clicks/h", 80, "center"),
@@ -148,8 +158,8 @@ class MoneyMakersPage:
         self.mm_tree.bind("<Button-3>", self.mm_menu)
         self.mm_empty = tk.Label(left, text="", bg=C["panel"], fg=C["muted"], font=("Segoe UI", 10))
 
-        right = tk.Frame(pane, bg=P2, highlightthickness=1, highlightbackground=C["line"])
-        pane.add(right, weight=2)
+        rgo, right = chrome_section(pane, "Strat", padx=0, pady=0)              # 2.69.0
+        pane.add(rgo, weight=2)
         acts = tk.Frame(right, bg=P2, padx=8, pady=8)
         acts.pack(fill="x")
         self.mm_btns = {}
@@ -1187,10 +1197,8 @@ class MoneyMakersPage:
         P1, P2 = C["panel"], C["panel2"]
         pane = ttk.PanedWindow(page, orient="horizontal")
         pane.pack(fill="both", expand=True, padx=8, pady=8)
-        left = tk.Frame(pane, bg=P2, padx=16, pady=8, highlightthickness=1, highlightbackground=C["line"])
-        pane.add(left, weight=2)
-        tk.Label(left, text="HOW TO CRAFT A TABLET", bg=P2, fg=C["steel"], font=("Segoe UI", 9, "bold"),
-                 anchor="w").pack(fill="x")
+        lfo, left = chrome_section(pane, "How to craft a tablet")              # 2.69.0
+        pane.add(lfo, weight=2)
         for i, (when, what) in enumerate(MM.TABLET_FLOW, 1):
             row = tk.Frame(left, bg=P2)
             row.pack(fill="x", pady=(8, 0))

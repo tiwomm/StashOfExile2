@@ -5,6 +5,7 @@ from tkinter import filedialog, ttk
 
 from . import maplib as ML
 from .style import C, place_near
+from .chrome import SectionBar, Viewport
 
 RANK_TAG = {"S": "s", "A": "a", "B": "b", "C": "c", "D": "d", "Avoid": "avoid"}
 
@@ -43,8 +44,10 @@ class MapLibraryPage:
             ttk.Button(rbar, text=r if r != "Avoid" else "✖ Avoid", width=-7,
                        command=lambda rr=r: self.ml_set(None if rr == "Clear" else rr)).pack(side="left", padx=(0, 4))
 
-        box = tk.Frame(page, bg=P1)
-        box.pack(fill="both", expand=True)
+        SectionBar(page, "Maps").pack(fill="x")               # 2.69.0: the list under a strip, sunken
+        bvp = Viewport(page)
+        bvp.pack(fill="both", expand=True)
+        box = bvp.body
         cols = (("map", "Map", 200, "w"), ("kind", "Kind", 90, "w"), ("rank", "Your rank", 90, "center"),
                 ("com", "Community", 110, "center"), ("runs", "Your runs", 84, "e"), ("avg", "Avg time", 80, "e"),
                 ("best", "Best", 70, "e"))

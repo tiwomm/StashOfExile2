@@ -10,6 +10,7 @@ from . import regex as R
 from .clipboard import read_clipboard_text
 from .config import load_json, save_json, SETTINGS
 from .style import C, MONO, SegBar
+from .chrome import section as chrome_section
 
 KIND_NAMES = {"tablet": "Tablets", "waystone": "Waystones", "relic": "Relics", "jewel": "Jewels",
               "gear": "Gear items"}                         # 2.22.0: jewels and gear
@@ -90,8 +91,8 @@ class RegexPage:
                  font=("Segoe UI", 9)).pack(side="left")
 
         # ---- the search string
-        res = tk.Frame(tab, bg=P2, padx=12, pady=8, highlightthickness=1, highlightbackground=C["line"])
-        res.pack(fill="x", padx=8)
+        rso, res = chrome_section(tab, "Your search", padx=12, pady=8)   # 2.69.0: header strip + sunken frame
+        rso.pack(fill="x", padx=8)
         btns = tk.Frame(res, bg=P2)
         btns.pack(side="right", anchor="n", padx=(8, 0))
         ttk.Button(btns, text="Copy", style="Primary.TButton", command=self.rx_copy, width=10).pack(side="left")
@@ -147,13 +148,12 @@ class RegexPage:
         lists.rowconfigure(0, weight=1)
         self.rx_lists = {}
         for col, side, title in ((0, "want", "I WANT THESE MODS"), (1, "avoid", "I DON'T WANT ANY OF THESE MODS")):
-            box = tk.Frame(lists, bg=P2, highlightthickness=1, highlightbackground=C["line"])
-            box.grid(row=0, column=col, sticky="nsew", padx=(0, 4) if col == 0 else (5, 0))
+            bxo, box = chrome_section(lists, title.capitalize(), padx=0, pady=0)    # 2.69.0
+            bxo.grid(row=0, column=col, sticky="nsew", padx=(0, 4) if col == 0 else (4, 0))
             hdr = tk.Frame(box, bg=P2, padx=8, pady=8)
             hdr.pack(fill="x")
-            tk.Label(hdr, text=title, bg=P2, fg=C["steel"], font=("Segoe UI", 9, "bold")).pack(side="left")
             cnt = tk.Label(hdr, text="", bg=P2, fg=C["good"], font=("Segoe UI", 9, "bold"))
-            cnt.pack(side="left", padx=8)
+            cnt.pack(side="left")
             if side == "want":
                 self.rx_match = {}
                 for val, label in ((True, "All"), (False, "Any")):
@@ -296,11 +296,10 @@ class RegexPage:
             self.rx_read_opts()
             self.rx_schedule_opts()
 
-        def card(title, col):
-            f = tk.Frame(box, bg=P2, padx=12, pady=8, highlightthickness=1, highlightbackground=C["line"])
-            f.grid(row=0, column=col, sticky="nsew", padx=(0 if col == 0 else 5, 0 if col == 2 else 5))
-            tk.Label(f, text=title, bg=P2, fg=C["steel"], font=("Segoe UI", 9, "bold"), anchor="w").grid(
-                row=0, column=0, columnspan=4, sticky="w", pady=(0, 2))
+        def card(title, col):                               # 2.69.0: header strip + sunken frame
+            fo, f = chrome_section(box, title.capitalize() if title.isupper() else title, padx=12, pady=8)
+            fo.grid(row=0, column=col, sticky="nsew", padx=(0 if col == 0 else 4, 0 if col == 2 else 4))
+            tk.Frame(f, bg=P2, height=1).grid(row=0, column=0, columnspan=4)
             return f
 
         def check(parent, key, label, row, col=0, value=None):

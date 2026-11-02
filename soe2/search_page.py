@@ -5,6 +5,7 @@ from tkinter import ttk
 
 from . import gamesearch
 from .style import C, FONT_TITLE, SegBar
+from .chrome import SectionBar, Viewport
 
 PAGE = 60
 
@@ -36,12 +37,15 @@ class SearchPage:
         self.gs_chips.bind("<Configure>", lambda e: self._gs_flow())
         self.gs_summary = tk.Label(body, text="", bg=P1, fg=C["muted"], anchor="w", padx=12)
         self.gs_summary.pack(fill="x")
-        res = tk.Frame(body, bg=P1)
-        res.pack(fill="both", expand=True, padx=12, pady=(4, 8))
+        self.gs_head = SectionBar(body, "Results")          # 2.69.0: the results under a strip, in a sunken frame
+        self.gs_head.pack(fill="x", padx=12, pady=(4, 0))
+        rvp = Viewport(body, bg_key="panel2")
+        rvp.pack(fill="both", expand=True, padx=12, pady=(0, 8))
+        res = rvp.body
         sb = ttk.Scrollbar(res, orient="vertical")
         sb.pack(side="right", fill="y")
         t = tk.Text(res, bg=P2, fg=C["text"], relief="flat", wrap="word", padx=16, pady=8, cursor="arrow",
-                    highlightthickness=1, highlightbackground=C["line"], yscrollcommand=sb.set, font=("Segoe UI", 10))
+                    highlightthickness=0, yscrollcommand=sb.set, font=("Segoe UI", 10))
         t.pack(side="left", fill="both", expand=True)
         sb.config(command=t.yview)
         t.tag_configure("name", font=("Segoe UI", 12, "bold"), foreground="#ffd9a8")

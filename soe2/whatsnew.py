@@ -21,6 +21,11 @@ NEXT = [
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.69.0": [
+        "Every tool now has the same look as Price checks: each part sits under a header strip in its own framed "
+        "panel - Settings, Wealth, Regex, Exchange rates, Game search, Market Insights, Money Makers, Map library, "
+        "Mod book, Overlay and Calculator. They follow your theme.",
+    ],
     "2.68.1": [
         "Notes is simply part of the overlay now - open it from Notes ▾ on the overlay, F6 hides it with the rest. "
         "Its separate settings and the old notes key are gone.",

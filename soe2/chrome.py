@@ -100,3 +100,21 @@ class Viewport(tk.Frame):
                     f.place(**place)
                     self._edges.append(f)
             self.body.pack_configure(padx=len(layers), pady=len(layers))
+
+
+def section(parent, title, note="", bg_key="panel2", padx=16, pady=8, expand=False):
+    """2.69.0: a part of a page the way Price checks draws them - the theme's header strip with the title, and a
+    sunken frame under it. -> (outer, inner): place outer (pack / grid), put the content in inner.
+    inner.section_outer / outer.section_title / outer.section_bar are set for code that needs them."""
+    outer = tk.Frame(parent, bg=C["panel"], highlightthickness=1, highlightbackground=C["panel"])
+    bar = SectionBar(outer, title)
+    bar.pack(fill="x")
+    vp = Viewport(outer, bg_key=bg_key)
+    vp.pack(fill="both", expand=True)
+    inner = tk.Frame(vp.body, bg=C[bg_key], padx=padx, pady=pady)
+    inner.pack(fill="both", expand=True)
+    if note:
+        tk.Label(inner, text=note, bg=C[bg_key], fg=C["muted"], font=("Segoe UI", 9), anchor="w", justify="left",
+                 wraplength=600).pack(fill="x", pady=(0, 8))
+    inner.section_outer, outer.section_title, outer.section_bar = outer, title, bar
+    return outer, inner

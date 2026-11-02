@@ -8,6 +8,7 @@ import tkinter as tk
 from tkinter import ttk
 
 from .style import C, MONO
+from .chrome import SectionBar, Viewport, section as chrome_section
 
 _OPS = {ast.Add: operator.add, ast.Sub: operator.sub, ast.Mult: operator.mul, ast.Div: operator.truediv,
         ast.FloorDiv: operator.floordiv, ast.Mod: operator.mod, ast.Pow: operator.pow,
@@ -100,12 +101,11 @@ class CalcPage:
                              highlightbackground="#5b77ad")
                 b.grid(row=r, column=c, sticky="nsew", padx=2, pady=2)
                 b.bind("<Button-1>", lambda e, kk=k: self.calc_key(kk))
-        hist = tk.Frame(wrap, bg=P2, highlightthickness=1, highlightbackground=C["line"])
-        hist.pack(fill="both", expand=True)
+        hso, hist = chrome_section(wrap, "History", padx=0, pady=0)            # 2.69.0
+        hso.pack(fill="both", expand=True)
+        hso.section_bar.note("click one to use it again")
         top = tk.Frame(hist, bg=P2)
         top.pack(fill="x")
-        tk.Label(top, text="HISTORY (click one to use it again)", bg=P2, fg=C["steel"], font=("Segoe UI", 9, "bold"),
-                 padx=8, pady=4).pack(side="left")
         self.calc_hist = tk.Listbox(hist, bg=P2, fg=C["text"], relief="flat", highlightthickness=0, height=5,
                                     font=(MONO, 10), selectbackground="#2c4a84", activestyle="none")
         self.calc_hist.pack(fill="both", expand=True, padx=4, pady=(0, 4))

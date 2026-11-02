@@ -6,6 +6,7 @@ from tkinter import ttk
 from . import gamedata
 from .clipboard import read_clipboard_text
 from .style import C, MONO
+from .chrome import SectionBar, Viewport, section as chrome_section
 from .config import PAGE_CHECKS
 from .pricefmt import fmt_div
 
@@ -38,9 +39,9 @@ class LibraryPage:
         pane = ttk.PanedWindow(tab, orient="horizontal")
         pane.pack(fill="both", expand=True, padx=8, pady=(0, 8))
         left = tk.Frame(pane, bg=C["panel"])
-        right = tk.Frame(pane, bg=C["panel2"], padx=12, pady=8, highlightthickness=1, highlightbackground=C["line"])
+        rgo, right = chrome_section(pane, "Item", padx=12, pady=8)              # 2.69.0
         pane.add(left, weight=3)
-        pane.add(right, weight=2)
+        pane.add(rgo, weight=2)
 
         nb = ttk.Notebook(left)
         nb.pack(fill="both", expand=True)
