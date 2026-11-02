@@ -29,7 +29,7 @@ class MoneyMakersPage:
     def build_money_window(self, body):
         P1 = C["panel"]
         self.mm_strats, self.mm_sel, self.mm_sort = [], None, ("thoughts_per_click", False)
-        self.mm_page = SegBar(body, ["Strats", "Lucrative Strats", "Tablet Crafting", "Farm Tracker"],
+        self.mm_page = SegBar(body, ["Strats", "Lucrative Strats", "Tablet Craft Helper", "Farm Tracker"],
                               command=lambda v: self.mm_show_page(), size=10, pad=(16, 4))
         self.mm_page.pack(anchor="w", padx=8, pady=(8, 0))
         if getattr(self, "shell", None) is not None:          # 2.64.0: its tabs are listed in the sidebar
@@ -38,7 +38,7 @@ class MoneyMakersPage:
         self.mm_strat_page, self.mm_run_page = self.mm_pages["Strats"], self.mm_pages["Farm Tracker"]
         self.mm_build_strats(self.mm_strat_page)
         self.mm_build_oneliners(self.mm_pages["Lucrative Strats"])
-        self.mm_build_tablets(self.mm_pages["Tablet Crafting"])
+        self.mm_build_tablets(self.mm_pages["Tablet Craft Helper"])
         self.build_ledger(self.mm_run_page)                  # 2.45.0: Farm Tracker (was Run tracker: ledger_page.py)
         self.mm_strat_page.pack(fill="both", expand=True)
         self.mm_reload()
@@ -51,7 +51,7 @@ class MoneyMakersPage:
         self.mm_pages[cur].pack(fill="both", expand=True)
         if cur == "Farm Tracker":
             self.fl_refresh()
-        elif cur == "Tablet Crafting":
+        elif cur == "Tablet Craft Helper":
             self.mm_tab_fill()
         elif cur == "Lucrative Strats":
             self.mm_one_fill()
@@ -1182,7 +1182,7 @@ class MoneyMakersPage:
         if why is not None:
             self._mm_bg(lambda: B.report(post["id"], why), lambda r: self.mm_board_result(r, "Reported - thanks."))
 
-    # ---------------- Tablet Crafting quick reference
+    # ---------------- Tablet Craft Helper quick reference
     def mm_build_tablets(self, page):
         P1, P2 = C["panel"], C["panel2"]
         pane = ttk.PanedWindow(page, orient="horizontal")
