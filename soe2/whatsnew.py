@@ -21,6 +21,14 @@ NEXT = [
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.59.0": [
+        "The overlay is always one window. Pick Style and Layout (Panel or Strip) in Settings › Appearance.",
+        "Session timer is now Overlay: the timer, Mechanic Helper and Notes on one screen. F6 shows / hides the whole "
+        "overlay (change it in Settings › Hotkeys); one lock for all of it.",
+        "New in Settings: Price checking (valuable mod, popups, sound, listings, prices in, account, copy marker), "
+        "Tools (exchange rates), General › Game (Client.txt, window title) and Advanced › Fine tuning.",
+        "A search box at the top of Settings finds any setting. Changes save by themselves - no Save & apply.",
+    ],
     "2.58.0": [
         "Every look is in one place: Settings › Appearance - the app, and over the game (style, one window, layout, "
         "opacity, Notes text size). Overlays no longer has an Appearance tab.",

@@ -161,6 +161,7 @@ class WealthSetup:
                       fg=C["steel"])
         g = tk.Frame(body, bg=C["panel"])
         g.pack(fill="x", pady=(4, 4))
+        self.pc_vars()                         # (first-time setup: the same account as Settings › Price checking)
         tk.Label(g, text="Your account name", bg=C["panel"], fg=C["text"]).grid(row=0, column=0, sticky="w", pady=2)
         ttk.Entry(g, textvariable=self.w_acc, width=26).grid(row=0, column=1, columnspan=2, sticky="w", padx=8)
         tk.Label(g, text="The price on the tab", bg=C["panel"], fg=C["text"]).grid(row=1, column=0, sticky="w", pady=2)
