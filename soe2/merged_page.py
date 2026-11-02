@@ -618,9 +618,12 @@ class MergedOverlay:
         """One window resting on the XP bar, or two - right of the life orb (the timer) and left of the mana orb
         (the switches, Notes, the clock) - in the game's own bar look. Fitted to the game window; drag them while
         unlocked if your UI scale puts the bar elsewhere."""
+        from . import hudart, themes as TH
+        from .overlaywin import _seed
         cfg = self.tracker_cfg()
         layout = self.merged_layout()
-        P = pal()
+        P = hudart.palette(pal())                           # 2.66.0: the game's own HUD look, in every theme
+        _seed(TH, P)
         self.mg_P = P
         spots = self.hud_spots(layout)
         if layout == "orbs":                                # 2.66.0: as wide as what each half shows
@@ -651,6 +654,8 @@ class MergedOverlay:
             if not cfg.get("mlocked"):
                 w.draggable(cv)
             W, H = ww - 2, hh - 2
+            self._hud_ends = {"all": ("crimson", "sapphire"), "timer": ("crimson", "crimson")}.get(part,
+                                                                                                ("sapphire", "sapphire"))
             if part == "all":
                 self._hud_row(w, cv, P, want, W, H)
             elif part == "timer":
@@ -687,7 +692,7 @@ class MergedOverlay:
         fb = tkfont.Font(root=self.root, family=P["font"], size=self._hf(13), weight="bold")
         out = []
         for i, (x, y, w, h) in enumerate(spots):
-            m = 2 * (hudart.cap_width(h) + 8)
+            m = 2 * (hudart.cap_width(h) + 14)
             if i == 0:
                 need = max(max(fb.measure("0:00:00"), fb.measure("not tracking")) + 16 + fm.measure("Avg  00:00"),
                            fm.measure("Map  00:00") + 8 + fm.measure("Mmmmm") + 8 + fm.measure("Maps  00"))
@@ -712,8 +717,8 @@ class MergedOverlay:
         """The game bar's plate (hudart: carved stone, bevelled bronze frame, end caps with an amber gem, a
         recessed well). -> the left / right edges of the well, where content goes."""
         from . import hudart
-        img = hudart.plate(cv, W, H, P)
-        m = hudart.cap_width(H) + 8
+        img = hudart.plate(cv, W, H, P, ends=getattr(self, "_hud_ends", ("crimson", "sapphire")))
+        m = hudart.cap_width(H) + 14
         if img is not None:
             cv.create_image(0, 0, image=img, anchor="nw", tags=("hudbg",))
             cv._hud_img = img

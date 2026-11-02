@@ -25,8 +25,13 @@ VERSION HISTORY
        border and accent) and pal() returns it - the Style list (parchment, codex, relic, carved, hud, classic,
        minimal) is gone from Settings; Minimal is a Layout now (an old Minimal style moves there once,
        SETTINGS ov_look_266). The palette's colors are seeded into themes' tone cache so Tk gets them as they are.
-       A theme swap rebuilds the overlay (relook -> merged_set). hudart takes the palette (colors()): plate,
-       sockets and dividers in the theme's colors. Beside the orbs: each half only as wide as it shows
+       A theme swap rebuilds the overlay (relook -> merged_set). The Game bar is the exception: it is part of the
+       game's bar, so hudart draws it in PoE2's own HUD style in every theme (charcoal stone, pewter frame with a
+       gold inner line, corner brackets and rivets, gothic-arch end caps with a crimson gem on the life side and
+       a sapphire one on the mana side, a crest, square sockets like the flask / skill slots glowing gold when
+       on, double dividers); hudart.palette() gives its cream / gold text in Palatino Linotype. Game search ↳
+       Anoints: Anoints left the category chips for its own page (register_tabs("search", gs_tabs,
+       home="Search")); the search leaves anoints out; gs_pick(ANOINTS) still lands there. Beside the orbs: each half only as wide as it shows
        (_hud_snug), against its orb; smaller end caps; the timer half is time + Avg / map, area, Maps. No
        "Fit to the game" button: picking a Game bar layout again starts it fitted (merged_set drops its
        hud_pos). Plus 2.65.1 below (never released on its own).

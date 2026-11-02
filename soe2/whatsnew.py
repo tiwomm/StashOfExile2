@@ -24,8 +24,10 @@ NOTES = {
     "2.66.0": [
         "Everything over the game now uses your theme (Settings › Appearance › Theme) - no separate overlay styles "
         "to clash with it. Minimal is now one of the Layouts.",
-        "The Game bar layouts look like part of the game: a carved plate in a metal frame, ornate end caps with a "
-        "gem, the switches in sockets that light up when on - all in your theme's colors.",
+        "The Game bar layouts look like part of the game's own bar: dark stone in a pewter frame, arched end caps "
+        "with a red gem by the life orb and a blue one by the mana orb, and the switches in slots like your flasks "
+        "and skills that glow gold when on.",
+        "Anoints has its own page now: Game search ↳ Anoints in the sidebar.",
         "Beside the orbs is slimmer: each half is only as wide as what it shows. Dragged it? Pick the layout again "
         "to put it back.",
         "Fixed: clicking a tool in the sidebar while you're on one of its tabs or sub-tools (Regex from Favorites, "
