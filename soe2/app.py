@@ -44,6 +44,7 @@ from .engine import Engine
 from . import gear, waystone
 from .toasts import Toasts
 from .style import C, FLAG_COLORS, FONT_TITLE, hotkey_blocked, MONO, Plate, SegBook, SegBar, setup_style, Toast, KeyCapture
+from .chrome import SectionBar, Viewport
 from .winsys import ICON_B64, KeyWatch, Tray
 from .wealth_page import WealthPage
 from .wealth_setup import WealthSetup
@@ -568,7 +569,7 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
                                 highlightthickness=1, highlightbackground="#3f5f8f")
         self.root.after(3000, self.cm_paint)
 
-        # ---- the two toolbar rows
+        # ---- the toolbar (2.63.0: row 1 = what to do, row 2 = what to show; the mode row comes first)
         tb = tk.Frame(body, bg=C["panel"], highlightthickness=1, highlightbackground=C["line"])
         tb.pack(fill="x", padx=8, pady=(8, 8))
         self.price_tb = tb
@@ -579,19 +580,9 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         bar2.pack(fill="x")
         lab = dict(bg=C["panel"], fg=C["muted"])
         ttk.Button(bar, text="Export CSV", command=self.export).pack(side="right")          # right side first: never squeezed out
-        ttk.Button(bar, text="Clear list", command=self.clear, style="Danger.TButton").pack(side="right", padx=8)
         self.pause_btn = ttk.Button(bar, text="Pause", command=self.toggle_pause, width=8)
-        self.pause_btn.pack(side="right")
-        ttk.Button(bar2, text="Re-price all", style="Primary.TButton", command=self.reprice_all).pack(side="right")
-        self.remove_btn = ttk.Button(bar2, text="✖ Mark removed", command=lambda: self.mark_selected("removed"))
-        self.remove_btn.pack(side="right", padx=8)
-        self.delete_btn = ttk.Button(bar2, text="🗑 Delete", command=self.remove_selected, style="Danger.TButton")      # 2.0 beta 19
-        self.delete_btn.pack(side="right", padx=(0, 8), before=self.remove_btn)
-        self.mark_btn = ttk.Button(bar2, text="✔ Mark listed", command=lambda: self.mark_selected("listed"))
-        self.mark_btn.pack(side="right")
-        self.undo_btn = ttk.Button(bar2, text="↺ Undo", command=self.undo_mark, state="disabled", width=7, style="Quiet.TButton")
-        self.undo_btn.pack(side="right", padx=(0, 8))
-        self.undo = []                                   # [(record id, previous mark, previous listed-at)] of the last mark
+        self.pause_btn.pack(side="right", padx=8)
+        ttk.Button(bar, text="⟳ Re-price all", style="Primary.TButton", command=self.reprice_all).pack(side="right")
         # 2.59.0: Valuable mod, Popups, Sound, Copy name, Listings, Listed within, Prices in and the account live in
         # Settings › Price checking - the toolbar only links there (one home for each setting)
         self.pc_vars()
@@ -599,34 +590,24 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
                                     cursor="hand2", font=("Segoe UI", 9, "underline"))
         self.pc_set_link.pack(side="left")
         self.pc_set_link.bind("<Button-1>", lambda e: self.settings_open("Price checking"))
-        self.pc_rules_lbl = tk.Label(bar2, text="", **lab)
-        self.pc_rules_lbl.pack(side="left")
+        self.pc_rules_lbl = tk.Label(bar, text="", **lab)
+        self.pc_rules_lbl.pack(side="left", padx=(12, 0))
         self.pc_rules_text()
-        self.view_var = tk.StringVar(value=SETTINGS["view"])    # its box sits above the list (2.0 beta 3)
+        self.view_var = tk.StringVar(value=SETTINGS["view"])
         self.build_tab_reader(tb)                                # 2.8.0: Add items from Ctrl+Alt+C | Stash tab
 
-        # ---- the key bar, at the bottom of this window (claims its space first)
-        kbf = tk.Frame(body, bg=C["panel"])
-        kbf.pack(fill="x", side="bottom")
-        self.build_keybar(kbf)
-        self.banner = tk.Label(body, text="", anchor="w", padx=16, pady=8, font=("Segoe UI", 10, "bold"), justify="left")
-
-        # ---- the list filters (2.0 beta 3), then the list and the side panel
-        items_tab = tk.Frame(body, bg=C["panel"])
-        items_tab.pack(fill="both", expand=True, padx=8, pady=(0, 4))
-        self.checks_area = items_tab                       # cards and banners go just above it
-        frow = tk.Frame(items_tab, bg=C["panel"], padx=4, pady=8)
-        frow.pack(fill="x")
+        # ---- row 2: the list filters (2.0 beta 3) + 2.63.0 search and "only ★"
+        frow = bar2
         flab = dict(bg=C["panel"], fg=C["muted"])
         tk.Label(frow, text="Show", **flab).pack(side="left", padx=(0, 8))
         vbox = ttk.Combobox(frow, textvariable=self.view_var, values=VIEWS, state="readonly", width=12)
         vbox.pack(side="left")
         vbox.bind("<<ComboboxSelected>>", self.on_view)
         self.cat_var, self.rar_var, self.type_var = tk.StringVar(value=self.ALL_CATS), tk.StringVar(value="All"), tk.StringVar(value="All")
-        self.cat_box = ttk.Combobox(frow, textvariable=self.cat_var, state="readonly", width=15)
+        self.cat_box = ttk.Combobox(frow, textvariable=self.cat_var, state="readonly", width=14)
         self.rar_box = ttk.Combobox(frow, textvariable=self.rar_var, state="readonly", width=8)
-        self.type_box = ttk.Combobox(frow, textvariable=self.type_var, state="readonly", width=15)
-        for label, box, pad in (("Category", self.cat_box, 18), ("Rarity", self.rar_box, 12), ("Type", self.type_box, 12)):
+        self.type_box = ttk.Combobox(frow, textvariable=self.type_var, state="readonly", width=13)
+        for label, box, pad in (("Category", self.cat_box, 14), ("Rarity", self.rar_box, 10), ("Type", self.type_box, 10)):
             tk.Label(frow, text=label, **flab).pack(side="left", padx=(pad, 6))
             box.pack(side="left")
         self.cat_box.bind("<<ComboboxSelected>>", lambda e: self.on_cat(changed="cat"))
@@ -634,16 +615,54 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         self.type_box.bind("<<ComboboxSelected>>", lambda e: self.on_cat(changed="type"))
         for cb in (vbox, self.cat_box, self.rar_box, self.type_box):
             cb.bind("<<ComboboxSelected>>", lambda e: self.root.after(20, self.root.focus_set), add="+")
-        # 2.26.4: was "Show all" - it clears Category / Rarity / Type, and only lights up when one is set
+        self.star_var = tk.BooleanVar(value=False)          # 2.63.0: only items with a ★ (valuable) mod
+        ttk.Checkbutton(frow, text="Only ★", variable=self.star_var, style="Switch.TCheckbutton",
+                        command=self.on_filter_text).pack(side="left", padx=(12, 0))
+        # 2.26.4: was "Show all" - it clears Category / Rarity / Type / search / ★, and only lights up when one is set
         self.clear_btn = ttk.Button(frow, text="✕ Clear filters", command=self.cat_reset, state="disabled")
         self.clear_btn.pack(side="left", padx=(12, 0))
         ttk.Button(frow, text="↕ Order added", command=self.sort_added).pack(side="left", padx=(8, 0))   # 2.0 beta 22
-        self.cat_count = tk.Label(frow, text="", **flab)
-        self.cat_count.pack(side="right")
+        self.search_var = tk.StringVar()                    # 2.63.0: find by name, base, type or mod text
+        srow = self.pc_mode.master                          # (on the first row, right of "Add items from")
+        self.search_box = ttk.Entry(srow, textvariable=self.search_var, width=26)
+        self.search_box.pack(side="right")
+        tk.Label(srow, text="🔍 Search", **flab).pack(side="right", padx=(12, 8))
+        self.search_var.trace_add("write", lambda *a: self.on_filter_text(soon=True))
+        self.search_box.bind("<Escape>", lambda e: (self.search_var.set(""), "break")[1])
+
+        # ---- the key bar, at the bottom of this window (claims its space first)
+        kbf = tk.Frame(body, bg=C["panel"])
+        kbf.pack(fill="x", side="bottom")
+        self.build_keybar(kbf)
+        self.banner = tk.Label(body, text="", anchor="w", padx=16, pady=8, font=("Segoe UI", 10, "bold"), justify="left")
+
+        # ---- the list (left) and the item (right), each under its own header strip
+        items_tab = tk.Frame(body, bg=C["panel"])
+        items_tab.pack(fill="both", expand=True, padx=8, pady=(0, 4))
+        self.checks_area = items_tab                       # cards and banners go just above it
         self.pane = ttk.PanedWindow(items_tab, orient="horizontal")        # drag the divider to resize
         self.pane.pack(fill="both", expand=True)
-        left = tk.Frame(self.pane, bg=C["panel"])
-        self.pane.add(left, weight=1)
+        lcol = tk.Frame(self.pane, bg=C["panel"])
+        self.pane.add(lcol, weight=1)
+        self.list_head = SectionBar(lcol, "Items")
+        self.list_head.pack(fill="x")
+        self.cat_count = tk.Label(lcol, text="")             # (not shown - its text is the strip's note)
+        # under the list: what to do with the picked rows
+        acts = tk.Frame(lcol, bg=C["panel"], pady=8)
+        acts.pack(fill="x", side="bottom")
+        ttk.Button(acts, text="Clear list", command=self.clear, style="Danger.TButton").pack(side="right")
+        self.delete_btn = ttk.Button(acts, text="🗑 Delete", command=self.remove_selected, style="Danger.TButton")      # 2.0 beta 19
+        self.delete_btn.pack(side="right", padx=8)
+        self.remove_btn = ttk.Button(acts, text="✖ Mark removed", command=lambda: self.mark_selected("removed"))
+        self.remove_btn.pack(side="right")
+        self.mark_btn = ttk.Button(acts, text="✔ Mark listed", command=lambda: self.mark_selected("listed"))
+        self.mark_btn.pack(side="right", padx=8)
+        self.undo_btn = ttk.Button(acts, text="↺ Undo", command=self.undo_mark, state="disabled", width=7, style="Quiet.TButton")
+        self.undo_btn.pack(side="right")
+        self.undo = []                                   # [(record id, previous mark, previous listed-at)] of the last mark
+        vp = Viewport(lcol)
+        vp.pack(fill="both", expand=True)
+        left = vp.body
         self.tree = ttk.Treeview(left, columns=[c[0] for c in self.COLS], show="headings", selectmode="extended")
         self.tree.menu_actions = self.checks_menu_actions          # 2.36.0: right-click / Menu key
         for cid, title, w, anchor in self.COLS:
@@ -666,7 +685,7 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         self.tree.tag_configure("sold", foreground="#7fe0c0")              # 2.21.0
         self.tree.bind("<<TreeviewSelect>>", self._on_select_soon)
         self.tree.bind("<Double-1>", lambda e: self.open_trade())
-        self.tree.bind("<ButtonRelease-1>", self.pc_preview_at, add="+")   # 2.53.0: the item's box, as in game
+        # 2.63.0: the item shows in the panel on the right - no more pop-up box over the list
         self.empty_lbl = tk.Label(left, bg=C["panel"], fg=C["muted"], font=("Segoe UI", 12), justify="center",
                                   text=self.empty_text)
         self.empty_lbl.place(relx=0.5, rely=0.45, anchor="center")
@@ -687,9 +706,21 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
                 pass
         self.pane.bind("<ButtonRelease-1>", keep_panel, add="+")
         self.outer = outer
-        dsb = ttk.Scrollbar(outer, orient="vertical")
+        self.item_head = SectionBar(outer, "Item")
+        self.item_head.pack(fill="x", padx=(8, 0))
+        # 2.63.0: the picked item's own buttons, at the foot of its panel
+        ifoot = tk.Frame(outer, bg=C["panel2"], pady=8)
+        ifoot.pack(fill="x", side="bottom", padx=(8, 0))
+        self.item_trade_btn = ttk.Button(ifoot, text="Open on trade site", command=self.open_trade, state="disabled")
+        self.item_trade_btn.pack(side="left", padx=(8, 0))
+        self.item_mark_btn = ttk.Button(ifoot, text="✔ Mark listed", command=lambda: self.mark_selected("listed"),
+                                        state="disabled")
+        self.item_mark_btn.pack(side="right", padx=(0, 8))
+        ivp = Viewport(outer, bg_key="panel2")
+        ivp.pack(fill="both", expand=True, padx=(8, 0))
+        dsb = ttk.Scrollbar(ivp.body, orient="vertical")
         dsb.pack(side="right", fill="y")
-        self.dcanvas = tk.Canvas(outer, bg=C["panel2"], highlightthickness=0, yscrollcommand=dsb.set)
+        self.dcanvas = tk.Canvas(ivp.body, bg=C["panel2"], highlightthickness=0, yscrollcommand=dsb.set)
         self.dcanvas.pack(side="left", fill="both", expand=True)
         dsb.config(command=self.dcanvas.yview)
         self.detail = tk.Frame(self.dcanvas, bg=C["panel2"], padx=16, pady=12)
@@ -3000,7 +3031,34 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
     def visible(self, rec):
         want = self.VIEW_MARK.get(SETTINGS.get("view", "Not yet listed"))
         return (rec.get("src", "manual") == self.list_src()             # 2.42.0: this list only
-                and (want is None or rec.get("mark", "new") == want) and self.cat_ok(rec))
+                and (want is None or rec.get("mark", "new") == want) and self.cat_ok(rec) and self.text_ok(rec))
+
+    def text_ok(self, rec):
+        """2.63.0: the Search box (name, base, type, label or a mod's text) and "Only ★" (a valuable mod)."""
+        sv = getattr(self, "star_var", None)
+        if sv is not None and sv.get() and not (rec.get("resolved") and self.key_mods(rec)):
+            return False
+        q = getattr(self, "search_var", None)
+        q = q.get().strip().lower() if q is not None else ""
+        if not q:
+            return True
+        it = rec["item"]
+        hay = " ".join(str(x) for x in (it.get("name"), it.get("base"), it.get("class"), rec.get("label"))).lower()
+        if all(w in hay for w in q.split()):
+            return True
+        mods = str(rec.get("raw") or "").lower()
+        return all(w in hay or w in mods for w in q.split())
+
+    def on_filter_text(self, soon=False):
+        if soon:
+            if getattr(self, "_flt_job", None):
+                self.root.after_cancel(self._flt_job)
+            self._flt_job = self.root.after(200, self.on_filter_text)
+            return
+        self._flt_job = None
+        self.rebuild_tree()
+        self.cat_refresh()
+        self.clear_btn_state()
 
     def in_list(self, rec):
         return rec.get("src", "manual") == self.list_src()
@@ -3065,6 +3123,19 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         shown = sum(1 for r in self.records.values() if self.visible(r))
         mine = sum(1 for r in self.records.values() if self.in_list(r))
         self.cat_count.config(text=f"Showing {shown} of {mine} items" if mine else "")
+        self.list_note()
+
+    def list_note(self):
+        """2.63.0: the list's header strip - which list, how many shown, how it's sorted."""
+        head = getattr(self, "list_head", None)
+        if head is None:
+            return
+        t = self.pctab_current() if self.list_src() != "manual" else None
+        head.set_title(f"Stash tab · {t['name']}" if t else "Items · Manual Add")
+        n = self.cat_count.cget("text")
+        srt = {"est": "value", "conf": "confidence", "listings": "listings", "priced": "when priced", "name": "name",
+               "type": "type", "mark": "status", "vmods": "★ mods"}.get(getattr(self, "sort_col", None))
+        head.note(n + (f" · sorted by {srt}" if srt and n else ""))
 
     def on_cat(self, changed="cat"):
         if changed == "cat":
@@ -3079,11 +3150,18 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
     def clear_btn_state(self):
         btn = getattr(self, "clear_btn", None)
         if btn is not None:
-            on = (self.cat_var.get(), self.rar_var.get(), self.type_var.get()) != (self.ALL_CATS, "All", "All")
+            on = ((self.cat_var.get(), self.rar_var.get(), self.type_var.get()) != (self.ALL_CATS, "All", "All")
+                  or bool(self.search_var.get().strip()) or self.star_var.get())
             btn.config(state="normal" if on else "disabled")
 
     def cat_reset(self):
         self.cat_var.set(self.ALL_CATS)
+        if hasattr(self, "search_var"):
+            self.star_var.set(False)
+            self.search_var.set("")
+            if getattr(self, "_flt_job", None):
+                self.root.after_cancel(self._flt_job)
+                self._flt_job = None
         self.on_cat()
 
     def rebuild_tree(self):
@@ -3250,7 +3328,10 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         """The toolbar buttons say what they will do: mark, or switch back."""
         recs = [self.records[int(i)] for i in self.tree.selection() if int(i) in self.records]
         for btn, mark, on, off in ((self.mark_btn, "listed", "✔ Mark listed", "↺ Unmark listed"),
-                                   (self.remove_btn, "removed", "✖ Mark removed", "↺ Unmark removed")):
+                                   (self.remove_btn, "removed", "✖ Mark removed", "↺ Unmark removed"),
+                                   (getattr(self, "item_mark_btn", None), "listed", "✔ Mark listed", "↺ Unmark listed")):
+            if btn is None:
+                continue
             btn.config(text=off if recs and all(r.get("mark", "new") == mark for r in recs) else on)
 
     def toggle_mod(self, rec, mod, checked):
@@ -3980,6 +4061,7 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         self.sort_col = col
         self._apply_sort()
         self.sort_headings()
+        self.list_note()
 
     def sort_headings(self):
         """▲ / ▼ on the column the list is sorted by (2.0 beta 22), so you can see it and click # to go back to the
@@ -3992,6 +4074,7 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         self.sort_col, self.sort_rev = "added", False
         self._apply_sort()
         self.sort_headings()
+        self.list_note()
 
     def _apply_sort(self):
         col = self.sort_col
@@ -4040,22 +4123,12 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         sel = self.tree.selection()
         rec = self.records.get(int(sel[0])) if len(sel) == 1 else None
         self.show_detail(rec)
+        if hasattr(self, "item_trade_btn"):                # 2.63.0: the item panel's own buttons
+            self.item_trade_btn.config(state="normal" if rec and rec.get("qid") else "disabled")
+            self.item_mark_btn.config(state="normal" if sel else "disabled")
         self.update_mark_buttons()
         if rec and SETTINGS.get("auto_copy"):
             self.copy_name(rec)
-
-    def pc_preview_at(self, e):
-        """2.53.0: a click on a Price checks row (Manual Add or a stash tab's list) shows the item's box - name, mods,
-        price - like Insights does. 2.55.1: Esc, Space, a click anywhere else (or on the same row again) or 20 s closes it. Ctrl / Shift clicks (picking many) don't."""
-        if e.state & 0x0005 or self.tree.identify_region(e.x, e.y) not in ("cell", "tree"):
-            return self.ins_preview_close()
-        try:
-            rec = self.records.get(int(self.tree.identify_row(e.y)))
-        except (TypeError, ValueError):
-            rec = None
-        if not rec or self.ins_pop_toggled_off(rec):
-            return self.ins_preview_close()
-        self.ins_preview("pc", rec, e.x_root + 18, e.y_root + 10)
 
     def checks_menu_actions(self, sel):
         """2.36.0: the Price checks rows' own right-click actions (Delete / Copy come from the standard list menu)."""

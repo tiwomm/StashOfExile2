@@ -88,6 +88,22 @@
    "bottom2": "#3d2f1c",
    "text": "text_muted",
    "texture": "none"
+  },
+  "section": {
+   "fill": [
+    [
+     0,
+     "#231b13"
+    ],
+    [
+     1,
+     "#130f0b"
+    ]
+   ],
+   "top": "#5a4526",
+   "bottom": "#000000",
+   "text": "#d2a24c",
+   "texture": "stone"
   }
  },
  "buttons": {
@@ -243,5 +259,27 @@
   "sel_text": "#f3d58a",
   "group": "#a5885a",
   "texture": "stone"
+ },
+ "panels": {
+  "viewport": {
+   "edges": [
+    [
+     "#5a4526",
+     "#5a4526"
+    ],
+    [
+     "#000000",
+     "#2a2016"
+    ],
+    [
+     "#000000",
+     "#0a0806"
+    ],
+    [
+     "#030202",
+     "#080706"
+    ]
+   ]
+  }
  }
 }

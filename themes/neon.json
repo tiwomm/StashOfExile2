@@ -82,6 +82,22 @@
    "bottom": "#050607",
    "text": "text_muted",
    "texture": "none"
+  },
+  "section": {
+   "fill": [
+    [
+     0,
+     "#2f363e"
+    ],
+    [
+     1,
+     "#1f2429"
+    ]
+   ],
+   "top": "#48515b",
+   "bottom": "#050607",
+   "text": "accent",
+   "texture": "brushed"
   }
  },
  "buttons": {
@@ -237,5 +253,19 @@
   "sel_text": "#eafff3",
   "group": "accent_2",
   "texture": "brushed"
+ },
+ "panels": {
+  "viewport": {
+   "edges": [
+    [
+     "#050607",
+     "#3a424b"
+    ],
+    [
+     "#000000",
+     "#0b0e11"
+    ]
+   ]
+  }
  }
 }

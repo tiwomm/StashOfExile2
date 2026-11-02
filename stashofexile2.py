@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU GPL v3.0 (see LICENSE). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.62.0
+VERSION 2.63.0
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,6 +19,18 @@ VERSION 2.62.0
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.63.0
+       Price checks, redesign step 2: soe2/chrome.py (SectionBar - a header strip painted from the pack's
+       "bars.section", title left, note right; Viewport - the sunken frame from "panels.viewport"; both redraw
+       after a live swap). Every pack has both (ported from the mockups, no ornaments; DEFAULTS too). The toolbar:
+       mode row + Search box, row 1 = settings link, rules, Re-price all / Pause / Export CSV, row 2 = Show,
+       Category, Rarity, Type, Only ★, Clear filters, Order added. The list sits under an "Items · Manual Add" /
+       "Stash tab · <name>" strip (count + sort as its note, list_note) in a Viewport, with Undo / Mark listed /
+       Mark removed / Delete / Clear list under it. The item panel has an "Item" strip, a Viewport and Open on trade
+       site / Mark listed at its foot. Search (text_ok: name, base, class, label, then the copied text) and Only ★
+       (key_mods) filter the list; Clear filters clears them too. The click pop-up on Price checks rows
+       (pc_preview_at, 2.53.0) is gone - the item panel shows the item. check_contrast checks the section strips.
+       test_v2630; test_v2530 updated.
   2.62.0
        Pages (redesign step 1 of the mockup style): shell.PAGES - one tool at a time, filling the main area. Each
        module keeps its own real window (DeskWindow) but as a page: placed over the whole desk (page_fill), no
@@ -1416,7 +1428,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.62.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.63.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
