@@ -21,6 +21,10 @@ NEXT = [
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.55.1": [
+        "The item box (click an item in Price checks or Insights) closes with Esc, Space, or a click anywhere else - "
+        "or click the same item again. A click on the box keeps it.",
+    ],
     "2.55.0": [
         "One overlay window: the Session timer, the Mechanic Helper and Notes together over the game. Turn \"One "
         "window\" off in Overlays › Appearance for three separate windows.",
