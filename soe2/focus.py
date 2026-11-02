@@ -183,3 +183,211 @@ def line_text(worth=None):
         return "", None
     p = progress(g, worth)
     return g["text"], (p[0] / p[1] if p and p[1] else None)
+
+
+# ---------------------------------------------------------------- 2.73.1: pokes
+# What each poke is, in the order they win when several are due. "urgent" ones (milestones, the build-lock guard)
+# don't count toward the per-hour limit; every poke still waits for town / hideout when "Only in town" is on.
+KINDS = {"milestone": "urgent", "guard": "urgent", "price": "normal", "checkin": "normal", "nudge": "normal"}
+TONE_WORDS = {"Gentle": ("A nudge from your plan", "Still on plan?"),
+              "Firm": ("Your plan says", "On plan? Be honest."),
+              "Drill sergeant": ("Eyes on the plan, exile", "Report: on plan?")}
+
+
+def state():
+    """The pokes' own bookkeeping (kept with the plan)."""
+    f = cfg()
+    st = f.setdefault("state", {})
+    st.setdefault("pending", [])           # urgent pokes waiting for town: [{kind, ...}]
+    st.setdefault("sent", [])              # timestamps of normal pokes (per-hour limit)
+    st.setdefault("chars", [])             # characters the log has shown
+    st.setdefault("reached_maps", False)
+    st.setdefault("price_day", {})         # stockpile name -> the day it was poked
+    st.setdefault("notoday", {})           # goal id -> the day you said "Not today"
+    st.setdefault("notoday_streak", 0)
+    st.setdefault("played", 0.0)           # seconds of play since the last check-in
+    st.setdefault("checkin_snooze", 0.0)
+    return st
+
+
+def today(now=None):
+    return time.strftime("%Y-%m-%d", time.localtime(now or time.time()))
+
+
+def log_event(kind, data, area_kind=None, now=None):
+    """A game-log event -> may queue an urgent poke. area_kind: the tracker's 'map' / 'town' / 'hideout' / 'other'."""
+    f, st = cfg(), state()
+    if not f["on"]:
+        return None
+    now = now or time.time()
+    if kind == "area" and area_kind == "map" and not st["reached_maps"]:
+        st["reached_maps"] = True
+        moved = set_phase("maps")
+        if f["pokes"].get("milestones") and (moved or goals_of("maps")):
+            st["pending"].append({"kind": "milestone", "id": "maps", "at": now})
+        save()
+        return "milestone"
+    if kind == "level":
+        who, lvl = data.get("who", ""), int(data.get("level") or 0)
+        known = who in st["chars"]
+        if not known:
+            st["chars"] = (st["chars"] + [who])[-30:]
+        lk = f["lock"]
+        mine = (lk.get("character") or "").strip().lower()
+        if not known and lvl <= 2 and lk.get("on") and mine and who.lower() != mine:
+            st["pending"].append({"kind": "guard", "who": who, "cls": data.get("cls", ""), "at": now})
+            save()
+            return "guard"
+        save()
+    return None
+
+
+def _quiet(pk, now):
+    if not pk.get("quiet_on"):
+        return False
+    a, b = (pk.get("quiet") or [23, 8])[:2]
+    h = time.localtime(now).tm_hour
+    return (a <= h or h < b) if a > b else (a <= h < b)
+
+
+def _room(pk, st, now):
+    per = int(pk.get("per_hour") or 0)
+    if pk.get("quieter") and st["notoday_streak"] >= 3:
+        per = per // 2
+    st["sent"] = [t for t in st["sent"] if now - t < 3600]
+    return per > 0 and len(st["sent"]) < per
+
+
+def due(now=None, in_town=True, session=True, played=0.0, prices=None, have=None):
+    """The poke to show now, or None. prices(name) -> divines each or None; have(name) -> count or None.
+    played: seconds of play since the last call (for the check-in)."""
+    f, st = cfg(), state()
+    if not f["on"]:
+        return None
+    now = now or time.time()
+    pk = f["pokes"]
+    st["played"] += max(0.0, played)
+    if pk.get("session_only") and not session:
+        return None
+    if _quiet(pk, now) or (pk.get("town_only") and not in_town):
+        return None
+    if st["pending"]:
+        return st["pending"].pop(0)
+    if not _room(pk, st, now):
+        return None
+    if pk.get("prices") and prices:
+        for row in f["stockpile"]:
+            if st["price_day"].get(row["name"]) == today(now):
+                continue
+            each = prices(row["name"])
+            h = have(row["name"]) if have else None
+            if stock_status(row, h, each) == "cheap":
+                st["price_day"][row["name"]] = today(now)
+                return {"kind": "price", "name": row["name"], "each": each, "have": h, "goal": row.get("goal"),
+                        "under": row.get("under")}
+    cm = int(pk.get("checkin_min") or 0)
+    if cm and st["played"] >= cm * 60 and now >= st["checkin_snooze"] and current():
+        st["played"] = 0.0
+        return {"kind": "checkin", "goal": current()["id"]}
+    for g in _nudgeable(now):
+        g["poked"] = now
+        return {"kind": "nudge", "goal": g["id"]}
+    return None
+
+
+def _nudgeable(now):
+    st = state()
+    out = []
+    for g in cfg()["goals"]:
+        if g["done"] or g.get("stopped") or (g.get("snooze") or 0) > now or st["notoday"].get(g["id"]) == today(now):
+            continue
+        last = g.get("poked") or 0
+        if g["trigger"] == "town" and now - last >= 3 * 3600:
+            out.append(g)
+        elif g["trigger"] == "weekly" and now - last >= 7 * 86400:
+            out.append(g)
+    return sorted(out, key=lambda g: g.get("poked") or 0)
+
+
+def sent(poke, now=None):
+    """A poke was shown: count it (urgent ones don't) and keep it in the history."""
+    st, f = state(), cfg()
+    now = now or time.time()
+    if KINDS.get(poke["kind"]) == "normal":
+        st["sent"].append(now)
+    f["history"] = (f["history"] + [{"ts": now, "kind": poke["kind"], "text": poke_text(poke)[1][:200],
+                                     "answer": None}])[-60:]
+    save()
+
+
+def answer(poke, what, now=None):
+    """Your answer to a poke -> what it changes. what: done / snooze / nottoday / stop / unlock / ontrack /
+    sidetracked / break / ok."""
+    st, f = state(), cfg()
+    now = now or time.time()
+    g = goal(poke.get("goal")) if poke.get("goal") else None
+    if what == "done" and g:
+        set_done(g["id"])
+    elif what == "snooze" and g:
+        g["snooze"] = now + int(f["pokes"].get("snooze_min") or 60) * 60
+    elif what == "nottoday" and g:
+        st["notoday"][g["id"]] = today(now)
+        st["notoday_streak"] += 1
+    elif what == "stop" and g:
+        g["stopped"] = True
+    elif what == "unlock":
+        f["lock"]["on"] = False
+    elif what == "break":
+        st["checkin_snooze"] = now + 30 * 60
+    if what not in ("nottoday",):
+        st["notoday_streak"] = 0
+    if f["history"] and f["history"][-1]["kind"] == poke["kind"] and f["history"][-1]["answer"] is None:
+        f["history"][-1]["answer"] = what
+    save()
+
+
+def poke_text(poke):
+    """-> (title, text, why, [(answer, label)]) for a poke, in the tone you picked."""
+    f = cfg()
+    tone = f["pokes"].get("tone", "Gentle")
+    head, ask = TONE_WORDS.get(tone, TONE_WORDS["Gentle"])
+    k = poke["kind"]
+    if k == "nudge":
+        g = goal(poke["goal"]) or {"text": "?", "created": time.time(), "phase": "start", "trigger": "town"}
+        when = time.strftime("%b %d", time.localtime(g.get("created") or time.time()))
+        return (head.upper(), f"You set this on {when}:\n\"{g['text']}\"",
+                ("Why now: a weekly reminder you asked for" if g["trigger"] == "weekly" else
+                 "Why now: you're in town, where you asked to be reminded") + f" ({phase_name(g['phase'])} goal).",
+                [("done", "Done"), ("snooze", f"Snooze {int(f['pokes'].get('snooze_min') or 60)} min"),
+                 ("nottoday", "Not today"), ("stop", "Stop this one")])
+    if k == "milestone":
+        lines = [g["text"] for g in goals_of("maps") if not g["done"]][:5]
+        farms = [x["name"] for x in f["farms"]][:2]
+        body = "Your first waystone map - here's what you planned for this moment:"
+        body += "".join(f"\n{i}. {t}" for i, t in enumerate(lines, 1)) or "\n(no goals for maps yet)"
+        if farms:
+            body += "\nFarm plan: " + ", then ".join(farms)
+        return ("YOU REACHED MAPS", body, "Why now: the log shows you in your first waystone map.",
+                [("plan", "Open Game Plan"), ("ok", "Got it")])
+    if k == "price":
+        under = poke.get("under")
+        body = f"{poke['name']} is {poke['each']:.3g} div" + (f" (you buy under {under:g})." if under is not None else ".")
+        if poke.get("goal"):
+            body += f"\nYou have {poke.get('have') if poke.get('have') is not None else '?'} of {poke['goal']}."
+        return ("CHEAP NOW - YOUR STOCKPILE", body, "Why now: poe.ninja's price is under the one you set.",
+                [("exchange", "Open the exchange"), ("ok", "Snooze today")])
+    if k == "guard":
+        lk = f["lock"]
+        body = (f"The log shows a new level 1 character ({poke.get('who', '?')}).\nYour build lock says: finish "
+                f"{lk.get('build') or 'your starter'} until {lk.get('until') or 'you reach your goal'}.")
+        return ("NEW CHARACTER?", body, "Why now: your build lock is on.",
+                [("plan", "Back to the plan"), ("unlock", "I'm sure - unlock")])
+    if k == "checkin":
+        g = goal(poke.get("goal"))
+        body = ask + (f"\nNow: {g['text']}" if g else "")
+        hist = [h for h in f["history"] if h["kind"] == "checkin" and h.get("answer")][-5:]
+        if hist:
+            body += f"\nOn plan {sum(1 for h in hist if h['answer'] == 'ontrack')} of your last {len(hist)} check-ins."
+        return ("CHECK-IN", body, f"Why now: {int(f['pokes'].get('checkin_min') or 45)} min of play since the last one.",
+                [("ontrack", "On track"), ("sidetracked", "Got sidetracked"), ("break", "Taking a break")])
+    return ("", "", "", [("ok", "OK")])

@@ -31,6 +31,7 @@ PARTY = re.compile(r"^: (.+) has (joined|left) the area\.")
 AFK_ON = re.compile(r"AFK mode is now ON", re.I)
 AFK_OFF = re.compile(r"AFK mode is now OFF", re.I)
 FOCUS = re.compile(r"\[WINDOW\] (Lost|Gained) focus", re.I)
+LEVELUP = re.compile(r"^: (.+?) \(([^)]+)\) is now level (\d+)")     # 2.73.1: League Focus (new characters)
 # 2.9.0, seen in a real PoE 2 log (Oct 2026), twice within 2 s:
 #   2026/10/27 04:50:56 ... [INFO Client 27512] : <brequelwarning>{Stored Hiveblood is almost at the maximum!}
 BREACH_WARN = re.compile(r"^: <brequelwarning>\{([^}]*)\}")
@@ -98,6 +99,9 @@ def parse(line):
     d = SLAIN.search(text)
     if d:
         return "death", ts, {"who": d.group(1)}
+    lv = LEVELUP.search(text)
+    if lv:
+        return "level", ts, {"who": lv.group(1), "cls": lv.group(2), "level": int(lv.group(3))}
     p = PARTY.search(text)
     if p:
         return "party", ts, {"who": p.group(1), "joined": p.group(2) == "joined"}
