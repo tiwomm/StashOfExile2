@@ -232,5 +232,16 @@
   "on": "#d2a24c",
   "off": "#1f1912",
   "lcd_bg": "#080706"
+ },
+ "nav": {
+  "bg": "surface_raised",
+  "marker": "gem",
+  "marker_color": "accent_2",
+  "sel_bg": "#3a2a14",
+  "hover_bg": "#221b13",
+  "text": "text",
+  "sel_text": "#f3d58a",
+  "group": "#a5885a",
+  "texture": "stone"
  }
 }
