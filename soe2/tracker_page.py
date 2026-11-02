@@ -13,6 +13,7 @@ from .config import save_json, SETTINGS
 from .gamelog import find_log, LogReader
 from .overlay import game_active, key_label, parse_key
 from .style import ScrollArea, C, FONT_TITLE, SegBar
+from .chrome import SectionBar, Viewport, section as chrome_section
 from .tracker import fmt_time, Session, Sessions
 
 DEFAULTS = {"overlay": True, "locked": False, "x": 60, "y": 260, "w": 230, "h": 190, "opacity": 225,
@@ -26,6 +27,21 @@ DEFAULT_KEYS = {"key_toggle": "Ctrl+Alt+S", "key_pause": "Ctrl+Alt+P",
 # 2.54.0: the Session timer times your play; money lives in one place, Money Makers › Strat Tracker.
 # Profit (Wealth at Stop minus at Start) is gone from here: its tiles, overlay line, options and Stop count.
 LINE_NAMES = [("session", "Session time"), ("map", "This map's time"), ("maps", "Maps done"), ("avg", "Average map")]
+
+
+class _BarTitle:
+    """2.69.0: a section strip's title that old code sets like a Label (.config(text=...))."""
+
+    def __init__(self, bar):
+        self.bar = bar
+
+    def config(self, text=None, **_kw):
+        if text is not None:
+            self.bar.set_title(text)
+    configure = config
+
+    def cget(self, key):
+        return self.bar.title if key == "text" else ""
 
 
 class TrackerPage:
@@ -87,8 +103,8 @@ class TrackerPage:
         self.tk_reader, self.tk_waiting_count, self.tk_finishing = None, False, False
         self.tk_overlay = None
         # ---- top: start / pause, and where the log is
-        top = tk.Frame(body, bg=P2, padx=16, pady=8, highlightthickness=1, highlightbackground=C["line"])
-        top.pack(fill="x", padx=8, pady=(8, 8))
+        tpo, top = chrome_section(body, "Session")                             # 2.69.0
+        tpo.pack(fill="x", padx=8, pady=(8, 8))
         self.tk_start_btn = ttk.Button(top, text="▶ Start tracking", style="Primary.TButton", command=self.tracker_toggle)
         self.tk_start_btn.pack(side="left")
         self.tk_pause_btn = ttk.Button(top, text="Pause", command=self.tracker_pause_toggle, state="disabled")
@@ -228,11 +244,9 @@ class TrackerPage:
         tv.pack(fill="both", expand=True)
         tv.bind("<<TreeviewSelect>>", lambda e: self.tracker_board())
         self.tk_stats = tv
-        right = tk.Frame(split, bg=P2, highlightthickness=1, highlightbackground=C["line"], padx=8, pady=8)
-        right.grid(row=0, column=1, sticky="nsew")
-        self.tk_board_title = tk.Label(right, text="Leaderboard", bg=P2, fg=C["accent"], anchor="w",
-                                       font=("Segoe UI", 10, "bold"))
-        self.tk_board_title.pack(fill="x")
+        rgo, right = chrome_section(split, "Leaderboard", padx=8, pady=8)      # 2.69.0
+        rgo.grid(row=0, column=1, sticky="nsew")
+        self.tk_board_title = _BarTitle(rgo.section_bar)
         bcols = (("rank", "#", 30, "e"), ("time", "Time", 70, "e"), ("when", "When", 110, "w"), ("lvl", "Level", 50, "e"),
                  ("deaths", "Deaths", 55, "e"))
         bv = ttk.Treeview(right, columns=[c[0] for c in bcols], show="headings", height=6, selectmode="none")
@@ -247,10 +261,8 @@ class TrackerPage:
                              "visits in between don't count); visits under 30 seconds aren't counted.",
                  bg=P2, fg=C["muted"], font=("Segoe UI", 9), anchor="w", justify="left", wraplength=320).pack(fill="x", pady=(4, 0))
         # ---- 2.7.0: maps per day
-        day = tk.Frame(page, bg=P2, highlightthickness=1, highlightbackground=C["line"], padx=8, pady=8)
-        day.pack(fill="x", pady=(8, 0))
-        tk.Label(day, text="Maps per day (last 14 days)", bg=P2, fg=C["accent"], font=("Segoe UI", 10, "bold"),
-                 anchor="w").pack(fill="x")
+        dyo, day = chrome_section(page, "Maps per day (last 14 days)", padx=8, pady=8)   # 2.69.0
+        dyo.pack(fill="x", pady=(8, 0))
         self.tk_daily = tk.Canvas(day, height=110, bg=P2, highlightthickness=0)
         self.tk_daily.pack(fill="x")
         self.tk_daily.bind("<Configure>", lambda e: self.tracker_draw_daily())
@@ -358,10 +370,8 @@ class TrackerPage:
 
     def _tracker_options(self, po):
         cfg, P2 = self.tracker_cfg(), C["panel2"]
-        box = tk.Frame(po, bg=P2, padx=16, pady=8, highlightthickness=1, highlightbackground=C["line"])
-        box.pack(fill="x")
-        tk.Label(box, text="Timer", bg=P2, fg=C["accent"], font=("Segoe UI", 10, "bold")).grid(
-            row=0, column=0, columnspan=3, sticky="w")
+        bxo, box = chrome_section(po, "Timer")                                 # 2.69.0
+        bxo.pack(fill="x")
         tk.Label(box, text="What the small timer over the game shows:", bg=P2, fg=C["muted"], font=("Segoe UI", 9)).grid(
             row=0, column=0, columnspan=3, sticky="e")
         self.tk_line_vars = {}
@@ -398,11 +408,9 @@ class TrackerPage:
         tk.Label(op, text="Style, layout and opacity of the overlay:", bg=P2, fg=C["text"]).pack(side="left")
         ttk.Button(op, text="Settings › Appearance", style="Quiet.TButton",
                    command=self.appearance_open).pack(side="left", padx=(8, 0))
-        box2 = tk.Frame(po, bg=P2, padx=16, pady=8, highlightthickness=1, highlightbackground=C["line"])
-        box2.pack(fill="x", pady=(8, 0))
+        bx2o, box2 = chrome_section(po, "Hotkeys")                             # 2.69.0
+        bx2o.pack(fill="x", pady=(8, 0))
         # 2.57.0: keys are set in Settings › Hotkeys only - here they're shown, with the way there
-        tk.Label(box2, text="Hotkeys", bg=P2, fg=C["accent"], font=("Segoe UI", 10, "bold")).grid(
-            row=0, column=0, columnspan=4, sticky="w")
         self.tk_key_vars = {k: tk.StringVar(value=cfg.get(k, "")) for k in ("key_toggle", "key_pause")}
         self.tk_key_msg = tk.Label(box2, text="", bg=P2, fg=C["text"], font=("Segoe UI", 9), anchor="w", justify="left")
         self.tk_key_msg.grid(row=1, column=0, columnspan=3, sticky="w")

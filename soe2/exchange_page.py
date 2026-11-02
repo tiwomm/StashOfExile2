@@ -8,6 +8,7 @@ from . import arbitrage as A
 from .config import save_json, SETTINGS
 from .rates import whole_ratio
 from .style import C, MONO
+from .chrome import SectionBar, Viewport, section as chrome_section
 from .util import _amt
 
 LOOKBACK = {"Last hour": 1, "Last 3 hours": 3, "Last 6 hours": 6}
@@ -91,10 +92,8 @@ class ExchangePage:
         self.arb_steps.pack(side="bottom", fill="x", padx=16, pady=(8, 8))
         self.arb_steps.bind("<Configure>", lambda e: self.arb_steps.config(wraplength=max(300, e.width - 24)))
         # ---- a flip you see in game
-        fl = tk.Frame(page, bg=P2, padx=16, pady=8, highlightthickness=1, highlightbackground=C["line"])
-        fl.pack(side="bottom", fill="x", padx=16, pady=(0, 8), before=self.arb_steps)
-        tk.Label(fl, text="Check a flip you see in game", bg=P2, fg=C["accent"], font=("Segoe UI", 10, "bold"),
-                 anchor="w").pack(fill="x")
+        flo, fl = chrome_section(page, "Check a flip you see in game")      # 2.69.0
+        flo.pack(side="bottom", fill="x", padx=16, pady=(0, 8), before=self.arb_steps)
         tk.Label(fl, text="On the Currency Exchange, hover the market ratio and hold Alt: it lists what people are "
                           "offering both ways. Type the two prices for one item here.", bg=P2, fg=C["muted"],
                  anchor="w", justify="left", wraplength=600).pack(fill="x")

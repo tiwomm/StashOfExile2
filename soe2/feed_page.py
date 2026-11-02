@@ -17,6 +17,7 @@ from .market import MARKET
 from .mods import MIN_WITH, HIGH_LIFT, SCOPED_CATS, norm, rule_key, sid_for_line
 from .pricefmt import parse_price
 from .style import C, Tooltip
+from .chrome import SectionBar, Viewport, section as chrome_section
 
 
 def _st_text(st):
@@ -44,9 +45,8 @@ class FeedPage:
                  bg=P1, fg=C["muted"], font=("Segoe UI", 9), wraplength=720, justify="left", anchor="w").pack(fill="x")
         body = tk.Frame(tab, bg=P1, padx=12)
         body.pack(fill="both", expand=True)
-        left = tk.Frame(body, bg=P2, padx=12, pady=8, highlightthickness=1, highlightbackground=C["line"])
-        left.pack(side="left", fill="y", pady=(0, 8))
-        tk.Label(left, text="The item", bg=P2, fg=C["text"], anchor="w").pack(fill="x")
+        lfo, left = chrome_section(body, "The item", padx=12, pady=8)          # 2.69.0
+        lfo.pack(side="left", fill="y", pady=(0, 8))
         self.fd_text = tk.Text(left, width=44, height=12, bg=C["panel"], fg=C["text"], insertbackground=C["text"],
                                relief="flat", wrap="none", font=("Consolas", 9), highlightthickness=1,
                                highlightbackground=C["line"])
