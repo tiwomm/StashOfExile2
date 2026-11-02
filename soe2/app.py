@@ -1193,48 +1193,36 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
                                                "it sits over the map or the minimap. 24% is the lowest, so it never "
                                                "disappears. Changes show at once. Hard to read over a busy spot? 95-100% "
                                                "reads best - text on a see-through window takes on the game behind it.")
+        # 2.56.1 (the user): ONE opacity for everything over the game (it was one slider each)
         grid = tk.Frame(row, bg=P2)
         grid.pack(fill="x")
-        self.ov_op_vars, self.ov_op_pct = {}, {}
-        for i, (key, label) in enumerate((("session", "Session timer"), ("helper", "Mechanic Helper bar"),
-                                          ("notes", "Notes"))):
-            tk.Label(grid, text=label, bg=P2, fg=C["text"]).grid(row=i, column=0, sticky="w", padx=(0, 8), pady=2)
-            v = tk.IntVar(value=self.ov_opacity_get(key))
-            self.ov_op_vars[key] = v
-            ttk.Scale(grid, from_=60, to=255, variable=v, orient="horizontal", length=200,
-                      command=lambda _v, k=key: self.on_ov_opacity(k)).grid(row=i, column=1, sticky="w")
-            pct = tk.Label(grid, text=f"{round(v.get() * 100 / 255)}%", bg=P2, fg=C["muted"], font=(MONO, 9), width=5,
-                           anchor="e")
-            pct.grid(row=i, column=2, sticky="e", padx=(8, 0))
-            self.ov_op_pct[key] = pct
+        tk.Label(grid, text="Opacity", bg=P2, fg=C["text"]).grid(row=0, column=0, sticky="w", padx=(0, 8), pady=2)
+        v = tk.IntVar(value=self.ov_opacity_get("session"))
+        self.ov_op_vars = {"all": v}
+        ttk.Scale(grid, from_=60, to=255, variable=v, orient="horizontal", length=260,
+                  command=lambda _v: self.on_ov_opacity()).grid(row=0, column=1, sticky="w")
+        pct = tk.Label(grid, text=f"{round(v.get() * 100 / 255)}%", bg=P2, fg=C["muted"], font=(MONO, 9), width=5,
+                       anchor="e")
+        pct.grid(row=0, column=2, sticky="e", padx=(8, 0))
+        self.ov_op_pct = {"all": pct}
 
-    def ov_opacity_get(self, key):
-        t = self.tracker_cfg()
-        if key == "session":
-            return int(t.get("opacity", 225))
-        if key == "helper":
-            return int(t.get("hopacity", t.get("opacity", 225)))
-        return int(self.overlay.cfg.get("notes_opacity", 215))
+    def ov_opacity_get(self, key="session"):
+        """The opacity of the windows over the game (2.56.1: one for all; the timer's is the one kept)."""
+        return int(self.tracker_cfg().get("opacity", 225))
 
-    def on_ov_opacity(self, key):
-        v = int(float(self.ov_op_vars[key].get()))
-        if getattr(self, "ov_op_pct", None) and key in self.ov_op_pct:
-            self.ov_op_pct[key].config(text=f"{round(v * 100 / 255)}%")
+    def on_ov_opacity(self, _key=None):
+        v = int(float(self.ov_op_vars["all"].get()))
+        self.ov_op_pct["all"].config(text=f"{round(v * 100 / 255)}%")
         t = self.tracker_cfg()
-        if key == "session":
-            t["opacity"] = v
-            w = getattr(self, "tk_overlay", None)
-        elif key == "helper":
-            t["hopacity"] = v
-            w = getattr(self, "tk_helpers", None)
-        else:
-            self.overlay.cfg["notes_opacity"] = v
-            w = getattr(self.overlay, "notes", None)
-        try:
-            if w is not None and w.winfo_exists():
-                w.set_opacity(v)
-        except Exception:
-            pass
+        t["opacity"] = t["hopacity"] = v
+        self.overlay.cfg["notes_opacity"] = v
+        for w in (getattr(self, "tk_overlay", None), getattr(self, "tk_helpers", None),
+                  getattr(self.overlay, "notes", None), getattr(self, "mg_win", None)):
+            try:
+                if w is not None and w.winfo_exists():
+                    w.set_opacity(v)
+            except Exception:
+                pass
         job = getattr(self, "_ov_save_job", None)              # save once the slider stops
         if job:
             self.root.after_cancel(job)

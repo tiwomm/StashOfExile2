@@ -148,6 +148,8 @@ class MergedOverlay:
             cfg.update(mx=nx, my=ny)
             if notes:
                 cfg.update(mw=ww, mh=hh)
+            if strip:                                       # 2.56.1: the strip's own width
+                cfg["sw"] = ww
             self.tracker_save()
 
         def lock(on):
@@ -158,7 +160,8 @@ class MergedOverlay:
         w = OverlayWindow(self.root, title, "⏱", geo, opacity=int(cfg.get("opacity", 225)),
                           locked=bool(cfg.get("mlocked")), min_size=(220, 200) if notes else (120, 30),
                           on_close=self.merged_close, on_lock=lock, on_moved=moved, follow_game=True,
-                          no_activate=not notes, resizable=notes, titlebar=not compact)
+                          no_activate=not notes, resizable=notes or strip, titlebar=not compact,
+                          resize_axes="x" if strip else "xy")
         w.withdraw()
         self.mg_win = w
         cv = w.canvas_body()
@@ -176,8 +179,33 @@ class MergedOverlay:
         self.tk_helpers = None
         self.tracker_overlay_draw(self.tracker_numbers())
         self.tracker_helpers_paint()
+        if strip:
+            w.min_size = (getattr(self, "mg_strip_min", 300), 30)
         w.show()
+        self._mg_on_screen(w)
         return w
+
+    def _mg_on_screen(self, w):
+        """2.56.1 (the user: a locked strip past the screen's edge couldn't be reached): always all on the screen it
+        is on - moved in, and a strip wider than the screen made narrower (never under its minimum)."""
+        from .style import monitor_rect
+        cfg = self.tracker_cfg()
+        try:
+            w.update_idletasks()
+            x, y = w.winfo_x(), w.winfo_y()
+            ww, hh = max(w.winfo_width(), w.winfo_reqwidth()), max(w.winfo_height(), w.winfo_reqheight())
+            l_, t, r, b = monitor_rect(self.root, x + 10, y + 10, full=True)
+        except Exception:
+            return
+        if ww > r - l_ and self.merged_layout() == "strip":
+            ww = max(getattr(self, "mg_strip_min", 300), r - l_)
+            cfg["sw"] = ww
+            w.geometry(f"{ww}x{hh}")
+        nx, ny = max(l_, min(x, r - ww)), max(t, min(y, b - hh))
+        if (nx, ny) != (x, y):
+            w.geometry(f"+{nx}+{ny}")
+            cfg.update(mx=nx, my=ny)
+            self.tracker_save()
 
     def merged_close(self):
         """× on the one window: everything in it goes (the timer, the switches' bar, the note) - each comes back from
@@ -291,7 +319,7 @@ class MergedOverlay:
             x -= 20
         return x
 
-    def _mg_notes_button(self, w, cv, P, x, y, anchor="e", peek=False):
+    def _mg_notes_button(self, w, cv, P, x, y, anchor="e", peek=False, chars=28):
         """Minimal / Strip: Notes opens the note as its own window right under this one."""
         oc = self.overlay.cfg
         if not oc.get("notes_enabled"):
@@ -299,7 +327,8 @@ class MergedOverlay:
         txt = "Notes"
         if peek:
             tabs = self.overlay.note_tabs()
-            first = (tabs[self.overlay.note_index()]["text"].strip().splitlines() or [""])[0][:28]
+            first = (tabs[self.overlay.note_index()]["text"].strip().splitlines() or [""])[0]
+            first = first if len(first) <= chars else first[:max(1, chars - 1)].rstrip() + "…"
             txt = ("NOTES  " if P.get("caps") else "Notes  ") + (first or "-")
         txt += "  ▾" if not self.overlay.notes_shown() else "  ▴"
         cv.create_text(x, y, text=txt, anchor=anchor, fill=P["muted"], font=(P["font"], 9), tags=("mg", "mg_notes"))
@@ -435,55 +464,101 @@ class MergedOverlay:
         cv.configure(width=W, height=y + 6)
 
     # ---------------------------------------------------------------- Strip
+    def _mg_strip_widths(self, cv, P, want):
+        """The strip's parts at their smallest (2.56.1: the minimum width shows all of it). -> {part: px}."""
+        cfg = self.tracker_cfg()
+        f = tkfont.Font(root=cv, family=P["font"], size=10)
+        hf = tkfont.Font(root=cv, family=P.get("hfont") or P["font"], size=9, weight="bold")
+        fbig = tkfont.Font(root=cv, family=P["font"], size=15, weight="bold")
+        fb = tkfont.Font(root=cv, family=P["font"], size=9)
+        wd = {}
+        if want["timer"]:
+            wd["title"] = hf.measure("SESSION") + 10
+            wd["time"] = max(fbig.measure("0:00:00"), fbig.measure("not tracking")) + 14
+            wd["map"] = f.measure("Map  00:00") + 10
+            wd["where"] = f.measure("Mmmmmmm") + 10                 # grows with the strip
+            if cfg["lines"].get("maps") or cfg["lines"].get("avg"):
+                wd["maps"] = f.measure("Maps  000") + 8 + f.measure("Avg  00:00") + 12
+        if want["helpers"]:
+            wd["cells"] = sum(fb.measure("Ritual 3/3" if k == "ritual" else k.title()) + 40 for k in self.HELPERS) + 38
+        if self.overlay.cfg.get("notes_enabled"):
+            wd["notes"] = fb.measure("NOTES  Mmmmmm  ▾") + 12              # grows with the strip
+        wd["right"] = (f.measure("00:00 PM") + 14 if want["timer"] and cfg.get("clock", True) else 0) + 56
+        return wd
+
     def _mg_strip(self, w, cv, P, want):
+        """2.56.1: as wide as you drag it (from its left / right edge while unlocked), never narrower than what it
+        shows; the area name and the note's first line get the room."""
         cfg = self.tracker_cfg()
         H, mid = 40, 20
-        x = 14
-        hf = (P.get("hfont") or P["font"], 9, "bold")
-        f = tkfont.Font(root=cv, family=P["font"], size=10)
+        wd = self._mg_strip_widths(cv, P, want)
+        min_w = 14 + sum(wd.values()) + 24
+        self.mg_strip_min = min_w
+        W0 = max(min_w, int(cfg.get("sw") or min_w + 220))
 
         def sep(xx):
             cv.create_line(xx, 8, xx, H - 8, fill=P["line"], tags=("mg",))
-        if want["timer"]:
-            t = "SESSION" if (P.get("caps") or P.get("rules")) else "Session"
-            cv.create_text(x, mid, text=t, anchor="w", fill=P["head"], font=hf, tags=("mg",))
-            x += tkfont.Font(root=cv, family=hf[0], size=9, weight="bold").measure(t) + 10
-            self._mg_text(cv, P, x, mid, "session", (P["font"], 15, "bold"), fill=P["big"])
-            fbig = tkfont.Font(root=cv, family=P["font"], size=15, weight="bold")
-            x += max(fbig.measure("0:00:00"), fbig.measure("not tracking")) + 14
-            sep(x)
-            x += 14
-            self._mg_text(cv, P, x, mid, "map", (P["font"], 10))
-            x += f.measure("Map  00:00") + 10
-            self._mg_text(cv, P, x, mid, "where", (P["font"], 10), fill=P["muted"], cls=_Trunc)
-            x += f.measure("Mmmmmmmmmmm") + 10
-            if cfg["lines"].get("maps") or cfg["lines"].get("avg"):
-                self._mg_text(cv, P, x, mid, "maps", (P["font"], 10))
-                x += f.measure("Maps  000") + 8
-                self._mg_text(cv, P, x, mid, "avg", (P["font"], 10))
-                x += f.measure("Avg  00:00") + 12
-            sep(x)
-            x += 10
-        if want["helpers"]:
-            fb = tkfont.Font(root=cv, family=P["font"], size=9)
-            for k in self.HELPERS:
-                cw = fb.measure("Ritual 3/3" if k == "ritual" else k.title()) + 34
-                self._mg_cell(cv, P, k, x, 7, x + cw, H - 7, label_font=(P["font"], 9))
-                x += cw + 6
-            cv.create_text(x + 4, mid, text="⚙", anchor="w", fill=P["muted"], font=("Segoe UI Symbol", 11),
-                           tags=("mg", "mg_cog"))
-            cv.tag_bind("mg_cog", "<Button-1>", lambda e: self.tracker_helpers_settings())
-            x += 26
-            sep(x)
-            x += 12
-        start_right = x
-        nx = start_right + 260
-        if self.overlay.cfg.get("notes_enabled"):
-            self._mg_notes_button(w, cv, P, start_right, mid, anchor="w", peek=True)
-        right = nx + 150
-        gx = self._mg_glyphs(w, cv, P, right - 8, mid)
-        if want["timer"] and cfg.get("clock", True):
-            self._mg_clock(w, cv, P, gx - 6, mid, anchor="e", on_bar=False)
-            self.tk_ov_clock.config = (lambda fn: (lambda text="", **kw: fn(text=text.splitlines()[0]
-                                                                            if text else "")))(self.tk_ov_clock.config)
-        cv.configure(width=right, height=H)
+
+        def draw(W):
+            cv.delete("mg")
+            self.tk_ov_lbls, self.tk_ov_alerts = {}, {}
+            W = max(W, min_w)
+            extra = W - min_w
+            grow_where = min(extra // 3, 120) if "where" in wd else 0
+            grow_notes = extra - grow_where if "notes" in wd else 0
+            fch = tkfont.Font(root=cv, family=P["font"], size=10).measure("m") or 8
+            x = 14
+            if want["timer"]:
+                t = "SESSION" if (P.get("caps") or P.get("rules")) else "Session"
+                cv.create_text(x, mid, text=t, anchor="w", fill=P["head"],
+                               font=(P.get("hfont") or P["font"], 9, "bold"), tags=("mg",))
+                x += wd["title"]
+                self._mg_text(cv, P, x, mid, "session", (P["font"], 15, "bold"), fill=P["big"])
+                x += wd["time"]
+                sep(x)
+                x += 14
+                self._mg_text(cv, P, x, mid, "map", (P["font"], 10))
+                x += wd["map"]
+                where = self._mg_text(cv, P, x, mid, "where", (P["font"], 10), fill=P["muted"], cls=_Trunc)
+                where.limit = max(6, int((wd["where"] + grow_where - 10) / (fch * 0.8)))
+                x += wd["where"] + grow_where
+                if "maps" in wd:
+                    fm = tkfont.Font(root=cv, family=P["font"], size=10)
+                    self._mg_text(cv, P, x, mid, "maps", (P["font"], 10))
+                    self._mg_text(cv, P, x + fm.measure("Maps  000") + 8, mid, "avg", (P["font"], 10))
+                    x += wd["maps"]
+                sep(x)
+                x += 10
+            if want["helpers"]:
+                fb = tkfont.Font(root=cv, family=P["font"], size=9)
+                for k in self.HELPERS:
+                    cw = fb.measure("Ritual 3/3" if k == "ritual" else k.title()) + 34
+                    self._mg_cell(cv, P, k, x, 7, x + cw, H - 7, label_font=(P["font"], 9))
+                    x += cw + 6
+                cv.create_text(x + 4, mid, text="\u2699", anchor="w", fill=P["muted"], font=("Segoe UI Symbol", 11),
+                               tags=("mg", "mg_cog"))
+                cv.tag_bind("mg_cog", "<Button-1>", lambda e: self.tracker_helpers_settings())
+                x += 26
+                sep(x)
+                x += 12
+            if "notes" in wd:
+                self._mg_notes_button(w, cv, P, x, mid, anchor="w", peek=True,
+                                      chars=max(6, int((wd["notes"] + grow_notes) / (fch * 0.75)) - 10))
+            gx = self._mg_glyphs(w, cv, P, W - 8, mid)
+            if want["timer"] and cfg.get("clock", True):
+                self._mg_clock(w, cv, P, gx - 6, mid, anchor="e", on_bar=False)
+                self.tk_ov_clock.config = (lambda fn: (lambda text="", **kw: fn(text=text.splitlines()[0]
+                                                                                if text else "")))(self.tk_ov_clock.config)
+            if getattr(self, "tk_overlay", None) is not None or want["timer"]:
+                self.tk_overlay = w if want["timer"] else None
+                self.tracker_overlay_draw(self.tracker_numbers())
+            self.tracker_helpers_paint()
+        draw(W0)
+        cv.configure(width=W0, height=H)
+        last = {"w": W0}
+
+        def on_cfg(e):
+            if e.width != last["w"] and e.width > 50:
+                last["w"] = e.width
+                draw(e.width)
+        cv.bind("<Configure>", on_cfg, add="+")
