@@ -21,6 +21,14 @@ NEXT = [
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.63.0": [
+        "Price checks has a cleaner layout: the list and the item each sit under their own header, the list says "
+        "how many items it shows and how it's sorted, and the buttons for the picked rows sit right under the list.",
+        "New: a Search box (finds an item by name, type or mod text) and an \"Only ★\" switch for items with a "
+        "valuable mod.",
+        "Clicking a row no longer opens a pop-up box - the item shows in the panel on the right, with Open on trade "
+        "site and Mark listed at its foot.",
+    ],
     "2.62.0": [
         "A new layout: every tool is listed by name in the sidebar on the left (sub-tools indented under theirs with "
         "↳), and the one you pick fills the window - one at a time, no more floating windows.",

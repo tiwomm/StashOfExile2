@@ -90,6 +90,23 @@
    "bottom": "#ffb070",
    "text": "text_muted",
    "texture": "none"
+  },
+  "section": {
+   "fill": [
+    [
+     0,
+     "#1b2a22"
+    ],
+    [
+     1,
+     "#121c17"
+    ]
+   ],
+   "top": "#2e4238",
+   "bottom": "#030504",
+   "text": "#ffb070",
+   "texture": "fronds",
+   "texture_color": "#7cc9c0"
   }
  },
  "buttons": {
@@ -238,5 +255,19 @@
   "group": "accent_2",
   "texture": "fronds",
   "texture_color": "#7cc9c0"
+ },
+ "panels": {
+  "viewport": {
+   "edges": [
+    [
+     "#030504",
+     "#3c5246"
+    ],
+    [
+     "#000000",
+     "#070c0a"
+    ]
+   ]
+  }
  }
 }

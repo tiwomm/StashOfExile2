@@ -4,7 +4,7 @@
 
 > **Who we build for - read second.** Path of Exile players are utilitarian: they love data and information, problem solving and creative thinking. So every feature shows its numbers *and how they were worked out*, lets you sort, filter, compare and export them (CSV), keeps power-user depth (keys, versions, raw data) one click away instead of hiding it, explains in plain words, and leaves the decision to the player. Pretty is welcome; vague is not.
 
-**Current version: 2.62.0**
+**Current version: 2.63.0**
 
 Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds features, 2.10.1 only fixes. Each step below is one release; we work through them top to bottom.
 
@@ -94,6 +94,7 @@ Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds f
 | 2.61.0 | The app window's own title bar in the theme's colors (Windows 11; dark / light on Windows 10). A fresh install starts by picking a theme. |
 | 2.61.1 | Chat command keys are set on the Chat commands page again, with a warning when a key is taken; a command without a key is kept. |
 | 2.62.0 | **Pages (redesign step 1):** a text sidebar (groups, ↳ sub-tools, Toolkit + Settings at the bottom); one tool fills the window at a time; a status bar instead of the taskbar; Frost Pane readability. |
+| 2.63.0 | **Price checks (redesign step 2):** header strips over the list and the item, the list in a sunken frame, Search and Only ★ filters, the picked rows' buttons under the list, the item panel's own buttons; no more pop-up box on a click. |
 
 ## ▶ Next up
 
@@ -103,7 +104,6 @@ Order (decided 2.34.0): the Polish basics first, so new features are built on th
 
 | Version | Plan |
 |---|---|
-| 2.63.0 | **Redesign step 2 - Price checks like the mockup:** a two-row toolbar (actions + search, filters), section headers, the list in a recessed panel, the item card panel on the right. |
 | 2.64.0 | **Redesign step 3:** the other tools in the same panel / section style (more steps as needed). |
 | 2.65.0 | **Farm Ledger part 2:** the setup as a short 5-step form with the cost of one run shown live; the log-loot box in 3 steps. |
 | 2.66.0 | **Strats browser redone:** filter buttons, strats as cards, a detail panel with Track in Farm Ledger and your own numbers. |
