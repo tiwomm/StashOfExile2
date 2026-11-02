@@ -636,14 +636,15 @@ class Market:
     # ---- 2.51.0: Manual feed - you tell the Mod book what an item is worth (an expensive tablet you saw sell, ...)
     FEED_MAX = 10
 
-    def feed(self, item, div, copies=3, price_txt="", note=""):
-        """An item and its price -> `copies` listings at that price, kept with the ones the Mod book learns from (the
-        same way a sale is), and a row in 'fed' so you can see and undo it. copies = how much it counts: the Mod book
-        needs a mod on 8 listings before it decides, so one real price can count for a few. -> its sig, or None."""
-        if not self.db or not div or div <= 0:
+    def feed(self, item, div, copies=1, price_txt="", note=""):
+        """An item and its price -> one listing at that price, kept with the ones the Mod book learns from (the same
+        way a sale is), and a row in 'fed' so you can see and undo it. 2.54.1 (the user): one item = one price - no
+        "counts as N listings"; and the price is optional - div None keeps the item (and its mods) with no listing,
+        so nothing is priced from it. -> its sig, or None."""
+        if not self.db or (div is not None and div <= 0):
             return None
         from .mods import norm
-        copies = max(1, min(self.FEED_MAX, int(copies)))
+        copies = 0 if div is None else 1
         try:
             sids, vals, lines = set(), {}, []
             for m in item.get("mods") or []:
