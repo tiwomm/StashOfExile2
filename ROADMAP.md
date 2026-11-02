@@ -4,7 +4,7 @@
 
 > **Who we build for - read second.** Path of Exile players are utilitarian: they love data and information, problem solving and creative thinking. So every feature shows its numbers *and how they were worked out*, lets you sort, filter, compare and export them (CSV), keeps power-user depth (keys, versions, raw data) one click away instead of hiding it, explains in plain words, and leaves the decision to the player. Pretty is welcome; vague is not.
 
-**Current version: 2.72.1**
+**Current version: 2.72.2**
 
 Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds features, 2.10.1 only fixes. Each step below is one release; we work through them top to bottom.
 
@@ -114,6 +114,7 @@ Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds f
 | 2.71.0 | Strats browser redone: filter buttons, strats as cards (List stays), Your numbers and Track in Strat Tracker in the strat's panel. |
 | 2.72.0 | Gear priced properly: filler / low-tier mods left out of the search, a real price when the listings back it up; uniques by roll; crafting bases by item level. |
 | 2.72.1 | Stackables poe.ninja doesn't list are priced from the trade site's bulk exchange (Wealth; a copied stack in Price checks). |
+| 2.72.2 | Notes: a right-click menu on each tab (Rename on the tab, New, Duplicate, Move, Copy, Clear, Reopen a closed note, Close). |
 
 ## ▶ Next up
 

@@ -21,6 +21,10 @@ NEXT = [
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.72.2": [
+        "Notes: right-click a note's tab for Rename, New note, Duplicate, Move left / right, Copy, Clear, Reopen a "
+        "closed note and Close. Right-click no longer closes a note by itself.",
+    ],
     "2.72.1": [
         "Wealth: stackable items poe.ninja doesn't list now get a price from the trade site's bulk exchange.",
         "Price checks: copy a stack and the status line says what it's worth.",
