@@ -21,6 +21,14 @@ NEXT = [
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.72.0": [
+        "Price checks: rare gear now gets a real price. The search skips mods buyers hardly pay for (light radius, "
+        "thorns, stun ...) and low tiers, so it compares your item with ones like it. Only a price the listings "
+        "can't back up still says Price manually.",
+        "Uniques are priced by their rolls: a well-rolled mod is searched at least that high, and the item shows how "
+        "well it rolled overall.",
+        "Normal and magic bases of item level 75+ are priced as crafting bases, at their item level.",
+    ],
     "2.71.0": [
         "Money Makers › Strats: filter buttons for what a strat is, how much thinking and how many clicks it takes.",
         "Strats show as cards with their estimated profit per hour - Cards / List switches back to the table.",

@@ -1709,8 +1709,8 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         kb.bind("<Configure>", place_scope, add="+")
 
     EMPTY_TEXT = ("Hover an item in game and press Ctrl+Alt+C\nIt will show up here and get priced.\n\n"
-                  "Made for pricing lots of tablets, jewels and waystones.\n"
-                  "Other items get a rough guess - check those yourself.")
+                  "Tablets, jewels, waystones and gear - weapons, armour, rings, uniques.\n"
+                  "A price the searches can't back up says Price manually.")
     EMPTY_TEXT_TAB = ("Type your tab's price above and press Read tab:\nevery item on it shows up here and gets priced.\n"
                       "(Ctrl+Alt+C in game still adds items one at a time.)")
 
@@ -1719,11 +1719,11 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         """2.8.0: the hint for an empty list follows "Add items from"."""
         return self.EMPTY_TEXT_TAB if SETTINGS.get("pctab", {}).get("mode") == "Stash tab" else self.EMPTY_TEXT
 
-    SCOPE_TEXT = ("Price checks is made for pricing lots of simpler items quickly: tablets, jewels and waystones, where "
-                  "a few mods or numbers decide the price. Other items (weapons, armour, rings ...) get a price too, "
-                  "but treat it as a rough guess: their value depends on combinations this checker can't judge. "
-                  "For those, check the price yourself on the trade site (press O on the item) or with your usual "
-                  "price-check tool.")
+    SCOPE_TEXT = ("Price checks prices tablets, jewels, waystones and gear. Gear (2.72.0) is searched on the mods "
+                  "buyers pay for - filler mods and low tiers are left out - by its totals (defences, DPS, total "
+                  "resistances), uniques by name and their well-rolled mods, crafting bases by item level. When the "
+                  "listings found don't back a price up, it says Price manually: then check it on the trade site "
+                  "(press O on the item).")
 
     def explain_scope(self):
         self.info_card(self.SCOPE_TEXT, secs=40)
@@ -3949,8 +3949,7 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         tags.append("even" if rid % 2 == 0 else "odd")
         conf = rec.get("conf", "") if st == "done" else ""
         conf = "" if conf == "-" else conf
-        if conf and it.get("gear") and not it.get("waystone") and it.get("rarity") != "Unique":
-            conf = "Guess"                                    # 2.0 beta 21: gear prices are a rough guess
+        # (2.72.0: gear shows its own confidence - it used to say "Guess" for every non-unique piece)
         stars = "★" * keys if keys else ""                     # 2.24.0: its own column (2.19.0 put it before the name)
         self.tree.item(str(rid), values=(rid, it["name"], it["base"], self.MARK_TEXT[mark], est, conf, listings,
                                          stamp, match, stars), tags=tags)
@@ -4397,7 +4396,7 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
             tk.Label(left, text=big, bg=P1, fg=C["red"] if (nomatch or manual or not rec["prices"]) else C["good"],
                      font=(MONO, 16, "bold"), anchor="w").pack(fill="x")      # (2.60.0: smaller - the card shows it big)
             cf = rec.get("conf")
-            guess = it.get("gear") and not it.get("waystone") and it.get("rarity") != "Unique"
+            guess = False                                  # 2.72.0: gear is priced like the rest (its confidence says)
             if cf and cf != "-" and guess:                      # 2.0 beta 21: say plainly that gear is a guess
                 right = tk.Frame(head, bg=P1)
                 right.pack(side="right", anchor="n")

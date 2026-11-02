@@ -54,6 +54,16 @@ KIND_NAMES = {"prefix": "Prefix", "suffix": "Suffix", "implicit": "Implicit", "r
               "explicit": "Explicit"}
 AFFIX_KINDS = ("Prefix", "Suffix", "Explicit")
 _PAIR = re.compile(r"(\d+(?:\.\d+)?)\s*-\s*(\d+(?:\.\d+)?)")
+# 2.72.0: mods that buyers hardly pay for on a rare - searching on them only hides the comparable listings. Left out
+# by default (✕ Ignore; tick one to search on it anyway). Our own list, from how the trade site's rare listings price.
+FILLER = {"#% increased Light Radius", "# to # Physical Thorns damage", "# to # Fire Thorns damage",
+          "# to # Cold Thorns damage", "#% increased Thorns damage", "# to Stun Threshold", "#% increased Stun Threshold",
+          "#% increased Stun Recovery", "#% increased Stun Duration", "#% increased Attribute Requirements",
+          "#% increased Knockback Distance", "Recover #% of maximum Life on Kill", "Recover #% of maximum Mana on Kill"}
+LOW_TIER = 6                 # 2.72.0: an affix of tier 6 or lower (T6, T7 ...) rarely adds to a rare's price
+GOOD_ROLL = 0.75             # 2.72.0: a unique's mod rolled in the top quarter of its range is searched on
+CRAFT_ILVL = 75              # 2.72.0: a normal / magic base this high is a crafting base: searched at its item level
+MAX_ILVL = 82                # (no mod needs more than this - a higher item level is worth the same)
 
 
 def is_gear(g):
@@ -145,8 +155,20 @@ def parse_gear(text):
         if kind not in AFFIX_KINDS:
             m["covered"] = {"Implicit": "implicit: comes with the base", "Rune": "socketed rune: can be swapped",
                             "Enchant": "enchant"}.get(kind, kind.lower())
-        if unique:
-            m["covered"] = m["covered"] or "uniques are searched by name (tick a mod to search on its roll too)"
+        if unique and not m["covered"]:                    # 2.72.0: uniques by roll
+            r = m["roll"]
+            if r is not None and r >= GOOD_ROLL and m["sid"] and kind in AFFIX_KINDS:
+                m["note"] = f"well rolled ({r:.0%} of its range): searched at least this high"
+            else:
+                m["covered"] = ("uniques are searched by name" + (f" - this roll is {r:.0%} of its range" if r is not None
+                                                                   else "") + " (tick it to search on its roll too)")
+        elif kind in AFFIX_KINDS and stat and g["rarity"] in ("Magic", "Rare"):     # 2.72.0: what buyers pay for
+            if stat["ref"] in FILLER:
+                m["auto"] = "ignore"
+                m["note"] = "rarely adds to a rare's price - not searched (tick it to search on it)"
+            elif str(gm.get("tier") or "").isdigit() and int(gm["tier"]) >= LOW_TIER:
+                m["auto"] = "ignore"
+                m["note"] = f"low tier (T{gm['tier']}) - rarely adds to the price, not searched (tick it to search on it)"
         mods.append(m)
         refs_of.append(stat["ref"] if stat else None)
 
@@ -205,8 +227,17 @@ def parse_gear(text):
               "corrupted": bool(g.get("corrupted")), "sockets_min": None}
     if unique:
         search.update(name=g["name"], type=g["base"], rarity="unique", category=None)
+        rolls = [m["roll"] for m in mods if m["roll"] is not None and m["kind"] in AFFIX_KINDS]
+        if rolls:                                           # 2.72.0: how well its rolls came out, on the whole
+            avg = sum(rolls) / len(rolls)
+            notes.append(f"rolls: {avg:.0%} of their ranges" + (" (well rolled)" if avg >= GOOD_ROLL else
+                                                                 " (low: most listings roll better)" if avg < 0.3 else ""))
     elif cls in PER_BASE_CLASSES or not totals:
         search.update(type=g["base"], category=None)        # its own market (and anything without totals to compare on)
+    if g["rarity"] in ("Normal", "Magic") and (g.get("ilvl") or 0) >= CRAFT_ILVL:     # 2.72.0: a crafting base
+        search.update(type=g["base"], category=None, ilvl_min=min(g["ilvl"], MAX_ILVL),
+                      rarity="normal" if g["rarity"] == "Normal" else "nonunique")
+        notes.append(f"crafting base: item level {min(g['ilvl'], MAX_ILVL)}+")
     need = EXCEPTIONAL_SOCKETS.get(cls)
     if need and g.get("sockets", 0) >= need and not g.get("corrupted"):
         search["sockets_min"] = g["sockets"]
@@ -284,6 +315,8 @@ def build_query(item, must, optional, count_min, values, plain=False):
     if mp:
         filters["map_filters"] = {"filters": mp}
     filters["misc_filters"] = {"filters": {"corrupted": {"option": "true" if s.get("corrupted") else "false"}}}
+    if s.get("ilvl_min"):                                     # 2.72.0: crafting bases (item level: a type filter)
+        filters.setdefault("type_filters", {"filters": {}})["filters"]["ilvl"] = {"min": s["ilvl_min"]}
     if api_age:
         filters["trade_filters"] = {"filters": {"indexed": {"option": api_age}}}
     query["filters"] = filters
