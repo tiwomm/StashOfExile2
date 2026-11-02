@@ -21,6 +21,10 @@ NEXT = [
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.69.2": [
+        "Overlay: when the session is paused, a small PAUSED tag shows next to the time instead of running into "
+        "the numbers beside it.",
+    ],
     "2.69.1": [
         "Community data sharing is now opt-in: the app asks once, and nothing is shared until you say yes. Change it "
         "any time in Settings › General › Community data sharing. It covers mod prices, map ranks and the strats "
