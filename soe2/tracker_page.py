@@ -596,10 +596,90 @@ class TrackerPage:
                             changed = True
                 if changed:
                     self.tracker_fill_maps()
+            self.tracker_game_watch()
             self.tracker_draw()
         except Exception:
             self.log_error("session tracker")
         self.root.after(1000, self.tracker_tick)
+
+    # ---------------- 2.69.3: the game closed (or crashed) while a session runs -> ask to end it
+    GAME_GONE_SECS = 15          # closed this long before asking (a restart of the game is quicker)
+    RESTORED_GRACE = 60          # a session kept from the last time the app ran: the game gets this long to show up
+
+    def tracker_game_watch(self, now=None, is_open=None):
+        """Every 5 s while a session is open: is the game's window still there (overlay.game_open: window titles
+        only, True when it can't tell)? Once it has been gone GAME_GONE_SECS, the session is paused at the moment
+        it went and you're asked: End session / Keep it going. Only after the game was seen during this session -
+        starting a session before the game is fine - or for a session kept from the last time the app ran (the
+        app or PC crashed). The game coming back resumes it."""
+        s = self.tk_session
+        now = now or time.time()
+        if s is None or s.ended is not None:
+            self.tk_game = {"seen": False, "gone": None, "asked": False, "paused": False, "s": None}
+            return None
+        g = getattr(self, "tk_game", None)
+        if g is None or g.get("s") is not s:
+            g = self.tk_game = {"seen": False, "gone": None, "asked": False, "paused": False, "s": s,
+                                "since": now, "restored": not getattr(s, "fresh", False)}
+        if is_open is None:
+            if now - g.get("checked", 0) < 5:
+                return None
+            g["checked"] = now
+            from . import overlay as OV
+            is_open = OV.game_open(self.overlay.cfg.get("poe_title") or OV.POE_TITLE)
+        if is_open:
+            back = g["paused"]
+            g.update(seen=True, gone=None, asked=False, paused=False)
+            if back and s.paused_at is not None:
+                s.resume(now)
+                self.tk_pause_btn.config(text="Pause")
+                self._tk_strip_close()
+                self._say("The game is back - the session goes on.", 8)
+            return "open"
+        if g["gone"] is None:
+            g["gone"] = now
+        if g["asked"]:
+            return "asked"
+        wait = self.GAME_GONE_SECS if g["seen"] else (self.RESTORED_GRACE if g["restored"] else None)
+        if wait is None or now - (g["gone"] if g["seen"] else max(g["gone"], g["since"])) < wait:
+            return "waiting"
+        g["asked"] = True
+        if s.paused_at is None:
+            s.pause(g["gone"] if g["seen"] else now)          # the time after the game went doesn't count
+            g["paused"] = True
+            self.tk_pause_btn.config(text="Resume")
+        self.tracker_game_ask()
+        return "ask"
+
+    def tracker_game_ask(self):
+        msg = "Path of Exile 2 isn't running any more (closed or crashed). End this session?"
+        self._tk_strip(msg, [("End session", self.tracker_game_end), ("Keep it going", self.tracker_game_keep)])
+        self.tk_game_toast = self.app_toast(msg + " The time since it closed isn't counted.", "Session",
+                                            actions=[("End session", self.tracker_game_end),
+                                                     ("Keep it going", self.tracker_game_keep)], secs=600)
+
+    def _tracker_game_toast_close(self):
+        t = getattr(self, "tk_game_toast", None)
+        try:
+            if t is not None and t.winfo_exists():
+                t.destroy()
+        except Exception:
+            pass
+        self.tk_game_toast = None
+
+    def tracker_game_end(self):
+        self._tracker_game_toast_close()
+        self._tk_strip_close()
+        self._tracker_finish_now()
+
+    def tracker_game_keep(self):
+        """Keep the session: it stays paused if the game closing paused it (Resume, or the game coming back,
+        goes on); asked again only after the game was seen and closed again."""
+        self._tracker_game_toast_close()
+        self._tk_strip_close()
+        g = getattr(self, "tk_game", None) or {}
+        g["seen"], g["restored"] = False, False
+        self._say("The session is kept (paused). Resume it when you're back - or the game coming back does.", 8)
 
     # ---------------- start / pause / stop
     def tracker_autostart(self):
@@ -615,6 +695,7 @@ class TrackerPage:
     def tracker_start(self):
         now = time.time()
         s = Session(now=now)
+        s.fresh = True                                 # 2.69.3: started in this run of the app (not kept from the last)
         self.tk_session = s
         self.tracker_open_log()
         la = getattr(self, "tk_last_area", None)
