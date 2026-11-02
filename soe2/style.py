@@ -107,15 +107,11 @@ _SWITCH = {}
 def _switch_img(root, on, hover=False, disabled=False, w=34, h=18, gap=8):
     """One picture of the switch: a rounded track (accent when on), a round knob (right when on). Drawn 4x and scaled
     down, so it's smooth. Pillow; without it a plain Tk drawing."""
-    def col(c):
-        try:
-            return theme_color(c)
-        except Exception:
-            return c
-    track = col(C["accent"]) if on else col("#2b3d5f")
+    # 2.62.0: straight from the running theme's palette (C) - these go into a picture, not through Tk's colors
+    track = C["accent"] if on else C["line"]
     if hover and not disabled:
-        track = col("#ffc37a") if on else col("#3d5582")
-    knob = "#ffffff" if on else col("#8fa3c7")
+        track = mix(C["accent"], "#ffffff", 0.25) if on else C["gold_dim"]
+    knob = "#ffffff" if on else C["steel"]
     alpha = 110 if disabled else 255
     try:
         from PIL import Image, ImageDraw, ImageTk
@@ -144,10 +140,15 @@ def _switch_img(root, on, hover=False, disabled=False, w=34, h=18, gap=8):
 def switches(root, s):
     """2.49.0 (feedback: "anywhere there's a checkbox... a modern slider in its place"): every ttk.Checkbutton
     (TCheckbutton and its Bar. / Mod. styles) shows a switch instead of a tick box. Same widgets, same variables."""
-    imgs = {(on, hv, ds): _switch_img(root, on, hv, ds) for on in (0, 1) for hv in (0, 1) for ds in (0, 1)}
-    name = "Switch.indicator.%s" % (theme_color(C["accent"]) + theme_color(C["line"])).replace("#", "")
-    _SWITCH[(id(root), name)] = imgs          # (kept, or Tk drops the pictures)
+    name = "Switch.indicator.%s" % (C["accent"] + C["line"] + C["gold_dim"] + C["steel"]).replace("#", "")
+    if (id(root), name) in _SWITCH:           # 2.62.0: this look's switch exists - keep ITS pictures (making new
+        imgs = None                           # ones here freed the old ones: switches went blank after a swap back)
+    else:
+        imgs = {(on, hv, ds): _switch_img(root, on, hv, ds) for on in (0, 1) for hv in (0, 1) for ds in (0, 1)}
+        _SWITCH[(id(root), name)] = imgs      # (kept, or Tk drops the pictures)
     try:
+        if imgs is None:
+            raise tk.TclError("exists")
         s.element_create(name, "image", imgs[(0, 0, 0)],
                          ("disabled", "selected", imgs[(1, 0, 1)]), ("disabled", imgs[(0, 0, 1)]),
                          ("active", "selected", imgs[(1, 1, 0)]), ("selected", imgs[(1, 0, 0)]),
