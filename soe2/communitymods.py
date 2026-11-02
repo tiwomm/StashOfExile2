@@ -3,8 +3,9 @@
 Once an hour (and when the app closes) the app sends the Community board a SUMMARY of the listings its own price
 checks saw since the last time - per (base, mod): how many listings and their median price, per base the same - plus
 the Mod book rules you set (High / Normal / Ignore count as your vote). Nothing else: no account names, no items, no
-listing ids. On by default with a notice the first time (Settings: "share_prices"). Reading what everyone pooled works
-either way: it is downloaded with the same hourly sync and used where your own data has nothing to say yet -
+listing ids. 2.69.1: off until you say yes - the first run asks (Settings › General › Community data sharing,
+"share_prices"; "share_asked" once answered). The same switch covers putting strats on the Money Makers board.
+Reading what everyone pooled works either way: it is downloaded with the same hourly sync and used where your own data has nothing to say yet -
   * a mod the pooled prices show as valuable (enough listings, lift, median at least your Valuable mod) counts as
     learned High ("from": "community"), unless your own data for this league decides it;
   * a mod most players rate High (at least 3 votes, 60 %) counts as shared High (mods.COMMUNITY_ACTIVE).
@@ -27,8 +28,15 @@ VOTE_MIN, VOTE_SHARE = 3, 0.6
 _lock = threading.Lock()
 
 
+# 2.69.1: what "Community data sharing" sends - said the same way in Settings and in the first-run question
+WHAT = ("Community data sharing pools anonymous data so everyone's numbers get better - most of all early in a league: "
+        "the mod prices your price checks see and your Mod book ratings, your map ranks, and the strats you upload "
+        "from Money Makers or the Strat Tracker. No account names, no items, no listing ids.")
+
+
 def sharing():
-    return bool(SETTINGS.get("share_prices", True))
+    """Opt-in (2.69.1): only after you said yes."""
+    return bool(SETTINGS.get("share_prices", False)) and bool(SETTINGS.get("share_asked"))
 
 
 def cid():

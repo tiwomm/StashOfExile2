@@ -194,6 +194,8 @@ class LedgerPage:
         ttk.Button(btns, text="Edit setup", command=self.fl_edit).pack(side="right", padx=(0, 8))
         self.fl_export_btn = ttk.Button(btns, text="Export ▾", command=self.fl_export_menu, style="Quiet.TButton")
         self.fl_export_btn.pack(side="right", padx=(0, 8))
+        self.fl_upload_btn = ttk.Button(btns, text="📤 Upload", command=self.fl_upload, style="Quiet.TButton")
+        self.fl_upload_btn.pack(side="right", padx=(0, 8))         # 2.69.1: to the community strats
         tk.Label(btns, text="Numbers from", bg=P1, fg=C["muted"], font=("Segoe UI", 9)).pack(side="left")
         self.fl_ver_var = tk.StringVar()
         self.fl_ver_box = ttk.Combobox(btns, textvariable=self.fl_ver_var, state="readonly", width=16)
@@ -846,6 +848,7 @@ class LedgerPage:
         m.add_command(label="Setup file (.json) - for a friend's Strat Tracker", command=lambda: self.fl_export("json"))
         m.add_command(label="Strat guide (CSV) - share this setup as a strat", command=lambda: self.fl_export("strat"))
         m.add_command(label="Copy summary (for Discord)", command=self.fl_copy_summary)
+        m.add_command(label="📤 Upload to the community strats…", command=self.fl_upload)
         m.add_separator()
         m.add_command(label="Import a setup file…", command=self.fl_import_json)
         m.add_command(label="Import logs from a CSV…", command=self.fl_import_csv)
@@ -882,6 +885,43 @@ class LedgerPage:
             fh.write(text)
         self._say(f"Saved {path}", 6)
         return path
+
+    # ---------------- 2.69.1: upload a setup (with its numbers) to the community strats on the Money Makers board
+    def fl_upload(self):
+        """This setup as a strat (fl_strat_guide: its items, mods that matter, atlas, cost and profit per run) -> kept
+        in Money Makers › Mine, then posted to the community board. Needs Community data sharing on (asks if it
+        isn't) and a board name (asks the first time). Anything the layout still needs -> it opens in Mine to fill
+        in, then 📤 Post to Community there. -> "posted" / "fill" / None."""
+        s = self.fl_setup()
+        if not s:
+            self._say("Pick a setup to upload first.", 6)
+            return None
+        if not self.cm_need_sharing(self.fl_upload):
+            return None
+        st = self.fl_strat_guide(s)
+        st["id"] = MM.slug("my-" + (st.get("name") or s["name"]))
+        st["author"] = st.get("author") or SETTINGS.get("wealth_account") or "me"
+        MM.save_mine([m for m in MM.mine() if m["id"] != st["id"]] + [MM.tidy(st)])
+        probs = MM.validate(st)
+        if probs:
+            self.fl_upload_fill(st, probs)
+            return "fill"
+        if self.mm_need_login("upload a strat"):
+            return None
+        data = {k: v for k, v in MM.tidy(st).items() if k not in ("id", "author")}
+        from . import board as B
+        self._mm_bg(lambda: B.post("strat", data),
+                    lambda r: self.mm_board_result(r, f"Uploaded \"{st['name']}\" to the community strats."))
+        return "posted"
+
+    def fl_upload_fill(self, st, probs):
+        """The strat still misses something the board needs -> Money Makers › Strats › Mine with it picked."""
+        self.mm_page.pick("Strats", notify=False)
+        self.mm_show_page()
+        self.mm_show_mine(st["id"])
+        self.app_toast(f"\"{st['name']}\" is saved in Money Makers › Strats › Mine. Before it can go to the community "
+                       f"strats it needs: {', '.join(p.replace('missing ', '') for p in probs[:4])}. Fill those in, "
+                       "then press 📤 Post to Community.", "Upload a strat", secs=30)
 
     def fl_strat_guide(self, s):
         """2.46.0: a setup -> a strat in the standard layout: its strat's text (if it has one), the items it runs

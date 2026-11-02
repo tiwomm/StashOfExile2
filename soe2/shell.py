@@ -1363,7 +1363,12 @@ class Shell:
 
     def _place_menu(self):
         if self.menu is not None:
-            h = min(560, self.desk.winfo_height() - 10)
+            try:                                    # 2.69.1: tall enough for its lists and both footer rows
+                self.menu.update_idletasks()
+                need = max(560, self.menu.winfo_reqheight())
+            except tk.TclError:
+                need = 560
+            h = min(need, self.desk.winfo_height() - 10)
             ox, oy = self.desk_origin()
             self.menu.geometry(f"430x{h}+{ox}+{oy}")
 
@@ -1440,15 +1445,24 @@ class Shell:
         q.trace_add("write", fill)
         fill()
         foot = tk.Frame(m, bg=P1, highlightthickness=0)
-        foot.pack(fill="x", side="bottom", padx=8, pady=8)
-        for text, cmd in (("⚙ Settings", lambda: self.open("settings")), ("✦ What's new", lambda: self.app.show_whatsnew(True)),
-                          ("➜ Quick start", lambda: self.app.show_quickstart(force=True)),
-                          ("⟳ Check for updates", self.app.check_updates),
-                          ("✕ Quit", self.app.on_close)):
+        foot.pack(fill="x", side="bottom", padx=8, pady=8, before=cols)   # 2.69.1: gets its room before the lists
+        # 2.69.1: two rows of even buttons, so none is cut off in a narrow Toolkit
+        btns = (("⚙ Settings", lambda: self.open("settings")), ("✦ What's new", lambda: self.app.show_whatsnew(True)),
+                ("➜ Quick start", lambda: self.app.show_quickstart(force=True)),
+                ("⟳ Check for updates", self.app.check_updates), ("✕ Quit", self.app.on_close))
+        self.menu_foot_btns = []
+        for i, (text, cmd) in enumerate(btns):
+            r, col = divmod(i, 3)
             b = tk.Label(foot, text=text, bg="#0b1222", fg=C["text"], padx=8, pady=4, cursor="hand2",
                          highlightthickness=1, highlightbackground=C["line"])
-            b.pack(side="left" if "Quit" not in text else "right", padx=(0, 8))
+            b.grid(row=r, column=col if i < 3 else (0 if i == 3 else 2), columnspan=2 if i == 3 else 1,
+                   sticky="ew", padx=(0 if col == 0 else 4, 0) if i < 3 else ((0, 0) if i == 3 else (4, 0)),
+                   pady=(0, 4) if r == 0 else 0)
             b.bind("<Button-1>", lambda ev, c=cmd: (self.close_menu(), c()))
+            self.menu_foot_btns.append(b)
+        for col in range(3):
+            foot.columnconfigure(col, weight=1, uniform="foot")
+        self._place_menu()
         e.focus_set()
         e.bind("<Escape>", lambda ev: self.close_menu())
         e.bind("<Return>", lambda ev: self._menu_enter(q.get()))

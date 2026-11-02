@@ -13,6 +13,8 @@ They can then hide, delete, ban and **promote**, and promoted posts join everyon
 Since 2.31.0 it also pools the **community Mod book**: once an hour each app sends a summary of the mod prices its
 price checks saw (per base and mod: how many listings and their median, nothing else), plus the Mod book rules the
 player set, which count as votes. These are keyed by a random install id, which the board only stores hashed.
+Since 2.69.1 this is opt-in ("Community data sharing" in the app's Settings, asked once on first run): an app
+sends nothing, and posts no strats, until its player says yes.
 
 It is a Cloudflare Worker (`src/index.js`) with a D1 database (`schema.sql`), and the free plan covers it. It stores a
 made-up player id and the display name. Internet addresses are only kept as a hash with the date, to count new

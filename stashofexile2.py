@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU GPL v3.0 (see LICENSE). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.69.0
+VERSION 2.69.1
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,6 +19,14 @@ VERSION 2.69.0
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.69.1
+       Community data sharing (was "Community Mod book" / "Share my mod prices") is opt-in: off until you say
+       yes. The first run asks in a small window (Share / No thanks; closing it asks again next time); the answer
+       is kept as share_asked. The same switch covers what goes to the community board: the hourly mod prices,
+       Mod book ratings and map ranks, and posting strats / one-liners from Money Makers (asks first when off).
+       Strat Tracker: 📤 Upload (and Export ▾ › Upload) puts a setup with its numbers on the community strats; if
+       the board's layout still needs something it is kept in Money Makers › Strats › Mine to fill in. Toolkit:
+       its footer buttons in two even rows and the menu as tall as its lists, so Check for updates isn't cut off.
   2.69.0
        Redesign step 3: every tool's parts sit under the theme's header strips in sunken frames, like Price checks
        (chrome.section(parent, title, note) -> (outer, inner)): every Settings section, Wealth (Totals, Sources,
@@ -1541,7 +1549,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.69.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.69.1"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
