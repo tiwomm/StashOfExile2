@@ -14,9 +14,10 @@ whatever is on; when nothing is, it's gone. ToS: it only shows things - the same
 import tkinter as tk
 from tkinter import font as tkfont
 
-from .overlaywin import CanvasText, OverlayWindow, pal, PALETTES
+from .overlaywin import CanvasText, OverlayWindow, pal
 
-LAYOUTS = {"panel": "Panel", "strip": "Strip", "xpbar": "Game bar - on the XP bar",
+# 2.66.0: one look (the app's theme); the layout says the shape - Minimal moved here from the old Style list
+LAYOUTS = {"panel": "Panel", "strip": "Strip", "minimal": "Minimal", "xpbar": "Game bar - on the XP bar",
            "orbs": "Game bar - beside the orbs"}
 HUD = ("xpbar", "orbs")          # 2.65.0: fitted to the game's own bottom bar, in its look
 
@@ -24,7 +25,8 @@ HUD = ("xpbar", "orbs")          # 2.65.0: fitted to the game's own bottom bar, 
 # the orbs' panels are anchored to the left and right edges, the XP bar runs between them). (x0, x1, bottom, h)
 #   x0 / x1 >= 0: from the left edge, < 0: from the right edge; bottom: up from the bottom edge.
 HUD_SPOTS = {"xpbar": [(0.535, -0.535, 0.0205, 0.026)],
-             "orbs": [(0.215, 0.525, 0.138, 0.052), (-0.525, -0.215, 0.138, 0.052)]}
+             "orbs": [(0.215, 0.525, 0.138, 0.046), (-0.525, -0.215, 0.138, 0.046)]}
+# 2.66.0 (feedback: too wide): beside the orbs each half is only as wide as what it shows, from the orb's side
 SHORT = {"breach": "Brch", "delirium": "Deli", "ritual": "Ritl", "remnant": "Remn"}
 PANEL_W, MINI_W = 290, 224
 
@@ -66,7 +68,7 @@ class MergedOverlay:
 
     def merged_embeds_notes(self):
         """Notes sit inside the window (Panel, not Minimal); else the note opens as its own window under it."""
-        return self.merged_on() and self.merged_layout() == "panel" and not pal().get("minimal")
+        return self.merged_on() and self.merged_layout() == "panel"
 
     def hud_spots(self, layout=None):
         """2.65.0: the Game bar windows' places -> [(x, y, w, h)]: fitted to the game window (or the main screen),
@@ -91,14 +93,6 @@ class MergedOverlay:
             out.append((x, y, w, h))
         return out
 
-    def hud_fit(self):
-        """Settings: put the Game bar windows back on the game's bar."""
-        cfg = self.tracker_cfg()
-        cfg.pop("hud_pos", None)
-        self.tracker_save()
-        if self.merged_layout() in HUD:
-            self.merged_build()
-
     def merged_wants(self):
         oc = self.overlay.cfg
         return {"timer": bool(getattr(self, "mg_timer", False)),
@@ -120,6 +114,8 @@ class MergedOverlay:
                 pass
             self.overlay.notes = None
         if layout in LAYOUTS:
+            if layout != cfg.get("layout"):                 # 2.66.0: a Game bar layout picked again starts fitted
+                (cfg.get("hud_pos") or {}).pop(layout, None)
             cfg["layout"] = layout
         self.tracker_save()
         self.mg_timer = timer
@@ -169,7 +165,7 @@ class MergedOverlay:
         P = pal()
         self.mg_P = P
         self._hud_k = 1.0
-        strip, mini = self.merged_layout() == "strip", bool(P.get("minimal"))
+        strip, mini = self.merged_layout() == "strip", self.merged_layout() == "minimal"
         compact = strip or mini
         x, y = cfg.get("mx", cfg.get("x", 60)), cfg.get("my", cfg.get("y", 260))
         if strip and "mx" not in cfg:
@@ -624,9 +620,11 @@ class MergedOverlay:
         unlocked if your UI scale puts the bar elsewhere."""
         cfg = self.tracker_cfg()
         layout = self.merged_layout()
-        P = PALETTES["gamebar"]
+        P = pal()
         self.mg_P = P
         spots = self.hud_spots(layout)
+        if layout == "orbs":                                # 2.66.0: as wide as what each half shows
+            spots = self._hud_snug(spots, want, P)
         parts = [("all", spots[0])] if layout == "xpbar" else [("timer", spots[0]), ("rest", spots[1])]
         if layout == "orbs" and not want["timer"]:
             parts = [("rest", spots[1])]
@@ -680,11 +678,41 @@ class MergedOverlay:
         """A font size for the Game bar, grown with the game window (made for 1080 px high)."""
         return max(7, round(n * getattr(self, "_hud_k", 1.0)))
 
+    def _hud_snug(self, spots, want, P):
+        """Beside the orbs: each half's width from its content, kept against its orb (left half grows right, the
+        right half grows left)."""
+        from . import hudart
+        cfg = self.tracker_cfg()
+        fm = tkfont.Font(root=self.root, family=P["font"], size=self._hf(10))
+        fb = tkfont.Font(root=self.root, family=P["font"], size=self._hf(13), weight="bold")
+        out = []
+        for i, (x, y, w, h) in enumerate(spots):
+            m = 2 * (hudart.cap_width(h) + 8)
+            if i == 0:
+                need = max(max(fb.measure("0:00:00"), fb.measure("not tracking")) + 16 + fm.measure("Avg  00:00"),
+                           fm.measure("Map  00:00") + 8 + fm.measure("Mmmmm") + 8 + fm.measure("Maps  00"))
+            else:
+                side = max(fm.measure("00:00 PM"), fm.measure("Notes  ▾") + 22) + 8
+                cells = (2 * max(56, max(self._hud_cell_w_root(P, k) for k in self.HELPERS)) + 5 + 12
+                         if want["helpers"] else 0)
+                need = side + cells
+            nw = int(min(w, max(need + m, 0.13 * h / 0.046)))
+            saved = ((cfg.get("hud_pos") or {}).get("orbs") or [None, None])
+            moved = i < len(saved) and saved[i]
+            if i == 1 and not moved:
+                x = x + w - nw
+            out.append((x, y, nw, h))
+        return out
+
+    def _hud_cell_w_root(self, P, k):
+        fb = tkfont.Font(root=self.root, family=P["font"], size=self._hf(9))
+        return fb.measure(SHORT[k]) + 16 + self._hf(12)
+
     def _hud_frame(self, cv, P, W, H):
         """The game bar's plate (hudart: carved stone, bevelled bronze frame, end caps with an amber gem, a
         recessed well). -> the left / right edges of the well, where content goes."""
         from . import hudart
-        img = hudart.plate(cv, W, H)
+        img = hudart.plate(cv, W, H, P)
         m = hudart.cap_width(H) + 8
         if img is not None:
             cv.create_image(0, 0, image=img, anchor="nw", tags=("hudbg",))
@@ -700,7 +728,7 @@ class MergedOverlay:
 
     def _hud_sep(self, cv, P, x, H):
         from . import hudart
-        img = hudart.divider(cv, max(10, H - 14))
+        img = hudart.divider(cv, max(10, H - 14), P)
         if img is not None:
             cv.create_image(x, H // 2, image=img, tags=("mg",))
         else:
@@ -711,7 +739,7 @@ class MergedOverlay:
         from . import hudart
         tag = f"mgcell_{k}"
         w_, h_ = max(8, x1 - x0), max(8, y1 - y0)
-        off_img, on_img = hudart.socket(cv, w_, h_, False), hudart.socket(cv, w_, h_, True)
+        off_img, on_img = hudart.socket(cv, w_, h_, P, False), hudart.socket(cv, w_, h_, P, True)
         if off_img is None:
             return self._mg_cell(cv, P, k, x0, y0, x1, y1, label_cls=label_cls, label_font=font)
         sock = cv.create_image(x0, y0, image=off_img, anchor="nw", tags=("mg", tag))
@@ -803,23 +831,25 @@ class MergedOverlay:
             self._mg_notes_button(w, cv, P, x, mid, anchor="w")
 
     def _hud_timer(self, cv, P, W, H):
-        """Right of the life orb: the time and Maps · Avg on top, a divider, the map and where you are under it."""
+        """Right of the life orb: the time and Avg on top, a rule, then the map, where you are and Maps."""
         cfg = self.tracker_cfg()
         lft, rgt = self._hud_frame(cv, P, W, H)
         top, low = H * 0.36, H * 0.70
-        self._mg_text(cv, P, lft, top, "session", (P["font"], self._hf(14), "bold"), fill=P["big"])
+        self._mg_text(cv, P, lft, top, "session", (P["font"], self._hf(13), "bold"), fill=P["big"])
         fm = tkfont.Font(root=cv, family=P["font"], size=self._hf(10))
         if cfg["lines"].get("avg"):
             self._mg_text(cv, P, rgt, top, "avg", (P["font"], self._hf(10)), anchor="e")
-        if cfg["lines"].get("maps"):
-            self._mg_text(cv, P, rgt - (fm.measure("Avg  00:00") + 12 if cfg["lines"].get("avg") else 0), top,
-                          "maps", (P["font"], self._hf(10)), anchor="e")
         self._hud_rule(cv, P, lft, rgt, H * 0.53)
+        end = rgt
+        if cfg["lines"].get("maps"):
+            self._mg_text(cv, P, rgt, low, "maps", (P["font"], self._hf(10)), anchor="e")
+            end = rgt - fm.measure("Maps  00") - 8
         if cfg["lines"].get("map", True):
             self._mg_text(cv, P, lft, low, "map", (P["font"], self._hf(10)))
-            wt = self._mg_text(cv, P, lft + fm.measure("Map  00:00") + 10, low, "where", (P["font"], self._hf(10)),
-                               fill=P["muted"], cls=_Trunc)
-            wt.limit = max(6, int((rgt - lft - fm.measure("Map  00:00") - 10) / ((fm.measure("m") or 8) * 0.8)))
+            x = lft + fm.measure("Map  00:00") + 8
+            if end - x > 30:
+                wt = self._mg_text(cv, P, x, low, "where", (P["font"], self._hf(10)), fill=P["muted"], cls=_Trunc)
+                wt.limit = max(4, int((end - x) / ((fm.measure("m") or 8) * 0.8)))
 
     def _hud_rule(self, cv, P, x0, x1, y):
         """A thin bronze rule that fades out at both ends, a small lozenge in the middle."""
@@ -837,7 +867,7 @@ class MergedOverlay:
         cfg = self.tracker_cfg()
         lft, rgt = self._hud_frame(cv, P, W, H)
         fm = tkfont.Font(root=cv, family=P["font"], size=self._hf(10))
-        side = max(fm.measure("00:00 PM"), fm.measure("Notes  ▾")) + 30
+        side = max(fm.measure("00:00 PM"), fm.measure("Notes  ▾") + 22) + 8
         top, low = H * 0.36, H * 0.70
         gx = self._mg_glyphs(w, cv, P, rgt, low)
         if want["timer"] and cfg.get("clock", True):
