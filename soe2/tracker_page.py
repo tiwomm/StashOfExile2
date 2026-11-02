@@ -395,8 +395,11 @@ class TrackerPage:
         sws.append(("Clock", self.ingame_clock_var, self.on_ingame_clock))
         self.tk_notes_var = tk.BooleanVar(value=bool(self._ensure_overlay().cfg.get("notes_enabled", True)))
         sws.append(("Notes", self.tk_notes_var, self.tracker_notes_switch))
-        self.tk_switches_var = tk.BooleanVar(value=bool(cfg.get("alerts_bar", True)))
-        sws.append(("Mechanic Helper switches", self.tk_switches_var, self.tracker_switches_switch))
+        from . import focus as F                                  # 2.73.0: League Focus (Overlay ↳ Game Plan)
+        self.tk_focus_var = tk.BooleanVar(value=bool(F.cfg()["on"]))
+        sws.append(("League Focus", self.tk_focus_var, lambda: self.focus_set_on(bool(self.tk_focus_var.get()))))
+        self.tk_fline_var = tk.BooleanVar(value=bool(F.cfg()["line"]))
+        sws.append(("Focus line", self.tk_fline_var, self.tracker_fline_switch))
         self.tk_ov_switches = {}
         for i, (label, v, fn) in enumerate(sws):
             cb = ttk.Checkbutton(grid, text=label, variable=v, command=fn, style="Card.TCheckbutton")
@@ -404,6 +407,22 @@ class TrackerPage:
             self.tk_ov_switches[label] = cb
         for c in range(3):
             grid.columnconfigure(c, uniform="sw")
+        # 2.73.0: what has its own switch on the overlay's bar (it keeps working either way)
+        tk.Label(sw, text="ON THE BAR  -  a switch on the overlay itself, to flip it mid-game; off: only here",
+                 bg=P2, fg=C["muted"], font=("Segoe UI", 9, "bold"), anchor="w").pack(fill="x", pady=(8, 2))
+        bar = tk.Frame(sw, bg=P2)
+        bar.pack(fill="x")
+        self.tk_switches_var = tk.BooleanVar(value=bool(cfg.get("alerts_bar", True)))
+        self.tk_bar_vars = {"focus": tk.BooleanVar(value=bool(self.bar_cfg().get("focus", True))),
+                            "notes": tk.BooleanVar(value=bool(self.bar_cfg().get("notes", True)))}
+        for i, (label, v, fn) in enumerate((("Mechanic Helper switches", self.tk_switches_var, self.tracker_switches_switch),
+                                            ("Focus switch", self.tk_bar_vars["focus"], self.tracker_bar_switch),
+                                            ("Notes ▾", self.tk_bar_vars["notes"], self.tracker_bar_switch))):
+            cb = ttk.Checkbutton(bar, text=label, variable=v, command=fn, style="Card.TCheckbutton")
+            cb.grid(row=0, column=i, sticky="w", padx=(0, 24), pady=2)
+            self.tk_ov_switches["bar:" + label] = cb
+        for c in range(3):
+            bar.columnconfigure(c, uniform="sw")
         bxo, box = chrome_section(po, "Session")                               # 2.69.0
         bxo.pack(fill="x", pady=(8, 0))
         self.tk_auto = tk.BooleanVar(value=bool(cfg.get("autostart")))           # 2.14.0
@@ -471,6 +490,21 @@ class TrackerPage:
         on = bool(self.tk_notes_var.get())
         self.overlay.cfg["notes_choice"] = True                # (kept as you set it, not switched back on at start)
         self.overlay.set_notes(on)
+        self.merged_build()
+
+    def tracker_fline_switch(self):
+        from . import focus as F
+        F.cfg()["line"] = bool(self.tk_fline_var.get())
+        F.save()
+        self.merged_build()
+
+    def tracker_bar_switch(self):
+        """2.73.0: a feature's switch on the overlay's bar shown or not (the feature keeps working)."""
+        b = self.bar_cfg()
+        for k, v in self.tk_bar_vars.items():
+            b[k] = bool(v.get())
+        self.tracker_save()
+        self.tracker_helpers_sync()
         self.merged_build()
 
     def tracker_switches_switch(self):
@@ -988,6 +1022,7 @@ class TrackerPage:
         if getattr(self, "tk_ov_cv", None) is not None:    # 2.47.0: the skins' two columns
             where = n.get("where") if show_where and live and n.get("where") not in ("-", None) else ""
             texts.update(map=f"Map  {n.get('map', '-')}", where=(where + self._ov_rank(where or None)).strip())
+        texts["focus"] = self.focus_line()[0]                 # 2.73.0: League Focus's line
         for k, lab in self.tk_ov_lbls.items():
             lab.config(text=texts.get(k, ""))
         if getattr(self, "tk_ov_clock", None) is not None:
@@ -1001,6 +1036,8 @@ class TrackerPage:
         """The Mechanic Helper bar's cells: on (green) / off (red) / needs attention, Ritual's live count."""
         if getattr(self, "tk_ov_alerts", None):
             states = self.alert_states()
+            from . import focus as F                               # 2.73.0: the Focus switch on the bar
+            states["focus"] = "on" if F.cfg()["on"] else "off"
             for k, (dot, lab) in self.tk_ov_alerts.items():
                 st = states.get(k, "off")
                 txt = k.title()
@@ -1016,13 +1053,18 @@ class TrackerPage:
     def tracker_helpers_sync(self):
         """2.49.0 (feedback: "it's a different bar, independent of the session tracker"): the bar shows whenever its
         switch is on - timer or not, session or not - and only while the game is in front (like every overlay)."""
-        on = bool(self.tracker_cfg().get("alerts_bar", True))         # 2.70.1: its own switch, timer or not
-        if on != bool(getattr(self, "mg_built", {}).get("helpers")) or (on and getattr(self, "mg_win", None) is None):
+        on = bool(self.bar_chips())          # 2.70.1: its own switch, timer or not; 2.73.0: or the Focus switch
+        shown = set(getattr(self, "tk_ov_alerts", None) or {})
+        if on != bool(getattr(self, "mg_built", {}).get("helpers")) or (on and getattr(self, "mg_win", None) is None) \
+                or (on and shown != set(self.bar_chips())):          # 2.73.0: which switches are on the bar changed
             self.merged_build()
         self.tracker_helpers_paint()
 
     def tracker_helper_click(self, key):
         """2.26.0: a click on a helper in the timer's bar switches it on / off."""
+        if key == "focus":                                         # 2.73.0: League Focus on / off
+            from . import focus as F
+            return self.focus_set_on(not F.cfg()["on"])
         on = self.alert_states().get(key, "off") != "off"
         try:
             self.alerts_toggle(key, not on)

@@ -4,7 +4,7 @@
 
 > **Who we build for - read second.** Path of Exile players are utilitarian: they love data and information, problem solving and creative thinking. So every feature shows its numbers *and how they were worked out*, lets you sort, filter, compare and export them (CSV), keeps power-user depth (keys, versions, raw data) one click away instead of hiding it, explains in plain words, and leaves the decision to the player. Pretty is welcome; vague is not.
 
-**Current version: 2.72.2**
+**Current version: 2.73.0**
 
 Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds features, 2.10.1 only fixes. Each step below is one release; we work through them top to bottom.
 
@@ -115,6 +115,7 @@ Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds f
 | 2.72.0 | Gear priced properly: filler / low-tier mods left out of the search, a real price when the listings back it up; uniques by roll; crafting bases by item level. |
 | 2.72.1 | Stackables poe.ninja doesn't list are priced from the trade site's bulk exchange (Wealth; a copied stack in Price checks). |
 | 2.72.2 | Notes: a right-click menu on each tab (Rename on the tab, New, Duplicate, Move, Copy, Clear, Reopen a closed note, Close). |
+| 2.73.0 | League Focus part 1: Overlay ↳ Game Plan (goals by phase, stockpile, farm plan, build lock, poke settings), the focus line on the overlay, a Focus switch on the bar; every feature's On and "on the bar" switches. |
 
 ## ▶ Next up
 
@@ -124,10 +125,13 @@ Order (decided 2.34.0): the Polish basics first, so new features are built on th
 
 | Version | Plan |
 |---|---|
-| 2.73.0 | **Public stash order test tool.** |
-| 2.74.0 | **Polish 4 - Responsive:** windows reflow when narrow (toolbars wrap, side panels drop under the list, sensible minimum sizes), sharp on every monitor (per-monitor DPI), a text size setting (100-150 %). |
-| 2.75.0 | **Polish 5 - Hover, focus, micro-interactions:** the same hover and pressed look on every button, row, icon and tab; a visible keyboard focus ring everywhere; short (120-180 ms) fades for popups and toasts, never on lists; a "Reduce motion" setting that turns them off. |
-| 2.76.0 | **Polish 6 - Visual hierarchy:** the suggestions below, window by window, with before / after screenshots in each PR. |
+| 2.73.1 | **League Focus part 2:** pokes over the game - the nudge (E), milestones from the log such as reaching maps (F), cheap-now stockpile prices (G), the new-character build-lock guard (H) - and the check-in every 45 min of play (J), with poke history. |
+| 2.74.0 | **Campaign Helper** (mockups L-T, pick pending): the campaign line on the overlay (L), the act route (M), campaign rewards (N), unknown zones for new acts (P), act splits (Q), its settings (R). Guide packs per patch (0.5.5: Acts I-IV, Interludes 1-3), updated from GitHub without an app update; zones the pack doesn't know are added from the log; Interludes can be dropped by a pack. Our own route data, from the public guides (credited). |
+| 2.75.0 | **Vendor search on the overlay** (O): in town, the act's vendor searches and your Regex favorites - one click copies, you paste with Ctrl+V (the app never types into the game). |
+| 2.76.0 | **Public stash order test tool.** |
+| 2.77.0 | **Polish 4 - Responsive:** windows reflow when narrow (toolbars wrap, side panels drop under the list, sensible minimum sizes), sharp on every monitor (per-monitor DPI), a text size setting (100-150 %). |
+| 2.78.0 | **Polish 5 - Hover, focus, micro-interactions:** the same hover and pressed look on every button, row, icon and tab; a visible keyboard focus ring everywhere; short (120-180 ms) fades for popups and toasts, never on lists; a "Reduce motion" setting that turns them off. |
+| 2.79.0 | **Polish 6 - Visual hierarchy:** the suggestions below, window by window, with before / after screenshots in each PR. |
 | Last | **Linux build** (Hyprland / Wayland first) - the groundwork is in place (session_linux_handover.txt). |
 
 ### Visual hierarchy - suggestions (for 2.47.0)

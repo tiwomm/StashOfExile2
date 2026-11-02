@@ -21,6 +21,13 @@ NEXT = [
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.73.0": [
+        "League Focus: Overlay ↳ Game Plan - set your league goals by phase, a stockpile to buy while it's cheap, your "
+        "farm plan and a build lock once, then forget it.",
+        "The overlay shows your current goal on a focus line, and a Focus switch sits on the bar next to Breach and "
+        "Delirium.",
+        "Overlay › Options › On the overlay: choose which features have a switch on the overlay's bar.",
+    ],
     "2.72.2": [
         "Notes: right-click a note's tab for Rename, New note, Duplicate, Move left / right, Copy, Clear, Reopen a "
         "closed note and Close. Right-click no longer closes a note by itself.",
