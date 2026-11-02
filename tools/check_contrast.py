@@ -1,8 +1,9 @@
-"""WCAG 2.1 AA contrast check for every theme x accent (2.34.0, Polish 1).
+"""WCAG 2.1 AA contrast check for every theme pack x accent (2.34.0, Polish 1; 2.60.0 theme packs).
 
   py tools/check_contrast.py      prints the lowest pairs, exit 1 if any text pair is under 4.5 : 1
 
-Pairs = the text colours the app puts on its surfaces (style.C / the button styles), after the theme recolours them."""
+Pairs = the text colours the app puts on its surfaces (style.C), the bevelled button / heading faces and the title
+bars - all from the pack itself."""
 import os
 import sys
 
@@ -26,36 +27,47 @@ def ratio(a, b):
 
 
 def pairs():
+    from soe2 import themes as TH
     C, mix = S.C, S.mix
-    a, r = C["accent"], C["red"]
+    t = TH.ST.theme
     out = []
     for surf in ("bg", "panel", "panel2", "odd", "stripe"):
         for fg in ("text", "muted", "steel", "accent", "good", "green", "red", "blue", "purple", "rare", "magic"):
             out.append((f"{fg} on {surf}", C[fg], C[surf]))
-    out += [("white on selected row", "#ffffff", C["sel"]),
-            ("list heading", "#cfe0ff", "#22365a"),
-            ("button", "#e6eeff", "#25395f"),
-            ("primary button", S.text_on(mix(a, "#000000", 0.15)), mix(a, "#000000", 0.15)),
-            ("quiet button", C["steel"], C["panel"]),
-            ("danger button", "#ffe9e6", mix(r, "#000000", 0.55)),
-            ("title bar child button", "#e8eefc", "#22345a")]
+    out.append(("selected row", t.c("selection_text", "#ffffff"), C["sel"]))
+    for spec, name in (("normal", "button"), ("heading", "list heading"), ("primary", "primary button"),
+                       ("danger", "danger button")):
+        bs = TH.button_spec(t, spec)
+        for k in ("fill", "hover"):
+            face = TH.grad_at(t.grad(bs[k]), 0.5)
+            if spec == "primary":
+                fg = TH.text_of(t, "primary", "text", S.text_on(TH.grad_at(t.grad(bs["fill"]), 0.5)))
+            elif spec == "danger":
+                fg = TH.text_of(t, "danger", "text", S.text_on(TH.grad_at(t.grad(bs["fill"]), 0.5), "#ffe9e6"))
+            else:
+                fg = TH.text_of(t, spec, "text" if k == "fill" else "text_hover", C["text"])
+            out.append((f"{name} ({k})", fg, face))
+    out.append(("quiet button", C["steel"], C["panel"]))
+    for kind in ("title", "title_off"):
+        spec = t.part("bars", kind)
+        out.append((f"{kind} bar", t.c(spec.get("text", "#ffffff")), TH.grad_at(t.grad(spec["fill"]), 0.5)))
     return out
 
 
 def run():
+    from soe2 import themes as TH
     worst, fails = [], []
     for theme in S.THEMES:
-        for accent in S.ACCENTS:
-            S.C.update(S._BASE)
+        for accent in ["theme"] + list(S.ACCENTS):
             S.apply_look(theme, accent)
             for name, fg, bg in pairs():
-                fg, bg = S.theme_color(fg), S.theme_color(bg)
+                with TH.raw():
+                    pass
                 r = ratio(fg, bg)
                 worst.append((r, theme, accent, name, fg, bg))
                 if r < AA:
                     fails.append((r, theme, accent, name, fg, bg))
-    S.C.update(S._BASE)
-    S.apply_look("midnight", "orange")
+    S.apply_look(TH.DEFAULT, "theme")
     return sorted(worst)[:8], sorted(fails)
 
 

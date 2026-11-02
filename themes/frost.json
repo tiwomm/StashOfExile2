@@ -1,0 +1,291 @@
+{
+ "schema": 1,
+ "id": "frost",
+ "name": "Frost Pane",
+ "order": 4,
+ "description": "Light glass and steel: glossy bars, cool blues, crisp white panes.",
+ "light": true,
+ "colors": {
+  "chassis": "#e1eaf4",
+  "surface": "#eef3f9",
+  "surface_raised": "#f7f9fc",
+  "surface_sunken": "#ffffff",
+  "surface_high": "#e3ebf5",
+  "border": "#b9c9dc",
+  "border_light": "#ffffff",
+  "border_dark": "#8ea7c4",
+  "shadow": "#c6d3e2",
+  "text": "#1e2a38",
+  "text_muted": "#4f5f73",
+  "text_strong": "#0b1622",
+  "text_disabled": "#9aa8b8",
+  "accent": "#1f66b8",
+  "accent_2": "#1d78c8",
+  "selection": "#cde6fb",
+  "selection_text": "#0b1622",
+  "hover": "#e5f3fd",
+  "stripe": "#f4f8fc",
+  "good": "#106a2c",
+  "warn": "#8a5a00",
+  "bad": "#b42323",
+  "money": "#7a5200",
+  "link": "#155fb0",
+  "normal": "#3b4048",
+  "magic": "#2a3db0",
+  "rare": "#735900",
+  "unique": "#b0521b",
+  "currency": "#6f5f37",
+  "gem": "#11807a",
+  "purple": "#6a3fb8",
+  "orange": "#a0560e"
+ },
+ "fonts": {
+  "head": [
+   "Segoe UI Semibold",
+   "Segoe UI",
+   "DejaVu Sans"
+  ],
+  "num": [
+   "Segoe UI Light",
+   "Segoe UI",
+   "DejaVu Sans"
+  ]
+ },
+ "bars": {
+  "title": {
+   "fill": [
+    [
+     0,
+     "#d4e5f7"
+    ],
+    [
+     0.48,
+     "#b3cfee"
+    ],
+    [
+     0.5,
+     "#8fb5e2"
+    ],
+    [
+     1,
+     "#a9c8ec"
+    ]
+   ],
+   "top": "#ffffff",
+   "bottom": "#6f92bd",
+   "text": "#0b1622",
+   "texture": "none"
+  },
+  "title_off": {
+   "fill": [
+    [
+     0,
+     "#dbe8f6"
+    ],
+    [
+     0.48,
+     "#c9dcf1"
+    ],
+    [
+     0.5,
+     "#b5ceea"
+    ],
+    [
+     1,
+     "#c4d8f0"
+    ]
+   ],
+   "top": "#ffffff",
+   "bottom": "#6f92bd",
+   "text": "#33465c",
+   "texture": "none"
+  }
+ },
+ "buttons": {
+  "normal": {
+   "fill": [
+    [
+     0,
+     "#f6f6f6"
+    ],
+    [
+     0.48,
+     "#ebebeb"
+    ],
+    [
+     0.5,
+     "#dddddd"
+    ],
+    [
+     1,
+     "#cfcfcf"
+    ]
+   ],
+   "hover": [
+    [
+     0,
+     "#eaf6fd"
+    ],
+    [
+     0.48,
+     "#d9f0fc"
+    ],
+    [
+     0.5,
+     "#bee6fd"
+    ],
+    [
+     1,
+     "#a7d9f5"
+    ]
+   ],
+   "pressed": [
+    [
+     0,
+     "#c4e5f6"
+    ],
+    [
+     0.48,
+     "#98d1ef"
+    ],
+    [
+     0.5,
+     "#68b3db"
+    ],
+    [
+     1,
+     "#9fd2ee"
+    ]
+   ],
+   "border": "#707070",
+   "hover_border": "#3c7fb1",
+   "inner": "#fcfcfc",
+   "radius": 3,
+   "text": "#0b1622",
+   "text_hover": "#0b1622"
+  },
+  "primary": {
+   "fill": [
+    [
+     0,
+     "#6aaee8"
+    ],
+    [
+     0.48,
+     "#3d8bd9"
+    ],
+    [
+     0.5,
+     "#1f66b8"
+    ],
+    [
+     1,
+     "#2f78c8"
+    ]
+   ],
+   "hover": [
+    [
+     0,
+     "#7cb9ec"
+    ],
+    [
+     0.48,
+     "#4b95de"
+    ],
+    [
+     0.5,
+     "#1b5ea9"
+    ],
+    [
+     1,
+     "#2a6fbb"
+    ]
+   ],
+   "pressed": [
+    [
+     0,
+     "#3b80c8"
+    ],
+    [
+     0.5,
+     "#2a6db8"
+    ],
+    [
+     1,
+     "#3b80c8"
+    ]
+   ],
+   "border": "#1f5794",
+   "hover_border": "#1f5794",
+   "inner": "#c9e4fb",
+   "radius": 3,
+   "text": "#ffffff",
+   "text_hover": "#ffffff"
+  },
+  "heading": {
+   "fill": [
+    [
+     0,
+     "#ffffff"
+    ],
+    [
+     0.5,
+     "#f7f8fa"
+    ],
+    [
+     0.5,
+     "#eef1f5"
+    ],
+    [
+     1,
+     "#e8ecf1"
+    ]
+   ],
+   "hover": [
+    [
+     0,
+     "#f4fafe"
+    ],
+    [
+     0.5,
+     "#e3f2fc"
+    ],
+    [
+     0.5,
+     "#d3ebfa"
+    ],
+    [
+     1,
+     "#c9e6f8"
+    ]
+   ],
+   "pressed": [
+    [
+     0,
+     "#c9e6f8"
+    ],
+    [
+     1,
+     "#e3f2fc"
+    ]
+   ],
+   "border": "#d5dde7",
+   "hover_border": "#88b6d9",
+   "inner": "#ffffff",
+   "radius": 0,
+   "text": "#2a3c52",
+   "text_hover": "#0b1622"
+  }
+ },
+ "card": {
+  "header": "glass",
+  "border": "#9bb2cc",
+  "sep": "#d6e0ec"
+ },
+ "meter": {
+  "style": "bar",
+  "on": "#37b54a",
+  "off": "#e6e6e6",
+  "lcd_bg": "#ffffff"
+ }
+}

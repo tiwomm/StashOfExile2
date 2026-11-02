@@ -67,14 +67,22 @@ def _blend(a, b, t):
 class GradientBar(tk.Canvas):
     """A canvas painted top-to-bottom from one color to another (title bars, taskbar)."""
 
-    def __init__(self, parent, height, colours, **kw):
+    def __init__(self, parent, height, colours, kind=None, **kw):
         super().__init__(parent, height=height, highlightthickness=0, bd=0, bg=colours[1], **kw)
         self.colours = colours
+        self.kind = kind                        # 2.60.0: "title" / "title_off" = the theme pack's own bar
+        if kind:
+            from . import themes as _th
+            _th.self_painted(self)
         self.bind("<Configure>", lambda e: self.paint())
 
     def paint(self, colours=None):
         if colours:
             self.colours = colours
+        if self.kind:
+            from . import themes as _th
+            _th.paint_bar(self, self.kind)
+            return
         self.delete("grad")
         h = max(1, self.winfo_height())
         w = self.winfo_width()
@@ -116,12 +124,14 @@ class DeskWindow(tk.Toplevel):
         self._g = None                         # where it is now
         self._move_job = None
         colours = UTIL_TITLE if utility else TITLE_ON
-        self.bar = GradientBar(self.inner, 30, colours)
+        self.bar = GradientBar(self.inner, 30, colours, kind="title")       # 2.60.0: drawn by the theme pack
         self.bar.pack(fill="x")
         self.accent = tk.Frame(self.inner, height=2, bg=C["accent"])
         self.accent.pack(fill="x")
-        self.lbl = self.bar.create_text(10, 15, text=f"{icon}  {title}", anchor="w", fill="#ffffff",
-                                        font=("Segoe UI", 10, "bold"))
+        from . import themes as _th
+        with _th.raw():
+            self.lbl = self.bar.create_text(10, 15, text=f"{icon}  {title}", anchor="w", fill=_th.bar_text("title"),
+                                            font=(_th.head_font(), 10, "bold"))
         self.btns = []
         for txt, cmd, bg in (("×", self.close, "#7a2a20"), ("□", self.toggle_max, "#22345a"), ("_", self.minimise, "#22345a")):
             b = tk.Label(self.bar, text=txt, bg=bg, fg="#cfe0ff", font=("Segoe UI", 9, "bold"), width=2,
@@ -189,12 +199,12 @@ class DeskWindow(tk.Toplevel):
             x -= b.winfo_reqwidth() + 6
 
     def set_active(self, on):
-        if self.utility:
-            colours = UTIL_TITLE if on else ("#2a2418", "#16120c")
-        else:
-            colours = TITLE_ON if on else TITLE_OFF
-        self.bar.paint(colours)
-        self.bar.itemconfigure(self.lbl, fill="#ffffff" if on else "#aab6cc")
+        from . import themes as _th
+        self._on = on
+        self.bar.kind = "title" if on else "title_off"
+        self.bar.paint()
+        with _th.raw():
+            self.bar.itemconfigure(self.lbl, fill=_th.bar_text(self.bar.kind), font=(_th.head_font(), 10, "bold"))
         self.accent.config(bg=C["accent"] if on else "#2b3d5f")
         border = BORDER_ON if on else BORDER_OFF
         self.config(bg=border)
@@ -481,15 +491,16 @@ class Shell:
         self.task_right = tk.Frame(self.task, bg="#111b30")
         self.task_right_id = self.task.create_window(0, TASK_H // 2, window=self.task_right, anchor="e")
         self.task.bind("<Configure>", lambda e: self.task.coords(self.task_right_id, e.width - 8, TASK_H // 2), add="+")
-        # 2.49.0 (the user): Toolkit sits at the left end of the taskbar - where a Start button would be - and opens
+        # 2.49.0: Toolkit sits at the left end of the taskbar - where a Start button would be - and opens
         # the Toolkit menu; Settings moved to the top of the dock (a cog). With the dock hidden, Settings shows here too.
         t = self.task
         t.create_rectangle(8, 6, DOCK_W - 8, TASK_H - 6, fill="#3a2a12", outline=C["accent"], tags=("tkbtn", "tkbox"))
         t.create_text(DOCK_W // 2, TASK_H // 2, text="◆  Toolkit", fill="#ffd9a8", font=("Segoe UI", 9, "bold"),
                       tags=("tkbtn", "tktxt"))
         t.tag_bind("tkbtn", "<Button-1>", lambda e: self.toggle_menu())
-        t.tag_bind("tkbtn", "<Enter>", lambda e: (t.config(cursor="hand2"), t.itemconfigure("tkbox", fill="#4e3816")))
-        t.tag_bind("tkbtn", "<Leave>", lambda e: (t.config(cursor=""), t.itemconfigure("tkbox", fill="#3a2a12")))
+        t.tag_bind("tkbtn", "<Enter>", lambda e: (t.config(cursor="hand2"), self._paint_tkbtn(True)))
+        t.tag_bind("tkbtn", "<Leave>", lambda e: (t.config(cursor=""), self._paint_tkbtn(False)))
+        self._paint_tkbtn(False)
         x0 = DOCK_W
         t.create_rectangle(x0, 6, x0 + DOCK_W - 16, TASK_H - 6, fill="#1c2a47", outline="#3d5582",
                            tags=("settings", "setbox"), state="hidden")
@@ -521,12 +532,41 @@ class Shell:
         # 2.10.0: typing that suddenly lands on a bare window (not the box you were typing in) goes back to that box
         self._typing = (None, 0.0)
         self.root.bind_all("<KeyPress>", self._note_typing, add="+")
+        from . import themes as _th
+        _th.subscribe(self.relook)
         self.root.bind_all("<FocusIn>", self._note_typing, add="+")
         for cls in ("Tk", "Toplevel"):
             self.root.bind_class(cls, "<KeyPress>", self._stray_key, add="+")
         self.root.after(1000, self._tick)
 
     # ---- 2.10.0: keys that lost their way
+    def _paint_tkbtn(self, hover):
+        """2.60.0: the Toolkit button follows the theme's accent."""
+        from . import themes as _th
+        a, bg = C["accent"], C["bg"]
+        with _th.raw():
+            self.task.itemconfigure("tkbox", fill=_th.mix(a, bg, .62 if hover else .76), outline=a)
+            self.task.itemconfigure("tktxt", fill=_th.mix(a, "#ffffff", .55) if not _th.ST.theme.light else _th.mix(a, "#000000", .45))
+
+    def relook(self, _theme=None):
+        """2.60.0: after a live theme swap - bars, dock, wallpaper and taskbar draw themselves again."""
+        for w in self.windows.values():
+            try:
+                w.set_active(getattr(w, "_on", False))
+            except tk.TclError:
+                pass
+        for fn in (self.task.paint, lambda: self._paint_tkbtn(False), self.paint_wallpaper, self.draw_dock,
+                   self.refresh_taskbar):
+            try:
+                fn()
+            except Exception:
+                pass
+        if self.cfg.get("desktop_icons"):
+            try:
+                self.draw_icons()
+            except Exception:
+                pass
+
     def _note_typing(self, e):
         w = e.widget
         try:
@@ -1208,13 +1248,17 @@ class Shell:
         self.menu = m
         self._place_menu()
         m.lift()
-        head = GradientBar(m, 62, TITLE_ON)
+        head = GradientBar(m, 62, TITLE_ON, kind="title")
         head.pack(fill="x")
         tk.Frame(m, height=2, bg=C["accent"]).pack(fill="x")
         if self.app_icon(2) is not None:
             head.create_image(31, 31, image=self.app_icon(2))
-        head.create_text(62, 22, text="StashOfExile2", anchor="w", fill="#ffffff", font=("Georgia", 15, "bold"))
-        head.create_text(62, 44, text=self.app.menu_subtitle(), anchor="w", fill="#9fb6dd", font=("Segoe UI", 9))
+        from . import themes as _th
+        with _th.raw():
+            tc = _th.bar_text("title")
+            head.create_text(62, 22, text="StashOfExile2", anchor="w", fill=tc, font=(_th.head_font(), 15, "bold"))
+            head.create_text(62, 44, text=self.app.menu_subtitle(), anchor="w", fill=_th.mix(tc, _th.ST.C["muted"], .45),
+                             font=("Segoe UI", 9))
         q = tk.StringVar()
         e = tk.Entry(m, textvariable=q, bg="#0b1222", fg=C["text"], insertbackground=C["text"], relief="flat",
                      highlightthickness=1, highlightbackground=C["line"], font=("Segoe UI", 10))

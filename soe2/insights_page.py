@@ -383,7 +383,7 @@ class InsightsPage:
         self.ins_pop_job = self.root.after(20000, self.ins_preview_close)   # never left lying around
 
     def _ins_pop_hooks(self):
-        """2.55.1 (the user): the item box goes away with Esc or Space, or a click anywhere that isn't on it. Set up
+        """2.55.1: the item box goes away with Esc or Space, or a click anywhere that isn't on it. Set up
         once, on every window; they do nothing while no box shows (Esc then minimizes as before: app.hk_esc)."""
         if getattr(self, "_ins_hooked", False):
             return

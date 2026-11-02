@@ -251,7 +251,7 @@ class UtilitiesPage:
         c1 = self._card(body, "Show / hide")
         g = tk.Frame(c1, bg=P2)
         g.pack(fill="x", pady=(4, 0))
-        # 2.59.0 (the user): no notes key - the note is part of the overlay; F6 shows / hides all of it
+        # 2.59.0: no notes key - the note is part of the overlay; F6 shows / hides all of it
         self.ov_vars["notes_key"] = tk.StringVar(value="")
         ttk.Button(g, text="Show / hide the note now", command=lambda: self.overlay.toggle_notes()).grid(
             row=0, column=0, sticky="w")

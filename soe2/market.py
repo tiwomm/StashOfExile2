@@ -638,7 +638,7 @@ class Market:
 
     def feed(self, item, div, copies=1, price_txt="", note=""):
         """An item and its price -> one listing at that price, kept with the ones the Mod book learns from (the same
-        way a sale is), and a row in 'fed' so you can see and undo it. 2.54.1 (the user): one item = one price - no
+        way a sale is), and a row in 'fed' so you can see and undo it. 2.54.1: one item = one price - no
         "counts as N listings"; and the price is optional - div None keeps the item (and its mods) with no listing,
         so nothing is priced from it. -> its sig, or None."""
         if not self.db or (div is not None and div <= 0):
