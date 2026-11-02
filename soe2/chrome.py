@@ -102,7 +102,7 @@ class Viewport(tk.Frame):
             self.body.pack_configure(padx=len(layers), pady=len(layers))
 
 
-def section(parent, title, note="", bg_key="panel2", padx=16, pady=8, expand=False):
+def section(parent, title, note="", bg_key="panel2", padx=16, pady=8, expand=False, wrap=False):
     """2.69.0: a part of a page the way Price checks draws them - the theme's header strip with the title, and a
     sunken frame under it. -> (outer, inner): place outer (pack / grid), put the content in inner.
     inner.section_outer / outer.section_title / outer.section_bar are set for code that needs them."""
@@ -114,7 +114,14 @@ def section(parent, title, note="", bg_key="panel2", padx=16, pady=8, expand=Fal
     inner = tk.Frame(vp.body, bg=C[bg_key], padx=padx, pady=pady)
     inner.pack(fill="both", expand=True)
     if note:
-        tk.Label(inner, text=note, bg=C[bg_key], fg=C["muted"], font=("Segoe UI", 9), anchor="w", justify="left",
-                 wraplength=600).pack(fill="x", pady=(0, 8))
+        nl = tk.Label(inner, text=note, bg=C[bg_key], fg=C["muted"], font=("Segoe UI", 9), anchor="w", justify="left",
+                      wraplength=600)
+        nl.pack(fill="x", pady=(0, 8))
+        if wrap:                                         # 2.70.0: the note wraps to the section's width (a fixed-size
+            def rewrap(e):                               # window only - damped, so it can't feed back on itself)
+                want = min(600, e.width - 4)
+                if e.width > 40 and abs(int(nl.cget("wraplength")) - want) > 24:
+                    nl.config(wraplength=want)
+            nl.bind("<Configure>", rewrap)
     inner.section_outer, outer.section_title, outer.section_bar = outer, title, bar
     return outer, inner

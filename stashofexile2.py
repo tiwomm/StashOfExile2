@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU GPL v3.0 (see LICENSE). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.69.3
+VERSION 2.70.0
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,6 +19,15 @@ VERSION 2.69.3
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.70.0
+       Strat Tracker part 2. The setup editor is 5 short steps (ledger_page.Steps: numbered steps along the top,
+       click one to go there; Back / Next, Enter goes on): Name & strat, Waystone, Tablets & more, Atlas, Logging -
+       each in a header-strip section - with "Cost of one run" always at the right (the total in big type, the
+       parts under it). A new setup saves at the end; an edited one from any step. Ctrl+Alt+C of an item jumps to
+       its step. The log-loot box is 3 steps: Runs (with what those runs cost), Loot (Ctrl+Alt+C a drop jumps
+       here), Profit (loot, cost, profit, note; Log it). Later / Skip on every step. Card.TRadiobutton style;
+       chrome.section(wrap=True): its note wraps to
+       the section's width (damped; only the editor uses it - on every page a theme swap made it loop).
   2.69.3
        Session: the game closing (or crashing) while a session is open is noticed (overlay.game_open, window titles
        only, every 5 s). After 15 s gone the session pauses at the moment it went (that time isn't counted) and the
@@ -1560,7 +1569,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.69.3"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.70.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
