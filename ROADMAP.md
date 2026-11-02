@@ -4,7 +4,7 @@
 
 > **Who we build for - read second.** Path of Exile players are utilitarian: they love data and information, problem solving and creative thinking. So every feature shows its numbers *and how they were worked out*, lets you sort, filter, compare and export them (CSV), keeps power-user depth (keys, versions, raw data) one click away instead of hiding it, explains in plain words, and leaves the decision to the player. Pretty is welcome; vague is not.
 
-**Current version: 2.68.0**
+**Current version: 2.68.1**
 
 Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds features, 2.10.1 only fixes. Each step below is one release; we work through them top to bottom.
 
@@ -104,6 +104,7 @@ Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds f
 | 2.67.1 | Money Makers › Tablet Crafting renamed Tablet Craft Helper. |
 | 2.67.2 | The XP bar overlay in two rows: the switches on top, the numbers under them. |
 | 2.68.0 | Farm Tracker is now Strat Tracker; waystones pick their endgame numbers (and search by them); the setup window stays in front after Done / Skip. |
+| 2.68.1 | Notes is part of the overlay: its settings section and every trace of a notes key are gone. |
 
 ## ▶ Next up
 
