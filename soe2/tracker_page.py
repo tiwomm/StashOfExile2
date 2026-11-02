@@ -660,6 +660,8 @@ class TrackerPage:
                     if kind == "party":
                         self.tk_others = getattr(self, "tk_others", set()) | {data["who"].lower()}
                         continue
+                    if kind in ("area", "level"):              # 2.73.1: League Focus watches these too
+                        self.focus_log(kind, data)
                     if kind == "death" and not self.tracker_is_me(data["who"]):
                         continue                              # a party member died, not you
                     changed |= s.feed(kind, ts, data)
@@ -677,6 +679,7 @@ class TrackerPage:
                 if changed:
                     self.tracker_fill_maps()
             self.tracker_game_watch()
+            self.focus_tick()                                 # 2.73.1: a League Focus poke due?
             self.tracker_draw()
         except Exception:
             self.log_error("session tracker")

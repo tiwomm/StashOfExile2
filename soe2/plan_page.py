@@ -326,7 +326,7 @@ class GamePlanPage:
         lk = F.cfg()["lock"]
         o, box = chrome_section(parent, "Build lock", "Stop the reroll itch: your league starter, and when you're "
                                                       "allowed to switch. A new level-1 character in the log gets a "
-                                                      "poke first (2.73.1).", wrap=True)
+                                                      "poke first.", wrap=True)
         o.pack(fill="x", pady=(0, 8))
         self.gp_lock_on = tk.BooleanVar(value=bool(lk["on"]))
         ttk.Checkbutton(box, text="Build lock on", variable=self.gp_lock_on, style="Card.TCheckbutton",
@@ -348,7 +348,7 @@ class GamePlanPage:
             lk[k] = v.get().strip()
         F.save()
 
-    # ---------------- K: poke settings (the pokes themselves arrive in 2.73.1)
+    # ---------------- K: poke settings
     def _gp_pokes(self, parent):
         P2 = C["panel2"]
         pk = F.cfg()["pokes"]
@@ -383,10 +383,22 @@ class GamePlanPage:
             self.gp_poke_vars[key] = v
         tr = tk.Frame(box, bg=P2)
         tr.pack(fill="x", pady=(8, 0))
+        ttk.Button(tr, text="Test a poke", command=self.focus_test).pack(side="right")
+        ttk.Button(tr, text="History", command=self.focus_history, style="Quiet.TButton").pack(side="right", padx=8)
         tk.Label(tr, text="Tone", bg=P2, fg=C["text"]).pack(side="left")
         self.gp_tone = SegBar(tr, list(F.TONES), command=lambda v: self.gp_pokes_save(), size=9, pad=(8, 4), bg=P2)
         self.gp_tone.pack(side="left", padx=8)
         self.gp_tone.pick(pk.get("tone", "Gentle"), notify=False)
+
+    def focus_history(self):
+        """The last pokes and what you answered."""
+        import time as _t
+        from tkinter import messagebox
+        h = F.cfg()["history"][-15:]
+        lines = [f"{_t.strftime('%b %d %H:%M', _t.localtime(x['ts']))}  {x['kind']}: {x['text'].splitlines()[0][:60]}"
+                 f"  ->  {x.get('answer') or '-'}" for x in reversed(h)] or ["No pokes yet."]
+        messagebox.showinfo("Poke history", "\n".join(lines), parent=self.root)
+        return lines
 
     def gp_pokes_save(self):
         pk = F.cfg()["pokes"]
@@ -412,3 +424,121 @@ class GamePlanPage:
         if hasattr(self, "gp_phase"):
             self.gp_phase.pick(F.phase_name(f["phase"]), notify=False)
         self.gp_on.set(bool(f["on"]))
+
+
+class FocusPokes:
+    """2.73.1: League Focus's pokes over the game - mixed into App. The session tracker's tick hands it the log's
+    events (focus_log) and asks every 10 s whether a poke is due (focus_tick); a poke is a small window at the top
+    middle of the game, in the overlay's look (the app's theme), that says why it showed up. A click answers it."""
+
+    def focus_log(self, kind, data):
+        from . import focus as F
+        ak = None
+        if kind == "area":
+            from .gamelog import area_kind
+            ak = area_kind(data.get("area"), data.get("seed"), data.get("level", 0))
+        try:
+            F.log_event(kind, data, ak)
+        except Exception:
+            self.log_error("League Focus (log)")
+
+    def focus_tick(self, now=None):
+        """-> the poke shown, or None."""
+        from . import focus as F
+        import time as _t
+        now = now or _t.time()
+        last = getattr(self, "_focus_last", None)
+        if last is not None and now - last < 10 and now >= last:
+            return None
+        s = self.tk_session
+        running = s is not None and s.ended is None and s.paused_at is None
+        played = (now - last) if (last is not None and running) else 0.0
+        self._focus_last = now
+        if getattr(self, "focus_win", None) is not None:
+            return None                                    # one at a time
+        where = (getattr(s, "where", None) or {}) if s is not None else {}
+        in_town = where.get("kind") in ("town", "hideout") if where else True
+        poke = F.due(now, in_town=in_town, session=s is not None and s.ended is None, played=played,
+                     prices=self.gp_each, have=self.gp_have)
+        if poke:
+            self.focus_show(poke)
+        return poke
+
+    def focus_show(self, poke):
+        from . import focus as F
+        from .overlaywin import OverlayWindow, pal
+        from .alerts_page import game_rect
+        title, text, why, buttons = F.poke_text(poke)
+        F.sent(poke)
+        P = pal()
+        r = game_rect() or (0, 0, self.root.winfo_screenwidth(), self.root.winfo_screenheight())
+        W = 460
+        geo = (r[0] + (r[2] - W) // 2, r[1] + int(r[3] * 0.08), W, None)
+        w = OverlayWindow(self.root, title.title(), "🎯", geo, palette=P, lockable=False, follow_game=True,
+                          no_activate=True, on_close=lambda: self.focus_answer(poke, "ok"))
+        bg, fg = P["bg"], P["text"]
+        body = tk.Frame(w.body, bg=bg, padx=16, pady=8)
+        body.pack(fill="both", expand=True)
+        tk.Label(body, text=text, bg=bg, fg=fg, font=(P["font"], 11), justify="left", anchor="w",
+                 wraplength=W - 40).pack(fill="x")
+        if F.cfg()["pokes"].get("why", True) and why:
+            tk.Label(body, text=why, bg=bg, fg=P["muted"], font=(P["font"], 9), justify="left", anchor="w",
+                     wraplength=W - 40).pack(fill="x", pady=(8, 0))
+        row = tk.Frame(body, bg=bg)
+        row.pack(fill="x", pady=(8, 0))
+        self.focus_btns = {}
+        for i, (key, label) in enumerate(buttons):
+            b = ttk.Button(row, text=label, style="Primary.TButton" if i == 0 else "TButton",
+                           command=lambda k=key: self.focus_answer(poke, k))
+            b.pack(side="left", padx=(0, 8))
+            self.focus_btns[key] = b
+        self.focus_win, self.focus_poke = w, poke
+        w.show()
+        pk = F.cfg()["pokes"]
+        if pk.get("sound"):
+            try:
+                self.root.bell()
+            except tk.TclError:
+                pass
+        if pk.get("windows") and getattr(self, "tray", None) is not None:
+            try:
+                from .overlay import game_active
+                if not game_active():
+                    self.tray.notify(f"{title.title()}: {text.splitlines()[0]}")
+            except Exception:
+                pass
+        return w
+
+    def focus_answer(self, poke, what):
+        from . import focus as F
+        w, self.focus_win = getattr(self, "focus_win", None), None
+        if w is not None:
+            try:
+                w.destroy()
+            except tk.TclError:
+                pass
+        F.answer(poke, what)
+        if what in ("plan", "sidetracked"):
+            try:
+                self.shell.open("plan")
+                self.gp_fill()
+            except Exception:
+                pass
+        elif what == "exchange":
+            import webbrowser
+            from urllib.parse import quote
+            from .config import SETTINGS
+            webbrowser.open("https://www.pathofexile.com/trade2/exchange/poe2/" + quote(SETTINGS.get("league") or ""))
+        elif what == "done":
+            self.gp_fill()
+            self.gp_overlay()
+        return what
+
+    def focus_test(self):
+        """Settings: Test a poke - a nudge (made up if the plan has no goal yet)."""
+        from . import focus as F
+        g = F.current()
+        poke = {"kind": "nudge", "goal": g["id"]} if g else {"kind": "checkin", "goal": None}
+        if getattr(self, "focus_win", None) is not None:
+            self.focus_answer(self.focus_poke, "ok")
+        return self.focus_show(poke)

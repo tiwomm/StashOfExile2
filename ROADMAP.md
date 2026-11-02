@@ -4,7 +4,7 @@
 
 > **Who we build for - read second.** Path of Exile players are utilitarian: they love data and information, problem solving and creative thinking. So every feature shows its numbers *and how they were worked out*, lets you sort, filter, compare and export them (CSV), keeps power-user depth (keys, versions, raw data) one click away instead of hiding it, explains in plain words, and leaves the decision to the player. Pretty is welcome; vague is not.
 
-**Current version: 2.73.0**
+**Current version: 2.73.1**
 
 Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds features, 2.10.1 only fixes. Each step below is one release; we work through them top to bottom.
 
@@ -116,6 +116,7 @@ Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds f
 | 2.72.1 | Stackables poe.ninja doesn't list are priced from the trade site's bulk exchange (Wealth; a copied stack in Price checks). |
 | 2.72.2 | Notes: a right-click menu on each tab (Rename on the tab, New, Duplicate, Move, Copy, Clear, Reopen a closed note, Close). |
 | 2.73.0 | League Focus part 1: Overlay ↳ Game Plan (goals by phase, stockpile, farm plan, build lock, poke settings), the focus line on the overlay, a Focus switch on the bar; every feature's On and "on the bar" switches. |
+| 2.73.1 | League Focus part 2: pokes over the game - nudge, reaching maps, cheap stockpile prices, the build lock's new-character guard, the check-in - with limits, quiet hours, tone, history. |
 
 ## ▶ Next up
 
@@ -125,7 +126,6 @@ Order (decided 2.34.0): the Polish basics first, so new features are built on th
 
 | Version | Plan |
 |---|---|
-| 2.73.1 | **League Focus part 2:** pokes over the game - the nudge (E), milestones from the log such as reaching maps (F), cheap-now stockpile prices (G), the new-character build-lock guard (H) - and the check-in every 45 min of play (J), with poke history. |
 | 2.73.2 | **Price checks fixes:** items read from a stash tab show only in the Stash tab list (they also showed in Manual Add); pause / reprioritize items waiting to be priced (pause one or all, price this one next, move up / down); an Item level column in the list (with Item, Valuable mods, Type, Status ...). |
 | 2.74.0 | **Campaign Helper** (mockups L-T, all kept): the campaign line on the overlay (L), the act route (M), campaign rewards (N), vendor search in town (O, was 2.75.0), unknown zones for new acts (P), act splits (Q), its settings (R), every feature on / on the bar (S, T). The tracker follows the zone you're in - never a forced line: entering a zone jumps to its step, skipped steps show "passed" (not "done"), click any step or ◀ ▶ (and optional hotkeys) to say "I'm here", "Start from here" for a character that's partway through. Rewards: only what the log can prove is ticked by itself (zones reached, rewards that print a line, quest items used anywhere in the act); "missed" only when a zone was never entered - otherwise "Did you get it?" with Got it · Remind me in town · Skip it; ticks by hand always win. Routes need little upkeep: zones, levels and order are learned from the log as you play (a new act works on day 1, without tips), pooled from every player who shares (Community data sharing) into an "everyone goes this way" route, and rebuilt at patch time from the game's public area data (a GitHub Action); only tips and the reward list are written by hand (about 30 lines an act), with players' notes from the community board. |
 | 2.75.0 | **Public stash order test tool.** |
