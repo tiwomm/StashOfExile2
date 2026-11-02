@@ -948,7 +948,7 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
                                          save_json("settings.json", SETTINGS))).pack(anchor="w", pady=(8, 0))
 
         # ======== Hotkeys
-        row = section("Hotkeys", "Hotkeys", "Every key the app listens for, in one place. Click a box and press the "
+        row = section("Hotkeys", "Hotkeys", "Every key the app listens for - this is the only place keys are set. Click a box and press the "
                                             "key you want (with Ctrl / Alt / Shift if you like, or a mouse button); "
                                             "it's saved straight away. Esc keeps the old key, Backspace or "
                                             "right-click clears it. Two things on the same key show in red.")
@@ -1292,29 +1292,57 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
                 if k in seen:
                     clash_keys |= {seen[k], what}
                 seen.setdefault(k, what)
-        for i, (what, key, where, kid) in enumerate(self.all_hotkeys()):
+        i, group = 0, None
+        self.hk_rows = {}
+        for what, key, where, kid in self.all_hotkeys():
+            if where != group:                                    # 2.57.0: a heading per group
+                group = where
+                tk.Label(f, text=group.upper(), bg=P2, fg=C["accent"], font=("Segoe UI", 9, "bold"), anchor="w").grid(
+                    row=i, column=0, columnspan=3, sticky="w", pady=(10 if i else 0, 2))
+                i += 1
             col = C["red"] if what in clash_keys else C["text"]
-            tk.Label(f, text=what, bg=P2, fg=col, anchor="w").grid(row=i, column=0, sticky="w", padx=(0, 12))
+            lab = tk.Label(f, text=what, bg=P2, fg=col, anchor="w")
+            lab.grid(row=i, column=0, sticky="w", padx=(12, 12))
             if kid:
                 v = tk.StringVar(value=key)
                 self.hk_vars[kid] = v
                 kc = KeyCapture(f, v, width=16, on_change=lambda t: self.root.after(10, self.save_hotkeys))   # 2.0 beta 16
                 kc.grid(row=i, column=1, sticky="w", pady=1)
+                self.hk_rows[kid] = (lab, kc)
                 if what in clash_keys:
                     kc.config(fg=col)
             else:
                 tk.Label(f, text=key_label(key) if key else "-", bg=P2, fg=col, anchor="w", font=(MONO, 9)).grid(
                     row=i, column=1, sticky="w")
-            tk.Label(f, text=where if where != "fixed" else "always on - the game's own copy, can't be changed",
-                     bg=P2, fg=C["muted"], font=("Segoe UI", 9)).grid(row=i, column=2, sticky="w", padx=(12, 0))
-            if kid == "checks:quick_copy_key" and key:              # 2.0 beta 21: a warning and the way back
-                i_w = len(self.all_hotkeys()) + 1
-                warn = tk.Frame(f, bg="#2a2110", padx=8, pady=8, highlightthickness=1, highlightbackground="#7a6428")
-                warn.grid(row=i_w, column=0, columnspan=3, sticky="we", pady=(8, 0))
-                tk.Label(warn, text="⚠ One-key copy is experimental. Ctrl+Alt+C is the reliable way to copy items: if "
-                                    "copies go missing or keys seem stuck in game, reset it.", bg="#2a2110",
-                         fg=C["good"], wraplength=520, justify="left", anchor="w").pack(side="left", fill="x", expand=True)
-                ttk.Button(warn, text="Reset to Ctrl+Alt+C only", command=self.reset_quick_copy).pack(side="right", padx=(8, 0))
+            if not kid:
+                tk.Label(f, text="the game's own copy - always on", bg=P2, fg=C["muted"],
+                         font=("Segoe UI", 9)).grid(row=i, column=2, sticky="w", padx=(12, 0))
+            i += 1
+        key = SETTINGS.get("quick_copy_key", "")
+        if key:                                                   # 2.0 beta 21: a warning and the way back
+            warn = tk.Frame(f, bg="#2a2110", padx=8, pady=8, highlightthickness=1, highlightbackground="#7a6428")
+            warn.grid(row=i + 1, column=0, columnspan=3, sticky="we", pady=(8, 0))
+            tk.Label(warn, text="⚠ One-key copy is experimental. Ctrl+Alt+C is the reliable way to copy items: if "
+                                "copies go missing or keys seem stuck in game, reset it.", bg="#2a2110",
+                     fg=C["good"], wraplength=520, justify="left", anchor="w").pack(side="left", fill="x", expand=True)
+            ttk.Button(warn, text="Reset to Ctrl+Alt+C only", command=self.reset_quick_copy).pack(side="right", padx=(8, 0))
+
+    def hotkeys_open(self, kid=None):
+        """2.57.0: Settings › Hotkeys, where every key is set - the row asked for is lit up for a moment."""
+        self.shell.open("settings")
+        try:
+            self.set_nb.select(self.set_nb.titles.index("Hotkeys"))
+        except (ValueError, AttributeError, tk.TclError):
+            pass
+        row = getattr(self, "hk_rows", {}).get(kid)
+        if row:
+            lab = row[0]
+            lab.config(bg=C["accent"], fg="#1a1206")
+            self.root.after(1600, lambda: lab.winfo_exists() and lab.config(bg=C["panel2"], fg=C["text"]))
+            try:
+                row[1].focus_set()
+            except tk.TclError:
+                pass
 
     def reset_quick_copy(self):
         SETTINGS["quick_copy_key"] = ""
@@ -1332,6 +1360,15 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
                 bad.append(txt)
                 continue
             where, key = kid.split(":")
+            if where == "cmd":                                     # 2.57.0: chat command keys are set here too
+                cmds = self.overlay.cfg.get("commands", []) or []
+                n = int(key)
+                if n < len(cmds):
+                    cmds[n]["key"] = txt
+                    rows = getattr(self, "ov_cmd_vars", [])
+                    if n < len(rows) and rows[n][1].get() != txt:
+                        rows[n][1].set(txt)
+                continue
             if where == "checks":
                 SETTINGS[key] = txt
                 if key == "regex_key" and hasattr(self, "rx_key_var") and self.rx_key_var.get() != txt:
@@ -1349,6 +1386,12 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         self.overlay.rebind()
         self.overlay.save_settings()
         save_json("settings.json", SETTINGS)
+        for refresh in ("_tk_keys_text", "_rx_key_text", "_notes_key_text", "_chat_keys_text"):
+            if hasattr(self, refresh):                             # 2.57.0: the places that show a key
+                try:
+                    getattr(self, refresh)()
+                except Exception:
+                    pass
         self.fill_hotkeys()
         clash = self.hotkey_clashes()
         self.hk_msg.config(text=("Not understood: " + ", ".join(bad)) if bad else

@@ -9,7 +9,7 @@ from tkinter import simpledialog, ttk
 from . import regex as R
 from .clipboard import read_clipboard_text
 from .config import load_json, save_json, SETTINGS
-from .style import C, KeyCapture, MONO, SegBar
+from .style import C, MONO, SegBar
 
 KIND_NAMES = {"tablet": "Tablets", "waystone": "Waystones", "relic": "Relics", "jewel": "Jewels",
               "gear": "Gear items"}                         # 2.22.0: jewels and gear
@@ -73,7 +73,12 @@ class RegexPage:
         hk.pack(fill="x", pady=(0, 8))
         tk.Label(hk, text="Regex key", bg=P1, fg=C["text"]).pack(side="left")
         self.rx_key_var = tk.StringVar(value=SETTINGS.get("regex_key", ""))
-        KeyCapture(hk, self.rx_key_var, width=14, on_change=self.rx_key_set).pack(side="left", padx=8)
+        # 2.57.0: shown here, set in Settings › Hotkeys (the one place for keys)
+        self.rx_key_lbl = tk.Label(hk, text="", bg=P1, fg=C["text"], font=("Consolas", 10))
+        self.rx_key_lbl.pack(side="left", padx=8)
+        ttk.Button(hk, text="Change…", style="Quiet.TButton",
+                   command=lambda: self.hotkeys_open("checks:regex_key")).pack(side="left", padx=(0, 8))
+        self._rx_key_text()
         tk.Label(hk, text="copies", bg=P1, fg=C["muted"]).pack(side="left")
         self.rx_hk_var = tk.StringVar()
         self.rx_hk_box = ttk.Combobox(hk, textvariable=self.rx_hk_var, state="readonly", width=34)
@@ -702,9 +707,17 @@ class RegexPage:
         self.toast.show("Stash search copied", [f"{label} ({len(s)} characters)",
                                                 "In your stash: Ctrl+F, then Ctrl+V."], C["accent"], 4)
 
+    def _rx_key_text(self):
+        from .overlay import key_label
+        k = SETTINGS.get("regex_key", "")
+        self.rx_key_var.set(k)
+        if getattr(self, "rx_key_lbl", None) is not None:
+            self.rx_key_lbl.config(text=key_label(k) if k else "none", fg=C["text"] if k else C["muted"])
+
     def rx_key_set(self, text):
         SETTINGS["regex_key"] = text
         save_json("settings.json", SETTINGS)
+        self._rx_key_text()
         if hasattr(self, "fill_hotkeys"):
             self.fill_hotkeys()
         self.update_mouse_watch()
