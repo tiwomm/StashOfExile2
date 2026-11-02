@@ -21,6 +21,13 @@ NEXT = [
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.68.0": [
+        "Farm Tracker is now Strat Tracker.",
+        "Strat Tracker: for a waystone, \"which numbers make this setup work?\" now lists its Pack Size, Item "
+        "Rarity, Monster Rarity and the rest - what the trade site actually searches - and its Trade search uses "
+        "them with its tier.",
+        "Fixed: after Done or Skip, the setup window no longer disappears behind the app.",
+    ],
     "2.67.2": [
         "The XP bar overlay is tidier: the Breach / Delirium / Ritual / Remnant switches sit in their own row on top, "
         "your time and maps in the row under it.",

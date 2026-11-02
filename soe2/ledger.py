@@ -1,4 +1,4 @@
-"""Farm Tracker (2.45.0, was Money Makers' Run tracker): does a farming setup really make money?
+"""Strat Tracker (2.45.0, was Money Makers' Run tracker): does a farming setup really make money?
 
 A SETUP is what you farm with: a strat (optional), the waystone you run, your tablets (and how many runs each lasts),
 your atlas trees and notes, and any other cost per run. Changing it makes a new VERSION, so older numbers stay honest.
@@ -363,7 +363,7 @@ def _when(t):
 
 
 def logs_csv(d, sids=None):
-    """One row per log - the Farm Tracker's CSV (the same columns in every export)."""
+    """One row per log - the Strat Tracker's CSV (the same columns in every export)."""
     buf = io.StringIO()
     w = csv.writer(buf)
     w.writerow(CSV_LOG_HEAD)
@@ -395,7 +395,7 @@ def _f(x):
 
 
 def import_logs_csv(d, sid, v, text):
-    """Rows in the Farm Tracker CSV layout -> logs on this setup. -> how many were added."""
+    """Rows in the Strat Tracker CSV layout -> logs on this setup. -> how many were added."""
     rows = list(csv.DictReader(io.StringIO(text)))
     n = 0
     for r in rows:
@@ -427,7 +427,7 @@ def setup_json(d, sid):
 def import_setup_json(d, text):
     j = json.loads(text)
     if not isinstance(j, dict) or "setup" not in j:
-        raise ValueError("not a Farm Tracker setup file")
+        raise ValueError("not a Strat Tracker setup file")
     s = j["setup"]
     old = s["id"]
     s["id"] = _id()
@@ -447,4 +447,4 @@ def summary(s, f, v=None):
         return f"{s['name']}: no runs logged yet."
     ph = f"{f['per_hour']:.1f} div/h" if f.get("per_hour") is not None else "no profit logged"
     pr = f" ({f['profit_run']:+.2f} a run)" if f.get("profit_run") is not None else ""
-    return f"{s['name']}{f' v{v}' if v else ''}: {ph} over {f['runs']} runs{pr} - Farm Tracker, StashOfExile2"
+    return f"{s['name']}{f' v{v}' if v else ''}: {ph} over {f['runs']} runs{pr} - Strat Tracker, StashOfExile2"

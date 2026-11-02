@@ -29,17 +29,17 @@ class MoneyMakersPage:
     def build_money_window(self, body):
         P1 = C["panel"]
         self.mm_strats, self.mm_sel, self.mm_sort = [], None, ("thoughts_per_click", False)
-        self.mm_page = SegBar(body, ["Strats", "Lucrative Strats", "Tablet Craft Helper", "Farm Tracker"],
+        self.mm_page = SegBar(body, ["Strats", "Lucrative Strats", "Tablet Craft Helper", "Strat Tracker"],
                               command=lambda v: self.mm_show_page(), size=10, pad=(16, 4))
         self.mm_page.pack(anchor="w", padx=8, pady=(8, 0))
         if getattr(self, "shell", None) is not None:          # 2.64.0: its tabs are listed in the sidebar
             self.shell.register_tabs("money", self.mm_page)
         self.mm_pages = {name: tk.Frame(body, bg=P1) for name in self.mm_page.btns}
-        self.mm_strat_page, self.mm_run_page = self.mm_pages["Strats"], self.mm_pages["Farm Tracker"]
+        self.mm_strat_page, self.mm_run_page = self.mm_pages["Strats"], self.mm_pages["Strat Tracker"]
         self.mm_build_strats(self.mm_strat_page)
         self.mm_build_oneliners(self.mm_pages["Lucrative Strats"])
         self.mm_build_tablets(self.mm_pages["Tablet Craft Helper"])
-        self.build_ledger(self.mm_run_page)                  # 2.45.0: Farm Tracker (was Run tracker: ledger_page.py)
+        self.build_ledger(self.mm_run_page)                  # 2.45.0: Strat Tracker (was Run tracker: ledger_page.py)
         self.mm_strat_page.pack(fill="both", expand=True)
         self.mm_reload()
 
@@ -49,7 +49,7 @@ class MoneyMakersPage:
             if name != cur:
                 f.pack_forget()
         self.mm_pages[cur].pack(fill="both", expand=True)
-        if cur == "Farm Tracker":
+        if cur == "Strat Tracker":
             self.fl_refresh()
         elif cur == "Tablet Craft Helper":
             self.mm_tab_fill()
@@ -153,7 +153,7 @@ class MoneyMakersPage:
         acts = tk.Frame(right, bg=P2, padx=8, pady=8)
         acts.pack(fill="x")
         self.mm_btns = {}
-        for key, text, cmd, style in (("track", "▶ Farm Tracker", self.mm_track, "Primary.TButton"),
+        for key, text, cmd, style in (("track", "▶ Strat Tracker", self.mm_track, "Primary.TButton"),
                                       ("vote", "▲ Upvote", self.mm_vote, "TButton"),
                                       ("post", "📤 Post to Community", self.mm_post, "TButton"),
                                       ("regex", "Copy regex", self.mm_copy_regex, "TButton"),
@@ -390,17 +390,17 @@ class MoneyMakersPage:
             if got:
                 t.insert("end", group + "  ", "h")
                 t.insert("end", " · ".join(got) + "\n", "chip")
-        from . import ledger as L                                 # 2.45.0: your Farm Tracker numbers for it
+        from . import ledger as L                                 # 2.45.0: your Strat Tracker numbers for it
         d = self.fl_data()
         sids = {x["id"] for x in d["setups"] if x.get("strat") == s["id"]}
         f = L.figures([l for l in d["logs"] if l["setup"] in sids]) if sids else None
         if f and f["runs"]:
-            t.insert("end", "Your Farm Tracker  ", "h")
+            t.insert("end", "Your Strat Tracker  ", "h")
             t.insert("end", f"{f['runs']} runs" + (f", {_hms(f['avg_run'])} each" if f["avg_run"] else "")
                             + (f", {f['per_hour']:.1f} div / h" if f["per_hour"] is not None else "") + "\n", "stat")
         if s.get("ledger"):
             lg = s["ledger"]
-            t.insert("end", "Author's Farm Tracker  ", "h")
+            t.insert("end", "Author's Strat Tracker  ", "h")
             t.insert("end", ", ".join(f"{v:g} {k.replace('_div', 'd').replace('_', ' ')}" for k, v in lg.items()) + "\n",
                      "meta")
         for key, title in (("requirements", "Requirements"), ("tablets", "Tablets"), ("waystones", "Waystones"),
@@ -442,7 +442,7 @@ class MoneyMakersPage:
             return
         post, me = s.get("_post") or {}, B.signed_in() or {}
         m = tk.Menu(self.root, tearoff=0, bg=C["panel2"], fg=C["text"], activebackground="#2c4a84")
-        m.add_command(label="▶ Track it in the Farm Tracker", command=self.mm_track)
+        m.add_command(label="▶ Track it in the Strat Tracker", command=self.mm_track)
         if s.get("regex"):
             m.add_command(label="Copy regex", command=self.mm_copy_regex)
         if post:
@@ -766,7 +766,7 @@ class MoneyMakersPage:
         return self.mm_write_strat(s, path)
 
     def mm_write_strat(self, s, path):
-        """2.46.0: a strat guide is a CSV file (the same layout as the Farm Tracker's numbers); JSON for the repo."""
+        """2.46.0: a strat guide is a CSV file (the same layout as the Strat Tracker's numbers); JSON for the repo."""
         if not path:
             return None
         if path.lower().endswith(".json"):
@@ -1019,9 +1019,9 @@ class MoneyMakersPage:
 
     # ---------------- the run tracker (its own, simple)
     def mm_track(self):
-        """A strat's "▶ Farm Tracker": its setup there (made if there's none yet)."""
+        """A strat's "▶ Strat Tracker": its setup there (made if there's none yet)."""
         s = self.mm_current()
-        self.mm_page.pick("Farm Tracker", notify=False)
+        self.mm_page.pick("Strat Tracker", notify=False)
         self.mm_show_page()
         if s:
             self.fl_for_strat(s["id"])

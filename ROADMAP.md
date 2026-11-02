@@ -4,7 +4,7 @@
 
 > **Who we build for - read second.** Path of Exile players are utilitarian: they love data and information, problem solving and creative thinking. So every feature shows its numbers *and how they were worked out*, lets you sort, filter, compare and export them (CSV), keeps power-user depth (keys, versions, raw data) one click away instead of hiding it, explains in plain words, and leaves the decision to the player. Pretty is welcome; vague is not.
 
-**Current version: 2.67.2**
+**Current version: 2.68.0**
 
 Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds features, 2.10.1 only fixes. Each step below is one release; we work through them top to bottom.
 
@@ -103,6 +103,7 @@ Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds f
 | 2.67.0 | Overlay: the Panel and the XP-bar Game bar only (switches in both); Notes in the overlay's look. Farm Tracker: one mods-matter question at a time, centered; no valuable-mods pop-up; Trade search + Copy regex per item. |
 | 2.67.1 | Money Makers › Tablet Crafting renamed Tablet Craft Helper. |
 | 2.67.2 | The XP bar overlay in two rows: the switches on top, the numbers under them. |
+| 2.68.0 | Farm Tracker is now Strat Tracker; waystones pick their endgame numbers (and search by them); the setup window stays in front after Done / Skip. |
 
 ## ▶ Next up
 
@@ -112,14 +113,14 @@ Order (decided 2.34.0): the Polish basics first, so new features are built on th
 
 | Version | Plan |
 |---|---|
-| 2.68.0 | **Redesign step 3:** the other tools in the same panel / section style (more steps as needed). |
-| 2.69.0 | **Farm Tracker part 2 (was Farm Ledger):** the setup as a short 5-step form with the cost of one run shown live; the log-loot box in 3 steps. |
-| 2.70.0 | **Strats browser redone:** filter buttons, strats as cards, a detail panel with Track in Farm Tracker and your own numbers. |
-| 2.71.0 | **More item types priced (Sidekick / Exiled Exchange-style):** a pricing engine for item types the app only guesses today. Their licenses are checked first; logic is ported, not code, with credit. |
-| 2.72.0 | **Public stash order test tool.** |
-| 2.73.0 | **Polish 4 - Responsive:** windows reflow when narrow (toolbars wrap, side panels drop under the list, sensible minimum sizes), sharp on every monitor (per-monitor DPI), a text size setting (100-150 %). |
-| 2.74.0 | **Polish 5 - Hover, focus, micro-interactions:** the same hover and pressed look on every button, row, icon and tab; a visible keyboard focus ring everywhere; short (120-180 ms) fades for popups and toasts, never on lists; a "Reduce motion" setting that turns them off. |
-| 2.75.0 | **Polish 6 - Visual hierarchy:** the suggestions below, window by window, with before / after screenshots in each PR. |
+| 2.69.0 | **Redesign step 3:** the other tools in the same panel / section style (more steps as needed). |
+| 2.70.0 | **Strat Tracker part 2 (was Farm Tracker):** the setup as a short 5-step form with the cost of one run shown live; the log-loot box in 3 steps. |
+| 2.71.0 | **Strats browser redone:** filter buttons, strats as cards, a detail panel with Track in Strat Tracker and your own numbers. |
+| 2.72.0 | **More item types priced (Sidekick / Exiled Exchange-style):** a pricing engine for item types the app only guesses today. Their licenses are checked first; logic is ported, not code, with credit. |
+| 2.73.0 | **Public stash order test tool.** |
+| 2.74.0 | **Polish 4 - Responsive:** windows reflow when narrow (toolbars wrap, side panels drop under the list, sensible minimum sizes), sharp on every monitor (per-monitor DPI), a text size setting (100-150 %). |
+| 2.75.0 | **Polish 5 - Hover, focus, micro-interactions:** the same hover and pressed look on every button, row, icon and tab; a visible keyboard focus ring everywhere; short (120-180 ms) fades for popups and toasts, never on lists; a "Reduce motion" setting that turns them off. |
+| 2.76.0 | **Polish 6 - Visual hierarchy:** the suggestions below, window by window, with before / after screenshots in each PR. |
 | Last | **Linux build** (Hyprland / Wayland first) - the groundwork is in place (session_linux_handover.txt). |
 
 ### Visual hierarchy - suggestions (for 2.47.0)
