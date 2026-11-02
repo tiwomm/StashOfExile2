@@ -2764,6 +2764,7 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
             else:
                 self.info_card(f"{name} x{qty:,} is a stack: currency isn't price-checked. (Counting it is part of "
                                "Wealth, a Labs feature: Settings > Labs.)")
+            self.stack_price(name, qty)                       # 2.72.1: what it's worth, in the status line
             return
         if g.get("stack") is not None:
             why = "stackable items are counted on the Wealth window, not price-checked here"
@@ -2919,6 +2920,30 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
     def read_any(text):
         """A copied item the price checker can price: tablets and jewels (their own checker), or any gear (1.41)."""
         return parse_item(text) or waystone.parse_waystone(text) or gear.parse_gear(text)
+
+    def stack_price(self, name, qty):
+        """2.72.1: a copied stack -> its worth in the status line: poe.ninja's price, or (not listed there) the trade
+        site's bulk exchange (one search, kept an hour). In the background; nothing is added to the list."""
+        def work():
+            from . import bulk
+            from .wealth import WPRICES
+            league = WPRICES.league or SETTINGS.get("league") or ""
+            each, src = WPRICES.named(name), "poe.ninja"
+            if each is None:
+                xid = bulk.exchange_id(name)
+                hit = bulk.price(league, xid, lambda a, c: RATES.to_div(a, c, league)) if xid else None
+                each, src = (hit[0], bulk.text(hit)) if hit else (None, None)
+            self.ui_q.put(("stack_priced", name, qty, each, src))
+        threading.Thread(target=work, daemon=True).start()
+
+    def ev_stack_priced(self, name, qty, each, src):
+        if each is None:
+            msg = f"{name}: no price on poe.ninja or the bulk exchange right now."
+        else:
+            msg = f"{name} x{qty:,}: {fmt_div(each * qty)} ({fmt_div(each)} each, {src})."
+        self.status_text, self.status_until = msg, time.time() + 20
+        self._say(msg, 12)
+        self.last_stack_price = (name, qty, each, src)
 
     def add_item_text(self, text, src=None):
         item = self.read_any(text)
