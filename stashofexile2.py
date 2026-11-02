@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU GPL v3.0 (see LICENSE). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.70.0
+VERSION 2.70.1
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,6 +19,14 @@ VERSION 2.70.0
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.70.1
+       Overlay page: the Hide timer button is gone (it took every number off the overlay, not just the timer). In
+       its place a "Timer over the game" switch - the session's time only. Options › On the overlay (was Timer):
+       a switch for each part - Session timer, This map's time, Maps done, Average map, Where you are (new), Clock,
+       Notes (2.68.1 forced it on; now your choice is kept, overlay notes_choice), Mechanic Helper switches (the
+       same switch as the Mechanic Helper page's; no longer forced on while the timer shows). Both looks (Panel, XP
+       bar) follow them. Options › Session holds autostart, the lock, your character, the Appearance link.
+       Card.TCheckbutton style. A session start always brings the overlay's numbers (cfg overlay migrated on).
   2.70.0
        Strat Tracker part 2. The setup editor is 5 short steps (ledger_page.Steps: numbered steps along the top,
        click one to go there; Back / Next, Enter goes on): Name & strat, Waystone, Tablets & more, Atlas, Logging -
@@ -1569,7 +1577,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.70.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.70.1"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 

@@ -3,8 +3,8 @@ over the game. 2.67.0: two looks, both the game's own - the Panel (a card like t
 plate, stats in a grid, the switches) and the Game bar (on the XP bar, in the HUD's own frame). 2.67.0: the four
 switches are in both whenever the timer shows. Notes opens as its own window from Notes ▾.
 
-Which parts show: the timer while it's shown (Show timer, or a session running - as before), the switches while the
-Mechanic Helper's switch is on. One window holds whatever is on; when nothing is, it's gone. ToS: it only shows
+Which parts show: the timer while a session runs (2.70.1: each part - the timer, each number, where you are, the clock,
+Notes, the switches - has its switch in Overlay › Options › On the overlay), the switches while their switch is on. One window holds whatever is on; when nothing is, it's gone. ToS: it only shows
 things - the same reading as the separate windows."""
 import tkinter as tk
 from tkinter import font as tkfont
@@ -151,7 +151,7 @@ class MergedOverlay:
     def merged_wants(self):
         oc = self.overlay.cfg
         return {"timer": bool(getattr(self, "mg_timer", False)),
-                "helpers": bool(self.tracker_cfg().get("alerts_bar", True)) or bool(getattr(self, "mg_timer", False)),
+                "helpers": bool(self.tracker_cfg().get("alerts_bar", True)),      # 2.70.1: its own switch
                 "notes": self.merged_embeds_notes() and bool(oc.get("notes_enabled")) and bool(oc.get("notes_visible"))}
 
     def merged_set(self, layout=None):
@@ -288,21 +288,22 @@ class MergedOverlay:
 
     def merged_close(self):
         """× on the one window: everything in it goes (the timer, the switches' bar, the note) - each comes back from
-        its own place (Show timer, Overlays › Mechanic Helper)."""
+        its own place (the next session, Overlay › Options › On the overlay)."""
         cfg = self.tracker_cfg()
         cfg["overlay"] = False
         cfg["alerts_bar"] = False
         if getattr(self, "al_bar", None) is not None:
             self.al_bar.set(False)
+        if getattr(self, "tk_switches_var", None) is not None:      # 2.70.1
+            self.tk_switches_var.set(False)
         self.mg_timer = False
         if self.overlay.cfg.get("notes_visible"):
             self.overlay.cfg["notes_visible"] = False
             self.overlay.save_settings()
         self.tracker_save()
         self.merged_destroy()
-        if getattr(self, "tk_ov_btn", None) is not None:
-            self.tk_ov_btn.config(text="Show timer")
-        self._say("Overlay closed. Show it again from Overlay (Show timer), or with F6.", 8)
+        self._say("Overlay closed. The numbers come back with your next session; the Mechanic Helper switches with "
+                  "their switch in Overlay › Options › On the overlay.", 8)
 
     # ---------------------------------------------------------------- pieces
     def _mg_halo(self, P):
@@ -480,11 +481,12 @@ class MergedOverlay:
         y = by1 + int(8 * k)
         grids = []
         colw = (gx1 - gx0) // 2
-        if want["timer"]:
-            cells = [("session", "\u23f1")]
-            for key, icon in (("map", "\u231b"), ("maps", "\u2691"), ("avg", "\u2248")):
-                if cfg["lines"].get(key, key == "map"):
+        cells = []
+        if want["timer"]:                                   # 2.70.1: each number has its switch (Options)
+            for key, icon in (("session", "\u23f1"), ("map", "\u231b"), ("maps", "\u2691"), ("avg", "\u2248")):
+                if cfg["lines"].get(key, True):
                     cells.append((key, icon))
+        if cells:
             rows = (len(cells) + 1) // 2
             rh = int(40 * k)
             grids.append((gx0, y, gx1, y + rows * rh, rows, 2 if len(cells) > 1 else 1))
@@ -726,26 +728,33 @@ class MergedOverlay:
             self._hud_clock(w, cv, P, gx - 2, mid)
             right = gx - fm.measure("00:00 PM") - 14
         x = lft
+        ln = cfg["lines"]                                    # 2.70.1: each part has its switch (Options)
         if want["timer"]:
-            t = self._mg_text(cv, P, x, mid, "session", (P["font"], self._hf(13), "bold"), fill=P["big"], cls=_Time)
-            pf = (P["font"], self._hf(7), "bold")              # 2.69.2: a small PAUSED tag after the time, room kept
-            t.tag = (cv.create_text(x, mid, text="", anchor="w", fill=P["muted"], font=pf, tags=("mg",)), "right")
-            fb_ = tkfont.Font(root=cv, family=P["font"], size=self._hf(13), weight="bold")
-            fp_ = tkfont.Font(root=cv, family=P["font"], size=self._hf(7), weight="bold")
-            x += max(fb_.measure("0:00:00") + 6 + fp_.measure("PAUSED"), fb_.measure("not tracking")) + 10
-            self._hud_sep(cv, P, x, H, cy=mid, h=int(H * 0.34) if two else None)
-            x += 14
-            self._mg_text(cv, P, x, mid, "map", f)
-            x += fm.measure("Map  00:00") + 10
-            need_rest = (fm.measure("Maps  000") + fm.measure("Avg  00:00") + 30 if (
-                cfg["lines"].get("maps") or cfg["lines"].get("avg")) else 0)
+            if ln.get("session", True):
+                t = self._mg_text(cv, P, x, mid, "session", (P["font"], self._hf(13), "bold"), fill=P["big"], cls=_Time)
+                pf = (P["font"], self._hf(7), "bold")          # 2.69.2: a small PAUSED tag after the time, room kept
+                t.tag = (cv.create_text(x, mid, text="", anchor="w", fill=P["muted"], font=pf, tags=("mg",)), "right")
+                fb_ = tkfont.Font(root=cv, family=P["font"], size=self._hf(13), weight="bold")
+                fp_ = tkfont.Font(root=cv, family=P["font"], size=self._hf(7), weight="bold")
+                x += max(fb_.measure("0:00:00") + 6 + fp_.measure("PAUSED"), fb_.measure("not tracking")) + 10
+                self._hud_sep(cv, P, x, H, cy=mid, h=int(H * 0.34) if two else None)
+                x += 14
+            if ln.get("map", True):
+                self._mg_text(cv, P, x, mid, "map", f)
+                x += fm.measure("Map  00:00") + 10
+            mw, aw = fm.measure("Maps  000") + 12, fm.measure("Avg  00:00") + 12
+            need_rest = (mw if ln.get("maps") else 0) + (aw if ln.get("avg") else 0)
             where_w = right - x - need_rest - 16
-            if where_w > 40:
+            if ln.get("where", True) and where_w > 40:
                 wt = self._mg_text(cv, P, x, mid, "where", f, fill=P["muted"], cls=_Trunc)
                 wt.limit = max(4, int(where_w / ((fm.measure("m") or 8) * 0.8)))
                 x += where_w
-            if need_rest:
+            elif need_rest:
+                x = max(x, right - need_rest - 16)
+            if ln.get("maps"):
                 self._mg_text(cv, P, x, mid, "maps", f)
-                self._mg_text(cv, P, x + fm.measure("Maps  000") + 12, mid, "avg", f)
+                x += mw
+            if ln.get("avg"):
+                self._mg_text(cv, P, x, mid, "avg", f)
         elif not two and self.overlay.cfg.get("notes_enabled"):
             self._mg_notes_button(w, cv, P, x, mid, anchor="w")

@@ -159,7 +159,7 @@ def switches(root, s):
         (name, {"side": "left", "sticky": ""}),
         ("Checkbutton.focus", {"side": "left", "sticky": "w", "children": [
             ("Checkbutton.label", {"sticky": "nswe"})]})]})]
-    for name in ("TCheckbutton", "Bar.TCheckbutton", "Mod.TCheckbutton"):
+    for name in ("TCheckbutton", "Bar.TCheckbutton", "Mod.TCheckbutton", "Card.TCheckbutton"):
         s.layout(name, layout)
         s.configure(name, padding=(0, 2))
 
@@ -230,6 +230,8 @@ def _setup_style(root, TH):
     s.map("TCheckbutton", background=[("active", C["bg"])])
     s.configure("Bar.TCheckbutton", background=C["panel"], foreground=C["text"], font=("Segoe UI", 10))
     s.map("Bar.TCheckbutton", background=[("active", C["panel"])])
+    s.configure("Card.TCheckbutton", background=C["panel2"], foreground=C["text"], font=("Segoe UI", 10))
+    s.map("Card.TCheckbutton", background=[("active", C["panel2"])])     # 2.70.1: a switch on a section's panel
     s.configure("Card.TRadiobutton", background=C["panel2"], foreground=C["text"], font=("Segoe UI", 10),
                 indicatorbackground=C["panel"], indicatorforeground=C["accent"])   # 2.70.0: on a section's panel
     s.map("Card.TRadiobutton", background=[("active", C["panel2"])])
