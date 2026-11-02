@@ -521,9 +521,9 @@ def stats(items, strat=None):
             "profit_per_hour": profit * 3600 / psecs if psecs else None}
 
 
-# ---------------------------------------------------------------- Tablet Crafting quick reference
+# ---------------------------------------------------------------- Tablet Craft Helper quick reference
 TABLET_TYPES = ("All", "Breach", "Delirium", "Ritual", "Expedition", "Abyss", "Overseer", "Temple")
-# The crafting flow, as the guide gives it (shown on the Tablet Crafting tab, and used by tablet_advice).
+# The crafting flow, as the guide gives it (shown on the Tablet Craft Helper tab, and used by tablet_advice).
 TABLET_FLOW = (("White tablet", "Orb of Transmutation, then Orb of Augmentation: 2 mods."),
                ("2 bad mods", "Orb of Alchemy."),
                ("2 good mods", "Regal Orb, then Exalted Orb."),

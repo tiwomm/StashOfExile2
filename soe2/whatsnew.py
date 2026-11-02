@@ -21,6 +21,9 @@ NEXT = [
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.67.1": [
+        "Money Makers › Tablet Crafting is now called Tablet Craft Helper.",
+    ],
     "2.67.0": [
         "Overlay layouts: the Panel and the Game bar on the XP bar - and the XP bar now has the Breach / Delirium / "
         "Ritual / Remnant switches too. Notes match the overlay's look and still move and resize.",
