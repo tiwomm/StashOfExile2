@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU GPL v3.0 (see LICENSE). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.65.0
+VERSION 2.65.1
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,6 +19,15 @@ VERSION 2.65.0
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.65.1
+       Game bar artwork (soe2/hudart.py, Pillow, drawn 3x and scaled down, cached per size): plate() - carved
+       stone (shade, mottling, grain), a bevelled bronze frame, end caps with a lozenge, flourishes and an amber
+       gem, a recessed well, a small crest on top; socket() - each switch in a recessed socket that lights up
+       (green-gold glow) when on; divider() - bronze dividers with a lozenge. Content sits inside the well
+       (_hud_frame returns its edges); a fading rule with a lozenge splits the beside-the-orbs timer. Without
+       Pillow the plain shaded bar is used. Sidebar fix: a click on a tool's own row goes back to its own page
+       from one of its tabs or child tools (Regex from Favorites -> Build a search, Overlay from Map library ->
+       Overlay); only on its own page does a click fold it. test_v2650 covers both.
   2.65.0
        Game bar overlay layouts (merged_page HUD = xpbar / orbs): "Game bar - on the XP bar" (one window between
        the orb panels, resting on the XP bar: time | map | maps · avg | the four switches, short names | Notes |
@@ -1453,7 +1462,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.65.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.65.1"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 

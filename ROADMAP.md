@@ -4,7 +4,7 @@
 
 > **Who we build for - read second.** Path of Exile players are utilitarian: they love data and information, problem solving and creative thinking. So every feature shows its numbers *and how they were worked out*, lets you sort, filter, compare and export them (CSV), keeps power-user depth (keys, versions, raw data) one click away instead of hiding it, explains in plain words, and leaves the decision to the player. Pretty is welcome; vague is not.
 
-**Current version: 2.65.0**
+**Current version: 2.65.1**
 
 Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds features, 2.10.1 only fixes. Each step below is one release; we work through them top to bottom.
 
@@ -97,6 +97,7 @@ Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds f
 | 2.63.0 | **Price checks (redesign step 2):** header strips over the list and the item, the list in a sunken frame, Search and Only ★ filters, the picked rows' buttons under the list, the item panel's own buttons; no more pop-up box on a click. |
 | 2.64.0 | Tabs in the sidebar: each page's tabs are listed under it with ↳ (Money Makers, Regex, Exchange rates, Mod book); Farm Ledger is now Farm Tracker. |
 | 2.65.0 | **Game bar overlay layouts:** on the XP bar, or split beside the life and mana orbs, in the game's own bar look, fitted to the game window (Fit to the game after a drag). The sidebar unfolds only the open tool; Regex lists just Favorites. |
+| 2.65.1 | Game bar artwork (carved stone, bronze frame, gem end caps, lit sockets); a click on a tool's row goes back to its own page from a tab or sub-tool. |
 
 ## ▶ Next up
 
