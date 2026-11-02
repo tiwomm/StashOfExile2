@@ -460,11 +460,138 @@ class Overlay:
                            highlightthickness=1, highlightbackground=fg)
             lab.pack(side="left", padx=(0, 2), pady=(0, 2))
             lab.bind("<Button-1>", lambda e, i=i: self.switch_tab(i))
-            lab.bind("<Double-1>", lambda e, i=i: self.rename_tab(i))
-            lab.bind("<Button-3>", lambda e, i=i: self.delete_tab(i))
+            lab.bind("<Double-1>", lambda e, i=i: self.rename_inline(i))
+            lab.bind("<Button-3>", lambda e, i=i: self.tab_menu(i, e.x_root, e.y_root))   # 2.72.2: a menu, not close
+            self.notes_tab_labels = getattr(self, "notes_tab_labels", {})
+            self.notes_tab_labels[i] = lab
         add = tk.Label(bar, text="+", bg=bg, fg=fg, padx=8, cursor="hand2", font=("Segoe UI", 9, "bold"))
         add.pack(side="left", pady=(0, 2))
         add.bind("<Button-1>", lambda e: self.add_tab())
+
+    # ---- 2.72.2: a sticky note's right-click menu
+    def tab_menu(self, i, x=None, y=None):
+        """Right-click a note's tab: Rename, New note, Duplicate, Move left / right, Copy its text, Clear it,
+        Reopen a closed note, Close."""
+        tabs = self.note_tabs()
+        if not 0 <= i < len(tabs):
+            return None
+        bg, fg = self.note_colours()
+        m = tk.Menu(self.notes or self.root, tearoff=0, bg=bg, fg=fg, activebackground=fg, activeforeground=bg)
+        m.add_command(label="Rename", command=lambda: self.rename_inline(i))
+        m.add_command(label="New note", command=self.add_tab, state="normal" if len(tabs) < 12 else "disabled")
+        m.add_command(label="Duplicate", command=lambda: self.duplicate_tab(i),
+                      state="normal" if len(tabs) < 12 else "disabled")
+        m.add_separator()
+        m.add_command(label="Move left", command=lambda: self.move_tab(i, -1), state="normal" if i > 0 else "disabled")
+        m.add_command(label="Move right", command=lambda: self.move_tab(i, 1),
+                      state="normal" if i < len(tabs) - 1 else "disabled")
+        m.add_separator()
+        m.add_command(label="Copy its text", command=lambda: self.copy_tab(i))
+        m.add_command(label="Clear its text…", command=lambda: self.clear_tab(i))
+        closed = self.cfg.get("notes_closed") or []
+        m.add_command(label=f"Reopen \"{closed[-1]['name']}\"" if closed else "Reopen a closed note",
+                      command=self.reopen_tab, state="normal" if closed and len(tabs) < 12 else "disabled")
+        m.add_separator()
+        m.add_command(label="Close", command=lambda: self.delete_tab(i), state="normal" if len(tabs) > 1 else "disabled")
+        self.notes_menu = m
+        if x is not None:
+            try:
+                m.tk_popup(x, y)
+            finally:
+                m.grab_release()
+        return m
+
+    def rename_inline(self, i):
+        """Rename a note right on its tab: type, Enter keeps it, Esc cancels."""
+        lab = (getattr(self, "notes_tab_labels", {}) or {}).get(i)
+        if lab is None or not lab.winfo_exists():
+            return self.rename_tab(i)
+        bg, fg = self.note_colours()
+        var = tk.StringVar(value=self.note_tabs()[i]["name"])
+        ent = tk.Entry(lab.master, textvariable=var, width=max(8, len(var.get()) + 2), bg=bg, fg=fg, insertbackground=fg,
+                       relief="flat", highlightthickness=1, highlightbackground=fg, font=("Segoe UI", 9))
+        ent.pack(side="left", padx=(0, 2), pady=(0, 2), before=lab)
+        lab.pack_forget()
+        ent.select_range(0, "end")
+        ent.focus_set()
+        done = {"v": False}
+
+        def keep(_e=None, ok=True):
+            if done["v"]:
+                return
+            done["v"] = True
+            if ok:
+                self.rename_tab(i, var.get())
+            self._paint_tabs()
+        ent.bind("<Return>", keep)
+        ent.bind("<FocusOut>", keep)
+        ent.bind("<Escape>", lambda e: keep(ok=False))
+        self.notes_rename_entry = ent
+        return ent
+
+    def duplicate_tab(self, i):
+        tabs = self.note_tabs()
+        if len(tabs) >= 12:
+            return None
+        self._keep_text()
+        tabs.insert(i + 1, {"name": (tabs[i]["name"] + " copy")[:30], "text": tabs[i]["text"]})
+        self.cfg["notes_tab"] = self.note_index()
+        self.switch_tab(i + 1)
+        return i + 1
+
+    def move_tab(self, i, step):
+        tabs = self.note_tabs()
+        j = i + step
+        if not (0 <= i < len(tabs) and 0 <= j < len(tabs)):
+            return False
+        self._keep_text()
+        cur = self.note_index()
+        tabs[i], tabs[j] = tabs[j], tabs[i]
+        self.cfg["notes_tab"] = j if cur == i else i if cur == j else cur
+        self.save_settings()
+        self._paint_tabs()
+        return True
+
+    def copy_tab(self, i):
+        self._keep_text()
+        t = self.note_tabs()[i]["text"]
+        try:
+            self.root.clipboard_clear()
+            self.root.clipboard_append(t)
+        except tk.TclError:
+            pass
+        return t
+
+    def clear_tab(self, i, ask=True):
+        self._keep_text()
+        tabs = self.note_tabs()
+        if ask and tabs[i]["text"].strip():
+            from tkinter import messagebox
+            if not messagebox.askyesno("Clear note", f"Clear what's on \"{tabs[i]['name']}\"?", parent=self.notes):
+                return False
+        self._remember_closed(tabs[i])                          # (Reopen brings the text back)
+        tabs[i]["text"] = ""
+        if i == self.note_index() and self.notes_text is not None:
+            self.notes_text.delete("1.0", "end")
+            self.notes_text.edit_modified(False)
+            self.cfg["notes_text"] = ""
+        self.save_settings()
+        return True
+
+    def _remember_closed(self, tab):
+        if tab.get("text", "").strip():
+            closed = [c for c in (self.cfg.get("notes_closed") or []) if c != tab][-4:]
+            self.cfg["notes_closed"] = closed + [dict(tab)]
+
+    def reopen_tab(self):
+        closed = self.cfg.get("notes_closed") or []
+        if not closed or len(self.note_tabs()) >= 12:
+            return None
+        tab = closed.pop()
+        self.cfg["notes_closed"] = closed
+        self.note_tabs().append(dict(tab))
+        self.switch_tab(len(self.note_tabs()) - 1)
+        return tab
 
     def switch_tab(self, i):
         if not 0 <= i < len(self.note_tabs()):
@@ -508,6 +635,7 @@ class Overlay:
             from tkinter import messagebox
             if not messagebox.askyesno("Delete note", f"Delete \"{tabs[i]['name']}\" and what's on it?", parent=self.notes):
                 return False
+        self._remember_closed(tabs[i])                          # 2.72.2: Reopen brings it back
         del tabs[i]
         cur = self.note_index()
         self.cfg["notes_tab"] = min(cur if cur < i else max(0, cur - 1), len(tabs) - 1)
