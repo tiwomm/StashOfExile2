@@ -25,6 +25,7 @@ NOTES = {
         "The app window's own title bar now takes the theme's colors too (Windows 11; on Windows 10 it turns dark "
         "or light to match).",
         "A fresh install starts by letting you pick a theme - you can change it any time in Settings › Appearance.",
+        "Fixed: the on / off switches in Settings could disappear after changing themes.",
     ],
     "2.60.0": [
         "Themes: ten looks for the whole app in Settings › Appearance - click one and it changes at once, nothing "
