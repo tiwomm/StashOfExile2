@@ -4,7 +4,7 @@
 
 > **Who we build for - read second.** Path of Exile players are utilitarian: they love data and information, problem solving and creative thinking. So every feature shows its numbers *and how they were worked out*, lets you sort, filter, compare and export them (CSV), keeps power-user depth (keys, versions, raw data) one click away instead of hiding it, explains in plain words, and leaves the decision to the player. Pretty is welcome; vague is not.
 
-**Current version: 2.67.0**
+**Current version: 2.67.1**
 
 Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds features, 2.10.1 only fixes. Each step below is one release; we work through them top to bottom.
 
@@ -101,6 +101,7 @@ Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds f
 | 2.66.1 | The Panel redrawn to match the game's Treasurer window (small-caps title band, red league band, gold numbers in charcoal boxes). |
 | 2.66.2 | The Panel redone: heavy dark-metal frame with filigree corners, framed header banner, stats in a 2 x 2 grid with icons and big gold numbers. |
 | 2.67.0 | Overlay: the Panel and the XP-bar Game bar only (switches in both); Notes in the overlay's look. Farm Tracker: one mods-matter question at a time, centered; no valuable-mods pop-up; Trade search + Copy regex per item. |
+| 2.67.1 | Money Makers › Tablet Crafting renamed Tablet Craft Helper. |
 
 ## ▶ Next up
 
@@ -154,7 +155,7 @@ Every new feature goes in one of three places:
 
 - **Top-level tool:** you open it on its own (dock, Toolkit menu, desktop icon). Now: Price checks, Wealth, Money Makers, Regex, Game search, Exchange rates, Calculator, Session tracker, Notes, Settings.
 - **Child tool:** built on one top-level tool's data. It is a button in the parent's title bar and sits indented under the parent in the Toolkit menu. Its window is called "Parent › Child". It is not on the dock. Now: Session tracker › Map library; Price checks › Mod book, Under the hood, Market Insights.
-- **Tab:** a different part of the same tool (e.g. Money Makers › Strats / Lucrative Strats / Tablet Crafting / Farm Tracker). **2.64.0: a page's tabs are listed in the sidebar under the page, indented with ↳ - never as a button row along the page's top.** 2.65.0: the sidebar shows only the tools at first; the open one unfolds. A tab that is the page itself is passed as `home=` and not listed (Regex: Build a search). Register the page's SegBar / SegBook with `shell.register_tabs("<key>", bar)` and the sidebar does the rest (a child tool's tabs go one step further in). Small switches that only change what a list or chart shows (Official / Community / Mine, Total / Daily, Item / How it's priced / Raw) stay on the page.
+- **Tab:** a different part of the same tool (e.g. Money Makers › Strats / Lucrative Strats / Tablet Craft Helper / Farm Tracker). **2.64.0: a page's tabs are listed in the sidebar under the page, indented with ↳ - never as a button row along the page's top.** 2.65.0: the sidebar shows only the tools at first; the open one unfolds. A tab that is the page itself is passed as `home=` and not listed (Regex: Build a search). Register the page's SegBar / SegBook with `shell.register_tabs("<key>", bar)` and the sidebar does the rest (a child tool's tabs go one step further in). Small switches that only change what a list or chart shows (Official / Community / Mine, Total / Daily, Item / How it's priced / Raw) stay on the page.
 
 **Look (2.34.0):** messages to the player go through `app_toast(text, title, kind=...)` (2.35.0); a list's own right-click actions go in `tree.menu_actions` (2.36.0).
 
