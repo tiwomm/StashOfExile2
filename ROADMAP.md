@@ -4,7 +4,7 @@
 
 > **Who we build for - read second.** Path of Exile players are utilitarian: they love data and information, problem solving and creative thinking. So every feature shows its numbers *and how they were worked out*, lets you sort, filter, compare and export them (CSV), keeps power-user depth (keys, versions, raw data) one click away instead of hiding it, explains in plain words, and leaves the decision to the player. Pretty is welcome; vague is not.
 
-**Current version: 2.55.0**
+**Current version: 2.55.1**
 
 Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds features, 2.10.1 only fixes. Each step below is one release; we work through them top to bottom.
 
@@ -83,6 +83,7 @@ Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds f
 | 2.54.0 | Money Makers filters: Thoughts per click, Clicks per hour. Profit leaves the Session timer: money is tracked in one place, the Farm Ledger. |
 | 2.54.1 | Manual feed: the price is optional (no price = the ticked mods are rated High); no "Counts as N listings" - one item is one price. |
 | 2.55.0 | One overlay window: Session timer, Mechanic Helper and Notes together (Merged switch splits them). New styles Codex and Minimal; Layout Panel or Strip for any style. |
+| 2.55.1 | The item box (Price checks, Insights) closes with Esc, Space or a click anywhere else. |
 
 ## ▶ Next up
 
