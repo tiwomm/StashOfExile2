@@ -4,7 +4,7 @@
 
 > **Who we build for - read second.** Path of Exile players are utilitarian: they love data and information, problem solving and creative thinking. So every feature shows its numbers *and how they were worked out*, lets you sort, filter, compare and export them (CSV), keeps power-user depth (keys, versions, raw data) one click away instead of hiding it, explains in plain words, and leaves the decision to the player. Pretty is welcome; vague is not.
 
-**Current version: 2.54.0**
+**Current version: 2.55.0**
 
 Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds features, 2.10.1 only fixes. Each step below is one release; we work through them top to bottom.
 
@@ -81,6 +81,8 @@ Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds f
 | 2.52.0 | Menus tidied: each setting in one place (opacity in Overlays › Appearance; the timer's clock switch in its Options). |
 | 2.53.0 | Price checks: click a row for the item's box (as in Insights). A softer Session timer. US spelling everywhere (Font and Colors). |
 | 2.54.0 | Money Makers filters: Thoughts per click, Clicks per hour. Profit leaves the Session timer: money is tracked in one place, the Farm Ledger. |
+| 2.54.1 | Manual feed: the price is optional (no price = the ticked mods are rated High); no "Counts as N listings" - one item is one price. |
+| 2.55.0 | One overlay window: Session timer, Mechanic Helper and Notes together (Merged switch splits them). New styles Codex and Minimal; Layout Panel or Strip for any style. |
 
 ## ▶ Next up
 
@@ -88,7 +90,6 @@ Order (decided 2.34.0): the Polish basics first, so new features are built on th
 
 | Version | Plan |
 |---|---|
-| 2.55.0 | **One merged overlay:** Session timer, Mechanic Helper and Notes in one window (a Merged switch splits them back). Styles: Codex (new), Minimal (new), Runeshape parchment, Relic tooltip, Carved frame, Quiet HUD, Classic dark; Layout: Panel or Strip (top edge), for any style. |
 | 2.56.0 | **Farm Ledger and strats redesign:** modern, clean, easy for the average player. Mockups first, then the build. |
 | 2.57.0 | **More item types priced (Sidekick / Exiled Exchange-style):** a pricing engine for item types the app only guesses today. Their licenses are checked first; logic is ported, not code, with credit. |
 | 2.58.0 | **Public stash order test tool.** |

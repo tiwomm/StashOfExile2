@@ -21,6 +21,7 @@ class UtilitiesPage:
             self.overlay = Overlay(self.root, SETTINGS, lambda: save_json("settings.json", SETTINGS),
                                    open_settings=self.open_utilities)
             self.overlay.lock_listener = lambda on: getattr(self, "note_lock", None) is not None and self.note_lock.set(on)
+            self.overlay.merged_host = self              # 2.55.0: Notes can sit inside the one overlay window
         return self.overlay
 
     def start_utilities(self):

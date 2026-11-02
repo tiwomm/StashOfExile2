@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU GPL v3.0 (see LICENSE). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.54.0
+VERSION 2.55.0
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,6 +19,21 @@ VERSION 2.54.0
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.55.0
+       One overlay window (merged_page.py, MergedOverlay; the user loved the mockups and wanted every style): the
+       Session timer, the Mechanic Helper and Notes in one OverlayWindow. tracker cfg "merged" (default on) and "layout"
+       (panel / strip); "mx"/"my" (+ "mw"/"mh" with Notes in it), "mlocked". Parts show while on: the timer (mg_timer,
+       Show timer / a session), the switches (alerts_bar), Notes (notes_visible; embedded in Panel - the Overlay's own
+       tabs + Text, Overlay.merged_host / _embedded(); in Strip and Minimal the note is its own window dropped under
+       it, merged_notes_drop). × closes all three. Merged off = the three windows of 2.54 (merged_set rebuilds).
+       New looks (overlaywin LOOKS): codex (obsidian, bronze corner_marks, caps headings, green-tinted on cells:
+       on_bg / on_line) and minimal (no title bar: OverlayWindow titlebar=False; lock and × drawn; short names).
+       Strip: no title bar, one 40 px row. Overlays › Appearance: "One window" switch and Layout. test_v2550.
+  2.54.1
+       Manual feed (the user): the price is optional - no price keeps the item with no listing (fed.div NULL, 0
+       copies) and only rates the ticked mods High; no price and nothing ticked says there's nothing to learn. "Counts
+       as N listings" is gone (it made no sense): Market.feed writes ONE listing per priced item. Fed list / CSV lose
+       the counts column. test_v2510 updated.
   2.54.0
        Money Makers filters renamed like the fields (the user): "🧠 Thoughts per click" and "🖱 Clicks per hour" (were
        "Thinking at most" / "Clicks at most"; still "this level or easier", said in a tooltip); column "Thoughts/click".
@@ -1299,7 +1314,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.54.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.55.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 

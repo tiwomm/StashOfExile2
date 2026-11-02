@@ -264,6 +264,8 @@ class Overlay:
             self.cfg["imported_ahk"] = True
             self.save_settings()
         self.notes = None
+        self.merged_host = None                # 2.55.0: the app, when Notes sit inside the one overlay window
+        self.notes_text = self.notes_tabbar = None
         self._save_job = None
         self._game_was_open = None
         self.pending = []                      # chat commands waiting for the window thread
@@ -304,8 +306,17 @@ class Overlay:
         return True
 
     # ---- notes window
+    def _embedded(self):
+        h = self.merged_host
+        return h is not None and h.merged_embeds_notes()
+
     def show_notes(self):
         c = self.cfg
+        if self._embedded():                   # 2.55.0: inside the one overlay window
+            c["notes_visible"] = True
+            self.save_settings()
+            self.merged_host.merged_build()
+            return
         if self.notes is None or not self.notes.winfo_exists():
             self._build_notes()
         self.notes.show()                      # 2.0 beta 15: only while the game (or the app) is in front
@@ -313,6 +324,13 @@ class Overlay:
         self.save_settings()
 
     def hide_notes(self, remember=True):
+        if self._embedded():
+            self._keep_text()
+            if remember:
+                self.cfg["notes_visible"] = False
+                self.save_settings()
+                self.merged_host.merged_build()
+            return
         if self.notes is not None and self.notes.winfo_exists():
             self._store_geometry()
             self.notes.hide()
@@ -328,6 +346,8 @@ class Overlay:
 
     def notes_shown(self):
         """Switched on (it may still be out of sight while the game isn't in front)."""
+        if self._embedded():
+            return bool(self.cfg.get("notes_visible")) and bool(self.cfg.get("notes_enabled"))
         return self.notes is not None and self.notes.winfo_exists() and getattr(self.notes, "wanted", True)
 
     def note_colours(self):
@@ -508,6 +528,10 @@ class Overlay:
     def restyle(self, store=True):
         """Colors / opacity / font / size changed in the Notes window: rebuild the note (where it is, unless the new
         place and size are already in the settings: store=False)."""
+        if self._embedded():
+            self._keep_text()
+            self.merged_host.merged_build()
+            return
         vis = self.notes_shown()
         if self.notes is not None and self.notes.winfo_exists():
             if store:
