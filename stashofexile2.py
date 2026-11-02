@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU GPL v3.0 (see LICENSE). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.57.0
+VERSION 2.58.0
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,6 +19,13 @@ VERSION 2.57.0
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.58.0
+       Settings cleanup 2 - one Appearance tab (standard rule 4): build_overlay_look moved from the Overlays hub into
+       Settings › Appearance (THE APP: launcher, wallpaper, clock, look of the app; OVER THE GAME: style, one window +
+       layout, opacity, Notes text size - notes_font_var / on_notes_font). OVH_TABS loses "Appearance";
+       ovh_open("Appearance") -> appearance_open() (scrolls to OVER THE GAME). Notes: no Font and Colors card
+       (build_notes_look, ov_pick, _ov_swatch gone); note_colours() = pal() field / text for every look, the font
+       the style's. Copy marker: no color box; marker_colour() from the style. test_v2580; old tests updated.
   2.57.0
        Settings cleanup 1 (the user OK'd the Settings Organization mockups; standard rule 3): every key is set in
        Settings › Hotkeys only. all_hotkeys' third field is now its group (Price checks, Regex, Overlays, Money Makers,
@@ -1349,7 +1356,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.57.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.58.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 

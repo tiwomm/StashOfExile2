@@ -352,10 +352,8 @@ class Overlay:
 
     def note_colours(self):
         """(background, text): the remnant book's parchment (2.43.0), or your own colors with the Classic look."""
-        from .overlaywin import pal, skinned
-        if skinned():                                     # 2.47.0: every PoE2 look: its own page colours
-            return pal()["field"], pal()["text"]
-        return self._colour("notes_bg", "1A1A2E"), self._colour("notes_fg", "E2C97E")
+        from .overlaywin import pal                       # 2.58.0: every look, Classic too - no own note colors
+        return pal()["field"], pal()["text"]
 
     def _colour(self, key, default):
         v = str(self.cfg.get(key) or default).lstrip("#")
@@ -363,7 +361,7 @@ class Overlay:
 
     def _build_notes(self):
         """The sticky note: the shared over-the-game window (overlaywin.py) with your colors inside it."""
-        from .overlaywin import OverlayWindow, pal, skinned
+        from .overlaywin import OverlayWindow, pal
         c = self.cfg
         bg, fg = self.note_colours()
 
@@ -389,7 +387,7 @@ class Overlay:
         self.notes_tabbar = tk.Frame(host, bg=bg)
         self.notes_tabbar.pack(fill="x")
         text = tk.Text(host, bg=bg, fg=fg, insertbackground=fg, relief="flat", highlightthickness=0, wrap="word",
-                       font=(pal()["font"] if skinned() else "Consolas", int(c.get("notes_font", 11))), padx=8, pady=4,
+                       font=(pal()["font"], int(c.get("notes_font", 11))), padx=8, pady=4,
                        spacing1=2, spacing3=2)
         text.pack(fill="both", expand=True)
         tabs, i = self.note_tabs(), self.note_index()

@@ -21,6 +21,11 @@ NEXT = [
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.58.0": [
+        "Every look is in one place: Settings › Appearance - the app, and over the game (style, one window, layout, "
+        "opacity, Notes text size). Overlays no longer has an Appearance tab.",
+        "Notes and the copy marker follow the overlay style - no separate colors to set.",
+    ],
     "2.57.0": [
         "Every key is set in one place: Settings › Hotkeys, grouped by what it's for. Chat command keys and the Farm "
         "Ledger's \"a run is done\" key can now be changed there.",
