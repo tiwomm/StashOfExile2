@@ -86,6 +86,23 @@
    "text": "text_muted",
    "texture": "none",
    "texture_color": "#ff7b2e"
+  },
+  "section": {
+   "fill": [
+    [
+     0,
+     "#1f2226"
+    ],
+    [
+     1,
+     "#141619"
+    ]
+   ],
+   "top": "#383e44",
+   "bottom": "#000000",
+   "text": "#ff9a5a",
+   "texture": "embers",
+   "texture_color": "#ff7b2e"
   }
  },
  "buttons": {
@@ -242,5 +259,19 @@
   "group": "accent_2",
   "texture": "embers",
   "texture_color": "#ff7b2e"
+ },
+ "panels": {
+  "viewport": {
+   "edges": [
+    [
+     "#000000",
+     "#3a4148"
+    ],
+    [
+     "#000000",
+     "#070809"
+    ]
+   ]
+  }
  }
 }

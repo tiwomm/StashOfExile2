@@ -50,9 +50,13 @@ def pairs():
     out.append(("quiet button", C["steel"], C["panel"]))
     cap, txt, _edge = TH.window_colors()
     out.append(("app window title bar (2.61.0)", txt, cap))
-    for kind in ("title", "title_off"):
+    for kind in ("title", "title_off", "section"):          # 2.63.0: + the section header strips
         spec = t.part("bars", kind)
-        out.append((f"{kind} bar", t.c(spec.get("text", "#ffffff")), TH.grad_at(t.grad(spec["fill"]), 0.5)))
+        for at in ((0.0, 0.5, 1.0) if kind == "section" else (0.5,)):
+            out.append((f"{kind} bar", t.c(spec.get("text", "#ffffff")), TH.grad_at(t.grad(spec["fill"]), at)))
+    if "section" in (t.part("bars") or {}):
+        spec = t.part("bars", "section")
+        out.append(("section bar note", C["steel"], TH.grad_at(t.grad(spec["fill"]), 0.5)))
     return out
 
 

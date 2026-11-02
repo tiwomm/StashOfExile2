@@ -99,6 +99,30 @@
    "bottom": "#6f92bd",
    "text": "#33465c",
    "texture": "none"
+  },
+  "section": {
+   "fill": [
+    [
+     0,
+     "#ffffff"
+    ],
+    [
+     0.5,
+     "#f1f5fa"
+    ],
+    [
+     0.5,
+     "#e5edf6"
+    ],
+    [
+     1,
+     "#eef3f9"
+    ]
+   ],
+   "top": "#ffffff",
+   "bottom": "#b9c9dc",
+   "text": "accent",
+   "texture": "none"
   }
  },
  "buttons": {
@@ -299,5 +323,19 @@
   "text": "text",
   "sel_text": "#0b1622",
   "group": "#1d4f8c"
+ },
+ "panels": {
+  "viewport": {
+   "edges": [
+    [
+     "#8ea7c4",
+     "#c6d4e4"
+    ],
+    [
+     "#e8eef6",
+     "#ffffff"
+    ]
+   ]
+  }
  }
 }

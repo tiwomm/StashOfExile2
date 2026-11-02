@@ -76,6 +76,23 @@
    "text": "text_muted",
    "texture": "none",
    "texture_color": "#b675ff"
+  },
+  "section": {
+   "fill": [
+    [
+     0,
+     "#150f20"
+    ],
+    [
+     1,
+     "#0b0811"
+    ]
+   ],
+   "top": "#2a2238",
+   "bottom": "#000000",
+   "text": "#c9a2ff",
+   "texture": "veins",
+   "texture_color": "#4ff0cf"
   }
  },
  "buttons": {
@@ -224,5 +241,23 @@
   "group": "#7f6aa3",
   "texture": "veins",
   "texture_color": "#6b3fb0"
+ },
+ "panels": {
+  "viewport": {
+   "edges": [
+    [
+     "#3a2a55",
+     "#1c1627"
+    ],
+    [
+     "#000000",
+     "#040207"
+    ],
+    [
+     "#000000",
+     "#040207"
+    ]
+   ]
+  }
  }
 }

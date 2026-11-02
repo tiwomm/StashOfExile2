@@ -53,7 +53,12 @@ DEFAULTS = {
                   "text": "#ffffff", "texture": "none"},
         "title_off": {"fill": [[0, "#1a2a4c"], [1, "#111b30"]], "top": "#2b3d5f", "bottom": "#070b13",
                       "text": "#aab6cc", "texture": "none"},
+        # 2.63.0: the header strip over a section (the list, the item panel)
+        "section": {"fill": [[0, "#1c2c4a"], [1, "#131f36"]], "top": "#2b3d5f", "bottom": "#070b13",
+                    "text": "accent", "texture": "none"},
     },
+    # 2.63.0: the sunken frame around a list - [top-left, bottom-right] colors, outside in
+    "panels": {"viewport": {"edges": [["#070b13", "#2b3d5f"], ["#000000", "#0b111c"]]}},
     "buttons": {
         "normal": {"fill": [[0, "#2f4a7c"], [1, "#1f3256"]], "hover": [[0, "#3a5a94"], [1, "#25395f"]],
                    "pressed": [[0, "#16233f"], [1, "#25395f"]], "border": "#0b1424", "hover_border": "#6c90cc",
