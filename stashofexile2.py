@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU GPL v3.0 (see LICENSE). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.65.1
+VERSION 2.66.0
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,6 +19,17 @@ VERSION 2.65.1
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.66.0
+       One look over the game: the app's theme. overlaywin.theme_palette() builds the overlay palette from the
+       running pack (surfaces, text, accent, border, good / bad, heading font; metal for the Game bar from the
+       border and accent) and pal() returns it - the Style list (parchment, codex, relic, carved, hud, classic,
+       minimal) is gone from Settings; Minimal is a Layout now (an old Minimal style moves there once,
+       SETTINGS ov_look_266). The palette's colors are seeded into themes' tone cache so Tk gets them as they are.
+       A theme swap rebuilds the overlay (relook -> merged_set). hudart takes the palette (colors()): plate,
+       sockets and dividers in the theme's colors. Beside the orbs: each half only as wide as it shows
+       (_hud_snug), against its orb; smaller end caps; the timer half is time + Avg / map, area, Maps. No
+       "Fit to the game" button: picking a Game bar layout again starts it fitted (merged_set drops its
+       hud_pos). Plus 2.65.1 below (never released on its own).
   2.65.1
        Game bar artwork (soe2/hudart.py, Pillow, drawn 3x and scaled down, cached per size): plate() - carved
        stone (shade, mottling, grain), a bevelled bronze frame, end caps with a lozenge, flourishes and an amber
@@ -1462,7 +1473,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.65.1"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.66.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 

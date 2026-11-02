@@ -21,9 +21,13 @@ NEXT = [
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
-    "2.65.1": [
-        "The Game bar layouts look like part of the game now: carved stone in a bronze frame, ornate end caps with "
-        "an amber gem, and the switches in sockets that light up when on.",
+    "2.66.0": [
+        "Everything over the game now uses your theme (Settings › Appearance › Theme) - no separate overlay styles "
+        "to clash with it. Minimal is now one of the Layouts.",
+        "The Game bar layouts look like part of the game: a carved plate in a metal frame, ornate end caps with a "
+        "gem, the switches in sockets that light up when on - all in your theme's colors.",
+        "Beside the orbs is slimmer: each half is only as wide as what it shows. Dragged it? Pick the layout again "
+        "to put it back.",
         "Fixed: clicking a tool in the sidebar while you're on one of its tabs or sub-tools (Regex from Favorites, "
         "Overlay from Map library) now takes you back to it. Click it again to fold it.",
     ],

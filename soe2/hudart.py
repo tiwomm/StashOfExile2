@@ -1,6 +1,8 @@
-"""The Game bar's artwork (2.65.1): drawn here with Pillow, no image files - a carved stone plate in a bevelled bronze
-frame with ornate end caps and an amber gem in each, recessed sockets for the mechanic switches, and small bronze
-dividers. Drawn 3x and scaled down, so edges and curves are smooth. Cached per size.
+"""The Game bar's artwork (2.65.1): drawn here with Pillow, no image files - a carved plate in a bevelled metal
+frame with ornate end caps and a gem in each, recessed sockets for the mechanic switches, and small dividers. Drawn
+3x and scaled down, so edges and curves are smooth. Cached per size and theme.
+2.66.0: every color comes from the overlay palette (the app's theme): the plate from its surfaces, the metal from
+its border and accent, the gem in the accent, a lit socket in its "good" color.
 
 GGG ToS: looks only - nothing here touches the game."""
 import random
@@ -8,15 +10,38 @@ import random
 SS = 3                                   # supersampling
 _CACHE = {}
 
-BRONZE_HI, BRONZE, BRONZE_MID, BRONZE_LO, BRONZE_DK = (232, 205, 140), (176, 141, 82), (130, 101, 57), (84, 63, 33), (40, 29, 15)
-STONE_TOP, STONE_BOT = (44, 39, 32), (17, 15, 12)
-WELL_TOP, WELL_BOT = (12, 11, 9), (24, 20, 16)
-AMBER = ((96, 30, 8), (170, 66, 18), (226, 120, 40), (255, 196, 120))
+
+
+def _rgb(h):
+    h = h.lstrip("#")
+    return tuple(int(h[i:i + 2], 16) for i in (0, 2, 4))
+
+
+def _mx(a, b, t):
+    return tuple(int(a[i] + (b[i] - a[i]) * t) for i in range(3))
+
+
+def colors(P):
+    """The artwork's colors from an overlay palette."""
+    K, Wt = (0, 0, 0), (255, 255, 255)
+    metal = _rgb(P["rim"])
+    acc, good, field = _rgb(P.get("accent") or P["head"]), _rgb(P["on"]), _rgb(P["field"])
+    bg, top = _rgb(P["bg"]), _rgb(P.get("bg_top") or P["bg"])
+    light = bool(P.get("light"))
+    return {
+        "hi": _rgb(P["rim_hi"]), "metal": metal, "mid": _mx(metal, K, .25), "lo": _mx(metal, K, .5),
+        "dk": _mx(metal, K, .75),
+        "stone_top": top if light else _mx(top, Wt, .04), "stone_bot": _mx(bg, K, .12 if light else .35),
+        "well_top": _mx(field, K, .08 if light else .45), "well_bot": field,
+        "gem": (_mx(acc, K, .65), _mx(acc, K, .35), acc, _mx(acc, Wt, .55)),
+        "on_top": _mx(good, field, .82), "on_bot": _mx(good, field, .68), "on_edge": _mx(good, Wt, .15),
+        "on_glow": good, "key": (P.get("theme"), P["rim"], P.get("accent"), P["field"]),
+    }
 
 
 def cap_width(h):
     """How wide each end cap is for a plate h px high."""
-    return max(18, min(52, int(h * 0.85)))
+    return max(18, min(34, int(h * 0.5)))
 
 
 def _lerp(a, b, t):
@@ -30,9 +55,12 @@ def _photo(img, root, key):
     return ph
 
 
-def plate(root, w, h):
+def plate(root, w, h, P):
     """The whole bar: stone, frame, end caps, the recessed well in between. -> PhotoImage (None without Pillow)."""
-    key = ("plate", w, h)
+    k = colors(P)
+    BRONZE_HI, BRONZE, BRONZE_MID, BRONZE_LO, BRONZE_DK = k["hi"], k["metal"], k["mid"], k["lo"], k["dk"]
+    STONE_TOP, STONE_BOT, WELL_TOP, WELL_BOT, AMBER = k["stone_top"], k["stone_bot"], k["well_top"], k["well_bot"], k["gem"]
+    key = ("plate", w, h, k["key"])
     if key in _CACHE:
         return _CACHE[key]
     try:
@@ -117,9 +145,11 @@ def plate(root, w, h):
     return _photo(img, root, key)
 
 
-def socket(root, w, h, on=False):
+def socket(root, w, h, P, on=False):
     """A recessed socket for one switch; lit (green-gold glow, bright rim) when on."""
-    key = ("sock", w, h, bool(on))
+    k = colors(P)
+    BRONZE_LO, BRONZE_MID = k["lo"], k["mid"]
+    key = ("sock", w, h, bool(on), k["key"])
     if key in _CACHE:
         return _CACHE[key]
     try:
@@ -130,7 +160,7 @@ def socket(root, w, h, on=False):
     img = Image.new("RGBA", (W, H), (0, 0, 0, 0))
     d = ImageDraw.Draw(img)
     r = 3 * t
-    top, bot = ((22, 30, 14), (34, 46, 20)) if on else ((9, 8, 6), (20, 17, 13))
+    top, bot = (k["on_top"], k["on_bot"]) if on else (k["well_top"], k["well_bot"])
     mask = Image.new("L", (W, H), 0)
     ImageDraw.Draw(mask).rounded_rectangle((0, 0, W - 1, H - 1), r, fill=255)
     fill = Image.new("RGBA", (W, H))
@@ -139,21 +169,23 @@ def socket(root, w, h, on=False):
         fd.line((0, y, W, y), fill=_lerp(top, bot, y / max(1, H - 1)) + (255,))
     if on:                                                 # a soft glow from below
         glow = Image.new("RGBA", (W, H), (0, 0, 0, 0))
-        ImageDraw.Draw(glow).ellipse((W * 0.1, H * 0.45, W * 0.9, H * 1.4), fill=(120, 170, 60, 90))
+        ImageDraw.Draw(glow).ellipse((W * 0.1, H * 0.45, W * 0.9, H * 1.4), fill=k["on_glow"] + (90,))
         fill = Image.alpha_composite(fill, glow.filter(ImageFilter.GaussianBlur(H * 0.25)))
     img.paste(fill, (0, 0), mask)
     d = ImageDraw.Draw(img)
     for i in range(2 * t):                                 # inner shadow under the top edge
         d.line((r, i + t, W - r, i + t), fill=(0, 0, 0, int(170 * (1 - i / (2 * t)))))
-    d.rounded_rectangle((0, 0, W - 1, H - 1), r, outline=(150, 190, 90) if on else BRONZE_LO, width=t)
-    d.line((r, H - t, W - r, H - t), fill=(200, 230, 140, 160) if on else BRONZE_MID + (180,), width=t)
+    d.rounded_rectangle((0, 0, W - 1, H - 1), r, outline=k["on_edge"] if on else BRONZE_LO, width=t)
+    d.line((r, H - t, W - r, H - t), fill=(k["on_edge"] if on else BRONZE_MID) + (170,), width=t)
     img = img.resize((w, h), Image.LANCZOS)
     return _photo(img, root, key)
 
 
-def divider(root, h):
+def divider(root, h, P):
     """A thin bronze divider with a small lozenge in the middle."""
-    key = ("div", h)
+    k = colors(P)
+    BRONZE_HI, BRONZE, BRONZE_MID, BRONZE_DK = k["hi"], k["metal"], k["mid"], k["dk"]
+    key = ("div", h, k["key"])
     if key in _CACHE:
         return _CACHE[key]
     try:

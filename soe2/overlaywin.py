@@ -59,13 +59,6 @@ PALETTES = {
                 text="#f3e3bd", muted="#d9c79e", line="#7a5a2e", on="#6fd36a", off="#e5604c", warn="#e0a352",
                 field="#0a0907", big="#f3e3bd", font=SERIF, rules=True, on_icon="\u2713", off_icon="\u2715",
                 cell_bg="#0a0907", cell_line="#0a0907"),
-    # 2.65.0: the Game bar layouts (on the XP bar / beside the orbs) - the game's own bottom bar: dark stone, a
-    # bronze rim with a pale highlight, warm gold serif text. Not in LOOKS: those two layouts always use it.
-    "gamebar": dict(_P, leather="#000000", edge="#000000", border=1, bg="#100e0b", band="#100e0b", head="#b8a174",
-                    text="#dccca4", muted="#a39272", line="#4a3d27", on="#6fcf6a", off="#d9654f", warn="#e0a352",
-                    field="#14110d", big="#f0e3bd", font=SERIF, cell_bg="#16130f", cell_line="#3a3122",
-                    on_bg="#17200f", on_line="#3d5a32", bg_top="#24201a", rim="#7d6539", rim_hi="#c9ad72",
-                    rim_lo="#2c2416"),
     "classic": dict(_P, leather=BORDER_OFF, edge=OUTLINE, border=0, bg=BODY_BG, band=BODY_BG, head="#ffe2b8",
                     text="#e8eefc", muted="#9fb0cc", line="#8a6a3a", on="#5ee08a", off="#ff5c5c", warn="#ffb347",
                     field=BODY_BG, big="#ffd9a8", font="Segoe UI", on_icon="\u25cf", off_icon="\u25cf"),
@@ -85,18 +78,59 @@ def _keep_overlay_colors():
 _keep_overlay_colors()
 
 
+_THEME_PAL = {}
+
+
+def theme_palette():
+    """2.66.0: the windows over the game take the app's theme (one look everywhere - no separate overlay styles).
+    Built from the running theme pack: its surfaces, text, accent and border colors, its heading font; the Game bar
+    artwork uses the same colors (metal from the border and accent, the gem in the accent)."""
+    from . import themes as TH
+    t = TH.ST.theme
+    if t is None:
+        return PALETTES["codex"]
+    key = (t.id, C.get("accent"), C.get("panel"), C.get("text"))
+    if key in _THEME_PAL:
+        P = _THEME_PAL[key]
+        if TH.ST.cache.get(P["bg"].lower()) is None:
+            _seed(TH, P)
+        return P
+    c, mix = t.c, TH.mix
+    acc = C.get("accent") or c("accent")
+    light = bool(getattr(t, "light", False) or t.data.get("light"))
+    metal = mix(c("border_light"), acc, 0.35)
+    P = dict(_P, leather=c("border_dark"), edge="#000000", border=1, bg=c("surface"), band=c("surface_raised"),
+             head=acc, text=c("text"), muted=c("text_muted"), line=c("border"), on=c("good"), off=c("bad"),
+             warn=c("warn"), field=c("surface_sunken"), big=c("text_strong"), font="Segoe UI", hfont=TH.head_font(),
+             title_size=9, caps=True, corners=metal, cell_bg=c("surface_sunken"), cell_line=c("border"),
+             on_bg=mix(c("good"), c("surface_sunken"), 0.82), on_line=mix(c("good"), c("border"), 0.5),
+             bg_top=c("surface_raised"), rim=metal, rim_hi=mix(metal, "#ffffff", 0.45),
+             rim_lo=mix(metal, "#000000", 0.6), accent=acc, light=light, theme=t.id)
+    _THEME_PAL.clear()
+    _THEME_PAL[key] = P
+    _seed(TH, P)
+    return P
+
+
+def _seed(TH, P):
+    """The palette's colors are the theme's own already: Tk gets them as they are (not re-toned)."""
+    for v in P.values():
+        if isinstance(v, str) and TH.is_hex(v):
+            TH.ST.cache[v.lower()] = v.lower()
+
+
 def pal():
-    """The colors, font and shape of the windows over the game, for their content."""
-    return PALETTES.get(LOOK[0], PALETTES["parchment"])
+    """The colors, font and shape of the windows over the game, for their content (2.66.0: the app's theme)."""
+    return theme_palette()
 
 
 def parchment():
-    return LOOK[0] == "parchment"
+    return False
 
 
 def skinned():
-    """One of the PoE2-style looks (not Classic): content is drawn on a canvas, like the mockups."""
-    return LOOK[0] in PALETTES and LOOK[0] != "classic"
+    """The windows over the game are drawn in the theme's colors, on a canvas (2.66.0: always)."""
+    return True
 
 
 def corner_marks(canvas, w, h, color, top=False, size=10):

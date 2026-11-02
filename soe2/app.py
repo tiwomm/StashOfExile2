@@ -109,8 +109,12 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         root.configure(bg=C["bg"])
         self.paint_titlebar()                            # 2.61.0: Windows' own title bar in the theme's colors
         root.after(1500, self.paint_titlebar)            # (again once the window is really on screen)
-        from . import overlaywin as _ow                  # 2.43.0: the look of the windows over the game
-        _ow.LOOK[0] = SETTINGS.get("overlay_look") if SETTINGS.get("overlay_look") in _ow.LOOKS else "parchment"
+        # 2.66.0: the windows over the game use the theme; the old Minimal style is now a Layout
+        if SETTINGS.get("overlay_look") == "minimal" and not SETTINGS.get("ov_look_266"):
+            tr = SETTINGS.setdefault("tracker", {})
+            if tr.get("layout", "panel") == "panel":
+                tr["layout"] = "minimal"
+        SETTINGS["ov_look_266"] = 1
         setup_style(root)
         self.records, self.next_id = {}, 1
         self.ui_q = queue.Queue()
@@ -1400,35 +1404,25 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
             row = tk.Frame(f, bg=P2)
             row.pack(fill="x")
             return row
-        from .overlaywin import LOOKS, LOOK
-        row = section("Appearance", "Style", "How everything over the game looks - the overlay (timer, Mechanic "
-                                             "Helper, Notes), remnant price tags and the copy marker. Codex: dark "
-                                             "stone with bronze corners. Minimal: just the time, the map and the four "
-                                             "switches.")
-        self.ov_look_var = tk.StringVar(value=LOOKS[LOOK[0]])
-        # 2.59.0: always one window - no "One window" switch; Layout is a dropdown under Style
+        # 2.66.0: no Style list - everything over the game is drawn in the app's theme (Settings › Appearance ›
+        # Theme). The Layout says the shape.
+        row = section("Appearance", "Overlay layout", "The overlay (timer, Mechanic Helper, Notes) and the remnant "
+                                                      "price tags use your theme's colors. Pick the overlay's shape:")
         from .merged_page import LAYOUTS
         g = tk.Frame(row, bg=P2)
         g.pack(fill="x")
-        tk.Label(g, text="Style", bg=P2, fg=C["text"], width=8, anchor="w").grid(row=0, column=0, sticky="w")
-        lk = ttk.Combobox(g, textvariable=self.ov_look_var, values=list(LOOKS.values()), state="readonly", width=30)
-        lk.grid(row=0, column=1, sticky="w", pady=2)
-        lk.bind("<<ComboboxSelected>>", lambda e: self.on_ov_look())
-        tk.Label(g, text="Layout", bg=P2, fg=C["text"], width=8, anchor="w").grid(row=1, column=0, sticky="w")
-        self.ov_layout_var = tk.StringVar(value=LAYOUTS.get(self.tracker_cfg().get("layout", "panel"), LAYOUTS["panel"]))
+        tk.Label(g, text="Layout", bg=P2, fg=C["text"], width=8, anchor="w").grid(row=0, column=0, sticky="w")
+        self.ov_layout_var = tk.StringVar(value=LAYOUTS.get(self.merged_layout(), LAYOUTS["panel"]))
         lc = ttk.Combobox(g, textvariable=self.ov_layout_var, values=list(LAYOUTS.values()), state="readonly", width=30)
-        lc.grid(row=1, column=1, sticky="w", pady=2)
+        lc.grid(row=0, column=1, sticky="w", pady=2)
         lc.bind("<<ComboboxSelected>>", lambda e: self.merged_set(
             layout=next((k for k, t in LAYOUTS.items() if t == self.ov_layout_var.get()), "panel")))
-        # 2.65.0: the Game bar layouts sit on the game's own bottom bar - put them back there after a drag
-        self.ov_hud_fit = ttk.Button(g, text="↺ Fit to the game", style="Quiet.TButton", command=self.hud_fit)
-        self.ov_hud_fit.grid(row=1, column=2, sticky="w", padx=(8, 0))
-        tk.Label(g, text="Panel: a card you place anywhere. Strip: one thin bar, made for the top edge of the screen.\n"
-                         "Game bar: in the game's own bar look, fitted to its bottom bar - on the XP bar, or split "
-                         "beside the life and mana orbs (time on the left; switches, Notes and clock on the right). "
-                         "Unlocked, you can drag it; Fit to the game puts it back.",
+        tk.Label(g, text="Panel: a card you place anywhere, Notes inside.  Strip: one thin bar for the top edge.  "
+                         "Minimal: just the time, the map and the switches.\nGame bar: fitted to the game's bottom "
+                         "bar - on the XP bar, or split beside the life and mana orbs. Unlocked, you can drag it; "
+                         "picking the layout again puts it back.",
                  bg=P2, fg=C["muted"], font=("Segoe UI", 9), justify="left", wraplength=620).grid(
-            row=2, column=0, columnspan=3, sticky="w", pady=(4, 0))
+            row=1, column=0, columnspan=2, sticky="w", pady=(4, 0))
         # 2.49.0: say what opacity does - and show the number
         row = section("Appearance", "Opacity", "How solid each window is over the game. 100% = fully solid: nothing of "
                                                "the game shows through it. Lower = more see-through: the whole window "
@@ -1512,14 +1506,6 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         self._ov_save_job = None
         self.tracker_save()
         self.overlay.save_settings()
-
-    def on_ov_look(self):
-        from . import overlaywin
-        key = next((k for k, t in overlaywin.LOOKS.items() if t == self.ov_look_var.get()), "parchment")
-        SETTINGS["overlay_look"] = key
-        overlaywin.LOOK[0] = key
-        save_json("settings.json", SETTINGS)
-        self.merged_set()                                          # the overlay window (and a dropped-down note)
 
     def on_ingame_clock(self):
         """2.39.0: the clock + date line on the Session timer, on or off."""
