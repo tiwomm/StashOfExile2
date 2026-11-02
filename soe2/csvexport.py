@@ -33,7 +33,7 @@ def write_sessions(path, sessions):
     n = 0
     with open(path, "w", newline="", encoding="utf-8") as f:
         w = csv.writer(f)
-        # 2.54.0: no wealth / profit columns - profit is tracked in Money Makers › Farm Tracker (its own CSV)
+        # 2.54.0: no wealth / profit columns - profit is tracked in Money Makers › Strat Tracker (its own CSV)
         w.writerow(["started", "ended", "length_seconds", "length", "maps", "average_map_seconds", "deaths", "note"])
         for s in sessions:
             avg = s.avg_map_time()
