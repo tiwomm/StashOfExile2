@@ -21,6 +21,12 @@ NEXT = [
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.70.0": [
+        "Strat Tracker: setting up a strat is now 5 short steps - Name & strat, Waystone, Tablets & more, Atlas, "
+        "Logging - with the cost of one run always showing at the right.",
+        "Strat Tracker: logging your loot is 3 steps - how many runs, what dropped, the profit. Ctrl+Alt+C a drop "
+        "and it jumps to the loot step.",
+    ],
     "2.69.3": [
         "Session: if the game closes or crashes while you're tracking, the session pauses and asks whether to end "
         "it. The time after the game closed isn't counted, and opening the game again picks the session back up.",

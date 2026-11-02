@@ -4,7 +4,7 @@
 
 > **Who we build for - read second.** Path of Exile players are utilitarian: they love data and information, problem solving and creative thinking. So every feature shows its numbers *and how they were worked out*, lets you sort, filter, compare and export them (CSV), keeps power-user depth (keys, versions, raw data) one click away instead of hiding it, explains in plain words, and leaves the decision to the player. Pretty is welcome; vague is not.
 
-**Current version: 2.69.3**
+**Current version: 2.70.0**
 
 Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds features, 2.10.1 only fixes. Each step below is one release; we work through them top to bottom.
 
@@ -109,6 +109,7 @@ Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds f
 | 2.69.1 | Community data sharing is opt-in (asks once; covers mod prices, map ranks and strat uploads); Strat Tracker 📤 Upload to the community strats; Toolkit footer no longer cut off. |
 | 2.69.2 | Overlay: a paused session shows a small PAUSED tag by the time instead of "(paused)" running into the next number. |
 | 2.69.3 | Session: the game closing or crashing pauses the session and asks End session / Keep it going (the game coming back resumes it). Roadmap: Maybe later. |
+| 2.70.0 | Strat Tracker part 2: the setup in 5 short steps with the cost of one run always in sight; the log-loot box in 3 steps (Runs, Loot, Profit). |
 
 ## ▶ Next up
 
@@ -118,7 +119,6 @@ Order (decided 2.34.0): the Polish basics first, so new features are built on th
 
 | Version | Plan |
 |---|---|
-| 2.70.0 | **Strat Tracker part 2 (was Farm Tracker):** the setup as a short 5-step form with the cost of one run shown live; the log-loot box in 3 steps. |
 | 2.71.0 | **Strats browser redone:** filter buttons, strats as cards, a detail panel with Track in Strat Tracker and your own numbers. |
 | 2.72.0 | **More item types priced (Sidekick / Exiled Exchange-style):** a pricing engine for item types the app only guesses today. Their licenses are checked first; logic is ported, not code, with credit. |
 | 2.73.0 | **Public stash order test tool.** |
