@@ -4,7 +4,7 @@
 
 > **Who we build for - read second.** Path of Exile players are utilitarian: they love data and information, problem solving and creative thinking. So every feature shows its numbers *and how they were worked out*, lets you sort, filter, compare and export them (CSV), keeps power-user depth (keys, versions, raw data) one click away instead of hiding it, explains in plain words, and leaves the decision to the player. Pretty is welcome; vague is not.
 
-**Current version: 2.69.2**
+**Current version: 2.69.3**
 
 Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds features, 2.10.1 only fixes. Each step below is one release; we work through them top to bottom.
 
@@ -108,6 +108,7 @@ Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds f
 | 2.69.0 | Redesign step 3: every tool's parts under the theme's header strips in sunken frames, like Price checks (Settings, Wealth, Regex, Exchange rates, Game search, Insights, Under the hood, Money Makers, Map library, Mod book, Overlay, Calculator). |
 | 2.69.1 | Community data sharing is opt-in (asks once; covers mod prices, map ranks and strat uploads); Strat Tracker 📤 Upload to the community strats; Toolkit footer no longer cut off. |
 | 2.69.2 | Overlay: a paused session shows a small PAUSED tag by the time instead of "(paused)" running into the next number. |
+| 2.69.3 | Session: the game closing or crashing pauses the session and asks End session / Keep it going (the game coming back resumes it). Roadmap: Maybe later. |
 
 ## ▶ Next up
 
@@ -146,6 +147,11 @@ Order (decided 2.34.0): the Polish basics first, so new features are built on th
 - **Motion:** nothing flashes more than 3 times a second; Reduce motion turns animations off.
 - **Resize:** text up to 150 % without cut-off text or overlapping controls.
 - **Names:** every icon-only button gets a text label or tooltip. (Tk gives screen readers little to work with on Windows, so full screen-reader support is not promised.)
+
+## 🤔 Maybe later (ideas to weigh when the plan above is done)
+
+- **Trials & Simulacrum tracker** (Overlay ↳ Trials): counts Trial of Sekhemas, Trial of Chaos and Simulacrum runs from the game's log (entering the area; finishing, if the log says so), with a "Got it!" for each mechanic's chase item (your own list; defaults such as Simulacrum → Voices, Trial of Chaos → Adorned, checked against current drop info first). Shows runs, runs since the last chase drop, the drop history and your runs per drop; a small run counter on the overlay inside a trial. Later: drop rates pooled through Community data sharing (opt-in).
+- **Community FAQ:** a keyword-searchable answer book for common PoE2 questions (e.g. "Can Sanctify add a socket, or only corruption?" -> "Corruption only, and only the first corruption with a Vaal Orb; a double corrupt can't add a socket, only a corruption enchant"). Anyone can send a question; it pops up for players who opted in to answering community questions (like Amazon's "can you answer this?"); anyone can answer; the asker marks the answer that solved it, and that answer is published to the searchable FAQ. Runs on the community board server (board/), with votes and reports like strats.
 
 ## 💤 Parked (not planned unless something changes)
 
