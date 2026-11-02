@@ -4,7 +4,7 @@ import tkinter as tk
 from tkinter import ttk
 
 from . import gamesearch
-from .style import C, FONT_TITLE
+from .style import C, FONT_TITLE, SegBar
 
 PAGE = 60
 
@@ -63,6 +63,11 @@ class SearchPage:
         t.tag_bind("more", "<Leave>", lambda e: t.config(cursor="arrow"))
         t.config(state="disabled")
         self.gs_text = t
+        # 2.66.0: Anoints is its own page, listed under Game search in the sidebar (Game search ↳ Anoints)
+        self.gs_tabs = SegBar(top, ["Search", "Anoints"], command=lambda v: self.gs_tab_changed())
+        self.gs_tabs.pack(anchor="w")
+        if getattr(self, "shell", None) is not None:
+            self.shell.register_tabs("search", self.gs_tabs, home="Search")
         self.gs_q.trace_add("write", lambda *a: self._gs_later())
         self.gs_entry.bind("<Escape>", lambda e: self.gs_clear())
         self.gs_render()
@@ -108,13 +113,18 @@ class SearchPage:
 
     def gs_lookup(self, text):
         """Open Game search with this already typed (from other windows: 'Look up')."""
-        self.shell.open("search")
+        self.shell.open_tab("search", "Search")
         self.gs_active = None
         self.gs_q.set(text.strip())
         self._gs_go()
         self.gs_entry.focus_set()
 
     def gs_pick(self, group):
+        bar = getattr(self, "gs_tabs", None)
+        if bar is not None:                                  # 2.66.0: Anoints is its own page
+            want = "Anoints" if group == gamesearch.ANOINTS else "Search"
+            if bar.get() != want:
+                bar.pick(want, notify=False)
         self.gs_active = group
         self.gs_shown = PAGE
         self.gs_render()
@@ -123,16 +133,37 @@ class SearchPage:
         self.gs_shown += PAGE
         self.gs_render(keep_scroll=True)
 
+    def gs_on_anoints(self):
+        bar = getattr(self, "gs_tabs", None)
+        return bar is not None and bar.get() == "Anoints"
+
+    def gs_tab_changed(self):
+        """Search <-> Anoints (from the sidebar)."""
+        self.gs_active = gamesearch.ANOINTS if self.gs_on_anoints() else None
+        self.gs_shown = PAGE
+        self.gs_render()
+
     def gs_render(self, keep_scroll=False):
         d = gamesearch.load()
         q = self.gs_q.get()
         terms, neg = gamesearch.parse(q)
         has = bool(terms or neg)
         allr = gamesearch.search(q) if has else d["rows"]
+        anoints = self.gs_on_anoints()
+        if anoints:
+            self.gs_active = gamesearch.ANOINTS
+        elif self.gs_active == gamesearch.ANOINTS:
+            self.gs_active = None
+        allr = [it for it in allr if (it["g"] == gamesearch.ANOINTS) == anoints]
+        order = [g for g in d["order"] if g != gamesearch.ANOINTS]
         counts = {}
         for it in allr:
             counts[it["g"]] = counts.get(it["g"], 0) + 1
-        self._gs_chips(counts, len(allr), d["order"])
+        self._gs_chips(counts, len(allr), order)
+        if anoints:
+            self.gs_chips.pack_forget()
+        elif not self.gs_chips.winfo_manager():
+            self.gs_chips.pack(fill="x", pady=(8, 0))
         lst = [it for it in allr if it["g"] == self.gs_active] if self.gs_active else allr
         self.gs_last = lst
         t = self.gs_text

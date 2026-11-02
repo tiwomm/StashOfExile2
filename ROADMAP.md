@@ -97,7 +97,7 @@ Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds f
 | 2.63.0 | **Price checks (redesign step 2):** header strips over the list and the item, the list in a sunken frame, Search and Only ★ filters, the picked rows' buttons under the list, the item panel's own buttons; no more pop-up box on a click. |
 | 2.64.0 | Tabs in the sidebar: each page's tabs are listed under it with ↳ (Money Makers, Regex, Exchange rates, Mod book); Farm Ledger is now Farm Tracker. |
 | 2.65.0 | **Game bar overlay layouts:** on the XP bar, or split beside the life and mana orbs, in the game's own bar look, fitted to the game window (Fit to the game after a drag). The sidebar unfolds only the open tool; Regex lists just Favorites. |
-| 2.66.0 | One look over the game - the app's theme (no overlay Style list; Minimal is a Layout). Game bar artwork in the theme's colors (carved plate, metal frame, gem end caps, lit sockets); slimmer halves beside the orbs; no Fit button. A click on a tool's row goes back to its own page from a tab or sub-tool. |
+| 2.66.0 | One look over the game - the app's theme (no overlay Style list; Minimal is a Layout). Game bar in PoE2's own HUD style (pewter frame, arched gem end caps, flask-slot sockets); Game search ↳ Anoints; slimmer halves beside the orbs; no Fit button. A click on a tool's row goes back to its own page from a tab or sub-tool. |
 
 ## ▶ Next up
 
