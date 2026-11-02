@@ -21,6 +21,10 @@ NEXT = [
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.72.1": [
+        "Wealth: stackable items poe.ninja doesn't list now get a price from the trade site's bulk exchange.",
+        "Price checks: copy a stack and the status line says what it's worth.",
+    ],
     "2.72.0": [
         "Price checks: rare gear now gets a real price. The search skips mods buyers hardly pay for (light radius, "
         "thorns, stun ...) and low tiers, so it compares your item with ones like it. Only a price the listings "

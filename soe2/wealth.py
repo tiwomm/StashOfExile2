@@ -698,7 +698,30 @@ class WealthPrices:
             hit = getattr(self, "by_slug", {}).get(slug(n))
             if hit:
                 return hit
+        from . import bulk                                      # 2.72.1: not on poe.ninja - the bulk exchange's
+        for n in names:                                         # price from the last hour (wealth_bulk_fill)
+            xid = bulk.exchange_id(n)
+            hit = bulk.cached(self.league or "", xid, max_age=6 * 3600) if xid else None
+            if hit:
+                return hit[0], bulk.text(hit)
         return None, None
+
+    def bulk_missing(self, items, limit=30):
+        """2.72.1: the stackables poe.ninja has no price for that the bulk exchange knows -> [(name, exchange id)]."""
+        from . import bulk
+        out, seen = [], set()
+        for it in items:
+            if it.get("frame") in (1, 2, 3) or self.value(it)[0] is not None:
+                continue
+            for n in [x for x in (it.get("type"), it.get("base")) if x]:
+                xid = bulk.exchange_id(n)
+                if xid and xid not in seen:
+                    seen.add(xid)
+                    out.append((n, xid))
+                    break
+            if len(out) >= limit:
+                break
+        return out
 
 
 def rare_sig(it):
