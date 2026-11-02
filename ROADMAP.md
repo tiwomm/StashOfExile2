@@ -4,7 +4,7 @@
 
 > **Who we build for - read second.** Path of Exile players are utilitarian: they love data and information, problem solving and creative thinking. So every feature shows its numbers *and how they were worked out*, lets you sort, filter, compare and export them (CSV), keeps power-user depth (keys, versions, raw data) one click away instead of hiding it, explains in plain words, and leaves the decision to the player. Pretty is welcome; vague is not.
 
-**Current version: 2.64.0**
+**Current version: 2.65.0**
 
 Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds features, 2.10.1 only fixes. Each step below is one release; we work through them top to bottom.
 
@@ -96,6 +96,7 @@ Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds f
 | 2.62.0 | **Pages (redesign step 1):** a text sidebar (groups, ↳ sub-tools, Toolkit + Settings at the bottom); one tool fills the window at a time; a status bar instead of the taskbar; Frost Pane readability. |
 | 2.63.0 | **Price checks (redesign step 2):** header strips over the list and the item, the list in a sunken frame, Search and Only ★ filters, the picked rows' buttons under the list, the item panel's own buttons; no more pop-up box on a click. |
 | 2.64.0 | Tabs in the sidebar: each page's tabs are listed under it with ↳ (Money Makers, Regex, Exchange rates, Mod book); Farm Ledger is now Farm Tracker. |
+| 2.65.0 | **Game bar overlay layouts:** on the XP bar, or split beside the life and mana orbs, in the game's own bar look, fitted to the game window (Fit to the game after a drag). The sidebar unfolds only the open tool; Regex lists just Favorites. |
 
 ## ▶ Next up
 
@@ -105,14 +106,14 @@ Order (decided 2.34.0): the Polish basics first, so new features are built on th
 
 | Version | Plan |
 |---|---|
-| 2.65.0 | **Redesign step 3:** the other tools in the same panel / section style (more steps as needed). |
-| 2.66.0 | **Farm Tracker part 2 (was Farm Ledger):** the setup as a short 5-step form with the cost of one run shown live; the log-loot box in 3 steps. |
-| 2.67.0 | **Strats browser redone:** filter buttons, strats as cards, a detail panel with Track in Farm Tracker and your own numbers. |
-| 2.68.0 | **More item types priced (Sidekick / Exiled Exchange-style):** a pricing engine for item types the app only guesses today. Their licenses are checked first; logic is ported, not code, with credit. |
-| 2.69.0 | **Public stash order test tool.** |
-| 2.70.0 | **Polish 4 - Responsive:** windows reflow when narrow (toolbars wrap, side panels drop under the list, sensible minimum sizes), sharp on every monitor (per-monitor DPI), a text size setting (100-150 %). |
-| 2.71.0 | **Polish 5 - Hover, focus, micro-interactions:** the same hover and pressed look on every button, row, icon and tab; a visible keyboard focus ring everywhere; short (120-180 ms) fades for popups and toasts, never on lists; a "Reduce motion" setting that turns them off. |
-| 2.72.0 | **Polish 6 - Visual hierarchy:** the suggestions below, window by window, with before / after screenshots in each PR. |
+| 2.66.0 | **Redesign step 3:** the other tools in the same panel / section style (more steps as needed). |
+| 2.67.0 | **Farm Tracker part 2 (was Farm Ledger):** the setup as a short 5-step form with the cost of one run shown live; the log-loot box in 3 steps. |
+| 2.68.0 | **Strats browser redone:** filter buttons, strats as cards, a detail panel with Track in Farm Tracker and your own numbers. |
+| 2.69.0 | **More item types priced (Sidekick / Exiled Exchange-style):** a pricing engine for item types the app only guesses today. Their licenses are checked first; logic is ported, not code, with credit. |
+| 2.70.0 | **Public stash order test tool.** |
+| 2.71.0 | **Polish 4 - Responsive:** windows reflow when narrow (toolbars wrap, side panels drop under the list, sensible minimum sizes), sharp on every monitor (per-monitor DPI), a text size setting (100-150 %). |
+| 2.72.0 | **Polish 5 - Hover, focus, micro-interactions:** the same hover and pressed look on every button, row, icon and tab; a visible keyboard focus ring everywhere; short (120-180 ms) fades for popups and toasts, never on lists; a "Reduce motion" setting that turns them off. |
+| 2.73.0 | **Polish 6 - Visual hierarchy:** the suggestions below, window by window, with before / after screenshots in each PR. |
 | Last | **Linux build** (Hyprland / Wayland first) - the groundwork is in place (session_linux_handover.txt). |
 
 ### Visual hierarchy - suggestions (for 2.47.0)
@@ -149,7 +150,7 @@ Every new feature goes in one of three places:
 
 - **Top-level tool:** you open it on its own (dock, Toolkit menu, desktop icon). Now: Price checks, Wealth, Money Makers, Regex, Game search, Exchange rates, Calculator, Session tracker, Notes, Settings.
 - **Child tool:** built on one top-level tool's data. It is a button in the parent's title bar and sits indented under the parent in the Toolkit menu. Its window is called "Parent › Child". It is not on the dock. Now: Session tracker › Map library; Price checks › Mod book, Under the hood, Market Insights.
-- **Tab:** a different part of the same tool (e.g. Money Makers › Strats / Lucrative Strats / Tablet Crafting / Farm Tracker). **2.64.0: a page's tabs are listed in the sidebar under the page, indented with ↳ - never as a button row along the page's top.** Register the page's SegBar / SegBook with `shell.register_tabs("<key>", bar)` and the sidebar does the rest (a child tool's tabs go one step further in). Small switches that only change what a list or chart shows (Official / Community / Mine, Total / Daily, Item / How it's priced / Raw) stay on the page.
+- **Tab:** a different part of the same tool (e.g. Money Makers › Strats / Lucrative Strats / Tablet Crafting / Farm Tracker). **2.64.0: a page's tabs are listed in the sidebar under the page, indented with ↳ - never as a button row along the page's top.** 2.65.0: the sidebar shows only the tools at first; the open one unfolds. A tab that is the page itself is passed as `home=` and not listed (Regex: Build a search). Register the page's SegBar / SegBook with `shell.register_tabs("<key>", bar)` and the sidebar does the rest (a child tool's tabs go one step further in). Small switches that only change what a list or chart shows (Official / Community / Mine, Total / Daily, Item / How it's priced / Raw) stay on the page.
 
 **Look (2.34.0):** messages to the player go through `app_toast(text, title, kind=...)` (2.35.0); a list's own right-click actions go in `tree.menu_actions` (2.36.0).
 
