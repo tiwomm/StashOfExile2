@@ -239,7 +239,7 @@ class UtilitiesPage:
         tk.Label(g, text="Show / hide notes", bg=P2, fg=C["text"], anchor="w").grid(row=0, column=0, sticky="w", padx=(0, 8))
         self._ov_entry(g, "notes_key", 0, 1, 10)
         ttk.Button(g, text="Show / hide now", command=lambda: self.overlay.toggle_notes()).grid(row=0, column=2, sticky="w")
-        c2 = self._card(body, "Colours and font (Classic style)")
+        c2 = self._card(body, "Font and colours")
         self.build_notes_look(c2)
         c3 = self._card(body, "Position")
         lrow = tk.Frame(c3, bg=P2)
@@ -277,10 +277,10 @@ class UtilitiesPage:
             v = self._ov_entry(ng, key, r, 2, 8)
             v.trace_add("write", lambda *_a, k=key: self._ov_swatch(k))
             ttk.Button(ng, text="Pick…", command=lambda k=key: self.ov_pick(k), style="Quiet.TButton").grid(row=r, column=3, sticky="w")
+        # 2.52.0: opacity lives in Overlays › Appearance only (it was here too)
         tk.Label(ng, text="Opacity", bg=P2, fg=C["text"], anchor="w").grid(row=2, column=0, sticky="w", pady=2)
-        self.ov_opacity = tk.IntVar(value=int(ov.get("notes_opacity", 215)))
-        ttk.Scale(ng, from_=40, to=255, variable=self.ov_opacity, orient="horizontal", length=150).grid(
-            row=2, column=1, columnspan=3, sticky="w")
+        ttk.Button(ng, text="Overlays › Appearance", style="Quiet.TButton",
+                   command=lambda: self.ovh_open("Appearance")).grid(row=2, column=1, columnspan=3, sticky="w")
         tk.Label(ng, text="Font size", bg=P2, fg=C["text"], anchor="w").grid(row=3, column=0, sticky="w", pady=2)
         self.ov_font = tk.IntVar(value=int(ov.get("notes_font", 11)))
         ttk.Spinbox(ng, from_=8, to=24, textvariable=self.ov_font, width=5).grid(row=3, column=1, columnspan=2, sticky="w")
@@ -327,7 +327,6 @@ class UtilitiesPage:
         cfg["commands"] = cmds
         for key in ("notes_bg", "notes_fg"):
             cfg[key] = self.ov_vars[key].get().strip().lstrip("#") or cfg.get(key)
-        cfg["notes_opacity"] = int(self.ov_opacity.get())
         try:
             cfg["notes_font"] = max(8, min(24, int(self.ov_font.get())))
         except (ValueError, tk.TclError):
