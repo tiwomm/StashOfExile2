@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU GPL v3.0 (see LICENSE). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.70.1
+VERSION 2.71.0
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,6 +19,15 @@ VERSION 2.70.1
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.71.0
+       Money Makers › Strats redone. Filter buttons instead of the Browse tree: Strats (All / each category, with
+       counts; empty ones grayed), its Type (once a category is picked), 🧠 Thinking and 🖱 Clicks (a pick shows that
+       level and the easier / calmer ones); they wrap to the window (_mm_flow, placed). Tag, Waystone tier and Sort
+       (Profit, Upvotes, Easiest, Name) stay as lists; the legend line is gone. Strats show as cards by default (what
+       it is, name, effort, estimated profit / h, upvotes, who, and "Yours: N runs · x div / h" when you tracked
+       it); Cards / List on the strip - the List is the old sortable table and still holds the selection
+       (mm_tree). The strat's panel: ▶ Track in Strat Tracker, and a Your numbers box (runs, div / hour, div a run,
+       time a run - every Strat Tracker setup that follows the strat) or how to start. Best profit first.
   2.70.1
        Overlay page: the Hide timer button is gone (it took every number off the overlay, not just the timer). In
        its place a "Timer over the game" switch - the session's time only. Options › On the overlay (was Timer):
@@ -1577,7 +1586,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.70.1"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.71.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 

@@ -15,6 +15,8 @@ from .chrome import SectionBar, Viewport, section as chrome_section
 
 ORIGIN = {"community": "Official", "mine": "Mine", "example": "Example", "board": "Community"}
 VIEWS = ("Official", "Community", "Mine")
+CARD_SORT = {"Profit": ("profit", True), "Upvotes": ("score", True), "Easiest": ("thoughts_per_click", False),
+             "Name": ("name", False)}                         # 2.71.0: the cards' Sort
 
 
 def _hms(secs):
@@ -29,7 +31,7 @@ class MoneyMakersPage:
 
     def build_money_window(self, body):
         P1 = C["panel"]
-        self.mm_strats, self.mm_sel, self.mm_sort = [], None, ("thoughts_per_click", False)
+        self.mm_strats, self.mm_sel, self.mm_sort = [], None, ("profit", True)     # 2.71.0: best first
         self.mm_page = SegBar(body, ["Strats", "Lucrative Strats", "Tablet Craft Helper", "Strat Tracker"],
                               command=lambda v: self.mm_show_page(), size=10, pad=(16, 4))
         self.mm_page.pack(anchor="w", padx=8, pady=(8, 0))
@@ -76,8 +78,30 @@ class MoneyMakersPage:
         self.mm_live_lbl = tk.Label(bar, text="", bg=P1, fg=C["muted"], font=("Segoe UI", 9))
         self.mm_live_lbl.pack(side="right", padx=8)
         self.mm_account_paint()
+        # 2.71.0: filter buttons - what it is (category, then its type), how much thinking, how busy the hands
+        self.mm_tag, self.mm_tier = tk.StringVar(value="Any"), tk.StringVar(value="Any")
+        self.mm_max, self.mm_cmax = tk.StringVar(value="Any"), tk.StringVar(value="Any")
+        self.mm_cat = tk.StringVar(value="")                 # "" = all
+        self.mm_type = tk.StringVar(value="")
+        chips = tk.Frame(page, bg=P1, padx=8)
+        chips.pack(fill="x")
+        self.mm_chip_rows = {}
+        for key, label in (("cat", "Strats"), ("type", "Type"), ("think", "🧠 Thinking"), ("clicks", "🖱 Clicks")):
+            r = tk.Frame(chips, bg=P1)
+            tk.Label(r, text=label, bg=P1, fg=C["muted"], font=("Segoe UI", 9), width=11, anchor="w").pack(
+                side="left", anchor="n", pady=(4, 0))
+            r.chips = tk.Frame(r, bg=P1)
+            r.chips.pack(side="left", fill="x", expand=True)
+            r.chips.bind("<Configure>", lambda e, f=r.chips: self._mm_flow(f, e.width))
+            self.mm_chip_rows[key] = r
+        for key in ("cat", "think", "clicks"):
+            self.mm_chip_rows[key].pack(fill="x")
+        Tooltip(self.mm_chip_rows["think"], "How much thinking a strat needs - a pick shows that level and the easier ones.")
+        Tooltip(self.mm_chip_rows["clicks"], "How busy your hands are - a pick shows that pace and the calmer ones.")
+        for var in (self.mm_max, self.mm_cmax):
+            var.trace_add("write", lambda *_a: self.root.after_idle(self.mm_chips_paint))
         fbar = tk.Frame(page, bg=P1, padx=8)
-        fbar.pack(fill="x", pady=(0, 8))
+        fbar.pack(fill="x", pady=(4, 8))
 
         def pick(label, var, values, width, first=False):
             tk.Label(fbar, text=label, bg=P1, fg=C["muted"]).pack(side="left", padx=(0 if first else 12, 6))
@@ -85,90 +109,76 @@ class MoneyMakersPage:
             cb.pack(side="left")
             cb.bind("<<ComboboxSelected>>", lambda e: (self.mm_fill(), self.root.after(20, self.root.focus_set)))
             return cb
-        self.mm_tag, self.mm_tier = tk.StringVar(value="Any"), tk.StringVar(value="Any")
-        self.mm_max, self.mm_cmax = tk.StringVar(value="Any"), tk.StringVar(value="Any")
         tag_values = ["Any"] + [t for g in MM.TAG_GROUPS.values() for t in g]
         pick("Tag", self.mm_tag, tag_values, 15, first=True)
         pick("Waystone tier", self.mm_tier, ("Any",) + tuple(str(i) for i in range(1, 17)), 4)
-        # 2.54.0: named like the fields - "Thoughts per click" and "Clicks per hour"; each still shows the
-        # level picked and the easier / calmer ones
-        Tooltip(pick("🧠 Thoughts per click", self.mm_max, ["Any"] + [w for w, _d in MM.THINKING.values()], 10),
-                "How much thinking a strat needs. Shows the level you pick and the easier ones.")
-        Tooltip(pick("🖱 Clicks per hour", self.mm_cmax, ["Any"] + list(MM.CLICKS), 8),
-                "How busy your hands are. Shows the pace you pick and the calmer ones.")
+        self.mm_csort = tk.StringVar(value="Profit")
+        pick("Sort", self.mm_csort, tuple(CARD_SORT), 9).bind(
+            "<<ComboboxSelected>>", lambda e: (self.mm_sort_card(), self.root.after(20, self.root.focus_set)))
         self.mm_bsort = tk.StringVar(value="Top")
-        self.mm_bsort_lab = tk.Label(fbar, text="Sort", bg=P1, fg=C["muted"])
+        self.mm_bsort_lab = tk.Label(fbar, text="Board", bg=P1, fg=C["muted"])
         self.mm_bsort_box = ttk.Combobox(fbar, textvariable=self.mm_bsort, values=("Top", "New"), state="readonly", width=5)
         self.mm_bsort_box.bind("<<ComboboxSelected>>", lambda e: (self.mm_board_fetch(), self.root.after(20, self.root.focus_set)))
-        self.mm_cat = tk.StringVar(value="")                 # picked in the browser on the left ("" = all)
-        self.mm_type = tk.StringVar(value="")
-
-        bar2 = tk.Frame(page, bg=P1, padx=8)
-        bar2.pack(fill="x", pady=(0, 8))
         for text, cmd in (("⬇ Download Format", self.mm_download_format), ("Import file…", self.mm_import),
                           ("+ Add my own", self.mm_add)):
-            ttk.Button(bar2, text=text, command=cmd).pack(side="right", padx=(8, 0))
-        leg = tk.Label(bar2, text="🧠 Thoughts per click: Autopilot · Easy · Moderate · Hard · Big brain      "
-                                  "🖱 Clicks per hour: Chill · Steady · Busy · Frantic",
-                       bg=P1, fg="#ffd9a8", font=("Segoe UI", 9), anchor="w", justify="left")
-        leg.pack(side="left", fill="x", expand=True)
-        leg.bind("<Configure>", lambda e: leg.config(wraplength=max(200, e.width - 4)))
+            ttk.Button(fbar, text=text, command=cmd, style="Quiet.TButton").pack(side="right", padx=(8, 0))
 
         pane = ttk.PanedWindow(page, orient="horizontal")
         pane.pack(fill="both", expand=True, padx=8, pady=(0, 8))
-        # 2.28.0: browse by what the strat IS - Category > Type (Mapping > Breach), with counts
-        navo = tk.Frame(pane, bg=P1)                         # 2.69.0: each list under a strip, sunken
-        pane.add(navo, weight=0)
-        SectionBar(navo, "Browse").pack(fill="x")
-        nvp = Viewport(navo)
-        nvp.pack(fill="both", expand=True)
-        nav = nvp.body
-        self.mm_nav = ttk.Treeview(nav, columns=("n",), show="tree headings", selectmode="browse", height=8)
-        self.mm_nav.heading("#0", text="Browse", anchor="w")
-        self.mm_nav.heading("n", text="#")
-        self.mm_nav.column("#0", width=150, minwidth=110, stretch=True)
-        self.mm_nav.column("n", width=34, minwidth=30, anchor="center", stretch=False)
-        self.mm_nav.tag_configure("empty", foreground=C["muted"])
-        self.mm_nav.tag_configure("cat", font=("Segoe UI", 10, "bold"))
-        self.mm_nav.pack(fill="both", expand=True)
-        self.mm_nav.bind("<<TreeviewSelect>>", lambda e: self.mm_nav_pick())
         lfo = tk.Frame(pane, bg=P1)
         pane.add(lfo, weight=3)
         self.mm_list_head = SectionBar(lfo, "Strats")
         self.mm_list_head.pack(fill="x")
+        self.mm_layout = SegBar(self.mm_list_head, ["Cards", "List"], command=lambda v: self.mm_layout_changed(),
+                                size=9, pad=(8, 2))
+        self.mm_list_head.add_right(self.mm_layout)
         lvp = Viewport(lfo)
         lvp.pack(fill="both", expand=True)
         left = lvp.body
         self.mm_pane = pane
+        # 2.71.0: strats as cards (the default); the List is the sortable table - it also keeps the selection
+        from .style import ScrollArea
+        self.mm_cards = ScrollArea(left, bg=C["panel2"])
+        self.mm_cards.inner.configure(padx=8, pady=8)
+        self.mm_cards.bind("<Configure>", lambda e: self.root.after_idle(self.mm_cards_reflow))
+        self.mm_card_w = {}
+        self.mm_listf = tk.Frame(left, bg=C["panel2"])
         cols = (("name", "Strat", 170, "w"), ("type", "Type", 110, "w"),
                 ("thoughts_per_click", "🧠 Thoughts/click", 104, "center"), ("clicks_per_hour", "🖱 Clicks/h", 80, "center"),
                 ("profit", "Est. profit/h", 92, "center"), ("score", "▲", 44, "center"), ("origin", "By", 90, "w"))
-        self.mm_tree = ttk.Treeview(left, columns=[c[0] for c in cols], show="headings", selectmode="browse")
+        self.mm_tree = ttk.Treeview(self.mm_listf, columns=[c[0] for c in cols], show="headings", selectmode="browse")
         for cid, title, w, anchor in cols:
             self.mm_tree.heading(cid, text=title, command=lambda c=cid: self.mm_sort_by(c))
             self.mm_tree.column(cid, width=w, minwidth=56, anchor=anchor, stretch=cid == "name")
         self.mm_tree.tag_configure("mine", foreground=C["green"])
         self.mm_tree.tag_configure("example", foreground=C["muted"])
         self.mm_tree.tag_configure("hidden", foreground=C["red"])
-        sb = ttk.Scrollbar(left, orient="vertical", command=self.mm_tree.yview)
+        sb = ttk.Scrollbar(self.mm_listf, orient="vertical", command=self.mm_tree.yview)
         self.mm_tree.configure(yscrollcommand=sb.set)
         sb.pack(side="right", fill="y")
         self.mm_tree.pack(side="left", fill="both", expand=True)
         self.mm_tree.bind("<<TreeviewSelect>>", lambda e: self.mm_pick())
         self.mm_tree.bind("<Button-3>", self.mm_menu)
-        self.mm_empty = tk.Label(left, text="", bg=C["panel"], fg=C["muted"], font=("Segoe UI", 10))
+        self.mm_empty = tk.Label(left, text="", bg=C["panel2"], fg=C["muted"], font=("Segoe UI", 10))
+        self.mm_layout.pick(SETTINGS.get("mm_layout", "Cards") if SETTINGS.get("mm_layout") in ("Cards", "List")
+                            else "Cards", notify=False)
+        self.mm_layout_changed(save=False)
 
         rgo, right = chrome_section(pane, "Strat", padx=0, pady=0)              # 2.69.0
         pane.add(rgo, weight=2)
         acts = tk.Frame(right, bg=P2, padx=8, pady=8)
         acts.pack(fill="x")
         self.mm_btns = {}
-        for key, text, cmd, style in (("track", "▶ Strat Tracker", self.mm_track, "Primary.TButton"),
+        for key, text, cmd, style in (("track", "▶ Track in Strat Tracker", self.mm_track, "Primary.TButton"),
                                       ("vote", "▲ Upvote", self.mm_vote, "TButton"),
                                       ("post", "📤 Post to Community", self.mm_post, "TButton"),
                                       ("regex", "Copy regex", self.mm_copy_regex, "TButton"),
-                                      ("more", "⋯ More", self.mm_more, "TButton")):
+                                      ("more", "More ▾", self.mm_more, "TButton")):
             self.mm_btns[key] = ttk.Button(acts, text=text, command=cmd, style=style)
+        # 2.71.0: your own numbers for this strat (from the Strat Tracker), always on top of its text
+        self.mm_mine_box = tk.Frame(right, bg=P1, padx=12, pady=8, highlightthickness=1,
+                                    highlightbackground=C["line"])
+        self.mm_mine_box.pack(fill="x", padx=8, pady=(0, 8))
         self.mm_detail = tk.Text(right, bg=P2, fg=C["text"], relief="flat", wrap="word", padx=12, pady=8,
                                  font=("Segoe UI", 10), highlightthickness=0, cursor="arrow")
         dsb = ttk.Scrollbar(right, orient="vertical", command=self.mm_detail.yview)
@@ -196,10 +206,224 @@ class MoneyMakersPage:
             w = self.mm_pane.winfo_width()
             if w > 200 and not getattr(self, "_mm_sash_set", False):
                 self._mm_sash_set = True
-                self.mm_pane.sashpos(0, 190)
-                self.mm_pane.sashpos(1, max(int(w * 0.62), min(800, w - 300)))
+                self.mm_pane.sashpos(0, max(int(w * 0.55), min(720, w - 380)))
         except tk.TclError:
             pass
+
+    # ---------------- 2.71.0: filter buttons and strat cards
+    def _mm_chip(self, parent, text, on, cmd, empty=False):
+        bg = C["accent"] if on else C["panel2"]
+        fg = C["bg"] if on else (C["muted"] if empty else C["text"])
+        b = tk.Label(parent, text=text, bg=bg, fg=fg, font=("Segoe UI", 9, "bold" if on else "normal"), padx=8, pady=4,
+                     cursor="hand2", highlightthickness=1, highlightbackground=C["accent"] if on else C["line"])
+        b.bind("<Button-1>", lambda e: cmd())
+        if not on:
+            b.bind("<Enter>", lambda e: b.config(bg=C["sel"]))
+            b.bind("<Leave>", lambda e: b.config(bg=C["panel2"]))
+        return b
+
+    def mm_chips_paint(self):
+        """The filter buttons, with how many strats each has (none: grayed)."""
+        rows = getattr(self, "mm_chip_rows", None)
+        if not rows:
+            return
+        n = {}
+        for s in self.mm_strats:
+            n[s.get("category")] = n.get(s.get("category"), 0) + 1
+            n[(s.get("category"), s.get("type"))] = n.get((s.get("category"), s.get("type")), 0) + 1
+        self.mm_counts = n
+        for r in rows.values():
+            for c in r.chips.winfo_children():
+                c.destroy()
+        cat, typ = self.mm_cat.get(), self.mm_type.get()
+        self._mm_chip(rows["cat"].chips, f"All  {len(self.mm_strats)}", not cat, lambda: self.mm_filter(""))
+        for c in MM.CATEGORIES:
+            self._mm_chip(rows["cat"].chips, f"{c}  {n.get(c, 0)}" if n.get(c) else c, cat == c,
+                          lambda c=c: self.mm_filter(c), empty=not n.get(c))
+        if cat:
+            self._mm_chip(rows["type"].chips, "Any", not typ, lambda: self.mm_filter(cat, ""))
+            for t in MM.TAXONOMY.get(cat, ()):
+                k = n.get((cat, t), 0)
+                self._mm_chip(rows["type"].chips, f"{t}  {k}" if k else t, typ == t,
+                              lambda t=t: self.mm_filter(cat, t), empty=not k)
+            if not rows["type"].winfo_manager():
+                rows["type"].pack(fill="x", after=rows["cat"])
+        else:
+            rows["type"].pack_forget()
+        mx, cm = self.mm_max.get(), self.mm_cmax.get()
+        self.root.after_idle(lambda: [self._mm_flow(r.chips) for r in rows.values()])
+        self._mm_chip(rows["think"].chips, "Any", mx == "Any", lambda: (self.mm_max.set("Any"), self.mm_fill()))
+        for w, _d in MM.THINKING.values():
+            self._mm_chip(rows["think"].chips, w, mx == w, lambda w=w: (self.mm_max.set(w), self.mm_fill()))
+        self._mm_chip(rows["clicks"].chips, "Any", cm == "Any", lambda: (self.mm_cmax.set("Any"), self.mm_fill()))
+        for w in MM.CLICKS:
+            self._mm_chip(rows["clicks"].chips, w, cm == w, lambda w=w: (self.mm_cmax.set(w), self.mm_fill()))
+
+    def _mm_flow(self, f, width=None):
+        """Lay the buttons out left to right, wrapping onto the next line when the row is full (2.71.0)."""
+        try:
+            width = width or f.winfo_width()
+            kids = f.winfo_children()
+        except tk.TclError:
+            return
+        if width < 50:
+            width = 2000
+        key = (width, tuple(str(k) for k in kids))
+        if getattr(f, "_flow", None) == key:
+            return
+        f._flow = key
+        x = y = 0
+        h = max([k.winfo_reqheight() for k in kids] or [24])
+        for k in kids:
+            w = k.winfo_reqwidth()
+            if x and x + w > width:
+                x, y = 0, y + h + 4
+            k.place(x=x, y=y)
+            x += w + 6
+        f.configure(height=y + h + 4)
+
+    def mm_filter(self, cat, typ=""):
+        """A category (and type) filter button: "" = all."""
+        self.mm_cat.set(cat)
+        self.mm_type.set(typ if cat else "")
+        self.mm_tree.heading("type", text="Type" if cat else "Category › Type")
+        self.mm_chips_paint()
+        self.mm_fill()
+
+    def mm_layout_changed(self, save=True):
+        cards = self.mm_layout.get() == "Cards"
+        (self.mm_listf if cards else self.mm_cards).pack_forget()
+        (self.mm_cards if cards else self.mm_listf).pack(fill="both", expand=True)
+        if save:
+            SETTINGS["mm_layout"] = self.mm_layout.get()
+            save_json("settings.json", SETTINGS)
+        if cards:
+            self.mm_cards_fill()
+
+    def mm_sort_card(self):
+        key, rev = CARD_SORT.get(self.mm_csort.get(), ("profit", True))
+        self.mm_sort = (key, rev)
+        self.mm_fill()
+
+    def mm_cards_fill(self):
+        """One card per strat in the list (same filters, same order): what it is, its name, the effort, the
+        estimated profit, upvotes and who - and your own numbers when you've tracked it."""
+        box = self.mm_cards.inner
+        for c in box.winfo_children():
+            c.destroy()
+        self.mm_card_w = {}
+        P2, P1 = C["panel2"], C["panel"]
+        mine = self._mm_my_numbers_all()
+        for iid in self.mm_tree.get_children():
+            s = next((x for x in self.mm_strats if x["id"] + "|" + x["origin"] == iid), None)
+            if s is None:
+                continue
+            post = s.get("_post") or {}
+            card = tk.Frame(box, bg=P1, padx=12, pady=8, highlightthickness=1, highlightbackground=C["line"],
+                            cursor="hand2")
+            tk.Label(card, text=MM.type_text(s).upper(), bg=P1, fg=C["steel"], font=("Segoe UI", 9, "bold"),
+                     anchor="w").pack(fill="x")
+            tk.Label(card, text=("✔ " if post.get("voted") else "") + s["name"], bg=P1,
+                     fg=C["green"] if s["origin"] == "mine" else C["text"], font=("Segoe UI", 12, "bold"), anchor="w",
+                     justify="left", wraplength=230).pack(fill="x")
+            tk.Label(card, text=f"🧠 {MM.thinking_word(s.get('thoughts_per_click'))}   🖱 {s.get('clicks_per_hour', '?')}",
+                     bg=P1, fg=C["muted"], font=("Segoe UI", 9), anchor="w").pack(fill="x", pady=(4, 0))
+            tk.Label(card, text=MM.money_text(s.get("est_profit"), " / h"), bg=P1, fg=C["good"],
+                     font=("Segoe UI", 16, "bold"), anchor="w").pack(fill="x", pady=(8, 0))
+            by = post.get("author", {}).get("name") or (s.get("author") if s["origin"] != "mine" else "me")
+            foot = (f"▲ {post.get('score', 0)}   " if post else "") + (f"by {by}" if by else "") + \
+                ("   HIDDEN" if post.get("hidden") else "")
+            tk.Label(card, text=foot, bg=P1, fg=C["red"] if post.get("hidden") else C["muted"], font=("Segoe UI", 9),
+                     anchor="w").pack(fill="x", pady=(4, 0))
+            f = mine.get(s["id"])
+            if f and f["runs"]:
+                tk.Label(card, text=f"Yours: {f['runs']} runs" + (f" · {f['per_hour']:.1f} div / h"
+                                                                    if f["per_hour"] is not None else ""),
+                         bg=P1, fg=C["green"], font=("Segoe UI", 9, "bold"), anchor="w").pack(fill="x", pady=(2, 0))
+            for w in [card] + list(card.winfo_children()):
+                w.bind("<Button-1>", lambda e, i=iid: self.mm_select(i))
+                w.bind("<Button-3>", lambda e, i=iid: (self.mm_select(i), self.mm_menu(None, e.x_root, e.y_root)))
+            self.mm_card_w[iid] = card
+        self._mm_cols = None
+        self.mm_cards_reflow()
+        self.mm_cards_mark()
+
+    def mm_cards_reflow(self):
+        cards = list(self.mm_card_w.values())
+        if not cards:
+            return
+        try:
+            w = self.mm_cards.winfo_width()
+        except tk.TclError:
+            return
+        cols = max(1, min(4, (w - 16) // 270)) if w > 50 else 2
+        if cols == getattr(self, "_mm_cols", None):
+            return
+        self._mm_cols = cols
+        box = self.mm_cards.inner
+        for c in range(4):
+            box.columnconfigure(c, weight=1 if c < cols else 0, uniform="card" if c < cols else "")
+        for i, card in enumerate(cards):
+            card.grid(row=i // cols, column=i % cols, sticky="nsew", padx=(0, 8), pady=(0, 8))
+
+    def mm_cards_mark(self):
+        sel = self.mm_tree.selection()
+        for iid, card in self.mm_card_w.items():
+            on = bool(sel) and iid == sel[0]
+            try:
+                card.config(highlightthickness=2 if on else 1, highlightbackground=C["accent"] if on else C["line"])
+            except tk.TclError:
+                pass
+
+    def mm_select(self, iid):
+        if self.mm_tree.exists(iid):
+            self.mm_tree.selection_set(iid)
+            self.mm_tree.see(iid)
+            self.mm_pick()
+
+    def _mm_my_numbers_all(self):
+        """strat id -> your Strat Tracker figures for it (every setup that follows it)."""
+        from . import ledger as L
+        try:
+            d = self.fl_data()
+        except Exception:
+            return {}
+        by = {}
+        for x in d.get("setups", []):
+            if x.get("strat"):
+                by.setdefault(x["strat"], set()).add(x["id"])
+        return {sid: L.figures([l for l in d["logs"] if l["setup"] in ids]) for sid, ids in by.items()}
+
+    def mm_mine_paint(self, s):
+        """The detail's "Your numbers" box: what your Strat Tracker logged for this strat, or how to start."""
+        box = getattr(self, "mm_mine_box", None)
+        if box is None:
+            return
+        for c in box.winfo_children():
+            c.destroy()
+        P1 = C["panel"]
+        if not s:
+            box.pack_forget()
+            return
+        if not box.winfo_manager():
+            box.pack(fill="x", padx=8, pady=(0, 8), before=self.mm_detail)
+        f = self._mm_my_numbers_all().get(s["id"])
+        tk.Label(box, text="YOUR NUMBERS", bg=P1, fg=C["steel"], font=("Segoe UI", 9, "bold"), anchor="w").pack(fill="x")
+        if not f or not f["runs"]:
+            tk.Label(box, text="Not tracked yet. ▶ Track in Strat Tracker makes a setup for it - then your real cost, "
+                               "loot and profit per hour show here.", bg=P1, fg=C["muted"], font=("Segoe UI", 9),
+                     anchor="w", justify="left", wraplength=360).pack(fill="x", pady=(2, 0))
+            return
+        row = tk.Frame(box, bg=P1)
+        row.pack(fill="x", pady=(4, 0))
+        for big, small in ((f"{f['runs']}", "runs"),
+                           (f"{f['per_hour']:.1f}" if f["per_hour"] is not None else "-", "div / hour"),
+                           (f"{f['profit_run']:+.2f}" if f.get("profit_run") is not None else "-", "div a run"),
+                           (_hms(f["avg_run"]) if f.get("avg_run") else "-", "a run")):
+            c = tk.Frame(row, bg=P1)
+            c.pack(side="left", padx=(0, 24))
+            tk.Label(c, text=big, bg=P1, fg=C["good"], font=("Segoe UI", 16, "bold"), anchor="w").pack(anchor="w")
+            tk.Label(c, text=small, bg=P1, fg=C["muted"], font=("Segoe UI", 9), anchor="w").pack(anchor="w")
 
     # ---------------- 2.30.0: Official / Community / Mine
     def _mm_official_cache(self):
@@ -232,7 +456,7 @@ class MoneyMakersPage:
 
     def mm_reload(self, keep=None):
         self.mm_strats = self.mm_view_list()
-        self.mm_nav_fill()
+        self.mm_chips_paint()                                # 2.71.0: the filter buttons (were the Browse tree)
         self.mm_fill(keep)
         if hasattr(self, "mm_one_tree"):
             self.mm_one_fill()
@@ -278,33 +502,6 @@ class MoneyMakersPage:
             return s.get(key, 0) if num else str(s.get(key, "")).lower()
         return sorted(out, key=k, reverse=rev)
 
-    def mm_nav_fill(self):
-        """The Category > Type browser, with how many strats each has (types with none are grayed)."""
-        nav = self.mm_nav
-        cur = nav.selection()[0] if nav.selection() else "all"
-        nav.delete(*nav.get_children())
-        n = {}
-        for s in self.mm_strats:
-            n[s.get("category")] = n.get(s.get("category"), 0) + 1
-            n[(s.get("category"), s.get("type"))] = n.get((s.get("category"), s.get("type")), 0) + 1
-        nav.insert("", "end", iid="all", text="All strats", values=(len(self.mm_strats),), tags=("cat",))
-        for cat, types in MM.TAXONOMY.items():
-            nav.insert("", "end", iid=cat, text=cat, values=(n.get(cat, 0) or "",),
-                       tags=("cat",) if n.get(cat) else ("cat", "empty"), open=bool(n.get(cat)))
-            for t in types:
-                c = n.get((cat, t), 0)
-                nav.insert(cat, "end", iid=f"{cat}|{t}", text=t, values=(c or "",), tags=() if c else ("empty",))
-        nav.selection_set(cur if nav.exists(cur) else "all")
-
-    def mm_nav_pick(self):
-        sel = self.mm_nav.selection()
-        cat, _, typ = (sel[0] if sel and sel[0] != "all" else "").partition("|")
-        if (cat, typ) != (self.mm_cat.get(), self.mm_type.get()):
-            self.mm_cat.set(cat)
-            self.mm_type.set(typ)
-            self.mm_tree.heading("type", text="Type" if cat else "Category › Type")
-            self.mm_fill()
-
     def mm_fill(self, keep=None):
         keep = keep or self.mm_sel
         tv = self.mm_tree
@@ -336,6 +533,8 @@ class MoneyMakersPage:
             tv.selection_set(tv.get_children()[0])
         else:
             self.mm_show_detail(None)
+        if self.mm_layout.get() == "Cards":                  # 2.71.0
+            self.mm_cards_fill()
 
     def mm_sort_by(self, col):
         key = "thoughts_per_click" if col == "thoughts_per_click" else col
@@ -353,6 +552,7 @@ class MoneyMakersPage:
         s = self.mm_current()
         self.mm_sel = self.mm_tree.selection()[0] if s else None
         self.mm_show_detail(s)
+        self.mm_cards_mark()
 
     def mm_show_detail(self, s):
         t = self.mm_detail
@@ -360,6 +560,7 @@ class MoneyMakersPage:
         t.delete("1.0", "end")
         for b in self.mm_btns.values():
             b.pack_forget()
+        self.mm_mine_paint(s)                                     # 2.71.0
         if not s:
             t.insert("end", "Pick a strat on the left.", "meta")
             t.config(state="disabled")
@@ -400,14 +601,7 @@ class MoneyMakersPage:
             if got:
                 t.insert("end", group + "  ", "h")
                 t.insert("end", " · ".join(got) + "\n", "chip")
-        from . import ledger as L                                 # 2.45.0: your Strat Tracker numbers for it
-        d = self.fl_data()
-        sids = {x["id"] for x in d["setups"] if x.get("strat") == s["id"]}
-        f = L.figures([l for l in d["logs"] if l["setup"] in sids]) if sids else None
-        if f and f["runs"]:
-            t.insert("end", "Your Strat Tracker  ", "h")
-            t.insert("end", f"{f['runs']} runs" + (f", {_hms(f['avg_run'])} each" if f["avg_run"] else "")
-                            + (f", {f['per_hour']:.1f} div / h" if f["per_hour"] is not None else "") + "\n", "stat")
+        # (2.71.0: your Strat Tracker numbers are in the Your numbers box above)
         if s.get("ledger"):
             lg = s["ledger"]
             t.insert("end", "Author's Strat Tracker  ", "h")
