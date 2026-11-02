@@ -1,0 +1,96 @@
+{
+ "schema": 1,
+ "id": "midnight",
+ "name": "Midnight Steel",
+ "order": 2,
+ "description": "The look StashOfExile2 had until 2.59.0: steel blue and navy with orange.",
+ "fonts": {
+  "head": [
+   "Segoe UI Semibold",
+   "Segoe UI",
+   "DejaVu Sans"
+  ]
+ },
+ "bars": {
+  "title": {
+   "fill": [
+    [
+     0,
+     "#2a4a7c"
+    ],
+    [
+     1,
+     "#1c3360"
+    ]
+   ],
+   "top": "#86a9de",
+   "bottom": "#070b13",
+   "text": "#ffffff",
+   "texture": "none"
+  },
+  "title_off": {
+   "fill": [
+    [
+     0,
+     "#1a2a4c"
+    ],
+    [
+     1,
+     "#111b30"
+    ]
+   ],
+   "top": "#2b3d5f",
+   "bottom": "#070b13",
+   "text": "#aab6cc",
+   "texture": "none"
+  }
+ },
+ "buttons": {
+  "normal": {
+   "fill": [
+    [
+     0,
+     "#2f4a7c"
+    ],
+    [
+     1,
+     "#1f3256"
+    ]
+   ],
+   "hover": [
+    [
+     0,
+     "#3a5a94"
+    ],
+    [
+     1,
+     "#25395f"
+    ]
+   ],
+   "pressed": [
+    [
+     0,
+     "#16233f"
+    ],
+    [
+     1,
+     "#25395f"
+    ]
+   ],
+   "border": "#0b1424",
+   "hover_border": "#6c90cc",
+   "inner": "#5578b4",
+   "radius": 0,
+   "text": "#e6eeff",
+   "text_hover": "#ffffff"
+  }
+ },
+ "card": {
+  "header": "plate"
+ },
+ "meter": {
+  "style": "bar",
+  "on": "good",
+  "off": "surface_high"
+ }
+}

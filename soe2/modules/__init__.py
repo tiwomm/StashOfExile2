@@ -17,7 +17,7 @@
     on_show()    - its window was opened or brought back
     status()     - utilities: True (on) / False (off) / "warn" (needs attention) -> the dots on the dock and taskbar
 
-Who we build for (2.47.0, the user): Path of Exile players are utilitarian - data, information, problem solving,
+Who we build for (2.47.0): Path of Exile players are utilitarian - data, information, problem solving,
 creative thinking. Show the numbers and how they were worked out; sort / filter / compare / export (CSV); keep the
 depth one click away; plain words; the player decides.
 

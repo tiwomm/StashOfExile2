@@ -1,4 +1,4 @@
-"""One overlay (2.55.0, the user loved the mockups): the Session timer, the Mechanic Helper and Notes in ONE window
+"""One overlay (2.55.0, from the mockups): the Session timer, the Mechanic Helper and Notes in ONE window
 over the game, in any style (Overlays › Appearance › Style) and either layout:
 
     Panel  a card: the time, Map | where, Maps | Avg, the four mechanic switches in two rows, then Notes (tabs + text)
@@ -49,7 +49,7 @@ class MergedOverlay:
 
     # ---------------------------------------------------------------- settings
     def merged_on(self):
-        """2.59.0 (the user): always one window - the separate windows of 2.54 are gone."""
+        """2.59.0: always one window - the separate windows of 2.54 are gone."""
         return True
 
     def merged_layout(self):
@@ -171,7 +171,7 @@ class MergedOverlay:
         return w
 
     def overlay_hide_toggle(self):
-        """2.59.0 (the user): F6 (Settings › Hotkeys) hides the whole overlay - timer, switches, Notes - and shows it
+        """2.59.0: F6 (Settings › Hotkeys) hides the whole overlay - timer, switches, Notes - and shows it
         again, as it was. Nothing is switched off; it's only out of sight."""
         self.mg_hidden = not getattr(self, "mg_hidden", False)
         w = getattr(self, "mg_win", None)
@@ -188,7 +188,7 @@ class MergedOverlay:
         return self.mg_hidden
 
     def _mg_on_screen(self, w):
-        """2.56.1 (the user: a locked strip past the screen's edge couldn't be reached): always all on the screen it
+        """2.56.1 (feedback: a locked strip past the screen's edge couldn't be reached): always all on the screen it
         is on - moved in, and a strip wider than the screen made narrower (never under its minimum)."""
         from .style import monitor_rect
         cfg = self.tracker_cfg()
@@ -309,7 +309,7 @@ class MergedOverlay:
         return clk
 
     def _mg_glyphs(self, w, cv, P, x, y):
-        """The lock drawn on the canvas (Minimal and Strip have no title bar). -> x left of it. (2.59.0, the user: no
+        """The lock drawn on the canvas (Minimal and Strip have no title bar). -> x left of it. (2.59.0: no
         × - it was easy to hit by mistake and the overlay vanished; F6 shows / hides it.)"""
         locked = bool(self.tracker_cfg().get("mlocked"))
         for txt, cmd, tag in (("🔒" if locked else "🔓", lambda: w._toggle_lock(), "mg_lock"),):

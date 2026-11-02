@@ -1,0 +1,216 @@
+{
+ "schema": 1,
+ "id": "hollow",
+ "name": "Hollow Deep",
+ "order": 8,
+ "description": "Void-black rock split by violet light, bone-white text.",
+ "colors": {
+  "chassis": "#060409",
+  "surface": "#0c0912",
+  "surface_raised": "#120e1a",
+  "surface_sunken": "#040207",
+  "surface_high": "#1c1627",
+  "border": "#2a2238",
+  "border_light": "#41355a",
+  "border_dark": "#000000",
+  "shadow": "#000000",
+  "text": "#e8e2ef",
+  "text_muted": "#8d82a0",
+  "text_strong": "#fbf8ff",
+  "text_disabled": "#4f4660",
+  "accent": "#b675ff",
+  "accent_2": "#4ff0cf",
+  "selection": "#2a1846",
+  "selection_text": "#f6eeff",
+  "hover": "#181222",
+  "stripe": "#09060e",
+  "good": "#4ff0cf",
+  "warn": "#f5c35a",
+  "bad": "#ff5470",
+  "money": "#f2d06b",
+  "link": "#8fb8ff"
+ },
+ "fonts": {
+  "head": [
+   "Corbel",
+   "Segoe UI Semibold",
+   "DejaVu Sans"
+  ],
+  "num": [
+   "Segoe UI Light",
+   "Corbel",
+   "DejaVu Sans"
+  ]
+ },
+ "bars": {
+  "title": {
+   "fill": [
+    [
+     0,
+     "#1a1028"
+    ],
+    [
+     1,
+     "#07040c"
+    ]
+   ],
+   "top": "#3a2a55",
+   "bottom": "#000000",
+   "text": "#f3eaff",
+   "texture": "veins",
+   "texture_color": "#b675ff"
+  },
+  "title_off": {
+   "fill": [
+    [
+     0,
+     "#0e0916"
+    ],
+    [
+     1,
+     "#040207"
+    ]
+   ],
+   "top": "#3a2a55",
+   "bottom": "#000000",
+   "text": "text_muted",
+   "texture": "none",
+   "texture_color": "#b675ff"
+  }
+ },
+ "buttons": {
+  "normal": {
+   "fill": [
+    [
+     0,
+     "#211a2f"
+    ],
+    [
+     1,
+     "#14101d"
+    ]
+   ],
+   "hover": [
+    [
+     0,
+     "#2b1f44"
+    ],
+    [
+     1,
+     "#181026"
+    ]
+   ],
+   "pressed": [
+    [
+     0,
+     "#0a0710"
+    ],
+    [
+     1,
+     "#1c1627"
+    ]
+   ],
+   "border": "#000000",
+   "hover_border": "#b675ff",
+   "inner": "#382c4f",
+   "radius": 0,
+   "text": "text",
+   "text_hover": "text_strong"
+  },
+  "primary": {
+   "fill": [
+    [
+     0,
+     "#cf9dff"
+    ],
+    [
+     0.5,
+     "#a865f5"
+    ],
+    [
+     1,
+     "#7d3fd0"
+    ]
+   ],
+   "hover": [
+    [
+     0,
+     "#dcb4ff"
+    ],
+    [
+     0.5,
+     "#b878ff"
+    ],
+    [
+     1,
+     "#8b4be0"
+    ]
+   ],
+   "pressed": [
+    [
+     0,
+     "#6a30b8"
+    ],
+    [
+     1,
+     "#8b4be0"
+    ]
+   ],
+   "border": "#12051f",
+   "hover_border": "#12051f",
+   "inner": "#ecd7ff",
+   "radius": 0,
+   "text": "#1a0d03",
+   "text_hover": "#1a0d03"
+  },
+  "heading": {
+   "fill": [
+    [
+     0,
+     "#171122"
+    ],
+    [
+     1,
+     "#0e0a15"
+    ]
+   ],
+   "hover": [
+    [
+     0,
+     "#1f1630"
+    ],
+    [
+     1,
+     "#120d1b"
+    ]
+   ],
+   "pressed": [
+    [
+     0,
+     "#120d1b"
+    ],
+    [
+     1,
+     "#1f1630"
+    ]
+   ],
+   "border": "#000000",
+   "hover_border": "#000000",
+   "inner": "#2a2238",
+   "radius": 0,
+   "text": "#a493c0",
+   "text_hover": "accent"
+  }
+ },
+ "card": {
+  "header": "plate",
+  "border": "#41355a",
+  "sep": "#2a2238"
+ },
+ "meter": {
+  "style": "orbs",
+  "on": "accent",
+  "off": "#1c1627",
+  "lcd_bg": "#040207"
+ }
+}

@@ -296,7 +296,7 @@ class RemnantPage:
     # whole game - and Auto, seeing its own black window, hid and showed it again and again.) Each tag is also hidden
     # from screen capture (Windows 10 2004+), so the watcher never reads its own tags.
     def remnant_show(self, rect, rows, secs=RM.SHOW_SECS):
-        """2.56.2 (the user: "very bold and large ... more compact, less intrusive"): smaller, plain-weight tags in
+        """2.56.2 (feedback: "very bold and large ... more compact, less intrusive"): smaller, plain-weight tags in
         the overlay style's own colors (Overlays › Appearance › Style), on its texture when it has one (the runeshape
         parchment), a thin edge; the best one in the style's warm color with a ★."""
         self.remnant_hide()

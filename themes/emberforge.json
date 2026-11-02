@@ -1,0 +1,234 @@
+{
+ "schema": 1,
+ "id": "emberforge",
+ "name": "Emberforge",
+ "order": 1,
+ "description": "Hammered black iron, ember orange and cold blue glow. The default.",
+ "colors": {
+  "chassis": "#090a0b",
+  "surface": "#111315",
+  "surface_raised": "#181b1e",
+  "surface_sunken": "#070809",
+  "surface_high": "#22262a",
+  "border": "#2d3237",
+  "border_light": "#474e56",
+  "border_dark": "#000000",
+  "shadow": "#000000",
+  "text": "#e1e4e6",
+  "text_muted": "#8d959c",
+  "text_strong": "#ffffff",
+  "text_disabled": "#4f565d",
+  "accent": "#ff7b2e",
+  "accent_2": "#62bdff",
+  "selection": "#2e1d10",
+  "selection_text": "#fff2e6",
+  "hover": "#1e2226",
+  "stripe": "#0c0d0f",
+  "good": "#7fd36a",
+  "warn": "#ffb23d",
+  "bad": "#ff5a4a",
+  "money": "#ffcf5e",
+  "link": "#62bdff"
+ },
+ "fonts": {
+  "head": [
+   "Constantia",
+   "Cambria",
+   "Georgia",
+   "DejaVu Serif"
+  ],
+  "num": [
+   "Constantia",
+   "Cambria",
+   "Georgia",
+   "DejaVu Serif"
+  ]
+ },
+ "bars": {
+  "title": {
+   "fill": [
+    [
+     0,
+     "#2b2f33"
+    ],
+    [
+     0.5,
+     "#1a1d20"
+    ],
+    [
+     1,
+     "#0e1012"
+    ]
+   ],
+   "top": "#555d66",
+   "bottom": "#000000",
+   "text": "#f4f6f8",
+   "texture": "embers",
+   "texture_color": "#ff7b2e"
+  },
+  "title_off": {
+   "fill": [
+    [
+     0,
+     "#181a1c"
+    ],
+    [
+     0.5,
+     "#0e1012"
+    ],
+    [
+     1,
+     "#08090a"
+    ]
+   ],
+   "top": "#555d66",
+   "bottom": "#000000",
+   "text": "text_muted",
+   "texture": "none",
+   "texture_color": "#ff7b2e"
+  }
+ },
+ "buttons": {
+  "normal": {
+   "fill": [
+    [
+     0,
+     "#3a4047"
+    ],
+    [
+     0.5,
+     "#272b30"
+    ],
+    [
+     1,
+     "#1a1d20"
+    ]
+   ],
+   "hover": [
+    [
+     0,
+     "#4a3428"
+    ],
+    [
+     0.5,
+     "#33241b"
+    ],
+    [
+     1,
+     "#221812"
+    ]
+   ],
+   "pressed": [
+    [
+     0,
+     "#0e1012"
+    ],
+    [
+     1,
+     "#272b30"
+    ]
+   ],
+   "border": "#000000",
+   "hover_border": "#ff7b2e",
+   "inner": "#5a626b",
+   "radius": 0,
+   "text": "text",
+   "text_hover": "text_strong"
+  },
+  "primary": {
+   "fill": [
+    [
+     0,
+     "#ffae6a"
+    ],
+    [
+     0.5,
+     "#ff7b2e"
+    ],
+    [
+     1,
+     "#c94e12"
+    ]
+   ],
+   "hover": [
+    [
+     0,
+     "#ffc188"
+    ],
+    [
+     0.5,
+     "#ff8d44"
+    ],
+    [
+     1,
+     "#d95c1c"
+    ]
+   ],
+   "pressed": [
+    [
+     0,
+     "#a8400c"
+    ],
+    [
+     1,
+     "#d95c1c"
+    ]
+   ],
+   "border": "#2a0d00",
+   "hover_border": "#2a0d00",
+   "inner": "#ffd9b8",
+   "radius": 0,
+   "text": "#1a0d03",
+   "text_hover": "#1a0d03"
+  },
+  "heading": {
+   "fill": [
+    [
+     0,
+     "#24282c"
+    ],
+    [
+     1,
+     "#16191c"
+    ]
+   ],
+   "hover": [
+    [
+     0,
+     "#2c3238"
+    ],
+    [
+     1,
+     "#1a1d20"
+    ]
+   ],
+   "pressed": [
+    [
+     0,
+     "#1a1d20"
+    ],
+    [
+     1,
+     "#2c3238"
+    ]
+   ],
+   "border": "#000000",
+   "hover_border": "#000000",
+   "inner": "#3a4148",
+   "radius": 0,
+   "text": "#a9b3bc",
+   "text_hover": "accent_2"
+  }
+ },
+ "card": {
+  "header": "plate",
+  "border": "#474e56",
+  "sep": "#2d3237"
+ },
+ "meter": {
+  "style": "runes",
+  "on": "accent_2",
+  "off": "#1e2226",
+  "lcd_bg": "#070809"
+ }
+}

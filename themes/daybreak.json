@@ -1,0 +1,230 @@
+{
+ "schema": 1,
+ "id": "daybreak",
+ "name": "Daybreak Stalker",
+ "order": 7,
+ "description": "First light over the jungle: night blue to amber, green leather.",
+ "colors": {
+  "chassis": "#0a100e",
+  "surface": "#101915",
+  "surface_raised": "#15201b",
+  "surface_sunken": "#070c0a",
+  "surface_high": "#1e2c25",
+  "border": "#26362e",
+  "border_light": "#3c5246",
+  "border_dark": "#030504",
+  "shadow": "#000000",
+  "text": "#e4e1cf",
+  "text_muted": "#929c88",
+  "text_strong": "#fffbea",
+  "text_disabled": "#56604f",
+  "accent": "#ff9b54",
+  "accent_2": "#7cc9c0",
+  "selection": "#2c2617",
+  "selection_text": "#fff3dc",
+  "hover": "#1a2620",
+  "stripe": "#0c1411",
+  "good": "#8fd36a",
+  "warn": "#ffc25a",
+  "bad": "#ff6655",
+  "money": "#ffd277",
+  "link": "#7cc9c0"
+ },
+ "fonts": {
+  "head": [
+   "Trebuchet MS",
+   "Candara",
+   "DejaVu Sans"
+  ],
+  "num": [
+   "Trebuchet MS",
+   "Candara",
+   "DejaVu Sans"
+  ]
+ },
+ "bars": {
+  "title": {
+   "fill": [
+    [
+     0,
+     "#18243a"
+    ],
+    [
+     0.45,
+     "#3a2d42"
+    ],
+    [
+     0.8,
+     "#8a4636"
+    ],
+    [
+     1,
+     "#d9783e"
+    ]
+   ],
+   "top": "#2b3b58",
+   "bottom": "#ffb070",
+   "text": "#fff3dc",
+   "texture": "none"
+  },
+  "title_off": {
+   "fill": [
+    [
+     0,
+     "#0d1420"
+    ],
+    [
+     0.45,
+     "#201924"
+    ],
+    [
+     0.8,
+     "#4c261e"
+    ],
+    [
+     1,
+     "#774222"
+    ]
+   ],
+   "top": "#2b3b58",
+   "bottom": "#ffb070",
+   "text": "text_muted",
+   "texture": "none"
+  }
+ },
+ "buttons": {
+  "normal": {
+   "fill": [
+    [
+     0,
+     "#2a3a31"
+    ],
+    [
+     1,
+     "#18241e"
+    ]
+   ],
+   "hover": [
+    [
+     0,
+     "#33473c"
+    ],
+    [
+     1,
+     "#1c2a23"
+    ]
+   ],
+   "pressed": [
+    [
+     0,
+     "#0f1713"
+    ],
+    [
+     1,
+     "#22312a"
+    ]
+   ],
+   "border": "#030504",
+   "hover_border": "#ff9b54",
+   "inner": "#4a6356",
+   "radius": 0,
+   "text": "text",
+   "text_hover": "text_strong"
+  },
+  "primary": {
+   "fill": [
+    [
+     0,
+     "#ffc07a"
+    ],
+    [
+     0.5,
+     "#ff9b54"
+    ],
+    [
+     1,
+     "#d9692e"
+    ]
+   ],
+   "hover": [
+    [
+     0,
+     "#ffd096"
+    ],
+    [
+     0.5,
+     "#ffab68"
+    ],
+    [
+     1,
+     "#e57836"
+    ]
+   ],
+   "pressed": [
+    [
+     0,
+     "#b8561f"
+    ],
+    [
+     1,
+     "#e57836"
+    ]
+   ],
+   "border": "#3a1a06",
+   "hover_border": "#3a1a06",
+   "inner": "#ffe2bd",
+   "radius": 0,
+   "text": "#1a0d03",
+   "text_hover": "#1a0d03"
+  },
+  "heading": {
+   "fill": [
+    [
+     0,
+     "#1e2c25"
+    ],
+    [
+     1,
+     "#141e19"
+    ]
+   ],
+   "hover": [
+    [
+     0,
+     "#263830"
+    ],
+    [
+     1,
+     "#18241e"
+    ]
+   ],
+   "pressed": [
+    [
+     0,
+     "#18241e"
+    ],
+    [
+     1,
+     "#263830"
+    ]
+   ],
+   "border": "#030504",
+   "hover_border": "#030504",
+   "inner": "#33463c",
+   "radius": 0,
+   "text": "#c9b58f",
+   "text_hover": "accent"
+  }
+ },
+ "card": {
+  "header": "plate",
+  "border": "#3c5246",
+  "sep": "#26362e"
+ },
+ "meter": {
+  "style": "ticks",
+  "on": "accent",
+  "off": "#1e2c25",
+  "lcd_bg": "#070c0a"
+ }
+}

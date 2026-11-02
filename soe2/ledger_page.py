@@ -150,7 +150,7 @@ class LedgerPage:
 
     # ================================================================ the page
     def build_ledger(self, page):
-        """2.56.0 (the user: "a bit confusing ... modern, clean, functional, ease of use for the average user"; the
+        """2.56.0 (feedback: "a bit confusing ... modern, clean, functional, ease of use for the average user"; the
         Farm Ledger Redesign mockups): your setups as cards on the left; on the right the setup's name and what it
         is, ONE main button (Log loot), whether runs are being counted, then the verdict in plain words ("Makes about
         10.3 div an hour"), the figures, where the money comes from, profit per log, and the sheet. No setup yet:
