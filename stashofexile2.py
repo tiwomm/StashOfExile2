@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU GPL v3.0 (see LICENSE). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.51.0
+VERSION 2.52.0
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,6 +19,11 @@ VERSION 2.51.0
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.52.0
+       Menus tidied (the user: opacity was in the Session timer's options AND in Appearance): every setting in one
+       place. Opacity only in Overlays › Appearance - the Session timer's Options and Notes' card link there (no
+       tk_opacity / ov_opacity any more). The clock-on-the-timer switch moved from Settings > Appearance > Clock to
+       Overlays › Session timer › Options (next to Lock); Settings links there. Notes' card: "Font and colours".
   2.51.0
        Mod book › Manual feed (feed_page.py; the user: paste an already expensive tablet with its price so the app
        learns it - on top of how it learns now). Ctrl+Alt+C (while the tab shows) or paste an item, type its price
@@ -1279,7 +1284,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.51.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.52.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 

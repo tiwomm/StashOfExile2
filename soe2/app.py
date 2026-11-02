@@ -898,9 +898,10 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
                           values=["12-hour (3:45 PM)", "24-hour (15:45)"])
         cb.pack(side="left")
         cb.bind("<<ComboboxSelected>>", lambda e: self.on_clock())
-        self.ingame_clock_var = tk.BooleanVar(value=bool(self.tracker_cfg().get("clock", True)))     # 2.39.0
-        ttk.Checkbutton(row, text="Also show it on the Session timer (in game)", variable=self.ingame_clock_var,
-                        command=self.on_ingame_clock).pack(side="left", padx=(16, 0))
+        # 2.52.0: the switch for the clock on the Session timer moved to the timer's own options
+        ttk.Button(row, text="On the Session timer: Overlays › Session timer › Options", style="Quiet.TButton",
+                   command=lambda: (self.ovh_open("Session timer"), self.tk_view.pick("Options"))).pack(
+            side="left", padx=(16, 0))
 
         # 2.44.0: the look of the windows over the game lives in Overlays › Look (with the things it changes)
         row = section("Appearance", "Over the game", "The Session timer, the Mechanic Helper bar and Notes have their "
@@ -1204,16 +1205,12 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         if key == "session":
             t["opacity"] = v
             w = getattr(self, "tk_overlay", None)
-            if getattr(self, "tk_opacity", None) is not None:
-                self.tk_opacity.set(v)
         elif key == "helper":
             t["hopacity"] = v
             w = getattr(self, "tk_helpers", None)
         else:
             self.overlay.cfg["notes_opacity"] = v
             w = getattr(self.overlay, "notes", None)
-            if getattr(self, "ov_opacity", None) is not None:
-                self.ov_opacity.set(v)
         try:
             if w is not None and w.winfo_exists():
                 w.set_opacity(v)

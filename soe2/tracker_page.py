@@ -377,8 +377,13 @@ class TrackerPage:
                         command=self.tracker_options_changed).grid(row=7, column=0, columnspan=3, sticky="w",
                                                                    pady=(8, 0))
         self.tk_lock = tk.BooleanVar(value=bool(cfg.get("locked")))
-        ttk.Checkbutton(box, text="Lock it (can't be moved or resized by accident)", variable=self.tk_lock,
-                        command=self.tracker_options_changed).grid(row=3, column=0, columnspan=3, sticky="w", pady=(8, 0))
+        lk = tk.Frame(box, bg=P2)
+        lk.grid(row=3, column=0, columnspan=3, sticky="w", pady=(8, 0))
+        ttk.Checkbutton(lk, text="Lock it (can't be moved or resized by accident)", variable=self.tk_lock,
+                        command=self.tracker_options_changed).pack(side="left")
+        self.ingame_clock_var = tk.BooleanVar(value=bool(cfg.get("clock", True)))     # 2.39.0 (2.52.0: was in Settings)
+        ttk.Checkbutton(lk, text="Clock and date on the timer", variable=self.ingame_clock_var,
+                        command=self.on_ingame_clock).pack(side="left", padx=(16, 0))
         ch = tk.Frame(box, bg=P2)                       # 2.7.0: whose deaths count
         ch.grid(row=5, column=0, columnspan=3, sticky="w", pady=(8, 0))
         tk.Label(ch, text="Your character name", bg=P2, fg=C["text"]).pack(side="left")
@@ -391,12 +396,10 @@ class TrackerPage:
         self.tracker_char_hint()
         op = tk.Frame(box, bg=P2)                       # 2.3.0: own row - it used to sit on top of its label
         op.grid(row=4, column=0, columnspan=3, sticky="w", pady=(8, 0))
-        tk.Label(op, text="Opacity", bg=P2, fg=C["text"]).pack(side="left")
-        self.tk_opacity = tk.IntVar(value=int(cfg.get("opacity", 225)))
-        ttk.Scale(op, from_=60, to=255, variable=self.tk_opacity, orient="horizontal", length=160,
-                  command=lambda _v: self.tracker_options_changed()).pack(side="left", padx=(8, 0))
-        tk.Label(op, text="(lower = see more of the game through it)", bg=P2, fg=C["muted"],
-                 font=("Segoe UI", 9)).pack(side="left", padx=(8, 0))
+        # 2.52.0 (the user: opacity was here AND in Appearance): one place for how every overlay looks
+        tk.Label(op, text="Style and opacity of the timer:", bg=P2, fg=C["text"]).pack(side="left")
+        ttk.Button(op, text="Overlays › Appearance", style="Quiet.TButton",
+                   command=lambda: self.ovh_open("Appearance")).pack(side="left", padx=(8, 0))
         box2 = tk.Frame(po, bg=P2, padx=16, pady=8, highlightthickness=1, highlightbackground=C["line"])
         box2.pack(fill="x", pady=(8, 0))
         tk.Label(box2, text="Hotkeys (work while the game is in front; also on the Hotkeys list in Settings)", bg=P2,
@@ -469,7 +472,6 @@ class TrackerPage:
         for k, v in self.tk_line_vars.items():
             cfg["lines"][k] = bool(v.get())
         cfg["locked"] = bool(self.tk_lock.get())
-        cfg["opacity"] = int(float(self.tk_opacity.get()))
         cfg["ask_count"] = bool(self.tk_ask.get())
         cfg["autostart"] = bool(self.tk_auto.get())
         self.tracker_save()

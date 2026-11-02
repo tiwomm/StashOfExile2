@@ -21,6 +21,10 @@ NEXT = [
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.52.0": [
+        "Tidier menus: every setting lives in one place. Opacity is only in Overlays › Appearance; the clock on the "
+        "Session timer is switched in Overlays › Session timer › Options.",
+    ],
     "2.51.0": [
         "Mod book › Manual feed: Ctrl+Alt+C (or paste) an item you know the price of - an expensive tablet, say - type "
         "the price and Feed it. The Mod book learns from it like a sale; you see what changed, and can undo it.",
