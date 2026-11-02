@@ -62,6 +62,39 @@ class _Num(CanvasText):
     configure = config
 
 
+class _Time(CanvasText):
+    """2.69.2: the session time. "(paused)" is not part of the big number any more (it ran into Map / the next
+    cell): a small muted PAUSED tag sits beside it (XP bar) or under it (Panel)."""
+    tag = None          # (canvas item, "right" / "below")
+    num = False         # the Panel: "not tracking" -> --:--
+
+    def config(self, **kw):
+        if "text" in kw:
+            t = str(kw["text"])
+            paused = "(paused)" in t
+            t = t.replace("(paused)", "").rstrip()
+            if self.num and "tracking" in t:
+                t = "--:--"
+            kw["text"] = t
+            super().config(**kw)
+            if self.tag:
+                item, where = self.tag
+                cv = self.canvas
+                try:
+                    cv.itemconfigure(item, text="PAUSED" if paused else "")
+                    bb = cv.bbox(self.item)
+                    if bb:
+                        if where == "right":
+                            cv.coords(item, bb[2] + 6, (bb[1] + bb[3]) // 2)
+                        else:
+                            cv.coords(item, bb[0], bb[3] + 1)
+                except Exception:
+                    pass
+            return
+        super().config(**kw)
+    configure = config
+
+
 class _Sub(_Trunc):
     """The Panel's red subtitle: where you are, or the league when the game hasn't said yet."""
     limit = 30
@@ -459,9 +492,16 @@ class MergedOverlay:
                 x0, y0 = gx0 + (i % 2) * colw, y + (i // 2) * rh
                 cv.create_text(x0 + int(16 * k), y0 + rh // 2, text=icon, fill=P["icon"],
                                font=("Segoe UI Symbol", self._hf(13)), tags=("mg",))
+                if key == "session":                        # 2.69.2: PAUSED under the time, not after it
+                    t = self._mg_text(cv, P, x0 + int(32 * k), y0 + rh // 2 - int(3 * k), key,
+                                      (P["font"], self._hf(15), "bold"), fill=P["big"], cls=_Time)
+                    t.num = True
+                    t.tag = (cv.create_text(x0 + int(32 * k), y0 + rh - int(4 * k), text="", anchor="nw",
+                                            fill=P["muted"], font=(P["font"], self._hf(7), "bold"), tags=("mg",)),
+                             "below")
+                    continue
                 self._mg_text(cv, P, x0 + int(32 * k), y0 + rh // 2, key,
-                              (P["font"], self._hf(15 if key == "session" else 14), "bold"), fill=P["big"],
-                              cls=_Num)
+                              (P["font"], self._hf(14), "bold"), fill=P["big"], cls=_Num)
             y += rows * rh + int(8 * k)
         if want["helpers"]:
             rh = int(30 * k)
@@ -687,9 +727,12 @@ class MergedOverlay:
             right = gx - fm.measure("00:00 PM") - 14
         x = lft
         if want["timer"]:
-            self._mg_text(cv, P, x, mid, "session", (P["font"], self._hf(13), "bold"), fill=P["big"])
+            t = self._mg_text(cv, P, x, mid, "session", (P["font"], self._hf(13), "bold"), fill=P["big"], cls=_Time)
+            pf = (P["font"], self._hf(7), "bold")              # 2.69.2: a small PAUSED tag after the time, room kept
+            t.tag = (cv.create_text(x, mid, text="", anchor="w", fill=P["muted"], font=pf, tags=("mg",)), "right")
             fb_ = tkfont.Font(root=cv, family=P["font"], size=self._hf(13), weight="bold")
-            x += max(fb_.measure("0:00:00"), fb_.measure("not tracking")) + 10
+            fp_ = tkfont.Font(root=cv, family=P["font"], size=self._hf(7), weight="bold")
+            x += max(fb_.measure("0:00:00") + 6 + fp_.measure("PAUSED"), fb_.measure("not tracking")) + 10
             self._hud_sep(cv, P, x, H, cy=mid, h=int(H * 0.34) if two else None)
             x += 14
             self._mg_text(cv, P, x, mid, "map", f)
