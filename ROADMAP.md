@@ -4,7 +4,7 @@
 
 > **Who we build for - read second.** Path of Exile players are utilitarian: they love data and information, problem solving and creative thinking. So every feature shows its numbers *and how they were worked out*, lets you sort, filter, compare and export them (CSV), keeps power-user depth (keys, versions, raw data) one click away instead of hiding it, explains in plain words, and leaves the decision to the player. Pretty is welcome; vague is not.
 
-**Current version: 2.61.0**
+**Current version: 2.61.1**
 
 Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds features, 2.10.1 only fixes. Each step below is one release; we work through them top to bottom.
 
@@ -92,6 +92,7 @@ Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds f
 | 2.59.0 | Settings cleanup 3+4 - always one overlay window (Layout under Style, no × on the strip); "Session timer" is now Overlay, one screen; F6 shows / hides the overlay (no notes key); Settings › Price checking and Tools; Client.txt and window title in General › Game; one league place; one overlay lock; no Save & apply; Fine tuning in Advanced; a search box in Settings. |
 | 2.60.0 | **Theme packs:** ten themes for the whole app (Emberforge default, Midnight Steel = the old look), swapped live in Settings › Appearance; bevelled buttons, list headings and title bars per theme; meters for the trade limits and mod rolls; an item card with Item / How it's priced / Raw in Price checks; a new icon. Themes are JSON (themes/); your own go in the data folder's themes folder. |
 | 2.61.0 | The app window's own title bar in the theme's colors (Windows 11; dark / light on Windows 10). A fresh install starts by picking a theme. |
+| 2.61.1 | Chat command keys are set on the Chat commands page again, with a warning when a key is taken; a command without a key is kept. |
 
 ## ▶ Next up
 

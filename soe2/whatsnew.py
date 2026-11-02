@@ -21,6 +21,11 @@ NEXT = [
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.61.1": [
+        "Chat commands: set each command's key right on that page again - click the Key box and press the key. If "
+        "another hotkey already uses it, the box turns red and says which one.",
+        "Fixed: a chat command you hadn't given a key yet wasn't kept.",
+    ],
     "2.61.0": [
         "The app window's own title bar now takes the theme's colors too (Windows 11; on Windows 10 it turns dark "
         "or light to match).",
