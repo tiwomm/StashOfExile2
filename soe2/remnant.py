@@ -221,7 +221,7 @@ def thumb(img):
 
 
 def changed(a, b, tol=6.0):
-    """Two small grey thumbnails (bytes) differ enough to read again."""
+    """Two small gray thumbnails (bytes) differ enough to read again."""
     if a is None or b is None or len(a) != len(b):
         return True
     return sum(abs(x - y) for x, y in zip(a, b)) / len(a) > tol

@@ -943,8 +943,9 @@ class TrackerPage:
         from .overlaywin import CanvasText
         cv = w.canvas_body()
         self.tk_ov_cv = cv
-        # 2.51.0 (the user: "barely legible"): a size up, bold numbers, a halo round every letter
-        f_big, f_row, f_bold = (P["font"], 22, "bold"), (P["font"], 11, "bold"), (P["font"], 11, "bold")
+        # 2.51.0 (the user: "barely legible"): a size up and a halo round every letter. 2.53.0 ("a bit too harsh now"):
+        # the rows back to plain weight, only the time and Profit bold, a thinner and softer halo
+        f_big, f_row, f_bold = (P["font"], 20, "bold"), (P["font"], 10), (P["font"], 10, "bold")
         items = {"session": cv.create_text(12, 6, text="", anchor="nw", fill=P["big"], font=f_big)}
         lines = cfg["lines"]
         rows = []
@@ -960,8 +961,7 @@ class TrackerPage:
                 items[left] = cv.create_text(12, 0, text="", anchor="w", fill=P["text"],
                                              font=f_bold if left == "profit" else f_row)
             if right:
-                items[right] = cv.create_text(0, 0, text="", anchor="e", fill=P["text"],
-                                              font=f_bold if right == "where" else f_row)
+                items[right] = cv.create_text(0, 0, text="", anchor="e", fill=P["text"], font=f_row)
 
         halo = P.get("halo") if P.get("texture") else None
         self.tk_ov_lbls = {k: CanvasText(cv, it, P["bg"], halo=halo) for k, it in items.items()}
@@ -969,13 +969,13 @@ class TrackerPage:
 
         def layout(_e=None):
             wd = max(cv.winfo_width(), 120)
-            y = 50
+            y = 48
             for left, right in rows:
                 if left:
                     lbl[left].place(12, y)
                 if right:
                     lbl[right].place(wd - 12, y)
-                y += 22
+                y += 21
         cv.bind("<Configure>", layout, add="+")
         layout()
         if not cfg.get("locked"):

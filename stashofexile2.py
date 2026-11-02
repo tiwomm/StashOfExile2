@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU GPL v3.0 (see LICENSE). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.52.0
+VERSION 2.53.0
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,11 +19,19 @@ VERSION 2.52.0
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.53.0
+       Price checks: a click on a row (Manual Add or a stash tab's list) shows the item's box - the same one Insights
+       draws (ins_preview, key "pc": name in its rarity color, mods as in game - an advanced copy's { } lines and
+       (min-max) ranges dropped - price, when added, listings seen). Ctrl / Shift clicks don't; a click on it, Esc
+       or 20 s closes it (app.pc_preview_at). The Session timer softer (the user: 2.51's text "a bit too harsh"):
+       rows 10 plain, the time 20 bold, Profit bold; the halo thinner (4 sides, no corners) and nearer the page
+       (#e6d6b2). US spelling in every user-facing text (colour -> color, grey -> gray ...); Notes' card "Font and
+       Colors". test_v2530.
   2.52.0
        Menus tidied (the user: opacity was in the Session timer's options AND in Appearance): every setting in one
        place. Opacity only in Overlays › Appearance - the Session timer's Options and Notes' card link there (no
        tk_opacity / ov_opacity any more). The clock-on-the-timer switch moved from Settings > Appearance > Clock to
-       Overlays › Session timer › Options (next to Lock); Settings links there. Notes' card: "Font and colours".
+       Overlays › Session timer › Options (next to Lock); Settings links there. Notes' card: "Font and Colors".
   2.51.0
        Mod book › Manual feed (feed_page.py; the user: paste an already expensive tablet with its price so the app
        learns it - on top of how it learns now). Ctrl+Alt+C (while the tab shows) or paste an item, type its price
@@ -32,7 +40,7 @@ VERSION HISTORY
        Market.stats learns from, like save_sale; never expire (seen refreshed at start); feeding the same item again
        replaces it. Optional: rate its ticked mods High (set_rules). Each mod shows what the Mod book thinks before /
        after (Market.standing). Fed so far: list, Forget (unfeed), CSV. Readability (the user: the timer was "barely
-       legible"): a halo in the page colour round every letter on the parchment (CanvasText halo), a calmer texture
+       legible"): a halo in the page color round every letter on the parchment (CanvasText halo), a calmer texture
        under the text (texture calm), the timer's text a size up and bold; the Opacity note says 95-100% reads best.
        test_v2510.
   2.50.0
@@ -40,7 +48,7 @@ VERSION HISTORY
        to each slider; runeshape tips only on the Mechanic Helper tab. The Mechanic Helper bar stands on its own (the
        user: "a different bar, independent of the session tracker"): "Show the Mechanic Helper bar over the game"
        shows it timer or not (tracker_helpers_sync at start and on the switch; tracker_helpers_paint). Notes' own
-       colour card: "Colours and font (Classic style)". Fixes from the user's screenshot: the Mechanic Helper icons
+       color card: "Colors and font (Classic style)". Fixes from the user's screenshot: the Mechanic Helper icons
        were 9 pt and a dark green that read as black - now 12 pt, brighter green / red on parchment; the clock ran
        into "Session" on a narrow timer - OverlayWindow.bar_note says when it doesn't fit, and the clock goes to the
        top right of the page; the bar moved up a few pixels when locked at the screen's bottom edge - it was kept
@@ -52,7 +60,7 @@ VERSION HISTORY
        Settings (a cog) is the first thing on the dock; Toolkit (the menu) sits at the left end of the taskbar, where a
        Start button would be (shell: dock tag "settings", taskbar tag "tkbtn"; with the dock hidden Settings shows on
        the taskbar too). Every ttk.Checkbutton is a modern switch (style.switches: a "Switch.indicator" image element
-       in the TCheckbutton / Bar. / Mod. layouts - same widgets and variables, Pillow-drawn, theme colours). test_v2490.
+       in the TCheckbutton / Bar. / Mod. layouts - same widgets and variables, Pillow-drawn, theme colors). test_v2490.
   2.48.0
        Taskbar (there whatever window is open; feedback_page.py): "⬆ Update x.y.z" when GitHub has a newer release
        (a quiet look 15 s after start and every 6 h, plus every other update check; click = Check for updates, which
@@ -146,7 +154,7 @@ VERSION HISTORY
        the box is set again when the list arrives (engine -> "currencies_loaded"). After a pick the text is no
        longer left highlighted (selection_clear, focus to its window).
        Fix: Breach / Ritual banners had a black box instead of see-through text (like END DELIRIUM). Themes recolour
-       every colour handed to Tk, and the banners' key #010203 counts as a dark blue - under Amethyst the window
+       every color handed to Tk, and the banners' key #010203 counts as a dark blue - under Amethyst the window
        became #020103 while the key stayed #010203. The key is now never recoloured (style._THEME keep). (Likely
        also the cause of 2.37.0's black remnant screen.) The Delirium banner runs in its own process, so it was fine.
        Fix: the Ritual "leave the map" reminder never fired - the user's ritual_log.txt showed the watcher stopping
@@ -186,7 +194,7 @@ VERSION HISTORY
        mouse automation, packet tools, input-automation imports, SendInput outside overlay.py, mouse INPUT, a
        screen-capturing file that can send keys) runs in checks.yml on every PR and in release.yml before a build.
        Remnant price tags: one small solid click-through window per tag, left out of screen captures
-       (SetWindowDisplayAffinity WDA_EXCLUDEFROMCAPTURE) - 2.37.0's single game-sized colour-keyed window showed
+       (SetWindowDisplayAffinity WDA_EXCLUDEFROMCAPTURE) - 2.37.0's single game-sized color-keyed window showed
        black on the user's PC, and Auto, capturing its own black window, toggled it on and off.
        Helpers bar: its own OverlayWindow (resizable=False: as big as its content, never cut off; "Remnant" was),
        shown and hidden with the Session timer, placed / locked / closed on its own (tracker cfg hx, hy, hlocked;
@@ -225,19 +233,19 @@ VERSION HISTORY
        Money Makers keep their own menus (reached by the key too).
   2.35.0
        Polish 2 - Toasts. soe2/toasts.py: one toast system - info ℹ / success ✔ / warning ⚠ / error ✖ (icon + edge
-       colour, never colour alone), stacked in the app's bottom-right corner (at most 4, newest at the bottom), paused
+       color, never color alone), stacked in the app's bottom-right corner (at most 4, newest at the bottom), paused
        while hovered, timed by text length (4-20 s; errors x1.5, with buttons at least 10 s), never activated / focused
        (WS_EX_NOACTIVATE), lifted while the app is always-on-top. Last 20 in toasts.json and Settings > Advanced >
        Recent messages. app_toast() now uses it (kind= or guessed); simple messagebox infos became toasts (update
        check, Export / Import / Remove imported rules). style.Toast (the popup at the mouse over the game) stays.
   2.34.0
        Polish 1 - Foundation. Design tokens in style.py: SPACE (4 8 12 16 24; 0-2 for hairlines), text sizes SMALL 9 /
-       BODY 10 / HEAD 12 / TITLE 16 (+ DISPLAY 18-28 for glyphs and big numbers), ROLE + role() colour roles. Every
+       BODY 10 / HEAD 12 / TITLE 16 (+ DISPLAY 18-28 for glyphs and big numbers), ROLE + role() color roles. Every
        font size and padding in soe2 moved onto them (tools/check_tokens.py --fix; canvas create_text and "# token-ok"
        lines are left alone). Button hierarchy: Primary.TButton (was Accent.TButton - kept as an alias), TButton,
        Quiet.TButton (flat), Danger.TButton (dark red; Delete, Clear list, Remove ...). Contrast: style.contrast() /
        text_on() - the primary button's text is light or dark by WCAG contrast (light text on orange / gold / lime /
-       teal / ice was 1.9-3.4 : 1); accent-derived button colours are no longer recoloured by themes (Ice accent).
+       teal / ice was 1.9-3.4 : 1); accent-derived button colors are no longer recoloured by themes (Ice accent).
        tools/check_contrast.py: every text pair, every theme x accent >= 4.5 : 1. .github/workflows/checks.yml runs
        check_version, check_tokens and check_contrast on every PR. Roadmap reordered: Toasts 2.35, Context menus 2.36,
        Expedition Remnant Price Checker 2.37, more item types 2.38, stash order tool 2.39, Responsive 2.40, Hover / focus 2.41, Visual
@@ -246,7 +254,7 @@ VERSION HISTORY
        Map library: the "✖ Avoid" rank button was cut off (ttk width -7 = at least 7, grows to fit).
   2.33.0
        Child tools (shell.py: DeskWindow.add_child, Shell.children / link_children / paint_children; Module.parent).
-       The layout rule for the whole app (ROADMAP "How the app is organised"): top-level tools / child tools / tabs. A
+       The layout rule for the whole app (ROADMAP "How the app is organized"): top-level tools / child tools / tabs. A
        child tool is a button in its parent's title bar, indented under it in the Toolkit menu, its window is titled
        "Parent › Child", and it is not on the dock or desktop. Session tracker › Map library (the placed 🗺 button is
        gone); Price checks › Mod book, Under the hood, Market Insights (Labs: its button shows only with Labs on).
@@ -351,7 +359,7 @@ VERSION HISTORY
   2.26.2
        (1) Regex: switching item type kept freezing (Lag finder: rx_build_lists destroying ~650 gear rows, up to
            0.8 s each time). Each type's rows are now built once and kept (canvas window swap); the other types are
-           built in the background 25 rows at a time after Regex opens (rx_warm); rows only repaint when their colour
+           built in the background 25 rows at a time after Regex opens (rx_warm); rows only repaint when their color
            changes. A switch: gear 920 ms -> ~180 ms, also the first time. Rows know their own type (a background
            row's placeholder used to land in the showing type's search).
        (2) The window really opens maximised again: the first "normal" size while the window appeared was saved
@@ -408,7 +416,7 @@ VERSION HISTORY
   2.25.0
        (1) Copy marks: "Keep them until I double-tap Esc" (two fresh Esc presses within 0.5 s, winsys.DOUBLE_TAP;
            key repeat doesn't count) replaces holding Esc for 3 s, which didn't clear them for the author.
-       (2) The +'s colour: Gold, White, Red, Lime, Cyan, Magenta, Orange or Blue (copymark.COLOURS,
+       (2) The +'s color: Gold, White, Red, Lime, Cyan, Magenta, Orange or Blue (copymark.COLORS,
            SETTINGS copy_marker_colour); picking one shows a sample + for 2 s.
   2.24.0
        (1) Copy marker: a small + instead of the ring (copymark.SIZE 16), shown for copy_marker_secs (Settings >
@@ -521,7 +529,7 @@ VERSION HISTORY
            user's real 0/3 and 1/3 cut-outs.
   2.14.0
        (1) Ritual watcher (soe2/ritual_alert.py): the game doesn't log Ritual progress, so - like the Delirium alert -
-           it reads the counter next to the Ritual icon (bottom right of centre) from the screen, in its own helper
+           it reads the counter next to the Ritual icon (bottom right of center) from the screen, in its own helper
            process (StashOfExile2.exe --ritual, utilities.RITUAL), twice a second, only that corner. The icon is found
            by template matching (templates/ritual_icon.png, cut from a real 2560x1440 screenshot, scaled to the game's
            height); the counter's black box beside it is cut into glyphs; "/" is the slanted middle one and each digit
@@ -537,7 +545,7 @@ VERSION HISTORY
   2.13.0
        (1) Breach banners look like the Delirium alert's END DELIRIUM again (user's choice): big flashing text straight
            over the game on a see-through background, no box, clicks pass through (WS_EX_TRANSPARENT / NOACTIVATE),
-           centred on the game window 22% down (END DELIRIUM sits at 62%). The text shrinks to fit the game window.
+           centered on the game window 22% down (END DELIRIUM sits at 62%). The text shrinks to fit the game window.
            Being click-through, they go by themselves (8 s; "full" 10 s) or when the Genesis Tree opens.
        (2) Top value is now Market Insights (window, dock, Labs text); its "Dearest listings seen" table is "Most
            expensive listings seen".
@@ -560,7 +568,7 @@ VERSION HISTORY
            kept in SETTINGS breach_alert.pending, so it survives a restart.
        (2) The window / keyboard recorder (diag.py) is gone: it found the 2.10.2 fix and isn't needed any more.
   2.10.2
-       (1) The real cause of windows vanishing on resize, found with diag_log.txt on the user's PC: every maximise,
+       (1) The real cause of windows vanishing on resize, found with diag_log.txt on the user's PC: every maximize,
            restore or snap made Tk rebuild each desktop window's Win32 window (new HWND each time), because they were
            transient() to the app's window - and the rebuilt one had no owner, so it fell behind the app. On Windows
            they're no longer transient (own_by_app sets the owner); and any rebuilt window is spotted (check_owner:
@@ -593,7 +601,7 @@ VERSION HISTORY
            comes back when the app is clicked.
        (6) Regex: the endgame number boxes save 150 ms after you stop typing (and when you leave the box), not on every
            key. Waystone searches stick to the waystone's own tier; Revives Available is searched by default.
-       (7) Settings > About: version, what's new, GitHub page, Discord, licence and credits. A fresh install gets a short
+       (7) Settings > About: version, what's new, GitHub page, Discord, license and credits. A fresh install gets a short
            quick start guide instead of the welcome card (About brings it back). Versions show in full (2.10.0).
        (8) Linux groundwork (not a Linux build): linsys.py (Hyprland IPC, the game window, Steam libraries),
            tk class "StashOfExile2", updater never picks an .exe off Windows, linux/ window rules, build_linux.sh.
@@ -730,12 +738,12 @@ VERSION HISTORY
            most 3 s after the windows are built), on a click, and never takes the keyboard; Settings > Appearance
            can turn it off. The welcome card waits for it.
        (3) The app's look (Settings > Appearance > Look of the app): theme (Midnight blue, Ember, Forest, Amethyst,
-           Crimson, Graphite), accent colour and text size, for every window. style.apply_look() at start-up: every
-           colour given to Tk (widgets, canvases, ttk styles, option database) passes through style.theme_color(),
-           which moves the app's blues to the theme's hue and keeps meaningful colours (rarities, green / red, gold,
-           the accent). The accent button is derived from the accent colour. Restart now (App.restart_app) restarts
+           Crimson, Graphite), accent color and text size, for every window. style.apply_look() at start-up: every
+           color given to Tk (widgets, canvases, ttk styles, option database) passes through style.theme_color(),
+           which moves the app's blues to the theme's hue and keeps meaningful colors (rarities, green / red, gold,
+           the accent). The accent button is derived from the accent color. Restart now (App.restart_app) restarts
            the app to apply it (launcher: --restarted waits for the old window to close).
-       (4) The note's colours / opacity / font are back in the Notes window; the pixel boxes for its place and size
+       (4) The note's colors / opacity / font are back in the Notes window; the pixel boxes for its place and size
            are gone (drag and resize the note itself; "Put it back in the corner" if it's lost).
        (5) Numbering: this is 2.0.0; see "How versions are numbered" above.
   2.0 beta 22
@@ -747,7 +755,7 @@ VERSION HISTORY
            and ▲ / ▼ on the column the list is sorted by.
   2.0 beta 21
        (1) Settings in tabs (SegBook): General (league / pace, window, Labs, updates), Appearance (launcher, wallpaper,
-           clock, the note's colours / opacity / font - moved here from the Notes window), Hotkeys, Advanced (Mod
+           clock, the note's colors / opacity / font - moved here from the Notes window), Hotkeys, Advanced (Mod
            book, Under the hood, data folder). App.open_settings_tab(name).
        (2) Launcher: dock, desktop icons or both (Shell.set_launcher; one is always on). Without the dock, Toolkit sits
            on the taskbar next to Settings.
@@ -826,7 +834,7 @@ VERSION HISTORY
        (1) Every window on the desktop is now a real (borderless) window owned by the app's window, instead of a frame
            drawn inside it. Windows itself moves, stacks and repaints them: a window follows the mouse while you drag
            it (the outline and the "Show window contents while moving" setting are gone), and clicking any window
-           brings it to the front. They follow the app's window when it moves, and hide with it (minimise / tray).
+           brings it to the front. They follow the app's window when it moves, and hide with it (minimize / tray).
        (2) The welcome / what's new card is a window of its own and stays above everything until you press Got it.
            On first start it asks which league you play; if you don't pick, the newest league is used (the first
            league in the trade site's list that isn't Standard, Hardcore, SSF or a private league).
@@ -862,7 +870,7 @@ VERSION HISTORY
        (3) The dock has three groups: MODULES (big tools you work in: Price checks, Mod book, Item library, Wealth),
            TOOLS (quick helpers that only do something while open: Regex, Exchange rates, Game search) and UTILITIES
            (keep working in or over the game while closed, with an on/off dot: Session tracker, Chat commands, Notes,
-           Delirium alert). Tools have their own colour.
+           Delirium alert). Tools have their own color.
        (4) The session timer shows while a session runs (Show timer brings it up any time).
   2.0 beta 9
        (1) New utility: Session tracker. Start / Stop / Pause (buttons or your own hotkeys) and it shows:
@@ -884,7 +892,7 @@ VERSION HISTORY
        (2) Version numbers: every build gets its own number from now on (the earlier "beta 7" kits were several builds).
   2.0 beta 7  (the toolkit desktop)
        (1) The app is now a small desktop: every tool opens in its own window inside the app. Drag a window by its
-           title bar, resize it from the corner, minimise it to the taskbar, maximise it (or double-click the title),
+           title bar, resize it from the corner, minimize it to the taskbar, maximize it (or double-click the title),
            close it. Resize from any edge or corner, like a normal window. Several can be open side by side; the one in front has the orange line under its title.
            Which windows are open, and where, is remembered.
              - Dock (left): the orb opens the Toolkit menu; a desktop-style icon with its name for every module
@@ -892,7 +900,7 @@ VERSION HISTORY
                a dot that is green while it is on); an orange edge = its window is open; the gear opens Settings.
              - Toolkit menu: search box (type a few letters + Enter), every module and utility, Settings,
                Check for updates, Quit.
-             - Taskbar: a button per open window (click = bring it forward, click again = minimise), the league
+             - Taskbar: a button per open window (click = bring it forward, click again = minimize), the league
                (click = Settings), the utilities' on/off dots, 📌 always on top, the clock.
              - Wallpaper: a dark gradient, or any picture you pick in Settings. Desktop icons are optional (Settings).
        (2) No more header or League / Pace bars across every page: the price-check toolbar, the total and the key
@@ -906,7 +914,7 @@ VERSION HISTORY
            with the app, and shows what it sees (watching / waiting for the game / Delirium active / ALERT). Its log
            and settings are in your data folder, under delirium. (The standalone PoE2DeliriumAlert.exe still works,
            but not at the same time.)
-       (5) Notes: the note itself only has its × now; every option is in the Notes window: key, colours, opacity,
+       (5) Notes: the note itself only has its × now; every option is in the Notes window: key, colors, opacity,
            font size, and new: its place and size typed in, Lock it (no moving / resizing by accident), Reset place and
            size. The note resizes from any edge or corner. (Fixed: a note shown and saved straight away could be stored
            as 1x1 pixels.)
@@ -916,7 +924,7 @@ VERSION HISTORY
        (7) The dock's Toolkit button is the app's own icon; optional desktop icons look like the dock's tiles.
        (8) Wealth, redesigned (ideas from Wealthy Exile, not a copy): a Wealth card (total, change, Total / Daily
            chart over 24 hours / 7 days / 30 days / Lifetime), a Breakdown card (value per category, in divines or
-           percent; click one to show only those items), your tabs down the side as coloured buttons (click one to
+           percent; click one to show only those items), your tabs down the side as colored buttons (click one to
            show only that tab) or your Snapshots, and every item with Name / Tab / Quantity / Price / Total. Sync,
            Stop and "Synced 8 minutes ago" sit above the list; Update prices and Re-check rares are under More.
            Setting up priced tabs is behind "Edit synced tabs".
@@ -942,7 +950,7 @@ VERSION HISTORY
        (1) New Utilities page, a card per helper, each turned on separately and running on every page:
            - Chat commands & notes: the POE2 Overlay (AutoHotkey) rebuilt in the app. A key types /hideout (F1), up
              to 8 more keys type your own chat commands; they only act while Path of Exile 2 is the active window.
-             F6 shows / hides an always-on-top sticky note (drag, resize, colours, opacity, font size; it saves
+             F6 shows / hides an always-on-top sticky note (drag, resize, colors, opacity, font size; it saves
              itself and hides while the game is closed). Your POE2 Overlay settings are read in the first time.
            - Delirium alert: the END DELIRIUM screen watcher, as its own program PoE2DeliriumAlert.exe (built by
              build_exe.bat next to StashOfExile2.exe; it needs OpenCV, so it stays out of the app's exe). Start /
@@ -978,7 +986,7 @@ VERSION HISTORY
            their mods. The app now counts what happens to every listing it fetches and says why one wasn't usable
            (no exchange rate, no mod text, mod wording not on the trade site's list), on the empty Mod book and in
            market_log.txt in the data folder. Listing lines worded differently from the trade site ("reduced" for a
-           negative "increased", "3 additional times" for "an additional time") are now recognised.
+           negative "increased", "3 additional times" for "an additional time") are now recognized.
   2.0 beta 1  (was going to be 1.46)
        (1) New version numbering (see above). The launcher is now always called stashofexile2.py.
        (2) Regex page laid out like poe2.re: the search string on top (Copy, Reset, Test on copied item), option
@@ -1045,7 +1053,7 @@ VERSION HISTORY
        (3) Check an item: paste any copied item (Ctrl+C) and see how the app reads it: class, base, base group,
            quality, defences, sockets, item level, corrupted, and every mod with its tier, roll range and trade stat.
            Lines it can't place are shown in red.
-       The data comes from Exiled Exchange 2 (MIT licence, see THIRD_PARTY_NOTICES.txt) and ships as gamedata.json,
+       The data comes from Exiled Exchange 2 (MIT license, see THIRD_PARTY_NOTICES.txt) and ships as gamedata.json,
        versioned like tabs.txt. tools/build_gamedata.py rebuilds it after a patch. This is the base the gear price
        checker (Phase 3) and the Ctrl+C currency sweep will use. Nothing else changes, except: the Wealth page now
        says honestly that poe.ninja prices currency, stackables and uniques, and that rares need the gear checker.
@@ -1198,10 +1206,10 @@ VERSION HISTORY
        once more with ANY value, and shows the result as '>= price' with a note, because a high roll can be worth more.
   1.15 The Items / Mod book / Mod rules tab strip is gone. A "Page" dropdown in the header switches between
        them instead. Nothing else changed.
-  1.14 Tabs (Items / Mod book / Mod rules) restyled: no more boxed grey outlines - flat dark tabs, the selected one is
+  1.14 Tabs (Items / Mod book / Mod rules) restyled: no more boxed gray outlines - flat dark tabs, the selected one is
        lifted with a gold top edge and gold text, hover brightens. The built-in icon now has a transparent background.
   1.13 Path of Exile look: warm near-black panels, gold accents and borders, serif title with the Mirror of Kalandra,
-       gold buttons and tabs, in-game rarity colours (rare yellow, magic blue). Looks only - no behaviour changed.
+       gold buttons and tabs, in-game rarity colors (rare yellow, magic blue). Looks only - no behavior changed.
   1.12 (1) Wide spread = no price: when the listings behind a price are 20x or more apart, the row shows CHECK BY HAND
        (red) with the lowest and highest price, instead of a number. (2) Clipboard watcher rebuilt: it now reads the
        Windows clipboard directly (not through Tkinter, which can keep a stale copy after the app writes an item name
@@ -1240,7 +1248,7 @@ VERSION HISTORY
   1.2  New pricing flow for tablets AND jewels: search 1 = all mods, then one search per prefix (each with all suffixes),
        final price = plain average of those searches (a search that finds nothing is left out; nothing at all = NO MATCH).
        Max requests per 5 minutes (a cap below what the site reports, because real 429s came earlier). Fuller 429 log.
-  1.1  App renamed to PoE2 Tablet + Jewel Pricer (window title, header, this text). No behaviour changes.
+  1.1  App renamed to PoE2 Tablet + Jewel Pricer (window title, header, this text). No behavior changes.
   1.0  First numbered version. Multi-pass tablet pricing with a weighted average and NO MATCH;
        Instant Buyout / listed-within / minimum-uses filters; per-mod impact (High / Normal /
        Ignore) with per-tablet tick boxes and a Mod rules tab fed by tabs.txt (with Prefix / Suffix);
@@ -1284,7 +1292,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.52.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.53.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 

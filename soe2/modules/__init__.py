@@ -21,7 +21,7 @@ Who we build for (2.47.0, the user): Path of Exile players are utilitarian - dat
 creative thinking. Show the numbers and how they were worked out; sort / filter / compare / export (CSV); keep the
 depth one click away; plain words; the player decides.
 
-How the app is organised (2.33.0 - the rule for every module, see ROADMAP.md):
+How the app is organized (2.33.0 - the rule for every module, see ROADMAP.md):
   * top level (dock, desktop, Toolkit menu): things you open on their own;
   * a child tool (parent = "<key>") is built on ONE module's data and used while working in it. It is never on the
     dock; it is a button in the parent window's title bar, sits indented under the parent in the Toolkit menu, and

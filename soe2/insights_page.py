@@ -268,7 +268,27 @@ class InsightsPage:
     RARITY_FG = {"Unique": "#af6025", "Rare": "#ffff77", "Magic": "#8888ff", "Normal": "#c8c8c8"}
 
     def ins_preview_item(self, key, obj):
-        """-> (name lines, rarity, mod lines, price text, footnote) for a row of Your most valuable / listings seen."""
+        """-> (name lines, rarity, mod lines, price text, footnote) for a row of Your most valuable / listings seen,
+        or (2.53.0, key "pc") a Price checks row."""
+        if key == "pc":
+            est, it = obj.get("est"), obj.get("item") or {}
+            if obj.get("nomatch"):
+                price = "No match on the trade site"
+            elif obj.get("manual"):
+                price = "Check it by hand"
+            elif est is not None:
+                price = f"Worth about {fmt_div(est)}" + (f"  ·  {obj['conf']} confidence"
+                                                        if obj.get("conf") and obj["conf"] != "-" else "")
+            else:
+                price = obj.get("label") or ("Pricing…" if obj.get("state") != "done" else "No listings")
+            fake = {"raw": obj.get("raw") or "", "name": it.get("name"), "base": it.get("base")}
+            head, rar, mods, _p, _f = self.ins_preview_item("mine", fake)
+            rar = it.get("rarity") or rar
+            n = len(obj.get("prices") or [])
+            when = datetime.fromtimestamp(obj["time"]).strftime("%b %d %H:%M") if obj.get("time") else ""
+            foot = "  ·  ".join(x for x in (f"Added {when}" if when else "",
+                                            f"{n} listing{'s' * (n != 1)} seen" if n else "") if x)
+            return head, rar, mods, price, foot
         if key == "mine":
             raw = obj.get("raw") or ""
             lines = [l.strip() for l in raw.splitlines()]
@@ -286,6 +306,8 @@ class InsightsPage:
                    [l for s in secs[1:] for l in s if not re.match(r"^(Item Level|Requires|Quality|Note|Sockets|"
                                                                     r"Corrupted|Unidentified|Map Tier|Waystone Tier)", l)]
             mods = [self.ins_with_value(m, lines) for m in mods]          # 2.25.3: the real numbers
+            # 2.53.0: an advanced copy (Ctrl+Alt+C) has "{ Prefix Modifier ... }" lines and (min-max) ranges: as in game
+            mods = [re.sub(r"\(-?\d+(?:\.\d+)?--?\d+(?:\.\d+)?\)", "", m) for m in mods if not m.startswith("{")]
             if not head:
                 head = [obj.get("name") or "", obj.get("base") or ""]
             price = f"Worth about {fmt_div(obj.get('est'))}" + (f"  ·  {obj['conf']} confidence"

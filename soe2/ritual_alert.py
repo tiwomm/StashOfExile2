@@ -1,7 +1,7 @@
 """Ritual watcher (2.14.0): reads the game's Ritual counter ("0/3", "2/4" ...) from your screen.
 
 Path of Exile 2 doesn't write Ritual progress to Client.txt, so - like the Delirium alert - this looks at a small part
-of the screen: the Ritual icon (horned skull in a red ring) at the bottom, right of centre, with the counter in a black
+of the screen: the Ritual icon (horned skull in a red ring) at the bottom, right of center, with the counter in a black
 box next to it. Only that corner is captured, twice a second; nothing is sent to the game.
 
 It runs as its own helper process (StashOfExile2.exe --ritual <data folder>, see utilities.RITUAL), so screen capture
@@ -11,7 +11,7 @@ never slows the app, and talks to the app over its stdin / stdout:
                    or a message line.
 How the counter is read: find the icon by template matching (soe2/templates/ritual_icon.png, scaled to the game's
 height), take the black box right of it, keep the bright text pixels and cut them into glyphs at the empty columns;
-the middle one is "/", and each digit (0 - 4) is recognised from its shape (holes, width, which edges are filled).
+the middle one is "/", and each digit (0 - 4) is recognized from its shape (holes, width, which edges are filled).
 A reading counts only when it's seen twice in a row and makes sense (total 3 or 4, done <= total).
 
 ToS (TOS.md): this only LOOKS at the screen (a capture, like a screenshot) and SHOWS something; it never presses,

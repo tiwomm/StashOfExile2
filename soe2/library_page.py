@@ -198,7 +198,7 @@ class LibraryPage:
             o.insert("end", f"{k}: ", "k")
             o.insert("end", f"{v}\n", tag)
         row("Class", c.get("name") or f"{it['class_text']} (not in the library)", None if c else "bad")
-        row("Base", it["base"] or "not recognised", None if it["base"] else "bad")
+        row("Base", it["base"] or "not recognized", None if it["base"] else "bad")
         if g:
             row("Base group", g["name"], "good")
         if it["rarity"]:

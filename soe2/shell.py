@@ -5,7 +5,7 @@ own content into the window they are given.
   Desktop  - the area the windows live in, with the wallpaper (a dark gradient, or an image you pick in Settings)
   Dock     - the orb (opens the Toolkit menu), one button per module, one per utility (with an on/off dot), Settings
   Taskbar  - a button per open window (click: bring to front / restore), league, searches, utility dots, clock
-  Window   - title bar (drag), minimise to the taskbar, maximise, close (hides it; utilities keep running), resize corner
+  Window   - title bar (drag), minimize to the taskbar, maximize, close (hides it; utilities keep running), resize corner
 
 Window positions, sizes and which ones are open are saved in settings.json ("shell")."""
 import sys
@@ -65,7 +65,7 @@ def _blend(a, b, t):
 
 
 class GradientBar(tk.Canvas):
-    """A canvas painted top-to-bottom from one colour to another (title bars, taskbar)."""
+    """A canvas painted top-to-bottom from one color to another (title bars, taskbar)."""
 
     def __init__(self, parent, height, colours, **kw):
         super().__init__(parent, height=height, highlightthickness=0, bd=0, bg=colours[1], **kw)
@@ -925,7 +925,7 @@ class Shell:
         self.paint_dock()
 
     def paint_dock(self):
-        """Tile colours: lighter under the mouse, an orange edge while its window is open."""
+        """Tile colors: lighter under the mouse, an orange edge while its window is open."""
         d = self.dock
         for k, t in self.dock_btns.items():
             if t is None:

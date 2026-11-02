@@ -1,7 +1,7 @@
 """Standard keys, right-click menus and striped rows everywhere (2.12.0).
 
 Every list (Treeview), in every window:
-  - rows alternate colours like a spreadsheet (in every theme), kept right after rows are added, removed or sorted;
+  - rows alternate colors like a spreadsheet (in every theme), kept right after rows are added, removed or sorted;
   - Ctrl+C copies the selected rows (tab-separated, pastes into a spreadsheet); Ctrl+A / Delete / Ctrl+Z as before
     (listkeys.py);
   - right-click: the window's own actions for the row (2.36.0: tree.menu_actions), then Copy, Copy every row,
