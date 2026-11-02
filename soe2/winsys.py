@@ -8,6 +8,46 @@ import time
 from .config import APP_TITLE
 
 
+# ------------------------------------------------------------------ the app window's title bar (2.61.0)
+def colorref(hex_color):
+    """'#rrggbb' -> a Windows COLORREF (0x00BBGGRR)."""
+    h = hex_color.lstrip("#")
+    r, g, b = int(h[0:2], 16), int(h[2:4], 16), int(h[4:6], 16)
+    return (b << 16) | (g << 8) | r
+
+
+def set_titlebar(root, caption, text, border, dark=True):
+    """Color Windows' own title bar of the app window (DWM). Windows 11: caption / text / border colors.
+    Windows 10 (1809+): only dark or light. Other systems, or if Windows says no: nothing happens. -> True if set."""
+    if sys.platform != "win32":
+        return False
+    try:
+        import ctypes
+        from ctypes import wintypes
+        u = ctypes.windll.user32
+        u.GetParent.restype = ctypes.c_void_p
+        u.GetParent.argtypes = [ctypes.c_void_p]
+        hwnd = u.GetParent(root.winfo_id()) or root.winfo_id()
+        dwm = ctypes.windll.dwmapi
+        dwm.DwmSetWindowAttribute.argtypes = [wintypes.HWND, wintypes.DWORD, ctypes.c_void_p, wintypes.DWORD]
+
+        def put(attr, value):
+            v = ctypes.c_int(value)
+            return dwm.DwmSetWindowAttribute(hwnd, attr, ctypes.byref(v), ctypes.sizeof(v)) == 0
+        if not put(20, 1 if dark else 0):                 # DWMWA_USE_IMMERSIVE_DARK_MODE (19 before 20H1)
+            put(19, 1 if dark else 0)
+        ok = put(35, colorref(caption))                   # DWMWA_CAPTION_COLOR (Windows 11)
+        put(36, colorref(text))                           # DWMWA_TEXT_COLOR
+        put(34, colorref(border))                         # DWMWA_BORDER_COLOR
+        # make Windows draw the frame again now
+        u.SetWindowPos.argtypes = [wintypes.HWND, wintypes.HWND, ctypes.c_int, ctypes.c_int, ctypes.c_int,
+                                   ctypes.c_int, wintypes.UINT]
+        u.SetWindowPos(hwnd, None, 0, 0, 0, 0, 0x0001 | 0x0002 | 0x0004 | 0x0010 | 0x0020)
+        return ok
+    except Exception:
+        return False
+
+
 # ------------------------------------------------------------------ icon + system tray
 ICON_B64 = (                    # 2.60.0: a stash chest with a toolbox lid and a hex-nut lock (tools/make_icon.py)
     "iVBORw0KGgoAAAANSUhEUgAAAGAAAABgCAYAAADimHc4AAAVtklEQVR4nO2debBcV33nP79z7u3t7Zt24UWyJcuRjYzBwTYIGwjE"

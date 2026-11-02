@@ -106,6 +106,8 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         from .style import apply_look                   # 2.0.0: Settings > Appearance (theme, accent, text size)
         apply_look(*look_settings(), root)
         root.configure(bg=C["bg"])
+        self.paint_titlebar()                            # 2.61.0: Windows' own title bar in the theme's colors
+        root.after(1500, self.paint_titlebar)            # (again once the window is really on screen)
         from . import overlaywin as _ow                  # 2.43.0: the look of the windows over the game
         _ow.LOOK[0] = SETTINGS.get("overlay_look") if SETTINGS.get("overlay_look") in _ow.LOOKS else "parchment"
         setup_style(root)
@@ -1040,24 +1042,7 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
                                              "folder of your data folder (Settings › Advanced › Your data).")
         self.set_anchors["theme"] = row.master
         self.look_vars = {"theme": tk.StringVar(value=THEMES.get(SETTINGS.get("theme"), (_th.DEFAULT,))[0])}
-        gal = tk.Frame(row, bg=P2)
-        gal.pack(fill="x")
-        self.look_cards = {}
-        for n, t in enumerate(_th.ordered()):
-            card = tk.Frame(gal, bg=P2, highlightthickness=2, highlightbackground=P2, cursor="hand2")
-            card.grid(row=n // 4, column=n % 4, padx=(0, 8), pady=(0, 8), sticky="nw")
-            cv = _th.self_painted(tk.Canvas(card, width=168, height=92, highlightthickness=0, bd=0, cursor="hand2"))
-            cv.pack()
-            _th.preview(cv, t)
-            name = tk.Label(card, text=t.name, bg=P2, fg=C["text"], font=("Segoe UI", 10, "bold"), anchor="w")
-            name.pack(fill="x", pady=(4, 0))
-            tip = t.data.get("description", "")
-            if tip:
-                from .style import Tooltip
-                Tooltip(card, tip)
-            for w in (card, cv, name):
-                w.bind("<Button-1>", lambda e, tid=t.id: self.pick_theme(tid))
-            self.look_cards[t.id] = card
+        self.look_cards = self.theme_cards(row, "settings")
         self._paint_look_cards()
         grid = tk.Frame(row, bg=P2)
         grid.pack(fill="x", pady=(8, 0))
@@ -1254,6 +1239,7 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         from .style import relook
         n, secs = relook(self.root, SETTINGS.get("theme"), SETTINGS.get("accent", "theme"))
         self._paint_look_cards()
+        self.paint_titlebar()
         if getattr(self, "mg_win", None) is not None:          # the overlay over the game: built again in its style
             try:
                 self.merged_set()
@@ -1271,15 +1257,59 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
                 pass
         self.look_stats = (n, secs)             # (tests read it: how many widgets, how long)
 
+    def theme_cards(self, parent, where, cols=4, scale=1.0):
+        """2.60.0 / 2.61.0: the theme cards - a small picture of each pack; click = that theme, live. Used in
+        Settings › Appearance and on the first page of the quick start."""
+        from . import themes as _th
+        from .style import Tooltip
+        P2 = C["panel2"]
+        gal = tk.Frame(parent, bg=P2)
+        gal.pack(fill="x")
+        cards = {}
+        w, h = int(168 * scale), int(92 * scale)
+        for n, t in enumerate(_th.ordered()):
+            card = tk.Frame(gal, bg=P2, highlightthickness=2, highlightbackground=P2, cursor="hand2")
+            card.grid(row=n // cols, column=n % cols, padx=(0, 8), pady=(0, 8), sticky="nw")
+            cv = _th.self_painted(tk.Canvas(card, width=w, height=h, highlightthickness=0, bd=0, cursor="hand2"))
+            cv.pack()
+            _th.preview(cv, t)
+            if scale != 1.0:
+                cv.scale("all", 0, 0, scale, scale)
+            name = tk.Label(card, text=t.name, bg=P2, fg=C["text"], font=("Segoe UI", 10 if scale >= 1 else 9, "bold"),
+                            anchor="w")
+            name.pack(fill="x", pady=(4, 0))
+            if t.data.get("description"):
+                Tooltip(card, t.data["description"])
+            for wd in (card, cv, name):
+                wd.bind("<Button-1>", lambda e, tid=t.id: self.pick_theme(tid))
+            cards[t.id] = card
+        self.__dict__.setdefault("look_card_sets", {})[where] = cards
+        self._paint_look_cards()
+        return cards
+
     def _paint_look_cards(self):
         cur = SETTINGS.get("theme")
-        for tid, card in getattr(self, "look_cards", {}).items():
-            on = tid == cur
-            try:
-                card.config(highlightbackground=C["accent"] if on else C["panel2"])
-                card.winfo_children()[1].config(fg=C["accent"] if on else C["text"])
-            except (tk.TclError, IndexError):
-                pass
+        for cards in getattr(self, "look_card_sets", {}).values():
+            for tid, card in cards.items():
+                on = tid == cur
+                try:
+                    card.config(highlightbackground=C["accent"] if on else C["panel2"])
+                    card.winfo_children()[1].config(fg=C["accent"] if on else C["text"])
+                except (tk.TclError, IndexError):
+                    pass
+
+    def paint_titlebar(self):
+        """2.61.0: the app window's own (Windows) title bar in the theme's colors - Windows 11 takes any color,
+        Windows 10 only dark or light. Elsewhere nothing happens."""
+        from . import themes as _th
+        from .winsys import set_titlebar
+        cap, txt, edge = _th.window_colors()
+        try:
+            self.root.update_idletasks()
+        except tk.TclError:
+            return
+        self.titlebar_colors = (cap, txt, edge)
+        set_titlebar(self.root, cap, txt, edge, dark=not _th.ST.theme.light)
 
     def draw_look_swatch(self):
         """(2.0.0's swatch - the theme cards show each look now)"""
