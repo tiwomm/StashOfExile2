@@ -32,6 +32,7 @@ DEFAULT_RULES = {   # used until the first response tells us the real numbers (v
     "search": [(5, 10, 60), (15, 60, 300), (30, 300, 600), (600, 21600, 3600)],
     "fetch":  [(12, 4, 10), (16, 12, 60), (50, 300, 600), (1000, 21600, 3600)],
     "other":  [(4, 10, 60), (10, 60, 300)],
+    "exchange": [(5, 10, 60), (15, 60, 300), (30, 300, 600)],      # 2.72.1: the bulk exchange (its own limits)
 }
 
 
@@ -109,7 +110,8 @@ class Limiter:
 
     @staticmethod
     def cls_of(method, url):
-        return "search" if "/search/" in url else "fetch" if "/fetch/" in url else "other"
+        return ("search" if "/search/" in url else "fetch" if "/fetch/" in url else
+                "exchange" if "/exchange/" in url else "other")
 
     def _pace(self):
         pc = dict(PACES.get(SETTINGS.get("pace"), PACES["Balanced"]))

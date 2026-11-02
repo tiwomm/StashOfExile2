@@ -1096,7 +1096,38 @@ class WealthPage:
                 msg += " (No priced tabs are set up, so Sync only updates the prices of what you counted by hand.)"
             self.w_msg.config(text=msg, fg=C["green"] if not WPRICES.errors else C["good"])
             self.refresh_wealth(force=True)
+            self.wealth_bulk_fill()                       # 2.72.1: then the bulk exchange, for what poe.ninja lacks
+        elif kind == "bulk":
+            self.refresh_wealth(force=True)
         self.wealth_buttons()
+
+    def wealth_bulk_fill(self):
+        """2.72.1: stackables poe.ninja has no price for, priced from the trade site's bulk exchange - in the
+        background, one search each (rate-limited like every trade-site request), kept an hour."""
+        if getattr(self, "_w_bulk_running", False):
+            return
+        todo = WPRICES.bulk_missing(WEALTH.all_items())
+        if not todo:
+            return
+        self._w_bulk_running = True
+        league = WPRICES.league or SETTINGS.get("league") or ""        # (the league its prices are kept for)
+
+        def work():
+            from . import bulk
+            from .rates import RATES
+            got = 0
+            try:
+                for _name, xid in todo:
+                    try:
+                        if bulk.price(league, xid, lambda a, c: RATES.to_div(a, c, league)):
+                            got += 1
+                    except Exception:
+                        continue
+            finally:
+                self._w_bulk_running = False
+                if got:
+                    self.ui_q.put(("wealth", "bulk"))
+        threading.Thread(target=work, daemon=True).start()
 
     def wealth_buttons(self):
         s = WEALTH_SYNC["cur"]

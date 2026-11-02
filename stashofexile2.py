@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU GPL v3.0 (see LICENSE). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.72.0
+VERSION 2.72.1
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,6 +19,14 @@ VERSION 2.72.0
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.72.1
+       Stackables poe.ninja doesn't list, priced from the trade site's bulk exchange (bulk.py): one "have Divine /
+       want it" search per item (then Exalted if fewer than 3 offers), price per item = asked / given, the median
+       of the cheapest five with far-off ones left out; kept an hour (bulk_prices.json). Its own rate-limit class
+       ("exchange"). Names -> exchange ids from the trade site's /data/static (trade_static.json). Wealth: after
+       poe.ninja's prices, the missing stackables are searched in the background (up to 30) and shown with source
+       "bulk exchange (N offers in divine)". Price checks: a copied stack says what it's worth in the status line
+       (poe.ninja, else the bulk exchange).
   2.72.0
        Gear priced properly (our own rules, from how the trade site's listings behave - no other tool's code).
        Rares / magic: filler mods buyers hardly pay for (gear.FILLER: light radius, thorns, stun, attribute
@@ -1596,7 +1604,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.72.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.72.1"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
