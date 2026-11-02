@@ -12,7 +12,7 @@ from tkinter import filedialog, ttk
 from .config import save_json, SETTINGS
 from .gamelog import find_log, LogReader
 from .overlay import game_active, key_label, parse_key
-from .style import ScrollArea, C, FONT_TITLE, KeyCapture, SegBar, Tooltip
+from .style import ScrollArea, C, FONT_TITLE, SegBar, Tooltip
 from .tracker import fmt_time, Session, Sessions
 
 DEFAULTS = {"overlay": True, "locked": False, "x": 60, "y": 260, "w": 230, "h": 190, "opacity": 225,
@@ -399,17 +399,16 @@ class TrackerPage:
                    command=lambda: self.ovh_open("Appearance")).pack(side="left", padx=(8, 0))
         box2 = tk.Frame(po, bg=P2, padx=16, pady=8, highlightthickness=1, highlightbackground=C["line"])
         box2.pack(fill="x", pady=(8, 0))
-        tk.Label(box2, text="Hotkeys (work while the game is in front; also on the Hotkeys list in Settings)", bg=P2,
-                 fg=C["accent"], font=("Segoe UI", 10, "bold")).grid(row=0, column=0, columnspan=4, sticky="w")
-        self.tk_key_vars = {}
-        for i, (k, label) in enumerate((("key_toggle", "Start / stop"), ("key_pause", "Pause / resume"))):
-            tk.Label(box2, text=label, bg=P2, fg=C["text"]).grid(row=1, column=i * 2, sticky="w", padx=(0, 8))
-            v = tk.StringVar(value=cfg.get(k, ""))
-            self.tk_key_vars[k] = v
-            KeyCapture(box2, v, width=12, on_change=lambda t: self.tracker_save_keys()).grid(row=1, column=i * 2 + 1, sticky="w", padx=(0, 16))
-        self.tk_key_msg = tk.Label(box2, text="Click a box and press the key. Esc keeps the old one; Backspace or "
-                                              "right-click clears it.", bg=P2, fg=C["muted"], font=("Segoe UI", 9))
-        self.tk_key_msg.grid(row=2, column=0, columnspan=5, sticky="w", pady=(4, 0))
+        # 2.57.0: keys are set in Settings › Hotkeys only - here they're shown, with the way there
+        tk.Label(box2, text="Hotkeys", bg=P2, fg=C["accent"], font=("Segoe UI", 10, "bold")).grid(
+            row=0, column=0, columnspan=4, sticky="w")
+        self.tk_key_vars = {k: tk.StringVar(value=cfg.get(k, "")) for k in ("key_toggle", "key_pause")}
+        self.tk_key_msg = tk.Label(box2, text="", bg=P2, fg=C["text"], font=("Segoe UI", 9), anchor="w", justify="left")
+        self.tk_key_msg.grid(row=1, column=0, columnspan=3, sticky="w")
+        ttk.Button(box2, text="Change in Settings › Hotkeys", style="Quiet.TButton",
+                   command=lambda: self.hotkeys_open("tracker:key_toggle")).grid(row=1, column=3, sticky="w", padx=(12, 0))
+        self._tk_keys_text()
+
 
     def tracker_view(self):
         if self.tk_view.get() == "Map stats":
@@ -429,6 +428,13 @@ class TrackerPage:
         self.tracker_save()
         if self.tk_overlay is not None:
             self.tracker_overlay_build()
+
+    def _tk_keys_text(self):
+        from .overlay import key_label
+        cfg = self.tracker_cfg()
+        if getattr(self, "tk_key_msg", None) is not None:
+            self.tk_key_msg.config(text=f"Start / stop: {key_label(cfg.get('key_toggle')) or 'none'}     "
+                                        f"Pause / resume: {key_label(cfg.get('key_pause')) or 'none'}")
 
     def tracker_save_keys(self):
         cfg, bad = self.tracker_cfg(), []
@@ -1148,22 +1154,26 @@ class TrackerPage:
         ov = getattr(self, "overlay", None)
         oc = ov.cfg if ov else {}
         tc = self.tracker_cfg()
-        rows = [("Add the item under the mouse to Price checks", "Ctrl+Alt+C", "fixed", None),
+        # 2.57.0 (the user: every key in Settings › Hotkeys, nowhere else): the third field is the group the key
+        # belongs to (a heading on the Hotkeys page); every key but Ctrl+Alt+C is set here and only here
+        rows = [("Add the item under the mouse to Price checks", "Ctrl+Alt+C", "Price checks", None),
                 ("One-key copy (experimental, in game)", SETTINGS.get("quick_copy_key", ""), "Price checks",
                  "checks:quick_copy_key"),
-                ("Copy your stash search (in game)", SETTINGS.get("regex_key", ""), "Regex", "checks:regex_key"),
-                ("Open poe2db's modifier list in your browser", SETTINGS.get("poe2db_key", ""), "Settings > Hotkeys",
+                ("Open poe2db's modifier list in your browser", SETTINGS.get("poe2db_key", ""), "Price checks",
                  "checks:poe2db_key"),
-                ("Go to hideout", oc.get("hideout_key", ""), "Settings > Chat commands", "overlay:hideout_key"),
-                ("Show / hide notes", oc.get("notes_key", ""), "Overlays › Notes", "overlay:notes_key"),
-                ("Session timer: start / stop", tc.get("key_toggle", ""), "Overlays › Session timer", "tracker:key_toggle"),
-                ("Session timer: pause / resume", tc.get("key_pause", ""), "Overlays › Session timer", "tracker:key_pause"),
-                ("Expedition Remnant Price Checker (in game)", self.remnant_cfg().get("key", ""),
-                 "Overlays › Mechanic Helper", "remnant:key"),
+                ("Copy your stash search (in game)", SETTINGS.get("regex_key", ""), "Regex", "checks:regex_key"),
+                ("Session timer: start / stop", tc.get("key_toggle", ""), "Overlays", "tracker:key_toggle"),
+                ("Session timer: pause / resume", tc.get("key_pause", ""), "Overlays", "tracker:key_pause"),
+                ("Show / hide notes", oc.get("notes_key", ""), "Overlays", "overlay:notes_key"),
+                ("Expedition Remnant Price Checker (in game)", self.remnant_cfg().get("key", ""), "Overlays",
+                 "remnant:key"),
                 ("Farm Ledger: a run is done (setups counted by key)", SETTINGS.get("ledger_key") or "Ctrl+Alt+N",
-                 "Money Makers › Farm Ledger", None)]
-        for c in oc.get("commands", []) or []:
-            rows.append((f"Chat: {c.get('cmd', '')}", c.get("key", ""), "Settings > Chat commands", None))
+                 "Money Makers", "checks:ledger_key"),
+                ("Go to hideout", oc.get("hideout_key", ""), "Chat commands", "overlay:hideout_key")]
+        for i, c in enumerate(oc.get("commands", []) or []):
+            if c.get("cmd"):
+                rows.append((f"Chat: {c.get('name') or c.get('cmd', '')}", c.get("key", ""), "Chat commands",
+                             f"cmd:{i}"))
         return rows
 
     def hotkey_clashes(self):
