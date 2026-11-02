@@ -57,6 +57,8 @@ class _Sub(_Trunc):
         if "text" in kw and not str(kw["text"]).strip():
             from .config import SETTINGS
             kw["text"] = f"League: {SETTINGS.get('league') or '-'}"
+        if "text" in kw:
+            kw["text"] = str(kw["text"]).upper()             # (small caps, like the game's subtitles)
         super().config(**kw)
     configure = config
 
@@ -389,64 +391,78 @@ class MergedOverlay:
         if getattr(self, "mg_win", None) is not None:
             self.merged_build()                              # (the ▾ / ▴)
 
-    # ---------------------------------------------------------------- 2.67.0: the Panel (vendor-window style)
+    # ---------------------------------------------------------------- 2.66.1: the Panel (the game's Treasurer window)
+    def _smallcaps(self, cv, P, cx, cy, text, size, fill):
+        """Small caps like the game's titles: each word's first letter bigger, the rest in smaller capitals; centered."""
+        big = tkfont.Font(root=cv, family=P["hfont"], size=self._hf(size), weight="bold")
+        small = tkfont.Font(root=cv, family=P["hfont"], size=self._hf(round(size * 0.78)), weight="bold")
+        parts = []
+        for wi, word in enumerate(text.split(" ")):
+            if wi:
+                parts.append((" ", small))
+            if word:
+                parts.append((word[0].upper(), big))
+                if word[1:]:
+                    parts.append((word[1:].upper(), small))
+        total = sum(f.measure(t_) for t_, f in parts)
+        x = cx - total / 2
+        base = cy + big.metrics("ascent") / 2 - 1
+        for t_, f in parts:
+            cv.create_text(x, base, text=t_, anchor="sw", fill=fill, font=f, tags=("mg",))
+            x += f.measure(t_)
+
     def _mg_card(self, w, cv, P, want):
-        """A card like the game's vendor windows: a header plate (SESSION, the area in red under it), the time, the
-        map's time, Maps and Avg in dark boxes with gold numbers, the four switches in boxes that light up, and a
-        footer with the clock, Notes ▾ and the lock."""
+        """A card like the game's Treasurer window: SESSION in small caps on a charcoal band, the area (or the
+        league) in red on a maroon band under it, then the time, map time, Maps and Avg in charcoal boxes - a cream
+        icon, a gold number - the four switches in boxes that light up, and the clock, Notes ▾ and the lock."""
         from . import hudart
         cfg = self.tracker_cfg()
         k = getattr(self, "_hud_k", 1.0)
         W = int(300 * k)
-        pad, gap = int(16 * k), int(6 * k)
-        hh = int(60 * k)
-        ch = int(34 * k)
-        cw = (W - 2 * pad - gap) // 2
+        m, gap = int(6 * k), int(4 * k)
+        b0 = m
+        b1 = b0 + int(30 * k)
+        b2 = b1 + int(24 * k)
+        cw = (W - 2 * m - gap) // 2
+        ch = int(38 * k)
         cx = W // 2
-        title = "SESSION" if want["timer"] else "MECHANICS"
-        cv.create_text(cx, hh * 0.42, text=title, fill=P["head"], font=(P["hfont"], self._hf(13), "bold"),
-                       tags=("mg",))
+        self._smallcaps(cv, P, cx, (b0 + b1) / 2 + 1, "Session" if want["timer"] else "Mechanics", 14, P["head"])
         if want["timer"]:
-            sub = self._mg_text(cv, P, cx, hh * 0.72, "where", (P["font"], self._hf(10), "bold"), fill=P["sub"],
-                                anchor="center", cls=_Sub)
-            sub.config(text="")
+            self._mg_text(cv, P, cx, (b1 + b2) / 2, "where", (P["hfont"], self._hf(10), "bold"), fill=P["sub"],
+                          anchor="center", cls=_Sub).config(text="")
         else:
-            cv.create_text(cx, hh * 0.72, text="Click one to switch it", fill=P["sub"],
-                           font=(P["font"], self._hf(10), "bold"), tags=("mg",))
-        y = hh + int(14 * k)
+            cv.create_text(cx, (b1 + b2) / 2, text="CLICK ONE TO SWITCH IT", fill=P["sub"],
+                           font=(P["hfont"], self._hf(9), "bold"), tags=("mg",))
+        y = b2 + gap + int(2 * k)
         boxes = []
         if want["timer"]:
-            cells = [("session", "⏱", (P["font"], self._hf(13), "bold"))]
-            if cfg["lines"].get("map", True):
-                cells.append(("map", "⚑", (P["font"], self._hf(11), "bold")))
-            if cfg["lines"].get("maps"):
-                cells.append(("maps", "∑", (P["font"], self._hf(11), "bold")))
-            if cfg["lines"].get("avg"):
-                cells.append(("avg", "≈", (P["font"], self._hf(11), "bold")))
-            for i, (key, icon, font) in enumerate(cells):
-                x0, y0 = pad + (i % 2) * (cw + gap), y + (i // 2) * (ch + gap)
+            cells = [("session", "\u23f1")]
+            for key, icon in (("map", "\u2691"), ("maps", "\u2211"), ("avg", "\u2248")):
+                if cfg["lines"].get(key, key == "map"):
+                    cells.append((key, icon))
+            for i, (key, icon) in enumerate(cells):
+                x0, y0 = m + (i % 2) * (cw + gap), y + (i // 2) * (ch + gap)
                 boxes.append((x0, y0, cw, ch))
-                cv.create_text(x0 + int(14 * k), y0 + ch // 2, text=icon, fill=P["on"],
-                               font=("Segoe UI Symbol", self._hf(11)), tags=("mg",))
-                self._mg_text(cv, P, x0 + int(28 * k), y0 + ch // 2, key, font, fill=P["big"])
-            y += ((len(cells) + 1) // 2) * (ch + gap) + int(4 * k)
+                cv.create_text(x0 + int(18 * k), y0 + ch // 2, text=icon, fill=P["icon"],
+                               font=("Segoe UI Symbol", self._hf(14)), tags=("mg",))
+                self._mg_text(cv, P, x0 + int(36 * k), y0 + ch // 2, key,
+                              (P["font"], self._hf(13 if key == "session" else 12), "bold"), fill=P["big"])
+            y += ((len(cells) + 1) // 2) * (ch + gap)
         if want["helpers"]:
-            if want["timer"]:
-                self._hud_rule(cv, P, pad, W - pad, y)
-                y += int(10 * k)
+            sh = int(30 * k)
             for i, kk in enumerate(self.HELPERS):
-                x0, y0 = pad + (i % 2) * (cw + gap), y + (i // 2) * (ch + gap)
-                self._card_switch(cv, P, kk, x0, y0, cw, ch)
-            y += 2 * (ch + gap)
-        fy = y + int(10 * k)
-        gx = self._mg_glyphs(w, cv, P, W - pad, fy)
+                x0, y0 = m + (i % 2) * (cw + gap), y + (i // 2) * (sh + gap)
+                self._card_switch(cv, P, kk, x0, y0, cw, sh)
+            y += 2 * (sh + gap)
+        fy = y + int(9 * k)
+        gx = self._mg_glyphs(w, cv, P, W - m - int(6 * k), fy)
         if self.overlay.cfg.get("notes_enabled"):
             self._mg_notes_button(w, cv, P, gx - 4, fy, anchor="e")
         if want["timer"] and cfg.get("clock", True):
-            self._mg_clock(w, cv, P, pad, fy, anchor="w", on_bar=False)
+            self._mg_clock(w, cv, P, m + int(6 * k), fy, anchor="w", on_bar=False)
             self.tk_ov_clock.config = (lambda fn: (lambda text="", **kw: fn(text=text.splitlines()[0]
                                                                             if text else "")))(self.tk_ov_clock.config)
-        H = fy + int(20 * k)
+        H = fy + int(14 * k)
         imgs = []
         for x0, y0, bw, bh in boxes:
             im = hudart.box(cv, bw, bh, False)
@@ -454,7 +470,7 @@ class MergedOverlay:
                 cv.create_image(x0, y0, image=im, anchor="nw", tags=("mgbox",))
                 imgs.append(im)
         cv.tag_lower("mgbox")
-        art = hudart.card(cv, W, H, hh)
+        art = hudart.card(cv, W, H, (b0, b1, b2))
         if art is not None:
             cv.create_image(0, 0, image=art, anchor="nw", tags=("hudbg",))
             cv.tag_lower("hudbg")
@@ -473,8 +489,8 @@ class MergedOverlay:
         mid = y0 + bh // 2
         dot = cv.create_text(x0 + self._hf(14), mid, text=P["off_icon"], fill=P["off"],
                              font=("Segoe UI Symbol", self._hf(11)), tags=("mg", tag))
-        lab = cv.create_text(x0 + self._hf(28), mid, text=k.title(), anchor="w", fill=P["text"],
-                             font=(P["font"], self._hf(10), "bold"), tags=("mg", tag))
+        lab = cv.create_text(x0 + self._hf(30), mid, text=k.title(), anchor="w", fill=P["text"],
+                             font=(P["font"], self._hf(11), "bold"), tags=("mg", tag))
         cv.tag_bind(tag, "<Button-1>", lambda e, k=k: self.tracker_helper_click(k))
         cv.tag_bind(tag, "<Enter>", lambda e: cv.configure(cursor="hand2"))
         cv.tag_bind(tag, "<Leave>", lambda e: cv.configure(cursor=""))
