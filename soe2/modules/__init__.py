@@ -73,5 +73,6 @@ def load(app):
     from .insights import Insights
     from .money import MoneyMakers
     from .maps import MapLibrary
+    from .plan import GamePlan
     return [cls(app) for cls in (PriceChecks, Wealth, ModBook, Library, Regex, Search, Tracker, Notes,
-                                 Rates, Calculator, Insights, MoneyMakers, MapLibrary, Settings)]
+                                 Rates, Calculator, Insights, MoneyMakers, MapLibrary, GamePlan, Settings)]

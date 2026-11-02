@@ -21,7 +21,7 @@ HUD = ("xpbar",)                 # 2.65.0: fitted to the game's own bottom bar, 
 # the orbs' panels are anchored to the left and right edges, the XP bar runs between them). (x0, x1, bottom, h)
 #   x0 / x1 >= 0: from the left edge, < 0: from the right edge; bottom: up from the bottom edge.
 HUD_SPOTS = {"xpbar": [(0.535, -0.535, 0.0205, 0.046)]}   # 2.67.2: two rows (switches on top)
-SHORT = {"breach": "Brch", "delirium": "Deli", "ritual": "Ritl", "remnant": "Remn"}
+SHORT = {"breach": "Brch", "delirium": "Deli", "ritual": "Ritl", "remnant": "Remn", "focus": "Focus"}
 
 
 class _Short(CanvasText):
@@ -151,8 +151,33 @@ class MergedOverlay:
     def merged_wants(self):
         oc = self.overlay.cfg
         return {"timer": bool(getattr(self, "mg_timer", False)),
-                "helpers": bool(self.tracker_cfg().get("alerts_bar", True)),      # 2.70.1: its own switch
+                "helpers": bool(self.bar_chips()),       # 2.70.1: its own switch; 2.73.0: or the Focus switch
                 "notes": self.merged_embeds_notes() and bool(oc.get("notes_enabled")) and bool(oc.get("notes_visible"))}
+
+    # 2.73.0: what sits on the overlay's bar - each feature has an "on the bar" switch (Overlay › Options)
+    def bar_cfg(self):
+        b = self.tracker_cfg().setdefault("bar", {})
+        b.setdefault("focus", True)
+        b.setdefault("notes", True)
+        return b
+
+    def bar_chips(self):
+        """The switches on the bar: the Mechanic Helper's four (their switch on), then Focus (its own)."""
+        chips = list(self.HELPERS) if self.tracker_cfg().get("alerts_bar", True) else []
+        if self.bar_cfg().get("focus"):
+            chips.append("focus")
+        return chips
+
+    def notes_on_bar(self):
+        return bool(self.overlay.cfg.get("notes_enabled")) and bool(self.bar_cfg().get("notes", True))
+
+    def focus_line(self):
+        """-> (text, progress 0-1 or None) for the overlay's focus line, or ("", None)."""
+        from . import focus as F
+        try:
+            return F.line_text(self.gp_worth() if hasattr(self, "gp_worth") else None)
+        except Exception:
+            return "", None
 
     def merged_set(self, layout=None):
         """Settings › Appearance: the style or the Layout changed - rebuild the overlay (and a dropped-down note)."""
@@ -506,16 +531,35 @@ class MergedOverlay:
                               (P["font"], self._hf(14), "bold"), fill=P["big"], cls=_Num)
             y += rows * rh + int(8 * k)
         if want["helpers"]:
+            chips = self.bar_chips()                         # 2.73.0: + Focus (each has its "on the bar" switch)
+            nr = (len(chips) + 1) // 2
             rh = int(30 * k)
-            grids.append((gx0, y, gx1, y + 2 * rh, 2, 2))
-            for i, kk in enumerate(self.HELPERS):
+            grids.append((gx0, y, gx1, y + nr * rh, nr, 2))
+            for i, kk in enumerate(chips):
                 x0, y0 = gx0 + (i % 2) * colw, y + (i // 2) * rh
                 self._card_switch(cv, P, kk, x0, y0, colw, rh)
-            y += 2 * rh + int(6 * k)
+            y += nr * rh + int(6 * k)
+        ftext, fprog = self.focus_line()
+        if ftext:                                            # 2.73.0: the focus line (League Focus, I)
+            rh = int(30 * k)
+            grids.append((gx0, y, gx1, y + rh, 1, 1))
+            cv.create_text(gx0 + int(10 * k), y + rh // 2, text="NOW", anchor="w", fill=P["head"],
+                           font=(P["hfont"], self._hf(8), "bold"), tags=("mg",))
+            ft = self._mg_text(cv, P, gx0 + int(44 * k), y + rh // 2, "focus", (P["font"], self._hf(9)), cls=_Trunc)
+            ft.limit = 34 if fprog is None else 26
+            ft.config(text=ftext)
+            if fprog is not None:
+                bx1 = gx1 - int(10 * k)
+                bx0 = bx1 - int(44 * k)
+                cv.create_rectangle(bx0, y + rh // 2 - 2, bx1, y + rh // 2 + 2, fill=P["cell_bg"], outline=P["line"],
+                                    tags=("mg",))
+                cv.create_rectangle(bx0, y + rh // 2 - 2, bx0 + int((bx1 - bx0) * min(1.0, fprog)), y + rh // 2 + 2,
+                                    fill=P["on"], outline="", tags=("mg",))
+            y += rh + int(6 * k)
         foot = y + int(2 * k)
         fy = foot + int(11 * k)
         gx = self._mg_glyphs(w, cv, P, gx1 - int(4 * k), fy)
-        if self.overlay.cfg.get("notes_enabled"):
+        if self.notes_on_bar():
             self._mg_notes_button(w, cv, P, gx - 4, fy, anchor="e")
         if want["timer"] and cfg.get("clock", True):
             self._mg_clock(w, cv, P, gx0 + int(4 * k), fy, anchor="w", on_bar=False)
@@ -679,13 +723,13 @@ class MergedOverlay:
         """The four switches in a row (short names when space is tight) or a 2 x 2 grid. -> right edge."""
         lc, font = (_Short if short else CanvasText), (P["font"], self._hf(9))
         if cols == 4:
-            for k in self.HELPERS:
+            for k in self.bar_chips():
                 w_ = self._hud_cell_w(cv, P, k, short)
                 self._hud_cell(cv, P, k, x, y0, x + w_, y1, lc, font)
                 x += w_ + 4
             return x
         rh = (y1 - y0 - 4) // 2
-        for i, k in enumerate(self.HELPERS):
+        for i, k in enumerate(self.bar_chips()):
             cx, cy = x + (i % 2) * (cw + 5), y0 + (i // 2) * (rh + 4)
             self._hud_cell(cv, P, k, cx, cy, cx + cw, cy + rh, lc, font)
         return x + 2 * cw + 5
@@ -708,11 +752,11 @@ class MergedOverlay:
         fm = tkfont.Font(root=cv, family=P["font"], size=self._hf(10))
         if two:                                              # ---- row 1: the switches, centered; Notes at the end
             ch = int(H * 0.30)
-            short = sum(self._hud_cell_w(cv, P, k, False) + 6 for k in self.HELPERS) > (rgt - lft) * 0.75
-            total = sum(self._hud_cell_w(cv, P, k, short) + 6 for k in self.HELPERS) - 6
+            short = sum(self._hud_cell_w(cv, P, k, False) + 6 for k in self.bar_chips()) > (rgt - lft) * 0.75
+            total = sum(self._hud_cell_w(cv, P, k, short) + 6 for k in self.bar_chips()) - 6
             x0 = lft + max(0, ((rgt - lft) - total) // 2)
             self._hud_cells(cv, P, x0, top_mid - ch // 2, top_mid + ch // 2, short=short)
-            if self.overlay.cfg.get("notes_enabled"):
+            if self.notes_on_bar():
                 self._mg_notes_button(w, cv, P, rgt, top_mid, anchor="e")
             ry = int(H * 0.50)                               # a thin rule between the rows, fading at the ends
             n = 32
@@ -745,7 +789,22 @@ class MergedOverlay:
             mw, aw = fm.measure("Maps  000") + 12, fm.measure("Avg  00:00") + 12
             need_rest = (mw if ln.get("maps") else 0) + (aw if ln.get("avg") else 0)
             where_w = right - x - need_rest - 16
-            if ln.get("where", True) and where_w > 40:
+            ftext, fprog = self.focus_line()
+            if ftext and where_w > 80:                         # 2.73.0: the focus line takes where-you-are's place
+                cv.create_text(x, mid, text="▸ NOW", anchor="w", fill=P["head"], font=(P["hfont"], self._hf(9), "bold"),
+                               tags=("mg",))
+                nx = x + fm.measure("▸ NOW ") + 6
+                pw = 0 if fprog is None else self._hf(50)
+                ft = self._mg_text(cv, P, nx, mid, "focus", f, cls=_Trunc)
+                ft.limit = max(4, int((where_w - (nx - x) - pw) / (fm.measure("n") or 7)))
+                ft.config(text=ftext)
+                if fprog is not None:
+                    bx1 = x + where_w - 8
+                    cv.create_rectangle(bx1 - pw, mid - 2, bx1, mid + 2, fill=P["cell_bg"], outline=P["line"], tags=("mg",))
+                    cv.create_rectangle(bx1 - pw, mid - 2, bx1 - pw + int(pw * min(1.0, fprog)), mid + 2, fill=P["on"],
+                                        outline="", tags=("mg",))
+                x += where_w
+            elif ln.get("where", True) and where_w > 40:
                 wt = self._mg_text(cv, P, x, mid, "where", f, fill=P["muted"], cls=_Trunc)
                 wt.limit = max(4, int(where_w / ((fm.measure("m") or 8) * 0.8)))
                 x += where_w
@@ -756,5 +815,5 @@ class MergedOverlay:
                 x += mw
             if ln.get("avg"):
                 self._mg_text(cv, P, x, mid, "avg", f)
-        elif not two and self.overlay.cfg.get("notes_enabled"):
+        elif not two and self.notes_on_bar():
             self._mg_notes_button(w, cv, P, x, mid, anchor="w")
