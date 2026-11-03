@@ -43,6 +43,11 @@ cxnames.json (Exchange rates > Arbitrage, 2.26.0, tools/build_cxnames.py): the n
 Exchange, by their game id, from RePoE's export (above).
 
 ------------------------------------------------------------------------------
+tierdata.json (Desecration Helper, 2.81.0, tools/build_tierdata.py): every mod's tiers, value ranges and spawn tags,
+the equipment bases and small fingerprints of their pictures, from RePoE's export (above). The game data belongs to
+Grinding Gear Games.
+
+------------------------------------------------------------------------------
 anointdata.json (Game search > Anoints, 2.17.0, tools/build_anointdata.py): the Liquid Emotion names come from RePoE's
 export (above); which emotions anoint each notable comes from the passive tree data in Path of Building Community for
 Path of Exile 2 (https://github.com/PathOfBuildingCommunity/PathOfBuilding-PoE2, MIT licensed), extracted from the game

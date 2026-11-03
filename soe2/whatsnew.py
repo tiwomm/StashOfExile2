@@ -21,6 +21,12 @@ NEXT = [
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.81.0": [
+        "New: Desecration Helper. At The Well of Souls, each revealed option shows its tier (T1 = best for that "
+        "item type), and Abyss lords' mods show their range and how good the roll is.",
+        "It only wakes up while you're at the Well (from the game's log) - a small notice says so. Switch it in "
+        "Overlay › Mechanic Helper.",
+    ],
     "2.80.0": [
         "New: Price Checks. Hover an item in game and press Ctrl+C - it opens with every filter on the left and the "
         "trade site's listings on the right (mods with tiers, price, seller, when, the item's picture). Recent keeps "

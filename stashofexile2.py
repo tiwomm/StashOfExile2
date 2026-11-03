@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU GPL v3.0 (see LICENSE). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.80.0
+VERSION 2.81.0
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,6 +19,19 @@ VERSION 2.80.0
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.81.0
+       Desecration Helper (feedback: "show the tier of their mod as a small overlaid helper"; "reading client.txt for
+       entering the well of souls ... a small popup"). Client.txt says you entered The Well of Souls (Abyss_Hub): a
+       small notice over the game, and the helper looks for the Well's window - only while you're there. When the
+       window shows its three options (in the middle of the screen, or left of the open inventory: its title plate
+       is found), Windows' text reader reads them and each gets a tag: "T4 of 6" (T1 = the best tier for that item
+       type, a star and gold for T1-T2), or "Abyss 13-17 · 100%" for the Abyss lords' own mods (one range: where the
+       roll sits). A two-line option is one hybrid mod. The item type comes from the options (Movement Speed only
+       rolls on boots ...) and, when they fit several, from the item's picture in the slot, matched against the
+       game's own item art. tierdata.json (tools/build_tierdata.py, from RePoE): every prefix / suffix wording with
+       each tier's level, ranges and spawn tags, every equipment base and a small fingerprint of its picture.
+       Switches: Overlay › Mechanic Helper (Desecration, with Test), Overlay › Options › On the overlay, and On
+       the bar (its switch shows on the bar while you're at the Well). On by default.
   2.80.0
        Price Checks (feedback: "copy the price checker / item panel into a new panel called Price Checks ... a
        display of the items on the trade site"). Hover an item in game and press Ctrl+C: the app reads the copy
@@ -1842,7 +1855,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.80.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.81.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 

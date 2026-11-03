@@ -417,6 +417,9 @@ class TrackerPage:
         sws.append(("Campaign line (on the goal bar)", self.tk_cline_var, self.camp_line_switch))
         self.tk_cvendor_var = tk.BooleanVar(value=bool(CP.cfg()["vendor"]))
         sws.append(("Vendor search (in town)", self.tk_cvendor_var, self.camp_vendor_switch))
+        self.tk_ws_var = tk.BooleanVar(value=bool(self.ws_cfg().get("on")))        # 2.81.0
+        sws.append(("Desecration Helper (at the Well)", self.tk_ws_var,
+                    lambda: self.alerts_toggle("desecrate", bool(self.tk_ws_var.get()))))
         self.tk_ov_switches = {}
         for i, (label, v, fn) in enumerate(sws):
             cb = ttk.Checkbutton(grid, text=label, variable=v, command=fn, style="Card.TCheckbutton")
@@ -434,13 +437,16 @@ class TrackerPage:
                             "notes": tk.BooleanVar(value=bool(self.bar_cfg().get("notes", True))),
                             "calc": tk.BooleanVar(value=bool(self.bar_cfg().get("calc", True))),
                             "campaign": tk.BooleanVar(value=bool(self.bar_cfg().get("campaign", True))),
-                            "vendor": tk.BooleanVar(value=bool(self.bar_cfg().get("vendor", True)))}
+                            "vendor": tk.BooleanVar(value=bool(self.bar_cfg().get("vendor", True))),
+                            "desecrate": tk.BooleanVar(value=bool(self.bar_cfg().get("desecrate", True)))}
         for i, (label, v, fn) in enumerate((("Mechanic Helper switches", self.tk_switches_var, self.tracker_switches_switch),
                                             ("Focus switch", self.tk_bar_vars["focus"], self.tracker_bar_switch),
                                             ("Notes ▾", self.tk_bar_vars["notes"], self.tracker_bar_switch),
                                             ("Calc ▾", self.tk_bar_vars["calc"], self.tracker_bar_switch),
                                             ("Campaign switch", self.tk_bar_vars["campaign"], self.tracker_bar_switch),
-                                            ("Vendor ▾ (in town)", self.tk_bar_vars["vendor"], self.tracker_bar_switch))):
+                                            ("Vendor ▾ (in town)", self.tk_bar_vars["vendor"], self.tracker_bar_switch),
+                                            ("Desecration switch (at the Well)", self.tk_bar_vars["desecrate"],
+                                             self.tracker_bar_switch))):
             cb = ttk.Checkbutton(bar, text=label, variable=v, command=fn, style="Card.TCheckbutton")
             cb.grid(row=i // 3, column=i % 3, sticky="w", padx=(0, 24), pady=2)
             self.tk_ov_switches["bar:" + label] = cb
