@@ -114,7 +114,7 @@ class WellSoulsPage:
         texts = W.rows_from_lines(RM.ocr(img_box), bb - bt)
         if not any(texts):
             return []
-        tpls = [W.find(W.template(t)) if t else None for t in texts]
+        tpls = [W.resolve(t)[0] if t else None for t in texts]
         cls = W.classes_for([t for t in tpls if t])
         bases = [b for bs in cls.values() for b in bs]
         if len(cls) > 1:                                   # the options fit several item types: the picture decides

@@ -4,7 +4,7 @@
 
 > **Who we build for - read second.** Path of Exile players are utilitarian: they love data and information, problem solving and creative thinking. So every feature shows its numbers *and how they were worked out*, lets you sort, filter, compare and export them (CSV), keeps power-user depth (keys, versions, raw data) one click away instead of hiding it, explains in plain words, and leaves the decision to the player. Pretty is welcome; vague is not.
 
-**Current version: 2.81.1**
+**Current version: 2.81.2**
 
 Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds features, 2.10.1 only fixes. Each step below is one release; we work through them top to bottom.
 
@@ -140,6 +140,7 @@ Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds f
 | 2.80.0 | **Price Checks**: Ctrl+C on an item in game shows its card with every filter and the trade site's listings beside it (name band, properties, item level, requirements, mods with tiers, price, seller, when, picture; Recent 20). The old page is **Bulk Pricing** (Ctrl+Alt+C, stash tabs), a child of Price Checks with Market Insights and Under the hood. |
 | 2.81.0 | **Desecration Helper**: at The Well of Souls (from Client.txt, with a notice) each revealed option shows its tier for the item type, Abyss lords' mods their range; the item type from the options and the item's picture. |
 | 2.81.1 | Desecration Helper tags show just the tier (T5); its switch only in Overlay › Options (not on the bar). |
+| 2.81.2 | Desecration Helper reads hybrids shown in either line order (Accuracy + Light Radius). |
 
 ## ▶ Next up
 

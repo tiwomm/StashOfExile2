@@ -21,6 +21,9 @@ NEXT = [
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.81.2": [
+        "Desecration Helper: two-line options like Accuracy + Light Radius get their tier too.",
+    ],
     "2.81.1": [
         "Desecration Helper: the tags show just the tier (T5), and its switch is only in Overlay › Options (not on "
         "the bar) - it turns itself on at the Well.",
