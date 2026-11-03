@@ -20,7 +20,7 @@ HUD = ("xpbar",)                 # 2.65.0: fitted to the game's own bottom bar, 
 # Where the game's bottom bar leaves room, as parts of the game window's height (PoE2 at 16:9, UI scale 100 %;
 # the orbs' panels are anchored to the left and right edges, the XP bar runs between them). (x0, x1, bottom, h)
 #   x0 / x1 >= 0: from the left edge, < 0: from the right edge; bottom: up from the bottom edge.
-HUD_SPOTS = {"xpbar": [(0.535, -0.535, 0.0205, 0.046)]}   # 2.67.2: two rows (switches on top)
+HUD_SPOTS = {"xpbar": [(0.535, -0.535, 0.0205, 0.066)]}   # 2.67.2: two rows (switches on top); 2.73.5: taller
 SHORT = {"breach": "Brch", "delirium": "Deli", "ritual": "Ritl", "remnant": "Remn", "focus": "Focus"}
 
 
@@ -730,7 +730,7 @@ class MergedOverlay:
 
     def _hud_cell_w(self, cv, P, k, short):
         fb = tkfont.Font(root=cv, family=P["font"], size=self._hf(9))
-        return fb.measure(SHORT[k] if short else ("Ritual 3/3" if k == "ritual" else k.title())) + 24 + self._hf(12)
+        return fb.measure(SHORT[k] if short else ("Ritual 3/3" if k == "ritual" else k.title())) + 16 + self._hf(12)
 
     def _hud_cells(self, cv, P, x, y0, y1, short, cols=4, cw=None):
         """The four switches in a row (short names when space is tight) or a 2 x 2 grid. -> right edge."""
@@ -748,7 +748,7 @@ class MergedOverlay:
         return x + 2 * cw + 5
 
     def _hud_gap(self):
-        return self._hf(14)
+        return 6                                             # 2.73.5: back to 2.73.3's spacing (room goes up / down)
 
     def _hud_clock(self, w, cv, P, x, y):
         self._mg_clock(w, cv, P, x, y, anchor="e", on_bar=False)
@@ -762,13 +762,13 @@ class MergedOverlay:
         cfg = self.tracker_cfg()
         lft, rgt = self._hud_frame(cv, P, W, H)
         two = want["helpers"]
-        top_mid = int(H * 0.30)
-        mid = int(H * 0.70) if two else H // 2 + 1
+        top_mid = int(H * 0.31)                              # 2.73.5: more room above / below each row
+        mid = int(H * 0.74) if two else H // 2 + 1
         f = (P["font"], self._hf(10))
         fm = tkfont.Font(root=cv, family=P["font"], size=self._hf(10))
         if two:                                              # ---- row 1: the switches, centered; Notes at the end
-            ch = int(H * 0.30)
-            gap = self._hud_gap()                            # 2.73.4: room between the switches (were crammed)
+            ch = int(H * 0.25)                               # (the socket a touch bigger, more room round it)
+            gap = self._hud_gap()
             room = (rgt - lft) * 0.75 - (self._hf(70) if self.notes_on_bar() else 0)
             short = sum(self._hud_cell_w(cv, P, k, False) + gap for k in self.bar_chips()) > room
             total = sum(self._hud_cell_w(cv, P, k, short) + gap for k in self.bar_chips()) - gap
@@ -776,7 +776,7 @@ class MergedOverlay:
             self._hud_cells(cv, P, x0, top_mid - ch // 2, top_mid + ch // 2, short=short)
             if self.notes_on_bar():
                 self._mg_notes_button(w, cv, P, rgt, top_mid, anchor="e")
-            ry = int(H * 0.50)                               # a thin rule between the rows, fading at the ends
+            ry = int(H * 0.535)                              # a thin rule between the rows, fading at the ends
             n = 32
             seg = (rgt - lft) / n
             for i in range(n):
