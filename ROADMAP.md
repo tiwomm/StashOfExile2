@@ -120,7 +120,7 @@ Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds f
 | 2.73.2 | Price checks fixes: stash-tab items only in their own list, Pause / Price next / Price last for waiting items, an iLvl column; Market Insights item panel at the side and Remove (with Undo) in all three lists; the tagline "One tool to rule them all." |
 | 2.73.3 | Map supply pokes (League Focus): Game Plan › Map supplies - refill every N maps or N minutes in maps (from the game's log, not Wealth), a poke between maps with Refilled / Snooze / Skip, its own switch. |
 | 2.73.4 | League Focus polish: prices only for your league; stockpile from the Currency Exchange's list or any name (Quantity); farms of your own; goal targets by kind (div, level and maps from the log, act, a number); the overlay bar spaced out, with hover tips and a first-time card per switch (Feature tips); Game Plan's visual hierarchy. |
-| 2.73.5 | The overlay bar: room above and below the switches (a taller bar; side to side as before), dividers in the numbers row, hover tips that stay on screen, the focus line hidden with Focus; price pop-ups only for items you check yourself (not a stash tab's). |
+| 2.73.5 | The overlay bar: room above and below the switches (a taller bar; side to side as before), dividers in the numbers row, hover tips that stay on screen, the focus line hidden with Focus; price pop-ups only for items you check yourself (not a stash tab's); iLvl for older rows. |
 
 ## ▶ Next up
 

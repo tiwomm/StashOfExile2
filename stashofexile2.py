@@ -28,7 +28,8 @@ VERSION HISTORY
        part of the bar's numbers row (time | map | where / NOW | maps | avg | clock). Focus hidden from the bar
        (Options) hides its focus line too. Price pop-ups at the mouse (worth it, valuable mods, all checked) only for
        items you checked yourself (App.pops_for): since 2.73.2 a stash tab's items are priced one at a time out of
-       sight, each looked like a single check and popped up wherever the mouse was.
+       sight, each looked like a single check and popped up wherever the mouse was. iLvl for rows saved before
+       2.73.2: load_session reads it from the row's copied text (a tab read again skips them as "already in the list").
   2.73.4
        League Focus polish. Your league only: WealthPrices.for_league() - named() / value() give nothing while the
        cached poe.ninja prices are another league's (a league switch waits for the next refresh); bulk prices are
