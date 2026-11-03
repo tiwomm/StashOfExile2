@@ -26,6 +26,7 @@ NOTES = {
         "item type), and Abyss lords' mods show their range and how good the roll is.",
         "It only wakes up while you're at the Well (from the game's log) - a small notice says so. Switch it in "
         "Overlay › Mechanic Helper.",
+        "Fixed: Price Checks' listing cards showed the mods as raw data.",
     ],
     "2.80.0": [
         "New: Price Checks. Hover an item in game and press Ctrl+C - it opens with every filter on the left and the "
