@@ -86,7 +86,9 @@ class MoneyMakersPage:
         chips = tk.Frame(page, bg=P1, padx=8)
         chips.pack(fill="x")
         self.mm_chip_rows = {}
-        for key, label in (("cat", "Strats"), ("type", "Type"), ("think", "🧠 Thinking"), ("clicks", "🖱 Clicks")):
+        self.mm_content = set()                              # 2.78.0: the Content row (pinnacles, map content)
+        for key, label in (("cat", "Strats"), ("type", "Type"), ("think", "🧠 Thinking"), ("clicks", "🖱 Clicks"),
+                           ("content", "◆ Content")):
             r = tk.Frame(chips, bg=P1)
             tk.Label(r, text=label, bg=P1, fg=C["muted"], font=("Segoe UI", 9), width=11, anchor="w").pack(
                 side="left", anchor="n", pady=(4, 0))
@@ -94,8 +96,9 @@ class MoneyMakersPage:
             r.chips.pack(side="left", fill="x", expand=True)
             r.chips.bind("<Configure>", lambda e, f=r.chips: self._mm_flow(f, e.width))
             self.mm_chip_rows[key] = r
-        for key in ("cat", "think", "clicks"):
+        for key in ("cat", "think", "clicks", "content"):
             self.mm_chip_rows[key].pack(fill="x")
+        Tooltip(self.mm_chip_rows["content"], "What a strat farms - pick any: strats with one of them show.")
         Tooltip(self.mm_chip_rows["think"], "How much thinking a strat needs - a pick shows that level and the easier ones.")
         Tooltip(self.mm_chip_rows["clicks"], "How busy your hands are - a pick shows that pace and the calmer ones.")
         for var in (self.mm_max, self.mm_cmax):
@@ -109,7 +112,7 @@ class MoneyMakersPage:
             cb.pack(side="left")
             cb.bind("<<ComboboxSelected>>", lambda e: (self.mm_fill(), self.root.after(20, self.root.focus_set)))
             return cb
-        tag_values = ["Any"] + [t for g in MM.TAG_GROUPS.values() for t in g]
+        tag_values = ["Any"] + [t for g in MM.tag_groups().values() for t in g]
         pick("Tag", self.mm_tag, tag_values, 15, first=True)
         pick("Waystone tier", self.mm_tier, ("Any",) + tuple(str(i) for i in range(1, 17)), 4)
         self.mm_csort = tk.StringVar(value="Profit")
@@ -258,6 +261,48 @@ class MoneyMakersPage:
         self._mm_chip(rows["clicks"].chips, "Any", cm == "Any", lambda: (self.mm_cmax.set("Any"), self.mm_fill()))
         for w in MM.CLICKS:
             self._mm_chip(rows["clicks"].chips, w, cm == w, lambda w=w: (self.mm_cmax.set(w), self.mm_fill()))
+        self._mm_content_chips(rows["content"].chips)
+
+    def _mm_content_chips(self, box):
+        """2.78.0: the Content row - the first group (pinnacles and bosses) folds into a menu of check boxes, the
+        others are buttons; picked ones show as chips with ×."""
+        groups = list(MM.content_groups().items())
+        picked = self.mm_content
+        self._mm_chip(box, "Any", not picked, lambda: self.mm_content_pick(None))
+        for i, (group, tags) in enumerate(groups):
+            if i == 0:
+                n = len(picked & set(tags))
+                b = self._mm_chip(box, f"{group}{f'  {n}' if n else ''} ▾", bool(n),
+                                  lambda g=group: self.mm_content_menu(g))
+                self.mm_content_btn = b
+                for t in sorted(picked & set(tags)):
+                    self._mm_chip(box, f"{t}  ×", True, lambda t=t: self.mm_content_pick(t))
+                continue
+            for t in tags:
+                self._mm_chip(box, f"{t}  ×" if t in picked else t, t in picked, lambda t=t: self.mm_content_pick(t))
+
+    def mm_content_pick(self, tag):
+        """A Content button: on / off (None: Any - all off)."""
+        if tag is None:
+            self.mm_content = set()
+        else:
+            self.mm_content ^= {tag}
+        self.mm_chips_paint()
+        self.mm_fill()
+
+    def mm_content_menu(self, group):
+        m = tk.Menu(self.root, tearoff=0)
+        self.mm_content_vars = {}
+        for t in MM.content_groups().get(group, ()):
+            v = tk.BooleanVar(value=t in self.mm_content)
+            self.mm_content_vars[t] = v
+            m.add_checkbutton(label=t, variable=v, command=lambda t=t: self.mm_content_pick(t))
+        b = getattr(self, "mm_content_btn", None)
+        try:
+            m.tk_popup(b.winfo_rootx(), b.winfo_rooty() + b.winfo_height())
+        except (AttributeError, tk.TclError):
+            pass
+        return m
 
     def _mm_flow(self, f, width=None):
         """Lay the buttons out left to right, wrapping onto the next line when the row is full (2.71.0)."""
@@ -328,6 +373,11 @@ class MoneyMakersPage:
                      justify="left", wraplength=230).pack(fill="x")
             tk.Label(card, text=f"🧠 {MM.thinking_word(s.get('thoughts_per_click'))}   🖱 {s.get('clicks_per_hour', '?')}",
                      bg=P1, fg=C["muted"], font=("Segoe UI", 9), anchor="w").pack(fill="x", pady=(4, 0))
+            content = [t for t in s.get("tags") or [] if t in MM.content_tags()]       # 2.78.0
+            if content:
+                tk.Label(card, text="◆ " + " · ".join(content[:3]) + (f" +{len(content) - 3}" if len(content) > 3 else ""),
+                         bg=P1, fg=C["steel"], font=("Segoe UI", 9, "bold"), anchor="w", justify="left",
+                         wraplength=230).pack(fill="x", pady=(4, 0))
             tk.Label(card, text=MM.money_text(s.get("est_profit"), " / h"), bg=P1, fg=C["good"],
                      font=("Segoe UI", 16, "bold"), anchor="w").pack(fill="x", pady=(8, 0))
             by = post.get("author", {}).get("name") or (s.get("author") if s["origin"] != "mine" else "me")
@@ -476,6 +526,8 @@ class MoneyMakersPage:
                 continue
             if tag != "Any" and tag not in (s.get("tags") or []) and tag != s.get("type"):
                 continue
+            if self.mm_content and not self.mm_content & set(s.get("tags") or []):
+                continue
             wt = s.get("waystone_tiers")
             if tier != "Any" and wt and not wt["min"] <= int(tier) <= wt["max"]:
                 continue
@@ -596,7 +648,7 @@ class MoneyMakersPage:
             t.insert("end", "Waystone tiers  ", "h")
             t.insert("end", MM.tiers_text(s["waystone_tiers"]) + "\n", "stat")
         tags = s.get("tags") or []
-        for group, opts in MM.TAG_GROUPS.items():
+        for group, opts in MM.tag_groups().items():
             got = [x for x in opts if x in tags]
             if got:
                 t.insert("end", group + "  ", "h")
@@ -607,10 +659,14 @@ class MoneyMakersPage:
             t.insert("end", "Author's Strat Tracker  ", "h")
             t.insert("end", ", ".join(f"{v:g} {k.replace('_div', 'd').replace('_', ' ')}" for k, v in lg.items()) + "\n",
                      "meta")
+        self.mm_need_items(t, s)                                   # 2.78.0: W - regex + trade for each item
+        self.mm_atlas(t, s)
         for key, title in (("requirements", "Requirements"), ("tablets", "Tablets"), ("waystones", "Waystones"),
-                           ("atlas", "Atlas / master setup"), ("craft_steps", "Craft steps"), ("setup", "Other setup"),
+                           ("craft_steps", "Craft steps"), ("setup", "Other setup"),
                            ("steps", "Steps"),
                            ("loot", "Loot to sell"), ("tips", "Tips"), ("risks", "Risks")):
+            if key in ("tablets", "waystones") and s.get("items"):
+                continue                                          # (the cards above have them)
             items = s.get(key) or []
             if not items:
                 continue
@@ -628,6 +684,140 @@ class MoneyMakersPage:
                 t.insert("end", (src.get("title") or src["url"]) + "\n", ("li", "link", tag))
                 t.tag_bind(tag, "<Button-1>", lambda e, u=src["url"]: webbrowser.open(u))
         t.config(state="disabled")
+
+    # ---------------- 2.78.0: W - what a strat needs, with a regex and a trade search for each item
+    def mm_need_items(self, t, s):
+        items = s.get("items") or []
+        if not items:
+            return
+        P1 = C["panel"]
+        now = MM.cost_now(s, self.mm_costs())
+        prices = {}
+        c = (self.mm_costs() or {}).get(s.get("id")) or {}
+        for i in range(len(items)):
+            p = (c.get("prices") or {}).get(str(i))
+            if p is not None:
+                prices[i] = p
+        t.insert("end", "What you need - search or buy it\n", "h")
+        self.mm_item_btns = []
+        for i, it in enumerate(items):
+            card = tk.Frame(t, bg=P1, padx=8, pady=8, highlightthickness=1, highlightbackground=C["line"])
+            top = tk.Frame(card, bg=P1)
+            top.pack(fill="x")
+            kind = {"waystone": "WAYSTONE", "tablet": "TABLET"}.get(it.get("kind"), "ITEM")
+            tk.Label(top, text=f"{kind} ×{it.get('count', 1)}", bg=P1, fg=C["muted"], font=("Segoe UI", 9, "bold"),
+                     width=11, anchor="w").pack(side="left")
+            last = f" · lasts {it.get('lasts')} runs" if int(it.get("lasts") or 1) > 1 else ""
+            tk.Label(top, text=(it.get("name") or it["base"]) + last, bg=P1, fg=C["text"],
+                     font=("Segoe UI", 10, "bold"), anchor="w").pack(side="left")
+            price = prices.get(i)
+            if it.get("key_mods"):
+                tk.Label(card, text="\n".join("★ " + m for m in it["key_mods"]), bg=P1, fg=C["muted"],
+                         font=("Segoe UI", 9), anchor="w", justify="left", wraplength=440).pack(fill="x", pady=(2, 0))
+            row = tk.Frame(card, bg=P1)
+            row.pack(fill="x", pady=(8, 0))
+            rx = MM.item_regex([it])
+            b1 = ttk.Button(row, text="Copy regex", style="Quiet.TButton",
+                            command=lambda rx=rx, it=it: self.mm_item_copy(rx, it.get("name") or it["base"]))
+            b1.pack(side="left")
+            b2 = ttk.Button(row, text="Trade ↗", style="Quiet.TButton", command=lambda it=it: self.mm_item_trade(it))
+            b2.pack(side="left", padx=(8, 0))
+            if not rx:
+                b1.state(["disabled"])
+            self.mm_item_btns.append((b1, b2, rx))
+            tk.Label(row, text=f"~{price:.2f} div today" if price is not None else
+                     ("no recent listings" if now or c else ""), bg=P1, fg=C["good"] if price is not None else C["muted"],
+                     font=("Segoe UI", 9)).pack(side="left", padx=8)
+            t.window_create("end", window=card, stretch=1)
+            t.insert("end", "\n")
+        tabs = [it for it in items if it.get("kind") != "waystone" and it.get("key_mods")]
+        if len(tabs) > 1:
+            rx = MM.item_regex(tabs)
+            b = ttk.Button(t, text="Copy one regex for all the tablets", style="Quiet.TButton",
+                           command=lambda: self.mm_item_copy(rx, "all the tablets"))
+            self.mm_all_tabs_btn = b
+            t.window_create("end", window=b)
+            t.insert("end", "  stash or vendor: Ctrl+F, Ctrl+V · Trade: the ★ mods, cheapest first\n", "meta")
+
+    def mm_item_copy(self, rx, what):
+        if not rx:
+            return None
+        self.root.clipboard_clear()
+        self.root.clipboard_append(rx)
+        self.own_clip = rx
+        self._say(f"Copied the search for {what}. In game: Ctrl+F, Ctrl+V.", 6)
+        return rx
+
+    def mm_item_trade(self, it):
+        url = MM.item_trade_link(SETTINGS.get("league"), it)
+        webbrowser.open(url)
+        return url
+
+    # ---------------- 2.78.0: the atlas - trees, the author's screenshot (click: see it big), notes
+    def mm_atlas(self, t, s):
+        lines, ref = s.get("atlas") or [], s.get("atlas_image")
+        if not lines and not ref:
+            return
+        t.insert("end", "Atlas / master setup\n", "h")
+        if ref:
+            from . import stratimg
+            path = stratimg.path_of(ref) if ref.startswith("l:") else None
+            if ref.startswith("b:"):
+                path = self.mm_board_image(ref, s)
+            img = self.strat_thumb(path, 320, 180) if path else None
+            if img is not None:
+                self.mm_atlas_img = img
+                lbl = tk.Label(t, image=img, bg=C["panel"], cursor="hand2", highlightthickness=1,
+                               highlightbackground=C["line"])
+                lbl.bind("<Button-1>", lambda e, p=path: self.mm_atlas_big(p))
+                t.window_create("end", window=lbl)
+                t.insert("end", "\n")
+                t.insert("end", "Click the picture to see it big.\n", "meta")
+            else:
+                t.insert("end", "loading the author's atlas screenshot…\n" if ref.startswith("b:") else
+                         "The atlas screenshot is missing from this PC.\n", "meta")
+        for line in lines:
+            t.insert("end", "• " + line + "\n", "li")
+
+    def mm_board_image(self, ref, s):
+        """A board image: kept on this PC after the first download (in the background; the panel redraws)."""
+        from . import stratimg
+        import os
+        p = os.path.join(stratimg.folder(), f"board_{ref[2:]}.jpg")
+        if os.path.isfile(p):
+            return p
+        busy = getattr(self, "_mm_img_busy", set())
+        if ref not in busy:
+            self._mm_img_busy = busy | {ref}
+
+            def done(path):
+                self._mm_img_busy = getattr(self, "_mm_img_busy", set()) - {ref}
+                cur = self.mm_current()
+                if path and cur and cur.get("atlas_image") == ref:
+                    self.mm_show_detail(cur)
+            self._mm_bg(lambda: stratimg.path_of(ref), done)
+        return None
+
+    def mm_atlas_big(self, path):
+        """The screenshot in its own window, as big as the screen allows."""
+        try:
+            from PIL import Image, ImageTk
+            im = Image.open(path)
+        except Exception:
+            return None
+        w = tk.Toplevel(self.root)
+        w.title("Atlas")
+        w.configure(bg=C["bg"])
+        sw, sh = int(self.root.winfo_screenwidth() * 0.9), int(self.root.winfo_screenheight() * 0.85)
+        im.thumbnail((sw, sh))
+        img = ImageTk.PhotoImage(im, master=self.root)
+        lbl = tk.Label(w, image=img, bg=C["bg"])
+        lbl.image = img
+        lbl.pack()
+        w.bind("<Escape>", lambda e: w.destroy())
+        lbl.bind("<Button-1>", lambda e: w.destroy())
+        self.mm_atlas_win = w
+        return w
 
     def mm_more(self):
         b = self.mm_btns["more"]
@@ -768,8 +958,16 @@ class MoneyMakersPage:
         if not s or s["origin"] != "mine" or not self.cm_need_sharing(self.mm_post) or self.mm_need_login("post"):
             return None
         data = {k: v for k, v in MM.tidy(s).items() if k not in ("id", "author")}
-        self._mm_bg(lambda: B.post("strat", data),
-                    lambda r: self.mm_board_result(r, f"Posted \"{s['name']}\" to the Community board."))
+
+        def work():                                               # 2.78.0: the atlas screenshot goes up first
+            from . import stratimg
+            if str(data.get("atlas_image", "")).startswith("l:"):
+                ok, ref = stratimg.upload(data["atlas_image"])
+                if not ok:
+                    return False, f"The atlas screenshot didn't upload ({ref})."
+                data["atlas_image"] = ref
+            return B.post("strat", data)
+        self._mm_bg(work, lambda r: self.mm_board_result(r, f"Posted \"{s['name']}\" to the Community board."))
 
     def mm_report(self):
         s = self.mm_current()
@@ -909,8 +1107,6 @@ class MoneyMakersPage:
             when = "today" if ago < 86400 else f"{int(ago // 86400)} days ago"
             t.insert("end", f"{total:.2f} div a run", "stat")
             t.insert("end", f"  (trade site, checked {when}{' - checking again…' if busy else ''})\n", "meta")
-            for name, each, per in parts:
-                t.insert("end", f"• {name}: {each:.2f} each → {per:.3f} a run\n", "li")
         else:
             t.insert("end", "checking the trade site…\n" if busy else
                      "not checked yet (once a day while Money Makers is open)\n", "meta")
@@ -1133,7 +1329,7 @@ class MoneyMakersPage:
         combo("cph", "🖱 Clicks per hour *", clicks, cur)
         head("Tags (everything else about it)")
         v["tags"] = {}
-        for group, opts in MM.TAG_GROUPS.items():
+        for group, opts in MM.tag_groups().items():                 # 2.78.0: + the Content groups
             checks("tags:" + group, group, opts, s.get("tags"))
             v["tags"].update(v["tags:" + group])
         head("Numbers (estimates)")

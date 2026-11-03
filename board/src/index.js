@@ -55,6 +55,8 @@ export function validateStrat(s) {
   }
   if (s.sources !== undefined && (!Array.isArray(s.sources) || !s.sources.every((x) => x && typeof x.url === "string" && /^https?:\/\//.test(x.url))))
     out.push('sources must be a list of {"title", "url"} with http(s) links');
+  if (s.atlas_image !== undefined && !/^b:\d{1,12}$/.test(String(s.atlas_image)))     // 2.78.0: uploaded first
+    out.push('atlas_image must be "b:<id>" (upload the screenshot first)');
   const unknown = Object.keys(s).filter((k) => !RULES.order.includes(k));
   if (unknown.length) out.push("unknown field(s): " + unknown.sort().join(", "));
   return out;
@@ -435,6 +437,33 @@ async function bugReport(req, env) {
   return json({ number: issue.number, url: issue.html_url }, 201);
 }
 
+// ------------------------------------------------------------------ 2.78.0: atlas screenshots for strats
+// POST /images {data: base64 JPEG} (joined users; IMAGES_PER_DAY each) -> {id}; GET /images/<id> -> the JPEG.
+const MAX_IMAGE = 320 * 1024;
+async function postImage(req, env, me) {
+  const text = await req.text();
+  if (text.length > MAX_IMAGE * 1.4 + 100) return fail(413, "That picture is too big.");
+  const body = JSON.parse(text || "{}");
+  let bytes;
+  try {
+    bytes = Uint8Array.from(atob(String(body.data || "")), (c) => c.charCodeAt(0));
+  } catch (_e) {
+    return fail(400, "bad picture");
+  }
+  if (bytes.length < 100 || bytes.length > MAX_IMAGE || bytes[0] !== 0xff || bytes[1] !== 0xd8) return fail(400, "Send a JPEG of 320 KB or less.");
+  const today = await env.DB.prepare("SELECT COUNT(*) AS n FROM images WHERE author_id = ? AND created > ?").bind(me.id, now() - DAY).first();
+  if (today.n >= Number(env.IMAGES_PER_DAY || 20) && !me.admin) return fail(429, "That's enough pictures for today - try again tomorrow.");
+  const res = await env.DB.prepare("INSERT INTO images (author_id, data, created) VALUES (?, ?, ?)").bind(me.id, bytes, now()).run();
+  return json({ id: res.meta.last_row_id }, 201);
+}
+
+async function getImage(env, id) {
+  const row = await env.DB.prepare("SELECT data FROM images WHERE id = ?").bind(id).first();
+  if (!row) return fail(404, "not found");
+  return new Response(new Uint8Array(row.data), { headers: { "content-type": "image/jpeg",
+    "cache-control": "public, max-age=31536000, immutable" } });
+}
+
 // ------------------------------------------------------------------ routing
 export default {
   async fetch(req, env) {
@@ -450,6 +479,8 @@ export default {
       if (path === "/mods/ratings") return modRatings(env);
       if (path === "/maps/ratings") return mapRatings(env);
       if (path === "/campaign/zones") return campaignZones(env);
+      const im = /^\/images\/(\d{1,12})$/.exec(path);
+      if (im && req.method === "GET") return getImage(env, Number(im[1]));
       if (path === "/bugs" && req.method === "POST") return bugReport(req, env);
       const me = await who(req, env);
       if (path === "/me") return me ? json({ user: me }) : fail(401, "sign in first");
@@ -468,6 +499,7 @@ export default {
       if (path === "/auth/admin" && req.method === "POST") return becomeAdmin(req, env, me);
       if (me.banned) return fail(403, "This account can't post on the board.");
       if (path === "/posts" && req.method === "POST") return createPost(req, env, me);
+      if (path === "/images" && req.method === "POST") return postImage(req, env, me);
       if (m && !m[2] && req.method === "PUT") return updatePost(req, env, me, Number(m[1]));
       if (m && !m[2] && req.method === "DELETE") return deletePost(env, me, Number(m[1]));
       if (m && m[2] === "vote" && req.method === "POST") return vote(req, env, me, Number(m[1]));

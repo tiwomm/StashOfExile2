@@ -21,6 +21,14 @@ NEXT = [
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.78.0": [
+        "Money Makers: strats say what they farm - pinnacles, bosses, Azmerian Wisps, Viridian Wildwood and more - "
+        "and you can filter by it in the new Content row.",
+        "The Strat Tracker asks how people should find your strat (what it is, Thinking, Clicks, tags, steps) "
+        "before it's published, and takes a screenshot of your atlas (paste it with Ctrl+V).",
+        "A strat's panel lists what you need: each tablet and waystone with Copy regex and a trade search, plus the "
+        "author's atlas - click it to see it big.",
+    ],
     "2.77.0": [
         "The Campaign Helper: a line over the overlay's bar says where you are in the campaign, what to do there, "
         "what it's worth and where to go next - it follows you by itself from the game's log. Click it for the "
