@@ -6,7 +6,7 @@
 
 > **Who we build for - read second.** Path of Exile players are utilitarian: they love data and information, problem solving and creative thinking. So every feature shows its numbers *and how they were worked out*, lets you sort, filter, compare and export them (CSV), keeps power-user depth (keys, versions, raw data) one click away instead of hiding it, explains in plain words, and leaves the decision to the player. Pretty is welcome; vague is not.
 
-A Windows toolkit for **Path of Exile 2** that runs next to the game. Its main job is pricing simple items in bulk: **tablets, jewels and waystones**.
+A Windows toolkit for **Path of Exile 2** that runs next to the game. Its main job is pricing items from the official trade site, in bulk or one at a time, with a Campaign Helper, League Focus and a session overlay alongside.
 
 Hover an item in game and press **Ctrl+Alt+C**. It goes into a list and is priced from the official trade site, using the mods that decide its price.
 
@@ -14,16 +14,18 @@ Hover an item in game and press **Ctrl+Alt+C**. It goes into a list and is price
 
 ## What it does
 
-- **Price checks:** bulk pricing for tablets, jewels and waystones, with a confidence rating and filters per item. Other gear gets a rough guess only.
-- **Mod book:** learns which mods are worth money from the listings it sees, and from what every player's price checks pool together (anonymous, can be switched off).
-- **Money Makers:** community farming strats in one layout (Notepad-friendly template), rated by Thoughts per Click and Clicks per hour, updated from GitHub; post and upvote on the Community board (no login); Lucrative one-liners; Tablet Craft Helper; Strat Tracker (what a farming setup really makes). Strat format: [strats/README.md](strats/README.md).
+- **Price checks:** bulk pricing for tablets, jewels, waystones and gear from the official trade site. Each item opens in one clean panel with every trade filter: this base or any of its kind, item level, quality, sockets, requirements, Any / Yes / No flags (corrupted, fractured, desecrated, sanctified ...), and each mod with Min / Max and ★ for must-match. You also get a confidence rating and how the price was worked out. It can read a whole public stash tab.
+- **Overlay over the game:** a bar on the XP bar, scaled to your resolution. It shows the session timer, map, maps run, the average per map, the clock, Notes and a calculator. It also holds the Breach, Delirium, Ritual and Remnant helper switches and the map's rank. Every part has its own switch.
+- **Campaign Helper:** where you are, what's next and which rewards you missed, act by act from the game's log, on a line docked to the overlay bar. It includes act routes, Vendor tips and act splits, and turns itself off at maps.
+- **League Focus:** a Game Plan of goals by phase, stockpile, farm plan and build lock, plus gentle reminders over the game (map supplies, cheap stockpile prices).
+- **Money Makers:** community farming strats in one layout, with content tags (pinnacles, bosses, map content) and atlas screenshots, rated by Thoughts per Click and Clicks per hour. You can post and upvote on the Community board (no login). It also has the Tablet Craft Helper and the Strat Tracker (what a farming setup really makes). Strat format: [strats/README.md](strats/README.md).
 - **Regex:** builds stash-search strings for tablets, waystones, relics, jewels and gear (at least, ranges, at most), with saved Favorites.
 - **Exchange rates:** poe.ninja rates, an Exchange Helper, and an Arbitrage tab for uneven Currency Exchange rates.
-- **Map library:** every map, citadel and pinnacle fight, ranked S to D or Avoid by you and the community; share ranks as a file. Opens from the Session tracker's title bar.
-- **Expedition Remnant Price Checker:** open a remnant's reward book and each reward gets its poe.ninja price next to it (the best one ★), by itself or with a key. In Session tracker › Alerts and the timer's Helpers bar, with a small list of the runeshapes players rate best. The idea comes from [PoE Ancients Price Helper](https://github.com/pedro-quiterio/PoeAncientsPriceHelper) by Pedro Quitério. None of its code is used, because it isn't open source.
-- **Session tracker:** time, maps and deaths per session with a timer over the game, plus Delirium, Breach (Hiveblood) and Ritual alerts.
-- **Utilities:** chat command keys, a sticky note and a calculator over the game.
-- **Labs (off by default):** Wealth (stash value over time), Market Insights and an offline game-data search (with every anoint, its Liquid Emotions and their poe.ninja prices).
+- **Map library:** every map, citadel and pinnacle fight, ranked S to D or Avoid by you and the community. You can share ranks as a file.
+- **Expedition Remnant Price Checker:** open a remnant's reward book and each reward gets its poe.ninja price next to it, with the best one marked ★. The idea comes from [PoE Ancients Price Helper](https://github.com/pedro-quiterio/PoeAncientsPriceHelper) by Pedro Quitério. None of its code is used, because it isn't open source.
+- **Utilities:** chat command keys and a sticky note over the game.
+- **Advanced tools (Settings › Advanced):** Under the hood and the Mod book, which learns which mods are worth money from listings and, if you opt in, from pooled community price checks.
+- **Labs (off by default):** Wealth (stash value over time), Market Insights and an offline game-data search.
 
 ## Install
 
@@ -47,7 +49,7 @@ Questions, ideas and bug reports: [Discord](https://discord.gg/Ta8EVnxx4T). The 
 ## Fair play
 
 - **One action per key press.** It never plays the game for you.
-- **Reads nothing from the game itself:** no memory, no network traffic. Only item text you copy, the game's own `Client.txt` log, and screenshots of your own screen (Delirium alert, Ritual watcher).
+- **Reads nothing from the game itself:** no memory, no network traffic. Only item text you copy, the game's own `Client.txt` log, and screenshots of your own screen (Delirium, Ritual and Remnant watchers).
 - **Respects the trade site's rate limits**, and nothing syncs on its own.
 
 ## License
