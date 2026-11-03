@@ -20,7 +20,9 @@ VERSION 2.81.1
 
 VERSION HISTORY
   2.81.1
-       Desecration Helper: the tags say just the tier ("T5", feedback: 'the "of x" isn't necessary').
+       Desecration Helper: the tags say just the tier ("T5", feedback: 'the "of x" isn't necessary'), and no switch
+       on the overlay's bar (feedback: it turns itself on at the Well) - its switch is in Overlay › Options and
+       Overlay › Mechanic Helper.
   2.81.0
        Desecration Helper (feedback: "show the tier of their mod as a small overlaid helper"; "reading client.txt for
        entering the well of souls ... a small popup"). Client.txt says you entered The Well of Souls (Abyss_Hub): a

@@ -139,7 +139,7 @@ Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds f
 | 2.79.2 | Every mod under Stat filters can be ticked (left-out ones too); searches start at Instant Buyout, priced in Exalted Orb Equivalent. |
 | 2.80.0 | **Price Checks**: Ctrl+C on an item in game shows its card with every filter and the trade site's listings beside it (name band, properties, item level, requirements, mods with tiers, price, seller, when, picture; Recent 20). The old page is **Bulk Pricing** (Ctrl+Alt+C, stash tabs), a child of Price Checks with Market Insights and Under the hood. |
 | 2.81.0 | **Desecration Helper**: at The Well of Souls (from Client.txt, with a notice) each revealed option shows its tier for the item type, Abyss lords' mods their range; the item type from the options and the item's picture. |
-| 2.81.1 | Desecration Helper tags show just the tier (T5). |
+| 2.81.1 | Desecration Helper tags show just the tier (T5); its switch only in Overlay › Options (not on the bar). |
 
 ## ▶ Next up
 
