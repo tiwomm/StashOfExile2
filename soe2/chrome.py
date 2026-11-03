@@ -125,3 +125,38 @@ def section(parent, title, note="", bg_key="panel2", padx=16, pady=8, expand=Fal
             nl.bind("<Configure>", rewrap)
     inner.section_outer, outer.section_title, outer.section_bar = outer, title, bar
     return outer, inner
+
+
+class Notice(tk.Frame):
+    """2.74.5 (feedback: beta notices "should be able to be closed off of the screen"): a one-line notice with a small
+    × at the right. Closed once, it stays closed (SETTINGS["notices_closed"][key]). show(**pack) packs it unless
+    it was closed; the owner packs it with show() wherever it used to pack the label."""
+
+    def __init__(self, parent, key, text, kind="beta"):
+        from .config import SETTINGS
+        bg, fg, edge = {"beta": ("#2a2110", "#ffcf40", "#7a6428")}.get(kind, (C["panel2"], C["muted"], C["line"]))
+        super().__init__(parent, bg=bg, highlightthickness=1, highlightbackground=edge)
+        self.key, self._S = key, SETTINGS
+        self.label = tk.Label(self, text=text, bg=bg, fg=fg, anchor="w", justify="left", padx=8, pady=2,
+                              font=("Segoe UI", 9))
+        self.label.pack(side="left", fill="x", expand=True)
+        self.label.bind("<Configure>", lambda e: self.label.config(wraplength=max(200, e.width - 16)))
+        self.x = tk.Label(self, text="✕", bg=bg, fg=fg, cursor="hand2", padx=8, font=("Segoe UI", 9, "bold"))
+        self.x.pack(side="right", anchor="n")
+        self.x.bind("<Button-1>", lambda e: self.close())
+
+    def closed(self):
+        return bool((self._S.get("notices_closed") or {}).get(self.key))
+
+    def show(self, **pack):
+        if self.closed():
+            self.pack_forget()
+            return False
+        self.pack(**pack)
+        return True
+
+    def close(self):
+        from .config import save_json
+        self._S.setdefault("notices_closed", {})[self.key] = True
+        save_json("settings.json", self._S)
+        self.pack_forget()

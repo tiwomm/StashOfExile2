@@ -21,6 +21,10 @@ NEXT = [
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.74.5": [
+        "Price checks is lighter: fewer rows and less padding, the settings line on top, and beta notices you can "
+        "close with the × on their right.",
+    ],
     "2.74.4": [
         "Price checks: tick the mods right on the item card, like Sidekick - ticked mods are searched on. Min / Max "
         "and key mods are under Fine-tune the search.",

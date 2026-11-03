@@ -43,7 +43,7 @@ from .wealth import WEALTH, parse_stack, WPRICES
 from .engine import Engine
 from . import gear, waystone
 from .toasts import Toasts
-from .style import C, FLAG_COLORS, FONT_TITLE, hotkey_blocked, MONO, Plate, SegBook, SegBar, setup_style, Toast, KeyCapture
+from .style import C, FLAG_COLORS, FONT_TITLE, hotkey_blocked, MONO, Plate, SegBook, SegBar, setup_style, Toast, KeyCapture, Tooltip
 from .chrome import SectionBar, Viewport, section as chrome_section
 from .communitymods import WHAT as CM_WHAT
 from .winsys import ICON_B64, KeyWatch, Tray
@@ -548,7 +548,7 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
     def build_checks(self, body):
         self.checks_body = body
         # ---- the summary line: total value of the list + priced / needs review
-        summ = tk.Frame(body, bg=C["panel2"], padx=12, pady=8)
+        summ = tk.Frame(body, bg=C["panel2"], padx=12, pady=4)      # 2.74.5: lighter padding all over the page
         summ.pack(fill="x")
         self.tot_lbl = tk.Label(summ, text="", bg=C["panel2"], fg="#9fb6dd", font=("Segoe UI", 9, "bold"))
         self.tot_val = tk.Label(summ, text="", bg=C["panel2"], fg=C["good"], font=("Segoe UI", 16, "bold"))
@@ -563,11 +563,7 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         self.tot_val.pack(side="left", padx=(8, 0))
         self.chip_review.pack(side="right")
         self.chip_priced.pack(side="right", padx=(0, 8))
-        # 2.26.4: what the stars in Valuable mods mean - up top where it is seen (was a small line under the list)
-        self.vmods_legend = tk.Label(summ, text="Valuable mods:  ★ = a mod your Mod book rates valuable  (★★★ = three)",
-                                     bg="#2a2110", fg="#ffd9a8", font=("Segoe UI", 9, "bold"), padx=8, pady=4,
-                                     highlightthickness=1, highlightbackground="#7a6428")
-        self.vmods_legend.pack(side="left", padx=(16, 0))
+        # 2.74.5: the Valuable mods legend chip is gone (clutter) - the column's ★ explains itself on hover
         # 2.31.0: how much the community Mod book knows (shown once there is something)
         self.cm_chip = tk.Label(summ, text="", bg="#10203a", fg="#8fc4ff", font=("Segoe UI", 9), padx=8, pady=4,
                                 highlightthickness=1, highlightbackground="#3f5f8f")
@@ -575,27 +571,29 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
 
         # ---- the toolbar (2.63.0: row 1 = what to do, row 2 = what to show; the mode row comes first)
         tb = tk.Frame(body, bg=C["panel"], highlightthickness=1, highlightbackground=C["line"])
-        tb.pack(fill="x", padx=8, pady=(8, 8))
+        tb.pack(fill="x", padx=8, pady=4)
         self.price_tb = tb
-        bar = tk.Frame(tb, bg=C["panel"], padx=8, pady=8)
+        bar = tk.Frame(tb, bg=C["panel"], height=1)          # (the first row's place: Add items from goes before it)
         bar.pack(fill="x")
-        tk.Frame(tb, bg=C["line"], height=1).pack(fill="x", padx=8)
-        bar2 = tk.Frame(tb, bg=C["panel"], padx=8, pady=8)
+        bar2 = tk.Frame(tb, bg=C["panel"], padx=8, pady=4)
         bar2.pack(fill="x")
-        lab = dict(bg=C["panel"], fg=C["muted"])
-        ttk.Button(bar, text="Export CSV", command=self.export).pack(side="right")          # right side first: never squeezed out
-        self.pause_btn = ttk.Button(bar, text="Pause", command=self.toggle_pause, width=8)
+        lab = dict(bg=C["panel2"], fg=C["muted"])
+        # 2.74.5: the actions share the filters' row (one row less), right side first: never squeezed out
+        ttk.Button(bar2, text="Export CSV", command=self.export, style="Quiet.TButton").pack(side="right")
+        self.pause_btn = ttk.Button(bar2, text="Pause", command=self.toggle_pause, width=8)
         self.pause_btn.pack(side="right", padx=8)
-        ttk.Button(bar, text="⟳ Re-price all", style="Primary.TButton", command=self.reprice_all).pack(side="right")
+        ttk.Button(bar2, text="⟳ Re-price all", style="Primary.TButton", command=self.reprice_all).pack(side="right")
         # 2.59.0: Valuable mod, Popups, Sound, Copy name, Listings, Listed within, Prices in and the account live in
-        # Settings › Price checking - the toolbar only links there (one home for each setting)
+        # Settings › Price checking - the toolbar only links there (one home for each setting). 2.74.5: on the top
+        # strip, after the total
         self.pc_vars()
-        self.pc_set_link = tk.Label(bar, text="⚙ Settings › Price checking", bg=C["panel"], fg=C["accent"],
-                                    cursor="hand2", font=("Segoe UI", 9, "underline"))
-        self.pc_set_link.pack(side="left")
+        self.pc_rules_lbl = tk.Label(summ, text="", **lab)
+        self.pc_rules_lbl.pack(side="left", padx=(16, 0))
+        self.pc_set_link = tk.Label(summ, text="⚙", bg=C["panel2"], fg=C["accent"], cursor="hand2",
+                                    font=("Segoe UI Symbol", 10))
+        self.pc_set_link.pack(side="left", padx=(8, 0))
         self.pc_set_link.bind("<Button-1>", lambda e: self.settings_open("Price checking"))
-        self.pc_rules_lbl = tk.Label(bar, text="", **lab)
-        self.pc_rules_lbl.pack(side="left", padx=(12, 0))
+        Tooltip(self.pc_set_link, "Settings › Price checking")
         self.pc_rules_text()
         self.view_var = tk.StringVar(value=SETTINGS["view"])
         self.build_tab_reader(tb)                                # 2.8.0: Add items from Ctrl+Alt+C | Stash tab
@@ -619,9 +617,7 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         self.type_box.bind("<<ComboboxSelected>>", lambda e: self.on_cat(changed="type"))
         for cb in (vbox, self.cat_box, self.rar_box, self.type_box):
             cb.bind("<<ComboboxSelected>>", lambda e: self.root.after(20, self.root.focus_set), add="+")
-        self.star_var = tk.BooleanVar(value=False)          # 2.63.0: only items with a ★ (valuable) mod
-        ttk.Checkbutton(frow, text="Only ★", variable=self.star_var, style="Switch.TCheckbutton",
-                        command=self.on_filter_text).pack(side="left", padx=(12, 0))
+        self.star_var = tk.BooleanVar(value=False)          # 2.74.5: the "Only ★" switch is gone (kept off)
         # 2.26.4: was "Show all" - it clears Category / Rarity / Type / search / ★, and only lights up when one is set
         self.clear_btn = ttk.Button(frow, text="✕ Clear filters", command=self.cat_reset, state="disabled")
         self.clear_btn.pack(side="left", padx=(12, 0))
@@ -638,7 +634,7 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         kbf = tk.Frame(body, bg=C["panel"])
         kbf.pack(fill="x", side="bottom")
         self.build_keybar(kbf)
-        self.banner = tk.Label(body, text="", anchor="w", padx=16, pady=8, font=("Segoe UI", 10, "bold"), justify="left")
+        self.banner = tk.Label(body, text="", anchor="w", padx=12, pady=2, font=("Segoe UI", 9), justify="left")
 
         # ---- the list (left) and the item (right), each under its own header strip
         items_tab = tk.Frame(body, bg=C["panel"])
@@ -652,7 +648,7 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         self.list_head.pack(fill="x")
         self.cat_count = tk.Label(lcol, text="")             # (not shown - its text is the strip's note)
         # under the list: what to do with the picked rows
-        acts = tk.Frame(lcol, bg=C["panel"], pady=8)
+        acts = tk.Frame(lcol, bg=C["panel"], pady=4)
         acts.pack(fill="x", side="bottom")
         ttk.Button(acts, text="Clear list", command=self.clear, style="Danger.TButton").pack(side="right")
         self.delete_btn = ttk.Button(acts, text="🗑 Delete", command=self.remove_selected, style="Danger.TButton")      # 2.0 beta 19
@@ -2159,7 +2155,7 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         if lbl is None:
             return
         try:
-            lbl.config(text=f"Valuable mod ≥ {SETTINGS['good_div']:g} div  ·  {SETTINGS['status']}  ·  "
+            lbl.config(text=f"★ valuable mod ≥ {SETTINGS['good_div']:g} div  ·  {SETTINGS['status']}  ·  "
                             f"listed within {SETTINGS['age']}")
         except tk.TclError:
             pass
@@ -2292,7 +2288,7 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         if txt:
             self.banner.config(text=txt, bg=bg, fg=fg)
             if not self.banner.winfo_ismapped():
-                self.banner.pack(fill="x", padx=16, pady=(0, 8), before=self.checks_area)
+                self.banner.pack(fill="x", padx=8, pady=(0, 4), before=self.checks_area)
         elif self.banner.winfo_ismapped():
             self.banner.pack_forget()
         parts, worst = [], 0
@@ -4439,7 +4435,7 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         it = rec["item"]
         col = C["rare"] if it["rarity"] == "Rare" else C["magic"]
 
-        def box(parent, edge=None, pad=(16, 8)):
+        def box(parent, edge=None, pad=(12, 8)):            # 2.74.5: lighter
             return tk.Frame(parent, bg=P1, padx=pad[0], pady=pad[1], highlightthickness=1, highlightbackground=edge or C["line"])
 
         # ---- 2.60.0: the item card (the theme draws its name band) and the tabs Item / How it's priced / Raw
@@ -4751,7 +4747,7 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         """The searches behind a price, one card each (2.60.0: the "How it's priced" tab)."""
         P2, P1 = C["panel2"], C["panel"]
 
-        def box(parent, edge=None, pad=(16, 8)):
+        def box(parent, edge=None, pad=(12, 8)):            # 2.74.5: lighter
             return tk.Frame(parent, bg=P1, padx=pad[0], pady=pad[1], highlightthickness=1, highlightbackground=edge or C["line"])
         stages = rec.get("stages") or []
         if stages:
@@ -4783,7 +4779,7 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         """The item's mods with their switches, ★, rolls and Min / Max boxes."""
         P2, P1 = C["panel2"], C["panel"]
 
-        def box(parent, edge=None, pad=(16, 8)):
+        def box(parent, edge=None, pad=(12, 8)):            # 2.74.5: lighter
             return tk.Frame(parent, bg=P1, padx=pad[0], pady=pad[1], highlightthickness=1, highlightbackground=edge or C["line"])
         # 2.74.4: the ticks are on the item card now; Min / Max, ★ and each mod's roll fold away under here
         tune = bool(SETTINGS.get("detail_tune"))
