@@ -131,7 +131,7 @@ class GamePlanPage:
                 note = "poke: " + trig.get(g["trigger"], g["trigger"])
                 if g.get("target_div"):                    # 2.73.2: you type how far you are (no Wealth)
                     pr = tk.Frame(box, bg=P2)
-                    pr.pack(fill="x", padx=(32, 0))
+                    pr.pack(fill="x", padx=(24, 0))
                     tk.Label(pr, text="have", bg=P2, fg=C["muted"], font=("Segoe UI", 9)).pack(side="left")
                     hv = tk.StringVar(value=f"{g.get('have') or 0:g}")
                     he = ttk.Entry(pr, textvariable=hv, width=6)
