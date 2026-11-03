@@ -340,6 +340,14 @@ async function modBatch(req, env) {
     else if (MAP_RANKS.includes(v.rank)) stmts.push(env.DB.prepare(`INSERT INTO map_votes (name, cid, rank, updated)
       VALUES (?1, ?2, ?3, ?4) ON CONFLICT(name, cid) DO UPDATE SET rank = ?3, updated = ?4`).bind(name, cid, v.rank, t));
   }
+  for (const z of (Array.isArray(body.zones) ? body.zones : []).slice(0, 100)) {   // 2.77.0: campaign zones
+    const act = String(z?.act ?? ""), zone = String(z?.zone ?? "").trim(), after = String(z?.after ?? "").trim();
+    const level = Math.floor(Number(z?.level) || 0);
+    if (!/^(\d|i\d)$/.test(act) || !okText(zone) || after.length > 80 || level < 0 || level > 100) continue;
+    stmts.push(env.DB.prepare(`INSERT INTO campaign_zones (act, zone, cid, after, level, updated)
+      VALUES (?1, ?2, ?3, ?4, ?5, ?6) ON CONFLICT(act, zone, cid) DO UPDATE SET after = ?4, level = ?5, updated = ?6`)
+      .bind(act, zone, cid, after, level, t));
+  }
   let votes = 0;
   for (const v of (Array.isArray(body.votes) ? body.votes : []).slice(0, MAX_VOTES)) {
     if (!KEY.test(String(v?.key ?? ""))) continue;
@@ -373,6 +381,18 @@ async function mapRatings(env) {
   const by = {};
   for (const r of rows.results) (by[r.name] ??= {})[r.rank] = r.n;
   return json({ maps: Object.entries(by) });
+}
+
+// 2.77.0: zones players' logs showed that their guide pack didn't have - pooled for tools/build_guide.py
+async function campaignZones(env) {
+  const rows = await env.DB.prepare(`SELECT act, zone, COUNT(*) AS n, ROUND(AVG(level)) AS level FROM campaign_zones
+    GROUP BY act, zone HAVING COUNT(*) >= 2`).all();
+  const after = await env.DB.prepare(`SELECT act, zone, after, COUNT(*) AS n FROM campaign_zones GROUP BY act, zone, after
+    ORDER BY n DESC`).all();
+  const best = {};
+  for (const a of after.results) best[a.act + "|" + a.zone] ??= a.after;
+  return json({ zones: rows.results.map((r) => ({ act: r.act, zone: r.zone, n: r.n, level: r.level,
+    after: best[r.act + "|" + r.zone] || "" })) });
 }
 
 async function modRatings(env) {
@@ -429,6 +449,7 @@ export default {
       if (path === "/mods/stats") return modStats(url, env);
       if (path === "/mods/ratings") return modRatings(env);
       if (path === "/maps/ratings") return mapRatings(env);
+      if (path === "/campaign/zones") return campaignZones(env);
       if (path === "/bugs" && req.method === "POST") return bugReport(req, env);
       const me = await who(req, env);
       if (path === "/me") return me ? json({ user: me }) : fail(401, "sign in first");

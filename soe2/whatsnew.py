@@ -21,6 +21,15 @@ NEXT = [
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.77.0": [
+        "The Campaign Helper: a line over the overlay's bar says where you are in the campaign, what to do there, "
+        "what it's worth and where to go next - it follows you by itself from the game's log. Click it for the "
+        "act's route, your rewards and your act times.",
+        "Never miss a permanent reward: leaving an act, it asks about the passive points, spirit and resistances you "
+        "may have skipped (Got it, Remind me in town, Skip it).",
+        "In town, Vendor ▾ copies a shop search (movement speed boots, resistances ...) - paste it in the shop's "
+        "search box. Its options are in Overlay › Options › Campaign.",
+    ],
     "2.76.0": [
         "The map's rank is its own part of the overlay - click it to rank the map you're in. Leaving a map you "
         "haven't ranked, a small card asks how it was (Overlay › Options can switch that off).",

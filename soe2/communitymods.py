@@ -104,12 +104,16 @@ def push(market, rules, call=None):
     before = st.get("maps", {})
     maps = [{"name": k, "rank": v} for k, v in mine_maps.items() if before.get(k) != v]
     maps += [{"name": k, "rank": None} for k in before if k not in mine_maps]
-    if not prices and not votes and not maps:
+    from . import campaign as CP                          # 2.77.0: campaign zones the guide pack didn't know
+    zones = CP.to_pool()
+    if not prices and not votes and not maps and not zones:
         return True, 0
     ok, d = (call or B.call)("POST", "/mods/batch", body={"cid": cid(), "league": league, "prices": prices,
-                                                         "bases": bases, "votes": votes, "maps": maps[:400]})
+                                                         "bases": bases, "votes": votes, "maps": maps[:400],
+                                                         "zones": zones})
     if not ok:
         return False, d
+    CP.pooled(zones)
     st["last_ts"] = newest
     st["votes"] = {k: v for k, v in dict(rules).items() if v in ("high", "normal", "ignore")}
     st["maps"] = dict(mine_maps)
