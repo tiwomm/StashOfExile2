@@ -18,7 +18,7 @@ from .tracker import fmt_time, Session, Sessions
 
 DEFAULTS = {"overlay": True, "locked": False, "x": 60, "y": 260, "w": 230, "h": 190, "opacity": 225,
             "lines": {"session": True, "map": True, "maps": True, "avg": True, "where": True, "rank": True},   # 2.70.1: where   # 2.54.0: no profit (Strat Tracker has it)
-            "key_pause": "", "ask_count": True, "log_path": "",
+            "key_pause": "", "key_camp_prev": "", "key_camp_next": "", "ask_count": True, "log_path": "",
             "character": "", "character_guess": "", "alerts_bar": True, "autostart": False,
             "clock": True,
             "merged": True, "layout": "xpbar"}   # 2.39.0 clock; 2.55.0: one overlay window; 2.74.0: Game bar
@@ -410,6 +410,13 @@ class TrackerPage:
         sws.append(("Focus line (its own bar)", self.tk_fline_var, self.tracker_fline_switch))
         self.tk_rank_ask = tk.BooleanVar(value=self.rank_ask_on())               # 2.76.0
         sws.append(("Ask me to rank maps I haven't ranked", self.tk_rank_ask, self.tracker_rank_ask_switch))
+        from . import campaign as CP                              # 2.77.0: the Campaign Helper
+        self.tk_camp_var = tk.BooleanVar(value=bool(CP.cfg()["on"]))
+        sws.append(("Campaign Helper", self.tk_camp_var, lambda: self.camp_set_on(bool(self.tk_camp_var.get()))))
+        self.tk_cline_var = tk.BooleanVar(value=bool(CP.cfg()["line"]))
+        sws.append(("Campaign line (on the goal bar)", self.tk_cline_var, self.camp_line_switch))
+        self.tk_cvendor_var = tk.BooleanVar(value=bool(CP.cfg()["vendor"]))
+        sws.append(("Vendor search (in town)", self.tk_cvendor_var, self.camp_vendor_switch))
         self.tk_ov_switches = {}
         for i, (label, v, fn) in enumerate(sws):
             cb = ttk.Checkbutton(grid, text=label, variable=v, command=fn, style="Card.TCheckbutton")
@@ -425,11 +432,15 @@ class TrackerPage:
         self.tk_switches_var = tk.BooleanVar(value=bool(cfg.get("alerts_bar", True)))
         self.tk_bar_vars = {"focus": tk.BooleanVar(value=bool(self.bar_cfg().get("focus", True))),
                             "notes": tk.BooleanVar(value=bool(self.bar_cfg().get("notes", True))),
-                            "calc": tk.BooleanVar(value=bool(self.bar_cfg().get("calc", True)))}
+                            "calc": tk.BooleanVar(value=bool(self.bar_cfg().get("calc", True))),
+                            "campaign": tk.BooleanVar(value=bool(self.bar_cfg().get("campaign", True))),
+                            "vendor": tk.BooleanVar(value=bool(self.bar_cfg().get("vendor", True)))}
         for i, (label, v, fn) in enumerate((("Mechanic Helper switches", self.tk_switches_var, self.tracker_switches_switch),
                                             ("Focus switch", self.tk_bar_vars["focus"], self.tracker_bar_switch),
                                             ("Notes ▾", self.tk_bar_vars["notes"], self.tracker_bar_switch),
-                                            ("Calc ▾", self.tk_bar_vars["calc"], self.tracker_bar_switch))):
+                                            ("Calc ▾", self.tk_bar_vars["calc"], self.tracker_bar_switch),
+                                            ("Campaign switch", self.tk_bar_vars["campaign"], self.tracker_bar_switch),
+                                            ("Vendor ▾ (in town)", self.tk_bar_vars["vendor"], self.tracker_bar_switch))):
             cb = ttk.Checkbutton(bar, text=label, variable=v, command=fn, style="Card.TCheckbutton")
             cb.grid(row=i // 3, column=i % 3, sticky="w", padx=(0, 24), pady=2)
             self.tk_ov_switches["bar:" + label] = cb
@@ -441,6 +452,7 @@ class TrackerPage:
                              command=self.tracker_tips_switch)
         cb.pack(anchor="w", pady=(8, 0))
         self.tk_ov_switches["tips"] = cb
+        self.camp_options(po)                                                  # 2.77.0: Campaign
         bxo, box = chrome_section(po, "Session")                               # 2.69.0
         bxo.pack(fill="x", pady=(8, 0))
         self.tk_auto = tk.BooleanVar(value=bool(cfg.get("autostart")))           # 2.14.0
@@ -694,6 +706,7 @@ class TrackerPage:
                     if kind in ("area", "level"):              # 2.73.1: League Focus watches these too
                         self.focus_log(kind, data)
                         self.maprank_log(kind, data)          # 2.76.0: ask for a rank after a map
+                    self.campaign_log(kind, ts, data)         # 2.77.0: the Campaign Helper
                     if kind == "death" and not self.tracker_is_me(data["who"]):
                         continue                              # a party member died, not you
                     changed |= s.feed(kind, ts, data)
@@ -868,6 +881,8 @@ class TrackerPage:
             self.tracker_play_click()                          # 2.74.3: as ⏸ / ▶ (starts it when it isn't running)
         elif what == "overlay":
             self.overlay_hide_toggle()
+        elif what in ("camp_prev", "camp_next"):                    # 2.77.0: the campaign's ◀ ▶
+            self.camp_step(-1 if what == "camp_prev" else 1)
 
     def _tracker_finish_now(self):
         s = self.tk_session
@@ -1059,6 +1074,8 @@ class TrackerPage:
             texts.update(map=f"Map  {n.get('map', '-')}", where=where.strip())      # 2.76.0: the rank is its own part
         texts["rank"] = self.rank_text(n.get("where") if live and getattr(self, "_mr_in", None) else None)
         texts["focus"] = self.focus_line()[0]                 # 2.73.0: League Focus's line
+        from . import campaign as CP
+        texts["campaign"] = "▸ " + CP.line_text() if CP.active() else ""          # 2.77.0: the campaign line
         for k, lab in self.tk_ov_lbls.items():
             lab.config(text=texts.get(k, ""))
         self.play_refresh()                                   # 2.74.3: ⏸ / ▶ follows the timer
@@ -1075,6 +1092,8 @@ class TrackerPage:
             states = self.alert_states()
             from . import focus as F                               # 2.73.0: the Focus switch on the bar
             states["focus"] = "on" if F.cfg()["on"] else "off"
+            from . import campaign as CP                           # 2.77.0
+            states["campaign"] = "on" if CP.cfg()["on"] else "off"
             for k, (dot, lab) in self.tk_ov_alerts.items():
                 st = states.get(k, "off")
                 txt = k.title()
@@ -1103,6 +1122,10 @@ class TrackerPage:
             from . import focus as F
             self.focus_set_on(not F.cfg()["on"])
             return self.ov_intro_maybe(key)                        # 2.73.4: the first time: what it's for
+        if key == "campaign":                                      # 2.77.0: the Campaign Helper on / off
+            from . import campaign as CP
+            self.camp_set_on(not CP.cfg()["on"])
+            return self.ov_intro_maybe(key)
         on = self.alert_states().get(key, "off") != "off"
         try:
             self.alerts_toggle(key, not on)
@@ -1133,7 +1156,8 @@ class TrackerPage:
         if self.fl_on_key(vk, ctrl, alt, shift):                       # 2.45.0: Strat Tracker "a run is done"
             return True
         cfg = SETTINGS.get("tracker") or {}
-        for key, action in (("key_pause", "pause"), ("key_overlay", "overlay")):
+        for key, action in (("key_pause", "pause"), ("key_overlay", "overlay"), ("key_camp_prev", "camp_prev"),
+                            ("key_camp_next", "camp_next")):
             k = parse_key(cfg.get(key) or "")
             if k and k == (vk, ctrl, alt, shift):
                 self.ui_q.put(("tracker", action))
@@ -1163,6 +1187,8 @@ class TrackerPage:
                 ("Session timer: pause / resume (or ⏸ / ▶ on the overlay)", tc.get("key_pause", ""), "Overlays",
                  "tracker:key_pause"),
                 ("Show / hide the overlay", tc.get("key_overlay", ""), "Overlays", "tracker:key_overlay"),
+                ("Campaign: a step back (◀)", tc.get("key_camp_prev", ""), "Overlays", "tracker:key_camp_prev"),
+                ("Campaign: a step on (▶)", tc.get("key_camp_next", ""), "Overlays", "tracker:key_camp_next"),
                 ("Expedition Remnant Price Checker (in game)", self.remnant_cfg().get("key", ""), "Overlays",
                  "remnant:key"),
                 ("Strat Tracker: a run is done (setups counted by key)", SETTINGS.get("ledger_key") or "Ctrl+Alt+N",

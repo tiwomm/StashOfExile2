@@ -26,6 +26,10 @@ HELP = {
                 "its key.", "Remnant settings"),
     "focus": ("Focus", "Your current league goal on this bar, and a short poke in town now and then.",
               "Keeps you on your plan when the league pulls you sideways. Quiet by default.", "Open Game Plan"),
+    "campaign": ("Campaign", "Where you are in the campaign, what's next and what it's worth - from the game's log. "
+                             "Click its line for the act's route, rewards and splits.",
+                 "Never miss a permanent reward (points, spirit, resistances), and see your act times.",
+                 "Open the route"),
 }
 TIP_DELAY = 450          # ms of hover before the tip
 
@@ -138,6 +142,9 @@ class OverlayHelp:
             pass
 
     def ov_switch_on(self, key):
+        if key == "campaign":
+            from . import campaign as CP
+            return bool(CP.cfg()["on"])
         if key == "focus":
             from . import focus as F
             return bool(F.cfg()["on"])
@@ -211,6 +218,8 @@ class OverlayHelp:
             if key == "focus":
                 self.shell.open("plan")
                 self.gp_fill()
+            elif key == "campaign":
+                return self.camp_route_show()
             else:
                 self.tracker_helpers_settings()
             self.root.deiconify()

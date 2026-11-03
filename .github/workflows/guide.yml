@@ -1,0 +1,42 @@
+# 2.77.0: the Campaign Helper's guide pack (campaign.json). Checked on every pull request that touches it; once a week
+# (and by hand, e.g. on patch day) the zones players' logs found are added from the community board and a PR is opened.
+name: Campaign guide
+on:
+  pull_request:
+    paths: ["campaign.json", "tools/build_guide.py"]
+  schedule:
+    - cron: "17 6 * * 3"
+  workflow_dispatch:
+permissions:
+  contents: write
+  pull-requests: write
+jobs:
+  check:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with: {python-version: "3.12"}
+      - run: python tools/build_guide.py --check
+  learn:
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with: {python-version: "3.12"}
+      - name: Add the zones players found
+        run: python tools/build_guide.py --pull
+      - name: Open a pull request when something changed
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git diff --quiet campaign.json && exit 0
+          b="guide-$(date +%Y%m%d)"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -b "$b"
+          git commit -am "Campaign guide: zones from players' logs"
+          git push origin "$b"
+          gh pr create --title "Campaign guide: zones from players' logs" --body "Zones the community board pooled (seen by 3 or more installs), added by tools/build_guide.py. Check each new step's place in its act, then add what to do there." --base main --head "$b"
