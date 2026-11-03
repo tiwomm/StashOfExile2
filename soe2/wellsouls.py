@@ -132,10 +132,28 @@ def classes_for(tpls):
     return out
 
 
+def resolve(text):
+    """An option's text -> (data template, the text in the data's line order) or (None, text). 2.81.2 (feedback: "+35
+    to Accuracy Rating / 10% increased Light Radius" wasn't read): the game can show a hybrid's two lines in another
+    order than the data lists them - every order is tried, exact matches before close ones."""
+    import itertools
+    parts = [p.strip() for p in clean(text).split(" / ") if p.strip()]
+    orders = [" / ".join(p) for p in itertools.permutations(parts)] if 1 < len(parts) <= 3 else [clean(text)]
+    mods = data()["mods"]
+    for t in orders:
+        if template(t) in mods:
+            return template(t), t
+    for t in orders:
+        tpl = find(template(t))
+        if tpl:
+            return tpl, t
+    return None, text
+
+
 def rate(text, bases):
     """One option's text -> {"tpl", "tier", "tier_hi", "of", "abyss", "range", "roll"} for the given candidate bases
     (several tag sets: the tier shows as a range when they disagree), or None when the wording isn't known."""
-    tpl = find(template(text))
+    tpl, text = resolve(text)
     if tpl is None:
         return None
     vals = numbers(text)
