@@ -122,3 +122,33 @@ def text(hit):
         return ""
     d, n, cur = hit
     return f"bulk exchange ({n} offer{'s' if n != 1 else ''} in {cur})"
+
+
+def catalog(static=None):
+    """2.73.4: everything the Currency Exchange trades, by group -> [(group, [names])] in the trade site's order
+    (Currency, Fragments, Essences, Runes, Omens ...), from its /data/static list (downloaded once a day). Before
+    that list is here: the names poe.ninja's exchange prices have (your league), else []."""
+    if static is None:
+        static = load_json("trade_static.json", {})
+    out = []
+    for group in (static or {}).get("result") or []:
+        names, seen = [], set()
+        for e in group.get("entries") or []:
+            t = str(e.get("text") or "").strip()
+            if t and t.lower() not in seen:
+                seen.add(t.lower())
+                names.append(t)
+        if names:
+            out.append((str(group.get("label") or group.get("id") or "Other"), names))
+    if out:
+        return out
+    try:
+        from .wealth import NINJA_EXCHANGE_TYPES, WPRICES
+        if WPRICES.for_league():
+            for typ in NINJA_EXCHANGE_TYPES:
+                names = sorted({ln[1] for ln in (WPRICES.parts.get(typ) or {}).get("lines") or [] if ln[1]})
+                if names:
+                    out.append((typ, names))
+    except Exception:
+        pass
+    return out

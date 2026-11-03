@@ -171,6 +171,15 @@ class MergedOverlay:
     def notes_on_bar(self):
         return bool(self.overlay.cfg.get("notes_enabled")) and bool(self.bar_cfg().get("notes", True))
 
+    def _focus_click(self, cv, ft):
+        """2.73.4: a click on the focus line opens Game Plan (where its goal is set)."""
+        try:
+            cv.tag_bind(ft.item, "<Button-1>", lambda e: self.ov_intro_setup("focus"))
+            cv.tag_bind(ft.item, "<Enter>", lambda e: cv.configure(cursor="hand2"))
+            cv.tag_bind(ft.item, "<Leave>", lambda e: cv.configure(cursor=""))
+        except (AttributeError, tk.TclError):
+            pass
+
     def focus_line(self):
         """-> (text, progress 0-1 or None) for the overlay's focus line, or ("", None)."""
         from . import focus as F
@@ -377,6 +386,7 @@ class MergedOverlay:
         cv.tag_bind(tag, "<Button-1>", lambda e, k=k: self.tracker_helper_click(k))
         cv.tag_bind(tag, "<Enter>", lambda e: cv.configure(cursor="hand2"))
         cv.tag_bind(tag, "<Leave>", lambda e: cv.configure(cursor=""))
+        self.ov_help_bind(cv, tag, k)                 # 2.73.4: what it does, on hover
         d = CanvasText(cv, dot, P["cell_bg"])
         lt = label_cls(cv, lab, P["cell_bg"])
         lt.key = k
@@ -548,6 +558,7 @@ class MergedOverlay:
             ft = self._mg_text(cv, P, gx0 + int(44 * k), y + rh // 2, "focus", (P["font"], self._hf(9)), cls=_Trunc)
             ft.limit = 34 if fprog is None else 26
             ft.config(text=ftext)
+            self._focus_click(cv, ft)
             if fprog is not None:
                 bx1 = gx1 - int(10 * k)
                 bx0 = bx1 - int(44 * k)
@@ -588,6 +599,7 @@ class MergedOverlay:
         cv.tag_bind(tag, "<Button-1>", lambda e, k=k: self.tracker_helper_click(k))
         cv.tag_bind(tag, "<Enter>", lambda e: cv.configure(cursor="hand2"))
         cv.tag_bind(tag, "<Leave>", lambda e: cv.configure(cursor=""))
+        self.ov_help_bind(cv, tag, k)                 # 2.73.4: what it does, on hover
         d = CanvasText(cv, dot, P["cell_bg"])
         lt = CanvasText(cv, lab, P["cell_bg"])
         lt.key = k
@@ -704,6 +716,7 @@ class MergedOverlay:
         cv.tag_bind(tag, "<Button-1>", lambda e, k=k: self.tracker_helper_click(k))
         cv.tag_bind(tag, "<Enter>", lambda e: cv.configure(cursor="hand2"))
         cv.tag_bind(tag, "<Leave>", lambda e: cv.configure(cursor=""))
+        self.ov_help_bind(cv, tag, k)                 # 2.73.4: what it does, on hover
         d = CanvasText(cv, dot, P["cell_bg"])
         lt = label_cls(cv, lab, P["cell_bg"])
         lt.key = k
@@ -717,7 +730,7 @@ class MergedOverlay:
 
     def _hud_cell_w(self, cv, P, k, short):
         fb = tkfont.Font(root=cv, family=P["font"], size=self._hf(9))
-        return fb.measure(SHORT[k] if short else ("Ritual 3/3" if k == "ritual" else k.title())) + 16 + self._hf(12)
+        return fb.measure(SHORT[k] if short else ("Ritual 3/3" if k == "ritual" else k.title())) + 24 + self._hf(12)
 
     def _hud_cells(self, cv, P, x, y0, y1, short, cols=4, cw=None):
         """The four switches in a row (short names when space is tight) or a 2 x 2 grid. -> right edge."""
@@ -726,13 +739,16 @@ class MergedOverlay:
             for k in self.bar_chips():
                 w_ = self._hud_cell_w(cv, P, k, short)
                 self._hud_cell(cv, P, k, x, y0, x + w_, y1, lc, font)
-                x += w_ + 4
+                x += w_ + self._hud_gap()
             return x
         rh = (y1 - y0 - 4) // 2
         for i, k in enumerate(self.bar_chips()):
             cx, cy = x + (i % 2) * (cw + 5), y0 + (i // 2) * (rh + 4)
             self._hud_cell(cv, P, k, cx, cy, cx + cw, cy + rh, lc, font)
         return x + 2 * cw + 5
+
+    def _hud_gap(self):
+        return self._hf(14)
 
     def _hud_clock(self, w, cv, P, x, y):
         self._mg_clock(w, cv, P, x, y, anchor="e", on_bar=False)
@@ -752,8 +768,10 @@ class MergedOverlay:
         fm = tkfont.Font(root=cv, family=P["font"], size=self._hf(10))
         if two:                                              # ---- row 1: the switches, centered; Notes at the end
             ch = int(H * 0.30)
-            short = sum(self._hud_cell_w(cv, P, k, False) + 6 for k in self.bar_chips()) > (rgt - lft) * 0.75
-            total = sum(self._hud_cell_w(cv, P, k, short) + 6 for k in self.bar_chips()) - 6
+            gap = self._hud_gap()                            # 2.73.4: room between the switches (were crammed)
+            room = (rgt - lft) * 0.75 - (self._hf(70) if self.notes_on_bar() else 0)
+            short = sum(self._hud_cell_w(cv, P, k, False) + gap for k in self.bar_chips()) > room
+            total = sum(self._hud_cell_w(cv, P, k, short) + gap for k in self.bar_chips()) - gap
             x0 = lft + max(0, ((rgt - lft) - total) // 2)
             self._hud_cells(cv, P, x0, top_mid - ch // 2, top_mid + ch // 2, short=short)
             if self.notes_on_bar():
@@ -798,6 +816,7 @@ class MergedOverlay:
                 ft = self._mg_text(cv, P, nx, mid, "focus", f, cls=_Trunc)
                 ft.limit = max(4, int((where_w - (nx - x) - pw) / (fm.measure("n") or 7)))
                 ft.config(text=ftext)
+                self._focus_click(cv, ft)
                 if fprog is not None:
                     bx1 = x + where_w - 8
                     cv.create_rectangle(bx1 - pw, mid - 2, bx1, mid + 2, fill=P["cell_bg"], outline=P["line"], tags=("mg",))

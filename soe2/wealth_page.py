@@ -1110,7 +1110,7 @@ class WealthPage:
         if not todo:
             return
         self._w_bulk_running = True
-        league = WPRICES.league or SETTINGS.get("league") or ""        # (the league its prices are kept for)
+        league = SETTINGS.get("league") or WPRICES.league or ""        # 2.73.4: always your league
 
         def work():
             from . import bulk
