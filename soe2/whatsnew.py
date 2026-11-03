@@ -21,6 +21,12 @@ NEXT = [
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.74.1": [
+        "Price checks: the Item card shows the item as it reads in game - its mods and their values right on the "
+        "card, with tier tags, no scrolling for them.",
+        "Uniques are read properly: their mods count (they were left out), Mageblood's Legacies are searched by "
+        "name (Legacy of Gold, Quicksilver ...), and flavour text is never taken for a mod.",
+    ],
     "2.74.0": [
         "Under the hood and the Mod book are advanced tools now, hidden unless you want them: Settings › Advanced › "
         "Show advanced tools. The Mod book sits inside Under the hood (Price checks ↳ Under the hood ↳ Mod book). "

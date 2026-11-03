@@ -313,7 +313,10 @@ def min_for(mod):
 
 def vfilter(mod):
     """Value filter for the trade search: 'at least this strong'. Negative stats: at most -N.
-    Values you typed in the side panel (mod["uval"], 1.35) win: {"min": .., "max": ..}, either may be None."""
+    Values you typed in the side panel (mod["uval"], 1.35) win: {"min": .., "max": ..}, either may be None.
+    2.74.1: a stat with a choice is searched for its option ({"option": id})."""
+    if mod.get("option") is not None:
+        return {"option": mod["option"]}
     if mod.get("novalue"):
         return None
     uv = mod.get("uval")
@@ -747,6 +750,17 @@ def mod_cat(k, base=None):
 
 
 DUPS = {}       # stat id -> every stat id with the same wording (trade site lists some mods twice)
+OPTS = {}       # 2.74.1: stat id -> {wording with the option filled in: option id} - "Legacy of #" with Gold, ...
+
+
+def option_for(sid, text):
+    """2.74.1: a stat the trade site lists with a choice (Mageblood's "Legacy of #": Gold, Quicksilver ...) -> the
+    option id for this line's wording, or None."""
+    for i in DUPS.get(sid, [sid]):
+        o = (OPTS.get(i) or {}).get(norm(text))
+        if o is not None:
+            return o
+    return None
 
 
 # ---- what the trade site calls each stat, so a listing's mod lines can be compared with what we searched for

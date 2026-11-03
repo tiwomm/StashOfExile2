@@ -13,7 +13,7 @@ from .config import BASE, load_json, P, save_json, SETTINGS
 from .util import mmss
 from .net import call, STATUS
 from .rates import RATES
-from .mods import DUPS, find_stat, norm, pretty, vfilter
+from .mods import DUPS, OPTS, find_stat, norm, pretty, vfilter
 from . import gear, waystone
 from .trade import (cheapest_real,
     _flt, build_sidtext, estimate, fetch_rich, listing_rules, mod_impact, search_ids, unconvertible,
@@ -187,20 +187,28 @@ class Engine(TabReaderJobs, WealthJobs, StratCostJobs, threading.Thread):
 
     def _load_stats(self):
         cache = P("stats_cache.json")
-        if os.path.exists(cache) and os.path.exists(P("stats_dups.json")) and time.time() - os.path.getmtime(cache) < 86400:
+        if os.path.exists(cache) and os.path.exists(P("stats_dups.json")) and os.path.exists(P("stats_options.json")) \
+                and time.time() - os.path.getmtime(cache) < 86400:
             DUPS.clear()
             DUPS.update(load_json("stats_dups.json", {}))
+            OPTS.clear()
+            OPTS.update(load_json("stats_options.json", {}))
             table = load_json("stats_cache.json", {})
             build_sidtext(table)
             return table
         STATUS("Downloading the trade site's mod list (once a day)...")
         data = call("GET", BASE + "/data/stats")
-        table, same = {}, {}
+        table, same, opts = {}, {}, {}
         for group in data["result"]:
             for e in group["entries"]:
                 k = norm(e["text"])
                 table.setdefault(k, {}).setdefault(group.get("id"), e["id"])
                 same.setdefault((k, group.get("id")), []).append(e["id"])
+                for o in ((e.get("option") or {}).get("options") or []):     # 2.74.1: "Legacy of #" -> "Legacy of Gold"
+                    if "#" in e["text"] and o.get("text") is not None:
+                        k2 = norm(e["text"].replace("#", str(o["text"]), 1))
+                        table.setdefault(k2, {}).setdefault(group.get("id"), e["id"])
+                        opts.setdefault(e["id"], {})[k2] = o.get("id")
         dups = {}
         for ids in same.values():
             if len(ids) > 1:
@@ -208,8 +216,11 @@ class Engine(TabReaderJobs, WealthJobs, StratCostJobs, threading.Thread):
                     dups[i] = ids
         save_json("stats_cache.json", table)
         save_json("stats_dups.json", dups)
+        save_json("stats_options.json", opts)
         DUPS.clear()
         DUPS.update(dups)
+        OPTS.clear()
+        OPTS.update(opts)
         build_sidtext(table)
         return table
 
@@ -526,7 +537,8 @@ class Engine(TabReaderJobs, WealthJobs, StratCostJobs, threading.Thread):
         if not must and not opt and item["rarity"] not in ("Unique", "Normal"):
             return dict(blank, label="nothing ticked to search on" + (f" · {unknown} mods not on the trade site" if unknown else ""))
         values = {id(m): vfilter(m) for m in must + opt}
-        check = [m for m in must if m.get("group") not in ("total", "pseudo")]     # listings' mod lines are checked for these
+        check = [m for m in must if m.get("group") not in ("total", "pseudo") and m.get("option") is None]
+        # (listings' mod lines are checked for these; 2.74.1: an option's own filter already makes sure)
         stages, verify_tot = [], {"bad": 0, "unverifiable": False}
         if item.get("waystone"):
             steps = waystone.plan(must, opt)
