@@ -59,6 +59,26 @@ def req_line(item):
     return ("Requires: " + ", ".join(parts)) if parts else ""
 
 
+def _mod_obj(x, kind):
+    """2.81.0 (feedback screenshot: mods showed as raw {'description': ...}): one mod as the trade site sends it now -
+    {"description", "flags": {"fractured": True ...}, "domain": "rune" / "explicit" / "desecrated" ..., "mods":
+    {"tier": "P1", ...} or [...]} -> [(tier, text, kind)]."""
+    fl = x.get("flags") or {}
+    dom = str(x.get("domain") or "")
+    kind = next((k for k in ("fractured", "desecrated", "crafted") if fl.get(k) or dom == k), None) or \
+        {"rune": "rune", "implicit": "implicit", "enchant": "enchant"}.get(dom, kind)
+    m = x.get("mods")
+    if isinstance(m, list):
+        m = m[0] if m and isinstance(m[0], dict) else {}
+    tier = str((m or {}).get("tier") or "") if isinstance(m, dict) else ""
+    out = []
+    for part in str(x.get("description") or x.get("text") or "").split("\n"):
+        if part.strip():
+            out.append((tier, _clean(part), kind))
+            tier = ""
+    return out
+
+
 def mod_rows(item):
     """[(tier or "", text, kind)] in the game's order; the tier from the listing's extended data (P1 / S3)."""
     ext = item.get("extended") or {}
@@ -70,6 +90,9 @@ def mod_rows(item):
               "implicitMods": "implicit", "craftedMods": "crafted"}.get(key)
         hl, ml = (hashes.get(hk) or []) if hk else [], (mods.get(hk) or []) if hk else []
         for i, line in enumerate(lines):
+            if isinstance(line, dict):                   # 2.81.0: the trade site's mods are objects now
+                out.extend(_mod_obj(line, kind))
+                continue
             tier = ""
             try:
                 idx = (hl[i][1] or [None])[0]

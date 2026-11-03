@@ -32,6 +32,8 @@ VERSION HISTORY
        each tier's level, ranges and spawn tags, every equipment base and a small fingerprint of its picture.
        Switches: Overlay › Mechanic Helper (Desecration, with Test), Overlay › Options › On the overlay, and On
        the bar (its switch shows on the bar while you're at the Well). On by default.
+       Price Checks: the listing cards showed the trade site's mods raw ({'description': ...}) - the site sends each
+       mod as an object now; read as text with its tier, and fractured / desecrated / crafted / rune by its kind.
   2.80.0
        Price Checks (feedback: "copy the price checker / item panel into a new panel called Price Checks ... a
        display of the items on the trade site"). Hover an item in game and press Ctrl+C: the app reads the copy
