@@ -72,6 +72,21 @@ def call(method, path, params=None, body=None, get=None):
     return True, data
 
 
+def image(iid, get=None):
+    """2.78.0: a strat's atlas screenshot -> (True, JPEG bytes) / (False, why)."""
+    if not configured():
+        return False, "The community board isn't set up yet."
+    import requests
+    try:
+        r = (get or requests.get)(f"{url()}/images/{int(iid)}", headers={"User-Agent": "StashOfExile2-board"},
+                                  timeout=TIMEOUT)
+    except Exception as e:
+        return False, f"Couldn't reach the community board ({e.__class__.__name__})."
+    if r.status_code != 200 or not r.content[:2] == b"\xff\xd8":
+        return False, f"The board answered {r.status_code}."
+    return True, r.content
+
+
 # ---------------------------------------------------------------- joining (no login)
 def join(name):
     """-> (True, user) or (False, why). Keeps the key the board hands out."""

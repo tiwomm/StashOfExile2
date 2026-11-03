@@ -4,7 +4,7 @@
 
 > **Who we build for - read second.** Path of Exile players are utilitarian: they love data and information, problem solving and creative thinking. So every feature shows its numbers *and how they were worked out*, lets you sort, filter, compare and export them (CSV), keeps power-user depth (keys, versions, raw data) one click away instead of hiding it, explains in plain words, and leaves the decision to the player. Pretty is welcome; vague is not.
 
-**Current version: 2.77.0**
+**Current version: 2.78.0**
 
 Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds features, 2.10.1 only fixes. Each step below is one release; we work through them top to bottom.
 
@@ -130,6 +130,7 @@ Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds f
 | 2.75.0 | Wealth UX pass: Wealth ↳ Overview / Stash tabs / Snapshots in the sidebar; Sync and Count currency on every page; setup steps as cards on the Overview, then one status line; a From list over the items. |
 | 2.76.0 | The overlay: the map's rank its own part (click to rank) and a card asking to rank maps you haven't; League Focus's line on its own small goal bar (Game bar / Panel style), where the Campaign Helper goes next. |
 | 2.77.0 | **Campaign Helper**: the campaign line on the goal bar, the act route (I'm here, ◀ ▶ and keys, start from here), rewards (missed / did you get it? in town; hand ticks win; "proof" zones tick themselves), Vendor ▾ in town, unknown zones learned (note, optional, newer guide) and pooled through Community data sharing, act splits with a best per league, its settings and switches. The guide pack (campaign.json) updates from GitHub; a weekly Action adds zones players found. |
+| 2.78.0 | **Money Makers rework:** content tags (pinnacles, bosses, map content - one tag system, shipped in strats/content.json) ticked in the Strat Tracker's Atlas & content step and filtered by in a Content row; an atlas screenshot with the strat (pasted or a file, kept small, uploaded to the board, shown in the Strat panel - no planner links); a Publish step that asks what it is, Thinking, Clicks, tags and steps before anything goes out; the Strat panel's What you need - each tablet and waystone with Copy regex and Trade. |
 
 ## ▶ Next up
 
@@ -139,11 +140,11 @@ Order (decided 2.34.0): the Polish basics first, so new features are built on th
 
 | Version | Plan |
 |---|---|
-| 2.78.0 | **Global leaderboards** (opt-in, through Community data sharing): one Leaderboards page under Overlay (Overlay ↳ Leaderboards) with tabs for Campaign (total and per act, from the Campaign Helper's splits), Maps (fastest clear per map), Bosses & pinnacles, and Trials (Sekhemas, Chaos, Simulacrum); each with Mine / Everyone, this league / all time, filters (league, class). The session page's own leaderboard links to it. Times come from the game's log, so they're marked self-reported: the board drops impossible times, and reports / an admin can hide entries. A board name only (no account), as on Money Makers. |
-| 2.79.0 | **Public stash order test tool.** |
-| 2.80.0 | **Polish 4 - Responsive:** windows reflow when narrow (toolbars wrap, side panels drop under the list, sensible minimum sizes), sharp on every monitor (per-monitor DPI), a text size setting (100-150 %). |
-| 2.81.0 | **Polish 5 - Hover, focus, micro-interactions:** the same hover and pressed look on every button, row, icon and tab; a visible keyboard focus ring everywhere; short (120-180 ms) fades for popups and toasts, never on lists; a "Reduce motion" setting that turns them off. |
-| 2.82.0 | **Polish 6 - Visual hierarchy:** the suggestions below, window by window, with before / after screenshots in each PR. |
+| 2.79.0 | **Global leaderboards** (opt-in, through Community data sharing): one Leaderboards page under Overlay (Overlay ↳ Leaderboards) with tabs for Campaign (total and per act, from the Campaign Helper's splits), Maps (fastest clear per map), Bosses & pinnacles, and Trials (Sekhemas, Chaos, Simulacrum); each with Mine / Everyone, this league / all time, filters (league, class). The session page's own leaderboard links to it. Times come from the game's log, so they're marked self-reported: the board drops impossible times, and reports / an admin can hide entries. A board name only (no account), as on Money Makers. |
+| 2.80.0 | **Public stash order test tool.** |
+| 2.81.0 | **Polish 4 - Responsive:** windows reflow when narrow (toolbars wrap, side panels drop under the list, sensible minimum sizes), sharp on every monitor (per-monitor DPI), a text size setting (100-150 %). |
+| 2.82.0 | **Polish 5 - Hover, focus, micro-interactions:** the same hover and pressed look on every button, row, icon and tab; a visible keyboard focus ring everywhere; short (120-180 ms) fades for popups and toasts, never on lists; a "Reduce motion" setting that turns them off. |
+| 2.83.0 | **Polish 6 - Visual hierarchy:** the suggestions below, window by window, with before / after screenshots in each PR. |
 | Last | **Linux build** (Hyprland / Wayland first) - the groundwork is in place (session_linux_handover.txt). |
 | Very end | **Kind words** (a hidden, opt-in easter egg): short affirmations in a quick centered box over the game, like PoE's loading-screen tips (e.g. on zone loads, at most every N minutes, fading after a few seconds). Found only by digging through the menus. I keep the rotation myself with little upkeep and no spoilers (the raw lines shouldn't be easy to read); how I add lines is still to decide - a scrambled file in the repo plus an Actions form, the board server, or lines built into each release. A starter template of lines. Extra polish. |
 
