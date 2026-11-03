@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU GPL v3.0 (see LICENSE). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.73.3
+VERSION 2.73.4
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,6 +19,20 @@ VERSION 2.73.3
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.73.4
+       League Focus polish. Your league only: WealthPrices.for_league() - named() / value() give nothing while the
+       cached poe.ninja prices are another league's (a league switch waits for the next refresh); bulk prices are
+       looked up for Settings' league (app.stack_price, Wealth's bulk fill, Game Plan). Stockpile: the Currency
+       Exchange's list (bulk.catalog from trade_static.json, by group; poe.ninja's names before it's here) with
+       type-to-narrow, or any item by name; Goal is Quantity. Farm plan: a farm of your own (add_farm(None, name)).
+       Goal targets by kind (focus.TARGETS): div, level (focus.char_level from the log's level-ups - the build
+       lock's character, else the last one), act, maps (counted by the log since the goal was set), a number;
+       target_div kept for older goals. The overlay bar: more room between the switches (_hud_gap); ovhelp.py -
+       hover a switch for one line on what it does, and the first time one is switched on a card (what / why /
+       set it up), once each; Overlay › Options › On the overlay › Feature tips turns both off. The focus line
+       with no goal says so and opens Game Plan on a click. Game Plan's look: a summary strip, phase headings with
+       counts and a NOW badge, goal details on a quieter line with a progress bar, ADD headings over aligned
+       forms, the same + Add everywhere, table headings with a rule, Pokes in Limits / When and what / Tone.
   2.73.3
        Map supply pokes (League Focus): focus.SETTINGS["focus"]["supplies"] rows {name, rule maps|minutes, every,
        at_maps, at_secs, snooze}. log_event counts waystone maps (a new area+seed; a portal back into the same map
@@ -1650,7 +1664,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.73.3"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.73.4"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 

@@ -21,6 +21,15 @@ NEXT = [
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.73.4": [
+        "Prices are always for your league - after switching leagues, old prices are never shown as current.",
+        "Game Plan: stockpile items from the Currency Exchange's list (or type any name), set a Quantity; add your "
+        "own farms; goal targets can be divines, a character level or maps run (both read from the game's log), "
+        "an act, or any number.",
+        "The overlay bar has more room between its switches. Hover one to see what it does - the first time you "
+        "switch one on, a short card explains it (Overlay › Options › Feature tips).",
+        "Game Plan is easier to scan: a summary on top, clearer headings and one look for every form.",
+    ],
     "2.73.3": [
         "Map supply pokes: Overlay ↳ Game Plan › Map supplies - list what you use up in maps (Scrolls of Wisdom, "
         "omens, any currency) and refill it every N maps or N minutes in maps. Between maps, in town, a poke says "

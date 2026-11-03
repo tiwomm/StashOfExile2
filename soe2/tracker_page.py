@@ -423,6 +423,12 @@ class TrackerPage:
             self.tk_ov_switches["bar:" + label] = cb
         for c in range(3):
             bar.columnconfigure(c, uniform="sw")
+        self.tk_tips_var = tk.BooleanVar(value=bool(cfg.get("tips", True)))      # 2.73.4: what each switch is for
+        cb = ttk.Checkbutton(sw, text="Feature tips - hover a switch for what it does; a short card the first time "
+                                      "you turn one on", variable=self.tk_tips_var, style="Card.TCheckbutton",
+                             command=self.tracker_tips_switch)
+        cb.pack(anchor="w", pady=(8, 0))
+        self.tk_ov_switches["tips"] = cb
         bxo, box = chrome_section(po, "Session")                               # 2.69.0
         bxo.pack(fill="x", pady=(8, 0))
         self.tk_auto = tk.BooleanVar(value=bool(cfg.get("autostart")))           # 2.14.0
@@ -1067,13 +1073,21 @@ class TrackerPage:
         """2.26.0: a click on a helper in the timer's bar switches it on / off."""
         if key == "focus":                                         # 2.73.0: League Focus on / off
             from . import focus as F
-            return self.focus_set_on(not F.cfg()["on"])
+            self.focus_set_on(not F.cfg()["on"])
+            return self.ov_intro_maybe(key)                        # 2.73.4: the first time: what it's for
         on = self.alert_states().get(key, "off") != "off"
         try:
             self.alerts_toggle(key, not on)
         except Exception:
             self.log_error(f"switching {key} from the timer")
         self.tracker_overlay_draw(self.tracker_numbers())
+        return self.ov_intro_maybe(key)
+
+    def tracker_tips_switch(self):
+        self.tracker_cfg()["tips"] = bool(self.tk_tips_var.get())
+        if not self.tracker_cfg()["tips"]:
+            self.ov_tip_hide()
+        save_json("settings.json", SETTINGS)
 
     def tracker_helpers_settings(self):
         """2.26.0: the ⚙ on the timer's bar - 2.44.0: Overlays › Mechanic Helper, where its options are."""

@@ -603,8 +603,17 @@ class WealthPrices:
                                              "parts": self.parts, "etags": self.etags})
             self._index()
 
-    def named(self, name):
-        """divines for one stackable by its name (or poe.ninja id), or None."""
+    def for_league(self, league=None):
+        """2.73.4: are these prices for your league (Settings' league, or `league`)? Prices from another league are
+        never shown as yours - a league switch waits for the next refresh."""
+        want = league if league is not None else (SETTINGS.get("league") or "")
+        return not want or not self.league or self.league == want
+
+    def named(self, name, league=None):
+        """divines for one stackable by its name (or poe.ninja id), or None (also when the prices held are for
+        another league than yours)."""
+        if not self.for_league(league):
+            return None
         hit = self.by_name.get(name.lower()) or getattr(self, "by_slug", {}).get(slug(name))
         return hit[0] if hit else None
 
@@ -671,6 +680,8 @@ class WealthPrices:
 
     def value(self, it):
         """-> (divines per unit, source) or (None, None)."""
+        if it["frame"] not in (1, 2) and not self.for_league():       # 2.73.4: another league's prices: not yours
+            return None, None
         if it["frame"] == 3:
             cands = self.uniques.get(it["name"].lower()) or []
             if not cands:
@@ -701,7 +712,7 @@ class WealthPrices:
         from . import bulk                                      # 2.72.1: not on poe.ninja - the bulk exchange's
         for n in names:                                         # price from the last hour (wealth_bulk_fill)
             xid = bulk.exchange_id(n)
-            hit = bulk.cached(self.league or "", xid, max_age=6 * 3600) if xid else None
+            hit = bulk.cached(SETTINGS.get("league") or self.league or "", xid, max_age=6 * 3600) if xid else None
             if hit:
                 return hit[0], bulk.text(hit)
         return None, None

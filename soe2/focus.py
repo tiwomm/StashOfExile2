@@ -56,10 +56,26 @@ def phase_name(key):
 
 
 # ---------------------------------------------------------------- goals
-def add_goal(text, phase="start", trigger="town", target_div=None):
+# 2.73.4: what a goal's target counts. "auto": filled in from the game's log (no typing).
+TARGETS = (("div", "Divines", "div"), ("level", "Character level", "level"), ("act", "Reach act", "act"),
+           ("maps", "Maps run", "maps"), ("count", "A number (anything)", ""))
+AUTO_TARGETS = ("level", "maps")
+
+
+def target_name(kind):
+    return next((n for k, n, _u in TARGETS if k == kind), kind)
+
+
+def add_goal(text, phase="start", trigger="town", target_div=None, target_kind=None, target=None):
+    """target_kind / target (2.73.4) - or the older target_div (a div target)."""
+    if target is None and target_div is not None:
+        target_kind, target = "div", target_div
+    kind = target_kind if target_kind in dict((k, n) for k, n, _u in TARGETS) else ("div" if target else None)
     g = {"id": uuid.uuid4().hex[:10], "text": text.strip(), "phase": phase if phase in dict(PHASES) else "start",
-         "done": False, "trigger": trigger if trigger in dict(TRIGGERS) else "town", "target_div": target_div,
-         "created": time.time(), "snooze": 0, "stopped": False}
+         "done": False, "trigger": trigger if trigger in dict(TRIGGERS) else "town",
+         "target_kind": kind if target else None, "target": float(target) if target else None,
+         "target_div": float(target) if target and kind == "div" else None,
+         "maps_at": state()["maps"], "created": time.time(), "snooze": 0, "stopped": False}
     cfg()["goals"].append(g)
     save()
     return g
@@ -108,12 +124,58 @@ def current():
     return None
 
 
+def goal_target(g):
+    """-> (kind, target) of a goal, or (None, None). Goals from 2.73.0-2.73.3 only had target_div."""
+    if not g:
+        return None, None
+    if g.get("target"):
+        return g.get("target_kind") or "div", float(g["target"])
+    if g.get("target_div"):
+        return "div", float(g["target_div"])
+    return None, None
+
+
+def char_level():
+    """The level the log last showed for your character (the build lock's, else the last one that levelled)."""
+    st = state()
+    lv = st.get("levels") or {}
+    mine = (cfg()["lock"].get("character") or "").strip().lower()
+    for who, n in lv.items():
+        if who.lower() == mine and mine:
+            return n
+    last = st.get("last_char")
+    return lv.get(last) if last else None
+
+
 def progress(g, worth=None):
-    """(have, target) for a goal with a target, or None. 2.73.2: "have" is what you type on the goal (Wealth isn't
-    used: it doesn't track live). worth is ignored (kept for older callers)."""
-    if not g or not g.get("target_div"):
+    """(have, target) for a goal with a target, or None. Divines, acts and numbers: what you type on the goal
+    (2.73.2: Wealth isn't used - it doesn't track live). 2.73.4: a level comes from the log, maps run are counted
+    by the log since the goal was set. worth is ignored (kept for older callers)."""
+    kind, target = goal_target(g)
+    if not kind:
         return None
-    return max(0.0, float(g.get("have") or 0)), float(g["target_div"])
+    if kind == "level":
+        have = char_level() or 0
+    elif kind == "maps":
+        have = state()["maps"] - int(g.get("maps_at") or 0)
+    else:
+        have = g.get("have") or 0
+    return max(0.0, float(have)), target
+
+
+def progress_text(g):
+    """ "12 / 50 div", "Lv 61 / 70", "Act 2 / 4", "14 / 50 maps", "3 / 10" - or "" (no target)."""
+    p = progress(g)
+    if not p:
+        return ""
+    kind = goal_target(g)[0]
+    h, t = p
+    if kind == "level":
+        return f"Lv {h:g} / {t:g}"
+    if kind == "act":
+        return f"Act {h:g} / {t:g}"
+    unit = {"div": " div", "maps": " maps"}.get(kind, "")
+    return f"{h:g} / {t:g}{unit}"
 
 
 def set_have(gid, have):
@@ -172,8 +234,10 @@ def stock_status(row, have=None, each=None):
 
 
 def add_farm(strat_id, name, until=""):
+    """strat_id: a Money Makers strat, or None for a farm you typed (2.73.4)."""
     f = cfg()
-    if any(x["strat"] == strat_id for x in f["farms"]):
+    name = (name or "").strip()
+    if not name or any((strat_id and x["strat"] == strat_id) or x["name"].lower() == name.lower() for x in f["farms"]):
         return None
     row = {"strat": strat_id, "name": name, "until": until}
     f["farms"].append(row)
@@ -198,6 +262,9 @@ def remove_farm(i):
         save()
 
 
+NO_GOAL = "No goal yet - click to set one in Game Plan"
+
+
 def line_text(worth=None):
     """The overlay's focus line: "NOW  <goal>" (+ progress), or "" when there is nothing to show."""
     f = cfg()
@@ -205,7 +272,7 @@ def line_text(worth=None):
         return "", None
     g = current()
     if not g:
-        return "", None
+        return NO_GOAL, None                               # 2.73.4: say what Focus is waiting for
     p = progress(g, worth)
     return g["text"], (p[0] / p[1] if p and p[1] else None)
 
@@ -336,6 +403,12 @@ def log_event(kind, data, area_kind=None, now=None):
         known = who in st["chars"]
         if not known:
             st["chars"] = (st["chars"] + [who])[-30:]
+        lv = st.setdefault("levels", {})                   # 2.73.4: level goals
+        lv[who] = max(lvl, lv.get(who, 0)) if known else lvl
+        st["last_char"] = who
+        if len(lv) > 30:
+            for k in list(lv)[:-30]:
+                lv.pop(k, None)
         lk = f["lock"]
         mine = (lk.get("character") or "").strip().lower()
         if not known and lvl <= 2 and lk.get("on") and mine and who.lower() != mine:
