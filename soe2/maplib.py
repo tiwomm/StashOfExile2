@@ -68,6 +68,21 @@ def id_name(area_id):
     return None
 
 
+def display_name(area_id):
+    """2.78.1: an area id -> the map's name, as the Map library and the overlay show it ("MapRugosa" -> "Rugosa"):
+    the library's name, else the id with its "Map" taken off and spaces put back."""
+    name = id_name(area_id)
+    if name:
+        return name
+    s = re.sub(r"^Map(?=[A-Z_])", "", str(area_id or "")).replace("_", " ")
+    s = re.sub(r"(?<=[a-z])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])|(?<=[A-Za-z])(?=\d)", " ", s)
+    return re.sub(r"\s+", " ", s).strip() or str(area_id or "")
+
+
+def _id_like(key):
+    return bool(re.fullmatch(r"Map[A-Z][A-Za-z0-9_]*", str(key)))
+
+
 def is_hideout(area_id, name=""):
     return "hideout" in (area_id or "").lower() or str(name or "").strip().lower().endswith("hideout")
 
@@ -120,7 +135,14 @@ def not_a_map(name):
 # ---------------------------------------------------------------- your ranks
 def ranks():
     d = load_json(RANKS_FILE, {})
-    return {k: v for k, v in d.items() if v in RANKS} if isinstance(d, dict) else {}
+    out = {k: v for k, v in d.items() if v in RANKS} if isinstance(d, dict) else {}
+    old = [k for k in out if _id_like(k)]               # 2.78.1: ranks the 2.76.0 card saved under an area id
+    if old:
+        for k in old:
+            v = out.pop(k)
+            out.setdefault(display_name(k), v)
+        save_json(RANKS_FILE, out)
+    return out
 
 
 def set_rank(names, rank):
