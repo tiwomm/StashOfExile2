@@ -15,6 +15,7 @@ from . import rumours as RU
 from .config import save_json, SETTINGS
 
 POLL = 0.6
+MARK_EVERY = 2.0             # seconds between looks for the Expedition mark in a map
 GONE = 2
 GRAND = "ExpeditionLogBook_"
 
@@ -25,6 +26,8 @@ class RumoursPage:
         """Every area change: the Remnant watcher's zone and the rumours watcher (hideout only)."""
         a = str(area_id or "")
         self.rm_zone = "grand" if a.startswith(GRAND) else kind
+        self.rm_map_exp = False                   # a map: the watcher waits for the Expedition mark on screen
+        self.rm_mark_at = 0.0
         if not self.rm_zone_ok():
             self.remnant_hide()                       # no remnants here: no leftover tags
         here = kind == "hideout"
@@ -36,8 +39,29 @@ class RumoursPage:
             self.ru_stop()
 
     def rm_zone_ok(self):
-        """The Remnant watcher looks only where remnants can be: not in a hideout, town or the campaign."""
-        return getattr(self, "rm_zone", None) not in ("hideout", "town", "other")
+        """The Remnant watcher looks only where remnants can be: not in a hideout, town or the campaign; in a map
+        only once the Expedition mark under MAP CONTENT was seen (rm_mark_check); a Grand Expedition always."""
+        z = getattr(self, "rm_zone", None)
+        if z in ("hideout", "town", "other"):
+            return False
+        if z == "map":
+            return bool(getattr(self, "rm_map_exp", False))
+        return True
+
+    def rm_mark_check(self, rect):
+        """In a map until the mark is seen: a look at the right edge every few seconds (cheap). Thread-side."""
+        if getattr(self, "rm_zone", None) != "map" or getattr(self, "rm_map_exp", False):
+            return
+        now = time.time()
+        if now - getattr(self, "rm_mark_at", 0.0) < MARK_EVERY:
+            return
+        self.rm_mark_at = now
+        try:
+            seen = RM.has_marker(RM.grab(RM.marker_rect(rect)), rect[3] - rect[1])
+        except Exception:
+            seen = None
+        if seen or seen is None:                      # (no OpenCV: as before - it watches)
+            self.rm_map_exp = True
 
     # ---------------------------------------------------------------- Island Rumours
     def ru_on(self):

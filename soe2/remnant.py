@@ -322,3 +322,43 @@ def selftest():
         return " | ".join(t for t, _b in ocr(img))
     except OcrUnavailable as e:
         return f"unavailable: {e}"
+
+
+# ================================================================ 2.83.0: is there an Expedition in this map?
+# The Expedition mark under MAP CONTENT on the right (its swirl), as the game draws it at 1440p (the middle of the
+# round icon). Feedback: "check a fixed area on the screen for the indicator of expedition being present".
+MARKER_B64 = ("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")
+MARKER_SCORE = 0.85              # its best match on the screenshots: ~1.0; with no Expedition: at most ~0.63
+MARKER_STRIP = (0.30, 0.12, 0.85)    # the right edge: width, top, bottom - in game heights (the row moves up / down)
+_MARK = {}
+
+
+def marker_rect(rect):
+    l_, t, r, b = rect
+    h = b - t
+    return (int(r - MARKER_STRIP[0] * h), int(t + MARKER_STRIP[1] * h), int(r), int(t + MARKER_STRIP[2] * h))
+
+
+def has_marker(img, game_h):
+    """A picture of the right edge -> True when the Expedition mark is there (None: can't tell - no OpenCV)."""
+    try:
+        import base64
+        import io
+        import cv2
+        import numpy as np
+        from PIL import Image
+    except Exception:
+        return None
+    k = max(0.5, min(3.0, game_h / 1440.0))
+    if "t" not in _MARK:
+        _MARK["t"] = Image.open(io.BytesIO(base64.b64decode(MARKER_B64))).convert("RGB")
+    hay = cv2.cvtColor(np.asarray(img.convert("RGB")), cv2.COLOR_RGB2BGR)
+    for s in (k, k * 0.9, k * 1.1):
+        t = _MARK["t"].resize((max(6, round(_MARK["t"].width * s)), max(6, round(_MARK["t"].height * s))))
+        tt = cv2.cvtColor(np.asarray(t), cv2.COLOR_RGB2BGR)
+        if tt.shape[0] >= hay.shape[0] or tt.shape[1] >= hay.shape[1]:
+            continue
+        if float(cv2.matchTemplate(hay, tt, cv2.TM_CCOEFF_NORMED).max()) >= MARKER_SCORE:
+            return True
+    return False
+
