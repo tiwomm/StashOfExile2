@@ -21,7 +21,7 @@ DEFAULTS = {"overlay": True, "locked": False, "x": 60, "y": 260, "w": 230, "h": 
             "key_toggle": "", "key_pause": "", "ask_count": True, "log_path": "",
             "character": "", "character_guess": "", "alerts_bar": True, "autostart": False,
             "clock": True,
-            "merged": True, "layout": "panel"}   # 2.39.0 clock; 2.55.0: one overlay window (merged_page.py)
+            "merged": True, "layout": "xpbar"}   # 2.39.0 clock; 2.55.0: one overlay window; 2.74.0: Game bar
 DEFAULT_KEYS = {"key_toggle": "Ctrl+Alt+S", "key_pause": "Ctrl+Alt+P",
                 "key_overlay": "F6"}           # 2.59.0: F6 shows / hides the whole overlay       # 2.10.0: set once, change them in Options
 # 2.54.0: the Session timer times your play; money lives in one place, Money Makers › Strat Tracker.
@@ -395,6 +395,8 @@ class TrackerPage:
         sws.append(("Clock", self.ingame_clock_var, self.on_ingame_clock))
         self.tk_notes_var = tk.BooleanVar(value=bool(self._ensure_overlay().cfg.get("notes_enabled", True)))
         sws.append(("Notes", self.tk_notes_var, self.tracker_notes_switch))
+        self.tk_calc_var = tk.BooleanVar(value=bool(self.calc_cfg()["on"]))          # 2.74.0
+        sws.append(("Calculator", self.tk_calc_var, self.tracker_calc_switch))
         from . import focus as F                                  # 2.73.0: League Focus (Overlay ↳ Game Plan)
         self.tk_focus_var = tk.BooleanVar(value=bool(F.cfg()["on"]))
         sws.append(("League Focus", self.tk_focus_var, lambda: self.focus_set_on(bool(self.tk_focus_var.get()))))
@@ -414,12 +416,14 @@ class TrackerPage:
         bar.pack(fill="x")
         self.tk_switches_var = tk.BooleanVar(value=bool(cfg.get("alerts_bar", True)))
         self.tk_bar_vars = {"focus": tk.BooleanVar(value=bool(self.bar_cfg().get("focus", True))),
-                            "notes": tk.BooleanVar(value=bool(self.bar_cfg().get("notes", True)))}
+                            "notes": tk.BooleanVar(value=bool(self.bar_cfg().get("notes", True))),
+                            "calc": tk.BooleanVar(value=bool(self.bar_cfg().get("calc", True)))}
         for i, (label, v, fn) in enumerate((("Mechanic Helper switches", self.tk_switches_var, self.tracker_switches_switch),
                                             ("Focus switch", self.tk_bar_vars["focus"], self.tracker_bar_switch),
-                                            ("Notes ▾", self.tk_bar_vars["notes"], self.tracker_bar_switch))):
+                                            ("Notes ▾", self.tk_bar_vars["notes"], self.tracker_bar_switch),
+                                            ("Calc ▾", self.tk_bar_vars["calc"], self.tracker_bar_switch))):
             cb = ttk.Checkbutton(bar, text=label, variable=v, command=fn, style="Card.TCheckbutton")
-            cb.grid(row=0, column=i, sticky="w", padx=(0, 24), pady=2)
+            cb.grid(row=i // 3, column=i % 3, sticky="w", padx=(0, 24), pady=2)
             self.tk_ov_switches["bar:" + label] = cb
         for c in range(3):
             bar.columnconfigure(c, uniform="sw")
@@ -498,6 +502,15 @@ class TrackerPage:
         self.overlay.set_notes(on)
         self.merged_build()
 
+    def tracker_calc_switch(self):
+        """2.74.0: the calculator over the game on / off (off: its window and Calc ▾ go)."""
+        on = bool(self.tk_calc_var.get())
+        self.calc_cfg()["on"] = on
+        if not on:
+            self.calc_ov_close(remember=False)
+        self.calc_save()
+        self.merged_build()
+
     def tracker_fline_switch(self):
         from . import focus as F
         F.cfg()["line"] = bool(self.tk_fline_var.get())
@@ -534,6 +547,7 @@ class TrackerPage:
         self.merged_build()
         if self.overlay.notes is not None:                  # a dropped-down note (Strip, Minimal)
             self.overlay.restyle()
+        self.calc_ov_restyle()                               # 2.74.0: the calculator follows the one lock
 
     def _tk_keys_text(self):
         from .overlay import key_label

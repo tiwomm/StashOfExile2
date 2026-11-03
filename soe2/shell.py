@@ -837,7 +837,13 @@ class Shell:
     def labs_on(self):
         return bool(self.S.get("labs"))
 
+    def advanced_on(self):
+        """2.74.0: Settings › Advanced › Show Under the hood (Under the hood, the Mod book) - off by default."""
+        return bool(self.S.get("show_advanced"))
+
     def visible(self, mod):
+        if getattr(mod, "advanced", False) and not self.advanced_on():
+            return False
         return not getattr(mod, "labs", False) or self.labs_on()
 
     def listed(self, mod):
@@ -934,6 +940,21 @@ class Shell:
                 w.bar.itemconfigure(item, state="normal" if on else "hidden")
                 b._off = not on
             w._bar_resized()
+
+    def set_advanced(self, on):
+        """2.74.0: Under the hood and the Mod book shown or not (they keep working either way)."""
+        self.S["show_advanced"] = bool(on)
+        self.save()
+        if not on:
+            for k, m in self.modules.items():
+                if getattr(m, "advanced", False) and self.windows[k].state_ != "closed":
+                    self.windows[k].close()
+        self.draw_dock()
+        self.make_task_dots()
+        if self.cfg.get("desktop_icons"):
+            self.draw_icons()
+        self.refresh_taskbar()
+        self.paint_children()
 
     def set_labs(self, on):
         self.S["labs"] = bool(on)
@@ -1138,8 +1159,14 @@ class Shell:
         if key == "notes" and hasattr(self.app, "ovh_open"):     # 2.44.0: Notes is a tab of Overlays now
             self.app.ovh_open("Notes")
             return
+        if key == "calc" and hasattr(self.app, "calc_ov_toggle"):  # 2.74.0: the calculator is over the game now
+            self.app.calc_ov_toggle(True)
+            return
         win = self.windows.get(key)
         if not win:
+            return
+        if getattr(self.modules[key], "advanced", False) and not self.advanced_on():
+            self.app._say(f"{self.modules[key].title} is an advanced tool: Settings › Advanced › Show Under the hood.", 8)
             return
         if not self.visible(self.modules[key]):            # a Labs one while Labs is off
             self.app._say(f"{self.modules[key].title} is a Labs (beta) feature: turn on Labs in Settings to use it.", 8)
@@ -1442,6 +1469,13 @@ class Shell:
                     sub.bind("<Enter>", lambda ev, r=sub: r.config(bg=C["sel"], fg=C["text"]))
                     sub.bind("<Leave>", lambda ev, r=sub: r.config(bg=P1, fg=C["muted"]))
                     sub.bind("<Button-1>", lambda ev, kk=c.key: self.open(kk))
+                    for g in self.children(c.key):     # 2.74.0: one level deeper (Under the hood › Mod book)
+                        s2 = tk.Label(lists[mod.kind], text=f"      ↳  {g.icon}  {g.title}", bg=P1, anchor="w", padx=24,
+                                      pady=4, fg=C["muted"], cursor="hand2", font=("Segoe UI", 9))
+                        s2.pack(fill="x")
+                        s2.bind("<Enter>", lambda ev, r=s2: r.config(bg=C["sel"], fg=C["text"]))
+                        s2.bind("<Leave>", lambda ev, r=s2: r.config(bg=P1, fg=C["muted"]))
+                        s2.bind("<Button-1>", lambda ev, kk=g.key: self.open(kk))
         q.trace_add("write", fill)
         fill()
         foot = tk.Frame(m, bg=P1, highlightthickness=0)

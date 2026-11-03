@@ -20,8 +20,10 @@ HELP = {
                  "Easy to miss when the map's done - and easy to fix. Reads your screen.", "Delirium settings"),
     "ritual": ("Ritual", "Shows the map's Ritual count (2/3) and reminds you if you leave with altars unfinished.",
                "Unfinished altars are tribute left behind. Reads your screen.", "Ritual settings"),
-    "remnant": ("Remnant", "Prices each reward in an Expedition remnant's book (poe.ninja, your league).",
-                "Pick the reward that's actually worth the most - by itself, or with its key.", "Remnant settings"),
+    "remnant": ("Remnant", "Prices each reward in an Expedition remnant's book (poe.ninja, your league), with a "
+                           "list of the runeshapes players rate best for loot (S to D).",
+                "Pick the reward that's actually worth the most, and the runeshapes that pay - by itself, or with "
+                "its key.", "Remnant settings"),
     "focus": ("Focus", "Your current league goal on this bar, and a short poke in town now and then.",
               "Keeps you on your plan when the league pulls you sideways. Quiet by default.", "Open Game Plan"),
 }

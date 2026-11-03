@@ -22,7 +22,7 @@ Hover an item in game and press **Ctrl+Alt+C**. It goes into a list and is price
 - **Map library:** every map, citadel and pinnacle fight, ranked S to D or Avoid by you and the community; share ranks as a file. Opens from the Session tracker's title bar.
 - **Expedition Remnant Price Checker:** open a remnant's reward book and each reward gets its poe.ninja price next to it (the best one ★), by itself or with a key. In Session tracker › Alerts and the timer's Helpers bar, with a small list of the runeshapes players rate best. The idea comes from [PoE Ancients Price Helper](https://github.com/pedro-quiterio/PoeAncientsPriceHelper) by Pedro Quitério. None of its code is used, because it isn't open source.
 - **Session tracker:** time, maps and deaths per session with a timer over the game, plus Delirium, Breach (Hiveblood) and Ritual alerts.
-- **Utilities:** chat command keys, a sticky note, a calculator.
+- **Utilities:** chat command keys, a sticky note and a calculator over the game.
 - **Labs (off by default):** Wealth (stash value over time), Market Insights and an offline game-data search (with every anoint, its Liquid Emotions and their poe.ninja prices).
 
 ## Install

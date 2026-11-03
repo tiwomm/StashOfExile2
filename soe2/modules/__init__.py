@@ -10,6 +10,8 @@
     hidden  - True: not on the dock, the Toolkit menu or the desktop; opened from inside another window only
               (2.0 beta 14: Under the hood, opened from Price checks)
     labs    - True for an experimental (Labs) one: only shown when Labs is on in Settings, tagged BETA
+    advanced - True (2.74.0): only shown with Settings › Advanced › Show Under the hood (Under the hood, the Mod
+              book). They keep working out of sight either way (the community data, learning from listings).
     beta    - True to tag it BETA but show it always (2.38.0: Money Makers)
     blurb   - one line about it (dock tooltip, menu search)
     build(body)  - draw its content into its window's body (called once at start-up; windows that are closed are
@@ -42,6 +44,7 @@ class Module:
     blurb = ""
     hidden = False
     beta = False        # 2.38.0: tagged BETA, still shown (labs: hidden unless Labs is on)
+    advanced = False    # 2.74.0
     parent = None       # 2.33.0: a child tool's parent module (see "How the app is organised" below)
 
     def __init__(self, app):
@@ -69,10 +72,9 @@ def load(app):
     from .tracker import Tracker
     from .search import Search
     from .settings import Settings
-    from .calc import Calculator
     from .insights import Insights
     from .money import MoneyMakers
     from .maps import MapLibrary
     from .plan import GamePlan
     return [cls(app) for cls in (PriceChecks, Wealth, ModBook, Library, Regex, Search, Tracker, Notes,
-                                 Rates, Calculator, Insights, MoneyMakers, MapLibrary, GamePlan, Settings)]
+                                 Rates, Insights, MoneyMakers, MapLibrary, GamePlan, Settings)]

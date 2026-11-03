@@ -31,7 +31,10 @@ class Sidebar(tk.Canvas):
         child tools and its tabs (2.64.0: {"tab": title, "of": key, "depth"}). A click on the open one folds it."""
         sh = self.shell
         act = sh.active
-        act_par = getattr(sh.modules.get(act), "parent", None)
+        chain, k = [], act                         # 2.74.0: the open tool and every tool above it (Mod book is
+        while k and k not in chain:                # under Under the hood, under Price checks)
+            chain.append(k)
+            k = getattr(sh.modules.get(k), "parent", None)
         out = []
 
         def tabs(m, depth):
@@ -44,16 +47,28 @@ class Sidebar(tk.Canvas):
             if not mods:
                 continue
             out.append({"group": label})
+            def kids(p, depth):
+                for c in sh.children(p):
+                    out.append({"key": c.key, "mod": c, "child": True, "depth": depth})
+                    if c.key in self.folded:
+                        continue
+                    tabs(c, depth + 1)
+                    if c.key in chain:
+                        kids(c.key, depth + 1)
             for m in mods:
                 out.append({"key": m.key, "mod": m})
-                if m.key not in (act, act_par) or m.key in self.folded:
+                if m.key not in chain or m.key in self.folded:
                     continue
                 tabs(m, 1)
-                for c in sh.children(m.key):
-                    out.append({"key": c.key, "mod": c, "child": True})
-                    if c.key not in self.folded:
-                        tabs(c, 2)
+                kids(m.key, 1)
         return out
+
+    def _chain(self):
+        chain, k = [], self.shell.active
+        while k and k not in chain:
+            chain.append(k)
+            k = getattr(self.shell.modules.get(k), "parent", None)
+        return chain
 
     def has_more(self, key):
         """Does this tool unfold (child tools or tabs)?"""
@@ -171,17 +186,16 @@ class Sidebar(tk.Canvas):
             if self.compact:
                 self.create_text((x0 + x1) // 2, cy, text=icon, font=("Segoe UI Emoji", 12), fill=fg)
             else:
-                ind = 14 if it.get("child") else 0
+                ind = 14 * it.get("depth", 1) if it.get("child") else 0
                 if it.get("child"):
-                    self.create_text(x0 + 10, cy, text="↳", anchor="w", font=("Segoe UI", 9), fill=grp)
+                    self.create_text(x0 + ind - 4, cy, text="↳", anchor="w", font=("Segoe UI", 9), fill=grp)
                 self.create_text(x0 + 12 + ind + (6 if mk == "gem" else 0), cy, text=icon, anchor="w",
                                  font=("Segoe UI Emoji", 12 if not it.get("child") else 10), fill=fg)
                 self.create_text(x0 + 40 + ind, cy, text=title, anchor="w", fill=fg,
                                  font=("Segoe UI", 10 if not it.get("child") else 9, "bold" if sel or opened else "normal"))
-                more = mod is not None and not it.get("child") and self.has_more(k)
+                more = mod is not None and (not it.get("child") or self.shell.children(k)) and self.has_more(k)
                 if more:                                       # 2.65.0: ▸ folded / ▾ open
-                    par = getattr(self.shell.modules.get(active), "parent", None)
-                    unfolded = k in (active, par) and k not in self.folded
+                    unfolded = k in self._chain() and k not in self.folded
                     self.create_text(x1 - 4, cy, text="▾" if unfolded else "▸", anchor="e", fill=grp,
                                      font=("Segoe UI Symbol", 9))
                     x1 -= 14

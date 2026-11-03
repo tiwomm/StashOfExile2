@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU GPL v3.0 (see LICENSE). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.73.5
+VERSION 2.74.0
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,6 +19,23 @@ VERSION 2.73.5
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.74.0
+       Advanced tools hidden by default (feedback: "I don't think the mod book or under the hood information is
+       useful to the average user"): Module.advanced; shell.visible() hides them unless SETTINGS["show_advanced"]
+       (Settings › Advanced › Show advanced tools, shell.set_advanced - the two Open buttons are gone). The Mod book
+       is a child of Under the hood now (parent = "library"): the sidebar lists a child's own children one step
+       further in, the Toolkit menu too. They keep working out of sight (learning, community data sharing, Regex's
+       ratings). The calculator over the game (calc.CalcOverlay, out of Tools - the Calculator module is gone): a
+       fixed-size OverlayWindow (248 px wide, as tall as its keys), dragged where you like and held by the overlay's
+       one lock (overlay_lock rebuilds it), opened from Calc ▾ on the overlay's bar beside Notes ▾
+       (merged_page._mg_bar_buttons); Overlay › Options: Calculator on / off and Calc ▾ on the bar. The bar is
+       0.056 of the game's height (halfway between 2.73.4 and 2.73.5). The Remnant tip mentions the runeshape list.
+       Focus's line follows the Focus line switch again (2.73.5 also hid it with the Focus switch on the bar).
+       Settings › Appearance › Overlay settings: Layout, Opacity and Click-through in one area (were Overlay layout
+       and Opacity). Click-through (on by default): a locked overlay's bar lets clicks through to the game
+       (merged_page.set_click_through - WS_EX_TRANSPARENT; overlay_click_through after every merged_build); unlock
+       it to use its switches. Notes and the calculator always take clicks. The Game bar is the default layout for
+       a new setup, and it's called "Game bar" (was "Game bar - on the XP bar").
   2.73.5
        The overlay bar's room goes up and down, not side to side (feedback: "more vertical padding, not
        horizontal"): HUD_SPOTS' xpbar is taller (0.046 -> 0.066 of the game's height), the switch row and the
@@ -1675,7 +1692,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.73.5"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.74.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
