@@ -36,7 +36,7 @@ from .mods import (
     default_tier, scoped, tier_key, TIER_ORDER, TIERS,
 )
 from .mods import DUPS, find_stat, current_key
-from .trade import ago, mod_impact
+from .trade import ago, mod_impact, CURRENCY_CHOICES, STATUS_CHOICES
 from .market import MARKET
 from .pricefmt import fmt_div, fmt_price, parse_price
 from .wealth import WEALTH, parse_stack, WPRICES
@@ -82,6 +82,9 @@ from .config import PAGE_CHECKS       # 1.40: was "Items"
 
 
 CARD_BOX = 46                 # 2.78.3: a Min / Max / item level box on the item card (px)
+REQ_NAMES = {"lvl": "Level", "str": "Str", "dex": "Dex", "int": "Int"}         # 2.79.0
+MISC_ROWS = (("corrupted", "Corrupted"), ("fractured", "Fractured"), ("desecrated", "Desecrated"),
+             ("sanctified", "Sanctified"), ("mirrored", "Mirrored"), ("unidentified", "Unidentified"))
 
 
 class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, ExchangePage, WealthPage, LibraryPage, RegexPage, UtilitiesPage, TrackerPage, SearchPage, CalcOverlay, InsightsPage, MoneyMakersPage, MapLibraryPage, RemnantPage, LedgerPage, FeedbackPage, FeedPage, MergedOverlay, GamePlanPage, FocusPokes, OverlayHelp, OverlayParts, CampaignUI):
@@ -713,8 +716,7 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         self.item_head = SectionBar(outer, "Item")
         self.item_head.pack(fill="x", padx=(8, 0))
         # 2.63.0: the picked item's own buttons, at the foot of its panel
-        ifoot = tk.Frame(outer, bg=C["panel2"], pady=8)
-        ifoot.pack(fill="x", side="bottom", padx=(8, 0))
+        ifoot = tk.Frame(outer, bg=C["panel2"], pady=8)       # 2.79.0: not shown - the card has these (no duplicates)
         self.item_trade_btn = ttk.Button(ifoot, text="Open on trade site", command=self.open_trade, state="disabled")
         self.item_trade_btn.pack(side="left", padx=(8, 0))
         self.item_mark_btn = ttk.Button(ifoot, text="✔ Mark listed", command=lambda: self.mark_selected("listed"),
@@ -802,14 +804,13 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
 
         row = section("Price checking", "Valuable items", "A mod is valuable when the cheapest listings with it cost "
                                                            "at least this much. Valuable items are green in the list, and "
-                                                           "can pop up and play a sound when they're priced.")
+                                                           "can play a sound when they're priced.")
         tk.Label(row, text="Valuable mod from", **lab).pack(side="left", padx=(0, 8))
         sp = ttk.Spinbox(row, from_=0.05, to=500, increment=0.25, width=6, textvariable=self.good_var, command=self.on_good)
         sp.pack(side="left")
         sp.bind("<Return>", lambda e: self.on_good())
         sp.bind("<FocusOut>", lambda e: self.on_good())
         tk.Label(row, text="div", **lab).pack(side="left", padx=(4, 16))
-        ttk.Checkbutton(row, text="Popup", variable=self.pop_var, command=self.on_toggles).pack(side="left", padx=(0, 12))
         ttk.Checkbutton(row, text="Sound", variable=self.snd_var, command=self.on_toggles).pack(side="left")
         row = section("Price checking", "Listings to price from", "Which trade listings count. Older listings are often "
                                                                    "stale or from players who are gone. New items use a "
@@ -3089,7 +3090,7 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         """2.73.5: a price pop-up at the mouse only for an item you checked yourself (copied with the hotkey). A stash
         tab's items, the Strat Tracker's and the Item library's are priced out of sight - one at a time, so each
         looked like a single check and popped up wherever the mouse was."""
-        return rec.get("src", "manual") == "manual" and rec.get("id") != getattr(self, "lib_rid", None)
+        return False                                # 2.79.0 (feedback): no pop-ups for Manual Add either - none at all
 
     def ev_resolved(self, rid):
         self.update_row(rid)
@@ -4422,6 +4423,9 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
             self.show_detail(self.shown_rec)
 
     def show_detail(self, rec):
+        """2.79.0 (feedback: "a clean view like Sidekick"): the item card holds every filter - properties,
+        requirements, miscellaneous, each mod, pseudo totals, trade filters - then Search again / Open on trade site,
+        and one ▸ Advanced section at the bottom (listing status, if you list it, how it's priced, rolls, raw text)."""
         for w in self.detail.winfo_children():
             w.destroy()
         self.shown_rec = rec
@@ -4437,170 +4441,69 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
                      bg=P2, fg=C["muted"], font=("Segoe UI", 10), justify="left", anchor="nw").pack(fill="x")
             return
         it = rec["item"]
-        col = C["rare"] if it["rarity"] == "Rare" else C["magic"]
-
-        def box(parent, edge=None, pad=(12, 8)):            # 2.74.5: lighter
-            return tk.Frame(parent, bg=P1, padx=pad[0], pady=pad[1], highlightthickness=1, highlightbackground=edge or C["line"])
-
-        # ---- 2.60.0: the item card (the theme draws its name band) and the tabs Item / How it's priced / Raw
         self._detail_card(d, rec, it, wrap)
-        tab = SETTINGS.get("detail_tab", "Item")
-        if tab not in ("Item", "How it's priced", "Raw"):
-            tab = "Item"
-        trow = tk.Frame(d, bg=P2)
-        trow.pack(fill="x", pady=(8, 8))
-        SegBar(trow, ["Item", "How it's priced", "Raw"], value=tab, size=9, pad=(12, 4),
-               command=lambda v: (SETTINGS.__setitem__("detail_tab", v), self.show_detail(rec))).pack(side="left")
-        ttk.Button(trow, text="Copy name  [C]", command=lambda: self.copy_name(rec, True)).pack(side="right")
-        if tab == "Raw":
-            self._detail_raw(d, rec, wrap)
-            return
-        if tab == "How it's priced":
-            self._detail_how(d, rec, wrap)
-            return
-        if it["corrupted"]:
-            tk.Label(d, text="corrupted", bg=P2, fg=C["red"], anchor="w").pack(fill="x")
-        if it.get("gear"):                                   # 1.41: how this piece of gear is searched
-            tk.Label(d, text=(waystone.summary(it) if it.get("waystone") else gear.summary(it)) + "".join("  ·  " + n for n in it.get("notes") or []), bg=P2, fg=C["muted"],
-                     font=("Segoe UI", 9), anchor="w", wraplength=wrap-11, justify="left").pack(fill="x")
-        tk.Frame(d, bg=P2, height=8).pack()
+        btns = tk.Frame(d, bg=P2)
+        btns.pack(fill="x", pady=(8, 0))
+        self.detail_search_btn = ttk.Button(btns, text="Search again  [Enter]", style="Primary.TButton",
+                                            command=lambda: self.reprice([rec["id"]]))
+        self.detail_search_btn.pack(side="left", fill="x", expand=True)
+        self.detail_open_btn = ttk.Button(btns, text="Open on trade site  [O]", command=self.open_trade)
+        self.detail_open_btn.pack(side="left", fill="x", expand=True, padx=(8, 0))
+        if not rec.get("qid"):
+            self.detail_open_btn.state(["disabled"])
+        note = self._detail_note(rec)
+        if note:
+            tk.Label(d, text=note[0], bg=P2, fg=note[1], font=("Segoe UI", 9), anchor="w", justify="left",
+                     wraplength=wrap).pack(fill="x", pady=(8, 0))
+        adv = bool(SETTINGS.get("detail_adv"))
+        head = tk.Label(d, text=("▾ " if adv else "▸ ") + "ADVANCED  ·  listing status, how it's priced, raw text",
+                        bg=P1, fg=C["accent"], font=("Segoe UI", 9, "bold"), anchor="w", cursor="hand2", padx=8,
+                        pady=8, highlightthickness=1, highlightbackground=C["accent"] if adv else C["line"])
+        head.pack(fill="x", pady=(8, 0))
+        head.bind("<Button-1>", lambda e: (SETTINGS.__setitem__("detail_adv", not adv), self.show_detail(rec)))
+        self.detail_adv_head = head
+        if adv:
+            self._detail_advanced(d, rec, it, wrap)
 
-        card = box(d)
-        card.pack(fill="x", pady=(0, 8))
+    def _detail_note(self, rec):
+        """One short line under the buttons when the price needs a word: no match, by hand, an error, a used tablet."""
         st = rec["state"]
-        if st == "done":
-            nomatch = rec.get("nomatch")
-            manual = rec.get("manual")
-            if nomatch:
-                big = "NO MATCH"
-            elif manual:
-                big = "CHECK BY HAND"
-            else:
-                big = fmt_div(rec["est"]) if rec["est"] is not None else (fmt_price(rec["prices"][0]) if rec["prices"] else "no listings")
-                if rec.get("partial") and rec["prices"]:
-                    big = "≥ " + big
-                elif rec.get("thin") and rec["prices"]:
-                    big = "~ " + big
-            head = tk.Frame(card, bg=P1)
-            head.pack(fill="x")
-            left = tk.Frame(head, bg=P1)
-            left.pack(side="left", fill="x", expand=True)
-            tk.Label(left, text="ESTIMATED VALUE", bg=P1, fg=C["muted"], font=("Segoe UI", 9, "bold"), anchor="w").pack(fill="x")
-            tk.Label(left, text=big, bg=P1, fg=C["red"] if (nomatch or manual or not rec["prices"]) else C["good"],
-                     font=(MONO, 16, "bold"), anchor="w").pack(fill="x")      # (2.60.0: smaller - the card shows it big)
-            cf = rec.get("conf")
-            guess = False                                  # 2.72.0: gear is priced like the rest (its confidence says)
-            if cf and cf != "-" and guess:                      # 2.0 beta 21: say plainly that gear is a guess
-                right = tk.Frame(head, bg=P1)
-                right.pack(side="right", anchor="n")
-                tk.Label(right, text="Rough guess", bg=C["warn_bg"], fg=C["good"], font=("Segoe UI", 10, "bold"),
-                         padx=8, pady=4, highlightthickness=1, highlightbackground=C["good"]).pack(anchor="e")
-                cf = None
-            if cf and cf != "-":
-                tint = {"High": (C["ok_bg"], C["green"]), "Medium": (C["warn_bg"], C["good"]), "Low": (C["bad_bg"], C["red"])}.get(cf, (P2, C["muted"]))
-                right = tk.Frame(head, bg=P1)
-                right.pack(side="right", anchor="n")
-                tk.Label(right, text=f"{cf} Confidence", bg=tint[0], fg=tint[1], font=("Segoe UI", 10, "bold"), padx=8, pady=4,
-                         highlightthickness=1, highlightbackground=tint[1]).pack(anchor="e")
-                if rec.get("spread"):
-                    tk.Label(right, text=f"Spread: {rec['spread']:.0f}x", bg=P1, fg=C["muted"], font=(MONO, 9)).pack(anchor="e", pady=(4, 0))
-            tk.Label(card, text=rec["label"] + ("" if nomatch else f"  ·  {rec['total']} listings"), bg=P1, fg=C["muted"],
-                     anchor="w", wraplength=wrap-31, justify="left").pack(fill="x", pady=(2, 0))
-            if guess:
-                g = tk.Label(card, text="Price checks is made for tablets, jewels and waystones. For gear this is a "
-                                        "rough guess: check it yourself (press O for the trade search, or use your "
-                                        "usual price checker).", bg=P1, fg=C["good"], anchor="w",
-                             wraplength=wrap-31, justify="left", font=("Segoe UI", 9))
-                g.pack(fill="x", pady=(4, 0))
-            why = rec.get("conf_why") or []
-            if cf and cf not in ("-", "High") and why:
-                wb = tk.Frame(card, bg=C["warn_bg"], padx=8, pady=8, highlightthickness=1, highlightbackground="#7a6428")
-                wb.pack(fill="x", pady=(8, 0))
-                tk.Label(wb, text="⚠  " + "; ".join(why) + ".", bg=C["warn_bg"], fg="#f0dca0", anchor="w", font=("Segoe UI", 9),
-                         wraplength=wrap-70, justify="left").pack(fill="x")
-            elif cf == "High" and why:
-                tk.Label(card, text="Confidence: " + "; ".join(why), bg=P1, fg=C["green"], font=("Segoe UI", 9, "bold"), anchor="w",
-                         wraplength=wrap-31, justify="left").pack(fill="x", pady=(8, 0))
-            if rec.get("est") is not None and not nomatch and not manual and not rec.get("skip"):
-                eq, opt = RATES.equivalents(rec["est"]), RATES.list_options(rec["est"])
-                if eq or opt:
-                    lb = tk.Frame(card, bg=P2, padx=8, pady=8, highlightthickness=1, highlightbackground=C["line"])
-                    lb.pack(fill="x", pady=(8, 0))
-                    tk.Label(lb, text="IF YOU LIST IT", bg=P2, fg=C["steel"], font=("Segoe UI", 9, "bold"), anchor="w").pack(fill="x")
-                    if eq:
-                        tk.Label(lb, text="≈ " + "  ·  ".join(f"{_amt(a)} {cur}" for cur, a in eq), bg=P2, fg=C["text"], font=("Segoe UI", 9),
-                                 anchor="w", wraplength=wrap-60, justify="left").pack(fill="x", pady=(2, 0))
-                    if opt:
-                        tk.Label(lb, text="Round to:  " + opt, bg=P2, fg=C["good"], font=("Segoe UI", 9, "bold"), anchor="w",
-                                 wraplength=wrap-60, justify="left").pack(fill="x", pady=(2, 0))
-            if rec.get("uses_note") and not nomatch and not manual:      # 1.45: a used tablet, priced by its uses left
-                ub = tk.Frame(card, bg=C["warn_bg"], padx=8, pady=8, highlightthickness=1, highlightbackground="#7a6428")
-                ub.pack(fill="x", pady=(8, 0))
-                tk.Label(ub, text="✂  " + rec["uses_note"], bg=C["warn_bg"], fg="#f0dca0", anchor="w", font=("Segoe UI", 9),
-                         wraplength=wrap-70, justify="left").pack(fill="x")
-            if rec.get("memory"):
-                tk.Label(card, text=rec["memory"], bg=P1, fg=C["muted"], font=("Segoe UI", 9), anchor="w",
-                         wraplength=wrap-31, justify="left").pack(fill="x", pady=(4, 0))
-            if rec.get("model"):
-                tk.Label(card, text=rec["model"], bg=P1, fg=C["muted"], font=("Segoe UI", 9), anchor="w",
-                         wraplength=wrap-31, justify="left").pack(fill="x", pady=(4, 0))
-            if rec.get("priced_at"):
-                tk.Label(card, text="Priced " + fmt_stamp(rec["priced_at"]), bg=P1, fg=C["muted"],
-                         font=("Segoe UI", 9), anchor="w").pack(fill="x", pady=(4, 0))
-            if nomatch:
-                tk.Label(card, text="None of the searches found a matching Instant Buyout listing, so no price is guessed. "
-                                    "Try ticking off a mod below, or check the trade site by hand.",
-                         bg=P1, fg=C["text"], anchor="w", wraplength=wrap-31, justify="left").pack(fill="x", pady=(8, 0))
-            elif manual:
-                tk.Label(card, text=(("Not searched: " + rec["manual_why"] + ". Please price it by hand.") if rec.get("manual_why") else
-                                     "The listings that match this tablet are priced wildly differently, so any single number "
-                                     "would be a guess. Please price it by hand: open a search below and look at the listings."),
-                         bg=P1, fg=C["text"], anchor="w", wraplength=wrap-31, justify="left").pack(fill="x", pady=(8, 0))
-                tk.Label(card, text="cheapest: " + ",  ".join(fmt_price(p) for p in rec["prices"][:5]),
-                         bg=P1, fg=C["text"], anchor="w", wraplength=wrap-31, justify="left").pack(fill="x", pady=(4, 0))
-            elif rec["prices"]:
-                tk.Label(card, text="cheapest: " + ",  ".join(fmt_price(p) for p in rec["prices"][:5]),
-                         bg=P1, fg=C["text"], anchor="w", wraplength=wrap-31, justify="left").pack(fill="x", pady=(4, 0))
-            if rec.get("qid"):
-                ttk.Button(card, text="Open on trade site  [O]", style="Primary.TButton", command=self.open_trade).pack(fill="x", pady=(8, 0))
-            stages = rec.get("stages") or []
-            if stages:
-                link = tk.Label(d, text=f"How this price was worked out ({len(stages)} search"
-                                        f"{'es' if len(stages) != 1 else ''})  ›", bg=P2, fg=C["accent"],
-                                cursor="hand2", font=("Segoe UI", 9, "bold"), anchor="w")
-                link.pack(fill="x", pady=(8, 0))
-                link.bind("<Button-1>", lambda _e: (SETTINGS.__setitem__("detail_tab", "How it's priced"),
-                                                    self.show_detail(rec)))
-        elif st == "error":
-            tk.Label(card, text="Couldn't price this", bg=P1, fg=C["red"], font=("Segoe UI", 12, "bold"), anchor="w").pack(fill="x")
-            tk.Label(card, text=rec["label"], bg=P1, fg=C["muted"], anchor="w", wraplength=wrap-31, justify="left").pack(fill="x")
-        else:
-            tk.Label(card, text="Pricing…" if st == "pricing" else "Waiting in line…", bg=P1, fg=C["muted"],
-                     font=("Segoe UI", 12), anchor="w").pack(fill="x")
-        self._detail_mods(d, rec, it, wrap)
+        if st == "error":
+            return f"Couldn't price this: {rec.get('label', '')}", C["red"]
+        if st != "done":
+            return None
+        if rec.get("nomatch"):
+            return ("No matching listing - untick a mod or widen a filter, then Search again.", C["text"])
+        if rec.get("manual"):
+            return ("Check by hand: " + (rec.get("manual_why") or "the listings are priced too differently") + ".",
+                    C["good"])
+        if rec.get("uses_note"):
+            return "✂ " + rec["uses_note"], C["good"]
+        return None
 
+    # ---------------- the card
     def _detail_card(self, d, rec, it, wrap):
-        """2.60.0: the item as a card - its name band in the theme's style, rarity colors, level, the price."""
+        """The item as a card, Sidekick-style: name band, price, then every filter - each with its check box and
+        Min / Max where it has a number. A click / Enter prices it again."""
         from . import themes as _th
+        from .searchopts_page import item_facts
         P2 = C["panel2"]
         rar = (it.get("rarity") or "").lower()
         t = _th.ST.theme
         col = {"rare": C["rare"], "magic": C["magic"], "unique": t.c("unique", "#af6025")}.get(rar, C["text"])
-        w = max(240, wrap + 12)          # 2.74.4: the panel's inner width (wrap + 44 less its 2 x 16 padding)
-        lines = []                       # 2.78.3: the item level is its own row (a check box and the number)
-        # 2.74.1 (feedback: "like Sidekick" - the mods with their values on the card, no scrolling for them): the
-        # item reads as it does in game - implicits, a rule, the other mods, Corrupted
+        w = max(240, wrap + 12)
+
         def card_text(m):
-            t = m.get("shown") or m.get("text") or ""
-            return re.sub(r"\s+", " ", re.sub(r"\[([^\]|]*\|)?([^\]]*)\]", r"\2", t)).strip()
+            tx = m.get("shown") or m.get("text") or ""
+            return re.sub(r"\s+", " ", re.sub(r"\[([^\]|]*\|)?([^\]]*)\]", r"\2", tx)).strip()
         own = [m for m in it.get("mods") or [] if m.get("kind") != "Total" and m.get("group") not in ("total", "pseudo")]
-        first = [m for m in own if m.get("kind") in ("Implicit", "Enchant", "Rune")]
-        rest = [m for m in own if m not in first]
-        totals = [m for m in it.get("mods") or [] if m not in own]       # 2.74.4: DPS, defences, pseudo totals
+        totals = [m for m in it.get("mods") or [] if m.get("kind") == "Total" and m.get("group") != "pseudo"]
+        pseudo = [m for m in it.get("mods") or [] if m not in own and m not in totals]
+        facts = item_facts(rec)
         st, big, sub = rec["state"], "", ""
         if st == "done" and not rec.get("nomatch") and not rec.get("manual"):
             if rec.get("est") is not None:
-                big = fmt_div(rec["est"])
+                big = ("≥ " if rec.get("partial") else "~ " if rec.get("thin") else "") + fmt_div(rec["est"])
             elif rec.get("prices"):
                 big = fmt_price(rec["prices"][0])
             cf = rec.get("conf")
@@ -4612,68 +4515,294 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
             big = "Couldn't price"
         else:
             big = "Pricing…" if st == "pricing" else "Waiting in line…"
-        h = 64 + 18 * len(lines) + (26 if it.get("ilvl") else 0) + (34 if big else 0) + (18 if sub else 0) + 8
-        cv = tk.Canvas(d, width=w, height=h, bg=P2, highlightthickness=0, bd=0)
+        cv = tk.Canvas(d, width=w, height=200, bg=P2, highlightthickness=0, bd=0)
         cv.pack(fill="x")
         fmod = ("Segoe UI", 10)
+        self.card_rows, self.card_vals, self.card_opts, self.card_tris = {}, {}, {}, {}
         with _th.raw():
             bg = C["odd"]
-            cv.create_rectangle(0, 0, w - 1, h - 1, fill=bg, outline=t.c(t.part("card", "border", default="border_light")),
+            cv.create_rectangle(0, 0, w - 1, 199, fill=bg, outline=t.c(t.part("card", "border", default="border_light")),
                                 tags=("cardframe",))
             name_c = _th.card_header(cv, 4, 4, w - 5, 54, col, bg)
             cv.create_text(w // 2, 20, text=it["name"], fill=name_c, font=(_th.head_font(), 12, "bold"),
                            width=w - 24, justify="center")
             if it.get("base") and it["base"] != it["name"]:
                 cv.create_text(w // 2, 40, text=it["base"], fill=_th.mix(name_c, C["text"], .45), font=("Segoe UI", 10))
-            y = 64
-            for ln in lines:
-                cv.create_text(w // 2, y + 6, text=ln, font=("Segoe UI", 9), fill=C["muted"])
-                y += 18
-            if it.get("ilvl"):
-                y = self._card_ilvl_row(cv, rec, it, y, w)
-            self.card_vals = {}
+            y = 62
+            good = st == "done" and big not in ("No match", "Check by hand")
+            cv.create_text(16, y + 14, text=big, anchor="w", font=(MONO, 16, "bold"),
+                           fill=C["good"] if good else (C["red"] if st in ("done", "error") else C["muted"]),
+                           tags=("cardprice",))
+            if sub:
+                cv.create_text(w - 16, y + 14, text=sub, anchor="e", font=("Segoe UI", 9), fill=C["muted"])
+            y += 32
             sep = t.c(t.part("card", "sep", default="border"))
             mod_c, imp_c = C["magic"], _th.mix(C["magic"], C["text"], .35)
-            # 2.74.4 (feedback: "the mods checkable in the item panel ... a check beside it the same way sidekick
-            # does"): each mod is a row with its own check box - ticked = searched on. A click re-prices.
-            self.card_rows = {}
-            vals = any(self._card_has_vals(rec, m) for m in own + totals)
-            for grp, colr, head in ((first, imp_c, ""), (rest, mod_c, ""), (totals, C["good"], "TOTALS")):
-                if not grp:
-                    continue
-                cv.create_line(16, y + 2, w - 16, y + 2, fill=sep)
+
+            def section(title, boxes=False):
+                nonlocal y
+                cv.create_line(12, y + 2, w - 12, y + 2, fill=sep)
                 y += 8
-                if vals and grp is (first or rest or totals):          # 2.78.3: MIN / MAX over the value boxes
-                    cv.create_text(w - 12 - CARD_BOX - CARD_BOX // 2 - 4, y, text="MIN", anchor="n",
+                cv.create_text(12, y, text=title, anchor="nw", font=("Segoe UI", 8, "bold"), fill=C["muted"])
+                if boxes:
+                    cv.create_text(w - 12 - 18 - CARD_BOX - CARD_BOX // 2 - 4, y, text="MIN", anchor="n",
                                    font=("Segoe UI", 9, "bold"), fill=C["muted"])
-                    cv.create_text(w - 12 - CARD_BOX // 2, y, text="MAX", anchor="n", font=("Segoe UI", 7, "bold"),
-                                   fill=C["muted"])
-                    y += 12
-                if head:
-                    cv.create_text(12, y, text=head, anchor="nw", font=("Segoe UI", 8, "bold"), fill=C["muted"])
-                    y += 16
-                for m in grp:
-                    y = self._card_mod_row(cv, rec, m, y, w, fmod, colr, card_text(m))
-                y += 4
+                    cv.create_text(w - 12 - 18 - CARD_BOX // 2, y, text="MAX", anchor="n",
+                                   font=("Segoe UI", 9, "bold"), fill=C["muted"])
+                y += 16
+            # ---- properties
+            section("PROPERTIES", boxes=True)
+            s = it.get("search") or {}
+            if it.get("gear") and not it.get("waystone") and s.get("rarity") != "unique":
+                y = self._card_base_row(cv, rec, it, y, w)
+            if it.get("quality"):
+                y = self._card_opt_row(cv, rec, "quality", f"Quality: +{it['quality']}%", it["quality"], y, w)
+            for m in totals:
+                y = self._card_mod_row(cv, rec, m, y, w, fmod, C["good"], card_text(m))
+            if it.get("ilvl"):
+                y = self._card_opt_row(cv, rec, "ilvl", f"Item level: {it['ilvl']}", it["ilvl"], y, w)
+            if it.get("sockets"):
+                y = self._card_opt_row(cv, rec, "sockets", f"Sockets: {it['sockets']}", it["sockets"], y, w)
+            # ---- requirements (folded)
+            req = facts.get("req") or {}
+            if req:
+                show = bool(SETTINGS.get("card_req"))
+                cv.create_line(12, y + 2, w - 12, y + 2, fill=sep)
+                y += 8
+                rq = cv.create_text(12, y, text=("▾ " if show else "▸ ") + "REQUIREMENTS  " + "  ·  ".join(
+                    f"{REQ_NAMES[k]} {v}" for k, v in req.items()), anchor="nw", font=("Segoe UI", 9, "bold"),
+                    fill=C["muted"], tags=("cardreq",))
+                cv.tag_bind(rq, "<Button-1>", lambda e: (SETTINGS.__setitem__("card_req", not show), self.show_detail(rec)))
+                cv.tag_bind(rq, "<Enter>", lambda e: cv.configure(cursor="hand2"))
+                cv.tag_bind(rq, "<Leave>", lambda e: cv.configure(cursor=""))
+                y += 18
+                if show:
+                    for k, v in req.items():
+                        y = self._card_opt_row(cv, rec, "req_" + k, f"{REQ_NAMES[k]}: {v}", v, y, w)
+            # ---- miscellaneous: Any / Yes / No
+            section("MISCELLANEOUS")
+            col_w = (w - 24) // 2
+            for i, (key, label) in enumerate(MISC_ROWS):
+                x0 = 16 + (i % 2) * col_w
+                self._card_tri(cv, rec, key, label, x0, y + (i // 2) * 20, facts)
+            y += 20 * ((len(MISC_ROWS) + 1) // 2) + 2
+            # ---- each mod
+            if own:
+                section("STAT FILTERS", boxes=any(self._card_has_vals(rec, m) for m in own))
+                first = [m for m in own if m.get("kind") in ("Implicit", "Enchant", "Rune")]
+                for m in first + [m for m in own if m not in first]:
+                    y = self._card_mod_row(cv, rec, m, y, w, fmod, imp_c if m in first else mod_c, card_text(m))
+            if pseudo:
+                section("PSEUDO FILTERS", boxes=True)
+                for m in pseudo:
+                    y = self._card_mod_row(cv, rec, m, y, w, fmod, C["good"], card_text(m))
+            # ---- trade filters
+            section("TRADE FILTERS")
+            from .searchopts_page import default_opts
+            cur = {**default_opts(it), **(rec.get("opts") or {})}
+            for key, label, choices in (("status", "Seller", STATUS_CHOICES), ("currency", "Priced in", CURRENCY_CHOICES)):
+                cv.create_text(16, y + 13, text=label, anchor="w", font=("Segoe UI", 9), fill=C["muted"])
+                names = [n for n, _v in choices]
+                var = tk.StringVar(value=next((n for n, v in choices if v == cur.get(key)), names[0]))
+                cb = ttk.Combobox(cv, textvariable=var, values=names, state="readonly")
+                cb.bind("<<ComboboxSelected>>", lambda e, k=key, v=var, c=choices: (
+                    self.search_opt_set(rec, k, dict(c)[v.get()], redraw=False), self.reprice([rec["id"]])))
+                cv.create_window(110, y, window=cb, anchor="nw", width=w - 126, height=26)
+                self.card_opts[key] = var
+                y += 30
             if it.get("corrupted"):
                 cv.create_text(w // 2, y + 8, text="Corrupted", font=("Segoe UI", 10, "bold"), fill=C["red"])
                 y += 20
-            if big:
-                cv.create_line(16, y, w - 16, y, fill=t.c(t.part("card", "sep", default="border")))
-                good = st == "done" and big not in ("No match", "Check by hand")
-                cv.create_text(w // 2, y + 18, text=big, font=(MONO, 16, "bold"),
-                               fill=C["good"] if good else (C["red"] if st in ("done", "error") else C["muted"]))
-                y += 34
-            if sub:
-                cv.create_text(w // 2, y + 6, text=sub, font=("Segoe UI", 9), fill=C["muted"])
-                y += 18
             h2 = y + 8
-            if h2 != h:                                       # (the mods made it taller: frame redrawn to fit)
-                cv.configure(height=h2)
-                cv.delete("frame")
-                cv.coords("cardframe", 0, 0, w - 1, h2 - 1)
+            cv.configure(height=h2)
+            cv.coords("cardframe", 0, 0, w - 1, h2 - 1)
         self.detail_card = cv
         return cv
+
+    def _card_box(self, cv, x, y, on, tag, enabled=True):
+        box = 14
+        cv.create_rectangle(x, y, x + box, y + box, outline=C["muted"] if enabled else C["line"],
+                            fill=C["accent"] if on and enabled else C["odd"], tags=("cardbox", tag))
+        if on and enabled:
+            cv.create_line(x + 3, y + 7, x + 6, y + 10, x + 11, y + 4, fill="#120a04", width=2, tags=(tag,))
+
+    def _card_click(self, cv, tag, fn):
+        cv.tag_bind(tag, "<Button-1>", lambda e: fn())
+        cv.tag_bind(tag, "<Enter>", lambda e: cv.configure(cursor="hand2"))
+        cv.tag_bind(tag, "<Leave>", lambda e: cv.configure(cursor=""))
+
+    def _card_base_row(self, cv, rec, it, y, w):
+        """Base type: ticked = this base only; unticked = any base of its kind."""
+        from .searchopts_page import default_opts
+        cur = {**default_opts(it), **(rec.get("opts") or {})}
+        on = cur.get("base") == "same"
+        tag = "cardbase"
+        cv.create_rectangle(4, y - 2, w - 4, y + 18, outline="", fill=C["odd"], tags=(tag,))
+        self._card_box(cv, 10, y + 2, on, tag)
+        cv.create_text(32, y, text=f"Base type: {it['base']}" if on else f"Any {it.get('class') or 'base'}",
+                       anchor="nw", font=("Segoe UI", 10), fill=C["text"] if on else C["muted"], tags=(tag,))
+        self._card_click(cv, tag, lambda: (self.search_opt_set(rec, "base", "class" if on else "same", redraw=False),
+                                           self.reprice([rec["id"]])))
+        self.card_opts["base"] = on
+        return y + 22
+
+    def _card_opt_row(self, cv, rec, key, label, have, y, w):
+        """[✓] Quality: +22%   [min] [max] - one of the item's own filters (rec["opts"][key]); ticked = searched."""
+        from .searchopts_page import default_opts
+        cur = {**default_opts(rec["item"]), **(rec.get("opts") or {})}.get(key)
+        if isinstance(cur, dict):
+            lo, hi = cur.get("min"), cur.get("max")
+        else:
+            lo, hi = cur, None
+        on = cur not in (None, "", 0, {})
+        tag = f"cardopt_{key}"
+        cv.create_rectangle(4, y - 2, w - 4 - (2 * CARD_BOX + 34), y + 18, outline="", fill=C["odd"], tags=(tag,))
+        self._card_box(cv, 10, y + 2, on, tag)
+        cv.create_text(32, y, text=label, anchor="nw", font=("Segoe UI", 10), fill=C["text"] if on else C["muted"],
+                       tags=(tag,))
+        boxes = {}
+        for i, (k, v) in enumerate((("min", lo if on else have), ("max", hi if on else None))):
+            e = self._card_entry(cv, "" if v is None else f"{v:g}" if isinstance(v, float) else str(v))
+            cv.create_window(w - 12 - 18 - CARD_BOX * (2 - i) - (4 if i == 0 else 0), y - 1, window=e, anchor="nw",
+                             width=CARD_BOX, height=20)
+            boxes[k] = e
+
+        def take(turn_on=True):
+            vals = {}
+            for k, e in boxes.items():
+                tx = e.get().strip().replace(",", ".")
+                try:
+                    vals[k] = int(float(tx)) if tx else None
+                except ValueError:
+                    e.config(highlightbackground=C["red"])
+                    return None
+            if not turn_on or (vals["min"] is None and vals["max"] is None):
+                vals = None
+            self._card_opt_store(rec, key, vals)
+            self.reprice([rec["id"]])
+            return vals
+        self._card_click(cv, tag, lambda: take(not on))
+        for e in boxes.values():
+            e.bind("<Return>", lambda _e: (take(True), "break")[-1])
+        self.card_opts[key] = (boxes, on)
+        if key == "ilvl":
+            self.card_ilvl = (boxes["min"], on)
+        return y + 22
+
+    def _card_opt_store(self, rec, key, vals):
+        """None = not searched (kept as None when the item's own search would use it - white bases)."""
+        self.search_opt_set(rec, key, {k: v for k, v in vals.items() if v is not None} if vals else None,
+                            redraw=False)
+
+    def card_ilvl_set(self, rec, on, text=None):
+        """Item level on (with its number as the minimum) or off; prices the item again."""
+        try:
+            n = int(float(str(text).strip())) if on else None
+        except (TypeError, ValueError):
+            n = rec["item"].get("ilvl")
+        self._card_opt_store(rec, "ilvl", {"min": max(1, min(100, n))} if n else None)
+        self.reprice([rec["id"]])
+        return n
+
+    def _card_tri(self, cv, rec, key, label, x, y, facts):
+        """Corrupted: Any / Yes / No - a click steps through them (this item's search only)."""
+        from .searchopts_page import default_opts
+        cur = {**default_opts(rec["item"]), **(rec.get("opts") or {})}.get(key) or "any"
+        has = facts.get("flags", set())
+        tag = f"cardtri_{key}"
+        cv.create_text(x, y, text=label, anchor="nw", font=("Segoe UI", 9),
+                       fill=C["text"] if key in has else C["muted"], tags=(tag,))
+        cv.create_text(x + 92, y, text=f"{cur.title()} ▾", anchor="nw", font=("Segoe UI", 9, "bold"),
+                       fill=C["accent"] if cur != "any" else C["text"], tags=(tag,))
+        nxt = {"any": "yes", "yes": "no", "no": "any"}[cur]
+        self._card_click(cv, tag, lambda: (self.search_opt_set(rec, key, nxt, redraw=False),
+                                           self.reprice([rec["id"]])))
+        self.card_tris[key] = cur
+
+    # ---------------- ▸ Advanced (2.79.0): everything that isn't a filter
+    def _detail_advanced(self, d, rec, it, wrap):
+        P2, P1 = C["panel2"], C["panel"]
+
+        def block(title):
+            f = tk.Frame(d, bg=P1, padx=12, pady=8, highlightthickness=1, highlightbackground=C["line"])
+            f.pack(fill="x", pady=(8, 0))
+            tk.Label(f, text=title, bg=P1, fg=C["steel"], font=("Segoe UI", 9, "bold"), anchor="w").pack(fill="x")
+            return f
+        self._detail_listing(block("LISTING STATUS"), rec)
+        if rec.get("est") is not None and not rec.get("nomatch") and not rec.get("manual") and not rec.get("skip"):
+            eq, opt = RATES.equivalents(rec["est"]), RATES.list_options(rec["est"])
+            if eq or opt:
+                b = block("IF YOU LIST IT")
+                if eq:
+                    tk.Label(b, text="≈ " + "  ·  ".join(f"{_amt(a)} {cur}" for cur, a in eq), bg=P1, fg=C["text"],
+                             font=("Segoe UI", 9), anchor="w", wraplength=wrap - 30, justify="left").pack(fill="x")
+                if opt:
+                    tk.Label(b, text="Round to:  " + opt, bg=P1, fg=C["good"], font=("Segoe UI", 9, "bold"),
+                             anchor="w", wraplength=wrap - 30, justify="left").pack(fill="x")
+        b = block("HOW IT'S PRICED")
+        if it.get("gear"):
+            tk.Label(b, text=(waystone.summary(it) if it.get("waystone") else gear.summary(it)) +
+                     "".join("  ·  " + n for n in it.get("notes") or []), bg=P1, fg=C["muted"], font=("Segoe UI", 9),
+                     anchor="w", wraplength=wrap - 30, justify="left").pack(fill="x", pady=(0, 4))
+        if rec.get("priced_at"):
+            tk.Label(b, text="Priced " + fmt_stamp(rec["priced_at"]), bg=P1, fg=C["muted"], font=("Segoe UI", 9),
+                     anchor="w").pack(fill="x")
+        hb = tk.Frame(b, bg=P1)
+        hb.pack(fill="x")
+        self._detail_how(hb, rec, wrap - 30)
+        rolls = [m for m in it.get("mods") or [] if m.get("roll") is not None or m.get("tier")]
+        if rolls:
+            b = block("EACH MOD'S ROLL AND TIER")
+            for m in rolls:
+                bits = [x for x in ((f"{(m.get('kind') or ' ')[0]}{m['tier']}" if m.get("tier") else ""),
+                                    (f"roll {round(m['roll'] * 100)}%" if m.get("roll") is not None else ""),
+                                    ", ".join(sorted(m.get("flags") or []))) if x]
+                tk.Label(b, text=f"{pretty(m['text'])}  ·  " + "  ·  ".join(bits), bg=P1, fg=C["muted"],
+                         font=("Segoe UI", 9), anchor="w", wraplength=wrap - 30, justify="left").pack(fill="x")
+        b = block("RAW TEXT")
+        self._detail_raw(b, rec, wrap - 30)
+        ttk.Button(b, text="Copy name  [C]", command=lambda: self.copy_name(rec, True)).pack(anchor="w", pady=(8, 0))
+
+    def _detail_listing(self, bx, rec):
+        """Listed / sold / removed (2.79.0: moved into Advanced)."""
+        P1 = C["panel"]
+        mark = rec.get("mark", "new")
+        cur_txt = {"new": "Not listed yet",
+                   "listed": "✔ Listed" + (f" for {rec['list_price']}" if rec.get("list_price") else ""),
+                   "sold": "💰 Sold" + (f" for {rec['sold_price']}" if rec.get("sold_price") else ""),
+                   "removed": "✖ Removed (reforged / changed)"}[mark]
+        tk.Label(bx, text=cur_txt, bg=P1, font=("Segoe UI", 12, "bold"), anchor="w",
+                 fg={"new": C["text"], "listed": C["green"], "sold": "#7fe0c0", "removed": C["muted"]}[mark]
+                 ).pack(fill="x", pady=(2, 8))
+        prow = tk.Frame(bx, bg=P1)
+        prow.pack(fill="x", pady=(0, 8))
+        tk.Label(prow, text="Listed at", bg=P1, fg=C["muted"], width=8, anchor="w").pack(side="left")
+        suggest = rec.get("list_price") or (fmt_div(rec["est"]) if rec.get("est") is not None and not rec.get("skip") else "")
+        self.price_var = tk.StringVar(value=suggest)
+        ttk.Entry(prow, textvariable=self.price_var, width=14).pack(side="left", padx=(0, 8))
+        if mark == "listed":
+            ttk.Button(prow, text="↺ Unmark listed", command=lambda: self.mark_selected("new")).pack(side="left")
+        else:
+            ttk.Button(prow, text="✔ Mark as listed", style="Primary.TButton",
+                       command=lambda: self.mark_selected("listed")).pack(side="left")
+        srow = tk.Frame(bx, bg=P1)
+        srow.pack(fill="x", pady=(0, 8))
+        tk.Label(srow, text="Sold for", bg=P1, fg=C["muted"], width=8, anchor="w").pack(side="left")
+        self.sold_var = tk.StringVar(value=rec.get("sold_price") or "")
+        se = ttk.Entry(srow, textvariable=self.sold_var, width=14)
+        se.pack(side="left", padx=(0, 8))
+        se.bind("<Return>", lambda e: self.mark_selected("sold"))
+        if mark == "sold":
+            ttk.Button(srow, text="↺ Unmark sold", command=lambda: self.mark_selected("new")).pack(side="left")
+        else:
+            ttk.Button(srow, text="💰 Mark as sold", command=lambda: self.mark_selected("sold")).pack(side="left")
+        tk.Label(bx, text="A real sale teaches the Mod book what these mods are worth.", bg=P1, fg=C["muted"],
+                 font=("Segoe UI", 9), anchor="w").pack(fill="x")
+        if mark == "removed":
+            ttk.Button(bx, text="↺ Unmark removed", command=lambda: self.mark_selected("new")).pack(anchor="w", pady=(4, 0))
+        else:
+            ttk.Button(bx, text="✖ Mark as removed (reforged / changed)", style="Quiet.TButton",
+                       command=lambda: self.mark_selected("removed")).pack(anchor="w", pady=(4, 0))
 
     def _card_mod_row(self, cv, rec, m, y, w, font, colr, text):
         """2.74.4: one mod on the item card: [✓] tier  text. -> the next row's y."""
@@ -4687,7 +4816,7 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         if tier:
             cv.create_text(tx, y + 1, text=tier, anchor="nw", font=("Segoe UI", 8), fill=C["muted"], tags=(tag,))
             tx += 22
-        right = (2 * CARD_BOX + 16) if self._card_has_vals(rec, m) else 0      # 2.78.3: Min / Max at the right
+        right = (2 * CARD_BOX + 16 if self._card_has_vals(rec, m) else 0) + 20     # 2.78.3: Min / Max; 2.79.0: ★
         tid = cv.create_text(tx, y, text=text, anchor="nw", font=font, width=w - tx - 12 - right, justify="left",
                              fill=colr if on and can else C["muted"], tags=("cardmod", tag))
         bb = cv.bbox(tid)
@@ -4701,9 +4830,23 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
                                    fill=C["accent"] if on and can else C["odd"], tags=("cardbox", tag))
         if on and can:
             cv.create_line(bx + 3, by + 7, bx + 6, by + 10, bx + 11, by + 4, fill="#120a04", width=2, tags=(tag,))
+        frac = "fractured" in (m.get("flags") or ()) or str(m.get("sid") or "").startswith("fractured.")
+        if frac:                                             # 2.79.0: a fractured mod says so
+            bb2 = cv.bbox(tid)
+            if bb2:
+                fx = cv.create_text(bb2[2] - 2, y1 - 2, text="FRACTURED", anchor="ne", font=("Segoe UI", 7, "bold"),
+                                    fill="#e8d6a8", tags=(tag,))
+                y1 = max(y1, (cv.bbox(fx) or (0, 0, 0, y1))[3] + 2)
         cv.coords(hit, 4, y - 2, w - 4 - right, y1 - 2)
-        if right:
+        if self._card_has_vals(rec, m):
             self._card_val_boxes(cv, rec, m, y - 1, w, on and can)
+        if can:                                              # 2.79.0: ★ = must match (a click: on / off)
+            imp = mod_impact(rec, m)
+            star = cv.create_text(w - 14, y + 1, text="★" if imp == "high" else "☆", anchor="ne",
+                                  font=("Segoe UI", 10), fill=C["good"] if imp == "high" else C["muted"],
+                                  tags=(f"cardstar{idx}",))
+            cv.tag_bind(star, "<Button-1>", lambda e, mm=m, cur=imp: self.set_item_impact(
+                rec, mm, "normal" if cur == "high" else "high"))
         if can:
             cv.tag_bind(tag, "<Button-1>", lambda e, mm=m, v=on: self.card_toggle(rec, mm, not v))
             cv.tag_bind(tag, "<Enter>", lambda e: cv.configure(cursor="hand2"))
@@ -4739,7 +4882,7 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         for i, key in enumerate(("min", "max")):
             v = cur.get(key)
             e = self._card_entry(cv, "" if v is None else f"{v:g}", enabled)
-            x = w - 12 - CARD_BOX * (2 - i) - (4 if i == 0 else 0)
+            x = w - 12 - 18 - CARD_BOX * (2 - i) - (4 if i == 0 else 0)
             cv.create_window(x, y, window=e, anchor="nw", width=CARD_BOX, height=20)
             boxes[key] = e
         if m.get("uval") is not None:
@@ -4773,51 +4916,6 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
             e.bind("<Return>", lambda _e: (self.reprice([rec["id"]]) if keep() else None, "break")[-1])
         self.card_vals[id(m)] = boxes
         return boxes
-
-    def _card_ilvl_row(self, cv, rec, it, y, w):
-        """[✓] Item level  [82]+  - ticked: only items of this level or more are compared. -> the next y."""
-        cur = (rec.get("opts") or {}).get("ilvl")
-        on = cur not in (None, "", 0)
-        box, bx = 14, w // 2 - 70
-        tag = "cardilvl"
-        cv.create_rectangle(bx, y + 3, bx + box, y + 3 + box, outline=C["muted"], fill=C["accent"] if on else C["odd"],
-                            tags=(tag,))
-        if on:
-            cv.create_line(bx + 3, y + 10, bx + 6, y + 13, bx + 11, y + 7, fill="#120a04", width=2, tags=(tag,))
-        cv.create_text(bx + box + 8, y + 10, text="Item level", anchor="w", font=("Segoe UI", 9),
-                       fill=C["text"] if on else C["muted"], tags=(tag,))
-        e = self._card_entry(cv, str(cur if on else it["ilvl"]), True)
-        cv.create_window(bx + box + 78, y, window=e, anchor="nw", width=CARD_BOX, height=20)
-        cv.create_text(bx + box + 78 + CARD_BOX + 4, y + 10, text="+", anchor="w", font=("Segoe UI", 9),
-                       fill=C["muted"])
-        self.card_ilvl = (e, on)
-
-        def flip(_e=None):
-            self.card_ilvl_set(rec, not on, e.get())
-        cv.tag_bind(tag, "<Button-1>", flip)
-        cv.tag_bind(tag, "<Enter>", lambda _e: cv.configure(cursor="hand2"))
-        cv.tag_bind(tag, "<Leave>", lambda _e: cv.configure(cursor=""))
-        e.bind("<Return>", lambda _e: (self.card_ilvl_set(rec, True, e.get()), "break")[-1])
-        return y + 26
-
-    def card_ilvl_set(self, rec, on, text=None):
-        """The card's Item level: on (with its number) or off; prices the item again."""
-        try:
-            n = int(float(str(text).strip())) if on else None
-        except (TypeError, ValueError):
-            n = rec["item"].get("ilvl")
-        o = dict(rec.get("opts") or {})
-        if n:
-            o["ilvl"] = max(1, min(100, n))
-        else:
-            o.pop("ilvl", None)
-        if o:
-            rec["opts"] = o
-        else:
-            rec.pop("opts", None)
-        self.dirty = True
-        self.reprice([rec["id"]])
-        return o.get("ilvl")
 
     def card_toggle(self, rec, m, checked):
         """2.74.4: a tick on the card - the same as the mod's switch further down (this item only)."""
@@ -4899,131 +4997,6 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
                 if s_.get("est") is not None and s_["n"]:
                     right = fmt_div(s_["est"]) + (f" · weight {s_['weight']:g}" if s_.get("weight") else " · not used")
                 tk.Label(bot, text=right, bg=P1, fg=C["good"] if s_.get("weight") else C["muted"], font=(MONO, 9, "bold")).pack(side="right")
-
-    def _detail_mods(self, d, rec, it, wrap):
-        """The item's mods with their switches, ★, rolls and Min / Max boxes."""
-        P2, P1 = C["panel2"], C["panel"]
-
-        def box(parent, edge=None, pad=(12, 8)):            # 2.74.5: lighter
-            return tk.Frame(parent, bg=P1, padx=pad[0], pady=pad[1], highlightthickness=1, highlightbackground=edge or C["line"])
-        # 2.74.4: the ticks are on the item card now; Min / Max, ★ and each mod's roll fold away under here
-        tune = bool(SETTINGS.get("detail_tune"))
-        head = tk.Label(d, text=("▾ " if tune else "▸ ") + f"FINE-TUNE THE SEARCH  -  Min / Max, ★ key mods, rolls "
-                                                        f"({len(it['mods'])})", bg=P2, fg=C["accent"],
-                        font=("Segoe UI", 9, "bold"), anchor="w", cursor="hand2")
-        head.pack(fill="x", pady=(12, 0))
-        head.bind("<Button-1>", lambda e: (SETTINGS.__setitem__("detail_tune", not tune), self.show_detail(rec)))
-        self.detail_tune_head = head
-        if tune:
-            legend = ("★ must match     ☑ counts (one or two may be dropped if too few listings)     unticked: not searched     "
-                      "Min / Max: the values searched for  (this item only)" if it.get("gear") else
-                      "☑ counts in the price search     ★ key mod     Min / Max: the values searched for  (this item only)")
-            tk.Label(d, text=legend,
-                     bg=P2, fg=C["muted"], font=("Segoe UI", 9), anchor="w", wraplength=wrap, justify="left").pack(fill="x", pady=(0, 4))
-        for m in (it["mods"] if tune else []):
-            med = MARKET.mod_median(it["base"], m.get("sid")) if m.get("sid") else None
-            good = med is not None and med >= SETTINGS["good_div"]
-            imp = mod_impact(rec, m)
-            li = learned_info(norm(m["text"]))
-            key = imp == "high" or (good and imp != "ignore")
-            row = tk.Frame(d, bg=P1, padx=8, pady=4, highlightthickness=1,
-                           highlightbackground=C["good"] if key else C["line"])
-            row.pack(fill="x", pady=1)
-            top = tk.Frame(row, bg=P1)
-            top.pack(fill="x")
-            on_var = tk.BooleanVar(value=imp != "ignore")          # tick = counts in the price search
-            self.detail_vars.append(on_var)
-            ttk.Checkbutton(top, variable=on_var, style="Mod.TCheckbutton", cursor="hand2",
-                            command=lambda mm=m, v=on_var: self.toggle_mod(rec, mm, v.get())).pack(side="left")
-            star = tk.Label(top, text="★" if imp == "high" else "☆", bg=P1, cursor="hand2",
-                            fg=C["good"] if imp == "high" else C["muted"], font=("Segoe UI", 12))
-            star.pack(side="right", padx=(8, 0))                   # click: mark / unmark as a key (high-impact) mod
-            star.bind("<Button-1>", lambda _e, mm=m, cur=imp: self.set_item_impact(
-                rec, mm, "normal" if cur == "high" else "high"))
-            tk.Label(top, text=m.get("shown") or pretty(m["text"]),
-                     bg=P1,
-                     fg=C["muted"] if imp == "ignore" else C["text"] if m.get("sid") or not rec["resolved"] else C["red"],
-                     anchor="w", wraplength=wrap-131, justify="left").pack(side="left", fill="x", expand=True)
-            meta = tk.Frame(row, bg=P1)
-            meta.pack(fill="x", pady=(4, 0))
-            rp = m.get("roll")
-            if rp is not None:
-                colr = C["green"] if rp >= 0.8 else C["good"] if rp >= 0.4 else C["red"]
-                from . import themes as _th                  # 2.60.0: the roll as the theme's meter
-                _th.Meter(meta, rp, width=90, height=12, on=colr).pack(side="left")
-                tk.Label(meta, text=f"{round(rp * 100)}%", bg=P1, fg=C["muted"], font=("Segoe UI", 9)).pack(side="left", padx=(8, 8))
-            if m["tier"]:
-                tk.Label(meta, text=f"T{m['tier']}", bg=P1, fg=C["muted"], font=("Segoe UI", 9)).pack(side="left", padx=(0, 8))
-            for fl in sorted(m["flags"]):
-                tk.Label(meta, text=fl, bg=P1, fg=FLAG_COLORS.get(fl, C["muted"]), font=("Segoe UI", 9, "bold")).pack(side="left", padx=(0, 8))
-            if m.get("value") is not None and not m.get("novalue") and (m.get("sid") or not rec["resolved"]):
-                self.value_boxes(rec, m, row, imp)
-            if m.get("note"):
-                tk.Label(row, text=m["note"], bg=P1, fg=C["muted"], font=("Segoe UI", 9), anchor="w",
-                         wraplength=wrap-51, justify="left").pack(fill="x")
-            if rec["resolved"] and not m.get("sid"):
-                tk.Label(meta, text="not found on trade site", bg=P1, fg=C["red"], font=("Segoe UI", 9)).pack(side="left")
-                if m.get("guess"):
-                    tk.Label(row, text=f"closest: {m['guess']}", bg=P1, fg=C["muted"], font=("Segoe UI", 9),
-                             anchor="w", wraplength=wrap-51, justify="left").pack(fill="x")
-            elif med is not None:
-                tk.Label(meta, text=f"listings ask ~{fmt_div(med)}", bg=P1, fg=C["good"] if good else C["muted"],
-                         font=("Segoe UI", 9, "bold" if good else "normal")).pack(side="right")
-            elif li and li["tier"] == "high":
-                tk.Label(meta, text="learned: valuable", bg=P1, fg=C["good"], font=("Segoe UI", 9, "bold")).pack(side="right")
-
-        self.search_filters_box(rec, d, wrap)                 # 2.4.1: seller, currency, corrupted, gear numbers
-        if rec.get("opts") or any(m.get("value") is not None and not m.get("novalue") for m in it["mods"]):
-            ttk.Button(d, text="Search with these values  [Enter]", style="Primary.TButton",
-                       command=lambda: self.reprice([rec["id"]])).pack(fill="x", pady=(8, 0))
-        # ---- tracking: has this one been listed yet?
-        ign = sum(1 for m in it["mods"] if mod_impact(rec, m) == "ignore")
-        if ign:
-            tk.Label(d, text=f"{ign} low-impact mod{'s' if ign != 1 else ''} left out of the price search",
-                     bg=P2, fg=C["muted"], font=("Segoe UI", 9), anchor="w").pack(fill="x", pady=(8, 0))
-        mark = rec.get("mark", "new")
-        bx = box(d)
-        bx.pack(fill="x", pady=(8, 0))
-        tk.Label(bx, text="LISTING STATUS", bg=P1, fg=C["steel"], font=("Segoe UI", 9, "bold"), anchor="w").pack(fill="x")
-        cur_txt = {"new": "Not listed yet",
-                   "listed": "✔ Listed" + (f" for {rec['list_price']}" if rec.get("list_price") else ""),
-                   "sold": "💰 Sold" + (f" for {rec['sold_price']}" if rec.get("sold_price") else ""),
-                   "removed": "✖ Removed (reforged / changed)"}[mark]
-        tk.Label(bx, text=cur_txt, bg=P1, font=("Segoe UI", 12, "bold"), anchor="w",
-                 fg={"new": C["text"], "listed": C["green"], "sold": "#7fe0c0", "removed": C["muted"]}[mark]
-                 ).pack(fill="x", pady=(2, 8))
-        prow = tk.Frame(bx, bg=P1)
-        prow.pack(fill="x", pady=(0, 8))
-        tk.Label(prow, text="Listed at", bg=P1, fg=C["muted"]).pack(side="left", padx=(0, 8))
-        suggest = rec.get("list_price") or (fmt_div(rec["est"]) if rec.get("est") is not None and not rec.get("skip") else "")
-        self.price_var = tk.StringVar(value=suggest)
-        ttk.Entry(prow, textvariable=self.price_var, width=16).pack(side="left")
-        if mark == "listed":
-            ttk.Button(bx, text="↺ Unmark listed (back to not listed)", style="Primary.TButton",
-                       command=lambda: self.mark_selected("new")).pack(fill="x", pady=2)
-        else:
-            ttk.Button(bx, text="✔ Mark as listed", style="Primary.TButton",
-                       command=lambda: self.mark_selected("listed")).pack(fill="x", pady=2)
-        # 2.21.0: what it really sold for - the Mod book learns from real sales
-        srow = tk.Frame(bx, bg=P1)
-        srow.pack(fill="x", pady=(8, 2))
-        tk.Label(srow, text="Sold for", bg=P1, fg=C["muted"]).pack(side="left", padx=(0, 8))
-        self.sold_var = tk.StringVar(value=rec.get("sold_price") or "")
-        se = ttk.Entry(srow, textvariable=self.sold_var, width=16)
-        se.pack(side="left")
-        se.bind("<Return>", lambda e: self.mark_selected("sold"))
-        if mark == "sold":
-            ttk.Button(srow, text="↺ Unmark sold", command=lambda: self.mark_selected("new")).pack(side="left", padx=8)
-        else:
-            ttk.Button(srow, text="💰 Mark as sold", command=lambda: self.mark_selected("sold")).pack(side="left", padx=8)
-        tk.Label(bx, text="A real sale teaches the Mod book what these mods are worth.", bg=P1, fg=C["muted"],
-                 font=("Segoe UI", 9), anchor="w").pack(fill="x")
-        if mark == "removed":
-            ttk.Button(bx, text="↺ Unmark removed (back to not listed)", command=lambda: self.mark_selected("new")).pack(fill="x", pady=2)
-        else:
-            ttk.Button(bx, text="✖ Mark as removed (reforged / changed)",
-                       command=lambda: self.mark_selected("removed")).pack(fill="x", pady=2)
-        ttk.Button(bx, text="Re-price this item", command=lambda: self.reprice([rec["id"]])).pack(fill="x", pady=(8, 2))
 
     def value_boxes(self, rec, m, row, imp):
         """Min / Max boxes for one mod (1.35). They show what the search uses; typing changes it for this item only.
