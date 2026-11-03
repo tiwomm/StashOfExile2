@@ -135,6 +135,7 @@ Order (decided 2.34.0): the Polish basics first, so new features are built on th
 | 2.78.0 | **Polish 5 - Hover, focus, micro-interactions:** the same hover and pressed look on every button, row, icon and tab; a visible keyboard focus ring everywhere; short (120-180 ms) fades for popups and toasts, never on lists; a "Reduce motion" setting that turns them off. |
 | 2.79.0 | **Polish 6 - Visual hierarchy:** the suggestions below, window by window, with before / after screenshots in each PR. |
 | Last | **Linux build** (Hyprland / Wayland first) - the groundwork is in place (session_linux_handover.txt). |
+| Very end | **Kind words** (a hidden, opt-in easter egg): short affirmations in a quick centered box over the game, like PoE's loading-screen tips (e.g. on zone loads, at most every N minutes, fading after a few seconds). Found only by digging through the menus. I keep the rotation myself with little upkeep and no spoilers (the raw lines shouldn't be easy to read); how I add lines is still to decide - a scrambled file in the repo plus an Actions form, the board server, or lines built into each release. A starter template of lines. Extra polish. |
 
 ### Visual hierarchy - suggestions (for 2.47.0)
 
