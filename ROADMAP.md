@@ -4,7 +4,7 @@
 
 > **Who we build for - read second.** Path of Exile players are utilitarian: they love data and information, problem solving and creative thinking. So every feature shows its numbers *and how they were worked out*, lets you sort, filter, compare and export them (CSV), keeps power-user depth (keys, versions, raw data) one click away instead of hiding it, explains in plain words, and leaves the decision to the player. Pretty is welcome; vague is not.
 
-**Current version: 2.73.3**
+**Current version: 2.73.4**
 
 Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds features, 2.10.1 only fixes. Each step below is one release; we work through them top to bottom.
 
@@ -119,6 +119,7 @@ Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds f
 | 2.73.1 | League Focus part 2: pokes over the game - nudge, reaching maps, cheap stockpile prices, the build lock's new-character guard, the check-in - with limits, quiet hours, tone, history. |
 | 2.73.2 | Price checks fixes: stash-tab items only in their own list, Pause / Price next / Price last for waiting items, an iLvl column; Market Insights item panel at the side and Remove (with Undo) in all three lists; the tagline "One tool to rule them all." |
 | 2.73.3 | Map supply pokes (League Focus): Game Plan › Map supplies - refill every N maps or N minutes in maps (from the game's log, not Wealth), a poke between maps with Refilled / Snooze / Skip, its own switch. |
+| 2.73.4 | League Focus polish: prices only for your league; stockpile from the Currency Exchange's list or any name (Quantity); farms of your own; goal targets by kind (div, level and maps from the log, act, a number); the overlay bar spaced out, with hover tips and a first-time card per switch (Feature tips); Game Plan's visual hierarchy. |
 
 ## ▶ Next up
 
