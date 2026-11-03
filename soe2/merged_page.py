@@ -72,7 +72,7 @@ class _Num(CanvasText):
     def config(self, **kw):
         if "text" in kw:
             import re
-            m = re.match(r"^\s*(?:Map|Maps|Avg)\s+(.*)$", str(kw["text"]))
+            m = re.match(r"^\s*(?:Map|Maps|Avg|★)\s+(.*)$", str(kw["text"]))
             if m:
                 kw["text"] = m.group(1)
             elif "tracking" in str(kw["text"]):              # (no session running)
@@ -191,6 +191,15 @@ class MergedOverlay:
     def notes_on_bar(self):
         return bool(self.overlay.cfg.get("notes_enabled")) and bool(self.bar_cfg().get("notes", True))
 
+    def _rank_click(self, cv, rt):
+        """2.76.0: a click on the map's rank ranks the map you're in."""
+        try:
+            cv.tag_bind(rt.item, "<Button-1>", lambda e: self.maprank_click())
+            cv.tag_bind(rt.item, "<Enter>", lambda e: cv.configure(cursor="hand2"))
+            cv.tag_bind(rt.item, "<Leave>", lambda e: cv.configure(cursor=""))
+        except (AttributeError, tk.TclError):
+            pass
+
     def _focus_click(self, cv, ft):
         """2.73.4: a click on the focus line opens Game Plan (where its goal is set)."""
         try:
@@ -234,6 +243,7 @@ class MergedOverlay:
 
     # ---------------------------------------------------------------- the window
     def merged_destroy(self):
+        self.goalbar_destroy()                                        # 2.76.0
         w2, self.mg_win2 = getattr(self, "mg_win2", None), None      # 2.65.0: the second Game bar half
         if w2 is not None:
             try:
@@ -265,6 +275,10 @@ class MergedOverlay:
         """(Re)build the one window from what's on. -> the window, or None when nothing is on. 2.74.0: then
         click-through, as the lock says."""
         w = self._merged_build()
+        try:
+            self.goalbar_build()                             # 2.76.0: League Focus (and the campaign) on its own bar
+        except Exception:
+            self.log_error("the goal bar")
         self.overlay_click_through()
         return w
 
@@ -276,7 +290,7 @@ class MergedOverlay:
     def overlay_click_through(self):
         """The overlay's bar windows (not Notes or the calculator - you type in those)."""
         on = self.click_through_on()
-        for w in (getattr(self, "mg_win", None), getattr(self, "mg_win2", None)):
+        for w in (getattr(self, "mg_win", None), getattr(self, "mg_win2", None), getattr(self, "gb_win", None)):
             if w is None:
                 continue
             w.click_through = on
@@ -331,7 +345,7 @@ class MergedOverlay:
         self.mg_hidden = not getattr(self, "mg_hidden", False)
         w = getattr(self, "mg_win", None)
         note = self.overlay.notes if getattr(self.overlay, "notes", None) is not None else None
-        for win in (w, getattr(self, "mg_win2", None), note):
+        for win in (w, getattr(self, "mg_win2", None), note, getattr(self, "gb_win", None)):
             if win is None:
                 continue
             try:
@@ -647,7 +661,8 @@ class MergedOverlay:
         colw = (gx1 - gx0) // 2
         cells = []
         if want["timer"]:                                   # 2.70.1: each number has its switch (Options)
-            for key, icon in (("session", "\u23f1"), ("map", "\u231b"), ("maps", "\u2691"), ("avg", "\u2248")):
+            for key, icon in (("session", "\u23f1"), ("map", "\u231b"), ("maps", "\u2691"), ("avg", "\u2248"),
+                              ("rank", "\u2605")):            # 2.76.0: the map's rank, its own cell
                 if cfg["lines"].get(key, True):
                     cells.append((key, icon))
         if cells:
@@ -669,8 +684,10 @@ class MergedOverlay:
                                             fill=P["muted"], font=(P["font"], self._hf(7), "bold"), tags=("mg",)),
                              "below")
                     continue
-                self._mg_text(cv, P, x0 + int(32 * k), y0 + rh // 2, key,
-                              (P["font"], self._hf(14), "bold"), fill=P["big"], cls=_Num)
+                t = self._mg_text(cv, P, x0 + int(32 * k), y0 + rh // 2, key,
+                                  (P["font"], self._hf(14), "bold"), fill=P["big"], cls=_Num)
+                if key == "rank":                            # 2.76.0: click it to rank the map
+                    self._rank_click(cv, t)
             y += rows * rh + int(8 * k)
         if want["helpers"]:
             chips = self.bar_chips()                         # 2.73.0: + Focus (each has its "on the bar" switch)
@@ -681,7 +698,7 @@ class MergedOverlay:
                 x0, y0 = gx0 + (i % 2) * colw, y + (i // 2) * rh
                 self._card_switch(cv, P, kk, x0, y0, colw, rh)
             y += nr * rh + int(6 * k)
-        ftext, fprog = self.focus_line()
+        ftext, fprog = "", None                              # 2.76.0: the focus line has its own bar (ovparts)
         if ftext:                                            # 2.73.0: the focus line (League Focus, I)
             rh = int(30 * k)
             grids.append((gx0, y, gx1, y + rh, 1, 1))
@@ -959,9 +976,14 @@ class MergedOverlay:
                 x += fm.measure("Map  00:00") + 4
                 drawn.append("map")
             mw, aw = fm.measure("Maps  000") + 4, fm.measure("Avg  00:00") + 4
-            need_rest = (mw + SW if ln.get("maps") else 0) + (aw + SW if ln.get("avg") else 0)
+            rw = fm.measure("★ (Avoid)") + 4                    # 2.76.0: the map's rank, its own part
+            show_rank = bool(ln.get("rank", True))
+            need_rest = (mw + SW if ln.get("maps") else 0) + (aw + SW if ln.get("avg") else 0) + \
+                (rw + SW if show_rank else 0)
+            if show_rank and need_rest > right - (x + (SW if drawn else 0)) - 4:
+                show_rank, need_rest = False, need_rest - rw - SW      # (a short bar: no room for it)
             where_w = right - (x + (SW if drawn else 0)) - need_rest - 4
-            ftext, fprog = self.focus_line()
+            ftext, fprog = "", None                            # 2.76.0: the focus line has its own bar (ovparts)
             if ftext and where_w > 80:                         # 2.73.0: the focus line takes where-you-are's place
                 x = lead(x)
                 cv.create_text(x, mid, text="▸ NOW", anchor="w", fill=P["head"], font=(P["hfont"], self._hf(9), "bold"),
@@ -987,6 +1009,12 @@ class MergedOverlay:
                 drawn.append("where")
             elif need_rest:
                 x = max(x, right - need_rest)
+            if show_rank:
+                x = lead(x)
+                rt = self._mg_text(cv, P, x, mid, "rank", f, fill=P["head"])
+                self._rank_click(cv, rt)
+                x += rw
+                drawn.append("rank")
             if ln.get("maps"):
                 x = lead(x)
                 self._mg_text(cv, P, x, mid, "maps", f)
