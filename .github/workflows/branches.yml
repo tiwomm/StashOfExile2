@@ -1,6 +1,8 @@
 # 2.78.1: merged branches clean themselves up. When a pull request is merged, its branch is deleted - and any other
 # branch whose pull request was merged earlier and is still around. Run it by hand too (Actions > Delete merged
 # branches > Run). main and branches with an open pull request are never touched.
+# Stale branches (closed without merging, or never in a pull request, and untouched for 30 days) are kept as a tag,
+# archive/<branch>, then deleted - nothing is lost: `git push origin archive/<branch>:refs/heads/<branch>` brings one back.
 name: Delete merged branches
 
 on:
@@ -30,4 +32,18 @@ jobs:
             if gh api "repos/$GH_REPO/branches/$b" >/dev/null 2>&1; then
               gh api -X DELETE "repos/$GH_REPO/git/refs/heads/$b" && echo "deleted $b"
             fi
+          done
+      - name: Archive and delete stale branches
+        run: |
+          open=$(gh pr list --state open --limit 200 --json headRefName --jq '.[].headRefName')
+          cutoff=$(date -u -d '30 days ago' +%s)
+          for b in $(gh api "repos/$GH_REPO/branches?per_page=100" --paginate --jq '.[].name'); do
+            [ "$b" = "main" ] && continue
+            echo "$open" | grep -qx "$b" && continue
+            sha=$(gh api "repos/$GH_REPO/branches/$b" --jq '.commit.sha')
+            when=$(gh api "repos/$GH_REPO/commits/$sha" --jq '.commit.committer.date')
+            [ "$(date -u -d "$when" +%s)" -gt "$cutoff" ] && continue
+            gh api -X POST "repos/$GH_REPO/git/refs" -f ref="refs/tags/archive/$b" -f sha="$sha" >/dev/null 2>&1 || \
+              gh api "repos/$GH_REPO/git/refs/tags/archive/$b" >/dev/null || { echo "couldn't archive $b"; continue; }
+            gh api -X DELETE "repos/$GH_REPO/git/refs/heads/$b" && echo "archived and deleted $b"
           done
