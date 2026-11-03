@@ -21,6 +21,10 @@ NEXT = [
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.78.1": [
+        "The \"Rank this map\" card shows the map's name (Rugosa, not MapRugosa), and the ranks you gave there now "
+        "show in the Map library.",
+    ],
     "2.78.0": [
         "Money Makers: strats say what they farm - pinnacles, bosses, Azmerian Wisps, Viridian Wildwood and more - "
         "and you can filter by it in the new Content row.",
