@@ -21,6 +21,9 @@ NEXT = [
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.85.1": [
+        "Money Makers: the filter labels on the left (Thoughts per click, Clicks per hour) show in full again.",
+    ],
     "2.85.0": [
         "Your community name: asked once, it's yours alone on Money Makers and can change once every 7 days.",
         "Community strats are protected: only their author edits them, and every change is kept (right-click › "
