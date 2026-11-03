@@ -24,7 +24,11 @@ VERSION HISTORY
        horizontal"): HUD_SPOTS' xpbar is taller (0.046 -> 0.066 of the game's height), the switch row and the
        numbers row each get space above and below, the switches' side-to-side spacing is 2.73.3's again
        (_hud_gap 6). A switch's hover tip goes above the pointer when there's no room under it, and stays inside
-       the game window (ovhelp._ov_tip_bounds) - it was cut off at the screen's bottom edge.
+       the game window (ovhelp._ov_tip_bounds) - it was cut off at the screen's bottom edge. A divider between each
+       part of the bar's numbers row (time | map | where / NOW | maps | avg | clock). Focus hidden from the bar
+       (Options) hides its focus line too. Price pop-ups at the mouse (worth it, valuable mods, all checked) only for
+       items you checked yourself (App.pops_for): since 2.73.2 a stash tab's items are priced one at a time out of
+       sight, each looked like a single check and popped up wherever the mouse was.
   2.73.4
        League Focus polish. Your league only: WealthPrices.for_league() - named() / value() give nothing while the
        cached poe.ninja prices are another league's (a league switch waits for the next refresh); bulk prices are
