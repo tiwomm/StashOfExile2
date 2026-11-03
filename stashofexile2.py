@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU GPL v3.0 (see LICENSE). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.74.4
+VERSION 2.74.5
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,6 +19,12 @@ VERSION 2.74.4
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.74.5
+       Price checks, a lighter page (feedback: "too much clutter and thick heavy padding"): the Valuable mods legend
+       chip is gone; the price-check settings line and its ⚙ sit on the top strip, after the total; Re-price all,
+       Pause and Export CSV share the filters' row (one toolbar row less); slimmer paddings, Paused / limits bar and
+       action row; no "Only ★" switch. chrome.Notice: a one-line notice with a small × that stays closed
+       (SETTINGS notices_closed) - the Stash tab's BETA line is one.
   2.74.4
        The item card's mods have check boxes (feedback: "a check beside it the same way sidekick does", not a scroll
        down to the switches): each mod and total is a row - [✓] tier text - ticked = searched on; a click re-prices
@@ -1723,7 +1729,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.74.4"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.74.5"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
