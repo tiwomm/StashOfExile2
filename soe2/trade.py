@@ -114,7 +114,8 @@ def listed_ts(s):
 _OPTS = threading.local()
 STATUS_CHOICES = [("Instant Buyout", "securable"), ("Instant Buyout and In Person", "available"),
                   ("In Person (Online)", "online"), ("Any", "any")]
-CURRENCY_CHOICES = [("Exalted Orb Equivalent", None),          # 2.79.2: the trade site's default (no option) ("Divine Orbs", "divine"), ("Exalted Orbs", "exalted"),
+# 2.79.2: "Exalted Orb Equivalent" = the trade site's default (no price option)
+CURRENCY_CHOICES = [("Exalted Orb Equivalent", None), ("Divine Orbs", "divine"), ("Exalted Orbs", "exalted"),
                     ("Chaos Orbs", "chaos"), ("Exalted or Divine Orbs", "exalted_divine")]
 
 
