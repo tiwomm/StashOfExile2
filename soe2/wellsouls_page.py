@@ -1,0 +1,256 @@
+"""2.81.0: the Desecration Helper in the app - its switch (Overlay › Mechanic Helper, Overlay › Options, the bar
+while you're at the Well), the notice over the game when you arrive, the watcher (only while you're at The Well of
+Souls - Client.txt says when; feedback: "eliminate the need for an always-on watcher") and the tier tags.
+The reading and rating are in wellsouls.py. GGG ToS: it looks at your screen and draws on top - nothing is sent."""
+import threading
+import time
+import tkinter as tk
+
+from . import remnant as RM
+from . import wellsouls as W
+from .config import save_json, SETTINGS
+
+POLL = 0.3                  # seconds between looks while you're at the Well
+SETTLE = 4                  # reads right after the window appears (it fades in)
+GONE = 2                    # looks without the window = it closed: tags off
+NOTICE_SECS = 4
+
+
+class WellSoulsPage:
+    def ws_cfg(self):
+        c = SETTINGS.setdefault("desecrate", {})
+        c.setdefault("on", True)
+        c.setdefault("notice", True)              # the small "Desecration Helper on" over the game
+        return c
+
+    def ws_status(self):
+        if not self.ws_cfg().get("on"):
+            return "off"
+        if getattr(self, "ws_problem", None) is None:
+            self.ws_problem = RM.ocr_available()
+        return "warn" if self.ws_problem else "on"
+
+    def ws_text(self, row):
+        if not self.ws_cfg().get("on"):
+            return row["what"]
+        if self.ws_status() == "warn":
+            return f"Can't read the screen: {self.ws_problem}."
+        if getattr(self, "ws_here", False):
+            return "On - you're at The Well of Souls: each option shows its tier"
+        return "On - wakes up when you enter The Well of Souls (from the game's log)"
+
+    def ws_toggle(self, want):
+        c = self.ws_cfg()
+        c["on"] = bool(want)
+        save_json("settings.json", SETTINGS)
+        self.ws_problem = None
+        if want:
+            if not getattr(self, "_br_ticking", False):
+                self.breach_start()                   # the game's log is followed while a helper needs it
+            if getattr(self, "ws_here", False):
+                self.ws_start()
+        else:
+            self.ws_stop()
+        return f"Can't read the screen: {self.ws_problem}." if want and self.ws_status() == "warn" else None
+
+    # ---------------------------------------------------------------- the area (Client.txt)
+    def ws_area(self, area_id):
+        """Every area change: at the Well -> on (with a notice); anywhere else -> off."""
+        here = str(area_id or "") in W.AREAS
+        before = getattr(self, "ws_here", False)
+        self.ws_here = here
+        if here and not before and self.ws_cfg().get("on"):
+            if self.ws_cfg().get("notice", True):
+                self.ws_notice()
+            self.ws_start()
+        elif not here and before:
+            self.ws_stop()
+        if here != before:
+            try:
+                self.tracker_helpers_sync()           # its switch shows on the bar only while you're here
+            except Exception:
+                pass
+
+    def ws_notice(self):
+        """A small notice over the game: the helper is on while you're here."""
+        try:
+            from .overlaywin import pal
+            from .alerts_page import game_rect, click_through, force_topmost
+            from .remnant_page import no_capture
+            P = pal()
+            g = game_rect() or (0, 0, self.root.winfo_screenwidth(), self.root.winfo_screenheight())
+            ui = max(0.7, g[3] / 1440.0)
+            w = tk.Toplevel(self.root)
+            w.withdraw()
+            w.overrideredirect(True)
+            w.attributes("-topmost", True)
+            tk.Label(w, text="◆  Desecration Helper on  -  each option at the Well shows its tier", fg=P["text"],
+                     bg=P["bg"], font=("Segoe UI", -max(11, int(14 * ui))), padx=8, pady=4,
+                     highlightthickness=1, highlightbackground=P["line"]).pack()
+            w.update_idletasks()
+            w.geometry(f"+{int(g[0] + (g[2] - w.winfo_reqwidth()) / 2)}+{int(g[1] + g[3] * 0.12)}")
+            w.deiconify()
+            click_through(w)
+            force_topmost(w)
+            no_capture(w)
+            self.ws_note_win = w
+            self.root.after(NOTICE_SECS * 1000, lambda: w.winfo_exists() and w.destroy())
+        except Exception:
+            self.log_error("the Desecration Helper notice")
+
+    # ---------------------------------------------------------------- the watcher (only at the Well)
+    def ws_start(self):
+        if self.ws_status() != "on" or getattr(self, "ws_alive", False):
+            return
+        self.ws_gen = getattr(self, "ws_gen", 0) + 1
+        self.ws_alive = True
+        threading.Thread(target=self._ws_watch, args=(self.ws_gen,), daemon=True).start()
+
+    def ws_stop(self):
+        self.ws_gen = getattr(self, "ws_gen", 0) + 1
+        self.ws_alive = False
+        self.ws_hide()
+
+    def ws_read(self, rect, cx, img_box=None, img_slot=None):
+        """The window at centre x cx -> [(row text, rating, (x0, y0, x1, y1) on screen)] (blocking: OCR)."""
+        bl, bt, br, bb = W.part(rect, cx, W.BOX)
+        if img_box is None:
+            img_box = RM.grab((bl, bt, br, bb))
+        texts = W.rows_from_lines(RM.ocr(img_box), bb - bt)
+        if not any(texts):
+            return []
+        tpls = [W.find(W.template(t)) if t else None for t in texts]
+        cls = W.classes_for([t for t in tpls if t])
+        bases = [b for bs in cls.values() for b in bs]
+        if len(cls) > 1:                                   # the options fit several item types: the picture decides
+            if img_slot is None:
+                img_slot = RM.grab(W.part(rect, cx, W.SLOT))
+            bases = W.match_art(img_slot, bases)
+        rh = (bb - bt) / W.ROWS
+        out = []
+        for i, t in enumerate(texts):
+            r = W.rate(t, bases) if t else None
+            if r is not None:                                  # (the "Place an item ..." text before Reveal: no tags)
+                out.append((t, r, (bl, int(bt + i * rh), br, int(bt + (i + 1) * rh))))
+        return out
+
+    def _ws_watch(self, gen):
+        from .alerts_page import game_rect
+        from .overlay import game_active
+        last, misses, settle = None, 0, 0
+        try:
+            while gen == getattr(self, "ws_gen", 0):
+                time.sleep(POLL)
+                if not game_active():
+                    continue
+                g = game_rect()
+                if not g:
+                    continue
+                rect = (g[0], g[1], g[0] + g[2], g[1] + g[3])
+                try:
+                    cx = next((x for x in W.centre_xs(rect)
+                               if W.plate_share(RM.grab(W.part(rect, x, W.TITLE))) >= W.PARCH), None)
+                    if cx is None:
+                        last, settle = None, 0
+                        misses += 1
+                        if misses == GONE:
+                            self.ui_q.put(("ws_tags", []))
+                        continue
+                    misses = 0
+                    img = RM.grab(W.part(rect, cx, W.BOX))
+                    th = RM.thumb(img)
+                    if last is None:
+                        settle = SETTLE
+                    if not RM.changed(last, th) and settle <= 0:
+                        continue
+                    settle -= 1
+                    last = th
+                    rows = self.ws_read(rect, cx, img_box=img)
+                except RM.OcrUnavailable:
+                    break
+                except Exception:
+                    continue
+                if rows:
+                    self.ui_q.put(("ws_tags", rows))
+        finally:
+            if gen == getattr(self, "ws_gen", 0):
+                self.ws_alive = False
+
+    # ---------------------------------------------------------------- the tags
+    def ev_ws_tags(self, rows):
+        sig = tuple((t, W.label(r)) for t, r, _b in rows)
+        if not rows:
+            self.ws_hide()
+            self.ws_sig = None
+            return
+        if sig == getattr(self, "ws_sig", None) and getattr(self, "ws_wins", None):
+            return
+        self.ws_sig = sig
+        self.ws_show(rows)
+
+    def ws_colour(self, r, P):
+        if not r or r.get("tier") is None:
+            return P["muted"]
+        if r.get("abyss"):
+            return "#9be37a"                                   # the Well's own green
+        if r["tier"] <= 2:
+            return P["warn"] if P.get("warn") else "#ffd25a"
+        return P["text"] if r["tier"] <= max(3, r["of"] // 2) else P["muted"]
+
+    def ws_show(self, rows):
+        self.ws_hide()
+        from tkinter import font as tkfont
+        from .overlaywin import pal
+        from .alerts_page import click_through, force_topmost
+        from .remnant_page import no_capture
+        P = pal()
+        wins = []
+        for text, r, (x0, y0, x1, y1) in rows:
+            ui = max(0.7, (y1 - y0) / 108.0)                   # a row is ~108 px at 1440p
+            size = -max(11, int(15 * ui))
+            txt = W.label(r)
+            if r and r.get("tier") == 1 and not r.get("abyss"):
+                txt = "★ " + txt
+            w = tk.Toplevel(self.root)
+            w.withdraw()
+            w.overrideredirect(True)
+            try:
+                w.attributes("-topmost", True)
+            except tk.TclError:
+                pass
+            f = tkfont.Font(root=w, family="Segoe UI", size=size, weight="bold")
+            col = self.ws_colour(r, P)
+            tk.Label(w, text=txt, fg=col, bg=P["bg"], font=f, padx=8, pady=2, highlightthickness=1,
+                     highlightbackground=col if r and r.get("tier") == 1 else P["line"]).pack()
+            w.update_idletasks()
+            w.geometry(f"+{int(x1 + 10)}+{int((y0 + y1) / 2 - w.winfo_reqheight() / 2)}")
+            w.deiconify()
+            try:
+                click_through(w)
+                force_topmost(w)
+            except Exception:
+                pass
+            no_capture(w)
+            wins.append(w)
+        self.ws_wins = wins or None
+
+    def ws_hide(self):
+        wins, self.ws_wins = getattr(self, "ws_wins", None), None
+        for w in wins or ():
+            try:
+                w.destroy()
+            except tk.TclError:
+                pass
+
+    def ws_test(self):
+        """Test: example tags in the middle of the screen (no picture, no reading)."""
+        sw, sh = self.root.winfo_screenwidth(), self.root.winfo_screenheight()
+        x0, x1, y = sw // 2 - 300, sw // 2 + 300, sh // 2 - 120
+        gloves = [b for b in W.data()["bases"] if b["c"] == "Gloves"]
+        rows = []
+        for i, t in enumerate(("+17% to Cold and Chaos Resistances", "13% increased Rarity of Items found",
+                               "+29% to Fire Resistance")):
+            rows.append((t, W.rate(t, gloves), (x0, y + i * 80, x1, y + i * 80 + 70)))
+        self.ws_show(rows)
+        self.root.after(6000, self.ws_hide)
+        return "Example tier tags show in the middle of your screen for 6 seconds."
