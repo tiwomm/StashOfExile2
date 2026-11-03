@@ -1,0 +1,33 @@
+# 2.78.1: merged branches clean themselves up. When a pull request is merged, its branch is deleted - and any other
+# branch whose pull request was merged earlier and is still around. Run it by hand too (Actions > Delete merged
+# branches > Run). main and branches with an open pull request are never touched.
+name: Delete merged branches
+
+on:
+  pull_request:
+    types: [closed]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: read
+
+jobs:
+  delete:
+    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+    steps:
+      - name: Delete the branches of merged pull requests
+        run: |
+          open=$(gh pr list --state open --limit 200 --json headRefName --jq '.[].headRefName')
+          for b in $(gh pr list --state merged --limit 200 --json headRefName,isCrossRepository \
+                     --jq '.[] | select(.isCrossRepository | not) | .headRefName' | sort -u); do
+            [ "$b" = "main" ] && continue
+            echo "$open" | grep -qx "$b" && continue
+            if gh api "repos/$GH_REPO/branches/$b" >/dev/null 2>&1; then
+              gh api -X DELETE "repos/$GH_REPO/git/refs/heads/$b" && echo "deleted $b"
+            fi
+          done
