@@ -137,7 +137,7 @@ Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds f
 | 2.79.0 | A clean item panel (every filter on the card, ▸ Advanced for the rest), no pop-ups, unique / granted-skill mods from the trade site's list, the white / magic base rule, Remnant tags on time. |
 | 2.79.1 | Mageblood: stat options in the id, the same Legacy twice = Min 2; granted skills found without "Summon"; campaign line docked on the bar; the bar as wide as the XP bar, refit per resolution; update look hourly. |
 | 2.79.2 | Every mod under Stat filters can be ticked (left-out ones too); searches start at Instant Buyout, priced in Exalted Orb Equivalent. |
-| 2.80.0 | **Price Checks**: Ctrl+C on an item in game shows its card with every filter and the trade site's listings beside it (name band, properties, item level, requirements, mods with tiers, price, seller, when, picture; Recent 20). The old page is **Bulk Pricing** (Ctrl+Alt+C, stash tabs). |
+| 2.80.0 | **Price Checks**: Ctrl+C on an item in game shows its card with every filter and the trade site's listings beside it (name band, properties, item level, requirements, mods with tiers, price, seller, when, picture; Recent 20). The old page is **Bulk Pricing** (Ctrl+Alt+C, stash tabs), a child of Price Checks with Market Insights and Under the hood. |
 
 ## ▶ Next up
 
