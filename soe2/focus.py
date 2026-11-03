@@ -3,7 +3,8 @@ cheap, the farms you planned, a build lock - and (2.73.1) pokes over the game th
 who get sidetracked (ADHD-friendly): everything is optional, quiet by default, and says why it showed up.
 
 Stored in SETTINGS["focus"]. Reads only what the app already knows - the game's log (Client.txt: zones, levels),
-poe.ninja prices, your Wealth counts and Strat Tracker numbers. Nothing touches the game.
+poe.ninja prices; counts and progress are what you type (2.73.2: not Wealth - it doesn't track live and is a beta).
+Nothing touches the game.
 
 Phases: "start" (league start / campaign), "maps" (once you reach maps), "long" (long term). The current phase moves
 to "maps" by itself the first time the log shows you in a waystone map (2.73.1), or by hand."""
@@ -106,10 +107,19 @@ def current():
 
 
 def progress(g, worth=None):
-    """(have, target) in divines for a goal with a target, or None. worth: your net worth (Wealth)."""
-    if not g or not g.get("target_div") or worth is None:
+    """(have, target) for a goal with a target, or None. 2.73.2: "have" is what you type on the goal (Wealth isn't
+    used: it doesn't track live). worth is ignored (kept for older callers)."""
+    if not g or not g.get("target_div"):
         return None
-    return max(0.0, float(worth)), float(g["target_div"])
+    return max(0.0, float(g.get("have") or 0)), float(g["target_div"])
+
+
+def set_have(gid, have):
+    g = goal(gid)
+    if g is not None:
+        g["have"] = max(0.0, float(have or 0))
+        save()
+    return g
 
 
 def set_phase(phase):
@@ -124,10 +134,23 @@ def set_phase(phase):
 
 # ---------------------------------------------------------------- stockpile, farms, build lock
 def add_stock(name, goal_qty=0, under=None):
-    row = {"name": name.strip(), "goal": int(goal_qty or 0), "under": under, "paid": None}
+    row = {"name": name.strip(), "goal": int(goal_qty or 0), "under": under, "paid": None, "have": 0}
     cfg()["stockpile"].append(row)
     save()
     return row
+
+
+def set_stock_have(name, have):
+    row = next((r for r in cfg()["stockpile"] if r["name"] == name), None)
+    if row is not None:
+        row["have"] = max(0, int(have or 0))
+        save()
+    return row
+
+
+def stock_have(name):
+    row = next((r for r in cfg()["stockpile"] if r["name"] == name), None)
+    return None if row is None else int(row.get("have") or 0)
 
 
 def remove_stock(name):
