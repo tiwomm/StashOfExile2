@@ -183,6 +183,8 @@ class MergedOverlay:
     def focus_line(self):
         """-> (text, progress 0-1 or None) for the overlay's focus line, or ("", None)."""
         from . import focus as F
+        if not self.bar_cfg().get("focus"):                 # 2.73.5: Focus hidden from the bar - its line too
+            return "", None
         try:
             return F.line_text(self.gp_worth() if hasattr(self, "gp_worth") else None)
         except Exception:
@@ -783,12 +785,25 @@ class MergedOverlay:
                 a_ = 1 - abs((i + 0.5) / n - 0.5) * 2
                 cv.create_line(lft + i * seg, ry, lft + (i + 1) * seg, ry, fill=mix(P["bg"], P["rim"], a_ ** 0.8),
                                tags=("mg",))
-        # ---- row 2 (or the only row): the numbers
+        # ---- row 2 (or the only row): the numbers - 2.73.5: a divider between each part (feedback: "more visual
+        # division between the different areas of text")
+        SW = self._hf(20)                                    # a divider's slot
+        sh = int(H * 0.34) if two else None
+        drawn = []
+
+        def lead(x):
+            """Before the next part: a divider, when something came before it."""
+            if not drawn:
+                return x
+            self._hud_sep(cv, P, x + SW // 2, H, cy=mid, h=sh)
+            return x + SW
+
         gx = self._mg_glyphs(w, cv, P, rgt, mid)
         right = gx
         if want["timer"] and cfg.get("clock", True):
             self._hud_clock(w, cv, P, gx - 2, mid)
-            right = gx - fm.measure("00:00 PM") - 14
+            right = gx - fm.measure("00:00 PM") - 6 - SW
+            self._hud_sep(cv, P, right + SW // 2, H, cy=mid, h=sh)
         x = lft
         ln = cfg["lines"]                                    # 2.70.1: each part has its switch (Options)
         if want["timer"]:
@@ -798,17 +813,19 @@ class MergedOverlay:
                 t.tag = (cv.create_text(x, mid, text="", anchor="w", fill=P["muted"], font=pf, tags=("mg",)), "right")
                 fb_ = tkfont.Font(root=cv, family=P["font"], size=self._hf(13), weight="bold")
                 fp_ = tkfont.Font(root=cv, family=P["font"], size=self._hf(7), weight="bold")
-                x += max(fb_.measure("0:00:00") + 6 + fp_.measure("PAUSED"), fb_.measure("not tracking")) + 10
-                self._hud_sep(cv, P, x, H, cy=mid, h=int(H * 0.34) if two else None)
-                x += 14
+                x += max(fb_.measure("0:00:00") + 6 + fp_.measure("PAUSED"), fb_.measure("not tracking")) + 4
+                drawn.append("session")
             if ln.get("map", True):
+                x = lead(x)
                 self._mg_text(cv, P, x, mid, "map", f)
-                x += fm.measure("Map  00:00") + 10
-            mw, aw = fm.measure("Maps  000") + 12, fm.measure("Avg  00:00") + 12
-            need_rest = (mw if ln.get("maps") else 0) + (aw if ln.get("avg") else 0)
-            where_w = right - x - need_rest - 16
+                x += fm.measure("Map  00:00") + 4
+                drawn.append("map")
+            mw, aw = fm.measure("Maps  000") + 4, fm.measure("Avg  00:00") + 4
+            need_rest = (mw + SW if ln.get("maps") else 0) + (aw + SW if ln.get("avg") else 0)
+            where_w = right - (x + (SW if drawn else 0)) - need_rest - 4
             ftext, fprog = self.focus_line()
             if ftext and where_w > 80:                         # 2.73.0: the focus line takes where-you-are's place
+                x = lead(x)
                 cv.create_text(x, mid, text="▸ NOW", anchor="w", fill=P["head"], font=(P["hfont"], self._hf(9), "bold"),
                                tags=("mg",))
                 nx = x + fm.measure("▸ NOW ") + 6
@@ -823,16 +840,22 @@ class MergedOverlay:
                     cv.create_rectangle(bx1 - pw, mid - 2, bx1 - pw + int(pw * min(1.0, fprog)), mid + 2, fill=P["on"],
                                         outline="", tags=("mg",))
                 x += where_w
+                drawn.append("focus")
             elif ln.get("where", True) and where_w > 40:
+                x = lead(x)
                 wt = self._mg_text(cv, P, x, mid, "where", f, fill=P["muted"], cls=_Trunc)
                 wt.limit = max(4, int(where_w / ((fm.measure("m") or 8) * 0.8)))
                 x += where_w
+                drawn.append("where")
             elif need_rest:
-                x = max(x, right - need_rest - 16)
+                x = max(x, right - need_rest)
             if ln.get("maps"):
+                x = lead(x)
                 self._mg_text(cv, P, x, mid, "maps", f)
                 x += mw
+                drawn.append("maps")
             if ln.get("avg"):
+                x = lead(x)
                 self._mg_text(cv, P, x, mid, "avg", f)
         elif not two and self.notes_on_bar():
             self._mg_notes_button(w, cv, P, x, mid, anchor="w")
