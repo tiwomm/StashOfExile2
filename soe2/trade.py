@@ -11,7 +11,7 @@ from datetime import datetime
 from .config import AGE_OPTIONS, APP_VERSION, BASE, P, SETTINGS, STATUS_OPTIONS
 from .net import call
 from .rates import RATES
-from .mods import DUPS, FLIP_PAIRS, impact_of, IMPACTS, norm, plural_wordings, SIDTEXT, strip_markup, TEXT2SID, VAL, vfilter
+from .mods import DUPS, FLIP_PAIRS, impact_of, IMPACTS, merge_dups, norm, plural_wordings, search_sid, SIDTEXT, strip_markup, TEXT2SID, VAL, vfilter
 
 
 # ------------------------------------------------------------------ trade searching
@@ -197,6 +197,7 @@ def search_ids(league, base, filters, count_min, corrupted=None):
                           "filters": [{**f, "id": i} for i in ids]})
         else:
             plain.append(f)
+    plain = merge_dups(plain)                         # 2.79.1: the same stat twice -> Min 2
     if count_min is None:
         group = {"type": "and", "filters": plain}
     else:
@@ -353,7 +354,7 @@ def verify_listings(rich, mods):
 
 
 def _flt(m, with_roll=True):
-    f = {"id": m["sid"]}
+    f = {"id": search_sid(m)}
     if m.get("novalue"):                              # no number on the trade site's wording: its own "at least 1" group
         f["own"] = True
     vf = vfilter(m) if with_roll else None

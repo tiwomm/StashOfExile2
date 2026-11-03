@@ -314,9 +314,9 @@ def min_for(mod):
 def vfilter(mod):
     """Value filter for the trade search: 'at least this strong'. Negative stats: at most -N.
     Values you typed in the side panel (mod["uval"], 1.35) win: {"min": .., "max": ..}, either may be None.
-    2.74.1: a stat with a choice is searched for its option ({"option": id})."""
+    2.79.1: a stat with a choice carries its option in the id (search_sid), no value."""
     if mod.get("option") is not None:
-        return {"option": mod["option"]}
+        return None
     if mod.get("novalue"):
         return None
     uv = mod.get("uval")
@@ -751,6 +751,31 @@ def mod_cat(k, base=None):
 
 DUPS = {}       # stat id -> every stat id with the same wording (trade site lists some mods twice)
 OPTS = {}       # 2.74.1: stat id -> {wording with the option filled in: option id} - "Legacy of #" with Gold, ...
+
+
+def search_sid(m, sid=None):
+    """2.79.1: the id the trade site searches: a stat with a choice is "<id>|<option>" (Legacy of Quicksilver:
+    explicit.stat_264262054|8)."""
+    sid = sid or m["sid"]
+    o = m.get("option")
+    return sid if o is None or "|" in sid else f"{sid}|{o}"
+
+
+def merge_dups(filters):
+    """2.79.1: the same stat more than once with no roll (two Legacy of Quicksilver) -> one filter, Min = how many."""
+    out, n = [], {}
+    for f in filters:
+        k = f.get("id")
+        if "value" not in f and k in n:
+            n[k] += 1
+            continue
+        if "value" not in f:
+            n[k] = 1
+        out.append(f)
+    for f in out:
+        if "value" not in f and n.get(f.get("id"), 1) > 1:
+            f["value"] = {"min": n[f["id"]]}
+    return out
 
 
 def option_for(sid, text):

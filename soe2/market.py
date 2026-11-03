@@ -9,7 +9,7 @@ import threading
 import time
 from .config import MODBOOK, P, SETTINGS
 from .rates import RATES
-from .mods import HIGH_LIFT, impact_of, LEARNED, MIN_WITH, MIN_WITHOUT, rebuild_community, sid_for_line, SIDTEXT, TEXT2SID, vfilter
+from .mods import HIGH_LIFT, impact_of, LEARNED, MIN_WITH, MIN_WITHOUT, rebuild_community, search_sid, sid_for_line, SIDTEXT, TEXT2SID, vfilter
 
 
 DESC_RE = __import__("re").compile(r"""'description': (['"])(.*?)\1, '""")
@@ -183,7 +183,7 @@ class Market:
         for m in mods:
             vf = vfilter(m) if m.get("sid") else None
             op, t = (next(iter(vf.items())) if vf else (None, None))
-            out.append([m["sid"], op, t])
+            out.append([search_sid(m), op, t])
         return sorted(out, key=lambda f: f[0])
 
     def record(self, base, filt, stage, total, kept, est):

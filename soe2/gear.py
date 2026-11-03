@@ -27,7 +27,7 @@ import time
 
 from . import gamedata
 from .config import BASE
-from .mods import option_for, read_numbers, roll_pct, strip_markup
+from .mods import merge_dups, option_for, read_numbers, search_sid, roll_pct, strip_markup
 from .net import call
 from .trade import apply_opts, _cached, _search_cache, listing_rules
 
@@ -65,12 +65,21 @@ def live_ids(text):
         return []
     tries = [text]
     sk = SKILL.match(strip_markup(text))
+    names = []
     if sk:
-        tries += [f"Grants Skill: Level # {sk.group(1)}", f"Grants Skill: {sk.group(1)}"]
+        n = sk.group(1)
+        names = [n] + ([n[7:]] if n.lower().startswith("summon ") else [])     # 2.79.1: trade says "Rhoa Mount"
+        for n in names:
+            tries += [f"Grants Skill: Level # {n}", f"Grants Skill: {n}"]
     for t in tries:
         k = norm(t)
         if k in TEXT2SID:
             return [TEXT2SID[k]]
+    for n in names:                                  # 2.79.1: any granted-skill wording ending in the skill's name
+        tail = norm(n)
+        for k, v in TEXT2SID.items():
+            if k.startswith("grants skill") and (k.endswith(" " + tail) or k.endswith(":" + tail)):
+                return [v]
     return []
 
 
@@ -311,7 +320,7 @@ def parse_gear(text):
 
 # ---------------------------------------------------------------- searching
 def _stat_filter(m, value):
-    f = {"id": m["sid"]}
+    f = {"id": search_sid(m)}
     if value:
         f["value"] = value
     return f
@@ -321,7 +330,7 @@ def _ids(m, plain):
     ids = m.get("search_ids") or m.get("ids") or [m["sid"]]
     if plain:                                   # the simplest form: the plain explicit id only
         ids = [i for i in ids if not i.split(".")[0] in ("fractured", "desecrated", "crafted")][:1] or ids[:1]
-    return ids
+    return [search_sid(m, i) for i in ids]
 
 
 def build_query(item, must, optional, count_min, values, plain=False):
@@ -362,10 +371,11 @@ def build_query(item, must, optional, count_min, values, plain=False):
             query["stats"].append({"type": "count", "value": {"min": 1}, "filters": [_stat_filter({"sid": i}, v) for i in ids]})
         else:
             and_f.append(_stat_filter(m, v))
+    and_f = merge_dups(and_f)                                # 2.79.1: two Legacy of Quicksilver -> one, Min 2
     if and_f or not query["stats"]:
         query["stats"].insert(0, {"type": "and", "filters": and_f})
     if optional:
-        opt = [_stat_filter({"sid": i}, values.get(id(m))) for m in optional for i in _ids(m, plain)]
+        opt = merge_dups([_stat_filter({"sid": i}, values.get(id(m))) for m in optional for i in _ids(m, plain)])
         query["stats"].append({"type": "count", "value": {"min": count_min}, "filters": opt})
     if s.get("sockets_min") and not plain:
         eq["rune_sockets"] = {"min": s["sockets_min"]}
