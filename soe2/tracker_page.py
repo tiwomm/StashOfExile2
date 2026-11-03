@@ -17,7 +17,7 @@ from .chrome import SectionBar, Viewport, section as chrome_section
 from .tracker import fmt_time, Session, Sessions
 
 DEFAULTS = {"overlay": True, "locked": False, "x": 60, "y": 260, "w": 230, "h": 190, "opacity": 225,
-            "lines": {"session": True, "map": True, "maps": True, "avg": True, "where": True},   # 2.70.1: where   # 2.54.0: no profit (Strat Tracker has it)
+            "lines": {"session": True, "map": True, "maps": True, "avg": True, "where": True, "rank": True},   # 2.70.1: where   # 2.54.0: no profit (Strat Tracker has it)
             "key_pause": "", "ask_count": True, "log_path": "",
             "character": "", "character_guess": "", "alerts_bar": True, "autostart": False,
             "clock": True,
@@ -27,6 +27,7 @@ DEFAULT_KEYS = {"key_pause": "Pause",            # 2.74.3: the keyboard's Pause 
 # 2.54.0: the Session timer times your play; money lives in one place, Money Makers › Strat Tracker.
 # Profit (Wealth at Stop minus at Start) is gone from here: its tiles, overlay line, options and Stop count.
 LINE_NAMES = [("session", "Session timer"), ("map", "This map's time"), ("maps", "Maps done"), ("avg", "Average map"),
+              ("rank", "Map rank"),                                              # 2.76.0: its own part
               ("where", "Where you are")]
 
 
@@ -406,7 +407,9 @@ class TrackerPage:
         self.tk_focus_var = tk.BooleanVar(value=bool(F.cfg()["on"]))
         sws.append(("League Focus", self.tk_focus_var, lambda: self.focus_set_on(bool(self.tk_focus_var.get()))))
         self.tk_fline_var = tk.BooleanVar(value=bool(F.cfg()["line"]))
-        sws.append(("Focus line", self.tk_fline_var, self.tracker_fline_switch))
+        sws.append(("Focus line (its own bar)", self.tk_fline_var, self.tracker_fline_switch))
+        self.tk_rank_ask = tk.BooleanVar(value=self.rank_ask_on())               # 2.76.0
+        sws.append(("Ask me to rank maps I haven't ranked", self.tk_rank_ask, self.tracker_rank_ask_switch))
         self.tk_ov_switches = {}
         for i, (label, v, fn) in enumerate(sws):
             cb = ttk.Checkbutton(grid, text=label, variable=v, command=fn, style="Card.TCheckbutton")
@@ -515,6 +518,10 @@ class TrackerPage:
             self.calc_ov_close(remember=False)
         self.calc_save()
         self.merged_build()
+
+    def tracker_rank_ask_switch(self):
+        self.tracker_cfg()["rank_ask"] = bool(self.tk_rank_ask.get())
+        self.tracker_save()
 
     def tracker_fline_switch(self):
         from . import focus as F
@@ -686,6 +693,7 @@ class TrackerPage:
                         continue
                     if kind in ("area", "level"):              # 2.73.1: League Focus watches these too
                         self.focus_log(kind, data)
+                        self.maprank_log(kind, data)          # 2.76.0: ask for a rank after a map
                     if kind == "death" and not self.tracker_is_me(data["who"]):
                         continue                              # a party member died, not you
                     changed |= s.feed(kind, ts, data)
@@ -1048,7 +1056,8 @@ class TrackerPage:
                  }
         if getattr(self, "tk_ov_cv", None) is not None:    # 2.47.0: the skins' two columns
             where = n.get("where") if show_where and live and n.get("where") not in ("-", None) else ""
-            texts.update(map=f"Map  {n.get('map', '-')}", where=(where + self._ov_rank(where or None)).strip())
+            texts.update(map=f"Map  {n.get('map', '-')}", where=where.strip())      # 2.76.0: the rank is its own part
+        texts["rank"] = self.rank_text(n.get("where") if live and getattr(self, "_mr_in", None) else None)
         texts["focus"] = self.focus_line()[0]                 # 2.73.0: League Focus's line
         for k, lab in self.tk_ov_lbls.items():
             lab.config(text=texts.get(k, ""))

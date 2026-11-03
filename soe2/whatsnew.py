@@ -21,6 +21,12 @@ NEXT = [
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.76.0": [
+        "The map's rank is its own part of the overlay - click it to rank the map you're in. Leaving a map you "
+        "haven't ranked, a small card asks how it was (Overlay › Options can switch that off).",
+        "League Focus's goal has its own small bar now, over the Game bar (or by the Panel), so the main bar keeps "
+        "its room. Unlock the overlay to drag it where you like.",
+    ],
     "2.75.0": [
         "Wealth is easier to find your way around: Wealth ↳ Overview, ↳ Stash tabs and ↳ Snapshots in the sidebar. "
         "Your stash tabs have their own page - the list, and adding one, always in view.",
