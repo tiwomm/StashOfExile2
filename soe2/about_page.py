@@ -28,7 +28,7 @@ QUICKSTART = [
         "game itself, and every key does one thing.",
     ]),
     ("Price an item", [
-        "Hover an item in game and press Ctrl+C. Price Checks shows what it's worth, every filter to tweak, and the "
+        "Hover an item in game and press Ctrl+D. Price Checks shows what it's worth, every filter to tweak, and the "
         "trade site's listings beside it.",
         "Pricing lots of items? Press Ctrl+Alt+C on each: they're listed in Bulk Pricing with what they're worth and "
         "what to list them for.",

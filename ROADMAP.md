@@ -4,7 +4,7 @@
 
 > **Who we build for - read second.** Path of Exile players are utilitarian: they love data and information, problem solving and creative thinking. So every feature shows its numbers *and how they were worked out*, lets you sort, filter, compare and export them (CSV), keeps power-user depth (keys, versions, raw data) one click away instead of hiding it, explains in plain words, and leaves the decision to the player. Pretty is welcome; vague is not.
 
-**Current version: 2.83.0**
+**Current version: 2.83.1**
 
 Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds features, 2.10.1 only fixes. Each step below is one release; we work through them top to bottom.
 
@@ -143,6 +143,7 @@ Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds f
 | 2.81.2 | Desecration Helper reads hybrids shown in either line order (Accuracy + Light Radius). |
 | 2.82.0 | Overlay ↳ Settings: the overlay's options on their own page, in cards (On the bar, Features, Campaign, Behaviour, Mechanic Helper). |
 | 2.83.0 | **Island Rumours**: in your hideout, each rumour on the Uncharted Waters card gets its island and your Map library rank. Remnant watcher off in hideouts / towns / campaign, in maps only with the Expedition mark on screen, always on in Grand Expedition islands. |
+| 2.83.1 | Price Checks' key is Ctrl+D (Settings › Hotkeys); the game's plain Ctrl+C is left alone. |
 
 ## ▶ Next up
 

@@ -1,5 +1,5 @@
 """2.80.0: Price Checks - one item at a time (feedback: "copy the price checker / item panel into a new panel called
-Price Checks ... a display of the items on the trade site"). Your Ctrl+C on an item in game opens it here: the item
+Price Checks ... a display of the items on the trade site"). Your price check key (Ctrl+D since 2.83.1) on an item in game opens it here: the item
 card with every filter on the left, the trade site's listings as cards on the right (name band, properties, item
 level, requirements, each mod with its tier, price, seller, when it was listed, the item's picture). Ctrl+Alt+C
 still adds to Bulk Pricing (the old Price checks page).
@@ -124,6 +124,17 @@ def listing_facts(e):
             "seller": ((lst.get("account") or {}).get("name") or ""), "ts": ts, "id": (e or {}).get("id")}
 
 
+
+def pc_key_is_copy():
+    """2.83.1: is the price check key the game's own Ctrl+C (then the app only listens, as in 2.80.0)?"""
+    from .overlay import parse_key
+    return parse_key(SETTINGS.get("pc_key") or "") == (0x43, True, False, False)
+
+
+def pc_key_label():
+    from .overlay import key_label
+    return key_label(SETTINGS.get("pc_key") or "") or "your price check key"
+
 class PriceCheckPage:
     # ---------------------------------------------------------------- the page
     def build_pc(self, body):
@@ -185,13 +196,16 @@ class PriceCheckPage:
 
     # ---------------------------------------------------------------- items in
     def pc_wants(self, text):
-        """Your own Ctrl+C (not Ctrl+Alt+C) on an item, with its switch on (Settings › Hotkeys)."""
+        """An item copied with your price check key (Ctrl+D; Settings › Hotkeys), with its switch on. Set to Ctrl+C,
+        the game's own plain copy counts as before."""
         keys = getattr(self, "keys", None)
         if not SETTINGS.get("pc_ctrl_c", True) or keys is None or not getattr(keys, "active", False):
             return False
         if not text.lstrip().startswith("Item Class:"):
             return False
-        return keys.copy_recent() and not keys.combo_recent()
+        if pc_key_is_copy():
+            return keys.copy_recent() and not keys.combo_recent()
+        return keys.pc_recent()
 
     def pc_take(self, text):
         """An item for Price Checks: priced first in line, shown on the page (the app comes to the front if you
@@ -230,7 +244,7 @@ class PriceCheckPage:
         self._pc_hist_ids = [r["id"] for r in recs]
         self.pc_hist_cb.config(values=[self.pc_label(r) for r in recs])
         cur = self.records.get(self.pc_rid)
-        self.pc_hist_var.set(self.pc_label(cur) if cur else ("Ctrl+C an item in game" if not recs else ""))
+        self.pc_hist_var.set(self.pc_label(cur) if cur else (f"{pc_key_label()} on an item in game" if not recs else ""))
 
     def pc_pick_hist(self):
         i = self.pc_hist_cb.current()
@@ -248,7 +262,7 @@ class PriceCheckPage:
         self.pc_refresh_hist()
         P2 = C["panel2"]
         if rec is None:
-            tk.Label(self.pc_left, text="Hover an item in game and press Ctrl+C.\nIt shows here with the trade "
+            tk.Label(self.pc_left, text=f"Hover an item in game and press {pc_key_label()}.\nIt shows here with the trade "
                                         "site's listings.\n\n(Ctrl+Alt+C adds items to Bulk Pricing.)",
                      bg=P2, fg=C["muted"], font=("Segoe UI", 10), justify="left", anchor="nw").pack(fill="x", pady=12)
             self.pc_draw_list(None)
