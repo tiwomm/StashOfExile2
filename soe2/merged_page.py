@@ -192,7 +192,7 @@ class MergedOverlay:
         b.setdefault("calc", True)                       # 2.74.0: Calc ▾ (the calculator over the game)
         b.setdefault("campaign", True)                   # 2.77.0: the Campaign switch, and Vendor ▾ in town
         b.setdefault("vendor", True)
-        b.setdefault("desecrate", True)                  # 2.81.0: the Desecration switch, at The Well of Souls
+        b.pop("desecrate", None)                         # 2.81.1 (feedback): no Desecration switch on the bar
         return b
 
     def bar_chips(self):
@@ -205,8 +205,6 @@ class MergedOverlay:
             run = CP.char()
             if run.get("act") is not None and not run.get("done"):
                 chips.append("campaign")
-        if self.bar_cfg().get("desecrate") and getattr(self, "ws_here", False):    # 2.81.0: only at the Well
-            chips.append("desecrate")
         return chips
 
     def notes_on_bar(self):

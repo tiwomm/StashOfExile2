@@ -1,5 +1,5 @@
-"""2.81.0: the Desecration Helper in the app - its switch (Overlay › Mechanic Helper, Overlay › Options, the bar
-while you're at the Well), the notice over the game when you arrive, the watcher (only while you're at The Well of
+"""2.81.0: the Desecration Helper in the app - its switch (Overlay › Mechanic Helper, Overlay › Options; 2.81.1: not
+on the bar - it turns itself on at the Well), the notice over the game when you arrive, the watcher (only while you're at The Well of
 Souls - Client.txt says when; feedback: "eliminate the need for an always-on watcher") and the tier tags.
 The reading and rating are in wellsouls.py. GGG ToS: it looks at your screen and draws on top - nothing is sent."""
 import threading
@@ -65,11 +65,6 @@ class WellSoulsPage:
             self.ws_start()
         elif not here and before:
             self.ws_stop()
-        if here != before:
-            try:
-                self.tracker_helpers_sync()           # its switch shows on the bar only while you're here
-            except Exception:
-                pass
 
     def ws_notice(self):
         """A small notice over the game: the helper is on while you're here."""
