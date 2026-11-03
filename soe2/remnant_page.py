@@ -126,12 +126,15 @@ class RemnantPage:
                 time.sleep(RM.AUTO_POLL)
                 c = SETTINGS.get("remnant") or {}
                 area = c.get("area") or RM.AREA
-                if not game_active() or getattr(self, "rm_busy", False) or not self.rm_zone_ok():
-                    continue                          # 2.83.0: not in hideouts, towns or the campaign
+                if not game_active() or getattr(self, "rm_busy", False):
+                    continue
                 g = game_rect()
                 if not g:
                     continue
                 rect = (g[0], g[1], g[0] + g[2], g[1] + g[3])
+                self.rm_mark_check(rect)              # 2.83.0: in a map, is there an Expedition?
+                if not self.rm_zone_ok():
+                    continue                          # not in hideouts / towns / campaign; maps only with Expedition
                 ar = RM.area_rect(area, rect)
                 try:
                     img = RM.grab(ar)

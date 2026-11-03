@@ -24,8 +24,8 @@ NOTES = {
     "2.83.0": [
         "New: Island Rumours. Open the world map in your hideout and each rumour on the Uncharted Waters card shows "
         "the island it leads to and your Map library rank for it. Rank the islands in the Map library.",
-        "The Remnant price tags no longer pop up in hideouts, towns or the campaign; on Grand Expedition islands "
-        "they're always watching.",
+        "The Remnant price tags no longer pop up in hideouts, towns, the campaign or maps without an Expedition (the "
+        "app looks for the Expedition mark under Map Content); on Grand Expedition islands they're always watching.",
     ],
     "2.82.0": [
         "Overlay ↳ Settings: every overlay option on its own page, grouped - On the bar, Features, Campaign, "
