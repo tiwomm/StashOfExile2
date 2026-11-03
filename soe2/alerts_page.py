@@ -134,7 +134,7 @@ class AlertsPage:
 
     def log_wanted(self):
         """Client.txt is followed while Breach or Ritual needs it (Ritual: to know when you leave a map)."""
-        return bool(self.breach_cfg().get("on") or self.ritual_cfg().get("on")
+        return bool(self.breach_cfg().get("on") or self.ritual_cfg().get("on") or self.ws_cfg().get("on")
                     or (hasattr(self, "fl_counting") and self.fl_counting()))     # 2.45.0: the Strat Tracker's runs
 
     def alerts_init(self):
@@ -175,7 +175,10 @@ class AlertsPage:
                 ("ritual", "Ritual", "reads the Ritual counter (0/3 ...) from your screen; reminds you if you leave a "
                                      "map after starting its rituals but not finishing them", self.alerts_test_ritual),
                 ("remnant", "Remnant", "Expedition Remnant Price Checker: each reward in a remnant's book gets its "
-                                       "poe.ninja price, by itself (Auto) or with its key", self.alerts_test_remnant)):
+                                       "poe.ninja price, by itself (Auto) or with its key", self.alerts_test_remnant),
+                ("desecrate", "Desecration", "Desecration Helper: at The Well of Souls each revealed option shows its "
+                                             "tier (T1 = best for that item type) - on only while you're there "
+                                             "(reads Client.txt, then your screen)", self.alerts_test_desecrate)):
             row = tk.Frame(box, bg=P2)
             row.pack(fill="x", pady=(8, 0))
             dot = tk.Label(row, text="●", bg=P2, fg=DOT["off"], font=("Segoe UI", 10))
@@ -185,7 +188,7 @@ class AlertsPage:
             nb.pack(side="left", padx=(4, 0))
             Tooltip(nb, what)                       # 2.37.0: what it does - the line under a row shows only while on
             snd = tk.BooleanVar(value=True)
-            if key != "remnant":                   # 2.39.0: the Remnant price tags make no sound
+            if key not in ("remnant", "desecrate"):   # 2.39.0: the Remnant price tags make no sound
                 ttk.Checkbutton(row, text="Sound", variable=snd,
                                 command=lambda k=key: self.alerts_sound(k)).pack(side="left")
             ttk.Button(row, text="Test", command=test, width=6).pack(side="right")
@@ -220,6 +223,7 @@ class AlertsPage:
         self.al_rows["ritual"]["on"].set(bool(self.ritual_cfg().get("on")))
         self.al_rows["ritual"]["sound"].set(bool(self.ritual_cfg().get("sound", True)))
         self.al_rows["remnant"]["on"].set(bool(self.remnant_cfg().get("on")))          # 2.37.0
+        self.al_rows["desecrate"]["on"].set(bool(self.ws_cfg().get("on")))            # 2.81.0
         try:
             from .utilities import DELIRIUM
             self.al_rows["delirium"]["sound"].set(bool(DELIRIUM.get_sound()))
@@ -266,6 +270,9 @@ class AlertsPage:
         elif key == "remnant":                                # 2.37.0
             err = self.remnant_toggle(want)
             r["note"] = err or ""
+        elif key == "desecrate":                              # 2.81.0
+            err = self.ws_toggle(want)
+            r["note"] = err or ""
         else:
             SETTINGS["util_delirium_autostart"] = want       # on = it also starts with the app next time
             save_json("settings.json", SETTINGS)
@@ -294,6 +301,11 @@ class AlertsPage:
     def alerts_ritual_leave_changed(self):
         self.ritual_cfg()["leave_reminder"] = bool(self.al_rleave.get())
         save_json("settings.json", SETTINGS)
+
+    def alerts_test_desecrate(self):
+        r = self.al_rows["desecrate"]
+        r["note"] = self.ws_test()
+        self.alerts_refresh()
 
     def alerts_test_remnant(self):
         r = self.al_rows["remnant"]
@@ -353,7 +365,8 @@ class AlertsPage:
             d = "off"
         b = self.breach_status()
         return {"delirium": d, "breach": "off" if b is False else "warn" if b == "warn" and self.br_reader is None
-                else "on", "ritual": self.ritual_status(), "remnant": self.remnant_status()}
+                else "on", "ritual": self.ritual_status(), "remnant": self.remnant_status(),
+                "desecrate": self.ws_status()}
 
     def alerts_refresh(self):
         """Every 2 s (util_refresh) and after a change: dots, checkboxes and status lines."""
@@ -392,7 +405,10 @@ class AlertsPage:
         mtxt = rows["remnant"]["note"] or self.remnant_text(rows["remnant"])
         rows["remnant"]["note"] = ""
         rows["remnant"]["on"].set(bool(self.remnant_cfg().get("on")))
-        for k, txt in (("delirium", dtxt), ("breach", btxt), ("ritual", rtxt), ("remnant", mtxt)):
+        wtxt = rows["desecrate"]["note"] or self.ws_text(rows["desecrate"])         # 2.81.0
+        rows["desecrate"]["note"] = ""
+        rows["desecrate"]["on"].set(bool(self.ws_cfg().get("on")))
+        for k, txt in (("delirium", dtxt), ("breach", btxt), ("ritual", rtxt), ("remnant", mtxt), ("desecrate", wtxt)):
             st = states[k]
             lbl = rows[k]["status"]                 # 2.37.0: a helper that's off (and has nothing to say) takes one line
             show = st != "off" or txt != rows[k]["what"]
@@ -489,6 +505,10 @@ class AlertsPage:
                             self.breach_set_pending(None)          # spent (the tree was opened)
                             self.breach_dismiss()
                         elif kind == "area":
+                            try:
+                                self.ws_area(data.get("area"))        # 2.81.0: the Desecration Helper
+                            except Exception:
+                                self.log_error("the Desecration Helper")
                             self.breach_area(gl_area_kind(data.get("area"), data.get("seed"), data.get("level", 0)),
                                              (data.get("area"), data.get("seed")))
         except Exception:
