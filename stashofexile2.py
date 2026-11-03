@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU GPL v3.0 (see LICENSE). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.73.4
+VERSION 2.73.5
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,6 +19,12 @@ VERSION 2.73.4
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.73.5
+       The overlay bar's room goes up and down, not side to side (feedback: "more vertical padding, not
+       horizontal"): HUD_SPOTS' xpbar is taller (0.046 -> 0.066 of the game's height), the switch row and the
+       numbers row each get space above and below, the switches' side-to-side spacing is 2.73.3's again
+       (_hud_gap 6). A switch's hover tip goes above the pointer when there's no room under it, and stays inside
+       the game window (ovhelp._ov_tip_bounds) - it was cut off at the screen's bottom edge.
   2.73.4
        League Focus polish. Your league only: WealthPrices.for_league() - named() / value() give nothing while the
        cached poe.ninja prices are another league's (a league switch waits for the next refresh); bulk prices are
@@ -1664,7 +1670,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.73.4"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.73.5"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 

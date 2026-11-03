@@ -82,11 +82,27 @@ class OverlayHelp:
         except tk.TclError:
             px, py = 100, 100
         w.update_idletasks()
-        sw = self.root.winfo_screenwidth()
-        w.geometry(f"+{max(0, min(px - w.winfo_reqwidth() // 2, sw - w.winfo_reqwidth()))}+{py + 22}")
+        tw, th = w.winfo_reqwidth(), w.winfo_reqheight()
+        left, top, right, bottom = self._ov_tip_bounds()
+        y = py + 22
+        if y + th > bottom:                                  # 2.73.5: no room under the pointer (the XP bar is at
+            y = py - th - 12                                 # the screen's bottom edge) -> above it
+        x = max(left, min(px - tw // 2, right - tw))
+        w.geometry(f"+{x}+{max(top, y)}")
         self._no_focus(w)
         self.ov_tip = w
         return w
+
+    def _ov_tip_bounds(self):
+        """The game window's edges (the tip stays inside it), else the screen's."""
+        try:
+            from .alerts_page import game_rect
+            r = game_rect()
+        except Exception:
+            r = None
+        if r:
+            return r[0], r[1], r[0] + r[2], r[1] + r[3]
+        return 0, 0, self.root.winfo_screenwidth(), self.root.winfo_screenheight()
 
     def ov_tip_hide(self):
         job = getattr(self, "_ov_tip_job", None)
