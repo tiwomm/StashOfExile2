@@ -177,19 +177,36 @@ PROP_RE = {
 MOD_HEADER = re.compile(r'^\{\s*(?P<kind>[A-Za-z ]+?)\s+Modifier(?:\s+"(?P<name>[^"]*)")?(?:\s*\(Tier:\s*(?P<tier>\d+)\))?')
 
 
-def flavour_section(sections, mods_from):
-    """2.74.1: the flavour text (a unique's lore lines at the bottom) -> its section's index, or None. It's the last
-    section with text, has no mod header, no number and no line the stat lists know."""
+def _lore(sec):
+    """A section of plain words: no mod header, no number, no line the stat lists know."""
+    sec = [l for l in sec if l not in FLAG_LINES and not l.startswith(("Note:", "Place into", "Right click"))]
+    if not sec:
+        return None
+    return not any(MOD_HEADER.match(l) or _NUM.search(l) for l in sec) and \
+        not any(stat_for(_WRANGE.sub("", l))[0] for l in sec)
+
+
+def flavour_sections(sections, mods_from, unique=False):
+    """2.74.1: the flavour text (a unique's lore lines) -> the indices of its sections. Any item: the last section
+    with text, if it's plain words. 2.74.4: a unique - every plain-words section (The Brass Dome's "The turtle's
+    shell one day becomes its tomb." was read as a mod: a section after it)."""
+    out = set()
+    if unique:
+        return {i for i in range(mods_from, len(sections)) if _lore(sections[i])}
     for i in range(len(sections) - 1, mods_from - 1, -1):
-        sec = [l for l in sections[i] if l not in FLAG_LINES and not l.startswith(("Note:", "Place into", "Right click"))]
-        if not sec:
+        lo = _lore(sections[i])
+        if lo is None:
             continue                                         # (Corrupted, a price note: look further up)
-        if any(MOD_HEADER.match(l) or _NUM.search(l) for l in sec):
-            return None
-        if any(stat_for(_WRANGE.sub("", l))[0] for l in sec):
-            return None
-        return i
-    return None
+        if lo:
+            out.add(i)
+        break
+    return out
+
+
+def flavour_section(sections, mods_from):
+    """(2.74.1's one-section form, kept for callers.)"""
+    got = flavour_sections(sections, mods_from)
+    return min(got) if got else None
 
 
 def read_item(text):
@@ -250,10 +267,10 @@ def read_item(text):
     item["ilvl"] = item["props"].get("ilvl")
     if mods_from is None:
         mods_from = len(sections)
-    flavour = flavour_section(sections, mods_from)          # 2.74.1: never read as mods
-    item["flavour"] = sections[flavour] if flavour is not None else []
+    flavour = flavour_sections(sections, mods_from, unique=rarity == "Unique")    # 2.74.1: never read as mods
+    item["flavour"] = [l for i in sorted(flavour) for l in sections[i]]
     for si, sec in enumerate(sections[mods_from:], mods_from):
-        if si == flavour:
+        if si in flavour:
             continue
         kind, tier, mname, source = None, None, None, None
         for l in sec:

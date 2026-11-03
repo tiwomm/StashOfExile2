@@ -277,6 +277,8 @@ class DeskWindow(tk.Toplevel):
             # agrees this window is the one in front.
             if f is not None and f.winfo_toplevel() is self and (widget is None or f is widget) and self.has_os_focus():
                 return                                            # it already has it
+            if isinstance(widget, str):                   # 2.74.4: the click redrew it (gone - only its name is left)
+                return
             if widget is not None and widget.winfo_class() in self.TYPING:
                 widget.focus_force()
             elif f is None or f.winfo_toplevel() is not self:
