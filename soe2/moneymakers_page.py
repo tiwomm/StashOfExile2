@@ -87,7 +87,7 @@ class MoneyMakersPage:
         chips.pack(fill="x")
         self.mm_chip_rows = {}
         self.mm_content = set()                              # 2.78.0: the Content row (pinnacles, map content)
-        for key, label in (("cat", "Strats"), ("type", "Type"), ("think", "🧠 Thinking"), ("clicks", "🖱 Clicks"),
+        for key, label in (("cat", "Strats"), ("type", "Type"), ("think", "🧠 Thoughts per click"), ("clicks", "🖱 Clicks per hour"),
                            ("content", "◆ Content")):
             r = tk.Frame(chips, bg=P1)
             tk.Label(r, text=label, bg=P1, fg=C["muted"], font=("Segoe UI", 9), width=11, anchor="w").pack(
@@ -544,9 +544,12 @@ class MoneyMakersPage:
         def k(s):
             if key == "score":
                 return (s.get("_post") or {}).get("score", -1)
-            if key == "profit":
-                p = s.get("est_profit") or {}
-                return p.get("high") or p.get("low") or -1
+            if key == "profit":                             # 2.85.0: in divines (ex / chaos converted); 0 is 0
+                v = MM.div_value(s.get("est_profit"))
+                return v if v is not None else float("-inf")
+            if key == "origin":                             # (the By column: the author's name)
+                post = s.get("_post") or {}
+                return str(post.get("author", {}).get("name") or (s.get("author") if s["origin"] != "mine" else "me")).lower()
             if key == "type":
                 return MM.type_text(s).lower()
             if key == "clicks_per_hour":
@@ -629,7 +632,17 @@ class MoneyMakersPage:
         t.insert("end", f"by {post.get('author', {}).get('name') or s.get('author', '?')} · game {s.get('patch', '?')} · "
                         f"updated {s.get('updated', '?')} · {ORIGIN.get(s['origin'], '')}"
                         + (f" · ▲ {post.get('score', 0)}" if post else "")
-                        + (" · HIDDEN (reported)" if post.get("hidden") else "") + "\n", "meta")
+                        + (" · HIDDEN" if post.get("hidden") else "") + "\n", "meta")
+        extra = []                                                # 2.85.0
+        if (post.get("based_on") or {}).get("id"):
+            extra.append(f"based on “{post['based_on'].get('name') or 'another strat'}”")
+        if post.get("pending"):
+            extra.append(f"{post['pending']} change waiting for reviewers")
+        if post.get("mine") and post.get("suggestions"):
+            extra.append(f"{post['suggestions']} suggested edit{'s' if post['suggestions'] != 1 else ''} for you (right-click › "
+                         "Suggestions)")
+        if extra:
+            t.insert("end", " · ".join(extra) + "\n", "meta")
         t.insert("end", s.get("summary", "") + "\n", "summary")
         tpc, cph = s.get("thoughts_per_click", 0), s.get("clicks_per_hour", "")
         word, why = MM.THINKING.get(tpc, ("?", ""))
@@ -654,11 +667,9 @@ class MoneyMakersPage:
                 t.insert("end", group + "  ", "h")
                 t.insert("end", " · ".join(got) + "\n", "chip")
         # (2.71.0: your Strat Tracker numbers are in the Your numbers box above)
-        if s.get("ledger"):
-            lg = s["ledger"]
+        if isinstance(s.get("ledger"), dict):
             t.insert("end", "Author's Strat Tracker  ", "h")
-            t.insert("end", ", ".join(f"{v:g} {k.replace('_div', 'd').replace('_', ' ')}" for k, v in lg.items()) + "\n",
-                     "meta")
+            t.insert("end", MM.ledger_text(s["ledger"]) + "\n", "meta")
         self.mm_need_items(t, s)                                   # 2.78.0: W - regex + trade for each item
         self.mm_atlas(t, s)
         for key, title in (("requirements", "Requirements"), ("tablets", "Tablets"), ("waystones", "Waystones"),
@@ -845,6 +856,12 @@ class MoneyMakersPage:
             m.add_command(label="📤 Post to Community", command=self.mm_post)
         else:
             m.add_command(label="Copy to Mine (to change it)", command=self.mm_copy_mine)
+        if post and not post.get("mine"):                          # 2.85.0
+            m.add_command(label="✎ Suggest an edit…", command=self.mm_suggest)
+        if post:
+            m.add_command(label="History…", command=self.bm_history)
+        if post.get("mine") and post.get("suggestions"):
+            m.add_command(label=f"Suggestions waiting ({post['suggestions']})…", command=self.bm_inbox)
         m.add_command(label="Export…", command=self.mm_export)
         if s.get("items"):                                         # 2.46.0
             m.add_command(label="Check what it costs now", command=lambda: (self.mm_cost_check(True, s["id"]),
@@ -902,7 +919,9 @@ class MoneyMakersPage:
         if not ok:
             self.mm_live_lbl.config(text=d, fg=C["red"])
             return
-        self.mm_board = [dict(p["data"], origin="board", _post=p) for p in d["posts"] if p["kind"] == "strat"]
+        # 2.85.0: a post that doesn't follow the layout (an older board let odd numbers in) isn't shown
+        self.mm_board = [dict(p["data"], origin="board", _post=p) for p in d["posts"] if p["kind"] == "strat"
+                         and not MM.validate(dict(p["data"]))]
         self.mm_board_ones = [dict(p["data"], origin="board", _post=p) for p in (d1 or {}).get("posts", [])] if ok1 else []
         self.mm_live_lbl.config(text=f"Community: {d['total']} strat{'s' if d['total'] != 1 else ''}", fg=C["muted"])
         if self.mm_view.get() == "Community":
@@ -922,9 +941,9 @@ class MoneyMakersPage:
     def mm_join(self, why="use the Community board", name=None):
         from tkinter import simpledialog
         if name is None:
-            name = simpledialog.askstring("Community board", f"To {why}, pick a name other players will see "
-                                          "(2-24 letters or numbers). No account or password needed.",
-                                          parent=self.root)
+            name = simpledialog.askstring("Community board", f"To {why}, pick your community name - other players see "
+                                          "it, it's yours alone and can change once every 7 days (2-24 letters or "
+                                          "numbers). No account or password needed.", parent=self.root)
         if not name:
             return False
         ok, d = B.join(name.strip())
@@ -966,7 +985,16 @@ class MoneyMakersPage:
                 if not ok:
                     return False, f"The atlas screenshot didn't upload ({ref})."
                 data["atlas_image"] = ref
-            return B.post("strat", data)
+            meta = (SETTINGS.get("mm_meta") or {}).get(s["id"]) or {}
+            if meta.get("post"):                               # 2.85.0: posted before - update it, no duplicate
+                res = B.update(meta["post"], data)
+                if res[0] or "only its author" not in str(res[1]) and "not found" not in str(res[1]):
+                    return res
+            res = B.post("strat", data, based_on=meta.get("based_on"))
+            if res[0]:
+                SETTINGS.setdefault("mm_meta", {}).setdefault(s["id"], {})["post"] = res[1]["post"]["id"]
+                save_json("settings.json", SETTINGS)
+            return res
         self._mm_bg(work, lambda r: self.mm_board_result(r, f"Posted \"{s['name']}\" to the Community board."))
 
     def mm_report(self):
@@ -996,6 +1024,13 @@ class MoneyMakersPage:
             return None
         c = {k: v for k, v in MM.tidy(s).items()}
         c["id"] = MM.slug("my-" + c["name"])
+        for k in ("ledger", "atlas_image"):                  # 2.85.0: their numbers and screenshot aren't yours
+            c.pop(k, None)
+        c["author"] = (B.signed_in() or {}).get("name") or "me"
+        post = s.get("_post") or {}
+        meta = SETTINGS.setdefault("mm_meta", {})
+        meta[c["id"]] = {"based_on": post.get("id")} if post.get("id") else {}
+        save_json("settings.json", SETTINGS)
         MM.save_mine([m for m in MM.mine() if m["id"] != c["id"]] + [c])
         self.mm_show_mine(c["id"])
         return c
@@ -1009,15 +1044,26 @@ class MoneyMakersPage:
     # ---------------- your board name (no login)
     def mm_account_paint(self):
         me = B.signed_in()
-        self.mm_acct.config(text=(f"👤 {me.get('name', '?')}" + (" (admin)" if me.get("admin") else "") + " ▾")
+        self.mm_acct.config(text=(f"👤 {me.get('name', '?')}" + (" (admin)" if me.get("admin") else
+                                                                  " (reviewer)" if me.get("reviewer") else "") + " ▾")
                             if me else "👤 Join the board")
 
     def mm_account_click(self):
         if not B.signed_in():
             return self.mm_join()
+        me = B.signed_in() or {}
         m = tk.Menu(self.root, tearoff=0, bg=C["panel2"], fg=C["text"], activebackground="#2c4a84")
-        m.add_command(label="Change my name…", command=self.mm_rename)
-        if not (B.signed_in() or {}).get("admin"):
+        nxt = self.bm_next_rename()                                  # 2.85.0: once every 7 days
+        m.add_command(label="Change my name…" + (f" (from {nxt})" if nxt else ""), command=self.mm_rename,
+                      state="disabled" if nxt and not me.get("admin") else "normal")
+        m.add_command(label="Inbox (suggestions and your edits)…", command=self.bm_inbox)
+        if me.get("reviewer") or me.get("admin"):
+            m.add_command(label="Review queue…", command=self.bm_review_queue)
+        if me.get("reviewer"):
+            m.add_command(label="Stop reviewing", command=lambda: self.bm_reviewer(False))
+        elif not me.get("admin"):
+            m.add_command(label="Become a reviewer (help check edits and reports)", command=self.bm_reviewer)
+        if not me.get("admin"):
             m.add_command(label="Become admin… (needs the board's admin key)", command=self.mm_admin_key)
         m.add_separator()
         m.add_command(label="Leave the board (forget this account)", command=self.mm_leave)
@@ -1026,7 +1072,8 @@ class MoneyMakersPage:
 
     def mm_rename(self, name=None):
         from tkinter import simpledialog
-        name = name or simpledialog.askstring("Community board", "Your new name:", parent=self.root)
+        name = name or simpledialog.askstring("Community board", "Your new name (it can change again in 7 days):",
+                                              parent=self.root)
         if name:
             ok, d = B.rename(name.strip())
             self.app_toast("Done." if ok else d, "Community") if not ok else self._say("Name changed.", 4)
@@ -1069,7 +1116,7 @@ class MoneyMakersPage:
         if not league:
             return 0
         n = 0
-        for s in MM.all_strats():
+        for s in self.fl_all_strats():                         # 2.85.0: Community and Official too
             if only and s["id"] != only:
                 continue
             if s.get("items") and (force or due(s, self.mm_costs(), league)):
@@ -1245,12 +1292,13 @@ class MoneyMakersPage:
         if s and (s["origin"] == "mine" or (s.get("_post") or {}).get("mine")):
             self.mm_form(dict(s))
 
-    def mm_form(self, s):
-        """Add / edit one of your strats - exactly the fields of the standard layout."""
+    def mm_form(self, s, suggest=False):
+        """Add / edit one of your strats - exactly the fields of the standard layout. 2.85.0: suggest=True - someone
+        else's Community strat: your version goes to its author (with a note) instead."""
         from .style import ScrollArea
         P1 = C["panel"]
         win = tk.Toplevel(self.root, bg=P1)
-        win.title("Your strat")
+        win.title("Suggest an edit" if suggest else "Your strat")
         win.transient(self.root)
         self.mm_form_win = win
         sa = ScrollArea(win, P1)
@@ -1323,7 +1371,8 @@ class MoneyMakersPage:
         cat_cb.bind("<<ComboboxSelected>>", cat_changed)
         head("Effort")
         think = [f"{w} - {d}" for w, d in MM.THINKING.values()]
-        combo("tpc", "🧠 Thoughts per click *", think, think[s.get("thoughts_per_click", 2) - 1])
+        tpc0 = s.get("thoughts_per_click") if s.get("thoughts_per_click") in MM.THINKING else 2
+        combo("tpc", "🧠 Thoughts per click *", think, think[tpc0 - 1])
         clicks = [f"{w} - {d}" for w, d in MM.CLICKS.items()]
         cur = next((c for c in clicks if c.startswith(str(s.get("clicks_per_hour")) + " ")), clicks[1])
         combo("cph", "🖱 Clicks per hour *", clicks, cur)
@@ -1335,9 +1384,8 @@ class MoneyMakersPage:
         head("Numbers (estimates)")
         entry("tiers", "Waystone tiers (1-16, e.g. 14-16)",
               "" if not wt else MM.tiers_text(wt).replace("T", ""), 10)
-        entry("inv", "Est. cost (div)", "" if not inv else f"{inv.get('amount', ''):g}", 10)
-        entry("profit", "Est. profit per hour (div, e.g. 5-10)",
-              "" if not p else MM.money_text(p).replace(" div", ""), 10)
+        entry("inv", "Est. cost per run (e.g. 2 div, 50 ex)", MM.money_edit(inv), 16)
+        entry("profit", "Est. profit per hour (e.g. 5-10 div)", MM.money_edit(p), 16)
         head("The guide (one line per item)")
         lines("requirements", "Requirements")
         lines("tablets", "Tablets")
@@ -1350,7 +1398,9 @@ class MoneyMakersPage:
         lines("tips", "Tips")
         lines("risks", "Risks")
         entry("regex", "Stash regex", s.get("regex", ""))
-        entry("sources", "Source link", (s.get("sources") or [{}])[0].get("url", ""))
+        srcs = s.get("sources") or []                             # 2.85.0: every link (only the first was kept)
+        s = dict(s, _src_lines=[x.get("url", "") for x in srcs])
+        lines("_src_lines", "Source links (one per line)")
         msg = tk.Label(f, text="* = needed. Everything else is optional.", bg=P1, fg=C["muted"], anchor="w",
                        font=("Segoe UI", 9))
         msg.grid(row=r, column=0, columnspan=2, sticky="we", pady=(8, 0))
@@ -1370,17 +1420,17 @@ class MoneyMakersPage:
             out["thoughts_per_click"] = words.index(v["tpc"].get().split(" - ")[0]) + 1
             out["clicks_per_hour"] = v["cph"].get().split(" - ")[0]
             try:
-                rng = MM._num_range(v["profit"].get())
-                out["est_profit"] = {"low": rng[0], "high": rng[1], "unit": "div"} if rng else None
-                rng = MM._num_range(v["inv"].get())
-                out["est_cost"] = {"amount": rng[0], "unit": "div"} if rng else None
+                out["est_profit"] = MM.money_parse(v["profit"].get())          # 2.85.0: units kept, negatives fine
+                out["est_cost"] = MM.money_parse(v["inv"].get(), single=True)
                 rng = MM._num_range(v["tiers"].get().lower().replace("t", ""))
                 out["waystone_tiers"] = {"min": int(rng[0]), "max": int(rng[1])} if rng else None
             except (TypeError, ValueError):
-                msg.config(text="Numbers only in tiers, cost and profit.", fg=C["red"])
+                msg.config(text="Tiers, cost and profit: a number or a range (5-10), with div, ex or chaos.", fg=C["red"])
                 return
-            url = v["sources"].get().strip()
-            out["sources"] = [{"title": url, "url": url}] if url else []
+            out.pop("_src_lines", None)
+            titles = {x.get("url"): x.get("title") or x.get("url") for x in srcs}
+            urls = [ln.strip() for ln in v["_src_lines"].get("1.0", "end").split("\n") if ln.strip()]
+            out["sources"] = [{"title": titles.get(u, u), "url": u} for u in urls]
             out["patch"] = out["patch"] or "?"
             out["updated"] = time.strftime("%Y-%m-%d")
             if not s.get("name"):
@@ -1391,6 +1441,20 @@ class MoneyMakersPage:
             if probs:
                 msg.config(text="Not saved: " + probs[0], fg=C["red"])
                 return
+            if post and suggest:                             # 2.85.0: someone else's: a suggestion for its author
+                from tkinter import simpledialog
+                note = simpledialog.askstring("Suggest an edit", "What did you change, and why? (the author reads this)",
+                                              parent=win)
+                if not note or len(note.strip()) < 3:
+                    msg.config(text="Not sent: say in a few words what you changed and why.", fg=C["red"])
+                    return
+                data = {k: v for k, v in out.items() if k not in ("id", "author")}
+                ok, d = self.bm_send_suggestion(post, data, note.strip())
+                if not ok:
+                    msg.config(text="Not sent: " + d, fg=C["red"])
+                    return
+                win.destroy()
+                return
             if post:                                         # your Community post: saved on the board
                 data = {k: v for k, v in out.items() if k not in ("id", "author")}
                 ok, d = B.update(post["id"], data)
@@ -1398,6 +1462,9 @@ class MoneyMakersPage:
                     msg.config(text="Not saved: " + d, fg=C["red"])
                     return
                 win.destroy()
+                if isinstance(d, dict) and d.get("pending"):  # 2.85.0: an Official post - reviewers look first
+                    self._say("Saved - it's an Official strat, so the change goes live once 2 reviewers approve it "
+                              "(History shows it waiting).", 12)
                 self.mm_board_fetch(keep=s["id"] + "|board")
                 return
             mine = [m for m in MM.mine() if m["id"] not in (s.get("id"), out["id"])] + [out]

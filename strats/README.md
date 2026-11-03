@@ -42,20 +42,20 @@ Searching a tag finds both: `Breach` finds Mapping › Breach and strats tagged 
 | `updated` | yes | `YYYY-MM-DD` |
 | `patch` | yes | game version, e.g. `0.4` |
 | `category`, `type` | yes | from the table above |
-| `thoughts_per_click` | yes | Thinking, 1-5: 1 Autopilot, 2 Easy, 3 Moderate, 4 Hard, 5 Big brain |
+| `thoughts_per_click` | yes | Thoughts per click, 1-5: 1 Autopilot, 2 Easy, 3 Moderate, 4 Hard, 5 Big brain |
 | `clicks_per_hour` | yes | `Chill`, `Steady`, `Busy` or `Frantic` |
 | `steps` | yes | list of lines, in order |
 | `tags` | no | from the tag table |
 | `waystone_tiers` | no | `{"min": 1-16, "max": 1-16}` |
-| `est_cost` | no | `{"amount", "unit"}` - unit `div`, `ex` or `chaos` |
-| `est_profit` | no | per hour: `{"low", "high", "unit"}` |
+| `est_cost` | no | per run: `{"amount", "unit"}` or `{"low", "high", "unit"}` - unit `div`, `ex` or `chaos` |
+| `est_profit` | no | per hour: `{"low", "high", "unit"}` (may be negative) |
 | `tablets`, `waystones`, `atlas`, `craft_steps` | no | lists of lines: tablets / waystones used, atlas and master setup, crafting steps |
 | `requirements`, `setup`, `loot`, `tips`, `risks` | no | lists of lines (`loot` = item names to sell) |
 | `regex` | no | a stash search string |
 | `sources` | no | `[{"title", "url"}]` |
 
 | `items` | no | `[{"kind", "base", "name", "count", "lasts", "key_mods"}]` - what a run uses, with the mods that matter: the app checks their trade price once a day ("Cost now") |
-| `ledger` | no | numbers from the author's Farm Ledger: `runs`, `minutes`, `cost_per_run_div`, `loot_per_run_div`, `profit_per_run_div`, `div_per_hour` |
+| `ledger` | no | numbers from the author's Strat Tracker: `runs`, `minutes`, `cost_per_run_div`, `loot_per_run_div`, `profit_per_run_div`, `div_per_hour` |
 
 **The CSV layout** (one header for every Money Makers CSV): `section,field,value,note`. `strat` rows hold the fields
 above (`thinking` as a word, `est_cost_div` a run, `est_profit_div` an hour), `tag` rows one tag each (field = its

@@ -21,6 +21,15 @@ NEXT = [
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.85.0": [
+        "Your community name: asked once, it's yours alone on Money Makers and can change once every 7 days.",
+        "Community strats are protected: only their author edits them, and every change is kept (right-click › "
+        "History, roll back). Want something fixed? Right-click › Suggest an edit - the author accepts or declines.",
+        "Help keep strats honest: become a reviewer from your name's menu. Changes to Official strats and reported "
+        "posts wait for two reviewers.",
+        "Money Makers and the Strat Tracker: costs and profits keep their currency (ex, chaos) and can be negative, "
+        "every source link is kept, Community and Official strats can be tracked, and the labels match everywhere.",
+    ],
     "2.84.0": [
         "New: Price Checks ↳ Favorites. Press ☆ Add to favorites on Price Checks, or paste a trade-site link: each "
         "favorite opens with its filters and the trade site's listings, like Price Checks.",
