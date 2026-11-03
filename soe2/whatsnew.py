@@ -21,6 +21,9 @@ NEXT = [
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.81.1": [
+        "Desecration Helper: the tags show just the tier (T5).",
+    ],
     "2.81.0": [
         "New: Desecration Helper. At The Well of Souls, each revealed option shows its tier (T1 = best for that "
         "item type), and Abyss lords' mods show their range and how good the roll is.",

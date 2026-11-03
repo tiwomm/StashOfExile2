@@ -291,5 +291,4 @@ def label(r):
         lo, hi = r["range"]
         fmt = (lambda v: f"{v:g}")
         return f"Abyss  {fmt(lo)}–{fmt(hi)}" + (f"  ·  {round(r['roll'] * 100)}%" if r.get("roll") is not None else "")
-    t = f"T{r['tier']}" if r["tier"] == r["tier_hi"] else f"T{r['tier']}–{r['tier_hi']}"
-    return f"{t} of {r['of']}"
+    return f"T{r['tier']}" if r["tier"] == r["tier_hi"] else f"T{r['tier']}–{r['tier_hi']}"   # 2.81.1: no "of N"
