@@ -144,7 +144,7 @@ Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds f
 | 2.82.0 | Overlay ↳ Settings: the overlay's options on their own page, in cards (On the bar, Features, Campaign, Behaviour, Mechanic Helper). |
 | 2.83.0 | **Island Rumours**: in your hideout, each rumour on the Uncharted Waters card gets its island and your Map library rank. Remnant watcher off in hideouts / towns / campaign, in maps only with the Expedition mark on screen, always on in Grand Expedition islands. |
 | 2.83.1 | Price Checks' key is Ctrl+D (Settings › Hotkeys); the game's plain Ctrl+C is left alone. |
-| 2.84.0 | **Price Checks ↳ Favorites**: items from Price Checks (☆ Add to favorites) and pasted trade links, in groups and your order; each opens with its filters and the trade site's listings. Right-click for rename / edit / duplicate / move / copy link / delete (Ctrl+Z). |
+| 2.84.0 | **Price Checks ↳ Favorites**: items from Price Checks (☆ Add to favorites) and pasted trade links, in groups and your order; each opens with its filters and the trade site's listings. Right-click for rename / edit / duplicate / move / copy link / delete (Ctrl+Z). Money Makers item links: Instant Buyout, waystone numbers and tier; regex with numbers. |
 
 ## ▶ Next up
 
