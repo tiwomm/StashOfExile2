@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU GPL v3.0 (see LICENSE). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.74.2
+VERSION 2.74.3
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,6 +19,14 @@ VERSION 2.74.2
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.74.3
+       The session timer's keys (feedback: the Ctrl+Alt keys "block some game input for some users"): no start / stop
+       key any more (key_toggle gone - Settings › Hotkeys and Overlay › Options too); pause / resume is on the
+       keyboard's Pause key (overlay.VK "pause" 0x13; Ctrl+Alt+P moved over once, keys_2743; a key of your own is
+       kept) and starts the timer when it isn't running. A ⏸ / ▶ button on the overlay, before the time (Game bar)
+       or in the timer's cell (Panel), drawn as shapes (merged_page._mg_play / play_refresh). Click-through is its
+       own switch, off by default, not tied to the lock (click_through_on). The bar's switches keep clear of
+       Notes ▾ / Calc ▾.
   2.74.2
        Settings › Advanced › Report a bug: the same form as the bottom bar's Report a bug (bug_report_open); the
        .zip problem report is gone from Settings (App.problem_report removed; report.py kept). A new version shows
@@ -1707,7 +1715,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.74.2"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.74.3"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
