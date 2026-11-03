@@ -4586,7 +4586,7 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         rar = (it.get("rarity") or "").lower()
         t = _th.ST.theme
         col = {"rare": C["rare"], "magic": C["magic"], "unique": t.c("unique", "#af6025")}.get(rar, C["text"])
-        w = max(240, wrap + 32)
+        w = max(240, wrap + 12)          # 2.74.4: the panel's inner width (wrap + 44 less its 2 x 16 padding)
         lines = [f"Item Level {it['ilvl']}"] if it.get("ilvl") else []
         # 2.74.1 (feedback: "like Sidekick" - the mods with their values on the card, no scrolling for them): the
         # item reads as it does in game - implicits, a rule, the other mods, Corrupted
@@ -4596,6 +4596,7 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         own = [m for m in it.get("mods") or [] if m.get("kind") != "Total" and m.get("group") not in ("total", "pseudo")]
         first = [m for m in own if m.get("kind") in ("Implicit", "Enchant", "Rune")]
         rest = [m for m in own if m not in first]
+        totals = [m for m in it.get("mods") or [] if m not in own]       # 2.74.4: DPS, defences, pseudo totals
         st, big, sub = rec["state"], "", ""
         if st == "done" and not rec.get("nomatch") and not rec.get("manual"):
             if rec.get("est") is not None:
@@ -4617,7 +4618,8 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         fmod = ("Segoe UI", 10)
         with _th.raw():
             bg = C["odd"]
-            cv.create_rectangle(0, 0, w - 1, h - 1, fill=bg, outline=t.c(t.part("card", "border", default="border_light")))
+            cv.create_rectangle(0, 0, w - 1, h - 1, fill=bg, outline=t.c(t.part("card", "border", default="border_light")),
+                                tags=("cardframe",))
             name_c = _th.card_header(cv, 4, 4, w - 5, 54, col, bg)
             cv.create_text(w // 2, 20, text=it["name"], fill=name_c, font=(_th.head_font(), 12, "bold"),
                            width=w - 24, justify="center")
@@ -4629,21 +4631,19 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
                 y += 18
             sep = t.c(t.part("card", "sep", default="border"))
             mod_c, imp_c = C["magic"], _th.mix(C["magic"], C["text"], .35)
-            for grp, colr in ((first, imp_c), (rest, mod_c)):
+            # 2.74.4 (feedback: "the mods checkable in the item panel ... a check beside it the same way sidekick
+            # does"): each mod is a row with its own check box - ticked = searched on. A click re-prices.
+            self.card_rows = {}
+            for grp, colr, head in ((first, imp_c, ""), (rest, mod_c, ""), (totals, C["good"], "TOTALS")):
                 if not grp:
                     continue
                 cv.create_line(16, y + 2, w - 16, y + 2, fill=sep)
                 y += 8
+                if head:
+                    cv.create_text(12, y, text=head, anchor="nw", font=("Segoe UI", 8, "bold"), fill=C["muted"])
+                    y += 16
                 for m in grp:
-                    tag = ""
-                    if m.get("tier"):
-                        tag = f"{(m.get('kind') or ' ')[0]}{m['tier']}"
-                    tid = cv.create_text(w // 2, y, text=card_text(m), anchor="n", font=fmod, fill=colr,
-                                         width=w - 76, justify="center", tags=("cardmod",))
-                    bb = cv.bbox(tid)
-                    if tag:
-                        cv.create_text(10, y + 1, text=tag, anchor="nw", font=("Segoe UI", 8), fill=C["muted"])
-                    y = (bb[3] if bb else y + 16) + 2
+                    y = self._card_mod_row(cv, rec, m, y, w, fmod, colr, card_text(m))
                 y += 4
             if it.get("corrupted"):
                 cv.create_text(w // 2, y + 8, text="Corrupted", font=("Segoe UI", 10, "bold"), fill=C["red"])
@@ -4661,9 +4661,48 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
             if h2 != h:                                       # (the mods made it taller: frame redrawn to fit)
                 cv.configure(height=h2)
                 cv.delete("frame")
-                cv.coords(cv.find_all()[0], 0, 0, w - 1, h2 - 1)
+                cv.coords("cardframe", 0, 0, w - 1, h2 - 1)
         self.detail_card = cv
         return cv
+
+    def _card_mod_row(self, cv, rec, m, y, w, font, colr, text):
+        """2.74.4: one mod on the item card: [✓] tier  text. -> the next row's y."""
+        idx = len(self.card_rows)
+        tag = f"cardrow{idx}"
+        on = mod_impact(rec, m) != "ignore"
+        can = bool(m.get("sid")) or not rec.get("resolved")
+        box, bx, tx = 14, 10, 32
+        hit = cv.create_rectangle(4, y - 2, w - 4, y + 18, outline="", fill=C["odd"], tags=(tag,))   # the row's click area
+        tier = f"{(m.get('kind') or ' ')[0]}{m['tier']}" if m.get("tier") else ""
+        if tier:
+            cv.create_text(tx, y + 1, text=tier, anchor="nw", font=("Segoe UI", 8), fill=C["muted"], tags=(tag,))
+            tx += 22
+        tid = cv.create_text(tx, y, text=text, anchor="nw", font=font, width=w - tx - 12, justify="left",
+                             fill=colr if on and can else C["muted"], tags=("cardmod", tag))
+        bb = cv.bbox(tid)
+        y1 = (bb[3] if bb else y + 16) + 4
+        if not can:                                          # not on the trade site: nothing to tick
+            cv.create_text(tx, y1 - 2, text="not on the trade site", anchor="nw", font=("Segoe UI", 8),
+                           fill=C["red"], tags=(tag,))
+            y1 += 14
+        by = y + 2
+        rect = cv.create_rectangle(bx, by, bx + box, by + box, outline=C["muted"] if can else C["line"],
+                                   fill=C["accent"] if on and can else C["odd"], tags=("cardbox", tag))
+        if on and can:
+            cv.create_line(bx + 3, by + 7, bx + 6, by + 10, bx + 11, by + 4, fill="#120a04", width=2, tags=(tag,))
+        cv.coords(hit, 4, y - 2, w - 4, y1 - 2)
+        if can:
+            cv.tag_bind(tag, "<Button-1>", lambda e, mm=m, v=on: self.card_toggle(rec, mm, not v))
+            cv.tag_bind(tag, "<Enter>", lambda e: cv.configure(cursor="hand2"))
+            cv.tag_bind(tag, "<Leave>", lambda e: cv.configure(cursor=""))
+        self.card_rows[idx] = (m, on, rect)
+        return y1
+
+    def card_toggle(self, rec, m, checked):
+        """2.74.4: a tick on the card - the same as the mod's switch further down (this item only)."""
+        self.toggle_mod(rec, m, checked)
+        if getattr(self, "shown_rec", None) is rec:
+            self.show_detail(rec)
 
     def _detail_how(self, d, rec, wrap):
         """2.60.0: How it's priced - what was searched, why this confidence, each search."""
@@ -4746,15 +4785,21 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
 
         def box(parent, edge=None, pad=(16, 8)):
             return tk.Frame(parent, bg=P1, padx=pad[0], pady=pad[1], highlightthickness=1, highlightbackground=edge or C["line"])
-        head_txt = (f"TOTALS AND MODIFIERS ({len(it['mods'])})" if it.get("gear") else
-                    f"{it['base'].upper().replace(' TABLET', '')} MODIFIERS ({len(it['mods'])})")
-        tk.Label(d, text=head_txt, bg=P2, fg=C["steel"], font=("Segoe UI", 9, "bold"), anchor="w").pack(fill="x", pady=(12, 0))
-        legend = ("★ must match     ☑ counts (one or two may be dropped if too few listings)     unticked: not searched     "
-                  "Min / Max: the values searched for  (this item only)" if it.get("gear") else
-                  "☑ counts in the price search     ★ key mod     Min / Max: the values searched for  (this item only)")
-        tk.Label(d, text=legend,
-                 bg=P2, fg=C["muted"], font=("Segoe UI", 9), anchor="w", wraplength=wrap, justify="left").pack(fill="x", pady=(0, 4))
-        for m in it["mods"]:
+        # 2.74.4: the ticks are on the item card now; Min / Max, ★ and each mod's roll fold away under here
+        tune = bool(SETTINGS.get("detail_tune"))
+        head = tk.Label(d, text=("▾ " if tune else "▸ ") + f"FINE-TUNE THE SEARCH  -  Min / Max, ★ key mods, rolls "
+                                                        f"({len(it['mods'])})", bg=P2, fg=C["accent"],
+                        font=("Segoe UI", 9, "bold"), anchor="w", cursor="hand2")
+        head.pack(fill="x", pady=(12, 0))
+        head.bind("<Button-1>", lambda e: (SETTINGS.__setitem__("detail_tune", not tune), self.show_detail(rec)))
+        self.detail_tune_head = head
+        if tune:
+            legend = ("★ must match     ☑ counts (one or two may be dropped if too few listings)     unticked: not searched     "
+                      "Min / Max: the values searched for  (this item only)" if it.get("gear") else
+                      "☑ counts in the price search     ★ key mod     Min / Max: the values searched for  (this item only)")
+            tk.Label(d, text=legend,
+                     bg=P2, fg=C["muted"], font=("Segoe UI", 9), anchor="w", wraplength=wrap, justify="left").pack(fill="x", pady=(0, 4))
+        for m in (it["mods"] if tune else []):
             med = MARKET.mod_median(it["base"], m.get("sid")) if m.get("sid") else None
             good = med is not None and med >= SETTINGS["good_div"]
             imp = mod_impact(rec, m)

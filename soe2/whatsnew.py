@@ -21,6 +21,11 @@ NEXT = [
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.74.4": [
+        "Price checks: tick the mods right on the item card, like Sidekick - ticked mods are searched on. Min / Max "
+        "and key mods are under Fine-tune the search.",
+        "A unique's flavour text is never taken for a mod any more.",
+    ],
     "2.74.3": [
         "The session timer has a ⏸ / ▶ button on the overlay, and the Pause key on your keyboard pauses and resumes "
         "it. The Ctrl+Alt start / stop and pause keys are gone - they could get in the way of the game.",
