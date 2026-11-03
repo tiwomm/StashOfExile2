@@ -135,6 +135,7 @@ class AlertsPage:
     def log_wanted(self):
         """Client.txt is followed while Breach or Ritual needs it (Ritual: to know when you leave a map)."""
         return bool(self.breach_cfg().get("on") or self.ritual_cfg().get("on") or self.ws_cfg().get("on")
+                    or self.remnant_cfg().get("on")
                     or (hasattr(self, "fl_counting") and self.fl_counting()))     # 2.45.0: the Strat Tracker's runs
 
     def alerts_init(self):
@@ -201,6 +202,12 @@ class AlertsPage:
                 ab = ttk.Checkbutton(row, text="Auto (no key needed)", variable=self.al_rauto,
                                      command=lambda: self.remnant_auto_changed(self.al_rauto.get()))
                 ab.pack(side="left", padx=(4, 0))
+                self.al_rru = tk.BooleanVar(value=bool(self.remnant_cfg().get("rumours", True)))   # 2.83.0
+                rb_ = ttk.Checkbutton(row, text="Island rumours (in your hideout)", variable=self.al_rru,
+                                      command=lambda: self.ru_changed(self.al_rru.get()))
+                rb_.pack(side="left", padx=(4, 0))
+                Tooltip(rb_, "On the world map's Uncharted Waters card, each rumour gets the island it leads to and "
+                             "your Map library rank for it. Only in your hideout.")
                 self.al_rtips = tk.BooleanVar(value=bool(self.remnant_cfg().get("tips", True)))      # 2.40.0
                 tb_ = ttk.Checkbutton(row, text="Runeshape tips", variable=self.al_rtips,
                                       command=lambda: self.remnant_tips_changed(self.al_rtips.get()))
@@ -507,8 +514,10 @@ class AlertsPage:
                         elif kind == "area":
                             try:
                                 self.ws_area(data.get("area"))        # 2.81.0: the Desecration Helper
+                                self.expedition_area(data.get("area"), gl_area_kind(      # 2.83.0: Remnant's places,
+                                    data.get("area"), data.get("seed"), data.get("level", 0)))  # Island Rumours
                             except Exception:
-                                self.log_error("the Desecration Helper")
+                                self.log_error("the area helpers")
                             self.breach_area(gl_area_kind(data.get("area"), data.get("seed"), data.get("level", 0)),
                                              (data.get("area"), data.get("seed")))
         except Exception:

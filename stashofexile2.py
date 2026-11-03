@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU GPL v3.0 (see LICENSE). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.82.0
+VERSION 2.83.0
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,6 +19,15 @@ VERSION 2.82.0
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.83.0
+       Island Rumours (feedback: "use our Map library to build an add-on for the expedition helper"): in your hideout
+       (Client.txt; feedback: "watch only in hideout") the app looks for the world map's Uncharted Waters card - the
+       one large light parchment patch on a small copy of the screen - and reads only that part. Each rumour gets a
+       tag beside the card: the island it leads to and your Map library rank for it ("Frigid Bluffs · A"; S / A in
+       gold). rumours.py: the 20 rumours and their islands (the newest guides agree on the pairs); matched loosely
+       (the card's handwriting reads as "clif fs"). Switch: Remnant's row, "Island rumours (in your hideout)".
+       Remnant watcher (feedback: "it keeps popping up in random areas"): off in hideouts, towns and the campaign
+       (Client.txt), always on in a Grand Expedition island (ExpeditionLogBook_...), in other maps as before.
   2.82.0
        Overlay ↳ Settings (feedback: the Options "shouldn't be nested beside the map stats ... reorganizing ...
        grouping of the toggle-able options"): the overlay's options are their own page under Overlay (in the
@@ -1872,7 +1881,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.82.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.83.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 

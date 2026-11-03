@@ -24,6 +24,7 @@ Hover an item in game and press **Ctrl+C** to price check it, or **Ctrl+Alt+C** 
 - **Exchange rates:** poe.ninja rates, an Exchange Helper, and an Arbitrage tab for uneven Currency Exchange rates.
 - **Map library:** every map, citadel and pinnacle fight, ranked S to D or Avoid by you and the community. You can share ranks as a file.
 - **Desecration Helper:** at The Well of Souls, each revealed option gets a tag with its tier for that item type (T1 = best), and the Abyss lords' own mods show their range and how good the roll is. It wakes up only while you're at the Well.
+- **Island Rumours:** open the world map in your hideout and each rumour on the Uncharted Waters card shows the island it leads to and your Map library rank for it.
 - **Expedition Remnant Price Checker:** open a remnant's reward book and each reward gets its poe.ninja price next to it, with the best one marked ★. The idea comes from [PoE Ancients Price Helper](https://github.com/pedro-quiterio/PoeAncientsPriceHelper) by Pedro Quitério. None of its code is used, because it isn't open source.
 - **Utilities:** chat command keys and a sticky note over the game.
 - **Advanced tools (Settings › Advanced):** Under the hood and the Mod book, which learns which mods are worth money from listings and, if you opt in, from pooled community price checks.
