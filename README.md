@@ -48,7 +48,7 @@ To build the exe yourself, run `build_exe.bat`; it makes `dist\StashOfExile2.exe
 
 ## Community
 
-Questions, ideas and bug reports: [Discord](https://discord.gg/Ta8EVnxx4T). The plan is in [ROADMAP.md](ROADMAP.md).
+Questions, ideas and bug reports: [Discord](https://discord.gg/Ta8EVnxx4T). The plan is in [ROADMAP.md](ROADMAP.md). Next up: global leaderboards, then a Community forum (questions and answers, farm strats, upvotes, moderation) inside the app.
 
 ## Fair play
 

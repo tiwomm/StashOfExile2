@@ -90,7 +90,7 @@ class MoneyMakersPage:
         for key, label in (("cat", "Strats"), ("type", "Type"), ("think", "🧠 Thoughts per click"), ("clicks", "🖱 Clicks per hour"),
                            ("content", "◆ Content")):
             r = tk.Frame(chips, bg=P1)
-            tk.Label(r, text=label, bg=P1, fg=C["muted"], font=("Segoe UI", 9), width=11, anchor="w").pack(
+            tk.Label(r, text=label, bg=P1, fg=C["muted"], font=("Segoe UI", 9), width=19, anchor="w").pack(  # 2.85.1: 19 (cut off)
                 side="left", anchor="n", pady=(4, 0))
             r.chips = tk.Frame(r, bg=P1)
             r.chips.pack(side="left", fill="x", expand=True)
