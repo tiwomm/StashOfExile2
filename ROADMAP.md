@@ -4,7 +4,7 @@
 
 > **Who we build for - read second.** Path of Exile players are utilitarian: they love data and information, problem solving and creative thinking. So every feature shows its numbers *and how they were worked out*, lets you sort, filter, compare and export them (CSV), keeps power-user depth (keys, versions, raw data) one click away instead of hiding it, explains in plain words, and leaves the decision to the player. Pretty is welcome; vague is not.
 
-**Current version: 2.85.0**
+**Current version: 2.85.1**
 
 Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds features, 2.10.1 only fixes. Each step below is one release; we work through them top to bottom.
 
@@ -146,6 +146,7 @@ Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds f
 | 2.83.1 | Price Checks' key is Ctrl+D (Settings › Hotkeys); the game's plain Ctrl+C is left alone. |
 | 2.84.0 | **Price Checks ↳ Favorites**: items from Price Checks (☆ Add to favorites) and pasted trade links, in groups and your order; each opens with its filters and the trade site's listings. Right-click for rename / edit / duplicate / move / copy link / delete (Ctrl+Z). Money Makers item links: Instant Buyout, waystone numbers and tier; regex with numbers. |
 | 2.85.0 | **Community board protections**: only authors edit, every change kept (History, roll back), **Suggest an edit** (the author accepts), opt-in reviewers (2 approve changes to Official strats and decide reports), unique community names asked once at start-up (change once every 7 days), field checks and daily limits. Money Makers / Strat Tracker accuracy fixes (units, negatives, sources, labels, tracking Community strats). |
+| 2.85.1 | Money Makers filter labels show in full. Roadmap: the Community FAQ becomes a Community forum. |
 
 ## ▶ Next up
 
@@ -187,7 +188,7 @@ Order (decided 2.34.0): the Polish basics first, so new features are built on th
 ## 🤔 Maybe later (ideas to weigh when the plan above is done)
 
 - **Trials & Simulacrum tracker** (Overlay ↳ Trials): counts Trial of Sekhemas, Trial of Chaos and Simulacrum runs from the game's log (entering the area; finishing, if the log says so), with a "Got it!" for each mechanic's chase item (your own list; defaults such as Simulacrum → Voices, Trial of Chaos → Adorned, checked against current drop info first). Shows runs, runs since the last chase drop, the drop history and your runs per drop; a small run counter on the overlay inside a trial. Later: drop rates pooled through Community data sharing (opt-in).
-- **Community FAQ:** a keyword-searchable answer book for common PoE2 questions (e.g. "Can Sanctify add a socket, or only corruption?" -> "Corruption only, and only the first corruption with a Vaal Orb; a double corrupt can't add a socket, only a corruption enchant"). Anyone can send a question; it pops up for players who opted in to answering community questions (like Amazon's "can you answer this?"); anyone can answer; the asker marks the answer that solved it, and that answer is published to the searchable FAQ. Runs on the community board server (board/), with votes and reports like strats.
+- **Community FAQ → Community forum** (expanded 2.85.1; mockups first, when it comes up): the FAQ works like a forum, a hybrid of two popular forums - threads in sections (Questions, Farm strats, Trading, Builds, General), each post under the player's community name (asked once at start-up), replies, and upvotes that count for both farm strats and FAQ answers. The asker marks the answer that solved it, and that answer goes to the searchable FAQ (e.g. "Can Sanctify add a socket, or only corruption?" -> "Corruption only ..."); players who opted in get unanswered questions offered to them. A player profile shows their posts and total upvotes (reputation), as on the trading-style popular forum. Moderation follows admin privileges plus the 2.85.0 reviewers: reports with reasons, hide / lock / pin / move threads, edit history, bans. Runs on the community board server (board/).
 
 ## 💤 Parked (not planned unless something changes)
 
