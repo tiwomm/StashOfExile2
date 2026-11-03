@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU GPL v3.0 (see LICENSE). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.74.5
+VERSION 2.75.0
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,6 +19,16 @@ VERSION 2.74.5
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.75.0
+       Wealth's UX pass (feedback: "this page needs a major pass to improve ux" - the stash tabs were behind a small
+       "Edit synced tabs" link, the setup guide's Next was off the window, Count again / Count currency read as two
+       things). Three pages in the sidebar (register_tabs): Wealth ↳ Overview (total, Where it is, items with a From
+       list - was the tab list at the side), ↳ Stash tabs (the list, Include / Open / Remove, and Add a stash tab with
+       the three in-game steps, always shown) and ↳ Snapshots (pick one: what it held; two: what changed). ⟳ Sync stash
+       tabs, Count currency… and More on top of every page, with what was done when. The setup guide is cards on
+       the Overview now (wealth_steps_refresh: count currency, add a tab or skip, sync - each ticks itself off;
+       More › Show the setup steps / Hide these steps), then one status line (currency counted, stash tabs, items
+       that need a price - each clickable). wealth_setup.py (the pop-up guide) is gone.
   2.74.5
        Price checks, a lighter page (feedback: "too much clutter and thick heavy padding"): the Valuable mods legend
        chip is gone; the price-check settings line and its ⚙ sit on the top strip, after the total; Re-price all,
@@ -1729,7 +1739,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.74.5"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.75.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
