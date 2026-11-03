@@ -48,6 +48,11 @@ class UtilitiesPage:
             self.ui_q.put(("keycap", vk, ctrl, alt, shift))
             return True
         try:
+            if self.pc_hotkey(vk, ctrl, alt, shift):
+                return True
+        except Exception:
+            pass
+        try:
             if self.quick_copy_key(vk, ctrl, alt, shift):
                 return True
         except Exception:
@@ -106,6 +111,24 @@ class UtilitiesPage:
             keys.set_mouse(waiting or self.mouse_hotkeys_used())
         except Exception:
             pass
+
+    def pc_hotkey(self, vk, ctrl, alt, shift):
+        """2.83.1: the price check key (Ctrl+D) in game -> the game's own Ctrl+Alt+C once (one key press, one item
+        copied, with its mod tiers); the copy goes to Price Checks, not Bulk Pricing."""
+        from .overlay import parse_key, game_active, send_copy, POE_TITLE
+        from .pricecheck_page import pc_key_is_copy
+        if not SETTINGS.get("pc_ctrl_c", True) or pc_key_is_copy():
+            return False                                   # Ctrl+C: the game copies, the app only listens
+        k = parse_key(SETTINGS.get("pc_key") or "")
+        if not k or k != (vk, ctrl, alt, shift):
+            return False
+        if not game_active((getattr(self, "overlay", None) and self.overlay.cfg.get("poe_title")) or POE_TITLE):
+            return False                                   # outside the game the key does its usual job
+        def go():
+            self.keys.pc_time = time.time()
+            send_copy()
+        threading.Thread(target=go, daemon=True).start()
+        return True
 
     def quick_copy_key(self, vk, ctrl, alt, shift):
         """Price checks' one-key copy (2.0 beta 15): your key -> the game's Ctrl+Alt+C on the item under the mouse."""
