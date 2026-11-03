@@ -38,6 +38,7 @@ class RemnantPage:
         c.setdefault("auto", True)                  # Auto: watch where the book opens; tags come and go by themselves
         c.setdefault("area", None)                  # None = RM.AREA; set only when a key press found it elsewhere
         c.setdefault("tips", True)                  # 2.40.0: the runeshape cheat sheet next to the tags
+        c.setdefault("rumours", True)               # 2.83.0: Island Rumours on the world map, in your hideout
         return c
 
     def remnant_status(self):
@@ -70,6 +71,11 @@ class RemnantPage:
         self.rm_problem = None
         if not want:
             self.remnant_hide()
+            self.ru_stop()                            # 2.83.0: Island Rumours is part of it
+        elif getattr(self, "ru_here", False):
+            self.ru_start()
+        if want and not getattr(self, "_br_ticking", False):
+            self.breach_start()                       # 2.83.0: the game's log says where you are
         st = self.remnant_status()
         self.remnant_auto_sync()
         return f"Can't read the screen: {self.rm_problem}." if want and st == "warn" else None
@@ -120,8 +126,8 @@ class RemnantPage:
                 time.sleep(RM.AUTO_POLL)
                 c = SETTINGS.get("remnant") or {}
                 area = c.get("area") or RM.AREA
-                if not game_active() or getattr(self, "rm_busy", False):
-                    continue
+                if not game_active() or getattr(self, "rm_busy", False) or not self.rm_zone_ok():
+                    continue                          # 2.83.0: not in hideouts, towns or the campaign
                 g = game_rect()
                 if not g:
                     continue
