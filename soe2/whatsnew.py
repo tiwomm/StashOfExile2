@@ -21,6 +21,12 @@ NEXT = [
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.78.3": [
+        "The overlay sizes itself to your game's resolution, from 720p to 4K - the bar, its text and the cards over "
+        "the game (map rank, campaign, the calculator).",
+        "Price checks: the item card has Item level (tick it, type a number) and Min / Max boxes beside each mod. "
+        "Press Enter to search again with them.",
+    ],
     "2.78.2": [
         "The Campaign Helper's line is as wide as the overlay's bar, lined up with it.",
     ],
