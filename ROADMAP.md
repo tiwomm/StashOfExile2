@@ -4,7 +4,7 @@
 
 > **Who we build for - read second.** Path of Exile players are utilitarian: they love data and information, problem solving and creative thinking. So every feature shows its numbers *and how they were worked out*, lets you sort, filter, compare and export them (CSV), keeps power-user depth (keys, versions, raw data) one click away instead of hiding it, explains in plain words, and leaves the decision to the player. Pretty is welcome; vague is not.
 
-**Current version: 2.79.0**
+**Current version: 2.79.1**
 
 Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds features, 2.10.1 only fixes. Each step below is one release; we work through them top to bottom.
 
@@ -135,6 +135,7 @@ Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds f
 | 2.78.2 | The campaign line's bar is as wide as the overlay's bar. |
 | 2.78.3 | The overlay scales to any resolution (720p to 4K, cards too); the item card has Item level and Min / Max beside each mod. |
 | 2.79.0 | The item panel like Sidekick (every filter on the card, ▸ Advanced for the rest), no pop-ups, unique / granted-skill mods from the trade site's list, the white / magic base rule, Remnant tags on time. |
+| 2.79.1 | Mageblood: stat options in the id, the same Legacy twice = Min 2; granted skills found without "Summon". |
 
 ## ▶ Next up
 
