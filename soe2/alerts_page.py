@@ -184,7 +184,7 @@ class AlertsPage:
             dot = tk.Label(row, text="●", bg=P2, fg=DOT["off"], font=("Segoe UI", 10))
             dot.pack(side="left")
             on = tk.BooleanVar(value=False)
-            nb = ttk.Checkbutton(row, text=name, variable=on, width=9, command=lambda k=key: self.alerts_toggle(k))
+            nb = ttk.Checkbutton(row, text=name, variable=on, width=12, command=lambda k=key: self.alerts_toggle(k))
             nb.pack(side="left", padx=(4, 0))
             Tooltip(nb, what)                       # 2.37.0: what it does - the line under a row shows only while on
             snd = tk.BooleanVar(value=True)

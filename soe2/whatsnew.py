@@ -21,6 +21,10 @@ NEXT = [
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.82.0": [
+        "Overlay ↳ Settings: every overlay option on its own page, grouped - On the bar, Features, Campaign, "
+        "Behaviour and the Mechanic Helper. Open it from the sidebar or the Overlay settings button.",
+    ],
     "2.81.2": [
         "Desecration Helper: two-line options like Accuracy + Light Radius get their tier too.",
     ],

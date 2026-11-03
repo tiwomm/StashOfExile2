@@ -487,15 +487,20 @@ class CampaignUI:
                 pass
 
     # ================================================================ R: its settings (Overlay › Options)
-    def camp_options(self, po):
+    def camp_options(self, po, into=None):
+        """Its options (route, splits ...). 2.82.0: into = the Campaign card on Overlay ↳ Settings."""
         from .chrome import section as chrome_section
         from .style import C, SegBar
         c = CP.cfg()
         P2 = C["panel2"]
-        so, box = chrome_section(po, "Campaign", "The Campaign Helper: where you are, what's next and what it's "
-                                                  "worth - from the game's log. Click its line on the overlay for "
-                                                  "the act's route, rewards and splits.")
-        so.pack(fill="x", pady=(8, 0))
+        if into is not None:
+            box = tk.Frame(into, bg=P2)
+            box.pack(fill="x", pady=(8, 0))
+        else:
+            so, box = chrome_section(po, "Campaign", "The Campaign Helper: where you are, what's next and what it's "
+                                                      "worth - from the game's log. Click its line on the overlay for "
+                                                      "the act's route, rewards and splits.")
+            so.pack(fill="x", pady=(8, 0))
         row = tk.Frame(box, bg=P2)
         row.pack(fill="x")
         tk.Label(row, text="Route", bg=P2, fg=C["text"]).pack(side="left", padx=(0, 8))
@@ -515,7 +520,7 @@ class CampaignUI:
                                  command=lambda k=k: self.camp_opt(k))
             cb.grid(row=i // 2, column=i % 2, sticky="w", padx=(0, 24), pady=2)
         self.tk_goal_dock = tk.BooleanVar(value=self.goalbar_docked())
-        ttk.Checkbutton(grid, text="Dock it to the top of the overlay bar", variable=self.tk_goal_dock,
+        ttk.Checkbutton(grid, text="Dock it to the overlay bar", variable=self.tk_goal_dock,
                         style="Card.TCheckbutton", command=self.goal_dock_set).grid(row=2, column=1, sticky="w",
                                                                                     padx=(0, 24), pady=2)
         for col in range(2):
@@ -523,11 +528,11 @@ class CampaignUI:
         pk = tk.Frame(box, bg=P2)
         pk.pack(fill="x", pady=(8, 0))
         self.tk_camp_pack = tk.Label(pk, text=self.camp_pack_text(), bg=P2, fg=C["muted"], font=("Segoe UI", 9))
-        self.tk_camp_pack.pack(side="left")
+        self.tk_camp_pack.pack(side="top" if into is not None else "left", anchor="w")   # 2.82.0: in a card, own line
         ttk.Button(pk, text="Check for a newer one", style="Quiet.TButton", command=self.camp_check_pack).pack(
-            side="left", padx=(8, 0))
+            side="left", padx=(0 if into is not None else 8, 0), pady=(4 if into is not None else 0, 0))
         ttk.Button(pk, text="Open the route", style="Quiet.TButton", command=self.camp_route_show).pack(
-            side="left", padx=(8, 0))
+            side="left", padx=(8, 0), pady=(4 if into is not None else 0, 0))
 
     def goal_dock_set(self):
         """2.79.1: the campaign / Focus line docked to the bar (on) or where you drag it (off)."""
