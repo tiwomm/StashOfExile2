@@ -4601,8 +4601,15 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         t = _th.ST.theme
         col = {"rare": C["rare"], "magic": C["magic"], "unique": t.c("unique", "#af6025")}.get(rar, C["text"])
         w = max(240, wrap + 32)
-        lines = [x for x in (f"Item Level {it['ilvl']}" if it.get("ilvl") else "",
-                             "Corrupted" if it.get("corrupted") else "") if x]
+        lines = [f"Item Level {it['ilvl']}"] if it.get("ilvl") else []
+        # 2.74.1 (feedback: "like Sidekick" - the mods with their values on the card, no scrolling for them): the
+        # item reads as it does in game - implicits, a rule, the other mods, Corrupted
+        def card_text(m):
+            t = m.get("shown") or m.get("text") or ""
+            return re.sub(r"\s+", " ", re.sub(r"\[([^\]|]*\|)?([^\]]*)\]", r"\2", t)).strip()
+        own = [m for m in it.get("mods") or [] if m.get("kind") != "Total" and m.get("group") not in ("total", "pseudo")]
+        first = [m for m in own if m.get("kind") in ("Implicit", "Enchant", "Rune")]
+        rest = [m for m in own if m not in first]
         st, big, sub = rec["state"], "", ""
         if st == "done" and not rec.get("nomatch") and not rec.get("manual"):
             if rec.get("est") is not None:
@@ -4621,6 +4628,7 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         h = 64 + 18 * len(lines) + (34 if big else 0) + (18 if sub else 0) + 8
         cv = tk.Canvas(d, width=w, height=h, bg=P2, highlightthickness=0, bd=0)
         cv.pack(fill="x")
+        fmod = ("Segoe UI", 10)
         with _th.raw():
             bg = C["odd"]
             cv.create_rectangle(0, 0, w - 1, h - 1, fill=bg, outline=t.c(t.part("card", "border", default="border_light")))
@@ -4631,9 +4639,29 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
                 cv.create_text(w // 2, 40, text=it["base"], fill=_th.mix(name_c, C["text"], .45), font=("Segoe UI", 10))
             y = 64
             for ln in lines:
-                cv.create_text(w // 2, y + 6, text=ln, font=("Segoe UI", 9),
-                               fill=C["red"] if ln == "Corrupted" else C["muted"])
+                cv.create_text(w // 2, y + 6, text=ln, font=("Segoe UI", 9), fill=C["muted"])
                 y += 18
+            sep = t.c(t.part("card", "sep", default="border"))
+            mod_c, imp_c = C["magic"], _th.mix(C["magic"], C["text"], .35)
+            for grp, colr in ((first, imp_c), (rest, mod_c)):
+                if not grp:
+                    continue
+                cv.create_line(16, y + 2, w - 16, y + 2, fill=sep)
+                y += 8
+                for m in grp:
+                    tag = ""
+                    if m.get("tier"):
+                        tag = f"{(m.get('kind') or ' ')[0]}{m['tier']}"
+                    tid = cv.create_text(w // 2, y, text=card_text(m), anchor="n", font=fmod, fill=colr,
+                                         width=w - 76, justify="center", tags=("cardmod",))
+                    bb = cv.bbox(tid)
+                    if tag:
+                        cv.create_text(10, y + 1, text=tag, anchor="nw", font=("Segoe UI", 8), fill=C["muted"])
+                    y = (bb[3] if bb else y + 16) + 2
+                y += 4
+            if it.get("corrupted"):
+                cv.create_text(w // 2, y + 8, text="Corrupted", font=("Segoe UI", 10, "bold"), fill=C["red"])
+                y += 20
             if big:
                 cv.create_line(16, y, w - 16, y, fill=t.c(t.part("card", "sep", default="border")))
                 good = st == "done" and big not in ("No match", "Check by hand")
@@ -4642,6 +4670,12 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
                 y += 34
             if sub:
                 cv.create_text(w // 2, y + 6, text=sub, font=("Segoe UI", 9), fill=C["muted"])
+                y += 18
+            h2 = y + 8
+            if h2 != h:                                       # (the mods made it taller: frame redrawn to fit)
+                cv.configure(height=h2)
+                cv.delete("frame")
+                cv.coords(cv.find_all()[0], 0, 0, w - 1, h2 - 1)
         self.detail_card = cv
         return cv
 
