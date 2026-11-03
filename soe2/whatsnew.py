@@ -21,6 +21,10 @@ NEXT = [
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.79.2": [
+        "Price checks: every mod under Stat filters can be ticked on and off again.",
+        "Searches start at Instant Buyout, priced in Exalted Orb Equivalent.",
+    ],
     "2.79.1": [
         "Mageblood and similar uniques price correctly: two of the same Legacy (2 Quicksilver, 2 Diamond) are searched "
         "as one stat with Min 2, like the trade site does.",

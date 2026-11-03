@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU GPL v3.0 (see LICENSE). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.79.1
+VERSION 2.79.2
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,6 +19,12 @@ VERSION 2.79.1
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.79.2
+       Stat filters: every mod can be ticked (feedback: "nothing is clickable under stat filters"). A tick on a mod the
+       price check had left out (filler, low tier) removed the item's own setting instead of keeping it, so nothing
+       changed; now it's kept unless it's what the mod would be anyway. The item's search starts at Instant Buyout
+       (the Settings choice is reset to it once), priced in Exalted Orb Equivalent (the trade site's default; was
+       labelled "Any currency").
   2.79.1
        Mageblood and other uniques with a choice stat: searched like the trade site, with the option in the stat id
        (explicit.stat_264262054|8 = Legacy of Quicksilver), not a separate option value. The same stat more than once
@@ -1824,7 +1830,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.79.1"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.79.2"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
