@@ -21,6 +21,13 @@ NEXT = [
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.80.0": [
+        "New: Price Checks. Hover an item in game and press Ctrl+C - it opens with every filter on the left and the "
+        "trade site's listings on the right (mods with tiers, price, seller, when, the item's picture). Recent keeps "
+        "your last 20.",
+        "The old Price checks page is now Bulk Pricing: Ctrl+Alt+C still adds items there.",
+        "Settings › Hotkeys › Price Checks: turn Ctrl+C off, stop the app coming to the front, or hide pictures.",
+    ],
     "2.79.2": [
         "Price checks: every mod under Stat filters can be ticked on and off again.",
         "Searches start at Instant Buyout, priced in Exalted Orb Equivalent.",

@@ -8,13 +8,14 @@
 
 A Windows toolkit for **Path of Exile 2** that runs next to the game. Its main job is pricing items from the official trade site, in bulk or one at a time, with a Campaign Helper, League Focus and a session overlay alongside.
 
-Hover an item in game and press **Ctrl+Alt+C**. It goes into a list and is priced from the official trade site, using the mods that decide its price.
+Hover an item in game and press **Ctrl+C** to price check it, or **Ctrl+Alt+C** to add it to the Bulk Pricing list. Prices come from the official trade site, using the mods that decide them.
 
 > **Written by AI.** This project's code, data tools and text were written by Claude (an AI made by Anthropic), directed and tested by a human who plays the game. It's shared openly so anyone can read it, check it, change it and use it.
 
 ## What it does
 
-- **Price checks:** bulk pricing for tablets, jewels, waystones and gear from the official trade site. Each item opens in one clean panel with every trade filter: this base or any of its kind, item level, quality, sockets, requirements, Any / Yes / No flags (corrupted, fractured, desecrated, sanctified ...), and each mod with Min / Max and ★ for must-match. You also get a confidence rating and how the price was worked out. It can read a whole public stash tab.
+- **Price Checks:** hover an item in game and press **Ctrl+C**. Its card shows every filter on the left and the trade site's listings on the right, with mods and tiers, price, seller, when it was listed and the item's picture. Your last 20 checks stay under Recent.
+- **Bulk Pricing:** press **Ctrl+Alt+C** on many items (tablets, jewels, waystones, gear) and they are priced from the official trade site as a list. Each item opens in one clean panel with every trade filter: this base or any of its kind, item level, quality, sockets, requirements, Any / Yes / No flags (corrupted, fractured, desecrated, sanctified ...), and each mod with Min / Max and ★ for must-match. You also get a confidence rating and how the price was worked out. It can read a whole public stash tab.
 - **Overlay over the game:** a bar on the XP bar, scaled to your resolution. It shows the session timer, map, maps run, the average per map, the clock, Notes and a calculator. It also holds the Breach, Delirium, Ritual and Remnant helper switches and the map's rank. Every part has its own switch.
 - **Campaign Helper:** where you are, what's next and which rewards you missed, act by act from the game's log, on a line docked to the overlay bar. It includes act routes, Vendor tips and act splits, and turns itself off at maps.
 - **League Focus:** a Game Plan of goals by phase, stockpile, farm plan and build lock, plus gentle reminders over the game (map supplies, cheap stockpile prices).
