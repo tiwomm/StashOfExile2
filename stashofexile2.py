@@ -24,8 +24,12 @@ VERSION HISTORY
        (explicit.stat_264262054|8 = Legacy of Quicksilver), not a separate option value. The same stat more than once
        (2 Quicksilver, 2 Diamond) is one filter with Min = how many (feedback). A granted skill is also found without
        "Summon" (the trade site says "Grants Skill: Level # Rhoa Mount").
+       The campaign / Focus line is docked to the top of the overlay bar by default, as wide, and moves with it
+       (Overlay › Options › Campaign › "Dock it to the top of the overlay bar"; off = drag it anywhere). The Game bar
+       spans the XP bar, bottom centre, just above it; a position you dragged is kept per resolution, so another
+       resolution fits it again. The update badge looks for a new release every hour (was 6 h).
   2.79.0
-       The item panel, like Sidekick (feedback: "a clean view like Sidekick ... all of those functions"). One card holds
+       The item panel, cleaned up (feedback: "a clean view ... all of those functions"). One card holds
        every filter: Properties (base type - this base or any of its kind -, quality, defences / DPS totals, item
        level, sockets, each with a check box and Min / Max), Requirements (Level, Str, Dex, Int read from "Requires:",
        folded), Miscellaneous (Corrupted, Fractured, Desecrated, Sanctified, Mirrored, Unidentified: Any / Yes / No -
@@ -117,7 +121,7 @@ VERSION HISTORY
        action row; no "Only ★" switch. chrome.Notice: a one-line notice with a small × that stays closed
        (SETTINGS notices_closed) - the Stash tab's BETA line is one.
   2.74.4
-       The item card's mods have check boxes (feedback: "a check beside it the same way sidekick does", not a scroll
+       The item card's mods have check boxes (feedback: "a check beside it", not a scroll
        down to the switches): each mod and total is a row - [✓] tier text - ticked = searched on; a click re-prices
        this item, as the switch did (app._card_mod_row / card_toggle). Min / Max, ★ and the rolls fold away under
        "Fine-tune the search" (SETTINGS detail_tune). The card is the panel's inner width (it was 20 px wider, the
@@ -138,7 +142,7 @@ VERSION HISTORY
        in the sidebar, above Toolkit and Settings - an accent row "Update to x.y.z" (sidebar._update_row; click:
        check_updates("ask")) - instead of the badge on the bottom bar (kept only without a sidebar).
   2.74.1
-       The Item card reads like the item in game (feedback: "like Sidekick" - the mod values were under the price,
+       The Item card reads like the item in game (feedback: the mod values were under the price,
        a scroll away): implicits, a rule, the other mods with their values and tier tags (P1 / S2), Corrupted,
        then the price - all on the card (app._detail_card). Uniques: a "{ Unique Modifier }" header is an explicit
        mod (gear.KIND_NAMES - they were all skipped as "unique"); a roll shown by name, Mageblood's "Legacy of
@@ -1414,7 +1418,7 @@ VERSION HISTORY
            included; the session ends by itself when you finish counting. Past sessions are kept, with notes.
        (2) Settings has a Hotkeys list: every key the app listens for in one place, editable, clashes in red.
   2.0 beta 8
-       (1) Chat commands are sent the way Sidekick sends them: the command goes on the clipboard and one quick burst
+       (1) Chat commands are pasted: the command goes on the clipboard and one quick burst
            of keys opens chat, clears it, pastes and sends. Nothing is typed letter by letter, so chat only flashes.
            Your clipboard is put back right after, and the app doesn't mistake either for a copy of yours.
        (2) Version numbers: every build gets its own number from now on (the earlier "beta 7" kits were several builds).
@@ -1467,7 +1471,7 @@ VERSION HISTORY
            lines still can't be read, a few examples show right on the page.
       (11) Fixed: Wealth found only Divine, Chaos and Exalted on poe.ninja. poe.ninja puts every item's name in a list
            the app wasn't reading (only the three core currencies were named), so Mirror of Kalandra, Hinekora's Lock,
-           essences, omens, runes ... all said "not on poe.ninja". Now read the way Sidekick reads it, with the
+           essences, omens, runes ... all said "not on poe.ninja". Now read by its item id, with the
            poe.ninja id as a fallback. The old price cache is thrown away once so everything is fetched fresh.
       (12) Exchange rates are its own utility (dock, Toolkit menu, taskbar dot), with currency names, and rates are
            converted from poe.ninja's main currency when that isn't the Divine Orb.
@@ -1607,7 +1611,7 @@ VERSION HISTORY
            already disappeared from the list because of the Show filter.
        (3) Ctrl+A selects every item in the list. Del does the same as "Clear list" (it still asks first).
        (4) Min uses is always 10 for tablets: the dropdown is gone.
-       (5) Your own mod values, like Sidekick: every mod in the side panel has Min and Max boxes, filled with what the
+       (5) Your own mod values: every mod in the side panel has Min and Max boxes, filled with what the
            search uses (your roll x 0.9 by default). Change them and press Enter or "Search with these values" to
            price the item again with them; "reset" puts a mod back to the automatic value.
   1.34 Fix: the shortcut bar and "Check for updates" button at the bottom disappeared in 1.33 (on every page), because
@@ -1716,12 +1720,12 @@ VERSION HISTORY
            in the last 24 h agree within 10 percent - off by default, memory never sets a price on its own otherwise.
   1.20 Same-wording mods: the trade site lists some mods TWICE with identical wording but different ids (e.g. "Map contains
        an additional Shrine"). The app only knew the first one, so it missed every listing that carries the other. It now
-       remembers all of them and searches "at least 1 of these" (exactly what Sidekick does). Needs a fresh download of
+       remembers all of them and searches "at least 1 of these". Needs a fresh download of
        the trade site's mod list on first start (automatic).
   1.19 Ready for the .exe: files packed INSIDE the exe (tabs.txt) are copied into the data folder on first start, so a
        brand-new user needs nothing else. Added build_exe.bat (one double-click builds StashOfExile2.exe).
   1.18 (1) Only YOUR Ctrl+Alt+C counts: the app now sees your real key presses (a Windows keyboard hook, which can tell
-       keys you pressed from keys another program sent) and ignores item copies made by Sidekick's Ctrl+D etc.
+       keys you pressed from keys another program sent) and ignores item copies made by other tools' keys.
        Toolbar box "Ctrl+Alt+C only" turns this off. (2) Duplicate check by exact name + exact mods (not by the raw copied
        text): a small always-on-top card asks "same item - skip" or "different tablet - add it".
   1.17 Safety check: if two different mods on one item end up on the SAME trade-site stat (the Azmeri Spirit mix-up

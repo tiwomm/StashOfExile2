@@ -60,7 +60,7 @@ def set_trade_currencies(static):
 
 
 # The trade site returns at most 100 listing ids per search. A tab holding more is searched again in slices: by
-# category, then sub-category (ids as Sidekick uses them for PoE 2), then rarity, then item level.
+# category, then sub-category (the ids poe.ninja uses for PoE 2), then rarity, then item level.
 WEALTH_CATS = {
     "weapon": ["weapon.bow", "weapon.crossbow", "weapon.claw", "weapon.dagger", "weapon.oneaxe", "weapon.onemace",
                "weapon.onesword", "weapon.flail", "weapon.sceptre", "weapon.spear", "weapon.staff", "weapon.rod",
@@ -624,7 +624,7 @@ class WealthPrices:
             names, images = {}, {}
             # 2.0 beta 7: every item's name is in the top-level "items" list; "core.items" only holds the few core
             # currencies (Divine / Chaos / Exalted). Reading only core.items left everything else nameless, so only
-            # those three were found. (Same layout Sidekick reads: ApiExchangeOverview.Items.)
+            # those three were found. (Layout: ApiExchangeOverview.Items.)
             for items in (core.get("items"), body.get("items")):
                 if isinstance(items, list):
                     for i in items:

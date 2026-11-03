@@ -118,7 +118,7 @@ CURRENCY_CHOICES = [("Any currency", None), ("Divine Orbs", "divine"), ("Exalted
                     ("Chaos Orbs", "chaos"), ("Exalted or Divine Orbs", "exalted_divine")]
 
 
-# 2.79.0: every filter the item panel offers (like Sidekick's) - opts key, the trade site's group and name
+# 2.79.0: every filter the item panel offers - opts key, the trade site's group and name
 NUM_OPTS = (("ilvl", "type_filters", "ilvl"), ("quality", "type_filters", "quality"),
             ("sockets", "equipment_filters", "rune_sockets"), ("req_lvl", "req_filters", "lvl"),
             ("req_str", "req_filters", "str"), ("req_dex", "req_filters", "dex"), ("req_int", "req_filters", "int"))

@@ -1125,7 +1125,7 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         self.hk_msg.pack(side="left", padx=8)
         self.fill_hotkeys()
         row = section("Hotkeys", "Other ways of copying", "Price checks only adds items you copy with your own "
-                                                          "Ctrl+Alt+C, so other tools (like Sidekick's Ctrl+D) don't "
+                                                          "Ctrl+Alt+C, so other tools' copy keys don't "
                                                           "fill your list. Tick this to also add items copied any other "
                                                           "way, e.g. a plain Ctrl+C.")
         self.any_copy_var = tk.BooleanVar(value=not SETTINGS.get("hotkey_only", True))
@@ -2571,7 +2571,7 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
                 _th.Meter(row, ratio, width=160, height=14,
                           on=C["red"] if ratio >= 0.8 else C["good"] if ratio >= 0.5 else None).pack(side="left")
         st = LIMITER.state()
-        note = "Counts include requests from other tools on the same account or IP (e.g. Sidekick)."
+        note = "Counts include requests from other tools on the same account or IP."
         if st["penalties"]:
             note += f"\nPenalties this session: {st['penalties']}"
         tk.Label(self.limit_body, text=note, bg=C["panel"], fg=C["muted"], justify="left", anchor="w",
@@ -2656,13 +2656,13 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         return getattr(self, "_clip_ignore", {}).get(text, 0) > time.time()
 
     def gate_ok(self, text):
-        """True if this copy may become a row: it must come from YOUR Ctrl+Alt+C (not Sidekick's Ctrl+D)."""
+        """True if this copy may become a row: it must come from YOUR Ctrl+Alt+C (not another tool's key)."""
         if text == self.own_clip or not SETTINGS.get("hotkey_only", True) or not self.keys.active:
             return True
         if self.keys.combo_recent():
             return True
         if text.lstrip().startswith("Item Class:"):
-            self.status_text = ("Ignored an item copy that wasn't made with your Ctrl+Alt+C (Sidekick?). "
+            self.status_text = ("Ignored an item copy that wasn't made with your Ctrl+Alt+C (another tool?). "
                                 "Wrong? Settings > Hotkeys > \"Also add items copied another way\"")
             self.status_until = time.time() + 8
         return False
@@ -4423,7 +4423,7 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
             self.show_detail(self.shown_rec)
 
     def show_detail(self, rec):
-        """2.79.0 (feedback: "a clean view like Sidekick"): the item card holds every filter - properties,
+        """2.79.0 (feedback: "a clean view"): the item card holds every filter - properties,
         requirements, miscellaneous, each mod, pseudo totals, trade filters - then Search again / Open on trade site,
         and one ▸ Advanced section at the bottom (listing status, if you list it, how it's priced, rolls, raw text)."""
         for w in self.detail.winfo_children():
@@ -4483,7 +4483,7 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
 
     # ---------------- the card
     def _detail_card(self, d, rec, it, wrap):
-        """The item as a card, Sidekick-style: name band, price, then every filter - each with its check box and
+        """The item as a card: name band, price, then every filter - each with its check box and
         Min / Max where it has a number. A click / Enter prices it again."""
         from . import themes as _th
         from .searchopts_page import item_facts
@@ -4855,7 +4855,7 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         return y1
 
     # ---------------- 2.78.3 (feedback: "we don't have the option to check ilvl ... to enter mod values / ranges"):
-    # on the card itself, like Sidekick - the item level with its own check box, Min / Max beside each mod
+    # on the card itself - the item level with its own check box, Min / Max beside each mod
     def _card_has_vals(self, rec, m):
         return m.get("value") is not None and not m.get("novalue") and (bool(m.get("sid")) or not rec.get("resolved"))
 
