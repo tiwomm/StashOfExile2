@@ -42,7 +42,8 @@ class OverlayParts:
         from .gamelog import area_kind
         ak = area_kind(data.get("area"), data.get("seed"), data.get("level", 0))
         if ak == "map":
-            self._mr_in = data.get("area")
+            from .maplib import display_name                 # 2.78.1: its name, not its area id ("MapRugosa")
+            self._mr_in = display_name(data.get("area"))
             return None
         left, self._mr_in = getattr(self, "_mr_in", None), None
         if left:
@@ -50,8 +51,11 @@ class OverlayParts:
         if not left or ak not in ("town", "hideout") or not self.rank_ask_on():
             return None
         from .config import SETTINGS
-        from .maplib import ranks
-        if left in ranks() or left in (SETTINGS.get("rank_never") or []):
+        from .maplib import display_name, ranks
+        never = SETTINGS.get("rank_never") or []
+        if any(display_name(n) != n for n in never):         # 2.78.1: ids saved by 2.76.0 -> names
+            SETTINGS["rank_never"] = never = list(dict.fromkeys(display_name(n) for n in never))
+        if left in ranks() or left in never:
             return None
         return self.maprank_prompt(left)
 
