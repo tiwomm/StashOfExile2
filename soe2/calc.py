@@ -172,16 +172,16 @@ class CalcOverlay:
         self.calc_var = tk.StringVar()
         ent = tk.Entry(body, textvariable=self.calc_var, bg=P["field"] if P.get("field") else P["cell_bg"], fg=txt,
                        insertbackground=txt, relief="flat", highlightthickness=1, highlightbackground=P["line"],
-                       highlightcolor=P["head"], font=(MONO, 12), justify="right", width=1)
+                       highlightcolor=P["head"], font=(MONO, self.ov_font(12)), justify="right", width=1)
         ent.pack(fill="x", ipady=4)
         ent.bind("<Return>", lambda e: self.calc_go())
         ent.bind("<KP_Enter>", lambda e: self.calc_go())
         ent.bind("<Escape>", lambda e: (self.calc_var.set(""), "break")[1])
         self.calc_entry = ent
         self.calc_out = tk.Label(body, text=fmt(self.calc_last) if self.calc_last is not None else "0", bg=bg,
-                                 fg=P["head"], font=(MONO, 16, "bold"), anchor="e")
+                                 fg=P["head"], font=(MONO, self.ov_font(16), "bold"), anchor="e")
         self.calc_out.pack(fill="x", pady=(4, 0))
-        self.calc_msg = tk.Label(body, text="12k = 12,000  ·  ans = last", bg=bg, fg=mut, font=(P["font"], 8),
+        self.calc_msg = tk.Label(body, text="12k = 12,000  ·  ans = last", bg=bg, fg=mut, font=(P["font"], self.ov_font(8)),
                                  anchor="e")
         self.calc_msg.pack(fill="x")
         keys = tk.Frame(body, bg=bg)
@@ -192,16 +192,16 @@ class CalcOverlay:
                 keys.columnconfigure(c, weight=1, uniform="k")
                 eq = k == "="
                 b = tk.Label(keys, text=k, bg=P["on_bg"] if eq and P.get("on_bg") else P["cell_bg"],
-                             fg=P["head"] if eq else txt, font=(P["font"], 10, "bold"), pady=4, cursor="hand2",
+                             fg=P["head"] if eq else txt, font=(P["font"], self.ov_font(10), "bold"), pady=4, cursor="hand2",
                              highlightthickness=1, highlightbackground=P["on_line"] if eq and P.get("on_line")
                              else P.get("cell_line") or P["line"])
                 b.grid(row=r, column=c, sticky="nsew", padx=1, pady=1)
                 b.bind("<Button-1>", lambda e, kk=k: self.calc_key(kk))
                 self.calc_keys[k] = b
-        tk.Label(body, text="RECENT  ·  click one to use it", bg=bg, fg=P["head"], font=(P["hfont"] or P["font"], 8, "bold"),
+        tk.Label(body, text="RECENT  ·  click one to use it", bg=bg, fg=P["head"], font=(P["hfont"] or P["font"], self.ov_font(8), "bold"),
                  anchor="w").pack(fill="x", pady=(8, 0))
         self.calc_hist = tk.Listbox(body, bg=bg, fg=mut, relief="flat", highlightthickness=0, height=3,
-                                    font=(MONO, 9), selectbackground=P["cell_bg"], selectforeground=txt,
+                                    font=(MONO, self.ov_font(9)), selectbackground=P["cell_bg"], selectforeground=txt,
                                     activestyle="none", width=1)
         self.calc_hist.pack(fill="x")
         for line in getattr(self, "_calc_lines", [])[:3]:
@@ -210,7 +210,7 @@ class CalcOverlay:
             self.calc_hist.insert("end", "nothing yet")
         self.calc_hist.bind("<<ListboxSelect>>", lambda e: self.calc_reuse())
         w.update_idletasks()
-        w.geometry(f"{self.W}x{w.winfo_reqheight()}")      # a fixed size: as wide as W, as tall as its keys
+        w.geometry(f"{self.ov_px(self.W)}x{w.winfo_reqheight()}")      # 2.78.3: the game's size      # a fixed size: as wide as W, as tall as its keys
         self.calc_win = w
         return w
 

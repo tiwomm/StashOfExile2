@@ -8,6 +8,7 @@ Notes, the switches - has its switch in Overlay › Options › On the overlay),
 things - the same reading as the separate windows."""
 import tkinter as tk
 from tkinter import font as tkfont
+from tkinter import ttk
 
 from .overlaywin import CanvasText, OverlayWindow, pal
 
@@ -22,6 +23,12 @@ HUD = ("xpbar",)                 # 2.65.0: fitted to the game's own bottom bar, 
 #   x0 / x1 >= 0: from the left edge, < 0: from the right edge; bottom: up from the bottom edge.
 HUD_SPOTS = {"xpbar": [(0.535, -0.535, 0.0205, 0.056)]}   # 2.67.2: two rows (switches on top); 2.74.0: between 2.73.4 and 2.73.5
 SHORT = {"breach": "Brch", "delirium": "Deli", "ritual": "Ritl", "remnant": "Remn", "focus": "Focus", "campaign": "Camp"}
+
+
+def hud_k(game_h):
+    """2.78.3 (feedback: "make sure the overlay is detecting a person's resolution and scaling it to fit"): how much
+    bigger than at 1080 px the overlay is drawn - the game window's height / 1080 (720p 0.67, 1440p 1.33, 4K 2.0)."""
+    return max(0.6, min(3.0, (game_h or 1080) / 1080))
 
 
 def set_click_through(w, on):
@@ -153,7 +160,7 @@ class MergedOverlay:
         if r is None:
             r = (0, 0, self.root.winfo_screenwidth(), self.root.winfo_screenheight())
         gx, gy, gw, gh = r
-        self._hud_k = max(0.8, min(1.6, gh / 1080))
+        self._hud_k = hud_k(gh)                            # 2.78.3: no 0.8-1.6 cap - 4K and 720p fit too
         saved = (self.tracker_cfg().get("hud_pos") or {}).get(layout) or []
         out = []
         for i, (a, b, bot, hh) in enumerate(HUD_SPOTS[layout]):
@@ -822,6 +829,28 @@ class MergedOverlay:
             else:
                 w.show()
         return self.mg_win
+
+    # 2.78.3: the cards over the game (map rank, campaign, feature tips) follow the game's size too
+    def ov_k(self):
+        from .alerts_page import game_rect
+        r = game_rect() or (0, 0, self.root.winfo_screenwidth(), self.root.winfo_screenheight())
+        return hud_k(r[3])
+
+    def ov_font(self, n):
+        return max(7, round(n * self.ov_k()))
+
+    def ov_px(self, n):
+        return int(round(n * self.ov_k()))
+
+    def ov_btn(self, style="TButton"):
+        """A button style for a card over the game: its text at the game's size."""
+        size = self.ov_font(10)
+        name = f"Ov{size}.{style}"
+        try:
+            ttk.Style(self.root).configure(name, font=("Segoe UI", size), padding=(self.ov_px(8), self.ov_px(4)))
+        except tk.TclError:
+            return style
+        return name
 
     def _hf(self, n):
         """A font size for the Game bar, grown with the game window (made for 1080 px high)."""
