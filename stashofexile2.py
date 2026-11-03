@@ -23,7 +23,8 @@ VERSION HISTORY
        The rank card ("Rank this map", 2.76.0) said the map's area id ("How was MapRugosa?") and saved the rank
        under it, so the Map library never showed it. It says and saves the map's name now (maplib.display_name: the
        library's name, else the id without "Map", with spaces). Ranks and "Never for this map" saved under an id
-       move to the name by themselves.
+       move to the name by themselves. A workflow (branches.yml) deletes a pull request's branch once it's merged
+       (and older merged ones still around).
   2.78.0
        Money Makers rework (feedback: the atlas step was a vague dropdown; no pinnacles, bosses or wisps; Upload
        never asked for tags, Thinking or Clicks; the Strat panel had no regex or trade links for its items).
