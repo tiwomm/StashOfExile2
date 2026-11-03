@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU GPL v3.0 (see LICENSE). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.78.3
+VERSION 2.79.0
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,6 +19,24 @@ VERSION 2.78.3
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.79.0
+       The item panel, like Sidekick (feedback: "a clean view like Sidekick ... all of those functions"). One card holds
+       every filter: Properties (base type - this base or any of its kind -, quality, defences / DPS totals, item
+       level, sockets, each with a check box and Min / Max), Requirements (Level, Str, Dex, Int read from "Requires:",
+       folded), Miscellaneous (Corrupted, Fractured, Desecrated, Sanctified, Mirrored, Unidentified: Any / Yes / No -
+       a click steps), Stat filters (each mod: check box, Min / Max, ★ must match, FRACTURED tag), Pseudo filters,
+       Trade filters (seller, priced in). Then Search again [Enter] / Open on trade site [O], and one ▸ Advanced
+       (listing status with Mark as listed / sold / removed, if you list it, how it's priced, each mod's roll and tier,
+       raw text, Copy name). Gone: the Item / How it's priced / Raw tabs, Fine-tune, the Search filters box, the foot
+       buttons. trade.apply_opts: Min / Max for any number filter (NUM_OPTS) and Any / Yes / No (MISC_OPTS).
+       No price pop-ups at all (feedback: not for Manual Add either). Mods the game data doesn't know (Mageblood's
+       legacies, new granted skills) are found on the trade site's own stat list (gear.live_ids / relink; unmatched
+       ones go to unmatched_mods.txt). A granted skill must match (no level filter); one the trade site doesn't list
+       makes the item "check by hand" (feedback: a Rhoa Mount Absent Amulet priced 3.7 div, really 28c). White and
+       magic bases (feedback): their exact item level, Normal / Magic, not corrupted, fractured or sanctified, their
+       quality and sockets at least. Remnant: when the book appears it's read again a few times while it settles
+       (SETTLE_READS) - the first look could land mid-animation, find nothing, and wait for the picture to change
+       (feedback: "not popping up on time").
   2.78.3
        The overlay fits any resolution (feedback: "detect a person's resolution and scale it to fit"): its size
        follows the game window's height (merged_page.hud_k: height / 1080) without the old 0.8-1.6 cap, so 720p and
@@ -1797,7 +1815,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.78.3"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.79.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 

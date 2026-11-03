@@ -21,6 +21,15 @@ NEXT = [
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.79.0": [
+        "Price checks: a clean item panel, like Sidekick - every filter on the item card (properties, requirements, "
+        "corrupted / fractured / desecrated / sanctified / mirrored / unidentified, each mod with Min / Max and ★, "
+        "trade filters). Listing status, how it's priced and the raw text are under ▸ Advanced.",
+        "No price pop-ups over your screen any more.",
+        "Uniques like Mageblood and bases with a granted skill (Summon Rhoa Mount) find their mods on the trade site. "
+        "White and magic bases are compared at their exact item level, rarity, quality and sockets.",
+        "The Remnant price tags show up as soon as the book is open.",
+    ],
     "2.78.3": [
         "The overlay sizes itself to your game's resolution, from 720p to 4K - the bar, its text and the cards over "
         "the game (map rank, campaign, the calculator).",

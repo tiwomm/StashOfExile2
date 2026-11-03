@@ -118,6 +118,14 @@ CURRENCY_CHOICES = [("Any currency", None), ("Divine Orbs", "divine"), ("Exalted
                     ("Chaos Orbs", "chaos"), ("Exalted or Divine Orbs", "exalted_divine")]
 
 
+# 2.79.0: every filter the item panel offers (like Sidekick's) - opts key, the trade site's group and name
+NUM_OPTS = (("ilvl", "type_filters", "ilvl"), ("quality", "type_filters", "quality"),
+            ("sockets", "equipment_filters", "rune_sockets"), ("req_lvl", "req_filters", "lvl"),
+            ("req_str", "req_filters", "str"), ("req_dex", "req_filters", "dex"), ("req_int", "req_filters", "int"))
+MISC_OPTS = (("fractured", "fractured_item", False), ("desecrated", "desecrated", False),
+             ("sanctified", "sanctified", False), ("mirrored", "mirrored", False), ("unidentified", "identified", True))
+
+
 def use_opts(opts):
     _OPTS.v = dict(opts) if opts else None
 
@@ -150,11 +158,20 @@ def apply_opts(query, item=None, opts=None):
     if o.get("corrupted") in ("any", "yes", "no"):
         put("misc_filters", "corrupted", None if o["corrupted"] == "any" else
             {"option": "true" if o["corrupted"] == "yes" else "false"})
-    for key, group, name in (("ilvl", "type_filters", "ilvl"), ("quality", "type_filters", "quality"),
-                             ("sockets", "equipment_filters", "rune_sockets")):
+    for key, group, name in NUM_OPTS:          # 2.79.0: a number (at least) or {"min", "max"}
         if key in o:
             v = o[key]
-            put(group, name, {"min": v} if v not in (None, "", 0) else None)
+            if isinstance(v, dict):
+                v = {k: x for k, x in v.items() if k in ("min", "max") and x not in (None, "")}
+                put(group, name, v or None)
+            else:
+                put(group, name, {"min": v} if v not in (None, "", 0) else None)
+    for key, name, flip in MISC_OPTS:          # 2.79.0: Any / Yes / No (Unidentified is the trade site's "identified")
+        if o.get(key) in ("yes", "no"):
+            yes = (o[key] == "yes") != flip
+            put("misc_filters", name, {"option": "true" if yes else "false"})
+        elif o.get(key) == "any":
+            put("misc_filters", name, None)
     if item is not None and o.get("base") in ("same", "class"):
         s = item.get("search") or {}
         if o["base"] == "same" and item.get("base"):

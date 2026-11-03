@@ -53,6 +53,44 @@ WEAPON_FEEDERS = ("Adds # to # Physical Damage", "#% increased Physical Damage",
 KIND_NAMES = {"prefix": "Prefix", "suffix": "Suffix", "implicit": "Implicit", "rune": "Rune", "enchant": "Enchant",
               "explicit": "Explicit", "unique": "Explicit"}   # 2.74.1: "{ Unique Modifier }" - a unique's explicit mods
 AFFIX_KINDS = ("Prefix", "Suffix", "Explicit")
+SKILL = re.compile(r"^Grants Skill:\s*(?:Level\s+\d+\s+)?(.+?)\s*$", re.I)
+
+
+def live_ids(text):
+    """2.79.0: a mod the game data doesn't know -> its id on the trade site's own stat list (the daily download),
+    trying the wording as it is, then a granted skill without its level. -> [id] or []."""
+    from .trade import TEXT2SID
+    from .mods import norm
+    if not TEXT2SID:
+        return []
+    tries = [text]
+    sk = SKILL.match(strip_markup(text))
+    if sk:
+        tries += [f"Grants Skill: Level # {sk.group(1)}", f"Grants Skill: {sk.group(1)}"]
+    for t in tries:
+        k = norm(t)
+        if k in TEXT2SID:
+            return [TEXT2SID[k]]
+    return []
+
+
+def relink(item):
+    """2.79.0: mods left without a trade id when the item was read (the trade list wasn't downloaded yet) -> try
+    again. -> how many were found."""
+    n = 0
+    for m in item.get("mods") or []:
+        if m.get("sid") or m.get("kind") == "Total":
+            continue
+        ids = live_ids(m["text"])
+        if ids:
+            m.update(sid=ids[0], ids=ids, note=None if not m.get("covered") else m.get("note"))
+            opt = option_for(ids[0], m["text"])
+            if opt is not None:
+                m.update(option=opt, novalue=True)
+                if item.get("rarity") == "Unique" and m.get("covered", "").startswith("uniques are searched"):
+                    m.update(covered=None, auto="high", note="which one it has decides the price - searched")
+            n += 1
+    return n
 _PAIR = re.compile(r"(\d+(?:\.\d+)?)\s*-\s*(\d+(?:\.\d+)?)")
 # 2.72.0: mods that buyers hardly pay for on a rare - searching on them only hides the comparable listings. Left out
 # by default (✕ Ignore; tick one to search on it anyway). Our own list, from how the trade site's rare listings price.
@@ -151,11 +189,20 @@ def parse_gear(text):
         m["roll"] = roll_pct(m)
         if v is not None and neg and m["roll"] is not None:
             m["roll"] = 1 - m["roll"]
+        if not ids:                                          # 2.79.0: the game data doesn't know it - the trade site's
+            ids = live_ids(clean)                             # own list (downloaded daily) might (Mageblood, new skills)
+            if ids:
+                m.update(sid=ids[0], ids=ids)
+        skill = SKILL.match(strip_markup(clean))
+        if skill:                                            # 2.79.0: "Grants Skill: Level 20 Summon Rhoa Mount" - which
+            m.update(auto="high", novalue=True, skill=skill.group(1).strip())   # skill decides the price; no level filter
+            if not m["sid"]:
+                m["note"] = "its skill isn't on the trade site's list yet"
         opt = option_for(ids[0], clean) if ids else None     # 2.74.1: a stat with a choice (Legacy of Gold ...)
         if opt is not None:
             m.update(option=opt, novalue=True)
-        if not stat:
-            m["note"] = "not found in the library or on the trade site's stat list"
+        if not stat and not m["sid"]:
+            m["note"] = m["note"] or "not found in the library or on the trade site's stat list"
         if kind not in AFFIX_KINDS:
             m["covered"] = {"Implicit": "implicit: comes with the base", "Rune": "socketed rune: can be swapped",
                             "Enchant": "enchant"}.get(kind, kind.lower())
@@ -241,10 +288,15 @@ def parse_gear(text):
                                                                  " (low: most listings roll better)" if avg < 0.3 else ""))
     elif cls in PER_BASE_CLASSES or not totals:
         search.update(type=g["base"], category=None)        # its own market (and anything without totals to compare on)
-    if g["rarity"] in ("Normal", "Magic") and (g.get("ilvl") or 0) >= CRAFT_ILVL:     # 2.72.0: a crafting base
-        search.update(type=g["base"], category=None, ilvl_min=min(g["ilvl"], MAX_ILVL),
-                      rarity="normal" if g["rarity"] == "Normal" else "nonunique")
-        notes.append(f"crafting base: item level {min(g['ilvl'], MAX_ILVL)}+")
+    if g["rarity"] in ("Normal", "Magic"):              # 2.79.0 (feedback): white and blue bases - the exact item
+        white = g["rarity"] == "Normal"                 # level, Normal / Magic, not corrupted, fractured or
+        search.update(type=g["base"], category=None, rarity="normal" if white else "magic", corrupted=False,
+                      fractured=False, sanctified=False, ilvl_min=g.get("ilvl"), ilvl_max=g.get("ilvl"),
+                      quality_min=q or None, sockets_min=g.get("sockets") or None)   # sanctified; its quality and
+        notes.append(("white" if white else "magic") + " base: " + ", ".join(    # sockets (at least) when it has them
+            x for x in (f"item level {g['ilvl']}" if g.get("ilvl") else "", f"{q}%+ quality" if q else "",
+                        f"{g['sockets']}+ sockets" if g.get("sockets") else "",
+                        "not corrupted, fractured or sanctified") if x))
     need = EXCEPTIONAL_SOCKETS.get(cls)
     if need and g.get("sockets", 0) >= need and not g.get("corrupted"):
         search["sockets_min"] = g["sockets"]
@@ -322,8 +374,14 @@ def build_query(item, must, optional, count_min, values, plain=False):
     if mp:
         filters["map_filters"] = {"filters": mp}
     filters["misc_filters"] = {"filters": {"corrupted": {"option": "true" if s.get("corrupted") else "false"}}}
+    for k, name in (("fractured", "fractured_item"), ("sanctified", "sanctified")):     # 2.79.0: white / blue bases
+        if s.get(k) is False:
+            filters["misc_filters"]["filters"][name] = {"option": "false"}
     if s.get("ilvl_min"):                                     # 2.72.0: crafting bases (item level: a type filter)
-        filters.setdefault("type_filters", {"filters": {}})["filters"]["ilvl"] = {"min": s["ilvl_min"]}
+        filters.setdefault("type_filters", {"filters": {}})["filters"]["ilvl"] = {
+            k: v for k, v in (("min", s["ilvl_min"]), ("max", s.get("ilvl_max"))) if v}
+    if s.get("quality_min"):                                  # 2.79.0: white bases
+        filters.setdefault("type_filters", {"filters": {}})["filters"]["quality"] = {"min": s["quality_min"]}
     if api_age:
         filters["trade_filters"] = {"filters": {"indexed": {"option": api_age}}}
     query["filters"] = filters
