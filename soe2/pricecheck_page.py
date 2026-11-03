@@ -135,6 +135,17 @@ def pc_key_label():
     from .overlay import key_label
     return key_label(SETTINGS.get("pc_key") or "") or "your price check key"
 
+
+class PCView:
+    """2.84.0: one item card + listings layout (Price Checks, and Favorites uses the same)."""
+
+    def __init__(self, left, lcanvas, lst, rcanvas, count, open_btn):
+        self.left, self.lcanvas, self.lst, self.rcanvas, self.count, self.open_btn = \
+            left, lcanvas, lst, rcanvas, count, open_btn
+        self.cards = []
+        self.redraw = None           # fn() -> draw the listings again (a picture arrived)
+
+
 class PriceCheckPage:
     # ---------------------------------------------------------------- the page
     def build_pc(self, body):
@@ -165,7 +176,12 @@ class PriceCheckPage:
         self.pc_count_lbl.pack(side="left")
         self.pc_open_btn = ttk.Button(head, text="Open on trade site", command=self.pc_open_trade, state="disabled")
         self.pc_open_btn.pack(side="right")
+        self.pc_fav_btn = ttk.Button(head, text="☆ Add to favorites", command=self.pc_add_fav, state="disabled")
+        self.pc_fav_btn.pack(side="right", padx=(0, 8))           # 2.84.0
         self.pc_rcanvas, self.pc_list = self._pc_scroller(right, padx=12, bg_key="panel")
+        self.pcv = PCView(self.pc_left, self.pc_lcanvas, self.pc_list, self.pc_rcanvas, self.pc_count_lbl,
+                          self.pc_open_btn)
+        self.pcv.redraw = lambda: self.pc_draw_list(self.records.get(self.pc_rid))
         self.pc_refresh_hist()
         recs = self.pc_recs()
         self.pc_show(recs[0] if recs else None)
@@ -267,20 +283,24 @@ class PriceCheckPage:
                      bg=P2, fg=C["muted"], font=("Segoe UI", 10), justify="left", anchor="nw").pack(fill="x", pady=12)
             self.pc_draw_list(None)
             return
-        wrap = 330
-        self._detail_card(self.pc_left, rec, rec["item"], wrap)
-        self.pc_card = self.detail_card
-        btns = tk.Frame(self.pc_left, bg=P2)
+        self.pc_card, self.pc_search_btn = self.pcv_card(self.pcv, rec)
+        self.pc_draw_list(rec)
+
+    def pcv_card(self, v, rec):
+        """The item card with every filter and the Search button, into a view's left side."""
+        P2, wrap = C["panel2"], 330
+        self._detail_card(v.left, rec, rec["item"], wrap)
+        card = self.detail_card
+        btns = tk.Frame(v.left, bg=P2)
         btns.pack(fill="x", pady=(8, 0))
-        self.pc_search_btn = ttk.Button(btns, text="Search", style="Primary.TButton",
-                                        command=lambda: self.reprice([rec["id"]]))
-        self.pc_search_btn.pack(side="left", fill="x", expand=True)
+        btn = ttk.Button(btns, text="Search", style="Primary.TButton", command=lambda: self.reprice([rec["id"]]))
+        btn.pack(side="left", fill="x", expand=True)
         note = self._detail_note(rec)
         if note:
-            tk.Label(self.pc_left, text=note[0], bg=P2, fg=note[1], font=("Segoe UI", 9), anchor="w", justify="left",
+            tk.Label(v.left, text=note[0], bg=P2, fg=note[1], font=("Segoe UI", 9), anchor="w", justify="left",
                      wraplength=wrap).pack(fill="x", pady=(8, 0))
-        self.pc_lcanvas.yview_moveto(0)
-        self.pc_draw_list(rec)
+        v.lcanvas.yview_moveto(0)
+        return card, btn
 
     def pc_entries(self, rec):
         """The listings behind this item's price: the search the price came from (its first 10)."""
@@ -292,29 +312,38 @@ class PriceCheckPage:
             len(ids)
 
     def pc_draw_list(self, rec):
-        for w in self.pc_list.winfo_children():
-            w.destroy()
-        self.pc_cards = []
-        bg = C["panel"]
-        self.pc_open_btn.config(state="normal" if rec and rec.get("qid") else "disabled")
+        self.pcv_list(self.pcv, rec)
+        self.pc_cards = self.pcv.cards
+        self.pc_fav_state(rec)
+
+    def pcv_list(self, v, rec):
+        v.open_btn.config(state="normal" if rec and rec.get("qid") else "disabled")
         if rec is None:
-            self.pc_count_lbl.config(text="")
-            return
+            return self.pcv_entries(v, None, 0, 0, "")
         st = rec["state"]
         if st != "done":
-            self.pc_count_lbl.config(text="Searching the trade site…" if st == "pricing" else
-                                     ("Couldn't search" if st == "error" else "Waiting in line…"))
-            return
+            return self.pcv_entries(v, None, 0, 0, "Searching the trade site…" if st == "pricing" else
+                                    ("Couldn't search" if st == "error" else "Waiting in line…"))
         entries, total, n = self.pc_entries(rec)
-        self.pc_count_lbl.config(text=f"Showing {len(entries)} of {total:,} items" if total else "No listings found")
-        if n and not entries:
-            tk.Label(self.pc_list, text="The listings aren't loaded any more - press Search to load them again.",
-                     bg=bg, fg=C["muted"], anchor="w").pack(fill="x", pady=8)
+        self.pcv_entries(v, entries, total, n)
+
+    def pcv_entries(self, v, entries, total, n, head=None):
+        """The listings as cards (entries None: only the heading)."""
+        for w in v.lst.winfo_children():
+            w.destroy()
+        v.cards = []
+        if entries is None:
+            v.count.config(text=head or "")
             return
-        width = max(420, self.pc_rcanvas.winfo_width() - 40)
+        v.count.config(text=f"Showing {len(entries)} of {total:,} items" if total else "No listings found")
+        if n and not entries:
+            tk.Label(v.lst, text="The listings aren't loaded any more - press Search to load them again.",
+                     bg=C["panel"], fg=C["muted"], anchor="w").pack(fill="x", pady=8)
+            return
+        width = max(420, v.rcanvas.winfo_width() - 40)
         for e in entries:
-            self.pc_cards.append(self._pc_card(self.pc_list, listing_facts(e), width))
-        self.pc_rcanvas.yview_moveto(0)
+            v.cards.append(self._pc_card(v.lst, listing_facts(e), width))
+        v.rcanvas.yview_moveto(0)
 
     def _pc_card(self, parent, f, w):
         """One listing, the way the trade site shows it: name band, properties, item level, requirements, mods with
@@ -453,8 +482,8 @@ class PriceCheckPage:
         got = {u for u in done if os.path.exists(self._pc_art_path(u))}
         self._pc_art_failed = {**getattr(self, "_pc_art_failed", {}), **{u: time.time() for u in done - got}}
         done = got
-        rec = self.records.get(self.pc_rid)
-        if rec is not None and any(getattr(c, "_art_url", None) in done for c in getattr(self, "pc_cards", [])):
-            self.pc_draw_list(rec)
+        for v in (getattr(self, "pcv", None), getattr(self, "favv", None)):      # 2.84.0: each view with cards
+            if v is not None and v.redraw and any(getattr(c, "_art_url", None) in done for c in v.cards):
+                v.redraw()
         if self._pc_art_wait:
             self.root.after(500, self._pc_art_poll)

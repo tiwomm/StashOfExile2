@@ -230,7 +230,7 @@ class Engine(TabReaderJobs, WealthJobs, StratCostJobs, threading.Thread):
             return
         self.resolve_rec(rec)
         self.ui_q.put(("resolved", rid))
-        self.add(0 if rec.get("src") == "pc" else 2, "price", rid)     # 2.80.0: Price Checks jump the queue
+        self.add(0 if rec.get("src") in ("pc", "fav") else 2, "price", rid)     # 2.80.0: Price Checks jump the queue
 
     def resolve_rec(self, rec):
         """Match every mod of a record's item to its trade-site stat (2.0: also used for Wealth items)."""
