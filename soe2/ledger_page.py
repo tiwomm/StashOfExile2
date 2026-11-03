@@ -14,6 +14,7 @@ from .config import SETTINGS, save_json
 from .pricefmt import fmt_short
 from .chrome import section as chrome_section
 from .style import C, MONO, ScrollArea, SegBar, Tooltip
+from .trade import listing_rules
 
 
 def _hms(secs):
@@ -2314,7 +2315,7 @@ class LedgerPage:
                 us = uses_stat_id(table)
                 if us:
                     flt.append({"id": us, "value": {"min": 10}})
-            q = {"query": {"status": {"option": "securable"}, "type": e.get("base") or e.get("name"),
+            q = {"query": {"status": {"option": listing_rules()[0]}, "type": e.get("base") or e.get("name"),
                            "stats": [{"type": "and", "filters": flt}]}, "sort": {"price": "asc"}}
             league = SETTINGS.get("league") or "Standard"
             url = (f"https://www.pathofexile.com/trade2/search/poe2/{quote(league)}"
@@ -2350,7 +2351,7 @@ class LedgerPage:
         mp = {"map_tier": {"min": tier, "max": tier}} if tier else {}
         for p in picked:
             mp[p["fid"]] = {"min": p["value"]}
-        q = {"query": {"status": {"option": "securable"}, "stats": [{"type": "and", "filters": []}],
+        q = {"query": {"status": {"option": listing_rules()[0]}, "stats": [{"type": "and", "filters": []}],
                        "filters": {"map_filters": {"filters": mp}}}, "sort": {"price": "asc"}}
         league = SETTINGS.get("league") or "Standard"
         url = (f"https://www.pathofexile.com/trade2/search/poe2/{quote(league)}"

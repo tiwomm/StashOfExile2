@@ -600,9 +600,16 @@ def tablet_advice(rarity, n_mods, n_good):
     return "Copy a tablet in game (Ctrl+C), then press Check my tablet."
 
 
+def _status():
+    """2.84.0 (feedback: "ALL price checks should ONLY be checking Instant Buyout unless the user selects in-person"):
+    the seller setting from Settings (Instant Buyout by default)."""
+    from .trade import listing_rules
+    return listing_rules()[0]
+
+
 def trade_link(league, sid=None, base=None):
     """A trade-site search for tablets with this mod (to check its price), cheapest first."""
-    q = {"query": {"status": {"option": "online"}}, "sort": {"price": "asc"}}
+    q = {"query": {"status": {"option": _status()}}, "sort": {"price": "asc"}}
     if base:
         q["query"]["type"] = base
     if sid:
@@ -613,12 +620,21 @@ def trade_link(league, sid=None, base=None):
 
 def item_trade_link(league, item):
     """2.78.0: a strat's item (its base and ★ mods) -> a trade-site search for it, cheapest first: the base, and each
-    ★ mod the trade site knows (with its number as the minimum)."""
-    q = {"query": {"status": {"option": "online"}}, "sort": {"price": "asc"}}
+    ★ mod the trade site knows (with its number as the minimum). 2.84.0: a waystone's numbers (Monster Rarity: +103%)
+    are the trade site's Endgame filters, with its tier."""
+    q = {"query": {"status": {"option": _status()}}, "sort": {"price": "asc"}}
     if item.get("base"):
         q["query"]["type"] = item["base"]
     filters = []
-    for line in item.get("key_mods") or []:
+    wp = waystone_props(item)
+    if wp is not None:
+        tier, props = wp
+        mp = {fid: {"min": v} for fid, _ro, v in props}
+        if tier:
+            mp["map_tier"] = {"min": tier, "max": tier}
+        if mp:
+            q["query"]["filters"] = {"map_filters": {"filters": mp}}
+    for line in ([] if wp is not None else item.get("key_mods") or []):
         sid = stat_id(line)
         if not sid or any(f["id"] == sid for f in filters):
             continue
@@ -633,6 +649,31 @@ def item_trade_link(league, item):
             + urllib.parse.quote(json.dumps(q, separators=(",", ":"))))
 
 
+WAYSTONE_REGEX = {"map_iir": "item_rarity", "map_bonus": "drop_chance", "map_packsize": "pack_size",
+                  "map_rare_monsters": "monster_rarity", "map_magic_monsters": "effectiveness"}
+
+
+def waystone_props(item):
+    """2.84.0: a waystone item -> (tier or None, [(trade filter id, regex option or None, value)]) from its ★ lines
+    ("Monster Rarity: +103%"); None for anything else."""
+    from .waystone import PROPS
+    base = str(item.get("base") or "")
+    if item.get("kind") != "waystone" and "waystone" not in base.lower():
+        return None
+    m = re.search(r"Tier (\d+)", base)
+    tier = int(m.group(1)) if m else None
+    out = []
+    for line in item.get("key_mods") or []:
+        mm = re.match(r"^\s*([A-Za-z ]+?)\s*:?\s*([+-]?\d+(?:\.\d+)?)%?", str(line).replace("★", "").strip())
+        if not mm:
+            continue
+        hit = PROPS.get(mm.group(1).strip().lower())
+        if hit:
+            v = float(mm.group(2))
+            out.append((hit[0], WAYSTONE_REGEX.get(hit[0]), int(v) if v.is_integer() else v))
+    return tier, out
+
+
 def item_regex(items):
     """2.78.0: a stash / vendor search for these items' ★ mods (one item: all of its mods; several: any of them).
     Mods the Regex tool knows use its short terms; others are searched by their words. -> text or ''."""
@@ -643,10 +684,28 @@ def item_regex(items):
     lines = [l for i in items for l in i.get("key_mods") or []]
     if not lines:
         return ""
-    ids = list(dict.fromkeys(R.matching_mods(kind, "\n".join(lines))))
+    if kind == "waystone" and len(items) == 1:                 # 2.84.0: its numbers and tier (not their words)
+        tier, props = waystone_props(items[0]) or (None, [])
+        opts = {ro: int(v) for _f, ro, v in props if ro}
+        if tier:
+            opts.update(tier_min=tier, tier_max=tier)
+        if opts:
+            try:
+                out, _notes = R.build("waystone", [], [], options=opts)
+            except Exception:
+                out = ""
+            if out:
+                return out
+    want = {}                                                   # 2.84.0: each mod at least the item's number
+    for line in lines:
+        n = re.search(r"\d+(?:\.\d+)?", str(line))
+        for x in R.matching_mods(kind, line):
+            v = int(float(n.group(0))) if n and len(items) == 1 else None
+            want.setdefault(x, v)
+    ids = list(want)
     if ids:
         try:
-            out, _notes = R.build(kind, [(x, None) for x in ids], [], len(items) == 1, {})
+            out, _notes = R.build(kind, [(x, want[x]) for x in ids], [], len(items) == 1, {})
         except Exception:
             out = ""
         if out:

@@ -26,6 +26,8 @@ NOTES = {
         "favorite opens with its filters and the trade site's listings, like Price Checks.",
         "Put favorites in groups, drag them into your order, and right-click for everything else (rename, edit, "
         "duplicate, move, copy the trade link, delete - Ctrl+Z undoes).",
+        "Money Makers: the Trade links of a strat's items search Instant Buyout (your Settings choice), a waystone's "
+        "numbers and tier are searched too, and Copy regex includes the numbers.",
     ],
     "2.83.1": [
         "Price Checks' key is now Ctrl+D: hover an item in game and press it. Change it in Settings › Hotkeys. "
