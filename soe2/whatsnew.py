@@ -21,6 +21,14 @@ NEXT = [
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.75.0": [
+        "Wealth is easier to find your way around: Wealth ↳ Overview, ↳ Stash tabs and ↳ Snapshots in the sidebar. "
+        "Your stash tabs have their own page - the list, and adding one, always in view.",
+        "Sync stash tabs and Count currency are on top of every Wealth page. The first time, the setup steps are "
+        "right on the Overview and tick themselves off; after that, one line says what's counted, synced and "
+        "still needs a price.",
+        "Pick which tab's items to show with From, over the item list.",
+    ],
     "2.74.5": [
         "Price checks is lighter: fewer rows and less padding, the settings line on top, and beta notices you can "
         "close with the × on their right.",
