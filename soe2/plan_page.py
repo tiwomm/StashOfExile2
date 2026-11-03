@@ -103,7 +103,6 @@ class GamePlanPage:
         cur = F.current()
         self.gp_goal_vars = {}
         trig = dict(F.TRIGGERS)
-        worth = self.gp_worth()
         for key, name in F.PHASES:
             gs = F.goals_of(key)
             tk.Label(box, text=name.upper() + ("  ·  NOW" if f["phase"] == key else ""), bg=P2,
@@ -130,9 +129,17 @@ class GamePlanPage:
                 b.bind("<Button-1>", lambda e, gid=g["id"]: self.gp_set_now(gid))
                 Tooltip(b, "Show this one on the overlay's focus line")
                 note = "poke: " + trig.get(g["trigger"], g["trigger"])
-                p = F.progress(g, worth)
-                if g.get("target_div"):
-                    note += f"  ·  {p[0]:.0f} of {p[1]:g} div" if p else f"  ·  target {g['target_div']:g} div"
+                if g.get("target_div"):                    # 2.73.2: you type how far you are (no Wealth)
+                    pr = tk.Frame(box, bg=P2)
+                    pr.pack(fill="x", padx=(32, 0))
+                    tk.Label(pr, text="have", bg=P2, fg=C["muted"], font=("Segoe UI", 9)).pack(side="left")
+                    hv = tk.StringVar(value=f"{g.get('have') or 0:g}")
+                    he = ttk.Entry(pr, textvariable=hv, width=6)
+                    he.pack(side="left", padx=4)
+                    he.bind("<Return>", lambda e, gid=g["id"], hv=hv: self.gp_goal_have(gid, hv.get()))
+                    he.bind("<FocusOut>", lambda e, gid=g["id"], hv=hv: self.gp_goal_have(gid, hv.get()))
+                    tk.Label(pr, text=f"of {g['target_div']:g} div", bg=P2, fg=C["muted"],
+                             font=("Segoe UI", 9)).pack(side="left")
                 tk.Label(box, text=note, bg=P2, fg=C["muted"], font=("Segoe UI", 9), anchor="w").pack(fill="x",
                                                                                                 padx=(24, 0))
 
@@ -167,19 +174,23 @@ class GamePlanPage:
             pass
 
     def gp_worth(self):
-        """Your net worth in divines (Wealth's last snapshot), for goals with a target, or None."""
-        try:
-            from .wealth import WEALTH
-            snaps = WEALTH.snapshots
-            return float(snaps[-1]["total"]) if snaps else None
-        except Exception:
-            return None
+        """2.73.2: not used any more (Wealth doesn't track live) - goals carry the progress you type."""
+        return None
+
+    def gp_goal_have(self, gid, text):
+        n = _num(text)
+        if n is not None:
+            g = F.goal(gid)
+            if g is not None and float(g.get("have") or 0) != n:
+                F.set_have(gid, n)
+                self.gp_overlay()
 
     # ---------------- B: stockpile
     def _gp_stock(self, parent):
         P2 = C["panel2"]
-        o, box = chrome_section(parent, "Stockpile while it's cheap", "What to buy and sit on. Have = your Wealth "
-                                                                       "count, Now = poe.ninja (or the bulk exchange).",
+        o, box = chrome_section(parent, "Stockpile while it's cheap", "What to buy and sit on. Have = what you type "
+                                                                       "(Enter keeps it), Now = poe.ninja (or the bulk "
+                                                                       "exchange).",
                                 wrap=True)
         o.pack(fill="x", pady=(0, 8))
         self.gp_stock_box = tk.Frame(box, bg=P2)
@@ -207,12 +218,8 @@ class GamePlanPage:
         return row
 
     def gp_have(self, name):
-        try:
-            from .wealth import WEALTH
-            return sum(int(i.get("qty") or 0) for i in WEALTH.all_items()
-                       if (i.get("type") or i.get("base") or "").lower() == name.lower())
-        except Exception:
-            return None
+        """2.73.2: what you typed for it (Wealth isn't used - it doesn't track live)."""
+        return F.stock_have(name)
 
     def gp_each(self, name):
         try:
@@ -226,6 +233,12 @@ class GamePlanPage:
             return each
         except Exception:
             return None
+
+    def gp_stock_have(self, name, text):
+        n = _num(text)
+        if n is not None and F.stock_have(name) != int(n):
+            F.set_stock_have(name, n)
+            self.gp_fill()
 
     def _gp_stock_rows(self):
         P2 = C["panel2"]
@@ -245,11 +258,21 @@ class GamePlanPage:
             have, each = self.gp_have(r["name"]), self.gp_each(r["name"])
             st = F.stock_status(r, have, each)
             self.gp_stock_state[r["name"]] = st
-            vals = (r["name"], f"{have if have is not None else '?'} / {r['goal'] or '-'}",
+            vals = (r["name"], None,
                     f"{r['under']:g} div" if r.get("under") is not None else "-",
                     (f"{each:.3g} div" if each is not None else "no price") + ("  · cheap" if st == "cheap" else
                                                                                "  · done" if st == "done" else ""))
             for c, v in enumerate(vals):
+                if c == 1:                                 # 2.73.2: Have is typed here
+                    hf = tk.Frame(box, bg=P2)
+                    hf.grid(row=i, column=1, sticky="w", padx=(0, 12), pady=1)
+                    hv = tk.StringVar(value=str(have or 0))
+                    he = ttk.Entry(hf, textvariable=hv, width=5)
+                    he.pack(side="left")
+                    he.bind("<Return>", lambda e, n=r["name"], hv=hv: self.gp_stock_have(n, hv.get()))
+                    he.bind("<FocusOut>", lambda e, n=r["name"], hv=hv: self.gp_stock_have(n, hv.get()))
+                    tk.Label(hf, text=f" / {r['goal'] or '-'}", bg=P2, fg=C["text"], font=("Segoe UI", 9)).pack(side="left")
+                    continue
                 tk.Label(box, text=v, bg=P2, fg=C["green"] if c == 3 and st == "cheap" else C["text"],
                          font=("Segoe UI", 9, "bold" if c == 3 and st == "cheap" else "normal"), anchor="w").grid(
                     row=i, column=c, sticky="w", padx=(0, 12), pady=1)
