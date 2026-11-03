@@ -9,6 +9,15 @@
 //
 // 2.31.0: also the community Mod book (/mods/*): hourly anonymous price summaries and Mod book rules as votes.
 //
+// 2.85.0 (feedback: "protections ... to only allow author + admin to make edits", "Suggest Edits", "moderation ...
+// opt-in community handled ... protections against data poisoning"): every change keeps the old version (History,
+// roll back); anyone can Suggest an edit, which the author accepts or declines; changes to an Official post (and
+// accepted suggestions to one, and suggestions to posts whose author is gone 30 days) wait for reviewers - players
+// who opted in with an account at least 14 days old and some activity; APPROVALS of them (or one admin) decide, never
+// on their own work. Reports from accounts younger than 7 days don't count towards hiding; an Official post is only
+// hidden by reviewers or an admin. Every field has limits; names are unique; edits, suggestions, reports, votes and
+// admin-key tries have daily limits.
+//
 // Secrets / vars: ADMIN_KEY, REPORT_HIDE, POSTS_PER_DAY, JOINS_PER_DAY. Stored per player: a made-up id and the
 // display name. Internet addresses are only kept as a hash with the day, to count new accounts.
 import RULES from "./schema.json";
@@ -17,6 +26,13 @@ const DAY = 86400;
 const MAX_BODY = 24000;
 const SESSION_DAYS = 180;
 const NAME = /^[\p{L}\p{N} _.\-]{2,24}$/u;
+const APPROVALS = 2, REVIEWER_DAYS = 14, REPORTER_DAYS = 7, AWAY_DAYS = 30;
+const PER_DAY = { edit: 30, suggest: 10, report: 20, vote: 200, admin_key: 5, admin_key_ip: 20, review: 100 };
+const MAX_MONEY = 100000, MAX_LINES = 60, MAX_LINE = 500;
+const TEXT_MAX = { name: 80, summary: 300, patch: 20, regex: 250, author: 40, type: 60, category: 60 };
+const ITEM_KINDS = ["tablet", "waystone", "other", "item"];
+const LEDGER_FIELDS = ["runs", "minutes", "cost_per_run_div", "loot_per_run_div", "profit_per_run_div", "div_per_hour"];
+const TAG_OK = /^[A-Za-z0-9][A-Za-z0-9 '&+\-]{1,39}$/;     // a Content tag the shared file added after this deploy
 
 // ------------------------------------------------------------------ the standard layout (same rules as the app)
 const slug = (t) => String(t).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 60) || "strat";
@@ -26,7 +42,10 @@ function amountProblems(d) {
   if (typeof d !== "object" || Array.isArray(d)) return ["must be an object"];
   const out = [];
   if (!RULES.units.includes(d.unit ?? "div")) out.push(`unit must be one of ${RULES.units.join(", ")}`);
-  for (const k of ["low", "high", "amount"]) if (k in d && d[k] !== null && typeof d[k] !== "number") out.push(`${k} must be a number`);
+  for (const k of ["low", "high", "amount"]) {
+    if (k in d && d[k] !== null && typeof d[k] !== "number") out.push(`${k} must be a number`);
+    else if (typeof d[k] === "number" && !(isFinite(d[k]) && Math.abs(d[k]) <= MAX_MONEY)) out.push(`${k} must be within ±${MAX_MONEY}`);
+  }
   if (typeof d.low === "number" && typeof d.high === "number" && d.low > d.high) out.push("low is bigger than high");
   return out;
 }
@@ -42,18 +61,41 @@ export function validateStrat(s) {
   if (t !== undefined && !(Number.isInteger(t) && t >= 1 && t <= 5)) out.push("thoughts_per_click must be 1-5");
   if (s.clicks_per_hour !== undefined && !RULES.clicks.includes(s.clicks_per_hour)) out.push(`clicks_per_hour must be one of ${RULES.clicks.join(", ")}`);
   if (s.updated && !/^\d{4}-\d{2}-\d{2}$/.test(String(s.updated))) out.push("updated must be YYYY-MM-DD");
+  else if (s.updated && Date.parse(s.updated) > Date.now() + 2 * DAY * 1000) out.push("updated is in the future");
+  for (const [k, n] of Object.entries(TEXT_MAX)) if (typeof s[k] === "string" && s[k].length > n) out.push(`${k}: ${n} characters at most`);
   for (const k of RULES.lists) {
     const v = s[k];
     if (v !== undefined && (!Array.isArray(v) || !v.every((x) => typeof x === "string"))) out.push(`${k} must be a list of text lines`);
+    else if (Array.isArray(v) && (v.length > MAX_LINES || v.some((x) => x.length > MAX_LINE)))
+      out.push(`${k}: ${MAX_LINES} lines of ${MAX_LINE} characters at most`);
   }
-  if (Array.isArray(s.tags)) for (const x of s.tags) if (!RULES.tags.includes(x)) out.push(`tags: "${x}" is not in the tag list`);
+  if (Array.isArray(s.tags)) for (const x of s.tags) if (!RULES.tags.includes(x) && !TAG_OK.test(String(x))) out.push(`tags: "${x}" is not in the tag list`);
+  if (s.items !== undefined) {
+    const it = s.items;
+    const okItem = (x) => x && typeof x === "object" && !Array.isArray(x) && typeof x.base === "string" && x.base && x.base.length <= 80 &&
+      (x.name === undefined || (typeof x.name === "string" && x.name.length <= 80)) &&
+      (x.kind === undefined || ITEM_KINDS.includes(x.kind)) &&
+      (x.count === undefined || (Number.isInteger(x.count) && x.count >= 1 && x.count <= 1000)) &&
+      (x.lasts === undefined || (Number.isInteger(x.lasts) && x.lasts >= 1 && x.lasts <= 100)) &&
+      (x.key_mods === undefined || (Array.isArray(x.key_mods) && x.key_mods.length <= 12 && x.key_mods.every((m) => typeof m === "string" && m.length <= 200))) &&
+      Object.keys(x).every((k) => ["kind", "base", "name", "count", "lasts", "key_mods"].includes(k));
+    if (!Array.isArray(it) || it.length > 30 || !it.every(okItem))
+      out.push('items must be up to 30 of {"kind", "base", "name", "count" 1-1000, "lasts" 1-100, "key_mods"}');
+  }
+  if (s.ledger !== undefined) {
+    const lg = s.ledger;
+    if (!lg || typeof lg !== "object" || Array.isArray(lg) || !Object.entries(lg).every(([k, v]) =>
+      LEDGER_FIELDS.includes(k) && typeof v === "number" && isFinite(v) && Math.abs(v) <= 1e6 && (k !== "runs" || (Number.isInteger(v) && v >= 0))))
+      out.push("ledger must be numbers: " + LEDGER_FIELDS.join(", "));
+  }
   for (const k of ["est_profit", "est_cost"]) for (const p of amountProblems(s[k])) out.push(`${k}: ${p}`);
   const wt = s.waystone_tiers;
   if (wt !== undefined) {
     const ok = wt && Number.isInteger(wt.min) && Number.isInteger(wt.max) && wt.min >= 1 && wt.max <= 16 && wt.min <= wt.max;
     if (!ok) out.push('waystone_tiers must be {"min": 1-16, "max": 1-16} with min <= max');
   }
-  if (s.sources !== undefined && (!Array.isArray(s.sources) || !s.sources.every((x) => x && typeof x.url === "string" && /^https?:\/\//.test(x.url))))
+  if (s.sources !== undefined && (!Array.isArray(s.sources) || s.sources.length > 10 || !s.sources.every((x) => x && typeof x.url === "string" &&
+    /^https?:\/\//.test(x.url) && x.url.length <= 300 && String(x.title ?? "").length <= 120)))
     out.push('sources must be a list of {"title", "url"} with http(s) links');
   if (s.atlas_image !== undefined && !/^b:\d{1,12}$/.test(String(s.atlas_image)))     // 2.78.0: uploaded first
     out.push('atlas_image must be "b:<id>" (upload the screenshot first)');
@@ -99,15 +141,67 @@ function sameText(a, b) {                  // constant-time compare for the admi
   return d === 0;
 }
 
+// 2.85.0: new columns and tables on an existing database (each statement fails harmlessly once it's done)
+let migrated = false;
+const MIGRATIONS = [
+  "ALTER TABLE users ADD COLUMN reviewer INTEGER NOT NULL DEFAULT 0",     // 1 = reviews; -1 = an admin took it away
+  "ALTER TABLE users ADD COLUMN last_seen INTEGER NOT NULL DEFAULT 0",
+  "ALTER TABLE posts ADD COLUMN based_on INTEGER",
+  "ALTER TABLE users ADD COLUMN renamed INTEGER NOT NULL DEFAULT 0",       // last name change (once every 7 days)                         // a copy of another post (credited)
+  `CREATE TABLE IF NOT EXISTS revisions (id INTEGER PRIMARY KEY AUTOINCREMENT, post_id INTEGER NOT NULL,
+    author_id TEXT NOT NULL, data TEXT NOT NULL, status TEXT NOT NULL, note TEXT NOT NULL DEFAULT '',
+    created INTEGER NOT NULL, decided INTEGER, decided_by TEXT, why TEXT)`,
+  "CREATE INDEX IF NOT EXISTS revisions_post ON revisions (post_id, status)",
+  `CREATE TABLE IF NOT EXISTS reviews (target TEXT NOT NULL, user_id TEXT NOT NULL, vote TEXT NOT NULL,
+    created INTEGER NOT NULL, PRIMARY KEY (target, user_id))`,
+  "CREATE TABLE IF NOT EXISTS limits (key TEXT PRIMARY KEY, n INTEGER NOT NULL, day TEXT NOT NULL)",
+];
+async function migrate(env) {
+  if (migrated) return;
+  for (const sql of MIGRATIONS) {
+    try { await env.DB.prepare(sql).run(); } catch (_e) { /* already there */ }
+  }
+  migrated = true;
+}
+
+const today = () => new Date().toISOString().slice(0, 10);
+// a daily allowance: false when `who` already did `what` `max` times today
+async function allowance(env, what, whoId, max, count = true) {
+  const day = today(), key = await sha256(`${what}|${whoId}|${day}`);
+  await env.DB.prepare("DELETE FROM limits WHERE day <> ?").bind(day).run();
+  const row = await env.DB.prepare("SELECT n FROM limits WHERE key = ?").bind(key).first();
+  if (row && row.n >= max) return false;
+  if (count) await env.DB.prepare("INSERT INTO limits (key, n, day) VALUES (?, 1, ?) ON CONFLICT(key) DO UPDATE SET n = n + 1").bind(key, day).run();
+  return true;
+}
+const limitFor = (env, what) => Number(env[`${what.toUpperCase()}_PER_DAY`] || PER_DAY[what]);
+
 async function who(req, env) {
   const m = /^Bearer\s+([a-f0-9]{64})$/i.exec(req.headers.get("authorization") || "");
   if (!m) return null;
   const row = await env.DB.prepare(
-    "SELECT u.id, u.name, u.admin, u.banned FROM sessions s JOIN users u ON u.id = s.user_id WHERE s.hash = ? AND s.expires > ?",
+    `SELECT u.id, u.name, u.admin, u.banned, u.reviewer, u.last_seen, u.created, u.renamed FROM sessions s JOIN users u ON u.id = s.user_id
+     WHERE s.hash = ? AND s.expires > ?`,
   ).bind(await sha256(m[1]), now()).first();
   if (!row) return null;
-  return { ...row, admin: !!row.admin, banned: !!row.banned };
+  if (now() - (row.last_seen || 0) > 3600) await env.DB.prepare("UPDATE users SET last_seen = ? WHERE id = ?").bind(now(), row.id).run();
+  return { ...row, admin: !!row.admin, banned: !!row.banned, reviewer: row.reviewer === 1 && !row.banned, reviewer_state: row.reviewer };
 }
+
+// can this account opt in as a reviewer? (14 days old, and a post or 10 upvotes given; not banned / taken away)
+async function reviewerCheck(env, me) {
+  if (me.banned) return "This account can't review.";
+  if (me.reviewer_state === -1) return "An admin took reviewing away from this account.";
+  const days = Number(env.REVIEWER_DAYS ?? REVIEWER_DAYS);
+  if (now() - me.created < days * DAY) return `Accounts can review once they're ${days} days old.`;
+  const posts = (await env.DB.prepare("SELECT COUNT(*) AS n FROM posts WHERE author_id = ? AND hidden = 0").bind(me.id).first()).n;
+  const votes = (await env.DB.prepare("SELECT COUNT(*) AS n FROM votes WHERE user_id = ?").bind(me.id).first()).n;
+  if (posts < 1 && votes < 10) return "Post a strat or upvote 10 first - then you can review.";
+  return null;
+}
+const canReview = (me) => !!me && !me.banned && (me.admin || me.reviewer === true || me.reviewer === 1);
+const userOut = (me) => ({ id: me.id, name: me.name, admin: !!me.admin, reviewer: me.reviewer === true || me.reviewer === 1,
+  next_rename: me.renamed ? me.renamed + 7 * DAY : 0 });
 
 async function readBody(req) {
   const text = await req.text();
@@ -118,12 +212,20 @@ async function readBody(req) {
 function present(row, me) {
   return {
     id: row.id, kind: row.kind, data: JSON.parse(row.data), score: row.score, created: row.created,
-    updated: row.updated, promoted: !!row.promoted, hidden: !!row.hidden, reports: me?.admin ? row.reports : undefined,
+    updated: row.updated, promoted: !!row.promoted, hidden: !!row.hidden,
+    reports: canReview(me) ? row.reports : undefined,
     author: { id: row.author_id, name: row.author_name }, voted: !!row.voted, mine: !!me && me.id === row.author_id,
+    based_on: row.based_on ? { id: row.based_on, name: row.based_name || null } : null,          // 2.85.0
+    suggestions: me && me.id === row.author_id ? row.suggested ?? 0 : undefined,
+    pending: row.pending ?? 0,
   };
 }
 
-const SELECT = `SELECT p.*, u.name AS author_name, %VOTED% AS voted FROM posts p JOIN users u ON u.id = p.author_id`;
+const SELECT = `SELECT p.*, u.name AS author_name, %VOTED% AS voted,
+  (SELECT json_extract(b.data, '$.name') FROM posts b WHERE b.id = p.based_on) AS based_name,
+  (SELECT COUNT(*) FROM revisions r WHERE r.post_id = p.id AND r.status = 'suggested') AS suggested,
+  (SELECT COUNT(*) FROM revisions r WHERE r.post_id = p.id AND r.status = 'pending') AS pending
+  FROM posts p JOIN users u ON u.id = p.author_id`;
 const selectFor = (me) => SELECT.replace("%VOTED%", me
   ? "EXISTS(SELECT 1 FROM votes v WHERE v.post_id = p.id AND v.user_id = ?1)" : "0");
 
@@ -137,30 +239,68 @@ async function join(req, env) {
   await env.DB.prepare("DELETE FROM joins WHERE day <> ?").bind(day).run();
   const seen = await env.DB.prepare("SELECT n FROM joins WHERE ip = ?").bind(ip).first();
   if (seen && seen.n >= Number(env.JOINS_PER_DAY || 5)) return fail(429, "Too many new board accounts from here today - try tomorrow.");
+  if (await nameTaken(env, clean)) return fail(409, "Someone on the board already has that name - pick another.");
   await env.DB.prepare("INSERT INTO joins (ip, n, day) VALUES (?, 1, ?) ON CONFLICT(ip) DO UPDATE SET n = n + 1").bind(ip, day).run();
   const id = "u" + randomHex(8), token = randomHex(32);
   await env.DB.batch([
-    env.DB.prepare("INSERT INTO users (id, name, created) VALUES (?, ?, ?)").bind(id, clean, now()),
+    env.DB.prepare("INSERT INTO users (id, name, created, renamed) VALUES (?, ?, ?, ?)").bind(id, clean, now(), now()),
     env.DB.prepare("INSERT INTO sessions (hash, user_id, created, expires) VALUES (?, ?, ?, ?)")
       .bind(await sha256(token), id, now(), now() + SESSION_DAYS * DAY),
   ]);
-  return json({ token, user: { id, name: clean, admin: false } }, 201);
+  return json({ token, user: { id, name: clean, admin: false, reviewer: false } }, 201);
+}
+
+async function nameTaken(env, name, exceptId = "") {
+  return !!(await env.DB.prepare("SELECT 1 AS x FROM users WHERE lower(name) = lower(?) AND id <> ?").bind(name, exceptId).first());
 }
 
 async function rename(req, env, me) {
+  if (me.banned) return fail(403, "This account can't post on the board.");
   const { name } = await readBody(req);
   const clean = String(name || "").trim();
   if (!NAME.test(clean)) return fail(400, "Pick a name of 2-24 letters, numbers, spaces, _ . or -.");
-  await env.DB.prepare("UPDATE users SET name = ? WHERE id = ?").bind(clean, me.id).run();
-  return json({ user: { id: me.id, name: clean, admin: me.admin } });
+  if (await nameTaken(env, clean, me.id)) return fail(409, "Someone on the board already has that name - pick another.");
+  // 2.85.0 (feedback): your name is permanent - it can change once every RENAME_DAYS days
+  const row = await env.DB.prepare("SELECT renamed FROM users WHERE id = ?").bind(me.id).first();
+  const wait = (row?.renamed || 0) + Number(env.RENAME_DAYS ?? 7) * DAY - now();
+  if (wait > 0 && !me.admin) return fail(429, `You can change your name again on ${new Date((now() + wait) * 1000).toISOString().slice(0, 10)}.`);
+  await env.DB.prepare("UPDATE users SET name = ?, renamed = ? WHERE id = ?").bind(clean, now(), me.id).run();
+  return json({ user: userOut({ ...me, name: clean, renamed: now() }) });
 }
 
 async function becomeAdmin(req, env, me) {
+  const ip = await sha256((req.headers.get("cf-connecting-ip") || "local") + "|admin");
+  const max = limitFor(env, "admin_key"), maxIp = limitFor(env, "admin_key_ip");   // wrong tries a day
+  if (!(await allowance(env, "admin_key", ip, maxIp, false)) || !(await allowance(env, "admin_key_user", me.id, max, false)))
+    return fail(429, "Too many tries today - try tomorrow.");
   const { key } = await readBody(req);
-  if (!env.ADMIN_KEY || String(env.ADMIN_KEY).length < 8 || !sameText(key, env.ADMIN_KEY))
+  if (!env.ADMIN_KEY || String(env.ADMIN_KEY).length < 8 || !sameText(key, env.ADMIN_KEY)) {
+    await allowance(env, "admin_key", ip, maxIp + 1);
+    await allowance(env, "admin_key_user", me.id, max + 1);
     return fail(403, "That isn't the admin key.");
+  }
   await env.DB.prepare("UPDATE users SET admin = 1 WHERE id = ?").bind(me.id).run();
-  return json({ user: { id: me.id, name: me.name, admin: true } });
+  return json({ user: userOut({ ...me, admin: true }) });
+}
+
+// 2.85.0: opt in / out as a reviewer
+async function setReviewer(req, env, me) {
+  const { on } = await readBody(req);
+  if (on === false) {
+    if (me.reviewer) await env.DB.prepare("UPDATE users SET reviewer = 0 WHERE id = ?").bind(me.id).run();
+    return json({ user: userOut({ ...me, reviewer: 0 }) });
+  }
+  const why = await reviewerCheck(env, me);
+  if (why) return fail(403, why);
+  await env.DB.prepare("UPDATE users SET reviewer = 1 WHERE id = ?").bind(me.id).run();
+  return json({ user: userOut({ ...me, reviewer: 1 }) });
+}
+
+async function adminReviewer(req, env, me, userId) {
+  if (!me.admin) return fail(403, "admins only");
+  const { on } = await readBody(req);
+  await env.DB.prepare("UPDATE users SET reviewer = ? WHERE id = ?").bind(on === false ? -1 : 1, userId).run();
+  return json({ ok: true });
 }
 
 // ------------------------------------------------------------------ posts
@@ -206,6 +346,14 @@ function prepare(kind, data, user, id) {
 const searchText = (d) => [d.name, d.summary, d.text, d.type, d.category, ...(d.tags ?? []), ...(d.steps ?? [])]
   .filter(Boolean).join(" ").toLowerCase();
 
+// a screenshot a post names must be the poster's own upload, or the one the post already had (2.85.0)
+async function imageOk(env, data, me, keep = null) {
+  const ref = data?.atlas_image;
+  if (!ref || ref === keep) return true;
+  const row = await env.DB.prepare("SELECT author_id FROM images WHERE id = ?").bind(Number(String(ref).slice(2))).first();
+  return !!row && (row.author_id === me.id || me.admin);
+}
+
 async function createPost(req, env, me) {
   const body = await readBody(req);
   const kind = body.kind === "one" ? "one" : "strat";
@@ -213,27 +361,249 @@ async function createPost(req, env, me) {
   if (today.n >= Number(env.POSTS_PER_DAY || 10) && !me.admin) return fail(429, "That's enough posts for today - try again tomorrow.");
   const r = prepare(kind, body.data ?? {}, me, null);
   if (r.probs) return json({ error: "Not in the standard layout: " + r.probs[0], problems: r.probs }, 400);
+  if (!(await imageOk(env, r.data, me))) return fail(400, "That atlas screenshot belongs to another post - upload your own.");
+  let basedOn = Number(body.based_on) || null;                     // 2.85.0: a copy credits the post it came from
+  if (basedOn && !(await env.DB.prepare("SELECT 1 AS x FROM posts WHERE id = ?").bind(basedOn).first())) basedOn = null;
   const t = now();
-  const res = await env.DB.prepare(`INSERT INTO posts (kind, author_id, data, search, category, type, tags, created, updated)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`).bind(kind, me.id, JSON.stringify(r.data), searchText(r.data), r.data.category ?? null,
-    r.data.type ?? null, "|" + (r.data.tags ?? []).join("|") + "|", t, t).run();
+  const res = await env.DB.prepare(`INSERT INTO posts (kind, author_id, data, search, category, type, tags, created, updated, based_on)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).bind(kind, me.id, JSON.stringify(r.data), searchText(r.data), r.data.category ?? null,
+    r.data.type ?? null, "|" + (r.data.tags ?? []).join("|") + "|", t, t, basedOn).run();
   const id = res.meta.last_row_id;
   r.data.id = `board-${id}`;
-  await env.DB.prepare("UPDATE posts SET data = ? WHERE id = ?").bind(JSON.stringify(r.data), id).run();
+  await env.DB.batch([
+    env.DB.prepare("UPDATE posts SET data = ? WHERE id = ?").bind(JSON.stringify(r.data), id),
+    env.DB.prepare("INSERT INTO revisions (post_id, author_id, data, status, note, created) VALUES (?, ?, ?, 'live', 'first version', ?)")
+      .bind(id, me.id, JSON.stringify(r.data), t),
+  ]);
   return json({ post: present(await getPost(env, me, id), me) }, 201);
+}
+
+// ---- 2.85.0: versions. A post's live version is in posts.data; every version (old, suggested, pending ...) in revisions.
+async function ensureFirstRevision(env, row) {
+  const has = await env.DB.prepare("SELECT 1 AS x FROM revisions WHERE post_id = ? AND status IN ('live', 'old')").bind(row.id).first();
+  if (!has) await env.DB.prepare("INSERT INTO revisions (post_id, author_id, data, status, note, created) VALUES (?, ?, ?, 'live', 'first version', ?)")
+    .bind(row.id, row.author_id, row.data, row.created).run();
+}
+
+// make a version live: the one live now becomes old; the post shows the new one
+async function goLive(env, row, revId, data, deciderId) {
+  const t = now();
+  await env.DB.batch([
+    env.DB.prepare("UPDATE revisions SET status = 'old' WHERE post_id = ? AND status = 'live'").bind(row.id),
+    env.DB.prepare("UPDATE revisions SET status = 'live', decided = ?, decided_by = ? WHERE id = ?").bind(t, deciderId, revId),
+    env.DB.prepare("UPDATE posts SET data = ?, search = ?, category = ?, type = ?, tags = ?, updated = ? WHERE id = ?")
+      .bind(JSON.stringify(data), searchText(data), data.category ?? null, data.type ?? null,
+        "|" + (data.tags ?? []).join("|") + "|", t, row.id),
+  ]);
+}
+
+async function addRevision(env, row, authorId, data, status, note) {
+  const res = await env.DB.prepare("INSERT INTO revisions (post_id, author_id, data, status, note, created) VALUES (?, ?, ?, ?, ?, ?)")
+    .bind(row.id, authorId, JSON.stringify(data), status, String(note || "").slice(0, 300), now()).run();
+  return res.meta.last_row_id;
+}
+
+const authorName = async (env, row) => row.author_name ??
+  (await env.DB.prepare("SELECT name FROM users WHERE id = ?").bind(row.author_id).first())?.name;
+
+// the post's own author keeps the author field, whoever writes the version
+async function prepareFor(env, row, data) {
+  return prepare(row.kind, data ?? {}, { name: await authorName(env, row) }, row.id);
 }
 
 async function updatePost(req, env, me, id) {
   const row = await getPost(env, me, id);
   if (!row) return fail(404, "not found");
-  if (row.author_id !== me.id) return fail(403, "only its author can change it");
+  if (row.author_id !== me.id) return fail(403, "only its author can change it - use Suggest an edit");
+  if (!(await allowance(env, "edit", me.id, limitFor(env, "edit")))) return fail(429, "That's enough edits for today.");
   const body = await readBody(req);
-  const r = prepare(row.kind, body.data ?? {}, me, id);
+  const r = await prepareFor(env, row, body.data);
   if (r.probs) return json({ error: "Not in the standard layout: " + r.probs[0], problems: r.probs }, 400);
-  await env.DB.prepare("UPDATE posts SET data = ?, search = ?, category = ?, type = ?, tags = ?, updated = ? WHERE id = ?")
-    .bind(JSON.stringify(r.data), searchText(r.data), r.data.category ?? null, r.data.type ?? null,
-      "|" + (r.data.tags ?? []).join("|") + "|", now(), id).run();
+  const old = JSON.parse(row.data);
+  if (!(await imageOk(env, r.data, me, old.atlas_image))) return fail(400, "That atlas screenshot belongs to another post - upload your own.");
+  await ensureFirstRevision(env, row);
+  if (row.promoted && !me.admin) {                                 // an Official post: reviewers look first
+    await env.DB.prepare("UPDATE revisions SET status = 'withdrawn', decided = ? WHERE post_id = ? AND author_id = ? AND status = 'pending'")
+      .bind(now(), id, me.id).run();
+    const rid = await addRevision(env, row, me.id, r.data, "pending", body.note);
+    return json({ post: present(await getPost(env, me, id), me), pending: rid }, 202);
+  }
+  const rid = await addRevision(env, row, me.id, r.data, "new", body.note);
+  await goLive(env, row, rid, r.data, me.id);
   return json({ post: present(await getPost(env, me, id), me) });
+}
+
+// anyone (not the author): a suggested version, for the author to accept or decline
+async function suggest(req, env, me, id) {
+  const row = await getPost(env, me, id);
+  if (!row || row.hidden) return fail(404, "not found");
+  if (row.author_id === me.id) return fail(400, "It's your post - just edit it.");
+  if (!(await allowance(env, "suggest", me.id, limitFor(env, "suggest")))) return fail(429, "That's enough suggestions for today.");
+  const open = await env.DB.prepare("SELECT COUNT(*) AS n FROM revisions WHERE post_id = ? AND author_id = ? AND status = 'suggested'").bind(id, me.id).first();
+  if (open.n >= 3) return fail(429, "You have 3 suggestions waiting on this post already.");
+  const body = await readBody(req);
+  const note = String(body.note || "").trim();
+  if (note.length < 3) return fail(400, "Say in a few words what you changed and why.");
+  const r = await prepareFor(env, row, body.data);
+  if (r.probs) return json({ error: "Not in the standard layout: " + r.probs[0], problems: r.probs }, 400);
+  const old = JSON.parse(row.data);
+  if (!(await imageOk(env, r.data, me, old.atlas_image))) return fail(400, "That atlas screenshot belongs to another post - upload your own.");
+  if (JSON.stringify(r.data) === JSON.stringify(old)) return fail(400, "Nothing changed.");
+  await ensureFirstRevision(env, row);
+  const rid = await addRevision(env, row, me.id, r.data, "suggested", note);
+  return json({ revision: rid }, 201);
+}
+
+function revOut(r, me) {
+  return {
+    id: r.id, post_id: r.post_id, status: r.status, note: r.note, created: r.created, decided: r.decided, why: r.why || "",
+    author: { id: r.author_id, name: r.author_name }, data: JSON.parse(r.data), mine: !!me && me.id === r.author_id,
+    approvals: r.approvals ?? 0, rejections: r.rejections ?? 0, my_vote: r.my_vote ?? null,
+    post_name: r.post_name ?? undefined, post_author: r.post_author ?? undefined,
+  };
+}
+const REV_SELECT = `SELECT r.*, u.name AS author_name,
+  (SELECT COUNT(*) FROM reviews v WHERE v.target = 'rev:' || r.id AND v.vote = 'approve') AS approvals,
+  (SELECT COUNT(*) FROM reviews v WHERE v.target = 'rev:' || r.id AND v.vote = 'reject') AS rejections,
+  (SELECT v.vote FROM reviews v WHERE v.target = 'rev:' || r.id AND v.user_id = ?1) AS my_vote,
+  json_extract(p.data, '$.name') AS post_name, pu.name AS post_author
+  FROM revisions r JOIN users u ON u.id = r.author_id JOIN posts p ON p.id = r.post_id JOIN users pu ON pu.id = p.author_id`;
+
+async function revisions(env, me, id) {
+  const row = await getPost(env, me, id);
+  if (!row || (row.hidden && !canReview(me) && row.author_id !== me?.id)) return fail(404, "not found");
+  const all = me && (me.id === row.author_id || canReview(me));
+  const rows = await env.DB.prepare(`${REV_SELECT} WHERE r.post_id = ?2 ORDER BY r.id DESC LIMIT 100`).bind(me?.id ?? null, id).all();
+  const out = rows.results.filter((r) => all || ["live", "old"].includes(r.status) || r.author_id === me?.id).map((r) => revOut(r, me));
+  return json({ revisions: out, live: present(row, me) });
+}
+
+// your inbox: suggestions waiting on your posts, and what became of your own suggestions / pending edits
+async function inbox(env, me) {
+  const forMe = await env.DB.prepare(`${REV_SELECT} WHERE p.author_id = ?2 AND r.status = 'suggested' ORDER BY r.id DESC LIMIT 100`)
+    .bind(me.id, me.id).all();
+  const mine = await env.DB.prepare(`${REV_SELECT} WHERE r.author_id = ?2 AND r.status IN ('suggested', 'pending', 'declined', 'live', 'old', 'withdrawn')
+    AND r.note <> 'first version' AND (r.status IN ('suggested', 'pending') OR r.decided > ?3) ORDER BY r.id DESC LIMIT 100`)
+    .bind(me.id, me.id, now() - 30 * DAY).all();
+  return json({ suggestions: forMe.results.map((r) => revOut(r, me)), mine: mine.results.filter((r) => r.post_id && r.author_id === me.id)
+    .map((r) => revOut(r, me)) });
+}
+
+async function getRev(env, me, rid) {
+  return env.DB.prepare(`${REV_SELECT} WHERE r.id = ?2`).bind(me?.id ?? null, rid).first();
+}
+
+// the author (or an admin) answers a suggestion; the author rolls back to an old version; the writer withdraws
+async function revAction(req, env, me, rid) {
+  const rev = await getRev(env, me, rid);
+  if (!rev) return fail(404, "not found");
+  const row = await getPost(env, me, rev.post_id);
+  if (!row) return fail(404, "not found");
+  const { action, why } = await readBody(req);
+  const owner = row.author_id === me.id || me.admin;
+  const t = now();
+  if (action === "withdraw") {
+    if (rev.author_id !== me.id || !["suggested", "pending"].includes(rev.status)) return fail(400, "Only your own waiting version can be withdrawn.");
+    await env.DB.prepare("UPDATE revisions SET status = 'withdrawn', decided = ? WHERE id = ?").bind(t, rid).run();
+    return json({ ok: true });
+  }
+  if (action === "decline") {
+    if (!owner || !["suggested", "pending"].includes(rev.status)) return fail(403, "Only the post's author or an admin can decline it.");
+    await env.DB.prepare("UPDATE revisions SET status = 'declined', decided = ?, decided_by = ?, why = ? WHERE id = ?")
+      .bind(t, me.id, String(why || "").slice(0, 200), rid).run();
+    return json({ ok: true, status: "declined" });
+  }
+  if (action === "accept" || action === "rollback") {
+    if (!owner) return fail(403, "Only the post's author or an admin can do that.");
+    if (action === "accept" && rev.status !== "suggested") return fail(400, "That isn't a waiting suggestion.");
+    if (action === "rollback" && rev.status !== "old") return fail(400, "Only an earlier version can be brought back.");
+    let rid2 = rid;
+    if (action === "rollback") rid2 = await addRevision(env, row, me.id, JSON.parse(rev.data), "new", `back to the version of ${new Date(rev.created * 1000).toISOString().slice(0, 10)}`);
+    if (row.promoted && !me.admin) {                              // an Official post: reviewers look first
+      await env.DB.prepare("UPDATE revisions SET status = 'pending', decided = NULL WHERE id = ?").bind(rid2).run();
+      return json({ ok: true, status: "pending" }, 202);
+    }
+    await goLive(env, row, rid2, JSON.parse(rev.data), me.id);
+    return json({ ok: true, status: "live" });
+  }
+  return fail(400, "action: accept, decline, rollback or withdraw");
+}
+
+// what reviewers can decide: Official edits waiting, suggestions whose author is away, reported posts
+async function reviewQueue(env, me) {
+  if (!canReview(me)) return fail(403, "Reviewers only - opt in from your board name's menu.");
+  const away = now() - Number(env.AWAY_DAYS ?? AWAY_DAYS) * DAY;
+  const revs = await env.DB.prepare(`${REV_SELECT} JOIN users au ON au.id = p.author_id WHERE (r.status = 'pending'
+    OR (r.status = 'suggested' AND au.last_seen < ?2 AND p.updated < ?2)) ORDER BY r.id LIMIT 100`).bind(me.id, away).all();
+  const reported = await env.DB.prepare(`${selectFor(me)} WHERE p.reports > 0 ORDER BY p.reports DESC LIMIT 100`).bind(me.id).all();
+  const reasons = {};
+  for (const p of reported.results) {
+    const rs = await env.DB.prepare("SELECT reason, created FROM reports WHERE post_id = ? ORDER BY created DESC LIMIT 20").bind(p.id).all();
+    reasons[p.id] = rs.results.map((x) => x.reason).filter(Boolean);
+  }
+  const votes = {};
+  for (const p of reported.results) {
+    const v = await env.DB.prepare("SELECT vote, COUNT(*) AS n FROM reviews WHERE target = ? GROUP BY vote").bind(`post:${p.id}`).all();
+    const mine = await env.DB.prepare("SELECT vote FROM reviews WHERE target = ? AND user_id = ?").bind(`post:${p.id}`, me.id).first();
+    votes[p.id] = { ...Object.fromEntries(v.results.map((x) => [x.vote, x.n])), mine: mine?.vote ?? null };
+  }
+  return json({
+    revisions: revs.results.filter((r) => r.author_id !== me.id).map((r) => ({ ...revOut(r, me), live: null })),
+    reported: reported.results.filter((p) => p.author_id !== me.id).map((p) => ({ ...present(p, me), reasons: reasons[p.id], votes: votes[p.id] })),
+  });
+}
+
+// a reviewer's vote: approve / reject a version; hide / keep a reported post. APPROVALS votes (or one admin) decide.
+async function review(req, env, me, target, id) {
+  if (!canReview(me)) return fail(403, "Reviewers only.");
+  if (!(await allowance(env, "review", me.id, limitFor(env, "review")))) return fail(429, "That's enough reviews for today.");
+  const { vote: v } = await readBody(req);
+  const t = now();
+  if (target === "rev") {
+    const rev = await getRev(env, me, id);
+    if (!rev) return fail(404, "not found");
+    const row = await getPost(env, me, rev.post_id);
+    if (rev.author_id === me.id || row.author_id === me.id) return fail(403, "Not on your own post or your own version.");
+    const away = now() - Number(env.AWAY_DAYS ?? AWAY_DAYS) * DAY;
+    const authorSeen = (await env.DB.prepare("SELECT last_seen FROM users WHERE id = ?").bind(row.author_id).first())?.last_seen ?? 0;
+    const open = rev.status === "pending" || (rev.status === "suggested" && authorSeen < away && row.updated < away);
+    if (!open) return fail(400, "That version isn't waiting for reviewers.");
+    if (!["approve", "reject"].includes(v)) return fail(400, "vote: approve or reject");
+    await env.DB.prepare(`INSERT INTO reviews (target, user_id, vote, created) VALUES (?, ?, ?, ?)
+      ON CONFLICT(target, user_id) DO UPDATE SET vote = excluded.vote, created = excluded.created`).bind(`rev:${id}`, me.id, v, t).run();
+    const c = Object.fromEntries((await env.DB.prepare("SELECT vote, COUNT(*) AS n FROM reviews WHERE target = ? GROUP BY vote")
+      .bind(`rev:${id}`).all()).results.map((x) => [x.vote, x.n]));
+    if ((c.approve ?? 0) >= APPROVALS || (me.admin && v === "approve")) {
+      await goLive(env, row, id, JSON.parse(rev.data), me.id);
+      return json({ ok: true, status: "live" });
+    }
+    if ((c.reject ?? 0) >= APPROVALS || (me.admin && v === "reject")) {
+      await env.DB.prepare("UPDATE revisions SET status = 'declined', decided = ?, decided_by = ?, why = 'reviewers said no' WHERE id = ?").bind(t, me.id, id).run();
+      return json({ ok: true, status: "declined" });
+    }
+    return json({ ok: true, status: rev.status, approvals: c.approve ?? 0, rejections: c.reject ?? 0 });
+  }
+  const row = await getPost(env, me, id);
+  if (!row) return fail(404, "not found");
+  if (row.author_id === me.id) return fail(403, "Not on your own post.");
+  if (!["hide", "keep"].includes(v)) return fail(400, "vote: hide or keep");
+  await env.DB.prepare(`INSERT INTO reviews (target, user_id, vote, created) VALUES (?, ?, ?, ?)
+    ON CONFLICT(target, user_id) DO UPDATE SET vote = excluded.vote, created = excluded.created`).bind(`post:${id}`, me.id, v, t).run();
+  const c = Object.fromEntries((await env.DB.prepare("SELECT vote, COUNT(*) AS n FROM reviews WHERE target = ? GROUP BY vote")
+    .bind(`post:${id}`).all()).results.map((x) => [x.vote, x.n]));
+  if ((c.hide ?? 0) >= APPROVALS || (me.admin && v === "hide")) {
+    await env.DB.prepare("UPDATE posts SET hidden = 1 WHERE id = ?").bind(id).run();
+    return json({ ok: true, hidden: true });
+  }
+  if ((c.keep ?? 0) >= APPROVALS || (me.admin && v === "keep")) {
+    await env.DB.batch([
+      env.DB.prepare("UPDATE posts SET hidden = 0, reports = 0 WHERE id = ?").bind(id),
+      env.DB.prepare("DELETE FROM reports WHERE post_id = ?").bind(id),
+      env.DB.prepare("DELETE FROM reviews WHERE target = ?").bind(`post:${id}`),
+    ]);
+    return json({ ok: true, hidden: false });
+  }
+  return json({ ok: true, hide: c.hide ?? 0, keep: c.keep ?? 0 });
 }
 
 async function deletePost(env, me, id) {
@@ -244,11 +614,13 @@ async function deletePost(env, me, id) {
     env.DB.prepare("DELETE FROM posts WHERE id = ?").bind(id),
     env.DB.prepare("DELETE FROM votes WHERE post_id = ?").bind(id),
     env.DB.prepare("DELETE FROM reports WHERE post_id = ?").bind(id),
+    env.DB.prepare("DELETE FROM revisions WHERE post_id = ?").bind(id),
   ]);
   return json({ ok: true });
 }
 
 async function vote(req, env, me, id) {
+  if (!(await allowance(env, "vote", me.id, limitFor(env, "vote")))) return fail(429, "That's enough votes for today.");
   const body = await readBody(req);
   const row = await getPost(env, me, id);
   if (!row || (row.hidden && !me.admin)) return fail(404, "not found");
@@ -262,10 +634,16 @@ async function report(req, env, me, id) {
   const body = await readBody(req);
   const row = await getPost(env, me, id);
   if (!row) return fail(404, "not found");
+  if (row.author_id === me.id) return fail(400, "That's your own post.");
+  if (!(await allowance(env, "report", me.id, limitFor(env, "report")))) return fail(429, "That's enough reports for today.");
   await env.DB.prepare("INSERT OR IGNORE INTO reports (post_id, user_id, reason, created) VALUES (?, ?, ?, ?)")
     .bind(id, me.id, String(body.reason || "").slice(0, 200), now()).run();
   const n = (await env.DB.prepare("SELECT COUNT(*) AS n FROM reports WHERE post_id = ?").bind(id).first()).n;
-  const hide = n >= Number(env.REPORT_HIDE || 3) ? 1 : row.hidden;
+  // 2.85.0: only reports from accounts at least REPORTER_DAYS old count towards hiding, and an Official post is only
+  // hidden by reviewers or an admin (three new accounts could hide anything before)
+  const counted = (await env.DB.prepare(`SELECT COUNT(*) AS n FROM reports r JOIN users u ON u.id = r.user_id
+    WHERE r.post_id = ? AND u.created <= ? AND u.banned = 0`).bind(id, now() - Number(env.REPORTER_DAYS ?? REPORTER_DAYS) * DAY).first()).n;
+  const hide = !row.promoted && counted >= Number(env.REPORT_HIDE || 3) ? 1 : row.hidden;
   await env.DB.prepare("UPDATE posts SET reports = ?, hidden = ? WHERE id = ?").bind(n, hide, id).run();
   return json({ ok: true, hidden: !!hide });
 }
@@ -275,7 +653,8 @@ async function adminPost(req, env, me, id) {
   const { action } = await readBody(req);
   const set = { hide: "hidden = 1", unhide: "hidden = 0, reports = 0", promote: "promoted = 1", unpromote: "promoted = 0" }[action];
   if (!set) return fail(400, "action: hide, unhide, promote or unpromote");
-  if (action === "unhide") await env.DB.prepare("DELETE FROM reports WHERE post_id = ?").bind(id).run();
+  if (action === "unhide") await env.DB.batch([env.DB.prepare("DELETE FROM reports WHERE post_id = ?").bind(id),
+    env.DB.prepare("DELETE FROM reviews WHERE target = ?").bind(`post:${id}`)]);
   await env.DB.prepare(`UPDATE posts SET ${set} WHERE id = ?`).bind(id).run();
   const row = await getPost(env, me, id);
   return row ? json({ post: present(row, me) }) : fail(404, "not found");
@@ -284,8 +663,14 @@ async function adminPost(req, env, me, id) {
 async function ban(req, env, me, userId) {
   if (!me.admin) return fail(403, "admins only");
   const { banned } = await readBody(req);
-  await env.DB.prepare("UPDATE users SET banned = ? WHERE id = ?").bind(banned === false ? 0 : 1, userId).run();
-  if (banned !== false) await env.DB.prepare("UPDATE posts SET hidden = 1 WHERE author_id = ?").bind(userId).run();
+  await env.DB.prepare("UPDATE users SET banned = ?, reviewer = CASE WHEN ? = 1 THEN 0 ELSE reviewer END WHERE id = ?")
+    .bind(banned === false ? 0 : 1, banned === false ? 0 : 1, userId).run();
+  if (banned !== false) {
+    await env.DB.batch([
+      env.DB.prepare("UPDATE posts SET hidden = 1 WHERE author_id = ?").bind(userId),
+      env.DB.prepare("UPDATE revisions SET status = 'withdrawn', decided = ? WHERE author_id = ? AND status IN ('suggested', 'pending')").bind(now(), userId),
+    ]);
+  } else await env.DB.prepare("UPDATE posts SET hidden = 0 WHERE author_id = ? AND reports = 0").bind(userId).run();
   return json({ ok: true });
 }
 
@@ -469,8 +854,10 @@ export default {
   async fetch(req, env) {
     const url = new URL(req.url);
     const path = url.pathname.replace(/\/+$/, "") || "/";
-    const m = /^\/posts\/(\d+)(?:\/(vote|report|admin))?$/.exec(path);
+    const m = /^\/posts\/(\d+)(?:\/(vote|report|admin|suggest|revisions|review))?$/.exec(path);
+    const rv = /^\/revisions\/(\d+)(?:\/(review))?$/.exec(path);
     try {
+      await migrate(env);
       if (path === "/" || path === "/health") return json({ ok: true, schema: RULES.schema });
       if (path === "/auth/join" && req.method === "POST") return join(req, env);
       if (path === "/official") return official(env);
@@ -483,7 +870,12 @@ export default {
       if (im && req.method === "GET") return getImage(env, Number(im[1]));
       if (path === "/bugs" && req.method === "POST") return bugReport(req, env);
       const me = await who(req, env);
-      if (path === "/me") return me ? json({ user: me }) : fail(401, "sign in first");
+      if (path === "/me") {
+        if (!me) return fail(401, "sign in first");
+        const why = canReview(me) ? null : await reviewerCheck(env, me);
+        return json({ user: { ...userOut(me), can_review: !why, why_not: why } });
+      }
+      if (m && m[2] === "revisions" && req.method === "GET") return revisions(env, me, Number(m[1]));
       if (path === "/auth/logout" && req.method === "POST") {
         const t = /^Bearer\s+(\S+)$/i.exec(req.headers.get("authorization") || "");
         if (t) await env.DB.prepare("DELETE FROM sessions WHERE hash = ?").bind(await sha256(t[1])).run();
@@ -497,6 +889,8 @@ export default {
       if (!me) return fail(401, "Join the board first.");
       if (path === "/auth/rename" && req.method === "POST") return rename(req, env, me);
       if (path === "/auth/admin" && req.method === "POST") return becomeAdmin(req, env, me);
+      if (path === "/me/inbox" && req.method === "GET") return inbox(env, me);
+      if (path === "/review" && req.method === "GET") return reviewQueue(env, me);
       if (me.banned) return fail(403, "This account can't post on the board.");
       if (path === "/posts" && req.method === "POST") return createPost(req, env, me);
       if (path === "/images" && req.method === "POST") return postImage(req, env, me);
@@ -505,8 +899,14 @@ export default {
       if (m && m[2] === "vote" && req.method === "POST") return vote(req, env, me, Number(m[1]));
       if (m && m[2] === "report" && req.method === "POST") return report(req, env, me, Number(m[1]));
       if (m && m[2] === "admin" && req.method === "POST") return adminPost(req, env, me, Number(m[1]));
-      const b = /^\/users\/([a-z0-9]{1,40})\/ban$/.exec(path);
-      if (b && req.method === "POST") return ban(req, env, me, b[1]);
+      if (m && m[2] === "suggest" && req.method === "POST") return suggest(req, env, me, Number(m[1]));
+      if (m && m[2] === "review" && req.method === "POST") return review(req, env, me, "post", Number(m[1]));
+      if (rv && rv[2] === "review" && req.method === "POST") return review(req, env, me, "rev", Number(rv[1]));
+      if (rv && !rv[2] && req.method === "POST") return revAction(req, env, me, Number(rv[1]));
+      if (path === "/auth/reviewer" && req.method === "POST") return setReviewer(req, env, me);
+      const b = /^\/users\/([a-z0-9]{1,40})\/(ban|reviewer)$/.exec(path);
+      if (b && b[2] === "ban" && req.method === "POST") return ban(req, env, me, b[1]);
+      if (b && b[2] === "reviewer" && req.method === "POST") return adminReviewer(req, env, me, b[1]);
       return fail(404, "not found");
     } catch (e) {
       if (e instanceof SyntaxError || e.message === "too big") return fail(400, "bad request");

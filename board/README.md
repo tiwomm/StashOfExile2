@@ -7,8 +7,24 @@ them, with no login: the first time someone posts, votes or reports, the app ask
 gives that install its own key. At most 5 new accounts a day are allowed per internet address, so votes can't be
 stuffed.
 
-Posts are live at once; 3 reports hide one until an admin looks at it. Admins type the admin key once in the app.
-They can then hide, delete, ban and **promote**, and promoted posts join everyone's **Official** list.
+Posts are live at once. Admins type the admin key once in the app (5 wrong tries a day per account). They can then
+hide, delete, ban and **promote**, and promoted posts join everyone's **Official** list.
+
+Since 2.85.0 posts are protected against vandalism and bad data:
+- **Only the author edits a post** (an admin can hide or delete it). Every change keeps the version before it:
+  **History** shows each version field by field, and the author can roll back.
+- **Suggest an edit:** anyone else sends their version with a note; the author accepts or declines it.
+- **Reviewers** (opt-in; the account must be 14 days old with a post or 10 upvotes given; an admin can take it away):
+  a change to an **Official** post, a suggestion the author accepted on one, and suggestions on posts whose author has
+  been away 30 days wait in the **Review queue**. Two reviewers (or one admin) decide; nobody reviews their own post
+  or version.
+- **Reports** from accounts younger than 7 days don't count. 3 counted reports hide a normal post; an Official post
+  is only hidden by 2 reviewers or an admin. Reviewers see the reasons and can hide a post or keep it (clearing its
+  reports).
+- **Field checks:** money within ±100,000, items (≤ 30; count 1-1000, lasts 1-100), the author's numbers, text
+  lengths and line counts, sources, dates; a post's screenshot must be its author's own upload.
+- **Names are unique** and change once every 7 days. Daily limits on edits (30), suggestions (10), reports (20),
+  votes (200) and reviews (100).
 
 Since 2.31.0 it also pools the **community Mod book**: once an hour each app sends a summary of the mod prices its
 price checks saw (per base and mod: how many listings and their median, nothing else), plus the Mod book rules the
@@ -52,7 +68,9 @@ npx wrangler d1 execute soe2-board --local --file schema.sql
 npx wrangler dev
 ```
 
-Put test values in `board/.dev.vars`, e.g. `ADMIN_KEY=...`, `REPORT_HIDE=2`, `JOINS_PER_DAY=50`.
+Put test values in `board/.dev.vars`, e.g. `ADMIN_KEY=...`, `REPORT_HIDE=2`, `JOINS_PER_DAY=50`, and (2.85.0, so tests
+needn't wait days) `REVIEWER_DAYS=0`, `REPORTER_DAYS=0`, `ADMIN_KEY_IP_PER_DAY=1000`. New columns and tables reach an
+existing database by themselves (the Worker adds them on first use).
 
 ## API (what the app calls)
 
@@ -60,10 +78,17 @@ Put test values in `board/.dev.vars`, e.g. `ADMIN_KEY=...`, `REPORT_HIDE=2`, `JO
 |---|---|
 | `POST /bugs` `{title, body, version}` | 2.48.0: a bug report → a GitHub issue `{number, url}` (needs the `GITHUB_TOKEN` Worker secret; 5 a day per address) |
 | `POST /auth/join` `{name}` | a new board account → `{token, user}`. Send `Authorization: Bearer <token>` after that. |
-| `POST /auth/rename` `{name}` · `POST /auth/admin` `{key}` · `POST /auth/logout` | your account |
+| `POST /auth/rename` `{name}` · `POST /auth/admin` `{key}` · `POST /auth/logout` | your account (2.85.0: names are unique; a rename once every 7 days) |
+| `GET /me` | 2.85.0: your account, and whether you can opt in as a reviewer (`can_review`, `why_not`) |
+| `POST /auth/reviewer` `{on}` · `POST /users/{id}/reviewer` `{on}` | 2.85.0: opt in / out as a reviewer; an admin gives or takes it away |
+| `POST /posts/{id}/suggest` `{data, note}` | 2.85.0: suggest an edit to someone else's post |
+| `GET /posts/{id}/revisions` | 2.85.0: History (everyone: live and earlier versions; the author and reviewers: waiting ones too) |
+| `GET /me/inbox` | 2.85.0: suggestions waiting on your posts, and what became of yours |
+| `POST /revisions/{id}` `{action: accept\|decline\|rollback\|withdraw, why}` | 2.85.0: the author answers a suggestion or rolls back; the writer withdraws |
+| `GET /review` · `POST /revisions/{id}/review` `{vote: approve\|reject}` · `POST /posts/{id}/review` `{vote: hide\|keep}` | 2.85.0: reviewers |
 | `GET /posts?kind=strat\|one&sort=top\|new&category&type&tag&q&limit&offset` | the board |
-| `POST /posts` `{kind, data}` | post (10 a day each) |
-| `PUT` / `DELETE /posts/{id}` | change or delete your own post |
+| `POST /posts` `{kind, data, based_on}` | post (10 a day each); `based_on`: the post it's a copy of (credited) |
+| `PUT` / `DELETE /posts/{id}` | change (`{data, note}`; an Official post's change waits for reviewers: 202 + `pending`) or delete your own post |
 | `POST /posts/{id}/vote` `{up}` · `POST /posts/{id}/report` `{reason}` | upvote, report |
 | `POST /posts/{id}/admin` `{action: hide\|unhide\|promote\|unpromote}` · `POST /users/{id}/ban` | admins |
 | `GET /official` | promoted posts (part of the Official list) |

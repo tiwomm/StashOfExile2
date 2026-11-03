@@ -87,3 +87,25 @@ CREATE TABLE IF NOT EXISTS campaign_zones (
 CREATE TABLE IF NOT EXISTS images (
   id INTEGER PRIMARY KEY AUTOINCREMENT, author_id TEXT NOT NULL, data BLOB NOT NULL, created INTEGER NOT NULL
 );
+
+-- 2.85.0: edits with history, Suggest an edit, reviewers. (New columns on users / posts are added by the Worker
+-- itself on first use - ALTER TABLE ... ADD COLUMN, see migrate() in src/index.js - so old databases keep working.)
+CREATE TABLE IF NOT EXISTS revisions (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  post_id INTEGER NOT NULL,
+  author_id TEXT NOT NULL,            -- who wrote this version (the post's author, or whoever suggested it)
+  data TEXT NOT NULL,                 -- the whole strat / one-liner at this version
+  status TEXT NOT NULL,               -- live, old (was live), suggested, pending (waits for reviewers), declined, withdrawn
+  note TEXT NOT NULL DEFAULT '',      -- what changed and why (from the one who wrote it)
+  created INTEGER NOT NULL,
+  decided INTEGER, decided_by TEXT, why TEXT
+);
+CREATE INDEX IF NOT EXISTS revisions_post ON revisions (post_id, status);
+CREATE TABLE IF NOT EXISTS reviews (  -- a reviewer's vote on a pending / suggested version or on a reported post
+  target TEXT NOT NULL,               -- "rev:<id>" or "post:<id>"
+  user_id TEXT NOT NULL, vote TEXT NOT NULL, created INTEGER NOT NULL,
+  PRIMARY KEY (target, user_id)
+);
+CREATE TABLE IF NOT EXISTS limits (   -- per-day counters (edits, suggestions, reports, admin-key tries ...)
+  key TEXT PRIMARY KEY, n INTEGER NOT NULL, day TEXT NOT NULL
+);

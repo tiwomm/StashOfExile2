@@ -41,7 +41,7 @@ def _num(text):
 
 
 # 2.56.0: Div / hour is the verdict's big number; these are the tiles next to it
-TILES = (("profit", "Profit / run", "loot − cost"), ("roi", "Return on cost", "loot ÷ cost"),
+TILES = (("profit", "Profit / run", "loot − cost"), ("roi", "Loot ÷ cost", "150% = the loot is worth 1.5× the cost"),
          ("avg", "Average run", ""), ("loot", "Loot / run", ""), ("cost", "Cost / run", ""), ("runs", "Runs", ""))
 LOG_COLS = (("n", "#", 40, "e"), ("when", "When", 120, "w"), ("v", "Ver.", 44, "center"), ("runs", "Runs", 50, "e"),
             ("time", "Time", 70, "e"), ("cost", "Cost", 66, "e"), ("loot", "Loot", 70, "e"), ("profit", "Profit", 74, "e"),
@@ -388,7 +388,7 @@ class LedgerPage:
         pend = (d.get("pending") or {}).get("setup")
         for s in d["setups"]:
             f = L.figures(L.logs_of(d, s["id"]))
-            strat = next((x for x in MM.all_strats() if x["id"] == s.get("strat")), None)
+            strat = next((x for x in self.fl_all_strats() if x["id"] == s.get("strat")), None)
             what = (strat.get("type") or strat["name"]) if strat else "your own"
             cards.add(s["id"], s["name"], f"{what} · {f['runs']} runs · {f['logs']} logs", f["per_hour"],
                       counting=pend == s["id"])
@@ -428,7 +428,7 @@ class LedgerPage:
             self.fl_empty.pack_forget()
             self.fl_main.pack(side="left", fill="both", expand=True, padx=12, pady=(0, 8))
         ver = L.version(s)
-        strat = next((x for x in MM.all_strats() if x["id"] == s.get("strat")), None)
+        strat = next((x for x in self.fl_all_strats() if x["id"] == s.get("strat")), None)
         self.fl_title.config(text=f"{s['name']}   v{ver['v']}")
         cost, _parts, unknown = L.cost_per_run(ver)
         chips = []
@@ -709,7 +709,7 @@ class LedgerPage:
         d = self.fl_data()
         s = next((x for x in d["setups"] if x.get("strat") == sid), None)
         if not s:
-            strat = next((x for x in MM.all_strats() if x["id"] == sid), None)
+            strat = next((x for x in self.fl_all_strats() if x["id"] == sid), None)
             s = L.new_setup(strat["name"] if strat else "New setup", strat=sid)
             d["setups"].append(s)
         d["current"] = s["id"]
@@ -821,8 +821,13 @@ class LedgerPage:
             if n is False or (n is None and key in ("runs", "cost")):
                 self._say("A number, please (divines: 2.5).", 5)
                 return
-            if key == "runs":
+            if key == "runs":                              # 2.85.0: the cost scales with the runs (it stayed at the old count)
+                old = max(1, int(l.get("runs") or 1))
                 l["runs"] = max(1, int(n))
+                if isinstance(l.get("cost"), (int, float)) and l["runs"] != old:
+                    l["cost"] = round(l["cost"] * l["runs"] / old, 4)
+                    if l.get("loot") is not None:
+                        l["profit"] = round(l["loot"] - l["cost"], 4)
             elif key == "cost":
                 l["cost"] = n
                 if l.get("loot") is not None:
@@ -980,7 +985,7 @@ class LedgerPage:
 
     def fl_guide_of(self, s):
         """The Publish step's answers for a setup, over the strat it follows (if it follows one)."""
-        base = next((x for x in MM.all_strats() if x["id"] == s.get("strat")), None) or {}
+        base = next((x for x in self.fl_all_strats() if x["id"] == s.get("strat")), None) or {}
         gd = {k: base[k] for k in ("category", "type", "summary", "thoughts_per_click", "clicks_per_hour", "tags",
                                    "steps") if base.get(k)}
         gd.update({k: v for k, v in (s.get("guide") or {}).items() if v not in (None, "", [])})
@@ -1016,11 +1021,24 @@ class LedgerPage:
                        f"strats it needs: {', '.join(p.replace('missing ', '') for p in probs[:4])}. Fill those in, "
                        "then press 📤 Post to Community.", "Upload a strat", secs=30)
 
+    def fl_all_strats(self):
+        """2.85.0: every strat a setup can follow - the bundled and yours, plus Community and Official posts (tracking
+        one of those made a "New setup" that lost its link)."""
+        out, seen = [], set()
+        extra = list(getattr(self, "mm_board", None) or [])
+        off = getattr(self, "mm_official", None) or {}
+        extra += [dict(x, origin="official") for x in (off.get("strats") or []) if isinstance(x, dict)]
+        for x in list(MM.all_strats()) + extra:
+            if isinstance(x, dict) and x.get("id") and x["id"] not in seen and x.get("name"):
+                seen.add(x["id"])
+                out.append(x)
+        return out
+
     def fl_strat_guide(self, s):
         """2.46.0: a setup -> a strat in the standard layout: its strat's text (if it has one), the items it runs
         (with the mods that matter - Money Makers checks their cost every day), the atlas, and its numbers."""
         import json as _json
-        base = next((x for x in MM.all_strats() if x["id"] == s.get("strat")), None)
+        base = next((x for x in self.fl_all_strats() if x["id"] == s.get("strat")), None)
         st = {k: v for k, v in _json.loads(_json.dumps(base)).items() if not k.startswith("_") and k != "origin"} if base \
             else MM.new_strat(name=s["name"], summary="", steps=[], author=SETTINGS.get("wealth_account") or "me")
         ver = L.version(s)
@@ -1042,6 +1060,11 @@ class LedgerPage:
         if not st["items"]:
             st.pop("items")
         f = L.figures(L.logs_of(self.fl_data(), s["id"], ver["v"]))
+        st.pop("ledger", None)                              # 2.85.0: only YOUR numbers go up (a followed strat's
+        if base is not None and base.get("author") != SETTINGS.get("wealth_account"):   # weren't yours to publish)
+            st.pop("est_profit", None)
+        from . import board as _B
+        st["author"] = (_B.signed_in() or {}).get("name") or st.get("author") or "me"
         if f["runs"]:
             lg = {"runs": f["runs"], "minutes": round(f["secs"] / 60, 1)}
             for k, v in (("cost_per_run_div", f["cost_run"]), ("loot_per_run_div", f["loot_run"]),
@@ -1667,7 +1690,7 @@ class LedgerPage:
         r = tk.Frame(g, bg=P2)
         r.pack(fill="x")
         tk.Label(r, text="Strat", bg=P2, fg=C["muted"], width=6, anchor="w").pack(side="left")
-        strats = sorted(MM.all_strats(), key=lambda x: x["name"].lower())
+        strats = sorted(self.fl_all_strats(), key=lambda x: x["name"].lower())
         self.fl_ed_strats = {"(none - my own idea)": None, **{x["name"]: x["id"] for x in strats}}
         cur = next((n for n, i in self.fl_ed_strats.items() if i == s.get("strat")), "(none - my own idea)")
         self.fl_ed_strat = tk.StringVar(value=cur)
@@ -1832,7 +1855,7 @@ class LedgerPage:
     def _fl_ed_publish_page(self, g):
         P2 = C["panel2"]
         s = self.fl_ed_s
-        base = next((x for x in MM.all_strats() if x["id"] == s.get("strat")), None) or {}
+        base = next((x for x in self.fl_all_strats() if x["id"] == s.get("strat")), None) or {}
         gd = dict(s.get("guide") or {})
         for k in ("category", "type", "summary", "thoughts_per_click", "clicks_per_hour", "tags"):
             if k not in gd and base.get(k):
@@ -1868,7 +1891,7 @@ class LedgerPage:
         self.fl_pub_sum.trace_add("write", lambda *a: self.fl_pub_check())
         row = tk.Frame(a, bg=P2)
         row.pack(fill="x", pady=(0, 8))
-        tk.Label(row, text="Thinking", bg=P2, fg=C["muted"], width=14, anchor="w").pack(side="left")
+        tk.Label(row, text="Thoughts per click", bg=P2, fg=C["muted"], width=16, anchor="w").pack(side="left")
         words = [w for w, _d in MM.THINKING.values()]
         self.fl_pub_think = SegBar(row, words, value=MM.THINKING.get(gd.get("thoughts_per_click"), ("",))[0],
                                    size=9, pad=(8, 4), command=lambda v: self.fl_pub_check())
@@ -1931,7 +1954,7 @@ class LedgerPage:
         if not gd.get("summary"):
             out.append("one line")
         if not gd.get("thoughts_per_click"):
-            out.append("Thinking")
+            out.append("Thoughts per click")
         if not gd.get("clicks_per_hour"):
             out.append("Clicks per hour")
         if not gd.get("steps"):
@@ -1946,7 +1969,7 @@ class LedgerPage:
         miss = self.fl_pub_missing(gd)
         content = [t for t, v in getattr(self, "fl_ed_content", {}).items() if v.get()]
         lines = [("✓" if not {"what it is", "one line"} & set(miss) else "○") + "  What it is, one line",
-                 ("✓" if not {"Thinking", "Clicks per hour"} & set(miss) else "○") + "  Thinking, clicks",
+                 ("✓" if not {"Thoughts per click", "Clicks per hour"} & set(miss) else "○") + "  Thoughts per click, clicks",
                  ("✓" if "steps" not in miss else "○") + "  Steps",
                  f"{'✓' if gd['tags'] or content else '○'}  {len(gd['tags'])} tags, {len(content)} content (step 4)",
                  f"{'✓' if self.fl_ed_ver['atlas'].get('image') else '○'}  Atlas screenshot (optional)"]

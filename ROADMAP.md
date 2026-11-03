@@ -4,7 +4,7 @@
 
 > **Who we build for - read second.** Path of Exile players are utilitarian: they love data and information, problem solving and creative thinking. So every feature shows its numbers *and how they were worked out*, lets you sort, filter, compare and export them (CSV), keeps power-user depth (keys, versions, raw data) one click away instead of hiding it, explains in plain words, and leaves the decision to the player. Pretty is welcome; vague is not.
 
-**Current version: 2.84.0**
+**Current version: 2.85.0**
 
 Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds features, 2.10.1 only fixes. Each step below is one release; we work through them top to bottom.
 
@@ -145,6 +145,7 @@ Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds f
 | 2.83.0 | **Island Rumours**: in your hideout, each rumour on the Uncharted Waters card gets its island and your Map library rank. Remnant watcher off in hideouts / towns / campaign, in maps only with the Expedition mark on screen, always on in Grand Expedition islands. |
 | 2.83.1 | Price Checks' key is Ctrl+D (Settings › Hotkeys); the game's plain Ctrl+C is left alone. |
 | 2.84.0 | **Price Checks ↳ Favorites**: items from Price Checks (☆ Add to favorites) and pasted trade links, in groups and your order; each opens with its filters and the trade site's listings. Right-click for rename / edit / duplicate / move / copy link / delete (Ctrl+Z). Money Makers item links: Instant Buyout, waystone numbers and tier; regex with numbers. |
+| 2.85.0 | **Community board protections**: only authors edit, every change kept (History, roll back), **Suggest an edit** (the author accepts), opt-in reviewers (2 approve changes to Official strats and decide reports), unique community names asked once at start-up (change once every 7 days), field checks and daily limits. Money Makers / Strat Tracker accuracy fixes (units, negatives, sources, labels, tracking Community strats). |
 
 ## ▶ Next up
 
@@ -154,11 +155,11 @@ Order (decided 2.34.0): the Polish basics first, so new features are built on th
 
 | Version | Plan |
 |---|---|
-| 2.85.0 | **Global leaderboards** (opt-in, through Community data sharing): one Leaderboards page under Overlay (Overlay ↳ Leaderboards) with tabs for Campaign (total and per act, from the Campaign Helper's splits), Maps (fastest clear per map), Bosses & pinnacles, and Trials (Sekhemas, Chaos, Simulacrum); each with Mine / Everyone, this league / all time, filters (league, class). The session page's own leaderboard links to it. Times come from the game's log, so they're marked self-reported: the board drops impossible times, and reports / an admin can hide entries. A board name only (no account), as on Money Makers. |
-| 2.86.0 | **Public stash order test tool.** |
-| 2.87.0 | **Polish 4 - Responsive:** windows reflow when narrow (toolbars wrap, side panels drop under the list, sensible minimum sizes), sharp on every monitor (per-monitor DPI), a text size setting (100-150 %). |
-| 2.88.0 | **Polish 5 - Hover, focus, micro-interactions:** the same hover and pressed look on every button, row, icon and tab; a visible keyboard focus ring everywhere; short (120-180 ms) fades for popups and toasts, never on lists; a "Reduce motion" setting that turns them off. |
-| 2.89.0 | **Polish 6 - Visual hierarchy:** the suggestions below, window by window, with before / after screenshots in each PR. |
+| 2.86.0 | **Global leaderboards** (opt-in, through Community data sharing): one Leaderboards page under Overlay (Overlay ↳ Leaderboards) with tabs for Campaign (total and per act, from the Campaign Helper's splits), Maps (fastest clear per map), Bosses & pinnacles, and Trials (Sekhemas, Chaos, Simulacrum); each with Mine / Everyone, this league / all time, filters (league, class). The session page's own leaderboard links to it. Times come from the game's log, so they're marked self-reported: the board drops impossible times, and reports / an admin can hide entries. A board name only (no account), as on Money Makers. |
+| 2.87.0 | **Public stash order test tool.** |
+| 2.88.0 | **Polish 4 - Responsive:** windows reflow when narrow (toolbars wrap, side panels drop under the list, sensible minimum sizes), sharp on every monitor (per-monitor DPI), a text size setting (100-150 %). |
+| 2.89.0 | **Polish 5 - Hover, focus, micro-interactions:** the same hover and pressed look on every button, row, icon and tab; a visible keyboard focus ring everywhere; short (120-180 ms) fades for popups and toasts, never on lists; a "Reduce motion" setting that turns them off. |
+| 2.90.0 | **Polish 6 - Visual hierarchy:** the suggestions below, window by window, with before / after screenshots in each PR. |
 | Last | **Linux build** (Hyprland / Wayland first) - the groundwork is in place (session_linux_handover.txt). |
 | Very end | **Kind words** (a hidden, opt-in easter egg): short affirmations in a quick centered box over the game, like PoE's loading-screen tips (e.g. on zone loads, at most every N minutes, fading after a few seconds). Found only by digging through the menus. I keep the rotation myself with little upkeep and no spoilers (the raw lines shouldn't be easy to read); how I add lines is still to decide - a scrambled file in the repo plus an Actions form, the board server, or lines built into each release. A starter template of lines. Extra polish. |
 
