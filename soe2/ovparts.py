@@ -128,8 +128,20 @@ class OverlayParts:
                 pass
 
     # ================================================================ the goal bar
+    def goalbar_rows(self):
+        """What the goal bar holds, top to bottom: 'campaign' (2.77.0, while you're in the campaign), 'focus'."""
+        rows = []
+        try:
+            if self.camp_on_bar():
+                rows.append("campaign")
+        except Exception:
+            self.log_error("the campaign line")
+        if self.focus_line()[0]:
+            rows.append("focus")
+        return rows
+
     def goalbar_wanted(self):
-        return bool(self.focus_line()[0])
+        return bool(self.goalbar_rows())
 
     def goalbar_destroy(self):
         w, self.gb_win = getattr(self, "gb_win", None), None
@@ -185,8 +197,12 @@ class OverlayParts:
             mw, mh = 600, 60
         mw = mw if mw > 1 else 600
         mh = mh if mh > 1 else 60
+        rows = self.goalbar_rows()
         gw = max(320, int(mw * (0.6 if hud else 1.0)))
-        gh = max(30, int((self.hud_spots("xpbar")[0][3] if hud else 60) * (0.55 if hud else 0.62)))
+        if "campaign" in rows:                               # (a longer line: the act, the step, the levels)
+            gw = max(gw, min(mw, 900))
+        row_h = max(30, int((self.hud_spots("xpbar")[0][3] if hud else 60) * (0.55 if hud else 0.62)))
+        gh = row_h + int(row_h * 0.8) * (len(rows) - 1)
         x, y = self._goalbar_spot(layout, gw, gh)
 
         def moved(nx, ny, _w, _h):
@@ -212,7 +228,17 @@ class OverlayParts:
                 cv.create_image(0, 0, image=art, anchor="nw", tags=("hudbg",))
                 cv._card_imgs = [art]
             lft, rgt = 16, W - 16
-        mid = H // 2
+        mids = [int(H * (2 * i + 1) / (2 * len(rows))) for i in range(len(rows))]
+        f = (P["font"], self._hf(10))
+        self.gb_rows = rows
+        if "campaign" in rows:
+            self.camp_draw_row(cv, P, lft, rgt, mids[rows.index("campaign")], f)
+            if len(rows) > 1:
+                y = (mids[0] + mids[1]) // 2
+                cv.create_line(lft, y, rgt, y, fill=P["line"], tags=("mg",))
+        if "focus" not in rows:
+            return self._goalbar_show(w, cv)
+        mid = mids[rows.index("focus")]
         ftext, fprog = self.focus_line()
         f = (P["font"], self._hf(10))
         fm = tkfont.Font(root=cv, family=P["font"], size=self._hf(10))
@@ -228,6 +254,9 @@ class OverlayParts:
             cv.create_rectangle(rgt - pw, mid - 2, rgt, mid + 2, fill=P["cell_bg"], outline=P["line"], tags=("mg",))
             cv.create_rectangle(rgt - pw, mid - 2, rgt - pw + int(pw * min(1.0, fprog)), mid + 2, fill=P["on"],
                                 outline="", tags=("mg",))
+        return self._goalbar_show(w, cv)
+
+    def _goalbar_show(self, w, cv):
         self.gb_win, self.gb_cv = w, cv
         w.click_through = self.click_through_on()
         from .merged_page import set_click_through

@@ -75,3 +75,10 @@ CREATE TABLE IF NOT EXISTS map_votes (
 
 -- 2.48.0: bug reports from the app (POST /bugs) - only a per-address count per day, to stop floods
 CREATE TABLE IF NOT EXISTS bug_limits (ip TEXT PRIMARY KEY, n INTEGER NOT NULL, day TEXT NOT NULL);
+
+-- 2.77.0: campaign zones a player's guide pack didn't know (POST /mods/batch "zones"); GET /campaign/zones pools them
+CREATE TABLE IF NOT EXISTS campaign_zones (
+  act TEXT NOT NULL, zone TEXT NOT NULL, cid TEXT NOT NULL, after TEXT NOT NULL DEFAULT '', level INTEGER NOT NULL DEFAULT 0,
+  updated INTEGER NOT NULL,
+  PRIMARY KEY (act, zone, cid)
+);

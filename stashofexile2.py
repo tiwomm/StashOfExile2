@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU GPL v3.0 (see LICENSE). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.76.0
+VERSION 2.77.0
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,6 +19,22 @@ VERSION 2.76.0
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.77.0
+       The Campaign Helper (campaign.py, campaign_ui.py; the guide pack campaign.json). It follows the zone you're in
+       from the game's log (the area line's id gives the act - G1..G4, P1..P3 interludes - and the [SCENE] line its
+       name): entering a zone jumps to its step, steps gone past without entering are "passed"; click a step (or
+       ◀ ▶, keys key_camp_prev / key_camp_next, off by default) to say "I'm here", or a step in another act to start
+       from there. Its line goes on the goal bar (a row over League Focus's): act and zone, what to do and what it's
+       worth, the next zone, your level and the zone's, the step; Vendor ▾ in town copies this act's searches and
+       your Regex favorites (you paste them - nothing is typed). A click opens the act's card: Route, Rewards (points,
+       spirit, resistances; tick any by hand), Splits (time per act without AFK or long gaps; a best per league).
+       Leaving an act, a reward whose zone you never entered is "missed", one whose zone you entered asks "Did you get
+       it?" - in the next town: Got it, Remind me in town, Skip it. A reward's "proof" zones tick it by themselves;
+       a hand tick always wins. Zones the guide doesn't know are added where you went (with a note, Mark optional, a
+       newer guide) and pooled through Community data sharing (POST /mods/batch "zones", GET /campaign/zones); a
+       weekly GitHub Action (guide.yml, tools/build_guide.py) adds the ones 3+ installs saw. Overlay › Options:
+       Campaign (route Full rewards / Speedrun / My own, five switches, the guide pack and its check), the Campaign
+       Helper / its line / Vendor search switches, and Campaign / Vendor ▾ on the bar. Turns itself off at maps.
   2.76.0
        Two parts of the overlay get their own place (ovparts.py). The map's rank (★ A, ★ (B) the community's, ★ -)
        is its own part, not glued onto where you are: its switch (lines "rank"), a click ranks the map you're in; on a
@@ -1748,7 +1764,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.76.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.77.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 

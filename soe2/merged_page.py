@@ -21,7 +21,7 @@ HUD = ("xpbar",)                 # 2.65.0: fitted to the game's own bottom bar, 
 # the orbs' panels are anchored to the left and right edges, the XP bar runs between them). (x0, x1, bottom, h)
 #   x0 / x1 >= 0: from the left edge, < 0: from the right edge; bottom: up from the bottom edge.
 HUD_SPOTS = {"xpbar": [(0.535, -0.535, 0.0205, 0.056)]}   # 2.67.2: two rows (switches on top); 2.74.0: between 2.73.4 and 2.73.5
-SHORT = {"breach": "Brch", "delirium": "Deli", "ritual": "Ritl", "remnant": "Remn", "focus": "Focus"}
+SHORT = {"breach": "Brch", "delirium": "Deli", "ritual": "Ritl", "remnant": "Remn", "focus": "Focus", "campaign": "Camp"}
 
 
 def set_click_through(w, on):
@@ -179,13 +179,20 @@ class MergedOverlay:
         b.setdefault("focus", True)
         b.setdefault("notes", True)
         b.setdefault("calc", True)                       # 2.74.0: Calc ▾ (the calculator over the game)
+        b.setdefault("campaign", True)                   # 2.77.0: the Campaign switch, and Vendor ▾ in town
+        b.setdefault("vendor", True)
         return b
 
     def bar_chips(self):
-        """The switches on the bar: the Mechanic Helper's four (their switch on), then Focus (its own)."""
+        """The switches on the bar: the Mechanic Helper's four (their switch on), then Focus and Campaign (their own)."""
         chips = list(self.HELPERS) if self.tracker_cfg().get("alerts_bar", True) else []
         if self.bar_cfg().get("focus"):
             chips.append("focus")
+        if self.bar_cfg().get("campaign"):             # 2.77.0: only while you're in the campaign (not before
+            from . import campaign as CP                 # the log shows a campaign zone, nor once you reach maps)
+            run = CP.char()
+            if run.get("act") is not None and not run.get("done"):
+                chips.append("campaign")
         return chips
 
     def notes_on_bar(self):
