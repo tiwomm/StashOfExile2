@@ -76,6 +76,7 @@ from .search_page import SearchPage
 from .pricecheck_page import PriceCheckPage    # 2.80.0: Price Checks (one item, the trade site's listings)
 from .wellsouls_page import WellSoulsPage      # 2.81.0: Desecration Helper (tiers at The Well of Souls)
 from .rumours_page import RumoursPage          # 2.83.0: Island Rumours; where the Remnant watcher looks
+from .favorites_page import FavoritesPage      # 2.84.0: Price Checks ↳ Favorites
 from . import gamedata
 from . import modules
 from .shell import Shell
@@ -90,7 +91,7 @@ MISC_ROWS = (("corrupted", "Corrupted"), ("fractured", "Fractured"), ("desecrate
              ("sanctified", "Sanctified"), ("mirrored", "Mirrored"), ("unidentified", "Unidentified"))
 
 
-class App(PriceCheckPage, WellSoulsPage, RumoursPage, ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, ExchangePage, WealthPage, LibraryPage, RegexPage, UtilitiesPage, TrackerPage, SearchPage, CalcOverlay, InsightsPage, MoneyMakersPage, MapLibraryPage, RemnantPage, LedgerPage, FeedbackPage, FeedPage, MergedOverlay, GamePlanPage, FocusPokes, OverlayHelp, OverlayParts, CampaignUI):
+class App(PriceCheckPage, FavoritesPage, WellSoulsPage, RumoursPage, ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, ExchangePage, WealthPage, LibraryPage, RegexPage, UtilitiesPage, TrackerPage, SearchPage, CalcOverlay, InsightsPage, MoneyMakersPage, MapLibraryPage, RemnantPage, LedgerPage, FeedbackPage, FeedPage, MergedOverlay, GamePlanPage, FocusPokes, OverlayHelp, OverlayParts, CampaignUI):
     COLS = [("added", "#", 46, "e"), ("name", "Item", 220, "w"), ("type", "Type", 110, "w"), ("mark", "Status", 90, "center"),
             ("est", "Est. value", 110, "e"), ("conf", "Confidence", 95, "center"), ("listings", "Listings", 70, "e"), ("priced", "Priced at", 130, "w"),
             ("match", "How it was priced", 300, "w"), ("vmods", "Valuable mods", 100, "center"),
@@ -3492,7 +3493,7 @@ class App(PriceCheckPage, WellSoulsPage, RumoursPage, ListKeys, AlertsPage, Abou
             self.batch_ids.add(rid)
             self.update_row(rid)
             self.refresh_detail_if_selected(rid)
-            pc = rec.get("src") == "pc"                          # 2.80.0: Price Checks go first
+            pc = rec.get("src") in ("pc", "fav")                 # 2.80.0: Price Checks go first (2.84.0: Favorites)
             self.engine.add(0 if pc else (2 if rec["resolved"] else 1), "price" if rec["resolved"] else "resolve", rid)
 
     def reprice_all(self):
@@ -4075,6 +4076,8 @@ class App(PriceCheckPage, WellSoulsPage, RumoursPage, ListKeys, AlertsPage, Abou
             if rid == getattr(self, "pc_rid", None):
                 self.pc_show(rec)
             return
+        if rec is not None and rec.get("src") == "fav":         # 2.84.0: an item favorite
+            return self.fav_rec_changed(rec)
         sel = self.tree.selection()
         if len(sel) == 1 and sel[0] == str(rid):
             self.show_detail(self.records[rid])
@@ -4458,6 +4461,8 @@ class App(PriceCheckPage, WellSoulsPage, RumoursPage, ListKeys, AlertsPage, Abou
         and one ▸ Advanced section at the bottom (listing status, if you list it, how it's priced, rolls, raw text)."""
         if rec is not None and rec.get("src") == "pc":          # 2.80.0: the card on Price Checks
             return self.pc_show(rec)
+        if rec is not None and rec.get("src") == "fav":         # 2.84.0: the card on Favorites
+            return self.fav_rec_changed(rec)
         for w in self.detail.winfo_children():
             w.destroy()
         self.shown_rec = rec

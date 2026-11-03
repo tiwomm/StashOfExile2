@@ -21,6 +21,12 @@ NEXT = [
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.84.0": [
+        "New: Price Checks ↳ Favorites. Press ☆ Add to favorites on Price Checks, or paste a trade-site link: each "
+        "favorite opens with its filters and the trade site's listings, like Price Checks.",
+        "Put favorites in groups, drag them into your order, and right-click for everything else (rename, edit, "
+        "duplicate, move, copy the trade link, delete - Ctrl+Z undoes).",
+    ],
     "2.83.1": [
         "Price Checks' key is now Ctrl+D: hover an item in game and press it. Change it in Settings › Hotkeys. "
         "The game's plain Ctrl+C no longer opens Price Checks.",

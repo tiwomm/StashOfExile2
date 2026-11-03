@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU GPL v3.0 (see LICENSE). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.83.1
+VERSION 2.84.0
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,6 +19,16 @@ VERSION 2.83.1
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.84.0
+       Price Checks ↳ Favorites (feedback: "a favorites (bookmark) tracker that you can paste a trade link into ...
+       'Add to favorites' next to 'Open on trade site' ... reorganize, give a name, edit/delete/etc, fully context
+       menu aware"). favorites.py: favorites.json (groups and favorites in your order), reading a trade link (the
+       long form decodes by itself; a short id is one GET of /search/poe2/<league>/<id>), clean_query (switched-off
+       filters left out). favorites_page.py: the list (groups, drag to reorder / regroup, right-click: Search now,
+       Open on trade site, Copy trade link, Rename F2, Edit, Duplicate, Move up / down Alt+arrows, Move to group,
+       New group; Delete + Ctrl+Z), an item favorite = a "fav" record with the Price Checks card (filters kept with
+       the favorite), a link favorite = its search's filters with switches and Min / Max, searched in your league.
+       Price Checks: ☆ Add to favorites. pricecheck_page.PCView: the card + listings layout both pages use.
   2.83.1
        Price Checks' key is Ctrl+D (feedback: "change the default keybind for price check from ctrl + c to ctrl + d"),
        set in Settings › Hotkeys (pc_key). In game it presses the game's own Ctrl+Alt+C once (overlay.send_copy - one
@@ -1889,7 +1899,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.83.1"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.84.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
