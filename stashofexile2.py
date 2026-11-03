@@ -29,6 +29,11 @@ VERSION HISTORY
        New group; Delete + Ctrl+Z), an item favorite = a "fav" record with the Price Checks card (filters kept with
        the favorite), a link favorite = its search's filters with switches and Min / Max, searched in your league.
        Price Checks: ☆ Add to favorites. pricecheck_page.PCView: the card + listings layout both pages use.
+       Money Makers item cards (feedback: the links "didn't fill in all of the information" and picked In Person):
+       every trade link uses the Settings seller (Instant Buyout by default; trade.listing_rules) - the Strat
+       Tracker's too; a waystone's ★ numbers (Monster Rarity: +103%) and tier go to the Endgame filters
+       (moneymakers.waystone_props) and its regex uses them (not the words "monster rarity"); a tablet's regex asks
+       for at least each ★ number.
   2.83.1
        Price Checks' key is Ctrl+D (feedback: "change the default keybind for price check from ctrl + c to ctrl + d"),
        set in Settings › Hotkeys (pc_key). In game it presses the game's own Ctrl+Alt+C once (overlay.send_copy - one
