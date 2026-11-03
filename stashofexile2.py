@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU GPL v3.0 (see LICENSE). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.74.1
+VERSION 2.74.2
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,6 +19,11 @@ VERSION 2.74.1
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.74.2
+       Settings › Advanced › Report a bug: the same form as the bottom bar's Report a bug (bug_report_open); the
+       .zip problem report is gone from Settings (App.problem_report removed; report.py kept). A new version shows
+       in the sidebar, above Toolkit and Settings - an accent row "Update to x.y.z" (sidebar._update_row; click:
+       check_updates("ask")) - instead of the badge on the bottom bar (kept only without a sidebar).
   2.74.1
        The Item card reads like the item in game (feedback: "like Sidekick" - the mod values were under the price,
        a scroll away): implicits, a rule, the other mods with their values and tier tags (P1 / S2), Corrupted,
@@ -1702,7 +1707,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.74.1"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.74.2"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 

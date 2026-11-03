@@ -1,4 +1,5 @@
 """The update badge and Report a bug (2.48.0), both on the taskbar so they're there whatever window you're in.
+2.74.2: a new version shows in the sidebar instead, above Toolkit and Settings (the taskbar badge is for no sidebar).
 
 Update badge: a quiet look at GitHub's latest release a little after start and every 6 hours. A newer version puts
 "⬆ Update x.y.z" on the taskbar; clicking it is the same as Settings > Updates > Check for updates (asks before
@@ -58,9 +59,13 @@ class FeedbackPage:
     def ev_update_badge(self, tag):
         from .updates import is_newer
         from .config import pretty_version
+        sb = getattr(self.shell, "sidebar", None)
         if tag and is_newer(tag, APP_VERSION):
             self.upd_latest = tag
             self.upd_badge.config(text=f"⬆ Update {pretty_version(tag)}")
+            if sb is not None:                               # 2.74.2: in the sidebar, above Toolkit and Settings
+                sb.redraw()
+                return
             if not self.upd_badge.winfo_ismapped():
                 self.upd_badge.pack(in_=self.shell.task_right, side="left", padx=4, before=self.bug_btn)
             from .style import Tooltip
@@ -69,6 +74,8 @@ class FeedbackPage:
         else:
             self.upd_latest = None
             self.upd_badge.pack_forget()
+            if sb is not None:
+                sb.redraw()
 
     # ================================================================ Report a bug
     def bug_report_text(self, what, steps, expected, contact, with_log):

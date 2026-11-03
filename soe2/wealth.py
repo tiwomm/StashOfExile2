@@ -890,7 +890,7 @@ class WealthJobs:
                 t["unreadable"] = t.get("unreadable", 0) + 1
                 if t["unreadable"] == 1:
                     t["warnings"].append(f"Couldn't read a listing ({type(ex).__name__}: {str(ex)[:80]}) - it was left "
-                                         f"out. Problem report (Settings > Advanced) helps find out why.")
+                                         f"out. Report a bug (bottom bar) helps find out why.")
                 continue
             s["fetched"] += 1
         self.ui_q.put(("wealth", "progress"))
