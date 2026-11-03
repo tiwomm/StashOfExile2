@@ -48,7 +48,7 @@ def clip_seq():
 
 
 def write_clipboard_text(text):
-    """Put text on the Windows clipboard (2.0 beta 8: chat commands are pasted, like Sidekick does). -> True if done."""
+    """Put text on the Windows clipboard (2.0 beta 8: chat commands are pasted). -> True if done."""
     if sys.platform != "win32":
         return False
     try:

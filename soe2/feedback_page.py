@@ -1,7 +1,7 @@
 """The update badge and Report a bug (2.48.0), both on the taskbar so they're there whatever window you're in.
 2.74.2: a new version shows in the sidebar instead, above Toolkit and Settings (the taskbar badge is for no sidebar).
 
-Update badge: a quiet look at GitHub's latest release a little after start and every 6 hours. A newer version puts
+Update badge: a quiet look at GitHub's latest release a little after start and every hour. A newer version puts
 "⬆ Update x.y.z" on the taskbar; clicking it is the same as Settings > Updates > Check for updates (asks before
 downloading). It never downloads by itself (that's still the Settings option).
 
@@ -23,7 +23,7 @@ from .config import APP_VERSION, P, SETTINGS
 from .style import C
 
 REPO = "tiwomm/StashOfExile2"
-UPDATE_EVERY = 6 * 3600
+UPDATE_EVERY = 3600                 # 2.79.1 (feedback): every hour (was 6 h)
 LOG_LINES = 40
 
 
@@ -45,7 +45,7 @@ class FeedbackPage:
         self.root.after(15000, self.quiet_update_check)
 
     def quiet_update_check(self):
-        """Every 6 hours: is there a newer release? Only shows the badge."""
+        """Every hour: is there a newer release? Only shows the badge."""
         def work():
             from .updates import latest_release
             try:

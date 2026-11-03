@@ -514,6 +514,10 @@ class CampaignUI:
             cb = ttk.Checkbutton(grid, text=label, variable=v, style="Card.TCheckbutton",
                                  command=lambda k=k: self.camp_opt(k))
             cb.grid(row=i // 2, column=i % 2, sticky="w", padx=(0, 24), pady=2)
+        self.tk_goal_dock = tk.BooleanVar(value=self.goalbar_docked())
+        ttk.Checkbutton(grid, text="Dock it to the top of the overlay bar", variable=self.tk_goal_dock,
+                        style="Card.TCheckbutton", command=self.goal_dock_set).grid(row=2, column=1, sticky="w",
+                                                                                    padx=(0, 24), pady=2)
         for col in range(2):
             grid.columnconfigure(col, uniform="cs")
         pk = tk.Frame(box, bg=P2)
@@ -524,6 +528,14 @@ class CampaignUI:
             side="left", padx=(8, 0))
         ttk.Button(pk, text="Open the route", style="Quiet.TButton", command=self.camp_route_show).pack(
             side="left", padx=(8, 0))
+
+    def goal_dock_set(self):
+        """2.79.1: the campaign / Focus line docked to the bar (on) or where you drag it (off)."""
+        cfg = self.tracker_cfg()
+        cfg["goal_dock"] = bool(self.tk_goal_dock.get())
+        cfg.pop("goal_pos", None)
+        self.tracker_save()
+        self.goalbar_build()
 
     def camp_route_pick(self, name):
         CP.cfg()["route"] = next((k for k, n in CP.ROUTES if n == name), "full")

@@ -125,7 +125,7 @@ Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds f
 | 2.74.1 | Price checks' Item card shows the mods and their values as in game; uniques' mods read (Unique Modifier headers), named rolls (Legacy of Gold) and trade-site options searched, flavour text never a mod. |
 | 2.74.2 | Settings › Advanced › Report a bug (the bottom bar's form, not a .zip); a new version shows in the sidebar above Toolkit and Settings. |
 | 2.74.3 | Session timer: ⏸ / ▶ on the overlay and the keyboard's Pause key (no Ctrl+Alt start / stop / pause keys); click-through its own switch, off by default. |
-| 2.74.4 | Price checks: check boxes for each mod on the item card (like Sidekick), Min / Max under Fine-tune; uniques' flavour text never a mod. |
+| 2.74.4 | Price checks: check boxes for each mod on the item card, Min / Max under Fine-tune; uniques' flavour text never a mod. |
 | 2.74.5 | Price checks, a lighter page (fewer rows, less padding, no legend chip or Only ★); closable beta notices. |
 | 2.75.0 | Wealth UX pass: Wealth ↳ Overview / Stash tabs / Snapshots in the sidebar; Sync and Count currency on every page; setup steps as cards on the Overview, then one status line; a From list over the items. |
 | 2.76.0 | The overlay: the map's rank its own part (click to rank) and a card asking to rank maps you haven't; League Focus's line on its own small goal bar (Game bar / Panel style), where the Campaign Helper goes next. |
@@ -134,8 +134,8 @@ Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds f
 | 2.78.1 | The rank card says the map's name, not its area id, and saves the rank under it (ranks saved under an id move over). |
 | 2.78.2 | The campaign line's bar is as wide as the overlay's bar. |
 | 2.78.3 | The overlay scales to any resolution (720p to 4K, cards too); the item card has Item level and Min / Max beside each mod. |
-| 2.79.0 | The item panel like Sidekick (every filter on the card, ▸ Advanced for the rest), no pop-ups, unique / granted-skill mods from the trade site's list, the white / magic base rule, Remnant tags on time. |
-| 2.79.1 | Mageblood: stat options in the id, the same Legacy twice = Min 2; granted skills found without "Summon". |
+| 2.79.0 | A clean item panel (every filter on the card, ▸ Advanced for the rest), no pop-ups, unique / granted-skill mods from the trade site's list, the white / magic base rule, Remnant tags on time. |
+| 2.79.1 | Mageblood: stat options in the id, the same Legacy twice = Min 2; granted skills found without "Summon"; campaign line docked on the bar; the bar as wide as the XP bar, refit per resolution; update look hourly. |
 
 ## ▶ Next up
 

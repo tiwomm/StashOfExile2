@@ -21,7 +21,7 @@ HUD = ("xpbar",)                 # 2.65.0: fitted to the game's own bottom bar, 
 # Where the game's bottom bar leaves room, as parts of the game window's height (PoE2 at 16:9, UI scale 100 %;
 # the orbs' panels are anchored to the left and right edges, the XP bar runs between them). (x0, x1, bottom, h)
 #   x0 / x1 >= 0: from the left edge, < 0: from the right edge; bottom: up from the bottom edge.
-HUD_SPOTS = {"xpbar": [(0.535, -0.535, 0.0205, 0.056)]}   # 2.67.2: two rows (switches on top); 2.74.0: between 2.73.4 and 2.73.5
+HUD_SPOTS = {"xpbar": [(0.531, -0.531, 0.0205, 0.056)]}   # 2.79.1: as wide as the XP bar (measured at 1440p), over it   # 2.67.2: two rows (switches on top); 2.74.0: between 2.73.4 and 2.73.5
 SHORT = {"breach": "Brch", "delirium": "Deli", "ritual": "Ritl", "remnant": "Remn", "focus": "Focus", "campaign": "Camp"}
 
 
@@ -161,7 +161,10 @@ class MergedOverlay:
             r = (0, 0, self.root.winfo_screenwidth(), self.root.winfo_screenheight())
         gx, gy, gw, gh = r
         self._hud_k = hud_k(gh)                            # 2.78.3: no 0.8-1.6 cap - 4K and 720p fit too
-        saved = (self.tracker_cfg().get("hud_pos") or {}).get(layout) or []
+        cfg = self.tracker_cfg()
+        saved = (cfg.get("hud_pos") or {}).get(layout) or []
+        if saved and (cfg.get("hud_res") or {}).get(layout) != [int(gw), int(gh)]:   # 2.79.1: another resolution -
+            saved = []                                                             # fitted again, bottom centre
         out = []
         for i, (a, b, bot, hh) in enumerate(HUD_SPOTS[layout]):
             x0 = gx + (a * gh if a >= 0 else gw + a * gh)
@@ -330,6 +333,7 @@ class MergedOverlay:
         def moved(nx, ny, _ww, _hh):
             cfg.update(mx=nx, my=ny)
             self.tracker_save()
+            self.goalbar_follow()
         w = OverlayWindow(self.root, "Session", "⏱", (x, y, None, None), opacity=int(cfg.get("opacity", 225)),
                           locked=bool(cfg.get("mlocked")), min_size=(120, 30), on_close=self.merged_close,
                           on_lock=lambda on: self.overlay_lock(on), on_moved=moved, follow_game=True,
@@ -800,7 +804,11 @@ class MergedOverlay:
                 while len(pos) < len(HUD_SPOTS[layout]):
                     pos.append(None)
                 pos[slot] = [nx, ny]
+                from .alerts_page import game_rect
+                r = game_rect() or (0, 0, self.root.winfo_screenwidth(), self.root.winfo_screenheight())
+                cfg.setdefault("hud_res", {})[layout] = [int(r[2]), int(r[3])]       # 2.79.1: kept for this size
                 self.tracker_save()
+                self.goalbar_follow()
             w = OverlayWindow(self.root, "Session", "⏱", (x, y, ww, hh), opacity=int(cfg.get("opacity", 225)),
                               locked=bool(cfg.get("mlocked")), min_size=(120, 24), on_close=self.merged_close,
                               on_lock=lambda on: self.overlay_lock(on), on_moved=moved, follow_game=True,

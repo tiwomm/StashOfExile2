@@ -142,7 +142,7 @@ DOUBLE_TAP = 0.5                   # 2.25.0: two Esc presses this close together
 
 
 class KeyWatch:
-    """Notices when YOU press Ctrl+Alt+C. Windows marks key presses sent by other programs (Sidekick) as 'injected',
+    """Notices when YOU press Ctrl+Alt+C. Windows marks key presses sent by other programs as 'injected',
     so those are ignored. Needs nothing installed."""
 
     def __init__(self):

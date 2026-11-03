@@ -3,7 +3,7 @@
   - A key that types /hideout into PoE2's chat (F1 by default), and up to 8 more keys for your own chat commands
     (/leave, /dnd, /invite Name ...). They only act while Path of Exile 2 is the active window; anywhere else the key
     does what it normally does. One key press = one chat command, like the "thanks for the trade" chat macro
-    GGG staff have long allowed (and Sidekick's hideout key).
+    GGG staff have long allowed.
   - Sticky notes: a small always-on-top note window over the game (F6 shows / hides it). Drag it by its header,
     resize it from the corner, set its colors, opacity and font size. It saves itself, and hides while the game
     is closed.
@@ -146,7 +146,7 @@ def _send_keys(events):
 
 def send_copy(sender=None):
     """One-key copy (2.0 beta 15): press the game's own Ctrl+Alt+C once for you - one key press, one item copied (the
-    same thing Sidekick's price-check key does). Nothing is clicked, moved or sent to the game's servers."""
+    same thing other price-check tools do). Nothing is clicked, moved or sent to the game's servers."""
     send = sender or _send_keys
     send([(0x10, None, True),                                                       # Shift up (it changes the copy)
           (0x11, None, False), (0x12, None, False), (0x43, None, False), (0x43, None, True),
@@ -157,7 +157,7 @@ CLIP_HOOK = [None]          # the app sets this: fn(text) -> "ignore this clipbo
 
 
 def type_chat(cmd, sender=None, sleep=time.sleep, clip=None):
-    """Send a chat command the way Sidekick does (2.0 beta 8): put it on the clipboard, then in one quick burst press
+    """Send a chat command (2.0 beta 8): put it on the clipboard, then in one quick burst press
     Enter (open chat), Ctrl+A + Backspace (clear it), Ctrl+V (paste), Enter (send). Nothing is typed letter by letter,
     so the chat box only flashes for a moment. Your clipboard is put back afterwards.
     Modifier keys you are still holding are released first, so Ctrl+H doesn't turn into shortcuts."""
