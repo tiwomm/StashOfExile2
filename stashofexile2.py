@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU GPL v3.0 (see LICENSE). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.73.1
+VERSION 2.73.2
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,6 +19,16 @@ VERSION 2.73.1
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.73.2
+       Price checks fixes. add_item_text: an item read into another list (a stash tab's while Manual Add shows) is
+       priced but not inserted into the visible tree. Engine: latest[(kind, rid)] = (newest seq, prio, copies);
+       take() skips older copies and parks a held item's job in held[rid]; hold / unhold / bump(rid, 0 or 90) back
+       the rows' right-click Pause / Resume pricing, Price next, Price last (a held row shows "⏸"). An iLvl
+       column (gear / waystones / jewels give "ilvl"; sortable). Market Insights: the cursor tooltip is gone - the
+       picked row is drawn in an Item panel at the side with Open / Price it again / Trade / Remove; Delete,
+       right-click › Remove and Undo in all three lists (ins_hidden / ins_hidden_mods hide listings and mods; the
+       Mod book keeps its data). config.TAGLINE "One tool to rule them all." in the title, Toolkit menu, About,
+       README.
   2.73.1
        League Focus part 2: pokes over the game (focus.due / poke_text / answer, plan_page.FocusPokes). Checked
        every 10 s from the session tracker's tick; the log's area and (new) level-up events feed focus.log_event.
@@ -1632,7 +1642,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.73.1"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.73.2"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 

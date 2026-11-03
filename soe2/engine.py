@@ -71,14 +71,83 @@ class Engine(TabReaderJobs, WealthJobs, StratCostJobs, threading.Thread):
         with self.lock:
             self.seq += 1
             self.jobs.put((prio, self.seq, job))
+            if job and job[0] in self.ITEM_JOBS and len(job) > 1:    # 2.73.2: the newest copy is the one that runs
+                old = self.latest.get((job[0], job[1]))
+                self.latest[(job[0], job[1])] = (self.seq, prio, (old[2] if old else 0) + 1)   # (newest, prio, copies)
+
+    # 2.73.2: one item's pricing can wait (pause) or jump the queue (price next / last)
+    ITEM_JOBS = ("resolve", "price")
+
+    @property
+    def latest(self):
+        d = self.__dict__.get("_latest")
+        if d is None:
+            d = self.__dict__["_latest"] = {}
+        return d
+
+    @property
+    def held(self):
+        d = self.__dict__.get("_held")
+        if d is None:
+            d = self.__dict__["_held"] = {}           # rid -> [(prio, job)] parked while paused
+        return d
+
+    def hold(self, rid):
+        with self.lock:
+            self.held.setdefault(rid, [])
+
+    def unhold(self, rid):
+        with self.lock:
+            parked = self.held.pop(rid, None)
+        for prio, job in parked or []:
+            self.add(prio, *job)
+        return parked is not None
+
+    def bump(self, rid, prio):
+        """Queue this item's waiting job again at `prio` (0: next, 90: last); its older copy is skipped."""
+        with self.lock:
+            parked = self.held.get(rid)
+            if parked:
+                self.held[rid] = [(prio, job) for _p, job in parked]
+                return True
+            mine = [(k, v) for k, v in self.latest.items() if k[1] == rid and v[0] > 0]
+        if not mine:
+            return False
+        for (kind, _r), _v in mine:
+            self.add(prio, kind, rid)
+        return True
+
+    def take(self, timeout=2):
+        """The next job to run, or None (nothing waiting, an older copy of a moved job, or a paused item's job -
+        parked until Resume). 2.73.2."""
+        try:
+            prio, seq, job = self.jobs.get(timeout=timeout)
+        except queue.Empty:
+            return None
+        if job and job[0] in self.ITEM_JOBS and len(job) > 1:
+            key = (job[0], job[1])
+            with self.lock:
+                newest = self.latest.get(key)
+                if newest is not None:
+                    left = newest[2] - 1                           # copies still in the queue
+                    stale = newest[0] != seq
+                    if left <= 0:
+                        self.latest.pop(key, None)
+                    else:                                          # seq 0: the newest one has left the queue
+                        self.latest[key] = (0 if not stale else newest[0], newest[1], left)
+                    if stale:
+                        return None                                # an older copy (it was moved): skip it
+                if job[1] in self.held:
+                    self.held[job[1]].append((prio, job))          # paused: parked until Resume
+                    return None
+        return job
 
     def run(self):
         while True:
             while self.paused:
                 time.sleep(0.3)
-            try:
-                _, _, job = self.jobs.get(timeout=2)
-            except queue.Empty:
+            job = self.take()
+            if job is None:
                 continue
             try:
                 getattr(self, "do_" + job[0])(*job[1:])

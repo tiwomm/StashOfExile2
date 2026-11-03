@@ -7,7 +7,7 @@ import tkinter as tk
 from datetime import datetime
 from tkinter import ttk
 
-from .config import SETTINGS
+from .config import SETTINGS, save_json
 from .market import MARKET
 from .valuelog import VALUE_LOG, sig_of
 from .mods import impact_key, JEWEL_BASE, norm, SIDTEXT
@@ -51,23 +51,29 @@ class InsightsPage:
                             "the Price checks list. The more you price, the more this fills in. Nothing is searched "
                             "for this page.", bg=P1, fg=C["muted"], anchor="w", padx=12, font=("Segoe UI", 9),
                  justify="left", wraplength=760).pack(fill="x")
-        # 2.4.0: details of the row you pick (bottom)
-        deto, det = chrome_section(body, "Details", padx=12, pady=8)          # 2.69.0
-        deto.pack(side="bottom", fill="x", padx=16, pady=(0, 8))
+        # 2.73.2: the picked row's item in a panel at the side (like Price checks) - it was a pop-up at the mouse
+        main = tk.Frame(body, bg=P1)
+        main.pack(fill="both", expand=True, padx=8, pady=(8, 8))
+        deto, det = chrome_section(main, "Item", padx=12, pady=8)
+        deto.pack(side="right", fill="y", padx=(4, 4), pady=4)
+        deto.configure(width=360)
+        deto.pack_propagate(False)
         dbar = tk.Frame(det, bg=P2)
-        dbar.pack(side="right", anchor="n")
+        dbar.pack(side="bottom", fill="x")
         self.ins_det_btns = {
             "open": ttk.Button(dbar, text="Show in Price checks", command=self.ins_open_record),
             "again": ttk.Button(dbar, text="Price it again", command=self.ins_price_again),
-            "trade": ttk.Button(dbar, text="Open the search", command=self.ins_open_search)}
+            "trade": ttk.Button(dbar, text="Open the search", command=self.ins_open_search),
+            "remove": ttk.Button(dbar, text="✕ Remove from here", command=self.ins_remove_picked, style="Quiet.TButton")}
         self.undo_button(dbar, "insights").pack(side="bottom", pady=(8, 0))
-        self.ins_det = tk.Label(det, text="Pick a row to see its details.", bg=P2, fg=C["muted"], anchor="nw",
-                                justify="left", font=("Segoe UI", 9))
-        self.ins_det.pack(side="left", fill="both", expand=True)
-        self.ins_det.bind("<Configure>", lambda e: self.ins_det.config(wraplength=max(300, e.width - 10)))
+        self.ins_card = tk.Frame(det, bg=P2)
+        self.ins_card.pack(fill="x")
+        self.ins_det = tk.Label(det, text="Pick a row to see its item here.", bg=P2, fg=C["muted"], anchor="nw",
+                                justify="left", font=("Segoe UI", 9), wraplength=320)
+        self.ins_det.pack(fill="both", expand=True, pady=(8, 0))
         self.ins_pick = None
-        grid = tk.Frame(body, bg=P1)
-        grid.pack(fill="both", expand=True, padx=8, pady=(8, 8))
+        grid = tk.Frame(main, bg=P1)
+        grid.pack(side="left", fill="both", expand=True)
         grid.columnconfigure(0, weight=1, uniform="g")
         grid.columnconfigure(1, weight=1, uniform="g")
         grid.rowconfigure(0, weight=1)
@@ -98,10 +104,10 @@ class InsightsPage:
                      (("name", "Item", 160, "w"), ("base", "Type", 110, "w"), ("est", "Worth", 70, "e"),
                       ("status", "Status", 70, "w")))
         mine.bind("<Double-1>", lambda e: self.ins_open_record())
-        mine.bind("<ButtonRelease-1>", lambda e: self.ins_preview_at("mine", e), add="+")   # 2.18.0: item preview
         self.list_register("insights", mine, delete=self.ins_forget)
         mine.menu_actions = lambda sel: [("Show in Price checks", lambda: (self.ins_show("mine"), self.ins_open_record())),
-                                         ("Price it again", lambda: (self.ins_show("mine"), self.ins_price_again()))]
+                                         ("Price it again", lambda: (self.ins_show("mine"), self.ins_price_again())),
+                                         ("✕ Remove from Market Insights", lambda: self.ins_forget(sel), bool(sel), "Del")]
         table(0, 1, "mods", "Mods worth the most", "What the Mod book learned: the typical asking price of listings "
                                                     "with this mod. ★ = valuable in your Mod book.",
               (("mod", "Mod", 220, "w"), ("base", "On", 90, "w"), ("med", "Typical", 70, "e"), ("n", "Seen", 45, "e")))
@@ -109,12 +115,15 @@ class InsightsPage:
                                                      "trade site (this league).",
               (("price", "Asking", 90, "e"), ("name", "Item", 200, "w"), ("mods", "Mods", 360, "w"),
                ("when", "Seen", 70, "w")), colspan=2)
-        self.list_register("insights", self.ins_tables["seen"][0])
+        self.list_register("insights", self.ins_tables["seen"][0], delete=self.ins_forget_seen)    # 2.73.2: Delete
         self.ins_tables["seen"][0].menu_actions = lambda sel: [            # 2.36.0
-            ("Open the search", lambda: (self.ins_show("seen"), self.ins_open_search()))]
-        self.ins_tables["seen"][0].bind("<ButtonRelease-1>", lambda e: self.ins_preview_at("seen", e), add="+")
+            ("Open the search", lambda: (self.ins_show("seen"), self.ins_open_search())),
+            ("✕ Remove from Market Insights", lambda: self.ins_forget_seen(sel), bool(sel), "Del")]
         body.bind("<Unmap>", lambda e: self.ins_preview_close(), add="+")
-        self.list_register("insights", self.ins_tables["mods"][0])
+        self.list_register("insights", self.ins_tables["mods"][0], delete=self.ins_forget_mods)   # 2.73.2: Delete
+        self.ins_tables["mods"][0].menu_actions = lambda sel: [
+            ("✕ Remove from Market Insights", lambda: self.ins_forget_mods(sel), bool(sel), "Del")]
+        self.ins_modmap = {}
         self.ins_rowmap, self.ins_seenmap = {}, {}
         self.refresh_insights()
 
@@ -146,14 +155,19 @@ class InsightsPage:
             self._ins_rated_mods(tv, empty, kind)
             return self._ins_fill_seen(kind)
         stats = MARKET.cached_stats()
+        hid = set(SETTINGS.get("ins_hidden_mods") or [])           # 2.73.2: removed by you
         rows = [(base, sid, st) for (base, sid), st in stats.items()
-                if kind_of(base) == kind and st.get("n", 0) >= 3 and st.get("med") is not None]
+                if kind_of(base) == kind and st.get("n", 0) >= 3 and st.get("med") is not None
+                and f"{base}|{sid}" not in hid]
+        self.ins_modmap = {}
         rows.sort(key=lambda r: -r[2]["med"])
         for base, sid, st in rows[:50]:
             text = _mod_text(sid)
             star = impact_key(norm(text)) == "high"
-            tv.insert("", "end", values=(("★ " if star else "") + text[:1].upper() + text[1:], base.replace(" Tablet", ""),
-                                         fmt_div(st["med"]), st["n"]), tags=("star",) if star else ())
+            iid = tv.insert("", "end", values=(("★ " if star else "") + text[:1].upper() + text[1:],
+                                               base.replace(" Tablet", ""), fmt_div(st["med"]), st["n"]),
+                            tags=("star",) if star else ())
+            self.ins_modmap[iid] = f"{base}|{sid}"
         why = f"Nothing learned about {kind[:-1].lower()} mods yet.\nIt fills in as you price {kind.lower()}."
         self._ins_empty(empty, not rows, why)
         self._ins_fill_seen(kind)
@@ -188,8 +202,9 @@ class InsightsPage:
         tv, empty = self.ins_tables["seen"]
         tv.delete(*tv.get_children())
         # 2.18.0: rows with neither mod lines nor stat ids (saved by an older version) say nothing: left out
+        hidden = set(SETTINGS.get("ins_hidden") or [])           # 2.73.2: removed by you
         seen = [x for x in MARKET.top_listings(detail=True) if kind_of(x["base"]) == kind
-                and (x.get("lines") or x.get("sids"))][:50]
+                and (x.get("lines") or x.get("sids")) and self.ins_seen_key(x) not in hidden][:50]
         now = time.time()
         self.ins_seenmap = {}
         for x in seen:
@@ -225,7 +240,10 @@ class InsightsPage:
                 other.selection_remove(*other.selection())
         for b in self.ins_det_btns.values():
             b.pack_forget()
+        for w in self.ins_card.winfo_children():
+            w.destroy()
         if not sel:
+            self.ins_det.config(text="Pick a row to see its item here.", fg=C["muted"])
             return
         if key == "mine":
             e = self.ins_rowmap.get(sel[0])
@@ -238,8 +256,10 @@ class InsightsPage:
             txt = (f"{e['name']}  ({e['base']})  -  worth about {fmt_div(e['est'])}"
                    + (f", {e['conf']} confidence" if e.get("conf") and e["conf"] != "-" else "") + f"\nPriced {when}"
                    + ("" if here else " · no longer in your Price checks list") + (f"\n{mods}" if mods else ""))
-            self.ins_det.config(text=txt, fg=C["text"])
+            self.ins_draw_card(self.ins_card, "mine", e)          # 2.73.2: the item, in the panel
+            self.ins_det.config(text=txt.split("\n", 2)[1] if "\n" in txt else "", fg=C["muted"])
             (self.ins_det_btns["open"] if here else self.ins_det_btns["again"]).pack(fill="x")
+            self.ins_det_btns["remove"].pack(fill="x", pady=(8, 0))
         elif key == "seen":
             x = self.ins_seenmap.get(sel[0])
             if not x:
@@ -249,9 +269,11 @@ class InsightsPage:
             mods = "\n".join("  " + m for m in self.ins_listing_mods(x))
             txt = (f"{x['name'] or x['base']}  -  asking {x['price'] or fmt_div(x['div'])} (≈ {fmt_div(x['div'])})"
                    f"\nSeen {when} while pricing a {x['base']}\n{mods}")
+            self.ins_draw_card(self.ins_card, "seen", x)          # 2.73.2
             self.ins_det.config(text=txt, fg=C["text"])
             if x.get("qid"):
                 self.ins_det_btns["trade"].pack(fill="x")
+            self.ins_det_btns["remove"].pack(fill="x", pady=(8, 0))
         else:
             self.ins_pick = None
             vals = tv.item(sel[0], "values")
@@ -323,6 +345,82 @@ class InsightsPage:
                                                                           if obj.get("price") else "")
         return [h for h in head if h], rar, self.ins_listing_mods(obj), price, (f"Seen on the trade site {when}"
                                                                                 if when else "")
+
+    def ins_draw_card(self, parent, key, obj):
+        """2.73.2: the item drawn like the game's tooltip, inside the Item panel (it used to pop up at the mouse)."""
+        head, rar, mods, price, foot = self.ins_preview_item(key, obj)
+        fg = self.RARITY_FG.get(rar, "#c8c8c8")
+        box = tk.Frame(parent, bg="#0b0b0e", highlightthickness=2, highlightbackground="#7a5a2e")
+        box.pack(fill="x")
+        top = tk.Frame(box, bg="#1d1712", padx=12, pady=8)
+        top.pack(fill="x")
+        for h in head:
+            tk.Label(top, text=h, bg="#1d1712", fg=fg, font=("Fontin SmallCaps", 12, "bold"), wraplength=300).pack()
+        body = tk.Frame(box, bg="#0b0b0e", padx=12, pady=8)
+        body.pack(fill="x")
+        for m in mods or ["(no mods saved)"]:
+            tk.Label(body, text=m, bg="#0b0b0e", fg="#8888ff" if mods else "#7f7f7f", font=("Segoe UI", 9),
+                     wraplength=300, justify="center").pack()
+        tk.Frame(box, bg="#5a4630", height=1).pack(fill="x", padx=12)
+        tk.Label(box, text=price, bg="#0b0b0e", fg="#ffd9a8", font=("Segoe UI", 10, "bold"), pady=8,
+                 wraplength=300).pack()
+        if foot:
+            tk.Label(box, text=foot, bg="#0b0b0e", fg="#9a9a9a", font=("Segoe UI", 9)).pack(pady=(0, 8))
+        return box
+
+    def ins_remove_picked(self):
+        if not self.ins_pick:
+            return None
+        key = self.ins_pick[0]
+        tv = self.ins_tables[key][0]
+        return self.ins_forget(tv.selection()) if key == "mine" else self.ins_forget_seen(tv.selection())
+
+    def ins_forget_seen(self, rows):
+        """2.73.2: Delete in Most expensive listings seen: hide those listings here (the Mod book keeps them)."""
+        xs = [self.ins_seenmap[r] for r in rows if r in self.ins_seenmap]
+        if not xs:
+            return None
+        hidden = SETTINGS.setdefault("ins_hidden", [])
+        keys = [self.ins_seen_key(x) for x in xs]
+        hidden.extend(k for k in keys if k not in hidden)
+        save_json("settings.json", SETTINGS)
+        label = f"{len(xs)} listing{'s' if len(xs) != 1 else ''}"
+
+        def restore():
+            for k in keys:
+                if k in SETTINGS.get("ins_hidden", []):
+                    SETTINGS["ins_hidden"].remove(k)
+            save_json("settings.json", SETTINGS)
+            self.refresh_insights()
+        self.push_undo("insights", label, restore)
+        self._say(f"Removed {label} from Market Insights. Ctrl+Z (or Undo) puts them back.", 8)
+        self.refresh_insights()
+        return len(xs)
+
+    def ins_forget_mods(self, rows):
+        """2.73.2: Delete in Mods worth the most: hide those mods here (the Mod book keeps what it learned)."""
+        keys = [self.ins_modmap[r] for r in rows if r in getattr(self, "ins_modmap", {})]
+        if not keys:
+            return None
+        hidden = SETTINGS.setdefault("ins_hidden_mods", [])
+        hidden.extend(k for k in keys if k not in hidden)
+        save_json("settings.json", SETTINGS)
+
+        def restore():
+            for k in keys:
+                if k in SETTINGS.get("ins_hidden_mods", []):
+                    SETTINGS["ins_hidden_mods"].remove(k)
+            save_json("settings.json", SETTINGS)
+            self.refresh_insights()
+        label = f"{len(keys)} mod{'s' if len(keys) != 1 else ''}"
+        self.push_undo("insights", label, restore)
+        self._say(f"Removed {label} from Market Insights. Ctrl+Z (or Undo) puts them back.", 8)
+        self.refresh_insights()
+        return len(keys)
+
+    @staticmethod
+    def ins_seen_key(x):
+        return f"{x.get('name') or x.get('base')}|{x.get('div')}|{x.get('seen')}"
 
     def ins_preview_at(self, key, e):
         tv = self.ins_tables[key][0]

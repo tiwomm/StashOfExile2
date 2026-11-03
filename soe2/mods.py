@@ -297,8 +297,9 @@ def parse_item(text):
             mod["roll"] = roll_pct(mod)       # quality as the game shows it, before any sign flip
             mods.append(mod)
     uses = next((int(m.group(1)) for l in lines for m in [re.search(r"(\d+)\s+uses?\s+remaining", l, re.I)] if m), None)
+    ilvl = next((int(m.group(1)) for l in lines for m in [re.match(r"Item Level:\s*(\d+)", l)] if m), None)   # 2.73.2
     return {"class": kind, "rarity": rarity, "name": name, "base": base, "mods": mods, "uses": uses,
-            "corrupted": any(l == "Corrupted" for l in lines)}
+            "corrupted": any(l == "Corrupted" for l in lines), "ilvl": ilvl}
 
 
 def min_for(mod):

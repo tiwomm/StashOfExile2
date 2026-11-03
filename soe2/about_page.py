@@ -70,6 +70,9 @@ class AboutPage:
         head.pack(fill="x", pady=(0, 8))
         tk.Label(head, text="StashOfExile2", bg="#1a2a4c", fg="#ffffff", font=(FONT_TITLE, 18, "bold"),
                  anchor="w").pack(fill="x")
+        from .config import TAGLINE
+        tk.Label(head, text=TAGLINE, bg="#1a2a4c", fg="#ffd9a8", font=(FONT_TITLE, 12, "italic"),
+                 anchor="w").pack(fill="x")                                               # 2.73.2
         tk.Label(head, text=f"Version {pretty_version()}  ·  a toolkit for Path of Exile 2  ·  free and open source "
                             "(GPL-3.0)", bg="#1a2a4c", fg="#9fb6dd", anchor="w").pack(fill="x")
         btns = tk.Frame(head, bg="#1a2a4c")
