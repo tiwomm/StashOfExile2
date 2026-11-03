@@ -21,6 +21,13 @@ NEXT = [
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.73.2": [
+        "Price checks: items read from a stash tab stay in that tab's list (they also showed in Manual Add). "
+        "Right-click waiting items to Pause pricing, Price next or Price last. A new iLvl column.",
+        "Market Insights: click an item to see it in the Item panel at the side (no more tooltip at the cursor). "
+        "Remove items from any of its lists - Delete, or right-click › Remove; Ctrl+Z puts them back.",
+        "StashOfExile2 - One tool to rule them all.",
+    ],
     "2.73.1": [
         "League Focus pokes: your plan now reminds you over the game - a nudge in your own words, \"you reached "
         "maps\" with what you planned for it, cheap stockpile prices, a heads-up before you reroll, and a check-in "

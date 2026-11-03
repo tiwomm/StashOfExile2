@@ -82,10 +82,11 @@ from .config import PAGE_CHECKS       # 1.40: was "Items"
 class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, ExchangePage, WealthSetup, WealthPage, LibraryPage, RegexPage, UtilitiesPage, TrackerPage, SearchPage, CalcPage, InsightsPage, MoneyMakersPage, MapLibraryPage, RemnantPage, LedgerPage, FeedbackPage, FeedPage, MergedOverlay, GamePlanPage, FocusPokes):
     COLS = [("added", "#", 46, "e"), ("name", "Item", 220, "w"), ("type", "Type", 110, "w"), ("mark", "Status", 90, "center"),
             ("est", "Est. value", 110, "e"), ("conf", "Confidence", 95, "center"), ("listings", "Listings", 70, "e"), ("priced", "Priced at", 130, "w"),
-            ("match", "How it was priced", 300, "w"), ("vmods", "Valuable mods", 100, "center")]
+            ("match", "How it was priced", 300, "w"), ("vmods", "Valuable mods", 100, "center"),
+            ("ilvl", "iLvl", 50, "e")]              # 2.73.2: item level (last in the data, shown after Type)
     # 2.24.0: "★ Valuable" (how many of the item's mods your Mod book rates High) is the last column in the data, so
     # older code reading values by position keeps working, but it's shown right after the item's name
-    SHOW_COLS = ("added", "name", "vmods", "type", "mark", "est", "conf", "listings", "priced", "match")
+    SHOW_COLS = ("added", "name", "vmods", "type", "ilvl", "mark", "est", "conf", "listings", "priced", "match")
     MARK_TEXT = {"new": "", "listed": "✔ listed", "sold": "💰 sold", "removed": "✖ removed"}
     VIEW_MARK = {"Not yet listed": "new", "Listed": "listed", "Sold": "sold", "Removed": "removed"}
 
@@ -525,7 +526,8 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         self.league_chip.config(text="⚑ " + (self.league_var.get() or "pick a league"))
 
     def menu_subtitle(self):
-        return f"v{pretty_version()}  ·  {self.league_var.get() or 'no league picked'}"
+        from .config import TAGLINE                    # 2.73.2
+        return f"{TAGLINE}  ·  v{pretty_version()}  ·  {self.league_var.get() or 'no league picked'}"
 
     def on_focus_module(self, key):
         """A window came to the front (shell.py calls this)."""
@@ -2963,6 +2965,9 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         self.batch_ids.add(rid)
         self.root.title(APP_TITLE)
         hidden_by_cat = not self.cat_ok(self.records[rid])
+        if src != self.list_src():           # 2.73.2: it belongs to another list (a stash tab read while Manual Add
+            self.engine.add(1, "resolve", rid)          # shows, or the other way round): priced, not shown here
+            return rid
         if SETTINGS["view"] not in ("Not yet listed", "All") or hidden_by_cat:   # a new item would be hidden - show it
             if SETTINGS["view"] not in ("Not yet listed", "All"):
                 SETTINGS["view"] = "Not yet listed"
@@ -3207,7 +3212,7 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         head.set_title(f"Stash tab · {t['name']}" if t else "Items · Manual Add")
         n = self.cat_count.cget("text")
         srt = {"est": "value", "conf": "confidence", "listings": "listings", "priced": "when priced", "name": "name",
-               "type": "type", "mark": "status", "vmods": "★ mods"}.get(getattr(self, "sort_col", None))
+               "type": "type", "mark": "status", "vmods": "★ mods", "ilvl": "item level"}.get(getattr(self, "sort_col", None))
         head.note(n + (f" · sorted by {srt}" if srt and n else ""))
 
     def on_cat(self, changed="cat"):
@@ -3954,6 +3959,8 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
             stamp = fmt_stamp(rec.get("priced_at"))
         elif st == "error":
             est, listings, match = "—", "", rec["label"]
+        elif rec.get("held"):                                 # 2.73.2: paused by hand
+            est, listings, match = "⏸", "", "paused - right-click › Resume pricing"
         else:
             est, listings, match = "…", "", "waiting" if st == "queued" else "searching…"
         mark = rec.get("mark", "new")
@@ -3977,8 +3984,9 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         conf = "" if conf == "-" else conf
         # (2.72.0: gear shows its own confidence - it used to say "Guess" for every non-unique piece)
         stars = "★" * keys if keys else ""                     # 2.24.0: its own column (2.19.0 put it before the name)
+        ilvl = it.get("ilvl") or ""                            # 2.73.2
         self.tree.item(str(rid), values=(rid, it["name"], it["base"], self.MARK_TEXT[mark], est, conf, listings,
-                                         stamp, match, stars), tags=tags)
+                                         stamp, match, stars, ilvl), tags=tags)
 
     def on_price_unit(self):
         from .pricefmt import PRICE_UNITS
@@ -4134,7 +4142,7 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
     # ---------------- sorting / selection / actions
     def sort_by(self, col):
         self.sort_rev = (not self.sort_rev) if self.sort_col == col else (col in ("est", "conf", "listings", "priced",
-                                                                                   "vmods"))
+                                                                                   "vmods", "ilvl"))
         self.sort_col = col
         self._apply_sort()
         self.sort_headings()
@@ -4178,6 +4186,8 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
                 return rec.get("mark", "new")
             if col == "vmods":
                 return len(self.key_mods(rec)) if rec.get("resolved") else 0
+            if col == "ilvl":
+                return rec["item"].get("ilvl") or 0
             return rec["label"].lower()
         ids = sorted(self.tree.get_children(), key=key, reverse=self.sort_rev)
         for i, iid in enumerate(ids):
@@ -4212,13 +4222,48 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         rids = [int(i) for i in sel if str(i).isdigit() and int(i) in self.records]
         one = self.records[rids[0]] if len(rids) == 1 else None
         n = f" ({len(rids)})" if len(rids) > 1 else ""
-        return [(f"Re-price{n}", lambda: self.reprice(rids), bool(rids)),
+        waiting = [r for r in rids if self.records[r].get("state") != "done"]
+        held = [r for r in waiting if self.records[r].get("held")]
+        return [(f"⏸ Pause pricing{n}" if not held or len(held) < len(waiting) else f"▶ Resume pricing{n}",
+                 (lambda: self.pricing_hold(waiting, not (held and len(held) == len(waiting)))), bool(waiting)),
+                (f"⏫ Price next{n}", lambda: self.pricing_move(waiting, 0), bool(waiting)),
+                (f"⏬ Price last{n}", lambda: self.pricing_move(waiting, 90), bool(waiting)),
+                None,
+                (f"Re-price{n}", lambda: self.reprice(rids), bool(rids)),
                 ("Copy name", lambda: self.copy_name(one, True), one is not None, "C"),
                 ("Open on trade site", self.open_trade, bool(one and one.get("qid")), "O"),
                 None,
                 (f"✔ Mark listed{n}", lambda: self.mark_selected("listed"), bool(rids)),
                 (f"💰 Mark sold{n}", lambda: self.mark_selected("sold"), bool(rids)),
                 (f"✖ Mark removed{n}", lambda: self.mark_selected("removed"), bool(rids))]
+
+    # ---------------- 2.73.2: pause / reorder the items waiting to be priced
+    def pricing_hold(self, rids, on=True):
+        """Pause (on) or resume these items' pricing. A paused item keeps its place; Pause searches (F2) still
+        pauses everything."""
+        for rid in rids:
+            rec = self.records.get(rid)
+            if rec is None or rec.get("state") == "done":
+                continue
+            if on:
+                rec["held"] = True
+                self.engine.hold(rid)
+            else:
+                rec.pop("held", None)
+                self.engine.unhold(rid)
+            if self.tree.exists(str(rid)):
+                self.update_row(rid)
+        self._say(("Paused" if on else "Resumed") + f" pricing for {len(rids)} item{'s' if len(rids) != 1 else ''}.", 5)
+        return len(rids)
+
+    def pricing_move(self, rids, prio):
+        """Price these next (prio 0) or last (90)."""
+        n = 0
+        for rid in (reversed(rids) if prio == 0 else rids):
+            if rid in self.records and self.records[rid].get("state") != "done" and self.engine.bump(rid, prio):
+                n += 1
+        self._say(f"{n} item{'s' if n != 1 else ''} will be priced {'next' if prio == 0 else 'last'}.", 5)
+        return n
 
     def open_trade(self):
         sel = self.tree.selection()

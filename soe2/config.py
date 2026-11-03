@@ -26,7 +26,8 @@ def pretty_version(v=None):
     return out
 
 
-APP_TITLE = f"StashOfExile2 v{pretty_version()}"
+TAGLINE = "One tool to rule them all."          # 2.73.2
+APP_TITLE = f"StashOfExile2 v{pretty_version()}  -  {TAGLINE}"
 
 
 APP_DIR = os.path.dirname(sys.executable if getattr(sys, "frozen", False)     # the folder with the exe / launcher:
