@@ -58,7 +58,7 @@ from .valuelog import VALUE_LOG
 from .exchange_page import ExchangePage
 from .library_page import LibraryPage
 from .regex_page import RegexPage
-from .calc import CalcPage
+from .calc import CalcOverlay
 from .insights_page import InsightsPage
 from .moneymakers_page import MoneyMakersPage
 from .maplib_page import MapLibraryPage
@@ -80,7 +80,7 @@ from .shell import Shell
 from .config import PAGE_CHECKS       # 1.40: was "Items"
 
 
-class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, ExchangePage, WealthSetup, WealthPage, LibraryPage, RegexPage, UtilitiesPage, TrackerPage, SearchPage, CalcPage, InsightsPage, MoneyMakersPage, MapLibraryPage, RemnantPage, LedgerPage, FeedbackPage, FeedPage, MergedOverlay, GamePlanPage, FocusPokes, OverlayHelp):
+class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, ExchangePage, WealthSetup, WealthPage, LibraryPage, RegexPage, UtilitiesPage, TrackerPage, SearchPage, CalcOverlay, InsightsPage, MoneyMakersPage, MapLibraryPage, RemnantPage, LedgerPage, FeedbackPage, FeedPage, MergedOverlay, GamePlanPage, FocusPokes, OverlayHelp):
     COLS = [("added", "#", 46, "e"), ("name", "Item", 220, "w"), ("type", "Type", 110, "w"), ("mark", "Status", 90, "center"),
             ("est", "Est. value", 110, "e"), ("conf", "Confidence", 95, "center"), ("listings", "Listings", 70, "e"), ("priced", "Priced at", 130, "w"),
             ("match", "How it was priced", 300, "w"), ("vmods", "Valuable mods", 100, "center"),
@@ -167,6 +167,7 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         self.keys.start()
         self.start_utilities()                       # 2.0: chat commands & notes listen to the same keyboard watcher
         root.after(15000, self.cm_start)             # 2.31.0: the community Mod book (hourly)
+        root.after(2500, self.calc_ov_restore)       # 2.74.0: the calculator over the game, if it was up
         self.dup_pending, self.dup_win, self.own_clip = [], None, ""
         self.tray = Tray(lambda what: self.ui_q.put(("tray", what)))
         self.in_tray = False
@@ -1136,14 +1137,18 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
                                                  "puts all of them back.")
         self.set_anchors["fine"] = row.master
         self.build_fine_tuning(row)
-        row = section("Advanced", "Mod book", "What the price checker has learned about each mod from real "
-                                              "listings, and the rules for which tablet / jewel mods count (★ worth "
-                                              "searching on, ☑ normal, ignored). It works on its own; open it only "
-                                              "if you want to see or change the rules. Regex uses the same ratings.")
-        ttk.Button(row, text="Open the Mod book", command=lambda: self.shell.open("modbook")).pack(side="left")
-        row = section("Advanced", "Under the hood", "How the price checker reads an item: its base, which bases it "
-                                                    "is compared with, and which trade-site search each mod becomes.")
-        ttk.Button(row, text="Open Under the hood", command=lambda: self.shell.open("library")).pack(side="left")
+        # 2.74.0: Under the hood (with the Mod book inside it) is hidden unless you want it - both keep working
+        row = section("Advanced", "Under the hood", "How the price checker reads an item (its base, which bases it "
+                                                    "is compared with, which trade-site search each mod becomes), and "
+                                                    "the Mod book: what it has learned about each mod from real "
+                                                    "listings and the rules for which tablet / jewel mods count. Both "
+                                                    "work on their own whether they're shown or not - learning, "
+                                                    "community data sharing and Regex's ratings carry on.")
+        self.adv_var = tk.BooleanVar(value=self.shell.advanced_on())
+        cb = ttk.Checkbutton(row, text="Show advanced tools - Price checks ↳ Under the hood ↳ Mod book",
+                             variable=self.adv_var, command=self.advanced_switch, style="Card.TCheckbutton")
+        cb.pack(side="left")
+        self.adv_switch = cb
         row = section("Advanced", "Problem report", "Something priced badly or went wrong? This makes one .zip with "
                                                     "your recent price checks (the copied item texts and what the app "
                                                     "did with them) and the app's log files - no account name, no "
@@ -1156,6 +1161,16 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
                                                "kept here, shared by every version of the app.")
         tk.Label(row, text=str(DATA_DIR), bg=P2, fg=C["text"], font=(MONO, 9)).pack(side="left")
         ttk.Button(row, text="Open folder", command=lambda: self.open_path(DATA_DIR), style="Quiet.TButton").pack(side="left", padx=8)
+
+    def on_click_through(self):
+        """2.74.0: Settings › Appearance › Overlay settings › Click-through."""
+        self.tracker_cfg()["click_through"] = bool(self.ov_ct_var.get())
+        self.tracker_save()
+        self.overlay_click_through()
+
+    def advanced_switch(self):
+        """2.74.0: Settings › Advanced › Show advanced tools."""
+        self.shell.set_advanced(bool(self.adv_var.get()))
 
     def build_toast_log(self, parent):
         """2.35.0: Settings > Advanced > Recent messages - the toast history, newest first."""
@@ -1396,41 +1411,52 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
             return row
         # 2.66.0: no Style list - everything over the game is drawn in the app's theme (Settings › Appearance ›
         # Theme). The Layout says the shape.
-        row = section("Appearance", "Overlay layout", "The overlay (timer, Mechanic Helper) in the game's own style. "
-                                                      "Notes and the remnant price tags use your theme's colors.")
+        # 2.74.0: one area - Layout, Opacity and Click-through (were the Overlay layout and Opacity sections)
+        row = section("Appearance", "Overlay settings", "The overlay over the game (timer, Mechanic Helper, Focus), in "
+                                                        "the game's own style. Notes, the calculator and the remnant "
+                                                        "price tags use your theme's colors.")
         from .merged_page import LAYOUTS
         g = tk.Frame(row, bg=P2)
         g.pack(fill="x")
-        tk.Label(g, text="Layout", bg=P2, fg=C["text"], width=8, anchor="w").grid(row=0, column=0, sticky="w")
-        self.ov_layout_var = tk.StringVar(value=LAYOUTS.get(self.merged_layout(), LAYOUTS["panel"]))
-        lc = ttk.Combobox(g, textvariable=self.ov_layout_var, values=list(LAYOUTS.values()), state="readonly", width=30)
-        lc.grid(row=0, column=1, sticky="w", pady=2)
+        g.columnconfigure(1, weight=1)
+
+        def label(r, text):
+            tk.Label(g, text=text, bg=P2, fg=C["text"], width=12, anchor="w").grid(row=r, column=0, sticky="nw",
+                                                                                   pady=(8 if r else 0, 0))
+
+        def hint(r, text):
+            tk.Label(g, text=text, bg=P2, fg=C["muted"], font=("Segoe UI", 9), justify="left", wraplength=560,
+                     anchor="w").grid(row=r, column=1, columnspan=2, sticky="w", pady=(2, 0))
+        label(0, "Layout")
+        self.ov_layout_var = tk.StringVar(value=LAYOUTS.get(self.merged_layout(), LAYOUTS["xpbar"]))
+        lc = ttk.Combobox(g, textvariable=self.ov_layout_var, values=list(LAYOUTS.values()), state="readonly", width=24)
+        lc.grid(row=0, column=1, sticky="w")
         lc.bind("<<ComboboxSelected>>", lambda e: self.merged_set(
-            layout=next((k for k, t in LAYOUTS.items() if t == self.ov_layout_var.get()), "panel")))
-        tk.Label(g, text="Panel: a card like the game's vendor windows - place it anywhere.\nGame bar: rests on the "
-                         "game's XP bar. Unlocked, you can drag it; picking the layout again puts it back. Both are "
-                         "drawn in the game's own style, with the Breach / Delirium / Ritual / Remnant switches.",
-                 bg=P2, fg=C["muted"], font=("Segoe UI", 9), justify="left", wraplength=620).grid(
-            row=1, column=0, columnspan=2, sticky="w", pady=(4, 0))
-        # 2.49.0: say what opacity does - and show the number
-        row = section("Appearance", "Opacity", "How solid each window is over the game. 100% = fully solid: nothing of "
-                                               "the game shows through it. Lower = more see-through: the whole window "
-                                               "fades, text and all, so you can see the game behind it - handy where "
-                                               "it sits over the map or the minimap. 24% is the lowest, so it never "
-                                               "disappears. Changes show at once. Hard to read over a busy spot? 95-100% "
-                                               "reads best - text on a see-through window takes on the game behind it.")
+            layout=next((k for k, t in LAYOUTS.items() if t == self.ov_layout_var.get()), "xpbar")))
+        hint(1, "Game bar: rests on the game's XP bar (unlocked, drag it; picking it again puts it back). "
+                "Panel: a card like the game's vendor windows - place it anywhere.")
         # 2.56.1: ONE opacity for everything over the game (it was one slider each)
-        grid = tk.Frame(row, bg=P2)
-        grid.pack(fill="x")
-        tk.Label(grid, text="Opacity", bg=P2, fg=C["text"]).grid(row=0, column=0, sticky="w", padx=(0, 8), pady=2)
+        label(2, "Opacity")
+        op = tk.Frame(g, bg=P2)
+        op.grid(row=2, column=1, sticky="w", pady=(8, 0))
         v = tk.IntVar(value=self.ov_opacity_get("session"))
         self.ov_op_vars = {"all": v}
-        ttk.Scale(grid, from_=60, to=255, variable=v, orient="horizontal", length=260,
-                  command=lambda _v: self.on_ov_opacity()).grid(row=0, column=1, sticky="w")
-        pct = tk.Label(grid, text=f"{round(v.get() * 100 / 255)}%", bg=P2, fg=C["muted"], font=(MONO, 9), width=5,
+        ttk.Scale(op, from_=60, to=255, variable=v, orient="horizontal", length=260,
+                  command=lambda _v: self.on_ov_opacity()).pack(side="left")
+        pct = tk.Label(op, text=f"{round(v.get() * 100 / 255)}%", bg=P2, fg=C["muted"], font=(MONO, 9), width=5,
                        anchor="e")
-        pct.grid(row=0, column=2, sticky="e", padx=(8, 0))
+        pct.pack(side="left", padx=(8, 0))
         self.ov_op_pct = {"all": pct}
+        hint(3, "100% = fully solid. Lower = see-through, text and all (24% is the lowest). Over a busy spot, "
+                "95-100% reads best.")
+        label(4, "Click-through")
+        self.ov_ct_var = tk.BooleanVar(value=bool(self.tracker_cfg().get("click_through", True)))
+        ct = ttk.Checkbutton(g, text="When the overlay is locked, clicks go through it to the game",
+                             variable=self.ov_ct_var, command=self.on_click_through, style="Card.TCheckbutton")
+        ct.grid(row=4, column=1, sticky="w", pady=(8, 0))
+        self.ov_ct_switch = ct
+        hint(5, "Unlock the overlay (Overlay › Options › Lock the overlay) to click its switches, Notes ▾ and "
+                "Calc ▾. Notes and the calculator always take clicks - you type in them.")
         row = section("Appearance", "Notes", "The note uses the style's colors and font; only its text size is "
                                              "yours.")
         tk.Label(row, text="Text size", bg=P2, fg=C["text"]).pack(side="left")

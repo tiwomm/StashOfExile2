@@ -1,14 +1,12 @@
-"""A small calculator (2.0 beta 21): type a sum, press Enter. Only arithmetic is understood (nothing is run as code).
+"""A small calculator (2.0 beta 21; 2.74.0: over the game, from the overlay's bar): type a sum, press Enter. Only arithmetic is understood (nothing is run as code).
 Writing "k" after a number means thousands (12k = 12000), handy for gold."""
 import ast
 import math
 import operator
 import re
 import tkinter as tk
-from tkinter import ttk
 
 from .style import C, MONO
-from .chrome import SectionBar, Viewport, section as chrome_section
 
 _OPS = {ast.Add: operator.add, ast.Sub: operator.sub, ast.Mult: operator.mul, ast.Div: operator.truediv,
         ast.FloorDiv: operator.floordiv, ast.Mod: operator.mod, ast.Pow: operator.pow,
@@ -65,51 +63,156 @@ def fmt(v):
     return f"{v:,.6f}".rstrip("0").rstrip(".")
 
 
-class CalcPage:
-    """Mixed into App: the Calculator window."""
+class CalcOverlay:
+    """Mixed into App (2.74.0): the calculator over the game - a small window of a fixed size, like Notes: dragged
+    where you want it, held by the overlay's one lock, in the overlay's look. Opened from Calc on the overlay's bar
+    (Overlay › Options: its own switch, and whether it's on the bar). Feedback: "move the calculator ... into the
+    overlay ... dragged around the screen and locked / unlocked. Keep this at a fixed size."
+    GGG ToS: a window of the app's own - you type into it, nothing is sent to the game."""
 
-    def build_calc_window(self, body):
-        P1, P2 = C["panel"], C["panel2"]
-        self.calc_last = None
-        wrap = tk.Frame(body, bg=P1, padx=12, pady=8)
-        wrap.pack(fill="both", expand=True)
+    W = 248                                              # the window's fixed width (its height follows its keys)
+    KEYS = (("7", "8", "9", "÷", "C"), ("4", "5", "6", "×", "("), ("1", "2", "3", "-", ")"),
+            ("0", ".", "k", "+", "="))
+
+    def calc_cfg(self):
+        from .config import SETTINGS
+        c = SETTINGS.setdefault("calc_ov", {})
+        c.setdefault("on", True)
+        c.setdefault("shown", False)
+        c.setdefault("x", None)
+        c.setdefault("y", None)
+        return c
+
+    def calc_save(self):
+        from .config import SETTINGS, save_json
+        save_json("settings.json", SETTINGS)
+
+    def calc_on_bar(self):
+        return bool(self.calc_cfg()["on"]) and bool(self.bar_cfg().get("calc", True))
+
+    def calc_ov_shown(self):
+        w = getattr(self, "calc_win", None)
+        return w is not None and w.winfo_exists() and getattr(w, "wanted", False)
+
+    def calc_ov_toggle(self, show=None):
+        """Show / hide it (show None: flip). -> shown."""
+        show = (not self.calc_ov_shown()) if show is None else bool(show)
+        if show and not self.calc_cfg()["on"]:
+            self._say("The calculator is switched off: Overlay › Options › On the overlay › Calculator.", 8)
+            return False
+        if show:
+            if not self.calc_ov_shown():
+                self.calc_ov_build()
+                self.calc_win.show()
+            try:
+                self.calc_entry.focus_set()
+            except tk.TclError:
+                pass
+        else:
+            self.calc_ov_close(remember=False)
+        self.calc_cfg()["shown"] = show
+        self.calc_save()
+        if getattr(self, "mg_win", None) is not None:
+            self.merged_build()                          # (Calc ▾ / ▴ on the bar)
+        return show
+
+    def calc_ov_restore(self):
+        c = self.calc_cfg()
+        if c["on"] and c["shown"]:
+            try:
+                self.calc_ov_toggle(True)
+            except Exception:
+                self.log_error("showing the calculator")
+
+    def calc_ov_close(self, remember=True):
+        w, self.calc_win = getattr(self, "calc_win", None), None
+        if w is not None:
+            try:
+                w.destroy()
+            except tk.TclError:
+                pass
+        if remember:
+            self.calc_cfg()["shown"] = False
+            self.calc_save()
+            if getattr(self, "mg_win", None) is not None:
+                self.merged_build()
+
+    def calc_ov_restyle(self):
+        """The overlay's lock or the theme changed: built again, where it was."""
+        if self.calc_ov_shown():
+            self.calc_ov_close(remember=False)
+            self.calc_ov_build()
+            self.calc_win.show()
+
+    def _calc_spot(self):
+        c = self.calc_cfg()
+        if c["x"] is not None and c["y"] is not None:
+            return int(c["x"]), int(c["y"])
+        from .alerts_page import game_rect                # first time: right of the screen's middle, above the bar
+        r = game_rect() or (0, 0, self.root.winfo_screenwidth(), self.root.winfo_screenheight())
+        return r[0] + int(r[2] * 0.70), r[1] + int(r[3] * 0.45)
+
+    def calc_ov_build(self):
+        from .overlaywin import OverlayWindow, pal
+        P = pal()
+        bg, txt, mut = P["bg"], P["text"], P["muted"]
+        locked = bool(self.tracker_cfg().get("mlocked"))
+
+        def moved(x, y, _w, _h):
+            self.calc_cfg().update(x=int(x), y=int(y))
+            self.calc_save()
+        x, y = self._calc_spot()
+        w = OverlayWindow(self.root, "Calculator", "🧮", (x, y, None, None), palette=P, locked=locked,
+                          on_lock=self.overlay_lock, on_close=lambda: self.calc_ov_close(), on_moved=moved,
+                          follow_game=True, resizable=False)
+        w.withdraw()
+        body = tk.Frame(w.body, bg=bg, padx=8, pady=8)
+        body.pack(fill="both", expand=True)
+        self.calc_last = getattr(self, "calc_last", None)
         self.calc_var = tk.StringVar()
-        ent = tk.Entry(wrap, textvariable=self.calc_var, bg=C["odd"], fg=C["text"], insertbackground=C["text"],
-                       relief="flat", highlightthickness=1, highlightbackground=C["line"], highlightcolor=C["accent"],
-                       font=(MONO, 16), justify="right")
-        ent.pack(fill="x", ipady=8)
+        ent = tk.Entry(body, textvariable=self.calc_var, bg=P["field"] if P.get("field") else P["cell_bg"], fg=txt,
+                       insertbackground=txt, relief="flat", highlightthickness=1, highlightbackground=P["line"],
+                       highlightcolor=P["head"], font=(MONO, 12), justify="right", width=1)
+        ent.pack(fill="x", ipady=4)
         ent.bind("<Return>", lambda e: self.calc_go())
         ent.bind("<KP_Enter>", lambda e: self.calc_go())
         ent.bind("<Escape>", lambda e: (self.calc_var.set(""), "break")[1])
         self.calc_entry = ent
-        self.calc_out = tk.Label(wrap, text="0", bg=P1, fg=C["good"], font=(MONO, 20, "bold"), anchor="e")
-        self.calc_out.pack(fill="x", pady=(8, 2))
-        self.calc_msg = tk.Label(wrap, text="Type a sum and press Enter.  12k = 12,000   5% = 0.05   ans = last answer",
-                                 bg=P1, fg=C["muted"], font=("Segoe UI", 9), anchor="e")
+        self.calc_out = tk.Label(body, text=fmt(self.calc_last) if self.calc_last is not None else "0", bg=bg,
+                                 fg=P["head"], font=(MONO, 16, "bold"), anchor="e")
+        self.calc_out.pack(fill="x", pady=(4, 0))
+        self.calc_msg = tk.Label(body, text="12k = 12,000  ·  ans = last", bg=bg, fg=mut, font=(P["font"], 8),
+                                 anchor="e")
         self.calc_msg.pack(fill="x")
-        keys = tk.Frame(wrap, bg=P1)
-        keys.pack(fill="x", pady=(8, 8))
-        rows = (("7", "8", "9", "÷", "C"), ("4", "5", "6", "×", "("), ("1", "2", "3", "-", ")"),
-                ("0", ".", "k", "+", "="))
-        for r, row in enumerate(rows):
-            keys.rowconfigure(r, weight=1)
+        keys = tk.Frame(body, bg=bg)
+        keys.pack(fill="x", pady=(4, 0))
+        self.calc_keys = {}
+        for r, row in enumerate(self.KEYS):
             for c, k in enumerate(row):
                 keys.columnconfigure(c, weight=1, uniform="k")
-                accent = k == "="
-                b = tk.Label(keys, text=k, bg=C["accent"] if accent else "#22345a", fg="#ffffff",
-                             font=("Segoe UI", 12, "bold"), pady=8, cursor="hand2", highlightthickness=1,
-                             highlightbackground="#5b77ad")
-                b.grid(row=r, column=c, sticky="nsew", padx=2, pady=2)
+                eq = k == "="
+                b = tk.Label(keys, text=k, bg=P["on_bg"] if eq and P.get("on_bg") else P["cell_bg"],
+                             fg=P["head"] if eq else txt, font=(P["font"], 10, "bold"), pady=4, cursor="hand2",
+                             highlightthickness=1, highlightbackground=P["on_line"] if eq and P.get("on_line")
+                             else P.get("cell_line") or P["line"])
+                b.grid(row=r, column=c, sticky="nsew", padx=1, pady=1)
                 b.bind("<Button-1>", lambda e, kk=k: self.calc_key(kk))
-        hso, hist = chrome_section(wrap, "History", padx=0, pady=0)            # 2.69.0
-        hso.pack(fill="both", expand=True)
-        hso.section_bar.note("click one to use it again")
-        top = tk.Frame(hist, bg=P2)
-        top.pack(fill="x")
-        self.calc_hist = tk.Listbox(hist, bg=P2, fg=C["text"], relief="flat", highlightthickness=0, height=5,
-                                    font=(MONO, 10), selectbackground="#2c4a84", activestyle="none")
-        self.calc_hist.pack(fill="both", expand=True, padx=4, pady=(0, 4))
+                self.calc_keys[k] = b
+        tk.Label(body, text="RECENT  ·  click one to use it", bg=bg, fg=P["head"], font=(P["hfont"] or P["font"], 8, "bold"),
+                 anchor="w").pack(fill="x", pady=(8, 0))
+        self.calc_hist = tk.Listbox(body, bg=bg, fg=mut, relief="flat", highlightthickness=0, height=3,
+                                    font=(MONO, 9), selectbackground=P["cell_bg"], selectforeground=txt,
+                                    activestyle="none", width=1)
+        self.calc_hist.pack(fill="x")
+        for line in getattr(self, "_calc_lines", [])[:3]:
+            self.calc_hist.insert("end", line)
+        if not self.calc_hist.size():
+            self.calc_hist.insert("end", "nothing yet")
         self.calc_hist.bind("<<ListboxSelect>>", lambda e: self.calc_reuse())
+        w.update_idletasks()
+        w.geometry(f"{self.W}x{w.winfo_reqheight()}")      # a fixed size: as wide as W, as tall as its keys
+        self.calc_win = w
+        return w
 
     def calc_key(self, k):
         if k == "C":
@@ -127,20 +230,24 @@ class CalcPage:
         except (ValueError, TypeError, OverflowError) as e:
             self.calc_msg.config(text=str(e).capitalize() + ".", fg=C["red"])
             return "break"
+        from .overlaywin import pal
         self.calc_last = v
         self.calc_out.config(text=fmt(v))
-        self.calc_msg.config(text=f"{text} =", fg=C["muted"])
-        self.calc_hist.insert(0, f"{text} = {fmt(v)}")
-        if self.calc_hist.size() > 50:
-            self.calc_hist.delete(50, "end")
+        self.calc_msg.config(text=f"{text} =", fg=pal()["muted"])
+        line = f"{text} = {fmt(v)}"
+        self._calc_lines = [line] + getattr(self, "_calc_lines", [])[:49]
+        if not getattr(self, "_calc_lines", [])[1:]:
+            self.calc_hist.delete(0, "end")                  # (the "nothing yet" line)
+        self.calc_hist.insert(0, line)
+        if self.calc_hist.size() > 3:
+            self.calc_hist.delete(3, "end")
         self.calc_var.set("")
         return "break"
 
     def calc_reuse(self):
         sel = self.calc_hist.curselection()
-        if sel:
+        if sel and " = " in self.calc_hist.get(sel[0]):
             line = self.calc_hist.get(sel[0])
             self.calc_var.set(line.rsplit(" = ", 1)[1].replace(",", ""))
             self.calc_entry.icursor("end")
             self.calc_entry.focus_set()
-

@@ -21,6 +21,17 @@ NEXT = [
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.74.0": [
+        "Under the hood and the Mod book are advanced tools now, hidden unless you want them: Settings › Advanced › "
+        "Show advanced tools. The Mod book sits inside Under the hood (Price checks ↳ Under the hood ↳ Mod book). "
+        "Both keep working either way.",
+        "The calculator is over the game: Calc ▾ on the overlay's bar opens a small calculator you can drag where "
+        "you like; the overlay's lock holds it in place. Overlay › Options turns it off or takes Calc ▾ off the bar.",
+        "The overlay bar is a little slimmer again, and the Remnant switch's tip mentions the runeshape list.",
+        "Settings › Appearance › Overlay settings: Layout, Opacity and Click-through in one place. Click-through is "
+        "on: while the overlay is locked, clicks go through it to the game - unlock it to use its switches. The Game "
+        "bar is the default layout for new setups.",
+    ],
     "2.73.5": [
         "The overlay bar is a little taller, so its switches have room above and below (side to side they're "
         "back to how they were).",

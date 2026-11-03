@@ -14,14 +14,33 @@ from .overlaywin import CanvasText, OverlayWindow, pal
 # 2.66.0: one look (the app's theme); the layout says the shape - Minimal moved here from the old Style list
 # 2.67.0 (feedback: "get rid of all of the other options"): the Panel in the game's vendor-window style (the
 # Treasurer's ledger) and the Game bar on the XP bar. Strip, Minimal and beside-the-orbs are gone (-> Panel).
-LAYOUTS = {"panel": "Panel", "xpbar": "Game bar - on the XP bar"}      # 2.67.0: beside the orbs is gone
+LAYOUTS = {"panel": "Panel", "xpbar": "Game bar"}     # 2.67.0: beside the orbs is gone; 2.74.0: "Game bar"
 HUD = ("xpbar",)                 # 2.65.0: fitted to the game's own bottom bar, in its look
 
 # Where the game's bottom bar leaves room, as parts of the game window's height (PoE2 at 16:9, UI scale 100 %;
 # the orbs' panels are anchored to the left and right edges, the XP bar runs between them). (x0, x1, bottom, h)
 #   x0 / x1 >= 0: from the left edge, < 0: from the right edge; bottom: up from the bottom edge.
-HUD_SPOTS = {"xpbar": [(0.535, -0.535, 0.0205, 0.066)]}   # 2.67.2: two rows (switches on top); 2.73.5: taller
+HUD_SPOTS = {"xpbar": [(0.535, -0.535, 0.0205, 0.056)]}   # 2.67.2: two rows (switches on top); 2.74.0: between 2.73.4 and 2.73.5
 SHORT = {"breach": "Brch", "delirium": "Deli", "ritual": "Ritl", "remnant": "Remn", "focus": "Focus"}
+
+
+def set_click_through(w, on):
+    """Windows: mouse clicks pass through the window to whatever is under it (WS_EX_TRANSPARENT on a layered window).
+    GGG ToS: a window style of the app's own window - nothing is sent to the game."""
+    import sys
+    if sys.platform != "win32":
+        return False
+    try:
+        import ctypes
+        u = ctypes.windll.user32
+        w.update_idletasks()
+        hwnd = u.GetParent(w.winfo_id()) or w.winfo_id()
+        ex = u.GetWindowLongW(hwnd, -20)
+        ex = (ex | 0x20 | 0x80000) if on else (ex & ~0x20)
+        u.SetWindowLongW(hwnd, -20, ex)
+        return True
+    except Exception:
+        return False
 
 
 class _Short(CanvasText):
@@ -118,7 +137,7 @@ class MergedOverlay:
         return True
 
     def merged_layout(self):
-        v = self.tracker_cfg().get("layout", "panel")
+        v = self.tracker_cfg().get("layout", "xpbar")      # 2.74.0: the Game bar by default
         return v if v in LAYOUTS else "panel"            # (2.67.0: an old Strip / Minimal is the Panel now)
 
     def merged_embeds_notes(self):
@@ -159,6 +178,7 @@ class MergedOverlay:
         b = self.tracker_cfg().setdefault("bar", {})
         b.setdefault("focus", True)
         b.setdefault("notes", True)
+        b.setdefault("calc", True)                       # 2.74.0: Calc ▾ (the calculator over the game)
         return b
 
     def bar_chips(self):
@@ -183,8 +203,6 @@ class MergedOverlay:
     def focus_line(self):
         """-> (text, progress 0-1 or None) for the overlay's focus line, or ("", None)."""
         from . import focus as F
-        if not self.bar_cfg().get("focus"):                 # 2.73.5: Focus hidden from the bar - its line too
-            return "", None
         try:
             return F.line_text(self.gp_worth() if hasattr(self, "gp_worth") else None)
         except Exception:
@@ -244,7 +262,28 @@ class MergedOverlay:
         self.tk_ov_lbls, self.tk_ov_alerts, self.tk_ov_clock, self.tk_ov_cv = {}, {}, None, None
 
     def merged_build(self):
-        """(Re)build the one window from what's on. -> the window, or None when nothing is on."""
+        """(Re)build the one window from what's on. -> the window, or None when nothing is on. 2.74.0: then
+        click-through, as the lock says."""
+        w = self._merged_build()
+        self.overlay_click_through()
+        return w
+
+    def click_through_on(self):
+        """2.74.0 (Settings › Appearance › Overlay settings): a locked overlay lets clicks through to the game -
+        unlock it to use its switches. On by default."""
+        cfg = self.tracker_cfg()
+        return bool(cfg.get("click_through", True)) and bool(cfg.get("mlocked"))
+
+    def overlay_click_through(self):
+        """The overlay's bar windows (not Notes or the calculator - you type in those)."""
+        on = self.click_through_on()
+        for w in (getattr(self, "mg_win", None), getattr(self, "mg_win2", None)):
+            if w is None:
+                continue
+            w.click_through = on
+            set_click_through(w, on)
+
+    def _merged_build(self):
         cfg = self.tracker_cfg()
         self.merged_destroy()
         want = self.merged_wants()
@@ -455,6 +494,36 @@ class MergedOverlay:
         bb = cv.bbox("mg_notes")
         return (bb[0] if bb else x) - 12
 
+    def _mg_bar_buttons(self, w, cv, P, x, y, anchor="e"):
+        """2.74.0: Notes ▾ and Calc ▾ side by side (each only when it's on the bar). -> the far edge."""
+        order = [("notes", self.notes_on_bar()), ("calc", self.calc_on_bar())]
+        if anchor == "e":
+            order.reverse()                               # drawn right to left: Calc, then Notes left of it
+        for what, on in order:
+            if not on:
+                continue
+            if what == "notes":
+                nx = self._mg_notes_button(w, cv, P, x, y, anchor=anchor)
+                bb = cv.bbox("mg_notes")
+            else:
+                nx = self._mg_calc_button(cv, P, x, y, anchor=anchor)
+                bb = cv.bbox("mg_calc")
+            x = nx if anchor == "e" else ((bb[2] if bb else x) + 12)
+        return x
+
+    def _mg_calc_button(self, cv, P, x, y, anchor="e"):
+        txt = "Calc" + ("  ▴" if self.calc_ov_shown() else "  ▾")
+        cv.create_text(x, y, text=txt, anchor=anchor, fill=P["muted"], font=(P["font"], self._hf(9)),
+                       tags=("mg", "mg_calc"))
+        cv.tag_bind("mg_calc", "<Button-1>", lambda e: self.calc_ov_toggle())
+        cv.tag_bind("mg_calc", "<Enter>", lambda e: cv.configure(cursor="hand2"))
+        cv.tag_bind("mg_calc", "<Leave>", lambda e: cv.configure(cursor=""))
+        bb = cv.bbox("mg_calc")
+        return (bb[0] if bb else x) - 12
+
+    def bar_buttons_on(self):
+        return self.notes_on_bar() or self.calc_on_bar()
+
     def merged_notes_drop(self):
         """The note under the strip / Minimal card (opened there each time, so it drops down from it)."""
         ov = self.overlay
@@ -572,8 +641,8 @@ class MergedOverlay:
         foot = y + int(2 * k)
         fy = foot + int(11 * k)
         gx = self._mg_glyphs(w, cv, P, gx1 - int(4 * k), fy)
-        if self.notes_on_bar():
-            self._mg_notes_button(w, cv, P, gx - 4, fy, anchor="e")
+        if self.bar_buttons_on():
+            self._mg_bar_buttons(w, cv, P, gx - 4, fy, anchor="e")
         if want["timer"] and cfg.get("clock", True):
             self._mg_clock(w, cv, P, gx0 + int(4 * k), fy, anchor="w", on_bar=False)
             self.tk_ov_clock.config = (lambda fn: (lambda text="", **kw: fn(text=text.splitlines()[0]
@@ -764,20 +833,21 @@ class MergedOverlay:
         cfg = self.tracker_cfg()
         lft, rgt = self._hud_frame(cv, P, W, H)
         two = want["helpers"]
-        top_mid = int(H * 0.31)                              # 2.73.5: more room above / below each row
+        top_mid = int(H * 0.30)                              # 2.73.5: more room above / below each row
         mid = int(H * 0.74) if two else H // 2 + 1
         f = (P["font"], self._hf(10))
         fm = tkfont.Font(root=cv, family=P["font"], size=self._hf(10))
         if two:                                              # ---- row 1: the switches, centered; Notes at the end
-            ch = int(H * 0.25)                               # (the socket a touch bigger, more room round it)
+            ch = int(H * 0.28)                               # (the socket: about 2.73.5's size)
             gap = self._hud_gap()
-            room = (rgt - lft) * 0.75 - (self._hf(70) if self.notes_on_bar() else 0)
+            room = (rgt - lft) * 0.75 - (self._hf(70) if self.notes_on_bar() else 0) - \
+                (self._hf(60) if self.calc_on_bar() else 0)
             short = sum(self._hud_cell_w(cv, P, k, False) + gap for k in self.bar_chips()) > room
             total = sum(self._hud_cell_w(cv, P, k, short) + gap for k in self.bar_chips()) - gap
             x0 = lft + max(0, ((rgt - lft) - total) // 2)
             self._hud_cells(cv, P, x0, top_mid - ch // 2, top_mid + ch // 2, short=short)
-            if self.notes_on_bar():
-                self._mg_notes_button(w, cv, P, rgt, top_mid, anchor="e")
+            if self.bar_buttons_on():
+                self._mg_bar_buttons(w, cv, P, rgt, top_mid, anchor="e")
             ry = int(H * 0.535)                              # a thin rule between the rows, fading at the ends
             n = 32
             seg = (rgt - lft) / n
@@ -857,5 +927,5 @@ class MergedOverlay:
             if ln.get("avg"):
                 x = lead(x)
                 self._mg_text(cv, P, x, mid, "avg", f)
-        elif not two and self.notes_on_bar():
-            self._mg_notes_button(w, cv, P, x, mid, anchor="w")
+        elif not two and self.bar_buttons_on():
+            self._mg_bar_buttons(w, cv, P, x, mid, anchor="w")
