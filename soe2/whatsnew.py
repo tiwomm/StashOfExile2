@@ -21,6 +21,12 @@ NEXT = [
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.73.5": [
+        "The overlay bar is a little taller, so its switches have room above and below (side to side they're "
+        "back to how they were).",
+        "A switch's hover tip shows above your pointer when there's no room below it - it was cut off at the "
+        "bottom of the screen.",
+    ],
     "2.73.4": [
         "Prices are always for your league - after switching leagues, old prices are never shown as current.",
         "Game Plan: stockpile items from the Currency Exchange's list (or type any name), set a Quantity; add your "
