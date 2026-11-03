@@ -142,7 +142,7 @@ Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds f
 | 2.81.1 | Desecration Helper tags show just the tier (T5); its switch only in Overlay › Options (not on the bar). |
 | 2.81.2 | Desecration Helper reads hybrids shown in either line order (Accuracy + Light Radius). |
 | 2.82.0 | Overlay ↳ Settings: the overlay's options on their own page, in cards (On the bar, Features, Campaign, Behaviour, Mechanic Helper). |
-| 2.83.0 | **Island Rumours**: in your hideout, each rumour on the Uncharted Waters card gets its island and your Map library rank. Remnant watcher off in hideouts / towns / campaign, always on in Grand Expedition islands. |
+| 2.83.0 | **Island Rumours**: in your hideout, each rumour on the Uncharted Waters card gets its island and your Map library rank. Remnant watcher off in hideouts / towns / campaign, in maps only with the Expedition mark on screen, always on in Grand Expedition islands. |
 
 ## ▶ Next up
 
