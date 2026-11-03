@@ -3073,11 +3073,17 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         else:
             self.status_text, self.status_until = f"Problem ({kind}): {msg[:140]}", time.time() + 20
 
+    def pops_for(self, rec):
+        """2.73.5: a price pop-up at the mouse only for an item you checked yourself (copied with the hotkey). A stash
+        tab's items, the Strat Tracker's and the Item library's are priced out of sight - one at a time, so each
+        looked like a single check and popped up wherever the mouse was."""
+        return rec.get("src", "manual") == "manual" and rec.get("id") != getattr(self, "lib_rid", None)
+
     def ev_resolved(self, rid):
         self.update_row(rid)
         self.refresh_detail_if_selected(rid)
         goods = self.good_mods(self.records[rid])
-        if goods and SETTINGS["popups"] and self.records[rid].get("src") != "ledger":   # 2.67.0: not for the Strat Tracker's own items
+        if goods and SETTINGS["popups"] and self.pops_for(self.records[rid]):
             lines = [pretty(m["text"]) + (f"  -  listings with it ask about {fmt_div(med)}" if med is not None else "  -  learned as valuable")
                      for m, med in goods[:4]]
             self.toast.show(f"★ {len(goods)} valuable mod{'s' if len(goods) > 1 else ''}", lines, C["good"],
@@ -3101,8 +3107,8 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
             if VALUE_LOG.add(rec, SETTINGS.get("league")):             # 2.4.0: Top value keeps it after a Clear list
                 self.value_log_save_soon()
             # in a bulk run the end-of-batch summary covers this; only pop up for one-off checks
-            if SETTINGS["popups"] and len(self.batch_ids) <= 1 and rec["est"] is not None and rec["est"] >= SETTINGS["good_div"] \
-                    and "WIDE SPREAD" not in rec.get("label", ""):
+            if SETTINGS["popups"] and self.pops_for(rec) and len(self.batch_ids) <= 1 and rec["est"] is not None \
+                    and rec["est"] >= SETTINGS["good_div"] and "WIDE SPREAD" not in rec.get("label", ""):
                 self.toast.show(f"💰 ~{fmt_div(rec['est'])}", [rec["item"]["name"], rec["label"]], C["green"],
                                 SETTINGS["toast_secs"])
 
@@ -4079,7 +4085,7 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
                  f"Total ≈ {fmt_div(total)}",
                  f"{len(worth)} worth {SETTINGS['good_div']:g}+ div" + (f"  (best: {best['item']['name']}, {fmt_div(best['est'])})" if best else "")]
         self.flash_window()
-        if SETTINGS["popups"]:
+        if SETTINGS["popups"] and any(self.pops_for(r) for r in recs):
             self.toast.show("✔ All items checked", lines, C["green"], 15)
         if SETTINGS["sound"]:
             try:

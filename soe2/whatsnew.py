@@ -26,6 +26,10 @@ NOTES = {
         "back to how they were).",
         "A switch's hover tip shows above your pointer when there's no room below it - it was cut off at the "
         "bottom of the screen.",
+        "Dividers between the time, map, goal, maps and average on the bar. Hiding Focus from the bar hides its "
+        "goal line too.",
+        "Price pop-ups no longer appear all over the screen while a stash tab is being priced - only for items you "
+        "check yourself.",
     ],
     "2.73.4": [
         "Prices are always for your league - after switching leagues, old prices are never shown as current.",
