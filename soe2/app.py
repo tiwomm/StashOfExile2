@@ -3512,6 +3512,9 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
                     m["flags"] = set(m.get("flags", []))
                 r["prices"] = [tuple(p) for p in r.get("prices", [])]
                 r.setdefault("mark", "new")
+                if not r["item"].get("ilvl") and r.get("raw"):  # 2.73.5: saved before 2.73.2 read it - from the copy
+                    m = re.search(r"^Item Level:\s*(\d+)", r["raw"], re.M)
+                    r["item"]["ilvl"] = int(m.group(1)) if m else None
                 if r.get("src") == "ledger":                  # (a Strat Tracker item that was still being priced)
                     continue
                 self.records[int(r["id"])] = r

@@ -30,6 +30,7 @@ NOTES = {
         "goal line too.",
         "Price pop-ups no longer appear all over the screen while a stash tab is being priced - only for items you "
         "check yourself.",
+        "The iLvl column now shows the item level for items you added before 2.73.2 too.",
     ],
     "2.73.4": [
         "Prices are always for your league - after switching leagues, old prices are never shown as current.",
