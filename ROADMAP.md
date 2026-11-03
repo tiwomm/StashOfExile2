@@ -4,7 +4,7 @@
 
 > **Who we build for - read second.** Path of Exile players are utilitarian: they love data and information, problem solving and creative thinking. So every feature shows its numbers *and how they were worked out*, lets you sort, filter, compare and export them (CSV), keeps power-user depth (keys, versions, raw data) one click away instead of hiding it, explains in plain words, and leaves the decision to the player. Pretty is welcome; vague is not.
 
-**Current version: 2.78.3**
+**Current version: 2.79.0**
 
 Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds features, 2.10.1 only fixes. Each step below is one release; we work through them top to bottom.
 
@@ -134,6 +134,7 @@ Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds f
 | 2.78.1 | The rank card says the map's name, not its area id, and saves the rank under it (ranks saved under an id move over). |
 | 2.78.2 | The campaign line's bar is as wide as the overlay's bar. |
 | 2.78.3 | The overlay scales to any resolution (720p to 4K, cards too); the item card has Item level and Min / Max beside each mod. |
+| 2.79.0 | The item panel like Sidekick (every filter on the card, ▸ Advanced for the rest), no pop-ups, unique / granted-skill mods from the trade site's list, the white / magic base rule, Remnant tags on time. |
 
 ## ▶ Next up
 
@@ -143,11 +144,11 @@ Order (decided 2.34.0): the Polish basics first, so new features are built on th
 
 | Version | Plan |
 |---|---|
-| 2.79.0 | **Global leaderboards** (opt-in, through Community data sharing): one Leaderboards page under Overlay (Overlay ↳ Leaderboards) with tabs for Campaign (total and per act, from the Campaign Helper's splits), Maps (fastest clear per map), Bosses & pinnacles, and Trials (Sekhemas, Chaos, Simulacrum); each with Mine / Everyone, this league / all time, filters (league, class). The session page's own leaderboard links to it. Times come from the game's log, so they're marked self-reported: the board drops impossible times, and reports / an admin can hide entries. A board name only (no account), as on Money Makers. |
-| 2.80.0 | **Public stash order test tool.** |
-| 2.81.0 | **Polish 4 - Responsive:** windows reflow when narrow (toolbars wrap, side panels drop under the list, sensible minimum sizes), sharp on every monitor (per-monitor DPI), a text size setting (100-150 %). |
-| 2.82.0 | **Polish 5 - Hover, focus, micro-interactions:** the same hover and pressed look on every button, row, icon and tab; a visible keyboard focus ring everywhere; short (120-180 ms) fades for popups and toasts, never on lists; a "Reduce motion" setting that turns them off. |
-| 2.83.0 | **Polish 6 - Visual hierarchy:** the suggestions below, window by window, with before / after screenshots in each PR. |
+| 2.80.0 | **Global leaderboards** (opt-in, through Community data sharing): one Leaderboards page under Overlay (Overlay ↳ Leaderboards) with tabs for Campaign (total and per act, from the Campaign Helper's splits), Maps (fastest clear per map), Bosses & pinnacles, and Trials (Sekhemas, Chaos, Simulacrum); each with Mine / Everyone, this league / all time, filters (league, class). The session page's own leaderboard links to it. Times come from the game's log, so they're marked self-reported: the board drops impossible times, and reports / an admin can hide entries. A board name only (no account), as on Money Makers. |
+| 2.81.0 | **Public stash order test tool.** |
+| 2.82.0 | **Polish 4 - Responsive:** windows reflow when narrow (toolbars wrap, side panels drop under the list, sensible minimum sizes), sharp on every monitor (per-monitor DPI), a text size setting (100-150 %). |
+| 2.83.0 | **Polish 5 - Hover, focus, micro-interactions:** the same hover and pressed look on every button, row, icon and tab; a visible keyboard focus ring everywhere; short (120-180 ms) fades for popups and toasts, never on lists; a "Reduce motion" setting that turns them off. |
+| 2.84.0 | **Polish 6 - Visual hierarchy:** the suggestions below, window by window, with before / after screenshots in each PR. |
 | Last | **Linux build** (Hyprland / Wayland first) - the groundwork is in place (session_linux_handover.txt). |
 | Very end | **Kind words** (a hidden, opt-in easter egg): short affirmations in a quick centered box over the game, like PoE's loading-screen tips (e.g. on zone loads, at most every N minutes, fading after a few seconds). Found only by digging through the menus. I keep the rotation myself with little upkeep and no spoilers (the raw lines shouldn't be easy to read); how I add lines is still to decide - a scrambled file in the repo plus an Actions form, the board server, or lines built into each release. A starter template of lines. Extra polish. |
 

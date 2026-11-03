@@ -114,7 +114,7 @@ class RemnantPage:
     def _remnant_watch(self, gen):
         from .alerts_page import game_rect
         from .overlay import game_active
-        last, misses = None, 0
+        last, misses, settle = None, 0, 0
         try:
             while gen == getattr(self, "rm_auto_gen", 0):
                 time.sleep(RM.AUTO_POLL)
@@ -130,14 +130,17 @@ class RemnantPage:
                 try:
                     img = RM.grab(ar)
                     if RM.parchment_share(img) < RM.PARCHMENT:     # no book there: nothing to read (cheap)
-                        lines, last = [], None
+                        lines, last, settle = [], None, 0
                         misses += 1
                         if misses == RM.AUTO_GONE:
                             self.ui_q.put(("remnant_auto", rect, []))
                         continue
                     th = RM.thumb(img)
-                    if not RM.changed(last, th):
-                        continue
+                    if last is None:                 # 2.79.0 (feedback: "not popping up on time"): the book just
+                        settle = RM.SETTLE_READS     # opened - its first look can land mid-animation and find no
+                    if not RM.changed(last, th) and settle <= 0:    # lines; read a few more times while it settles,
+                        continue                     # not only when the picture changes a lot
+                    settle -= 1
                     last = th
                     lines = RM.shift(RM.ocr(img), ar[0] - rect[0], ar[1] - rect[1])
                     rows = self.remnant_price(lines, SETTINGS.get("league", ""))
@@ -148,6 +151,7 @@ class RemnantPage:
                 misses = 0                       # 2.43.0: the book is still open - a read with fewer rows (the
                 if rows:                         # game's tooltip over a reward) never takes tags away; only the
                     self.ui_q.put(("remnant_auto", rect, rows))      # book closing does
+                    settle = min(settle, 1)      # (found them: one more read to catch the rest of the list)
         finally:
             if gen == getattr(self, "rm_auto_gen", 0):
                 self.rm_auto_alive = False

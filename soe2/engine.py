@@ -238,7 +238,16 @@ class Engine(TabReaderJobs, WealthJobs, StratCostJobs, threading.Thread):
             self.table = self._load_stats()      # first attempt failed (no internet?) - try once more
         item = rec["item"]
         if item.get("gear"):                     # 1.41: gear mods were matched from the game-data library already
+            from .gear import relink
+            relink(item)                          # 2.79.0: what the library didn't know - the trade site's own list
             for m in item["mods"]:
+                if not m.get("sid") and not m.get("covered") and m["text"] not in self.logged_unmatched:
+                    self.logged_unmatched.add(m["text"])
+                    try:
+                        with open(P("unmatched_mods.txt"), "a", encoding="utf-8") as f:
+                            f.write(f"{m['text']}\t| {item.get('name')} ({item.get('base')})\n")
+                    except Exception:
+                        pass
                 m["key"] = f"{item['base']}|{m['sid']}" if m.get("sid") else None
             rec["resolved"] = True
             return
@@ -284,6 +293,13 @@ class Engine(TabReaderJobs, WealthJobs, StratCostJobs, threading.Thread):
             return
         rec["state"] = "pricing"
         tell()
+        lost = [m for m in item["mods"] if m.get("skill") and not m.get("sid")] if item.get("gear") else []
+        if lost:                                 # 2.79.0: the skill sets the price - the base alone would mislead
+            rec.update(state="done", total=0, prices=[], est=None, qid=None, manual=True, nomatch=False, stages=[],
+                       manual_why=f"its skill ({lost[0]['skill']}) isn't on the trade site's list, and the price "
+                                  "depends on it", label="check by hand", priced_at=time.time())
+            tell()
+            return
         if item.get("gear"):
             _status, _age, hours = listing_rules()
             out = self._price_gear(rec, hours, SETTINGS["min_results"])
