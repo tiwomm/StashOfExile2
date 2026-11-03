@@ -1149,11 +1149,10 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
                              variable=self.adv_var, command=self.advanced_switch, style="Card.TCheckbutton")
         cb.pack(side="left")
         self.adv_switch = cb
-        row = section("Advanced", "Problem report", "Something priced badly or went wrong? This makes one .zip with "
-                                                    "your recent price checks (the copied item texts and what the app "
-                                                    "did with them) and the app's log files - no account name, no "
-                                                    "Wealth data. Send it along with what you saw.")
-        ttk.Button(row, text="Make a problem report…", command=self.problem_report).pack(side="left")
+        # 2.74.2: the same Report a bug as on the bottom bar (was a .zip you had to send yourself)
+        row = section("Advanced", "Report a bug", "Something priced badly or went wrong? Tell us what happened - it "
+                                                  "becomes an issue on GitHub, and you see exactly what's sent first.")
+        ttk.Button(row, text="🐞 Report a bug…", command=self.bug_report_open).pack(side="left")
         row = section("Advanced", "Recent messages", "The last 20 messages the app showed you (they go away "
                                                      "by themselves, so they're kept here). Hover one to keep it up.")
         self.build_toast_log(row)
@@ -1239,19 +1238,6 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
                 if hasattr(mod, n):
                     setattr(mod, n, wrap(getattr(mod, n)))
         mb._soe2_parented = True
-
-    def problem_report(self):
-        from .report import make_report
-        path = filedialog.asksaveasfilename(defaultextension=".zip", filetypes=[("Zip", "*.zip")],
-                                            initialfile=f"StashOfExile2_report_{time.strftime('%Y%m%d_%H%M')}.zip")
-        if not path:
-            return
-        try:
-            n = make_report(path, self.records)
-        except Exception as e:
-            return self._say(f"Couldn't make the report: {e}", 10)
-        self._say(f"Report saved ({n} recent price checks): {path}", 12)
-        self.open_path(os.path.dirname(path))
 
     def open_path(self, path):
         try:

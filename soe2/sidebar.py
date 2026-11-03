@@ -93,6 +93,10 @@ class Sidebar(tk.Canvas):
             self.configure(cursor="hand2" if k else "")
             self.redraw()
             mod = self.shell.modules.get(k)
+            if k == "_update" and self.update_tag():
+                from .config import pretty_version
+                self.shell.app._say(f"Version {self.update_tag()} is out (you have {pretty_version()}). Click: see "
+                                    "what's new and update (it asks first).", 6)
             if mod is not None and getattr(mod, "blurb", ""):
                 self.shell.app._say(f"{mod.title}: {mod.blurb}", 4)
 
@@ -100,6 +104,8 @@ class Sidebar(tk.Canvas):
         k = self._hit(e.y)
         if k == "_toolkit":
             self.shell.toggle_menu()
+        elif k == "_update":                                  # 2.74.2: see what's new and update (it asks first)
+            self.shell.app.check_updates("ask")
         elif k and "::" in k:                                  # one of a page's tabs
             key, title = k.split("::", 1)
             self.shell.open_tab(key, title)
@@ -145,11 +151,13 @@ class Sidebar(tk.Canvas):
         self._rows = []
         active = self.shell.active
         rows = self.items()
-        for it in rows + [{"group": None}, {"key": "_toolkit", "title": "Toolkit", "icon": "◆"},
-                                  {"key": "settings", "title": "Settings", "icon": "⚙"}]:
+        upd = self.update_tag()                           # 2.74.2: a new version - above Toolkit and Settings
+        bottom = ([{"key": "_update", "title": f"Update to {upd}", "icon": "⬆"}] if upd else []) + \
+            [{"key": "_toolkit", "title": "Toolkit", "icon": "◆"}, {"key": "settings", "title": "Settings", "icon": "⚙"}]
+        for it in rows + [{"group": None}] + bottom:
             if "group" in it:
-                if it["group"] is None:                       # the bottom: Toolkit and Settings
-                    y = max(y + 8, h - 2 * (rh + 2) - 12)
+                if it["group"] is None:                       # the bottom: (Update,) Toolkit and Settings
+                    y = max(y + 8, h - len(bottom) * (rh + 2) - 12)
                     self.create_line(10, y, w - 10, y, fill=C["line"])
                     y += 8
                     continue
@@ -162,6 +170,9 @@ class Sidebar(tk.Canvas):
                 y += 22
                 continue
             k = it["key"]
+            if k == "_update":
+                y = self._update_row(y, w, rh, acc, t)
+                continue
             if "tab" in it:                                    # 2.64.0: a page's tab, under it
                 y = self._tab_row(it, y, w, mk, acc, sel_bg, bg, hov_bg, txt, sel_txt, grp, t, nav)
                 continue
@@ -211,6 +222,32 @@ class Sidebar(tk.Canvas):
                     self.create_text(x1 - 6, cy, text="BETA", anchor="e", font=("Segoe UI", 7, "bold"), fill=acc)
             self._rows.append((k, y0, y1))
             y = y1 + 2
+
+    def update_tag(self):
+        """2.74.2: the newer version the quiet check found (feedback_page), or None."""
+        tag = getattr(self.shell.app, "upd_latest", None)
+        if not tag:
+            return None
+        from .config import pretty_version
+        return pretty_version(tag)
+
+    def _update_row(self, y, w, rh, acc, t):
+        """A new version: a filled row in the accent color (it was a badge on the bottom bar)."""
+        x0, x1 = (6, w - 6) if not self.compact else (4, w - 4)
+        y0, y1 = y, y + rh
+        hov = self.hover == "_update"
+        fill = TH.mix(acc, "#ffffff", .15) if hov else acc
+        TH.round_rect(self, x0, y0 + 1, x1, y1 - 1, 4, fill=fill, outline=acc)
+        cy = (y0 + y1) // 2
+        ink = "#1a1206"
+        if self.compact:
+            self.create_text((x0 + x1) // 2, cy, text="⬆", font=("Segoe UI Symbol", 12, "bold"), fill=ink)
+        else:
+            self.create_text(x0 + 12, cy, text="⬆", anchor="w", font=("Segoe UI Symbol", 11, "bold"), fill=ink)
+            self.create_text(x0 + 40, cy, text=f"Update to {self.update_tag()}", anchor="w", fill=ink,
+                             font=("Segoe UI", 10, "bold"))
+        self._rows.append(("_update", y0, y1))
+        return y1 + 2
 
     def _tab_row(self, it, y, w, mk, acc, sel_bg, bg, hov_bg, txt, sel_txt, grp, t, nav):
         k, rh = it["key"], 24

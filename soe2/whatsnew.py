@@ -21,6 +21,10 @@ NEXT = [
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.74.2": [
+        "A new version now shows in the sidebar, above Toolkit and Settings - click it to see what's new and update.",
+        "Settings › Advanced › Report a bug opens the same Report a bug as the bottom bar.",
+    ],
     "2.74.1": [
         "Price checks: the Item card shows the item as it reads in game - its mods and their values right on the "
         "card, with tier tags, no scrolling for them.",
