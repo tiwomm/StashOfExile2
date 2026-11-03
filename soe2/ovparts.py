@@ -203,8 +203,8 @@ class OverlayParts:
         mh = mh if mh > 1 else 60
         rows = self.goalbar_rows()
         gw = max(320, int(mw * (0.6 if hud else 1.0)))
-        if "campaign" in rows:                               # (a longer line: the act, the step, the levels)
-            gw = max(gw, min(mw, 900))
+        if "campaign" in rows:                               # 2.78.2: as wide as the overlay's bar (feedback: "scale
+            gw = mw                                          # to match the width of the other piece")
         row_h = max(30, int((self.hud_spots("xpbar")[0][3] if hud else 60) * (0.55 if hud else 0.62)))
         gh = row_h + int(row_h * 0.8) * (len(rows) - 1)
         x, y = self._goalbar_spot(layout, gw, gh)
