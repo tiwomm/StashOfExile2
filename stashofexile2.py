@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU GPL v3.0 (see LICENSE). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.74.0
+VERSION 2.74.1
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,6 +19,16 @@ VERSION 2.74.0
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.74.1
+       The Item card reads like the item in game (feedback: "like Sidekick" - the mod values were under the price,
+       a scroll away): implicits, a rule, the other mods with their values and tier tags (P1 / S2), Corrupted,
+       then the price - all on the card (app._detail_card). Uniques: a "{ Unique Modifier }" header is an explicit
+       mod (gear.KIND_NAMES - they were all skipped as "unique"); a roll shown by name, Mageblood's "Legacy of
+       Gold (Amethyst-Topaz)", is read as "Legacy of Gold" (gamedata._WRANGE); stats the trade site lists with a
+       choice ("Legacy of #" - Gold, Quicksilver ...) are read with their options (engine._load_stats ->
+       stats_options.json, mods.OPTS / option_for) and searched as {"option": id} - which Legacies a Mageblood has
+       is searched, it sets the price. Flavour text (the lore lines at the bottom) is never read as a mod, on any
+       item (gamedata.flavour_section).
   2.74.0
        Advanced tools hidden by default (feedback: "I don't think the mod book or under the hood information is
        useful to the average user"): Module.advanced; shell.visible() hides them unless SETTINGS["show_advanced"]
@@ -1692,7 +1702,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.74.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.74.1"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 

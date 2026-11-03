@@ -106,6 +106,9 @@ def find_base(text):
 
 _MARKUP = re.compile(r"\[([^\]|]*\|)?([^\]]*)\]")
 _RANGE = re.compile(r"\((-?\d+(?:\.\d+)?)[-–](-?\d+(?:\.\d+)?)\)")
+# 2.74.1: a roll shown by name in the advanced copy - Mageblood's "Legacy of Gold (Amethyst-Topaz)" - is a range, as
+# "(10-20)" is: the line is "Legacy of Gold"
+_WRANGE = re.compile(r"\s*\(([A-Za-z][A-Za-z' ]*)\s*[-–]\s*([A-Za-z][A-Za-z' ]*)\)")
 _NUM = re.compile(r"[+-]?\d+(?:[.,]\d+)?")
 _TAGS = re.compile(r"\s*\((implicit|rune|enchant|crafted|desecrated|fractured|augmented|unscalable value|sanctum)\)\s*$", re.I)
 
@@ -113,7 +116,7 @@ _TAGS = re.compile(r"\s*\((implicit|rune|enchant|crafted|desecrated|fractured|au
 def norm_mod(text):
     """Mod wording with every number as '#', lower-case: '+52(40-59) to maximum Life' -> '# to maximum life'."""
     t = _MARKUP.sub(r"\2", text or "")
-    t = _RANGE.sub("", t)
+    t = _WRANGE.sub("", _RANGE.sub("", t))
     while _TAGS.search(t):
         t = _TAGS.sub("", t)
     t = _NUM.sub("#", t)
@@ -174,6 +177,21 @@ PROP_RE = {
 MOD_HEADER = re.compile(r'^\{\s*(?P<kind>[A-Za-z ]+?)\s+Modifier(?:\s+"(?P<name>[^"]*)")?(?:\s*\(Tier:\s*(?P<tier>\d+)\))?')
 
 
+def flavour_section(sections, mods_from):
+    """2.74.1: the flavour text (a unique's lore lines at the bottom) -> its section's index, or None. It's the last
+    section with text, has no mod header, no number and no line the stat lists know."""
+    for i in range(len(sections) - 1, mods_from - 1, -1):
+        sec = [l for l in sections[i] if l not in FLAG_LINES and not l.startswith(("Note:", "Place into", "Right click"))]
+        if not sec:
+            continue                                         # (Corrupted, a price note: look further up)
+        if any(MOD_HEADER.match(l) or _NUM.search(l) for l in sec):
+            return None
+        if any(stat_for(_WRANGE.sub("", l))[0] for l in sec):
+            return None
+        return i
+    return None
+
+
 def read_item(text):
     """Everything the price checker needs from a copied item (Ctrl+C or Ctrl+Alt+C), whatever its class.
     -> dict, or None if the text isn't an item."""
@@ -232,7 +250,11 @@ def read_item(text):
     item["ilvl"] = item["props"].get("ilvl")
     if mods_from is None:
         mods_from = len(sections)
-    for sec in sections[mods_from:]:
+    flavour = flavour_section(sections, mods_from)          # 2.74.1: never read as mods
+    item["flavour"] = sections[flavour] if flavour is not None else []
+    for si, sec in enumerate(sections[mods_from:], mods_from):
+        if si == flavour:
+            continue
         kind, tier, mname, source = None, None, None, None
         for l in sec:
             h = MOD_HEADER.match(l)
@@ -245,6 +267,7 @@ def read_item(text):
                 continue
             if l in FLAG_LINES or l.startswith(("Note:", "Place into", "Right click")):
                 continue
+            l = _WRANGE.sub("", l)                           # 2.74.1: "Legacy of Gold (Amethyst-Topaz)" -> "Legacy of Gold"
             tag = _TAGS.search(l)
             tagged = tag.group(1).lower() if tag else None
             k = kind or (tagged if tagged in ("implicit", "rune", "enchant") else "explicit")

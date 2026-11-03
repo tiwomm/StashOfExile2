@@ -27,7 +27,7 @@ import time
 
 from . import gamedata
 from .config import BASE
-from .mods import read_numbers, roll_pct, strip_markup
+from .mods import option_for, read_numbers, roll_pct, strip_markup
 from .net import call
 from .trade import apply_opts, _cached, _search_cache, listing_rules
 
@@ -51,7 +51,7 @@ DEFENCES = {        # trade-site filter -> (item property, name, the stat wordin
 WEAPON_FEEDERS = ("Adds # to # Physical Damage", "#% increased Physical Damage", "Adds # to # Fire Damage",
                   "Adds # to # Cold Damage", "Adds # to # Lightning Damage", "#% increased Attack Speed")
 KIND_NAMES = {"prefix": "Prefix", "suffix": "Suffix", "implicit": "Implicit", "rune": "Rune", "enchant": "Enchant",
-              "explicit": "Explicit"}
+              "explicit": "Explicit", "unique": "Explicit"}   # 2.74.1: "{ Unique Modifier }" - a unique's explicit mods
 AFFIX_KINDS = ("Prefix", "Suffix", "Explicit")
 _PAIR = re.compile(r"(\d+(?:\.\d+)?)\s*-\s*(\d+(?:\.\d+)?)")
 # 2.72.0: mods that buyers hardly pay for on a rare - searching on them only hides the comparable listings. Left out
@@ -128,6 +128,7 @@ def parse_gear(text):
         prev_key = key
         clean = re.sub(r"\s*\((implicit|rune|enchant|crafted|desecrated|fractured)\)\s*$", "", gm["text"], flags=re.I)
         clean = re.sub(r"\s+[—-]\s+Unscalable Value.*$", "", clean)
+        clean = gamedata._WRANGE.sub("", clean)            # 2.74.1: "Legacy of Gold (Amethyst-Topaz)"
         v, lo, hi = read_numbers(strip_markup(clean))
         stat, neg = gamedata.stat_for(gm["text"])
         if neg and v is not None:
@@ -150,12 +151,18 @@ def parse_gear(text):
         m["roll"] = roll_pct(m)
         if v is not None and neg and m["roll"] is not None:
             m["roll"] = 1 - m["roll"]
+        opt = option_for(ids[0], clean) if ids else None     # 2.74.1: a stat with a choice (Legacy of Gold ...)
+        if opt is not None:
+            m.update(option=opt, novalue=True)
         if not stat:
             m["note"] = "not found in the library or on the trade site's stat list"
         if kind not in AFFIX_KINDS:
             m["covered"] = {"Implicit": "implicit: comes with the base", "Rune": "socketed rune: can be swapped",
                             "Enchant": "enchant"}.get(kind, kind.lower())
-        if unique and not m["covered"]:                    # 2.72.0: uniques by roll
+        if unique and not m["covered"] and m.get("option") is not None:      # 2.74.1: which one it has sets the price
+            m["auto"] = "high"
+            m["note"] = "which one it has decides the price - searched"
+        elif unique and not m["covered"]:                    # 2.72.0: uniques by roll
             r = m["roll"]
             if r is not None and r >= GOOD_ROLL and m["sid"] and kind in AFFIX_KINDS:
                 m["note"] = f"well rolled ({r:.0%} of its range): searched at least this high"
@@ -349,6 +356,9 @@ def summary(item):
     s = item["search"]
     if s.get("name"):
         how = f"by name ({s['name']})"
+        picks = [m["text"] for m in item.get("mods") or [] if m.get("option") is not None]
+        if picks:                                            # 2.74.1: Mageblood's Legacies ...
+            how += " with " + ", ".join(picks)
     elif s.get("type"):
         how = f"by base type ({s['type']})"
     else:
