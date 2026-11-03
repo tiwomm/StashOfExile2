@@ -27,7 +27,7 @@ class TabReaderPage:
         cfg = SETTINGS.setdefault("pctab", {})
         if cfg.get("mode") not in MODES:
             cfg["mode"] = MODES[0]
-        mrow = tk.Frame(tb, bg=P1, padx=8, pady=8)
+        mrow = tk.Frame(tb, bg=P1, padx=8, pady=4)            # 2.74.5: lighter
         mrow.pack(fill="x", before=tb.winfo_children()[0])
         tk.Label(mrow, text="Add items from", bg=P1, fg=C["muted"]).pack(side="left", padx=(0, 8))
         # 2.31.0: Stash tab is BETA - a good idea that doesn't work well in practice yet (2.38.0: the tag sits inside
@@ -69,11 +69,10 @@ class TabReaderPage:
         how = tk.Label(row, text="ⓘ How", bg=P1, fg="#6ea8ff", cursor="hand2", font=("Segoe UI", 9, "underline"))
         how.pack(side="right", padx=(0, 8))
         how.bind("<Button-1>", lambda e: self.pctab_explain())
-        self.pc_beta = tk.Label(tb, text="⚠ BETA: reading a stash tab may not work as intended and is of limited "
-                                         "use - many tabs read only partly. Ctrl+Alt+C on each item is the reliable "
-                                         "way.", bg="#2a2110", fg="#ffcf40", anchor="w", justify="left", padx=12,
-                                pady=4, font=("Segoe UI", 9))
-        self.pc_beta.bind("<Configure>", lambda e: self.pc_beta.config(wraplength=max(300, e.width - 24)))
+        from .chrome import Notice                       # 2.74.5: closable (× at the right), stays closed
+        self.pc_beta = Notice(tb, "pctab_beta", "⚠ BETA: reading a stash tab may not work as intended and is of "
+                                                "limited use - many tabs read only partly. Ctrl+Alt+C on each item is "
+                                                "the reliable way.")
         self.pc_msg = tk.Label(tb, text="", bg=P1, fg=C["muted"], anchor="w", justify="left", padx=12,
                                font=("Segoe UI", 9))
         self.pc_msg.bind("<Configure>", lambda e: self.pc_msg.config(wraplength=max(300, e.width - 24)))
@@ -91,8 +90,8 @@ class TabReaderPage:
             self.pc_tabsrow.pack(fill="x", after=self.pc_tabrow_after)
             self.pctab_bar()
             self.pc_tabrow.pack(fill="x", after=self.pc_tabsrow)
-            self.pc_beta.pack(fill="x", after=self.pc_tabrow, padx=8, pady=(2, 0))
-            self.pc_msg.pack(fill="x", after=self.pc_beta)
+            self.pc_beta.show(fill="x", after=self.pc_tabrow, padx=8, pady=(2, 0))
+            self.pc_msg.pack(fill="x", after=self.pc_tabrow if self.pc_beta.closed() else self.pc_beta)
             self.pc_mode_hint.config(text="reads a public stash tab and adds what it can (Ctrl+Alt+C still works)")
             if not self.pc_msg.cget("text"):
                 self.pc_msg.config(text="Make a Premium stash tab public and give the whole tab one price nobody would "
