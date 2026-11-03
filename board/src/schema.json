@@ -67,7 +67,23 @@
   "Trade league",
   "Party play",
   "Hardcore safe",
-  "example"
+  "example",
+  "Arbiter of Ash",
+  "Xesht (Breach)",
+  "King in the Mists / Bodach",
+  "Olroth (Expedition)",
+  "Simulacrum",
+  "Vessel of Kulemak",
+  "Atziri (Vaal Temple)",
+  "Citadel bosses",
+  "Map bosses",
+  "Trials (Sekhemas / Chaos)",
+  "Azmerian Wisps",
+  "Viridian Wildwood",
+  "Towers",
+  "Unique maps",
+  "Abyssal Fractures",
+  "Expedition logbooks"
  ],
  "tag_groups": {
   "Also uses": [
@@ -101,6 +117,26 @@
    "Trade league",
    "Party play",
    "Hardcore safe"
+  ],
+  "Pinnacle & bosses": [
+   "Arbiter of Ash",
+   "Xesht (Breach)",
+   "King in the Mists / Bodach",
+   "Olroth (Expedition)",
+   "Simulacrum",
+   "Vessel of Kulemak",
+   "Atziri (Vaal Temple)",
+   "Citadel bosses",
+   "Map bosses",
+   "Trials (Sekhemas / Chaos)"
+  ],
+  "Map content": [
+   "Azmerian Wisps",
+   "Viridian Wildwood",
+   "Towers",
+   "Unique maps",
+   "Abyssal Fractures",
+   "Expedition logbooks"
   ]
  },
  "thinking": {
@@ -175,7 +211,8 @@
   "regex",
   "sources",
   "items",
-  "ledger"
+  "ledger",
+  "atlas_image"
  ],
  "one_order": [
   "id",

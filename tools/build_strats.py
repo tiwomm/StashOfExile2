@@ -15,12 +15,30 @@ from soe2.moneymakers import SCHEMA, from_text, tidy, tidy_one, validate, valida
 
 FOLDER, OUT = os.path.join(ROOT, "strats"), os.path.join(ROOT, "moneymakers.json")
 BOARD_SCHEMA = os.path.join(ROOT, "board", "src", "schema.json")
+CONTENT = os.path.join(FOLDER, "content.json")
+
+
+def load_content():
+    """2.78.0: strats/content.json - the Content tag groups (pinnacles, bosses, map content). -> (groups, problems)"""
+    if not os.path.exists(CONTENT):
+        return {g: list(v) for g, v in MM.CONTENT.items()}, []
+    try:
+        with open(CONTENT, encoding="utf-8-sig") as f:
+            c = json.load(f)
+    except Exception as e:
+        return {}, [f"content.json: can't be read ({e})"]
+    if not isinstance(c, dict) or not all(isinstance(v, list) and v and all(isinstance(x, str) and 0 < len(x) <= 40
+                                                                             for x in v) for v in c.values()):
+        return {}, ["content.json: {\"group\": [\"tag\", ...]} - tags of 1-40 characters"]
+    tags = [t for v in c.values() for t in v]
+    dup = sorted({t for t in tags if tags.count(t) > 1 or t in MM.ALL_TAGS})
+    return c, [f"content.json: \"{t}\" is listed twice (or is already a tag)" for t in dup]
 
 
 def write_board_schema():
     """2.30.0: the layout rules for the community board server (board/src/index.js checks posts with them), so
     the app and the server never disagree."""
-    d = {"schema": SCHEMA, "taxonomy": MM.TAXONOMY, "tags": list(MM.ALL_TAGS), "tag_groups": MM.TAG_GROUPS,
+    d = {"schema": SCHEMA, "taxonomy": MM.TAXONOMY, "tags": list(MM.all_tags()), "tag_groups": MM.tag_groups(),
          "thinking": {str(k): w for k, (w, _d) in MM.THINKING.items()}, "clicks": list(MM.CLICKS),
          "units": list(MM.UNITS), "required": list(MM.REQUIRED), "lists": list(MM.LISTS), "order": list(MM.ORDER),
          "one_order": list(MM.ONE_ORDER)}
@@ -33,7 +51,7 @@ def write_board_schema():
 def collect():
     strats, problems = [], []
     for name in sorted(os.listdir(FOLDER)):
-        if name.startswith("_") or name == "oneliners.json" or not name.endswith((".json", ".txt", ".csv")):
+        if name.startswith("_") or name in ("oneliners.json", "content.json") or not name.endswith((".json", ".txt", ".csv")):
             continue
         path = os.path.join(FOLDER, name)
         try:
@@ -67,7 +85,10 @@ def collect():
 
 
 def main():
+    content, cprobs = load_content()
+    MM.content_groups = lambda: {g: tuple(v) for g, v in content.items()}      # (checked against the new lists)
     strats, ones, problems = collect()
+    problems = cprobs + problems
     if "--check" not in sys.argv:
         write_board_schema()
     for p in problems:
@@ -84,9 +105,9 @@ def main():
     url_file = os.path.join(ROOT, "board", "url.txt")
     board_url = open(url_file, encoding="utf-8").read().strip() if os.path.exists(url_file) else ""
     rev = old.get("revision", 0) + (old.get("strats") != strats or old.get("oneliners", []) != ones or
-                                    old.get("board_url", "") != board_url)
+                                    old.get("board_url", "") != board_url or old.get("content") != content)
     with open(OUT, "w", encoding="utf-8", newline="\n") as f:
-        out = {"schema": SCHEMA, "revision": rev, "strats": strats, "oneliners": ones}
+        out = {"schema": SCHEMA, "revision": rev, "strats": strats, "oneliners": ones, "content": content}
         if board_url:
             out["board_url"] = board_url                     # 2.30.0: where the Community board lives
         json.dump(out, f, indent=1, ensure_ascii=False)

@@ -68,6 +68,8 @@ Put test values in `board/.dev.vars`, e.g. `ADMIN_KEY=...`, `REPORT_HIDE=2`, `JO
 | `POST /posts/{id}/admin` `{action: hide\|unhide\|promote\|unpromote}` · `POST /users/{id}/ban` | admins |
 | `GET /official` | promoted posts (part of the Official list) |
 | `POST /mods/batch` `{cid, league, prices, bases, votes}` | 2.31.0: an install's hourly summary (per base / mod: count + median) and its Mod book rule changes. One per 45 min. 2.77.0: `zones` - campaign zones the app's guide pack didn't know (`{act, zone, after, level}`). |
+| `POST /images` `{data}` | 2.78.0: an atlas screenshot (base64 JPEG, 320 KB at most; joined users, 20 a day) -> `{id}`. A strat names it `"atlas_image": "b:<id>"`. |
+| `GET /images/<id>` | 2.78.0: that JPEG (cached for good). |
 | `GET /campaign/zones` | 2.77.0: those zones, pooled (seen by 2 or more installs): `{act, zone, n, level, after}` - read by `tools/build_guide.py`. |
 | `GET /mods/stats?league=` · `GET /mods/ratings` | the pooled prices (median, lift, summaries) and how players rate each mod |
 | `GET /maps/ratings` | 2.32.0: how players rank each map (`maps` in the batch = a player's map ranks) |

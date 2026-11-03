@@ -1,6 +1,6 @@
 {
  "schema": 2,
- "revision": 3,
+ "revision": 4,
  "strats": [],
  "oneliners": [
   {
@@ -14,5 +14,27 @@
    ]
   }
  ],
+ "content": {
+  "Pinnacle & bosses": [
+   "Arbiter of Ash",
+   "Xesht (Breach)",
+   "King in the Mists / Bodach",
+   "Olroth (Expedition)",
+   "Simulacrum",
+   "Vessel of Kulemak",
+   "Atziri (Vaal Temple)",
+   "Citadel bosses",
+   "Map bosses",
+   "Trials (Sekhemas / Chaos)"
+  ],
+  "Map content": [
+   "Azmerian Wisps",
+   "Viridian Wildwood",
+   "Towers",
+   "Unique maps",
+   "Abyssal Fractures",
+   "Expedition logbooks"
+  ]
+ },
  "board_url": "https://soe2-board.stashofexile2.workers.dev"
 }

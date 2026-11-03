@@ -64,4 +64,8 @@ group), list rows one line each (section = the list, field = 1, 2, 3 ...), `sour
 Ledger's numbers under the same names as its own CSV. The `note` column is help - the app ignores it.
 
 One-liner (`oneliners.json`): `{"id", "text", "author"}` + optional `category`, `type`, `tags`, `updated`.
+`content.json` holds the Content tag groups (pinnacles, bosses, map content - 2.78.0): add a new league's content
+there and every app gets it from `moneymakers.json`. `atlas_image` is `"b:<id>"`, an atlas screenshot on the board
+(the app uploads it when you post).
+
 The tag `example` marks a sample strat. Check your files with `py tools/build_strats.py --check`.

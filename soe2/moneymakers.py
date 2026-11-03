@@ -49,6 +49,42 @@ TAG_GROUPS = {
     "Play style": ("SSF friendly", "Trade league", "Party play", "Hardcore safe"),
 }
 ALL_TAGS = tuple(t for g in TAG_GROUPS.values() for t in g) + ("example",)
+# 2.78.0: what a strat farms in the endgame - pinnacles, bosses, map content - tags too (one tag system), ticked in the
+# Strat Tracker's Atlas step and filtered by in the Content row. The lists ship in the shared strats file
+# (strats/content.json -> moneymakers.json "content"), so a new league's content arrives without an app update.
+CONTENT = {
+    "Pinnacle & bosses": ("Arbiter of Ash", "Xesht (Breach)", "King in the Mists / Bodach", "Olroth (Expedition)",
+                          "Simulacrum", "Vessel of Kulemak", "Atziri (Vaal Temple)", "Citadel bosses", "Map bosses",
+                          "Trials (Sekhemas / Chaos)"),
+    "Map content": ("Azmerian Wisps", "Viridian Wildwood", "Towers", "Unique maps", "Abyssal Fractures",
+                    "Expedition logbooks"),
+}
+_CONTENT = {"key": None, "groups": None}
+
+
+def content_groups():
+    """-> {group: (tags)} - the shared file's (newest), else CONTENT."""
+    paths = (P(FILE), os.path.join(RESOURCE_DIR, FILE), os.path.join(APP_DIR, FILE))
+    key = tuple((p, os.path.getmtime(p)) for p in paths if os.path.isfile(p))
+    if _CONTENT["key"] != key or _CONTENT["groups"] is None:
+        c = shared().get("content")
+        ok = isinstance(c, dict) and c and all(isinstance(v, list) and all(isinstance(x, str) for x in v)
+                                               for v in c.values())
+        _CONTENT.update(key=key, groups={g: tuple(v) for g, v in c.items()} if ok else dict(CONTENT))
+    return _CONTENT["groups"]
+
+
+def tag_groups():
+    """Every tag group: TAG_GROUPS, then the content groups."""
+    return {**TAG_GROUPS, **content_groups()}
+
+
+def content_tags():
+    return tuple(t for g in content_groups().values() for t in g)
+
+
+def all_tags():
+    return ALL_TAGS + content_tags()
 UNITS = ("div", "ex", "chaos")
 # ---- effort: two words, picked from a list (no numbers to type)
 THINKING = {1: ("Autopilot", "the same every map, no decisions"),
@@ -70,7 +106,7 @@ LISTS = ("tags", "requirements", "tablets", "waystones", "atlas", "craft_steps",
 ORDER = ("id", "name", "author", "updated", "patch", "category", "type", "summary", "thoughts_per_click",
          "clicks_per_hour", "tags", "waystone_tiers", "est_cost", "est_profit",
          "requirements", "tablets", "waystones", "atlas", "craft_steps", "setup", "steps", "loot", "tips", "risks",
-         "regex", "sources", "items", "ledger")
+         "regex", "sources", "items", "ledger", "atlas_image")
 # Lucrative Strats: one-liners
 ONE_ORDER = ("id", "text", "author", "updated", "category", "type", "tags")
 
@@ -142,7 +178,7 @@ def validate(s):
     for k in ("est_profit", "est_cost"):
         out += [f"{k}: {p}" for p in _amount(s.get(k))]
     if isinstance(s.get("tags"), list):
-        out += [f"tags: \"{x}\" is not in the tag list" for x in s["tags"] if x not in ALL_TAGS]
+        out += [f"tags: \"{x}\" is not in the tag list" for x in s["tags"] if x not in all_tags()]
     wt = s.get("waystone_tiers")
     if wt is not None:
         lo, hi = (wt.get("min"), wt.get("max")) if isinstance(wt, dict) else (None, None)
@@ -154,6 +190,9 @@ def validate(s):
     it = s.get("items")                       # 2.46.0: what the strat runs, with the mods that matter (cost check)
     if it is not None and (not isinstance(it, list) or not all(isinstance(x, dict) and x.get("base") for x in it)):
         out.append("items must be a list of {\"kind\", \"base\", \"count\", \"lasts\", \"key_mods\"}")
+    img = s.get("atlas_image")                # 2.78.0: a screenshot of the atlas (l: on this PC, b: on the board)
+    if img is not None and not (isinstance(img, str) and re.fullmatch(r"(l:[A-Za-z0-9._-]{1,80}|b:\d{1,12})", img)):
+        out.append("atlas_image must be \"b:<board image id>\" (or \"l:<file>\" on your PC)")
     lg = s.get("ledger")
     if lg is not None and (not isinstance(lg, dict) or not all(isinstance(v, (int, float)) for v in lg.values())):
         out.append("ledger must be numbers: " + ", ".join(LEDGER_FIELDS))
@@ -238,7 +277,7 @@ def migrate(s):
             s.setdefault(new, s.pop(old))
     tags, extra = [], []
     for t in list(s.get("tags") or []) + list(s.pop("mechanics", None) or []):
-        (tags if t in ALL_TAGS else extra).append(t)
+        (tags if t in all_tags() else extra).append(t)
     tags += [_OLD_FARM[f] for f in s.pop("farm_types", None) or [] if f in _OLD_FARM]
     if s.pop("league_start", False):
         tags.append("League start")
@@ -324,7 +363,7 @@ def validate_one(o):
         out.append("id: lower-case letters, digits and dashes only")
     if len(str(o.get("text", ""))) > 300:
         out.append("text: keep it to one line (300 characters at most)")
-    out += [f"tags: \"{x}\" is not in the tag list" for x in o.get("tags") or [] if x not in ALL_TAGS]
+    out += [f"tags: \"{x}\" is not in the tag list" for x in o.get("tags") or [] if x not in all_tags()]
     if o.get("category") and o["category"] not in CATEGORIES:
         out.append("category is not in the list")
     elif o.get("type") and o["type"] not in TAXONOMY.get(o.get("category"), ()):
@@ -397,7 +436,7 @@ def to_text(s=None):
             out += [f"[{'x' if v == w else ' '}] {w} - {d}" for w, d in CLICKS.items()]
             out.append("")
         elif key == "tags":
-            for group, tags in TAG_GROUPS.items():
+            for group, tags in tag_groups().items():
                 out.append(f"Tags - {group}:")
                 out += [f"[{'x' if t in (v or []) else ' '}] {t}" for t in tags]
                 out.append("")
@@ -572,6 +611,57 @@ def trade_link(league, sid=None, base=None):
             + urllib.parse.quote(json.dumps(q, separators=(",", ":"))))
 
 
+def item_trade_link(league, item):
+    """2.78.0: a strat's item (its base and ★ mods) -> a trade-site search for it, cheapest first: the base, and each
+    ★ mod the trade site knows (with its number as the minimum)."""
+    q = {"query": {"status": {"option": "online"}}, "sort": {"price": "asc"}}
+    if item.get("base"):
+        q["query"]["type"] = item["base"]
+    filters = []
+    for line in item.get("key_mods") or []:
+        sid = stat_id(line)
+        if not sid or any(f["id"] == sid for f in filters):
+            continue
+        f = {"id": sid}
+        n = re.search(r"[-+]?\d+(?:\.\d+)?", line)
+        if n:
+            f["value"] = {"min": float(n.group(0)) if "." in n.group(0) else int(n.group(0))}
+        filters.append(f)
+    if filters:
+        q["query"]["stats"] = [{"type": "and", "filters": filters}]
+    return (f"https://www.pathofexile.com/trade2/search/poe2/{urllib.parse.quote(league or 'Standard')}?q="
+            + urllib.parse.quote(json.dumps(q, separators=(",", ":"))))
+
+
+def item_regex(items):
+    """2.78.0: a stash / vendor search for these items' ★ mods (one item: all of its mods; several: any of them).
+    Mods the Regex tool knows use its short terms; others are searched by their words. -> text or ''."""
+    from . import regex as R
+    if not items:
+        return ""
+    kind = "waystone" if all(i.get("kind") == "waystone" for i in items) else "tablet"
+    lines = [l for i in items for l in i.get("key_mods") or []]
+    if not lines:
+        return ""
+    ids = list(dict.fromkeys(R.matching_mods(kind, "\n".join(lines))))
+    if ids:
+        try:
+            out, _notes = R.build(kind, [(x, None) for x in ids], [], len(items) == 1, {})
+        except Exception:
+            out = ""
+        if out:
+            return out
+    words = []
+    for l in lines:
+        w = re.sub(r"[-+]?\d+(\.\d+)?%?", "", l).strip(" :").lower()
+        w = re.sub(r"\s+", " ", w)[:40].strip()
+        if w and w not in words:
+            words.append(w)
+    if not words:
+        return ""
+    return " ".join(f'"{w}"' for w in words) if len(items) == 1 else '"' + "|".join(words) + '"'
+
+
 def stat_id(line):
     """A tablet mod line -> the trade site's stat id (from the trade data the app downloaded), or None."""
     import difflib
@@ -632,7 +722,7 @@ def to_csv(s=None):
             v = s.get(key, "")
         w.writerow(("strat", key, "" if v is None else v, note if not s else ""))
     tags = s.get("tags") or []
-    for group, opts in TAG_GROUPS.items():
+    for group, opts in tag_groups().items():
         mine = [t for t in tags if t in opts]
         for t in mine:
             w.writerow(("tag", group, t, ""))

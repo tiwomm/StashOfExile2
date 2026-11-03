@@ -82,3 +82,8 @@ CREATE TABLE IF NOT EXISTS campaign_zones (
   updated INTEGER NOT NULL,
   PRIMARY KEY (act, zone, cid)
 );
+
+-- 2.78.0: atlas screenshots for strats (POST /images, GET /images/<id>) - small JPEGs, a strat names one "b:<id>"
+CREATE TABLE IF NOT EXISTS images (
+  id INTEGER PRIMARY KEY AUTOINCREMENT, author_id TEXT NOT NULL, data BLOB NOT NULL, created INTEGER NOT NULL
+);

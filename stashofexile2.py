@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU GPL v3.0 (see LICENSE). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.77.0
+VERSION 2.78.0
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,6 +19,22 @@ VERSION 2.77.0
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.78.0
+       Money Makers rework (feedback: the atlas step was a vague dropdown; no pinnacles, bosses or wisps; Upload
+       never asked for tags, Thinking or Clicks; the Strat panel had no regex or trade links for its items).
+       Content tags: pinnacles and bosses, map content (Azmerian Wisps, Viridian Wildwood ...) are tags like the
+       others (one tag system) - moneymakers.content_groups() from the shared file's "content" (strats/content.json,
+       built by tools/build_strats.py into moneymakers.json and the board's schema.json), so a new league's content
+       arrives without an app update. The Strat Tracker's setup has 6 steps: Atlas & content (the content check
+       boxes, trees and points, an atlas screenshot - pasted or a file, kept by stratimg.py as a JPEG of at most
+       1600 px / 300 KB) and Publish (what it is, one line, Thinking, Clicks, tags, steps - Publish to Community or
+       Keep it in Mine only). Upload opens on Publish while any of those is missing (was: posted with defaults).
+       Posting uploads the screenshot first (board POST /images, GET /images/<id>; a strat names it
+       "atlas_image": "b:<id>"); the setup keeps the board's copy. Money Makers: a Content row (the pinnacles in a
+       menu of check boxes, map content as buttons), content on the cards, and in the Strat panel What you need -
+       each tablet and waystone with its ★ mods, today's price, Copy regex (the Regex tool's terms) and Trade (that
+       base and its ★ mods, cheapest first), one regex for all the tablets - and the author's atlas screenshot
+       (click: big). No planner links: the app keeps you in the app. After publishing, Money Makers opens on it.
   2.77.0
        The Campaign Helper (campaign.py, campaign_ui.py; the guide pack campaign.json). It follows the zone you're in
        from the game's log (the area line's id gives the act - G1..G4, P1..P3 interludes - and the [SCENE] line its
@@ -1764,7 +1780,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.77.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.78.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 

@@ -930,20 +930,23 @@ class LedgerPage:
 
     # ---------------- 2.69.1: upload a setup (with its numbers) to the community strats on the Money Makers board
     def fl_upload(self):
-        """This setup as a strat (fl_strat_guide: its items, mods that matter, atlas, cost and profit per run) -> kept
-        in Money Makers › Mine, then posted to the community board. Needs Community data sharing on (asks if it
-        isn't) and a board name (asks the first time). Anything the layout still needs -> it opens in Mine to fill
-        in, then 📤 Post to Community there. -> "posted" / "fill" / None."""
+        """This setup as a strat (fl_strat_guide: its guide, items, mods that matter, atlas, content, cost and profit
+        per run) -> kept in Money Makers › Mine, then posted to the community board. 2.78.0: the Publish step is
+        asked first when what it is, Thinking, Clicks or the steps aren't picked yet (they were filled with
+        defaults and posted without asking). Needs Community data sharing on and a board name (asks). The atlas
+        screenshot goes up first. -> "posted" / "ask" / "fill" / None."""
         s = self.fl_setup()
         if not s:
             self._say("Pick a setup to upload first.", 6)
             return None
+        if self.fl_pub_missing(self.fl_guide_of(s)):
+            self.fl_edit()
+            self.fl_ed_steps.go(len(self.fl_ed_steps.frames) - 1)
+            self._say("Before it goes out: say what it is, how much thinking and clicking it takes, and its steps.", 8)
+            return "ask"
         if not self.cm_need_sharing(self.fl_upload):
             return None
-        st = self.fl_strat_guide(s)
-        st["id"] = MM.slug("my-" + (st.get("name") or s["name"]))
-        st["author"] = st.get("author") or SETTINGS.get("wealth_account") or "me"
-        MM.save_mine([m for m in MM.mine() if m["id"] != st["id"]] + [MM.tidy(st)])
+        st = self.fl_keep_mine(s)
         probs = MM.validate(st)
         if probs:
             self.fl_upload_fill(st, probs)
@@ -952,9 +955,56 @@ class LedgerPage:
             return None
         data = {k: v for k, v in MM.tidy(st).items() if k not in ("id", "author")}
         from . import board as B
-        self._mm_bg(lambda: B.post("strat", data),
-                    lambda r: self.mm_board_result(r, f"Uploaded \"{st['name']}\" to the community strats."))
+        from . import stratimg
+
+        def work():
+            if data.get("atlas_image", "").startswith("l:"):
+                ok, ref = stratimg.upload(data["atlas_image"])
+                if not ok:
+                    return False, f"The atlas screenshot didn't upload ({ref})."
+                data["atlas_image"] = ref
+                st["atlas_image"] = ref                          # (Mine keeps the board's copy too)
+                MM.save_mine([m for m in MM.mine() if m["id"] != st["id"]] + [MM.tidy(st)])
+            return B.post("strat", data)
+
+        def done(r):
+            self.mm_board_result(r, f"Uploaded \"{st['name']}\" to the community strats.")
+            if str(st.get("atlas_image", "")).startswith("b:"):    # (uploaded once: the setup keeps the board's copy)
+                L.version(s)["atlas"]["image"] = st["atlas_image"]
+                self.fl_save()
+            if r and r[0]:
+                self.fl_show_in_mm(st["id"])
+        self._mm_bg(work, done)
         return "posted"
+
+    def fl_guide_of(self, s):
+        """The Publish step's answers for a setup, over the strat it follows (if it follows one)."""
+        base = next((x for x in MM.all_strats() if x["id"] == s.get("strat")), None) or {}
+        gd = {k: base[k] for k in ("category", "type", "summary", "thoughts_per_click", "clicks_per_hour", "tags",
+                                   "steps") if base.get(k)}
+        gd.update({k: v for k, v in (s.get("guide") or {}).items() if v not in (None, "", [])})
+        return gd
+
+    def fl_keep_mine(self, s):
+        """The setup as a strat, kept in Money Makers › Mine. -> the strat."""
+        st = self.fl_strat_guide(s)
+        st["id"] = MM.slug("my-" + (st.get("name") or s["name"]))
+        st["author"] = st.get("author") or SETTINGS.get("wealth_account") or "me"
+        MM.save_mine([m for m in MM.mine() if m["id"] != st["id"]] + [MM.tidy(st)])
+        return st
+
+    def fl_show_in_mm(self, sid):
+        """After publishing: Money Makers on the strat (its items, regex and trade links)."""
+        try:
+            self.shell.open("money")
+        except Exception:
+            pass
+        try:
+            self.mm_page.pick("Strats", notify=False)
+            self.mm_show_page()
+            self.mm_show_mine(sid)
+        except Exception:
+            self.log_error("opening the strat in Money Makers")
 
     def fl_upload_fill(self, st, probs):
         """The strat still misses something the board needs -> Money Makers › Strats › Mine with it picked."""
@@ -1003,6 +1053,19 @@ class LedgerPage:
         cost = L.cost_per_run(ver)[0]
         if cost:
             st["est_cost"] = {"amount": round(cost, 3), "unit": "div"}
+        gd = s.get("guide") or {}                           # 2.78.0: the Publish step's answers win
+        for k in ("category", "type", "summary", "thoughts_per_click", "clicks_per_hour", "steps"):
+            if gd.get(k):
+                st[k] = gd[k]
+        tags = list(gd.get("tags") or st.get("tags") or [])
+        tags += [t for t in s.get("content") or [] if t not in tags]
+        if tags:
+            st["tags"] = [t for t in tags if t in MM.all_tags()]
+        if ver["atlas"].get("image"):
+            st["atlas_image"] = ver["atlas"]["image"]
+        if not st.get("patch"):                             # (the game version the guide pack is for)
+            from .campaign import pack
+            st["patch"] = pack().get("patch") or "?"
         st["updated"] = time.strftime("%Y-%m-%d")
         return st
 
@@ -1545,7 +1608,7 @@ class LedgerPage:
         win.title(f"Strat Tracker - {s['name']}")
         win.configure(bg=P1)
         win.transient(self.root)
-        W, H = 900, 600
+        W, H = 960, 640
         try:                                                 # 2.67.0: centered on the app, not the screen's corner
             rx, ry, rw, rh = self.root.winfo_rootx(), self.root.winfo_rooty(), self.root.winfo_width(), self.root.winfo_height()
             win.geometry(f"{W}x{H}+{rx + max(0, (rw - W) // 2)}+{ry + max(0, (rh - H) // 3)}")
@@ -1554,7 +1617,9 @@ class LedgerPage:
         self.fl_ed, self.fl_ed_s, self.fl_ed_new = win, s, bool(new)
         self.fl_ed_ver = _json.loads(_json.dumps(L.version(s)))           # edited as a copy; Save decides the version
         # 2.70.0: five short steps, the cost of one run always in sight at the right
-        st = self.fl_ed_steps = Steps(win, ("Name & strat", "Waystone", "Tablets & more", "Atlas", "Logging"),
+        # 2.78.0: Atlas & content (what it runs - tags - and a screenshot), and Publish (how people find it)
+        st = self.fl_ed_steps = Steps(win, ("Name & strat", "Waystone", "Tablets & more", "Atlas & content",
+                                            "Logging", "Publish"),
                                       {"bg": P1, "band": P2, "text": C["text"], "muted": C["muted"],
                                        "accent": C["accent"]}, on_change=self._fl_ed_step)
         st.bar.pack(fill="x")
@@ -1583,7 +1648,7 @@ class LedgerPage:
         self.fl_ed_cost_lbl.pack(fill="both", expand=True)
         st.body.pack(in_=main, side="left", fill="both", expand=True)
         st.body.lift(main)                                   # (made before main: keep it above main's background)
-        f1, f2, f3, f4, f5 = st.frames
+        f1, f2, f3, f4, f5, f6 = st.frames
 
         def head(f, title, hint):
             o, inner = chrome_section(f, title, hint, wrap=True)
@@ -1623,8 +1688,28 @@ class LedgerPage:
             sa = ScrollArea(g, bg=P2)
             sa.pack(fill="both", expand=True)
             self.fl_ed_cols[kind] = sa.inner
-        # ---- 4: atlas
-        a = head(f4, "Atlas", "The atlas trees this setup runs, with their points - and a link or notes.")
+        # ---- 4: atlas & content (2.78.0: what it runs, as tags; the atlas as a screenshot)
+        g = head(f4, "Atlas & content", "Tick what this setup runs - the same tags Money Makers filters by. Then "
+                                        "the atlas trees and their points, and a screenshot of your atlas.")
+        sa = ScrollArea(g, bg=P2)
+        sa.pack(fill="both", expand=True)
+        a = sa.inner
+        self.fl_ed_content = {}
+        have = set(s.get("content") or [])
+        for group, tags in MM.content_groups().items():
+            tk.Label(a, text=group.upper(), bg=P2, fg=C["steel"], font=("Segoe UI", 9, "bold"), anchor="w").pack(
+                fill="x", pady=(0, 2))
+            box = tk.Frame(a, bg=P2)
+            box.pack(fill="x", pady=(0, 8))
+            for i, t in enumerate(tags):
+                v = tk.BooleanVar(value=t in have)
+                ttk.Checkbutton(box, text=t, variable=v, style="Card.TCheckbutton").grid(
+                    row=i // 2, column=i % 2, sticky="w", padx=(0, 16), pady=1)
+                self.fl_ed_content[t] = v
+            for c in range(2):
+                box.columnconfigure(c, uniform="ct")
+        tk.Label(a, text="ATLAS TREES AND POINTS", bg=P2, fg=C["steel"], font=("Segoe UI", 9, "bold"),
+                 anchor="w").pack(fill="x", pady=(4, 2))
         self.fl_ed_trees = tk.Frame(a, bg=P2)
         self.fl_ed_trees.pack(fill="x", pady=(0, 4))
         add = tk.Frame(a, bg=P2)
@@ -1632,15 +1717,35 @@ class LedgerPage:
         self.fl_ed_tree_name = tk.StringVar(value=L.ATLAS_TREES[1])
         ttk.Combobox(add, textvariable=self.fl_ed_tree_name, values=list(L.ATLAS_TREES), width=18).pack(side="left")
         self.fl_ed_tree_pts = tk.StringVar(value="10")
-        ttk.Spinbox(add, from_=0, to=200, textvariable=self.fl_ed_tree_pts, width=4).pack(side="left", padx=4)
+        ttk.Spinbox(add, from_=0, to=400, textvariable=self.fl_ed_tree_pts, width=4).pack(side="left", padx=4)
         tk.Label(add, text="points", bg=P2, fg=C["muted"]).pack(side="left")
         ttk.Button(add, text="Add", command=self.fl_ed_add_tree, style="Quiet.TButton").pack(side="left", padx=(8, 0))
-        tk.Label(a, text="Atlas link or notes (masters, the order you take nodes …)", bg=P2, fg=C["muted"],
-                 font=("Segoe UI", 9), anchor="w").pack(fill="x", pady=(16, 2))
-        self.fl_ed_notes = tk.Text(a, height=5, bg=C["panel"], fg=C["text"], insertbackground=C["text"],
+        tk.Label(a, text="YOUR ATLAS", bg=P2, fg=C["steel"], font=("Segoe UI", 9, "bold"), anchor="w").pack(
+            fill="x", pady=(16, 2))
+        shot = tk.Frame(a, bg=P2)
+        shot.pack(fill="x")
+        self.fl_ed_shot = tk.Label(shot, text="No screenshot yet", bg=C["panel"], fg=C["muted"], width=28, height=6,
+                                   font=("Segoe UI", 9), highlightthickness=1, highlightbackground=C["line"])
+        self.fl_ed_shot.pack(side="left")
+        sb = tk.Frame(shot, bg=P2)
+        sb.pack(side="left", padx=(12, 0), anchor="n")
+        tk.Label(sb, text="Screenshot your atlas in game, then", bg=P2, fg=C["muted"], font=("Segoe UI", 9),
+                 anchor="w").pack(fill="x")
+        self.fl_ed_shot_btns = {}
+        for key, text, cmd, style in (("paste", "Paste screenshot (Ctrl+V)", self.fl_ed_shot_paste, "Primary.TButton"),
+                                      ("file", "Pick an image file…", self.fl_ed_shot_file, "TButton"),
+                                      ("clear", "Remove it", self.fl_ed_shot_clear, "Quiet.TButton")):
+            b = ttk.Button(sb, text=text, command=cmd, style=style)
+            b.pack(fill="x", pady=(4, 0))
+            self.fl_ed_shot_btns[key] = b
+        win.bind("<Control-v>", lambda e: self.fl_ed_shot_paste() if self.fl_ed_steps.cur == 3 else None, add="+")
+        tk.Label(a, text="Notes (masters, the order you take nodes …)", bg=P2, fg=C["muted"],
+                 font=("Segoe UI", 9), anchor="w").pack(fill="x", pady=(12, 2))
+        self.fl_ed_notes = tk.Text(a, height=4, bg=C["panel"], fg=C["text"], insertbackground=C["text"],
                                    relief="flat", font=("Segoe UI", 9), wrap="word")
         self.fl_ed_notes.pack(fill="x")
         self.fl_ed_notes.insert("1.0", self.fl_ed_ver["atlas"].get("notes", ""))
+        self.fl_ed_shot_paint()
         # ---- 5: logging
         g = head(f5, "Logging", "When the Strat Tracker asks for your loot, how runs are counted, and what else "
                                 "a run costs.")
@@ -1661,12 +1766,207 @@ class LedgerPage:
         ttk.Entry(xr, textvariable=self.fl_ed_extra, width=6).pack(side="left", padx=4)
         tk.Label(xr, text="div", bg=P2, fg=C["text"]).pack(side="left")
         self.fl_ed_extra.trace_add("write", lambda *a: self.fl_ed_cost())
+        self._fl_ed_publish_page(head(f6, "Publish", "How people find it in Money Makers. Asked before anything "
+                                                     "goes out - steps, loot and tips can be added after, in Mine."))
         win.bind("<Return>", lambda e: None if isinstance(e.widget, tk.Text) else self.fl_ed_forward())
         self.fl_ed_fill()
         st.go(0)
         if new:
             win.after(50, lambda: (self.fl_ed_name_entry.focus_set(), self.fl_ed_name_entry.select_range(0, "end")))
         return win
+
+    # ---------------- 2.78.0: the atlas screenshot
+    def fl_ed_shot_paint(self):
+        lbl = getattr(self, "fl_ed_shot", None)
+        if lbl is None:
+            return
+        from . import stratimg
+        ref = self.fl_ed_ver["atlas"].get("image")
+        img = self.strat_thumb(stratimg.path_of(ref), 220, 124) if ref else None
+        if img is not None:
+            lbl.config(image=img, text="", width=220, height=124)
+            lbl.image = img
+        else:
+            lbl.config(image="", text="No screenshot yet" if not ref else "The screenshot is missing", width=28,
+                       height=6)
+            lbl.image = None
+        self.fl_ed_shot_btns["clear"].pack_configure() if ref else self.fl_ed_shot_btns["clear"].pack_forget()
+
+    def strat_thumb(self, path, w, h):
+        """A picture file -> a Tk image that fits w x h (None without it, or without Pillow)."""
+        if not path:
+            return None
+        try:
+            from PIL import Image, ImageTk
+            im = Image.open(path)
+            im.thumbnail((w, h))
+            return ImageTk.PhotoImage(im, master=self.root)
+        except Exception:
+            return None
+
+    def fl_ed_shot_set(self, ref, how):
+        if not ref:
+            self._say("No picture on the clipboard - take a screenshot (Win+Shift+S, or Print Screen) and press "
+                      "Paste again." if how == "paste" else "That file isn't a picture the app can read.", 8)
+            return None
+        self.fl_ed_ver["atlas"]["image"] = ref
+        self.fl_ed_shot_paint()
+        return ref
+
+    def fl_ed_shot_paste(self, grab=None):
+        from . import stratimg
+        return self.fl_ed_shot_set(stratimg.from_clipboard(grab), "paste")
+
+    def fl_ed_shot_file(self, path=None):
+        from . import stratimg
+        path = path or filedialog.askopenfilename(parent=self.fl_ed, title="Your atlas screenshot",
+                                                  filetypes=[("Pictures", "*.png *.jpg *.jpeg *.bmp *.webp")])
+        return self.fl_ed_shot_set(stratimg.from_file(path), "file") if path else None
+
+    def fl_ed_shot_clear(self):
+        self.fl_ed_ver["atlas"].pop("image", None)
+        self.fl_ed_shot_paint()
+
+    # ---------------- 2.78.0: Publish - how people find it (asked before anything goes out)
+    def _fl_ed_publish_page(self, g):
+        P2 = C["panel2"]
+        s = self.fl_ed_s
+        base = next((x for x in MM.all_strats() if x["id"] == s.get("strat")), None) or {}
+        gd = dict(s.get("guide") or {})
+        for k in ("category", "type", "summary", "thoughts_per_click", "clicks_per_hour", "tags"):
+            if k not in gd and base.get(k):
+                gd[k] = base[k]
+        sa = ScrollArea(g, bg=P2)
+        sa.pack(fill="both", expand=True)
+        a = sa.inner
+        row = tk.Frame(a, bg=P2)
+        row.pack(fill="x", pady=(0, 8))
+        tk.Label(row, text="What it is", bg=P2, fg=C["muted"], width=14, anchor="w").pack(side="left")
+        self.fl_pub_cat = tk.StringVar(value=gd.get("category", ""))
+        self.fl_pub_type = tk.StringVar(value=gd.get("type", ""))
+        cb = ttk.Combobox(row, textvariable=self.fl_pub_cat, values=list(MM.CATEGORIES), state="readonly", width=12)
+        cb.pack(side="left")
+        tk.Label(row, text="›", bg=P2, fg=C["muted"]).pack(side="left", padx=4)
+        self.fl_pub_type_box = ttk.Combobox(row, textvariable=self.fl_pub_type, state="readonly", width=20,
+                                            values=list(MM.TAXONOMY.get(self.fl_pub_cat.get(), ())))
+        self.fl_pub_type_box.pack(side="left")
+
+        def cat_changed(_e=None):
+            types = list(MM.TAXONOMY.get(self.fl_pub_cat.get(), ()))
+            self.fl_pub_type_box.config(values=types)
+            if self.fl_pub_type.get() not in types:
+                self.fl_pub_type.set("")
+            self.fl_pub_check()
+        cb.bind("<<ComboboxSelected>>", cat_changed)
+        self.fl_pub_type_box.bind("<<ComboboxSelected>>", lambda e: self.fl_pub_check())
+        row = tk.Frame(a, bg=P2)
+        row.pack(fill="x", pady=(0, 8))
+        tk.Label(row, text="One line", bg=P2, fg=C["muted"], width=14, anchor="w").pack(side="left")
+        self.fl_pub_sum = tk.StringVar(value=gd.get("summary", ""))
+        ttk.Entry(row, textvariable=self.fl_pub_sum, width=52).pack(side="left", fill="x", expand=True)
+        self.fl_pub_sum.trace_add("write", lambda *a: self.fl_pub_check())
+        row = tk.Frame(a, bg=P2)
+        row.pack(fill="x", pady=(0, 8))
+        tk.Label(row, text="Thinking", bg=P2, fg=C["muted"], width=14, anchor="w").pack(side="left")
+        words = [w for w, _d in MM.THINKING.values()]
+        self.fl_pub_think = SegBar(row, words, value=MM.THINKING.get(gd.get("thoughts_per_click"), ("",))[0],
+                                   size=9, pad=(8, 4), command=lambda v: self.fl_pub_check())
+        self.fl_pub_think.pack(side="left")
+        row = tk.Frame(a, bg=P2)
+        row.pack(fill="x", pady=(0, 8))
+        tk.Label(row, text="Clicks per hour", bg=P2, fg=C["muted"], width=14, anchor="w").pack(side="left")
+        self.fl_pub_clicks = SegBar(row, list(MM.CLICKS), value=gd.get("clicks_per_hour", ""), size=9, pad=(8, 4),
+                                    command=lambda v: self.fl_pub_check())
+        self.fl_pub_clicks.pack(side="left")
+        grid = tk.Frame(a, bg=P2)
+        grid.pack(fill="x", pady=(4, 0))
+        self.fl_pub_tags = {}
+        have = set(gd.get("tags") or [])
+        for col, (group, tags) in enumerate(MM.TAG_GROUPS.items()):
+            f = tk.Frame(grid, bg=P2)
+            f.grid(row=0, column=col, sticky="nw", padx=(0, 12))
+            tk.Label(f, text=group.upper(), bg=P2, fg=C["steel"], font=("Segoe UI", 9, "bold"), anchor="w").grid(
+                row=0, column=0, columnspan=2, sticky="w")
+            per = 6                                          # (a long group - Also uses - in two columns)
+            for i, t in enumerate(tags):
+                v = tk.BooleanVar(value=t in have)
+                ttk.Checkbutton(f, text=t, variable=v, style="Card.TCheckbutton",
+                                command=self.fl_pub_check).grid(row=1 + i % per, column=i // per, sticky="w",
+                                                                padx=(0, 8))
+                self.fl_pub_tags[t] = v
+        tk.Label(a, text="STEPS - what you do, one per line", bg=P2, fg=C["steel"], font=("Segoe UI", 9, "bold"),
+                 anchor="w").pack(fill="x", pady=(8, 2))
+        self.fl_pub_steps = tk.Text(a, height=4, bg=C["panel"], fg=C["text"], insertbackground=C["text"],
+                                    relief="flat", font=("Segoe UI", 9), wrap="word")
+        self.fl_pub_steps.pack(fill="x")
+        self.fl_pub_steps.insert("1.0", "\n".join(gd.get("steps") or base.get("steps") or []))
+        self.fl_pub_steps.bind("<KeyRelease>", lambda e: self.fl_pub_check())
+        self.fl_pub_ready = tk.Label(a, text="", bg=P2, fg=C["text"], font=("Segoe UI", 9), anchor="w",
+                                     justify="left")
+        self.fl_pub_ready.pack(fill="x", pady=(8, 0))
+        btns = tk.Frame(a, bg=P2)
+        btns.pack(fill="x", pady=(8, 0))
+        self.fl_pub_btn = ttk.Button(btns, text="📤 Publish to Community", style="Primary.TButton",
+                                     command=self.fl_ed_publish)
+        self.fl_pub_btn.pack(side="left")
+        ttk.Button(btns, text="Keep it in Mine only", command=lambda: self.fl_ed_publish(post=False)).pack(
+            side="left", padx=(8, 0))
+        self.fl_pub_check()
+
+    def fl_pub_guide(self):
+        """What the Publish step holds -> the guide fields (setup["guide"])."""
+        words = {w: k for k, (w, _d) in MM.THINKING.items()}
+        return {"category": self.fl_pub_cat.get(), "type": self.fl_pub_type.get(),
+                "summary": self.fl_pub_sum.get().strip(), "thoughts_per_click": words.get(self.fl_pub_think.get()),
+                "clicks_per_hour": self.fl_pub_clicks.get() or None,
+                "tags": [t for t, v in self.fl_pub_tags.items() if v.get()],
+                "steps": [l.strip() for l in self.fl_pub_steps.get("1.0", "end-1c").splitlines() if l.strip()]}
+
+    def fl_pub_missing(self, gd=None):
+        gd = self.fl_pub_guide() if gd is None else gd
+        out = []
+        if not gd.get("category") or not gd.get("type"):
+            out.append("what it is")
+        if not gd.get("summary"):
+            out.append("one line")
+        if not gd.get("thoughts_per_click"):
+            out.append("Thinking")
+        if not gd.get("clicks_per_hour"):
+            out.append("Clicks per hour")
+        if not gd.get("steps"):
+            out.append("steps")
+        return out
+
+    def fl_pub_check(self):
+        lbl = getattr(self, "fl_pub_ready", None)
+        if lbl is None:
+            return
+        gd = self.fl_pub_guide()
+        miss = self.fl_pub_missing(gd)
+        content = [t for t, v in getattr(self, "fl_ed_content", {}).items() if v.get()]
+        lines = [("✓" if not {"what it is", "one line"} & set(miss) else "○") + "  What it is, one line",
+                 ("✓" if not {"Thinking", "Clicks per hour"} & set(miss) else "○") + "  Thinking, clicks",
+                 ("✓" if "steps" not in miss else "○") + "  Steps",
+                 f"{'✓' if gd['tags'] or content else '○'}  {len(gd['tags'])} tags, {len(content)} content (step 4)",
+                 f"{'✓' if self.fl_ed_ver['atlas'].get('image') else '○'}  Atlas screenshot (optional)"]
+        lbl.config(text="\n".join(lines) + ("" if not miss else "\n\nStill needed: " + ", ".join(miss)))
+        try:
+            self.fl_pub_btn.state(["disabled"] if miss else ["!disabled"])
+        except (AttributeError, tk.TclError):
+            pass
+
+    def fl_ed_publish(self, post=True):
+        """The Publish step's buttons: save the setup (with its guide), then post it - or keep it in Mine."""
+        if post and self.fl_pub_missing():
+            self._say("Still needed: " + ", ".join(self.fl_pub_missing()), 6)
+            return None
+        s = self.fl_ed_s
+        self.fl_ed_save()
+        if not post:
+            st = self.fl_keep_mine(s)
+            self._say(f"\"{st['name']}\" is kept in Money Makers › Mine.", 6)
+            return "mine"
+        return self.fl_upload()
 
     # 2.70.0: the steps
     def _fl_ed_step(self, i):
@@ -2085,6 +2385,8 @@ class LedgerPage:
         d, s = self.fl_data(), self.fl_ed_s
         ver = self.fl_ed_ver
         ver["atlas"]["notes"] = self.fl_ed_notes.get("1.0", "end-1c").strip()
+        s["content"] = [t for t, v in self.fl_ed_content.items() if v.get()]           # 2.78.0
+        s["guide"] = {k: v for k, v in self.fl_pub_guide().items() if v not in (None, "", [])}
         s["name"] = self.fl_ed_name.get().strip()[:60] or s["name"]
         s["strat"] = self.fl_ed_strats.get(self.fl_ed_strat.get())
         try:
