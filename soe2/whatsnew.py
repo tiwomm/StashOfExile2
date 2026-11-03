@@ -21,6 +21,9 @@ NEXT = [
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.78.2": [
+        "The Campaign Helper's line is as wide as the overlay's bar, lined up with it.",
+    ],
     "2.78.1": [
         "The \"Rank this map\" card shows the map's name (Rugosa, not MapRugosa), and the ranks you gave there now "
         "show in the Map library.",
