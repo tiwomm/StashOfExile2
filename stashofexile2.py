@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU GPL v3.0 (see LICENSE). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.73.2
+VERSION 2.73.3
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,6 +19,14 @@ VERSION 2.73.2
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.73.3
+       Map supply pokes (League Focus): focus.SETTINGS["focus"]["supplies"] rows {name, rule maps|minutes, every,
+       at_maps, at_secs, snooze}. log_event counts waystone maps (a new area+seed; a portal back into the same map
+       isn't one) and seconds in maps (enter -> leave, capped at 3 h). due() offers one "supply" poke for every row
+       that's up, only in town / hideout (never in a map), after price pokes and before the check-in; Refilled and
+       Skip count again from now, Snooze waits snooze_min. Its own switch (pokes["supplies"]). Game Plan › Map
+       supplies: the switch, rows with Refill every (N + maps / min in maps), Since refill, ↻ refilled, ✕, and an
+       add row with common supplies. Not Wealth (it doesn't track live).
   2.73.2
        Price checks fixes. add_item_text: an item read into another list (a stash tab's while Manual Add shows) is
        priced but not inserted into the visible tree. Engine: latest[(kind, rid)] = (newest seq, prio, copies);
@@ -1642,7 +1650,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.73.2"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.73.3"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 

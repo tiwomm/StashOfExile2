@@ -26,10 +26,12 @@ DEFAULTS = {
     "goals": [],                    # [{id, text, phase, done, trigger, target_div, created, snooze, stopped}]
     "stockpile": [],                # [{name, goal, under, paid}]
     "farms": [],                    # [{strat, name, until}]
+    "supplies": [],                 # 2.73.3: [{id, name, rule: maps|minutes, every, at_maps, at_secs, snooze}]
     "lock": {"on": False, "character": "", "build": "", "until": "I reach maps and have 10 div"},
     "pokes": {"per_hour": 2, "checkin_min": 45, "snooze_min": 60, "town_only": True, "session_only": True,
               "milestones": True, "prices": True, "quiet_on": False, "quiet": [23, 8], "tone": "Gentle",
-              "sound": True, "why": True, "quieter": True, "windows": False},
+              "sound": True, "why": True, "quieter": True, "windows": False,
+              "supplies": True},           # 2.73.3: map supply pokes (their own switch)
     "history": [],
 }
 
@@ -208,10 +210,73 @@ def line_text(worth=None):
     return g["text"], (p[0] / p[1] if p and p[1] else None)
 
 
+# ---------------------------------------------------------------- 2.73.3: map supplies
+# Things you use up in maps (wisdom scrolls, omens, a currency) and when to refill them: every N maps, or every N
+# minutes spent in maps. Both come from the game's log (a new waystone map = one map; time from entering a map to
+# leaving it). Not from Wealth: it doesn't track live.
+SUPPLY_RULES = (("maps", "maps"), ("minutes", "min in maps"))
+SUPPLY_PRESETS = ("Scroll of Wisdom", "Omen of Amelioration", "Exalted Orb", "Regal Orb", "Chaos Orb",
+                  "Orb of Alchemy", "Distilled Emotion", "Simulacrum Splinter")
+
+
+def add_supply(name, rule="maps", every=10):
+    st = state()
+    row = {"id": uuid.uuid4().hex[:10], "name": name.strip(), "rule": rule if rule in dict(SUPPLY_RULES) else "maps",
+           "every": max(1, int(every or 1)), "at_maps": st["maps"], "at_secs": st["map_secs"], "snooze": 0}
+    cfg()["supplies"].append(row)
+    save()
+    return row
+
+
+def supply(sid):
+    return next((r for r in cfg()["supplies"] if r["id"] == sid), None)
+
+
+def remove_supply(sid):
+    f = cfg()
+    f["supplies"] = [r for r in f["supplies"] if r["id"] != sid]
+    save()
+
+
+def set_supply(sid, rule=None, every=None):
+    r = supply(sid)
+    if r is not None:
+        if rule in dict(SUPPLY_RULES):
+            r["rule"] = rule
+        if every is not None:
+            r["every"] = max(1, int(every))
+        save()
+    return r
+
+
+def supply_used(row):
+    """-> (used so far, every) in the row's unit: maps run, or whole minutes in maps, since the last refill."""
+    st = state()
+    if row["rule"] == "minutes":
+        return int((st["map_secs"] - row.get("at_secs", 0)) // 60), row["every"]
+    return st["maps"] - row.get("at_maps", 0), row["every"]
+
+
+def refilled(row):
+    st = state()
+    row["at_maps"], row["at_secs"], row["snooze"] = st["maps"], st["map_secs"], 0
+
+
+def supplies_due(now=None):
+    now = now or time.time()
+    out = []
+    for r in cfg()["supplies"]:
+        used, every = supply_used(r)
+        if used >= every and (r.get("snooze") or 0) <= now:
+            out.append(r)
+    return out
+
+
 # ---------------------------------------------------------------- 2.73.1: pokes
 # What each poke is, in the order they win when several are due. "urgent" ones (milestones, the build-lock guard)
 # don't count toward the per-hour limit; every poke still waits for town / hideout when "Only in town" is on.
-KINDS = {"milestone": "urgent", "guard": "urgent", "price": "normal", "checkin": "normal", "nudge": "normal"}
+KINDS = {"milestone": "urgent", "guard": "urgent", "price": "normal", "supply": "normal", "checkin": "normal",
+         "nudge": "normal"}
 TONE_WORDS = {"Gentle": ("A nudge from your plan", "Still on plan?"),
               "Firm": ("Your plan says", "On plan? Be honest."),
               "Drill sergeant": ("Eyes on the plan, exile", "Report: on plan?")}
@@ -230,6 +295,10 @@ def state():
     st.setdefault("notoday_streak", 0)
     st.setdefault("played", 0.0)           # seconds of play since the last check-in
     st.setdefault("checkin_snooze", 0.0)
+    st.setdefault("maps", 0)               # 2.73.3: waystone maps the log has shown
+    st.setdefault("map_secs", 0.0)         # seconds spent in maps
+    st.setdefault("map_in", None)          # when the current map was entered
+    st.setdefault("map_seed", None)
     return st
 
 
@@ -243,6 +312,16 @@ def log_event(kind, data, area_kind=None, now=None):
     if not f["on"]:
         return None
     now = now or time.time()
+    if kind == "area":                                     # 2.73.3: count maps and time in maps (map supplies)
+        if st["map_in"] is not None:
+            st["map_secs"] += max(0.0, min(now - st["map_in"], 3 * 3600))
+            st["map_in"] = None
+        if area_kind == "map":
+            st["map_in"] = now
+            key = f"{data.get('area')}|{data.get('seed')}"
+            if key != st["map_seed"]:                      # back into the same map (a portal) isn't a new one
+                st["maps"] += 1
+                st["map_seed"] = key
     if kind == "area" and area_kind == "map" and not st["reached_maps"]:
         st["reached_maps"] = True
         moved = set_phase("maps")
@@ -250,6 +329,8 @@ def log_event(kind, data, area_kind=None, now=None):
             st["pending"].append({"kind": "milestone", "id": "maps", "at": now})
         save()
         return "milestone"
+    if kind == "area":
+        save()
     if kind == "level":
         who, lvl = data.get("who", ""), int(data.get("level") or 0)
         known = who in st["chars"]
@@ -308,6 +389,10 @@ def due(now=None, in_town=True, session=True, played=0.0, prices=None, have=None
                 st["price_day"][row["name"]] = today(now)
                 return {"kind": "price", "name": row["name"], "each": each, "have": h, "goal": row.get("goal"),
                         "under": row.get("under")}
+    if pk.get("supplies", True) and in_town:               # 2.73.3: always between maps, never in one
+        rows = supplies_due(now)
+        if rows:
+            return {"kind": "supply", "ids": [r["id"] for r in rows]}
     cm = int(pk.get("checkin_min") or 0)
     if cm and st["played"] >= cm * 60 and now >= st["checkin_snooze"] and current():
         st["played"] = 0.0
@@ -360,6 +445,16 @@ def answer(poke, what, now=None):
         g["stopped"] = True
     elif what == "unlock":
         f["lock"]["on"] = False
+    elif what in ("refilled", "skip") and poke["kind"] == "supply":   # 2.73.3: count again from now
+        for sid in poke.get("ids") or []:
+            r = supply(sid)
+            if r is not None:
+                refilled(r)
+    elif what == "snooze" and poke["kind"] == "supply":
+        for sid in poke.get("ids") or []:
+            r = supply(sid)
+            if r is not None:
+                r["snooze"] = now + int(f["pokes"].get("snooze_min") or 60) * 60
     elif what == "break":
         st["checkin_snooze"] = now + 30 * 60
     if what not in ("nottoday",):
@@ -399,6 +494,17 @@ def poke_text(poke):
             body += f"\nYou have {poke.get('have') if poke.get('have') is not None else '?'} of {poke['goal']}."
         return ("CHEAP NOW - YOUR STOCKPILE", body, "Why now: poe.ninja's price is under the one you set.",
                 [("exchange", "Open the exchange"), ("ok", "Snooze today")])
+    if k == "supply":
+        rows = [r for r in (supply(i) for i in poke.get("ids") or []) if r]
+        lines = []
+        for r in rows:
+            used, every = supply_used(r)
+            unit = "maps" if r["rule"] == "maps" else "min in maps"
+            lines.append(f"{r['name']} - {used} {unit} since you last refilled (you said every {every}).")
+        body = "Time to restock before the next map:\n" + "\n".join(lines or ["(removed)"])
+        return ("REFILL YOUR MAP SUPPLIES", body, "Why now: you're between maps and a refill rule you set is up.",
+                [("refilled", "Refilled"), ("snooze", f"Snooze {int(f['pokes'].get('snooze_min') or 60)} min"),
+                 ("skip", "Skip this time")])
     if k == "guard":
         lk = f["lock"]
         body = (f"The log shows a new level 1 character ({poke.get('who', '?')}).\nYour build lock says: finish "
