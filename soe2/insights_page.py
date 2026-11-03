@@ -48,7 +48,7 @@ class InsightsPage:
         self.ins_kind.pack(side="left", padx=16)
         ttk.Button(top, text="Refresh", command=self.refresh_insights).pack(side="right")
         tk.Label(body, text="The most valuable things your price checks have found so far - kept even after you clear "
-                            "the Price checks list. The more you price, the more this fills in. Nothing is searched "
+                            "the Bulk Pricing list. The more you price, the more this fills in. Nothing is searched "
                             "for this page.", bg=P1, fg=C["muted"], anchor="w", padx=12, font=("Segoe UI", 9),
                  justify="left", wraplength=760).pack(fill="x")
         # 2.73.2: the picked row's item in a panel at the side (like Price checks) - it was a pop-up at the mouse
@@ -61,7 +61,7 @@ class InsightsPage:
         dbar = tk.Frame(det, bg=P2)
         dbar.pack(side="bottom", fill="x")
         self.ins_det_btns = {
-            "open": ttk.Button(dbar, text="Show in Price checks", command=self.ins_open_record),
+            "open": ttk.Button(dbar, text="Show in Bulk Pricing", command=self.ins_open_record),
             "again": ttk.Button(dbar, text="Price it again", command=self.ins_price_again),
             "trade": ttk.Button(dbar, text="Open the search", command=self.ins_open_search),
             "remove": ttk.Button(dbar, text="✕ Remove from here", command=self.ins_remove_picked, style="Quiet.TButton")}
@@ -105,7 +105,7 @@ class InsightsPage:
                       ("status", "Status", 70, "w")))
         mine.bind("<Double-1>", lambda e: self.ins_open_record())
         self.list_register("insights", mine, delete=self.ins_forget)
-        mine.menu_actions = lambda sel: [("Show in Price checks", lambda: (self.ins_show("mine"), self.ins_open_record())),
+        mine.menu_actions = lambda sel: [("Show in Bulk Pricing", lambda: (self.ins_show("mine"), self.ins_open_record())),
                                          ("Price it again", lambda: (self.ins_show("mine"), self.ins_price_again())),
                                          ("✕ Remove from Market Insights", lambda: self.ins_forget(sel), bool(sel), "Del")]
         table(0, 1, "mods", "Mods worth the most", "What the Mod book learned: the typical asking price of listings "
@@ -255,7 +255,7 @@ class InsightsPage:
             mods = "\n".join("  " + m for m in e.get("mods") or [])
             txt = (f"{e['name']}  ({e['base']})  -  worth about {fmt_div(e['est'])}"
                    + (f", {e['conf']} confidence" if e.get("conf") and e["conf"] != "-" else "") + f"\nPriced {when}"
-                   + ("" if here else " · no longer in your Price checks list") + (f"\n{mods}" if mods else ""))
+                   + ("" if here else " · no longer in your Bulk Pricing list") + (f"\n{mods}" if mods else ""))
             self.ins_draw_card(self.ins_card, "mine", e)          # 2.73.2: the item, in the panel
             self.ins_det.config(text=txt.split("\n", 2)[1] if "\n" in txt else "", fg=C["muted"])
             (self.ins_det_btns["open"] if here else self.ins_det_btns["again"]).pack(fill="x")

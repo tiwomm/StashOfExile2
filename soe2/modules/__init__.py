@@ -63,6 +63,7 @@ class Module:
 
 def load(app):
     from .checks import PriceChecks
+    from .pricecheck import PriceCheck
     from .wealth import Wealth
     from .modbook import ModBook
     from .library import Library
@@ -76,5 +77,5 @@ def load(app):
     from .money import MoneyMakers
     from .maps import MapLibrary
     from .plan import GamePlan
-    return [cls(app) for cls in (PriceChecks, Wealth, ModBook, Library, Regex, Search, Tracker, Notes,
+    return [cls(app) for cls in (PriceCheck, PriceChecks, Wealth, ModBook, Library, Regex, Search, Tracker, Notes,
                                  Rates, Insights, MoneyMakers, MapLibrary, GamePlan, Settings)]

@@ -28,9 +28,11 @@ QUICKSTART = [
         "game itself, and every key does one thing.",
     ]),
     ("Price an item", [
-        "Hover an item in game and press Ctrl+Alt+C. It shows up in Price checks with what it's worth and what to "
-        "list it for.",
-        "It works best on tablets, jewels and waystones. Got a whole tab of them? Price checks > Add items from > "
+        "Hover an item in game and press Ctrl+C. Price Checks shows what it's worth, every filter to tweak, and the "
+        "trade site's listings beside it.",
+        "Pricing lots of items? Press Ctrl+Alt+C on each: they're listed in Bulk Pricing with what they're worth and "
+        "what to list them for.",
+        "It works best on tablets, jewels and waystones. Got a whole tab of them? Bulk Pricing > Add items from > "
         "Stash tab reads it in one go.",
     ]),
     ("Find your way around", [
