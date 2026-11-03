@@ -21,6 +21,10 @@ NEXT = [
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.83.1": [
+        "Price Checks' key is now Ctrl+D: hover an item in game and press it. Change it in Settings › Hotkeys. "
+        "The game's plain Ctrl+C no longer opens Price Checks.",
+    ],
     "2.83.0": [
         "New: Island Rumours. Open the world map in your hideout and each rumour on the Uncharted Waters card shows "
         "the island it leads to and your Map library rank for it. Rank the islands in the Map library.",

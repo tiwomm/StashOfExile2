@@ -1203,7 +1203,8 @@ class TrackerPage:
         tc = self.tracker_cfg()
         # 2.57.0 (feedback: every key in Settings › Hotkeys, nowhere else): the third field is the group the key
         # belongs to (a heading on the Hotkeys page); every key but Ctrl+Alt+C is set here and only here
-        rows = [("Price check the item under the mouse", "Ctrl+C", "Price Checks", None),
+        rows = [("Price check the item under the mouse (in game)", SETTINGS.get("pc_key", "Ctrl+D"), "Price Checks",
+                 "checks:pc_key"),
                 ("Add the item under the mouse to Bulk Pricing", "Ctrl+Alt+C", "Bulk Pricing", None),
                 ("One-key copy (experimental, in game)", SETTINGS.get("quick_copy_key", ""), "Bulk Pricing",
                  "checks:quick_copy_key"),

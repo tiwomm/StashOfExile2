@@ -127,7 +127,8 @@ DEFAULTS = {
     "min_results": 3,
     "tray": True,          # minimize to the system tray (needs pystray + pillow)
     "spread_warn": 20,     # warn when the cheapest and dearest listing are this many times apart (0 = off)
-    "pc_ctrl_c": True,     # 2.80.0: your Ctrl+C on an item in game opens it on Price Checks
+    "pc_ctrl_c": True,     # 2.80.0: your price check key on an item in game opens it on Price Checks
+    "pc_key": "Ctrl+D",    # 2.83.1 (feedback): the price check key (was the game's plain Ctrl+C)
     "pc_front": True,      # ...and brings the app to the front
     "pc_art": True,        # ...with the items' pictures from the trade site's image server
     "hotkey_only": True,   # only accept items copied while YOU press Ctrl+Alt+C (ignores other tools' copies)

@@ -1127,12 +1127,12 @@ class App(PriceCheckPage, WellSoulsPage, RumoursPage, ListKeys, AlertsPage, Abou
         self.hk_msg = tk.Label(row2, text="", bg=P2, fg=C["muted"], anchor="w", justify="left")
         self.hk_msg.pack(side="left", padx=8)
         self.fill_hotkeys()
-        row = section("Hotkeys", "Price Checks (Ctrl+C)", "Hover an item in game and press Ctrl+C: Price Checks shows "
-                                                          "it with the trade site's listings. Ctrl+Alt+C adds it to "
-                                                          "Bulk Pricing instead. The game does the copying - the app "
-                                                          "only reads what you copied.")
+        row = section("Hotkeys", "Price Checks", "Hover an item in game and press your price check key (Ctrl+D, set "
+                                                 "above): the app presses the game's own copy once and Price Checks "
+                                                 "shows the item with the trade site's listings. Ctrl+Alt+C adds it "
+                                                 "to Bulk Pricing instead.")
         self.pc_set_vars = {}
-        for k, label in (("pc_ctrl_c", "Ctrl+C on an item opens Price Checks"),
+        for k, label in (("pc_ctrl_c", "The price check key opens Price Checks"),
                          ("pc_front", "Bring the app to the front"), ("pc_art", "Show the items' pictures")):
             v = tk.BooleanVar(value=bool(SETTINGS.get(k, True)))
             self.pc_set_vars[k] = v
@@ -2640,7 +2640,7 @@ class App(PriceCheckPage, WellSoulsPage, RumoursPage, ListKeys, AlertsPage, Abou
                             self.last_clip = text
                             if self.wealth_takes(text):          # 2.0 beta 7: a copied stack, counted on Wealth
                                 self.wealth_clip(text)
-                            elif self.pc_wants(text):            # 2.80.0: your Ctrl+C on an item -> Price Checks
+                            elif self.pc_wants(text):            # 2.80.0: your price check key on an item -> Price Checks
                                 self.last_heard = time.time()
                                 self.pc_take(text)
                             elif self.gate_ok(text):
