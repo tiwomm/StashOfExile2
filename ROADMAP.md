@@ -4,7 +4,7 @@
 
 > **Who we build for - read second.** Path of Exile players are utilitarian: they love data and information, problem solving and creative thinking. So every feature shows its numbers *and how they were worked out*, lets you sort, filter, compare and export them (CSV), keeps power-user depth (keys, versions, raw data) one click away instead of hiding it, explains in plain words, and leaves the decision to the player. Pretty is welcome; vague is not.
 
-**Current version: 2.80.0**
+**Current version: 2.81.0**
 
 Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds features, 2.10.1 only fixes. Each step below is one release; we work through them top to bottom.
 
@@ -138,6 +138,7 @@ Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds f
 | 2.79.1 | Mageblood: stat options in the id, the same Legacy twice = Min 2; granted skills found without "Summon"; campaign line docked on the bar; the bar as wide as the XP bar, refit per resolution; update look hourly. |
 | 2.79.2 | Every mod under Stat filters can be ticked (left-out ones too); searches start at Instant Buyout, priced in Exalted Orb Equivalent. |
 | 2.80.0 | **Price Checks**: Ctrl+C on an item in game shows its card with every filter and the trade site's listings beside it (name band, properties, item level, requirements, mods with tiers, price, seller, when, picture; Recent 20). The old page is **Bulk Pricing** (Ctrl+Alt+C, stash tabs), a child of Price Checks with Market Insights and Under the hood. |
+| 2.81.0 | **Desecration Helper**: at The Well of Souls (from Client.txt, with a notice) each revealed option shows its tier for the item type, Abyss lords' mods their range; the item type from the options and the item's picture. |
 
 ## ▶ Next up
 
@@ -147,11 +148,11 @@ Order (decided 2.34.0): the Polish basics first, so new features are built on th
 
 | Version | Plan |
 |---|---|
-| 2.81.0 | **Global leaderboards** (opt-in, through Community data sharing): one Leaderboards page under Overlay (Overlay ↳ Leaderboards) with tabs for Campaign (total and per act, from the Campaign Helper's splits), Maps (fastest clear per map), Bosses & pinnacles, and Trials (Sekhemas, Chaos, Simulacrum); each with Mine / Everyone, this league / all time, filters (league, class). The session page's own leaderboard links to it. Times come from the game's log, so they're marked self-reported: the board drops impossible times, and reports / an admin can hide entries. A board name only (no account), as on Money Makers. |
-| 2.82.0 | **Public stash order test tool.** |
-| 2.83.0 | **Polish 4 - Responsive:** windows reflow when narrow (toolbars wrap, side panels drop under the list, sensible minimum sizes), sharp on every monitor (per-monitor DPI), a text size setting (100-150 %). |
-| 2.84.0 | **Polish 5 - Hover, focus, micro-interactions:** the same hover and pressed look on every button, row, icon and tab; a visible keyboard focus ring everywhere; short (120-180 ms) fades for popups and toasts, never on lists; a "Reduce motion" setting that turns them off. |
-| 2.85.0 | **Polish 6 - Visual hierarchy:** the suggestions below, window by window, with before / after screenshots in each PR. |
+| 2.82.0 | **Global leaderboards** (opt-in, through Community data sharing): one Leaderboards page under Overlay (Overlay ↳ Leaderboards) with tabs for Campaign (total and per act, from the Campaign Helper's splits), Maps (fastest clear per map), Bosses & pinnacles, and Trials (Sekhemas, Chaos, Simulacrum); each with Mine / Everyone, this league / all time, filters (league, class). The session page's own leaderboard links to it. Times come from the game's log, so they're marked self-reported: the board drops impossible times, and reports / an admin can hide entries. A board name only (no account), as on Money Makers. |
+| 2.83.0 | **Public stash order test tool.** |
+| 2.84.0 | **Polish 4 - Responsive:** windows reflow when narrow (toolbars wrap, side panels drop under the list, sensible minimum sizes), sharp on every monitor (per-monitor DPI), a text size setting (100-150 %). |
+| 2.85.0 | **Polish 5 - Hover, focus, micro-interactions:** the same hover and pressed look on every button, row, icon and tab; a visible keyboard focus ring everywhere; short (120-180 ms) fades for popups and toasts, never on lists; a "Reduce motion" setting that turns them off. |
+| 2.86.0 | **Polish 6 - Visual hierarchy:** the suggestions below, window by window, with before / after screenshots in each PR. |
 | Last | **Linux build** (Hyprland / Wayland first) - the groundwork is in place (session_linux_handover.txt). |
 | Very end | **Kind words** (a hidden, opt-in easter egg): short affirmations in a quick centered box over the game, like PoE's loading-screen tips (e.g. on zone loads, at most every N minutes, fading after a few seconds). Found only by digging through the menus. I keep the rotation myself with little upkeep and no spoilers (the raw lines shouldn't be easy to read); how I add lines is still to decide - a scrambled file in the repo plus an Actions form, the board server, or lines built into each release. A starter template of lines. Extra polish. |
 

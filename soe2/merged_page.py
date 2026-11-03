@@ -22,7 +22,8 @@ HUD = ("xpbar",)                 # 2.65.0: fitted to the game's own bottom bar, 
 # the orbs' panels are anchored to the left and right edges, the XP bar runs between them). (x0, x1, bottom, h)
 #   x0 / x1 >= 0: from the left edge, < 0: from the right edge; bottom: up from the bottom edge.
 HUD_SPOTS = {"xpbar": [(0.531, -0.531, 0.0205, 0.056)]}   # 2.79.1: as wide as the XP bar (measured at 1440p), over it   # 2.67.2: two rows (switches on top); 2.74.0: between 2.73.4 and 2.73.5
-SHORT = {"breach": "Brch", "delirium": "Deli", "ritual": "Ritl", "remnant": "Remn", "focus": "Focus", "campaign": "Camp"}
+SHORT = {"breach": "Brch", "delirium": "Deli", "ritual": "Ritl", "remnant": "Remn", "focus": "Focus", "campaign": "Camp",
+         "desecrate": "Dsc"}
 
 
 def hud_k(game_h):
@@ -191,6 +192,7 @@ class MergedOverlay:
         b.setdefault("calc", True)                       # 2.74.0: Calc ▾ (the calculator over the game)
         b.setdefault("campaign", True)                   # 2.77.0: the Campaign switch, and Vendor ▾ in town
         b.setdefault("vendor", True)
+        b.setdefault("desecrate", True)                  # 2.81.0: the Desecration switch, at The Well of Souls
         return b
 
     def bar_chips(self):
@@ -203,6 +205,8 @@ class MergedOverlay:
             run = CP.char()
             if run.get("act") is not None and not run.get("done"):
                 chips.append("campaign")
+        if self.bar_cfg().get("desecrate") and getattr(self, "ws_here", False):    # 2.81.0: only at the Well
+            chips.append("desecrate")
         return chips
 
     def notes_on_bar(self):
