@@ -124,12 +124,16 @@ def posts(kind="strat", sort="top", **filters):
     return call("GET", "/posts", params)
 
 
-def post(kind, data):
-    return call("POST", "/posts", body={"kind": kind, "data": data})
+def post(kind, data, based_on=None):
+    body = {"kind": kind, "data": data}
+    if based_on:
+        body["based_on"] = int(based_on)                 # 2.85.0: a copy of another post credits it
+    return call("POST", "/posts", body=body)
 
 
-def update(pid, data):
-    return call("PUT", f"/posts/{pid}", body={"data": data})
+def update(pid, data, note=""):
+    """Your own post. -> (True, {"post", "pending"?}): an Official post's change waits for reviewers (pending)."""
+    return call("PUT", f"/posts/{pid}", body={"data": data, "note": note})
 
 
 def delete(pid):
@@ -155,3 +159,48 @@ def ban(user_id, banned=True):
 def official():
     """Posts an admin promoted - they join the Official list."""
     return call("GET", "/official")
+
+
+# ---------------------------------------------------------------- 2.85.0: versions, suggestions, reviewers
+def me():
+    return _keep_user(call("GET", "/me"))
+
+
+def suggest(pid, data, note):
+    """Suggest an edit to someone else's post: the author accepts or declines it."""
+    return call("POST", f"/posts/{pid}/suggest", body={"data": data, "note": note})
+
+
+def revisions(pid):
+    """A post's History (its author and reviewers see suggested / waiting versions too)."""
+    return call("GET", f"/posts/{pid}/revisions")
+
+
+def inbox():
+    """Suggestions waiting on your posts, and what became of yours."""
+    return call("GET", "/me/inbox")
+
+
+def rev_action(rid, action, why=""):
+    """accept / decline (your post's suggestion), rollback (an old version of your post), withdraw (your own)."""
+    return call("POST", f"/revisions/{rid}", body={"action": action, "why": why})
+
+
+def review_queue():
+    return call("GET", "/review")
+
+
+def review_rev(rid, vote):
+    return call("POST", f"/revisions/{rid}/review", body={"vote": vote})
+
+
+def review_post(pid, vote):
+    return call("POST", f"/posts/{pid}/review", body={"vote": vote})
+
+
+def set_reviewer(on=True):
+    return _keep_user(call("POST", "/auth/reviewer", body={"on": bool(on)}))
+
+
+def admin_reviewer(user_id, on):
+    return call("POST", f"/users/{user_id}/reviewer", body={"on": bool(on)})

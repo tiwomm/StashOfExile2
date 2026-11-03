@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU GPL v3.0 (see LICENSE). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.84.0
+VERSION 2.85.0
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,6 +19,28 @@ VERSION 2.84.0
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.85.0
+       Community board protections (feedback: "only allow author + admin to make edits", "Suggest Edits -> change
+       things, publish to community / moderation", "opt-in community handled ... protections against data
+       poisoning"; picked: reviewers opt in once earned, the author's OK is enough except on Official posts).
+       board/src/index.js: revisions (every version kept: History, roll back), POST /posts/<id>/suggest (author
+       accepts / declines), Official changes "pending" until 2 reviewers (or an admin) approve, suggestions to posts
+       whose author is away 30 days go to reviewers too, GET /review + votes (never on your own), reports from
+       accounts under 7 days don't count and never auto-hide an Official post, unique names, a rename once every 7
+       days, daily limits (edits, suggestions, reports, votes, reviews, admin-key tries), field bounds (money, items,
+       ledger, text, sources, dates), a screenshot must be the poster's own, based_on (a copy credits the original).
+       The Worker adds its new columns / tables itself (migrate()).
+       App: boardmod_page.py - the community name asked once at start-up (feedback: "prompt a user once at startup
+       for their chosen username ... permanent ... only be changed every 7 days"), Suggest an edit (the editor in
+       suggest mode + a note), History, Inbox, Review queue, Become a reviewer; Copy to Mine drops the original's
+       numbers and screenshot and credits it (mm_meta), re-posting updates the post (no duplicates).
+       Money Makers / Strat Tracker accuracy (an audit of every field): negative profits and ex / chaos amounts keep
+       their sign and unit everywhere (money_parse / money_edit - they failed or became div), a cost range no longer
+       crashes the editor, every source link is kept (only the first was), the author's numbers read in words (not
+       "cost per rund"), Community posts that don't follow the layout aren't shown, profit sorts in divines, the By
+       column sorts by author, a setup with no runs no longer publishes the followed strat's numbers as yours,
+       Community and Official strats can be tracked and costed, editing a log's runs scales its cost, one label
+       ("Thoughts per click") everywhere, "Loot ÷ cost" (was "Return on cost").
   2.84.0
        Price Checks ↳ Favorites (feedback: "a favorites (bookmark) tracker that you can paste a trade link into ...
        'Add to favorites' next to 'Open on trade site' ... reorganize, give a name, edit/delete/etc, fully context
@@ -1904,7 +1926,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.84.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.85.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 

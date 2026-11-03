@@ -188,13 +188,20 @@ def validate(s):
     if src is not None and (not isinstance(src, list) or not all(isinstance(x, dict) and x.get("url") for x in src)):
         out.append("sources must be a list of {\"title\", \"url\"}")
     it = s.get("items")                       # 2.46.0: what the strat runs, with the mods that matter (cost check)
-    if it is not None and (not isinstance(it, list) or not all(isinstance(x, dict) and x.get("base") for x in it)):
+    def _item_ok(x):                          # 2.85.0: the same checks as the board (a bad one broke the view)
+        return (isinstance(x, dict) and isinstance(x.get("base"), str) and x["base"]
+                and all(x.get(k) is None or (isinstance(x[k], int) and not isinstance(x[k], bool) and 1 <= x[k] <= lim)
+                        for k, lim in (("count", 1000), ("lasts", 100)))
+                and (x.get("key_mods") is None or (isinstance(x["key_mods"], list)
+                                                   and all(isinstance(m, str) for m in x["key_mods"]))))
+    if it is not None and (not isinstance(it, list) or not all(_item_ok(x) for x in it)):
         out.append("items must be a list of {\"kind\", \"base\", \"count\", \"lasts\", \"key_mods\"}")
     img = s.get("atlas_image")                # 2.78.0: a screenshot of the atlas (l: on this PC, b: on the board)
     if img is not None and not (isinstance(img, str) and re.fullmatch(r"(l:[A-Za-z0-9._-]{1,80}|b:\d{1,12})", img)):
         out.append("atlas_image must be \"b:<board image id>\" (or \"l:<file>\" on your PC)")
     lg = s.get("ledger")
-    if lg is not None and (not isinstance(lg, dict) or not all(isinstance(v, (int, float)) for v in lg.values())):
+    if lg is not None and (not isinstance(lg, dict) or not all(isinstance(v, (int, float)) and not isinstance(v, bool)
+                                                                and k in LEDGER_FIELDS for k, v in lg.items())):
         out.append("ledger must be numbers: " + ", ".join(LEDGER_FIELDS))
     unknown = set(s) - set(ORDER) - {"origin"}
     if unknown:
@@ -399,12 +406,87 @@ TXT_FIELDS = (("name", "Name"), ("id", "ID (empty = made from the name)"), ("aut
 _LABEL2KEY = {re.sub(r"\s*\(.*\)$", "", lab).lower(): k for k, lab in TXT_FIELDS}
 
 
+_NUM = r"-?\d+(?:\.\d+)?"
+_RANGE = re.compile(rf"^({_NUM})(?:(?:-|to|–)({_NUM}))?$")
+
+
 def _num_range(text):
-    t = str(text).replace(" ", "").replace(",", ".").lower().replace("div", "")
+    """"5-10", "-3.2", "-3 - -1", "5 to 10" -> (low, high); "" -> None. 2.85.0: negative numbers work (a losing
+    setup's profit) - "-3.2" used to fail."""
+    t = str(text).replace(" ", "").replace(",", ".").lower()
+    for u in UNITS + ("divine", "divines", "exalted", "exalts", "chaos"):
+        t = t.replace(u, "") if t.endswith(u) else t
+    t = t.replace("/h", "").replace("/run", "")
     if not t:
         return None
-    lo, _, hi = t.partition("-")
-    return float(lo), float(hi or lo)
+    m = _RANGE.match(t)
+    if not m:
+        raise ValueError(text)
+    lo, hi = float(m.group(1)), float(m.group(2) if m.group(2) is not None else m.group(1))
+    return (lo, hi) if lo <= hi else (hi, lo)
+
+
+def _unit_of(text, default="div"):
+    t = str(text).lower()
+    for word, u in (("chaos", "chaos"), ("ex", "ex"), ("div", "div")):
+        if re.search(rf"\d\s*{word}|\b{word}", t):
+            return u
+    return default
+
+
+LEDGER_WORDS = {"runs": "runs", "minutes": "minutes", "cost_per_run_div": "div cost / run", "loot_per_run_div": "div loot / run",
+                "profit_per_run_div": "div profit / run", "div_per_hour": "div / hour"}
+
+
+def ledger_text(lg):
+    """2.85.0: the author's Strat Tracker numbers in words (they read "cost per rund")."""
+    out = []
+    for k, w in LEDGER_WORDS.items():
+        v = lg.get(k) if isinstance(lg, dict) else None
+        if isinstance(v, (int, float)):
+            out.append(f"{v:g} {w}")
+    return ", ".join(out)
+
+
+def div_value(d):
+    """A cost / profit -> divines (its middle for a range; ex and chaos at today's rates), or None."""
+    if not isinstance(d, dict):
+        return None
+    nums = [d.get(k) for k in ("amount", "low", "high") if isinstance(d.get(k), (int, float))]
+    if not nums:
+        return None
+    v = d["amount"] if isinstance(d.get("amount"), (int, float)) else sum(n for n in nums) / len(nums)
+    unit = d.get("unit", "div")
+    if unit == "div":
+        return v
+    try:
+        from .rates import RATES
+        per = RATES.value({"ex": "exalted", "chaos": "chaos"}.get(unit, unit))     # (no fetch: the rates in hand)
+    except Exception:
+        per = None
+    if per is None:
+        per = {"ex": 1 / 100, "chaos": 1 / 200}.get(unit, 1)      # (rough, until the rates are in)
+    return v * per
+
+
+def money_parse(text, single=False):
+    """2.85.0: what you typed for a cost / profit -> the layout's object with its unit kept ("50 ex" stays ex - it
+    used to become 50 div). single: one number becomes {"amount"} (a cost)."""
+    rng = _num_range(text)
+    if rng is None:
+        return None
+    unit = _unit_of(text)
+    if single and rng[0] == rng[1]:
+        return {"amount": rng[0], "unit": unit}
+    return {"low": rng[0], "high": rng[1], "unit": unit}
+
+
+def money_edit(d):
+    """The layout's object -> what the editor / text / CSV show ("5-10 ex", "0.5 div"); "" for nothing."""
+    if not isinstance(d, dict):
+        return ""
+    t = money_text(d)
+    return "" if t == "?" else t
 
 
 def to_text(s=None):
@@ -448,10 +530,8 @@ def to_text(s=None):
         else:
             if key == "waystone_tiers":
                 v = "" if not v else f"{v['min']}" if v["min"] == v["max"] else f"{v['min']}-{v['max']}"
-            elif key == "est_cost":
-                v = "" if not v else f"{v.get('amount', ''):g}"
-            elif key == "est_profit":
-                v = "" if not v else money_text(v).replace(" div", "")
+            elif key in ("est_cost", "est_profit"):
+                v = money_edit(v)
             elif key == "updated" and not v:
                 v = date.today().isoformat()
             out.append(f"{label}: {'' if v is None else v}")
@@ -508,15 +588,9 @@ def from_text(text):
                 s[key] = {"min": int(lo), "max": int(hi)}
             except (TypeError, ValueError):
                 s[key] = val
-        elif key == "est_cost":
+        elif key in ("est_cost", "est_profit"):
             try:
-                s[key] = {"amount": _num_range(val)[0], "unit": "div"}
-            except (TypeError, ValueError):
-                s[key] = val
-        elif key == "est_profit":
-            try:
-                lo, hi = _num_range(val)
-                s[key] = {"low": lo, "high": hi, "unit": "div"}
+                s[key] = money_parse(val, single=key == "est_cost")
             except (TypeError, ValueError):
                 s[key] = val
         elif key in LISTS or key == "sources":
@@ -747,8 +821,8 @@ _CSV_STRAT = (("name", "Name - needed"), ("id", "lower-case-with-dashes; empty =
               ("summary", "one line - needed"), ("category", " | ".join(CATEGORIES)),
               ("type", "a type of the category (strats/README.md)"),
               ("thinking", " | ".join(w for w, _d in THINKING.values())), ("clicks_per_hour", " | ".join(CLICKS)),
-              ("waystone_tiers", "e.g. 14-16"), ("est_cost_div", "divines a run"),
-              ("est_profit_div", "divines an hour, e.g. 5-10"), ("regex", "a stash search"))
+              ("waystone_tiers", "e.g. 14-16"), ("est_cost_div", "a run, e.g. 2 div or 50 ex"),
+              ("est_profit_div", "an hour, e.g. 5-10 div"), ("regex", "a stash search"))
 _CSV_LISTS = ("requirements", "tablets", "waystones", "atlas", "craft_steps", "setup", "steps", "loot", "tips", "risks")
 _ITEM_FIELDS = ("kind", "base", "name", "count", "lasts", "key_mod")
 
@@ -770,11 +844,9 @@ def to_csv(s=None):
             wt = s.get("waystone_tiers")
             v = "" if not isinstance(wt, dict) else str(wt["min"]) if wt["min"] == wt["max"] else f"{wt['min']}-{wt['max']}"
         elif key == "est_cost_div":
-            ec = s.get("est_cost")
-            v = "" if not isinstance(ec, dict) else f"{ec.get('amount', ''):g}"
+            v = money_edit(s.get("est_cost"))
         elif key == "est_profit_div":
-            ep = s.get("est_profit")
-            v = "" if not isinstance(ep, dict) else money_text(ep).replace(" div", "")
+            v = money_edit(s.get("est_profit"))
         elif key == "updated":
             v = s.get("updated") or date.today().isoformat()
         else:
@@ -828,17 +900,12 @@ def from_csv(text):
                     s[field] = {"min": int(lo), "max": int(hi)}
                 except (TypeError, ValueError):
                     s[field] = val
-            elif field == "est_cost_div":
+            elif field in ("est_cost_div", "est_profit_div"):
+                key2 = field[:-4]
                 try:
-                    s["est_cost"] = {"amount": _num_range(val)[0], "unit": "div"}
+                    s[key2] = money_parse(val, single=key2 == "est_cost")
                 except (TypeError, ValueError):
-                    s["est_cost"] = val
-            elif field == "est_profit_div":
-                try:
-                    lo, hi = _num_range(val)
-                    s["est_profit"] = {"low": lo, "high": hi, "unit": "div"}
-                except (TypeError, ValueError):
-                    s["est_profit"] = val
+                    s[key2] = val
             elif field in ("name", "id", "author", "updated", "patch", "summary", "category", "type", "regex"):
                 s[field] = val
         elif sec == "tag":
