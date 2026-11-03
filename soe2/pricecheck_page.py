@@ -384,7 +384,8 @@ class PriceCheckPage:
             except Exception:
                 self._pc_art_cache[url] = None
                 return None
-        if url not in self._pc_art_wait:
+        failed = getattr(self, "_pc_art_failed", {})
+        if url not in self._pc_art_wait and time.time() - failed.get(url, 0) > 600:   # a failed one: again in 10 min
             self._pc_art_wait.add(url)
             threading.Thread(target=self._pc_art_get, args=(url, path), daemon=True).start()
             self.root.after(500, self._pc_art_poll)
@@ -412,6 +413,9 @@ class PriceCheckPage:
             return
         self._pc_art_done = set()
         self._pc_art_wait -= done
+        got = {u for u in done if os.path.exists(self._pc_art_path(u))}
+        self._pc_art_failed = {**getattr(self, "_pc_art_failed", {}), **{u: time.time() for u in done - got}}
+        done = got
         rec = self.records.get(self.pc_rid)
         if rec is not None and any(getattr(c, "_art_url", None) in done for c in getattr(self, "pc_cards", [])):
             self.pc_draw_list(rec)
