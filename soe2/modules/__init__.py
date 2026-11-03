@@ -79,5 +79,5 @@ def load(app):
     from .plan import GamePlan
     from .ovsettings import OverlaySettings
     from .favorites import Favorites
-    return [cls(app) for cls in (PriceCheck, PriceChecks, Favorites, Wealth, ModBook, Library, Regex, Search, Tracker, Notes,
-                                 Rates, Insights, MoneyMakers, OverlaySettings, MapLibrary, GamePlan, Settings)]
+    return [cls(app) for cls in (PriceCheck, PriceChecks, Wealth, ModBook, Library, Regex, Search, Tracker, Notes,
+                                 Rates, Insights, Favorites, MoneyMakers, OverlaySettings, MapLibrary, GamePlan, Settings)]
