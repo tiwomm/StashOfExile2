@@ -1116,7 +1116,7 @@ class Shell:
         saved = self.cfg["windows"]
         opened = [k for k, v in saved.items() if v.get("open") and k in self.windows and self.visible(self.modules[k])]
         if not opened:
-            opened = ["checks"] if "checks" in self.windows else list(self.windows)[:1]
+            opened = ["pricecheck"] if "pricecheck" in self.windows else list(self.windows)[:1]
         order = sorted(opened, key=lambda k: saved.get(k, {}).get("z", 0))
         if PAGES:                                   # 2.62.0: the page you were on last time
             page = self.cfg.get("page")
@@ -1148,7 +1148,7 @@ class Shell:
     def default_geo(self, win):
         dw, dh = max(800, self.desk.winfo_width()), max(500, self.desk.winfo_height())
         n = list(self.windows).index(win.key)
-        if win.key == "checks":
+        if win.key in ("checks", "pricecheck"):
             return [16, 12, dw - 40, dh - 30]
         w, h = (min(1000, dw - 60), min(640, dh - 40)) if win.utility is False else (min(700, dw - 80), min(740, dh - 30))
         return [30 + 26 * (n % 6), 20 + 22 * (n % 6), w, h]
@@ -1264,7 +1264,7 @@ class Shell:
                 self.focus(nxt)
             elif PAGES:                                           # 2.62.0: the page you were on before comes back
                 back = next((k for k in reversed(order) if k != key and k in self.windows
-                             and self.visible(self.modules[k])), "checks" if key != "checks" else None)
+                             and self.visible(self.modules[k])), "pricecheck" if key != "pricecheck" else None)
                 if back:
                     self.open(back, save=False)
         self.refresh_taskbar()

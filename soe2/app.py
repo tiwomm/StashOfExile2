@@ -1159,7 +1159,7 @@ class App(PriceCheckPage, ListKeys, AlertsPage, AboutPage, TabReaderPage, Search
                                                     "work on their own whether they're shown or not - learning, "
                                                     "community data sharing and Regex's ratings carry on.")
         self.adv_var = tk.BooleanVar(value=self.shell.advanced_on())
-        cb = ttk.Checkbutton(row, text="Show advanced tools - Bulk Pricing ↳ Under the hood ↳ Mod book",
+        cb = ttk.Checkbutton(row, text="Show advanced tools - Price Checks ↳ Under the hood ↳ Mod book",
                              variable=self.adv_var, command=self.advanced_switch, style="Card.TCheckbutton")
         cb.pack(side="left")
         self.adv_switch = cb

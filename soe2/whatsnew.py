@@ -25,7 +25,8 @@ NOTES = {
         "New: Price Checks. Hover an item in game and press Ctrl+C - it opens with every filter on the left and the "
         "trade site's listings on the right (mods with tiers, price, seller, when, the item's picture). Recent keeps "
         "your last 20.",
-        "The old Price checks page is now Bulk Pricing: Ctrl+Alt+C still adds items there.",
+        "The old Price checks page is now Bulk Pricing, under Price Checks with Market Insights: Ctrl+Alt+C still "
+        "adds items there.",
         "Settings › Hotkeys › Price Checks: turn Ctrl+C off, stop the app coming to the front, or hide pictures.",
     ],
     "2.79.2": [

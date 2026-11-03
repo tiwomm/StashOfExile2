@@ -29,7 +29,8 @@ VERSION HISTORY
        "Showing X of Y", Open on trade site. Recent: the last 20 items. Its searches go first in line. The
        listings are the ones the price search already fetched (no extra requests). Settings › Hotkeys › Price
        Checks: Ctrl+C on an item opens Price Checks, Bring the app to the front, Show the items' pictures.
-       The old Price checks page is now Bulk Pricing: Ctrl+Alt+C (and stash tabs) add items there, as before.
+       The old Price checks page is now Bulk Pricing: Ctrl+Alt+C (and stash tabs) add items there, as before. Price
+       Checks is the parent: Bulk Pricing, Market Insights and Under the hood are its children (feedback).
   2.79.2
        Stat filters: every mod can be ticked (feedback: "nothing is clickable under stat filters"). A tick on a mod the
        price check had left out (filler, low tier) removed the item's own setting instead of keeping it, so nothing
