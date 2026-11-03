@@ -241,6 +241,20 @@ def mod_lines(x):
     return [(l, None) for l in str(x).split("\n") if l.strip()]
 
 
+RAW_LISTINGS = {}             # 2.80.0: listing id -> the trade site's own entry (item + listing), for Price Checks' cards
+RAW_MAX = 400
+
+
+def keep_raw(e):
+    """2.80.0: remember a fetched listing as the trade site sent it (no extra request: Price Checks shows these)."""
+    i = (e or {}).get("id")
+    if not i:
+        return
+    RAW_LISTINGS[i] = e
+    while len(RAW_LISTINGS) > RAW_MAX:
+        RAW_LISTINGS.pop(next(iter(RAW_LISTINGS)))
+
+
 def fetch_rich(qid, ids, max_hours=None):
     """One fetch call for up to 10 listings -> [{id, price, ts, mods}] cheapest first.
     mods = [(normalised text, [numbers])] straight from the listing, or None if the listing didn't say.
@@ -253,6 +267,7 @@ def fetch_rich(qid, ids, max_hours=None):
             fetched = call("GET", f"{BASE}/fetch/{','.join(ids)}", params={"query": qid})
             cutoff = time.time() - max_hours * 3600 if max_hours else None
             for e in fetched["result"]:
+                keep_raw(e)
                 lst = (e or {}).get("listing") or {}
                 p = lst.get("price")
                 if not p:

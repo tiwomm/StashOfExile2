@@ -127,6 +127,9 @@ DEFAULTS = {
     "min_results": 3,
     "tray": True,          # minimize to the system tray (needs pystray + pillow)
     "spread_warn": 20,     # warn when the cheapest and dearest listing are this many times apart (0 = off)
+    "pc_ctrl_c": True,     # 2.80.0: your Ctrl+C on an item in game opens it on Price Checks
+    "pc_front": True,      # ...and brings the app to the front
+    "pc_art": True,        # ...with the items' pictures from the trade site's image server
     "hotkey_only": True,   # only accept items copied while YOU press Ctrl+Alt+C (ignores other tools' copies)
     "memory_shortcut": False,   # True: skip searching when 5+ identical searches in the last memory_hours agree (see 1.21)
     "memory_hours": 24,
@@ -289,4 +292,5 @@ def backup_modbook():
 
 backup_modbook()
 
-PAGE_CHECKS = "Price checks"        # the price-check page (1.40: was "Items")
+PAGE_CHECKS = "Bulk Pricing"        # the list page (1.40: was "Items"; 2.80.0: was "Price checks")
+PAGE_PC = "Price Checks"            # 2.80.0: one item at a time, with the trade site's listings

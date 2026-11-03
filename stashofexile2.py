@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU GPL v3.0 (see LICENSE). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.79.2
+VERSION 2.80.0
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,6 +19,17 @@ VERSION 2.79.2
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.80.0
+       Price Checks (feedback: "copy the price checker / item panel into a new panel called Price Checks ... a
+       display of the items on the trade site"). Hover an item in game and press Ctrl+C: the app reads the copy
+       (the game does the copying) and shows it on Price Checks - the item card with every filter on the left
+       (Search searches again), and on the right the trade site's listings behind the price as cards: name band,
+       properties, item level, requirements, each mod with its tier (P1 / S1) at the left edge, the price, the
+       seller, when it was listed and the item's picture (from the trade site's image server, cached),
+       "Showing X of Y", Open on trade site. Recent: the last 20 items. Its searches go first in line. The
+       listings are the ones the price search already fetched (no extra requests). Settings › Hotkeys › Price
+       Checks: Ctrl+C on an item opens Price Checks, Bring the app to the front, Show the items' pictures.
+       The old Price checks page is now Bulk Pricing: Ctrl+Alt+C (and stash tabs) add items there, as before.
   2.79.2
        Stat filters: every mod can be ticked (feedback: "nothing is clickable under stat filters"). A tick on a mod the
        price check had left out (filler, low tier) removed the item's own setting instead of keeping it, so nothing
@@ -1830,7 +1841,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.79.2"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.80.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 

@@ -381,7 +381,7 @@ class WealthPage:
                         "it under Wealth ↳ Stash tabs. Sync searches your account's listings at that price and reads "
                         "them. Sync only runs when you press it, and it shares the trade site's limits with price "
                         "checks (price checks always go first)."),
-        ("Prices", "Currency, fragments and other stackables come from poe.ninja. Rares are priced like Price checks "
+        ("Prices", "Currency, fragments and other stackables come from poe.ninja. Rares are priced like Bulk Pricing "
                    "(slowly, in the background). Double-click an item's price to set your own."),
         ("Total and Where it is", "Total is everything added up; the chart shows it over time (Daily = the change "
                                   "per day). Where it is splits it by kind (currency, fragments, gear ...)."),
@@ -980,7 +980,7 @@ class WealthPage:
             return
         got = self.wealth_pc_tab()
         if got:
-            btn.config(text=f"Use my Price checks tab ({got[0]:,} {dict(WEALTH_CURRENCIES).get(got[1], got[1])})")
+            btn.config(text=f"Use my Bulk Pricing tab ({got[0]:,} {dict(WEALTH_CURRENCIES).get(got[1], got[1])})")
             if not btn.winfo_ismapped():
                 btn.pack(side="left", padx=(16, 0))
         elif btn.winfo_ismapped():
@@ -989,7 +989,7 @@ class WealthPage:
     def wealth_add_pc_tab(self):
         got = self.wealth_pc_tab()
         if got and self._wealth_add(got[0], got[1], "Price checks tab"):
-            self._w_tell("Added the tab you read in Price checks. Press Sync to count what's on it.", "ok")
+            self._w_tell("Added the tab you read in Bulk Pricing. Press Sync to count what's on it.", "ok")
         self.wealth_pc_refresh()
 
     def _w_tell(self, text, kind="error"):

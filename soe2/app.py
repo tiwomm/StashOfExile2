@@ -73,6 +73,7 @@ from .merged_page import MergedOverlay        # 2.55.0: one overlay window for t
 from .utilities_page import UtilitiesPage
 from .tracker_page import TrackerPage
 from .search_page import SearchPage
+from .pricecheck_page import PriceCheckPage    # 2.80.0: Price Checks (one item, the trade site's listings)
 from . import gamedata
 from . import modules
 from .shell import Shell
@@ -87,7 +88,7 @@ MISC_ROWS = (("corrupted", "Corrupted"), ("fractured", "Fractured"), ("desecrate
              ("sanctified", "Sanctified"), ("mirrored", "Mirrored"), ("unidentified", "Unidentified"))
 
 
-class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, ExchangePage, WealthPage, LibraryPage, RegexPage, UtilitiesPage, TrackerPage, SearchPage, CalcOverlay, InsightsPage, MoneyMakersPage, MapLibraryPage, RemnantPage, LedgerPage, FeedbackPage, FeedPage, MergedOverlay, GamePlanPage, FocusPokes, OverlayHelp, OverlayParts, CampaignUI):
+class App(PriceCheckPage, ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, ExchangePage, WealthPage, LibraryPage, RegexPage, UtilitiesPage, TrackerPage, SearchPage, CalcOverlay, InsightsPage, MoneyMakersPage, MapLibraryPage, RemnantPage, LedgerPage, FeedbackPage, FeedPage, MergedOverlay, GamePlanPage, FocusPokes, OverlayHelp, OverlayParts, CampaignUI):
     COLS = [("added", "#", 46, "e"), ("name", "Item", 220, "w"), ("type", "Type", 110, "w"), ("mark", "Status", 90, "center"),
             ("est", "Est. value", 110, "e"), ("conf", "Confidence", 95, "center"), ("listings", "Listings", 70, "e"), ("priced", "Priced at", 130, "w"),
             ("match", "How it was priced", 300, "w"), ("vmods", "Valuable mods", 100, "center"),
@@ -819,7 +820,7 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         combo(row, self.status_var, [l for l, _ in STATUS_OPTIONS], self.on_listing_rules, 22).pack(side="left")
         tk.Label(row, text="Listed within", **lab).pack(side="left", padx=(16, 8))
         combo(row, self.age_var, [a[0] for a in AGE_OPTIONS], self.on_listing_rules, 10).pack(side="left")
-        row = section("Price checking", "Prices", "The currency every price is shown in (Price checks, Wealth, Market "
+        row = section("Price checking", "Prices", "The currency every price is shown in (Price Checks, Bulk Pricing, Wealth, Market "
                                                   "Insights, the timer).")
         tk.Label(row, text="Prices in", **lab).pack(side="left", padx=(0, 8))
         combo(row, self.unit_var, [t for _k, t in PRICE_UNITS], self.on_price_unit, 22).pack(side="left")
@@ -959,7 +960,7 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
 
         self.build_chat_window(pages["Chat commands"][1])        # 2.27.0: was its own Utilities window
         # ======== General
-        row = section("General", "League and search pace", "The league is used everywhere: Price checks, Wealth and "
+        row = section("General", "League and search pace", "The league is used everywhere: Price Checks, Bulk Pricing, Wealth and "
                                                            "the session tracker. Pace = how fast the trade site is "
                                                            "searched (slower = fewer waits from its limits).")
         self.set_anchors["league"] = row.master
@@ -1124,10 +1125,22 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         self.hk_msg = tk.Label(row2, text="", bg=P2, fg=C["muted"], anchor="w", justify="left")
         self.hk_msg.pack(side="left", padx=8)
         self.fill_hotkeys()
-        row = section("Hotkeys", "Other ways of copying", "Price checks only adds items you copy with your own "
+        row = section("Hotkeys", "Price Checks (Ctrl+C)", "Hover an item in game and press Ctrl+C: Price Checks shows "
+                                                          "it with the trade site's listings. Ctrl+Alt+C adds it to "
+                                                          "Bulk Pricing instead. The game does the copying - the app "
+                                                          "only reads what you copied.")
+        self.pc_set_vars = {}
+        for k, label in (("pc_ctrl_c", "Ctrl+C on an item opens Price Checks"),
+                         ("pc_front", "Bring the app to the front"), ("pc_art", "Show the items' pictures")):
+            v = tk.BooleanVar(value=bool(SETTINGS.get(k, True)))
+            self.pc_set_vars[k] = v
+            ttk.Checkbutton(row, text=label, variable=v, style="Card.TCheckbutton",
+                            command=lambda k=k, v=v: (SETTINGS.__setitem__(k, bool(v.get())), save_json("settings.json", SETTINGS))
+                            ).pack(side="left", padx=(0, 16))
+        row = section("Hotkeys", "Other ways of copying", "Bulk Pricing only adds items you copy with your own "
                                                           "Ctrl+Alt+C, so other tools' copy keys don't "
                                                           "fill your list. Tick this to also add items copied any other "
-                                                          "way, e.g. a plain Ctrl+C.")
+                                                          "way.")
         self.any_copy_var = tk.BooleanVar(value=not SETTINGS.get("hotkey_only", True))
         ttk.Checkbutton(row, text="Also add items copied another way", variable=self.any_copy_var,
                         command=self.on_any_copy).pack(side="left")
@@ -1146,7 +1159,7 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
                                                     "work on their own whether they're shown or not - learning, "
                                                     "community data sharing and Regex's ratings carry on.")
         self.adv_var = tk.BooleanVar(value=self.shell.advanced_on())
-        cb = ttk.Checkbutton(row, text="Show advanced tools - Price checks ↳ Under the hood ↳ Mod book",
+        cb = ttk.Checkbutton(row, text="Show advanced tools - Bulk Pricing ↳ Under the hood ↳ Mod book",
                              variable=self.adv_var, command=self.advanced_switch, style="Card.TCheckbutton")
         cb.pack(side="left")
         self.adv_switch = cb
@@ -1736,7 +1749,7 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         """2.8.0: the hint for an empty list follows "Add items from"."""
         return self.EMPTY_TEXT_TAB if SETTINGS.get("pctab", {}).get("mode") == "Stash tab" else self.EMPTY_TEXT
 
-    SCOPE_TEXT = ("Price checks prices tablets, jewels, waystones and gear. Gear (2.72.0) is searched on the mods "
+    SCOPE_TEXT = ("Bulk Pricing prices tablets, jewels, waystones and gear. Gear (2.72.0) is searched on the mods "
                   "buyers pay for - filler mods and low tiers are left out - by its totals (defences, DPS, total "
                   "resistances), uniques by name and their well-rolled mods, crafting bases by item level. When the "
                   "listings found don't back a price up, it says Price manually: then check it on the trade site "
@@ -2625,6 +2638,9 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
                             self.last_clip = text
                             if self.wealth_takes(text):          # 2.0 beta 7: a copied stack, counted on Wealth
                                 self.wealth_clip(text)
+                            elif self.pc_wants(text):            # 2.80.0: your Ctrl+C on an item -> Price Checks
+                                self.last_heard = time.time()
+                                self.pc_take(text)
                             elif self.gate_ok(text):
                                 self.last_heard = time.time()
                                 self.accept_clip(text)
@@ -3474,7 +3490,8 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
             self.batch_ids.add(rid)
             self.update_row(rid)
             self.refresh_detail_if_selected(rid)
-            self.engine.add(2 if rec["resolved"] else 1, "price" if rec["resolved"] else "resolve", rid)
+            pc = rec.get("src") == "pc"                          # 2.80.0: Price Checks go first
+            self.engine.add(0 if pc else (2 if rec["resolved"] else 1), "price" if rec["resolved"] else "resolve", rid)
 
     def reprice_all(self):
         self.reprice([rid for rid, r in self.records.items() if r.get("mark", "new") == "new" and self.in_list(r)])
@@ -4051,6 +4068,11 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
             self.show_detail(self.records.get(int(sel[0])))
 
     def refresh_detail_if_selected(self, rid):
+        rec = self.records.get(rid)
+        if rec is not None and rec.get("src") == "pc":          # 2.80.0: an item on Price Checks
+            if rid == getattr(self, "pc_rid", None):
+                self.pc_show(rec)
+            return
         sel = self.tree.selection()
         if len(sel) == 1 and sel[0] == str(rid):
             self.show_detail(self.records[rid])
@@ -4432,6 +4454,8 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         """2.79.0 (feedback: "a clean view"): the item card holds every filter - properties,
         requirements, miscellaneous, each mod, pseudo totals, trade filters - then Search again / Open on trade site,
         and one ▸ Advanced section at the bottom (listing status, if you list it, how it's priced, rolls, raw text)."""
+        if rec is not None and rec.get("src") == "pc":          # 2.80.0: the card on Price Checks
+            return self.pc_show(rec)
         for w in self.detail.winfo_children():
             w.destroy()
         self.shown_rec = rec

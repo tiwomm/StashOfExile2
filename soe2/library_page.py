@@ -27,7 +27,7 @@ class LibraryPage:
         self.lib_info = tk.Label(bar, text="", anchor="w", padx=16, **lab)
         self.lib_info.pack(side="left", fill="x", expand=True)
 
-        purpose = tk.Label(tab, text="Part of Price checks, for the curious: how the price checker reads an item. Paste a "
+        purpose = tk.Label(tab, text="Part of Bulk Pricing, for the curious: how the price checker reads an item. Paste a "
                            "copied item on the right to see its "
                            "base, which bases it is compared with, and which trade-site search each mod turns into. On the "
                            "left, every base by class and group, and every mod the trade site can search for. You never "
@@ -93,7 +93,7 @@ class LibraryPage:
         self.lib_in.pack(fill="x")
         prow = tk.Frame(right, bg=P2)                       # 1.41: the price check result for the pasted item
         prow.pack(fill="x", pady=(8, 0))
-        self.lib_open_btn = ttk.Button(prow, text="Show in Price checks", command=self.lib_open_check)
+        self.lib_open_btn = ttk.Button(prow, text="Show in Bulk Pricing", command=self.lib_open_check)
         self.lib_price_lbl = tk.Label(prow, text="", bg=P2, fg=C["muted"], anchor="w", justify="left", wraplength=420,
                                       font=("Segoe UI", 10, "bold"))
         self.lib_price_lbl.pack(side="left", fill="x", expand=True)
@@ -280,7 +280,7 @@ class LibraryPage:
         elif st == "error":
             txt, col = "Couldn't price it: " + (rec.get("label") or ""), C["red"]
         else:
-            txt, col = ("Pricing… " if st == "pricing" else "Waiting in line… ") + "(it is on the Price checks page too)", C["muted"]
+            txt, col = ("Pricing… " if st == "pricing" else "Waiting in line… ") + "(it is on the Bulk Pricing page too)", C["muted"]
         self.lib_price_lbl.config(text=txt, fg=col)
         self.lib_open_btn.pack(side="right", padx=(8, 0))
 

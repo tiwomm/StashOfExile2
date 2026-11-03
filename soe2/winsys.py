@@ -147,6 +147,7 @@ class KeyWatch:
 
     def __init__(self):
         self.combo_time, self.active, self.err = 0.0, False, None
+        self.copy_time = 0.0        # 2.80.0: YOUR plain Ctrl+C (no Alt) - Price Checks; Ctrl+Alt+C stays Bulk Pricing
         self.esc_since = 0.0        # 2.24.0: when Esc went down (0 = it's up)
         self.esc_last = 0.0         # 2.25.0: the last fresh Esc press, and when two came quickly (a double tap)
         self.esc_double = 0.0
@@ -188,6 +189,9 @@ class KeyWatch:
     def combo_recent(self, secs=1.5):
         return time.time() - self.combo_time < secs
 
+    def copy_recent(self, secs=1.5):
+        return time.time() - self.copy_time < secs
+
     def _run(self):
         try:
             import ctypes
@@ -222,6 +226,8 @@ class KeyWatch:
                                 self.shift = down or (self.shift and not up)
                             elif vk == 0x43 and down and self.ctrl and self.alt:
                                 self.combo_time = time.time()
+                            elif vk == 0x43 and down and self.ctrl and not self.shift:
+                                self.copy_time = time.time()
                             if vk == 0x1B:                                   # Esc: never swallowed, only timed
                                 self.note_esc(down, up)
                             if up and vk in self._swallowed:            # the release of a key we acted on

@@ -1178,10 +1178,11 @@ class TrackerPage:
         tc = self.tracker_cfg()
         # 2.57.0 (feedback: every key in Settings › Hotkeys, nowhere else): the third field is the group the key
         # belongs to (a heading on the Hotkeys page); every key but Ctrl+Alt+C is set here and only here
-        rows = [("Add the item under the mouse to Price checks", "Ctrl+Alt+C", "Price checks", None),
-                ("One-key copy (experimental, in game)", SETTINGS.get("quick_copy_key", ""), "Price checks",
+        rows = [("Price check the item under the mouse", "Ctrl+C", "Price Checks", None),
+                ("Add the item under the mouse to Bulk Pricing", "Ctrl+Alt+C", "Bulk Pricing", None),
+                ("One-key copy (experimental, in game)", SETTINGS.get("quick_copy_key", ""), "Bulk Pricing",
                  "checks:quick_copy_key"),
-                ("Open poe2db's modifier list in your browser", SETTINGS.get("poe2db_key", ""), "Price checks",
+                ("Open poe2db's modifier list in your browser", SETTINGS.get("poe2db_key", ""), "Bulk Pricing",
                  "checks:poe2db_key"),
                 ("Copy your stash search (in game)", SETTINGS.get("regex_key", ""), "Regex", "checks:regex_key"),
                 ("Session timer: pause / resume (or ⏸ / ▶ on the overlay)", tc.get("key_pause", ""), "Overlays",
