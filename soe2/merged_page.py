@@ -269,10 +269,9 @@ class MergedOverlay:
         return w
 
     def click_through_on(self):
-        """2.74.0 (Settings › Appearance › Overlay settings): a locked overlay lets clicks through to the game -
-        unlock it to use its switches. On by default."""
-        cfg = self.tracker_cfg()
-        return bool(cfg.get("click_through", True)) and bool(cfg.get("mlocked"))
+        """Settings › Appearance › Overlay settings › Click-through: clicks go through the overlay's bar to the game.
+        2.74.3 (feedback: "an isolated toggle that isn't tied to being locked"): its own switch, off by default."""
+        return bool(self.tracker_cfg().get("click_through", False))
 
     def overlay_click_through(self):
         """The overlay's bar windows (not Notes or the calculator - you type in those)."""
@@ -521,6 +520,65 @@ class MergedOverlay:
         bb = cv.bbox("mg_calc")
         return (bb[0] if bb else x) - 12
 
+    # 2.74.3 (feedback: "a small pause play toggle for the session tracker directly on the overlay")
+    def play_glyph(self):
+        s = getattr(self, "tk_session", None)
+        running = s is not None and s.ended is None and s.paused_at is None
+        return "⏸" if running else "▶"
+
+    def _mg_play(self, cv, P, x, y, anchor="w", size=12):
+        """The session timer's ⏸ / ▶: pause, resume - or start, when it isn't tracking. Drawn as shapes (a font's
+        ⏸ isn't there on every PC), in a small round button. -> its width."""
+        d = self._hf(size) + 6                              # the button's size
+        x0 = x - d // 2 if anchor == "center" else x
+        y0 = y - d // 2
+        cv.create_oval(x0, y0, x0 + d, y0 + d, fill=P.get("cell_bg", P["bg"]), outline=P.get("line", P["muted"]),
+                       tags=("mg", "mg_play"))
+        self._play_spots = [sp for sp in getattr(self, "_play_spots", []) if sp[0] is not cv or sp[1:3] != (x0, y0)]
+        self._play_spots.append((cv, x0, y0, d, P.get("head", P["text"])))
+        self._play_draw(cv, x0, y0, d, P.get("head", P["text"]))
+        cv.tag_bind("mg_play", "<Button-1>", lambda e: self.tracker_play_click())
+        cv.tag_bind("mg_play", "<Enter>", lambda e: cv.configure(cursor="hand2"))
+        cv.tag_bind("mg_play", "<Leave>", lambda e: cv.configure(cursor=""))
+        return d
+
+    def _play_draw(self, cv, x0, y0, d, col):
+        tag = f"mg_play_g{x0}_{y0}"
+        cv.delete(tag)
+        c, r = (x0 + d / 2, y0 + d / 2), d * 0.24
+        if self.play_glyph() == "⏸":                      # two bars
+            w = max(2, d * 0.13)
+            for dx in (-r * 0.55, r * 0.55):
+                cv.create_rectangle(c[0] + dx - w / 2, c[1] - r, c[0] + dx + w / 2, c[1] + r, fill=col, outline="",
+                                    tags=("mg", "mg_play", tag))
+        else:                                              # a triangle, a little right of center
+            cv.create_polygon(c[0] - r * 0.7, c[1] - r, c[0] - r * 0.7, c[1] + r, c[0] + r, c[1], fill=col,
+                              outline="", tags=("mg", "mg_play", tag))
+        cv.itemconfigure(tag, state="disabled")            # (the button underneath takes the click)
+
+    def tracker_play_click(self):
+        s = getattr(self, "tk_session", None)
+        if s is None or s.ended is not None:
+            self.tracker_start()
+        else:
+            self.tracker_pause_toggle()
+        self.play_refresh()
+
+    def play_refresh(self):
+        g = self.play_glyph()
+        if g == getattr(self, "_play_last", None) and getattr(self, "_play_drawn", 0) == len(getattr(self, "_play_spots", [])):
+            return
+        self._play_last, live = g, []
+        for cv, x0, y0, d, col in getattr(self, "_play_spots", []):
+            try:
+                if cv.winfo_exists():
+                    self._play_draw(cv, x0, y0, d, col)
+                    live.append((cv, x0, y0, d, col))
+            except tk.TclError:
+                pass
+        self._play_spots = live
+        self._play_drawn = len(live)
+
     def bar_buttons_on(self):
         return self.notes_on_bar() or self.calc_on_bar()
 
@@ -598,8 +656,11 @@ class MergedOverlay:
             grids.append((gx0, y, gx1, y + rows * rh, rows, 2 if len(cells) > 1 else 1))
             for i, (key, icon) in enumerate(cells):
                 x0, y0 = gx0 + (i % 2) * colw, y + (i // 2) * rh
-                cv.create_text(x0 + int(16 * k), y0 + rh // 2, text=icon, fill=P["icon"],
-                               font=("Segoe UI Symbol", self._hf(13)), tags=("mg",))
+                if key == "session":                        # 2.74.3: the ⏸ / ▶ button in the timer's place
+                    self._mg_play(cv, P, x0 + int(16 * k), y0 + rh // 2, anchor="center", size=13)
+                else:
+                    cv.create_text(x0 + int(16 * k), y0 + rh // 2, text=icon, fill=P["icon"],
+                                   font=("Segoe UI Symbol", self._hf(13)), tags=("mg",))
                 if key == "session":                        # 2.69.2: PAUSED under the time, not after it
                     t = self._mg_text(cv, P, x0 + int(32 * k), y0 + rh // 2 - int(3 * k), key,
                                       (P["font"], self._hf(15), "bold"), fill=P["big"], cls=_Time)
@@ -844,10 +905,16 @@ class MergedOverlay:
                 (self._hf(60) if self.calc_on_bar() else 0)
             short = sum(self._hud_cell_w(cv, P, k, False) + gap for k in self.bar_chips()) > room
             total = sum(self._hud_cell_w(cv, P, k, short) + gap for k in self.bar_chips()) - gap
+            bleft = rgt
+            if self.bar_buttons_on():                        # Notes ▾ / Calc ▾ first; the switches keep clear of them
+                bleft = self._mg_bar_buttons(w, cv, P, rgt, top_mid, anchor="e")
+            span = min(rgt - lft, 2 * (bleft - (lft + rgt) // 2) - 16) if bleft < rgt else rgt - lft
             x0 = lft + max(0, ((rgt - lft) - total) // 2)
+            if total > span:                                 # (centered doesn't fit: as far left as needed)
+                x0 = max(lft, bleft - 16 - total)
+            elif x0 + total > bleft - 16:
+                x0 = max(lft, bleft - 16 - total)
             self._hud_cells(cv, P, x0, top_mid - ch // 2, top_mid + ch // 2, short=short)
-            if self.bar_buttons_on():
-                self._mg_bar_buttons(w, cv, P, rgt, top_mid, anchor="e")
             ry = int(H * 0.535)                              # a thin rule between the rows, fading at the ends
             n = 32
             seg = (rgt - lft) / n
@@ -878,6 +945,7 @@ class MergedOverlay:
         ln = cfg["lines"]                                    # 2.70.1: each part has its switch (Options)
         if want["timer"]:
             if ln.get("session", True):
+                x += self._mg_play(cv, P, x, mid, anchor="w", size=12) + 8      # 2.74.3: ⏸ / ▶ before the time
                 t = self._mg_text(cv, P, x, mid, "session", (P["font"], self._hf(13), "bold"), fill=P["big"], cls=_Time)
                 pf = (P["font"], self._hf(7), "bold")          # 2.69.2: a small PAUSED tag after the time, room kept
                 t.tag = (cv.create_text(x, mid, text="", anchor="w", fill=P["muted"], font=pf, tags=("mg",)), "right")

@@ -21,6 +21,12 @@ NEXT = [
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.74.3": [
+        "The session timer has a ⏸ / ▶ button on the overlay, and the Pause key on your keyboard pauses and resumes "
+        "it. The Ctrl+Alt start / stop and pause keys are gone - they could get in the way of the game.",
+        "Click-through (Settings › Appearance › Overlay settings) is its own switch now, off to start with - the "
+        "lock only stops the overlay moving.",
+    ],
     "2.74.2": [
         "A new version now shows in the sidebar, above Toolkit and Settings - click it to see what's new and update.",
         "Settings › Advanced › Report a bug opens the same Report a bug as the bottom bar.",

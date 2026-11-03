@@ -18,12 +18,12 @@ from .tracker import fmt_time, Session, Sessions
 
 DEFAULTS = {"overlay": True, "locked": False, "x": 60, "y": 260, "w": 230, "h": 190, "opacity": 225,
             "lines": {"session": True, "map": True, "maps": True, "avg": True, "where": True},   # 2.70.1: where   # 2.54.0: no profit (Strat Tracker has it)
-            "key_toggle": "", "key_pause": "", "ask_count": True, "log_path": "",
+            "key_pause": "", "ask_count": True, "log_path": "",
             "character": "", "character_guess": "", "alerts_bar": True, "autostart": False,
             "clock": True,
             "merged": True, "layout": "xpbar"}   # 2.39.0 clock; 2.55.0: one overlay window; 2.74.0: Game bar
-DEFAULT_KEYS = {"key_toggle": "Ctrl+Alt+S", "key_pause": "Ctrl+Alt+P",
-                "key_overlay": "F6"}           # 2.59.0: F6 shows / hides the whole overlay       # 2.10.0: set once, change them in Options
+DEFAULT_KEYS = {"key_pause": "Pause",            # 2.74.3: the keyboard's Pause key (was Ctrl+Alt+P; start / stop's
+                "key_overlay": "F6"}             # Ctrl+Alt+S is gone - Ctrl+Alt keys got in the way of game input)           # 2.59.0: F6 shows / hides the whole overlay       # 2.10.0: set once, change them in Options
 # 2.54.0: the Session timer times your play; money lives in one place, Money Makers › Strat Tracker.
 # Profit (Wealth at Stop minus at Start) is gone from here: its tiles, overlay line, options and Stop count.
 LINE_NAMES = [("session", "Session timer"), ("map", "This map's time"), ("maps", "Maps done"), ("avg", "Average map"),
@@ -62,6 +62,11 @@ class TrackerPage:
             for k, v in DEFAULT_KEYS.items():
                 if not cfg.get(k):
                     cfg[k] = v
+        if not cfg.get("keys_2743"):                 # 2.74.3: no start / stop key; pause on the Pause key
+            cfg["keys_2743"] = True
+            cfg.pop("key_toggle", None)
+            if cfg.get("key_pause") in (None, "", "Ctrl+Alt+P"):
+                cfg["key_pause"] = "Pause"
         return cfg
 
     def tracker_save(self):
@@ -463,7 +468,7 @@ class TrackerPage:
         bx2o, box2 = chrome_section(po, "Hotkeys")                             # 2.69.0
         bx2o.pack(fill="x", pady=(8, 0))
         # 2.57.0: keys are set in Settings › Hotkeys only - here they're shown, with the way there
-        self.tk_key_vars = {k: tk.StringVar(value=cfg.get(k, "")) for k in ("key_toggle", "key_pause")}
+        self.tk_key_vars = {k: tk.StringVar(value=cfg.get(k, "")) for k in ("key_pause",)}
         self.tk_key_msg = tk.Label(box2, text="", bg=P2, fg=C["text"], font=("Segoe UI", 9), anchor="w", justify="left")
         self.tk_key_msg.grid(row=1, column=0, columnspan=3, sticky="w")
         ttk.Button(box2, text="Change in Settings › Hotkeys", style="Quiet.TButton",
@@ -554,8 +559,8 @@ class TrackerPage:
         cfg = self.tracker_cfg()
         if getattr(self, "tk_key_msg", None) is not None:
             self.tk_key_msg.config(text=f"Show / hide the overlay: {key_label(cfg.get('key_overlay')) or 'none'}     "
-                                        f"Start / stop: {key_label(cfg.get('key_toggle')) or 'none'}     "
-                                        f"Pause / resume: {key_label(cfg.get('key_pause')) or 'none'}")
+                                        f"Pause / resume the timer: {key_label(cfg.get('key_pause')) or 'none'} "
+                                        f"(or ⏸ / ▶ on the overlay)")
 
     def tracker_save_keys(self):
         cfg, bad = self.tracker_cfg(), []
@@ -575,8 +580,7 @@ class TrackerPage:
         """The keys next to Start (2.10.0), so you know they exist."""
         from .overlay import key_label
         cfg = self.tracker_cfg()
-        parts = [f"{what} {key_label(cfg[k])}" for k, what in (("key_toggle", "Start/stop"), ("key_pause", "Pause"))
-                 if cfg.get(k)]
+        parts = [f"{what} {key_label(cfg[k])}" for k, what in (("key_pause", "Pause / resume"),) if cfg.get(k)]
         if getattr(self, "tk_keys_lbl", None) is not None:
             self.tk_keys_lbl.config(text=("In game: " + "  ·  ".join(parts)) if parts else "")
 
@@ -853,7 +857,7 @@ class TrackerPage:
         elif what == "toggle":
             self.tracker_toggle()
         elif what == "pause":
-            self.tracker_pause_toggle()
+            self.tracker_play_click()                          # 2.74.3: as ⏸ / ▶ (starts it when it isn't running)
         elif what == "overlay":
             self.overlay_hide_toggle()
 
@@ -1048,6 +1052,7 @@ class TrackerPage:
         texts["focus"] = self.focus_line()[0]                 # 2.73.0: League Focus's line
         for k, lab in self.tk_ov_lbls.items():
             lab.config(text=texts.get(k, ""))
+        self.play_refresh()                                   # 2.74.3: ⏸ / ▶ follows the timer
         if getattr(self, "tk_ov_clock", None) is not None:
             from .shell import clock_text
             try:
@@ -1119,7 +1124,7 @@ class TrackerPage:
         if self.fl_on_key(vk, ctrl, alt, shift):                       # 2.45.0: Strat Tracker "a run is done"
             return True
         cfg = SETTINGS.get("tracker") or {}
-        for key, action in (("key_toggle", "toggle"), ("key_pause", "pause"), ("key_overlay", "overlay")):
+        for key, action in (("key_pause", "pause"), ("key_overlay", "overlay")):
             k = parse_key(cfg.get(key) or "")
             if k and k == (vk, ctrl, alt, shift):
                 self.ui_q.put(("tracker", action))
@@ -1146,8 +1151,8 @@ class TrackerPage:
                 ("Open poe2db's modifier list in your browser", SETTINGS.get("poe2db_key", ""), "Price checks",
                  "checks:poe2db_key"),
                 ("Copy your stash search (in game)", SETTINGS.get("regex_key", ""), "Regex", "checks:regex_key"),
-                ("Session timer: start / stop", tc.get("key_toggle", ""), "Overlays", "tracker:key_toggle"),
-                ("Session timer: pause / resume", tc.get("key_pause", ""), "Overlays", "tracker:key_pause"),
+                ("Session timer: pause / resume (or ⏸ / ▶ on the overlay)", tc.get("key_pause", ""), "Overlays",
+                 "tracker:key_pause"),
                 ("Show / hide the overlay", tc.get("key_overlay", ""), "Overlays", "tracker:key_overlay"),
                 ("Expedition Remnant Price Checker (in game)", self.remnant_cfg().get("key", ""), "Overlays",
                  "remnant:key"),

@@ -4,7 +4,7 @@
 
 > **Who we build for - read second.** Path of Exile players are utilitarian: they love data and information, problem solving and creative thinking. So every feature shows its numbers *and how they were worked out*, lets you sort, filter, compare and export them (CSV), keeps power-user depth (keys, versions, raw data) one click away instead of hiding it, explains in plain words, and leaves the decision to the player. Pretty is welcome; vague is not.
 
-**Current version: 2.74.2**
+**Current version: 2.74.3**
 
 Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds features, 2.10.1 only fixes. Each step below is one release; we work through them top to bottom.
 
@@ -124,6 +124,7 @@ Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds f
 | 2.74.0 | Advanced tools hidden by default: Price checks ↳ Under the hood ↳ Mod book, shown with Settings › Advanced › Show advanced tools (both keep working - learning, community data sharing). The calculator over the game: a fixed-size window from Calc ▾ on the overlay's bar, held by the overlay's lock, its own switch (out of Tools). The overlay bar halfway between 2.73.4's and 2.73.5's height; the Remnant tip names the runeshape list; Settings › Appearance › Overlay settings (Layout, Opacity, Click-through - on by default, while locked); the Game bar is the default layout, named "Game bar".
 | 2.74.1 | Price checks' Item card shows the mods and their values as in game; uniques' mods read (Unique Modifier headers), named rolls (Legacy of Gold) and trade-site options searched, flavour text never a mod. |
 | 2.74.2 | Settings › Advanced › Report a bug (the bottom bar's form, not a .zip); a new version shows in the sidebar above Toolkit and Settings. |
+| 2.74.3 | Session timer: ⏸ / ▶ on the overlay and the keyboard's Pause key (no Ctrl+Alt start / stop / pause keys); click-through its own switch, off by default. |
 
 ## ▶ Next up
 
