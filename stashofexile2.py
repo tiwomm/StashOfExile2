@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU GPL v3.0 (see LICENSE). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.81.2
+VERSION 2.82.0
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,6 +19,14 @@ VERSION 2.81.2
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.82.0
+       Overlay ↳ Settings (feedback: the Options "shouldn't be nested beside the map stats ... reorganizing ...
+       grouping of the toggle-able options"): the overlay's options are their own page under Overlay (in the
+       sidebar, the title bar's Settings button and an "Overlay settings" button on the Overlay page), in cards:
+       On the bar (the numbers; the switches and menus on it), Features (Notes, Calculator, League Focus, Focus
+       line, map rank questions, Desecration Helper), Campaign (its switches and options), Behaviour (lock, tips,
+       start tracking, look, character name, keys) and the Mechanic Helper. The Overlay page keeps the session, its
+       numbers and This session's maps / Map stats / Past sessions. "Desecration" is written in full on its switch.
   2.81.2
        Desecration Helper: a hybrid option the game shows in another line order than the game data lists it
        ("+35 to Accuracy Rating / 10% increased Light Radius", feedback) is read - every order is tried.
@@ -1864,7 +1872,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.81.2"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.82.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 

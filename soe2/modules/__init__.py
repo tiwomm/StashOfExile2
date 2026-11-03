@@ -77,5 +77,6 @@ def load(app):
     from .money import MoneyMakers
     from .maps import MapLibrary
     from .plan import GamePlan
+    from .ovsettings import OverlaySettings
     return [cls(app) for cls in (PriceCheck, PriceChecks, Wealth, ModBook, Library, Regex, Search, Tracker, Notes,
-                                 Rates, Insights, MoneyMakers, MapLibrary, GamePlan, Settings)]
+                                 Rates, Insights, MoneyMakers, OverlaySettings, MapLibrary, GamePlan, Settings)]
