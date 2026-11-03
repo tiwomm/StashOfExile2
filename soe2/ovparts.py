@@ -74,28 +74,28 @@ class OverlayParts:
         self.maprank_close()
         P = pal()
         r = game_rect() or (0, 0, self.root.winfo_screenwidth(), self.root.winfo_screenheight())
-        W = 420
+        W = self.ov_px(420)                                  # 2.78.3: the game's size
         geo = (r[0] + (r[2] - W) // 2, r[1] + int(r[3] * 0.08), W, None)
         w = OverlayWindow(self.root, "Rank this map", "★", geo, palette=P, lockable=False, follow_game=True,
                           no_activate=True, on_close=self.maprank_close)
         bg = P["bg"]
-        body = tk.Frame(w.body, bg=bg, padx=16, pady=8)
+        body = tk.Frame(w.body, bg=bg, padx=self.ov_px(16), pady=self.ov_px(8))
         body.pack(fill="both", expand=True)
-        tk.Label(body, text=f"How was {name}?", bg=bg, fg=P["text"], font=(P["font"], 11, "bold"), anchor="w").pack(fill="x")
+        tk.Label(body, text=f"How was {name}?", bg=bg, fg=P["text"], font=(P["font"], self.ov_font(11), "bold"), anchor="w").pack(fill="x")
         tk.Label(body, text="Your rank shows on the overlay next time, and counts as your vote for the community's.",
-                 bg=bg, fg=P["muted"], font=(P["font"], 9), anchor="w", justify="left", wraplength=W - 40).pack(fill="x")
+                 bg=bg, fg=P["muted"], font=(P["font"], self.ov_font(9)), anchor="w", justify="left", wraplength=W - self.ov_px(40)).pack(fill="x")
         row = tk.Frame(body, bg=bg)
         row.pack(fill="x", pady=(8, 0))
         self.maprank_btns = {}
         for rk in RANK_BUTTONS:
-            b = ttk.Button(row, text=rk, width=6 if rk == "Avoid" else 3,
+            b = ttk.Button(row, text=rk, width=6 if rk == "Avoid" else 3, style=self.ov_btn(),
                            command=lambda rk=rk: self.maprank_set(name, rk))
             b.pack(side="left", padx=(0, 4))
             self.maprank_btns[rk] = b
         row2 = tk.Frame(body, bg=bg)
         row2.pack(fill="x", pady=(8, 0))
         for key, label in (("later", "Not now"), ("never", "Never for this map")):
-            b = ttk.Button(row2, text=label, style="Quiet.TButton", command=lambda k=key: self.maprank_skip(name, k))
+            b = ttk.Button(row2, text=label, style=self.ov_btn("Quiet.TButton"), command=lambda k=key: self.maprank_skip(name, k))
             b.pack(side="left", padx=(0, 8))
             self.maprank_btns[key] = b
         self.maprank_win, self.maprank_name = w, name

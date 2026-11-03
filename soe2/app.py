@@ -81,6 +81,9 @@ from .shell import Shell
 from .config import PAGE_CHECKS       # 1.40: was "Items"
 
 
+CARD_BOX = 46                 # 2.78.3: a Min / Max / item level box on the item card (px)
+
+
 class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, ExchangePage, WealthPage, LibraryPage, RegexPage, UtilitiesPage, TrackerPage, SearchPage, CalcOverlay, InsightsPage, MoneyMakersPage, MapLibraryPage, RemnantPage, LedgerPage, FeedbackPage, FeedPage, MergedOverlay, GamePlanPage, FocusPokes, OverlayHelp, OverlayParts, CampaignUI):
     COLS = [("added", "#", 46, "e"), ("name", "Item", 220, "w"), ("type", "Type", 110, "w"), ("mark", "Status", 90, "center"),
             ("est", "Est. value", 110, "e"), ("conf", "Confidence", 95, "center"), ("listings", "Listings", 70, "e"), ("priced", "Priced at", 130, "w"),
@@ -4584,7 +4587,7 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         t = _th.ST.theme
         col = {"rare": C["rare"], "magic": C["magic"], "unique": t.c("unique", "#af6025")}.get(rar, C["text"])
         w = max(240, wrap + 12)          # 2.74.4: the panel's inner width (wrap + 44 less its 2 x 16 padding)
-        lines = [f"Item Level {it['ilvl']}"] if it.get("ilvl") else []
+        lines = []                       # 2.78.3: the item level is its own row (a check box and the number)
         # 2.74.1 (feedback: "like Sidekick" - the mods with their values on the card, no scrolling for them): the
         # item reads as it does in game - implicits, a rule, the other mods, Corrupted
         def card_text(m):
@@ -4609,7 +4612,7 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
             big = "Couldn't price"
         else:
             big = "Pricing…" if st == "pricing" else "Waiting in line…"
-        h = 64 + 18 * len(lines) + (34 if big else 0) + (18 if sub else 0) + 8
+        h = 64 + 18 * len(lines) + (26 if it.get("ilvl") else 0) + (34 if big else 0) + (18 if sub else 0) + 8
         cv = tk.Canvas(d, width=w, height=h, bg=P2, highlightthickness=0, bd=0)
         cv.pack(fill="x")
         fmod = ("Segoe UI", 10)
@@ -4626,16 +4629,26 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
             for ln in lines:
                 cv.create_text(w // 2, y + 6, text=ln, font=("Segoe UI", 9), fill=C["muted"])
                 y += 18
+            if it.get("ilvl"):
+                y = self._card_ilvl_row(cv, rec, it, y, w)
+            self.card_vals = {}
             sep = t.c(t.part("card", "sep", default="border"))
             mod_c, imp_c = C["magic"], _th.mix(C["magic"], C["text"], .35)
             # 2.74.4 (feedback: "the mods checkable in the item panel ... a check beside it the same way sidekick
             # does"): each mod is a row with its own check box - ticked = searched on. A click re-prices.
             self.card_rows = {}
+            vals = any(self._card_has_vals(rec, m) for m in own + totals)
             for grp, colr, head in ((first, imp_c, ""), (rest, mod_c, ""), (totals, C["good"], "TOTALS")):
                 if not grp:
                     continue
                 cv.create_line(16, y + 2, w - 16, y + 2, fill=sep)
                 y += 8
+                if vals and grp is (first or rest or totals):          # 2.78.3: MIN / MAX over the value boxes
+                    cv.create_text(w - 12 - CARD_BOX - CARD_BOX // 2 - 4, y, text="MIN", anchor="n",
+                                   font=("Segoe UI", 9, "bold"), fill=C["muted"])
+                    cv.create_text(w - 12 - CARD_BOX // 2, y, text="MAX", anchor="n", font=("Segoe UI", 7, "bold"),
+                                   fill=C["muted"])
+                    y += 12
                 if head:
                     cv.create_text(12, y, text=head, anchor="nw", font=("Segoe UI", 8, "bold"), fill=C["muted"])
                     y += 16
@@ -4674,7 +4687,8 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         if tier:
             cv.create_text(tx, y + 1, text=tier, anchor="nw", font=("Segoe UI", 8), fill=C["muted"], tags=(tag,))
             tx += 22
-        tid = cv.create_text(tx, y, text=text, anchor="nw", font=font, width=w - tx - 12, justify="left",
+        right = (2 * CARD_BOX + 16) if self._card_has_vals(rec, m) else 0      # 2.78.3: Min / Max at the right
+        tid = cv.create_text(tx, y, text=text, anchor="nw", font=font, width=w - tx - 12 - right, justify="left",
                              fill=colr if on and can else C["muted"], tags=("cardmod", tag))
         bb = cv.bbox(tid)
         y1 = (bb[3] if bb else y + 16) + 4
@@ -4687,13 +4701,123 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
                                    fill=C["accent"] if on and can else C["odd"], tags=("cardbox", tag))
         if on and can:
             cv.create_line(bx + 3, by + 7, bx + 6, by + 10, bx + 11, by + 4, fill="#120a04", width=2, tags=(tag,))
-        cv.coords(hit, 4, y - 2, w - 4, y1 - 2)
+        cv.coords(hit, 4, y - 2, w - 4 - right, y1 - 2)
+        if right:
+            self._card_val_boxes(cv, rec, m, y - 1, w, on and can)
         if can:
             cv.tag_bind(tag, "<Button-1>", lambda e, mm=m, v=on: self.card_toggle(rec, mm, not v))
             cv.tag_bind(tag, "<Enter>", lambda e: cv.configure(cursor="hand2"))
             cv.tag_bind(tag, "<Leave>", lambda e: cv.configure(cursor=""))
         self.card_rows[idx] = (m, on, rect)
         return y1
+
+    # ---------------- 2.78.3 (feedback: "we don't have the option to check ilvl ... to enter mod values / ranges"):
+    # on the card itself, like Sidekick - the item level with its own check box, Min / Max beside each mod
+    def _card_has_vals(self, rec, m):
+        return m.get("value") is not None and not m.get("novalue") and (bool(m.get("sid")) or not rec.get("resolved"))
+
+    def _card_entry(self, cv, text, enabled=True):
+        e = tk.Entry(cv, width=5, bg=C["panel"], fg=C["text"], insertbackground=C["text"], relief="flat",
+                     highlightthickness=1, highlightbackground=C["line"], highlightcolor=C["accent"],
+                     font=("Segoe UI", 9), justify="center", disabledbackground=C["odd"],
+                     disabledforeground=C["muted"])
+        e.insert(0, text)
+        if not enabled:
+            e.config(state="disabled")
+        return e
+
+    def _card_val_boxes(self, cv, rec, m, y, w, enabled):
+        """Min / Max for one mod - what the search uses; typing changes it for this item; Enter prices it again."""
+        saved = m.pop("uval", None)
+        try:
+            auto = vfilter(m) or {}
+        finally:
+            if saved is not None:
+                m["uval"] = saved
+        cur = m.get("uval") if m.get("uval") is not None else auto
+        boxes = {}
+        for i, key in enumerate(("min", "max")):
+            v = cur.get(key)
+            e = self._card_entry(cv, "" if v is None else f"{v:g}", enabled)
+            x = w - 12 - CARD_BOX * (2 - i) - (4 if i == 0 else 0)
+            cv.create_window(x, y, window=e, anchor="nw", width=CARD_BOX, height=20)
+            boxes[key] = e
+        if m.get("uval") is not None:
+            for e in boxes.values():
+                e.config(highlightbackground=C["accent"])
+
+        def keep(_e=None):
+            vals = {}
+            for key, e in boxes.items():
+                t = e.get().strip().replace(",", ".")
+                try:
+                    vals[key] = float(t) if t else None
+                    e.config(highlightbackground=C["line"])
+                except ValueError:
+                    e.config(highlightbackground=C["red"])
+                    return False
+            if vals["min"] is not None and vals["max"] is not None and vals["min"] > vals["max"]:
+                boxes["max"].config(highlightbackground=C["red"])
+                return False
+            norm_auto = {k: (None if auto.get(k) is None else float(auto[k])) for k in ("min", "max")}
+            if vals == norm_auto:
+                m.pop("uval", None)
+            else:
+                m["uval"] = vals
+                for e in boxes.values():
+                    e.config(highlightbackground=C["accent"])
+            self.dirty = True
+            return True
+        for e in boxes.values():
+            e.bind("<KeyRelease>", keep)
+            e.bind("<Return>", lambda _e: (self.reprice([rec["id"]]) if keep() else None, "break")[-1])
+        self.card_vals[id(m)] = boxes
+        return boxes
+
+    def _card_ilvl_row(self, cv, rec, it, y, w):
+        """[✓] Item level  [82]+  - ticked: only items of this level or more are compared. -> the next y."""
+        cur = (rec.get("opts") or {}).get("ilvl")
+        on = cur not in (None, "", 0)
+        box, bx = 14, w // 2 - 70
+        tag = "cardilvl"
+        cv.create_rectangle(bx, y + 3, bx + box, y + 3 + box, outline=C["muted"], fill=C["accent"] if on else C["odd"],
+                            tags=(tag,))
+        if on:
+            cv.create_line(bx + 3, y + 10, bx + 6, y + 13, bx + 11, y + 7, fill="#120a04", width=2, tags=(tag,))
+        cv.create_text(bx + box + 8, y + 10, text="Item level", anchor="w", font=("Segoe UI", 9),
+                       fill=C["text"] if on else C["muted"], tags=(tag,))
+        e = self._card_entry(cv, str(cur if on else it["ilvl"]), True)
+        cv.create_window(bx + box + 78, y, window=e, anchor="nw", width=CARD_BOX, height=20)
+        cv.create_text(bx + box + 78 + CARD_BOX + 4, y + 10, text="+", anchor="w", font=("Segoe UI", 9),
+                       fill=C["muted"])
+        self.card_ilvl = (e, on)
+
+        def flip(_e=None):
+            self.card_ilvl_set(rec, not on, e.get())
+        cv.tag_bind(tag, "<Button-1>", flip)
+        cv.tag_bind(tag, "<Enter>", lambda _e: cv.configure(cursor="hand2"))
+        cv.tag_bind(tag, "<Leave>", lambda _e: cv.configure(cursor=""))
+        e.bind("<Return>", lambda _e: (self.card_ilvl_set(rec, True, e.get()), "break")[-1])
+        return y + 26
+
+    def card_ilvl_set(self, rec, on, text=None):
+        """The card's Item level: on (with its number) or off; prices the item again."""
+        try:
+            n = int(float(str(text).strip())) if on else None
+        except (TypeError, ValueError):
+            n = rec["item"].get("ilvl")
+        o = dict(rec.get("opts") or {})
+        if n:
+            o["ilvl"] = max(1, min(100, n))
+        else:
+            o.pop("ilvl", None)
+        if o:
+            rec["opts"] = o
+        else:
+            rec.pop("opts", None)
+        self.dirty = True
+        self.reprice([rec["id"]])
+        return o.get("ilvl")
 
     def card_toggle(self, rec, m, checked):
         """2.74.4: a tick on the card - the same as the mod's switch further down (this item only)."""

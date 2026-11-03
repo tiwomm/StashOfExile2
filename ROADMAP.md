@@ -4,7 +4,7 @@
 
 > **Who we build for - read second.** Path of Exile players are utilitarian: they love data and information, problem solving and creative thinking. So every feature shows its numbers *and how they were worked out*, lets you sort, filter, compare and export them (CSV), keeps power-user depth (keys, versions, raw data) one click away instead of hiding it, explains in plain words, and leaves the decision to the player. Pretty is welcome; vague is not.
 
-**Current version: 2.78.2**
+**Current version: 2.78.3**
 
 Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds features, 2.10.1 only fixes. Each step below is one release; we work through them top to bottom.
 
@@ -133,6 +133,7 @@ Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds f
 | 2.78.0 | **Money Makers rework:** content tags (pinnacles, bosses, map content - one tag system, shipped in strats/content.json) ticked in the Strat Tracker's Atlas & content step and filtered by in a Content row; an atlas screenshot with the strat (pasted or a file, kept small, uploaded to the board, shown in the Strat panel - no planner links); a Publish step that asks what it is, Thinking, Clicks, tags and steps before anything goes out; the Strat panel's What you need - each tablet and waystone with Copy regex and Trade. |
 | 2.78.1 | The rank card says the map's name, not its area id, and saves the rank under it (ranks saved under an id move over). |
 | 2.78.2 | The campaign line's bar is as wide as the overlay's bar. |
+| 2.78.3 | The overlay scales to any resolution (720p to 4K, cards too); the item card has Item level and Min / Max beside each mod. |
 
 ## ▶ Next up
 

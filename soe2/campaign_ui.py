@@ -130,6 +130,7 @@ class CampaignUI:
         from .alerts_page import game_rect
         P = pal()
         r = game_rect() or (0, 0, self.root.winfo_screenwidth(), self.root.winfo_screenheight())
+        W = self.ov_px(W)                                    # 2.78.3: the game's size
         geo = (r[0] + (r[2] - W) // 2, r[1] + int(r[3] * top), W, None)
         w = OverlayWindow(self.root, title, icon, geo, palette=P, lockable=False, follow_game=True,
                           no_activate=True, on_close=on_close)
@@ -170,7 +171,7 @@ class CampaignUI:
         top.pack(fill="x")
         self.camp_page_btns = {}
         for p in PAGES:
-            b = ttk.Button(top, text=p, style="Primary.TButton" if p == self.camp_page else "Quiet.TButton",
+            b = ttk.Button(top, text=p, style=self.ov_btn("Primary.TButton" if p == self.camp_page else "Quiet.TButton"),
                            command=lambda p=p: self.camp_route_show(page=p))
             b.pack(side="left", padx=(0, 4))
             self.camp_page_btns[p] = b
@@ -193,9 +194,9 @@ class CampaignUI:
         head.pack(fill="x")
         town = (CP.act(key) or {}).get("town") or ""
         tk.Label(head, text=(CP.act_name(key) + (f" · {town}" if town else "")).upper(), bg=bg, fg=P["head"],
-                 font=(P["hfont"] or P["font"], 10, "bold"), anchor="w").pack(side="left")
+                 font=(P["hfont"] or P["font"], self.ov_font(10), "bold"), anchor="w").pack(side="left")
         tk.Label(head, text="route: " + dict(CP.ROUTES).get(c["route"], c["route"]), bg=bg, fg=P["muted"],
-                 font=(P["font"], 9)).pack(side="right")
+                 font=(P["font"], self.ov_font(9))).pack(side="right")
         rows = CP.steps(key, run)
         self.camp_rows = []
         marks = {"done": ("✓", P["on"]), "here": ("▸", P["head"]), "todo": ("○", P["muted"]),
@@ -211,10 +212,10 @@ class CampaignUI:
             f = tk.Frame(page, bg=rbg, cursor="hand2")
             f.pack(fill="x", pady=1)
             mk, col = marks[s["state"]]
-            tk.Label(f, text=mk, bg=rbg, fg=col, width=2, font=(P["font"], 10)).pack(side="left")
+            tk.Label(f, text=mk, bg=rbg, fg=col, width=2, font=(P["font"], self.ov_font(10))).pack(side="left")
             txt = s["zone"] + (f" - {s['do']}" if s.get("do") else "")
             fg = P["text"] if s["state"] in ("here", "todo") else P["muted"]
-            tk.Label(f, text=txt, bg=rbg, fg=fg, font=(P["font"], 10, "bold" if here else "normal"), anchor="w",
+            tk.Label(f, text=txt, bg=rbg, fg=fg, font=(P["font"], self.ov_font(10), "bold" if here else "normal"), anchor="w",
                      wraplength=380, justify="left").pack(side="left", fill="x", expand=True)
             side = ", ".join(gives.get(CP.norm(s["zone"]), []))
             if s.get("learned"):
@@ -225,7 +226,7 @@ class CampaignUI:
                 side = side or s["note"]
             if side:
                 tk.Label(f, text=side, bg=rbg, fg=P["on"] if gives.get(CP.norm(s["zone"])) else P["muted"],
-                         font=(P["font"], 9)).pack(side="right")
+                         font=(P["font"], self.ov_font(9))).pack(side="right")
             for wdg in [f] + list(f.winfo_children()):
                 wdg.bind("<Button-1>", lambda e, i=i: self.camp_here(i))
             self.camp_rows.append(f)
@@ -233,17 +234,17 @@ class CampaignUI:
                 self._camp_unknown_row(page, P, s)
         if not rows:
             tk.Label(page, text="The guide has no steps for this act yet - they're added as you go.", bg=bg,
-                     fg=P["muted"], font=(P["font"], 10)).pack(anchor="w")
+                     fg=P["muted"], font=(P["font"], self.ov_font(10))).pack(anchor="w")
         nav = tk.Frame(page, bg=bg)
         nav.pack(fill="x", pady=(8, 0))
-        ttk.Button(nav, text="◀", width=3, command=lambda: self.camp_step(-1)).pack(side="left")
-        ttk.Button(nav, text="▶", width=3, command=lambda: self.camp_step(1)).pack(side="left", padx=(4, 0))
-        tk.Label(nav, text="Click a step: I'm here", bg=bg, fg=P["muted"], font=(P["font"], 9)).pack(side="left",
+        ttk.Button(nav, text="◀", width=3, style=self.ov_btn(), command=lambda: self.camp_step(-1)).pack(side="left")
+        ttk.Button(nav, text="▶", width=3, style=self.ov_btn(), command=lambda: self.camp_step(1)).pack(side="left", padx=(4, 0))
+        tk.Label(nav, text="Click a step: I'm here", bg=bg, fg=P["muted"], font=(P["font"], self.ov_font(9))).pack(side="left",
                                                                                                  padx=(8, 0))
         tip = (CP.act(key) or {}).get("tip")
         if tip and c["tips"]:
-            tk.Label(page, text="Tip: " + tip, bg=bg, fg=P["muted"], font=(P["font"], 9), anchor="w",
-                     justify="left", wraplength=520).pack(fill="x", pady=(8, 0))
+            tk.Label(page, text="Tip: " + tip, bg=bg, fg=P["muted"], font=(P["font"], self.ov_font(9)), anchor="w",
+                     justify="left", wraplength=self.ov_px(520)).pack(fill="x", pady=(8, 0))
 
     def _camp_unknown_row(self, page, P, s):
         """P: a zone the guide doesn't know - a note for it, Mark optional, or check for a newer guide."""
@@ -251,18 +252,18 @@ class CampaignUI:
         f = tk.Frame(page, bg=bg)
         f.pack(fill="x", pady=(2, 8), padx=(24, 0))
         tk.Label(f, text="The guide doesn't have this zone yet. It's on your route where you went, with its level, "
-                         "so it's there next time.", bg=bg, fg=P["muted"], font=(P["font"], 9), anchor="w",
-                 justify="left", wraplength=480).pack(fill="x")
+                         "so it's there next time.", bg=bg, fg=P["muted"], font=(P["font"], self.ov_font(9)), anchor="w",
+                 justify="left", wraplength=self.ov_px(480)).pack(fill="x")
         row = tk.Frame(f, bg=bg)
         row.pack(fill="x", pady=(4, 0))
         self.camp_note_var = tk.StringVar(value=s.get("note", ""))
         e = ttk.Entry(row, textvariable=self.camp_note_var, width=22)
         e.pack(side="left")
-        ttk.Button(row, text="Add a note", style="Primary.TButton",
+        ttk.Button(row, text="Add a note", style=self.ov_btn("Primary.TButton"),
                    command=lambda: self.camp_note(s["zone"])).pack(side="left", padx=(4, 0))
-        ttk.Button(row, text="Mark optional", style="Quiet.TButton",
+        ttk.Button(row, text="Mark optional", style=self.ov_btn("Quiet.TButton"),
                    command=lambda: self.camp_optional(s["zone"])).pack(side="left", padx=(4, 0))
-        ttk.Button(row, text="Check for a newer guide", style="Quiet.TButton",
+        ttk.Button(row, text="Check for a newer guide", style=self.ov_btn("Quiet.TButton"),
                    command=self.camp_check_pack).pack(side="left", padx=(4, 0))
 
     def _camp_rewards_page(self, page, P):
@@ -275,18 +276,18 @@ class CampaignUI:
             have, of = tot.get(k, (0, 0))
             f = tk.Frame(grid, bg=bg)
             f.grid(row=0, column=i, sticky="w", padx=(0, 24))
-            tk.Label(f, text=lab, bg=bg, fg=P["muted"], font=(P["font"], 8, "bold")).pack(anchor="w")
-            tk.Label(f, text=f"{have} / {of}", bg=bg, fg=P["text"], font=(P["font"], 15, "bold")).pack(anchor="w")
+            tk.Label(f, text=lab, bg=bg, fg=P["muted"], font=(P["font"], self.ov_font(8), "bold")).pack(anchor="w")
+            tk.Label(f, text=f"{have} / {of}", bg=bg, fg=P["text"], font=(P["font"], self.ov_font(15), "bold")).pack(anchor="w")
         res = []
         for k, name in (("res_cold", "Cold"), ("res_lightning", "Lightning"), ("res_fire", "Fire")):
             have, of = tot.get(k, (0, 0))
             res.append(f"{name} {'✓' if of and have >= of else '○'}")
         f = tk.Frame(grid, bg=bg)
         f.grid(row=0, column=2, sticky="w")
-        tk.Label(f, text="RESISTANCES", bg=bg, fg=P["muted"], font=(P["font"], 8, "bold")).pack(anchor="w")
-        tk.Label(f, text=" · ".join(res), bg=bg, fg=P["text"], font=(P["font"], 10, "bold")).pack(anchor="w", pady=(4, 0))
+        tk.Label(f, text="RESISTANCES", bg=bg, fg=P["muted"], font=(P["font"], self.ov_font(8), "bold")).pack(anchor="w")
+        tk.Label(f, text=" · ".join(res), bg=bg, fg=P["text"], font=(P["font"], self.ov_font(10), "bold")).pack(anchor="w", pady=(4, 0))
         tk.Label(page, text=CP.act_name(self.camp_view).upper(), bg=bg, fg=P["head"],
-                 font=(P["hfont"] or P["font"], 9, "bold"), anchor="w").pack(fill="x", pady=(8, 2))
+                 font=(P["hfont"] or P["font"], self.ov_font(9), "bold"), anchor="w").pack(fill="x", pady=(8, 2))
         self.camp_reward_vars = {}
         for r in CP.rewards(self.camp_view):
             st = run["rewards"].get(r["id"])
@@ -296,27 +297,27 @@ class CampaignUI:
             row.pack(fill="x")
             cb = tk.Checkbutton(row, text=f"{r['zone']} - {r['what']}: {r['gives']}", variable=v, bg=bg,
                                 fg=P["text"], selectcolor=bg, activebackground=bg, activeforeground=P["text"],
-                                font=(P["font"], 10), anchor="w", highlightthickness=0, bd=0,
+                                font=(P["font"], self.ov_font(10)), anchor="w", highlightthickness=0, bd=0,
                                 command=lambda r=r, v=v: self.camp_tick(r["id"], v.get()))
             cb.pack(side="left")
             if st in ("missed", "skip", "remind"):
                 tk.Label(row, text={"missed": "missed", "skip": "skipped", "remind": "remind me"}[st], bg=bg,
                          fg=P.get("off", P["muted"]) if st == "missed" else P["muted"],
-                         font=(P["font"], 9)).pack(side="right")
+                         font=(P["font"], self.ov_font(9))).pack(side="right")
         tk.Label(page, text=f"The list comes from the guide pack ({CP.pack().get('name', '')}). Only what the log "
                             "can prove ticks by itself - tick or untick any reward by hand.", bg=bg, fg=P["muted"],
-                 font=(P["font"], 9), anchor="w", justify="left", wraplength=520).pack(fill="x", pady=(8, 0))
+                 font=(P["font"], self.ov_font(9)), anchor="w", justify="left", wraplength=self.ov_px(520)).pack(fill="x", pady=(8, 0))
 
     def _camp_splits_page(self, page, P):
         bg = P["bg"]
         if not CP.cfg()["splits"]:
             tk.Label(page, text="Act splits are off (Overlay › Options › Campaign).", bg=bg, fg=P["muted"],
-                     font=(P["font"], 10)).pack(anchor="w")
+                     font=(P["font"], self.ov_font(10))).pack(anchor="w")
             return
         g = tk.Frame(page, bg=bg)
         g.pack(fill="x")
         for c, h in enumerate(("ACT", "THIS RUN", "BEST", "+/-")):
-            tk.Label(g, text=h, bg=bg, fg=P["muted"], font=(P["font"], 8, "bold")).grid(row=0, column=c, sticky="w",
+            tk.Label(g, text=h, bg=bg, fg=P["muted"], font=(P["font"], self.ov_font(8), "bold")).grid(row=0, column=c, sticky="w",
                                                                                      padx=(0, 24))
         self.camp_split_rows = []
         for i, (name, mine, best, here) in enumerate(CP.splits(), start=1):
@@ -331,10 +332,10 @@ class CampaignUI:
             vals = (name, CP.fmt(mine) + (" ▸" if here else ""), CP.fmt(best), diff)
             for c, v in enumerate(vals):
                 tk.Label(g, text=v, bg=bg, fg=dcol if c == 3 else (P["text"] if mine is not None else P["muted"]),
-                         font=(P["font"], 10)).grid(row=i, column=c, sticky="w", padx=(0, 24))
+                         font=(P["font"], self.ov_font(10))).grid(row=i, column=c, sticky="w", padx=(0, 24))
             self.camp_split_rows.append(vals)
         tk.Label(page, text="From the game log's zone changes, with pauses for AFK. Each league keeps its own best.",
-                 bg=bg, fg=P["muted"], font=(P["font"], 9), anchor="w").pack(fill="x", pady=(8, 0))
+                 bg=bg, fg=P["muted"], font=(P["font"], self.ov_font(9)), anchor="w").pack(fill="x", pady=(8, 0))
 
     # ---------------------------------------------------------------- actions
     def camp_here(self, i):
@@ -396,19 +397,19 @@ class CampaignUI:
                 head, txt = "Missed one:", f"{r['what']} in {r['zone']} ({r['gives']}). It's still there."
             else:
                 head, txt = "Did you get it?", f"{r['what']} in {r['zone']} ({r['gives']})."
-            tk.Label(f, text=head, bg=bg, fg=P["head"], font=(P["font"], 10, "bold"), anchor="w").pack(fill="x")
-            tk.Label(f, text=txt, bg=bg, fg=P["text"], font=(P["font"], 10), anchor="w", justify="left",
-                     wraplength=420).pack(fill="x")
+            tk.Label(f, text=head, bg=bg, fg=P["head"], font=(P["font"], self.ov_font(10), "bold"), anchor="w").pack(fill="x")
+            tk.Label(f, text=txt, bg=bg, fg=P["text"], font=(P["font"], self.ov_font(10)), anchor="w", justify="left",
+                     wraplength=self.ov_px(420)).pack(fill="x")
             row = tk.Frame(f, bg=bg)
             row.pack(fill="x", pady=(4, 0))
             for k, label, style in (("got", "Got it", "Primary.TButton"), ("remind", "Remind me in town", "TButton"),
                                     ("skip", "Skip it", "Quiet.TButton")):
-                b = ttk.Button(row, text=label, style=style, command=lambda r=r, k=k: self.camp_answer(r["id"], k))
+                b = ttk.Button(row, text=label, style=self.ov_btn(style), command=lambda r=r, k=k: self.camp_answer(r["id"], k))
                 b.pack(side="left", padx=(0, 8))
                 self.camp_ask_btns[(r["id"], k)] = b
         if len(items) > 4:
             tk.Label(body, text=f"+{len(items) - 4} more - Campaign › Rewards", bg=bg, fg=P["muted"],
-                     font=(P["font"], 9)).pack(anchor="w")
+                     font=(P["font"], self.ov_font(9))).pack(anchor="w")
         self.camp_ask_win = w
         w.show()
         return w
@@ -436,21 +437,21 @@ class CampaignUI:
         w, body, P = self._camp_card("Vendor search", "🔎", 420, top=0.14, on_close=lambda: self.camp_vendor_close())
         bg = P["bg"]
         tk.Label(body, text="Click one = copied · Ctrl+F, Ctrl+V in the shop", bg=bg, fg=P["muted"],
-                 font=(P["font"], 9), anchor="w").pack(fill="x")
+                 font=(P["font"], self.ov_font(9)), anchor="w").pack(fill="x")
         self.camp_vendor_btns = {}
 
         def group(title, rows):
             if not rows:
                 return
-            tk.Label(body, text=title, bg=bg, fg=P["head"], font=(P["hfont"] or P["font"], 8, "bold"),
+            tk.Label(body, text=title, bg=bg, fg=P["head"], font=(P["hfont"] or P["font"], self.ov_font(8), "bold"),
                      anchor="w").pack(fill="x", pady=(8, 2))
             for name, rx in rows:
-                b = ttk.Button(body, text=name, command=lambda n=name, rx=rx: self.camp_copy(n, rx))
+                b = ttk.Button(body, text=name, style=self.ov_btn(), command=lambda n=name, rx=rx: self.camp_copy(n, rx))
                 b.pack(fill="x", pady=1)
                 self.camp_vendor_btns[name] = b
         group("FOR THIS ACT", CP.vendor_searches())
         group("MY FAVORITES (REGEX TOOL)", self.camp_regex_favs())
-        self.camp_vendor_msg = tk.Label(body, text="", bg=bg, fg=P["on"], font=(P["font"], 9), anchor="w")
+        self.camp_vendor_msg = tk.Label(body, text="", bg=bg, fg=P["on"], font=(P["font"], self.ov_font(9)), anchor="w")
         self.camp_vendor_msg.pack(fill="x", pady=(8, 0))
         self.camp_vendor_win = w
         w.show()

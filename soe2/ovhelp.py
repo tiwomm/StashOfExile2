@@ -76,13 +76,13 @@ class OverlayHelp:
         box.pack()
         head = tk.Frame(box, bg=P["bg"])
         head.pack(fill="x")
-        tk.Label(head, text=name.upper(), bg=P["bg"], fg=P["head"], font=(P["hfont"] or P["font"], 9, "bold")).pack(side="left")
+        tk.Label(head, text=name.upper(), bg=P["bg"], fg=P["head"], font=(P["hfont"] or P["font"], self.ov_font(9), "bold")).pack(side="left")
         tk.Label(head, text="  ON" if on else "  OFF", bg=P["bg"], fg=P["on"] if on else P["muted"],
-                 font=(P["font"], 8, "bold")).pack(side="left")
-        tk.Label(box, text=what, bg=P["bg"], fg=P["text"], font=(P["font"], 9), justify="left", anchor="w",
-                 wraplength=300).pack(fill="x", pady=(2, 0))
+                 font=(P["font"], self.ov_font(8), "bold")).pack(side="left")
+        tk.Label(box, text=what, bg=P["bg"], fg=P["text"], font=(P["font"], self.ov_font(9)), justify="left", anchor="w",
+                 wraplength=self.ov_px(300)).pack(fill="x", pady=(2, 0))
         tk.Label(box, text="Click to switch " + ("off" if on else "on"), bg=P["bg"], fg=P["muted"],
-                 font=(P["font"], 8), anchor="w").pack(fill="x", pady=(2, 0))
+                 font=(P["font"], self.ov_font(8)), anchor="w").pack(fill="x", pady=(2, 0))
         try:
             px, py = (x, y) if x is not None else (cv.winfo_pointerx(), cv.winfo_pointery())
         except tk.TclError:
@@ -167,35 +167,35 @@ class OverlayHelp:
         name, what, why, setup = HELP[key]
         P = pal()
         r = game_rect() or (0, 0, self.root.winfo_screenwidth(), self.root.winfo_screenheight())
-        W = 420
+        W = self.ov_px(420)
         geo = (r[0] + (r[2] - W) // 2, r[1] + int(r[3] * 0.10), W, None)
         w = OverlayWindow(self.root, f"{name} is on", "💡", geo, palette=P, lockable=False, follow_game=True,
                           no_activate=True, on_close=lambda: self.ov_intro_close())
         bg = P["bg"]
-        body = tk.Frame(w.body, bg=bg, padx=16, pady=8)
+        body = tk.Frame(w.body, bg=bg, padx=self.ov_px(16), pady=self.ov_px(8))
         body.pack(fill="both", expand=True)
-        tk.Label(body, text="WHAT IT DOES", bg=bg, fg=P["head"], font=(P["hfont"] or P["font"], 8, "bold"), anchor="w").pack(fill="x")
-        tk.Label(body, text=what, bg=bg, fg=P["text"], font=(P["font"], 11), justify="left", anchor="w",
-                 wraplength=W - 40).pack(fill="x", pady=(2, 8))
-        tk.Label(body, text="WHY", bg=bg, fg=P["head"], font=(P["hfont"] or P["font"], 8, "bold"), anchor="w").pack(fill="x")
+        tk.Label(body, text="WHAT IT DOES", bg=bg, fg=P["head"], font=(P["hfont"] or P["font"], self.ov_font(8), "bold"), anchor="w").pack(fill="x")
+        tk.Label(body, text=what, bg=bg, fg=P["text"], font=(P["font"], self.ov_font(11)), justify="left", anchor="w",
+                 wraplength=W - self.ov_px(40)).pack(fill="x", pady=(2, 8))
+        tk.Label(body, text="WHY", bg=bg, fg=P["head"], font=(P["hfont"] or P["font"], self.ov_font(8), "bold"), anchor="w").pack(fill="x")
         extra = ""
         if key == "focus":
             from . import focus as F
             if not F.current():
                 extra = "\nNo goal yet - Open Game Plan and add one (10 seconds)."
-        tk.Label(body, text=why + extra, bg=bg, fg=P["muted"], font=(P["font"], 10), justify="left", anchor="w",
-                 wraplength=W - 40).pack(fill="x", pady=(2, 8))
+        tk.Label(body, text=why + extra, bg=bg, fg=P["muted"], font=(P["font"], self.ov_font(10)), justify="left", anchor="w",
+                 wraplength=W - self.ov_px(40)).pack(fill="x", pady=(2, 8))
         row = tk.Frame(body, bg=bg)
         row.pack(fill="x")
         self.ov_intro_btns = {}
         if setup:
-            b = ttk.Button(row, text=setup, style="Primary.TButton", command=lambda: self.ov_intro_setup(key))
+            b = ttk.Button(row, text=setup, style=self.ov_btn("Primary.TButton"), command=lambda: self.ov_intro_setup(key))
             b.pack(side="left", padx=(0, 8))
             self.ov_intro_btns["setup"] = b
-        b = ttk.Button(row, text="Got it", command=lambda: self.ov_intro_close())
+        b = ttk.Button(row, text="Got it", style=self.ov_btn(), command=lambda: self.ov_intro_close())
         b.pack(side="left")
         self.ov_intro_btns["ok"] = b
-        tk.Label(row, text="Hover a switch for a reminder", bg=bg, fg=P["muted"], font=(P["font"], 8)).pack(side="right")
+        tk.Label(row, text="Hover a switch for a reminder", bg=bg, fg=P["muted"], font=(P["font"], self.ov_font(8))).pack(side="right")
         self.ov_intro_win, self.ov_intro_key = w, key
         w.show()
         return w
