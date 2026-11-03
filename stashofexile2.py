@@ -28,7 +28,7 @@ VERSION HISTORY
        (the card's handwriting reads as "clif fs"). Switch: Remnant's row, "Island rumours (in your hideout)".
        Remnant watcher (feedback: "it keeps popping up in random areas"): off in hideouts, towns and the campaign
        (Client.txt), always on in a Grand Expedition island (ExpeditionLogBook_...); in other maps only once the
-       Expedition mark (its swirl under MAP CONTENT, right edge) has been seen - a cheap look every 2 seconds until
+       Expedition mark (its swirl or its crystal under MAP CONTENT, right edge) has been seen - a cheap look every 2 seconds until
        it is (feedback: "check a fixed area on the screen for the indicator of expedition being present").
   2.82.0
        Overlay ↳ Settings (feedback: the Options "shouldn't be nested beside the map stats ... reorganizing ...
