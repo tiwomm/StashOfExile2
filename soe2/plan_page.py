@@ -48,6 +48,7 @@ class GamePlanPage:
         self._gp_goals(left)
         self._gp_pokes(left)
         self._gp_stock(right)
+        self._gp_supplies(right)
         self._gp_farms(right)
         self._gp_lock(right)
         self.gp_fill()
@@ -280,6 +281,96 @@ class GamePlanPage:
             x.grid(row=i, column=4, sticky="e")
             x.bind("<Button-1>", lambda e, n=r["name"]: (F.remove_stock(n), self.gp_fill()))
 
+    # ---------------- 2.73.3: map supplies
+    def _gp_supplies(self, parent):
+        P2 = C["panel2"]
+        o, box = chrome_section(parent, "Map supplies", "What you use up in maps and when to refill it - every N "
+                                                         "maps or N minutes in maps, counted from the game's log. "
+                                                         "The poke comes between maps, in town or your hideout.",
+                                wrap=True)
+        o.pack(fill="x", pady=(0, 8))
+        self.gp_sup_on = tk.BooleanVar(value=bool(F.cfg()["pokes"].get("supplies", True)))
+        ttk.Checkbutton(box, text="Map supply pokes", variable=self.gp_sup_on, style="Card.TCheckbutton",
+                        command=self.gp_sup_switch).pack(anchor="w", pady=(0, 8))
+        self.gp_sup_box = tk.Frame(box, bg=P2)
+        self.gp_sup_box.pack(fill="x")
+        add = tk.Frame(box, bg=P2)
+        add.pack(fill="x", pady=(8, 0))
+        self.gp_u_name, self.gp_u_every = tk.StringVar(), tk.StringVar(value="10")
+        self.gp_u_rule = tk.StringVar(value=F.SUPPLY_RULES[0][1])
+        ttk.Combobox(add, textvariable=self.gp_u_name, values=F.SUPPLY_PRESETS, width=20).pack(
+            side="left", fill="x", expand=True)
+        tk.Label(add, text="every", bg=P2, fg=C["muted"], font=("Segoe UI", 9)).pack(side="left", padx=(8, 4))
+        ttk.Spinbox(add, from_=1, to=500, textvariable=self.gp_u_every, width=4).pack(side="left")
+        ttk.Combobox(add, textvariable=self.gp_u_rule, values=[n for _k, n in F.SUPPLY_RULES], state="readonly",
+                     width=11).pack(side="left", padx=(4, 0))
+        ttk.Button(add, text="+ Add", command=self.gp_add_supply).pack(side="left", padx=(8, 0))
+
+    def gp_sup_switch(self):
+        F.cfg()["pokes"]["supplies"] = bool(self.gp_sup_on.get())
+        F.save()
+
+    @staticmethod
+    def _gp_rule_key(label):
+        return next((k for k, n in F.SUPPLY_RULES if n == label), "maps")
+
+    def gp_add_supply(self):
+        name = self.gp_u_name.get().strip()
+        if not name:
+            return None
+        row = F.add_supply(name, self._gp_rule_key(self.gp_u_rule.get()), int(_num(self.gp_u_every.get()) or 10))
+        self.gp_u_name.set("")
+        self.gp_fill()
+        return row
+
+    def gp_set_supply(self, sid, rule_label=None, every=None):
+        n = _num(every) if every is not None else None
+        F.set_supply(sid, self._gp_rule_key(rule_label) if rule_label else None, int(n) if n else None)
+        self._gp_sup_rows()
+
+    def _gp_sup_rows(self):
+        P2 = C["panel2"]
+        box = self.gp_sup_box
+        for w in box.winfo_children():
+            w.destroy()
+        rows = F.cfg()["supplies"]
+        if not rows:
+            tk.Label(box, text="Nothing yet - e.g. Scroll of Wisdom every 10 maps.", bg=P2, fg=C["muted"],
+                     font=("Segoe UI", 9), anchor="w").pack(fill="x")
+            return
+        for c, h in enumerate(("Supply", "Refill every", "Since refill", "")):
+            tk.Label(box, text=h, bg=P2, fg=C["muted"], font=("Segoe UI", 9, "bold"), anchor="w").grid(
+                row=0, column=c, sticky="w", padx=(0, 12))
+        self.gp_sup_cells = {}
+        for i, r in enumerate(rows, 1):
+            used, every = F.supply_used(r)
+            tk.Label(box, text=r["name"], bg=P2, fg=C["text"], font=("Segoe UI", 9), anchor="w").grid(
+                row=i, column=0, sticky="w", padx=(0, 12), pady=1)
+            ef = tk.Frame(box, bg=P2)
+            ef.grid(row=i, column=1, sticky="w", padx=(0, 12), pady=1)
+            ev = tk.StringVar(value=str(r["every"]))
+            e = ttk.Entry(ef, textvariable=ev, width=4)
+            e.pack(side="left")
+            e.bind("<Return>", lambda _e, sid=r["id"], ev=ev: self.gp_set_supply(sid, every=ev.get()))
+            e.bind("<FocusOut>", lambda _e, sid=r["id"], ev=ev: self.gp_set_supply(sid, every=ev.get()))
+            rv = tk.StringVar(value=dict(F.SUPPLY_RULES)[r["rule"]])
+            cb = ttk.Combobox(ef, textvariable=rv, values=[n for _k, n in F.SUPPLY_RULES], state="readonly", width=11)
+            cb.pack(side="left", padx=(4, 0))
+            cb.bind("<<ComboboxSelected>>", lambda _e, sid=r["id"], rv=rv: self.gp_set_supply(sid, rv.get()))
+            up = used >= every
+            lab = tk.Label(box, text=f"{used} / {every}" + ("  · refill" if up else ""), bg=P2,
+                           fg=C["orange"] if up else C["text"], font=("Segoe UI", 9, "bold" if up else "normal"),
+                           anchor="w")
+            lab.grid(row=i, column=2, sticky="w", padx=(0, 12), pady=1)
+            self.gp_sup_cells[r["id"]] = lab
+            ok = tk.Label(box, text="↻", bg=P2, fg=C["muted"], cursor="hand2")
+            ok.grid(row=i, column=3, sticky="e")
+            ok.bind("<Button-1>", lambda _e, rr=r: (F.refilled(rr), F.save(), self._gp_sup_rows()))
+            Tooltip(ok, "Refilled - count again from now")
+            x = tk.Label(box, text="✕", bg=P2, fg=C["muted"], cursor="hand2")
+            x.grid(row=i, column=4, sticky="e", padx=(8, 0))
+            x.bind("<Button-1>", lambda _e, sid=r["id"]: (F.remove_supply(sid), self._gp_sup_rows()))
+
     # ---------------- C: farm plan
     def _gp_farms(self, parent):
         P2 = C["panel2"]
@@ -442,11 +533,14 @@ class GamePlanPage:
             return
         self._gp_goal_rows()
         self._gp_stock_rows()
+        self._gp_sup_rows()
         self._gp_farm_rows()
         f = F.cfg()
         if hasattr(self, "gp_phase"):
             self.gp_phase.pick(F.phase_name(f["phase"]), notify=False)
         self.gp_on.set(bool(f["on"]))
+        if hasattr(self, "gp_sup_on"):
+            self.gp_sup_on.set(bool(f["pokes"].get("supplies", True)))
 
 
 class FocusPokes:

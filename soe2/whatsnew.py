@@ -21,6 +21,11 @@ NEXT = [
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.73.3": [
+        "Map supply pokes: Overlay ↳ Game Plan › Map supplies - list what you use up in maps (Scrolls of Wisdom, "
+        "omens, any currency) and refill it every N maps or N minutes in maps. Between maps, in town, a poke says "
+        "it's time - Refilled, Snooze or Skip. Counted from the game's log; its own switch.",
+    ],
     "2.73.2": [
         "Price checks: items read from a stash tab stay in that tab's list (they also showed in Manual Add). "
         "Right-click waiting items to Pause pricing, Price next or Price last. A new iLvl column.",
