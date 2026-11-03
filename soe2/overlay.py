@@ -38,11 +38,12 @@ VK = {**{f"f{i}": 0x6F + i for i in range(1, 25)},
       "enter": 0x0D, "space": 0x20, "tab": 0x09, "esc": 0x1B, "escape": 0x1B, "backspace": 0x08, "insert": 0x2D,
       "ins": 0x2D, "delete": 0x2E, "del": 0x2E, "home": 0x24, "end": 0x23, "pgup": 0x21, "pageup": 0x21,
       "pgdn": 0x22, "pagedown": 0x22, "up": 0x26, "down": 0x28, "left": 0x25, "right": 0x27, "`": 0xC0,
+      "pause": 0x13, "break": 0x13,                      # 2.74.3: the Pause key (session timer pause / resume)
       "-": 0xBD, "=": 0xBB, "[": 0xDB, "]": 0xDD, ";": 0xBA, "'": 0xDE, ",": 0xBC, ".": 0xBE, "/": 0xBF, "\\": 0xDC,
       # mouse buttons (2.0 beta 17; AutoHotkey names, plus plain ones)
       "mbutton": 0x04, "xbutton1": 0x05, "xbutton2": 0x06, "middle": 0x04, "mouse4": 0x05, "mouse5": 0x06}
 MOUSE_VKS = (0x04, 0x05, 0x06)
-PRETTY = {0x04: "Middle mouse", 0x05: "Mouse 4", 0x06: "Mouse 5"}
+PRETTY = {0x04: "Middle mouse", 0x05: "Mouse 4", 0x06: "Mouse 5", 0x13: "Pause"}
 MODS = {"^": "ctrl", "!": "alt", "+": "shift"}
 
 

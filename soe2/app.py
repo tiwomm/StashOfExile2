@@ -1436,13 +1436,13 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         hint(3, "100% = fully solid. Lower = see-through, text and all (24% is the lowest). Over a busy spot, "
                 "95-100% reads best.")
         label(4, "Click-through")
-        self.ov_ct_var = tk.BooleanVar(value=bool(self.tracker_cfg().get("click_through", True)))
-        ct = ttk.Checkbutton(g, text="When the overlay is locked, clicks go through it to the game",
+        self.ov_ct_var = tk.BooleanVar(value=bool(self.tracker_cfg().get("click_through", False)))
+        ct = ttk.Checkbutton(g, text="Clicks go through the overlay to the game",
                              variable=self.ov_ct_var, command=self.on_click_through, style="Card.TCheckbutton")
         ct.grid(row=4, column=1, sticky="w", pady=(8, 0))
         self.ov_ct_switch = ct
-        hint(5, "Unlock the overlay (Overlay › Options › Lock the overlay) to click its switches, Notes ▾ and "
-                "Calc ▾. Notes and the calculator always take clicks - you type in them.")
+        hint(5, "On: the overlay's bar can't be clicked - its switches, ⏸ / ▶, Notes ▾ and Calc ▾ too (the Pause key "
+                "still pauses the timer). The lock only stops it moving. Notes and the calculator always take clicks.")
         row = section("Appearance", "Notes", "The note uses the style's colors and font; only its text size is "
                                              "yours.")
         tk.Label(row, text="Text size", bg=P2, fg=C["text"]).pack(side="left")
