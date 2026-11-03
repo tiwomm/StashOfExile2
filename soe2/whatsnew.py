@@ -24,9 +24,12 @@ NOTES = {
     "2.79.1": [
         "Mageblood and similar uniques price correctly: two of the same Legacy (2 Quicksilver, 2 Diamond) are searched "
         "as one stat with Min 2, like the trade site does.",
+        "The campaign line sits docked on top of the overlay bar and moves with it (switch: Overlay › Options › "
+        "Campaign). The bar is as wide as the XP bar, bottom centre, and refits when your resolution changes.",
+        "Updates are looked for every hour.",
     ],
     "2.79.0": [
-        "Price checks: a clean item panel, like Sidekick - every filter on the item card (properties, requirements, "
+        "Price checks: a clean item panel - every filter on the item card (properties, requirements, "
         "corrupted / fractured / desecrated / sanctified / mirrored / unidentified, each mod with Min / Max and ★, "
         "trade filters). Listing status, how it's priced and the raw text are under ▸ Advanced.",
         "No price pop-ups over your screen any more.",
@@ -83,7 +86,7 @@ NOTES = {
         "close with the × on their right.",
     ],
     "2.74.4": [
-        "Price checks: tick the mods right on the item card, like Sidekick - ticked mods are searched on. Min / Max "
+        "Price checks: tick the mods right on the item card - ticked mods are searched on. Min / Max "
         "and key mods are under Fine-tune the search.",
         "A unique's flavour text is never taken for a mod any more.",
     ],

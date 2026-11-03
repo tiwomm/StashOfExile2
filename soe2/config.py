@@ -127,7 +127,7 @@ DEFAULTS = {
     "min_results": 3,
     "tray": True,          # minimize to the system tray (needs pystray + pillow)
     "spread_warn": 20,     # warn when the cheapest and dearest listing are this many times apart (0 = off)
-    "hotkey_only": True,   # only accept items copied while YOU press Ctrl+Alt+C (ignores Sidekick Ctrl+D copies)
+    "hotkey_only": True,   # only accept items copied while YOU press Ctrl+Alt+C (ignores other tools' copies)
     "memory_shortcut": False,   # True: skip searching when 5+ identical searches in the last memory_hours agree (see 1.21)
     "memory_hours": 24,
     "model_shortcut": False,    # True: the model may set a price itself, but only after 100 checked guesses at 99 percent (1.23)

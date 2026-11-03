@@ -155,10 +155,26 @@ class OverlayParts:
             except tk.TclError:
                 pass
 
+    def goalbar_docked(self):
+        """2.79.1 (feedback: "force its default position to be docked to the top of the overlay bar"): the campaign /
+        Focus line sits on the bar and moves with it (Overlay › Options › Campaign › Dock it to the bar)."""
+        return bool(self.tracker_cfg().get("goal_dock", True))
+
+    def goalbar_follow(self):
+        """The bar moved: a docked line goes with it."""
+        w = getattr(self, "gb_win", None)
+        if w is None or not self.goalbar_docked():
+            return
+        try:
+            x, y = self._goalbar_spot(self.merged_layout(), w.winfo_width(), w.winfo_height())
+            w.geometry(f"+{x}+{y}")
+        except tk.TclError:
+            pass
+
     def _goalbar_spot(self, layout, gw, gh):
         cfg = self.tracker_cfg()
         saved = (cfg.get("goal_pos") or {}).get(layout)
-        if isinstance(saved, (list, tuple)) and len(saved) == 2:
+        if not self.goalbar_docked() and isinstance(saved, (list, tuple)) and len(saved) == 2:
             return int(saved[0]), int(saved[1])
         main = getattr(self, "mg_win", None)
         try:
@@ -203,13 +219,15 @@ class OverlayParts:
         mh = mh if mh > 1 else 60
         rows = self.goalbar_rows()
         gw = max(320, int(mw * (0.6 if hud else 1.0)))
-        if "campaign" in rows:                               # 2.78.2: as wide as the overlay's bar (feedback: "scale
+        if "campaign" in rows or self.goalbar_docked():                               # 2.78.2: as wide as the overlay's bar (feedback: "scale
             gw = mw                                          # to match the width of the other piece")
         row_h = max(30, int((self.hud_spots("xpbar")[0][3] if hud else 60) * (0.55 if hud else 0.62)))
         gh = row_h + int(row_h * 0.8) * (len(rows) - 1)
         x, y = self._goalbar_spot(layout, gw, gh)
 
         def moved(nx, ny, _w, _h):
+            if self.goalbar_docked():
+                return
             cfg.setdefault("goal_pos", {})[layout] = [int(nx), int(ny)]
             self.tracker_save()
         w = OverlayWindow(self.root, "Goal", "🎯", (x, y, gw, gh), opacity=int(cfg.get("opacity", 225)),
@@ -220,7 +238,7 @@ class OverlayParts:
         cv = w.canvas_body()
         W, H = gw - 2, gh - 2
         cv.configure(width=W, height=H)
-        if not cfg.get("mlocked"):
+        if not cfg.get("mlocked") and not self.goalbar_docked():     # docked: it moves with the bar
             w.draggable(cv)
         if hud:
             ends, self._hud_ends = getattr(self, "_hud_ends", None), ("amber", "amber")
