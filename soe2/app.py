@@ -3437,10 +3437,16 @@ class App(ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, Exchan
         self.set_item_impact(rec, mod, ("normal" if g == "ignore" else g) if checked else "ignore")
 
     def set_item_impact(self, rec, mod, imp):
-        """Tick / untick / star a mod on this one item only (pack size is worth money on some tablets, not all)."""
+        """Tick / untick / star a mod on this one item only (pack size is worth money on some tablets, not all).
+        2.79.2 (feedback: "nothing is clickable under stat filters"): the override goes only when it matches what
+        this mod would be anyway on this item - gear mods the price check left out (filler, low tier) can be ticked."""
         k = norm(mod["text"])
         ov = rec.setdefault("ov", {})
-        if imp == impact_key(k):
+        mine = ov.pop(k, None)
+        default = mod_impact(rec, mod)
+        if mine is not None:
+            ov[k] = mine
+        if imp == default:
             ov.pop(k, None)
         else:
             ov[k] = imp

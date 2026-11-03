@@ -15,9 +15,7 @@ CORRUPT_CHOICES = [("Any", "any"), ("Yes", "yes"), ("No", "no")]
 
 def default_opts(item):
     """What the searches use when you haven't changed anything (for showing it, and for Reset)."""
-    st = dict(STATUS_OPTIONS).get(SETTINGS.get("status"), "securable")
-    if st == "onlineleague":
-        st = "online"
+    st = "securable"                     # 2.79.2 (feedback): the item's search starts at Instant Buyout, always
     gear = bool(item.get("gear")) and not item.get("waystone")
     s = item.get("search") or {}
     out = {"status": st, "currency": None,
