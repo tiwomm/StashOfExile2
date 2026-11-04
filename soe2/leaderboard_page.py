@@ -33,6 +33,9 @@ class LeaderboardPage:
         self.lb_cls_box = ttk.Combobox(top, textvariable=self.lb_cls, values=("All",), state="readonly", width=16)
         self.lb_cls_box.pack(side="left")
         self.lb_cls_box.bind("<<ComboboxSelected>>", lambda e: self.lb_refresh())
+        from .style import Tooltip
+        Tooltip(self.lb_cls_box, "Your class comes from the game's log: it names it at every level-up "
+                                 "(\"Tylo (Invoker) is now level 24\"). Everyone's: the classes players shared.")
         ttk.Button(top, text="↻ Refresh", style="Quiet.TButton", command=lambda: self.lb_refresh(send=True)).pack(
             side="right")
         self.lb_share_var = tk.BooleanVar(value=bool(SETTINGS.get("lb_share", True)))
@@ -131,9 +134,21 @@ class LeaderboardPage:
         return True
 
     # ---------------------------------------------------------------- showing
+    def lb_classes_once(self):
+        """2.87.0: once a run, read the classes from the last part of Client.txt (in the background), then refresh."""
+        if getattr(self, "_lb_cls_read", False):
+            return
+        self._lb_cls_read = True
+        from .gamelog import find_log
+        path = find_log(self.tracker_cfg().get("log_path")) if hasattr(self, "tracker_cfg") else None
+        if path:
+            threading.Thread(target=lambda: self.ui_q.put(("lb_done", lambda r: r and self.lb_refresh(),
+                                                           LB.learn_classes(path))), daemon=True).start()
+
     def lb_refresh(self, send=False):
         if not hasattr(self, "lb_keys_tv"):
             return
+        self.lb_classes_once()
         if send:
             self.lb_send(force=True)
         cat = self.lb_cat_key()

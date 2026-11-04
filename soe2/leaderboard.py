@@ -45,6 +45,34 @@ def classes():
     return dict((F.cfg().get("state") or {}).get("classes") or {})
 
 
+def learn_classes(path, max_bytes=64 * 1024 * 1024):
+    """2.87.0 (feedback: "we don't have a way to read the class"): the game's log says it at every level-up
+    ("Tylo (Invoker) is now level 24"); the overlay only noted it from 2.86.0 on. Read the last part of Client.txt
+    (64 MB at most) for each character's newest class. -> {character: class} (also saved). Thread-safe (no Tk)."""
+    import os
+    from .gamelog import parse
+    from . import focus as F
+    found = {}
+    try:
+        size = os.path.getsize(path)
+        with open(path, "rb") as f:
+            f.seek(max(0, size - max_bytes))
+            for raw in f:
+                if b"is now level" not in raw:
+                    continue
+                ev = parse(raw.decode("utf-8", "replace"))
+                if ev and ev[0] == "level" and ev[2].get("cls"):
+                    found[ev[2]["who"]] = ev[2]["cls"]
+    except OSError:
+        return {}
+    if found:
+        st = F.cfg().setdefault("state", {})
+        cl = st.setdefault("classes", {})
+        for who, c in found.items():
+            cl.setdefault(who, c)
+    return found
+
+
 def best(entries):
     """[(cat, key, secs, ...)] -> only the fastest per (cat, key, league, class)."""
     out = {}
