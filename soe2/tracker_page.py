@@ -253,6 +253,8 @@ class TrackerPage:
         rgo, right = chrome_section(split, "Leaderboard", padx=8, pady=8)      # 2.69.0
         rgo.grid(row=0, column=1, sticky="nsew")
         self.tk_board_title = _BarTitle(rgo.section_bar)
+        ttk.Button(right, text="🏆 Global leaderboards", style="Quiet.TButton",          # 2.86.0
+                   command=lambda: self.shell.open("leaderboards")).pack(anchor="e")
         bcols = (("rank", "#", 30, "e"), ("time", "Time", 70, "e"), ("when", "When", 110, "w"), ("lvl", "Level", 50, "e"),
                  ("deaths", "Deaths", 55, "e"))
         bv = ttk.Treeview(right, columns=[c[0] for c in bcols], show="headings", height=6, selectmode="none")

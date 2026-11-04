@@ -178,6 +178,8 @@ def char(name=None):
     c = cfg()
     name = current_char() if name is None else name
     run = c["chars"].setdefault(name or "", {})
+    if not run:                                           # 2.86.0: a new run - its league (for the leaderboards)
+        run["league"] = SETTINGS.get("league") or ""
     for k, v in (("act", None), ("zone", None), ("here", None), ("seen", {}), ("levels", {}), ("rewards", {}),
                  ("ask", []), ("secs", {}), ("last_ts", None), ("afk", False), ("done", False), ("zone_level", 0),
                  ("pending", None), ("unknown", None)):

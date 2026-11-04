@@ -4,7 +4,7 @@
 
 > **Who we build for - read second.** Path of Exile players are utilitarian: they love data and information, problem solving and creative thinking. So every feature shows its numbers *and how they were worked out*, lets you sort, filter, compare and export them (CSV), keeps power-user depth (keys, versions, raw data) one click away instead of hiding it, explains in plain words, and leaves the decision to the player. Pretty is welcome; vague is not.
 
-**Current version: 2.85.2**
+**Current version: 2.86.0**
 
 Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds features, 2.10.1 only fixes. Each step below is one release; we work through them top to bottom.
 
@@ -148,6 +148,7 @@ Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds f
 | 2.85.0 | **Community board protections**: only authors edit, every change kept (History, roll back), **Suggest an edit** (the author accepts), opt-in reviewers (2 approve changes to Official strats and decide reports), unique community names asked once at start-up (change once every 7 days), field checks and daily limits. Money Makers / Strat Tracker accuracy fixes (units, negatives, sources, labels, tracking Community strats). |
 | 2.85.1 | Money Makers filter labels show in full. Roadmap: the Community FAQ becomes a Community forum. |
 | 2.85.2 | Ritual / Delirium watchers see the game under the overlay bar (the bar is left out of screen captures; switch in Overlay ↳ Settings). The docked Focus / campaign line sits flush with matching ends. |
+| 2.86.0 | **Global leaderboards**: Overlay ↳ Leaderboards - Campaign (acts + whole), Maps, Bosses & pinnacles, Trials; Mine / Everyone, league, class; opt-in sharing (community name only); self-reported times checked by the board, reports, reviewers, admins. |
 
 ## ▶ Next up
 
@@ -157,7 +158,6 @@ Order (decided 2.34.0): the Polish basics first, so new features are built on th
 
 | Version | Plan |
 |---|---|
-| 2.86.0 | **Global leaderboards** (opt-in, through Community data sharing): one Leaderboards page under Overlay (Overlay ↳ Leaderboards) with tabs for Campaign (total and per act, from the Campaign Helper's splits), Maps (fastest clear per map), Bosses & pinnacles, and Trials (Sekhemas, Chaos, Simulacrum); each with Mine / Everyone, this league / all time, filters (league, class). The session page's own leaderboard links to it. Times come from the game's log, so they're marked self-reported: the board drops impossible times, and reports / an admin can hide entries. A board name only (no account), as on Money Makers. |
 | 2.87.0 | **Public stash order test tool.** |
 | 2.88.0 | **Polish 4 - Responsive:** windows reflow when narrow (toolbars wrap, side panels drop under the list, sensible minimum sizes), sharp on every monitor (per-monitor DPI), a text size setting (100-150 %). |
 | 2.89.0 | **Polish 5 - Hover, focus, micro-interactions:** the same hover and pressed look on every button, row, icon and tab; a visible keyboard focus ring everywhere; short (120-180 ms) fades for popups and toasts, never on lists; a "Reduce motion" setting that turns them off. |
@@ -189,7 +189,7 @@ Order (decided 2.34.0): the Polish basics first, so new features are built on th
 ## 🤔 Maybe later (ideas to weigh when the plan above is done)
 
 - **Trials & Simulacrum tracker** (Overlay ↳ Trials): counts Trial of Sekhemas, Trial of Chaos and Simulacrum runs from the game's log (entering the area; finishing, if the log says so), with a "Got it!" for each mechanic's chase item (your own list; defaults such as Simulacrum → Voices, Trial of Chaos → Adorned, checked against current drop info first). Shows runs, runs since the last chase drop, the drop history and your runs per drop; a small run counter on the overlay inside a trial. Later: drop rates pooled through Community data sharing (opt-in).
-- **Community FAQ → Community forum** (expanded 2.85.1; mockups first, when it comes up): the FAQ works like a forum, a hybrid of two popular forums - threads in sections (Questions, Farm strats, Trading, Builds, General), each post under the player's community name (asked once at start-up), replies, and upvotes that count for both farm strats and FAQ answers. The asker marks the answer that solved it, and that answer goes to the searchable FAQ (e.g. "Can Sanctify add a socket, or only corruption?" -> "Corruption only ..."); players who opted in get unanswered questions offered to them. A player profile shows their posts and total upvotes (reputation), as on the trading-style popular forum. Moderation follows admin privileges plus the 2.85.0 reviewers: reports with reasons, hide / lock / pin / move threads, edit history, bans. Runs on the community board server (board/).
+- **Community FAQ → Community forum** (expanded 2.85.1; mockups first, when it comes up): the FAQ works like a forum, a hybrid of two popular forums - threads in sections (Questions, Farm strats, Trading, Builds, General), each post under the player's community name (asked once at start-up), replies, and upvotes that count for both farm strats and FAQ answers. The asker marks the answer that solved it, and that answer goes to the searchable FAQ (e.g. "Can Sanctify add a socket, or only corruption?" -> "Corruption only ..."); players who opted in get unanswered questions offered to them. A player profile shows their posts and total upvotes (reputation), as on the trading-style popular forum. Moderation follows admin privileges plus the 2.85.0 reviewers: reports with reasons, hide / lock / pin / move threads, edit history, bans. Runs on the community board server (board/). **To solve first:** how the app gets updates - pulling new threads, replies, votes and moderation changes (when to poll and how often, what to cache on this PC, unread counts, notifications, staying inside the board's free-plan limits).
 
 ## 💤 Parked (not planned unless something changes)
 
