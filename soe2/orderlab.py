@@ -60,23 +60,45 @@ def entry(e, rank):
     p = lst.get("price") or {}
     return {"id": (e or {}).get("id"), "rank": rank, "name": " ".join(x for x in (it.get("name"), it.get("typeLine")) if x),
             "x": st.get("x"), "y": st.get("y"), "stash": st.get("name"), "indexed": lst.get("indexed"),
+            "w": it.get("w"), "h": it.get("h"), "base": it.get("baseType") or "",          # 2.92.1: its size in cells
+            "corrupted": bool(it.get("corrupted")),
             "price": f"{p.get('amount')} {p.get('currency')}" if p else "", "text": text, "walk": None}
 
 
+def _base_words(head):
+    return set(" ".join(head).split())
+
+
 def match(listings, text):
-    """A copied item -> the listing it is (not walked yet; the best line overlap among those with the same name)."""
+    """A copied item -> the listing it is (not walked yet; the best line overlap among those with the same name).
+    2.92.1: when no listing has exactly the same name lines (corrupted / magic items: the copy and the site's text
+    word them differently), the ones that share the base type's words are tried, on their other lines."""
     head, exact, shape = text_key(text)
-    best, score = None, float("-inf")
-    for L in listings:
-        if L.get("walk") is not None:
-            continue
-        h, ex, sh = text_key(L["text"])
-        if head and h and h != head:
-            continue
-        sc = 2 * len(exact & ex) + len(shape & sh) - 0.1 * len(shape ^ sh)
-        if sc > score:
-            best, score = L, sc
-    return best
+    left = [L for L in listings if L.get("walk") is None]
+
+    def best_of(cands):
+        best, score = None, float("-inf")
+        for L in cands:
+            _h, ex, sh = text_key(L["text"])
+            sc = 2 * len(exact & ex) + len(shape & sh) - 0.1 * len(shape ^ sh)
+            if sc > score:
+                best, score = L, sc
+        return best, score
+    same = [L for L in left if not head or not text_key(L["text"])[0] or text_key(L["text"])[0] == head]
+    if same:
+        return best_of(same)[0]
+    words = _base_words(head)
+    near = [L for L in left if words and (set(str(L.get("base") or "").lower().split()) <= words or
+                                          len(words & _base_words(text_key(L["text"])[0])) >= 2)]
+    b, sc = best_of(near)
+    return b if b is not None and sc > 0 else None
+
+
+def stash_order(listings):
+    """2.92.1: the order to work a tab in, as players do: down the first column from the top, then the next column
+    to the right - by each item's top-left cell (the site gives it: x, y)."""
+    return sorted(listings, key=lambda L: ((L.get("x") if isinstance(L.get("x"), int) else 10 ** 6),
+                                           (L.get("y") if isinstance(L.get("y"), int) else 10 ** 6)))
 
 
 def ranks(values):
@@ -116,6 +138,10 @@ def orders(listings, newest=None):
     if all(isinstance(L.get("x"), int) and isinstance(L.get("y"), int) for L in listings):
         out["place, down columns"] = [L["x"] * 1000 + L["y"] for L in listings]
         out["place, across rows"] = [L["y"] * 1000 + L["x"] for L in listings]
+        # 2.92.1: big items by their middle cell - where the eye finds a 2x4 crossbow, not its top-left corner
+        mid = [((L["x"] + (L.get("w") or 1) / 2), (L["y"] + (L.get("h") or 1) / 2)) for L in listings]
+        out["middle, down columns"] = [x * 1000 + y for x, y in mid]
+        out["middle, across rows"] = [y * 1000 + x for x, y in mid]
     if all(L.get("indexed") for L in listings):
         out["indexed time"] = [str(L["indexed"]) for L in listings]
     out["listing id"] = [str(L["id"]) for L in listings]
@@ -156,10 +182,25 @@ def to_csv(rounds, path):
     import csv
     with open(path, "w", newline="", encoding="utf-8") as fh:
         w = csv.writer(fh)
-        w.writerow(["round", "when", "site_rank", "newest_rank", "walk", "x", "y", "indexed", "id", "name", "price"])
+        w.writerow(["round", "when", "site_rank", "newest_rank", "walk", "x", "y", "w", "h", "corrupted", "indexed", "id",
+                    "name", "price"])
         for n, r in enumerate(rounds, 1):
             pos = {i: k for k, i in enumerate(r.get("newest") or [])}
             for L in r["listings"]:
                 w.writerow([n, time.strftime("%Y-%m-%d %H:%M", time.localtime(r["when"])), L["rank"],
                             pos.get(L["id"], ""), "" if L.get("walk") is None else L["walk"], L.get("x"), L.get("y"),
-                            L.get("indexed"), L["id"], L["name"], L.get("price")])
+                            L.get("w"), L.get("h"), int(bool(L.get("corrupted"))), L.get("indexed"), L["id"], L["name"],
+                            L.get("price")])
+
+
+def log_unmatched(text, path=None):
+    """2.92.1: a copy that matched no listing -> its first lines in orderlab_unmatched.txt (on this PC only; names
+    scrubbed), so the matching can be fixed."""
+    from .config import P
+    from .privacy import scrub_names
+    lines = [l for l in str(text or "").splitlines() if l.strip()][:10]
+    try:
+        with open(path or P("orderlab_unmatched.txt"), "a", encoding="utf-8") as fh:
+            fh.write(time.strftime("%Y-%m-%d %H:%M:%S") + "\n" + scrub_names("\n".join(lines)) + "\n---\n")
+    except OSError:
+        pass
