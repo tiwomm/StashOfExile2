@@ -49,13 +49,13 @@ class OverlayRates:
     def ovr_switch(self, on):
         self.ovr_cfg()["on"] = bool(on)
         save_json("settings.json", SETTINGS)
-        if on:
+        if on and self.ov_enabled():
             self.ovr_build()
         else:
             self.ovr_close()
 
     def ovr_restore(self):
-        if self.ovr_cfg()["on"]:
+        if self.ovr_cfg()["on"] and self.ov_enabled():            # 2.92.2: not while the overlay is disabled
             try:
                 self.ovr_build()
             except Exception:

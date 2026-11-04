@@ -122,11 +122,18 @@ class TrackerPage:
         self.tk_pause_btn.pack(side="left", padx=8)
         self.tk_state = tk.Label(top, text="Not tracking", bg=P2, fg=C["muted"], font=("Segoe UI", 12, "bold"))
         self.tk_state.pack(side="left", padx=12)
-        # 2.70.1: a switch for the timer only (was "Hide timer", which hid every number); the rest: Options
+        # 2.70.1: the session timer's own switch (now in Settings › On the bar › Numbers)
         self.tk_timer_var = tk.BooleanVar(value=bool(cfg["lines"].get("session", True)))
-        self.tk_timer_sw = ttk.Checkbutton(top, text="Timer over the game", variable=self.tk_timer_var,
-                                           command=self.tracker_timer_switch, style="Card.TCheckbutton")
-        self.tk_timer_sw.pack(side="right")
+        # 2.92.2 (feedback): one master switch for everything over the game - Overlay Enabled | Overlay Disabled
+        self.tk_ov_master = tk.StringVar(value="on" if self.ov_enabled() else "off")
+        mf = tk.Frame(top, bg=P2)
+        mf.pack(side="right")
+        self.tk_ov_master_btns = {}
+        for val, label in (("on", "Overlay Enabled"), ("off", "Overlay Disabled")):
+            rb = ttk.Radiobutton(mf, text=label, value=val, variable=self.tk_ov_master, style="Card.TRadiobutton",
+                                 command=lambda: self.ov_enable(self.tk_ov_master.get() == "on"))
+            rb.pack(side="left", padx=(8, 0))
+            self.tk_ov_master_btns[val] = rb
         self.tk_keys_lbl = tk.Label(top, text="", bg=P2, fg=C["muted"], font=("Segoe UI", 9))       # 2.10.0
         self.tk_keys_lbl.pack(side="right", padx=8)
         self.tracker_keys_hint()
@@ -422,7 +429,9 @@ class TrackerPage:
         self.tk_switches_var = tk.BooleanVar(value=bool(cfg.get("alerts_bar", True)))
         from .merged_page import CHIPS, chip_name
         bc = self.bar_cfg()
-        self.tk_bar_vars = {k: tk.BooleanVar(value=bool(bc.get(k, True))) for k in CHIPS + ("notes", "calc", "vendor")}
+        self.tk_bar_vars = {k: tk.BooleanVar(value=bool(bc.get(k, True))) for k in CHIPS + ("notes", "calc", "regex")}
+        from . import campaign as CP
+        self.tk_bar_vars["vendor"] = tk.BooleanVar(value=bool(bc.get("vendor", True)) and bool(CP.cfg()["vendor"]))
         # 2.90.0: one switch per helper (the bar fits itself to the ones you keep), then the menus, then the lines
         sub(bar, "Switches - turn a helper on or off mid-game (it keeps working when its switch isn't on the bar)", 8)
         switches(bar, [(chip_name(k) + (" switch" if k in ("focus", "campaign") else ""), self.tk_bar_vars[k],
@@ -430,7 +439,9 @@ class TrackerPage:
         sub(bar, "Menus", 8)
         switches(bar, (("Notes ▾", self.tk_bar_vars["notes"], self.tracker_bar_switch),
                        ("Calc ▾", self.tk_bar_vars["calc"], self.tracker_bar_switch),
-                       ("Vendor ▾ (in town)", self.tk_bar_vars["vendor"], self.tracker_bar_switch)), 3, prefix="bar:")
+                       ("Regex ▾ (your favorites)", self.tk_bar_vars["regex"], self.tracker_bar_switch),
+                       ("Vendor ▾ (campaign towns)", self.tk_bar_vars["vendor"],
+                        lambda: self.camp_vendor_switch(self.tk_bar_vars["vendor"]))), 2, prefix="bar:")
         from . import focus as F
         from . import campaign as CP
         sub(bar, "Lines above the bar", 8)
@@ -456,9 +467,9 @@ class TrackerPage:
         # ---- Campaign: its options (route, act timer ...); on / off is in Helpers, its line in On the bar
         camp = card(1, 0, "Campaign", "The Campaign Helper's options. Turn it on or off in Helpers below; its line "
                                       "and switch are in On the bar.")
-        self.tk_cvendor_var = tk.BooleanVar(value=bool(CP.cfg()["vendor"]))
+        self.tk_cvendor_var = self.tk_bar_vars["vendor"]          # 2.92.2: the same switch as Vendor ▾ in On the bar
         vv = self.tk_cvendor_var
-        switches(camp, (("Vendor search (in town)", vv, lambda: self.camp_vendor_switch(vv)),), 2)
+        switches(camp, (("Vendor ▾ in campaign towns", vv, lambda: self.camp_vendor_switch(vv)),), 2)
         self.camp_options(po, into=camp)
         # ---- Behaviour
         box = card(1, 1, "Behaviour")
@@ -583,6 +594,8 @@ class TrackerPage:
         b = self.bar_cfg()
         for k, v in self.tk_bar_vars.items():
             b[k] = bool(v.get())
+        if not b.get("regex"):
+            self.rx_ov_close()
         if any(b.get(k) for k in self.HELPERS):              # 2.90.0: a helper's own switch brings the row back
             self.tracker_cfg()["alerts_bar"] = True
         self.tracker_save()

@@ -118,7 +118,7 @@ class CalcOverlay:
 
     def calc_ov_restore(self):
         c = self.calc_cfg()
-        if c["on"] and c["shown"]:
+        if c["on"] and c["shown"] and self.ov_enabled():          # 2.92.2: not while the overlay is disabled
             try:
                 self.calc_ov_toggle(True)
             except Exception:

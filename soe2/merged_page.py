@@ -246,6 +246,8 @@ class MergedOverlay:
 
     def merged_wants(self):
         oc = self.overlay.cfg
+        if not self.ov_enabled():                         # 2.92.2: the master switch is off - nothing over the game
+            return {"timer": False, "helpers": False, "notes": False}
         return {"timer": bool(getattr(self, "mg_timer", False)),
                 "helpers": bool(self.bar_chips()),       # 2.70.1: its own switch; 2.73.0: or the Focus switch
                 "notes": self.merged_embeds_notes() and bool(oc.get("notes_enabled")) and bool(oc.get("notes_visible"))}
@@ -262,6 +264,7 @@ class MergedOverlay:
         b.setdefault("calc", True)                       # 2.74.0: Calc ▾ (the calculator over the game)
         b.setdefault("campaign", True)                   # 2.77.0: the Campaign switch, and Vendor ▾ in town
         b.setdefault("vendor", True)
+        b.setdefault("regex", True)                      # 2.92.2: Regex ▾ (your favorites)
         b.pop("desecrate", None)                         # 2.81.1 (feedback): no Desecration switch on the bar
         for k in self.HELPERS:
             b.setdefault(k, True)
@@ -625,6 +628,41 @@ class MergedOverlay:
             x -= 20
         return x
 
+    # ---------------------------------------------------------------- 2.92.2: the master switch
+    def ov_enabled(self):
+        """Overlay Enabled | Overlay Disabled (Overlay page, top). A new install starts disabled; an install that
+        already had the overlay keeps it on."""
+        cfg = self.tracker_cfg()
+        if "ov_on" not in cfg:
+            cfg["ov_on"] = not getattr(self, "_fresh_install", False)
+        return bool(cfg["ov_on"])
+
+    def ov_enable(self, on):
+        """On: the bar, the calculator and the rates window come back as you left them - then, the first time, which
+        switches go on the bar. Off: all of it goes (each helper's own setting is kept)."""
+        on = bool(on)
+        self.tracker_cfg()["ov_on"] = on
+        self.tracker_save()
+        v = getattr(self, "tk_ov_master", None)
+        if v is not None and v.get() != ("on" if on else "off"):
+            v.set("on" if on else "off")
+        if on:
+            self.merged_build()
+            self.calc_ov_restore()
+            self.ovr_restore()
+            return self.ov_chips_maybe()
+        self.calc_ov_close(remember=False)
+        self.ovr_close()
+        self.rx_ov_close()
+        self.camp_vendor_close()
+        try:
+            if getattr(self.overlay, "notes", None) is not None and not self.overlay._embedded():
+                self.overlay.hide_notes(remember=False)
+        except Exception:
+            pass
+        self.merged_build()
+        return None
+
     # ---------------------------------------------------------------- 2.90.0: which switches on the bar
     def ov_chips_maybe(self):
         """Once: ask which helpers' switches go on the overlay's bar (a new install shows none until you pick)."""
@@ -727,32 +765,120 @@ class MergedOverlay:
         bb = cv.bbox("mg_notes")
         return (bb[0] if bb else x) - 12
 
+    def bar_buttons(self):
+        """2.92.2: the menus on the bar, left to right: Notes ▾, Calc ▾, Regex ▾, Vendor ▾ (each only when it's on)."""
+        return [k for k, on in (("notes", self.notes_on_bar()), ("calc", self.calc_on_bar()),
+                                ("regex", self.regex_on_bar()), ("vendor", self.vendor_on_bar())) if on]
+
+    def regex_on_bar(self):
+        return bool(self.bar_cfg().get("regex", True))
+
+    def vendor_on_bar(self):
+        """2.92.2 (feedback: the Vendor switch did nothing): Vendor ▾ sits with the other menus, not on the campaign
+        line - shown in a campaign town whether that line is up or not."""
+        from . import campaign as CP
+        try:
+            return bool(CP.cfg()["vendor"]) and bool(self.bar_cfg().get("vendor", True)) and CP.active() and \
+                self.camp_in_town()
+        except Exception:
+            return False
+
     def _mg_bar_buttons(self, w, cv, P, x, y, anchor="e"):
-        """2.74.0: Notes ▾ and Calc ▾ side by side (each only when it's on the bar). -> the far edge."""
-        order = [("notes", self.notes_on_bar()), ("calc", self.calc_on_bar())]
+        """2.74.0: Notes ▾ and Calc ▾ side by side (each only when it's on the bar); 2.92.2: Regex ▾ and Vendor ▾
+        too. -> the far edge."""
+        order = self.bar_buttons()
         if anchor == "e":
-            order.reverse()                               # drawn right to left: Calc, then Notes left of it
-        for what, on in order:
-            if not on:
-                continue
+            order.reverse()                               # drawn right to left
+        for what in order:
             if what == "notes":
                 nx = self._mg_notes_button(w, cv, P, x, y, anchor=anchor)
                 bb = cv.bbox("mg_notes")
             else:
-                nx = self._mg_calc_button(cv, P, x, y, anchor=anchor)
-                bb = cv.bbox("mg_calc")
+                nx = self._mg_menu_button(cv, P, x, y, what, anchor=anchor)
+                bb = cv.bbox("mg_" + what)
             x = nx if anchor == "e" else ((bb[2] if bb else x) + 12)
         return x
 
-    def _mg_calc_button(self, cv, P, x, y, anchor="e"):
-        txt = "Calc" + ("  ▴" if self.calc_ov_shown() else "  ▾")
-        cv.create_text(x, y, text=txt, anchor=anchor, fill=P["muted"], font=(P["font"], self._hf(9)),
-                       tags=("mg", "mg_calc"))
-        cv.tag_bind("mg_calc", "<Button-1>", lambda e: self.calc_ov_toggle())
-        cv.tag_bind("mg_calc", "<Enter>", lambda e: cv.configure(cursor="hand2"))
-        cv.tag_bind("mg_calc", "<Leave>", lambda e: cv.configure(cursor=""))
-        bb = cv.bbox("mg_calc")
+    def _mg_menu_button(self, cv, P, x, y, what, anchor="e"):
+        """Calc ▾, Regex ▾ or Vendor ▾: a click opens / closes its small window."""
+        name, shown, click = {
+            "calc": ("Calc", self.calc_ov_shown, self.calc_ov_toggle),
+            "regex": ("Regex", self.rx_ov_shown, self.rx_ov_toggle),
+            "vendor": ("Vendor", lambda: getattr(self, "camp_vendor_win", None) is not None, self.camp_vendor_toggle),
+        }[what]
+        tag = "mg_" + what
+        cv.create_text(x, y, text=name + ("  ▴" if shown() else "  ▾"), anchor=anchor, fill=P["muted"],
+                       font=(P["font"], self._hf(9)), tags=("mg", tag))
+        cv.tag_bind(tag, "<Button-1>", lambda e: click())
+        cv.tag_bind(tag, "<Enter>", lambda e: cv.configure(cursor="hand2"))
+        cv.tag_bind(tag, "<Leave>", lambda e: cv.configure(cursor=""))
+        bb = cv.bbox(tag)
         return (bb[0] if bb else x) - 12
+
+    # 2.92.2 (feedback): your Regex favorites over the game, beside Notes and Calc
+    def rx_ov_shown(self):
+        return getattr(self, "rx_ov_win", None) is not None
+
+    def rx_ov_toggle(self, show=None):
+        show = (not self.rx_ov_shown()) if show is None else bool(show)
+        if show:
+            self.rx_ov_show()
+        else:
+            self.rx_ov_close()
+        if getattr(self, "mg_win", None) is not None:
+            self.merged_build()                          # (Regex ▾ / ▴ on the bar)
+        return show
+
+    def rx_ov_favs(self):
+        out = []
+        for f in getattr(self, "rx_favs", None) or []:
+            try:
+                s = self.rx_fav_search(f)
+            except Exception:
+                s = ""
+            if s:
+                out.append((f.get("name") or "Favorite", s))
+        return out
+
+    def rx_ov_show(self):
+        self.rx_ov_close()
+        w, body, P = self._camp_card("Regex favorites", "★", 380, top=0.14, on_close=lambda: self.rx_ov_toggle(False))
+        bg = P["bg"]
+        favs = self.rx_ov_favs()
+        tip = "Click one = copied · Ctrl+F, Ctrl+V in the stash or a shop" if favs else \
+            "No favorites yet. Build a search on the Regex page, then press ☆ Add to Favorites."
+        tk.Label(body, text=tip, bg=bg, fg=P["muted"], font=(P["font"], self.ov_font(9)), anchor="w", justify="left",
+                 wraplength=self.ov_px(340)).pack(fill="x")
+        self.rx_ov_btns = {}
+        for name, rx in favs[:12]:
+            b = ttk.Button(body, text=name, style=self.ov_btn(), command=lambda n=name, rx=rx: self.rx_ov_copy(n, rx))
+            b.pack(fill="x", pady=1)
+            self.rx_ov_btns[name] = b
+        if len(favs) > 12:
+            tk.Label(body, text=f"+{len(favs) - 12} more on the Regex page", bg=bg, fg=P["muted"],
+                     font=(P["font"], self.ov_font(8)), anchor="w").pack(fill="x", pady=(4, 0))
+        self.rx_ov_msg = tk.Label(body, text="", bg=bg, fg=P["on"], font=(P["font"], self.ov_font(9)), anchor="w")
+        self.rx_ov_msg.pack(fill="x", pady=(8, 0))
+        self.rx_ov_win = w
+        w.show()
+        return w
+
+    def rx_ov_copy(self, name, rx):
+        self.root.clipboard_clear()
+        self.root.clipboard_append(rx)
+        try:
+            self.rx_ov_msg.config(text=f"Copied: {name}")
+        except (AttributeError, tk.TclError):
+            pass
+        return rx
+
+    def rx_ov_close(self):
+        w, self.rx_ov_win = getattr(self, "rx_ov_win", None), None
+        if w is not None:
+            try:
+                w.destroy()
+            except tk.TclError:
+                pass
 
     # 2.74.3 (feedback: "a small pause play toggle for the session tracker directly on the overlay")
     def play_glyph(self):
@@ -814,7 +940,7 @@ class MergedOverlay:
         self._play_drawn = len(live)
 
     def bar_buttons_on(self):
-        return self.notes_on_bar() or self.calc_on_bar()
+        return bool(self.bar_buttons())
 
     def merged_notes_drop(self):
         """The note under the strip / Minimal card (opened there each time, so it drops down from it)."""
@@ -1164,8 +1290,8 @@ class MergedOverlay:
         if two:                                              # ---- row 1: the switches, centered; Notes at the end
             ch = int(H * 0.28)                               # (the socket: about 2.73.5's size)
             gap = self._hud_gap()
-            room = (rgt - lft) * 0.75 - (self._hf(70) if self.notes_on_bar() else 0) - \
-                (self._hf(60) if self.calc_on_bar() else 0)
+            room = (rgt - lft) * 0.75 - sum(self._hf(70 if k in ("notes", "vendor", "regex") else 60)
+                                            for k in self.bar_buttons())
             short = sum(self._hud_cell_w(cv, P, k, False) + gap for k in self.bar_chips()) > room
             total = sum(self._hud_cell_w(cv, P, k, short) + gap for k in self.bar_chips()) - gap
             bleft = rgt

@@ -21,6 +21,12 @@ NEXT = [
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.92.2": [
+        "Overlay page: Overlay Enabled | Overlay Disabled - one switch for everything over the game. You pick which "
+        "switches go on the bar when you enable it.",
+        "Regex ▾ on the overlay bar, beside Notes and Calc: click a favorite to copy it.",
+        "Vendor ▾ works again in campaign towns, beside the other menus (one switch for it).",
+    ],
     "2.92.1": [
         "Listing order lab (admins): corrupted items match their listing; item sizes and a column-by-column order are "
         "shown for comparing.",
