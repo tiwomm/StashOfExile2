@@ -21,6 +21,12 @@ NEXT = [
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.87.0": [
+        "Bulk Pricing › Stash tab: the list follows your tab - down each column, left to right (or across each row: "
+        "List order). The # column shows where each item sits (C3 R5 = column 3, row 5).",
+        "Price Checks go first: Bulk Pricing waits while one runs, and pressing Search again replaces the older "
+        "search. Price Checks now search exactly the mods you ticked.",
+    ],
     "2.86.1": [
         "Community names: slurs and hate words aren't allowed (also with swapped letters, numbers or spaces). A name "
         "like that from before is reset - the app asks you for a new one.",

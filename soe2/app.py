@@ -3292,7 +3292,7 @@ class App(PriceCheckPage, FavoritesPage, BoardModPage, LeaderboardPage, WellSoul
         sel = set(self.tree.selection())
         self.tree.delete(*self.tree.get_children())
         shown = 0
-        for rid in sorted(self.records):
+        for rid in sorted(self.records, key=lambda r: self.stash_key(self.records[r])):   # 2.87.0: a tab in its order
             if self.visible(self.records[rid]):
                 self.tree.insert("", "end", iid=str(rid), values=("",) * len(self.COLS))
                 self.update_row(rid)
@@ -3497,10 +3497,12 @@ class App(PriceCheckPage, FavoritesPage, BoardModPage, LeaderboardPage, WellSoul
             if not rec:
                 continue
             rec["state"] = "queued"
+            pc = rec.get("src") in ("pc", "fav")                 # 2.80.0: Price Checks go first (2.84.0: Favorites)
+            if pc:                                               # 2.87.0: a new Search replaces its older one
+                rec["gen"] = rec.get("gen", 0) + 1
             self.batch_ids.add(rid)
             self.update_row(rid)
             self.refresh_detail_if_selected(rid)
-            pc = rec.get("src") in ("pc", "fav")                 # 2.80.0: Price Checks go first (2.84.0: Favorites)
             self.engine.add(0 if pc else (2 if rec["resolved"] else 1), "price" if rec["resolved"] else "resolve", rid)
 
     def reprice_all(self):
@@ -4041,7 +4043,7 @@ class App(PriceCheckPage, FavoritesPage, BoardModPage, LeaderboardPage, WellSoul
         # (2.72.0: gear shows its own confidence - it used to say "Guess" for every non-unique piece)
         stars = "★" * keys if keys else ""                     # 2.24.0: its own column (2.19.0 put it before the name)
         ilvl = it.get("ilvl") or ""                            # 2.73.2
-        self.tree.item(str(rid), values=(rid, it["name"], it["base"], self.MARK_TEXT[mark], est, conf, listings,
+        self.tree.item(str(rid), values=(self.stash_spot(rec), it["name"], it["base"], self.MARK_TEXT[mark], est, conf, listings,
                                          stamp, match, stars, ilvl), tags=tags)
 
     def on_price_unit(self):
@@ -4218,6 +4220,35 @@ class App(PriceCheckPage, FavoritesPage, BoardModPage, LeaderboardPage, WellSoul
             arrow = (" ▼" if self.sort_rev else " ▲") if cid == self.sort_col else ""
             self.tree.heading(cid, text=title + arrow)
 
+    # ---------------- 2.87.0 (feedback: the trade site lists a public tab's items in no order - "I work ... from top to
+    # bottom and left to right across my stash"): each item read from a tab keeps its place (the listing's stash x / y),
+    # and the list follows the tab - down each column, columns left to right (or across each row; Settings key
+    # "stash_order": "columns" / "rows"). The # column shows the place (C3 R5 = column 3, row 5).
+    def stash_key(self, rec):
+        pos = rec.get("pos")
+        if not pos:
+            return (1, 0, 0, rec["id"])
+        x, y = pos
+        return (0, x, y, rec["id"]) if SETTINGS.get("stash_order", "columns") == "columns" else (0, y, x, rec["id"])
+
+    def stash_spot(self, rec):
+        pos = rec.get("pos")
+        return f"C{pos[0] + 1} R{pos[1] + 1}" if pos else rec["id"]
+
+    def stash_order_soon(self):
+        if getattr(self, "_so_job", None) is None:
+            def go():
+                self._so_job = None
+                if self.sort_col in (None, "added"):
+                    self.sort_col = self.sort_col or "added"
+                    self._apply_sort()
+            self._so_job = self.root.after(300, go)
+
+    def stash_order_set(self, how):
+        SETTINGS["stash_order"] = how
+        save_json("settings.json", SETTINGS)
+        self.sort_added()
+
     def sort_added(self):
         self.sort_col, self.sort_rev = "added", False
         self._apply_sort()
@@ -4232,7 +4263,7 @@ class App(PriceCheckPage, FavoritesPage, BoardModPage, LeaderboardPage, WellSoul
         def key(rid):
             rec = self.records[int(rid)]
             if col == "added":                                 # 2.0 beta 22: the order you copied them in
-                return int(rid)
+                return self.stash_key(rec)                      # (2.87.0: a stash tab's items: their place in it)
             if col == "est":
                 return rec["est"] if rec["est"] is not None else -1
             if col == "conf":
