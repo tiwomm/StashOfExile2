@@ -27,7 +27,7 @@ import time
 
 from . import gamedata
 from .config import BASE
-from .mods import merge_dups, option_for, read_numbers, search_sid, roll_pct, strip_markup
+from .mods import merge_dups, norm, option_for, read_numbers, search_sid, roll_pct, strip_markup
 from .net import call
 from .trade import apply_opts, _cached, _search_cache, listing_rules
 
@@ -147,6 +147,53 @@ def _total(text, shown, value, sid, why):
     return {"text": text, "shown": shown, "kind": "Total", "tier": None, "mid": f"total:{sid}", "flags": set(),
             "value": float(round(value)), "lo": None, "hi": None, "roll": None, "sid": sid, "ids": [sid],
             "group": "total", "guess": None, "note": why, "key": None, "novalue": False, "covered": None}
+
+
+SOURCES_ONLY = ("fractured", "desecrated")
+HYBRID_RES = re.compile(r"^#% to (Fire|Cold|Lightning|Chaos) and (Fire|Cold|Lightning|Chaos) Resistances$")
+
+
+def only_source(rec, m):
+    """2.93.0: "fractured" / "desecrated" when this mod is ticked to be searched only as that (the small box beside
+    it on the card), else None."""
+    src = next((s for s in SOURCES_ONLY if s in (m.get("flags") or ())), None)
+    if src and (rec.get("only") or {}).get(norm(m.get("text") or "")):
+        return src
+    return None
+
+
+def hybrid_split(mods, totals):
+    """2.93.0 (feedback): a hybrid resistance ("+17% to Lightning and Chaos Resistances") -> a pseudo total per
+    resistance it has (total Lightning, total Chaos), each adding up every mod that feeds it. Chaos isn't in the
+    total Elemental Resistance, so its total is searched (☑); an elemental one is offered unticked (the elemental
+    total already counts it). -> the new totals."""
+    rules = {r["pseudo"]: r for r in gamedata.load().get("pseudo_rules", [])}
+    have = {t["sid"] for t in totals}
+    out = []
+    for h in mods:
+        mt = HYBRID_RES.match(h.get("ref") or "")
+        if not mt or h["value"] is None or h["kind"] not in AFFIX_KINDS + ("Implicit",):
+            continue
+        for el in mt.groups():
+            rule = rules.get(f"#% total to {el} Resistance")
+            pid = _pseudo_id(rule["pseudo"]) if rule else None
+            if not pid or pid in have:
+                continue
+            weights = {s["ref"]: s.get("x", 1) for s in rule["stats"]}
+            feeding = [m for m in mods if m.get("ref") in weights and m["value"] is not None
+                       and m["kind"] in AFFIX_KINDS + ("Implicit",)]
+            tot = sum(m["value"] * weights[m["ref"]] for m in feeding)
+            t = _total(rule["pseudo"], rule["pseudo"].replace("#", f"{tot:g}", 1), tot, pid,
+                       f"{el} part of a hybrid resistance" + (f" + {len(feeding) - 1} more" if len(feeding) > 1 else ""))
+            t["group"] = "pseudo"
+            if el != "Chaos":
+                t["auto"] = "ignore"
+                t["note"] += " - counted in the total Elemental Resistance (tick it to search on it too)"
+            else:
+                t["auto"] = "normal"
+            out.append(t)
+            have.add(pid)
+    return out
 
 
 def _pseudo_id(ref):
@@ -282,6 +329,7 @@ def parse_gear(text):
             totals.append(t)
             for m in feeding:
                 m["covered"] = f"counted in the {name}"
+        totals += hybrid_split(mods, totals)
     for m in mods:
         if m["covered"] and not m.get("note"):
             m["note"] = m["covered"]
