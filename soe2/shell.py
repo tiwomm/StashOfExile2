@@ -117,6 +117,7 @@ class DeskWindow(tk.Toplevel):
             except tk.TclError:
                 pass
         self._hwnd_seen = None
+        self._ghosts = set()                   # 2.89.0: real windows Tk replaced (see hide_ghosts)
         self.shell, self.key, self.title, self.icon, self.utility = shell, key, title, icon, utility
         self.inner = tk.Frame(self, bg=C["panel"])
         self.inner.pack(fill="both", expand=True, padx=0 if PAGES else EDGE, pady=0 if PAGES else EDGE)
@@ -306,7 +307,7 @@ class DeskWindow(tk.Toplevel):
         if h is None or h == self._hwnd_seen:
             return False
         first = self._hwnd_seen is None
-        self._hwnd_seen = h
+        self.note_hwnd(h)
         if first:
             return False
         self.own_by_app()
@@ -394,9 +395,71 @@ class DeskWindow(tk.Toplevel):
             return self.geo
         return list(self._g) if self._g else self.geo
 
+    def note_hwnd(self, h):
+        """2.89.0 (feedback: "I resized from fullscreen by clicking and dragging the window ... the settings menu was
+        stuck in front of everything"): when Tk swaps this window's real window for a new one, the old one can stay on
+        screen - topmost, and no longer Tk's, so nothing hides it. Remember it; hide_ghosts() hides it."""
+        if h is None:
+            return
+        if self._hwnd_seen is not None and h != self._hwnd_seen:
+            self._ghosts.add(self._hwnd_seen)
+        self._hwnd_seen = h
+        self._ghosts.discard(h)
+        if self._ghosts:
+            self.hide_ghosts()
+
+    def hide_ghosts(self, api=None):
+        """Hide (and un-topmost) every real window Tk left behind. -> how many were hidden."""
+        if not self._ghosts:
+            return 0
+        if api is None:
+            if sys.platform != "win32":
+                return 0
+            try:
+                import ctypes
+                u = ctypes.windll.user32
+                for f in (u.IsWindow, u.ShowWindow, u.SetWindowPos, u.GetWindowThreadProcessId):
+                    f.argtypes = None
+                import os
+
+                def ours(h):                  # still a window, and still this app's (a handle can be reused)
+                    if not u.IsWindow(ctypes.c_void_p(h)):
+                        return False
+                    pid = ctypes.c_ulong()
+                    u.GetWindowThreadProcessId(ctypes.c_void_p(h), ctypes.byref(pid))
+                    return pid.value == os.getpid()
+                api = {"exists": ours,
+                       "hide": lambda h: (u.SetWindowPos(ctypes.c_void_p(h), ctypes.c_void_p(-2), 0, 0, 0, 0, 0x13),
+                                          u.ShowWindow(ctypes.c_void_p(h), 0))}
+            except Exception:
+                return 0
+        live = set()
+        try:
+            live = {w._hwnd_seen for w in self.shell.windows.values()}
+        except Exception:
+            pass
+        n = 0
+        for h in list(self._ghosts):
+            try:
+                if h == self._hwnd_seen or h in live or not api["exists"](h):
+                    self._ghosts.discard(h)
+                    continue
+                api["hide"](h)
+                n += 1
+            except Exception:
+                self._ghosts.discard(h)
+        return n
+
+    def withdraw(self):
+        super().withdraw()
+        try:
+            self.hide_ghosts()            # 2.89.0: a left-behind copy goes too
+        except Exception:
+            pass
+
     def _show(self):
         self.deiconify()
-        self._hwnd_seen = self.hwnd()
+        self.note_hwnd(self.hwnd())
         self.own_by_app()
         self.follow_on_top()
         self.lift()
