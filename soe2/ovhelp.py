@@ -27,8 +27,8 @@ HELP = {
     "focus": ("Focus", "Your current league goal on this bar, and a short poke in town now and then.",
               "Keeps you on your plan when the league pulls you sideways. Quiet by default.", "Open Game Plan"),
     "campaign": ("Campaign", "Where you are in the campaign, what's next and what it's worth - from the game's log. "
-                             "Click its line for the act's route, rewards and splits.",
-                 "Never miss a permanent reward (points, spirit, resistances), and see your act times.",
+                             "Click its line for the act's route, rewards and act times.",
+                 "Never miss a permanent reward (points, spirit, resistances), and see how long each act took you.",
                  "Open the route"),
 }
 TIP_DELAY = 450          # ms of hover before the tip
@@ -195,7 +195,9 @@ class OverlayHelp:
         b = ttk.Button(row, text="Got it", style=self.ov_btn(), command=lambda: self.ov_intro_close())
         b.pack(side="left")
         self.ov_intro_btns["ok"] = b
-        tk.Label(row, text="Hover a switch for a reminder", bg=bg, fg=P["muted"], font=(P["font"], self.ov_font(8))).pack(side="right")
+        # 2.89.2: say what the hint means - this card shows once; the same words come back on hover
+        tk.Label(row, text=f"Shown once. Hover {HELP[key][0]} on the bar to read this again.", bg=bg, fg=P["muted"],
+                 font=(P["font"], self.ov_font(8)), wraplength=self.ov_px(220), justify="right").pack(side="right")
         self.ov_intro_win, self.ov_intro_key = w, key
         w.show()
         return w
