@@ -3528,6 +3528,10 @@ class App(PriceCheckPage, FavoritesPage, BoardModPage, LeaderboardPage, WellSoul
                 it = dict(rec["item"])
                 it["mods"] = [{**m, "flags": sorted(m["flags"])} for m in rec["item"]["mods"]]
                 r["item"] = it
+                if rec.get("src") in ("pc", "fav"):        # 2.87.0: Recent keeps its listings over a restart
+                    from .trade import RAW_LISTINGS
+                    ids = [i for st in rec.get("stages") or [] for i in st.get("ids") or []]
+                    r["_raw"] = [RAW_LISTINGS[i] for i in dict.fromkeys(ids) if i in RAW_LISTINGS][:20]
                 recs.append(r)
             data = {"next_id": self.next_id, "records": recs}
         except Exception:
@@ -3565,6 +3569,11 @@ class App(PriceCheckPage, FavoritesPage, BoardModPage, LeaderboardPage, WellSoul
                     r["item"]["ilvl"] = int(m.group(1)) if m else None
                 if r.get("src") == "ledger":                  # (a Strat Tracker item that was still being priced)
                     continue
+                raw = r.pop("_raw", None)
+                if raw:                                       # 2.87.0: a Price Checks item's listings, as they were
+                    from .trade import keep_raw
+                    for e in raw:
+                        keep_raw(e)
                 self.records[int(r["id"])] = r
                 if r.get("state") in ("queued", "pricing"):      # was still waiting when the app closed
                     r["state"] = "queued"
@@ -3574,6 +3583,13 @@ class App(PriceCheckPage, FavoritesPage, BoardModPage, LeaderboardPage, WellSoul
         self.next_id = max([int(data.get("next_id", 1))] + [rid + 1 for rid in self.records])
         self.seen_texts = {hash(r["raw"].strip()): rid for rid, r in self.records.items() if r.get("raw")}
         self.rebuild_tree()
+        try:                                                  # 2.87.0 (feedback: Recent was empty after a restart):
+            recs = self.pc_recs()                             # the page was built before the list was read
+            self.pc_refresh_hist()
+            if recs and not self.records.get(getattr(self, "pc_rid", None)):
+                self.pc_show(recs[0])
+        except Exception:
+            self.log_error("Price Checks' Recent")
 
     # ---------------- mod rules tab
     def build_rules_page(self, tab, cat):
