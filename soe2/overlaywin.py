@@ -259,6 +259,7 @@ GAME_TITLE = ["Path of Exile 2"]  # the Chat commands window's game title
 _LIVE = []                        # windows that follow the game
 _JOB = [None]
 TICK_MS = 350
+LAST_OK = [False]                 # 2.88.3: the last answer of foreground_ok
 
 
 def _fg_hwnd():
@@ -281,16 +282,19 @@ def foreground_ok():
     try:
         from .overlay import game_active
         if game_active(GAME_TITLE[0] or "Path of Exile 2"):
+            LAST_OK[0] = True
             return True
         import ctypes
         u = ctypes.windll.user32
         fg = _fg_hwnd()
         for w in _LIVE:
             if _alive(w) and (u.GetParent(w.winfo_id()) or w.winfo_id()) == fg:
+                LAST_OK[0] = True
                 return True
+        LAST_OK[0] = False
         return False
     except Exception:
-        return True
+        return LAST_OK[0]          # 2.88.3: a failed check keeps the last answer (it showed the overlay before)
 
 
 def _tick(root):
