@@ -60,7 +60,7 @@ class BoardModPage:
         """2.86.1: start-up, with a board name: the board may have reset it (a name its filter refuses) - then ask for
         a new one. The answer comes back through the app's event queue."""
         if not (B.configured() and B.signed_in()):
-            return self.board_name_prompt()
+            return None                       # 2.94.0: no name asked at start - only when you do something that needs one
         threading.Thread(target=lambda: self.ui_q.put(("bm_me", B.me())), daemon=True).start()
 
     def ev_bm_me(self, res):
@@ -365,7 +365,7 @@ class BoardModPage:
             ok, d = res
             if not ok:
                 return self.app_toast(d, "Community")
-            self._say("You're a reviewer now - the Review queue is in your name's menu." if on else
+            self._say("You're a reviewer now - the Review queue: Settings › Privacy & community." if on else
                       "You've stopped reviewing.", 8)
             self.mm_account_paint()
         self._bm_bg(lambda: B.set_reviewer(on), done)
@@ -373,7 +373,7 @@ class BoardModPage:
     def bm_review_queue(self):
         me = B.signed_in() or {}
         if not (me.get("reviewer") or me.get("admin")):
-            return self.app_toast("Opt in as a reviewer first (your name's menu on Money Makers).", "Community")
+            return self.app_toast("Become a reviewer first: Settings › Privacy & community.", "Community")
         win = self._bm_window("Review queue", "bm_rq_win")
         P1 = C["panel"]
         msg = tk.Label(win, text="Loading…", bg=P1, fg=C["muted"], anchor="w", padx=8, pady=8, justify="left")

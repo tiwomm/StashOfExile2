@@ -75,6 +75,7 @@ from .tracker_page import TrackerPage
 from .search_page import SearchPage
 from .pricecheck_page import PriceCheckPage    # 2.80.0: Price Checks (one item, the trade site's listings)
 from .ovrates import OverlayRates              # 2.91.0: exchange rates over the game
+from .community_page import CommunityPage      # 2.94.0: Settings › Privacy & community
 from .wellsouls_page import WellSoulsPage      # 2.81.0: Desecration Helper (tiers at The Well of Souls)
 from .rumours_page import RumoursPage          # 2.83.0: Island Rumours; where the Remnant watcher looks
 from .favorites_page import FavoritesPage      # 2.84.0: Price Checks ↳ Favorites
@@ -95,7 +96,7 @@ MISC_ROWS = (("corrupted", "Corrupted"), ("fractured", "Fractured"), ("desecrate
              ("sanctified", "Sanctified"), ("mirrored", "Mirrored"), ("unidentified", "Unidentified"))
 
 
-class App(PriceCheckPage, FavoritesPage, BoardModPage, LeaderboardPage, OrderLabPage, WellSoulsPage, RumoursPage, ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, ExchangePage, WealthPage, LibraryPage, RegexPage, UtilitiesPage, TrackerPage, SearchPage, CalcOverlay, InsightsPage, MoneyMakersPage, MapLibraryPage, RemnantPage, LedgerPage, FeedbackPage, FeedPage, MergedOverlay, GamePlanPage, FocusPokes, OverlayHelp, OverlayParts, CampaignUI, OverlayRates):
+class App(PriceCheckPage, FavoritesPage, BoardModPage, LeaderboardPage, OrderLabPage, WellSoulsPage, RumoursPage, ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, ExchangePage, WealthPage, LibraryPage, RegexPage, UtilitiesPage, TrackerPage, SearchPage, CalcOverlay, InsightsPage, MoneyMakersPage, MapLibraryPage, RemnantPage, LedgerPage, FeedbackPage, FeedPage, MergedOverlay, GamePlanPage, FocusPokes, OverlayHelp, OverlayParts, CampaignUI, OverlayRates, CommunityPage):
     COLS = [("added", "#", 46, "e"), ("name", "Item", 220, "w"), ("type", "Type", 110, "w"), ("mark", "Status", 90, "center"),
             ("est", "Est. value", 110, "e"), ("conf", "Confidence", 95, "center"), ("listings", "Listings", 70, "e"), ("priced", "Priced at", 130, "w"),
             ("match", "How it was priced", 300, "w"), ("vmods", "Valuable mods", 100, "center"),
@@ -926,7 +927,8 @@ class App(PriceCheckPage, FavoritesPage, BoardModPage, LeaderboardPage, OrderLab
         self.set_nb = SegBook(body)
         self.set_nb.pack(fill="both", expand=True, padx=8, pady=(8, 0))
         pages = {}
-        for name in ("General", "Appearance", "Hotkeys", "Price checking", "Tools", "Chat commands", "Advanced", "About"):
+        for name in ("General", "Appearance", "Hotkeys", "Price checking", "Tools", "Chat commands", "Privacy & community",
+                     "Advanced", "About"):
             sa = ScrollArea(self.set_nb, P1)
             wrap = tk.Frame(sa.inner, bg=P1, padx=8, pady=4)
             wrap.pack(fill="both", expand=True)
@@ -1008,15 +1010,8 @@ class App(PriceCheckPage, FavoritesPage, BoardModPage, LeaderboardPage, OrderLab
         te.bind("<Return>", lambda e: (self.ov_save(), self.root.focus_set()))
         self.game_log_text()
 
-        # 2.31.0: the community Mod book
-        # 2.69.1: Community data sharing (was "Community Mod book"): off until you say yes
-        row = section("General", "Community data sharing", CM_WHAT + " You always get everyone else's data, sharing or "
-                                                           "not.")
-        self.cm_share_var = tk.BooleanVar(value=self.cm_sharing())
-        ttk.Checkbutton(row, text="Share anonymous data with the community", variable=self.cm_share_var,
-                        command=self.cm_share_changed).pack(side="left")
-        ttk.Button(row, text="What's shared, and why?", style="Quiet.TButton",          # 2.89.2
-                   command=lambda: self.cm_ask(info=True)).pack(side="left", padx=(12, 0))
+        # 2.31.0 / 2.69.1: Community data sharing - 2.94.0: on its own page with your community name
+        self.build_privacy_community(section)
         row = section("General", "Window", "Always on top keeps StashOfExile2 in front of the game (and brings it "
                                            "back if something minimizes it). The 📌 on the taskbar does the same. "
                                            "The overlay (timer, Mechanic Helper, Notes) is shown over the game: "
@@ -1949,7 +1944,7 @@ class App(PriceCheckPage, FavoritesPage, BoardModPage, LeaderboardPage, OrderLab
             fill="x", pady=(8, 0))
         tk.Label(box, text=CM.NEVER, bg=P2, fg=C["muted"], justify="left", wraplength=520, anchor="w").pack(
             fill="x", pady=(8, 0))
-        tk.Label(box, text="Change it any time: Settings › General › Community data sharing.", bg=P2, fg=C["muted"],
+        tk.Label(box, text="Change it any time: Settings › Privacy & community.", bg=P2, fg=C["muted"],
                  justify="left", wraplength=520, anchor="w").pack(fill="x", pady=(8, 16))
         row = tk.Frame(box, bg=P2)
         row.pack(fill="x")

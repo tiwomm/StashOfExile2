@@ -21,6 +21,11 @@ NEXT = [
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.94.0": [
+        "Settings › Privacy & community: what you share, and your community name - change it, become a reviewer or "
+        "admin, move it to another PC, or delete everything. The 👤 chip on Money Makers and Leaderboards opens it.",
+        "No more name question at start: you're asked only when you post, vote or share leaderboard times.",
+    ],
     "2.93.1": [
         "Price Checks: listings look like the trade site's own preview.",
         "Price Checks: Clear (beside Search) empties the page and Recent.",

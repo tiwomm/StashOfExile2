@@ -38,6 +38,9 @@ class LeaderboardPage:
                                  "(\"ExampleWitch (Invoker) is now level 24\"). Everyone's: the classes players shared.")
         ttk.Button(top, text="↻ Refresh", style="Quiet.TButton", command=lambda: self.lb_refresh(send=True)).pack(
             side="right")
+        from .community_page import chip_text                  # 2.94.0: your community name, as on Money Makers
+        self.lb_acct = ttk.Button(top, text=chip_text() + " ▾", command=self.community_open)
+        self.lb_acct.pack(side="right", padx=(0, 8))
         self.lb_share_var = tk.BooleanVar(value=bool(SETTINGS.get("lb_share", True)))
         ttk.Checkbutton(top, text="Share my times", variable=self.lb_share_var, command=self.lb_share_switch).pack(
             side="right", padx=(0, 12))
@@ -110,6 +113,13 @@ class LeaderboardPage:
     def lb_share_switch(self):
         SETTINGS["lb_share"] = bool(self.lb_share_var.get())
         save_json("settings.json", SETTINGS)
+        cv = getattr(self, "cy_lb_var", None)                    # 2.94.0: Settings › Privacy & community follows
+        if cv is not None and bool(cv.get()) != SETTINGS["lb_share"]:
+            cv.set(SETTINGS["lb_share"])
+        from . import board as B
+        if SETTINGS["lb_share"] and B.configured() and not B.signed_in() and not getattr(self, "mm_sync", False):
+            self.mm_join("show your times on the Leaderboards")       # 2.94.0: a name only when you need one
+            self.cy_paint()
         if SETTINGS["lb_share"]:
             self.lb_send(force=True)
         else:                                                # 2.89.3: off = your times come off the board

@@ -15,6 +15,7 @@ Hover an item in game and press **Ctrl+D** to price check it, or **Ctrl+Alt+C** 
 ## What it does
 
 - **Price Checks:** hover an item in game and press **Ctrl+D** (change it in Settings › Hotkeys). Its card shows every filter on the left and the trade site's listings on the right, with mods and tiers, price, seller, when it was listed and the item's picture. Your last 20 checks stay under Recent. A fractured or desecrated mod can be searched as only that; hybrid resistances add a total per resistance; socketed rune lines stay out unless you tick them.
+- **Privacy & community (Settings):** what leaves your PC (nothing unless you turn it on), the data sharing switches, and your community name - why you'd want one, what's stored, rename, reviewer, admin, move it to another PC, delete everything.
 - **Favorites:** press ☆ Add to favorites on Price Checks, or paste a trade-site link. Each favorite opens with its filters and the trade site's listings. Sort them into groups, drag them into your order, rename, edit or duplicate them from the right-click menu.
 - **Bulk Pricing:** press **Ctrl+Alt+C** on many items (tablets, jewels, waystones, gear) and they are priced from the official trade site as a list. Each item opens in one clean panel with every trade filter: this base or any of its kind, item level, quality, sockets, requirements, Any / Yes / No flags (corrupted, fractured, desecrated, sanctified ...), and each mod with Min / Max and ★ for must-match. You also get a confidence rating and how the price was worked out. It can read a whole public stash tab, listed in the tab's own order (down each column, or across each row).
 - **Overlay over the game:** a bar on the XP bar, scaled to your resolution. One switch turns it on or off (Overlay Enabled | Overlay Disabled). It shows the session timer, map, maps run, the average per map, the clock, Notes, a calculator and your Regex favorites (Vendor searches too, in campaign towns). When you enable it, you pick which helper switches it holds (Breach, Delirium, Ritual, Expedition, Focus, Campaign); the map's time, area and rank share one part. It shows only while the game is in front. Screenshots show it; if it covers a counter the Ritual or Delirium watcher reads, a switch hides it from captures while they run. A ⚙ by its lock opens its settings. Every part has its own switch.
@@ -58,7 +59,7 @@ Questions, ideas and bug reports: [Discord](https://discord.gg/Ta8EVnxx4T). The 
 - **Anonymous:** no account or character names, no items, no listing ids. It goes only to the app's own community server, is never sold, and is never used for ads or tracking.
 - **Your logs stay yours:** error logs, problem reports and bug reports leave out your Windows user name, home folder, account and character names.
 - **Nobody can be singled out:** leaderboards show the day, not the time; private leagues are never shared; shared strats carry rates, never totals; your wealth never leaves your PC.
-- **Leave any time:** Money Makers › Leave the board deletes everything of yours on the community board.
+- **Leave any time:** Settings › Privacy & community › Leave and delete my data deletes everything of yours on the community board.
 
 ## Fair play
 

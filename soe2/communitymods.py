@@ -53,8 +53,8 @@ DETAILS = (
 WHERE = ("It all goes to the StashOfExile2 community server (run by the app's developer on Cloudflare) - not to GGG, "
          "not to anyone else. It is never sold and never used for ads or tracking. Your internet address is never "
          "stored: only a keyed scramble of it, to stop spam, deleted the next day. Private leagues are never shared, and "
-         "leaderboard times show the day, not the time. You can delete everything of yours: Money Makers › Leave the "
-         "board.")
+         "leaderboard times show the day, not the time. You can delete everything of yours: Settings › Privacy & "
+         "community › Leave and delete my data.")
 NEVER = ("Never sent: your account or character names, your wealth (stash value, net worth), your items or stash, "
          "listing ids, files from your computer. Check a screenshot before you upload it - it's public. Bug reports are "
          "separate: they go only when you press Report a bug, and you see every word first.")

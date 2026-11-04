@@ -4,7 +4,7 @@
 
 > **Who we build for - read second.** Path of Exile players are utilitarian: they love data and information, problem solving and creative thinking. So every feature shows its numbers *and how they were worked out*, lets you sort, filter, compare and export them (CSV), keeps power-user depth (keys, versions, raw data) one click away instead of hiding it, explains in plain words, and leaves the decision to the player. Pretty is welcome; vague is not.
 
-**Current version: 2.93.1**
+**Current version: 2.94.0**
 
 Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds features, 2.10.1 only fixes. Each step below is one release; we work through them top to bottom.
 
@@ -166,6 +166,7 @@ Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds f
 | 2.92.2 | Overlay Enabled / Disabled (one master switch; the bar question comes when you enable it); Regex ▾ favorites on the bar; Vendor ▾ fixed and moved beside Notes / Calc. |
 | 2.93.0 | Price Checks: a fractured / desecrated mod can be searched as that only (a small box beside it); a hybrid resistance adds a pseudo total per resistance (Chaos searched, the elemental one offered); socketed rune lines are marked and left out unless ticked. |
 | 2.93.1 | Price Checks: listing cards laid out like the trade site; a Clear button beside Search empties Price Checks. |
+| 2.94.0 | Settings › Privacy & community: what leaves your PC, the data sharing switches, your community name (why, what's stored, every action - moved from Money Makers - and Move to another PC), your rights; 👤 chips on Money Makers and Leaderboards open it; no name asked at start. |
 
 ## ▶ Next up
 
@@ -175,12 +176,12 @@ Order (decided 2.34.0): the Polish basics first, so new features are built on th
 
 | Version | Plan |
 |---|---|
-| 2.94.0 | **Help rate mods + Bulk Pricing floor** (mockups OK'd 2026-11-04): a subtle opt-in to rate mods (S/A/B/C/D/Ignore, one at a time, per rule set incl. gear base types) that feeds the board; Bulk Pricing skips items the Mod book is sure are under a floor (1 div by default, per rule set) and flags unsure-cheap ones "check by hand". "Not now" asks again once, at random, 3-7 days later; "No thanks" never asks again. |
+| 2.95.0 | **Help rate mods + Bulk Pricing floor** (mockups OK'd 2026-11-04): a subtle opt-in to rate mods (S/A/B/C/D/Ignore, one at a time, per rule set incl. gear base types) that feeds the board; Bulk Pricing skips items the Mod book is sure are under a floor (1 div by default, per rule set) and flags unsure-cheap ones "check by hand". "Not now" asks again once, at random, 3-7 days later; "No thanks" never asks again. |
 | Before 1.0 (Dec 11) | **Campaign guide pack refresh** for 0.5.5 and then 1.0: Dreadnought Vanguard is gone (Jamanra in The Dreadnought), Azarian moved to the Heart of Keth, the Waterways levers are pressure pads, the Primal Arena's +2 points moved to Omniphobia, the Whakapanu shark's permanent choice and Plunder's Point are missing, and about 10 Interlude zones are missing. 1.0 may bring Acts 5-6. |
 | Later | **Mageblood search helper:** build the trade search for the flasks / charms you want on a Mageblood. Starting point, the user's search: [Mageblood search](https://www.pathofexile.com/trade2/search/poe2/Forbidden%20Rites/H4sIAAAAAAAACp3TwUrEMBAG4FeR_xykyWbbTY7e97gnKZJ1owykabGzYql5d4mLKLggzjWTL_MzSVbMHPg8w68YJ6YxwyPkBUUhhyHCYx-e4zGN4wkKvEx16cCUiJebu5gY6vOIGf5-_aqHXDc_UeL4cinQCR7xbUr0SHxbwYNprWlNs7XvOyi8hnSONcVAGd6Uov5AWwmyEqS1RG0kqBPlE7VqRa2MRImQaOi6kSgnanX1LfXV_ecXbHadtU53ze_7sM13Chp-Im11a5xx7upk-9KXD_rzLDzYAwAA). How it's used: uncheck every mod but the ones you want and set each one's min to how many you want. 2x Quicksilver + 2x Gold: uncheck all but Gold and Quicksilver, min 2 on each. 1 Basalt + 1 Quicksilver + 2 Gold: uncheck all but Basalt, Quicksilver and Gold; min Basalt 1, Quicksilver 1, Gold 2. Builds on 2.79.1 (two of the same Legacy = Min 2). The rest gets worked out when we get there. |
-| 2.95.0 | **Polish 4 - Responsive:** windows reflow when narrow (toolbars wrap, side panels drop under the list, sensible minimum sizes), sharp on every monitor (per-monitor DPI), a text size setting (100-150 %). |
-| 2.96.0 | **Polish 5 - Hover, focus, micro-interactions:** the same hover and pressed look on every button, row, icon and tab; a visible keyboard focus ring everywhere; short (120-180 ms) fades for popups and toasts, never on lists; a "Reduce motion" setting that turns them off. Everything over the game matches the overlay's own theme (both looks): tooltips, pop-ups, cards, notices, toasts. |
-| 2.97.0 | **Polish 6 - Visual hierarchy:** the suggestions below, window by window, with before / after screenshots in each PR. |
+| 2.96.0 | **Polish 4 - Responsive:** windows reflow when narrow (toolbars wrap, side panels drop under the list, sensible minimum sizes), sharp on every monitor (per-monitor DPI), a text size setting (100-150 %). |
+| 2.97.0 | **Polish 5 - Hover, focus, micro-interactions:** the same hover and pressed look on every button, row, icon and tab; a visible keyboard focus ring everywhere; short (120-180 ms) fades for popups and toasts, never on lists; a "Reduce motion" setting that turns them off. Everything over the game matches the overlay's own theme (both looks): tooltips, pop-ups, cards, notices, toasts. |
+| 2.98.0 | **Polish 6 - Visual hierarchy:** the suggestions below, window by window, with before / after screenshots in each PR. |
 | - | **Linux:** player-built. `build_linux.sh` stays in the repo; the project builds and tests Windows only (decided 2026-11-04). |
 | Very end | **Kind words** (a hidden, opt-in easter egg): short affirmations in a quick centered box over the game, like PoE's loading-screen tips (e.g. on zone loads, at most every N minutes, fading after a few seconds). Found only by digging through the menus. I keep the rotation myself with little upkeep and no spoilers (the raw lines shouldn't be easy to read); how I add lines is still to decide - a scrambled file in the repo plus an Actions form, the board server, or lines built into each release. A starter template of lines. Extra polish. |
 

@@ -249,6 +249,45 @@ def lb_forget():
     return call("DELETE", "/lb/mine")
 
 
+KEY_KIND = "soe2-community-key"
+
+
+def export_key(path):
+    """2.94.0: this PC's board key to a file (to move your community name to another PC). -> (ok, why)."""
+    import json
+    s = session()
+    if not s.get("token"):
+        return False, "There's no community name on this PC yet."
+    data = {"kind": KEY_KIND, "token": s["token"], "name": (s.get("user") or {}).get("name", "")}
+    try:
+        with open(path, "w", encoding="utf-8") as f:
+            json.dump(data, f)
+    except OSError as e:
+        return False, f"Couldn't write the file ({e.strerror or e})."
+    return True, ""
+
+
+def import_key(path):
+    """2.94.0: a key file from export_key -> this PC uses that community name. -> (ok, user or why)."""
+    import json
+    try:
+        with open(path, encoding="utf-8") as f:
+            data = json.load(f)
+    except (OSError, ValueError):
+        return False, "That isn't a community key file."
+    tok = data.get("token") if isinstance(data, dict) else None
+    if not (isinstance(data, dict) and data.get("kind") == KEY_KIND and isinstance(tok, str)
+            and re.fullmatch(r"[A-Za-z0-9_\-]{20,200}", tok)):
+        return False, "That isn't a community key file."
+    old = load_json(SESSION, {})
+    save_json(SESSION, {"token": tok, "user": {"name": str(data.get("name") or "")[:24]}, "since": time.time()})
+    ok, d = me()
+    if not ok:
+        save_json(SESSION, old if isinstance(old, dict) else {})         # the board doesn't know that key: keep yours
+        return False, d if isinstance(d, str) else "The board doesn't know that key."
+    return True, session().get("user") or {}
+
+
 def delete_me():
     """2.89.3: leave the board and delete everything of yours on it (name, posts, pictures, votes, times). -> (ok, d)"""
     ok, d = call("DELETE", "/me")
