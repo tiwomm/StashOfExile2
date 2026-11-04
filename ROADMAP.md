@@ -150,7 +150,7 @@ Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds f
 | 2.85.2 | Ritual / Delirium watchers see the game under the overlay bar (the bar is left out of screen captures; switch in Overlay ↳ Settings). The docked Focus / campaign line sits flush with matching ends. |
 | 2.86.0 | **Global leaderboards**: Overlay ↳ Leaderboards - Campaign (acts + whole), Maps, Bosses & pinnacles, Trials; Mine / Everyone, league, class; opt-in sharing (community name only); self-reported times checked by the board, reports, reviewers, admins. |
 | 2.86.1 | Community names: slurs and hate words refused (with look-alike spellings); old ones reset and asked again. |
-| 2.87.0 | **Stash order**: a stash tab's items follow the tab (down columns or across rows; the trade site keeps no order, but says where each item sits). Price Checks go first, Search again replaces the older search, and they search exactly what's ticked. |
+| 2.87.0 | **Stash order**: a stash tab's items follow the tab (down columns or across rows; the trade site keeps no order, but says where each item sits). Price Checks go first, Search again replaces the older search, and they search exactly what's ticked; Recent is kept over a restart. |
 
 ## ▶ Next up
 
