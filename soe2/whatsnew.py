@@ -27,7 +27,8 @@ NOTES = {
         "Price Checks go first: Bulk Pricing waits while one runs, and pressing Search again replaces the older "
         "search. Price Checks now search exactly the mods you ticked.",
         "Price Checks' Recent (and each check's listings) is kept when you close the app.",
-        "Leaderboards: Simulacrum of Delusion is under Bosses & pinnacles (it was under Trials).",
+        "Leaderboards: Simulacrum of Delusion is under Bosses & pinnacles (it was under Trials), and your classes are "
+        "read from the game's log (it names the class at every level-up), so Class can filter.",
     ],
     "2.86.1": [
         "Community names: slurs and hate words aren't allowed (also with swapped letters, numbers or spaces). A name "
