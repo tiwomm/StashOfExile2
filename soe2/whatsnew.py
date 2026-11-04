@@ -21,6 +21,13 @@ NEXT = [
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.86.0": [
+        "New: Overlay ↳ Leaderboards - your fastest campaign acts, maps, pinnacle fights and trials, and everyone's. "
+        "Filter by league and class.",
+        "Everyone's times come from players who share (Community data sharing + Share my times): your community name "
+        "shows, never your account or character. Times are self-reported from the game's log; impossible ones are "
+        "refused, and a time can be reported.",
+    ],
     "2.85.2": [
         "Ritual alerts work under the overlay bar again: the bar is left out of screen captures, so the watcher sees "
         "the Ritual counter beneath it. Switch: Overlay ↳ Settings › Behaviour (off = screenshots and streams show the "

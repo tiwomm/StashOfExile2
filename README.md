@@ -23,6 +23,7 @@ Hover an item in game and press **Ctrl+D** to price check it, or **Ctrl+Alt+C** 
 - **Money Makers:** community farming strats in one layout, with content tags (pinnacles, bosses, map content) and atlas screenshots, rated by Thoughts per Click and Clicks per hour. You can post and upvote on the Community board (no login: a community name, asked once). Only authors edit their strats; anyone can **Suggest an edit**, every change is kept (History), and opt-in reviewers check changes to Official strats and reported posts. It also has the Tablet Craft Helper and the Strat Tracker (what a farming setup really makes). Strat format: [strats/README.md](strats/README.md).
 - **Regex:** builds stash-search strings for tablets, waystones, relics, jewels and gear (at least, ranges, at most), with saved Favorites.
 - **Exchange rates:** poe.ninja rates, an Exchange Helper, and an Arbitrage tab for uneven Currency Exchange rates.
+- **Leaderboards:** your fastest campaign acts, maps, pinnacle fights and trials, and everyone's who shares (Community data sharing). Filter by league and class. Times come from the game's log, so they're self-reported: the board refuses impossible ones and players can report a time.
 - **Map library:** every map, citadel and pinnacle fight, ranked S to D or Avoid by you and the community. You can share ranks as a file.
 - **Desecration Helper:** at The Well of Souls, each revealed option gets a tag with its tier for that item type (T1 = best), and the Abyss lords' own mods show their range and how good the roll is. It wakes up only while you're at the Well.
 - **Island Rumours:** open the world map in your hideout and each rumour on the Uncharted Waters card shows the island it leads to and your Map library rank for it.
@@ -48,7 +49,7 @@ To build the exe yourself, run `build_exe.bat`; it makes `dist\StashOfExile2.exe
 
 ## Community
 
-Questions, ideas and bug reports: [Discord](https://discord.gg/Ta8EVnxx4T). The plan is in [ROADMAP.md](ROADMAP.md). Next up: global leaderboards, then a Community forum (questions and answers, farm strats, upvotes, moderation) inside the app.
+Questions, ideas and bug reports: [Discord](https://discord.gg/Ta8EVnxx4T). The plan is in [ROADMAP.md](ROADMAP.md). Next up: the public stash order tool, polish, then a Community forum (questions and answers, farm strats, upvotes, moderation) inside the app.
 
 ## Fair play
 

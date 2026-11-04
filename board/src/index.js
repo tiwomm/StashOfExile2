@@ -155,6 +155,14 @@ const MIGRATIONS = [
   `CREATE TABLE IF NOT EXISTS reviews (target TEXT NOT NULL, user_id TEXT NOT NULL, vote TEXT NOT NULL,
     created INTEGER NOT NULL, PRIMARY KEY (target, user_id))`,
   "CREATE TABLE IF NOT EXISTS limits (key TEXT PRIMARY KEY, n INTEGER NOT NULL, day TEXT NOT NULL)",
+  // 2.86.0: global leaderboards - one row per account / board / key / league / class: its best time
+  `CREATE TABLE IF NOT EXISTS lb (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id TEXT NOT NULL, cat TEXT NOT NULL,
+    key TEXT NOT NULL, league TEXT NOT NULL, cls TEXT NOT NULL DEFAULT '', secs REAL NOT NULL, level INTEGER NOT NULL DEFAULT 0,
+    deaths INTEGER NOT NULL DEFAULT 0, at INTEGER NOT NULL, sent INTEGER NOT NULL, reports INTEGER NOT NULL DEFAULT 0,
+    hidden INTEGER NOT NULL DEFAULT 0, UNIQUE (user_id, cat, key, league, cls))`,
+  "CREATE INDEX IF NOT EXISTS lb_board ON lb (cat, key, league, hidden, secs)",
+  `CREATE TABLE IF NOT EXISTS lb_reports (lb_id INTEGER NOT NULL, user_id TEXT NOT NULL, reason TEXT, created INTEGER NOT NULL,
+    PRIMARY KEY (lb_id, user_id))`,
 ];
 async function migrate(env) {
   if (migrated) return;
@@ -682,6 +690,117 @@ async function official(env) {
   return json(out);
 }
 
+// ------------------------------------------------------------------ 2.86.0: global leaderboards
+// POST /lb {entries: [{cat, key, secs, league, cls, level, deaths, at}]} - your best times (the app sends each board's
+// best; it keeps the faster of old and new). Times come from the game's log, so they're self-reported: impossible
+// ones are refused (LB_FLOOR / LB_CEIL); reports from accounts 7+ days old, reviewers and admins hide them.
+const LB_CATS = ["campaign", "map", "boss", "trial"];
+const LB_FLOOR = { campaign: 120, map: 30, boss: 10, trial: 60 };
+const LB_CEIL = { campaign: 48 * 3600, map: 3 * 3600, boss: 3600, trial: 3 * 3600 };
+const LB_EVERY = 10 * 60;
+
+async function lbSend(req, env, me) {
+  const body = await readBody(req);
+  const last = await env.DB.prepare("SELECT MAX(sent) AS t FROM lb WHERE user_id = ?").bind(me.id).first();
+  if (last?.t && now() - last.t < Number(env.LB_EVERY ?? LB_EVERY) && !me.admin) return fail(429, "too soon");
+  const t = now(), stmts = [];
+  let ok = 0, bad = 0;
+  for (const e of (Array.isArray(body.entries) ? body.entries : []).slice(0, 400)) {
+    const cat = String(e?.cat), key = String(e?.key ?? "").trim(), league = String(e?.league ?? "").trim();
+    const cls = String(e?.cls ?? "").trim(), secs = Number(e?.secs);
+    if (!LB_CATS.includes(cat) || !key || key.length > 80 || !league || league.length > 60 || cls.length > 40 ||
+        !isFinite(secs) || secs < LB_FLOOR[cat] || secs > LB_CEIL[cat]) { bad++; continue; }
+    const level = Math.max(0, Math.min(100, Math.floor(Number(e.level) || 0)));
+    const deaths = Math.max(0, Math.min(999, Math.floor(Number(e.deaths) || 0)));
+    const at = Math.min(t, Math.max(0, Math.floor(Number(e.at) || t)));
+    stmts.push(env.DB.prepare(`INSERT INTO lb (user_id, cat, key, league, cls, secs, level, deaths, at, sent)
+      VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10) ON CONFLICT(user_id, cat, key, league, cls) DO UPDATE SET
+      secs = MIN(secs, ?6), level = CASE WHEN ?6 < secs THEN ?7 ELSE level END,
+      deaths = CASE WHEN ?6 < secs THEN ?8 ELSE deaths END, at = CASE WHEN ?6 < secs THEN ?9 ELSE at END, sent = ?10`)
+      .bind(me.id, cat, key, league, cls, secs, level, deaths, at, t));
+    ok++;
+  }
+  if (!ok) stmts.push(env.DB.prepare("UPDATE lb SET sent = ? WHERE user_id = ?").bind(t, me.id));
+  for (let i = 0; i < stmts.length; i += 50) await env.DB.batch(stmts.slice(i, i + 50));
+  return json({ ok: true, kept: ok, refused: bad });
+}
+
+// GET /lb?cat=&key=&league=&cls=&limit= -> the board (fastest first, one row per account); without key: the keys
+async function lbList(url, env, me) {
+  const p = url.searchParams, cat = p.get("cat") || "map";
+  if (!LB_CATS.includes(cat)) return fail(400, "cat: " + LB_CATS.join(", "));
+  const where = ["l.cat = ?1", canReview(me) && p.get("hidden") === "1" ? "1 = 1" : "l.hidden = 0", "u.banned = 0"];
+  const args = [cat];
+  if (p.get("league")) { where.push(`l.league = ?${args.length + 1}`); args.push(p.get("league")); }
+  if (p.get("cls")) { where.push(`l.cls = ?${args.length + 1}`); args.push(p.get("cls")); }
+  if (!p.get("key")) {
+    const rows = await env.DB.prepare(`SELECT l.key, COUNT(DISTINCT l.user_id) AS players, MIN(l.secs) AS best FROM lb l
+      JOIN users u ON u.id = l.user_id WHERE ${where.join(" AND ")} GROUP BY l.key ORDER BY players DESC LIMIT 500`).bind(...args).all();
+    const cls = await env.DB.prepare(`SELECT DISTINCT l.cls FROM lb l JOIN users u ON u.id = l.user_id WHERE l.cat = ?1 AND l.cls <> ''`)
+      .bind(cat).all();
+    const leagues = await env.DB.prepare("SELECT DISTINCT league FROM lb WHERE cat = ?").bind(cat).all();
+    return json({ keys: rows.results, classes: cls.results.map((r) => r.cls), leagues: leagues.results.map((r) => r.league) });
+  }
+  where.push(`l.key = ?${args.length + 1}`);
+  args.push(p.get("key"));
+  const limit = Math.min(200, Math.max(1, Number(p.get("limit")) || 100));
+  // one row per account: its fastest (over the chosen leagues / classes)
+  const rows = await env.DB.prepare(`SELECT l.*, u.name FROM lb l JOIN users u ON u.id = l.user_id
+    WHERE ${where.join(" AND ")} AND l.secs = (SELECT MIN(x.secs) FROM lb x WHERE x.user_id = l.user_id AND x.cat = l.cat
+    AND x.key = l.key AND x.hidden = 0 ${p.get("league") ? "AND x.league = l.league" : ""} ${p.get("cls") ? "AND x.cls = l.cls" : ""})
+    GROUP BY l.user_id ORDER BY l.secs, l.at LIMIT ${limit}`).bind(...args).all();
+  return json({ rows: rows.results.map((r) => ({ id: r.id, name: r.name, secs: r.secs, cls: r.cls, league: r.league,
+    level: r.level, deaths: r.deaths, at: r.at, mine: !!me && me.id === r.user_id, hidden: !!r.hidden,
+    reports: canReview(me) ? r.reports : undefined })) });
+}
+
+async function lbReport(req, env, me, id) {
+  const row = await env.DB.prepare("SELECT * FROM lb WHERE id = ?").bind(id).first();
+  if (!row) return fail(404, "not found");
+  if (row.user_id === me.id) return fail(400, "That's your own time.");
+  if (!(await allowance(env, "report", me.id, limitFor(env, "report")))) return fail(429, "That's enough reports for today.");
+  const { reason } = await readBody(req);
+  await env.DB.prepare("INSERT OR IGNORE INTO lb_reports (lb_id, user_id, reason, created) VALUES (?, ?, ?, ?)")
+    .bind(id, me.id, String(reason || "").slice(0, 200), now()).run();
+  const n = (await env.DB.prepare("SELECT COUNT(*) AS n FROM lb_reports WHERE lb_id = ?").bind(id).first()).n;
+  const counted = (await env.DB.prepare(`SELECT COUNT(*) AS n FROM lb_reports r JOIN users u ON u.id = r.user_id
+    WHERE r.lb_id = ? AND u.created <= ? AND u.banned = 0`).bind(id, now() - Number(env.REPORTER_DAYS ?? REPORTER_DAYS) * DAY).first()).n;
+  const hide = counted >= Number(env.REPORT_HIDE || 3) ? 1 : row.hidden;
+  await env.DB.prepare("UPDATE lb SET reports = ?, hidden = ? WHERE id = ?").bind(n, hide, id).run();
+  return json({ ok: true, hidden: !!hide });
+}
+
+// reviewers vote hide / keep (two decide), an admin decides alone
+async function lbReview(req, env, me, id) {
+  if (!canReview(me)) return fail(403, "Reviewers only.");
+  const row = await env.DB.prepare("SELECT * FROM lb WHERE id = ?").bind(id).first();
+  if (!row) return fail(404, "not found");
+  if (row.user_id === me.id) return fail(403, "Not on your own time.");
+  const { vote: v } = await readBody(req);
+  if (!["hide", "keep"].includes(v)) return fail(400, "vote: hide or keep");
+  await env.DB.prepare(`INSERT INTO reviews (target, user_id, vote, created) VALUES (?, ?, ?, ?)
+    ON CONFLICT(target, user_id) DO UPDATE SET vote = excluded.vote, created = excluded.created`).bind(`lb:${id}`, me.id, v, now()).run();
+  const c = Object.fromEntries((await env.DB.prepare("SELECT vote, COUNT(*) AS n FROM reviews WHERE target = ? GROUP BY vote")
+    .bind(`lb:${id}`).all()).results.map((x) => [x.vote, x.n]));
+  if ((c.hide ?? 0) >= APPROVALS || (me.admin && v === "hide")) {
+    await env.DB.prepare("UPDATE lb SET hidden = 1 WHERE id = ?").bind(id).run();
+    return json({ ok: true, hidden: true });
+  }
+  if ((c.keep ?? 0) >= APPROVALS || (me.admin && v === "keep")) {
+    await env.DB.batch([env.DB.prepare("UPDATE lb SET hidden = 0, reports = 0 WHERE id = ?").bind(id),
+      env.DB.prepare("DELETE FROM lb_reports WHERE lb_id = ?").bind(id),
+      env.DB.prepare("DELETE FROM reviews WHERE target = ?").bind(`lb:${id}`)]);
+    return json({ ok: true, hidden: false });
+  }
+  return json({ ok: true, hide: c.hide ?? 0, keep: c.keep ?? 0 });
+}
+
+async function lbForget(env, me) {
+  await env.DB.batch([env.DB.prepare("DELETE FROM lb_reports WHERE lb_id IN (SELECT id FROM lb WHERE user_id = ?)").bind(me.id),
+    env.DB.prepare("DELETE FROM lb WHERE user_id = ?").bind(me.id)]);
+  return json({ ok: true });
+}
+
 // ------------------------------------------------------------------ 2.31.0: the community Mod book
 const BATCH_EVERY = 45 * 60;                 // one summary per install per 45 minutes at most (the app sends hourly)
 const MAX_PAIRS = 600, MAX_VOTES = 400, W_CAP = 10;
@@ -876,6 +995,7 @@ export default {
         return json({ user: { ...userOut(me), can_review: !why, why_not: why } });
       }
       if (m && m[2] === "revisions" && req.method === "GET") return revisions(env, me, Number(m[1]));
+      if (path === "/lb" && req.method === "GET") return lbList(url, env, me);
       if (path === "/auth/logout" && req.method === "POST") {
         const t = /^Bearer\s+(\S+)$/i.exec(req.headers.get("authorization") || "");
         if (t) await env.DB.prepare("DELETE FROM sessions WHERE hash = ?").bind(await sha256(t[1])).run();
@@ -904,6 +1024,11 @@ export default {
       if (rv && rv[2] === "review" && req.method === "POST") return review(req, env, me, "rev", Number(rv[1]));
       if (rv && !rv[2] && req.method === "POST") return revAction(req, env, me, Number(rv[1]));
       if (path === "/auth/reviewer" && req.method === "POST") return setReviewer(req, env, me);
+      if (path === "/lb" && req.method === "POST") return lbSend(req, env, me);
+      if (path === "/lb/mine" && req.method === "DELETE") return lbForget(env, me);
+      const lbm = /^\/lb\/(\d+)\/(report|review)$/.exec(path);
+      if (lbm && lbm[2] === "report" && req.method === "POST") return lbReport(req, env, me, Number(lbm[1]));
+      if (lbm && lbm[2] === "review" && req.method === "POST") return lbReview(req, env, me, Number(lbm[1]));
       const b = /^\/users\/([a-z0-9]{1,40})\/(ban|reviewer)$/.exec(path);
       if (b && b[2] === "ban" && req.method === "POST") return ban(req, env, me, b[1]);
       if (b && b[2] === "reviewer" && req.method === "POST") return adminReviewer(req, env, me, b[1]);

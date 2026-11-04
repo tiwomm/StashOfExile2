@@ -92,6 +92,9 @@ existing database by themselves (the Worker adds them on first use).
 | `POST /posts/{id}/vote` `{up}` · `POST /posts/{id}/report` `{reason}` | upvote, report |
 | `POST /posts/{id}/admin` `{action: hide\|unhide\|promote\|unpromote}` · `POST /users/{id}/ban` | admins |
 | `GET /official` | promoted posts (part of the Official list) |
+| `POST /lb` `{entries: [{cat, key, secs, league, cls, level, deaths, at}]}` | 2.86.0: your best times (campaign / map / boss / trial); one batch per 10 min; the faster time stays; impossible times refused |
+| `GET /lb?cat&league&cls` · `GET /lb?cat&key&league&cls&limit` | 2.86.0: the boards (keys, players, best) · one board, fastest first, one row per account |
+| `POST /lb/{id}/report` `{reason}` · `POST /lb/{id}/review` `{vote: hide\|keep}` · `DELETE /lb/mine` | 2.86.0: report a time; reviewers / admins hide or keep; forget all your times |
 | `POST /mods/batch` `{cid, league, prices, bases, votes}` | 2.31.0: an install's hourly summary (per base / mod: count + median) and its Mod book rule changes. One per 45 min. 2.77.0: `zones` - campaign zones the app's guide pack didn't know (`{act, zone, after, level}`). |
 | `POST /images` `{data}` | 2.78.0: an atlas screenshot (base64 JPEG, 320 KB at most; joined users, 20 a day) -> `{id}`. A strat names it `"atlas_image": "b:<id>"`. |
 | `GET /images/<id>` | 2.78.0: that JPEG (cached for good). |

@@ -78,6 +78,7 @@ from .wellsouls_page import WellSoulsPage      # 2.81.0: Desecration Helper (tie
 from .rumours_page import RumoursPage          # 2.83.0: Island Rumours; where the Remnant watcher looks
 from .favorites_page import FavoritesPage      # 2.84.0: Price Checks ↳ Favorites
 from .boardmod_page import BoardModPage        # 2.85.0: your community name, Suggest an edit, History, reviewers
+from .leaderboard_page import LeaderboardPage  # 2.86.0: Overlay ↳ Leaderboards
 from . import gamedata
 from . import modules
 from .shell import Shell
@@ -92,7 +93,7 @@ MISC_ROWS = (("corrupted", "Corrupted"), ("fractured", "Fractured"), ("desecrate
              ("sanctified", "Sanctified"), ("mirrored", "Mirrored"), ("unidentified", "Unidentified"))
 
 
-class App(PriceCheckPage, FavoritesPage, BoardModPage, WellSoulsPage, RumoursPage, ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, ExchangePage, WealthPage, LibraryPage, RegexPage, UtilitiesPage, TrackerPage, SearchPage, CalcOverlay, InsightsPage, MoneyMakersPage, MapLibraryPage, RemnantPage, LedgerPage, FeedbackPage, FeedPage, MergedOverlay, GamePlanPage, FocusPokes, OverlayHelp, OverlayParts, CampaignUI):
+class App(PriceCheckPage, FavoritesPage, BoardModPage, LeaderboardPage, WellSoulsPage, RumoursPage, ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, ExchangePage, WealthPage, LibraryPage, RegexPage, UtilitiesPage, TrackerPage, SearchPage, CalcOverlay, InsightsPage, MoneyMakersPage, MapLibraryPage, RemnantPage, LedgerPage, FeedbackPage, FeedPage, MergedOverlay, GamePlanPage, FocusPokes, OverlayHelp, OverlayParts, CampaignUI):
     COLS = [("added", "#", 46, "e"), ("name", "Item", 220, "w"), ("type", "Type", 110, "w"), ("mark", "Status", 90, "center"),
             ("est", "Est. value", 110, "e"), ("conf", "Confidence", 95, "center"), ("listings", "Listings", 70, "e"), ("priced", "Priced at", 130, "w"),
             ("match", "How it was priced", 300, "w"), ("vmods", "Valuable mods", 100, "center"),
@@ -1946,6 +1947,10 @@ class App(PriceCheckPage, FavoritesPage, BoardModPage, WellSoulsPage, RumoursPag
     def cm_tick(self):
         from . import communitymods as CM
         threading.Thread(target=self._cm_work, daemon=True).start()
+        try:
+            self.lb_send()                               # 2.86.0: your best times to the leaderboards (opt-in)
+        except Exception:
+            self.log_error("leaderboards")
         self.root.after(CM.EVERY * 1000, self.cm_tick)
 
     def _cm_work(self):

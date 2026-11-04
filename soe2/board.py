@@ -204,3 +204,30 @@ def set_reviewer(on=True):
 
 def admin_reviewer(user_id, on):
     return call("POST", f"/users/{user_id}/reviewer", body={"on": bool(on)})
+
+
+# ---------------------------------------------------------------- 2.86.0: global leaderboards
+def lb_send(entries):
+    """Your best times (leaderboard.payload). -> (True, {"kept", "refused"}); the board takes one batch per 10 min."""
+    return call("POST", "/lb", body={"entries": entries})
+
+
+def lb_keys(cat, league="", cls=""):
+    return call("GET", "/lb", {k: v for k, v in (("cat", cat), ("league", league), ("cls", cls)) if v})
+
+
+def lb_board(cat, key, league="", cls="", limit=100):
+    return call("GET", "/lb", {k: v for k, v in (("cat", cat), ("key", key), ("league", league), ("cls", cls),
+                                                  ("limit", limit)) if v})
+
+
+def lb_report(lid, reason=""):
+    return call("POST", f"/lb/{lid}/report", body={"reason": reason})
+
+
+def lb_review(lid, vote):
+    return call("POST", f"/lb/{lid}/review", body={"vote": vote})
+
+
+def lb_forget():
+    return call("DELETE", "/lb/mine")

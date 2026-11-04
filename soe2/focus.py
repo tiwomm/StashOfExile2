@@ -406,6 +406,11 @@ def log_event(kind, data, area_kind=None, now=None):
         lv = st.setdefault("levels", {})                   # 2.73.4: level goals
         lv[who] = max(lvl, lv.get(who, 0)) if known else lvl
         st["last_char"] = who
+        if data.get("cls"):                                # 2.86.0: the class / ascendancy, for the leaderboards
+            cl = st.setdefault("classes", {})
+            cl[who] = data["cls"]
+            for k in list(cl)[:-30]:
+                cl.pop(k, None)
         if len(lv) > 30:
             for k in list(lv)[:-30]:
                 lv.pop(k, None)
