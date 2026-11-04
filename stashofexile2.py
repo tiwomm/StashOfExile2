@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU GPL v3.0 (see LICENSE). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.88.1
+VERSION 2.88.2
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,6 +19,19 @@ VERSION 2.88.1
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.88.2
+       Ctrl+Alt+C now and then not heard (feedback: "sometimes it works sometimes it doesn't ... if I click in the
+       window itself once ... it seems to work"): Windows quietly drops a low-level keyboard hook that answers too
+       slowly (a busy moment in the app). KeyWatch notes the last physical / injected key it saw; an advanced copy
+       (Ctrl+Alt+C text) arriving while the hook saw no key at all for 3 s counts as yours and puts a fresh hook in
+       (rehook, thread message 0x8003); the app also renews the hook every 5 minutes (keys_refresh). A live hook that
+       saw no Ctrl+Alt+C still ignores other tools' copies.
+       Price Checks / Favorites: a tick, a Min / Max reset or a filter change on the card no longer searches by itself
+       (feedback: "it's sending for a new search rather than waiting for me ... then I manually click search") -
+       app.card_changed marks the item and the button reads "Search • filters changed"; Bulk Pricing still prices
+       again at once. A tick keeps the card's scroll position.
+       Trade links: a long link that holds the bare search (no "query" around it) reads (feedback: the Listing order
+       lab said "The trade site sent no search for that link").
   2.88.1
        Bulk Pricing stalled (feedback: "ctrl + alt + c isn't working for bulk pricing"): 2.87.0's "Price Checks go
        first" asked whether any Price Checks / Favorites item was marked "queued" - a favorite that was never opened
@@ -1999,7 +2012,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.88.1"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.88.2"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
