@@ -156,8 +156,7 @@ class KeyWatch:
         self.listener = None        # 2.0: f(vk, ctrl, alt, shift) -> True to swallow the key (Utilities hotkeys)
         self._swallowed = set()
         self.mouse_on, self._mouse_hook, self._tid = False, None, None     # 2.0 beta 17: mouse buttons as hotkeys
-        # 2.88.2 (feedback: Ctrl+Alt+C "sometimes it works sometimes it doesn't ... if I click in the window itself
-        # once ... it seems to work"): Windows quietly drops a keyboard hook that answers too slowly. When it did,
+        # 2.88.2 (feedback): Windows quietly drops a keyboard hook that answers too slowly. When it did,
         # no Ctrl+Alt+C was ever seen again. The last physical / injected key the hook saw tells whether it's still
         # alive; rehook() puts a fresh one in.
         self.last_phys = self.last_inj = 0.0

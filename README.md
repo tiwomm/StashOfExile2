@@ -49,7 +49,13 @@ To build the exe yourself, run `build_exe.bat`; it makes `dist\StashOfExile2.exe
 
 ## Community
 
-Questions, ideas and bug reports: [Discord](https://discord.gg/Ta8EVnxx4T). The plan is in [ROADMAP.md](ROADMAP.md). Next up: the public stash order tool, polish, then a Community forum (questions and answers, farm strats, upvotes, moderation) inside the app.
+Questions, ideas and bug reports: [Discord](https://discord.gg/Ta8EVnxx4T). The plan is in [ROADMAP.md](ROADMAP.md). Next up: rating mods for the Mod book and a Bulk Pricing floor, polish, then a Community forum (questions and answers, farm strats, upvotes, moderation) inside the app.
+
+## Privacy
+
+- **Nothing is shared unless you say yes.** Community data sharing is off until you turn it on. The question (and Settings › General › What's shared, and why?) lists each thing sent, what it's for and where it goes.
+- **Anonymous:** no account or character names, no items, no listing ids. It goes only to the app's own community server, is never sold, and is never used for ads or tracking.
+- **Your logs stay yours:** error logs, problem reports and bug reports leave out your Windows user name and home folder.
 
 ## Fair play
 

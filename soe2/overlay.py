@@ -92,8 +92,7 @@ def game_active(title=POE_TITLE):
     u.GetClassNameW(hwnd, cls, 64)
     if cls.value == "POEWindowClass":
         return True
-    # 2.88.3 (feedback: "the overlay ... showing even when path of exile isn't the active window sometimes"): "title
-    # somewhere in the window's name" matched a browser tab or video called "Path of Exile 2 ...". Now the game's own
+    # 2.88.3: "title somewhere in the window's name" matched a browser tab or video called "Path of Exile 2 ...". Now the game's own
     # window class, or a window named exactly the game's title (window names only - ToS).
     return title_is_game(buf.value, title)
 

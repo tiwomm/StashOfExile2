@@ -199,7 +199,8 @@ def save_json(name, data):
         try:
             import time as _t
             with open(P("error_log.txt"), "a", encoding="utf-8") as f:
-                f.write(f"{_t.strftime('%Y-%m-%d %H:%M:%S')} could not save {name}: {e}\n")
+                from .privacy import scrub                    # 2.89.2: the error names the path (your user name)
+                f.write(f"{_t.strftime('%Y-%m-%d %H:%M:%S')} could not save {name}: {scrub(str(e))}\n")
         except Exception:
             pass
         return False

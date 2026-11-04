@@ -29,9 +29,30 @@ _lock = threading.Lock()
 
 
 # 2.69.1: what "Community data sharing" sends - said the same way in Settings and in the first-run question
-WHAT = ("Community data sharing pools anonymous data so everyone's numbers get better - most of all early in a league: "
-        "the mod prices your price checks see and your Mod book ratings, your map ranks, and the strats you upload "
-        "from Money Makers or the Strat Tracker. No account names, no items, no listing ids.")
+WHAT = ("Community data sharing is off until you say yes. If you turn it on, the app sends anonymous data to its own "
+        "community server so everyone's numbers get better: mod prices, Mod book ratings, map ranks, your best times "
+        "for the Leaderboards, new campaign zones, and the strats you upload. No account or character names, no "
+        "items, no listing ids. It is never sold and never used for ads.")
+
+# 2.89.2 (feedback): each thing sent, and what it's for. Keep this list TRUE - every
+# new upload that rides on this switch gets a line here.
+DETAILS = (
+    ("Mod prices your price checks see", "a summary only - how many listings and their middle price, per mod", "better "
+     "prices for everyone in the Mod book, most of all early in a league"),
+    ("Your Mod book ratings", "the S-D / High-Ignore you set for a mod", "the pooled ratings that decide which mods "
+     "matter"),
+    ("Your map ranks", "the rank you gave a map", "the community map ranks"),
+    ("Your best times", "map, boss, trial and act times with your class, level, deaths and league - under your "
+     "community name, never your character's", "the Leaderboards (you can turn this one off on its own)"),
+    ("Campaign zones the guide doesn't know", "the zone's name, its act and level", "the next update of the campaign "
+     "guide"),
+    ("Strats you upload yourself", "only when you press Upload / Post", "the Money Makers and Strat Tracker boards"),
+)
+WHERE = ("It all goes to the StashOfExile2 community server (run by the app's developer on Cloudflare) - not to GGG, "
+         "not to anyone else. It is never sold and never used for ads or tracking. Your internet address is only used, "
+         "scrambled, to stop spam, and is thrown away each day.")
+NEVER = ("Never sent: your account or character names, your items or stash, listing ids, anything from your computer. "
+         "Problem reports are separate - they go only when you press Report a bug.")
 
 
 def sharing():
