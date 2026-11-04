@@ -577,11 +577,7 @@ class CampaignUI:
             cb = ttk.Checkbutton(grid, text=label, variable=v, style="Card.TCheckbutton",
                                  command=lambda k=k: self.camp_opt(k))
             cb.grid(row=i // 2, column=i % 2, sticky="w", padx=(0, 24), pady=2)
-        self.tk_goal_dock = tk.BooleanVar(value=self.goalbar_docked())
-        ttk.Checkbutton(grid, text="Dock it to the overlay bar", variable=self.tk_goal_dock,
-                        style="Card.TCheckbutton", command=self.goal_dock_set).grid(
-            row=len(opts) // 2, column=len(opts) % 2, sticky="w", padx=(0, 24), pady=2)   # 2.89.1: after the rest
-            # (2.89.0 put the new switch in this cell: the two labels overlapped - "Dock it to the overlay bar...")
+        # (2.90.0: Dock is in On the bar › Lines above the bar, with the lines themselves)
         for col in range(2):
             grid.columnconfigure(col, uniform="cs")
         pk = tk.Frame(box, bg=P2)
@@ -593,10 +589,10 @@ class CampaignUI:
         ttk.Button(pk, text="Open the route", style="Quiet.TButton", command=self.camp_route_show).pack(
             side="left", padx=(8, 0), pady=(4 if into is not None else 0, 0))
 
-    def goal_dock_set(self):
+    def goal_dock_set(self, var=None):
         """2.79.1: the campaign / Focus line docked to the bar (on) or where you drag it (off)."""
         cfg = self.tracker_cfg()
-        cfg["goal_dock"] = bool(self.tk_goal_dock.get())
+        cfg["goal_dock"] = bool((var or self.tk_goal_dock).get())
         cfg.pop("goal_pos", None)
         self.tracker_save()
         self.goalbar_build()
@@ -615,13 +611,13 @@ class CampaignUI:
         CP.save()
         self.camp_refresh()
 
-    def camp_line_switch(self):
-        CP.cfg()["line"] = bool(self.tk_cline_var.get())
+    def camp_line_switch(self, var=None):
+        CP.cfg()["line"] = bool((var or self.tk_cline_var).get())    # 2.90.0: the box you clicked, not a stale copy
         CP.save()
         self.merged_build()
 
-    def camp_vendor_switch(self):
-        CP.cfg()["vendor"] = bool(self.tk_cvendor_var.get())
+    def camp_vendor_switch(self, var=None):
+        CP.cfg()["vendor"] = bool((var or self.tk_cvendor_var).get())
         CP.save()
         if not CP.cfg()["vendor"]:
             self.camp_vendor_close()

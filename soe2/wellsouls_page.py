@@ -21,6 +21,7 @@ class WellSoulsPage:
         c = SETTINGS.setdefault("desecrate", {})
         c.setdefault("on", True)
         c.setdefault("notice", True)              # the small "Desecration Helper on" over the game
+        c.setdefault("asked", False)              # 2.90.0: the first visit to the Well asks whether you want it
         return c
 
     def ws_status(self):
@@ -59,12 +60,66 @@ class WellSoulsPage:
         here = str(area_id or "") in W.AREAS
         before = getattr(self, "ws_here", False)
         self.ws_here = here
+        if here and not before and not self.ws_cfg().get("asked"):
+            self.ws_ask()                                 # 2.90.0: nobody knew it was there - ask at the Well
+            return
+        if not here and before:
+            self.ws_ask_close()
         if here and not before and self.ws_cfg().get("on"):
             if self.ws_cfg().get("notice", True):
                 self.ws_notice()
             self.ws_start()
         elif not here and before:
             self.ws_stop()
+
+    # ---------------------------------------------------------------- 2.90.0: asked at the Well, once
+    def ws_ask(self):
+        """A card over the game the first time you reach The Well of Souls: want the Desecration Helper (Beta)?"""
+        from tkinter import ttk
+        self.ws_ask_close()
+        try:
+            w, body, P = self._camp_card("Desecration Helper (Beta)", "◆", 460, top=0.14,
+                                         on_close=lambda: self.ws_answer(None))
+        except Exception:
+            self.log_error("the Desecration Helper question")
+            return None
+        bg = P["bg"]
+        tk.Label(body, text="You're at The Well of Souls. Want each revealed option to show its tier (T1 = the best "
+                            "for that item type)?", bg=bg, fg=P["text"], font=(P["font"], self.ov_font(10)),
+                 justify="left", anchor="w", wraplength=self.ov_px(420)).pack(fill="x")
+        tk.Label(body, text="Beta: it reads your screen while you're here, and it's still being tuned. Change it any "
+                            "time: Overlay ↳ Settings › Helpers.", bg=bg, fg=P["muted"], font=(P["font"], self.ov_font(9)),
+                 justify="left", anchor="w", wraplength=self.ov_px(420)).pack(fill="x", pady=(4, 0))
+        row = tk.Frame(body, bg=bg)
+        row.pack(fill="x", pady=(8, 0))
+        self.ws_ask_btns = {}
+        for k, label, style in (("yes", "Turn it on", "Primary.TButton"), ("no", "No thanks", "TButton")):
+            b = ttk.Button(row, text=label, style=self.ov_btn(style), command=lambda k=k: self.ws_answer(k == "yes"))
+            b.pack(side="left", padx=(0, 8))
+            self.ws_ask_btns[k] = b
+        self.ws_ask_win = w
+        w.show()
+        return w
+
+    def ws_answer(self, on):
+        """Yes / No: kept (asked). Closed with ×: asked again next visit."""
+        self.ws_ask_close()
+        if on is None:
+            return
+        c = self.ws_cfg()
+        c["asked"] = True
+        save_json("settings.json", SETTINGS)
+        self.alerts_toggle("desecrate", bool(on))
+        if on and getattr(self, "ws_here", False):
+            self.ws_start()
+
+    def ws_ask_close(self):
+        w, self.ws_ask_win = getattr(self, "ws_ask_win", None), None
+        if w is not None:
+            try:
+                w.destroy()
+            except tk.TclError:
+                pass
 
     def ws_notice(self):
         """A small notice over the game: the helper is on while you're here."""
@@ -79,7 +134,7 @@ class WellSoulsPage:
             w.withdraw()
             w.overrideredirect(True)
             w.attributes("-topmost", True)
-            tk.Label(w, text="◆  Desecration Helper on  -  each option at the Well shows its tier", fg=P["text"],
+            tk.Label(w, text="◆  Desecration Helper (Beta) on  -  each option at the Well shows its tier", fg=P["text"],
                      bg=P["bg"], font=("Segoe UI", -max(11, int(14 * ui))), padx=8, pady=4,
                      highlightthickness=1, highlightbackground=P["line"]).pack()
             w.update_idletasks()

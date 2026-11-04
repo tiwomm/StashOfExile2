@@ -420,45 +420,42 @@ class TrackerPage:
         sub(bar, "Numbers")
         switches(bar, nums, 3)
         self.tk_switches_var = tk.BooleanVar(value=bool(cfg.get("alerts_bar", True)))
-        self.tk_bar_vars = {"focus": tk.BooleanVar(value=bool(self.bar_cfg().get("focus", True))),
-                            "notes": tk.BooleanVar(value=bool(self.bar_cfg().get("notes", True))),
-                            "calc": tk.BooleanVar(value=bool(self.bar_cfg().get("calc", True))),
-                            "campaign": tk.BooleanVar(value=bool(self.bar_cfg().get("campaign", True))),
-                            "vendor": tk.BooleanVar(value=bool(self.bar_cfg().get("vendor", True)))}
-        sub(bar, "Switches and menus - flip a feature mid-game (it keeps working when its switch isn't on the bar)", 8)
-        switches(bar, (("Mechanic Helper switches", self.tk_switches_var, self.tracker_switches_switch),
-                       ("Focus switch", self.tk_bar_vars["focus"], self.tracker_bar_switch),
-                       ("Campaign switch", self.tk_bar_vars["campaign"], self.tracker_bar_switch),
-                       ("Notes ▾", self.tk_bar_vars["notes"], self.tracker_bar_switch),
+        from .merged_page import CHIPS, chip_name
+        bc = self.bar_cfg()
+        self.tk_bar_vars = {k: tk.BooleanVar(value=bool(bc.get(k, True))) for k in CHIPS + ("notes", "calc", "vendor")}
+        # 2.90.0: one switch per helper (the bar fits itself to the ones you keep), then the menus, then the lines
+        sub(bar, "Switches - turn a helper on or off mid-game (it keeps working when its switch isn't on the bar)", 8)
+        switches(bar, [(chip_name(k) + (" switch" if k in ("focus", "campaign") else ""), self.tk_bar_vars[k],
+                        self.tracker_bar_switch) for k in CHIPS], 3, prefix="bar:")
+        sub(bar, "Menus", 8)
+        switches(bar, (("Notes ▾", self.tk_bar_vars["notes"], self.tracker_bar_switch),
                        ("Calc ▾", self.tk_bar_vars["calc"], self.tracker_bar_switch),
-                       ("Vendor ▾ (in town)", self.tk_bar_vars["vendor"], self.tracker_bar_switch)), 2, prefix="bar:")
+                       ("Vendor ▾ (in town)", self.tk_bar_vars["vendor"], self.tracker_bar_switch)), 3, prefix="bar:")
+        from . import focus as F
+        from . import campaign as CP
+        sub(bar, "Lines above the bar", 8)
+        self.tk_fline_var = tk.BooleanVar(value=bool(F.cfg()["line"]))
+        self.tk_cline_var = tk.BooleanVar(value=bool(CP.cfg()["line"]))
+        self.tk_goal_dock = tk.BooleanVar(value=self.goalbar_docked())
+        fv, cv_, dv = self.tk_fline_var, self.tk_cline_var, self.tk_goal_dock
+        switches(bar, (("Focus line", fv, lambda: self.tracker_fline_switch(fv)),
+                       ("Campaign line", cv_, lambda: self.camp_line_switch(cv_)),
+                       ("Dock the lines to the bar", dv, lambda: self.goal_dock_set(dv))), 3)
         # ---- Features
         feat = card(0, 1, "Features", "Switch off what you don't want over the game.")
         self.tk_notes_var = tk.BooleanVar(value=bool(self._ensure_overlay().cfg.get("notes_enabled", True)))
         self.tk_calc_var = tk.BooleanVar(value=bool(self.calc_cfg()["on"]))          # 2.74.0
-        from . import focus as F                                  # 2.73.0: League Focus (Overlay ↳ Game Plan)
-        self.tk_focus_var = tk.BooleanVar(value=bool(F.cfg()["on"]))
-        self.tk_fline_var = tk.BooleanVar(value=bool(F.cfg()["line"]))
         self.tk_rank_ask = tk.BooleanVar(value=self.rank_ask_on())               # 2.76.0
-        self.tk_ws_var = tk.BooleanVar(value=bool(self.ws_cfg().get("on")))        # 2.81.0
+        # 2.90.0: the tools here; every helper's on / off is in Helpers below (Breach ... Focus, Campaign, Desecration)
         switches(feat, (("Notes", self.tk_notes_var, self.tracker_notes_switch),
                         ("Calculator", self.tk_calc_var, self.tracker_calc_switch),
-                        ("League Focus", self.tk_focus_var, lambda: self.focus_set_on(bool(self.tk_focus_var.get()))),
-                        ("Focus line (its own bar)", self.tk_fline_var, self.tracker_fline_switch),
-                        ("Ask me to rank maps I haven't ranked", self.tk_rank_ask, self.tracker_rank_ask_switch),
-                        ("Desecration Helper (at the Well)", self.tk_ws_var,
-                         lambda: self.alerts_toggle("desecrate", bool(self.tk_ws_var.get())))), 2)
-        # ---- Campaign: its switches, then its own options (route, splits ...)
-        camp = card(1, 0, "Campaign", "The Campaign Helper: where you are, what's next and what it's worth - from the "
-                                      "game's log. Click its line on the overlay for the act's route, rewards and "
-                                      "splits.")
-        from . import campaign as CP                              # 2.77.0: the Campaign Helper
-        self.tk_camp_var = tk.BooleanVar(value=bool(CP.cfg()["on"]))
-        self.tk_cline_var = tk.BooleanVar(value=bool(CP.cfg()["line"]))
+                        ("Ask me to rank maps I haven't ranked", self.tk_rank_ask, self.tracker_rank_ask_switch)), 2)
+        # ---- Campaign: its options (route, act timer ...); on / off is in Helpers, its line in On the bar
+        camp = card(1, 0, "Campaign", "The Campaign Helper's options. Turn it on or off in Helpers below; its line "
+                                      "and switch are in On the bar.")
         self.tk_cvendor_var = tk.BooleanVar(value=bool(CP.cfg()["vendor"]))
-        switches(camp, (("Campaign Helper", self.tk_camp_var, lambda: self.camp_set_on(bool(self.tk_camp_var.get()))),
-                        ("Campaign line (on the goal bar)", self.tk_cline_var, self.camp_line_switch),
-                        ("Vendor search (in town)", self.tk_cvendor_var, self.camp_vendor_switch)), 2)
+        vv = self.tk_cvendor_var
+        switches(camp, (("Vendor search (in town)", vv, lambda: self.camp_vendor_switch(vv)),), 2)
         self.camp_options(po, into=camp)
         # ---- Behaviour
         box = card(1, 1, "Behaviour")
@@ -519,9 +516,9 @@ class TrackerPage:
         po.pack(fill="both", expand=True, padx=8, pady=8)
         self.tk_opt_area = po
         self._tracker_options(po.inner)
-        mo, mb = chrome_section(po.inner, "Mechanic Helper", "Small helpers for league mechanics. They only watch and "
-                                                            "show - they never act in the game. Click one on the "
-                                                            "overlay to switch it on or off.")
+        mo, mb = chrome_section(po.inner, "Helpers", "Every helper over the game, on or off: the league mechanics, "
+                                                    "League Focus, the Campaign Helper and the Desecration Helper "
+                                                    "(Beta). They only watch and show - they never act in the game.")
         mo.pack(fill="x")
         self.build_alerts_panel(mb).pack(fill="x")
         self.ovh_pages = getattr(self, "ovh_pages", {})
@@ -572,9 +569,9 @@ class TrackerPage:
         self.tracker_cfg()["rank_ask"] = bool(self.tk_rank_ask.get())
         self.tracker_save()
 
-    def tracker_fline_switch(self):
+    def tracker_fline_switch(self, var=None):
         from . import focus as F
-        F.cfg()["line"] = bool(self.tk_fline_var.get())
+        F.cfg()["line"] = bool((var or self.tk_fline_var).get())
         F.save()
         self.merged_build()
 
@@ -583,6 +580,8 @@ class TrackerPage:
         b = self.bar_cfg()
         for k, v in self.tk_bar_vars.items():
             b[k] = bool(v.get())
+        if any(b.get(k) for k in self.HELPERS):              # 2.90.0: a helper's own switch brings the row back
+            self.tracker_cfg()["alerts_bar"] = True
         self.tracker_save()
         self.tracker_helpers_sync()
         self.merged_build()
@@ -1104,7 +1103,7 @@ class TrackerPage:
                  "map": f"Map  {n.get('map', '-')}" + (f"   {n.get('where', '')}" if show_where and live and
                                                        n.get("where") not in ("-", None) else "")
                         + self._ov_rank(n.get("where") if live else None),
-                 "maps": f"Maps  {n.get('maps', '0')}", "avg": f"Avg  {n.get('avg', '-')}",
+                 "maps": f"Maps: {n.get('maps', '0')}", "avg": f"Avg. {n.get('avg', '-')}",   # 2.90.0
                  }
         if getattr(self, "tk_ov_cv", None) is not None:    # 2.47.0: the skins' two columns
             where = n.get("where") if show_where and live and n.get("where") not in ("-", None) else ""
