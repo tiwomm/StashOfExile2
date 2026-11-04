@@ -1184,7 +1184,7 @@ export default {
       const me = await who(req, env);
       const im = /^\/images\/([0-9a-f]{32})$/.exec(path);
       if (im && req.method === "GET") return getImage(env, me, im[1]);
-      if (path === "/me") {
+      if (path === "/me" && req.method === "GET") {
         if (!me) return fail(401, "sign in first");
         const why = canReview(me) ? null : await reviewerCheck(env, me);
         return json({ user: { ...userOut(me), can_review: !why, why_not: why } });
