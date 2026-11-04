@@ -86,7 +86,8 @@ class BoardModPage:
                             "was reset. Pick a new one - you can do it now." if reset else
                             "Other players see it on Money Makers strats, upvotes and edits. It's yours alone, and it "
                             "can change once every 7 days. No account or password - this PC keeps a key. Slurs and "
-                            "hate words aren't allowed."),
+                            "hate words aren't allowed. Don't use your account or character name - keep the board "
+                            "apart from who you are in game."),
                  bg=P2, fg=C["muted"], wraplength=380, justify="left", anchor="w").pack(fill="x", pady=(4, 8))
         var = tk.StringVar()
         ent = ttk.Entry(win, textvariable=var, width=30)

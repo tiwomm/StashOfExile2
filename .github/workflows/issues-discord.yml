@@ -22,7 +22,8 @@ jobs:
           if [ -z "$HOOK" ]; then echo "No DISCORD_WEBHOOK secret - skipping."; exit 0; fi
           python3 - <<'PY'
           import json, os, urllib.request
-          msg = {"content": f"📋 New issue #{os.environ['NUM']} by {os.environ['WHO']}: {os.environ['TITLE']}\n{os.environ['URL']}"}
+          msg = {"content": f"📋 New issue #{os.environ['NUM']} by {os.environ['WHO']}: {os.environ['TITLE']}\n{os.environ['URL']}",
+                 "allowed_mentions": {"parse": []}}
           req = urllib.request.Request(os.environ["HOOK"], data=json.dumps(msg).encode(), headers={"content-type": "application/json"})
           urllib.request.urlopen(req, timeout=20)
           PY

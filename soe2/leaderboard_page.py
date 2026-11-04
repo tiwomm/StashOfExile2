@@ -35,7 +35,7 @@ class LeaderboardPage:
         self.lb_cls_box.bind("<<ComboboxSelected>>", lambda e: self.lb_refresh())
         from .style import Tooltip
         Tooltip(self.lb_cls_box, "Your class comes from the game's log: it names it at every level-up "
-                                 "(\"Tylo (Invoker) is now level 24\"). Everyone's: the classes players shared.")
+                                 "(\"ExampleWitch (Invoker) is now level 24\"). Everyone's: the classes players shared.")
         ttk.Button(top, text="↻ Refresh", style="Quiet.TButton", command=lambda: self.lb_refresh(send=True)).pack(
             side="right")
         self.lb_share_var = tk.BooleanVar(value=bool(SETTINGS.get("lb_share", True)))
@@ -112,6 +112,10 @@ class LeaderboardPage:
         save_json("settings.json", SETTINGS)
         if SETTINGS["lb_share"]:
             self.lb_send(force=True)
+        else:                                                # 2.89.3: off = your times come off the board
+            from . import board as B
+            if B.configured() and B.signed_in():
+                self._lb_bg(B.lb_forget, lambda r: None)
 
     def lb_send(self, force=False):
         """Your best times to the board (Community data sharing on, a community name, Share my times on). At most

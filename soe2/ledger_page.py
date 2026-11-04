@@ -960,6 +960,8 @@ class LedgerPage:
         if self.mm_need_login("upload a strat"):
             return None
         data = {k: v for k, v in MM.tidy(st).items() if k not in ("id", "author")}
+        if not self.mm_atlas_check(data):                         # 2.89.3: a public picture - look first
+            return None
         from . import board as B
         from . import stratimg
 
@@ -995,7 +997,7 @@ class LedgerPage:
         """The setup as a strat, kept in Money Makers › Mine. -> the strat."""
         st = self.fl_strat_guide(s)
         st["id"] = MM.slug("my-" + (st.get("name") or s["name"]))
-        st["author"] = st.get("author") or SETTINGS.get("wealth_account") or "me"
+        st["author"] = st.get("author") or "me"            # 2.89.3: never your account name
         MM.save_mine([m for m in MM.mine() if m["id"] != st["id"]] + [MM.tidy(st)])
         return st
 
@@ -1040,7 +1042,7 @@ class LedgerPage:
         import json as _json
         base = next((x for x in self.fl_all_strats() if x["id"] == s.get("strat")), None)
         st = {k: v for k, v in _json.loads(_json.dumps(base)).items() if not k.startswith("_") and k != "origin"} if base \
-            else MM.new_strat(name=s["name"], summary="", steps=[], author=SETTINGS.get("wealth_account") or "me")
+            else MM.new_strat(name=s["name"], summary="", steps=[], author="me")     # 2.89.3: not the account name
         ver = L.version(s)
         st["waystones"] = [f"{e.get('count', 1)}× {e['name']}" + (f" - ★ {', '.join(e['key_mods'])}" if e.get("key_mods") else "")
                            for e in ver["waystones"]] or st.get("waystones", [])
@@ -1061,14 +1063,15 @@ class LedgerPage:
             st.pop("items")
         f = L.figures(L.logs_of(self.fl_data(), s["id"], ver["v"]))
         st.pop("ledger", None)                              # 2.85.0: only YOUR numbers go up (a followed strat's
-        if base is not None and base.get("author") != SETTINGS.get("wealth_account"):   # weren't yours to publish)
+        if base is not None and base.get("origin") != "mine":                          # weren't yours to publish)
             st.pop("est_profit", None)
         from . import board as _B
         st["author"] = (_B.signed_in() or {}).get("name") or st.get("author") or "me"
         if f["runs"]:
-            lg = {"runs": f["runs"], "minutes": round(f["secs"] / 60, 1)}
-            for k, v in (("cost_per_run_div", f["cost_run"]), ("loot_per_run_div", f["loot_run"]),
-                         ("profit_per_run_div", f["profit_run"]), ("div_per_hour", f["per_hour"])):
+            # 2.89.3: only rates go out - never how many runs, how long, or totals (that's what you earned)
+            lg = {}
+            for k, v in (("cost_per_run_div", f["cost_run"]), ("profit_per_run_div", f["profit_run"]),
+                         ("div_per_hour", f["per_hour"])):
                 if v is not None:
                     lg[k] = round(v, 3)
             st["ledger"] = lg

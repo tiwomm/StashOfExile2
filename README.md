@@ -55,7 +55,9 @@ Questions, ideas and bug reports: [Discord](https://discord.gg/Ta8EVnxx4T). The 
 
 - **Nothing is shared unless you say yes.** Community data sharing is off until you turn it on. The question (and Settings › General › What's shared, and why?) lists each thing sent, what it's for and where it goes.
 - **Anonymous:** no account or character names, no items, no listing ids. It goes only to the app's own community server, is never sold, and is never used for ads or tracking.
-- **Your logs stay yours:** error logs, problem reports and bug reports leave out your Windows user name and home folder.
+- **Your logs stay yours:** error logs, problem reports and bug reports leave out your Windows user name, home folder, account and character names.
+- **Nobody can be singled out:** leaderboards show the day, not the time; private leagues are never shared; shared strats carry rates, never totals; your wealth never leaves your PC.
+- **Leave any time:** Money Makers › Leave the board deletes everything of yours on the community board.
 
 ## Fair play
 

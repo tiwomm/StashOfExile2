@@ -1883,6 +1883,14 @@ class App(PriceCheckPage, FavoritesPage, BoardModPage, LeaderboardPage, OrderLab
         return bool(SETTINGS.get("share_asked"))
 
     def cm_set_sharing(self, on, say=True):
+        was = bool(SETTINGS.get("share_prices")) and bool(SETTINGS.get("share_asked"))
+        if was and not on:                               # 2.89.3: turning it off takes your times off the leaderboards
+            try:
+                from . import board as B
+                if B.configured() and B.signed_in():
+                    threading.Thread(target=B.lb_forget, daemon=True).start()
+            except Exception:
+                pass
         SETTINGS["share_prices"] = bool(on)
         SETTINGS["share_asked"] = True
         save_json("settings.json", SETTINGS)
@@ -2643,8 +2651,8 @@ class App(PriceCheckPage, FavoritesPage, BoardModPage, LeaderboardPage, OrderLab
     def log_error(self, where):
         """Write an unexpected error to error_log.txt and say so in the status line - never let it stop the app."""
         try:
-            from .privacy import scrub
-            tb = scrub(traceback.format_exc())               # 2.89.2: no user name / home folder in the log
+            from .privacy import scrub_names
+            tb = scrub_names(traceback.format_exc())         # 2.89.2/3: no user, account or character names in the log
             sig = tb.strip().splitlines()[-1] if tb.strip() else where
             if time.time() - self._err_seen.get(sig, 0) > 30:          # don't repeat the same error every 100 ms
                 self._err_seen[sig] = time.time()

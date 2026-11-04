@@ -37,6 +37,6 @@ def make_report(path, records, limit=60):
             if os.path.exists(p):
                 with open(p, "rb") as f:
                     data = f.read()[-400_000:]                 # the end of a long log is what matters
-                from .privacy import scrub                     # 2.89.2: no user name / home folder in the report
-                z.writestr(name, scrub(data.decode("utf-8", errors="replace")))
+                from .privacy import scrub_names               # 2.89.2/3: no user, account or character names
+                z.writestr(name, scrub_names(data.decode("utf-8", errors="replace")))
     return len(out)

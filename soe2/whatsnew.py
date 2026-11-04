@@ -21,6 +21,13 @@ NEXT = [
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.89.3": [
+        "Privacy: Money Makers › Leave the board can now delete everything of yours on the community board.",
+        "Leaderboards show the day of a run, not the time; private leagues are never shared.",
+        "Strats you share carry your rates (div per hour), never your totals or your account name.",
+        "A screenshot asks before it goes public; a community name can't be your account or character name.",
+        "Logs and bug reports leave out your account and character names.",
+    ],
     "2.89.2": [
         "Privacy: Community data sharing stays off until you say yes, and now shows exactly what's shared, what for "
         "and where it goes (Settings › General › What's shared, and why?).",

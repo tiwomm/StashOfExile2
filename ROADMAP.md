@@ -4,7 +4,7 @@
 
 > **Who we build for - read second.** Path of Exile players are utilitarian: they love data and information, problem solving and creative thinking. So every feature shows its numbers *and how they were worked out*, lets you sort, filter, compare and export them (CSV), keeps power-user depth (keys, versions, raw data) one click away instead of hiding it, explains in plain words, and leaves the decision to the player. Pretty is welcome; vague is not.
 
-**Current version: 2.89.2**
+**Current version: 2.89.3**
 
 Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds features, 2.10.1 only fixes. Each step below is one release; we work through them top to bottom.
 
@@ -158,6 +158,7 @@ Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds f
 | 2.89.0 | A new campaign asks Speedrun or Full rewards and follows that guide (a real speedrun route: bosses and side areas that only give gems or loot skipped, the rewards worth the time kept); Settings can't stay stuck in front after resizing the app. |
 | 2.89.1 | Screenshots show the overlay (capture hiding off by default); a ⚙ by the overlay's lock opens its settings; "Campaign" on the bar; Campaign options no longer overlap. |
 | 2.89.2 | Privacy: the sharing question says what, why and where; no user name in logs or bug reports; Act splits is the Act timer. |
+| 2.89.3 | Privacy hardening: delete all your board data, day-only leaderboard times, private leagues never shared, rates not totals, screenshots checked, names kept out of logs and reports. |
 
 ## ▶ Next up
 

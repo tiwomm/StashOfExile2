@@ -88,7 +88,7 @@ def path_of(ref, fetch=None):
     if m:
         p = os.path.join(folder(), m.group(1))
         return p if os.path.isfile(p) else None
-    m = re.fullmatch(r"b:(\d{1,12})", ref)
+    m = re.fullmatch(r"b:([0-9a-f]{32})", ref)               # 2.89.3: an unguessable key
     if not m:
         return None
     p = os.path.join(folder(), f"board_{m.group(1)}.jpg")
@@ -116,4 +116,7 @@ def upload(ref, call=None):
     ok, d = (call or B.call)("POST", "/images", body={"data": base64.b64encode(data).decode("ascii")})
     if not ok:
         return False, d
-    return True, f"b:{int(d['id'])}"
+    key = str(d.get("id") or "")
+    if not re.fullmatch(r"[0-9a-f]{32}", key):
+        return False, "the board didn't keep it"
+    return True, f"b:{key}"

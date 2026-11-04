@@ -197,7 +197,7 @@ def validate(s):
     if it is not None and (not isinstance(it, list) or not all(_item_ok(x) for x in it)):
         out.append("items must be a list of {\"kind\", \"base\", \"count\", \"lasts\", \"key_mods\"}")
     img = s.get("atlas_image")                # 2.78.0: a screenshot of the atlas (l: on this PC, b: on the board)
-    if img is not None and not (isinstance(img, str) and re.fullmatch(r"(l:[A-Za-z0-9._-]{1,80}|b:\d{1,12})", img)):
+    if img is not None and not (isinstance(img, str) and re.fullmatch(r"(l:[A-Za-z0-9._-]{1,80}|b:[0-9a-f]{32})", img)):
         out.append("atlas_image must be \"b:<board image id>\" (or \"l:<file>\" on your PC)")
     lg = s.get("ledger")
     if lg is not None and (not isinstance(lg, dict) or not all(isinstance(v, (int, float)) and not isinstance(v, bool)

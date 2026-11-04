@@ -9,8 +9,8 @@ Lines used (seen in a real PoE 2 log, Oct 2026):
   2026/10/25 17:04:22 ... [INFO Client 24908] [SCENE] Set Source [Sun Temple]
   2026/10/25 17:04:11 ... [DEBUG Client 24908] local player sold an item for 610 gold
   2026/10/25 17:10:56 ... [INFO Client 24908] [WINDOW] Lost focus
-  2026/10/26 13:10:02 ... [INFO Client 21412] : Tylo_witch has been slain.        (anyone in your area, you too)
-  2026/10/26 12:14:20 ... [INFO Client 21412] : Tylo_witch has joined the area.    (OTHER players only)
+  2026/10/26 13:10:02 ... [INFO Client 21412] : ExampleWitch has been slain.        (anyone in your area, you too)
+  2026/10/26 12:14:20 ... [INFO Client 21412] : ExampleWitch has joined the area.    (OTHER players only)
   2026/10/26 14:25:27 ... [INFO Client 21412] : AFK mode is now ON. Autoreply "This player is AFK."
 Going back into the same map through its portal logs the same area with the SAME seed; a new map has a new seed.
 Hideouts and towns have seed 1. "has been slain" is logged for party members too, and your own joins aren't logged,

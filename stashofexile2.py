@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU GPL v3.0 (see LICENSE). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.89.2
+VERSION 2.89.3
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,6 +19,28 @@ VERSION 2.89.2
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.89.3
+       Privacy hardening, from a full audit (nobody may be singled out or targeted through this app).
+       Board (Worker): atlas screenshots get unguessable keys ("b:<32 hex>"; old numbered ones were re-keyed once,
+       imageKeys) and are handed out only while a visible post uses them (or to their uploader / reviewers), cached for
+       an hour, deleted with their post, and swept daily when no post uses them. DELETE /me deletes everything of
+       yours (name, posts, pictures, versions, votes, reports, reviews, leaderboard times, sessions) - Money Makers ›
+       Leave the board offers it. Leaderboard times keep the day only (the second showed when people play); a rename
+       rewrites the name in every copy of your posts; account ids go to admins only. Internet addresses: only an
+       HMAC (IP_PEPPER secret, else a random key the board keeps) with the day and purpose, purged daily
+       (housekeeping, also expired sessions). /mods/batch: per-address limits on batches and new installs; zone text
+       restricted and 3 sources needed (as documented). /bugs: JSON with the app's header only (a web page can't post
+       one), account names / home paths masked, no @everyone pings. Admin: a 32+ character key, and admin rights
+       lapse when the key changes (users.admin_key).
+       App: a strat's author is never your account name (board name or "me"), exports included; strats carry rates
+       only (div per hour, per run), never runs / minutes / totals. A screenshot asks before it goes public (it may
+       show names, chat, party). A community name can't be your account or a character's. Private leagues
+       ("(PL12345)") never go to the leaderboard, the hourly sync or a bug report. Turning sharing (or Share my times)
+       off takes your times off the board. Anonymous calls (/mods, /maps, /campaign, /bugs) never carry your board
+       key. privacy.scrub_names: account / character names and Name#1234 out of error logs, problem reports and the
+       whole bug report (which no longer sends the exact Windows build or screen size). update_log, rate_limit_log
+       and tab_reader_log keep no paths, cookies or item notes. The sample character name in comments is gone.
+       Workflows pin actions to commit SHAs; Discord posts can't mention everyone.
   2.89.2
        Privacy first. Community data sharing stays off until you say yes; its question now lists each thing sent, what
        exactly and what it's for (communitymods.DETAILS - keep it true when a new upload rides on the switch), where
@@ -2055,7 +2077,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.89.2"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.89.3"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
