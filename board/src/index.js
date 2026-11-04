@@ -189,6 +189,10 @@ const MIGRATIONS = [
     deaths INTEGER NOT NULL DEFAULT 0, at INTEGER NOT NULL, sent INTEGER NOT NULL, reports INTEGER NOT NULL DEFAULT 0,
     hidden INTEGER NOT NULL DEFAULT 0, UNIQUE (user_id, cat, key, league, cls))`,
   "CREATE INDEX IF NOT EXISTS lb_board ON lb (cat, key, league, hidden, secs)",
+  // 2.87.0: Simulacrum of Delusion is a pinnacle fight (2.86.0 filed it under Trials) - a time already sent moves
+  // (unless the same player already has one under Bosses: then the faster stays and the Trials copy goes)
+  "UPDATE OR IGNORE lb SET cat = 'boss' WHERE cat = 'trial' AND key = 'Simulacrum of Delusion'",
+  "DELETE FROM lb WHERE cat = 'trial' AND key = 'Simulacrum of Delusion'",
   `CREATE TABLE IF NOT EXISTS lb_reports (lb_id INTEGER NOT NULL, user_id TEXT NOT NULL, reason TEXT, created INTEGER NOT NULL,
     PRIMARY KEY (lb_id, user_id))`,
 ];

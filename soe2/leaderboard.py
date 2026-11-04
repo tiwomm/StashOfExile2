@@ -5,7 +5,8 @@ Four boards:
     the guide pack has one).
   * Maps - fastest clear per map (time inside the map; maps, towers, unique maps, citadels).
   * Bosses & pinnacles - the Map library's pinnacle fights.
-  * Trials - Trial of the Sekhemas, Trial of Chaos, Simulacrum (and other trial areas the tracker learns).
+  * Trials - Trial of the Sekhemas, Trial of Chaos (and other trial areas the tracker learns); pinnacle fights such
+    as Simulacrum of Delusion are on Bosses & pinnacles.
 Mine is worked out on this PC. Everyone comes from the community board: with Community data sharing on, each
 account's best per board / league / class is sent (its community name, never an account or character name). Times are
 self-reported (from the log), so the board refuses impossible ones and reports / reviewers / admins can hide entries.
@@ -31,10 +32,10 @@ def cat_of(name):
     e = library().get(name) or {}
     kind = e.get("kind")
     ids = " ".join(e.get("ids") or [])
+    if kind == "Pinnacle":                     # 2.87.0 (feedback): first - Simulacrum of Delusion is a pinnacle fight
+        return "boss"
     if TRIAL.search(name or "") or TRIAL.search(ids):
         return "trial"
-    if kind == "Pinnacle":
-        return "boss"
     return "map"
 
 
