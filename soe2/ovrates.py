@@ -137,4 +137,8 @@ class OverlayRates:
             tk.Label(body, text=f"poe.ninja · {int(age // 60)} min ago", bg=P["bg"], fg=P["muted"],
                      font=(P["font"], self.ov_font(8))).grid(row=len(rows) + 1, column=0, columnspan=2, sticky="w",
                                                              pady=(4, 0))
+        w = getattr(self, "ovr_win", None)                       # 2.96.1 (feedback: it couldn't be moved): unlocked,
+        if w is not None and not w.locked:                         # any spot on it drags it, not just its title bar
+            for c in [body] + list(body.winfo_children()):
+                w.draggable(c)
         self._ovr_job = self.root.after(REFRESH_MS, self.ovr_fill)

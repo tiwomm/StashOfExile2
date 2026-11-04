@@ -26,9 +26,9 @@ DEFAULT_KEYS = {"key_pause": "Pause",            # 2.74.3: the keyboard's Pause 
                 "key_overlay": "F6"}             # Ctrl+Alt+S is gone - Ctrl+Alt keys got in the way of game input)           # 2.59.0: F6 shows / hides the whole overlay       # 2.10.0: set once, change them in Options
 # 2.54.0: the Session timer times your play; money lives in one place, Money Makers › Strat Tracker.
 # Profit (Wealth at Stop minus at Start) is gone from here: its tiles, overlay line, options and Stop count.
-LINE_NAMES = [("session", "Session timer"), ("map", "This map's time"), ("maps", "Maps done"), ("avg", "Average map"),
-              ("rank", "Map rank"),                                              # 2.76.0: its own part
-              ("where", "Where you are")]
+LINE_NAMES = [("session", "Session timer"), ("map", "Map timer"), ("maps", "Maps done"), ("avg", "Average map time"),
+              ("rank", "Map rank: S-D"),                                         # 2.76.0: its own part
+              ("where", "Map name")]                                             # (2.96.1: plainer names)
 
 
 class _BarTitle:
@@ -58,6 +58,19 @@ class TrackerPage:
             cfg["ov_2701"] = True
             cfg["overlay"] = True
             cfg["alerts_bar"] = True                 # (the overlay's × used to switch these off without saying so)
+        if not cfg.get("ov_2961"):                   # 2.96.1: no "Mechanic Helper bar" switch any more - a bar that
+            cfg["ov_2961"] = True                    # was off keeps its helpers' switches off, one by one
+            if not cfg.get("alerts_bar", True):
+                b = cfg.setdefault("bar", {})
+                for k in ("breach", "delirium", "ritual", "remnant"):
+                    b[k] = False
+            cfg["alerts_bar"] = True
+            try:                                     # the act timer has no switch: always on (its times reach the
+                from . import campaign as _CP        # Leaderboards only if you share data)
+                _CP.cfg()["splits"] = True
+                _CP.save()
+            except Exception:
+                pass
         if not cfg.get("keys_210"):                  # 2.10.0: start / stop and pause get a key (only if you had none)
             cfg["keys_210"] = True
             for k, v in DEFAULT_KEYS.items():
@@ -412,9 +425,8 @@ class TrackerPage:
         def sub(parent, text, top=0):
             tk.Label(parent, text=text, bg=P2, fg=C["muted"], font=("Segoe UI", 9), anchor="w").pack(
                 fill="x", pady=(top, 2))
-        # ---- On the bar: the numbers, then the switches and menus on it
-        bar = card(0, 0, "On the bar", "What the overlay's bar shows over the game. Its look, layout and opacity: "
-                                       "Settings › Appearance.")
+        # ---- 2.96.1 (feedback: one switch per item, no doubles): On the bar | Options; then Helpers and Campaign
+        bar = card(0, 0, "On the bar", "One switch per item: on = it's on the bar (and works); off = it's gone.")
         self.tk_line_vars = {}
         nums = []
         for k, label in LINE_NAMES:
@@ -426,96 +438,67 @@ class TrackerPage:
         nums.append(("Clock", self.ingame_clock_var, self.on_ingame_clock))
         sub(bar, "Numbers")
         switches(bar, nums, 3)
-        self.tk_switches_var = tk.BooleanVar(value=bool(cfg.get("alerts_bar", True)))
-        from .merged_page import CHIPS, chip_name
+        self.tk_switches_var = tk.BooleanVar(value=True)
+        from .merged_page import CHIPS
         bc = self.bar_cfg()
-        self.tk_bar_vars = {k: tk.BooleanVar(value=bool(bc.get(k, True))) for k in CHIPS + ("notes", "calc", "regex")}
         from . import campaign as CP
-        self.tk_bar_vars["vendor"] = tk.BooleanVar(value=bool(bc.get("vendor", True)) and bool(CP.cfg()["vendor"]))
-        # 2.90.0: one switch per helper (the bar fits itself to the ones you keep), then the menus, then the lines
-        sub(bar, "Switches - turn a helper on or off mid-game (it keeps working when its switch isn't on the bar)", 8)
-        switches(bar, [(chip_name(k) + (" switch" if k in ("focus", "campaign") else ""), self.tk_bar_vars[k],
-                        self.tracker_bar_switch) for k in CHIPS], 3, prefix="bar:")
-        sub(bar, "Menus", 8)
-        switches(bar, (("Notes ▾", self.tk_bar_vars["notes"], self.tracker_bar_switch),
-                       ("Calc ▾", self.tk_bar_vars["calc"], self.tracker_bar_switch),
-                       ("Regex ▾ (your favorites)", self.tk_bar_vars["regex"], self.tracker_bar_switch),
-                       ("Vendor ▾ (campaign towns)", self.tk_bar_vars["vendor"],
-                        lambda: self.camp_vendor_switch(self.tk_bar_vars["vendor"]))), 2, prefix="bar:")
         from . import focus as F
-        from . import campaign as CP
-        sub(bar, "Lines above the bar", 8)
+        # tools: Notes / Calc / Exchange rates are one switch each (the feature and its place on the bar)
+        oc = self._ensure_overlay().cfg
+        self.tk_notes_var = tk.BooleanVar(value=bool(oc.get("notes_enabled", True)) and bool(bc.get("notes", True)))
+        self.tk_calc_var = tk.BooleanVar(value=bool(self.calc_cfg()["on"]) and bool(bc.get("calc", True)))
+        self.tk_ovr_var = tk.BooleanVar(value=bool(self.ovr_cfg()["on"]))       # 2.91.0
+        self.tk_bar_vars = {k: tk.BooleanVar(value=bool(bc.get(k, True))) for k in CHIPS + ("regex",)}
+        self.tk_bar_vars["notes"], self.tk_bar_vars["calc"] = self.tk_notes_var, self.tk_calc_var
+        self.tk_bar_vars["vendor"] = tk.BooleanVar(value=bool(bc.get("vendor", True)) and bool(CP.cfg()["vendor"]))
+        ov_ = self.tk_ovr_var
+        sub(bar, "Tools", 8)
+        switches(bar, (("Notes ▾", self.tk_notes_var, lambda: (self.tracker_bar_switch(), self.tracker_notes_switch())),
+                       ("Calc ▾", self.tk_calc_var, lambda: (self.tracker_bar_switch(), self.tracker_calc_switch())),
+                       ("Regex ▾", self.tk_bar_vars["regex"], self.tracker_bar_switch),
+                       ("Exchange rates", ov_, lambda: self.ovr_switch(bool(ov_.get())))), 3, prefix="bar:")
+        # (the lines above the bar and each helper's switch on the bar: in Helpers, beside the helper)
         self.tk_fline_var = tk.BooleanVar(value=bool(F.cfg()["line"]))
         self.tk_cline_var = tk.BooleanVar(value=bool(CP.cfg()["line"]))
         self.tk_goal_dock = tk.BooleanVar(value=self.goalbar_docked())
-        fv, cv_, dv = self.tk_fline_var, self.tk_cline_var, self.tk_goal_dock
-        switches(bar, (("Focus line", fv, lambda: self.tracker_fline_switch(fv)),
-                       ("Campaign line", cv_, lambda: self.camp_line_switch(cv_)),
-                       ("Dock the lines to the bar", dv, lambda: self.goal_dock_set(dv))), 3)
-        # ---- Features
-        feat = card(0, 1, "Features", "Switch off what you don't want over the game.")
-        self.tk_notes_var = tk.BooleanVar(value=bool(self._ensure_overlay().cfg.get("notes_enabled", True)))
-        self.tk_calc_var = tk.BooleanVar(value=bool(self.calc_cfg()["on"]))          # 2.74.0
+        # ---- Options: how the overlay behaves
+        box = card(0, 1, "Options", "How the overlay behaves.")
         self.tk_rank_ask = tk.BooleanVar(value=self.rank_ask_on())               # 2.76.0
-        # 2.90.0: the tools here; every helper's on / off is in Helpers below (Breach ... Focus, Campaign, Desecration)
-        self.tk_ovr_var = tk.BooleanVar(value=bool(self.ovr_cfg()["on"]))       # 2.91.0
-        ov_ = self.tk_ovr_var
-        switches(feat, (("Notes", self.tk_notes_var, self.tracker_notes_switch),
-                        ("Calculator", self.tk_calc_var, self.tracker_calc_switch),
-                        ("Exchange rates window", ov_, lambda: self.ovr_switch(bool(ov_.get()))),
-                        ("Ask me to rank maps I haven't ranked", self.tk_rank_ask, self.tracker_rank_ask_switch)), 2)
-        # ---- Campaign: its options (route, act timer ...); on / off is in Helpers, its line in On the bar
-        camp = card(1, 0, "Campaign", "The Campaign Helper's options. Turn it on or off in Helpers below; its line "
-                                      "and switch are in On the bar.")
-        self.tk_cvendor_var = self.tk_bar_vars["vendor"]          # 2.92.2: the same switch as Vendor ▾ in On the bar
-        vv = self.tk_cvendor_var
-        switches(camp, (("Vendor ▾ in campaign towns", vv, lambda: self.camp_vendor_switch(vv)),), 2)
-        self.camp_options(po, into=camp)
-        # ---- Behaviour
-        box = card(1, 1, "Behaviour")
         self.tk_lock = tk.BooleanVar(value=bool(cfg.get("mlocked")))      # 2.59.0: ONE lock for the whole overlay
         self.tk_tips_var = tk.BooleanVar(value=bool(cfg.get("tips", True)))      # 2.73.4: what each switch is for
         self.tk_auto = tk.BooleanVar(value=bool(cfg.get("autostart")))           # 2.14.0
         self.overlay_hide_capture()                                                    # (2.89.1: its one-time reset)
         self.tk_hidecap = tk.BooleanVar(value=bool(cfg.get("hide_capture", False)))   # 2.85.2
-        lk = tk.Frame(box, bg=P2)
-        lk.grid(row=3, column=0, columnspan=3, sticky="w")
-        sw = switches(lk, (("Lock the overlay (can't be moved or resized by accident)", self.tk_lock,
-                            self.tracker_options_changed),
-                           ("Feature tips - hover a switch for what it does; a short card the first time you turn "
-                            "one on", self.tk_tips_var, self.tracker_tips_switch),
-                           ("Start tracking when StashOfExile2 starts", self.tk_auto, self.tracker_options_changed),
-                           ("Hide the bar from screen captures while the Ritual or Delirium watcher runs - only if the "
-                            "bar covers a counter they read; while it's on, screenshots won't show the bar", self.tk_hidecap, self.tracker_hidecap_switch)), 1)
-        self.tk_ov_switches["tips"] = self.tk_ov_switches.pop("Feature tips - hover a switch for what it does; a "
-                                                              "short card the first time you turn one on")
-        del sw
-        ch = tk.Frame(box, bg=P2)                       # 2.7.0: whose deaths count
-        ch.grid(row=5, column=0, columnspan=3, sticky="w", pady=(8, 0))
-        tk.Label(ch, text="Your character name", bg=P2, fg=C["text"]).pack(side="left")
-        self.tk_char = tk.StringVar(value=cfg.get("character", ""))
-        ttk.Entry(ch, textvariable=self.tk_char, width=22).pack(side="left", padx=(8, 0))
-        self.tk_char.trace_add("write", lambda *a: self.tracker_char_set())
-        self.tk_char_hint = tk.Label(box, text="", bg=P2, fg=C["muted"], font=("Segoe UI", 9), anchor="w",
-                                     justify="left", wraplength=600)
-        self.tk_char_hint.grid(row=6, column=0, columnspan=3, sticky="w")
-        self.tracker_char_hint()
-        op = tk.Frame(box, bg=P2)                       # 2.3.0: own row - it used to sit on top of its label
-        op.grid(row=4, column=0, columnspan=3, sticky="w", pady=(8, 0))
-        # 2.52.0 (feedback: opacity was here AND in Appearance): one place for how every overlay looks
-        tk.Label(op, text="Style, layout and opacity of the overlay:", bg=P2, fg=C["text"]).pack(side="left")
-        ttk.Button(op, text="Settings › Appearance", style="Quiet.TButton",
-                   command=self.appearance_open).pack(side="left", padx=(8, 0))
-        box2 = tk.Frame(box, bg=P2)                                            # 2.82.0: keys, in Behaviour
-        box2.grid(row=8, column=0, columnspan=3, sticky="w", pady=(8, 0))
-        # 2.57.0: keys are set in Settings › Hotkeys only - here they're shown, with the way there
-        self.tk_key_vars = {k: tk.StringVar(value=cfg.get(k, "")) for k in ("key_pause",)}
-        self.tk_key_msg = tk.Label(box2, text="", bg=P2, fg=C["text"], font=("Segoe UI", 9), anchor="w", justify="left")
-        self.tk_key_msg.grid(row=1, column=0, columnspan=3, sticky="w")
-        ttk.Button(box2, text="Change in Settings › Hotkeys", style="Quiet.TButton",
-                   command=lambda: self.hotkeys_open("tracker:key_overlay")).grid(row=2, column=0, sticky="w", pady=(4, 0))
-        self._tk_keys_text()
+        dv = self.tk_goal_dock
+        switches(box, (("Lock the overlay (can't be moved)", self.tk_lock, self.tracker_options_changed),
+                       ("Feature tips", self.tk_tips_var, self.tracker_tips_switch),
+                       ("Start the overlay with StashOfExile2", self.tk_auto, self.tracker_options_changed),
+                       ("Ask me to rank maps", self.tk_rank_ask, self.tracker_rank_ask_switch),
+                       ("Dock the lines to the bar", dv, lambda: self.goal_dock_set(dv)),
+                       ("Hide from screen captures", self.tk_hidecap, self.tracker_hidecap_switch)), 2)
+        from .style import Tooltip
+        Tooltip(self.tk_ov_switches["Hide from screen captures"], "Only while the Ritual or Delirium watcher runs, and "
+                "only needed if the bar covers a counter they read. While it's on, screenshots won't show the bar.")
+        self.tk_ov_switches["tips"] = self.tk_ov_switches.pop("Feature tips")
+        op = tk.Frame(box, bg=P2)
+        op.pack(fill="x", pady=(8, 0))
+        ttk.Button(op, text="Overlay appearance…", command=self.appearance_open).pack(side="left")
+        # (2.96.1: Your character name is gone - deaths are counted for the character the game's log names; the keys
+        # are in Settings › Hotkeys)
 
+    def tracker_campaign_card(self, parent):
+        """2.96.1: Campaign - its options, full width under Helpers."""
+        o, camp = chrome_section(parent, "Campaign", "The Campaign Helper's options. Turn it on or off in Helpers.")
+        o.pack(fill="x", pady=(8, 0))
+        self.tk_ov_switches = getattr(self, "tk_ov_switches", {})
+        self.tk_cvendor_var = self.tk_bar_vars["vendor"]          # 2.92.2: the same switch as Vendor ▾ on the bar
+        vv = self.tk_cvendor_var
+        cb = ttk.Checkbutton(camp, text="Vendor ▾ - on the bar the whole campaign", variable=vv,
+                             style="Card.TCheckbutton", command=lambda: self.camp_vendor_switch(vv))
+        cb.pack(anchor="w")
+        self.tk_ov_switches["Vendor ▾ - on the bar the whole campaign"] = cb
+        self.camp_options(parent, into=camp)
+        return o
 
     def tracker_hidecap_switch(self):
         """2.85.2: the bar in / out of screen captures."""
@@ -530,11 +513,11 @@ class TrackerPage:
         po.pack(fill="both", expand=True, padx=8, pady=8)
         self.tk_opt_area = po
         self._tracker_options(po.inner)
-        mo, mb = chrome_section(po.inner, "Helpers", "Every helper over the game, on or off: the league mechanics, "
-                                                    "League Focus, the Campaign Helper and the Desecration Helper "
-                                                    "(Beta). They only watch and show - they never act in the game.")
+        mo, mb = chrome_section(po.inner, "Helpers", "Each helper: on / off, then its own options on the same row. "
+                                                    "They only watch and show - they never act in the game.")
         mo.pack(fill="x")
         self.build_alerts_panel(mb).pack(fill="x")
+        self.tracker_campaign_card(po.inner)                      # 2.96.1: under Helpers, full width
         self.ovh_pages = getattr(self, "ovh_pages", {})
         self.ovh_pages.update({"Mechanic Helper": mo})
         return po
@@ -624,6 +607,8 @@ class TrackerPage:
         if self.overlay.notes is not None:                  # a dropped-down note (Strip, Minimal)
             self.overlay.restyle()
         self.calc_ov_restyle()                               # 2.74.0: the calculator follows the one lock
+        if getattr(self, "ovr_win", None) is not None:      # 2.96.1 (feedback: it stayed locked): the rates window too
+            self.ovr_build()
 
     def _tk_keys_text(self):
         from .overlay import key_label
@@ -644,7 +629,8 @@ class TrackerPage:
         self.tracker_save()
         clash = self.hotkey_clashes()
         msg = ("Not understood: " + ", ".join(bad)) if bad else ("Saved. " + ("Clash: " + "; ".join(clash) if clash else ""))
-        self.tk_key_msg.config(text=msg, fg=C["red"] if bad or clash else C["green"])
+        if getattr(self, "tk_key_msg", None) is not None:
+            self.tk_key_msg.config(text=msg, fg=C["red"] if bad or clash else C["green"])
         self.tracker_keys_hint()
 
     def tracker_keys_hint(self):
@@ -717,6 +703,8 @@ class TrackerPage:
         self.tracker_char_hint()
 
     def tracker_char_hint(self):
+        if getattr(self, "tk_char_hint", None) is None:          # (2.96.1: the name box is gone)
+            return
         cfg = self.tracker_cfg()
         guess = cfg.get("character_guess")
         if (cfg.get("character") or "").strip():

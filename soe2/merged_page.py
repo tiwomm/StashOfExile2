@@ -503,12 +503,7 @@ class MergedOverlay:
         """× on the one window: everything in it goes (the timer, the switches' bar, the note) - each comes back from
         its own place (the next session, Overlay › Options › On the overlay)."""
         cfg = self.tracker_cfg()
-        cfg["overlay"] = False
-        cfg["alerts_bar"] = False
-        if getattr(self, "al_bar", None) is not None:
-            self.al_bar.set(False)
-        if getattr(self, "tk_switches_var", None) is not None:      # 2.70.1
-            self.tk_switches_var.set(False)
+        cfg["overlay"] = False                     # (2.96.1: the helpers' switches stay as they are)
         self.mg_timer = False
         if self.overlay.cfg.get("notes_visible"):
             self.overlay.cfg["notes_visible"] = False
@@ -775,11 +770,10 @@ class MergedOverlay:
 
     def vendor_on_bar(self):
         """2.92.2 (feedback: the Vendor switch did nothing): Vendor ▾ sits with the other menus, not on the campaign
-        line - shown in a campaign town whether that line is up or not."""
+        line. 2.96.1 (feedback): on the bar the whole campaign, in town or not, until the campaign is done."""
         from . import campaign as CP
         try:
-            return bool(CP.cfg()["vendor"]) and bool(self.bar_cfg().get("vendor", True)) and CP.active() and \
-                self.camp_in_town()
+            return bool(CP.cfg()["vendor"]) and bool(self.bar_cfg().get("vendor", True)) and CP.active()
         except Exception:
             return False
 

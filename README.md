@@ -69,6 +69,11 @@ Questions, ideas and bug reports: [Discord](https://discord.gg/Ta8EVnxx4T). The 
 - **Reads nothing from the game itself:** no memory, no network traffic. Only item text you copy, the game's own `Client.txt` log, and screenshots of your own screen (Delirium, Ritual and Remnant watchers).
 - **Respects the trade site's rate limits**, and nothing syncs on its own.
 
+## Credits
+
+- **[poe.ninja](https://poe.ninja)** (by rasmuskl): the economy data behind Exchange rates, the rates window over the game, the Remnant prices and currency values. Thank you!
+- **[PoE Ancients Price Helper](https://github.com/pedro-quiterio/PoeAncientsPriceHelper)** by Pedro Quitério: the idea for the Expedition Remnant Price Checker. None of its code is used.
+
 ## License
 
 The code is free software under the **GNU General Public License v3.0** ([LICENSE](LICENSE)): you can use it, change it and share it. If you share a changed version, it has to stay under the same license, with its source.

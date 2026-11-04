@@ -565,11 +565,10 @@ class CampaignUI:
         grid.pack(fill="x", pady=(8, 0))
         self.tk_camp_vars = {}
         opts = (("ask_route", "Ask Speedrun or Full rewards when a campaign starts"),   # 2.89.0
-                ("optional", "Show optional zones"), ("tips", "Tips (bosses, vendor checks)"),
-                ("warn", "Warn when I leave an act with a reward missed"),
-                ("splits", "Act timer - time each act and compare to your best (on with the session tracker; "
-                           "your best times go to the Leaderboards if you share data)"),   # 2.89.2
+                ("optional", "Optional zones"), ("tips", "Tips (bosses, vendor checks)"),
+                ("warn", "Missing rewards - warn when I leave an act"),
                 ("off_at_maps", "Turn itself off once I reach maps"))
+        # (2.96.1: no Act timer switch - act times are always kept; the Leaderboards get them only if you share data)
         for i, (k, label) in enumerate(opts):
             v = tk.BooleanVar(value=bool(c[k]))
             self.tk_camp_vars[k] = v

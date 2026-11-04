@@ -4,7 +4,7 @@
 
 > **Who we build for - read second.** Path of Exile players are utilitarian: they love data and information, problem solving and creative thinking. So every feature shows its numbers *and how they were worked out*, lets you sort, filter, compare and export them (CSV), keeps power-user depth (keys, versions, raw data) one click away instead of hiding it, explains in plain words, and leaves the decision to the player. Pretty is welcome; vague is not.
 
-**Current version: 2.96.0**
+**Current version: 2.96.1**
 
 Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds features, 2.10.1 only fixes. Each step below is one release; we work through them top to bottom.
 
@@ -169,6 +169,7 @@ Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds f
 | 2.94.0 | Settings › Privacy & community: what leaves your PC, the data sharing switches, your community name (why, what's stored, every action - moved from Money Makers - and Move to another PC), your rights; 👤 chips on Money Makers and Leaderboards open it; no name asked at start. |
 | 2.95.0 | Rep (karma-style) and the contributor icon: upvotes on your strats, accepted edits, reviews, ratings that match the community (opt-in), an admin's thank-you; a small icon beside your name that steps up white / blue / yellow / orange, its card on hover. Nothing locked behind it. |
 | 2.96.0 | Help rate mods: ▲ / ▼ beside each mod on Price Checks (your rule; gear per item class), Rate mods one at a time (S-D / Ignore) from the Mod book or Privacy & community, a gentle ask (once; Not now = once more 3-7 days later; No thanks = never); Bulk Pricing skips items the Mod book is sure sell under your floor (1 div per rule set), thin data = check by hand. |
+| 2.96.1 | Overlay ↳ Settings regrouped: On the bar (one switch per item) and Options; Helpers with each helper's options and bar switch on its row; Campaign full width; doubles, the Act timer switch, the character name and the hotkey line gone; the Exchange rates window moves and follows the lock; poe.ninja credited. |
 
 ## ▶ Next up
 

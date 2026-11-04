@@ -159,14 +159,9 @@ class AlertsPage:
         self.alerts_init()
         P2 = C["panel2"]
         box = tk.Frame(parent, bg=P2, padx=12, pady=8, highlightthickness=1, highlightbackground=C["line"])
-        head = tk.Frame(box, bg=P2)
-        head.pack(fill="x")
-        tk.Label(head, text="Alerts while you play", bg=P2, fg=C["accent"], font=("Segoe UI", 10, "bold")).pack(side="left")
-        tk.Label(head, text="they work over the game whenever the app runs, session or not", bg=P2, fg=C["muted"],
-                 font=("Segoe UI", 9)).pack(side="left", padx=8)
-        self.al_bar = tk.BooleanVar(value=bool(self.tracker_cfg().get("alerts_bar", True)))
-        ttk.Checkbutton(head, text="Show the Mechanic Helper bar over the game", variable=self.al_bar,
-                        command=self.alerts_bar_changed).pack(side="right")
+        # 2.96.1: no "Mechanic Helper bar" switch - each helper has its own "Switch on the bar" on its row
+        self.al_bar = tk.BooleanVar(value=True)
+        CB = "Card.TCheckbutton"                        # (2.96.1: the card's own background - no black boxes)
         self.al_rows = {}
         for key, name, what, test in (
                 ("delirium", "Delirium", "END DELIRIUM when you finish a map with Delirium still on (reads your screen)",
@@ -191,32 +186,32 @@ class AlertsPage:
             dot = tk.Label(row, text="●", bg=P2, fg=DOT["off"], font=("Segoe UI", 10))
             dot.pack(side="left")
             on = tk.BooleanVar(value=False)
-            nb = ttk.Checkbutton(row, text=name, variable=on, width=18 if key == "desecrate" else 12,
+            nb = ttk.Checkbutton(row, text=name, variable=on, width=18 if key == "desecrate" else 12, style=CB,
                                  command=lambda k=key: self.alerts_toggle(k))
             nb.pack(side="left", padx=(4, 0))
             Tooltip(nb, what)                       # 2.37.0: what it does - the line under a row shows only while on
             snd = tk.BooleanVar(value=True)
             if key not in ("remnant", "desecrate", "focus", "campaign"):   # 2.39.0: no sound for these
-                ttk.Checkbutton(row, text="Sound", variable=snd,
+                ttk.Checkbutton(row, text="Sound", variable=snd, style=CB,
                                 command=lambda k=key: self.alerts_sound(k)).pack(side="left")
             ttk.Button(row, text="Open" if key in ("focus", "campaign") else "Test", command=test, width=6).pack(side="right")
             if key == "breach":                    # 2.11.0
                 self.al_leave = tk.BooleanVar(value=bool(self.breach_cfg().get("leave_reminder", True)))
-                ttk.Checkbutton(row, text="Remind me when I leave the map", variable=self.al_leave,
+                ttk.Checkbutton(row, text="Remind me when I leave the map", variable=self.al_leave, style=CB,
                                 command=self.alerts_leave_changed).pack(side="left", padx=(4, 0))
             if key == "remnant":                   # 2.37.0: Auto - the list is found and priced by itself
                 self.al_rauto = tk.BooleanVar(value=bool(self.remnant_cfg().get("auto")))
-                ab = ttk.Checkbutton(row, text="Auto (no key needed)", variable=self.al_rauto,
+                ab = ttk.Checkbutton(row, text="Auto (no key needed)", variable=self.al_rauto, style=CB,
                                      command=lambda: self.remnant_auto_changed(self.al_rauto.get()))
                 ab.pack(side="left", padx=(4, 0))
                 self.al_rru = tk.BooleanVar(value=bool(self.remnant_cfg().get("rumours", True)))   # 2.83.0
-                rb_ = ttk.Checkbutton(row, text="Island rumours (in your hideout)", variable=self.al_rru,
+                rb_ = ttk.Checkbutton(row, text="Island rumours (in your hideout)", variable=self.al_rru, style=CB,
                                       command=lambda: self.ru_changed(self.al_rru.get()))
                 rb_.pack(side="left", padx=(4, 0))
                 Tooltip(rb_, "On the world map's Uncharted Waters card, each rumour gets the island it leads to and "
                              "your Map library rank for it. Only in your hideout.")
                 self.al_rtips = tk.BooleanVar(value=bool(self.remnant_cfg().get("tips", True)))      # 2.40.0
-                tb_ = ttk.Checkbutton(row, text="Runeshape tips", variable=self.al_rtips,
+                tb_ = ttk.Checkbutton(row, text="Runeshape tips", variable=self.al_rtips, style=CB,
                                       command=lambda: self.remnant_tips_changed(self.al_rtips.get()))
                 tb_.pack(side="left", padx=(4, 0))
                 Tooltip(tb_, "A small list next to the prices: the runeshapes players rate best for loot (S and A "
@@ -226,8 +221,19 @@ class AlertsPage:
                             "Off: only the key prices it.")
             if key == "ritual":                    # 2.14.0
                 self.al_rleave = tk.BooleanVar(value=bool(self.ritual_cfg().get("leave_reminder", True)))
-                ttk.Checkbutton(row, text="Remind me when I leave the map", variable=self.al_rleave,
+                ttk.Checkbutton(row, text="Remind me when I leave the map", variable=self.al_rleave, style=CB,
                                 command=self.alerts_ritual_leave_changed).pack(side="left", padx=(4, 0))
+            lv = {"focus": getattr(self, "tk_fline_var", None), "campaign": getattr(self, "tk_cline_var", None)}.get(key)
+            if lv is not None:                     # 2.96.1: Focus / Campaign - their line above the bar, here
+                ttk.Checkbutton(row, text="Its line above the bar", variable=lv, style=CB,
+                                command=(lambda v=lv: self.tracker_fline_switch(v)) if key == "focus" else
+                                (lambda v=lv: self.camp_line_switch(v))).pack(side="left", padx=(4, 0))
+            bv = (getattr(self, "tk_bar_vars", None) or {}).get(key)
+            if bv is not None:                     # 2.96.1: its switch on the bar, here (was a list in On the bar)
+                sb_ = ttk.Checkbutton(row, text="Switch on the bar", variable=bv, style=CB, command=self.tracker_bar_switch)
+                sb_.pack(side="left", padx=(4, 0))
+                if hasattr(self, "tk_ov_switches"):
+                    self.tk_ov_switches["bar:" + name.split(" (")[0]] = sb_
             st = tk.Label(box, text=what, bg=P2, fg=C["muted"], anchor="w", justify="left", font=("Segoe UI", 9))
             st.pack(fill="x", padx=(24, 8))                   # 2.11.0: its own line, so it never gets cut off
             st.bind("<Configure>", lambda e, l=st: l.config(wraplength=max(200, e.width - 10)))
