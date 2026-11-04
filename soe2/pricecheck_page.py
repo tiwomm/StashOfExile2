@@ -14,6 +14,7 @@ import re
 import threading
 import time
 import tkinter as tk
+import tkinter.font as tkfont
 from tkinter import ttk
 
 from .config import APP_UA, P, SETTINGS
@@ -47,6 +48,41 @@ def prop_lines(item):
         else:
             out.append(f"{name}: {', '.join(vals)}" if name else ", ".join(vals))
     return [x for x in out if x]
+
+
+def prop_parts(item):
+    """2.93.1: the properties as the trade site draws them -> [(label, value, augmented)]: "Energy Shield", "211",
+    True when the value is raised by quality / mods (drawn blue). A line without a value: (label, "", False)."""
+    out = []
+    for p in item.get("properties") or []:
+        name = _clean(p.get("name"))
+        vals = [v for v in p.get("values") or [] if v]
+        if not vals:
+            if name:
+                out.append((name, "", False))
+            continue
+        aug = any(len(v) > 1 and v[1] == 1 for v in vals)
+        txt = ", ".join(_clean(v[0]) for v in vals)
+        if p.get("displayMode") == 3 and "{0}" in name:
+            t = name
+            for i, v in enumerate(vals):
+                t = t.replace("{%d}" % i, _clean(v[0]))
+            out.append((t, "", aug))
+        else:
+            out.append((name, txt, aug))
+    return out
+
+
+def cur_label(cur):
+    """A trade-site currency id -> "Divine Orb" (its name when known)."""
+    try:
+        from .cxnames import item_name
+        n = item_name(cur)
+    except Exception:
+        n = None
+    return n or {"divine": "Divine Orb", "exalted": "Exalted Orb", "chaos": "Chaos Orb", "mirror": "Mirror of Kalandra",
+                 "annul": "Orb of Annulment", "regal": "Regal Orb", "alch": "Orb of Alchemy",
+                 "vaal": "Vaal Orb"}.get(cur, str(cur or "").replace("-", " ").title())
 
 
 def req_line(item):
@@ -120,6 +156,9 @@ def listing_facts(e):
     return {"name": _clean(it.get("name")), "base": _clean(it.get("typeLine") or it.get("baseType")),
             "rarity": it.get("rarity") or "", "props": prop_lines(it), "ilvl": it.get("ilvl"), "req": req_line(it),
             "mods": mod_rows(it), "corrupted": bool(it.get("corrupted")), "icon": it.get("icon") or "",
+            "parts": prop_parts(it), "pseudo": [_clean(x if not isinstance(x, dict) else x.get("description"))
+                                                 for x in it.get("pseudoMods") or []],
+            "note": _clean(it.get("note")) if it.get("note") else "",
             "price": (price.get("amount"), price.get("currency")) if price.get("amount") is not None else None,
             "seller": ((lst.get("account") or {}).get("name") or ""), "ts": ts, "id": (e or {}).get("id")}
 
@@ -245,6 +284,19 @@ class PriceCheckPage:
             self.log_error("opening Price Checks")
         return rid
 
+    def pc_clear(self):
+        """2.93.1: clear the single searches - every item on Price Checks (Recent too). Bulk Pricing and Favorites
+        stay as they are."""
+        for r in self.pc_recs():
+            self.records.pop(r["id"], None)
+            getattr(self, "batch_ids", set()).discard(r["id"])
+            if r.get("raw"):
+                getattr(self, "seen_texts", {}).pop(hash(r["raw"].strip()), None)      # copying it again checks it again
+        self.dirty = True
+        self.pc_rid = None
+        self.pc_refresh_hist()
+        self.pc_show(None)
+
     def pc_recs(self):
         return sorted((r for r in self.records.values() if r.get("src") == "pc"), key=lambda r: -r.get("time", 0))
 
@@ -299,6 +351,8 @@ class PriceCheckPage:
         btn = ttk.Button(btns, text="Search  •  filters changed" if rec.get("changed") else "Search",
                          style="Primary.TButton", command=lambda: self.reprice([rec["id"]]))
         btn.pack(side="left", fill="x", expand=True)
+        if v is getattr(self, "pcv", None):                 # 2.93.1 (feedback): Clear - empties Price Checks
+            ttk.Button(btns, text="Clear", command=self.pc_clear).pack(side="left", padx=(8, 0))
         note = self._detail_note(rec)
         if note:
             tk.Label(v.left, text=note[0], bg=P2, fg=note[1], font=("Segoe UI", 9), anchor="w", justify="left",
@@ -351,78 +405,121 @@ class PriceCheckPage:
         v.rcanvas.yview_moveto(0)
 
     def _pc_card(self, parent, f, w):
-        """One listing, the way the trade site shows it: name band, properties, item level, requirements, mods with
-        their tiers on the left edge, and on the right the price, the seller, how long ago, the picture."""
+        """One listing, laid out as the trade site does (2.93.1, feedback: cleaner, like the site): the picture on the
+        left; in the middle the name band, then centered groups split by thin lines - properties (raised values in
+        blue), item level and requirements, the socketed / implicit lines, the mods with their tiers at the block's
+        left edge (P red, S blue), the site's own totals, Corrupted, the seller's note; on the right the asking
+        price, the seller and how long ago."""
         from . import themes as _th
         t = _th.ST.theme
-        bg = C["odd"]
+        bg, panel = C["odd"], C["panel"]
         rk = RARITY_COL.get(f["rarity"])
         col = t.c("unique", "#af6025") if rk == "unique" else (C[rk] if rk else C["text"])
-        cv = tk.Canvas(parent, width=w, height=200, bg=C["panel"], highlightthickness=0, bd=0)
+        cv = tk.Canvas(parent, width=w, height=200, bg=panel, highlightthickness=0, bd=0)
         cv.pack(fill="x", pady=(0, 8))
+        blue, red = "#8888ff", "#d26e5e"
         with _th.raw():
-            frame = cv.create_rectangle(0, 0, w - 1, 199, fill=bg, outline=t.c(t.part("card", "border",
-                                                                                       default="border_light")))
+            art_w, side = 100, 190                         # the picture column, the price column
+            mx0, mx1 = art_w, max(art_w + 300, w - side - 12)
+            cx = (mx0 + mx1) // 2
+            box = cv.create_rectangle(mx0, 0, mx1, 199, fill=bg, outline=t.c(t.part("card", "border",
+                                                                                     default="border_light")))
             two = bool(f["name"]) and f["name"] != f["base"]
-            hh = 50 if two else 32
-            name_c = _th.card_header(cv, 4, 4, w - 5, hh, col, bg)
+            hh = 46 if two else 30
+            name_c = _th.card_header(cv, mx0 + 2, 2, mx1 - 2, hh, col, bg)
             if two:
-                cv.create_text(w // 2, 16, text=f["name"], fill=name_c, font=(_th.head_font(), 11, "bold"))
-                cv.create_text(w // 2, 36, text=f["base"], fill=name_c, font=(_th.head_font(), 10))
+                cv.create_text(cx, 14, text=f["name"], fill=name_c, font=(_th.head_font(), 11, "bold"))
+                cv.create_text(cx, 33, text=f["base"], fill=name_c, font=(_th.head_font(), 10, "bold"))
             else:
-                cv.create_text(w // 2, hh // 2 + 2, text=f["base"] or f["name"], fill=name_c,
-                               font=(_th.head_font(), 11, "bold"))
-            side = 150                                   # the price / seller / picture column
-            cx = (w - side) // 2
+                cv.create_text(cx, hh // 2 + 1, text=f["base"] or f["name"], fill=name_c, font=(_th.head_font(), 11, "bold"))
+            font = ("Segoe UI", 9)
+            tw = mx1 - mx0 - 70
             y = hh + 12
-            for line in f["props"]:
-                cv.create_text(cx, y, text=line, fill=C["muted"] if ":" not in line else C["text"],
-                               font=("Segoe UI", 9))
-                y += 16
-            if f["ilvl"]:
-                y += 4
-                cv.create_text(cx, y, text=f"Item Level: {f['ilvl']}", fill=C["text"], font=("Segoe UI", 9))
-                y += 16
-            if f["req"]:
-                cv.create_text(cx, y, text=f["req"], fill=C["muted"], font=("Segoe UI", 9))
-                y += 16
-            if f["mods"]:
-                cv.create_line(cx - 120, y, cx + 120, y, fill=C["line"])
-                y += 10
-            kc = {"implicit": C["magic"], "rune": C["magic"], "enchant": C["magic"], "fractured": "#e8d6a8",
-                  "desecrated": "#d08cff", "crafted": "#b8daf2"}
-            for tier, text, kind in f["mods"]:
-                if tier:
-                    cv.create_text(12, y, text=tier, anchor="w", font=("Segoe UI", 8, "bold"),
-                                   fill=C["good"] if tier[1:] in ("1", "2") else C["muted"])
-                tid = cv.create_text(cx, y, text=text, fill=kc.get(kind, C["magic"]), font=("Segoe UI", 9),
-                                     width=w - side - 60, justify="center")
+
+            def sep():
+                nonlocal y
+                y += 1
+                cv.create_line(cx - 110, y, cx + 110, y, fill=C["line"])
+                y += 9
+
+            def line(text, fill, bold=False):
+                nonlocal y
+                tid = cv.create_text(cx, y, text=text, fill=fill, font=("Segoe UI", 9, "bold") if bold else font,
+                                     width=tw, justify="center", anchor="n")
                 bb = cv.bbox(tid)
-                y = (bb[3] if bb else y + 8) + 9
+                y = (bb[3] if bb else y + 14) + 1
+                return tid
+
+            def pair(label, value, aug):
+                """"Energy Shield: 211" - the label grey, the value white (blue when raised)."""
+                nonlocal y
+                if not value:
+                    return line(label, C["muted"])
+                fm = tkfont.Font(root=cv, family="Segoe UI", size=9)
+                a, b = label + ": ", value
+                x0 = cx - (fm.measure(a) + fm.measure(b)) // 2
+                cv.create_text(x0, y, text=a, fill=C["muted"], font=font, anchor="nw")
+                cv.create_text(x0 + fm.measure(a), y, text=b, fill=blue if aug else C["text"], font=font, anchor="nw")
+                y += 15
+            for label, value, aug in f.get("parts") or [(x, "", False) for x in f["props"]]:
+                pair(label, value, aug)
+            if f["ilvl"] or f["req"]:
+                sep()
+                if f["ilvl"]:
+                    pair("Item Level", str(f["ilvl"]), False)
+                if f["req"]:
+                    line(f["req"], C["muted"])
+            kc = {"implicit": blue, "rune": blue, "enchant": "#b8daf2", "fractured": "#e8d6a8",
+                  "desecrated": "#c9a2e0", "crafted": "#b8daf2"}
+            first = [m for m in f["mods"] if m[2] in ("enchant", "implicit", "rune")]
+            rest = [m for m in f["mods"] if m not in first]
+            for group in (first, rest):
+                if not group:
+                    continue
+                sep()
+                for tier, text, kind in group:
+                    if tier:
+                        cv.create_text(mx0 + 10, y, text=tier, anchor="nw", font=("Segoe UI", 8, "bold"),
+                                       fill=red if tier[:1] == "P" else blue if tier[:1] == "S" else C["muted"])
+                    line(text, kc.get(kind, blue))
+            if f.get("pseudo"):
+                y += 2
+                for p in f["pseudo"]:
+                    line(p, C["muted"])
             if f["corrupted"]:
-                cv.create_text(cx, y + 2, text="Corrupted", fill=C["red"], font=("Segoe UI", 9, "bold"))
-                y += 18
-            # price, seller, age, picture
-            px = w - side // 2 - 8
-            py = hh + 22
+                sep()
+                line("Corrupted", C["red"], bold=True)
+            if f.get("note"):
+                sep()
+                line(f["note"], C["muted"])
+            h_mid = y + 10
+            # ---- right: asking price, seller, when
+            px = w - side // 2 - 4
+            py = 18
+            cv.create_rectangle(w - side + 4, py - 8, w - 8, py + 46, fill=C["odd"], outline="")
+            cv.create_text(px, py, text="Asking price:", fill=C["muted"], font=("Segoe UI", 9), anchor="n")
             if f["price"]:
                 amt, cur = f["price"]
                 amt = int(amt) if float(amt).is_integer() else amt
-                cv.create_text(px, py, text=f"{amt} {cur}", fill=C["text"], font=(_th.head_font(), 14, "bold"),
-                               tags=("pcprice",))
-            cv.create_text(px, py + 24, text=f["seller"], fill=C["text"], font=("Segoe UI", 9, "bold"),
-                           width=side - 10)
+                cv.create_text(px, py + 18, text=f"{amt}× {cur_label(cur)}", fill=C["text"],
+                               font=(_th.head_font(), 11, "bold"), anchor="n", width=side - 20, tags=("pcprice",))
+            else:
+                cv.create_text(px, py + 18, text="no price", fill=C["muted"], font=font, anchor="n")
+            cv.create_text(px, py + 60, text=f["seller"], fill=C["text"], font=("Segoe UI", 9, "bold"),
+                           width=side - 16, anchor="n")
             if f["ts"]:
-                cv.create_text(px, py + 42, text=ago(f["ts"]), fill=C["muted"], font=("Segoe UI", 8))
+                cv.create_text(px, py + 78, text="listed " + ago(f["ts"]), fill=C["muted"], font=("Segoe UI", 8),
+                               anchor="n")
+            # ---- left: the picture
             img = self.pc_art(f["icon"]) if SETTINGS.get("pc_art", True) else None
             if img is not None:
-                cv.create_image(px, py + 60, image=img, anchor="n")
+                cv.create_image(art_w // 2, max(hh + 8, h_mid // 2 - ART_PX // 2), image=img, anchor="n")
                 cv._art = img
             elif f["icon"] and SETTINGS.get("pc_art", True):
                 cv._art_url = f["icon"]
-            h = max(y + 10, py + 60 + ART_PX + 12)
+            h = max(h_mid, py + 100, ART_PX + hh + 16)
             cv.configure(height=h)
-            cv.coords(frame, 0, 0, w - 1, h - 1)
+            cv.coords(box, mx0, 0, mx1, h_mid - 1)
         cv._facts = f
         return cv
 

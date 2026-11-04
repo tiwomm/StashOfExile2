@@ -4,7 +4,7 @@
 
 > **Who we build for - read second.** Path of Exile players are utilitarian: they love data and information, problem solving and creative thinking. So every feature shows its numbers *and how they were worked out*, lets you sort, filter, compare and export them (CSV), keeps power-user depth (keys, versions, raw data) one click away instead of hiding it, explains in plain words, and leaves the decision to the player. Pretty is welcome; vague is not.
 
-**Current version: 2.93.0**
+**Current version: 2.93.1**
 
 Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds features, 2.10.1 only fixes. Each step below is one release; we work through them top to bottom.
 
@@ -165,6 +165,7 @@ Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds f
 | 2.92.1 | Listing order lab: corrupted items match, item sizes, column-by-column order to compare (ready for a 1x1 round). |
 | 2.92.2 | Overlay Enabled / Disabled (one master switch; the bar question comes when you enable it); Regex ▾ favorites on the bar; Vendor ▾ fixed and moved beside Notes / Calc. |
 | 2.93.0 | Price Checks: a fractured / desecrated mod can be searched as that only (a small box beside it); a hybrid resistance adds a pseudo total per resistance (Chaos searched, the elemental one offered); socketed rune lines are marked and left out unless ticked. |
+| 2.93.1 | Price Checks: listing cards laid out like the trade site; a Clear button beside Search empties Price Checks. |
 
 ## ▶ Next up
 
