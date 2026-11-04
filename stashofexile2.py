@@ -37,6 +37,9 @@ VERSION HISTORY
        refreshes it now; and each Price Checks item saves its listings (up to 20, "_raw"), so the cards come back too.
        Leaderboards: Simulacrum of Delusion was under Trials (feedback: "should be pinnacle") - leaderboard.cat_of now
        asks the Map library's kind first (Pinnacle -> Bosses & pinnacles); the board moves times already sent.
+       Leaderboards' Class (feedback: "we don't have a way to read the class"): the game's log names it at every
+       level-up; 2.86.0 only noted it from then on, so the box stayed at "All". leaderboard.learn_classes reads the
+       last 64 MB of Client.txt once a run (in the background) for each character's class; the box has a tooltip.
        The stash tab's "List order" box sits on the tabs row (on the Stash tab row it squeezed "Count it in Wealth" out).
   2.86.1
        Community-name filter (feedback: "deny inappropriate usernames, especially homophobic, transphobic, racist
