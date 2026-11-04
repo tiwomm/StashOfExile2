@@ -463,13 +463,16 @@ class TrackerPage:
         self.tk_lock = tk.BooleanVar(value=bool(cfg.get("mlocked")))      # 2.59.0: ONE lock for the whole overlay
         self.tk_tips_var = tk.BooleanVar(value=bool(cfg.get("tips", True)))      # 2.73.4: what each switch is for
         self.tk_auto = tk.BooleanVar(value=bool(cfg.get("autostart")))           # 2.14.0
+        self.tk_hidecap = tk.BooleanVar(value=bool(cfg.get("hide_capture", True)))   # 2.85.2
         lk = tk.Frame(box, bg=P2)
         lk.grid(row=3, column=0, columnspan=3, sticky="w")
         sw = switches(lk, (("Lock the overlay (can't be moved or resized by accident)", self.tk_lock,
                             self.tracker_options_changed),
                            ("Feature tips - hover a switch for what it does; a short card the first time you turn "
                             "one on", self.tk_tips_var, self.tracker_tips_switch),
-                           ("Start tracking when StashOfExile2 starts", self.tk_auto, self.tracker_options_changed)), 1)
+                           ("Start tracking when StashOfExile2 starts", self.tk_auto, self.tracker_options_changed),
+                           ("Hide the bar from screen captures (the Ritual and Delirium watchers see the game under "
+                            "it; screenshots and streams won't show it)", self.tk_hidecap, self.tracker_hidecap_switch)), 1)
         self.tk_ov_switches["tips"] = self.tk_ov_switches.pop("Feature tips - hover a switch for what it does; a "
                                                               "short card the first time you turn one on")
         del sw
@@ -499,6 +502,12 @@ class TrackerPage:
                    command=lambda: self.hotkeys_open("tracker:key_overlay")).grid(row=2, column=0, sticky="w", pady=(4, 0))
         self._tk_keys_text()
 
+
+    def tracker_hidecap_switch(self):
+        """2.85.2: the bar in / out of screen captures."""
+        self.tracker_cfg()["hide_capture"] = bool(self.tk_hidecap.get())
+        self.tracker_save()
+        self.overlay_click_through()
 
     def build_ov_settings(self, body):
         """2.82.0: Overlay ↳ Settings - cards (On the bar, Features, Campaign, Behaviour) and the Mechanic Helper."""

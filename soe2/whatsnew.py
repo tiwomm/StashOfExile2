@@ -21,6 +21,12 @@ NEXT = [
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.85.2": [
+        "Ritual alerts work under the overlay bar again: the bar is left out of screen captures, so the watcher sees "
+        "the Ritual counter beneath it. Switch: Overlay ↳ Settings › Behaviour (off = screenshots and streams show the "
+        "bar).",
+        "The Focus / campaign line docks flush on the overlay bar, with matching ends.",
+    ],
     "2.85.1": [
         "Money Makers: the filter labels on the left (Thoughts per click, Clicks per hour) show in full again.",
     ],
