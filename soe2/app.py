@@ -79,6 +79,7 @@ from .rumours_page import RumoursPage          # 2.83.0: Island Rumours; where t
 from .favorites_page import FavoritesPage      # 2.84.0: Price Checks ↳ Favorites
 from .boardmod_page import BoardModPage        # 2.85.0: your community name, Suggest an edit, History, reviewers
 from .leaderboard_page import LeaderboardPage  # 2.86.0: Overlay ↳ Leaderboards
+from .orderlab_page import OrderLabPage        # 2.88.0: Under the hood ↳ Listing order lab (admins)
 from . import gamedata
 from . import modules
 from .shell import Shell
@@ -93,7 +94,7 @@ MISC_ROWS = (("corrupted", "Corrupted"), ("fractured", "Fractured"), ("desecrate
              ("sanctified", "Sanctified"), ("mirrored", "Mirrored"), ("unidentified", "Unidentified"))
 
 
-class App(PriceCheckPage, FavoritesPage, BoardModPage, LeaderboardPage, WellSoulsPage, RumoursPage, ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, ExchangePage, WealthPage, LibraryPage, RegexPage, UtilitiesPage, TrackerPage, SearchPage, CalcOverlay, InsightsPage, MoneyMakersPage, MapLibraryPage, RemnantPage, LedgerPage, FeedbackPage, FeedPage, MergedOverlay, GamePlanPage, FocusPokes, OverlayHelp, OverlayParts, CampaignUI):
+class App(PriceCheckPage, FavoritesPage, BoardModPage, LeaderboardPage, OrderLabPage, WellSoulsPage, RumoursPage, ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, ExchangePage, WealthPage, LibraryPage, RegexPage, UtilitiesPage, TrackerPage, SearchPage, CalcOverlay, InsightsPage, MoneyMakersPage, MapLibraryPage, RemnantPage, LedgerPage, FeedbackPage, FeedPage, MergedOverlay, GamePlanPage, FocusPokes, OverlayHelp, OverlayParts, CampaignUI):
     COLS = [("added", "#", 46, "e"), ("name", "Item", 220, "w"), ("type", "Type", 110, "w"), ("mark", "Status", 90, "center"),
             ("est", "Est. value", 110, "e"), ("conf", "Confidence", 95, "center"), ("listings", "Listings", 70, "e"), ("priced", "Priced at", 130, "w"),
             ("match", "How it was priced", 300, "w"), ("vmods", "Valuable mods", 100, "center"),
@@ -2646,7 +2647,9 @@ class App(PriceCheckPage, FavoritesPage, BoardModPage, LeaderboardPage, WellSoul
                             self.last_clip = text
                         elif text:
                             self.last_clip = text
-                            if self.wealth_takes(text):          # 2.0 beta 7: a copied stack, counted on Wealth
+                            if getattr(self, "ol_walking", False) and self.ol_wants(text):   # 2.88.0: the order lab
+                                self.ol_take(text)
+                            elif self.wealth_takes(text):        # 2.0 beta 7: a copied stack, counted on Wealth
                                 self.wealth_clip(text)
                             elif self.pc_wants(text):            # 2.80.0: your price check key on an item -> Price Checks
                                 self.last_heard = time.time()
