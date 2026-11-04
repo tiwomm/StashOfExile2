@@ -80,5 +80,6 @@ def load(app):
     from .ovsettings import OverlaySettings
     from .favorites import Favorites
     from .leaderboards import Leaderboards
-    return [cls(app) for cls in (PriceCheck, PriceChecks, Wealth, ModBook, Library, Regex, Search, Tracker, Notes,
+    from .orderlab import OrderLab
+    return [cls(app) for cls in (PriceCheck, PriceChecks, Wealth, ModBook, Library, OrderLab, Regex, Search, Tracker, Notes,
                                  Rates, Insights, Favorites, MoneyMakers, OverlaySettings, MapLibrary, Leaderboards, GamePlan, Settings)]

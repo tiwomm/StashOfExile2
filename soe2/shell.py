@@ -843,8 +843,18 @@ class Shell:
         """2.74.0: Settings › Advanced › Show Under the hood (Under the hood, the Mod book) - off by default."""
         return bool(self.S.get("show_advanced"))
 
+    def admin_on(self):
+        """2.88.0: a community board admin (tools only they need, e.g. the Listing order lab)."""
+        try:
+            from . import board as B
+            return bool((B.signed_in() or {}).get("admin"))
+        except Exception:
+            return False
+
     def visible(self, mod):
         if getattr(mod, "advanced", False) and not self.advanced_on():
+            return False
+        if getattr(mod, "admin_only", False) and not self.admin_on():
             return False
         return not getattr(mod, "labs", False) or self.labs_on()
 
@@ -1169,6 +1179,9 @@ class Shell:
             return
         if getattr(self.modules[key], "advanced", False) and not self.advanced_on():
             self.app._say(f"{self.modules[key].title} is an advanced tool: Settings › Advanced › Show Under the hood.", 8)
+            return
+        if getattr(self.modules[key], "admin_only", False) and not self.admin_on():
+            self.app._say(f"{self.modules[key].title} is for community board admins.", 8)
             return
         if not self.visible(self.modules[key]):            # a Labs one while Labs is off
             self.app._say(f"{self.modules[key].title} is a Labs (beta) feature: turn on Labs in Settings to use it.", 8)
