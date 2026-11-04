@@ -21,6 +21,10 @@ NEXT = [
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.92.1": [
+        "Listing order lab (admins): corrupted items match their listing; item sizes and a column-by-column order are "
+        "shown for comparing.",
+    ],
     "2.92.0": [
         "Arbitrage is removed (deprecated): the Currency Exchange history it read comes from GGG without clear terms "
         "for tools, so the app no longer reads it.",

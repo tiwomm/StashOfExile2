@@ -16,7 +16,9 @@ class OrderLabPage:
         tk.Label(body, text="For working out the trade site's listing order. 1) Paste the trade-site link of your public "
                             "tab and press Read. 2) Press Start walking, then Ctrl+Alt+C each item in game in the order "
                             "you go through the tab. 3) The table and the numbers below show which order the site's "
-                            "list follows. Do a few tabs; Export CSV keeps every round.",
+                            "list follows. Do a few tabs; Export CSV keeps every round. Most telling: a tab of 1x1 items "
+                            "(no big items to blur the place), walked down each column from the top, then the next "
+                            "column to the right.",
                  bg=P1, fg=C["muted"], anchor="w", justify="left", wraplength=1100, padx=8, pady=8).pack(fill="x")
         bar = tk.Frame(body, bg=P1, padx=8, pady=4)
         bar.pack(fill="x")
@@ -30,6 +32,7 @@ class OrderLabPage:
         self.ol_msg = tk.Label(body, text="", bg=P1, fg=C["muted"], anchor="w", padx=8)
         self.ol_msg.pack(fill="x")
         cols = (("walk", "Walk", 50), ("site", "Site #", 55), ("newest", "Newest #", 70), ("place", "Place", 70),
+                ("size", "Size", 50),                                                  # 2.92.1
                 ("indexed", "Indexed", 150), ("name", "Item", 260), ("price", "Price", 90), ("id", "Listing id", 160))
         tv = ttk.Treeview(body, columns=[c[0] for c in cols], show="headings", selectmode="browse", height=16)
         for cid, t, w in cols:
@@ -113,6 +116,7 @@ class OrderLabPage:
     def ol_take(self, text):
         L = OL.match(self.ol_round["listings"], text)
         if L is None:
+            OL.log_unmatched(text)                                   # 2.92.1: on this PC only, to fix the matching
             self.ol_msg.config(text="That copy didn't match a listing that's left (already walked, or not in this "
                                     "search).", fg=C["red"])
             return None
@@ -146,14 +150,17 @@ class OrderLabPage:
         for L in r["listings"]:
             place = f"C{L['x'] + 1} R{L['y'] + 1}" if isinstance(L.get("x"), int) and isinstance(L.get("y"), int) else "?"
             rows.append((L, {"walk": L.get("walk") or 10 ** 6, "site": L["rank"], "newest": npos.get(L["id"], 10 ** 6),
-                             "place": (L.get("x") or 0, L.get("y") or 0), "indexed": str(L.get("indexed") or ""),
+                             "place": (L.get("x") or 0, L.get("y") or 0), "size": (L.get("w") or 0) * (L.get("h") or 0),
+                             "indexed": str(L.get("indexed") or ""),
                              "name": L["name"].lower(), "price": L.get("price") or "", "id": str(L["id"])}, place))
         rows.sort(key=lambda t: t[1][self.ol_sort])
         last = self.ol_last[-1] if self.ol_last else None
         for L, _k, place in rows:
             tags = ("last",) if L is last else ("walked",) if L.get("walk") is not None else ()
-            tv.insert("", "end", values=(L.get("walk") or "", L["rank"], npos.get(L["id"], ""), place,
-                                         L.get("indexed") or "", L["name"], L.get("price") or "", L["id"]), tags=tags)
+            size = f"{L['w']}x{L['h']}" if L.get("w") and L.get("h") else "?"
+            tv.insert("", "end", values=(L.get("walk") or "", L["rank"], npos.get(L["id"], ""), place, size,
+                                         L.get("indexed") or "", L["name"] + ("  (corrupted)" if L.get("corrupted") else ""),
+                                         L.get("price") or "", L["id"]), tags=tags)
         res = OL.compare(r["listings"], r.get("newest"))
         fmt = lambda v: "   -  " if v is None else f"{v:+.2f}"  # noqa: E731
         lines = ["order                    vs your walk   vs the site's order   (1 = same order, 0 = unrelated)"]
