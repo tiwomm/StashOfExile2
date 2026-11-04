@@ -156,6 +156,12 @@ class KeyWatch:
         self.listener = None        # 2.0: f(vk, ctrl, alt, shift) -> True to swallow the key (Utilities hotkeys)
         self._swallowed = set()
         self.mouse_on, self._mouse_hook, self._tid = False, None, None     # 2.0 beta 17: mouse buttons as hotkeys
+        # 2.88.2 (feedback: Ctrl+Alt+C "sometimes it works sometimes it doesn't ... if I click in the window itself
+        # once ... it seems to work"): Windows quietly drops a keyboard hook that answers too slowly. When it did,
+        # no Ctrl+Alt+C was ever seen again. The last physical / injected key the hook saw tells whether it's still
+        # alive; rehook() puts a fresh one in.
+        self.last_phys = self.last_inj = 0.0
+        self._hook = None
 
     def note_esc(self, down, up, now=None):
         """2.25.0: Esc went down / up. Two fresh presses within DOUBLE_TAP = a double tap (esc_double); a held key's
@@ -186,6 +192,19 @@ class KeyWatch:
     def start(self):
         if sys.platform == "win32":
             threading.Thread(target=self._run, daemon=True).start()
+
+    def hook_stale(self, secs=3.0):
+        """2.88.2: a copy just came from the game, yet the hook saw no key at all for `secs` - Windows dropped it."""
+        now = time.time()
+        return self.active and now - self.last_phys > secs and now - self.last_inj > secs
+
+    def rehook(self):
+        if sys.platform == "win32" and self._tid:
+            try:
+                import ctypes
+                ctypes.windll.user32.PostThreadMessageW(self._tid, 0x8003, 0, 0)
+            except Exception:
+                pass
 
     def combo_recent(self, secs=1.5):
         return time.time() - self.combo_time < secs
@@ -219,6 +238,10 @@ class KeyWatch:
                 try:
                     if n >= 0:
                         k = ctypes.cast(l, ctypes.POINTER(KBD)).contents
+                        if k.flags & 0x10:
+                            self.last_inj = time.time()
+                        else:
+                            self.last_phys = time.time()
                         if not (k.flags & 0x10):                    # 0x10 = injected by a program, not your keyboard
                             down, up = w in (0x100, 0x104), w in (0x101, 0x105)
                             vk = k.vkCode
@@ -246,6 +269,7 @@ class KeyWatch:
                 return user32.CallNextHookEx(None, n, w, l)
             self._proc = HOOKPROC(proc)                             # keep a reference or Python frees it
             hook = user32.SetWindowsHookExW(13, self._proc, kernel32.GetModuleHandleW(None), 0)
+            self._hook = hook
             if not hook:
                 self.err = "Windows refused the keyboard hook"
                 return
@@ -280,6 +304,13 @@ class KeyWatch:
             while user32.GetMessageW(ctypes.byref(msg), None, 0, 0) > 0:
                 if msg.message == 0x8001 and not self._mouse_hook:              # mouse buttons wanted
                     self._mouse_hook = user32.SetWindowsHookExW(14, self._mproc, kernel32.GetModuleHandleW(None), 0)
+                    continue
+                if msg.message == 0x8003:                                       # 2.88.2: a fresh keyboard hook
+                    new = user32.SetWindowsHookExW(13, self._proc, kernel32.GetModuleHandleW(None), 0)
+                    if new:
+                        old, self._hook = self._hook, new
+                        if old:
+                            user32.UnhookWindowsHookEx(old)
                     continue
                 if msg.message == 0x8002 and self._mouse_hook:                  # not any more
                     user32.UnhookWindowsHookEx(self._mouse_hook)

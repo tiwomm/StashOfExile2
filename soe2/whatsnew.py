@@ -21,6 +21,12 @@ NEXT = [
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.88.2": [
+        "Ctrl+Alt+C is heard more reliably: if Windows stopped passing keys to the app, your next copy still counts and "
+        "the app starts listening again.",
+        "Price Checks: ticking or unticking mods no longer searches by itself - press Search when you're ready.",
+        "Pasted trade links of every kind read (some long ones said \"no search for that link\").",
+    ],
     "2.88.1": [
         "Fixed: items copied with Ctrl+Alt+C weren't priced in Bulk Pricing (when you had Favorites).",
     ],

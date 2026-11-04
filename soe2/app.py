@@ -179,6 +179,7 @@ class App(PriceCheckPage, FavoritesPage, BoardModPage, LeaderboardPage, OrderLab
         root.after(1500, self.rates_tick)
         root.protocol("WM_DELETE_WINDOW", self.on_close)
         self.keys.start()
+        self.root.after(5 * 60 * 1000, self.keys_refresh)   # 2.88.2: a fresh key watcher every 5 minutes
         self.start_utilities()                       # 2.0: chat commands & notes listen to the same keyboard watcher
         root.after(15000, self.cm_start)             # 2.31.0: the community Mod book (hourly)
         root.after(2500, self.calc_ov_restore)       # 2.74.0: the calculator over the game, if it was up
@@ -2684,11 +2685,23 @@ class App(PriceCheckPage, FavoritesPage, BoardModPage, LeaderboardPage, OrderLab
     def _clip_ignored(self, text):
         return getattr(self, "_clip_ignore", {}).get(text, 0) > time.time()
 
+    def keys_refresh(self):
+        """2.88.2: Windows drops a keyboard hook that was slow to answer (a busy moment), silently; putting a fresh
+        one in every few minutes keeps Ctrl+Alt+C / Ctrl+D / the hotkeys heard."""
+        try:
+            self.keys.rehook()
+        finally:
+            self.root.after(5 * 60 * 1000, self.keys_refresh)
+
     def gate_ok(self, text):
         """True if this copy may become a row: it must come from YOUR Ctrl+Alt+C (not another tool's key)."""
         if text == self.own_clip or not SETTINGS.get("hotkey_only", True) or not self.keys.active:
             return True
         if self.keys.combo_recent():
+            return True
+        if self.keys.hook_stale() and self.ADVANCED.search(text):    # 2.88.2: the key watcher was dropped by Windows
+            self.keys.rehook()                                         # (no key seen at all): an advanced copy is
+            self.keys.combo_time = time.time()                         # yours - and a fresh watcher goes in
             return True
         if text.lstrip().startswith("Item Class:"):
             self.status_text = ("Ignored an item copy that wasn't made with your Ctrl+Alt+C (another tool?). "
@@ -3465,6 +3478,16 @@ class App(PriceCheckPage, FavoritesPage, BoardModPage, LeaderboardPage, OrderLab
         g = impact_key(norm(mod["text"]))              # what the Mod rules tab says for every tablet
         self.set_item_impact(rec, mod, ("normal" if g == "ignore" else g) if checked else "ignore")
 
+    def card_changed(self, rec):
+        """2.88.2 (feedback: checking or unchecking a mod "sending for a new search rather than waiting for me ...
+        then I manually click search"): on Price Checks / Favorites a change on the card waits for Search; the card
+        says so. Bulk Pricing prices it again at once, as before."""
+        if rec.get("src") in ("pc", "fav"):
+            rec["changed"] = True
+            self.dirty = True
+            return self.refresh_detail_if_selected(rec["id"])
+        self.reprice([rec["id"]])
+
     def set_item_impact(self, rec, mod, imp):
         """Tick / untick / star a mod on this one item only (pack size is worth money on some tablets, not all).
         2.79.2 (feedback: "nothing is clickable under stat filters"): the override goes only when it matches what
@@ -3480,7 +3503,7 @@ class App(PriceCheckPage, FavoritesPage, BoardModPage, LeaderboardPage, OrderLab
         else:
             ov[k] = imp
         self.dirty = True
-        self.reprice([rec["id"]])
+        self.card_changed(rec)
 
     def flash_window(self):
         """Make the taskbar button flash and put the result in the title, so you notice even while in game."""
@@ -3503,6 +3526,7 @@ class App(PriceCheckPage, FavoritesPage, BoardModPage, LeaderboardPage, OrderLab
             pc = rec.get("src") in ("pc", "fav")                 # 2.80.0: Price Checks go first (2.84.0: Favorites)
             if pc:                                               # 2.87.0: a new Search replaces its older one
                 rec["gen"] = rec.get("gen", 0) + 1
+                rec.pop("changed", None)
             self.batch_ids.add(rid)
             self.update_row(rid)
             self.refresh_detail_if_selected(rid)
@@ -4700,7 +4724,7 @@ class App(PriceCheckPage, FavoritesPage, BoardModPage, LeaderboardPage, OrderLab
                 var = tk.StringVar(value=next((n for n, v in choices if v == cur.get(key)), names[0]))
                 cb = ttk.Combobox(cv, textvariable=var, values=names, state="readonly")
                 cb.bind("<<ComboboxSelected>>", lambda e, k=key, v=var, c=choices: (
-                    self.search_opt_set(rec, k, dict(c)[v.get()], redraw=False), self.reprice([rec["id"]])))
+                    self.search_opt_set(rec, k, dict(c)[v.get()], redraw=False), self.card_changed(rec)))
                 cv.create_window(110, y, window=cb, anchor="nw", width=w - 126, height=26)
                 self.card_opts[key] = var
                 y += 30
@@ -4736,7 +4760,7 @@ class App(PriceCheckPage, FavoritesPage, BoardModPage, LeaderboardPage, OrderLab
         cv.create_text(32, y, text=f"Base type: {it['base']}" if on else f"Any {it.get('class') or 'base'}",
                        anchor="nw", font=("Segoe UI", 10), fill=C["text"] if on else C["muted"], tags=(tag,))
         self._card_click(cv, tag, lambda: (self.search_opt_set(rec, "base", "class" if on else "same", redraw=False),
-                                           self.reprice([rec["id"]])))
+                                           self.card_changed(rec)))
         self.card_opts["base"] = on
         return y + 22
 
@@ -4773,7 +4797,7 @@ class App(PriceCheckPage, FavoritesPage, BoardModPage, LeaderboardPage, OrderLab
             if not turn_on or (vals["min"] is None and vals["max"] is None):
                 vals = None
             self._card_opt_store(rec, key, vals)
-            self.reprice([rec["id"]])
+            self.card_changed(rec)
             return vals
         self._card_click(cv, tag, lambda: take(not on))
         for e in boxes.values():
@@ -4795,7 +4819,7 @@ class App(PriceCheckPage, FavoritesPage, BoardModPage, LeaderboardPage, OrderLab
         except (TypeError, ValueError):
             n = rec["item"].get("ilvl")
         self._card_opt_store(rec, "ilvl", {"min": max(1, min(100, n))} if n else None)
-        self.reprice([rec["id"]])
+        self.card_changed(rec)
         return n
 
     def _card_tri(self, cv, rec, key, label, x, y, facts):
@@ -4810,7 +4834,7 @@ class App(PriceCheckPage, FavoritesPage, BoardModPage, LeaderboardPage, OrderLab
                        fill=C["accent"] if cur != "any" else C["text"], tags=(tag,))
         nxt = {"any": "yes", "yes": "no", "no": "any"}[cur]
         self._card_click(cv, tag, lambda: (self.search_opt_set(rec, key, nxt, redraw=False),
-                                           self.reprice([rec["id"]])))
+                                           self.card_changed(rec)))
         self.card_tris[key] = cur
 
     # ---------------- ▸ Advanced (2.79.0): everything that isn't a filter
@@ -5154,7 +5178,7 @@ class App(PriceCheckPage, FavoritesPage, BoardModPage, LeaderboardPage, OrderLab
         def reset(_e=None):
             m.pop("uval", None)
             self.dirty = True
-            self.reprice([rec["id"]])
+            self.card_changed(rec)
 
         for key, (v, e) in boxes.items():
             e.bind("<KeyRelease>", keep)

@@ -289,17 +289,22 @@ class PriceCheckPage:
     def pcv_card(self, v, rec):
         """The item card with every filter and the Search button, into a view's left side."""
         P2, wrap = C["panel2"], 330
+        same = getattr(v, "shown_rid", None) == rec["id"]        # 2.88.2: a tick on the same card keeps the scroll
+        top = v.lcanvas.yview()[0] if same else 0
+        v.shown_rid = rec["id"]
         self._detail_card(v.left, rec, rec["item"], wrap)
         card = self.detail_card
         btns = tk.Frame(v.left, bg=P2)
         btns.pack(fill="x", pady=(8, 0))
-        btn = ttk.Button(btns, text="Search", style="Primary.TButton", command=lambda: self.reprice([rec["id"]]))
+        btn = ttk.Button(btns, text="Search  •  filters changed" if rec.get("changed") else "Search",
+                         style="Primary.TButton", command=lambda: self.reprice([rec["id"]]))
         btn.pack(side="left", fill="x", expand=True)
         note = self._detail_note(rec)
         if note:
             tk.Label(v.left, text=note[0], bg=P2, fg=note[1], font=("Segoe UI", 9), anchor="w", justify="left",
                      wraplength=wrap).pack(fill="x", pady=(8, 0))
-        v.lcanvas.yview_moveto(0)
+        v.lcanvas.update_idletasks()
+        v.lcanvas.yview_moveto(top)
         return card, btn
 
     def pc_entries(self, rec):
