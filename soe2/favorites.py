@@ -69,6 +69,9 @@ def read_link(link, call=None, base=None):
             return None, f"Couldn't read that link from the trade site ({msg[:80]})."
         qid = code
     q = data.get("query") if isinstance(data, dict) else None
+    if q is None and isinstance(data, dict) and any(k in data for k in ("status", "stats", "filters", "type", "name")):
+        q = data                                          # 2.88.2: the long form often holds the bare search
+        data = {"query": q}
     if not isinstance(q, dict):
         return None, "The trade site sent no search for that link."
     return {"league": league, "query": q, "sort": data.get("sort") or {"price": "asc"}, "qid": qid}, None
