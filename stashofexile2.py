@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU GPL v3.0 (see LICENSE). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.91.0
+VERSION 2.92.0
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,6 +19,14 @@ VERSION 2.91.0
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.92.0
+       Arbitrage removed (deprecated): it read Grinding Gear Games' hourly Currency Exchange history from an address
+       outside their documented API (their developer docs say endpoints outside it are against their Terms of Use; the
+       official Currency Exchange API needs a registered app). With the terms for that data unclear, the tab, its
+       Live scan and every request to that address are gone (arbitrage.py removed; old arb_* settings and
+       cx_history.json are simply not read). The Check a flip calculator stays - arithmetic on two prices you type,
+       no requests - at the bottom of Exchange rates › Exchange Helper (exchange_page.build_flip); item names and the
+       flip math live in cxnames.py.
   2.91.0
        Exchange rates over the game (ovrates.py): a small window in the overlay's own look (the Game bar's colours
        with that layout, the Panel's otherwise; rebuilt when the layout changes) listing the most-used rates - "210 :
@@ -2102,7 +2110,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.91.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.92.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 

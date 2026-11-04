@@ -946,8 +946,7 @@ class App(PriceCheckPage, FavoritesPage, BoardModPage, LeaderboardPage, OrderLab
         self.set_anchors = {}
         self.build_pc_settings(section)                          # 2.59.0: Settings › Price checking
         row = section("Tools", "Exchange rates", "Rates come from poe.ninja and turn prices into the currency you pick "
-                                                 "(Settings › Price checking › Prices in). The Arbitrage tab's filters "
-                                                 "stay on that tab.")
+                                                 "(Settings › Price checking › Prices in).")
         self.set_anchors["rates"] = row.master
         self.rates_auto_var = tk.BooleanVar(value=SETTINGS.get("rates_auto", True))
         ttk.Checkbutton(row, text="Check for new rates every hour", variable=self.rates_auto_var,
@@ -2422,13 +2421,13 @@ class App(PriceCheckPage, FavoritesPage, BoardModPage, LeaderboardPage, OrderLab
 
     def build_rates_window(self, win):
         self.rates_win = win
-        # 2.4.0: three tabs - Rates, Exchange Helper, Arbitrage (exchange_page.py)
-        self.rates_view = SegBar(win, ["Rates", "Exchange Helper", "Arbitrage"], command=lambda v: self.rates_show_page(),
+        # 2.4.0: tabs - Rates, Exchange Helper (2.92.0: Arbitrage removed; its flip check is under Exchange Helper)
+        self.rates_view = SegBar(win, ["Rates", "Exchange Helper"], command=lambda v: self.rates_show_page(),
                                  size=10, pad=(16, 4))
         self.rates_view.pack(anchor="w", padx=16, pady=(8, 0))
         if getattr(self, "shell", None) is not None:          # 2.64.0: its tabs are listed in the sidebar
             self.shell.register_tabs("rates", self.rates_view)
-        self.rates_pages = {k: tk.Frame(win, bg=C["panel"]) for k in ("Rates", "Exchange Helper", "Arbitrage")}
+        self.rates_pages = {k: tk.Frame(win, bg=C["panel"]) for k in ("Rates", "Exchange Helper")}
         w = self.rates_pages["Rates"]
         w.pack(fill="both", expand=True)
         top = tk.Frame(w, bg=C["panel"], padx=16, pady=8)
@@ -2506,7 +2505,7 @@ class App(PriceCheckPage, FavoritesPage, BoardModPage, LeaderboardPage, OrderLab
         tv.tag_configure("thin", foreground=C["muted"])
         self.rates_tv = tv
         self.list_register("rates", tv)
-        self.build_arbitrage(self.rates_pages["Arbitrage"])
+        self.build_flip(self.rates_pages["Exchange Helper"])   # 2.92.0: at the bottom of Exchange Helper
         self.draw_rates()
 
     def rates_show_page(self):
@@ -2516,8 +2515,6 @@ class App(PriceCheckPage, FavoritesPage, BoardModPage, LeaderboardPage, OrderLab
                 f.pack(fill="both", expand=True)
             else:
                 f.pack_forget()
-        if pick == "Arbitrage":
-            self.arb_draw()
 
     def draw_rates(self):
         w = self.rates_win
