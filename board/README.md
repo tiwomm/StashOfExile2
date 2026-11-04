@@ -23,7 +23,10 @@ Since 2.85.0 posts are protected against vandalism and bad data:
   reports).
 - **Field checks:** money within ±100,000, items (≤ 30; count 1-1000, lasts 1-100), the author's numbers, text
   lengths and line counts, sources, dates; a post's screenshot must be its author's own upload.
-- **Names are unique** and change once every 7 days. Daily limits on edits (30), suggestions (10), reports (20),
+- **Names are unique**, change once every 7 days, and (2.86.1) slurs and hate words are refused - also spelled with
+  look-alike letters, numbers, repeats or spaces (the open-source `obscenity` list plus our own). A name from before
+  the filter is reset to `Player-...` on its next visit (its owner picks a new one at once); `POST /admin/names/sweep`
+  (admins) resets them all. Daily limits on edits (30), suggestions (10), reports (20),
   votes (200) and reviews (100).
 
 Since 2.31.0 it also pools the **community Mod book**: once an hour each app sends a summary of the mod prices its

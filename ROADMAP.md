@@ -4,7 +4,7 @@
 
 > **Who we build for - read second.** Path of Exile players are utilitarian: they love data and information, problem solving and creative thinking. So every feature shows its numbers *and how they were worked out*, lets you sort, filter, compare and export them (CSV), keeps power-user depth (keys, versions, raw data) one click away instead of hiding it, explains in plain words, and leaves the decision to the player. Pretty is welcome; vague is not.
 
-**Current version: 2.86.0**
+**Current version: 2.86.1**
 
 Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds features, 2.10.1 only fixes. Each step below is one release; we work through them top to bottom.
 
@@ -149,6 +149,7 @@ Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds f
 | 2.85.1 | Money Makers filter labels show in full. Roadmap: the Community FAQ becomes a Community forum. |
 | 2.85.2 | Ritual / Delirium watchers see the game under the overlay bar (the bar is left out of screen captures; switch in Overlay ↳ Settings). The docked Focus / campaign line sits flush with matching ends. |
 | 2.86.0 | **Global leaderboards**: Overlay ↳ Leaderboards - Campaign (acts + whole), Maps, Bosses & pinnacles, Trials; Mine / Everyone, league, class; opt-in sharing (community name only); self-reported times checked by the board, reports, reviewers, admins. |
+| 2.86.1 | Community names: slurs and hate words refused (with look-alike spellings); old ones reset and asked again. |
 
 ## ▶ Next up
 

@@ -21,11 +21,38 @@
 // Secrets / vars: ADMIN_KEY, REPORT_HIDE, POSTS_PER_DAY, JOINS_PER_DAY. Stored per player: a made-up id and the
 // display name. Internet addresses are only kept as a hash with the day, to count new accounts.
 import RULES from "./schema.json";
+import { RegExpMatcher, englishDataset, englishRecommendedTransformers } from "obscenity";
 
 const DAY = 86400;
 const MAX_BODY = 24000;
 const SESSION_DAYS = 180;
 const NAME = /^[\p{L}\p{N} _.\-]{2,24}$/u;
+
+// 2.86.1 (feedback: "deny inappropriate usernames, especially homophobic, transphobic, racist bigoted names, including
+// variants with alternate spellings or misspellings"): the open-source "obscenity" filter's English list (slurs and
+// profanity, with look-alike letters, number swaps and repeated letters handled), checked on the name as typed and
+// with its spaces / _ . - taken out, plus our own list of hate terms it doesn't cover.
+const MATCHER = new RegExpMatcher({ ...englishDataset.build(), ...englishRecommendedTransformers });
+const LEET = { 0: "o", 1: "i", 2: "z", 3: "e", 4: "a", 5: "s", 6: "g", 7: "t", 8: "b", 9: "g", "@": "a", "$": "s", "|": "i", "!": "i" };
+// (short or common-name words - nazi in Nazir, coon in Raccoon, spic in Spice, pedo in Torpedo, rapist in Therapist,
+// Aryan, Lynch - are left out on purpose: they'd refuse real names)
+const HATE = ["hitler", "heilhit", "siegheil", "1488", "kkk", "whitepower", "whitepride", "gaschamber", "holohoax",
+  "jewrat", "wetback", "gook", "beaner", "raghead", "towelhead", "sandnig", "jigaboo", "porchmonk", "golliwog",
+  "zipperhead", "slanteye", "niglet", "nigga", "negroid", "tranny", "trannie", "troon", "shemale", "ladyboy", "faggot",
+  "fagot", "lesbo", "dyke", "homo", "paedo", "pedophil", "paedophil", "nonce", "molest", "genocide"];
+export function nameProblem(name) {
+  const raw = String(name || "").normalize("NFKC");
+  const flat = raw.toLowerCase().replace(/[\s_.\-]+/g, "");
+  if (MATCHER.hasMatch(raw) || MATCHER.hasMatch(flat)) return "That name isn't allowed - pick another.";
+  const plain = [...flat].map((c) => LEET[c] ?? c).join("").replace(/(.)\1+/g, "$1");
+  const plain2 = [...flat].map((c) => LEET[c] ?? c).join("");
+  const hit = (w) => {                                      // as typed, with number swaps, and with repeats squeezed
+    const sq = w.replace(/(.)\1+/g, "$1");
+    return flat.includes(w) || plain2.includes(w) || (sq.length >= 4 && plain.includes(sq));
+  };
+  if (HATE.some(hit)) return "That name isn't allowed - pick another.";
+  return null;
+}
 const APPROVALS = 2, REVIEWER_DAYS = 14, REPORTER_DAYS = 7, AWAY_DAYS = 30;
 const PER_DAY = { edit: 30, suggest: 10, report: 20, vote: 200, admin_key: 5, admin_key_ip: 20, review: 100 };
 const MAX_MONEY = 100000, MAX_LINES = 60, MAX_LINE = 500;
@@ -147,7 +174,8 @@ const MIGRATIONS = [
   "ALTER TABLE users ADD COLUMN reviewer INTEGER NOT NULL DEFAULT 0",     // 1 = reviews; -1 = an admin took it away
   "ALTER TABLE users ADD COLUMN last_seen INTEGER NOT NULL DEFAULT 0",
   "ALTER TABLE posts ADD COLUMN based_on INTEGER",
-  "ALTER TABLE users ADD COLUMN renamed INTEGER NOT NULL DEFAULT 0",       // last name change (once every 7 days)                         // a copy of another post (credited)
+  "ALTER TABLE users ADD COLUMN renamed INTEGER NOT NULL DEFAULT 0",       // last name change (once every 7 days)
+  "ALTER TABLE users ADD COLUMN name_reset INTEGER NOT NULL DEFAULT 0",    // 2.86.1: the filter reset the name                         // a copy of another post (credited)
   `CREATE TABLE IF NOT EXISTS revisions (id INTEGER PRIMARY KEY AUTOINCREMENT, post_id INTEGER NOT NULL,
     author_id TEXT NOT NULL, data TEXT NOT NULL, status TEXT NOT NULL, note TEXT NOT NULL DEFAULT '',
     created INTEGER NOT NULL, decided INTEGER, decided_by TEXT, why TEXT)`,
@@ -188,11 +216,16 @@ async function who(req, env) {
   const m = /^Bearer\s+([a-f0-9]{64})$/i.exec(req.headers.get("authorization") || "");
   if (!m) return null;
   const row = await env.DB.prepare(
-    `SELECT u.id, u.name, u.admin, u.banned, u.reviewer, u.last_seen, u.created, u.renamed FROM sessions s JOIN users u ON u.id = s.user_id
+    `SELECT u.id, u.name, u.admin, u.banned, u.reviewer, u.last_seen, u.created, u.renamed, u.name_reset FROM sessions s JOIN users u ON u.id = s.user_id
      WHERE s.hash = ? AND s.expires > ?`,
   ).bind(await sha256(m[1]), now()).first();
   if (!row) return null;
   if (now() - (row.last_seen || 0) > 3600) await env.DB.prepare("UPDATE users SET last_seen = ? WHERE id = ?").bind(now(), row.id).run();
+  if (nameProblem(row.name)) {                                  // 2.86.1: a name from before the filter: reset it
+    row.name = await resetName(env, row.id);
+    row.renamed = 0;
+    row.name_reset = 1;
+  }
   return { ...row, admin: !!row.admin, banned: !!row.banned, reviewer: row.reviewer === 1 && !row.banned, reviewer_state: row.reviewer };
 }
 
@@ -209,7 +242,7 @@ async function reviewerCheck(env, me) {
 }
 const canReview = (me) => !!me && !me.banned && (me.admin || me.reviewer === true || me.reviewer === 1);
 const userOut = (me) => ({ id: me.id, name: me.name, admin: !!me.admin, reviewer: me.reviewer === true || me.reviewer === 1,
-  next_rename: me.renamed ? me.renamed + 7 * DAY : 0 });
+  next_rename: me.renamed ? me.renamed + 7 * DAY : 0, name_reset: !!me.name_reset });
 
 async function readBody(req) {
   const text = await req.text();
@@ -242,6 +275,7 @@ async function join(req, env) {
   const { name } = await readBody(req);
   const clean = String(name || "").trim();
   if (!NAME.test(clean)) return fail(400, "Pick a name of 2-24 letters, numbers, spaces, _ . or -.");
+  if (nameProblem(clean)) return fail(400, nameProblem(clean));
   const day = new Date().toISOString().slice(0, 10);
   const ip = await sha256((req.headers.get("cf-connecting-ip") || "local") + "|" + day);
   await env.DB.prepare("DELETE FROM joins WHERE day <> ?").bind(day).run();
@@ -258,6 +292,21 @@ async function join(req, env) {
   return json({ token, user: { id, name: clean, admin: false, reviewer: false } }, 201);
 }
 
+// 2.86.1: a name the filter refuses becomes "Player-<id>"; its owner may pick a new one at once (no 7-day wait)
+async function resetName(env, id) {
+  const name = "Player-" + id.slice(1, 7);
+  await env.DB.prepare("UPDATE users SET name = ?, renamed = 0, name_reset = 1 WHERE id = ?").bind(name, id).run();
+  return name;
+}
+
+async function sweepNames(env, me) {
+  if (!me.admin) return fail(403, "admins only");
+  const rows = await env.DB.prepare("SELECT id, name FROM users").all();
+  const reset = [];
+  for (const r of rows.results) if (nameProblem(r.name)) { await resetName(env, r.id); reset.push(r.id); }
+  return json({ checked: rows.results.length, reset: reset.length });
+}
+
 async function nameTaken(env, name, exceptId = "") {
   return !!(await env.DB.prepare("SELECT 1 AS x FROM users WHERE lower(name) = lower(?) AND id <> ?").bind(name, exceptId).first());
 }
@@ -267,13 +316,14 @@ async function rename(req, env, me) {
   const { name } = await readBody(req);
   const clean = String(name || "").trim();
   if (!NAME.test(clean)) return fail(400, "Pick a name of 2-24 letters, numbers, spaces, _ . or -.");
+  if (nameProblem(clean)) return fail(400, nameProblem(clean));
   if (await nameTaken(env, clean, me.id)) return fail(409, "Someone on the board already has that name - pick another.");
   // 2.85.0 (feedback): your name is permanent - it can change once every RENAME_DAYS days
   const row = await env.DB.prepare("SELECT renamed FROM users WHERE id = ?").bind(me.id).first();
   const wait = (row?.renamed || 0) + Number(env.RENAME_DAYS ?? 7) * DAY - now();
   if (wait > 0 && !me.admin) return fail(429, `You can change your name again on ${new Date((now() + wait) * 1000).toISOString().slice(0, 10)}.`);
-  await env.DB.prepare("UPDATE users SET name = ?, renamed = ? WHERE id = ?").bind(clean, now(), me.id).run();
-  return json({ user: userOut({ ...me, name: clean, renamed: now() }) });
+  await env.DB.prepare("UPDATE users SET name = ?, renamed = ?, name_reset = 0 WHERE id = ?").bind(clean, now(), me.id).run();
+  return json({ user: userOut({ ...me, name: clean, renamed: now(), name_reset: 0 }) });
 }
 
 async function becomeAdmin(req, env, me) {
@@ -1010,6 +1060,7 @@ export default {
       if (path === "/auth/rename" && req.method === "POST") return rename(req, env, me);
       if (path === "/auth/admin" && req.method === "POST") return becomeAdmin(req, env, me);
       if (path === "/me/inbox" && req.method === "GET") return inbox(env, me);
+      if (path === "/admin/names/sweep" && req.method === "POST") return sweepNames(env, me);
       if (path === "/review" && req.method === "GET") return reviewQueue(env, me);
       if (me.banned) return fail(403, "This account can't post on the board.");
       if (path === "/posts" && req.method === "POST") return createPost(req, env, me);

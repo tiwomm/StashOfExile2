@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU GPL v3.0 (see LICENSE). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.86.0
+VERSION 2.86.1
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,6 +19,15 @@ VERSION 2.86.0
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.86.1
+       Community-name filter (feedback: "deny inappropriate usernames, especially homophobic, transphobic, racist
+       bigoted names, including variants with alternate spellings or misspellings"). Board: nameProblem() - the
+       open-source obscenity package's English list (MIT; THIRD_PARTY_NOTICES), with its look-alike / leet /
+       repeated-letter transformers, run on the name as typed and with spaces _ . - taken out, plus our HATE list
+       (number swaps and squeezed repeats; words that sit inside real names - Nazir, Raccoon, Spice, Torpedo,
+       Therapist, Aryan, Lynch - left out). Join and rename refuse; a name from before the filter is reset to
+       "Player-<id>" on its next visit (name_reset, no 7-day wait) and POST /admin/names/sweep resets them all. App:
+       board_name_check at start-up asks again when the board reset your name; the prompt shows the board's reason.
   2.86.0
        Global leaderboards (ROADMAP): Overlay ↳ Leaderboards (modules/leaderboards.py, leaderboard_page.py,
        leaderboard.py). Boards: Campaign (each act's split + the whole campaign, from the Campaign Helper's runs),
@@ -1953,7 +1962,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.86.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.86.1"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
