@@ -8,11 +8,17 @@ own content into the window they are given.
   Window   - title bar (drag), minimize to the taskbar, maximize, close (hides it; utilities keep running), resize corner
 
 Window positions, sizes and which ones are open are saved in settings.json ("shell")."""
+import os
+import re
 import sys
 import time
 import tkinter as tk
 
 from .style import C
+
+# 2.91.1 (Linux, from a Linux player's patch): the windows are part of the app's own window there (see InDesk).
+# SOE2_REAL_WINDOWS=1 brings back the borderless windows of their own.
+IN_DESK = sys.platform.startswith("linux") and os.environ.get("SOE2_REAL_WINDOWS") != "1"
 
 TITLE_ON = ("#34508a", "#1a2a4c")
 TITLE_OFF = ("#26324a", "#182236")
@@ -96,22 +102,126 @@ class GradientBar(tk.Canvas):
         self.tag_lower("grad")
 
 
-class DeskWindow(tk.Toplevel):
+class InDesk:
+    """Linux: a Toplevel that lives inside a frame on the desktop (Tk's -use, "embedded") instead of being a
+    borderless window of its own. Wayland compositors (Hyprland) treat each borderless X11 window as a window of its
+    own: one could be sent to another workspace alone, and one the app moved jumped to the workspace in view. Embedded,
+    it is part of the app's window - it moves, hides and changes workspace with it. Tk's wm commands don't work on an
+    embedded window, so the ones the app uses are done on the frame: geometry (screen coordinates, as before),
+    withdraw / deiconify / state, lift."""
+    _box = None
+
+    def _embed_in(self, desk):
+        """-> the -use value for Toplevel(). Call before Toplevel.__init__."""
+        self._box = tk.Frame(desk, container=True, bd=0, highlightthickness=0)
+        self._box_g, self._box_on = [0, 0, 1, 1], False
+        return self._box.winfo_id()
+
+    def _box_place(self):
+        x, y, w, h = self._box_g
+        self._box.place(x=x, y=y, width=w, height=h)
+
+    def geometry(self, newGeometry=None):
+        if self._box is None:
+            return super().geometry(newGeometry)
+        desk = self._box.master
+        if newGeometry is None:
+            x, y, w, h = self._box_g
+            return f"{w}x{h}+{desk.winfo_rootx() + x}+{desk.winfo_rooty() + y}"
+        m = re.fullmatch(r"(?:(\d+)x(\d+))?(?:([+-]-?\d+)([+-]-?\d+))?", newGeometry.strip())
+        if not m:
+            return super().geometry(newGeometry)
+        w, h, x, y = m.groups()
+        g = self._box_g
+        if w:
+            g[2], g[3] = int(w), int(h)
+        if x:
+            g[0], g[1] = int(x.lstrip("+")) - desk.winfo_rootx(), int(y.lstrip("+")) - desk.winfo_rooty()
+        if self._box_on:
+            self._box_place()
+        return ""
+
+    wm_geometry = geometry
+
+    def withdraw(self):
+        if self._box is None:
+            return super().withdraw()
+        self._box.place_forget()
+        self._box_on = False
+
+    wm_withdraw = withdraw
+
+    def deiconify(self):
+        if self._box is None:
+            return super().deiconify()
+        self._box_place()
+        self._box_on = True
+
+    wm_deiconify = deiconify
+
+    def state(self, newstate=None):
+        if self._box is None:
+            return super().state(newstate)
+        if newstate == "withdrawn":
+            self.withdraw()
+        elif newstate is not None:
+            self.deiconify()
+        return None if newstate is not None else ("normal" if self._box_on else "withdrawn")
+
+    wm_state = state
+
+    def lift(self, aboveThis=None):
+        if self._box is None:
+            return super().lift(aboveThis)
+        self._box.tkraise()
+
+    tkraise = lift
+
+    def destroy(self):
+        box = self._box
+        super().destroy()
+        if box is not None:
+            try:
+                box.destroy()
+            except tk.TclError:
+                pass
+
+
+class InDeskToplevel(InDesk, tk.Toplevel):
+    """A pop-up on the desktop (the Toolkit menu): embedded on Linux (see InDesk), a borderless window elsewhere."""
+
+    def __init__(self, shell, **kw):
+        if IN_DESK:
+            kw["use"] = self._embed_in(shell.desk)
+        super().__init__(shell.root, **kw)
+        if self._box is not None:
+            self._box_on = True                 # shown from the start, like any new Toplevel
+        else:
+            self.overrideredirect(True)
+            try:
+                self.transient(shell.root)
+            except tk.TclError:
+                pass
+
+
+class DeskWindow(InDesk, tk.Toplevel):
     """One window on the desktop. body is where the module draws.
 
     2.0 beta 13: a real (borderless) window of its own, owned by the app's window, instead of a frame drawn inside it.
     Tk can't stack overlapping frames reliably on Windows (windows smeared when moved and didn't come to the front);
     real windows are moved, stacked and repainted by Windows itself. Positions are still kept relative to the desktop
-    area, and the windows move with the app's window."""
+    area, and the windows move with the app's window. On Linux it is embedded in the app's window instead (InDesk)."""
 
     def __init__(self, shell, key, title, icon, utility=False):
-        super().__init__(shell.root, bg=BORDER_OFF, highlightthickness=1, highlightbackground="#5b77ad")
+        kw = {"use": self._embed_in(shell.desk)} if IN_DESK else {}
+        super().__init__(shell.root, bg=BORDER_OFF, highlightthickness=1, highlightbackground="#5b77ad", **kw)
         self.withdraw()
-        self.overrideredirect(True)
+        if self._box is None:
+            self.overrideredirect(True)
         # 2.10.2: not transient() on Windows - with it, Tk threw away and rebuilt this window's real (Win32) window
         # every time the app was maximised, restored or snapped, and the new one had no owner: it fell behind the
         # app (windows "vanished") and the keyboard was lost. own_by_app() sets the owner instead (diag_log.txt).
-        if sys.platform != "win32":
+        if sys.platform != "win32" and self._box is None:
             try:
                 self.transient(shell.root)
             except tk.TclError:
@@ -1478,12 +1588,7 @@ class Shell:
 
     def open_menu(self):
         P1 = C["panel"]
-        m = tk.Toplevel(self.root, bg=P1, highlightthickness=1, highlightbackground="#3d5582")
-        m.overrideredirect(True)
-        try:
-            m.transient(self.root)
-        except tk.TclError:
-            pass
+        m = InDeskToplevel(self, bg=P1, highlightthickness=1, highlightbackground="#3d5582")
         self.menu = m
         self._place_menu()
         m.lift()

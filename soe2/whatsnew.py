@@ -21,6 +21,11 @@ NEXT = [
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.91.1": [
+        "Linux: the app's windows, What's new card and Toolkit menu stay inside the app's window (they used to drift "
+        "to other workspaces on Hyprland). Thanks to a Linux player for the patch.",
+        "Fixed a start-up warning on newer Python versions.",
+    ],
     "2.89.3": [
         "Privacy: Money Makers › Leave the board can now delete everything of yours on the community board.",
         "Leaderboards show the day of a run, not the time; private leagues are never shared.",

@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU GPL v3.0 (see LICENSE). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.89.3
+VERSION 2.91.1
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,6 +19,17 @@ VERSION 2.89.3
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.91.1
+       Linux (a Linux player's patch, in daily use on Hyprland since 2.20): a Wayland compositor treated every
+       borderless window as its own - a desk window, the What's new card or the Toolkit menu could land alone on
+       another workspace, or jump onto the one in view while the app stayed put. shell.InDesk embeds them in a
+       container frame on the app's desk (Tk's -use) and does the wm commands the app uses on that frame (geometry in
+       screen coordinates, withdraw / deiconify / state, lift, destroy); DeskWindow, InDeskToplevel (the Toolkit
+       menu, both What's new cards) use it. IN_DESK is False on Windows and macOS and with SOE2_REAL_WINDOWS=1 -
+       there every method falls back to the plain Toplevel one. Game overlays stay real windows.
+       Two invalid "\\d" escapes in this history (2.22.0) are written as "\\\\d" (a SyntaxWarning on Python 3.12+);
+       every .py compiles with -W error::SyntaxWarning. linux/README.md: the build script and InDesk are marked
+       tested by that player; "window owner tricks" leave "Still Windows-only".
   2.89.3
        Privacy hardening, from a full audit (nobody may be singled out or targeted through this app).
        Board (Worker): atlas screenshots get unguessable keys ("b:<32 hex>"; old numbered ones were re-keyed once,
@@ -1227,9 +1238,9 @@ VERSION HISTORY
            armour, shields, foci, quivers, weapons). tools/build_regexdata.py: MULTI kinds from several RePoE
            domains (misc / item / desecrated) kept by spawn tag; mods with the same text are one row; a line another
            mod shares word for word doesn't block a token; base names are noise; when no short token is unique the
-           whole line is the token (^...$, numbers as \d+, mod["rx"]). Jewel type filter (base name), gear "Show
+           whole line is the token (^...$, numbers as \\d+, mod["rx"]). Jewel type filter (base name), gear "Show
            mods for" slot boxes (list only). Ranges / maximums work the same. BUNDLED_DATA regexdata.json 2.
-           Exact number patterns (regex.num_range writes \d, never '.', up to 9999) for whole-line tokens, lines with
+           Exact number patterns (regex.num_range writes \\d, never '.', up to 9999) for whole-line tokens, lines with
            two numbers ("adds # to # ...") and mods that can reach 1,000+: checked over every roll of every mod.
   2.21.0
        (1) Price checks: "Sold for" + 💰 Mark as sold in the item's panel (mark "sold", Show: Sold). The sale goes in
@@ -2077,7 +2088,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.89.3"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.91.1"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
