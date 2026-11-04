@@ -26,6 +26,7 @@ NOTES = {
         "List order). The # column shows where each item sits (C3 R5 = column 3, row 5).",
         "Price Checks go first: Bulk Pricing waits while one runs, and pressing Search again replaces the older "
         "search. Price Checks now search exactly the mods you ticked.",
+        "Price Checks' Recent (and each check's listings) is kept when you close the app.",
     ],
     "2.86.1": [
         "Community names: slurs and hate words aren't allowed (also with swapped letters, numbers or spaces). A name "

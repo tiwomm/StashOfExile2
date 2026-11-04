@@ -32,6 +32,9 @@ VERSION HISTORY
        the older run stops (Superseded). Price Checks search exactly what's ticked (no "all but 1 of the ☑ mods"
        ladder - that's why the ticked "+2 to Level of all Projectile Skills" seemed ignored: the listings shown came
        from a looser search without it).
+       Price Checks' Recent after a restart (feedback: "not keeping track on single price checks ... in between
+       closing the app"): the page was built before session.json was read, so Recent stayed empty - load_session
+       refreshes it now; and each Price Checks item saves its listings (up to 20, "_raw"), so the cards come back too.
   2.86.1
        Community-name filter (feedback: "deny inappropriate usernames, especially homophobic, transphobic, racist
        bigoted names, including variants with alternate spellings or misspellings"). Board: nameProblem() - the
