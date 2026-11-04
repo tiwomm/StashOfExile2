@@ -49,6 +49,8 @@ DETAILS = (
     ("Strats you upload yourself", "only when you press Upload / Post - with rates (div per hour), never your totals",
      "the Money Makers and Strat Tracker boards"),
     ("Your community name, votes and reports", "only when you join, vote or report yourself", "the board itself"),
+    ("Your rep", "points the board counts from upvotes on your strats, accepted edits and reviews - your ratings only if "
+     "you tick Count my mod ratings", "the small contributor icon beside your name (you can hide it)"),
 )
 WHERE = ("It all goes to the StashOfExile2 community server (run by the app's developer on Cloudflare) - not to GGG, "
          "not to anyone else. It is never sold and never used for ads or tracking. Your internet address is never "

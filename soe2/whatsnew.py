@@ -21,6 +21,12 @@ NEXT = [
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.95.0": [
+        "Rep: help the community (upvoted strats, accepted edits, reviews, ratings that match everyone's) and a small "
+        "contributor icon shows beside your name. Hover anyone's icon for their card.",
+        "Settings › Privacy & community: your rep, where it came from, and switches to hide the icon or count your "
+        "mod ratings. Nothing is locked behind rep.",
+    ],
     "2.94.0": [
         "Settings › Privacy & community: what you share, and your community name - change it, become a reviewer or "
         "admin, move it to another PC, or delete everything. The 👤 chip on Money Makers and Leaderboards opens it.",

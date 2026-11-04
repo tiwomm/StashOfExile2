@@ -14,6 +14,7 @@ import tkinter as tk
 from tkinter import ttk
 
 from . import board as B
+from . import rep as R
 from .config import SETTINGS, save_json
 from .style import C
 
@@ -41,6 +42,8 @@ class CommunityPage:
         """The 👤 chips (Money Makers, Leaderboards) and every "pick a name" hint lead here."""
         self.open_settings_tab(PAGE)
         self.cy_paint()
+        if B.configured() and B.signed_in():                     # 2.95.0: today's rep
+            self._bm_bg(B.me, lambda _r: self.cy_paint())
 
     def build_privacy_community(self, section):
         P2 = C["panel2"]
@@ -76,6 +79,12 @@ class CommunityPage:
         box.pack(fill="x")
         self.cy_name_lbl = tk.Label(box, text="", bg=P2, fg=C["text"], font=("Segoe UI", 12, "bold"), anchor="w")
         self.cy_name_lbl.pack(fill="x")
+        # 2.95.0: your rep and where it came from
+        self.cy_rep_lbl = tk.Label(box, text="", bg=P2, fg=C["text"], font=("Segoe UI", 9), anchor="w", justify="left",
+                                   wraplength=640)
+        self.cy_rep_lbl.pack(fill="x", pady=(2, 0))
+        self.cy_rep_sw = tk.Frame(box, bg=P2)
+        self.cy_rep_sw.pack(fill="x", pady=(4, 0))
         tk.Label(box, text=NAME_STORED, bg=P2, fg=C["muted"], font=("Segoe UI", 9), justify="left", wraplength=640,
                  anchor="w").pack(fill="x", pady=(2, 8))
         self.cy_btns = tk.Frame(box, bg=P2)
@@ -116,6 +125,7 @@ class CommunityPage:
                                                                          " - reviewer" if me.get("reviewer") else ""))
                                 if me else "No community name on this PC")
         self.cy_buttons = {}
+        self.cy_rep_paint(me)
 
         def btn(text, cmd, primary=False, state="normal"):
             b = ttk.Button(box, text=text, command=cmd, style="Primary.TButton" if primary else "TButton")
@@ -140,8 +150,139 @@ class CommunityPage:
             btn("Become a reviewer", self.bm_reviewer)
         if not me.get("admin"):
             btn("Become admin…", self.mm_admin_key)
+        else:
+            btn("Thank someone with rep…", self.cy_admin_rep)                    # 2.95.0: e.g. a fixed bug report
         btn("Move to another PC…", self.cy_export_key)
         btn("Leave and delete my data…", self.mm_leave)
+
+    # ---------------------------------------------------------------- 2.95.0: rep
+    def cy_rep_paint(self, me=None):
+        me = B.signed_in() if me is None else me
+        lbl, sw = getattr(self, "cy_rep_lbl", None), getattr(self, "cy_rep_sw", None)
+        if lbl is None:
+            return
+        try:
+            for w in sw.winfo_children():
+                w.destroy()
+        except tk.TclError:
+            return
+        if not me:
+            lbl.config(text="Rep: karma-style points for helping - upvotes on your strats, accepted edits, reviews, "
+                            "ratings that match the community. It shows as a small icon beside your name. Nothing "
+                            "is locked behind it.")
+            return
+        rep = int(me.get("rep") or 0)
+        t = R.tier(rep)
+        f = me.get("rep_from") or {}
+        parts = [f"{f[k]} {w}" for k, w in (("upvotes", "upvotes"), ("edits", "accepted edits"), ("reviews", "reviews"),
+                                            ("ratings", "matching ratings"), ("bugs", "fixed bugs")) if f.get(k)]
+        lbl.config(text=f"{'◆ ' if t else ''}{rep:,} rep" + (f" - from {', '.join(parts)}" if parts else
+                   " - upvotes on your strats, accepted edits, reviews and ratings that match the community earn it."),
+                   fg=t[1] if t else C["text"])
+        self.cy_rep_show = tk.BooleanVar(value=not me.get("rep_hidden"))
+        self.cy_rep_link = tk.BooleanVar(value=bool(me.get("rep_linked")))
+        ttk.Checkbutton(sw, text="Show my contributor icon and card", variable=self.cy_rep_show,
+                        command=lambda: self.cy_rep_set(hidden=not self.cy_rep_show.get())).pack(side="left")
+        ttk.Checkbutton(sw, text="Count my mod ratings and map ranks", variable=self.cy_rep_link,
+                        command=lambda: self.cy_rep_set(link=self.cy_rep_link.get())).pack(side="left", padx=(16, 0))
+        tk.Label(sw, text="(ties this PC's anonymous ratings to your name on the server, only to count the ones that "
+                          "match the community - never shown one by one)", bg=C["panel2"], fg=C["muted"],
+                 font=("Segoe UI", 9), wraplength=320, justify="left").pack(side="left", padx=(8, 0))
+
+    def cy_rep_set(self, hidden=None, link=None):
+        from .communitymods import cid
+
+        def work():
+            if link is not None:
+                return B.set_rep(link=cid() if link else None, unlink=not link)
+            return B.set_rep(hidden=hidden)
+
+        def done(res):
+            ok, d = res
+            if not ok:
+                self.cy_say(d if isinstance(d, str) else "Couldn't save that.")
+            R.forget()
+            self.cy_paint()
+        self._bm_bg(work, done)
+
+    def cy_admin_rep(self, name=None, pts=None):
+        from tkinter import simpledialog
+        name = name or simpledialog.askstring("Thank someone with rep", "Their community name:", parent=self.root)
+        if not name:
+            return None
+        pts = pts or simpledialog.askinteger("Thank someone with rep", "How much rep (1-50)? A fixed bug report: 10.",
+                                             parent=self.root, minvalue=1, maxvalue=50, initialvalue=10)
+        if not pts:
+            return None
+
+        def done(res):
+            ok, d = res
+            self.cy_say(f"Thanks sent: {name} has {d.get('rep', 0):,} rep now." if ok else d)
+            R.forget()
+        self._bm_bg(lambda: B.admin_rep(name, pts), done)
+        return True
+
+    # the icon beside a name: hover = the contributor card
+    def rep_tree_hover(self, tv, name_of):
+        """A Treeview whose first (#0) column holds the icon: hovering it shows that contributor's card."""
+        def motion(e):
+            name = name_of(tv.identify_row(e.y)) if tv.identify_column(e.x) == "#0" else None
+            if not name:
+                return self.rep_tip_hide()
+            if getattr(self, "_rep_tip_name", None) != name:
+                self.rep_tip_show(name, e.x_root + 14, e.y_root + 10)
+        tv.bind("<Motion>", motion, add="+")
+        tv.bind("<Leave>", lambda e: self.rep_tip_hide(), add="+")
+
+    def rep_text_mark(self, t, author, base_tag):
+        """In a Text: ◆ in the tier's color before a name (nothing when there's no rep, or it's hidden)."""
+        tr = R.tier((author or {}).get("rep"))
+        if not tr or not author.get("name"):
+            return False
+        tag = "rep_" + tr[0]
+        t.tag_configure(tag, foreground=tr[1])
+        name = author["name"]
+        t.insert("end", "◆ ", (base_tag, tag, "rep_mark"))
+        t.tag_bind(tag, "<Enter>", lambda e: self.rep_tip_show(name, e.x_root + 14, e.y_root + 10))
+        t.tag_bind(tag, "<Leave>", lambda e: self.rep_tip_hide())
+        return True
+
+    def rep_tip_show(self, name, x, y):
+        self.rep_tip_hide()
+        self._rep_tip_name = name
+        w = tk.Toplevel(self.root, bg=C["line"])
+        w.overrideredirect(True)
+        try:
+            w.attributes("-topmost", True)
+        except tk.TclError:
+            pass
+        lbl = tk.Label(w, text="Loading…", bg=C["panel2"], fg=C["text"], font=("Segoe UI", 9), justify="left",
+                       padx=8, pady=8)
+        lbl.pack(padx=1, pady=1)
+        w.geometry(f"+{x}+{y}")
+        self._rep_tip = w
+
+        def done(ok, d):
+            def paint():
+                if getattr(self, "_rep_tip", None) is w and getattr(self, "_rep_tip_name", None) == name:
+                    try:
+                        lbl.config(text=R.card_text(d) if ok else str(d))
+                    except tk.TclError:
+                        pass
+            try:
+                self.root.after(0, paint)
+            except (RuntimeError, tk.TclError):
+                pass
+        R.card(name, done, sync=bool(getattr(self, "mm_sync", False)))
+        return w
+
+    def rep_tip_hide(self):
+        w, self._rep_tip, self._rep_tip_name = getattr(self, "_rep_tip", None), None, None
+        if w is not None:
+            try:
+                w.destroy()
+            except tk.TclError:
+                pass
 
     def cy_lb_switch(self):
         """Leaderboard times on / off (the same switch as Leaderboards › Share my times)."""

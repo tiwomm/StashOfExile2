@@ -88,6 +88,9 @@ existing database by themselves (the Worker adds them on first use).
 | `POST /posts/{id}/suggest` `{data, note}` | 2.85.0: suggest an edit to someone else's post |
 | `GET /posts/{id}/revisions` | 2.85.0: History (everyone: live and earlier versions; the author and reviewers: waiting ones too) |
 | `GET /me/inbox` | 2.85.0: suggestions waiting on your posts, and what became of yours |
+| `GET /people/<name>` | 2.95.0: a contributor card - rep, what it came from, member month (just the name if they hide it) |
+| `POST /me/rep` | 2.95.0: `{hidden}` show / hide your icon and card; `{link: "<install id>" or null}` count this install's ratings toward your rep, or stop |
+| `POST /admin/rep` | 2.95.0 (admins): `{name, pts}` thank someone with rep (1-50, e.g. a fixed bug report) |
 | `POST /revisions/{id}` `{action: accept\|decline\|rollback\|withdraw, why}` | 2.85.0: the author answers a suggestion or rolls back; the writer withdraws |
 | `GET /review` · `POST /revisions/{id}/review` `{vote: approve\|reject}` · `POST /posts/{id}/review` `{vote: hide\|keep}` | 2.85.0: reviewers |
 | `GET /posts?kind=strat\|one&sort=top\|new&category&type&tag&q&limit&offset` | the board |
