@@ -54,6 +54,14 @@ def spread_of(stages, league):
 
 
 # ------------------------------------------------------------------ background engine
+
+class Superseded(Exception):
+    """(2.87.0) A Price Checks item's Search was pressed again: this pricing stops; the newer one runs."""
+
+
+class Preempted(Exception):
+    """(2.87.0) A Bulk Pricing item steps aside for a Price Checks item; it goes back in line."""
+
 class Engine(TabReaderJobs, WealthJobs, StratCostJobs, threading.Thread):
     """One background thread does all network work. Lower priority number = sooner."""
 
@@ -269,11 +277,38 @@ class Engine(TabReaderJobs, WealthJobs, StratCostJobs, threading.Thread):
                     pass
         rec["resolved"] = True
 
+    # ---- 2.87.0 (feedback: "single price checks should take priority over bulk pricing ... if you change them and
+    # hit search again it should refresh and remove its own single searches ... and start a new search"): between
+    # searches, a Bulk Pricing item steps aside (back in line) while a Price Checks item waits, and a Price Checks
+    # item whose Search was pressed again stops - its newer search runs instead.
+    URGENT = ("pc", "fav")
+
+    def urgent_waiting(self):
+        return any(r.get("src") in self.URGENT and r.get("state") == "queued" for r in list(self.records.values()))
+
+    def _turn(self, rec):
+        """Called before each search of an item's pricing."""
+        cur = self.__dict__.get("_cur")
+        if cur is not None and cur[0] is rec and rec.get("gen", 0) != cur[1]:
+            raise Superseded()
+        if rec.get("src") not in self.URGENT and self.urgent_waiting():
+            raise Preempted()
+
     def do_price(self, rid):
         rec = self.records.get(rid)
         if not rec:
             return
-        self.price_rec(rec, lambda: self.ui_q.put(("priced", rid)))
+        self._cur = (rec, rec.get("gen", 0))
+        try:
+            self.price_rec(rec, lambda: self.ui_q.put(("priced", rid)))
+        except Superseded:
+            pass                                          # its newer search is in the queue (first in line)
+        except Preempted:                                 # a Price Checks item first; this one back in line
+            rec["state"] = "queued"
+            self.add(1 if rec.get("resolved") else 2, "price", rid)
+            self.ui_q.put(("priced", rid))
+        finally:
+            self._cur = None
 
     def price_rec(self, rec, tell=lambda: None):
         """Price a record (its mods resolved first). tell() is called whenever its state changes.
@@ -407,6 +442,7 @@ class Engine(TabReaderJobs, WealthJobs, StratCostJobs, threading.Thread):
                             wide=False, manual=False, conf="High", conf_why=["identical searches agree"], memory="")
         stages, verify_tot = [], {"bad": 0, "unverifiable": False}
         for name, gs in plan:
+            self._turn(rec)
             fs = [_flt(m) for g in gs for m in g["mods"]]
             total, ids, qid = search_ids(league, item["base"], fs + extra, None, None)   # Corrupted/Fractured/Desecrated = Any
             st = self._stage(item["base"], name, gs, total, ids, qid, hours, league, verify_tot)
@@ -430,6 +466,7 @@ class Engine(TabReaderJobs, WealthJobs, StratCostJobs, threading.Thread):
                 dropped = [g for g in keep if g["tier_rank"] == low]
                 keep = left
                 fs = [_flt(m) for g in keep for m in g["mods"]]
+                self._turn(rec)
                 total, ids, qid = search_ids(league, item["base"], fs + extra, None, None)
                 tname = TIER_ORDER[low] if low < len(TIER_ORDER) else "?"
                 st = self._stage(item["base"], f"without {tname}-tier: " + ", ".join(short(g) for g in dropped), keep,
@@ -443,6 +480,7 @@ class Engine(TabReaderJobs, WealthJobs, StratCostJobs, threading.Thread):
                 relaxed = None
         if not found:                                           # nothing at your rolls: once more with ANY value
             fs = [_flt(m, with_roll=False) for g in plan[0][1] for m in g["mods"]]
+            self._turn(rec)
             total, ids, qid = search_ids(league, item["base"], fs + extra, None, None)
             st = self._stage(item["base"], "any roll", plan[0][1], total, ids, qid, hours, league, verify_tot, record=False)
             stages.append(st)
@@ -452,6 +490,7 @@ class Engine(TabReaderJobs, WealthJobs, StratCostJobs, threading.Thread):
         if not found and len(plan[0][1]) >= 2:                  # 2.3.0: still nothing - the best mod on its own
             best = sorted(plan[0][1], key=lambda g: (g["impact"] != "high", -worth(g)))[0]
             fs = [_flt(m) for m in best["mods"]]
+            self._turn(rec)
             total, ids, qid = search_ids(league, item["base"], fs + extra, None, None)
             st = self._stage(item["base"], f"only {short(best)}", [best], total, ids, qid, hours, league, verify_tot,
                              record=False)
@@ -560,7 +599,10 @@ class Engine(TabReaderJobs, WealthJobs, StratCostJobs, threading.Thread):
             steps = waystone.plan(must, opt)
         else:
             steps = [(name, must, opt, k, values) for name, k in gear.ladder(len(opt))]
+        if rec.get("src") in self.URGENT and len(steps) > 1:     # 2.87.0: Price Checks search exactly what you ticked
+            steps = steps[:1]
         for name, must_s, opt_s, k, vals in steps:
+            self._turn(rec)
             q = gear.build_query(item, must_s, opt_s, k, vals)
             try:
                 total, ids, qid = gear.run_search(league, q)
