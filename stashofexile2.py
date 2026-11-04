@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU GPL v3.0 (see LICENSE). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.89.0
+VERSION 2.89.1
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,6 +19,17 @@ VERSION 2.89.0
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.89.1
+       Screenshots (feedback: "overlay still hides itself from screenshots"): 2.88.3 hid the bar only while the Ritual /
+       Delirium watcher ran - but it runs all the time for anyone who has it on. "Hide the bar from screen captures"
+       is now off by default and turned off once for everyone (tracker cfg hidecap_2891); turn it on only if the bar
+       covers a counter a watcher reads.
+       The Campaign switch on the bar says "Campaign", not "Camp" (merged_page.SHORT).
+       A ⚙ beside the overlay's lock opens Overlay ↳ Settings and brings the app forward (overlay_settings_go;
+       feedback: "a small settings cog on the overlay near the lock icon").
+       Campaign options: 2.89.0's "Ask Speedrun or Full rewards..." switch was gridded into the same cell as "Dock it
+       to the overlay bar" - the two labels overlapped (feedback screenshot). The Ask switch comes first, Dock after the
+       rest. "Act splits" says what it is: your time in each act, against your best.
   2.89.0
        Campaign: Speedrun or Full rewards (feedback: "when a person starts campaign with it enabled, it should prompt
        them if they want the speedrun version which skips a lot of things or the regular version, and then follow the
@@ -2044,7 +2055,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.89.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.89.1"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
