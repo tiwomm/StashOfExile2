@@ -64,7 +64,7 @@ class _Short(CanvasText):
     def config(self, **kw):
         if "text" in kw:
             t = kw["text"]
-            kw["text"] = t.split(" ", 1)[1] if (" " in t and "/" in t) else SHORT.get(self.key, t)
+            kw["text"] = t if "/" in t else SHORT.get(self.key, t)        # 2.89.2: full words, live count too
         super().config(**kw)
     configure = config
 
