@@ -1006,8 +1006,8 @@ class MoneyMakersPage:
         if not str(data.get("atlas_image", "")).startswith("l:"):
             return True
         from tkinter import messagebox
-        if getattr(self, "mm_sync", False):                       # (tests answer for you)
-            a = getattr(self, "mm_atlas_answer", True)
+        if hasattr(self, "mm_atlas_answer"):                      # (tests answer for you)
+            a = self.mm_atlas_answer
         else:
             a = messagebox.askyesnocancel(
                 "Your atlas screenshot will be public",
