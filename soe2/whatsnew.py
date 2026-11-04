@@ -21,6 +21,10 @@ NEXT = [
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.93.1": [
+        "Price Checks: listings look like the trade site's own preview.",
+        "Price Checks: Clear (beside Search) empties the page and Recent.",
+    ],
     "2.93.0": [
         "Price Checks: tick the small box under a fractured or desecrated mod to search it only as fractured / "
         "desecrated.",
