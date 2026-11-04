@@ -39,6 +39,17 @@ class CampaignUI:
         except Exception:
             self.log_error("the campaign helper")
             return None
+        if kind == "area":                                         # 2.92.2: Vendor ▾ on the bar - in town only
+            try:
+                v = self.vendor_on_bar()
+                if v != getattr(self, "_vendor_was", None):
+                    self._vendor_was = v
+                    if not v:
+                        self.camp_vendor_close()
+                    if getattr(self, "mg_win", None) is not None:
+                        self.merged_build()
+            except Exception:
+                self.log_error("the Vendor menu")
         if kind == "scene" and getattr(self, "_camp_town", False) and CP.cfg()["warn"] and CP.asks():
             self._camp_later = set()                               # a new town: "Remind me in town" asks again
             self.camp_ask_show()                                   # in town: the rewards to answer
@@ -158,13 +169,7 @@ class CampaignUI:
         head = cv.create_text(lft, mid, text=d["head"], anchor="w", fill=P["head"], font=hf, tags=("mg", "camp"))
         x = lft + fh.measure(d["head"]) + 12
         right = rgt
-        if self.camp_in_town() and CP.cfg()["vendor"] and self.bar_cfg().get("vendor", True):
-            vt = cv.create_text(right, mid, text="Vendor ▾", anchor="e", fill=P["text"], font=hf,
-                                tags=("mg", "campvendor"))
-            right -= fh.measure("Vendor ▾") + 14
-            cv.tag_bind(vt, "<Button-1>", lambda e: self.camp_vendor_show())
-            cv.tag_bind(vt, "<Enter>", lambda e: cv.configure(cursor="hand2"))
-            cv.tag_bind(vt, "<Leave>", lambda e: cv.configure(cursor=""))
+        # (2.92.2: Vendor ▾ moved to the bar's menus, beside Notes / Calc / Regex)
         info = "   ".join(t for t in (d["levels"], d["step"]) if t)
         if info:
             cv.create_text(right, mid, text=info, anchor="e", fill=P["muted"], font=(P["font"], self._hf(9)),
@@ -506,24 +511,15 @@ class CampaignUI:
                 b = ttk.Button(body, text=name, style=self.ov_btn(), command=lambda n=name, rx=rx: self.camp_copy(n, rx))
                 b.pack(fill="x", pady=1)
                 self.camp_vendor_btns[name] = b
-        group("FOR THIS ACT", CP.vendor_searches())
-        group("MY FAVORITES (REGEX TOOL)", self.camp_regex_favs())
+        group("FOR THIS ACT", CP.vendor_searches())      # (2.92.2: your favorites: Regex ▾ on the bar)
+        if not CP.vendor_searches():
+            tk.Label(body, text="No vendor searches for this act.", bg=bg, fg=P["muted"],
+                     font=(P["font"], self.ov_font(9)), anchor="w").pack(fill="x", pady=(8, 0))
         self.camp_vendor_msg = tk.Label(body, text="", bg=bg, fg=P["on"], font=(P["font"], self.ov_font(9)), anchor="w")
         self.camp_vendor_msg.pack(fill="x", pady=(8, 0))
         self.camp_vendor_win = w
         w.show()
         return w
-
-    def camp_regex_favs(self):
-        out = []
-        for f in (getattr(self, "rx_favs", None) or [])[:6]:
-            try:
-                s = self.rx_fav_search(f)
-            except Exception:
-                s = ""
-            if s:
-                out.append((f["name"], s))
-        return out
 
     def camp_copy(self, name, rx):
         self.root.clipboard_clear()
@@ -619,8 +615,23 @@ class CampaignUI:
         CP.save()
         self.merged_build()
 
+    def camp_vendor_toggle(self):
+        """2.92.2: Vendor ▾ on the bar opens / closes the card."""
+        if getattr(self, "camp_vendor_win", None) is not None:
+            self.camp_vendor_close()
+        else:
+            self.camp_vendor_show()
+        if getattr(self, "mg_win", None) is not None:
+            self.merged_build()
+
     def camp_vendor_switch(self, var=None):
-        CP.cfg()["vendor"] = bool((var or self.tk_cvendor_var).get())
+        on = bool((var or self.tk_cvendor_var).get())
+        CP.cfg()["vendor"] = on
+        self.bar_cfg()["vendor"] = on                 # 2.92.2: one switch (it was two that had to agree)
+        self.tracker_save()
+        bv = (getattr(self, "tk_bar_vars", None) or {}).get("vendor")
+        if bv is not None and bv is not var and bool(bv.get()) != on:
+            bv.set(on)
         CP.save()
         if not CP.cfg()["vendor"]:
             self.camp_vendor_close()

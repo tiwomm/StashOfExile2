@@ -4,7 +4,7 @@
 
 > **Who we build for - read second.** Path of Exile players are utilitarian: they love data and information, problem solving and creative thinking. So every feature shows its numbers *and how they were worked out*, lets you sort, filter, compare and export them (CSV), keeps power-user depth (keys, versions, raw data) one click away instead of hiding it, explains in plain words, and leaves the decision to the player. Pretty is welcome; vague is not.
 
-**Current version: 2.92.1**
+**Current version: 2.92.2**
 
 Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds features, 2.10.1 only fixes. Each step below is one release; we work through them top to bottom.
 
@@ -163,6 +163,7 @@ Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds f
 | 2.91.0 | Exchange rates over the game (a small window in the overlay's look, off until you turn it on); Arbitrage's Check a flip picks from every exchange item. |
 | 2.92.0 | Arbitrage removed - **deprecated**: it read GGG's hourly Currency Exchange history from an address outside their documented API, and GGG's terms for that data are unclear. The flip check stays, under Exchange rates › Exchange Helper. |
 | 2.92.1 | Listing order lab: corrupted items match, item sizes, column-by-column order to compare (ready for a 1x1 round). |
+| 2.92.2 | Overlay Enabled / Disabled (one master switch; the bar question comes when you enable it); Regex ▾ favorites on the bar; Vendor ▾ fixed and moved beside Notes / Calc. |
 
 ## ▶ Next up
 

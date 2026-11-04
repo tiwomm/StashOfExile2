@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU GPL v3.0 (see LICENSE). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.92.1
+VERSION 2.92.2
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,6 +19,16 @@ VERSION 2.92.1
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.92.2
+       Overlay page: "Timer over the game" becomes Overlay Enabled | Overlay Disabled - one master switch for the bar,
+       its lines, the calculator, the rates window and the Regex / Vendor cards (each helper keeps its own setting). A
+       new install starts disabled; an install that had the overlay keeps it on. "Which switches go on the bar?" is
+       asked the first time you enable it, not when the app starts (feedback: it asked right after an update). The
+       session timer's own switch stays in Settings › On the bar › Numbers.
+       Regex ▾ on the bar beside Notes and Calc: your Regex favorites in a small card, a click copies one (you paste
+       it). The Vendor card no longer lists them.
+       Vendor ▾ fixed (feedback: its switch did nothing): it was drawn on the campaign line only, so with that line off
+       it never showed. Now it sits with the bar's menus in a campaign town, and the two Vendor switches are one.
   2.92.1
        Listing order lab (admins): the first round showed the site's order follows nothing it reports (vs the walk,
        the place, the time, the id: -0.13 to +0.09) when every price is the same, while each listing's place (x / y,
@@ -2121,7 +2131,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.92.1"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.92.2"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 

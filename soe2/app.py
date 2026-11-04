@@ -185,7 +185,7 @@ class App(PriceCheckPage, FavoritesPage, BoardModPage, LeaderboardPage, OrderLab
         self.start_utilities()                       # 2.0: chat commands & notes listen to the same keyboard watcher
         root.after(15000, self.cm_start)             # 2.31.0: the community Mod book (hourly)
         root.after(2500, self.calc_ov_restore)       # 2.74.0: the calculator over the game, if it was up
-        root.after(4000, self.ov_chips_maybe)        # 2.90.0: which switches go on the overlay's bar (asked once)
+        # (2.92.2: which switches go on the bar is asked when you enable the overlay, not at start)
         root.after(3000, self.ovr_restore)           # 2.91.0: the exchange rates window, if it's on
         self.dup_pending, self.dup_win, self.own_clip = [], None, ""
         self.tray = Tray(lambda what: self.ui_q.put(("tray", what)))
