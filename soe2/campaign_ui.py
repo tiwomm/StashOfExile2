@@ -17,7 +17,7 @@ from tkinter import ttk
 
 from . import campaign as CP
 
-PAGES = ("Route", "Rewards", "Splits")
+PAGES = ("Route", "Rewards", "Act times")   # 2.89.2: "Splits" said nothing to most players
 
 
 class CampaignUI:
@@ -230,7 +230,7 @@ class CampaignUI:
             b.pack(side="left", padx=(0, 4))
             self.camp_page_btns[p] = b
         names = [a["name"] for a in CP.acts()]
-        if names and self.camp_page != "Splits":
+        if names and self.camp_page != "Act times":
             self.camp_act_var = tk.StringVar(value=CP.act_name(self.camp_view))
             cb = ttk.Combobox(top, values=names, textvariable=self.camp_act_var, state="readonly", width=12)
             cb.pack(side="right")
@@ -239,7 +239,7 @@ class CampaignUI:
         page = tk.Frame(body, bg=bg)
         page.pack(fill="both", expand=True, pady=(8, 0))
         {"Route": self._camp_route_page, "Rewards": self._camp_rewards_page,
-         "Splits": self._camp_splits_page}[self.camp_page](page, P)
+         "Act times": self._camp_splits_page}[self.camp_page](page, P)
 
     def _camp_route_page(self, page, P):
         bg, c, run = P["bg"], CP.cfg(), CP.char()
@@ -365,7 +365,7 @@ class CampaignUI:
     def _camp_splits_page(self, page, P):
         bg = P["bg"]
         if not CP.cfg()["splits"]:
-            tk.Label(page, text="Act splits are off (Overlay › Options › Campaign).", bg=bg, fg=P["muted"],
+            tk.Label(page, text="The act timer is off (Overlay › Options › Campaign).", bg=bg, fg=P["muted"],
                      font=(P["font"], self.ov_font(10))).pack(anchor="w")
             return
         g = tk.Frame(page, bg=bg)
@@ -568,7 +568,8 @@ class CampaignUI:
         opts = (("ask_route", "Ask Speedrun or Full rewards when a campaign starts"),   # 2.89.0
                 ("optional", "Show optional zones"), ("tips", "Tips (bosses, vendor checks)"),
                 ("warn", "Warn when I leave an act with a reward missed"),
-                ("splits", "Act splits - your time in each act, against your best"),   # 2.89.1: say what it is
+                ("splits", "Act timer - time each act and compare to your best (on with the session tracker; "
+                           "your best times go to the Leaderboards if you share data)"),   # 2.89.2
                 ("off_at_maps", "Turn itself off once I reach maps"))
         for i, (k, label) in enumerate(opts):
             v = tk.BooleanVar(value=bool(c[k]))

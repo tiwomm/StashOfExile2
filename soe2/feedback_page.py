@@ -99,7 +99,8 @@ class FeedbackPage:
                     tail = fh.read().splitlines()[-LOG_LINES:]
             except OSError:
                 tail = []
-            parts.append("**End of error_log.txt**\n```\n" + ("\n".join(tail) or "(empty)") + "\n```")
+            from .privacy import scrub                        # 2.89.2: it goes to a public issue - older log lines
+            parts.append("**End of error_log.txt**\n```\n" + (scrub("\n".join(tail)) or "(empty)") + "\n```")   # too
         return "\n\n".join(parts)
 
     def bug_report_open(self):

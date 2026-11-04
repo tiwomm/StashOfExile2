@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU GPL v3.0 (see LICENSE). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.89.1
+VERSION 2.89.2
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,21 +19,28 @@ VERSION 2.89.1
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.89.2
+       Privacy first. Community data sharing stays off until you say yes; its question now lists each thing sent, what
+       exactly and what it's for (communitymods.DETAILS - keep it true when a new upload rides on the switch), where
+       it goes (the app's own community server, never sold, no ads, no tracking) and what is never sent. Settings ›
+       General › Community data sharing has "What's shared, and why?" (the same page, read only).
+       New privacy.scrub: your home folder and user name leave error_log.txt, problem reports and bug reports (those
+       become a public issue - older log lines are scrubbed on the way out too). http_error_log keeps only the
+       rate-limit headers, never cookies.
+       "Act splits" is the Act timer (tab "Act times"): on by default, it times each act while the session tracker
+       runs, against your best per league; with sharing on (and a community name) your best act times go to the
+       Leaderboards.
+       Code comments and this history describe feedback in plain words - they don't quote it.
   2.89.1
-       Screenshots (feedback: "overlay still hides itself from screenshots"): 2.88.3 hid the bar only while the Ritual /
-       Delirium watcher ran - but it runs all the time for anyone who has it on. "Hide the bar from screen captures"
-       is now off by default and turned off once for everyone (tracker cfg hidecap_2891); turn it on only if the bar
-       covers a counter a watcher reads.
+       Screenshots: 2.88.3 hid the bar only while the Ritual / Delirium watcher ran - but it runs all the time for
+       anyone who has it on. "Hide the bar from screen captures" is now off by default and turned off once for
+       everyone (tracker cfg hidecap_2891); turn it on only if the bar covers a counter a watcher reads.
        The Campaign switch on the bar says "Campaign", not "Camp" (merged_page.SHORT).
-       A ⚙ beside the overlay's lock opens Overlay ↳ Settings and brings the app forward (overlay_settings_go;
-       feedback: "a small settings cog on the overlay near the lock icon").
+       A ⚙ beside the overlay's lock opens Overlay ↳ Settings and brings the app forward (overlay_settings_go).
        Campaign options: 2.89.0's "Ask Speedrun or Full rewards..." switch was gridded into the same cell as "Dock it
-       to the overlay bar" - the two labels overlapped (feedback screenshot). The Ask switch comes first, Dock after the
-       rest. "Act splits" says what it is: your time in each act, against your best.
+       to the overlay bar" - the two labels overlapped. The Ask switch comes first, Dock after the rest.
   2.89.0
-       Campaign: Speedrun or Full rewards (feedback: "when a person starts campaign with it enabled, it should prompt
-       them if they want the speedrun version which skips a lot of things or the regular version, and then follow the
-       guide version of whichever they opt for"). The first campaign zone of a run with no guide yet shows a card
+       Campaign: Speedrun or Full rewards. The first campaign zone of a run with no guide yet shows a card
        (camp_route_ask_show): Speedrun / Full rewards, "Use this every time". The pick is the run's own (run["route"],
        campaign.route_of; the default cfg route otherwise); "Use this every time" makes it the default and turns off
        "Ask Speedrun or Full rewards when a campaign starts" (Overlay › Options › Campaign; cfg ask_route). Picking a
@@ -43,38 +50,29 @@ VERSION HISTORY
        give gems or loot skipped, the rest run through), 2 are skipped (The Mud Burrow; Dreadnought Vanguard, gone
        in 0.5). Rewards a speedrun still takes carry "speed": true (25 of 26 - every point, spirit, resistance, life
        and mana; not the Goddess of Justice); leaving an act on Speedrun doesn't ask about the others.
-       Settings stuck in front (feedback: "I resized from fullscreen by clicking and dragging the window itself which
-       caused it to downscale and the settings menu was stuck in front of everything"): Tk can swap a page's real
-       (Win32) window for a new one, and the old one stayed - topmost, no longer Tk's, so nothing hid it.
-       DeskWindow.note_hwnd keeps the old handles; hide_ghosts hides them (not topmost, SW_HIDE) when the swap is seen
-       (check_owner, _show) and on every withdraw - only windows of this app, never a handle a page uses now.
-       Roadmap: Mageblood search helper (the user's trade link and how to set it up), Help rate mods + the Bulk
-       Pricing floor as 2.90.0, the guide pack refresh before 1.0; Polish 4-6 move to 2.91.0-2.93.0.
+       Settings stuck in front after resizing the app out of full screen: Tk can swap a page's real (Win32) window for
+       a new one, and the old one stayed - topmost, no longer Tk's, so nothing hid it. DeskWindow.note_hwnd keeps the
+       old handles; hide_ghosts hides them (not topmost, SW_HIDE) when the swap is seen (check_owner, _show) and on
+       every withdraw - only windows of this app, never a handle a page uses now.
+       Roadmap: Mageblood search helper, Help rate mods + the Bulk Pricing floor as 2.90.0, the guide pack refresh
+       before 1.0; Polish 4-6 move to 2.91.0-2.93.0.
   2.88.3
-       Campaign switch always on the overlay's bar (feedback: "right now people don't know it exists"): bar_chips
-       shows it whenever its "On the bar" switch is on, campaign or not (it was hidden until the log showed a
-       campaign zone). Its switch in Overlay › Options still takes it off.
-       Overlay showed when the game wasn't in front (feedback: "showing even when path of exile isn't the active
-       window sometimes"): game_active matched any window whose title held "Path of Exile 2" (a browser tab, a
-       video). Now the game's own window class, or a window named exactly the game's title
-       (overlay.title_is_game; window names only, ToS). A failed foreground check keeps the last answer instead of showing.
-       Screen captures (feedback: "it's being excluded for screenshots when it wasn't always"): the bar leaves
-       captures only while the Ritual or Delirium watcher runs (they read the game under it); otherwise screenshots
-       and streams show it. overlay_capture_sync puts it back when a watcher starts / stops. Same switch, Overlay ↳
-       Settings › Behaviour.
+       Campaign switch always on the overlay's bar: bar_chips shows it whenever its "On the bar" switch is on,
+       campaign or not (it was hidden until the log showed a campaign zone, so it went unnoticed).
+       Overlay showed when the game wasn't in front: game_active matched any window whose title held "Path of Exile 2"
+       (a browser tab, a video). Now the game's own window class, or a window named exactly the game's title
+       (overlay.title_is_game; window names only, ToS). A failed foreground check keeps the last answer.
+       Screen captures: the bar leaves captures only while the Ritual or Delirium watcher runs; overlay_capture_sync
+       puts it back when a watcher starts / stops (2.89.1: off by default).
   2.88.2
-       Ctrl+Alt+C now and then not heard (feedback: "sometimes it works sometimes it doesn't ... if I click in the
-       window itself once ... it seems to work"): Windows quietly drops a low-level keyboard hook that answers too
-       slowly (a busy moment in the app). KeyWatch notes the last physical / injected key it saw; an advanced copy
-       (Ctrl+Alt+C text) arriving while the hook saw no key at all for 3 s counts as yours and puts a fresh hook in
-       (rehook, thread message 0x8003); the app also renews the hook every 5 minutes (keys_refresh). A live hook that
-       saw no Ctrl+Alt+C still ignores other tools' copies.
+       Ctrl+Alt+C now and then not heard: Windows quietly drops a low-level keyboard hook that answers too slowly.
+       KeyWatch notes the last physical / injected key it saw; an advanced copy arriving while the hook saw no key at
+       all for 3 s counts as yours and puts a fresh hook in (rehook, thread message 0x8003); the app also renews the
+       hook every 5 minutes (keys_refresh). A live hook that saw no Ctrl+Alt+C still ignores other tools' copies.
        Price Checks / Favorites: a tick, a Min / Max reset or a filter change on the card no longer searches by itself
-       (feedback: "it's sending for a new search rather than waiting for me ... then I manually click search") -
-       app.card_changed marks the item and the button reads "Search • filters changed"; Bulk Pricing still prices
+       - app.card_changed marks the item and the button reads "Search • filters changed"; Bulk Pricing still prices
        again at once. A tick keeps the card's scroll position.
-       Trade links: a long link that holds the bare search (no "query" around it) reads (feedback: the Listing order
-       lab said "The trade site sent no search for that link").
+       Trade links: a long link that holds the bare search (no "query" around it) reads.
   2.88.1
        Bulk Pricing stalled (feedback: "ctrl + alt + c isn't working for bulk pricing"): 2.87.0's "Price Checks go
        first" asked whether any Price Checks / Favorites item was marked "queued" - a favorite that was never opened
@@ -2055,7 +2053,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.89.1"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.89.2"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 

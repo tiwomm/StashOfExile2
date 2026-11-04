@@ -396,8 +396,7 @@ class DeskWindow(tk.Toplevel):
         return list(self._g) if self._g else self.geo
 
     def note_hwnd(self, h):
-        """2.89.0 (feedback: "I resized from fullscreen by clicking and dragging the window ... the settings menu was
-        stuck in front of everything"): when Tk swaps this window's real window for a new one, the old one can stay on
+        """2.89.0 (feedback): when Tk swaps this window's real window for a new one, the old one can stay on
         screen - topmost, and no longer Tk's, so nothing hides it. Remember it; hide_ghosts() hides it."""
         if h is None:
             return

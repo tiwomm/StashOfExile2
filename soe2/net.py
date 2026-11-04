@@ -287,7 +287,9 @@ def call(method, url, **kw):
             note = f"{r.status_code} for {method} {url}  | server said: {r.text[:200].strip()!r}"
             try:
                 with open(P("http_error_log.txt"), "a", encoding="utf-8") as f:
-                    f.write(time.strftime("%Y-%m-%d %H:%M:%S ") + note + f"  | headers: {dict(r.headers)}\n")
+                    keep = {k: v for k, v in r.headers.items()          # 2.89.2: only the rate-limit ones - never
+                            if k.lower().startswith("x-rate-limit") or k.lower() == "retry-after"}   # cookies
+                    f.write(time.strftime("%Y-%m-%d %H:%M:%S ") + note + f"  | headers: {keep}\n")
             except Exception:
                 pass
             raise RuntimeError(note)

@@ -200,7 +200,7 @@ class MergedOverlay:
         chips = list(self.HELPERS) if self.tracker_cfg().get("alerts_bar", True) else []
         if self.bar_cfg().get("focus"):
             chips.append("focus")
-        if self.bar_cfg().get("campaign"):             # 2.88.3 (feedback: "people don't know it exists"): always on
+        if self.bar_cfg().get("campaign"):             # 2.88.3 (feedback): always on
             chips.append("campaign")                     # the bar while its switch is on, campaign or not
         return chips
 
@@ -310,13 +310,13 @@ class MergedOverlay:
         and streams show the bar."""
         cfg = self.tracker_cfg()
         if not cfg.get("hidecap_2891"):
-            # 2.89.1 (feedback: "overlay still hides itself from screenshots"): off for everyone, once - the Ritual /
+            # 2.89.1 (feedback): off for everyone, once - the Ritual /
             # Delirium watchers ran all the time for anyone who had them on, so the bar was never in a screenshot.
             # Turn it on again only if a watcher can't read a counter the bar covers.
             cfg["hide_capture"], cfg["hidecap_2891"] = False, True
         if not cfg.get("hide_capture", False):
             return False
-        # 2.88.3 (feedback: "it's being excluded for screenshots when it wasn't always"): only while the Ritual or
+        # 2.88.3 (feedback): only while the Ritual or
         # Delirium watcher is running - they're the ones that need to see under the bar. Otherwise screenshots show it.
         from .utilities import DELIRIUM, RITUAL
         try:
@@ -536,8 +536,7 @@ class MergedOverlay:
         return x
 
     def overlay_settings_go(self):
-        """2.89.1 (feedback: "a small settings cog on the overlay near the lock icon that brings you to overlay
-        settings"): the app comes forward on Overlay ↳ Settings."""
+        """2.89.1 (feedback): the app comes forward on Overlay ↳ Settings."""
         try:
             self.ovh_open("Settings")
             self.root.deiconify()

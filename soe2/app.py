@@ -1012,6 +1012,8 @@ class App(PriceCheckPage, FavoritesPage, BoardModPage, LeaderboardPage, OrderLab
         self.cm_share_var = tk.BooleanVar(value=self.cm_sharing())
         ttk.Checkbutton(row, text="Share anonymous data with the community", variable=self.cm_share_var,
                         command=self.cm_share_changed).pack(side="left")
+        ttk.Button(row, text="What's shared, and why?", style="Quiet.TButton",          # 2.89.2
+                   command=lambda: self.cm_ask(info=True)).pack(side="left", padx=(12, 0))
         row = section("General", "Window", "Always on top keeps StashOfExile2 in front of the game (and brings it "
                                            "back if something minimizes it). The 📌 on the taskbar does the same. "
                                            "The overlay (timer, Mechanic Helper, Notes) is shown over the game: "
@@ -1900,9 +1902,12 @@ class App(PriceCheckPage, FavoritesPage, BoardModPage, LeaderboardPage, OrderLab
     def cm_opt_out(self):
         self.cm_set_sharing(False)
 
-    def cm_ask(self, then=None):
+    def cm_ask(self, then=None, info=False):
         """The first-run question (and the one before an upload while sharing is off). A small window in the middle
-        of the app; closing it without an answer asks again next time. then(on) runs after an answer."""
+        of the app; closing it without an answer asks again next time - and shares nothing. then(on) runs after an
+        answer. 2.89.2: it says what each thing sent is, what it's for and where it goes (communitymods.DETAILS);
+        info=True is the same page from Settings ("What's shared?"), with just a Close."""
+        from . import communitymods as CM
         old = getattr(self, "cm_ask_win", None)
         if old is not None and old.winfo_exists():
             old.lift()
@@ -1914,11 +1919,27 @@ class App(PriceCheckPage, FavoritesPage, BoardModPage, LeaderboardPage, OrderLab
         w.resizable(False, False)
         box = tk.Frame(w, bg=P2, padx=16, pady=16)
         box.pack(fill="both", expand=True)
-        tk.Label(box, text="Share anonymous data with the community?", bg=P2, fg=C["text"],
-                 font=("Segoe UI", 12, "bold"), anchor="w").pack(fill="x")
-        tk.Label(box, text=CM_WHAT + "\n\nYou get everyone else's data either way. You can change this any time "
-                 "in Settings › General › Community data sharing.", bg=P2, fg=C["muted"], justify="left",
-                 wraplength=440, anchor="w").pack(fill="x", pady=(8, 16))
+        tk.Label(box, text="What's shared, and why" if info else "Share anonymous data with the community?", bg=P2,
+                 fg=C["text"], font=("Segoe UI", 12, "bold"), anchor="w").pack(fill="x")
+        tk.Label(box, text="It's off until you say yes. Nothing is shared unless you turn it on, and you get "
+                 "everyone else's data either way. We respect your privacy: no selling, no ads, no tracking.",
+                 bg=P2, fg=C["text"], justify="left", wraplength=520, anchor="w").pack(fill="x", pady=(8, 8))
+        g = tk.Frame(box, bg=P2)
+        g.pack(fill="x")
+        for c, h in enumerate(("WHAT", "WHAT EXACTLY", "WHAT IT'S FOR")):
+            tk.Label(g, text=h, bg=P2, fg=C["muted"], font=("Segoe UI", 9, "bold"), anchor="w").grid(
+                row=0, column=c, sticky="w", padx=(0, 12), pady=(0, 2))
+        for r, (what, exact, why) in enumerate(CM.DETAILS, start=1):
+            for c, (t, wl, col) in enumerate(((what, 150, C["text"]), (exact, 190, C["muted"]), (why, 170, C["muted"]))):
+                tk.Label(g, text=t, bg=P2, fg=col, font=("Segoe UI", 9, "bold" if c == 0 else "normal"), justify="left",
+                         wraplength=wl, anchor="nw").grid(row=r, column=c, sticky="nw", padx=(0, 12), pady=4)
+        self.cm_ask_rows = len(CM.DETAILS)
+        tk.Label(box, text=CM.WHERE, bg=P2, fg=C["muted"], justify="left", wraplength=520, anchor="w").pack(
+            fill="x", pady=(8, 0))
+        tk.Label(box, text=CM.NEVER, bg=P2, fg=C["muted"], justify="left", wraplength=520, anchor="w").pack(
+            fill="x", pady=(8, 0))
+        tk.Label(box, text="Change it any time: Settings › General › Community data sharing.", bg=P2, fg=C["muted"],
+                 justify="left", wraplength=520, anchor="w").pack(fill="x", pady=(8, 16))
         row = tk.Frame(box, bg=P2)
         row.pack(fill="x")
 
@@ -1926,8 +1947,12 @@ class App(PriceCheckPage, FavoritesPage, BoardModPage, LeaderboardPage, OrderLab
             self.cm_set_sharing(on)
             if then:
                 then(on)
-        ttk.Button(row, text="Share", style="Primary.TButton", command=lambda: answer(True)).pack(side="right")
-        ttk.Button(row, text="No thanks", command=lambda: answer(False)).pack(side="right", padx=(0, 8))
+        if info:
+            ttk.Button(row, text="Close", command=lambda: (w.destroy(), setattr(self, "cm_ask_win", None))).pack(
+                side="right")
+        else:
+            ttk.Button(row, text="Share", style="Primary.TButton", command=lambda: answer(True)).pack(side="right")
+            ttk.Button(row, text="No thanks", command=lambda: answer(False)).pack(side="right", padx=(0, 8))
         w.protocol("WM_DELETE_WINDOW", lambda: (w.destroy(), setattr(self, "cm_ask_win", None)))
         try:
             w.update_idletasks()
@@ -2618,7 +2643,8 @@ class App(PriceCheckPage, FavoritesPage, BoardModPage, LeaderboardPage, OrderLab
     def log_error(self, where):
         """Write an unexpected error to error_log.txt and say so in the status line - never let it stop the app."""
         try:
-            tb = traceback.format_exc()
+            from .privacy import scrub
+            tb = scrub(traceback.format_exc())               # 2.89.2: no user name / home folder in the log
             sig = tb.strip().splitlines()[-1] if tb.strip() else where
             if time.time() - self._err_seen.get(sig, 0) > 30:          # don't repeat the same error every 100 ms
                 self._err_seen[sig] = time.time()
@@ -3479,8 +3505,7 @@ class App(PriceCheckPage, FavoritesPage, BoardModPage, LeaderboardPage, OrderLab
         self.set_item_impact(rec, mod, ("normal" if g == "ignore" else g) if checked else "ignore")
 
     def card_changed(self, rec):
-        """2.88.2 (feedback: checking or unchecking a mod "sending for a new search rather than waiting for me ...
-        then I manually click search"): on Price Checks / Favorites a change on the card waits for Search; the card
+        """2.88.2 (feedback): on Price Checks / Favorites a change on the card waits for Search; the card
         says so. Bulk Pricing prices it again at once, as before."""
         if rec.get("src") in ("pc", "fav"):
             rec["changed"] = True

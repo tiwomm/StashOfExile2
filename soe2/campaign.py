@@ -208,8 +208,7 @@ def route_of(run=None):
 
 
 def needs_route(run=None):
-    """2.89.0 (feedback: "when a person starts campaign ... prompt them if they want the speedrun version ... or the
-    regular version"): a run in the campaign that hasn't picked its guide yet."""
+    """2.89.0 (feedback): a run in the campaign that hasn't picked its guide yet."""
     c = cfg()
     run = run or char()
     return bool(c["on"] and c["ask_route"] and run.get("act") is not None and not run.get("done")
