@@ -21,6 +21,9 @@ NEXT = [
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.88.1": [
+        "Fixed: items copied with Ctrl+Alt+C weren't priced in Bulk Pricing (when you had Favorites).",
+    ],
     "2.88.0": [
         "For board admins: Under the hood ↳ Listing order lab - read a public tab's trade link, walk the tab with "
         "Ctrl+Alt+C, and see which order the trade site's list follows.",
