@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU GPL v3.0 (see LICENSE). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.85.2
+VERSION 2.86.0
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,6 +19,19 @@ VERSION 2.85.2
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.86.0
+       Global leaderboards (ROADMAP): Overlay ↳ Leaderboards (modules/leaderboards.py, leaderboard_page.py,
+       leaderboard.py). Boards: Campaign (each act's split + the whole campaign, from the Campaign Helper's runs),
+       Maps, Bosses & pinnacles (Map library kind Pinnacle), Trials (Sekhemas / Chaos / Simulacrum by name). Mine =
+       worked out here (sessions now keep their league and each map run its character; the log's level-up line
+       gives the class - focus state "classes"; sessions from before 2.86.0 have no league and are left out); Everyone
+       = the board's GET /lb (one row per account, fastest first, by league / class). With Community data sharing on
+       and "Share my times" (lb_share), the best per board / league / class goes up (POST /lb, every 15 minutes at
+       most, from cm_tick and on opening): community name only, no character names. The board keeps the faster time,
+       refuses impossible ones (floors: act 2 min, map 30 s, boss 10 s, trial 1 min), hides on reports from accounts
+       7+ days old, reviewers' or an admin's vote (POST /lb/<id>/review). The session page's Leaderboard has a
+       "Global leaderboards" button. Network answers come back through ui_q (ev_lb_done), never root.after from a
+       thread.
   2.85.2
        Ritual alerts (feedback: "aren't working, maybe because the overlay is in the position of where the ritual
        (x/3) counter is"): the overlay's bar (and the goal bar) sit over the XP bar, right where the watcher looks
@@ -1940,7 +1953,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.85.2"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.86.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 

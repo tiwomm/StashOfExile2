@@ -109,3 +109,21 @@ CREATE TABLE IF NOT EXISTS reviews (  -- a reviewer's vote on a pending / sugges
 CREATE TABLE IF NOT EXISTS limits (   -- per-day counters (edits, suggestions, reports, admin-key tries ...)
   key TEXT PRIMARY KEY, n INTEGER NOT NULL, day TEXT NOT NULL
 );
+
+-- 2.86.0: global leaderboards (the Worker also creates these itself on first use)
+CREATE TABLE IF NOT EXISTS lb (
+  id INTEGER PRIMARY KEY AUTOINCREMENT, user_id TEXT NOT NULL,
+  cat TEXT NOT NULL,                  -- campaign, map, boss, trial
+  key TEXT NOT NULL,                  -- the act / map / fight
+  league TEXT NOT NULL, cls TEXT NOT NULL DEFAULT '',
+  secs REAL NOT NULL,                 -- the best time (self-reported, from the game's log)
+  level INTEGER NOT NULL DEFAULT 0, deaths INTEGER NOT NULL DEFAULT 0,
+  at INTEGER NOT NULL, sent INTEGER NOT NULL,
+  reports INTEGER NOT NULL DEFAULT 0, hidden INTEGER NOT NULL DEFAULT 0,
+  UNIQUE (user_id, cat, key, league, cls)
+);
+CREATE INDEX IF NOT EXISTS lb_board ON lb (cat, key, league, hidden, secs);
+CREATE TABLE IF NOT EXISTS lb_reports (
+  lb_id INTEGER NOT NULL, user_id TEXT NOT NULL, reason TEXT, created INTEGER NOT NULL,
+  PRIMARY KEY (lb_id, user_id)
+);

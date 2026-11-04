@@ -30,11 +30,26 @@ def pretty_area(area):
     return re.sub(r"(?<=[a-z])(?=[A-Z])", " ", a).strip() or area
 
 
+def _char_now():
+    """2.86.0: who's playing (the last character the log named)."""
+    try:
+        from .campaign import current_char
+        return current_char()
+    except Exception:
+        return ""
+
+
 class Session:
     def __init__(self, now=None, start_value=None, start_items=None):
         now = time.time() if now is None else now
         self.started = now
         self.ended = None
+        try:                                    # 2.86.0: the leaderboards need the league and character of a run
+            from .config import SETTINGS as _S
+            from .campaign import current_char
+            self.league, self.char = _S.get("league") or "", current_char()
+        except Exception:
+            self.league, self.char = "", ""
         self.paused_at = None
         self.paused_total = 0.0
         self.maps = []                      # {area, name, level, seed, first, time, entries, deaths}
@@ -111,7 +126,8 @@ class Session:
                 idx = next((i for i, m in enumerate(self.maps) if m["area"] == data["area"] and m["seed"] == data["seed"]), None)
                 if idx is None:
                     self.maps.append({"area": data["area"], "name": pretty_area(data["area"]), "level": data["level"],
-                                      "seed": data["seed"], "first": ts, "time": 0.0, "entries": 1, "deaths": 0})
+                                      "seed": data["seed"], "first": ts, "time": 0.0, "entries": 1, "deaths": 0,
+                                      "char": _char_now()})
                     idx = len(self.maps) - 1
                 else:
                     self.maps[idx]["entries"] += 1
@@ -178,6 +194,7 @@ class Session:
     @classmethod
     def from_json(cls, d):
         s = cls(now=d.get("started"))
+        s.league, s.char = None, ""             # 2.86.0: a session saved before the leaderboards: league unknown
         s.__dict__.update({k: v for k, v in d.items() if k in s.__dict__})
         return s
 
