@@ -4,7 +4,7 @@
 
 > **Who we build for - read second.** Path of Exile players are utilitarian: they love data and information, problem solving and creative thinking. So every feature shows its numbers *and how they were worked out*, lets you sort, filter, compare and export them (CSV), keeps power-user depth (keys, versions, raw data) one click away instead of hiding it, explains in plain words, and leaves the decision to the player. Pretty is welcome; vague is not.
 
-**Current version: 2.85.1**
+**Current version: 2.85.2**
 
 Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds features, 2.10.1 only fixes. Each step below is one release; we work through them top to bottom.
 
@@ -147,6 +147,7 @@ Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds f
 | 2.84.0 | **Price Checks ↳ Favorites**: items from Price Checks (☆ Add to favorites) and pasted trade links, in groups and your order; each opens with its filters and the trade site's listings. Right-click for rename / edit / duplicate / move / copy link / delete (Ctrl+Z). Money Makers item links: Instant Buyout, waystone numbers and tier; regex with numbers. |
 | 2.85.0 | **Community board protections**: only authors edit, every change kept (History, roll back), **Suggest an edit** (the author accepts), opt-in reviewers (2 approve changes to Official strats and decide reports), unique community names asked once at start-up (change once every 7 days), field checks and daily limits. Money Makers / Strat Tracker accuracy fixes (units, negatives, sources, labels, tracking Community strats). |
 | 2.85.1 | Money Makers filter labels show in full. Roadmap: the Community FAQ becomes a Community forum. |
+| 2.85.2 | Ritual / Delirium watchers see the game under the overlay bar (the bar is left out of screen captures; switch in Overlay ↳ Settings). The docked Focus / campaign line sits flush with matching ends. |
 
 ## ▶ Next up
 

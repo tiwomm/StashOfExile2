@@ -166,6 +166,14 @@ class OverlayParts:
         if w is None or not self.goalbar_docked():
             return
         try:
+            main = getattr(self, "mg_win", None)
+            if main is not None and abs(main.winfo_width() - w.winfo_width()) > 1 and \
+                    not getattr(self, "_gb_rebuilding", False):        # 2.85.2: the bar changed width - match it
+                self._gb_rebuilding = True
+                try:
+                    return self.goalbar_build()
+                finally:
+                    self._gb_rebuilding = False
             x, y = self._goalbar_spot(self.merged_layout(), w.winfo_width(), w.winfo_height())
             w.geometry(f"+{x}+{y}")
         except tk.TclError:
@@ -187,7 +195,8 @@ class OverlayParts:
             r = game_rect() or (0, 0, self.root.winfo_screenwidth(), self.root.winfo_screenheight())
             return r[0] + (r[2] - gw) // 2, r[1] + int(r[3] * 0.80)
         if layout == "xpbar":                                 # over the Game bar, in the middle
-            return mx + (mw - gw) // 2, my - gh - 6
+            # 2.85.2 (feedback: "a fine gap between the two"): docked, it sits right on the bar
+            return mx + (mw - gw) // 2, my - gh - (0 if self.goalbar_docked() else 6)
         from .alerts_page import game_rect
         r = game_rect() or (0, 0, self.root.winfo_screenwidth(), self.root.winfo_screenheight())
         if my + mh + 6 + gh > r[1] + r[3]:                    # no room under the Panel: over it
@@ -242,7 +251,8 @@ class OverlayParts:
             w.draggable(cv)
         if hud:
             ends, self._hud_ends = getattr(self, "_hud_ends", None), ("amber", "amber")
-            lft, rgt = self._hud_frame(cv, P, W, H)
+            from . import hudart as _ha                       # 2.85.2: the same end caps as the bar under it
+            lft, rgt = self._hud_frame(cv, P, W, H, cap=_ha.cap_width(mh - 2) if self.goalbar_docked() else None)
             self._hud_ends = ends or ("crimson", "sapphire")
         else:
             art = hudart.card(cv, W, H, None, [(8, 6, W - 8, H - 6, 1, 1)], None)

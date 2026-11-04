@@ -12,6 +12,23 @@ from .pricefmt import fmt_short
 
 
 
+def capture_affinity(win, hide=True):
+    """2.85.2: hide = this window is left out of screen captures (WDA_EXCLUDEFROMCAPTURE: a capture sees what's under
+    it); False = back in them. Windows 10 2004+ only; nothing in the game changes."""
+    if sys.platform != "win32":
+        return
+    try:
+        import ctypes
+        u = ctypes.windll.user32
+        u.GetParent.restype = ctypes.c_void_p
+        u.GetParent.argtypes = [ctypes.c_void_p]
+        h = u.GetParent(win.winfo_id()) or win.winfo_id()
+        u.SetWindowDisplayAffinity.argtypes = [ctypes.c_void_p, ctypes.c_uint]
+        u.SetWindowDisplayAffinity(h, 0x11 if hide else 0x0)
+    except Exception:
+        pass
+
+
 def no_capture(win):
     """Windows 10 2004+: leave this window out of screen captures (WDA_EXCLUDEFROMCAPTURE), so the Auto watcher -
     and any screenshot - sees the game, not our tags. Only hides it from captures; it changes nothing in the game."""

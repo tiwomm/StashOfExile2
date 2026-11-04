@@ -306,14 +306,23 @@ class MergedOverlay:
         2.74.3 (feedback: "an isolated toggle that isn't tied to being locked"): its own switch, off by default."""
         return bool(self.tracker_cfg().get("click_through", False))
 
+    def overlay_hide_capture(self):
+        """2.85.2 (feedback: "Ritual alerts aren't working, maybe because the overlay is in the position of where the
+        ritual (x/3) counter is"): the bar is left out of screen captures, so the Ritual / Delirium watchers see the
+        game's counters under it. Its own switch (Overlay ↳ Settings › Behaviour), on by default; off = screenshots
+        and streams show the bar."""
+        return bool(self.tracker_cfg().get("hide_capture", True))
+
     def overlay_click_through(self):
         """The overlay's bar windows (not Notes or the calculator - you type in those)."""
-        on = self.click_through_on()
+        from .remnant_page import capture_affinity
+        on, hide = self.click_through_on(), self.overlay_hide_capture()
         for w in (getattr(self, "mg_win", None), getattr(self, "mg_win2", None), getattr(self, "gb_win", None)):
             if w is None:
                 continue
             w.click_through = on
             set_click_through(w, on)
+            capture_affinity(w, hide)
 
     def _merged_build(self):
         cfg = self.tracker_cfg()
@@ -866,12 +875,12 @@ class MergedOverlay:
         """A font size for the Game bar, grown with the game window (made for 1080 px high)."""
         return max(7, round(n * getattr(self, "_hud_k", 1.0)))
 
-    def _hud_frame(self, cv, P, W, H):
+    def _hud_frame(self, cv, P, W, H, cap=None):
         """The game bar's plate (hudart: carved stone, bevelled bronze frame, end caps with an amber gem, a
         recessed well). -> the left / right edges of the well, where content goes."""
         from . import hudart
-        img = hudart.plate(cv, W, H, P, ends=getattr(self, "_hud_ends", ("crimson", "sapphire")))
-        m = hudart.cap_width(H) + 14
+        img = hudart.plate(cv, W, H, P, ends=getattr(self, "_hud_ends", ("crimson", "sapphire")), cap=cap)
+        m = (cap or hudart.cap_width(H)) + 14
         if img is not None:
             cv.create_image(0, 0, image=img, anchor="nw", tags=("hudbg",))
             cv._hud_img = img
