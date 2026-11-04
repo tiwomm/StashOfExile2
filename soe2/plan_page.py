@@ -274,7 +274,9 @@ class GamePlanPage:
         """League Focus on / off - the page's switch, the overlay's Focus switch and Options › On the overlay."""
         F.cfg()["on"] = bool(on)
         F.save()
-        for var in (getattr(self, "gp_on", None), getattr(self, "tk_focus_var", None)):
+        rows = getattr(self, "al_rows", None) or {}                # 2.90.0: Helpers › Focus follows too
+        for var in (getattr(self, "gp_on", None), getattr(self, "tk_focus_var", None),
+                    (rows.get("focus") or {}).get("on")):
             if var is not None and bool(var.get()) != bool(on):
                 var.set(bool(on))
         self.gp_overlay()

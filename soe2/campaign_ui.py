@@ -127,6 +127,9 @@ class CampaignUI:
         CP.save()
         if getattr(self, "tk_camp_var", None) is not None and bool(self.tk_camp_var.get()) != bool(on):
             self.tk_camp_var.set(bool(on))
+        r = (getattr(self, "al_rows", None) or {}).get("campaign")        # 2.90.0: Helpers › Campaign follows
+        if r is not None and bool(r["on"].get()) != bool(on):
+            r["on"].set(bool(on))
         if not on:
             self.camp_close_all()
         self.merged_build()
