@@ -118,6 +118,10 @@ class AboutPage:
                 "or endorsed by Grinding Gear Games."):
             tk.Label(box, text=line, bg=P2, fg=C["text"], anchor="w", justify="left", wraplength=600,
                      font=("Segoe UI", 9)).pack(fill="x", pady=(4, 0))
+        # 2.96.1: poe.ninja's economy data - thank you
+        tk.Label(box, text="Economy data (Exchange rates, the rates window, Remnant prices, currency values): poe.ninja, "
+                           "by rasmuskl - thank you!", bg=P2, fg=C["text"],
+                 anchor="w", justify="left", wraplength=600, font=("Segoe UI", 9)).pack(fill="x", pady=(4, 0))
         # 2.37.0: credit for an idea (no code used - that project isn't open source)
         from .remnant import CREDIT_NAME, CREDIT_URL
         cr = tk.Label(box, text=f"Expedition Remnant Price Checker: the idea comes from {CREDIT_NAME} - thank you! "

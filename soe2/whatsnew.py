@@ -21,6 +21,12 @@ NEXT = [
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.96.1": [
+        "Overlay ↳ Settings is tidier: one switch per item on the bar, each helper's options on its own row, and "
+        "Options for how the overlay behaves.",
+        "The Exchange rates window can be moved again (unlock the overlay, then drag it).",
+        "Vendor ▾ stays on the bar the whole campaign.",
+    ],
     "2.96.0": [
         "Price Checks: ▲ / ▼ beside each mod - did it matter for the price? Your answer counts for every item like it.",
         "Rate mods one at a time (S to D, or Ignore): Mod book, or Settings › Privacy & community. It tunes your price "

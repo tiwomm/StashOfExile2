@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU GPL v3.0 (see LICENSE). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.96.0
+VERSION 2.96.1
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,6 +19,24 @@ VERSION 2.96.0
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.96.1
+       Overlay ↳ Settings regrouped (feedback: doubles, cut-off text, black boxes behind the helpers' switches):
+       - On the bar: one switch per item - Session timer, Map timer, Maps done, Average map time, Map rank: S-D, Map
+         name, Clock; Notes ▾, Calc ▾, Regex ▾, Exchange rates (each one switch: the feature and its place on the bar -
+         the Features card and the Menus list are gone).
+       - Options (was Behaviour, plus the Features leftovers): Lock the overlay, Feature tips, Start the overlay with
+         StashOfExile2, Ask me to rank maps, Dock the lines to the bar, Hide from screen captures, Overlay appearance….
+       - Helpers: each helper's options on its own row, with its "Switch on the bar" (and Focus / Campaign "Its line
+         above the bar"); the "Show the Mechanic Helper bar" switch is gone (a bar that was off keeps its helpers'
+         switches off). The switches use the card's colors - no black boxes. The overlay's × no longer turns the
+         helpers' switches off.
+       - Campaign, full width: Vendor ▾ is on the bar the whole campaign (in town or not, until the campaign is done);
+         no Act timer switch (act times are always kept; the Leaderboards get them only if you share data).
+       - Gone: Your character name (deaths count for the character the game's log names; a name you typed is kept)
+         and the hotkey line (Settings › Hotkeys).
+       Exchange rates window: unlocked, drag it by any spot (it could only be moved by its title bar), and it follows
+       the overlay's lock (it kept the lock it was built with). poe.ninja (by rasmuskl) credited in the README and
+       Settings › About.
   2.96.0
        Help rate mods (ratemods.py, ratemods_page.py). Your ratings tune your own price checks at once; with Community
        data sharing on they're your vote too (rep when they match everyone's, with Count my mod ratings on).
@@ -2185,7 +2203,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.96.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.96.1"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
