@@ -21,6 +21,12 @@ NEXT = [
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.96.0": [
+        "Price Checks: ▲ / ▼ beside each mod - did it matter for the price? Your answer counts for every item like it.",
+        "Rate mods one at a time (S to D, or Ignore): Mod book, or Settings › Privacy & community. It tunes your price "
+        "checks and earns rep when it matches everyone's.",
+        "Bulk Pricing skips items the Mod book is sure sell under 1 div (Settings › Price checking › Skip cheap items).",
+    ],
     "2.95.0": [
         "Rep: help the community (upvoted strats, accepted edits, reviews, ratings that match everyone's) and a small "
         "contributor icon shows beside your name. Hover anyone's icon for their card.",

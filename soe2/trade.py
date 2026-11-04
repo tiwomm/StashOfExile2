@@ -82,6 +82,12 @@ def mod_impact(rec, mod):
         return ov
     if mod.get("covered"):                  # gear (1.41): already counted in a total, or an implicit / rune
         return "ignore"
+    if (rec.get("item") or {}).get("gear"):  # 2.96.0: your ▲ / ▼ for this gear class (or waystones)
+        from .ratemods import key_for
+        k = key_for(rec, mod)
+        from .mods import RULES
+        if k and RULES.get(k) in IMPACTS:
+            return RULES[k]
     if mod.get("auto") in IMPACTS:          # 2.72.0: gear - filler and low-tier affixes left out
         return mod["auto"]
     if mod.get("kind") == "Total":          # gear totals (defences, DPS, pseudo totals) are must-haves

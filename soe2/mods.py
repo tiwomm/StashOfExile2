@@ -364,7 +364,7 @@ RULES = load_json("mod_rules.json", {})        # your own changes: normalised mo
 
 # 2.6.0: waystone and relic rules have their own names ("relic:#% increased movement speed"), so a relic mod never
 # picks up a jewel rule that happens to use the same words. Tablet and jewel rules keep the plain wording.
-SCOPED_CATS = ("waystone", "relic")
+SCOPED_CATS = ("waystone", "relic", "gear")          # 2.96.0: gear rules are "gear:<class>:<text>"
 
 
 def rule_key(cat, k):

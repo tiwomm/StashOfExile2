@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU GPL v3.0 (see LICENSE). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.95.0
+VERSION 2.96.0
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,6 +19,21 @@ VERSION 2.95.0
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.96.0
+       Help rate mods (ratemods.py, ratemods_page.py). Your ratings tune your own price checks at once; with Community
+       data sharing on they're your vote too (rep when they match everyone's, with Count my mod ratings on).
+       - ▲ / ▼ beside each mod on Price Checks ("did it matter?"): ▲ = High, ▼ = Ignore, again = cleared - for every
+         item like it. Gear gets its own rules per item class ("gear:<class>:<mod>"), so a helmet's ▲ doesn't touch
+         rings; trade.mod_impact reads them for gear and waystones (after the item's own ticks and totals).
+       - Rate mods: one mod at a time, S / A (High) B / C / D (Normal, with that tier) or Ignore, keys S A B C D I,
+         ◀ back, Skip; per rule set (Tablets, Jewels, Waystones, Relics, each gear class you've checked). From the Mod
+         book's rule pages and Settings › Privacy & community.
+       - The ask: once, after 25 items are priced; Not now asks once more, at random 3-7 days later; No thanks (or
+         Not now again) never asks again.
+       - Bulk Pricing floor (Settings › Price checking › Skip cheap items, on, 1 div for Tablets / Jewels / Relics): an
+         item whose every searched mod sells for under the floor in the Mod book's own data (5+ listings each, none
+         rated High) isn't searched; with 3-4 listings it's marked check by hand. A mod with no data, or one rated
+         High / S / A, means it's searched. Price Checks always search.
   2.95.0
        Rep - karma-style points for helping (feedback: contributors need something back, without anything locked
        away). The board counts it: an upvote on your strat +1 (gone if it's taken back; never your own), an edit of
@@ -2170,7 +2185,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.95.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.96.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
