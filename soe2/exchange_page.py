@@ -102,7 +102,12 @@ class ExchangePage:
         self.flip_buy, self.flip_sell, self.flip_qty = tk.StringVar(), tk.StringVar(), tk.StringVar(value="100")
         self.flip_item, self.flip_cur = tk.StringVar(value="the item"), tk.StringVar(value="Exalted Orb")
         tk.Label(row, text="I can buy 1", bg=P2, fg=C["text"]).pack(side="left")
-        ttk.Entry(row, textvariable=self.flip_item, width=18).pack(side="left", padx=4)
+        # 2.91.0: every item the Currency Exchange trades (type to narrow the list)
+        self.flip_item.set("")
+        self.flip_box = ttk.Combobox(row, textvariable=self.flip_item, values=self.flip_names(), width=26)
+        self.flip_box.pack(side="left", padx=4)
+        self.flip_box.bind("<KeyRelease>", lambda e: self.flip_filter())
+        self.flip_box.bind("<Button-1>", lambda e: self.flip_box.configure(values=self.flip_names()), add="+")
         tk.Label(row, text="for", bg=P2, fg=C["text"]).pack(side="left")
         ttk.Entry(row, textvariable=self.flip_buy, width=7).pack(side="left", padx=4)
         tk.Label(row, text="and sell 1 for", bg=P2, fg=C["text"]).pack(side="left")
@@ -292,6 +297,41 @@ class ExchangePage:
         return f"{a} : {b}"
 
     # ---- a flip you type in
+    def flip_names(self):
+        """2.91.0: every Currency Exchange item by name - the rates table's (most traded first) and the full list of
+        exchange items (cxnames.json) after them."""
+        out = []
+        try:
+            from .rates import RATES
+            names = {}
+            try:
+                from .wealth import WPRICES
+                for part in (WPRICES.parts or {}).values():
+                    names.update(part.get("names") or {})
+            except Exception:
+                pass
+            for cid in sorted((c for c, v in RATES.table.items() if v), key=lambda c: -(RATES.vol.get(c, 0))):
+                out.append(names.get(cid) or self.arb_name(cid))
+        except Exception:
+            pass
+        try:
+            A.item_name("divine")                              # (loads cxnames.json)
+            out += sorted(v for k, v in A._NAMES.items() if k != "_loaded" and isinstance(v, str))
+        except Exception:
+            pass
+        seen, uniq = set(), []
+        for n in out:
+            if n and n.lower() not in seen:
+                seen.add(n.lower())
+                uniq.append(n)
+        return uniq
+
+    def flip_filter(self):
+        """Typing narrows the list to the names that hold what you typed."""
+        t = self.flip_item.get().strip().lower()
+        allv = self.flip_names()
+        self.flip_box.configure(values=[n for n in allv if t in n.lower()] if t else allv)
+
     def flip_draw(self):
         def num(v):
             try:
