@@ -27,6 +27,9 @@ VERSION HISTORY
        cx_history.json are simply not read). The Check a flip calculator stays - arithmetic on two prices you type,
        no requests - at the bottom of Exchange rates › Exchange Helper (exchange_page.build_flip); item names and the
        flip math live in cxnames.py.
+       Every request says honestly which app is asking: "StashOfExile2/<version> (+https://github.com/tiwomm/
+       StashOfExile2)" (config.APP_UA) - the trade site saw "personal-stash-pricer/1.0" before; poe.ninja, GitHub and
+       the community board get the same name. No name, account or email of the user is in it.
   2.91.0
        Exchange rates over the game (ovrates.py): a small window in the overlay's own look (the Game bar's colours
        with that layout, the Panel's otherwise; rebuilt when the layout changes) listing the most-used rates - "210 :

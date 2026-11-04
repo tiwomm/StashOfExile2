@@ -7,6 +7,8 @@ import re
 import requests
 import sys
 
+from .config import APP_UA
+
 
 # ------------------------------------------------------------------ updates (GitHub Releases)
 REPO = "tiwomm/StashOfExile2"
@@ -59,7 +61,7 @@ def pick_asset(rel, frozen=None):
 def latest_release():
     """-> ("ok", release dict) / ("none", msg) / ("error", msg). One small public request; nothing is sent about you."""
     try:
-        r = requests.get(RELEASE_URL, headers={"Accept": "application/vnd.github+json", "User-Agent": "StashOfExile2-update-check"}, timeout=20)
+        r = requests.get(RELEASE_URL, headers={"Accept": "application/vnd.github+json", "User-Agent": APP_UA}, timeout=20)
     except Exception as e:
         return "error", f"Could not reach GitHub ({e}). Check your internet."
     if r.status_code == 404:
@@ -80,7 +82,7 @@ def download_asset(asset, dest, progress=None):
         return False, "The download address is not from the project's GitHub page.", False
     h, got = hashlib.sha256(), 0
     try:
-        with requests.get(url, headers={"User-Agent": "StashOfExile2-update-check"}, stream=True, timeout=30) as r:
+        with requests.get(url, headers={"User-Agent": APP_UA}, stream=True, timeout=30) as r:
             if r.status_code != 200:
                 return False, f"Download failed (GitHub answered {r.status_code}).", False
             with open(dest, "wb") as f:

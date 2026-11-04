@@ -25,7 +25,8 @@ API's limits.
    (Ctrl+Alt+C), or one chat command (pasted, one Enter). The mouse is never moved or clicked for you.
 5. **What the app reads:** your clipboard, the game's own log file (Client.txt), and pixels of your screen (a
    screenshot, the same as any capture tool). Plus public websites: the official trade site's search API, only for
-   searches you started (a copied item, a sync you pressed), always inside the limits it sends back (clause 22) -
+   searches you started (a copied item, a sync you pressed), always inside the limits it sends back (clause 22), and
+   always saying who is asking (User-Agent "StashOfExile2/<version> (+repo link)", config.APP_UA) -
    never automated buying, whispers or listing, never scraping its pages - and poe.ninja.
    The app never connects to the game's servers (7.5) and never changes the game client or its files (7.2).
 6. **Overlays are just windows on top.** Click-through where they sit over the game, they never change what the game

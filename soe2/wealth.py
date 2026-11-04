@@ -95,7 +95,7 @@ NINJA_ITEM_TYPES = ["UniqueWeapons", "UniqueArmours", "UniqueAccessories", "Uniq
                     "UniqueSanctumRelics", "UniqueTablets", "PrecursorTablets"]
 
 
-WEALTH_UA = f"StashOfExile2/{APP_VERSION} (personal Path of Exile 2 net worth tracker; prices refreshed at most hourly)"
+from .config import APP_UA as WEALTH_UA                    # 2.92.0: one honest name for the app
 
 
 def wealth_children(extra, level):

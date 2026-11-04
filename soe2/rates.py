@@ -25,7 +25,7 @@ RATE_ALIASES = {"alchemy": "alch", "augmentation": "aug", "transmutation": "tran
                 "mirror-of-kalandra": "mirror", "regal-orb": "regal"}
 
 
-RATES_UA = f"StashOfExile2/{APP_VERSION} (personal Path of Exile 2 price checker; one small request an hour)"
+from .config import APP_UA as RATES_UA                     # 2.92.0: one honest name for the app
 
 
 class Rates:

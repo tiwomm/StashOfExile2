@@ -17,7 +17,7 @@ import time
 import urllib.parse
 from datetime import date
 
-from .config import APP_DIR, RESOURCE_DIR, P, load_json, save_json
+from .config import APP_UA, APP_DIR, RESOURCE_DIR, P, load_json, save_json
 
 SCHEMA = 2          # 2.29.0: category + type, tag groups, effort words (2.28.0 wrote 1 - migrate() converts it)
 FILE = "moneymakers.json"
@@ -343,7 +343,7 @@ def fetch_live(get=None, force=False, now=None):
         import requests
         get = requests.get
     try:
-        r = get(LIVE_URL, headers={"User-Agent": "StashOfExile2-moneymakers"}, timeout=15)
+        r = get(LIVE_URL, headers={"User-Agent": APP_UA}, timeout=15)
         if r.status_code != 200:
             return "error", f"GitHub answered {r.status_code}."
         d = r.json()
