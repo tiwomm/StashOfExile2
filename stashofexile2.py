@@ -31,6 +31,8 @@ VERSION HISTORY
        runs, against your best per league; with sharing on (and a community name) your best act times go to the
        Leaderboards.
        Code comments and this history describe feedback in plain words - they don't quote it.
+       The overlay bar's switches say full words (Breach, Delirium, Ritual, Expedition, Focus, Campaign) - no short
+       forms; the Remnant switch reads Expedition (merged_page.NAMES / chip_name).
   2.89.1
        Screenshots: 2.88.3 hid the bar only while the Ritual / Delirium watcher ran - but it runs all the time for
        anyone who has it on. "Hide the bar from screen captures" is now off by default and turned off once for
