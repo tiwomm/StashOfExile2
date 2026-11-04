@@ -21,6 +21,13 @@ NEXT = [
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.90.0": [
+        "Overlay bar: the map's time, the area and its rank share one part, shown whole; every part is centered.",
+        "Pick which switches your bar shows - one per helper (Breach, Delirium, Ritual, Expedition, Focus, Campaign).",
+        "Overlay ↳ Settings is regrouped: every helper's on / off is in Helpers; lines and switches are in On the bar.",
+        "Desecration Helper (Beta): your first visit to The Well of Souls asks if you want it.",
+        "Fixed: the Campaign line and Dock switches did nothing; the campaign line showed after the campaign.",
+    ],
     "2.89.3": [
         "Privacy: Money Makers › Leave the board can now delete everything of yours on the community board.",
         "Leaderboards show the day of a run, not the time; private leagues are never shared.",

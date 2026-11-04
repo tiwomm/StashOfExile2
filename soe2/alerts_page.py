@@ -175,24 +175,31 @@ class AlertsPage:
                                      "(reads Client.txt)", lambda: self.breach_alert(test=True)),
                 ("ritual", "Ritual", "reads the Ritual counter (0/3 ...) from your screen; reminds you if you leave a "
                                      "map after starting its rituals but not finishing them", self.alerts_test_ritual),
-                ("remnant", "Remnant", "Expedition Remnant Price Checker: each reward in a remnant's book gets its "
-                                       "poe.ninja price, by itself (Auto) or with its key", self.alerts_test_remnant),
-                ("desecrate", "Desecration", "Desecration Helper: at The Well of Souls each revealed option shows its "
-                                             "tier (T1 = best for that item type) - on only while you're there "
-                                             "(reads Client.txt, then your screen)", self.alerts_test_desecrate)):
+                ("remnant", "Expedition", "Expedition Remnant Price Checker: each reward in a remnant's book gets its "
+                                          "poe.ninja price, by itself (Auto) or with its key", self.alerts_test_remnant),
+                # 2.90.0: League Focus and the Campaign Helper sit with the others (one place for every helper)
+                ("focus", "Focus", "League Focus: your current league goal on the bar, and a short poke in town now "
+                                   "and then (Overlay ↳ Game Plan)", lambda: self.ov_intro_setup("focus")),
+                ("campaign", "Campaign", "Campaign Helper: where you are in the campaign, what's next and what it's "
+                                         "worth (reads Client.txt)", lambda: self.camp_route_show()),
+                ("desecrate", "Desecration (Beta)", "Desecration Helper (Beta): at The Well of Souls each revealed "
+                                                    "option shows its tier (T1 = best for that item type) - on only "
+                                                    "while you're there (reads Client.txt, then your screen)",
+                 self.alerts_test_desecrate)):
             row = tk.Frame(box, bg=P2)
             row.pack(fill="x", pady=(8, 0))
             dot = tk.Label(row, text="●", bg=P2, fg=DOT["off"], font=("Segoe UI", 10))
             dot.pack(side="left")
             on = tk.BooleanVar(value=False)
-            nb = ttk.Checkbutton(row, text=name, variable=on, width=12, command=lambda k=key: self.alerts_toggle(k))
+            nb = ttk.Checkbutton(row, text=name, variable=on, width=18 if key == "desecrate" else 12,
+                                 command=lambda k=key: self.alerts_toggle(k))
             nb.pack(side="left", padx=(4, 0))
             Tooltip(nb, what)                       # 2.37.0: what it does - the line under a row shows only while on
             snd = tk.BooleanVar(value=True)
-            if key not in ("remnant", "desecrate"):   # 2.39.0: the Remnant price tags make no sound
+            if key not in ("remnant", "desecrate", "focus", "campaign"):   # 2.39.0: no sound for these
                 ttk.Checkbutton(row, text="Sound", variable=snd,
                                 command=lambda k=key: self.alerts_sound(k)).pack(side="left")
-            ttk.Button(row, text="Test", command=test, width=6).pack(side="right")
+            ttk.Button(row, text="Open" if key in ("focus", "campaign") else "Test", command=test, width=6).pack(side="right")
             if key == "breach":                    # 2.11.0
                 self.al_leave = tk.BooleanVar(value=bool(self.breach_cfg().get("leave_reminder", True)))
                 ttk.Checkbutton(row, text="Remind me when I leave the map", variable=self.al_leave,
@@ -231,6 +238,9 @@ class AlertsPage:
         self.al_rows["ritual"]["sound"].set(bool(self.ritual_cfg().get("sound", True)))
         self.al_rows["remnant"]["on"].set(bool(self.remnant_cfg().get("on")))          # 2.37.0
         self.al_rows["desecrate"]["on"].set(bool(self.ws_cfg().get("on")))            # 2.81.0
+        from . import campaign as _CP, focus as _F
+        self.al_rows["focus"]["on"].set(bool(_F.cfg()["on"]))                          # 2.90.0
+        self.al_rows["campaign"]["on"].set(bool(_CP.cfg()["on"]))
         try:
             from .utilities import DELIRIUM
             self.al_rows["delirium"]["sound"].set(bool(DELIRIUM.get_sound()))
@@ -280,6 +290,10 @@ class AlertsPage:
         elif key == "desecrate":                              # 2.81.0
             err = self.ws_toggle(want)
             r["note"] = err or ""
+        elif key == "focus":                                  # 2.90.0
+            self.focus_set_on(bool(want))
+        elif key == "campaign":
+            self.camp_set_on(bool(want))
         else:
             SETTINGS["util_delirium_autostart"] = want       # on = it also starts with the app next time
             save_json("settings.json", SETTINGS)
@@ -373,7 +387,11 @@ class AlertsPage:
         b = self.breach_status()
         return {"delirium": d, "breach": "off" if b is False else "warn" if b == "warn" and self.br_reader is None
                 else "on", "ritual": self.ritual_status(), "remnant": self.remnant_status(),
-                "desecrate": self.ws_status()}
+                "desecrate": self.ws_status()} | self._alert_states_more()
+
+    def _alert_states_more(self):
+        from . import campaign as _CP, focus as _F                                # 2.90.0
+        return {"focus": "on" if _F.cfg()["on"] else "off", "campaign": "on" if _CP.cfg()["on"] else "off"}
 
     def alerts_refresh(self):
         """Every 2 s (util_refresh) and after a change: dots, checkboxes and status lines."""
@@ -415,7 +433,13 @@ class AlertsPage:
         wtxt = rows["desecrate"]["note"] or self.ws_text(rows["desecrate"])         # 2.81.0
         rows["desecrate"]["note"] = ""
         rows["desecrate"]["on"].set(bool(self.ws_cfg().get("on")))
-        for k, txt in (("delirium", dtxt), ("breach", btxt), ("ritual", rtxt), ("remnant", mtxt), ("desecrate", wtxt)):
+        from . import campaign as _CP, focus as _F                                # 2.90.0
+        rows["focus"]["on"].set(bool(_F.cfg()["on"]))
+        rows["campaign"]["on"].set(bool(_CP.cfg()["on"]))
+        ftxt = ("On - " + (self.focus_line()[0] or "pick a goal in Overlay ↳ Game Plan")) if _F.cfg()["on"] else rows["focus"]["what"]
+        ctxt = ("On - " + (_CP.line_text() or "waits for a campaign zone in the game's log")) if _CP.cfg()["on"] else rows["campaign"]["what"]
+        for k, txt in (("delirium", dtxt), ("breach", btxt), ("ritual", rtxt), ("remnant", mtxt), ("desecrate", wtxt),
+                       ("focus", ftxt), ("campaign", ctxt)):
             st = states[k]
             lbl = rows[k]["status"]                 # 2.37.0: a helper that's off (and has nothing to say) takes one line
             show = st != "off" or txt != rows[k]["what"]

@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU GPL v3.0 (see LICENSE). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.89.3
+VERSION 2.90.0
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,6 +19,21 @@ VERSION 2.89.3
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.90.0
+       The overlay bar's numbers row: | ⏸ time | Map 3:12  Arcane Isle  ★ A | Maps: 4 | Avg. 6:01 | clock ⚙ 🔒 - the
+       map's time, the area and its rank are one part (merged_page._MapPart; tk_ov_lbls "map" / "where" / "rank" are
+       _PartOf views of it), every part's text is centered between its dividers, and the area's name is shown whole
+       (the type steps down to 8 pt before anything is cut).
+       A switch per helper: bar_cfg holds breach / delirium / ritual / remnant / focus / campaign (merged_page.CHIPS);
+       the bar fits itself to the ones on. Asked once which you want (ov_chips_ask, tracker cfg chips_asked); a new
+       install (no seen_version) starts with none ticked.
+       Overlay ↳ Settings regrouped: On the bar = Numbers, Switches (one per helper), Menus, Lines above the bar (Focus
+       line, Campaign line, Dock the lines to the bar); Features = Notes, Calculator, rank maps; Campaign = its options;
+       Helpers (was Mechanic Helper) = every helper's on / off, League Focus and the Campaign Helper included.
+       The Campaign line / Dock switches act on the box you clicked (a rebuilt page left a stale copy, so the click did
+       nothing). A character at level 65+ is past the campaign (campaign.MAPS_LEVEL): no campaign line in the hideout.
+       The Desecration Helper is Beta everywhere, and the first visit to The Well of Souls asks whether you want it
+       (ws_ask; desecrate cfg asked).
   2.89.3
        Privacy hardening, from a full audit (nobody may be singled out or targeted through this app).
        Board (Worker): atlas screenshots get unguessable keys ("b:<32 hex>"; old numbered ones were re-keyed once,
@@ -2077,7 +2092,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.89.3"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.90.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 

@@ -28,6 +28,9 @@ NAMES = {"breach": "Breach", "delirium": "Delirium", "ritual": "Ritual", "remnan
 SHORT = NAMES                     # (the old short forms - Brch, Deli ... - are gone)
 
 
+CHIPS = ("breach", "delirium", "ritual", "remnant", "focus", "campaign")   # 2.90.0: the switches the bar can show
+
+
 def chip_name(k):
     return NAMES.get(k, k.title())
 
@@ -80,13 +83,70 @@ class _Trunc(CanvasText):
     configure = config
 
 
+class _MapPart(CanvasText):
+    """2.90.0: "Map 3:12  Arcane Isle" - the map's time and the area as one text, fitted whole into its part."""
+    width, font, show, muted = 200, ("Segoe UI", 10), (True, True, True), None
+
+    def __init__(self, *a, **k):
+        super().__init__(*a, **k)
+        self.parts = {"map": "", "where": "", "rank": ""}
+
+    def set_part(self, key, text):
+        self.parts[key] = " ".join(str(text or "").split())
+        m = self.parts["map"] if self.show[0] else ""
+        wh = self.parts["where"] if self.show[1] else ""
+        rk = self.parts["rank"] if self.show[2] else ""
+        text = "  ".join(t for t in (m, wh, rk) if t and t != "-")
+        fam, size = self.font[0], int(self.font[1])
+        rest = tuple(self.font[2:])
+        try:
+            while size > 8 and tkfont.Font(root=self.canvas, family=fam, size=size, weight=rest[0] if rest else "normal") \
+                    .measure(text) > self.width:
+                size -= 1
+            fnt = tkfont.Font(root=self.canvas, family=fam, size=size, weight=rest[0] if rest else "normal")
+            while len(text) > 4 and fnt.measure(text) > self.width:     # (only a very narrow bar cuts it)
+                text = text[:-2].rstrip() + "…"
+            self.canvas.itemconfigure(self.item, font=(fam, size) + rest)
+            for h, _dx, _dy in self.halos:
+                self.canvas.itemconfigure(h, font=(fam, size) + rest)
+        except tk.TclError:
+            pass
+        CanvasText.config(self, text=text)
+        self.shown_size = size
+
+
+class _PartOf:
+    """One of _MapPart's two parts, answering like a label (config(text=...), cget("text"))."""
+
+    def __init__(self, part, key):
+        self.part, self.key = part, key
+
+    @property
+    def item(self):
+        return self.part.item
+
+    @property
+    def canvas(self):
+        return self.part.canvas
+
+    def config(self, **kw):
+        if "text" in kw:
+            self.part.set_part(self.key, kw["text"])
+        if "fg" in kw and self.key == "map":
+            CanvasText.config(self.part, fg=kw["fg"])
+    configure = config
+
+    def cget(self, key):
+        return self.part.parts.get(self.key, "") if key == "text" else self.part.cget(key)
+
+
 class _Num(CanvasText):
     """The Panel's numbers: the value only - its icon says what it is ("Maps 7" -> "7", "Avg 6:01" -> "6:01")."""
 
     def config(self, **kw):
         if "text" in kw:
             import re
-            m = re.match(r"^\s*(?:Map|Maps|Avg|★)\s+(.*)$", str(kw["text"]))
+            m = re.match(r"^\s*(?:Map|Maps:?|Avg\.?|★)\s+(.*)$", str(kw["text"]))
             if m:
                 kw["text"] = m.group(1)
             elif "tracking" in str(kw["text"]):              # (no session running)
@@ -193,18 +253,26 @@ class MergedOverlay:
     # 2.73.0: what sits on the overlay's bar - each feature has an "on the bar" switch (Overlay › Options)
     def bar_cfg(self):
         b = self.tracker_cfg().setdefault("bar", {})
+        # 2.90.0: each helper's switch can leave the bar on its own; a new install starts with none (it asks which)
+        if getattr(self, "_fresh_install", False) and not b.get("chips_set"):
+            for k in CHIPS:
+                b.setdefault(k, False)
         b.setdefault("focus", True)
         b.setdefault("notes", True)
         b.setdefault("calc", True)                       # 2.74.0: Calc ▾ (the calculator over the game)
         b.setdefault("campaign", True)                   # 2.77.0: the Campaign switch, and Vendor ▾ in town
         b.setdefault("vendor", True)
         b.pop("desecrate", None)                         # 2.81.1 (feedback): no Desecration switch on the bar
+        for k in self.HELPERS:
+            b.setdefault(k, True)
+        b["chips_set"] = True
         return b
 
     def bar_chips(self):
         """The switches on the bar: the Mechanic Helper's four (their switch on), then Focus and Campaign (their own)."""
-        chips = list(self.HELPERS) if self.tracker_cfg().get("alerts_bar", True) else []
-        if self.bar_cfg().get("focus"):
+        b = self.bar_cfg()
+        chips = [k for k in self.HELPERS if b.get(k, True)] if self.tracker_cfg().get("alerts_bar", True) else []
+        if b.get("focus"):
             chips.append("focus")
         if self.bar_cfg().get("campaign"):             # 2.88.3 (feedback): always on
             chips.append("campaign")                     # the bar while its switch is on, campaign or not
@@ -449,6 +517,20 @@ class MergedOverlay:
     def _mg_halo(self, P):
         return P.get("halo") if P.get("texture") else None
 
+    def _hud_map_part(self, cv, P, x0, x1, y, font, show_map=True, show_where=True, show_rank=True):
+        """2.90.0: the map's time and where you are, as one centered text between x0 and x1. The area's name is shown
+        whole: the type gets smaller (down to 7 pt) before anything is cut."""
+        it = cv.create_text((x0 + x1) // 2, y, text="", anchor="center", fill=P["text"], font=font, tags=("mg",))
+        part = _MapPart(cv, it, P["bg"], halo=self._mg_halo(P))
+        part.width, part.font, part.show = max(20, x1 - x0 - 8), font, (show_map, show_where, show_rank)
+        part.muted = P["muted"]
+        self.tk_ov_lbls["map"] = _PartOf(part, "map")
+        self.tk_ov_lbls["where"] = _PartOf(part, "where")
+        self.tk_ov_lbls["rank"] = _PartOf(part, "rank")
+        self._rank_click(cv, part)
+        self.tk_ov_map_part = part
+        return part
+
     def _mg_text(self, cv, P, x, y, key, font, fill=None, anchor="w", cls=CanvasText):
         it = cv.create_text(x, y, text="", anchor=anchor, fill=fill or P["text"], font=font, tags=("mg",))
         t = cls(cv, it, P["bg"], halo=self._mg_halo(P))
@@ -540,6 +622,79 @@ class MergedOverlay:
             cv.tag_bind(tag, "<Leave>", lambda e: cv.configure(cursor=""))
             x -= 20
         return x
+
+    # ---------------------------------------------------------------- 2.90.0: which switches on the bar
+    def ov_chips_maybe(self):
+        """Once: ask which helpers' switches go on the overlay's bar (a new install shows none until you pick)."""
+        cfg = self.tracker_cfg()
+        if cfg.get("chips_asked"):
+            return None
+        return self.ov_chips_ask()
+
+    def ov_chips_ask(self):
+        from .style import C
+        from . import ovhelp as OH
+        old = getattr(self, "ov_chips_win", None)
+        if old is not None and old.winfo_exists():
+            old.lift()
+            return old
+        P2 = C["panel2"]
+        w = self.ov_chips_win = tk.Toplevel(self.root, bg=P2)
+        w.title("Your overlay bar")
+        w.transient(self.root)
+        w.resizable(False, False)
+        box = tk.Frame(w, bg=P2, padx=16, pady=16)
+        box.pack(fill="both", expand=True)
+        tk.Label(box, text="Which switches do you want on the overlay's bar?", bg=P2, fg=C["text"],
+                 font=("Segoe UI", 12, "bold"), anchor="w").pack(fill="x")
+        tk.Label(box, text="Tick the helpers you use. Each switch turns its helper on and off mid-game; the bar fits "
+                 "itself to the ones you keep. Change this any time: Overlay ↳ Settings › On the bar.", bg=P2,
+                 fg=C["muted"], justify="left", wraplength=460, anchor="w").pack(fill="x", pady=(4, 8))
+        b = self.bar_cfg()
+        self.ov_chip_vars = {}
+        for k in CHIPS:
+            v = tk.BooleanVar(value=bool(b.get(k)) if not getattr(self, "_fresh_install", False) else False)
+            self.ov_chip_vars[k] = v
+            row = tk.Frame(box, bg=P2)
+            row.pack(fill="x", pady=2)
+            ttk.Checkbutton(row, text=chip_name(k), variable=v, width=12).pack(side="left")
+            what = (OH.HELP.get(k) or ("", ""))[1]
+            tk.Label(row, text=what, bg=P2, fg=C["muted"], font=("Segoe UI", 9), justify="left", wraplength=340,
+                     anchor="w").pack(side="left", fill="x")
+        btns = tk.Frame(box, bg=P2)
+        btns.pack(fill="x", pady=(12, 0))
+        ttk.Button(btns, text="Save", style="Primary.TButton", command=self.ov_chips_save).pack(side="right")
+        w.protocol("WM_DELETE_WINDOW", self.ov_chips_save)
+        try:
+            w.update_idletasks()
+            hx, hy, hw, hh = self.root.winfo_rootx(), self.root.winfo_rooty(), self.root.winfo_width(), self.root.winfo_height()
+            w.geometry(f"+{hx + max(0, (hw - w.winfo_reqwidth()) // 2)}+{hy + max(0, (hh - w.winfo_reqheight()) // 3)}")
+            w.lift()
+        except tk.TclError:
+            pass
+        return w
+
+    def ov_chips_save(self):
+        b = self.bar_cfg()
+        for k, v in (getattr(self, "ov_chip_vars", None) or {}).items():
+            b[k] = bool(v.get())
+        if any(b.get(k) for k in self.HELPERS):
+            self.tracker_cfg()["alerts_bar"] = True
+        self.tracker_cfg()["chips_asked"] = True
+        self.tracker_save()
+        w, self.ov_chips_win = getattr(self, "ov_chips_win", None), None
+        if w is not None:
+            try:
+                w.destroy()
+            except tk.TclError:
+                pass
+        for k, v in (getattr(self, "tk_bar_vars", None) or {}).items():
+            try:
+                v.set(bool(b.get(k)))
+            except tk.TclError:
+                pass
+        self.tracker_helpers_sync()
+        self.merged_build()
 
     def overlay_settings_go(self):
         """2.89.1 (feedback): the app comes forward on Overlay ↳ Settings."""
@@ -1059,58 +1214,29 @@ class MergedOverlay:
                 fp_ = tkfont.Font(root=cv, family=P["font"], size=self._hf(7), weight="bold")
                 x += max(fb_.measure("0:00:00") + 6 + fp_.measure("PAUSED"), fb_.measure("not tracking")) + 4
                 drawn.append("session")
-            if ln.get("map", True):
+            # 2.90.0: | Map 3:12  Arcane Isle | Maps: 4 | Avg. 6:01 | - the map and where you are share one part,
+            # each part's text is centered between its dividers, and the area's name is shown whole (smaller type
+            # before it is ever cut)
+            mw, aw = fm.measure("Maps: 000") + 16, fm.measure("Avg. 00:00") + 16
+            fixed = [k for k, on in (("maps", ln.get("maps")), ("avg", ln.get("avg"))) if on]
+            widths = {"maps": mw, "avg": aw}
+            map_on = bool(ln.get("map", True) or ln.get("where", True))
+
+            def room(keys):
+                return right - x - sum(widths[k] + SW for k in keys) - (SW if drawn and map_on else 0)
+            if map_on:                                        # (the map's rank rides in this part too: ★ A)
                 x = lead(x)
-                self._mg_text(cv, P, x, mid, "map", f)
-                x += fm.measure("Map  00:00") + 4
+                map_w = max(self._hf(60), room(fixed))
+                self._hud_map_part(cv, P, x, x + map_w, mid, f, show_map=ln.get("map", True),
+                                   show_where=ln.get("where", True), show_rank=bool(ln.get("rank", True)))
+                x += map_w
                 drawn.append("map")
-            mw, aw = fm.measure("Maps  000") + 4, fm.measure("Avg  00:00") + 4
-            rw = fm.measure("★ (Avoid)") + 4                    # 2.76.0: the map's rank, its own part
-            show_rank = bool(ln.get("rank", True))
-            need_rest = (mw + SW if ln.get("maps") else 0) + (aw + SW if ln.get("avg") else 0) + \
-                (rw + SW if show_rank else 0)
-            if show_rank and need_rest > right - (x + (SW if drawn else 0)) - 4:
-                show_rank, need_rest = False, need_rest - rw - SW      # (a short bar: no room for it)
-            where_w = right - (x + (SW if drawn else 0)) - need_rest - 4
-            ftext, fprog = "", None                            # 2.76.0: the focus line has its own bar (ovparts)
-            if ftext and where_w > 80:                         # 2.73.0: the focus line takes where-you-are's place
+            elif fixed:
+                x = max(x, right - sum(widths[k] + SW for k in fixed))
+            for k in fixed:
                 x = lead(x)
-                cv.create_text(x, mid, text="▸ NOW", anchor="w", fill=P["head"], font=(P["hfont"], self._hf(9), "bold"),
-                               tags=("mg",))
-                nx = x + fm.measure("▸ NOW ") + 6
-                pw = 0 if fprog is None else self._hf(50)
-                ft = self._mg_text(cv, P, nx, mid, "focus", f, cls=_Trunc)
-                ft.limit = max(4, int((where_w - (nx - x) - pw) / (fm.measure("n") or 7)))
-                ft.config(text=ftext)
-                self._focus_click(cv, ft)
-                if fprog is not None:
-                    bx1 = x + where_w - 8
-                    cv.create_rectangle(bx1 - pw, mid - 2, bx1, mid + 2, fill=P["cell_bg"], outline=P["line"], tags=("mg",))
-                    cv.create_rectangle(bx1 - pw, mid - 2, bx1 - pw + int(pw * min(1.0, fprog)), mid + 2, fill=P["on"],
-                                        outline="", tags=("mg",))
-                x += where_w
-                drawn.append("focus")
-            elif ln.get("where", True) and where_w > 40:
-                x = lead(x)
-                wt = self._mg_text(cv, P, x, mid, "where", f, fill=P["muted"], cls=_Trunc)
-                wt.limit = max(4, int(where_w / ((fm.measure("m") or 8) * 0.8)))
-                x += where_w
-                drawn.append("where")
-            elif need_rest:
-                x = max(x, right - need_rest)
-            if show_rank:
-                x = lead(x)
-                rt = self._mg_text(cv, P, x, mid, "rank", f, fill=P["head"])
-                self._rank_click(cv, rt)
-                x += rw
-                drawn.append("rank")
-            if ln.get("maps"):
-                x = lead(x)
-                self._mg_text(cv, P, x, mid, "maps", f)
-                x += mw
-                drawn.append("maps")
-            if ln.get("avg"):
-                x = lead(x)
-                self._mg_text(cv, P, x, mid, "avg", f)
+                self._mg_text(cv, P, x + widths[k] // 2, mid, k, f, anchor="center")
+                x += widths[k]
+                drawn.append(k)
         elif not two and self.bar_buttons_on():
             self._mg_bar_buttons(w, cv, P, x, mid, anchor="w")

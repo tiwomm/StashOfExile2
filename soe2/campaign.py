@@ -471,9 +471,15 @@ def _enter(run, name, area_id, level, ts, id_act=None):
 
 
 # ---------------------------------------------------------------- the line on the overlay
+MAPS_LEVEL = 65                   # 2.90.0: a character this level is past the campaign (maps start at 65)
+
+
 def active(run=None):
     c = cfg()
     run = run or char()
+    if not run.get("done") and run.get("act") is not None and char_level() >= MAPS_LEVEL:
+        run["done"] = True              # 2.90.0: maps were reached while the log wasn't being read (it showed in the
+                                        # hideout, post-campaign)
     return bool(c["on"]) and run.get("act") is not None and not (run.get("done") and c["off_at_maps"])
 
 

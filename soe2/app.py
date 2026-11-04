@@ -107,6 +107,7 @@ class App(PriceCheckPage, FavoritesPage, BoardModPage, LeaderboardPage, OrderLab
 
     def __init__(self, root):
         self.root = root
+        self._fresh_install = not SETTINGS.get("seen_version")   # 2.90.0: a new install starts with a clean bar
         root.title(APP_TITLE)
         if sys.platform == "win32":      # own taskbar entry with our icon (not python's)
             try:
@@ -183,6 +184,7 @@ class App(PriceCheckPage, FavoritesPage, BoardModPage, LeaderboardPage, OrderLab
         self.start_utilities()                       # 2.0: chat commands & notes listen to the same keyboard watcher
         root.after(15000, self.cm_start)             # 2.31.0: the community Mod book (hourly)
         root.after(2500, self.calc_ov_restore)       # 2.74.0: the calculator over the game, if it was up
+        root.after(4000, self.ov_chips_maybe)        # 2.90.0: which switches go on the overlay's bar (asked once)
         self.dup_pending, self.dup_win, self.own_clip = [], None, ""
         self.tray = Tray(lambda what: self.ui_q.put(("tray", what)))
         self.in_tray = False
