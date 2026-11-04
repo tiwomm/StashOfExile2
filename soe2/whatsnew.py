@@ -21,6 +21,12 @@ NEXT = [
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.89.0": [
+        "Campaign Helper: starting a campaign asks Speedrun or Full rewards, then follows that guide. Speedrun skips "
+        "the bosses and side areas that only give gems or loot, and keeps the points, spirit and resistances.",
+        "Change it any time: Overlay › Options › Campaign › Route (or turn the question off there).",
+        "Settings can't get stuck in front of everything after you resize the app.",
+    ],
     "2.88.3": [
         "The Campaign switch is always on the overlay's bar now, so you can find the Campaign Helper. Don't want it? "
         "Overlay › Options › On the bar.",

@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU GPL v3.0 (see LICENSE). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.88.3
+VERSION 2.89.0
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,6 +19,26 @@ VERSION 2.88.3
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.89.0
+       Campaign: Speedrun or Full rewards (feedback: "when a person starts campaign with it enabled, it should prompt
+       them if they want the speedrun version which skips a lot of things or the regular version, and then follow the
+       guide version of whichever they opt for"). The first campaign zone of a run with no guide yet shows a card
+       (camp_route_ask_show): Speedrun / Full rewards, "Use this every time". The pick is the run's own (run["route"],
+       campaign.route_of; the default cfg route otherwise); "Use this every time" makes it the default and turns off
+       "Ask Speedrun or Full rewards when a campaign starts" (Overlay › Options › Campaign; cfg ask_route). Picking a
+       Route there moves the run you're on too.
+       The guide pack (revision 2) has a real Speedrun guide: each step may carry "speed": {"skip": true} (left out) or
+       {"do": ...} (its own instruction) - 38 steps say what a speedrun does there (bosses and side areas that only
+       give gems or loot skipped, the rest run through), 2 are skipped (The Mud Burrow; Dreadnought Vanguard, gone
+       in 0.5). Rewards a speedrun still takes carry "speed": true (25 of 26 - every point, spirit, resistance, life
+       and mana; not the Goddess of Justice); leaving an act on Speedrun doesn't ask about the others.
+       Settings stuck in front (feedback: "I resized from fullscreen by clicking and dragging the window itself which
+       caused it to downscale and the settings menu was stuck in front of everything"): Tk can swap a page's real
+       (Win32) window for a new one, and the old one stayed - topmost, no longer Tk's, so nothing hid it.
+       DeskWindow.note_hwnd keeps the old handles; hide_ghosts hides them (not topmost, SW_HIDE) when the swap is seen
+       (check_owner, _show) and on every withdraw - only windows of this app, never a handle a page uses now.
+       Roadmap: Mageblood search helper (the user's trade link and how to set it up), Help rate mods + the Bulk
+       Pricing floor as 2.90.0, the guide pack refresh before 1.0; Polish 4-6 move to 2.91.0-2.93.0.
   2.88.3
        Campaign switch always on the overlay's bar (feedback: "right now people don't know it exists"): bar_chips
        shows it whenever its "On the bar" switch is on, campaign or not (it was hidden until the log showed a
@@ -2024,7 +2044,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.88.3"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.89.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 

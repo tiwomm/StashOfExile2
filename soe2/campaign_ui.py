@@ -46,7 +46,61 @@ class CampaignUI:
             self._say("Maps! The Campaign Helper turns itself off (Overlay › Options › Campaign).", 6)
         if out or CP.line_text() != before:
             self.camp_refresh()
+        if CP.needs_route() and getattr(self, "camp_rq_win", None) is None:
+            self.camp_route_ask_show()                             # 2.89.0: a new campaign - which guide?
         return out
+
+    # ---------------------------------------------------------------- 2.89.0: which guide, when a campaign starts
+    def camp_route_ask_show(self):
+        self.camp_route_ask_close()
+        w, body, P = self._camp_card("New campaign", "🗺", 460, top=0.16,
+                                     on_close=lambda: self.camp_route_pick_new(CP.cfg()["route"]))
+        bg = P["bg"]
+        tk.Label(body, text="Which guide should I follow?", bg=bg, fg=P["head"],
+                 font=(P["font"], self.ov_font(11), "bold"), anchor="w").pack(fill="x")
+        self.camp_rq_btns = {}
+        for k, title, txt, style in (
+                ("speed", "Speedrun", "The main story. Skips side zones and most extras; keeps only the rewards "
+                                      "worth the time.", "Primary.TButton"),
+                ("full", "Full rewards", "Every passive point, spirit and resistance, with the side zones that give "
+                                         "them.", "TButton")):
+            f = tk.Frame(body, bg=bg, pady=4)
+            f.pack(fill="x")
+            b = ttk.Button(f, text=title, style=self.ov_btn(style), width=14,
+                           command=lambda k=k: self.camp_route_pick_new(k))
+            b.pack(side="left", anchor="n")
+            tk.Label(f, text=txt, bg=bg, fg=P["text"], font=(P["font"], self.ov_font(9)), anchor="w", justify="left",
+                     wraplength=self.ov_px(290)).pack(side="left", fill="x", padx=(8, 0))
+            self.camp_rq_btns[k] = b
+        self.camp_rq_keep = tk.BooleanVar(value=False)
+        tk.Checkbutton(body, text="Use this every time (don't ask again)", variable=self.camp_rq_keep, bg=bg,
+                       fg=P["text"], activebackground=bg, activeforeground=P["text"], selectcolor=P["bg"],
+                       font=(P["font"], self.ov_font(9)), anchor="w", highlightthickness=0).pack(anchor="w", pady=(8, 0))
+        tk.Label(body, text="Change it any time: Overlay › Options › Campaign › Route.", bg=bg, fg=P["muted"],
+                 font=(P["font"], self.ov_font(8)), anchor="w").pack(fill="x", pady=(2, 0))
+        self.camp_rq_win = w
+        w.show()
+        return w
+
+    def camp_route_pick_new(self, route):
+        CP.set_route(route, remember=bool(getattr(self, "camp_rq_keep", None) and self.camp_rq_keep.get()))
+        if getattr(self, "tk_camp_route", None) is not None:
+            try:
+                self.tk_camp_route.pick(dict(CP.ROUTES).get(CP.cfg()["route"]), notify=False)
+            except Exception:
+                pass
+        if getattr(self, "tk_camp_vars", None) and "ask_route" in self.tk_camp_vars:
+            self.tk_camp_vars["ask_route"].set(bool(CP.cfg()["ask_route"]))
+        self.camp_route_ask_close()
+        self.camp_refresh()
+
+    def camp_route_ask_close(self):
+        w, self.camp_rq_win = getattr(self, "camp_rq_win", None), None
+        if w is not None:
+            try:
+                w.destroy()
+            except tk.TclError:
+                pass
 
     def camp_refresh(self):
         """The line changed: rebuild the goal bar (and an open route card)."""
@@ -78,7 +132,7 @@ class CampaignUI:
         self.merged_build()
 
     def camp_close_all(self):
-        for name in ("camp_win", "camp_vendor_win", "camp_ask_win"):
+        for name in ("camp_win", "camp_vendor_win", "camp_ask_win", "camp_rq_win"):
             w = getattr(self, name, None)
             setattr(self, name, None)
             if w is not None:
@@ -195,7 +249,7 @@ class CampaignUI:
         town = (CP.act(key) or {}).get("town") or ""
         tk.Label(head, text=(CP.act_name(key) + (f" · {town}" if town else "")).upper(), bg=bg, fg=P["head"],
                  font=(P["hfont"] or P["font"], self.ov_font(10), "bold"), anchor="w").pack(side="left")
-        tk.Label(head, text="route: " + dict(CP.ROUTES).get(c["route"], c["route"]), bg=bg, fg=P["muted"],
+        tk.Label(head, text="route: " + dict(CP.ROUTES).get(CP.route_of(), ""), bg=bg, fg=P["muted"],
                  font=(P["font"], self.ov_font(9))).pack(side="right")
         rows = CP.steps(key, run)
         self.camp_rows = []
@@ -513,7 +567,8 @@ class CampaignUI:
         self.tk_camp_vars = {}
         for i, (k, label) in enumerate((("optional", "Show optional zones"), ("tips", "Tips (bosses, vendor checks)"),
                                         ("warn", "Warn when I leave an act with a reward missed"),
-                                        ("splits", "Act splits"), ("off_at_maps", "Turn itself off once I reach maps"))):
+                                        ("splits", "Act splits"), ("off_at_maps", "Turn itself off once I reach maps"),
+                                        ("ask_route", "Ask Speedrun or Full rewards when a campaign starts"))):
             v = tk.BooleanVar(value=bool(c[k]))
             self.tk_camp_vars[k] = v
             cb = ttk.Checkbutton(grid, text=label, variable=v, style="Card.TCheckbutton",
@@ -544,7 +599,11 @@ class CampaignUI:
 
     def camp_route_pick(self, name):
         CP.cfg()["route"] = next((k for k, n in CP.ROUTES if n == name), "full")
+        run = CP.char()
+        if run.get("act") is not None and not run.get("done"):   # 2.89.0: the run you're on follows too
+            run["route"] = CP.cfg()["route"]
         CP.save()
+        self.camp_route_ask_close()
         self.camp_refresh()
 
     def camp_opt(self, k):
