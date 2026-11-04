@@ -134,7 +134,9 @@ class TabReaderJobs:
                                         json.dumps(it, ensure_ascii=False)[:6000])
                 continue
             PCTAB["read"] += 1
-            self.ui_q.put(("pctab", "item", text))
+            st = lst.get("stash") or {}                 # 2.87.0: where it sits in the tab (the trade site says)
+            pos = [int(st["x"]), int(st["y"])] if isinstance(st.get("x"), int) and isinstance(st.get("y"), int) else None
+            self.ui_q.put(("pctab", "item", text, pos))
         self.ui_q.put(("pctab", "progress"))
 
     def do_pctab_finish(self, gen):

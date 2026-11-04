@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU GPL v3.0 (see LICENSE). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.86.1
+VERSION 2.87.0
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,6 +19,19 @@ VERSION 2.86.1
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.87.0
+       Stash order (ROADMAP "public stash order"; feedback: the trade site lists a public tab's items "seemingly at
+       random", while "I work ... top to bottom and left to right across my stash"). The trade site doesn't keep any
+       order of its own for a tab (it sorts by price, then as it likes), but every listing says where the item sits:
+       listing.stash x / y. tabreader keeps it (record "pos"); Bulk Pricing's list follows the tab - down each column,
+       columns left to right (stash_key; Settings "stash_order" columns / rows, "List order" on the Stash tab row) -
+       and the # column shows the place (C3 R5).
+       Price Checks first (feedback: "single price check isn't causing bulk price checks to pause ... should not queue
+       single price checks each time you hit search"): engine._turn() before each search - a Bulk Pricing item steps
+       aside (Preempted: back in line) while a Price Checks / Favorites item waits; Search again bumps rec "gen" and
+       the older run stops (Superseded). Price Checks search exactly what's ticked (no "all but 1 of the ☑ mods"
+       ladder - that's why the ticked "+2 to Level of all Projectile Skills" seemed ignored: the listings shown came
+       from a looser search without it).
   2.86.1
        Community-name filter (feedback: "deny inappropriate usernames, especially homophobic, transphobic, racist
        bigoted names, including variants with alternate spellings or misspellings"). Board: nameProblem() - the
@@ -1962,7 +1975,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.86.1"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.87.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 

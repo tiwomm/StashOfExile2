@@ -63,6 +63,13 @@ class TabReaderPage:
         self.pc_stop.pack(side="right")
         self.pc_read_btn = ttk.Button(row, text="Read tab", style="Primary.TButton", command=self.pctab_read)
         self.pc_read_btn.pack(side="right", padx=(0, 8))
+        # 2.87.0: the list follows the tab - down each column (left to right) or across each row (top to bottom)
+        ORDERS = (("columns", "Down columns"), ("rows", "Across rows"))
+        self.pc_order = tk.StringVar(value=dict(ORDERS).get(SETTINGS.get("stash_order", "columns")))
+        ob = ttk.Combobox(row, textvariable=self.pc_order, values=[n for _k, n in ORDERS], state="readonly", width=13)
+        ob.pack(side="right", padx=(0, 8))
+        ob.bind("<<ComboboxSelected>>", lambda e: self.stash_order_set(next(k for k, n in ORDERS if n == self.pc_order.get())))
+        tk.Label(row, text="List order", bg=P1, fg=C["muted"]).pack(side="right", padx=(0, 4))
         self.pc_to_wealth = tk.Label(row, text="＋ Count it in Wealth", bg=P1, fg="#6ea8ff", cursor="hand2",
                                      font=("Segoe UI", 9, "underline"))          # 2.18.0: the same tab in Wealth
         self.pc_to_wealth.bind("<Button-1>", lambda e: self.pctab_to_wealth())
@@ -354,7 +361,7 @@ class TabReaderPage:
 
     def ev_pctab(self, what, *args):
         if what == "item":
-            self.pctab_add(args[0])
+            self.pctab_add(args[0], args[1] if len(args) > 1 else None)
         elif what == "progress":
             st = getattr(self, "_pctab", {})
             self.pc_msg.config(fg=C["muted"], text=f"{PCTAB['msg']}  ·  added {st.get('added', 0)}"
@@ -362,7 +369,7 @@ class TabReaderPage:
         elif what == "done":
             self.pctab_finished()
 
-    def pctab_add(self, text):
+    def pctab_add(self, text, pos=None):
         """One item from the tab -> a row (unless it's already in the list, or isn't something the app can price).
         2.8.1: what happens to each one goes in tab_reader_log.txt, and an error on one item doesn't hide the rest."""
         st = self.__dict__.setdefault("_pctab", {"added": 0, "already": 0, "unreadable": 0, "failed": 0})
@@ -379,7 +386,12 @@ class TabReaderPage:
                    if r.get("src", "manual") == src):
                 st["already"] += 1
                 return PCTAB["log"].append(f"already in this tab's list: {first}")
-            if self.add_item_text(text, src=src):
+            rid = self.add_item_text(text, src=src)
+            if rid:
+                if pos and rid in self.records:          # 2.87.0: its place in the tab - the list follows the tab
+                    self.records[rid]["pos"] = list(pos)
+                    self.update_row(rid)
+                    self.stash_order_soon()
                 st["added"] += 1
                 PCTAB["log"].append(f"added: {first}")
             else:
