@@ -7,7 +7,7 @@ Every call returns (ok, data or error text) and never raises, so a server that's
 import re
 import time
 
-from .config import SETTINGS, load_json, save_json
+from .config import APP_UA, SETTINGS, load_json, save_json
 
 # The live board's address normally comes from the shared strat file (board/url.txt -> moneymakers.json).
 BOARD_URL = ""
@@ -57,7 +57,7 @@ def call(method, path, params=None, body=None, get=None):
         return False, "The community board isn't set up yet."
     import requests
     tok = None if path.startswith(ANON) else session().get("token")
-    headers = {"User-Agent": "StashOfExile2-board", "X-SOE2": "1"}
+    headers = {"User-Agent": APP_UA, "X-SOE2": "1"}
     if tok:
         headers["Authorization"] = f"Bearer {tok}"
     try:
@@ -85,7 +85,7 @@ def image(iid, get=None):
         iid = str(iid)
         if not re.fullmatch(r"[0-9a-f]{32}", iid):           # 2.89.3: pictures have unguessable keys
             return False, "not a board picture"
-        hd = {"User-Agent": "StashOfExile2-board"}
+        hd = {"User-Agent": APP_UA}
         tok = session().get("token")
         if tok:                                               # (your own / a reviewer's not-yet-shown picture)
             hd["Authorization"] = f"Bearer {tok}"

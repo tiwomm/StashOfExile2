@@ -16,7 +16,7 @@ import time
 import tkinter as tk
 from tkinter import ttk
 
-from .config import P, SETTINGS
+from .config import APP_UA, P, SETTINGS
 from .style import C
 from .trade import ago, RAW_LISTINGS, strip_markup
 
@@ -465,7 +465,7 @@ class PriceCheckPage:
     def _pc_art_get(self, url, path):
         try:
             import requests
-            r = requests.get(url, headers={"User-Agent": "StashOfExile2"}, timeout=10)
+            r = requests.get(url, headers={"User-Agent": APP_UA}, timeout=10)
             if r.status_code == 200 and r.content:
                 tmp = path + ".tmp"
                 with open(tmp, "wb") as fh:

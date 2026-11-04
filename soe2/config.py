@@ -113,7 +113,10 @@ def refresh_bundled_data():
 BASE = os.environ.get("SOE2_TRADE_API") or "https://www.pathofexile.com/api/trade2"
 
 
-HEADERS = {"User-Agent": "personal-stash-pricer/1.0", "Content-Type": "application/json"}
+# 2.92.0: every request says honestly which app is asking and where to find it (GGG asks apps to identify themselves);
+# no name, account or email of the user
+APP_UA = f"StashOfExile2/{APP_VERSION} (+https://github.com/tiwomm/StashOfExile2)"
+HEADERS = {"User-Agent": APP_UA, "Content-Type": "application/json"}
 
 
 DEFAULTS = {

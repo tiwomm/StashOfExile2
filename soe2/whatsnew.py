@@ -25,6 +25,7 @@ NOTES = {
         "Arbitrage is removed (deprecated): the Currency Exchange history it read comes from GGG without clear terms "
         "for tools, so the app no longer reads it.",
         "Check a flip you see in game stays - it's now at the bottom of Exchange rates › Exchange Helper.",
+        "The app now tells the trade site and poe.ninja plainly who's asking: StashOfExile2 and its version.",
     ],
     "2.91.0": [
         "New: an Exchange rates window over the game (chaos : div, exalt : div ...), in the overlay's look. Turn it "

@@ -17,7 +17,7 @@ import os
 import re
 import time
 
-from .config import APP_DIR, RESOURCE_DIR, P, SETTINGS, load_json, save_json
+from .config import APP_UA, APP_DIR, RESOURCE_DIR, P, SETTINGS, load_json, save_json
 
 FILE = "campaign.json"
 SCHEMA = 1
@@ -107,7 +107,7 @@ def fetch_live(get=None):
         import requests
         get = requests.get
     try:
-        r = get(LIVE_URL, headers={"User-Agent": "StashOfExile2-campaign"}, timeout=15)
+        r = get(LIVE_URL, headers={"User-Agent": APP_UA}, timeout=15)
         if r.status_code != 200:
             return "error", f"GitHub answered {r.status_code}."
         d = r.json()
