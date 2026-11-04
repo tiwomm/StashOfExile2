@@ -21,6 +21,10 @@ NEXT = [
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.88.0": [
+        "For board admins: Under the hood ↳ Listing order lab - read a public tab's trade link, walk the tab with "
+        "Ctrl+Alt+C, and see which order the trade site's list follows.",
+    ],
     "2.87.0": [
         "Bulk Pricing › Stash tab: the list follows your tab - down each column, left to right (or across each row: "
         "List order). The # column shows where each item sits (C3 R5 = column 3, row 5).",

@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU GPL v3.0 (see LICENSE). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.87.0
+VERSION 2.88.0
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,6 +19,16 @@ VERSION 2.87.0
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.88.0
+       Listing order lab (feedback: "the tool reads the trade site link and then I go one time through each item
+       manually and you try and decipher the listing order ... a tool under advanced -> under the hood ... that only
+       admin has access to"). Under the hood ↳ Listing order lab (modules/orderlab.py: advanced + admin_only - the
+       shell shows it only to a community board admin; orderlab.py + orderlab_page.py). Read: a tab's trade link ->
+       the listings in the site's order (and the same search newest first), each with its place (stash x / y),
+       indexed time and id. Walk: Start walking, Ctrl+Alt+C each item in your order - each copy is matched to its
+       listing (name lines, then its lines with and without numbers) and doesn't go to Bulk Pricing meanwhile; Undo
+       last. Compare: rank correlation of every candidate order (site, newest, place down columns / across rows,
+       indexed, id) with your walk and with the site's order. Rounds kept in orderlab.json; Export CSV.
   2.87.0
        Stash order (ROADMAP "public stash order"; feedback: the trade site lists a public tab's items "seemingly at
        random", while "I work ... top to bottom and left to right across my stash"). The trade site doesn't keep any
@@ -1984,7 +1994,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.87.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.88.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
