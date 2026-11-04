@@ -26,6 +26,7 @@ NOTES = {
         "and where it goes (Settings › General › What's shared, and why?).",
         "Error logs and bug reports no longer contain your Windows user name.",
         "\"Act splits\" is now the Act timer: your time in each act against your best.",
+        "The overlay bar spells out each switch (Breach, Delirium, Ritual, Expedition ...).",
     ],
     "2.89.1": [
         "Screenshots show the overlay again. (Overlay ↳ Settings › Behaviour can hide it, if it covers a counter the "

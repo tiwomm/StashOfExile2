@@ -1137,7 +1137,8 @@ class TrackerPage:
             states["campaign"] = "on" if CP.cfg()["on"] else "off"
             for k, (dot, lab) in self.tk_ov_alerts.items():
                 st = states.get(k, "off")
-                txt = k.title()
+                from .merged_page import chip_name
+                txt = chip_name(k)                                 # 2.89.2: full words (Expedition)
                 if k == "ritual" and st == "on":                   # 2.14.0: the live count
                     from .utilities import RITUAL
                     if RITUAL.seen == "ok" and RITUAL.count:

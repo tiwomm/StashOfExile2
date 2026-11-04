@@ -22,8 +22,14 @@ HUD = ("xpbar",)                 # 2.65.0: fitted to the game's own bottom bar, 
 # the orbs' panels are anchored to the left and right edges, the XP bar runs between them). (x0, x1, bottom, h)
 #   x0 / x1 >= 0: from the left edge, < 0: from the right edge; bottom: up from the bottom edge.
 HUD_SPOTS = {"xpbar": [(0.531, -0.531, 0.0205, 0.056)]}   # 2.79.1: as wide as the XP bar (measured at 1440p), over it   # 2.67.2: two rows (switches on top); 2.74.0: between 2.73.4 and 2.73.5
-SHORT = {"breach": "Brch", "delirium": "Deli", "ritual": "Ritl", "remnant": "Remn", "focus": "Focus", "campaign": "Campaign",
-         "desecrate": "Dsc"}
+# 2.89.2: full words on the bar, never short forms; the Remnant switch reads "Expedition" (what players call it)
+NAMES = {"breach": "Breach", "delirium": "Delirium", "ritual": "Ritual", "remnant": "Expedition", "focus": "Focus",
+         "campaign": "Campaign", "desecrate": "Desecration"}
+SHORT = NAMES                     # (the old short forms - Brch, Deli ... - are gone)
+
+
+def chip_name(k):
+    return NAMES.get(k, k.title())
 
 
 def hud_k(game_h):
@@ -480,7 +486,7 @@ class MergedOverlay:
         else:
             dot = cv.create_text(x0 + 13, mid, text=P["off_icon"], fill=P["off"], font=("Segoe UI Symbol", self._hf(11)),
                                  tags=("mg", tag))
-            lab = cv.create_text(x0 + 13 + self._hf(13), mid, text=k.title(), anchor="w", fill=P["text"],
+            lab = cv.create_text(x0 + 13 + self._hf(13), mid, text=chip_name(k), anchor="w", fill=P["text"],
                                  font=label_font or (P["font"], 10, "bold" if not P.get("caps") else "normal"),
                                  tags=("mg", tag))
         cv.tag_bind(tag, "<Button-1>", lambda e, k=k: self.tracker_helper_click(k))
@@ -800,7 +806,7 @@ class MergedOverlay:
         mid = y0 + bh // 2
         dot = cv.create_text(x0 + self._hf(16), mid, text=P["off_icon"], fill=P["off"],
                              font=("Segoe UI Symbol", self._hf(11)), tags=("mg", tag))
-        lab = cv.create_text(x0 + self._hf(30), mid, text=k.title(), anchor="w", fill=P["text"],
+        lab = cv.create_text(x0 + self._hf(30), mid, text=chip_name(k), anchor="w", fill=P["text"],
                              font=(P["font"], self._hf(11)), tags=("mg", tag))
         cv.tag_bind(tag, "<Button-1>", lambda e, k=k: self.tracker_helper_click(k))
         cv.tag_bind(tag, "<Enter>", lambda e: cv.configure(cursor="hand2"))
@@ -943,7 +949,7 @@ class MergedOverlay:
         mid = (y0 + y1) // 2
         dot = cv.create_text(x0 + 6 + self._hf(5), mid, text=P["off_icon"], fill=P["off"],
                              font=("Segoe UI Symbol", self._hf(10)), tags=("mg", tag))
-        lab = cv.create_text(x0 + 9 + self._hf(12), mid, text=k.title(), anchor="w", fill=P["text"], font=font,
+        lab = cv.create_text(x0 + 9 + self._hf(12), mid, text=chip_name(k), anchor="w", fill=P["text"], font=font,
                              tags=("mg", tag))
         cv.tag_bind(tag, "<Button-1>", lambda e, k=k: self.tracker_helper_click(k))
         cv.tag_bind(tag, "<Enter>", lambda e: cv.configure(cursor="hand2"))
@@ -962,7 +968,7 @@ class MergedOverlay:
 
     def _hud_cell_w(self, cv, P, k, short):
         fb = tkfont.Font(root=cv, family=P["font"], size=self._hf(9))
-        return fb.measure(SHORT[k] if short else ("Ritual 3/3" if k == "ritual" else k.title())) + 16 + self._hf(12)
+        return fb.measure(SHORT[k] if short else ("Ritual 3/3" if k == "ritual" else chip_name(k))) + 16 + self._hf(12)
 
     def _hud_cells(self, cv, P, x, y0, y1, short, cols=4, cw=None):
         """The four switches in a row (short names when space is tight) or a 2 x 2 grid. -> right edge."""
