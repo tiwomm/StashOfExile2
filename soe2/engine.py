@@ -326,6 +326,17 @@ class Engine(TabReaderJobs, WealthJobs, StratCostJobs, threading.Thread):
         finally:
             use_opts(None)
 
+    def _floor(self, rec, searchable):
+        from .ratemods import floor_check
+
+        def median_n(base, sid):
+            st = MARKET.cached_stats().get((base, sid))
+            return (st["med"], st["n"]) if st else (None, 0)
+        try:
+            return floor_check(rec, searchable, median_n)
+        except Exception:
+            return None
+
     def _price_rec(self, rec, tell):
         item, league = rec["item"], SETTINGS["league"]
         if not league:
@@ -358,6 +369,15 @@ class Engine(TabReaderJobs, WealthJobs, StratCostJobs, threading.Thread):
             rec.update(state="done", total=0, prices=[], est=None, qid=None, partial=False, skip=low, thin=False,
                        nomatch=False, stages=[], priced_at=time.time(),
                        label="only low-impact mods - not worth a search" if low else "no searchable mods")
+            tell()
+            return
+        fl = self._floor(rec, searchable)                      # 2.96.0: Bulk Pricing floor
+        if fl:
+            what, why = fl
+            rec.update(state="done", total=0, prices=[], est=None, qid=None, partial=False, thin=False, nomatch=False,
+                       stages=[], priced_at=time.time(), skip=what == "skip", manual=what == "hand",
+                       manual_why=why if what == "hand" else "", floor=True,
+                       label=("under your floor - not searched" if what == "skip" else "check by hand") + f" ({why})")
             tell()
             return
         rec["skip"] = False

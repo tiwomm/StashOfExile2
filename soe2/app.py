@@ -76,6 +76,7 @@ from .search_page import SearchPage
 from .pricecheck_page import PriceCheckPage    # 2.80.0: Price Checks (one item, the trade site's listings)
 from .ovrates import OverlayRates              # 2.91.0: exchange rates over the game
 from .community_page import CommunityPage      # 2.94.0: Settings › Privacy & community
+from .ratemods_page import RateModsPage        # 2.96.0: Help rate mods, the Bulk Pricing floor
 from .wellsouls_page import WellSoulsPage      # 2.81.0: Desecration Helper (tiers at The Well of Souls)
 from .rumours_page import RumoursPage          # 2.83.0: Island Rumours; where the Remnant watcher looks
 from .favorites_page import FavoritesPage      # 2.84.0: Price Checks ↳ Favorites
@@ -96,7 +97,7 @@ MISC_ROWS = (("corrupted", "Corrupted"), ("fractured", "Fractured"), ("desecrate
              ("sanctified", "Sanctified"), ("mirrored", "Mirrored"), ("unidentified", "Unidentified"))
 
 
-class App(PriceCheckPage, FavoritesPage, BoardModPage, LeaderboardPage, OrderLabPage, WellSoulsPage, RumoursPage, ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, ExchangePage, WealthPage, LibraryPage, RegexPage, UtilitiesPage, TrackerPage, SearchPage, CalcOverlay, InsightsPage, MoneyMakersPage, MapLibraryPage, RemnantPage, LedgerPage, FeedbackPage, FeedPage, MergedOverlay, GamePlanPage, FocusPokes, OverlayHelp, OverlayParts, CampaignUI, OverlayRates, CommunityPage):
+class App(PriceCheckPage, FavoritesPage, BoardModPage, LeaderboardPage, OrderLabPage, WellSoulsPage, RumoursPage, ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, ExchangePage, WealthPage, LibraryPage, RegexPage, UtilitiesPage, TrackerPage, SearchPage, CalcOverlay, InsightsPage, MoneyMakersPage, MapLibraryPage, RemnantPage, LedgerPage, FeedbackPage, FeedPage, MergedOverlay, GamePlanPage, FocusPokes, OverlayHelp, OverlayParts, CampaignUI, OverlayRates, CommunityPage, RateModsPage):
     COLS = [("added", "#", 46, "e"), ("name", "Item", 220, "w"), ("type", "Type", 110, "w"), ("mark", "Status", 90, "center"),
             ("est", "Est. value", 110, "e"), ("conf", "Confidence", 95, "center"), ("listings", "Listings", 70, "e"), ("priced", "Priced at", 130, "w"),
             ("match", "How it was priced", 300, "w"), ("vmods", "Valuable mods", 100, "center"),
@@ -188,6 +189,7 @@ class App(PriceCheckPage, FavoritesPage, BoardModPage, LeaderboardPage, OrderLab
         root.after(2500, self.calc_ov_restore)       # 2.74.0: the calculator over the game, if it was up
         # (2.92.2: which switches go on the bar is asked when you enable the overlay, not at start)
         root.after(3000, self.ovr_restore)           # 2.91.0: the exchange rates window, if it's on
+        root.after(10 * 60 * 1000, self.rm_ask_tick)  # 2.96.0: Help rate mods? (once; Not now = once more, later)
         self.dup_pending, self.dup_win, self.own_clip = [], None, ""
         self.tray = Tray(lambda what: self.ui_q.put(("tray", what)))
         self.in_tray = False
@@ -833,6 +835,11 @@ class App(PriceCheckPage, FavoritesPage, BoardModPage, LeaderboardPage, OrderLab
         combo(row, self.status_var, [l for l, _ in STATUS_OPTIONS], self.on_listing_rules, 22).pack(side="left")
         tk.Label(row, text="Listed within", **lab).pack(side="left", padx=(16, 8))
         combo(row, self.age_var, [a[0] for a in AGE_OPTIONS], self.on_listing_rules, 10).pack(side="left")
+        row = section("Price checking", "Skip cheap items", "Bulk Pricing doesn't search an item when every mod it would "
+                                                          "search sells for under this in the Mod book's own data and "
+                                                          "none is rated High; with only a few listings to go on it's "
+                                                          "marked \"check by hand\" instead. Price Checks always search.")
+        self.build_floor_settings(row)                                                           # 2.96.0
         row = section("Price checking", "Prices", "The currency every price is shown in (Price Checks, Bulk Pricing, Wealth, Market "
                                                   "Insights, the timer).")
         tk.Label(row, text="Prices in", **lab).pack(side="left", padx=(0, 8))
@@ -3658,6 +3665,8 @@ class App(PriceCheckPage, FavoritesPage, BoardModPage, LeaderboardPage, OrderLab
         ttk.Entry(rbar, textvariable=ns.filt, width=18).pack(side="left")
         ttk.Button(rbar, text="Export rules", command=self.export_rules).pack(side="left", padx=(16, 0))
         ttk.Button(rbar, text="Import rules", command=self.import_rules).pack(side="left", padx=(8, 0))
+        ttk.Button(rbar, text="Rate mods one at a time…", style="Primary.TButton",               # 2.96.0
+                   command=lambda c=cat: self.rm_open(c)).pack(side="left", padx=(8, 0))
         if cat not in SCOPED_CATS and any(mod_cat(k) == cat for k in COMMUNITY):   # (votes imported before 2.20.0)
             ttk.Button(rbar, text="Remove imported", command=self.clear_imported_rules, style="Danger.TButton").pack(side="left", padx=(8, 0))
         if cat not in SCOPED_CATS:                       # 2.20.0: tiers decide what's left out first
@@ -4667,6 +4676,7 @@ class App(PriceCheckPage, FavoritesPage, BoardModPage, LeaderboardPage, OrderLab
         fmod = ("Segoe UI", 10)
         self.card_rows, self.card_vals, self.card_opts, self.card_tris = {}, {}, {}, {}
         self.card_onlys = {}
+        self.card_thumbs = {}
         with _th.raw():
             bg = C["odd"]
             cv.create_rectangle(0, 0, w - 1, 199, fill=bg, outline=t.c(t.part("card", "border", default="border_light")),
@@ -4736,7 +4746,7 @@ class App(PriceCheckPage, FavoritesPage, BoardModPage, LeaderboardPage, OrderLab
             y += 20 * ((len(MISC_ROWS) + 1) // 2) + 2
             # ---- each mod
             if own:
-                section("STAT FILTERS", boxes=any(self._card_has_vals(rec, m) for m in own))
+                section("STAT FILTERS   ▲▼ did it matter?", boxes=any(self._card_has_vals(rec, m) for m in own))
                 first = [m for m in own if m.get("kind") in ("Implicit", "Enchant", "Rune")]
                 for m in first + [m for m in own if m not in first]:
                     y = self._card_mod_row(cv, rec, m, y, w, fmod, imp_c if m in first else mod_c, card_text(m))
@@ -4965,6 +4975,10 @@ class App(PriceCheckPage, FavoritesPage, BoardModPage, LeaderboardPage, OrderLab
             cv.create_text(tx, y + 1, text=tier, anchor="nw", font=("Segoe UI", 8), fill=C["muted"], tags=(tag,))
             tx += 22
         right = (2 * CARD_BOX + 16 if self._card_has_vals(rec, m) else 0) + 20     # 2.78.3: Min / Max; 2.79.0: ★
+        from .ratemods import key_for
+        rkey = key_for(rec, m) if can else None
+        if rkey:
+            right += 30                                      # 2.96.0: ▲ / ▼ - did this mod matter for the price?
         tid = cv.create_text(tx, y, text=text, anchor="nw", font=font, width=w - tx - 12 - right, justify="left",
                              fill=colr if on and can else C["muted"], tags=("cardmod", tag))
         bb = cv.bbox(tid)
@@ -5014,6 +5028,8 @@ class App(PriceCheckPage, FavoritesPage, BoardModPage, LeaderboardPage, OrderLab
             cv.tag_bind(tag, "<Button-1>", lambda e, mm=m, v=on: self.card_toggle(rec, mm, not v))
             cv.tag_bind(tag, "<Enter>", lambda e: cv.configure(cursor="hand2"))
             cv.tag_bind(tag, "<Leave>", lambda e: cv.configure(cursor=""))
+        if rkey:
+            self._card_thumbs(cv, rec, m, rkey, idx, w, y)
         self.card_rows[idx] = (m, on, rect)
         return y1
 
@@ -5092,6 +5108,35 @@ class App(PriceCheckPage, FavoritesPage, BoardModPage, LeaderboardPage, OrderLab
         if getattr(self, "shown_rec", None) is rec:
             self.show_detail(rec)
         return on
+
+    def _card_thumbs(self, cv, rec, m, key, idx, w, y):
+        """2.96.0: ▲ ▼ side by side, left of Min: your rule for this mod (High / Ignore) - for every item like it. Again:
+        cleared. With Community data sharing on it's your vote too (rep when it matches the community)."""
+        from .ratemods import thumb
+        cur = thumb(key)
+        x = w - 12 - 18 - CARD_BOX * 2 - 4 - 22
+        for d, glyph, dx, col in (("up", "▲", 0, C["good"]), ("down", "▼", 13, C["red"])):
+            tag = f"cardthumb{idx}{d}"
+            cv.create_text(x + dx, y + 1, text=glyph, anchor="n", font=("Segoe UI", 9, "bold" if cur == d else "normal"),
+                           fill=col if cur == d else C["muted"], tags=(tag, "cardthumb"))
+            cv.tag_bind(tag, "<Button-1>", lambda e, dd=d, c=cur: self.card_thumb(rec, m, key, None if c == dd else dd))
+            cv.tag_bind(tag, "<Enter>", lambda e: cv.configure(cursor="hand2"))
+            cv.tag_bind(tag, "<Leave>", lambda e: cv.configure(cursor=""))
+        self.card_thumbs[idx] = (m, key, cur)
+
+    def card_thumb(self, rec, m, key, what):
+        """▲ (High), ▼ (Ignore) or None (clear) for this mod's rule; the item waits for Search (Price Checks) or is
+        priced again (Bulk Pricing)."""
+        from .ratemods import apply
+        apply([key], what)
+        (rec.get("ov") or {}).pop(norm(m["text"]), None)        # (the rule speaks for this item now)
+        self.card_changed(rec)
+        if getattr(self, "shown_rec", None) is rec:
+            self.show_detail(rec)
+        self.status_text, self.status_until = ({"up": "▲ This mod matters - searched on every item like it.",
+                                                "down": "▼ This mod doesn't matter - left out on every item like it.",
+                                                None: "Your rule for this mod is cleared."}[what], time.time() + 6)
+        return what
 
     def card_toggle(self, rec, m, checked):
         """2.74.4: a tick on the card - the same as the mod's switch further down (this item only)."""

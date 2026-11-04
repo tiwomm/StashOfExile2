@@ -73,6 +73,11 @@ class CommunityPage:
             self.cy_rows[label] = cb
         tk.Label(row, text="Coming later, off until you turn it on: the community FAQ.", bg=P2, fg=C["muted"],
                  font=("Segoe UI", 9), anchor="w").pack(fill="x", pady=(8, 0))
+        hr = tk.Frame(row, bg=P2)                                                               # 2.96.0
+        hr.pack(fill="x", pady=(8, 0))
+        ttk.Button(hr, text="Help rate mods…", command=lambda: self.rm_open()).pack(side="left")
+        tk.Label(hr, text="One mod at a time - tunes your price checks, and earns rep when it matches everyone's.",
+                 bg=P2, fg=C["muted"], font=("Segoe UI", 9)).pack(side="left", padx=(8, 0))
         # ---- your community name
         row = section(PAGE, "Your community name", NAME_WHY)
         box = tk.Frame(row, bg=P2)
