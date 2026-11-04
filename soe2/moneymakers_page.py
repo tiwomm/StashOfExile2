@@ -941,10 +941,10 @@ class MoneyMakersPage:
     def mm_join(self, why="use the Community board", name=None):
         from tkinter import simpledialog
         if name is None:
-            name = simpledialog.askstring("Community board", f"To {why}, pick your community name - other players see "
-                                          "it, it's yours alone and can change once every 7 days (2-24 letters or "
-                                          "numbers). No account or password needed. Not your account or character "
-                                          "name.", parent=self.root)
+            name = simpledialog.askstring("Your community name", f"To {why}, pick a community name. Other players "
+                                          "see it; it can change once every 7 days (2-24 letters or numbers). No "
+                                          "password - this PC keeps a key. Not your account or character name.\n\n"
+                                          "More: Settings › Privacy & community.", parent=self.root)
         if not name:
             return False
         ok, d = B.join(name.strip())
@@ -1066,32 +1066,12 @@ class MoneyMakersPage:
 
     # ---------------- your board name (no login)
     def mm_account_paint(self):
-        me = B.signed_in()
-        self.mm_acct.config(text=(f"👤 {me.get('name', '?')}" + (" (admin)" if me.get("admin") else
-                                                                  " (reviewer)" if me.get("reviewer") else "") + " ▾")
-                            if me else "👤 Join the board")
+        """The 👤 chips here and on Leaderboards, and Settings › Privacy & community (2.94.0)."""
+        self.cy_paint()
 
     def mm_account_click(self):
-        if not B.signed_in():
-            return self.mm_join()
-        me = B.signed_in() or {}
-        m = tk.Menu(self.root, tearoff=0, bg=C["panel2"], fg=C["text"], activebackground="#2c4a84")
-        nxt = self.bm_next_rename()                                  # 2.85.0: once every 7 days
-        m.add_command(label="Change my name…" + (f" (from {nxt})" if nxt else ""), command=self.mm_rename,
-                      state="disabled" if nxt and not me.get("admin") else "normal")
-        m.add_command(label="Inbox (suggestions and your edits)…", command=self.bm_inbox)
-        if me.get("reviewer") or me.get("admin"):
-            m.add_command(label="Review queue…", command=self.bm_review_queue)
-        if me.get("reviewer"):
-            m.add_command(label="Stop reviewing", command=lambda: self.bm_reviewer(False))
-        elif not me.get("admin"):
-            m.add_command(label="Become a reviewer (help check edits and reports)", command=self.bm_reviewer)
-        if not me.get("admin"):
-            m.add_command(label="Become admin… (needs the board's admin key)", command=self.mm_admin_key)
-        m.add_separator()
-        m.add_command(label="Leave the board (and delete my data)…", command=self.mm_leave)
-        b = self.mm_acct
-        m.tk_popup(b.winfo_rootx(), b.winfo_rooty() + b.winfo_height())
+        """2.94.0: the 👤 chip opens Settings › Privacy & community (the name's menu moved there)."""
+        return self.community_open()
 
     def mm_rename(self, name=None):
         from tkinter import simpledialog
