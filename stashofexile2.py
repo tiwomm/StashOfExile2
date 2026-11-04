@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU GPL v3.0 (see LICENSE). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.88.2
+VERSION 2.88.3
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,6 +19,18 @@ VERSION 2.88.2
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.88.3
+       Campaign switch always on the overlay's bar (feedback: "right now people don't know it exists"): bar_chips
+       shows it whenever its "On the bar" switch is on, campaign or not (it was hidden until the log showed a
+       campaign zone). Its switch in Overlay › Options still takes it off.
+       Overlay showed when the game wasn't in front (feedback: "showing even when path of exile isn't the active
+       window sometimes"): game_active matched any window whose title held "Path of Exile 2" (a browser tab, a
+       video). Now the game's own window class, or a window named exactly the game's title
+       (overlay.title_is_game; window names only, ToS). A failed foreground check keeps the last answer instead of showing.
+       Screen captures (feedback: "it's being excluded for screenshots when it wasn't always"): the bar leaves
+       captures only while the Ritual or Delirium watcher runs (they read the game under it); otherwise screenshots
+       and streams show it. overlay_capture_sync puts it back when a watcher starts / stops. Same switch, Overlay ↳
+       Settings › Behaviour.
   2.88.2
        Ctrl+Alt+C now and then not heard (feedback: "sometimes it works sometimes it doesn't ... if I click in the
        window itself once ... it seems to work"): Windows quietly drops a low-level keyboard hook that answers too
@@ -2012,7 +2024,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.88.2"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.88.3"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 

@@ -200,11 +200,8 @@ class MergedOverlay:
         chips = list(self.HELPERS) if self.tracker_cfg().get("alerts_bar", True) else []
         if self.bar_cfg().get("focus"):
             chips.append("focus")
-        if self.bar_cfg().get("campaign"):             # 2.77.0: only while you're in the campaign (not before
-            from . import campaign as CP                 # the log shows a campaign zone, nor once you reach maps)
-            run = CP.char()
-            if run.get("act") is not None and not run.get("done"):
-                chips.append("campaign")
+        if self.bar_cfg().get("campaign"):             # 2.88.3 (feedback: "people don't know it exists"): always on
+            chips.append("campaign")                     # the bar while its switch is on, campaign or not
         return chips
 
     def notes_on_bar(self):
@@ -311,7 +308,15 @@ class MergedOverlay:
         ritual (x/3) counter is"): the bar is left out of screen captures, so the Ritual / Delirium watchers see the
         game's counters under it. Its own switch (Overlay ↳ Settings › Behaviour), on by default; off = screenshots
         and streams show the bar."""
-        return bool(self.tracker_cfg().get("hide_capture", True))
+        if not self.tracker_cfg().get("hide_capture", True):
+            return False
+        # 2.88.3 (feedback: "it's being excluded for screenshots when it wasn't always"): only while the Ritual or
+        # Delirium watcher is running - they're the ones that need to see under the bar. Otherwise screenshots show it.
+        from .utilities import DELIRIUM, RITUAL
+        try:
+            return bool(RITUAL.running() or DELIRIUM.running())
+        except Exception:
+            return True
 
     def overlay_click_through(self):
         """The overlay's bar windows (not Notes or the calculator - you type in those)."""
@@ -323,6 +328,12 @@ class MergedOverlay:
             w.click_through = on
             set_click_through(w, on)
             capture_affinity(w, hide)
+        self._cap_hidden = hide
+
+    def overlay_capture_sync(self):
+        """2.88.3: a watcher started or stopped - put the bar in / out of captures to match."""
+        if self.overlay_hide_capture() != getattr(self, "_cap_hidden", None):
+            self.overlay_click_through()
 
     def _merged_build(self):
         cfg = self.tracker_cfg()
