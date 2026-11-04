@@ -33,7 +33,8 @@ DEFAULTS = {
     "on": True,                   # the feature (Overlay › Options › On the overlay, and the Campaign switch on the bar)
     "line": True,                 # its line on the goal bar
     "vendor": True,               # Vendor search, in town
-    "route": "full",
+    "route": "full",              # the default guide (2.89.0: each character's run keeps its own, run["route"])
+    "ask_route": True,            # 2.89.0: a new campaign asks Speedrun or Full rewards
     "optional": False,            # show optional zones
     "tips": True,
     "warn": True,                 # leaving an act with a reward missed or not ticked: ask
@@ -199,11 +200,44 @@ def char_level():
     return int((st.get("levels") or {}).get(current_char(), 0) or 0)
 
 
-def steps(act_key, run=None, route=None, optional=None):
-    """The route for an act -> [{zone, do, side, optional, tip, learned, state}] (state: done / here / passed / todo)."""
+def route_of(run=None):
+    """2.89.0: this run's guide - the one picked when its campaign started, else the default."""
+    run = run or char()
+    r = run.get("route") or cfg()["route"]
+    return r if r in dict(ROUTES) else "full"
+
+
+def needs_route(run=None):
+    """2.89.0 (feedback: "when a person starts campaign ... prompt them if they want the speedrun version ... or the
+    regular version"): a run in the campaign that hasn't picked its guide yet."""
     c = cfg()
     run = run or char()
-    route = route or c["route"]
+    return bool(c["on"] and c["ask_route"] and run.get("act") is not None and not run.get("done")
+                and not run.get("route"))
+
+
+def set_route(route, run=None, remember=False):
+    """Pick this run's guide. remember: it's the default and new campaigns stop asking."""
+    c = cfg()
+    run = run or char()
+    run["route"] = route if route in dict(ROUTES) else "full"
+    if remember:
+        c["route"], c["ask_route"] = run["route"], False
+    save()
+
+
+def speed_reward(r):
+    """A reward a speedrun still takes (the pack marks it "speed": true)."""
+    return bool(r.get("speed"))
+
+
+def steps(act_key, run=None, route=None, optional=None):
+    """The route for an act -> [{zone, do, side, optional, tip, learned, state}] (state: done / here / passed / todo).
+    2.89.0: Speedrun leaves out steps the pack marks "speed": {"skip": true} (and side zones), and shows a step's
+    "speed": {"do": ...} instead of its usual "do"."""
+    c = cfg()
+    run = run or char()
+    route = route or route_of(run)
     optional = c["optional"] if optional is None else optional
     a = act(act_key) or {"steps": []}
     rows = [dict(s) for s in a.get("steps") or []]
@@ -224,7 +258,10 @@ def steps(act_key, run=None, route=None, optional=None):
         rows = [s for _k, s in sorted(((pos.get(norm(s["zone"]), len(order) + j), s) for j, s in enumerate(rows)),
                                       key=lambda t: t[0])]
     if route == "speed":
-        rows = [s for s in rows if not s.get("side")]
+        rows = [s for s in rows if not s.get("side") and not (s.get("speed") or {}).get("skip")]
+        for s in rows:
+            if (s.get("speed") or {}).get("do"):
+                s["do"] = s["speed"]["do"]
     if not optional:
         rows = [s for s in rows if not s.get("optional") or norm(s["zone"]) in _seen(run, act_key)]
     seen = _seen(run, act_key)
@@ -336,9 +373,12 @@ def _close_act(run, key, now):
     if run["seen"].get(key):
         c["mine"][key] = list(run["seen"][key])
     seen = set(_seen(run, key))
+    speed = route_of(run) == "speed"
     for r in rewards(key):
         st = run["rewards"].get(r["id"])
         if st in ("got", "skip"):
+            continue
+        if speed and not speed_reward(r):                   # 2.89.0: a speedrun leaves it - no "missed" nag
             continue
         if norm(r["zone"]) not in seen:
             run["rewards"][r["id"]] = "missed"
