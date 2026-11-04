@@ -135,10 +135,10 @@ def _bracket(d, x, y, sx, sy, n, t):
     _rivet(d, x + sx * n * 0.45, y + sy * n * 0.45, t * 1.3)
 
 
-def plate(root, w, h, P=None, ends=("crimson", "sapphire")):
+def plate(root, w, h, P=None, ends=("crimson", "sapphire"), cap=None):
     """The whole bar: stone, pewter frame with a gold inner line, corner brackets, end caps with gems, a crest on top,
     the recessed well between the caps. -> PhotoImage (None without Pillow)."""
-    key = ("plate", w, h, ends)
+    key = ("plate", w, h, ends, cap)
     if key in _CACHE:
         return _CACHE[key]
     try:
@@ -148,7 +148,7 @@ def plate(root, w, h, P=None, ends=("crimson", "sapphire")):
     W, H, t = w * SS, h * SS, SS
     img = _stone(W, H, w * 7 + h)
     d = ImageDraw.Draw(img, "RGBA")
-    cw = cap_width(h) * SS
+    cw = (cap or cap_width(h)) * SS                         # 2.85.2: cap = another bar's cap width (the docked line)
     _bevel_frame(d, 0, 0, W, H, t)
     x0, x1, y0, y1 = cw + 6 * t, W - cw - 6 * t, 6 * t, H - 6 * t
     if x1 - x0 > 4 * t and y1 - y0 > 3 * t:                 # the well: recessed, a shadow under its top edge

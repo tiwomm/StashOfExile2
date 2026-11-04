@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU GPL v3.0 (see LICENSE). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.85.1
+VERSION 2.85.2
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,6 +19,16 @@ VERSION 2.85.1
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.85.2
+       Ritual alerts (feedback: "aren't working, maybe because the overlay is in the position of where the ritual
+       (x/3) counter is"): the overlay's bar (and the goal bar) sit over the XP bar, right where the watcher looks
+       (ritual_alert.SEARCH), and the screen capture saw the bar instead of the counter. The bar windows are now left
+       out of screen captures (remnant_page.capture_affinity, WDA_EXCLUDEFROMCAPTURE, Windows 10 2004+), so the Ritual
+       and Delirium watchers see the game under them. Switch: Overlay ↳ Settings › Behaviour "Hide the bar from
+       screen captures" (tracker cfg hide_capture, on by default; off = screenshots / streams show the bar).
+       Docked goal / Focus line (feedback: "a fine gap between the two ... a slight width issue"): it sits right on
+       the bar (no 6 px gap), uses the bar's end-cap width (hudart.plate cap=, so the frames line up) and is rebuilt
+       when the bar's width changes (goalbar_follow).
   2.85.1
        Money Makers' filter rows: the labels ("Thoughts per click", "Clicks per hour") were cut off - their column is
        19 characters wide (was 11). ROADMAP: the Community FAQ grows into a Community forum (sections, threads,
@@ -1930,7 +1940,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.85.1"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.85.2"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
