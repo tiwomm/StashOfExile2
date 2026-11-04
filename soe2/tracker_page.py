@@ -447,8 +447,11 @@ class TrackerPage:
         self.tk_calc_var = tk.BooleanVar(value=bool(self.calc_cfg()["on"]))          # 2.74.0
         self.tk_rank_ask = tk.BooleanVar(value=self.rank_ask_on())               # 2.76.0
         # 2.90.0: the tools here; every helper's on / off is in Helpers below (Breach ... Focus, Campaign, Desecration)
+        self.tk_ovr_var = tk.BooleanVar(value=bool(self.ovr_cfg()["on"]))       # 2.91.0
+        ov_ = self.tk_ovr_var
         switches(feat, (("Notes", self.tk_notes_var, self.tracker_notes_switch),
                         ("Calculator", self.tk_calc_var, self.tracker_calc_switch),
+                        ("Exchange rates window", ov_, lambda: self.ovr_switch(bool(ov_.get()))),
                         ("Ask me to rank maps I haven't ranked", self.tk_rank_ask, self.tracker_rank_ask_switch)), 2)
         # ---- Campaign: its options (route, act timer ...); on / off is in Helpers, its line in On the bar
         camp = card(1, 0, "Campaign", "The Campaign Helper's options. Turn it on or off in Helpers below; its line "

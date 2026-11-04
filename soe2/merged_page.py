@@ -330,6 +330,8 @@ class MergedOverlay:
         self.merged_build()
         if notes_on and not self.merged_embeds_notes():
             self.overlay.show_notes()
+        if getattr(self, "ovr_win", None) is not None:      # 2.91.0: the rates window takes the new look too
+            self.ovr_build()
 
     # ---------------------------------------------------------------- the window
     def merged_destroy(self):

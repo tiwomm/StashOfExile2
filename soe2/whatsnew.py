@@ -21,6 +21,11 @@ NEXT = [
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.91.0": [
+        "New: an Exchange rates window over the game (chaos : div, exalt : div ...), in the overlay's look. Turn it "
+        "on in Overlay ↳ Settings › Features and drag it where you like.",
+        "Arbitrage › Check a flip: pick the item from every Currency Exchange item (type to narrow the list).",
+    ],
     "2.90.0": [
         "Overlay bar: the map's time, the area and its rank share one part, shown whole; every part is centered.",
         "Pick which switches your bar shows - one per helper (Breach, Delirium, Ritual, Expedition, Focus, Campaign).",

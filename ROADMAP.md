@@ -4,7 +4,7 @@
 
 > **Who we build for - read second.** Path of Exile players are utilitarian: they love data and information, problem solving and creative thinking. So every feature shows its numbers *and how they were worked out*, lets you sort, filter, compare and export them (CSV), keeps power-user depth (keys, versions, raw data) one click away instead of hiding it, explains in plain words, and leaves the decision to the player. Pretty is welcome; vague is not.
 
-**Current version: 2.90.0**
+**Current version: 2.91.0**
 
 Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds features, 2.10.1 only fixes. Each step below is one release; we work through them top to bottom.
 
@@ -160,6 +160,7 @@ Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds f
 | 2.89.2 | Privacy: the sharing question says what, why and where; no user name in logs or bug reports; Act splits is the Act timer. |
 | 2.89.3 | Privacy hardening: delete all your board data, day-only leaderboard times, private leagues never shared, rates not totals, screenshots checked, names kept out of logs and reports. |
 | 2.90.0 | The overlay bar: one switch per helper (asked once which you want), Map + area + rank as one centered part shown whole, Maps: / Avg. centered; Settings › Helpers holds every helper; the Well asks once (Desecration Helper is Beta); no campaign line after the campaign. |
+| 2.91.0 | Exchange rates over the game (a small window in the overlay's look, off until you turn it on); Arbitrage's Check a flip picks from every exchange item. |
 
 ## ▶ Next up
 
@@ -169,7 +170,6 @@ Order (decided 2.34.0): the Polish basics first, so new features are built on th
 
 | Version | Plan |
 |---|---|
-| 2.91.0 | **Exchange rates on the overlay + Arbitrage:** a small movable window over the game (off until you turn it on) listing today's most-used rates (chaos:div, exalt:div ...), in the overlay's look (both looks); Arbitrage › Check a flip you see in game picks Buy / Sell from a list of every item Exchange rates tracks. |
 | 2.92.0 | **Help rate mods + Bulk Pricing floor** (mockups OK'd 2026-11-04): a subtle opt-in to rate mods (S/A/B/C/D/Ignore, one at a time, per rule set incl. gear base types) that feeds the board; Bulk Pricing skips items the Mod book is sure are under a floor (1 div by default, per rule set) and flags unsure-cheap ones "check by hand". "Not now" asks again once, at random, 3-7 days later; "No thanks" never asks again. |
 | Before 1.0 (Dec 11) | **Campaign guide pack refresh** for 0.5.5 and then 1.0: Dreadnought Vanguard is gone (Jamanra in The Dreadnought), Azarian moved to the Heart of Keth, the Waterways levers are pressure pads, the Primal Arena's +2 points moved to Omniphobia, the Whakapanu shark's permanent choice and Plunder's Point are missing, and about 10 Interlude zones are missing. 1.0 may bring Acts 5-6. |
 | Later | **Mageblood search helper:** build the trade search for the flasks / charms you want on a Mageblood. Starting point, the user's search: [Mageblood search](https://www.pathofexile.com/trade2/search/poe2/Forbidden%20Rites/H4sIAAAAAAAACp3TwUrEMBAG4FeR_xykyWbbTY7e97gnKZJ1owykabGzYql5d4mLKLggzjWTL_MzSVbMHPg8w68YJ6YxwyPkBUUhhyHCYx-e4zGN4wkKvEx16cCUiJebu5gY6vOIGf5-_aqHXDc_UeL4cinQCR7xbUr0SHxbwYNprWlNs7XvOyi8hnSONcVAGd6Uov5AWwmyEqS1RG0kqBPlE7VqRa2MRImQaOi6kSgnanX1LfXV_ecXbHadtU53ze_7sM13Chp-Im11a5xx7upk-9KXD_rzLDzYAwAA). How it's used: uncheck every mod but the ones you want and set each one's min to how many you want. 2x Quicksilver + 2x Gold: uncheck all but Gold and Quicksilver, min 2 on each. 1 Basalt + 1 Quicksilver + 2 Gold: uncheck all but Basalt, Quicksilver and Gold; min Basalt 1, Quicksilver 1, Gold 2. Builds on 2.79.1 (two of the same Legacy = Min 2). The rest gets worked out when we get there. |
