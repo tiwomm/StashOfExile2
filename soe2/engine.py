@@ -15,6 +15,7 @@ from .net import call, STATUS
 from .rates import RATES
 from .mods import DUPS, OPTS, find_stat, norm, pretty, vfilter
 from . import gear, waystone
+from .gear import only_source
 from .trade import (cheapest_real,
     _flt, build_sidtext, estimate, fetch_rich, listing_rules, mod_impact, search_ids, unconvertible,
     uses_filter, verify_listings,
@@ -586,11 +587,17 @@ class Engine(TabReaderJobs, WealthJobs, StratCostJobs, threading.Thread):
             if not m.get("sid"):
                 unknown += 1
                 continue
+            m.pop("search_ids", None)                       # (worked out fresh each time - ticks change)
             if valid and not str(m["sid"]).startswith(("equip:", "map:")):  # 1.42: only ids the trade site's own list has
                 m["search_ids"] = [i for i in (m.get("ids") or [m["sid"]]) if i in valid]
                 if not m["search_ids"]:
                     unknown += 1
                     continue
+            src = only_source(rec, m)
+            if src:                                          # 2.93.0: this mod as fractured / desecrated only
+                ids = [i for i in (m.get("search_ids") or m.get("ids") or [m["sid"]]) if str(i).startswith(src + ".")]
+                if ids:
+                    m["search_ids"] = ids
             (must if imp == "high" else opt).append(m)
         blank = dict(total=0, prices=[], est=None, qid=None, partial=False, thin=False, nomatch=False, stages=[],
                      wide=False, manual=False, conf="-", conf_why=[], memory="", skip=False)

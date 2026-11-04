@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU GPL v3.0 (see LICENSE). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.92.2
+VERSION 2.93.0
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,6 +19,15 @@ VERSION 2.92.2
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.93.0
+       Price Checks (feedback):
+       - A fractured or desecrated mod gets a small box under it: "FRACTURED - only?" / "DESECRATED - only?". Ticked,
+         that mod is searched as fractured (or desecrated) only; unticked, either way, as before. This item only.
+       - A hybrid resistance ("+17% to Lightning and Chaos Resistances") adds a pseudo total for each resistance it
+         has, adding up every mod that feeds it (total Lightning 37 + 17 = 54, total Chaos 17). Chaos isn't in the total
+         Elemental Resistance, so its total is searched; the elemental one is offered unticked.
+       - Socketed rune lines (above the mods) are marked "RUNE / SOCKETED" - not searched and not in any total unless
+         you tick them.
   2.92.2
        Overlay page: "Timer over the game" becomes Overlay Enabled | Overlay Disabled - one master switch for the bar,
        its lines, the calculator, the rates window and the Regex / Vendor cards (each helper keeps its own setting). A
@@ -2131,7 +2140,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.92.2"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.93.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 

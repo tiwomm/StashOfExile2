@@ -4671,6 +4671,7 @@ class App(PriceCheckPage, FavoritesPage, BoardModPage, LeaderboardPage, OrderLab
         cv.pack(fill="x")
         fmod = ("Segoe UI", 10)
         self.card_rows, self.card_vals, self.card_opts, self.card_tris = {}, {}, {}, {}
+        self.card_onlys = {}
         with _th.raw():
             bg = C["odd"]
             cv.create_rectangle(0, 0, w - 1, 199, fill=bg, outline=t.c(t.part("card", "border", default="border_light")),
@@ -4982,13 +4983,28 @@ class App(PriceCheckPage, FavoritesPage, BoardModPage, LeaderboardPage, OrderLab
                                    fill=C["accent"] if on and can else C["odd"], tags=("cardbox", tag))
         if on and can:
             cv.create_line(bx + 3, by + 7, bx + 6, by + 10, bx + 11, by + 4, fill="#120a04", width=2, tags=(tag,))
-        frac = "fractured" in (m.get("flags") or ()) or str(m.get("sid") or "").startswith("fractured.")
-        if frac:                                             # 2.79.0: a fractured mod says so
-            bb2 = cv.bbox(tid)
-            if bb2:
-                fx = cv.create_text(bb2[2] - 2, y1 - 2, text="FRACTURED", anchor="ne", font=("Segoe UI", 7, "bold"),
-                                    fill="#e8d6a8", tags=(tag,))
-                y1 = max(y1, (cv.bbox(fx) or (0, 0, 0, y1))[3] + 2)
+        fl = m.get("flags") or ()
+        src = next((x for x in ("fractured", "desecrated") if x in fl or str(m.get("sid") or "").startswith(x + ".")),
+                   None)
+        if src and can:                                      # 2.79.0: a fractured mod says so; 2.93.0: and a box to
+            only = bool((rec.get("only") or {}).get(norm(m["text"])))    # search it as fractured / desecrated only
+            otag = f"cardonly{idx}"
+            fc = "#e8d6a8" if src == "fractured" else "#c9a2e0"
+            ob = 10
+            cv.create_rectangle(tx, y1, tx + ob, y1 + ob, outline=fc, fill=fc if only else C["odd"], tags=(otag,))
+            if only:
+                cv.create_line(tx + 2, y1 + 5, tx + 4, y1 + 8, tx + 8, y1 + 2, fill="#120a04", width=2, tags=(otag,))
+            ox = cv.create_text(tx + ob + 4, y1 - 1, text=src.upper() + " ONLY" if only else src.upper() + " - only?",
+                                anchor="nw", font=("Segoe UI", 9, "bold"), fill=fc, tags=(otag,))
+            cv.tag_bind(otag, "<Button-1>", lambda e, mm=m, v=only: self.card_only(rec, mm, not v))
+            cv.tag_bind(otag, "<Enter>", lambda e: cv.configure(cursor="hand2"))
+            cv.tag_bind(otag, "<Leave>", lambda e: cv.configure(cursor=""))
+            self.card_onlys[idx] = (m, only, src)
+            y1 = max(y1, (cv.bbox(ox) or (0, 0, 0, y1))[3] + 2)
+        elif m.get("kind") == "Rune":                        # 2.93.0: a socketed rune's line says so
+            rx = cv.create_text(tx, y1 - 2, text="RUNE / SOCKETED - not searched unless ticked", anchor="nw",
+                                font=("Segoe UI", 9, "bold"), fill=C["muted"], tags=(tag,))
+            y1 = max(y1, (cv.bbox(rx) or (0, 0, 0, y1))[3] + 2)
         cv.coords(hit, 4, y - 2, w - 4 - right, y1 - 2)
         if self._card_has_vals(rec, m):
             self._card_val_boxes(cv, rec, m, y - 1, w, on and can)
@@ -5068,6 +5084,19 @@ class App(PriceCheckPage, FavoritesPage, BoardModPage, LeaderboardPage, OrderLab
             e.bind("<Return>", lambda _e: (self.reprice([rec["id"]]) if keep() else None, "break")[-1])
         self.card_vals[id(m)] = boxes
         return boxes
+
+    def card_only(self, rec, m, on):
+        """2.93.0 (feedback): search this fractured / desecrated mod only as fractured / desecrated (this item only)."""
+        k = norm(m["text"])
+        only = rec.setdefault("only", {})
+        if on:
+            only[k] = True
+        else:
+            only.pop(k, None)
+        self.card_changed(rec)
+        if getattr(self, "shown_rec", None) is rec:
+            self.show_detail(rec)
+        return on
 
     def card_toggle(self, rec, m, checked):
         """2.74.4: a tick on the card - the same as the mod's switch further down (this item only)."""
