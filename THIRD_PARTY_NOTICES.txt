@@ -83,3 +83,8 @@ is copied; StashOfExile2's version is written from scratch.
 ------------------------------------------------------------------------------
 The Windows build reads screen text with Windows' own OCR (Windows.Media.Ocr) through PyWinRT
 (https://github.com/pywinrt/pywinrt, the winrt-* packages), MIT License, Copyright (c) the PyWinRT authors.
+
+------------------------------------------------------------------------------
+The community board (board/, 2.86.1) checks community names with obscenity (https://github.com/jo3-l/obscenity,
+the npm package "obscenity"), MIT License, Copyright (c) 2025 Joseph Liu: its English word list (slurs and
+profanity) and its look-alike / number-swap / repeated-letter handling. It runs on the board server only.

@@ -56,8 +56,21 @@ def diff(old, new):
 
 class BoardModPage:
     # ---------------------------------------------------------------- your community name (asked once)
-    def board_name_prompt(self, force=False):
-        """Start-up: no community name yet - ask once (it's the name on Money Makers and any board feature)."""
+    def board_name_check(self):
+        """2.86.1: start-up, with a board name: the board may have reset it (a name its filter refuses) - then ask for
+        a new one. The answer comes back through the app's event queue."""
+        if not (B.configured() and B.signed_in()):
+            return self.board_name_prompt()
+        threading.Thread(target=lambda: self.ui_q.put(("bm_me", B.me())), daemon=True).start()
+
+    def ev_bm_me(self, res):
+        ok, d = res
+        if ok and (d.get("user") or {}).get("name_reset"):
+            self.board_name_prompt(force=True, reset=True)
+
+    def board_name_prompt(self, force=False, reset=False):
+        """Start-up: no community name yet - ask once (it's the name on Money Makers and any board feature).
+        reset=True (2.86.1): the board reset a name its filter refuses - pick a new one (no 7-day wait)."""
         if not force and (SETTINGS.get("board_name_asked") or B.signed_in() or not B.configured()):
             return None
         SETTINGS["board_name_asked"] = True
@@ -67,10 +80,13 @@ class BoardModPage:
         win.title("Your community name")
         win.transient(self.root)
         self.bn_win = win
-        tk.Label(win, text="Pick your community name", bg=P2, fg=C["accent"], font=("Segoe UI", 12, "bold"),
-                 anchor="w").pack(fill="x")
-        tk.Label(win, text="Other players see it on Money Makers strats, upvotes and edits. It's yours alone, and it "
-                           "can change once every 7 days. No account or password - this PC keeps a key.",
+        tk.Label(win, text="Pick a new community name" if reset else "Pick your community name", bg=P2, fg=C["accent"],
+                 font=("Segoe UI", 12, "bold"), anchor="w").pack(fill="x")
+        tk.Label(win, text=("Your old name isn't allowed on the community board (slurs and hate words aren't), so it "
+                            "was reset. Pick a new one - you can do it now." if reset else
+                            "Other players see it on Money Makers strats, upvotes and edits. It's yours alone, and it "
+                            "can change once every 7 days. No account or password - this PC keeps a key. Slurs and "
+                            "hate words aren't allowed."),
                  bg=P2, fg=C["muted"], wraplength=380, justify="left", anchor="w").pack(fill="x", pady=(4, 8))
         var = tk.StringVar()
         ent = ttk.Entry(win, textvariable=var, width=30)
@@ -100,7 +116,7 @@ class BoardModPage:
                 return msg.config(text="At least 2 characters.", fg=C["red"])
             btn.state(["disabled"])
             msg.config(text="Saving…", fg=C["muted"])
-            self._bm_bg(lambda: B.join(name), done)
+            self._bm_bg(lambda: B.rename(name) if reset else B.join(name), done)
         btn = ttk.Button(row, text="Save my name", style="Primary.TButton", command=save)
         btn.pack(side="right")
         ttk.Button(row, text="Later", style="Quiet.TButton", command=win.destroy).pack(side="right", padx=(0, 8))

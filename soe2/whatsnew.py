@@ -21,6 +21,10 @@ NEXT = [
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.86.1": [
+        "Community names: slurs and hate words aren't allowed (also with swapped letters, numbers or spaces). A name "
+        "like that from before is reset - the app asks you for a new one.",
+    ],
     "2.86.0": [
         "New: Overlay ↳ Leaderboards - your fastest campaign acts, maps, pinnacle fights and trials, and everyone's. "
         "Filter by league and class.",
