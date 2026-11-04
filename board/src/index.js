@@ -188,6 +188,10 @@ async function housekeeping(env) {
   const day = today();
   if ((await metaGet(env, "swept")) === day) return;
   await metaSet(env, "swept", day);
+  try {                                                        // 2.95.0: ratings that matched the community, once a day
+    const linked = await env.DB.prepare("SELECT id, cid_link FROM users WHERE cid_link <> ''").all();
+    for (const u of linked.results) await repRatings(env, u.id, u.cid_link);
+  } catch (_e) { /* next time */ }
   await env.DB.batch([
     env.DB.prepare("DELETE FROM limits WHERE day <> ?").bind(day),
     env.DB.prepare("DELETE FROM joins WHERE day <> ?").bind(day),
@@ -241,6 +245,12 @@ const MIGRATIONS = [
   "CREATE UNIQUE INDEX IF NOT EXISTS images_key ON images (key)",
   "UPDATE lb SET at = (at / 86400) * 86400 WHERE at % 86400 <> 0",
   "ALTER TABLE users ADD COLUMN admin_key TEXT NOT NULL DEFAULT ''",
+  // 2.95.0: rep - what each account gave the community, karma-style. One row per thing that earned (or cost) it;
+  // the account's rep is their sum (never below 0). Upvotes are keyed by a scramble, so the table never says who voted.
+  `CREATE TABLE IF NOT EXISTS rep (user_id TEXT NOT NULL, kind TEXT NOT NULL, ref TEXT NOT NULL, pts INTEGER NOT NULL,
+    created INTEGER NOT NULL, PRIMARY KEY (user_id, kind, ref))`,
+  "ALTER TABLE users ADD COLUMN rep_hidden INTEGER NOT NULL DEFAULT 0",   // 1 = no contributor icon / card for others
+  "ALTER TABLE users ADD COLUMN cid_link TEXT NOT NULL DEFAULT ''",      // opt-in: this install's ratings count (sha256)
 ];
 async function migrate(env) {
   if (migrated) return;
@@ -277,11 +287,90 @@ async function allowance(env, what, whoId, max, count = true) {
 }
 const limitFor = (env, what) => Number(env[`${what.toUpperCase()}_PER_DAY`] || PER_DAY[what]);
 
+// ------------------------------------------------------------------ 2.95.0: rep
+const REP = { upvote: 1, edit: 3, edit_no: -1, review: 1, removed: -2 };
+const RATING_MIN_VOTES = 5;                 // a mod / map needs this many ratings before it has a community answer
+async function repAdd(env, userId, kind, ref, pts) {
+  if (!userId) return;
+  await env.DB.prepare("INSERT OR IGNORE INTO rep (user_id, kind, ref, pts, created) VALUES (?, ?, ?, ?, ?)")
+    .bind(userId, kind, String(ref), pts ?? REP[kind] ?? 0, now()).run();
+}
+async function repDel(env, userId, kind, ref) {
+  await env.DB.prepare("DELETE FROM rep WHERE user_id = ? AND kind = ? AND ref = ?").bind(userId, kind, String(ref)).run();
+}
+const voteRef = (voterId, postId) => sha256(`vote|${voterId}|${postId}`).then((h) => h.slice(0, 24));
+// the reviewers who voted the way it was decided earn 1 each
+async function repReviewers(env, target, vote) {
+  const rows = await env.DB.prepare("SELECT user_id FROM reviews WHERE target = ? AND vote = ?").bind(target, vote).all();
+  for (const r of rows.results) await repAdd(env, r.user_id, "review", target);
+}
+// ratings (Mod book rules, map ranks) of a linked install that match what the community settled on
+async function repRatings(env, userId, cid) {
+  const q = (table, keyCol, valCol) => `WITH c AS (SELECT ${keyCol} AS k, ${valCol} AS v, COUNT(*) AS n FROM ${table} GROUP BY k, v),
+    t AS (SELECT k, SUM(n) AS tot, MAX(n) AS top FROM c GROUP BY k HAVING tot >= ${RATING_MIN_VOTES}),
+    w AS (SELECT c.k, c.v FROM c JOIN t ON t.k = c.k AND c.n = t.top)
+    SELECT COUNT(*) AS n FROM ${table} x JOIN w ON w.k = x.${keyCol} AND w.v = x.${valCol} WHERE x.cid = ?`;
+  const mods = (await env.DB.prepare(q("mod_votes", "key", "value")).bind(cid).first())?.n ?? 0;
+  const maps = (await env.DB.prepare(q("map_votes", "name", "rank")).bind(cid).first())?.n ?? 0;
+  await env.DB.prepare(`INSERT INTO rep (user_id, kind, ref, pts, created) VALUES (?1, 'ratings', 'all', ?2, ?3)
+    ON CONFLICT(user_id, kind, ref) DO UPDATE SET pts = ?2, created = ?3`).bind(userId, mods + maps, now()).run();
+  return mods + maps;
+}
+async function repOf(env, userId) {
+  const rows = await env.DB.prepare("SELECT kind, COUNT(*) AS n, SUM(pts) AS pts FROM rep WHERE user_id = ? GROUP BY kind")
+    .bind(userId).all();
+  const by = Object.fromEntries(rows.results.map((r) => [r.kind, { n: r.n, pts: r.pts }]));
+  const rep = Math.max(0, rows.results.reduce((a, r) => a + (r.pts || 0), 0));
+  return { rep, from: { upvotes: by.upvote?.n ?? 0, edits: by.edit?.n ?? 0, reviews: by.review?.n ?? 0,
+    ratings: by.ratings?.pts ?? 0, bugs: by.bug?.n ?? 0 } };
+}
+const REP_SQL = (col) => `(SELECT MAX(0, COALESCE(SUM(pts), 0)) FROM rep WHERE user_id = ${col})`;
+
+// GET /people/<name>: the contributor card (the icon's hover). Hidden: the name only.
+async function person(env, me, name) {
+  const u = await env.DB.prepare("SELECT id, name, created, banned, rep_hidden FROM users WHERE name = ? COLLATE NOCASE")
+    .bind(String(name).slice(0, 40)).first();
+  if (!u || u.banned) return fail(404, "not found");
+  if (u.rep_hidden && me?.id !== u.id) return json({ name: u.name, hidden: true });
+  const r = await repOf(env, u.id);
+  return json({ name: u.name, rep: r.rep, from: r.from, since: new Date(u.created * 1000).toISOString().slice(0, 7) });
+}
+
+// POST /me/rep: {hidden} and / or {link: "<install id>" | null} (count this install's ratings, or stop)
+async function setRep(req, env, me) {
+  const b = await readBody(req);
+  if (typeof b.hidden === "boolean") await env.DB.prepare("UPDATE users SET rep_hidden = ? WHERE id = ?").bind(b.hidden ? 1 : 0, me.id).run();
+  if (b.link === null) {
+    await env.DB.batch([env.DB.prepare("UPDATE users SET cid_link = '' WHERE id = ?").bind(me.id),
+      env.DB.prepare("DELETE FROM rep WHERE user_id = ? AND kind = 'ratings'").bind(me.id)]);
+  } else if (b.link !== undefined) {
+    if (!/^[a-f0-9]{32}$/.test(String(b.link))) return fail(400, "bad install id");
+    const h = await sha256(String(b.link));
+    await env.DB.prepare("UPDATE users SET cid_link = ? WHERE id = ?").bind(h, me.id).run();
+    await repRatings(env, me.id, h);
+  }
+  const u = await env.DB.prepare("SELECT rep_hidden, cid_link FROM users WHERE id = ?").bind(me.id).first();
+  return json({ ...(await repOf(env, me.id)), hidden: !!u.rep_hidden, linked: !!u.cid_link });
+}
+
+// POST /admin/rep {name, pts, why}: an admin thanks someone (a bug report that got fixed ...)
+async function adminRep(req, env, me) {
+  if (!me.admin) return fail(403, "admins only");
+  const b = await readBody(req);
+  const pts = Math.round(Number(b.pts));
+  if (!(pts >= 1 && pts <= 50)) return fail(400, "pts: 1-50");
+  const u = await env.DB.prepare("SELECT id FROM users WHERE name = ? COLLATE NOCASE").bind(String(b.name || "").slice(0, 40)).first();
+  if (!u) return fail(404, "No one has that name.");
+  await repAdd(env, u.id, "bug", randomHex(8), pts);
+  return json(await repOf(env, u.id));
+}
+
 async function who(req, env) {
   const m = /^Bearer\s+([a-f0-9]{64})$/i.exec(req.headers.get("authorization") || "");
   if (!m) return null;
   const row = await env.DB.prepare(
-    `SELECT u.id, u.name, u.admin, u.admin_key, u.banned, u.reviewer, u.last_seen, u.created, u.renamed, u.name_reset FROM sessions s JOIN users u ON u.id = s.user_id
+    `SELECT u.id, u.name, u.admin, u.admin_key, u.banned, u.reviewer, u.last_seen, u.created, u.renamed, u.name_reset,
+       u.rep_hidden, u.cid_link FROM sessions s JOIN users u ON u.id = s.user_id
      WHERE s.hash = ? AND s.expires > ?`,
   ).bind(await sha256(m[1]), now()).first();
   if (!row) return null;
@@ -310,7 +399,8 @@ async function reviewerCheck(env, me) {
 }
 const canReview = (me) => !!me && !me.banned && (me.admin || me.reviewer === true || me.reviewer === 1);
 const userOut = (me) => ({ id: me.id, name: me.name, admin: !!me.admin, reviewer: me.reviewer === true || me.reviewer === 1,
-  next_rename: me.renamed ? me.renamed + 7 * DAY : 0, name_reset: !!me.name_reset });
+  next_rename: me.renamed ? me.renamed + 7 * DAY : 0, name_reset: !!me.name_reset,
+  rep_hidden: !!me.rep_hidden, rep_linked: !!me.cid_link });
 
 async function readBody(req) {
   const text = await req.text();
@@ -324,7 +414,8 @@ function present(row, me) {
     updated: row.updated, promoted: !!row.promoted, hidden: !!row.hidden,
     reports: canReview(me) ? row.reports : undefined,
     // 2.89.3: account ids only for admins (they ban); the name is always today's (a rename reaches old posts)
-    author: { id: me?.admin ? row.author_id : undefined, name: row.author_name }, voted: !!row.voted,
+    author: { id: me?.admin ? row.author_id : undefined, name: row.author_name,
+      rep: row.author_rep_hidden ? undefined : row.author_rep ?? 0 }, voted: !!row.voted,
     mine: !!me && me.id === row.author_id,
     based_on: row.based_on ? { id: row.based_on, name: row.based_name || null } : null,          // 2.85.0
     suggestions: me && me.id === row.author_id ? row.suggested ?? 0 : undefined,
@@ -332,7 +423,8 @@ function present(row, me) {
   };
 }
 
-const SELECT = `SELECT p.*, u.name AS author_name, %VOTED% AS voted,
+const SELECT = `SELECT p.*, u.name AS author_name, %VOTED% AS voted, u.rep_hidden AS author_rep_hidden,
+  ${REP_SQL("p.author_id")} AS author_rep,
   (SELECT json_extract(b.data, '$.name') FROM posts b WHERE b.id = p.based_on) AS based_name,
   (SELECT COUNT(*) FROM revisions r WHERE r.post_id = p.id AND r.status = 'suggested') AS suggested,
   (SELECT COUNT(*) FROM revisions r WHERE r.post_id = p.id AND r.status = 'pending') AS pending
@@ -525,6 +617,9 @@ async function ensureFirstRevision(env, row) {
 // make a version live: the one live now becomes old; the post shows the new one
 async function goLive(env, row, revId, data, deciderId) {
   const t = now();
+  const rv = await env.DB.prepare("SELECT author_id FROM revisions WHERE id = ?").bind(revId).first();
+  if (rv && rv.author_id !== row.author_id) await repAdd(env, rv.author_id, "edit", `rev:${revId}`);   // 2.95.0
+  await repReviewers(env, `rev:${revId}`, "approve");
   await env.DB.batch([
     env.DB.prepare("UPDATE revisions SET status = 'old' WHERE post_id = ? AND status = 'live'").bind(row.id),
     env.DB.prepare("UPDATE revisions SET status = 'live', decided = ?, decided_by = ? WHERE id = ?").bind(t, deciderId, revId),
@@ -649,6 +744,8 @@ async function revAction(req, env, me, rid) {
     if (!owner || !["suggested", "pending"].includes(rev.status)) return fail(403, "Only the post's author or an admin can decline it.");
     await env.DB.prepare("UPDATE revisions SET status = 'declined', decided = ?, decided_by = ?, why = ? WHERE id = ?")
       .bind(t, me.id, String(why || "").slice(0, 200), rid).run();
+    if (rev.author_id !== row.author_id) await repAdd(env, rev.author_id, "edit_no", `rev:${rid}`);     // 2.95.0
+    await repReviewers(env, `rev:${rid}`, "reject");
     return json({ ok: true, status: "declined" });
   }
   if (action === "accept" || action === "rollback") {
@@ -717,6 +814,8 @@ async function review(req, env, me, target, id) {
     }
     if ((c.reject ?? 0) >= APPROVALS || (me.admin && v === "reject")) {
       await env.DB.prepare("UPDATE revisions SET status = 'declined', decided = ?, decided_by = ?, why = 'reviewers said no' WHERE id = ?").bind(t, me.id, id).run();
+      if (rev.author_id !== row.author_id) await repAdd(env, rev.author_id, "edit_no", `rev:${id}`);   // 2.95.0
+      await repReviewers(env, `rev:${id}`, "reject");
       return json({ ok: true, status: "declined" });
     }
     return json({ ok: true, status: rev.status, approvals: c.approve ?? 0, rejections: c.reject ?? 0 });
@@ -731,9 +830,13 @@ async function review(req, env, me, target, id) {
     .bind(`post:${id}`).all()).results.map((x) => [x.vote, x.n]));
   if ((c.hide ?? 0) >= APPROVALS || (me.admin && v === "hide")) {
     await env.DB.prepare("UPDATE posts SET hidden = 1 WHERE id = ?").bind(id).run();
+    await repAdd(env, row.author_id, "removed", `post:${id}`);                                   // 2.95.0
+    await repReviewers(env, `post:${id}`, "hide");
     return json({ ok: true, hidden: true });
   }
   if ((c.keep ?? 0) >= APPROVALS || (me.admin && v === "keep")) {
+    await repReviewers(env, `post:${id}`, "keep");                                               // 2.95.0
+    await repDel(env, row.author_id, "removed", `post:${id}`);
     await env.DB.batch([
       env.DB.prepare("UPDATE posts SET hidden = 0, reports = 0 WHERE id = ?").bind(id),
       env.DB.prepare("DELETE FROM reports WHERE post_id = ?").bind(id),
@@ -770,6 +873,9 @@ async function postImages(env, id) {
 // 2.89.3: DELETE /me - leave the board and take everything with you: your name, posts (and their pictures, votes,
 // versions), your suggestions, votes, reports, reviews, leaderboard times and sessions. Nothing of yours stays.
 async function deleteMe(env, me) {
+  const given = (await env.DB.prepare("SELECT v.post_id, p.author_id FROM votes v JOIN posts p ON p.id = v.post_id WHERE v.user_id = ?")
+    .bind(me.id).all()).results;
+  for (const g of given) await repDel(env, g.author_id, "upvote", await voteRef(me.id, g.post_id));   // 2.95.0
   const posts = (await env.DB.prepare("SELECT id FROM posts WHERE author_id = ?").bind(me.id).all()).results.map((r) => r.id);
   for (const id of posts) {
     const keys = await postImages(env, id);
@@ -792,6 +898,7 @@ async function deleteMe(env, me) {
     env.DB.prepare("DELETE FROM lb_reports WHERE user_id = ? OR lb_id IN (SELECT id FROM lb WHERE user_id = ?)").bind(me.id, me.id),
     env.DB.prepare("DELETE FROM lb WHERE user_id = ?").bind(me.id),
     env.DB.prepare("DELETE FROM sessions WHERE user_id = ?").bind(me.id),
+    env.DB.prepare("DELETE FROM rep WHERE user_id = ?").bind(me.id),
     env.DB.prepare("DELETE FROM users WHERE id = ?").bind(me.id),
   ]);
   await env.DB.prepare("UPDATE posts SET score = (SELECT COUNT(*) FROM votes v WHERE v.post_id = posts.id)").run();
@@ -803,8 +910,14 @@ async function vote(req, env, me, id) {
   const body = await readBody(req);
   const row = await getPost(env, me, id);
   if (!row || (row.hidden && !me.admin)) return fail(404, "not found");
-  if (body.up === false) await env.DB.prepare("DELETE FROM votes WHERE post_id = ? AND user_id = ?").bind(id, me.id).run();
-  else await env.DB.prepare("INSERT OR IGNORE INTO votes (post_id, user_id, created) VALUES (?, ?, ?)").bind(id, me.id, now()).run();
+  const ref = await voteRef(me.id, id);                       // 2.95.0: the author's rep (never for your own post)
+  if (body.up === false) {
+    await env.DB.prepare("DELETE FROM votes WHERE post_id = ? AND user_id = ?").bind(id, me.id).run();
+    await repDel(env, row.author_id, "upvote", ref);
+  } else {
+    await env.DB.prepare("INSERT OR IGNORE INTO votes (post_id, user_id, created) VALUES (?, ?, ?)").bind(id, me.id, now()).run();
+    if (row.author_id !== me.id) await repAdd(env, row.author_id, "upvote", ref);
+  }
   await env.DB.prepare("UPDATE posts SET score = (SELECT COUNT(*) FROM votes WHERE post_id = ?1) WHERE id = ?1").bind(id).run();
   return json({ post: present(await getPost(env, me, id), me) });
 }
@@ -836,6 +949,8 @@ async function adminPost(req, env, me, id) {
     env.DB.prepare("DELETE FROM reviews WHERE target = ?").bind(`post:${id}`)]);
   await env.DB.prepare(`UPDATE posts SET ${set} WHERE id = ?`).bind(id).run();
   const row = await getPost(env, me, id);
+  if (row && action === "hide") await repAdd(env, row.author_id, "removed", `post:${id}`);       // 2.95.0
+  if (row && action === "unhide") await repDel(env, row.author_id, "removed", `post:${id}`);
   return row ? json({ post: present(row, me) }) : fail(404, "not found");
 }
 
@@ -917,11 +1032,11 @@ async function lbList(url, env, me) {
   args.push(p.get("key"));
   const limit = Math.min(200, Math.max(1, Number(p.get("limit")) || 100));
   // one row per account: its fastest (over the chosen leagues / classes)
-  const rows = await env.DB.prepare(`SELECT l.*, u.name FROM lb l JOIN users u ON u.id = l.user_id
+  const rows = await env.DB.prepare(`SELECT l.*, u.name, u.rep_hidden, ${REP_SQL("l.user_id")} AS rep FROM lb l JOIN users u ON u.id = l.user_id
     WHERE ${where.join(" AND ")} AND l.secs = (SELECT MIN(x.secs) FROM lb x WHERE x.user_id = l.user_id AND x.cat = l.cat
     AND x.key = l.key AND x.hidden = 0 ${p.get("league") ? "AND x.league = l.league" : ""} ${p.get("cls") ? "AND x.cls = l.cls" : ""})
     GROUP BY l.user_id ORDER BY l.secs, l.id LIMIT ${limit}`).bind(...args).all();
-  return json({ rows: rows.results.map((r) => ({ id: r.id, name: r.name, secs: r.secs, cls: r.cls, league: r.league,
+  return json({ rows: rows.results.map((r) => ({ id: r.id, name: r.name, rep: r.rep_hidden ? undefined : r.rep, secs: r.secs, cls: r.cls, league: r.league,
     level: r.level, deaths: r.deaths, at: Math.floor(r.at / DAY) * DAY, mine: !!me && me.id === r.user_id, hidden: !!r.hidden,
     reports: canReview(me) ? r.reports : undefined })) });
 }
@@ -1187,10 +1302,13 @@ export default {
       if (path === "/me" && req.method === "GET") {
         if (!me) return fail(401, "sign in first");
         const why = canReview(me) ? null : await reviewerCheck(env, me);
-        return json({ user: { ...userOut(me), can_review: !why, why_not: why } });
+        const r = await repOf(env, me.id);                                                         // 2.95.0
+        return json({ user: { ...userOut(me), can_review: !why, why_not: why, rep: r.rep, rep_from: r.from } });
       }
       if (m && m[2] === "revisions" && req.method === "GET") return revisions(env, me, Number(m[1]));
       if (path === "/lb" && req.method === "GET") return lbList(url, env, me);
+      const pm = /^\/people\/([^/]{1,80})$/.exec(path);                                            // 2.95.0
+      if (pm && req.method === "GET") return person(env, me, decodeURIComponent(pm[1]));
       if (path === "/auth/logout" && req.method === "POST") {
         const t = /^Bearer\s+(\S+)$/i.exec(req.headers.get("authorization") || "");
         if (t) await env.DB.prepare("DELETE FROM sessions WHERE hash = ?").bind(await sha256(t[1])).run();
@@ -1206,6 +1324,8 @@ export default {
       if (path === "/me" && req.method === "DELETE") return deleteMe(env, me);
       if (path === "/auth/admin" && req.method === "POST") return becomeAdmin(req, env, me);
       if (path === "/me/inbox" && req.method === "GET") return inbox(env, me);
+      if (path === "/me/rep" && req.method === "POST") return setRep(req, env, me);                 // 2.95.0
+      if (path === "/admin/rep" && req.method === "POST") return adminRep(req, env, me);
       if (path === "/admin/names/sweep" && req.method === "POST") return sweepNames(env, me);
       if (path === "/review" && req.method === "GET") return reviewQueue(env, me);
       if (me.banned) return fail(403, "This account can't post on the board.");
