@@ -440,7 +440,7 @@ class App(PriceCheckPage, FavoritesPage, BoardModPage, LeaderboardPage, WellSoul
         self.shell.set_launcher(self.shell.cfg.get("launcher", "dock"))
         self.root.after(60, self.restore_zoom)                 # 2.23.1: maximised last time -> maximised again
         self.root.after(1500, self.show_whatsnew)              # 2.0 beta 12: once per new version
-        self.root.after(4000, self.board_name_prompt)          # 2.85.0: your community name, asked once
+        self.root.after(4000, self.board_name_check)           # 2.85.0: your community name, asked once (2.86.1: or again if reset)
         if SPLASH[0] is not None:                              # 2.0.0: the start-up screen waits for the mod list,
             _splash_step(i=3)                                  # but never more than 3 seconds
             self.root.after(3000, self.close_splash)
