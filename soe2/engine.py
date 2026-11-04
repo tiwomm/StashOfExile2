@@ -284,7 +284,12 @@ class Engine(TabReaderJobs, WealthJobs, StratCostJobs, threading.Thread):
     URGENT = ("pc", "fav")
 
     def urgent_waiting(self):
-        return any(r.get("src") in self.URGENT and r.get("state") == "queued" for r in list(self.records.values()))
+        """A Price Checks / Favorites job really waiting in the queue (first in line, priority 0). 2.88.1: not "any
+        such item marked queued" - a favorite that was never opened stays "queued" with no job, and Bulk Pricing then
+        stepped aside forever (feedback: "Ctrl+Alt+C isn't working for bulk pricing")."""
+        with self.lock:
+            return any(v[0] > 0 and v[1] == 0 and self.records.get(k[1], {}).get("src") in self.URGENT
+                       for k, v in self.latest.items())
 
     def _turn(self, rec):
         """Called before each search of an item's pricing."""
