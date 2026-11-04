@@ -22,7 +22,7 @@ HUD = ("xpbar",)                 # 2.65.0: fitted to the game's own bottom bar, 
 # the orbs' panels are anchored to the left and right edges, the XP bar runs between them). (x0, x1, bottom, h)
 #   x0 / x1 >= 0: from the left edge, < 0: from the right edge; bottom: up from the bottom edge.
 HUD_SPOTS = {"xpbar": [(0.531, -0.531, 0.0205, 0.056)]}   # 2.79.1: as wide as the XP bar (measured at 1440p), over it   # 2.67.2: two rows (switches on top); 2.74.0: between 2.73.4 and 2.73.5
-SHORT = {"breach": "Brch", "delirium": "Deli", "ritual": "Ritl", "remnant": "Remn", "focus": "Focus", "campaign": "Camp",
+SHORT = {"breach": "Brch", "delirium": "Deli", "ritual": "Ritl", "remnant": "Remn", "focus": "Focus", "campaign": "Campaign",
          "desecrate": "Dsc"}
 
 
@@ -308,7 +308,13 @@ class MergedOverlay:
         ritual (x/3) counter is"): the bar is left out of screen captures, so the Ritual / Delirium watchers see the
         game's counters under it. Its own switch (Overlay ↳ Settings › Behaviour), on by default; off = screenshots
         and streams show the bar."""
-        if not self.tracker_cfg().get("hide_capture", True):
+        cfg = self.tracker_cfg()
+        if not cfg.get("hidecap_2891"):
+            # 2.89.1 (feedback: "overlay still hides itself from screenshots"): off for everyone, once - the Ritual /
+            # Delirium watchers ran all the time for anyone who had them on, so the bar was never in a screenshot.
+            # Turn it on again only if a watcher can't read a counter the bar covers.
+            cfg["hide_capture"], cfg["hidecap_2891"] = False, True
+        if not cfg.get("hide_capture", False):
             return False
         # 2.88.3 (feedback: "it's being excluded for screenshots when it wasn't always"): only while the Ritual or
         # Delirium watcher is running - they're the ones that need to see under the bar. Otherwise screenshots show it.
@@ -519,7 +525,8 @@ class MergedOverlay:
         """The lock drawn on the canvas (Minimal and Strip have no title bar). -> x left of it. (2.59.0: no
         × - it was easy to hit by mistake and the overlay vanished; F6 shows / hides it.)"""
         locked = bool(self.tracker_cfg().get("mlocked"))
-        for txt, cmd, tag in (("🔒" if locked else "🔓", lambda: w._toggle_lock(), "mg_lock"),):
+        for txt, cmd, tag in (("🔒" if locked else "🔓", lambda: w._toggle_lock(), "mg_lock"),
+                              ("⚙", self.overlay_settings_go, "mg_cog")):    # 2.89.1: Overlay ↳ Settings
             cv.create_text(x, y, text=txt, anchor="e", fill=P["muted"], font=("Segoe UI Symbol", 10, "bold"),
                            tags=("mg", tag))
             cv.tag_bind(tag, "<Button-1>", lambda e, c=cmd: c())
@@ -527,6 +534,17 @@ class MergedOverlay:
             cv.tag_bind(tag, "<Leave>", lambda e: cv.configure(cursor=""))
             x -= 20
         return x
+
+    def overlay_settings_go(self):
+        """2.89.1 (feedback: "a small settings cog on the overlay near the lock icon that brings you to overlay
+        settings"): the app comes forward on Overlay ↳ Settings."""
+        try:
+            self.ovh_open("Settings")
+            self.root.deiconify()
+            self.root.lift()
+            self.root.focus_force()
+        except Exception:
+            self.log_error("opening the overlay's settings")
 
     def _mg_notes_button(self, w, cv, P, x, y, anchor="e", peek=False, chars=28):
         """Minimal / Strip: Notes opens the note as its own window right under this one."""

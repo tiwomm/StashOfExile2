@@ -565,10 +565,12 @@ class CampaignUI:
         grid = tk.Frame(box, bg=P2)
         grid.pack(fill="x", pady=(8, 0))
         self.tk_camp_vars = {}
-        for i, (k, label) in enumerate((("optional", "Show optional zones"), ("tips", "Tips (bosses, vendor checks)"),
-                                        ("warn", "Warn when I leave an act with a reward missed"),
-                                        ("splits", "Act splits"), ("off_at_maps", "Turn itself off once I reach maps"),
-                                        ("ask_route", "Ask Speedrun or Full rewards when a campaign starts"))):
+        opts = (("ask_route", "Ask Speedrun or Full rewards when a campaign starts"),   # 2.89.0
+                ("optional", "Show optional zones"), ("tips", "Tips (bosses, vendor checks)"),
+                ("warn", "Warn when I leave an act with a reward missed"),
+                ("splits", "Act splits - your time in each act, against your best"),   # 2.89.1: say what it is
+                ("off_at_maps", "Turn itself off once I reach maps"))
+        for i, (k, label) in enumerate(opts):
             v = tk.BooleanVar(value=bool(c[k]))
             self.tk_camp_vars[k] = v
             cb = ttk.Checkbutton(grid, text=label, variable=v, style="Card.TCheckbutton",
@@ -576,8 +578,9 @@ class CampaignUI:
             cb.grid(row=i // 2, column=i % 2, sticky="w", padx=(0, 24), pady=2)
         self.tk_goal_dock = tk.BooleanVar(value=self.goalbar_docked())
         ttk.Checkbutton(grid, text="Dock it to the overlay bar", variable=self.tk_goal_dock,
-                        style="Card.TCheckbutton", command=self.goal_dock_set).grid(row=2, column=1, sticky="w",
-                                                                                    padx=(0, 24), pady=2)
+                        style="Card.TCheckbutton", command=self.goal_dock_set).grid(
+            row=len(opts) // 2, column=len(opts) % 2, sticky="w", padx=(0, 24), pady=2)   # 2.89.1: after the rest
+            # (2.89.0 put the new switch in this cell: the two labels overlapped - "Dock it to the overlay bar...")
         for col in range(2):
             grid.columnconfigure(col, uniform="cs")
         pk = tk.Frame(box, bg=P2)

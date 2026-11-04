@@ -21,6 +21,12 @@ NEXT = [
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.89.1": [
+        "Screenshots show the overlay again. (Overlay ↳ Settings › Behaviour can hide it, if it covers a counter the "
+        "Ritual or Delirium watcher reads.)",
+        "A ⚙ next to the overlay's lock opens its settings.",
+        "The bar's switch says Campaign; the Campaign settings no longer print two options on top of each other.",
+    ],
     "2.89.0": [
         "Campaign Helper: starting a campaign asks Speedrun or Full rewards, then follows that guide. Speedrun skips "
         "the bosses and side areas that only give gems or loot, and keeps the points, spirit and resistances.",
