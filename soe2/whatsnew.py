@@ -21,6 +21,11 @@ NEXT = [
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.92.0": [
+        "Arbitrage is removed (deprecated): the Currency Exchange history it read comes from GGG without clear terms "
+        "for tools, so the app no longer reads it.",
+        "Check a flip you see in game stays - it's now at the bottom of Exchange rates › Exchange Helper.",
+    ],
     "2.91.0": [
         "New: an Exchange rates window over the game (chaos : div, exalt : div ...), in the overlay's look. Turn it "
         "on in Overlay ↳ Settings › Features and drag it where you like.",
