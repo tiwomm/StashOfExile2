@@ -130,8 +130,9 @@ class TabReaderJobs:
                 PCTAB["log"].append(f"couldn't turn into item text ({ex!r}): {name}")
                 if not PCTAB.get("raw_logged"):          # 2.8.2: the first one in full, to see what it looks like
                     PCTAB["raw_logged"] = True
-                    PCTAB["log"].append(traceback.format_exc() + "listing item: " +
-                                        json.dumps(it, ensure_ascii=False)[:6000])
+                    shown = {k: v for k, v in it.items() if k not in ("note", "name")} if isinstance(it, dict) else it
+                    PCTAB["log"].append(traceback.format_exc() + "listing item (its note and name left out): " +
+                                        json.dumps(shown, ensure_ascii=False)[:6000])     # 2.89.3
                 continue
             PCTAB["read"] += 1
             st = lst.get("stash") or {}                 # 2.87.0: where it sits in the tab (the trade site says)

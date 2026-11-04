@@ -46,13 +46,18 @@ DETAILS = (
      "community name, never your character's", "the Leaderboards (you can turn this one off on its own)"),
     ("Campaign zones the guide doesn't know", "the zone's name, its act and level", "the next update of the campaign "
      "guide"),
-    ("Strats you upload yourself", "only when you press Upload / Post", "the Money Makers and Strat Tracker boards"),
+    ("Strats you upload yourself", "only when you press Upload / Post - with rates (div per hour), never your totals",
+     "the Money Makers and Strat Tracker boards"),
+    ("Your community name, votes and reports", "only when you join, vote or report yourself", "the board itself"),
 )
 WHERE = ("It all goes to the StashOfExile2 community server (run by the app's developer on Cloudflare) - not to GGG, "
-         "not to anyone else. It is never sold and never used for ads or tracking. Your internet address is only used, "
-         "scrambled, to stop spam, and is thrown away each day.")
-NEVER = ("Never sent: your account or character names, your items or stash, listing ids, anything from your computer. "
-         "Problem reports are separate - they go only when you press Report a bug.")
+         "not to anyone else. It is never sold and never used for ads or tracking. Your internet address is never "
+         "stored: only a keyed scramble of it, to stop spam, deleted the next day. Private leagues are never shared, and "
+         "leaderboard times show the day, not the time. You can delete everything of yours: Money Makers › Leave the "
+         "board.")
+NEVER = ("Never sent: your account or character names, your wealth (stash value, net worth), your items or stash, "
+         "listing ids, files from your computer. Check a screenshot before you upload it - it's public. Bug reports are "
+         "separate: they go only when you press Report a bug, and you see every word first.")
 
 
 def sharing():
@@ -114,6 +119,9 @@ def vote_changes(rules, before):
 def push(market, rules, call=None):
     """Send this hour's summary + rule changes. -> (True, how many prices) / (False, why)."""
     if not B.configured() or not sharing():
+        return False, "off"
+    from .privacy import is_private_league                 # 2.89.3: a private league's numbers never go up
+    if is_private_league(SETTINGS.get("league")):
         return False, "off"
     league = SETTINGS.get("league") or ""
     st = sent_state()

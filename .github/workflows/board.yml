@@ -18,14 +18,14 @@ jobs:
       run:
         working-directory: board
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09  # v5
       - name: Secrets set?
         id: ready
         run: |
           if [ -z "$CLOUDFLARE_API_TOKEN" ] || [ -z "$CLOUDFLARE_ACCOUNT_ID" ] || [ -z "$D1_ID" ]; then
             echo "Board secrets aren't set yet - see board/README.md. Skipping."; echo "go=no" >> "$GITHUB_OUTPUT"
           else echo "go=yes" >> "$GITHUB_OUTPUT"; fi
-      - uses: actions/setup-node@v5
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444  # v5
         if: steps.ready.outputs.go == 'yes'
         with: {node-version: "22"}
       - name: Install wrangler
@@ -47,6 +47,13 @@ jobs:
         run: |
           if [ -n "$ADMIN_KEY" ]; then printf '%s' "$ADMIN_KEY" | npx wrangler secret put ADMIN_KEY;
           else echo "No ADMIN_KEY secret: nobody can become admin until you add one."; fi
+      - name: IP pepper (2.89.3)
+        if: steps.ready.outputs.go == 'yes'
+        env:
+          IP_PEPPER: ${{ secrets.IP_PEPPER }}
+        run: |
+          if [ -n "$IP_PEPPER" ]; then printf '%s' "$IP_PEPPER" | npx wrangler secret put IP_PEPPER;
+          else echo "No IP_PEPPER secret: the board keeps its own random key (add one: 32+ random characters)."; fi
       - name: Bug reports (2.48.0)
         if: steps.ready.outputs.go == 'yes'
         env:

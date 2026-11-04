@@ -124,7 +124,7 @@ export function validateStrat(s) {
   if (s.sources !== undefined && (!Array.isArray(s.sources) || s.sources.length > 10 || !s.sources.every((x) => x && typeof x.url === "string" &&
     /^https?:\/\//.test(x.url) && x.url.length <= 300 && String(x.title ?? "").length <= 120)))
     out.push('sources must be a list of {"title", "url"} with http(s) links');
-  if (s.atlas_image !== undefined && !/^b:\d{1,12}$/.test(String(s.atlas_image)))     // 2.78.0: uploaded first
+  if (s.atlas_image !== undefined && !/^b:[0-9a-f]{32}$/.test(String(s.atlas_image)))  // 2.78.0: uploaded first
     out.push('atlas_image must be "b:<id>" (upload the screenshot first)');
   const unknown = Object.keys(s).filter((k) => !RULES.order.includes(k));
   if (unknown.length) out.push("unknown field(s): " + unknown.sort().join(", "));
@@ -160,6 +160,44 @@ async function sha256(text) {
   const d = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text));
   return [...new Uint8Array(d)].map((b) => b.toString(16).padStart(2, "0")).join("");
 }
+// 2.89.3: an internet address is never stored. What is kept (for daily limits) is a KEYED hash of it with the day and
+// what it's for: HMAC-SHA256 with the IP_PEPPER secret (or, until that is set, a random key kept in the database) - a
+// leaked table alone can't be turned back into addresses, and every row is gone the next day.
+async function metaGet(env, k) {
+  const row = await env.DB.prepare("SELECT v FROM meta WHERE k = ?").bind(k).first();
+  return row ? row.v : null;
+}
+async function metaSet(env, k, v) {
+  await env.DB.prepare("INSERT INTO meta (k, v) VALUES (?, ?) ON CONFLICT(k) DO UPDATE SET v = excluded.v").bind(k, String(v)).run();
+}
+async function ipKey(req, env, purpose) {
+  let pepper = env.IP_PEPPER;
+  if (!pepper) {
+    pepper = await metaGet(env, "pepper");
+    if (!pepper) { pepper = randomHex(32); await metaSet(env, "pepper", pepper); }
+  }
+  const key = await crypto.subtle.importKey("raw", new TextEncoder().encode(String(pepper)), { name: "HMAC", hash: "SHA-256" },
+    false, ["sign"]);
+  const ip = req.headers.get("cf-connecting-ip") || "local";
+  const sig = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(`${ip}|${purpose}|${today()}`));
+  return [...new Uint8Array(sig)].map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+// 2.89.3: once a day - yesterday's limits, expired sessions, and pictures no post uses any more go
+async function housekeeping(env) {
+  const day = today();
+  if ((await metaGet(env, "swept")) === day) return;
+  await metaSet(env, "swept", day);
+  await env.DB.batch([
+    env.DB.prepare("DELETE FROM limits WHERE day <> ?").bind(day),
+    env.DB.prepare("DELETE FROM joins WHERE day <> ?").bind(day),
+    env.DB.prepare("DELETE FROM bug_limits WHERE day <> ?").bind(day),
+    env.DB.prepare("DELETE FROM sessions WHERE expires < ?").bind(now()),
+    env.DB.prepare(`DELETE FROM images WHERE created < ? AND NOT EXISTS (SELECT 1 FROM posts p WHERE instr(p.data, '"b:' || images.key || '"') > 0)
+      AND NOT EXISTS (SELECT 1 FROM revisions r WHERE instr(r.data, '"b:' || images.key || '"') > 0)`).bind(now() - 3600),
+  ]);
+}
+
 const randomHex = (n) => [...crypto.getRandomValues(new Uint8Array(n))].map((b) => b.toString(16).padStart(2, "0")).join("");
 function sameText(a, b) {                  // constant-time compare for the admin key
   a = String(a); b = String(b);
@@ -195,13 +233,36 @@ const MIGRATIONS = [
   "DELETE FROM lb WHERE cat = 'trial' AND key = 'Simulacrum of Delusion'",
   `CREATE TABLE IF NOT EXISTS lb_reports (lb_id INTEGER NOT NULL, user_id TEXT NOT NULL, reason TEXT, created INTEGER NOT NULL,
     PRIMARY KEY (lb_id, user_id))`,
+  // 2.89.3: privacy - a key table for the server's own secrets / markers; pictures get unguessable keys; leaderboard
+  // times keep only the day (not the second you played); admin rights are tied to the admin key they came from
+  "CREATE TABLE IF NOT EXISTS meta (k TEXT PRIMARY KEY, v TEXT NOT NULL)",
+  "ALTER TABLE images ADD COLUMN key TEXT",
+  "UPDATE images SET key = lower(hex(randomblob(16))) WHERE key IS NULL",
+  "CREATE UNIQUE INDEX IF NOT EXISTS images_key ON images (key)",
+  "UPDATE lb SET at = (at / 86400) * 86400 WHERE at % 86400 <> 0",
+  "ALTER TABLE users ADD COLUMN admin_key TEXT NOT NULL DEFAULT ''",
 ];
 async function migrate(env) {
   if (migrated) return;
   for (const sql of MIGRATIONS) {
     try { await env.DB.prepare(sql).run(); } catch (_e) { /* already there */ }
   }
+  try { await imageKeys(env); } catch (_e) { /* next time */ }
   migrated = true;
+}
+
+// 2.89.3, once: posts and versions that named a picture by its old counting number ("b:12") name it by its key
+async function imageKeys(env) {
+  if (await metaGet(env, "image_keys")) return;
+  const rows = await env.DB.prepare("SELECT id, key FROM images").all();
+  for (const r of rows.results) {
+    const from = `"b:${r.id}"`, to = `"b:${r.key}"`;
+    await env.DB.batch([
+      env.DB.prepare("UPDATE posts SET data = replace(data, ?1, ?2) WHERE instr(data, ?1) > 0").bind(from, to),
+      env.DB.prepare("UPDATE revisions SET data = replace(data, ?1, ?2) WHERE instr(data, ?1) > 0").bind(from, to),
+    ]);
+  }
+  await metaSet(env, "image_keys", "1");
 }
 
 const today = () => new Date().toISOString().slice(0, 10);
@@ -220,7 +281,7 @@ async function who(req, env) {
   const m = /^Bearer\s+([a-f0-9]{64})$/i.exec(req.headers.get("authorization") || "");
   if (!m) return null;
   const row = await env.DB.prepare(
-    `SELECT u.id, u.name, u.admin, u.banned, u.reviewer, u.last_seen, u.created, u.renamed, u.name_reset FROM sessions s JOIN users u ON u.id = s.user_id
+    `SELECT u.id, u.name, u.admin, u.admin_key, u.banned, u.reviewer, u.last_seen, u.created, u.renamed, u.name_reset FROM sessions s JOIN users u ON u.id = s.user_id
      WHERE s.hash = ? AND s.expires > ?`,
   ).bind(await sha256(m[1]), now()).first();
   if (!row) return null;
@@ -230,7 +291,10 @@ async function who(req, env) {
     row.renamed = 0;
     row.name_reset = 1;
   }
-  return { ...row, admin: !!row.admin, banned: !!row.banned, reviewer: row.reviewer === 1 && !row.banned, reviewer_state: row.reviewer };
+  // 2.89.3: admin only while the server's ADMIN_KEY is the one it was granted with - a new key takes it away from everyone
+  const admin = !!row.admin && !!env.ADMIN_KEY && row.admin_key === (await sha256("admin|" + env.ADMIN_KEY)).slice(0, 16);
+  delete row.admin_key;
+  return { ...row, admin, banned: !!row.banned, reviewer: row.reviewer === 1 && !row.banned, reviewer_state: row.reviewer };
 }
 
 // can this account opt in as a reviewer? (14 days old, and a post or 10 upvotes given; not banned / taken away)
@@ -256,10 +320,12 @@ async function readBody(req) {
 
 function present(row, me) {
   return {
-    id: row.id, kind: row.kind, data: JSON.parse(row.data), score: row.score, created: row.created,
+    id: row.id, kind: row.kind, data: { ...JSON.parse(row.data), author: row.author_name }, score: row.score, created: row.created,
     updated: row.updated, promoted: !!row.promoted, hidden: !!row.hidden,
     reports: canReview(me) ? row.reports : undefined,
-    author: { id: row.author_id, name: row.author_name }, voted: !!row.voted, mine: !!me && me.id === row.author_id,
+    // 2.89.3: account ids only for admins (they ban); the name is always today's (a rename reaches old posts)
+    author: { id: me?.admin ? row.author_id : undefined, name: row.author_name }, voted: !!row.voted,
+    mine: !!me && me.id === row.author_id,
     based_on: row.based_on ? { id: row.based_on, name: row.based_name || null } : null,          // 2.85.0
     suggestions: me && me.id === row.author_id ? row.suggested ?? 0 : undefined,
     pending: row.pending ?? 0,
@@ -280,8 +346,8 @@ async function join(req, env) {
   const clean = String(name || "").trim();
   if (!NAME.test(clean)) return fail(400, "Pick a name of 2-24 letters, numbers, spaces, _ . or -.");
   if (nameProblem(clean)) return fail(400, nameProblem(clean));
-  const day = new Date().toISOString().slice(0, 10);
-  const ip = await sha256((req.headers.get("cf-connecting-ip") || "local") + "|" + day);
+  const day = today();
+  const ip = await ipKey(req, env, "join");
   await env.DB.prepare("DELETE FROM joins WHERE day <> ?").bind(day).run();
   const seen = await env.DB.prepare("SELECT n FROM joins WHERE ip = ?").bind(ip).first();
   if (seen && seen.n >= Number(env.JOINS_PER_DAY || 5)) return fail(429, "Too many new board accounts from here today - try tomorrow.");
@@ -326,22 +392,31 @@ async function rename(req, env, me) {
   const row = await env.DB.prepare("SELECT renamed FROM users WHERE id = ?").bind(me.id).first();
   const wait = (row?.renamed || 0) + Number(env.RENAME_DAYS ?? 7) * DAY - now();
   if (wait > 0 && !me.admin) return fail(429, `You can change your name again on ${new Date((now() + wait) * 1000).toISOString().slice(0, 10)}.`);
-  await env.DB.prepare("UPDATE users SET name = ?, renamed = ?, name_reset = 0 WHERE id = ?").bind(clean, now(), me.id).run();
+  await env.DB.batch([
+    env.DB.prepare("UPDATE users SET name = ?, renamed = ?, name_reset = 0 WHERE id = ?").bind(clean, now(), me.id),
+    // 2.89.3: the old name leaves every copy the board kept of your posts (a rename really hides the old name)
+    env.DB.prepare("UPDATE posts SET data = json_set(data, '$.author', ?) WHERE author_id = ?").bind(clean, me.id),
+    env.DB.prepare(`UPDATE revisions SET data = json_set(data, '$.author', ?) WHERE post_id IN
+      (SELECT id FROM posts WHERE author_id = ?)`).bind(clean, me.id),
+  ]);
   return json({ user: userOut({ ...me, name: clean, renamed: now(), name_reset: 0 }) });
 }
 
 async function becomeAdmin(req, env, me) {
-  const ip = await sha256((req.headers.get("cf-connecting-ip") || "local") + "|admin");
+  const ip = await ipKey(req, env, "admin");
   const max = limitFor(env, "admin_key"), maxIp = limitFor(env, "admin_key_ip");   // wrong tries a day
   if (!(await allowance(env, "admin_key", ip, maxIp, false)) || !(await allowance(env, "admin_key_user", me.id, max, false)))
     return fail(429, "Too many tries today - try tomorrow.");
   const { key } = await readBody(req);
-  if (!env.ADMIN_KEY || String(env.ADMIN_KEY).length < 8 || !sameText(key, env.ADMIN_KEY)) {
+  if (env.ADMIN_KEY && String(env.ADMIN_KEY).length < 32)                    // 2.89.3: 32+ characters, or nobody gets in
+    return fail(503, "The board's admin key is too short - set a new one of 32+ random characters.");
+  if (!env.ADMIN_KEY || !sameText(key, env.ADMIN_KEY)) {
     await allowance(env, "admin_key", ip, maxIp + 1);
     await allowance(env, "admin_key_user", me.id, max + 1);
     return fail(403, "That isn't the admin key.");
   }
-  await env.DB.prepare("UPDATE users SET admin = 1 WHERE id = ?").bind(me.id).run();
+  await env.DB.prepare("UPDATE users SET admin = 1, admin_key = ? WHERE id = ?")
+    .bind((await sha256("admin|" + env.ADMIN_KEY)).slice(0, 16), me.id).run();
   return json({ user: userOut({ ...me, admin: true }) });
 }
 
@@ -412,7 +487,7 @@ const searchText = (d) => [d.name, d.summary, d.text, d.type, d.category, ...(d.
 async function imageOk(env, data, me, keep = null) {
   const ref = data?.atlas_image;
   if (!ref || ref === keep) return true;
-  const row = await env.DB.prepare("SELECT author_id FROM images WHERE id = ?").bind(Number(String(ref).slice(2))).first();
+  const row = await env.DB.prepare("SELECT author_id FROM images WHERE key = ?").bind(String(ref).slice(2)).first();
   return !!row && (row.author_id === me.id || me.admin);
 }
 
@@ -519,7 +594,8 @@ async function suggest(req, env, me, id) {
 function revOut(r, me) {
   return {
     id: r.id, post_id: r.post_id, status: r.status, note: r.note, created: r.created, decided: r.decided, why: r.why || "",
-    author: { id: r.author_id, name: r.author_name }, data: JSON.parse(r.data), mine: !!me && me.id === r.author_id,
+    author: { id: me?.admin ? r.author_id : undefined, name: r.author_name },
+    data: JSON.parse(r.data), mine: !!me && me.id === r.author_id,
     approvals: r.approvals ?? 0, rejections: r.rejections ?? 0, my_vote: r.my_vote ?? null,
     post_name: r.post_name ?? undefined, post_author: r.post_author ?? undefined,
   };
@@ -672,13 +748,54 @@ async function deletePost(env, me, id) {
   const row = await getPost(env, me, id);
   if (!row) return fail(404, "not found");
   if (row.author_id !== me.id && !me.admin) return fail(403, "only its author or an admin can delete it");
+  const keys = await postImages(env, id);
   await env.DB.batch([
     env.DB.prepare("DELETE FROM posts WHERE id = ?").bind(id),
     env.DB.prepare("DELETE FROM votes WHERE post_id = ?").bind(id),
     env.DB.prepare("DELETE FROM reports WHERE post_id = ?").bind(id),
     env.DB.prepare("DELETE FROM revisions WHERE post_id = ?").bind(id),
+    env.DB.prepare("DELETE FROM reviews WHERE target = ?").bind(`post:${id}`),
+    ...keys.map((k) => env.DB.prepare("DELETE FROM images WHERE key = ?").bind(k)),   // 2.89.3: its pictures go too
   ]);
   return json({ ok: true });
+}
+
+// the picture keys a post and its versions name
+async function postImages(env, id) {
+  const rows = await env.DB.prepare(`SELECT json_extract(data, '$.atlas_image') AS ref FROM posts WHERE id = ?1
+    UNION SELECT json_extract(data, '$.atlas_image') FROM revisions WHERE post_id = ?1`).bind(id).all();
+  return [...new Set(rows.results.map((r) => String(r.ref || "")).filter((r) => /^b:[0-9a-f]{32}$/.test(r)).map((r) => r.slice(2)))];
+}
+
+// 2.89.3: DELETE /me - leave the board and take everything with you: your name, posts (and their pictures, votes,
+// versions), your suggestions, votes, reports, reviews, leaderboard times and sessions. Nothing of yours stays.
+async function deleteMe(env, me) {
+  const posts = (await env.DB.prepare("SELECT id FROM posts WHERE author_id = ?").bind(me.id).all()).results.map((r) => r.id);
+  for (const id of posts) {
+    const keys = await postImages(env, id);
+    await env.DB.batch([
+      env.DB.prepare("DELETE FROM votes WHERE post_id = ?").bind(id),
+      env.DB.prepare("DELETE FROM reports WHERE post_id = ?").bind(id),
+      env.DB.prepare("DELETE FROM reviews WHERE target = ? OR target IN (SELECT 'rev:' || id FROM revisions WHERE post_id = ?)")
+        .bind(`post:${id}`, id),
+      env.DB.prepare("DELETE FROM revisions WHERE post_id = ?").bind(id),
+      ...keys.map((k) => env.DB.prepare("DELETE FROM images WHERE key = ?").bind(k)),
+    ]);
+  }
+  await env.DB.batch([
+    env.DB.prepare("DELETE FROM posts WHERE author_id = ?").bind(me.id),
+    env.DB.prepare("DELETE FROM revisions WHERE author_id = ?").bind(me.id),
+    env.DB.prepare("DELETE FROM images WHERE author_id = ?").bind(me.id),
+    env.DB.prepare("DELETE FROM votes WHERE user_id = ?").bind(me.id),
+    env.DB.prepare("DELETE FROM reports WHERE user_id = ?").bind(me.id),
+    env.DB.prepare("DELETE FROM reviews WHERE user_id = ?").bind(me.id),
+    env.DB.prepare("DELETE FROM lb_reports WHERE user_id = ? OR lb_id IN (SELECT id FROM lb WHERE user_id = ?)").bind(me.id, me.id),
+    env.DB.prepare("DELETE FROM lb WHERE user_id = ?").bind(me.id),
+    env.DB.prepare("DELETE FROM sessions WHERE user_id = ?").bind(me.id),
+    env.DB.prepare("DELETE FROM users WHERE id = ?").bind(me.id),
+  ]);
+  await env.DB.prepare("UPDATE posts SET score = (SELECT COUNT(*) FROM votes v WHERE v.post_id = posts.id)").run();
+  return json({ ok: true, deleted: true });
 }
 
 async function vote(req, env, me, id) {
@@ -766,7 +883,8 @@ async function lbSend(req, env, me) {
         !isFinite(secs) || secs < LB_FLOOR[cat] || secs > LB_CEIL[cat]) { bad++; continue; }
     const level = Math.max(0, Math.min(100, Math.floor(Number(e.level) || 0)));
     const deaths = Math.max(0, Math.min(999, Math.floor(Number(e.deaths) || 0)));
-    const at = Math.min(t, Math.max(0, Math.floor(Number(e.at) || t)));
+    // 2.89.3: only the day is kept - the exact second would show when (and in which time zone) someone plays
+    const at = Math.floor(Math.min(t, Math.max(0, Math.floor(Number(e.at) || t))) / DAY) * DAY;
     stmts.push(env.DB.prepare(`INSERT INTO lb (user_id, cat, key, league, cls, secs, level, deaths, at, sent)
       VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10) ON CONFLICT(user_id, cat, key, league, cls) DO UPDATE SET
       secs = MIN(secs, ?6), level = CASE WHEN ?6 < secs THEN ?7 ELSE level END,
@@ -802,9 +920,9 @@ async function lbList(url, env, me) {
   const rows = await env.DB.prepare(`SELECT l.*, u.name FROM lb l JOIN users u ON u.id = l.user_id
     WHERE ${where.join(" AND ")} AND l.secs = (SELECT MIN(x.secs) FROM lb x WHERE x.user_id = l.user_id AND x.cat = l.cat
     AND x.key = l.key AND x.hidden = 0 ${p.get("league") ? "AND x.league = l.league" : ""} ${p.get("cls") ? "AND x.cls = l.cls" : ""})
-    GROUP BY l.user_id ORDER BY l.secs, l.at LIMIT ${limit}`).bind(...args).all();
+    GROUP BY l.user_id ORDER BY l.secs, l.id LIMIT ${limit}`).bind(...args).all();
   return json({ rows: rows.results.map((r) => ({ id: r.id, name: r.name, secs: r.secs, cls: r.cls, league: r.league,
-    level: r.level, deaths: r.deaths, at: r.at, mine: !!me && me.id === r.user_id, hidden: !!r.hidden,
+    level: r.level, deaths: r.deaths, at: Math.floor(r.at / DAY) * DAY, mine: !!me && me.id === r.user_id, hidden: !!r.hidden,
     reports: canReview(me) ? r.reports : undefined })) });
 }
 
@@ -861,12 +979,18 @@ const MAX_PAIRS = 600, MAX_VOTES = 400, W_CAP = 10;
 const SID = /^[a-z_]+\.[A-Za-z0-9_.]{1,80}$/, KEY = /^.{2,200}$/s, VOTE = ["high", "normal", "ignore"];
 const MAP_RANKS = ["S", "A", "B", "C", "D", "Avoid"];
 const okPrice = (m) => typeof m === "number" && isFinite(m) && m > 0.0005 && m < 100000;
+const ZONE_TEXT = /^[\p{L}\p{N} ',.\-]{1,80}$/u;
 const okText = (t, n = 80) => typeof t === "string" && t.length > 0 && t.length <= n;
 
 async function modBatch(req, env) {
   const body = await readBody(req);
   const cidRaw = String(body.cid || "");
   if (!/^[a-f0-9]{32}$/.test(cidRaw)) return fail(400, "bad cid");
+  // 2.89.3: made-up install ids can't flood it - BATCHES_PER_DAY batches and NEW_CIDS_PER_DAY new installs per address
+  const ipk = await ipKey(req, env, "batch");
+  if (!(await allowance(env, "batch_ip", ipk, Number(env.BATCHES_PER_DAY || 60)))) return fail(429, "too many today");
+  const known = await env.DB.prepare("SELECT 1 AS x FROM contributors WHERE cid = ?").bind(await sha256(cidRaw)).first();
+  if (!known && !(await allowance(env, "new_cid_ip", ipk, Number(env.NEW_CIDS_PER_DAY || 3)))) return fail(429, "too many new installs today");
   const league = String(body.league || "").slice(0, 60);
   const cid = await sha256(cidRaw), t = now();
   const seen = await env.DB.prepare("SELECT last FROM contributors WHERE cid = ?").bind(cid).first();
@@ -903,7 +1027,9 @@ async function modBatch(req, env) {
   for (const z of (Array.isArray(body.zones) ? body.zones : []).slice(0, 100)) {   // 2.77.0: campaign zones
     const act = String(z?.act ?? ""), zone = String(z?.zone ?? "").trim(), after = String(z?.after ?? "").trim();
     const level = Math.floor(Number(z?.level) || 0);
-    if (!/^(\d|i\d)$/.test(act) || !okText(zone) || after.length > 80 || level < 0 || level > 100) continue;
+    // 2.89.3: a zone name is letters, digits, spaces and ' , . - only (it can reach the guide pack)
+    if (!/^(\d|i\d)$/.test(act) || !okText(zone) || !ZONE_TEXT.test(zone) || (after && !ZONE_TEXT.test(after)) ||
+        after.length > 80 || level < 0 || level > 100) continue;
     stmts.push(env.DB.prepare(`INSERT INTO campaign_zones (act, zone, cid, after, level, updated)
       VALUES (?1, ?2, ?3, ?4, ?5, ?6) ON CONFLICT(act, zone, cid) DO UPDATE SET after = ?4, level = ?5, updated = ?6`)
       .bind(act, zone, cid, after, level, t));
@@ -946,7 +1072,7 @@ async function mapRatings(env) {
 // 2.77.0: zones players' logs showed that their guide pack didn't have - pooled for tools/build_guide.py
 async function campaignZones(env) {
   const rows = await env.DB.prepare(`SELECT act, zone, COUNT(*) AS n, ROUND(AVG(level)) AS level FROM campaign_zones
-    GROUP BY act, zone HAVING COUNT(*) >= 2`).all();
+    GROUP BY act, zone HAVING COUNT(*) >= 3`).all();
   const after = await env.DB.prepare(`SELECT act, zone, after, COUNT(*) AS n FROM campaign_zones GROUP BY act, zone, after
     ORDER BY n DESC`).all();
   const best = {};
@@ -964,15 +1090,21 @@ async function modRatings(env) {
 // ------------------------------------------------------------------ bug reports (2.48.0)
 // The app's "Report a bug" posts here; the Worker opens a GitHub issue with its own token (the GITHUB_TOKEN secret -
 // the app never holds one) and, with a DISCORD_WEBHOOK secret, tells Discord. No sign-in; BUGS_PER_DAY per address.
+// 2.89.3: a public issue - an account name (Name#1234) or a Windows / Linux home path is masked here too
+const scrubText = (t) => String(t).replace(/([\\/](?:Users|home)[\\/])[^\\/\s"']+/gi, "$1<you>")
+  .replace(/[\p{L}\p{N}_]{2,40}#\d{4}\b/gu, "<account>").replace(/@(everyone|here)/gi, "@\u200b$1");
 async function bugReport(req, env) {
+  // 2.89.3: only the app sends these - a web page can't (a JSON body and the app's own header force a check first)
+  if (!/^application\/json/i.test(req.headers.get("content-type") || "") || req.headers.get("x-soe2") !== "1")
+    return fail(400, "bad request");
   if (!env.GITHUB_TOKEN) return fail(503, "Bug reports aren't set up on the board yet.");
   const b = await readBody(req);
-  const title = String(b.title || "").trim().slice(0, 120);
-  const text = String(b.body || "").trim().slice(0, 20000);
+  const title = scrubText(String(b.title || "").trim().slice(0, 120));
+  const text = scrubText(String(b.body || "").trim().slice(0, 20000));
   const version = String(b.version || "?").slice(0, 30);
   if (title.length < 4 || text.length < 10) return fail(400, "Say what happened (a title and a few words).");
-  const day = new Date().toISOString().slice(0, 10);
-  const ip = await sha256((req.headers.get("cf-connecting-ip") || "local") + "|bug|" + day);
+  const day = today();
+  const ip = await ipKey(req, env, "bug");
   await env.DB.prepare("DELETE FROM bug_limits WHERE day <> ?").bind(day).run();
   const seen = await env.DB.prepare("SELECT n FROM bug_limits WHERE ip = ?").bind(ip).first();
   if (seen && seen.n >= Number(env.BUGS_PER_DAY || 5)) return fail(429, "That's a lot of reports today - try tomorrow.");
@@ -989,7 +1121,8 @@ async function bugReport(req, env) {
   const issue = await r.json();
   if (env.DISCORD_WEBHOOK) {
     await fetch(env.DISCORD_WEBHOOK, { method: "POST", headers: { "content-type": "application/json" },
-      body: JSON.stringify({ content: `🐞 New bug report #${issue.number} (v${version}): ${title}\n${issue.html_url}` }) })
+      body: JSON.stringify({ content: `🐞 New bug report #${issue.number} (v${version}): ${title}\n${issue.html_url}`,
+        allowed_mentions: { parse: [] } }) })
       .catch(() => {});
   }
   return json({ number: issue.number, url: issue.html_url }, 201);
@@ -1011,15 +1144,22 @@ async function postImage(req, env, me) {
   if (bytes.length < 100 || bytes.length > MAX_IMAGE || bytes[0] !== 0xff || bytes[1] !== 0xd8) return fail(400, "Send a JPEG of 320 KB or less.");
   const today = await env.DB.prepare("SELECT COUNT(*) AS n FROM images WHERE author_id = ? AND created > ?").bind(me.id, now() - DAY).first();
   if (today.n >= Number(env.IMAGES_PER_DAY || 20) && !me.admin) return fail(429, "That's enough pictures for today - try again tomorrow.");
-  const res = await env.DB.prepare("INSERT INTO images (author_id, data, created) VALUES (?, ?, ?)").bind(me.id, bytes, now()).run();
-  return json({ id: res.meta.last_row_id }, 201);
+  const key = randomHex(16);                         // 2.89.3: an unguessable key, not a counting number
+  await env.DB.prepare("INSERT INTO images (author_id, data, created, key) VALUES (?, ?, ?, ?)").bind(me.id, bytes, now(), key).run();
+  return json({ id: key }, 201);
 }
 
-async function getImage(env, id) {
-  const row = await env.DB.prepare("SELECT data FROM images WHERE id = ?").bind(id).first();
+// 2.89.3: a picture is only handed out while a post people can see uses it (or to its uploader / reviewers);
+// a deleted or hidden post's picture is gone, and nothing caches it for long
+async function getImage(env, me, key) {
+  const row = await env.DB.prepare("SELECT data, author_id FROM images WHERE key = ?").bind(key).first();
   if (!row) return fail(404, "not found");
+  const ref = `"b:${key}"`;
+  const shown = await env.DB.prepare("SELECT 1 AS x FROM posts WHERE hidden = 0 AND instr(data, ?) > 0 LIMIT 1").bind(ref).first();
+  const own = me && (me.id === row.author_id || canReview(me));
+  if (!shown && !own) return fail(404, "not found");
   return new Response(new Uint8Array(row.data), { headers: { "content-type": "image/jpeg",
-    "cache-control": "public, max-age=31536000, immutable" } });
+    "cache-control": "private, max-age=3600" } });
 }
 
 // ------------------------------------------------------------------ routing
@@ -1031,6 +1171,7 @@ export default {
     const rv = /^\/revisions\/(\d+)(?:\/(review))?$/.exec(path);
     try {
       await migrate(env);
+      try { await housekeeping(env); } catch (_e) { /* next request */ }
       if (path === "/" || path === "/health") return json({ ok: true, schema: RULES.schema });
       if (path === "/auth/join" && req.method === "POST") return join(req, env);
       if (path === "/official") return official(env);
@@ -1039,10 +1180,10 @@ export default {
       if (path === "/mods/ratings") return modRatings(env);
       if (path === "/maps/ratings") return mapRatings(env);
       if (path === "/campaign/zones") return campaignZones(env);
-      const im = /^\/images\/(\d{1,12})$/.exec(path);
-      if (im && req.method === "GET") return getImage(env, Number(im[1]));
       if (path === "/bugs" && req.method === "POST") return bugReport(req, env);
       const me = await who(req, env);
+      const im = /^\/images\/([0-9a-f]{32})$/.exec(path);
+      if (im && req.method === "GET") return getImage(env, me, im[1]);
       if (path === "/me") {
         if (!me) return fail(401, "sign in first");
         const why = canReview(me) ? null : await reviewerCheck(env, me);
@@ -1062,6 +1203,7 @@ export default {
       }
       if (!me) return fail(401, "Join the board first.");
       if (path === "/auth/rename" && req.method === "POST") return rename(req, env, me);
+      if (path === "/me" && req.method === "DELETE") return deleteMe(env, me);
       if (path === "/auth/admin" && req.method === "POST") return becomeAdmin(req, env, me);
       if (path === "/me/inbox" && req.method === "GET") return inbox(env, me);
       if (path === "/admin/names/sweep" && req.method === "POST") return sweepNames(env, me);

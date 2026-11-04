@@ -943,7 +943,8 @@ class MoneyMakersPage:
         if name is None:
             name = simpledialog.askstring("Community board", f"To {why}, pick your community name - other players see "
                                           "it, it's yours alone and can change once every 7 days (2-24 letters or "
-                                          "numbers). No account or password needed.", parent=self.root)
+                                          "numbers). No account or password needed. Not your account or character "
+                                          "name.", parent=self.root)
         if not name:
             return False
         ok, d = B.join(name.strip())
@@ -977,6 +978,8 @@ class MoneyMakersPage:
         if not s or s["origin"] != "mine" or not self.cm_need_sharing(self.mm_post) or self.mm_need_login("post"):
             return None
         data = {k: v for k, v in MM.tidy(s).items() if k not in ("id", "author")}
+        if not self.mm_atlas_check(data):                         # 2.89.3: a public picture - look first
+            return None
 
         def work():                                               # 2.78.0: the atlas screenshot goes up first
             from . import stratimg
@@ -996,6 +999,26 @@ class MoneyMakersPage:
                 save_json("settings.json", SETTINGS)
             return res
         self._mm_bg(work, lambda r: self.mm_board_result(r, f"Posted \"{s['name']}\" to the Community board."))
+
+    def mm_atlas_check(self, data):
+        """2.89.3: a screenshot becomes public. Before it goes up: check it shows no character, account or guild
+        names, chat or party. Yes = upload it, No = post without it, Cancel = stop. -> False when stopped."""
+        if not str(data.get("atlas_image", "")).startswith("l:"):
+            return True
+        from tkinter import messagebox
+        if getattr(self, "mm_sync", False):                       # (tests answer for you)
+            a = getattr(self, "mm_atlas_answer", True)
+        else:
+            a = messagebox.askyesnocancel(
+                "Your atlas screenshot will be public",
+                "Anyone can see it. Check it shows NO character, account or guild names, no chat and no party - "
+                "crop it to the atlas if it does.\n\nYes: upload it.  No: post without it.  Cancel: stop.",
+                parent=self.root)
+        if a is None:
+            return False
+        if not a:
+            data.pop("atlas_image", None)
+        return True
 
     def mm_report(self):
         s = self.mm_current()
@@ -1066,7 +1089,7 @@ class MoneyMakersPage:
         if not me.get("admin"):
             m.add_command(label="Become admin… (needs the board's admin key)", command=self.mm_admin_key)
         m.add_separator()
-        m.add_command(label="Leave the board (forget this account)", command=self.mm_leave)
+        m.add_command(label="Leave the board (and delete my data)…", command=self.mm_leave)
         b = self.mm_acct
         m.tk_popup(b.winfo_rootx(), b.winfo_rooty() + b.winfo_height())
 
@@ -1100,11 +1123,20 @@ class MoneyMakersPage:
 
     def mm_leave(self):
         from tkinter import messagebox
-        if messagebox.askyesno("Community board", "Forget this board account? Your posts stay, but you can't edit "
-                                                  "them from a new account.", parent=self.root):
+        # 2.89.3: leaving can take everything with you
+        a = messagebox.askyesnocancel("Community board", "Leave the board and DELETE everything of yours on it - your "
+                                      "name, strats, pictures, votes, suggestions and leaderboard times?\n\nYes: delete "
+                                      "it all.  No: just forget this account on this PC (your posts stay).",
+                                      parent=self.root)
+        if a is None:
+            return
+        if a:
+            ok, d = B.delete_me()
+            self._say("Done - nothing of yours is on the board any more." if ok else f"Couldn't delete it ({d}).", 8)
+        else:
             B.sign_out()
-            self.mm_account_paint()
-            self.mm_board_fetch()
+        self.mm_account_paint()
+        self.mm_board_fetch()
 
     # ---------------- 2.46.0: what a strat costs today (stratcost.py: one search per item, once a day)
     def mm_costs(self):
@@ -1220,9 +1252,15 @@ class MoneyMakersPage:
         """2.46.0: a strat guide is a CSV file (the same layout as the Strat Tracker's numbers); JSON for the repo."""
         if not path:
             return None
+        from . import board as _B
+        from .privacy import known_names
+        mine = s.get("origin") == "mine"
+        s = MM.tidy(s)                                       # 2.89.3: a file you might share - your board name or "me",
+        if mine or str(s.get("author") or "") in known_names():   # never an account / character name
+            s["author"] = (_B.signed_in() or {}).get("name") or "me"
         if path.lower().endswith(".json"):
             with open(path, "w", encoding="utf-8") as f:
-                json.dump(MM.tidy(s), f, indent=2, ensure_ascii=False)
+                json.dump(s, f, indent=2, ensure_ascii=False)
         elif path.lower().endswith(".txt"):
             with open(path, "w", encoding="utf-8", newline="\r\n") as f:
                 f.write(MM.to_text(s))

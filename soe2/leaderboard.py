@@ -47,7 +47,7 @@ def classes():
 
 def learn_classes(path, max_bytes=64 * 1024 * 1024):
     """2.87.0 (feedback: "we don't have a way to read the class"): the game's log says it at every level-up
-    ("Tylo (Invoker) is now level 24"); the overlay only noted it from 2.86.0 on. Read the last part of Client.txt
+    ("ExampleWitch (Invoker) is now level 24"); the overlay only noted it from 2.86.0 on. Read the last part of Client.txt
     (64 MB at most) for each character's newest class. -> {character: class} (also saved). Thread-safe (no Tk)."""
     import os
     from .gamelog import parse
@@ -158,7 +158,15 @@ def keys_of(entries, cat, league=None, cls=None):
 
 def payload(entries):
     """What goes to the board: the best per board / key / league / class, no character names."""
-    return [{k: e[k] for k in ("cat", "key", "secs", "league", "cls", "level", "deaths", "at")} for e in best(entries)][:400]
+    from .privacy import is_private_league                 # 2.89.3: private leagues stay off the board; only the day
+    out = []
+    for e in best(entries):
+        if is_private_league(e.get("league")):
+            continue
+        d = {k: e[k] for k in ("cat", "key", "secs", "league", "cls", "level", "deaths", "at")}
+        d["at"] = int(d.get("at") or 0) // 86400 * 86400
+        out.append(d)
+    return out[:400]
 
 
 def fmt(secs):

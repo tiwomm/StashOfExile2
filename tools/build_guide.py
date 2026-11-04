@@ -60,6 +60,8 @@ def merge(d, zones):
     for z in sorted(zones, key=lambda z: -int(z.get("n") or 0)):
         if int(z.get("n") or 0) < MIN_SEEN:
             continue
+        if not all(re.fullmatch(r"[\w ',.\-]{0,80}", str(z.get(k) or "")) for k in ("zone", "after")) or not z.get("zone"):
+            continue                                           # 2.89.3: odd text never reaches the guide pack
         a = next((x for x in d["acts"] if x["key"] == z.get("act")), None)
         if a is None:
             if not re.match(r"^(\d|i\d)$", str(z.get("act"))):

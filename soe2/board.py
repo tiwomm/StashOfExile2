@@ -4,6 +4,7 @@ No logins: the first time you post, vote or report, the app joins the board with
 it gets back (board_session.json in the data folder), sent as "Authorization: Bearer ...". Admins type the board's
 admin key once (Become admin).
 Every call returns (ok, data or error text) and never raises, so a server that's down never breaks the window."""
+import re
 import time
 
 from .config import SETTINGS, load_json, save_json
@@ -47,13 +48,16 @@ def sign_out():
     save_json(SESSION, {})
 
 
+ANON = ("/mods/", "/maps/", "/campaign/", "/bugs")      # 2.89.3: these never carry your board key - anonymous by design
+
+
 def call(method, path, params=None, body=None, get=None):
     """-> (True, json) or (False, "why it didn't work")."""
     if not configured():
         return False, "The community board isn't set up yet."
     import requests
-    tok = session().get("token")
-    headers = {"User-Agent": "StashOfExile2-board"}
+    tok = None if path.startswith(ANON) else session().get("token")
+    headers = {"User-Agent": "StashOfExile2-board", "X-SOE2": "1"}
     if tok:
         headers["Authorization"] = f"Bearer {tok}"
     try:
@@ -78,8 +82,14 @@ def image(iid, get=None):
         return False, "The community board isn't set up yet."
     import requests
     try:
-        r = (get or requests.get)(f"{url()}/images/{int(iid)}", headers={"User-Agent": "StashOfExile2-board"},
-                                  timeout=TIMEOUT)
+        iid = str(iid)
+        if not re.fullmatch(r"[0-9a-f]{32}", iid):           # 2.89.3: pictures have unguessable keys
+            return False, "not a board picture"
+        hd = {"User-Agent": "StashOfExile2-board"}
+        tok = session().get("token")
+        if tok:                                               # (your own / a reviewer's not-yet-shown picture)
+            hd["Authorization"] = f"Bearer {tok}"
+        r = (get or requests.get)(f"{url()}/images/{iid}", headers=hd, timeout=TIMEOUT)
     except Exception as e:
         return False, f"Couldn't reach the community board ({e.__class__.__name__})."
     if r.status_code != 200 or not r.content[:2] == b"\xff\xd8":
@@ -90,6 +100,9 @@ def image(iid, get=None):
 # ---------------------------------------------------------------- joining (no login)
 def join(name):
     """-> (True, user) or (False, why). Keeps the key the board hands out."""
+    from .privacy import name_problem
+    if name_problem(name):                                     # 2.89.3: never your account / a character's name
+        return False, name_problem(name)
     ok, d = call("POST", "/auth/join", body={"name": name})
     if ok and d.get("token"):
         save_json(SESSION, {"token": d["token"], "user": d.get("user") or {}, "since": time.time()})
@@ -107,6 +120,9 @@ def _keep_user(res):
 
 
 def rename(name):
+    from .privacy import name_problem
+    if name_problem(name):                                     # 2.89.3
+        return False, name_problem(name)
     return _keep_user(call("POST", "/auth/rename", body={"name": name}))
 
 
@@ -231,3 +247,11 @@ def lb_review(lid, vote):
 
 def lb_forget():
     return call("DELETE", "/lb/mine")
+
+
+def delete_me():
+    """2.89.3: leave the board and delete everything of yours on it (name, posts, pictures, votes, times). -> (ok, d)"""
+    ok, d = call("DELETE", "/me")
+    if ok:
+        save_json(SESSION, {})
+    return ok, d

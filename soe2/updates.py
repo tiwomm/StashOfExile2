@@ -149,9 +149,10 @@ def finish_update(old, me=None, tries=240, wait=0.5, run=None, popen=None, sleep
             sleep(wait)
     else:
         try:
+            from .privacy import scrub                    # 2.89.3: paths hold your Windows user name
             with open(os.path.join(os.path.dirname(old), "update_log.txt"), "a", encoding="utf-8") as f:
-                f.write(f"{time.strftime('%Y-%m-%d %H:%M:%S')} the update could not replace {old} (still in use) - "
-                        f"running the new version from {me}\n")
+                f.write(f"{time.strftime('%Y-%m-%d %H:%M:%S')} the update could not replace {scrub(old)} (still in use) - "
+                        f"running the new version from {scrub(me)}\n")
         except OSError:
             pass
         popen([me], env=clean_env(), close_fds=True)

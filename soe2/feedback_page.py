@@ -80,28 +80,28 @@ class FeedbackPage:
     # ================================================================ Report a bug
     def bug_report_text(self, what, steps, expected, contact, with_log):
         """Exactly what is sent (shown in the form before you send it)."""
+        from .privacy import public_league, scrub_names
         try:
-            sw, sh = self.root.winfo_screenwidth(), self.root.winfo_screenheight()
+            sh = self.root.winfo_screenheight()
         except tk.TclError:
-            sw = sh = 0
+            sh = 0
         parts = [f"**What happened**\n{what.strip()}"]
         if steps.strip():
             parts.append(f"**How to make it happen**\n{steps.strip()}")
         if expected.strip():
             parts.append(f"**What I expected**\n{expected.strip()}")
-        if contact.strip():
-            parts.append(f"**Contact** (Discord / in game): {contact.strip()[:60]}")
-        parts.append(f"**App** {APP_VERSION} · {platform.system()} {platform.release()} ({platform.version()}) · "
-                     f"screen {sw}×{sh} · league {SETTINGS.get('league') or '?'}")
+        # 2.89.3: no exact Windows build or screen size (they help pick one person out); a private league's name stays here
+        res = "4K" if sh >= 2000 else "1440p" if sh >= 1400 else "1080p" if sh >= 1000 else "under 1080p" if sh else "?"
+        parts.append(f"**App** {APP_VERSION} · {platform.system()} {platform.release()} · {res} · "
+                     f"league {public_league(SETTINGS.get('league')) or '?'}")
         if with_log:
             try:
                 with open(P("error_log.txt"), encoding="utf-8", errors="replace") as fh:
                     tail = fh.read().splitlines()[-LOG_LINES:]
             except OSError:
                 tail = []
-            from .privacy import scrub                        # 2.89.2: it goes to a public issue - older log lines
-            parts.append("**End of error_log.txt**\n```\n" + (scrub("\n".join(tail)) or "(empty)") + "\n```")   # too
-        return "\n\n".join(parts)
+            parts.append("**End of error_log.txt**\n```\n" + ("\n".join(tail) or "(empty)") + "\n```")
+        return scrub_names("\n\n".join(parts))      # 2.89.3: every word - your names / paths never reach the issue
 
     def bug_report_open(self):
         P1, P2 = C["panel"], C["panel2"]
@@ -123,7 +123,8 @@ class FeedbackPage:
         f.pack(fill="both", expand=True)
         tk.Label(f, text="Report a bug", bg=P1, fg=C["accent"], font=("Segoe UI", 12, "bold"), anchor="w").pack(fill="x")
         tk.Label(f, text="It becomes an issue on GitHub (tiwomm/StashOfExile2), and the developer is told on Discord. "
-                         "No account names, items or settings are sent - below is exactly what goes.", bg=P1,
+                         "Your account and character names and your Windows user name are taken out - below is exactly "
+                         "what goes, word for word. It's public: don't paste whispers or chat.", bg=P1,
                  fg=C["muted"], font=("Segoe UI", 9), wraplength=600, justify="left", anchor="w").pack(fill="x",
                                                                                                        pady=(2, 8))
         self.bug_vars = {}
@@ -199,7 +200,8 @@ class FeedbackPage:
         self.bug_msg.config(text="Sending…", fg=C["muted"])
 
         def work():
-            return B.call("POST", "/bugs", body={"title": title, "body": body, "version": APP_VERSION})
+            from .privacy import scrub_names
+            return B.call("POST", "/bugs", body={"title": scrub_names(title), "body": body, "version": APP_VERSION})
 
         def done(res):
             ok, data = res

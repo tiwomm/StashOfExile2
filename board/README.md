@@ -53,7 +53,8 @@ accounts.
    | `CLOUDFLARE_API_TOKEN` | the token from step 3 |
    | `CLOUDFLARE_ACCOUNT_ID` | the Account ID from step 3 |
    | `D1_ID` | the Database ID from step 2 |
-   | `ADMIN_KEY` | a long password you make up (at least 8 characters). In the app, use 👤 › Become admin. |
+   | `ADMIN_KEY` | a long password you make up (at least 32 random characters - shorter keys are refused; a new key takes admin away from everyone until they enter it again). In the app, use 👤 › Become admin. |
+   | `IP_PEPPER` | 32+ random characters (2.89.3). Daily limits keep only a keyed scramble of an internet address; this is the key. Without it the board makes and keeps its own. |
    | `BUGS_GITHUB_TOKEN` | 2.48.0, optional: lets the app's **🐞 Report a bug** open GitHub issues. GitHub › Settings › Developer settings › Personal access tokens › **Fine-grained** › Generate: only this repository, permission **Issues: Read and write**, nothing else. Without it, Report a bug opens GitHub's new-issue page in the player's browser instead. |
    | `DISCORD_WEBHOOK` | 2.48.0, optional: tells your Discord about every new issue (from the app or opened on GitHub). Discord › Server Settings › Integrations › Webhooks › New Webhook › pick the channel › **Copy Webhook URL**. |
 

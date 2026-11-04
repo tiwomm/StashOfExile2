@@ -212,7 +212,9 @@ class Limiter:
                          f"in the last 300s: search {len(self._window('search', 300, time.time()))}, fetch {len(self._window('fetch', 300, time.time()))}, other {len(self._window('other', 300, time.time()))}",
                          "    our own count per rule (hits/max per seconds): " +
                          ", ".join(f"{h}/{mx} per {per}s" for h, mx, per in self.usage(cls)),
-                         "    ALL headers on the 429: " + "; ".join(f"{k}={v}" for k, v in headers.items()),
+                         "    rate-limit headers on the 429: " + "; ".join(f"{k}={v}" for k, v in headers.items()   # 2.89.3:
+                                                                       if k.lower().startswith("x-rate-limit") or        # never
+                                                                       k.lower() == "retry-after"),                     # cookies
                          "    body on the 429: " + (body or "").replace("\n", " ")[:300]]
                 for t, c, hd in list(self.recent)[-12:]:
                     st = "; ".join(f"{k}={v}" for k, v in hd.items() if k.lower().endswith("state"))
