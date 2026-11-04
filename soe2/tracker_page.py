@@ -473,8 +473,8 @@ class TrackerPage:
                            ("Feature tips - hover a switch for what it does; a short card the first time you turn "
                             "one on", self.tk_tips_var, self.tracker_tips_switch),
                            ("Start tracking when StashOfExile2 starts", self.tk_auto, self.tracker_options_changed),
-                           ("Hide the bar from screen captures (the Ritual and Delirium watchers see the game under "
-                            "it; screenshots and streams won't show it)", self.tk_hidecap, self.tracker_hidecap_switch)), 1)
+                           ("Hide the bar from screen captures while the Ritual or Delirium watcher runs (they see "
+                            "the game under it; the rest of the time screenshots show the bar)", self.tk_hidecap, self.tracker_hidecap_switch)), 1)
         self.tk_ov_switches["tips"] = self.tk_ov_switches.pop("Feature tips - hover a switch for what it does; a "
                                                               "short card the first time you turn one on")
         del sw
@@ -1124,6 +1124,10 @@ class TrackerPage:
 
     def tracker_helpers_paint(self):
         """The Mechanic Helper bar's cells: on (green) / off (red) / needs attention, Ritual's live count."""
+        try:
+            self.overlay_capture_sync()                            # 2.88.3: hidden from captures only while watching
+        except Exception:
+            self.log_error("the overlay's capture setting")
         if getattr(self, "tk_ov_alerts", None):
             states = self.alert_states()
             from . import focus as F                               # 2.73.0: the Focus switch on the bar

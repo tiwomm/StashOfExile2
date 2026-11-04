@@ -21,6 +21,13 @@ NEXT = [
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.88.3": [
+        "The Campaign switch is always on the overlay's bar now, so you can find the Campaign Helper. Don't want it? "
+        "Overlay › Options › On the bar.",
+        "The overlay only shows over the game itself - not over a browser tab or video with \"Path of Exile 2\" in "
+        "its name.",
+        "Screenshots show the overlay again. It's only hidden from captures while the Ritual or Delirium watcher runs.",
+    ],
     "2.88.2": [
         "Ctrl+Alt+C is heard more reliably: if Windows stopped passing keys to the app, your next copy still counts and "
         "the app starts listening again.",

@@ -4,7 +4,7 @@
 
 > **Who we build for - read second.** Path of Exile players are utilitarian: they love data and information, problem solving and creative thinking. So every feature shows its numbers *and how they were worked out*, lets you sort, filter, compare and export them (CSV), keeps power-user depth (keys, versions, raw data) one click away instead of hiding it, explains in plain words, and leaves the decision to the player. Pretty is welcome; vague is not.
 
-**Current version: 2.88.2**
+**Current version: 2.88.3**
 
 Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds features, 2.10.1 only fixes. Each step below is one release; we work through them top to bottom.
 
@@ -154,6 +154,7 @@ Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds f
 | 2.88.0 | **Listing order lab** (admins, Under the hood): read a tab's trade link, walk the tab with Ctrl+Alt+C, compare the site's order with yours (rounds kept, CSV) - to work out the listing order. |
 | 2.88.1 | Fixed: Bulk Pricing stalled when you had Favorites (Price Checks-first waited for a job that wasn't there). |
 | 2.88.2 | Ctrl+Alt+C heard reliably (a dropped key watcher is noticed and renewed); Price Checks wait for Search after a tick; every long trade link reads. |
+| 2.88.3 | Campaign switch always on the bar; overlay shows only over the game's own window; hidden from captures only while a watcher runs. |
 
 ## ▶ Next up
 
@@ -163,6 +164,7 @@ Order (decided 2.34.0): the Polish basics first, so new features are built on th
 
 | Version | Plan |
 |---|---|
+| Waiting on mockups | **Help rate mods + Bulk Pricing floor:** a subtle opt-in to rate mods (S/A/B/C/D/Ignore, one at a time, per rule set incl. gear base types) that feeds the board; Bulk Pricing skips items the Mod book is sure are under a floor (1 div by default, per rule set) and flags unsure-cheap ones "check by hand". |
 | 2.89.0 | **Polish 4 - Responsive:** windows reflow when narrow (toolbars wrap, side panels drop under the list, sensible minimum sizes), sharp on every monitor (per-monitor DPI), a text size setting (100-150 %). |
 | 2.90.0 | **Polish 5 - Hover, focus, micro-interactions:** the same hover and pressed look on every button, row, icon and tab; a visible keyboard focus ring everywhere; short (120-180 ms) fades for popups and toasts, never on lists; a "Reduce motion" setting that turns them off. |
 | 2.91.0 | **Polish 6 - Visual hierarchy:** the suggestions below, window by window, with before / after screenshots in each PR. |
