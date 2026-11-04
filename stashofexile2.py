@@ -35,6 +35,9 @@ VERSION HISTORY
        Price Checks' Recent after a restart (feedback: "not keeping track on single price checks ... in between
        closing the app"): the page was built before session.json was read, so Recent stayed empty - load_session
        refreshes it now; and each Price Checks item saves its listings (up to 20, "_raw"), so the cards come back too.
+       Leaderboards: Simulacrum of Delusion was under Trials (feedback: "should be pinnacle") - leaderboard.cat_of now
+       asks the Map library's kind first (Pinnacle -> Bosses & pinnacles); the board moves times already sent.
+       The stash tab's "List order" box sits on the tabs row (on the Stash tab row it squeezed "Count it in Wealth" out).
   2.86.1
        Community-name filter (feedback: "deny inappropriate usernames, especially homophobic, transphobic, racist
        bigoted names, including variants with alternate spellings or misspellings"). Board: nameProblem() - the

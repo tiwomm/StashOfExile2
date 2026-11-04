@@ -63,13 +63,7 @@ class TabReaderPage:
         self.pc_stop.pack(side="right")
         self.pc_read_btn = ttk.Button(row, text="Read tab", style="Primary.TButton", command=self.pctab_read)
         self.pc_read_btn.pack(side="right", padx=(0, 8))
-        # 2.87.0: the list follows the tab - down each column (left to right) or across each row (top to bottom)
-        ORDERS = (("columns", "Down columns"), ("rows", "Across rows"))
-        self.pc_order = tk.StringVar(value=dict(ORDERS).get(SETTINGS.get("stash_order", "columns")))
-        ob = ttk.Combobox(row, textvariable=self.pc_order, values=[n for _k, n in ORDERS], state="readonly", width=13)
-        ob.pack(side="right", padx=(0, 8))
-        ob.bind("<<ComboboxSelected>>", lambda e: self.stash_order_set(next(k for k, n in ORDERS if n == self.pc_order.get())))
-        tk.Label(row, text="List order", bg=P1, fg=C["muted"]).pack(side="right", padx=(0, 4))
+
         self.pc_to_wealth = tk.Label(row, text="＋ Count it in Wealth", bg=P1, fg="#6ea8ff", cursor="hand2",
                                      font=("Segoe UI", 9, "underline"))          # 2.18.0: the same tab in Wealth
         self.pc_to_wealth.bind("<Button-1>", lambda e: self.pctab_to_wealth())
@@ -173,6 +167,16 @@ class TabReaderPage:
         add = ttk.Button(self.pc_tabsrow, text="＋ Tab", command=self.pctab_new, style="Quiet.TButton")   # 2.47.0
         add.pack(side="left", padx=(8, 0))
         Tooltip(add, "Another stash tab, with its own price and its own list")
+        # 2.87.0: the list follows the tab - down each column (left to right) or across each row (top to bottom)
+        ORDERS = (("columns", "Down columns"), ("rows", "Across rows"))
+        self.pc_order = tk.StringVar(value=dict(ORDERS).get(SETTINGS.get("stash_order", "columns")))
+        ob = ttk.Combobox(self.pc_tabsrow, textvariable=self.pc_order, values=[n for _k, n in ORDERS],
+                          state="readonly", width=13)
+        ob.pack(side="right")
+        ob.bind("<<ComboboxSelected>>",
+                lambda e: self.stash_order_set(next(k for k, n in ORDERS if n == self.pc_order.get())))
+        tk.Label(self.pc_tabsrow, text="List order", bg=P1, fg=C["muted"]).pack(side="right", padx=(0, 4))
+        Tooltip(ob, "Items read from the tab are listed in the order they sit in it (the # column shows where)")
 
     def pctab_empty_text(self):
         t = self.pctab_current()
