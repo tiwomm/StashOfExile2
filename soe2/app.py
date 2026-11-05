@@ -104,7 +104,7 @@ MISC_ROWS = (("corrupted", "Corrupted"), ("fractured", "Fractured"), ("desecrate
 class App(GearBookPage, PriceCheckPage, FavoritesPage, BoardModPage, LeaderboardPage, OrderLabPage, WellSoulsPage, RumoursPage, ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, ExchangePage, WealthPage, LibraryPage, RegexPage, UtilitiesPage, TrackerPage, SearchPage, CalcOverlay, InsightsPage, MoneyMakersPage, MapLibraryPage, RemnantPage, LedgerPage, FeedbackPage, FeedPage, MergedOverlay, LightOverlay, GamePlanPage, FocusPokes, OverlayHelp, OverlayParts, CampaignUI, OverlayRates, CommunityPage, RateModsPage, OverlayRecap, StashScanPage):
     COLS = [("added", "#", 46, "e"), ("name", "Item", 220, "w"), ("type", "Type", 110, "w"), ("mark", "Status", 90, "center"),
             ("est", "Est. value", 110, "e"), ("conf", "Confidence", 95, "center"), ("listings", "Listings", 70, "e"), ("priced", "Priced at", 130, "w"),
-            ("match", "How it was priced", 300, "w"), ("vmods", "Valuable mods", 100, "center"),
+            ("match", "How it was priced", 300, "w"), ("vmods", "★", 60, "center"),
             ("ilvl", "iLvl", 50, "e")]              # 2.73.2: item level (last in the data, shown after Type)
     # 2.24.0: "★ Valuable" (how many of the item's mods your Mod book rates High) is the last column in the data, so
     # older code reading values by position keeps working, but it's shown right after the item's name
@@ -427,7 +427,7 @@ class App(GearBookPage, PriceCheckPage, FavoritesPage, BoardModPage, Leaderboard
         _meter_ws = [tk.Frame(strip, bg=C["bg"], width=8)]
         _meter_ws[0].pack(side="right")
         for cls in ("fetch", "search"):
-            cnt = tk.Label(strip, text="", bg=C["bg"], fg=C["muted"], cursor="hand2", font=(MONO, 9))
+            cnt = tk.Label(strip, text="", bg=C["bg"], fg=C["muted"], cursor="hand2", font=("Segoe UI", 9))         # P1: one font in the bar (Segoe UI digits are fixed-width)
             cnt.pack(side="right", padx=(4, 0))
             m = _th.Meter(strip, 0.0, width=72, height=14, bg=C["bg"])
             m.pack(side="right", padx=(4, 0))
@@ -438,7 +438,7 @@ class App(GearBookPage, PriceCheckPage, FavoritesPage, BoardModPage, Leaderboard
                 w.bind("<Button-1>", self.open_limits)
             m.configure(cursor="hand2")
             self.limit_meters[cls], self.limit_counts[cls] = m, cnt
-        self.rates_lbl = tk.Label(strip, text="Rates: …", bg=C["bg"], fg=C["muted"], padx=8, cursor="hand2", font=(MONO, 9))
+        self.rates_lbl = tk.Label(strip, text="Rates: …", bg=C["bg"], fg=C["muted"], padx=8, cursor="hand2", font=("Segoe UI", 9))   # P1: one font in the bar
         self.rates_lbl.pack(side="right")
         self.rates_lbl.bind("<Button-1>", self.open_rates)
         self.status = tk.Label(strip, text="Starting...", anchor="w", bg=C["bg"], fg=C["muted"], padx=16, pady=4)
@@ -634,7 +634,16 @@ class App(GearBookPage, PriceCheckPage, FavoritesPage, BoardModPage, Leaderboard
         bar2.pack(fill="x")
         lab = dict(bg=C["panel2"], fg=C["muted"])
         # 2.74.5: the actions share the filters' row (one row less), right side first: never squeezed out
-        ttk.Button(bar2, text="Export CSV", command=self.export, style="Quiet.TButton").pack(side="right")
+        # P1 (2.103.0): Export CSV and Clear list live in "⋯" (rarely used; Clear list was a second red button)
+        more = ttk.Menubutton(bar2, text="⋯", style="Quiet.TButton", width=3)
+        mm = tk.Menu(more, tearoff=0)
+        mm.add_command(label="Export CSV…", command=self.export)
+        mm.add_separator()
+        mm.add_command(label="Clear list…", command=self.clear)
+        more.config(menu=mm)
+        more.pack(side="right")
+        Tooltip(more, "More: Export CSV, Clear list")
+        self.checks_more, self.checks_more_menu = more, mm
         self.pause_btn = ttk.Button(bar2, text="Pause", command=self.toggle_pause, width=8)
         self.pause_btn.pack(side="right", padx=8)
         ttk.Button(bar2, text="⟳ Re-price all", style="Primary.TButton", command=self.reprice_all).pack(side="right")
@@ -654,8 +663,13 @@ class App(GearBookPage, PriceCheckPage, FavoritesPage, BoardModPage, Leaderboard
         self.build_tab_reader(tb)                                # 2.8.0: Add items from Ctrl+Alt+C | Stash tab
 
         # ---- row 2: the list filters (2.0 beta 3) + 2.63.0 search and "only ★"
-        frow = bar2
+        # P1 (2.103.0): behind "Filters ▾" on row 2 - their own row opens under it (and stays open while one is set)
         flab = dict(bg=C["panel"], fg=C["muted"])
+        self.filt_btn = ttk.Button(bar2, text="Filters ▾", command=self.filters_toggle)
+        self.filt_btn.pack(side="left")
+        Tooltip(self.filt_btn, "Show, Category, Rarity, Type, order")
+        frow = tk.Frame(tb, bg=C["panel"], padx=8, pady=4)
+        self.filt_row, self.filt_open = frow, False
         tk.Label(frow, text="Show", **flab).pack(side="left", padx=(0, 8))
         vbox = ttk.Combobox(frow, textvariable=self.view_var, values=VIEWS, state="readonly", width=11)
         vbox.pack(side="left")
@@ -687,6 +701,7 @@ class App(GearBookPage, PriceCheckPage, FavoritesPage, BoardModPage, Leaderboard
         from .style import flowify                          # 2.98.0: these rows wrap in a narrow window
         flowify(srow)
         flowify(bar2)
+        flowify(frow)
 
         # ---- the key bar, at the bottom of this window (claims its space first)
         kbf = tk.Frame(body, bg=C["panel"])
@@ -708,12 +723,11 @@ class App(GearBookPage, PriceCheckPage, FavoritesPage, BoardModPage, Leaderboard
         # under the list: what to do with the picked rows
         acts = tk.Frame(lcol, bg=C["panel"], pady=4)
         acts.pack(fill="x", side="bottom")
-        ttk.Button(acts, text="Clear list", command=self.clear, style="Danger.TButton").pack(side="right")
-        self.delete_btn = ttk.Button(acts, text="🗑 Delete", command=self.remove_selected, style="Danger.TButton")      # 2.0 beta 19
-        self.delete_btn.pack(side="right", padx=8)
-        self.remove_btn = ttk.Button(acts, text="✖ Mark removed", command=lambda: self.mark_selected("removed"))
+        self.delete_btn = ttk.Button(acts, text="🗑 Delete", command=self.remove_selected, style="Danger.TButton", state="disabled")      # 2.0 beta 19
+        self.delete_btn.pack(side="right", padx=(8, 0))         # P1 (2.103.0): Clear list is in ⋯ (one red button)
+        self.remove_btn = ttk.Button(acts, text="✖ Mark removed", command=lambda: self.mark_selected("removed"), state="disabled")
         self.remove_btn.pack(side="right")
-        self.mark_btn = ttk.Button(acts, text="✔ Mark listed", command=lambda: self.mark_selected("listed"))
+        self.mark_btn = ttk.Button(acts, text="✔ Mark listed", command=lambda: self.mark_selected("listed"), state="disabled")
         self.mark_btn.pack(side="right", padx=8)
         self.undo_btn = ttk.Button(acts, text="↺ Undo", command=self.undo_mark, state="disabled", width=7, style="Quiet.TButton")
         self.undo_btn.pack(side="right")
@@ -3434,6 +3448,23 @@ class App(GearBookPage, PriceCheckPage, FavoritesPage, BoardModPage, Leaderboard
             on = ((self.cat_var.get(), self.rar_var.get(), self.type_var.get()) != (self.ALL_CATS, "All", "All")
                   or bool(self.search_var.get().strip()) or self.star_var.get())
             btn.config(state="normal" if on else "disabled")
+        fb = getattr(self, "filt_btn", None)
+        if fb is not None:                              # P1 (2.103.0): "Filters ▾ (2)" - how many are set
+            n = sum(1 for v, d in ((self.cat_var.get(), self.ALL_CATS), (self.rar_var.get(), "All"),
+                                   (self.type_var.get(), "All")) if v != d)
+            fb.config(text=f"Filters ▾ ({n})" if n else "Filters ▾")
+            if n and not self.filt_open:
+                self.filters_toggle(True)
+
+    def filters_toggle(self, want=None):
+        """P1 (2.103.0): open / close the list filters' row (Show, Category, Rarity, Type, Order added)."""
+        want = (not self.filt_open) if want is None else bool(want)
+        self.filt_open = want
+        if want:
+            self.filt_row.pack(fill="x")
+        else:
+            self.filt_row.pack_forget()
+        return want
 
     def cat_reset(self):
         self.cat_var.set(self.ALL_CATS)
@@ -3614,6 +3645,10 @@ class App(GearBookPage, PriceCheckPage, FavoritesPage, BoardModPage, Leaderboard
             if btn is None:
                 continue
             btn.config(text=off if recs and all(r.get("mark", "new") == mark for r in recs) else on)
+        for btn in (getattr(self, "mark_btn", None), getattr(self, "remove_btn", None),
+                    getattr(self, "delete_btn", None)):        # P1 (2.103.0): they act on the picked rows - lit only then
+            if btn is not None:
+                btn.config(state="normal" if recs else "disabled")
 
     def toggle_mod(self, rec, mod, checked):
         g = impact_key(norm(mod["text"]))              # what the Mod rules tab says for every tablet
@@ -4254,8 +4289,22 @@ class App(GearBookPage, PriceCheckPage, FavoritesPage, BoardModPage, Leaderboard
         # (2.72.0: gear shows its own confidence - it used to say "Guess" for every non-unique piece)
         stars = "★" * keys if keys else ""                     # 2.24.0: its own column (2.19.0 put it before the name)
         ilvl = it.get("ilvl") or ""                            # 2.73.2
-        self.tree.item(str(rid), values=(self.stash_spot(rec), it["name"], it["base"], self.MARK_TEXT[mark], est, conf, listings,
+        status = self.MARK_TEXT[mark] or self.price_status(rec)     # P1 (2.103.0): the Status column says where it is
+        self.tree.item(str(rid), values=(self.stash_spot(rec), it["name"], it["base"], status, est, conf, listings,
                                          stamp, match, stars, ilvl), tags=tags)
+
+    def price_status(self, rec):
+        """P1 (2.103.0): an item not marked listed / sold / removed - where its pricing is, in words."""
+        st = rec["state"]
+        if st == "done":
+            if rec.get("nomatch") or rec.get("manual") or self.price_manually(rec):
+                return "! Review"
+            return "– Skipped" if rec.get("skip") else "✓ Priced"
+        if st == "error":
+            return "✖ Error"
+        if rec.get("held"):
+            return "⏸ Paused"
+        return "⧗ Pricing" if st == "pricing" else "⧗ Waiting"
 
     def on_price_unit(self):
         from .pricefmt import PRICE_UNITS
@@ -4320,7 +4369,7 @@ class App(GearBookPage, PriceCheckPage, FavoritesPage, BoardModPage, Leaderboard
         review = sum(1 for r in done if (r.get("manual") or r.get("nomatch") or r.get("conf") == "Low" or r["est"] is None)
                      and not r.get("skip"))
         if shown:
-            txt = fmt_div(tot)
+            txt = fmt_div(tot) if tot else "0 div"               # P1 (2.103.0): not "0.000 div"
             c = RATES.value("chaos")
             if c and tot >= 1:
                 txt += f"  (~{tot / c:,.0f}c)"
@@ -4818,7 +4867,7 @@ class App(GearBookPage, PriceCheckPage, FavoritesPage, BoardModPage, Leaderboard
                 cv.create_text(w // 2, 40, text=it["base"], fill=_th.mix(name_c, C["text"], .45), font=("Segoe UI", 10))
             y = 62
             good = st == "done" and big not in ("No match", "Check by hand")
-            cv.create_text(16, y + 14, text=big, anchor="w", font=(MONO, 16, "bold"),
+            cv.create_text(16, y + 14, text=big, anchor="w", font=("Segoe UI", 16, "bold"),
                            fill=C["good"] if good else (C["red"] if st in ("done", "error") else C["muted"]),
                            tags=("cardprice",))
             if sub:

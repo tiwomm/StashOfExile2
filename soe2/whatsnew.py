@@ -21,6 +21,11 @@ NEXT = [
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.103.0": [
+        "Price Checks: when nothing matched, it says why and offers Search again or Search with fewer mods.",
+        "Bulk Pricing: Filters ▾ opens the list filters; Export CSV and Clear list are under ⋯; the Status column "
+        "shows Priced, Review, Pricing or Waiting.",
+    ],
     "2.102.0": [
         "Wealth › Scan stash (beta - may not work): open your Currency, Abyss, Delirium and Breach tabs one at a time "
         "and press Start reading on the card over the game - no Ctrl+C on every stack.",

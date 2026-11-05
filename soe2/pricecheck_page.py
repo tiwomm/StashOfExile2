@@ -470,10 +470,59 @@ class PriceCheckPage:
             return self.pcv_entries(v, None, 0, 0, "")
         st = rec["state"]
         if st != "done":
-            return self.pcv_entries(v, None, 0, 0, "Searching the trade site…" if st == "pricing" else
-                                    ("Couldn't search" if st == "error" else "Waiting in line…"))
+            self.pcv_entries(v, None, 0, 0, "Searching the trade site…" if st == "pricing" else
+                             ("Couldn't search" if st == "error" else "Waiting in line…"))
+            if st == "error" and v is getattr(self, "pcv", None):
+                why = rec.get("label") or "The trade site didn't answer."
+                low = why.lower()
+                tip = ("Too many filters for one search: untick a few mods." if "complex" in low else
+                       "Pick a league in Settings." if "league" in low else "Wait a moment and try again.")
+                self.pc_why_box(v, rec, "Couldn't search", f"{why}\n{tip}",
+                                fewer="complex" in low and len(self.pc_ticked(rec)) > 1)
+            return
         entries, total, n = self.pc_entries(rec)
         self.pcv_entries(v, entries, total, n)
+        if not total and not n and v is getattr(self, "pcv", None):
+            on = len(self.pc_ticked(rec))
+            self.pc_why_box(v, rec, "No listings matched these filters",
+                            (f"{on} mod filter{'s are' if on != 1 else ' is'} on. " if on else "")
+                            + "Untick the rarest mod or lower a Min, then press Search.", fewer=on > 1)
+
+    def pc_ticked(self, rec):
+        """P1 (2.103.0): the card's ticked mods, top to bottom (the card on screen)."""
+        if getattr(self, "pc_rid", None) != rec.get("id"):
+            return []
+        rows = getattr(self, "card_rows", {}) or {}
+        return [m for _i, (m, on, _r) in sorted(rows.items()) if on and m.get("sid")]
+
+    def pc_why_box(self, v, rec, title, text, fewer=False):
+        """P1 (2.103.0): a price check that found nothing says why and what to try, with the buttons for it."""
+        box = tk.Frame(v.lst, bg=C["panel2"], padx=16, pady=12, highlightthickness=1, highlightbackground=C["red"])
+        box.pack(fill="x", pady=(12, 0))
+        tk.Label(box, text=title, bg=C["panel2"], fg=C["red"], font=("Segoe UI", 12, "bold"),
+                 anchor="w").pack(fill="x")
+        tk.Label(box, text=text, bg=C["panel2"], fg=C["text"], anchor="w", justify="left",
+                 wraplength=520).pack(fill="x", pady=(4, 0))
+        row = tk.Frame(box, bg=C["panel2"])
+        row.pack(fill="x", pady=(8, 0))
+        ttk.Button(row, text="Search again", style="Primary.TButton",
+                   command=lambda: self.reprice([rec["id"]])).pack(side="left")
+        if fewer:
+            b = ttk.Button(row, text="Search with fewer mods", command=lambda: self.pc_fewer(rec))
+            b.pack(side="left", padx=(8, 0))
+            from .style import Tooltip
+            Tooltip(b, "Unticks the last ticked mod and searches again.")
+        v.why_box = box
+        return box
+
+    def pc_fewer(self, rec):
+        """Untick the last ticked mod and search again."""
+        ticked = self.pc_ticked(rec)
+        if not ticked:
+            return self.reprice([rec["id"]])
+        self.toggle_mod(rec, ticked[-1], False)
+        self.status_text, self.status_until = f"Unticked: {ticked[-1].get('text', '')[:60]}", time.time() + 6
+        self.reprice([rec["id"]])
 
     def pcv_entries(self, v, entries, total, n, head=None):
         """The listings as cards (entries None: only the heading)."""

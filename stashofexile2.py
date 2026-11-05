@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU GPL v3.0 (see LICENSE). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.102.0
+VERSION 2.103.0
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,6 +19,23 @@ VERSION 2.102.0
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.103.0
+       Polish 7, P1 - Price Checks and Bulk Pricing (the page standard; feedback on the findings + mockups):
+       - Price Checks: a check that finds nothing says why under Listings ("No listings matched these filters" - how
+         many mod filters are on, what to try) with Search again and Search with fewer mods (unticks the last ticked
+         mod and searches); a failed search says Couldn't search, the reason, and Search again. Kept as they are (your
+         call): Search / Clear / Add to favorites / Open on trade site under the card, the header buttons, the card's
+         width (a third of the page since 2.97.0).
+       - Bulk Pricing: the list filters (Show, Category, Rarity, Type, Order added) open from Filters ▾ (it counts the
+         ones set and stays open while one is); Export CSV and Clear list moved into ⋯ (one red button left: Delete);
+         Mark listed / Mark removed / Delete light only with rows picked; the Status column says where pricing is
+         (✓ Priced, ! Review, ⧗ Pricing / Waiting, ⏸ Paused, ✖ Error) until an item is marked; the ★ column's header
+         is just ★; an empty total reads 0 div (not 0.000 div).
+       - One font in the status bar and the card's price line (Segoe UI; its digits are fixed-width).
+       - Not changed: ★ and Rate ▾ on the card stay apart - ★ is "must match" on this item, Rate is your rule for every
+         item like it. Fractured / desecrated only stays the small line under its mod.
+       Roadmap: P3 removes the public stash tabs from Wealth, P8 the Listing order lab; P10 adds Settings › Advanced ›
+       Developer options with a Debug mode (Windows and Linux).
   2.102.0
        Wealth > Scan stash (beta, may not work): count currency by looking at the open stash tab instead of Ctrl+C
        on every stack (stashread.py, stashlayouts.py, stashscan_page.py). A card over the game asks for one tab at a
@@ -2400,7 +2417,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.102.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.103.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
