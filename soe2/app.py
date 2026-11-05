@@ -43,7 +43,7 @@ from .wealth import WEALTH, parse_stack, WPRICES
 from .engine import Engine
 from . import gear, waystone
 from .toasts import Toasts
-from .style import C, FLAG_COLORS, FONT_TITLE, hotkey_blocked, MONO, Plate, SegBook, SegBar, setup_style, Toast, KeyCapture, Tooltip
+from .style import C, MOD_COL, FLAG_COLORS, FONT_TITLE, hotkey_blocked, MONO, Plate, SegBook, SegBar, setup_style, Toast, KeyCapture, Tooltip
 from .chrome import SectionBar, Viewport, section as chrome_section
 from .communitymods import WHAT as CM_WHAT
 from .winsys import ICON_B64, KeyWatch, Tray
@@ -4704,85 +4704,103 @@ class App(PriceCheckPage, FavoritesPage, BoardModPage, LeaderboardPage, OrderLab
                 cv.create_text(w - 16, y + 14, text=sub, anchor="e", font=("Segoe UI", 9), fill=C["muted"])
             y += 32
             sep = t.c(t.part("card", "sep", default="border"))
-            mod_c, imp_c = C["magic"], _th.mix(C["magic"], C["text"], .35)
+            mod_c, imp_c = MOD_COL["explicit"], MOD_COL["implicit"]
+            fold = SETTINGS.setdefault("pc_fold", {})          # 2.97.2: each section folds; remembered
+            if "req" not in fold and SETTINGS.get("card_req"):
+                fold["req"] = False                            # (Requirements was opened before 2.97.2)
+            self.card_sections = {}
+            # fold all / unfold all
+            keys_all = ("props", "req", "misc", "aug", "stats", "pseudo", "trade")
+            all_open = any(not fold.get(k, k == "req") for k in keys_all)    # (any open: "Fold all")
+            fa = cv.create_text(w - 16, y - 2, text="Fold all ▴" if all_open else "Unfold all ▾", anchor="e",
+                                font=("Segoe UI", 9), fill=C["accent"], tags=("cardfoldall",))
+            self._card_click(cv, "cardfoldall", lambda: self.card_fold_all(rec, all_open))
 
-            def section(title, boxes=False):
+            def section(title, key, count=None, boxes=False, summary=""):
+                """▾ TITLE (n) ─── MIN MAX: a click folds / unfolds it. -> open?"""
                 nonlocal y
-                cv.create_line(12, y + 2, w - 12, y + 2, fill=sep)
-                y += 8
-                cv.create_text(12, y, text=title, anchor="nw", font=("Segoe UI", 8, "bold"), fill=C["muted"])
-                if boxes:
+                shut = bool(fold.get(key, key == "req"))
+                y += 4
+                lab = ("▸ " if shut else "▾ ") + title + (f"  ({count})" if count else "")
+                if shut and summary:
+                    lab += "   " + summary
+                tag = f"cardsec_{key}"
+                tid = cv.create_text(12, y, text=lab, anchor="nw", font=("Segoe UI", 9, "bold"),
+                                     fill=C["text"] if not shut else C["muted"], tags=(tag, "cardsec"))
+                bb = cv.bbox(tid)
+                x_end = w - 12
+                if boxes and not shut:
+                    x_end = w - 12 - 18 - CARD_BOX * 2 - 8
                     cv.create_text(w - 12 - 18 - CARD_BOX - CARD_BOX // 2 - 4, y, text="MIN", anchor="n",
                                    font=("Segoe UI", 9, "bold"), fill=C["muted"])
                     cv.create_text(w - 12 - 18 - CARD_BOX // 2, y, text="MAX", anchor="n",
                                    font=("Segoe UI", 9, "bold"), fill=C["muted"])
-                y += 16
+                if bb and bb[2] + 8 < x_end:
+                    cv.create_line(bb[2] + 8, y + 8, x_end, y + 8, fill=sep)
+                self._card_click(cv, tag, lambda k=key, s=shut: self.card_fold(rec, k, not s))
+                self.card_sections[key] = not shut
+                y += 20
+                return not shut
             # ---- properties
-            section("PROPERTIES", boxes=True)
-            s = it.get("search") or {}
-            if it.get("gear") and not it.get("waystone") and s.get("rarity") != "unique":
-                y = self._card_base_row(cv, rec, it, y, w)
-            if it.get("quality"):
-                y = self._card_opt_row(cv, rec, "quality", f"Quality: +{it['quality']}%", it["quality"], y, w)
-            for m in totals:
-                y = self._card_mod_row(cv, rec, m, y, w, fmod, C["good"], card_text(m))
-            if it.get("ilvl"):
-                y = self._card_opt_row(cv, rec, "ilvl", f"Item level: {it['ilvl']}", it["ilvl"], y, w)
-            if it.get("sockets"):
-                y = self._card_opt_row(cv, rec, "sockets", f"Sockets: {it['sockets']}", it["sockets"], y, w)
-            # ---- requirements (folded)
+            if section("PROPERTIES", "props", boxes=True):
+                s = it.get("search") or {}
+                if it.get("gear") and not it.get("waystone") and s.get("rarity") != "unique":
+                    y = self._card_base_row(cv, rec, it, y, w)
+                if it.get("quality"):
+                    y = self._card_opt_row(cv, rec, "quality", f"Quality: +{it['quality']}%", it["quality"], y, w)
+                for m in totals:
+                    y = self._card_mod_row(cv, rec, m, y, w, fmod, C["good"], card_text(m))
+                if it.get("ilvl"):
+                    y = self._card_opt_row(cv, rec, "ilvl", f"Item level: {it['ilvl']}", it["ilvl"], y, w)
+                if it.get("sockets"):
+                    y = self._card_opt_row(cv, rec, "sockets", f"Sockets: {it['sockets']}", it["sockets"], y, w)
+            # ---- requirements (folded at first)
             req = facts.get("req") or {}
-            if req:
-                show = bool(SETTINGS.get("card_req"))
-                cv.create_line(12, y + 2, w - 12, y + 2, fill=sep)
-                y += 8
-                rq = cv.create_text(12, y, text=("▾ " if show else "▸ ") + "REQUIREMENTS  " + "  ·  ".join(
-                    f"{REQ_NAMES[k]} {v}" for k, v in req.items()), anchor="nw", font=("Segoe UI", 9, "bold"),
-                    fill=C["muted"], tags=("cardreq",))
-                cv.tag_bind(rq, "<Button-1>", lambda e: (SETTINGS.__setitem__("card_req", not show), self.show_detail(rec)))
-                cv.tag_bind(rq, "<Enter>", lambda e: cv.configure(cursor="hand2"))
-                cv.tag_bind(rq, "<Leave>", lambda e: cv.configure(cursor=""))
-                y += 18
-                if show:
-                    for k, v in req.items():
-                        y = self._card_opt_row(cv, rec, "req_" + k, f"{REQ_NAMES[k]}: {v}", v, y, w)
+            if req and section("REQUIREMENTS", "req", summary="  ·  ".join(f"{REQ_NAMES[k]} {v}" for k, v in req.items())):
+                for k, v in req.items():
+                    y = self._card_opt_row(cv, rec, "req_" + k, f"{REQ_NAMES[k]}: {v}", v, y, w)
             # ---- miscellaneous: Any / Yes / No
-            section("MISCELLANEOUS")
-            col_w = (w - 24) // 2
-            for i, (key, label) in enumerate(MISC_ROWS):
-                x0 = 16 + (i % 2) * col_w
-                self._card_tri(cv, rec, key, label, x0, y + (i // 2) * 20, facts)
-            y += 20 * ((len(MISC_ROWS) + 1) // 2) + 2
-            # ---- each mod
+            from .searchopts_page import default_opts as _dopts
+            _cur = {**_dopts(it), **(rec.get("opts") or {})}
+            nset = sum(1 for key, _l in MISC_ROWS if _cur.get(key) not in (None, "any", "", "Any"))
+            if section("MISCELLANEOUS", "misc", count=nset):
+                col_w = (w - 24) // 2
+                for i, (key, label) in enumerate(MISC_ROWS):
+                    x0 = 16 + (i % 2) * col_w
+                    self._card_tri(cv, rec, key, label, x0, y + (i // 2) * 20, facts)
+                y += 20 * ((len(MISC_ROWS) + 1) // 2) + 2
+
+            def ticked(ms):
+                return sum(1 for m in ms if mod_impact(rec, m) != "ignore")
+            # ---- each mod: its color says where it comes from (2.97.2)
             aug = [m for m in own if m.get("kind") == "Rune"]
-            if aug:                                          # 2.97.1 (feedback): socketed runes in their own section
-                section("AUGMENTS", boxes=any(self._card_has_vals(rec, m) for m in aug))
+            if aug and section("AUGMENTS", "aug", count=ticked(aug),
+                               boxes=any(self._card_has_vals(rec, m) for m in aug)):   # 2.97.1: runes on their own
                 for m in aug:
-                    y = self._card_mod_row(cv, rec, m, y, w, fmod, imp_c, card_text(m))
+                    y = self._card_mod_row(cv, rec, m, y, w, fmod, MOD_COL["rune"], card_text(m))
             own = [m for m in own if m not in aug]
-            if own:
-                section("STAT FILTERS", boxes=any(self._card_has_vals(rec, m) for m in own))
+            if own and section("STAT FILTERS", "stats", count=ticked(own),
+                               boxes=any(self._card_has_vals(rec, m) for m in own)):
                 first = [m for m in own if m.get("kind") in ("Implicit", "Enchant")]
                 for m in first + [m for m in own if m not in first]:
                     y = self._card_mod_row(cv, rec, m, y, w, fmod, imp_c if m in first else mod_c, card_text(m))
-            if pseudo:
-                section("PSEUDO FILTERS", boxes=True)
+            if pseudo and section("PSEUDO FILTERS", "pseudo", count=ticked(pseudo), boxes=True):
                 for m in pseudo:
-                    y = self._card_mod_row(cv, rec, m, y, w, fmod, C["good"], card_text(m))
+                    y = self._card_mod_row(cv, rec, m, y, w, fmod, MOD_COL["pseudo"], card_text(m))
             # ---- trade filters
-            section("TRADE FILTERS")
-            from .searchopts_page import default_opts
-            cur = {**default_opts(it), **(rec.get("opts") or {})}
-            for key, label, choices in (("status", "Seller", STATUS_CHOICES), ("currency", "Priced in", CURRENCY_CHOICES)):
-                cv.create_text(16, y + 13, text=label, anchor="w", font=("Segoe UI", 9), fill=C["muted"])
-                names = [n for n, _v in choices]
-                var = tk.StringVar(value=next((n for n, v in choices if v == cur.get(key)), names[0]))
-                cb = ttk.Combobox(cv, textvariable=var, values=names, state="readonly")
-                cb.bind("<<ComboboxSelected>>", lambda e, k=key, v=var, c=choices: (
-                    self.search_opt_set(rec, k, dict(c)[v.get()], redraw=False), self.card_changed(rec)))
-                cv.create_window(110, y, window=cb, anchor="nw", width=w - 126, height=26)
-                self.card_opts[key] = var
-                y += 30
+            if section("TRADE FILTERS", "trade"):
+                from .searchopts_page import default_opts
+                cur = {**default_opts(it), **(rec.get("opts") or {})}
+                for key, label, choices in (("status", "Seller", STATUS_CHOICES), ("currency", "Priced in", CURRENCY_CHOICES)):
+                    cv.create_text(16, y + 13, text=label, anchor="w", font=("Segoe UI", 9), fill=C["muted"])
+                    names = [n for n, _v in choices]
+                    var = tk.StringVar(value=next((n for n, v in choices if v == cur.get(key)), names[0]))
+                    cb = ttk.Combobox(cv, textvariable=var, values=names, state="readonly")
+                    cb.bind("<<ComboboxSelected>>", lambda e, k=key, v=var, c=choices: (
+                        self.search_opt_set(rec, k, dict(c)[v.get()], redraw=False), self.card_changed(rec)))
+                    cv.create_window(110, y, window=cb, anchor="nw", width=w - 126, height=26)
+                    self.card_opts[key] = var
+                    y += 30
             if it.get("corrupted"):
                 cv.create_text(w // 2, y + 8, text="Corrupted", font=("Segoe UI", 10, "bold"), fill=C["red"])
                 y += 20
@@ -4791,6 +4809,19 @@ class App(PriceCheckPage, FavoritesPage, BoardModPage, LeaderboardPage, OrderLab
             cv.coords("cardframe", 0, 0, w - 1, h2 - 1)
         self.detail_card = cv
         return cv
+
+    def card_fold(self, rec, key, shut):
+        """2.97.2: fold / unfold one section of the card (remembered for every item)."""
+        SETTINGS.setdefault("pc_fold", {})[key] = bool(shut)
+        save_json("settings.json", SETTINGS)
+        self.show_detail(rec)
+
+    def card_fold_all(self, rec, shut):
+        f = SETTINGS.setdefault("pc_fold", {})
+        for k in ("props", "req", "misc", "aug", "stats", "pseudo", "trade"):
+            f[k] = bool(shut)
+        save_json("settings.json", SETTINGS)
+        self.show_detail(rec)
 
     def _card_box(self, cv, x, y, on, tag, enabled=True):
         box = 14
@@ -4994,8 +5025,15 @@ class App(PriceCheckPage, FavoritesPage, BoardModPage, LeaderboardPage, OrderLab
         rkey = key_for(rec, m) if can else None
         if rkey:
             right += 30                                      # 2.97.0: Rate ▾ (was ▲ / ▼)
+        fl0 = m.get("flags") or ()
+        src0 = next((x for x in ("fractured", "desecrated") if x in fl0 or str(m.get("sid") or "").startswith(x + ".")),
+                    None)
+        if src0:                                             # 2.97.2: fractured tan, desecrated green
+            colr = MOD_COL[src0]
+        from . import themes as _th2                         # unticked: its own color, dimmed (not grey)
+        shown_c = colr if on and can else (_th2.mix(colr, C["odd"], .5) if can else C["muted"])
         tid = cv.create_text(tx, y, text=text, anchor="nw", font=font, width=w - tx - 12 - right, justify="left",
-                             fill=colr if on and can else C["muted"], tags=("cardmod", tag))
+                             fill=shown_c, tags=("cardmod", tag))
         bb = cv.bbox(tid)
         y1 = (bb[3] if bb else y + 16) + 4
         if not can:                                          # not on the trade site: nothing to tick
@@ -5013,9 +5051,7 @@ class App(PriceCheckPage, FavoritesPage, BoardModPage, LeaderboardPage, OrderLab
         if src and can:                                      # 2.79.0: a fractured mod says so; 2.93.0: and a box to
             only = bool((rec.get("only") or {}).get(norm(m["text"])))    # search it as fractured / desecrated only
             otag = f"cardonly{idx}"
-            fc = "#e8d6a8" if src == "fractured" else "#c9a2e0"
-            if on:                                           # 2.97.1 (feedback: which mod is it?): the mod itself in
-                cv.itemconfigure(tid, fill=fc)               # the fractured / desecrated color, as the game shows it
+            fc = MOD_COL[src]                                # 2.97.1 / 2.97.2: the mod's own color
             ob = 8                                           # ...and a small box right under it, tied with └
             cv.create_text(tx, y1 - 3, text="└", anchor="nw", font=("Segoe UI", 8), fill=fc, tags=(otag,))
             bx0 = tx + 12

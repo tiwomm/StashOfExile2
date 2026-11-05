@@ -15,6 +15,10 @@ C = {   # Xfire-style steel blue and navy, with orange for actions and gold for 
     "rare": "#ffff77", "magic": "#8f9bff", "sel": "#1b4a96", "odd": "#0b111c", "stripe": "#16213a", "key": "#26354f",
     "warn_bg": "#2a2110", "bad_bg": "#34171a", "ok_bg": "#10281c",
 }
+
+# 2.97.2 (feedback: visual hierarchy, as the game and the trade site show them): a mod's color says where it comes from.
+MOD_COL = {"explicit": "#8f9bff", "rune": "#9fd8ff", "implicit": "#9fd8ff", "enchant": "#b8daf2",
+           "fractured": "#d9b871", "desecrated": "#a8d65c", "pseudo": "#e07ce0"}
 _BASE = dict(C)                       # (as shipped - tools/check_contrast.py starts each theme from it)
 
 

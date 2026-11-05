@@ -546,8 +546,9 @@ class PriceCheckPage:
                     pair("Item Level", str(f["ilvl"]), False)
                 if f["req"]:
                     line(f["req"], C["muted"])
-            kc = {"implicit": blue, "rune": blue, "enchant": "#b8daf2", "fractured": "#e8d6a8",
-                  "desecrated": "#c9a2e0", "crafted": "#b8daf2"}
+            from .style import MOD_COL                     # 2.97.2: the same colors as the item card
+            kc = {"implicit": MOD_COL["implicit"], "rune": MOD_COL["rune"], "enchant": MOD_COL["enchant"],
+                  "fractured": MOD_COL["fractured"], "desecrated": MOD_COL["desecrated"], "crafted": MOD_COL["enchant"]}
             first = [m for m in f["mods"] if m[2] in ("enchant", "implicit", "rune")]
             rest = [m for m in f["mods"] if m not in first]
             for group in (first, rest):
@@ -558,11 +559,11 @@ class PriceCheckPage:
                     if tier:
                         cv.create_text(mx0 + 10, y, text=tier, anchor="nw", font=("Segoe UI", 8, "bold"),
                                        fill=red if tier[:1] == "P" else blue if tier[:1] == "S" else C["muted"])
-                    line(text, kc.get(kind, blue))
+                    line(text, kc.get(kind, MOD_COL["explicit"]))
             if f.get("pseudo"):
                 y += 2
                 for p in f["pseudo"]:
-                    line(p, C["muted"])
+                    line(p, MOD_COL["pseudo"])
             if f["corrupted"]:
                 sep()
                 line("Corrupted", C["red"], bold=True)

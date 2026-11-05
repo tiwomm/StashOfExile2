@@ -21,6 +21,10 @@ NEXT = [
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.97.2": [
+        "Price Checks: each mod's color shows where it comes from (affix, rune, fractured, desecrated, pseudo).",
+        "Every section of the item card folds, with how many are ticked; Fold all / Unfold all at the top.",
+    ],
     "2.97.1": [
         "Price Checks: socketed runes have their own Augments section, and a rune's line no longer ticks an affix "
         "with the same wording.",
