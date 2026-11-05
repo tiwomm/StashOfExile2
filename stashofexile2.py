@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU GPL v3.0 (see LICENSE). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.98.1
+VERSION 2.98.2
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,6 +19,17 @@ VERSION 2.98.1
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.98.2
+       Corrupted items priced as corrupted (feedback: corrupted uniques came out at uncorrupted prices):
+       - "Twice Corrupted" counts as corrupted (it wasn't read, so those were searched "uncorrupted only").
+       - "{ Corruption Enhancement — ... }" (what a Vaal Orb added) is read as the corruption enchantment - its
+         header was read as a mod line and the enchantment itself left out. Searched as a must, with the trade
+         site's own enchant id (the same stat number) and at least its value; several of them, all searched.
+       - A corrupted item's sockets are searched (at least as many): it can't get more.
+       - Only corrupted listings are compared with a corrupted item (as before); the notes say what was searched.
+       The Toolkit menu (feedback: on two monitors it sometimes opened on the main one): shown only once it's in
+       place, at the desk's corner read fresh, kept on the monitor the app is on (shell.menu_origin, monitor_of).
+       Roadmap: stash tab reads in stash order (from the listing-order findings), at the end.
   2.98.1
        Trade Whisper Watcher (feedback: at league start items sell by whisper before the trade system opens up -
        easy to miss one in chat): Overlay > Settings > Helpers > Trade whispers. A whisper TO you that asks to buy
@@ -2273,7 +2284,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.98.1"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.98.2"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 

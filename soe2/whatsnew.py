@@ -21,6 +21,11 @@ NEXT = [
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.98.2": [
+        "Corrupted uniques (and other corrupted gear) are priced as corrupted: Twice Corrupted counts, and the "
+        "corruption enhancement and the sockets it has are searched.",
+        "The Toolkit menu stays on the monitor the app is on.",
+    ],
     "2.98.1": [
         "Trade Whisper Watcher: at league start, a card over the game when someone whispers to buy an item you "
         "listed (Overlay › Settings › Helpers › Trade whispers). On during the campaign; it can stay on after.",
