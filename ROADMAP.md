@@ -4,7 +4,7 @@
 
 > **Who we build for - read second.** Path of Exile players are utilitarian: they love data and information, problem solving and creative thinking. So every feature shows its numbers *and how they were worked out*, lets you sort, filter, compare and export them (CSV), keeps power-user depth (keys, versions, raw data) one click away instead of hiding it, explains in plain words, and leaves the decision to the player. Pretty is welcome; vague is not.
 
-**Current version: 2.97.0**
+**Current version: 2.97.1**
 
 Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds features, 2.10.1 only fixes. Each step below is one release; we work through them top to bottom.
 
@@ -171,6 +171,7 @@ Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds f
 | 2.96.0 | Help rate mods: ▲ / ▼ beside each mod on Price Checks (your rule; gear per item class), Rate mods one at a time (S-D / Ignore) from the Mod book or Privacy & community, a gentle ask (once; Not now = once more 3-7 days later; No thanks = never); Bulk Pricing skips items the Mod book is sure sell under your floor (1 div per rule set), thin data = check by hand. |
 | 2.96.1 | Overlay ↳ Settings regrouped: On the bar (one switch per item) and Options; Helpers with each helper's options and bar switch on its row; Campaign full width; doubles, the Act timer switch, the character name and the hotkey line gone; the Exchange rates window moves and follows the lock; poe.ninja credited. |
 | 2.97.0 | Polish 4 - feedback round: the Rate mods ask says what it is (Count me in! / Not now / Never ask again) and opens in front; Rate mods starts with "Which items do you know best?", lights only your rating, Back / Next / Done under it; F is the ignore tier everywhere tiers show (saved as Ignore); Focus / Campaign on = their line shows (no line switch; both on = one bar, two rows, in Panel and Game bar), switching one on turns the overlay on; a finished character's campaign line and Vendor ▾ come back in campaign zones; Price Checks: Rate ▾ replaces ▲ / ▼, the card and listings fit the window (scrollbar only when needed), Fractured only ticks the mod. |
+| 2.97.1 | Price Checks card: a rune's line and an affix with the same wording are ticked apart; runes in their own AUGMENTS section (no RUNE / SOCKETED lines); Fractured / Desecrated only small, right under its mod, the mod in its color. |
 
 ## ▶ Next up
 
@@ -182,7 +183,7 @@ Order (decided 2.34.0): the Polish basics first, so new features are built on th
 |---|---|
 | Before 1.0 (Dec 11) | **Campaign guide pack refresh** for 0.5.5 and then 1.0: Dreadnought Vanguard is gone (Jamanra in The Dreadnought), Azarian moved to the Heart of Keth, the Waterways levers are pressure pads, the Primal Arena's +2 points moved to Omniphobia, the Whakapanu shark's permanent choice and Plunder's Point are missing, and about 10 Interlude zones are missing. 1.0 may bring Acts 5-6. |
 | Later | **Mageblood search helper:** build the trade search for the flasks / charms you want on a Mageblood. Starting point, the user's search: [Mageblood search](https://www.pathofexile.com/trade2/search/poe2/Forbidden%20Rites/H4sIAAAAAAAACp3TwUrEMBAG4FeR_xykyWbbTY7e97gnKZJ1owykabGzYql5d4mLKLggzjWTL_MzSVbMHPg8w68YJ6YxwyPkBUUhhyHCYx-e4zGN4wkKvEx16cCUiJebu5gY6vOIGf5-_aqHXDc_UeL4cinQCR7xbUr0SHxbwYNprWlNs7XvOyi8hnSONcVAGd6Uov5AWwmyEqS1RG0kqBPlE7VqRa2MRImQaOi6kSgnanX1LfXV_ecXbHadtU53ze_7sM13Chp-Im11a5xx7upk-9KXD_rzLDzYAwAA). How it's used: uncheck every mod but the ones you want and set each one's min to how many you want. 2x Quicksilver + 2x Gold: uncheck all but Gold and Quicksilver, min 2 on each. 1 Basalt + 1 Quicksilver + 2 Gold: uncheck all but Basalt, Quicksilver and Gold; min Basalt 1, Quicksilver 1, Gold 2. Builds on 2.79.1 (two of the same Legacy = Min 2). The rest gets worked out when we get there. |
-| 2.98.0 | **Polish 5 - Responsive (global):** windows reflow when narrow (toolbars wrap, side panels drop under the list, sensible minimum sizes), sharp on every monitor (per-monitor DPI), a text size setting (100-150 %). Done before the page passes, so each page is checked at every size. |
+| 2.98.0 | **Polish 5 - Responsive (global):** **everything drawn to a width redraws when the window changes size** (decided 2026-11-05: the default for the whole app, like Price Checks and Favorites in 2.97.0 - one shared helper, every canvas, card, wrapped label and list); windows reflow when narrow (toolbars wrap, side panels drop under the list, sensible minimum sizes), sharp on every monitor (per-monitor DPI), a text size setting (100-150 %). Done before the page passes, so each page is checked at every size. |
 | 2.99.0 | **Polish 6 - Hover, focus, motion (global):** the same hover and pressed look on every button, row, icon and tab; a visible keyboard focus ring everywhere; short (120-180 ms) fades for popups and toasts, never on lists; a "Reduce motion" setting. Everything over the game matches the overlay's own theme (both looks): tooltips, pop-ups, cards, notices, toasts. |
 | Next | **Polish 7 - Page passes** (one version per pass, below): each page is gone through with the Page standard; I bring a findings list + mockup, you suggest changes, then I build it. |
 | Later | **More overlay bar styles** beside Panel and Game bar (each with the goal bar, Focus / Campaign rows, menus and helpers drawn in that style). |
@@ -210,7 +211,7 @@ Most-used first; pages that share data go together so their doubles can be merge
 
 1. **Purpose:** one sentence for what the page is for; one primary action (accent), everything else secondary or quiet.
 2. **One home per thing:** a setting or action that also lives on another page is merged into one place (the other page links to it). Same thing = same name everywhere.
-3. **Layout:** section cards (same title, padding, spacing); most-used first; related controls grouped; rarely used actions in "⋯ More"; nothing cut off at 100-150 % text.
+3. **Layout:** anything drawn to a width redraws when the window changes size (nothing cut off, no stale widths); section cards (same title, padding, spacing); most-used first; related controls grouped; rarely used actions in "⋯ More"; nothing cut off at 100-150 % text.
 4. **Words:** plain US English, short labels, no jargon; a tooltip for anything that isn't obvious; numbers right-aligned.
 5. **Controls:** switch for on / off, segmented bar for 2-4 choices, dropdown for 5+; a choice that matters is asked as a question ("Which items do you know best?"), not a bare dropdown.
 6. **Flows and pop-ups:** open in front, focused, centered on the app; steps end with **Back | Next | Done** centered at the bottom; an ask offers **Yes-action | Not now | Never ask again** (Not now asks once more, later) and says how long it takes and that you can stop any time - never an open-ended "a few".

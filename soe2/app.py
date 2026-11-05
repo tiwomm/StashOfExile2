@@ -3528,7 +3528,8 @@ class App(PriceCheckPage, FavoritesPage, BoardModPage, LeaderboardPage, OrderLab
         """Tick / untick / star a mod on this one item only (pack size is worth money on some tablets, not all).
         2.79.2 (feedback: "nothing is clickable under stat filters"): the override goes only when it matches what
         this mod would be anyway on this item - gear mods the price check left out (filler, low tier) can be ticked."""
-        k = norm(mod["text"])
+        from .trade import ov_key
+        k = ov_key(mod)
         ov = rec.setdefault("ov", {})
         mine = ov.pop(k, None)
         default = mod_impact(rec, mod)
@@ -4753,9 +4754,15 @@ class App(PriceCheckPage, FavoritesPage, BoardModPage, LeaderboardPage, OrderLab
                 self._card_tri(cv, rec, key, label, x0, y + (i // 2) * 20, facts)
             y += 20 * ((len(MISC_ROWS) + 1) // 2) + 2
             # ---- each mod
+            aug = [m for m in own if m.get("kind") == "Rune"]
+            if aug:                                          # 2.97.1 (feedback): socketed runes in their own section
+                section("AUGMENTS", boxes=any(self._card_has_vals(rec, m) for m in aug))
+                for m in aug:
+                    y = self._card_mod_row(cv, rec, m, y, w, fmod, imp_c, card_text(m))
+            own = [m for m in own if m not in aug]
             if own:
                 section("STAT FILTERS", boxes=any(self._card_has_vals(rec, m) for m in own))
-                first = [m for m in own if m.get("kind") in ("Implicit", "Enchant", "Rune")]
+                first = [m for m in own if m.get("kind") in ("Implicit", "Enchant")]
                 for m in first + [m for m in own if m not in first]:
                     y = self._card_mod_row(cv, rec, m, y, w, fmod, imp_c if m in first else mod_c, card_text(m))
             if pseudo:
@@ -5007,21 +5014,22 @@ class App(PriceCheckPage, FavoritesPage, BoardModPage, LeaderboardPage, OrderLab
             only = bool((rec.get("only") or {}).get(norm(m["text"])))    # search it as fractured / desecrated only
             otag = f"cardonly{idx}"
             fc = "#e8d6a8" if src == "fractured" else "#c9a2e0"
-            ob = 10
-            cv.create_rectangle(tx, y1, tx + ob, y1 + ob, outline=fc, fill=fc if only else C["odd"], tags=(otag,))
+            if on:                                           # 2.97.1 (feedback: which mod is it?): the mod itself in
+                cv.itemconfigure(tid, fill=fc)               # the fractured / desecrated color, as the game shows it
+            ob = 8                                           # ...and a small box right under it, tied with └
+            cv.create_text(tx, y1 - 3, text="└", anchor="nw", font=("Segoe UI", 8), fill=fc, tags=(otag,))
+            bx0 = tx + 12
+            cv.create_rectangle(bx0, y1, bx0 + ob, y1 + ob, outline=fc, fill=fc if only else C["odd"], tags=(otag,))
             if only:
-                cv.create_line(tx + 2, y1 + 5, tx + 4, y1 + 8, tx + 8, y1 + 2, fill="#120a04", width=2, tags=(otag,))
-            ox = cv.create_text(tx + ob + 4, y1 - 1, text=src.upper() + " ONLY" if only else src.upper() + " - only?",
-                                anchor="nw", font=("Segoe UI", 9, "bold"), fill=fc, tags=(otag,))
+                cv.create_line(bx0 + 1, y1 + 4, bx0 + 3, y1 + 7, bx0 + 7, y1 + 1, fill="#120a04", width=2, tags=(otag,))
+            ox = cv.create_text(bx0 + ob + 4, y1 - 2, text=f"{src} only", anchor="nw", font=("Segoe UI", 8), fill=fc,
+                                tags=(otag,))
             cv.tag_bind(otag, "<Button-1>", lambda e, mm=m, v=only: self.card_only(rec, mm, not v))
             cv.tag_bind(otag, "<Enter>", lambda e: cv.configure(cursor="hand2"))
             cv.tag_bind(otag, "<Leave>", lambda e: cv.configure(cursor=""))
             self.card_onlys[idx] = (m, only, src)
             y1 = max(y1, (cv.bbox(ox) or (0, 0, 0, y1))[3] + 2)
-        elif m.get("kind") == "Rune":                        # 2.93.0: a socketed rune's line says so
-            rx = cv.create_text(tx, y1 - 2, text="RUNE / SOCKETED - not searched unless ticked", anchor="nw",
-                                font=("Segoe UI", 9, "bold"), fill=C["muted"], tags=(tag,))
-            y1 = max(y1, (cv.bbox(rx) or (0, 0, 0, y1))[3] + 2)
+        # (2.97.1: no "RUNE / SOCKETED" line - runes have their own AUGMENTS section)
         cv.coords(hit, 4, y - 2, w - 4 - right, y1 - 2)
         if self._card_has_vals(rec, m):
             self._card_val_boxes(cv, rec, m, y - 1, w, on and can)
@@ -5161,7 +5169,8 @@ class App(PriceCheckPage, FavoritesPage, BoardModPage, LeaderboardPage, OrderLab
         priced again (Bulk Pricing)."""
         from .ratemods import apply
         apply([key], what)
-        (rec.get("ov") or {}).pop(norm(m["text"]), None)        # (the rule speaks for this item now)
+        from .trade import ov_key
+        (rec.get("ov") or {}).pop(ov_key(m), None)              # (the rule speaks for this item now)
         self.card_changed(rec)
         if getattr(self, "shown_rec", None) is rec:
             self.show_detail(rec)
