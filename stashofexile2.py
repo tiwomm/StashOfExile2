@@ -1567,9 +1567,9 @@ VERSION HISTORY
            armour, shields, foci, quivers, weapons). tools/build_regexdata.py: MULTI kinds from several RePoE
            domains (misc / item / desecrated) kept by spawn tag; mods with the same text are one row; a line another
            mod shares word for word doesn't block a token; base names are noise; when no short token is unique the
-           whole line is the token (^...$, numbers as \d+, mod["rx"]). Jewel type filter (base name), gear "Show
+           whole line is the token (^...$, numbers as \\d+, mod["rx"]). Jewel type filter (base name), gear "Show
            mods for" slot boxes (list only). Ranges / maximums work the same. BUNDLED_DATA regexdata.json 2.
-           Exact number patterns (regex.num_range writes \d, never '.', up to 9999) for whole-line tokens, lines with
+           Exact number patterns (regex.num_range writes \\d, never '.', up to 9999) for whole-line tokens, lines with
            two numbers ("adds # to # ...") and mods that can reach 1,000+: checked over every roll of every mod.
   2.21.0
        (1) Price checks: "Sold for" + 💰 Mark as sold in the item's panel (mark "sold", Show: Sold). The sale goes in

@@ -160,12 +160,9 @@ class AboutPage:
         if old is not None and old.winfo_exists():
             old.destroy()
         P1, P2 = C["panel"], C["panel2"]
-        card = tk.Toplevel(self.root, bg=C["accent"], padx=2, pady=2)
-        card.overrideredirect(True)
-        try:
-            card.transient(self.root)
-        except tk.TclError:
-            pass
+        from .shell import InDeskToplevel
+        # (2.103.0 linux branch, Linux: inside the app's window, see shell.InDesk)
+        card = InDeskToplevel(self.shell, bg=C["accent"], padx=2, pady=2)
         self._whatsnew = card                   # same place / follow / keep-on-top as the what's new card
         self._wn_h = 420
         self.whatsnew_follow()

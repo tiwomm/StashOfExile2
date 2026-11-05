@@ -6,9 +6,18 @@ import sys
 
 
 def read_clipboard_text():
-    """Text on the Windows clipboard, read directly. '' = no text there, None = another program is holding it (retry)."""
+    """Text on the Windows clipboard, read directly. '' = no text there, None = another program is holding it (retry).
+    Elsewhere (Linux): Tk's own clipboard - callers that only read this saw '' there (Money Makers › Check my tablet)."""
     if sys.platform != "win32":
-        return ""
+        try:
+            import threading
+            import tkinter
+            root = tkinter._default_root
+            if root is None or threading.current_thread() is not threading.main_thread():   # Tk: main thread only
+                return ""
+            return root.clipboard_get()
+        except Exception:
+            return ""
     try:
         import ctypes
         from ctypes import wintypes

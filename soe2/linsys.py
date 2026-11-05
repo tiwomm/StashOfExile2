@@ -58,8 +58,10 @@ def hypr(cmd, timeout=0.3):
 def is_game(win, title=GAME_TITLE):
     if not isinstance(win, dict):
         return False
+    # like overlay.title_is_game (2.88.3): the game's class, or a window named exactly the game's title - "somewhere in
+    # the name" matched a browser tab called "... Path of Exile 2 ..."
     return win.get("class") == GAME_CLASS or win.get("initialClass") == GAME_CLASS or \
-        (title or GAME_TITLE).lower() in str(win.get("title") or "").lower()
+        str(win.get("title") or "").strip().lower() == (title or GAME_TITLE).strip().lower()
 
 
 def active_window():
