@@ -400,9 +400,10 @@ class PriceCheckPage:
             self.pc_show(self.records[ids[i]])
 
     # ---------------------------------------------------------------- showing it
-    def pc_show(self, rec):
+    def pc_show(self, rec, card_only=False):
         if not hasattr(self, "pc_left"):
             return
+        self._pc_card_only = card_only and rec is not None and rec["id"] == getattr(self, "pc_rid", None)
         old = list(self.pc_left.winfo_children())
         if rec is not None and old:                      # 2.103.1 (feedback: a tick made the card flicker): the new
             return self._pc_show_swap(rec, old)          # card is built beside the old one, then swapped in
@@ -431,6 +432,10 @@ class PriceCheckPage:
             self.pc_draw_list(None)
             return
         self.pc_card, self.pc_search_btn = self.pcv_card(self.pcv, rec, swap=swap)
+        if getattr(self, "_pc_card_only", False):        # 2.103.2: a tick / a typed value - the listings stay as they
+            self._pc_card_only = False                   # are (redrawing them was the flicker)
+            self.pc_fav_state(rec)
+            return
         self.pc_draw_list(rec)
 
     def pcv_card(self, v, rec, swap=None):

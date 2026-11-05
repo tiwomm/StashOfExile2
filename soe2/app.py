@@ -676,7 +676,7 @@ class App(GearBookPage, PriceCheckPage, FavoritesPage, BoardModPage, Leaderboard
         # 2.26.4: was "Show all" - it clears Category / Rarity / Type / search / ★, and only lights up when one is set
         self.clear_btn = ttk.Button(frow, text="✕ Clear filters", command=self.cat_reset, state="disabled")
         self.clear_btn.pack(side="left", padx=(12, 0))
-        ttk.Button(frow, text="↕ Order added", command=self.sort_added).pack(side="left", padx=(8, 0))   # 2.0 beta 22
+        ttk.Button(frow, text="↕ Order added", command=self.sort_added).pack(side="left", padx=(16, 0))   # 2.103.2: room   # 2.0 beta 22
         self.search_var = tk.StringVar()                    # 2.63.0: find by name, base, type or mod text
         srow = self.pc_mode.master                          # (on the first row, right of "Add items from")
         self.search_box = ttk.Entry(srow, textvariable=self.search_var, width=26)
@@ -3630,6 +3630,8 @@ class App(GearBookPage, PriceCheckPage, FavoritesPage, BoardModPage, Leaderboard
         if rec.get("src") in ("pc", "fav"):
             rec["changed"] = True
             self.dirty = True
+            if rec.get("src") == "pc" and rec["id"] == getattr(self, "pc_rid", None):
+                return self.pc_show(rec, card_only=True)    # 2.103.2: the listings stay (they flickered)
             return self.refresh_detail_if_selected(rec["id"])
         self.reprice([rec["id"]])
 
@@ -4890,6 +4892,8 @@ class App(GearBookPage, PriceCheckPage, FavoritesPage, BoardModPage, Leaderboard
                     y = self._card_opt_row(cv, rec, "quality", f"Quality: +{it['quality']}%", it["quality"], y, w)
                 for m in totals:
                     y = self._card_mod_row(cv, rec, m, y, w, fmod, C["good"], card_text(m))
+                if it.get("waystone") and it.get("tier"):     # 2.103.2 (feedback): the tier can be widened
+                    y = self._card_opt_row(cv, rec, "tier", f"Waystone tier: {it['tier']}", it["tier"], y, w)
                 if it.get("ilvl"):
                     y = self._card_opt_row(cv, rec, "ilvl", f"Item level: {it['ilvl']}", it["ilvl"], y, w)
                 if it.get("sockets"):

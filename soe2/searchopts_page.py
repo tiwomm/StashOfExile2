@@ -20,6 +20,8 @@ def default_opts(item):
     s = item.get("search") or {}
     out = {"status": st, "currency": None,
            "corrupted": ("yes" if item.get("corrupted") else "no") if item.get("gear") else "any"}
+    if item.get("waystone") and item.get("tier"):        # 2.103.2: same tier, as the search always did
+        out["tier"] = {"min": item["tier"], "max": item["tier"]}
     if gear:
         out.update(ilvl=None, quality=None, sockets=s.get("sockets_min"),
                    base="same" if s.get("type") else "class")

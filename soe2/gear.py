@@ -56,6 +56,25 @@ AFFIX_KINDS = ("Prefix", "Suffix", "Explicit")
 SKILL = re.compile(r"^Grants Skill:\s*(?:Level\s+\d+\s+)?(.+?)\s*$", re.I)
 
 
+_LOOSE = {"n": -1, "map": {}}
+
+
+def _loosen(k):
+    return re.sub(r"\s+", " ", re.sub(r"\+|\bto\b|\bincreased\b", " ", k)).strip()
+
+
+def _loose_id(k):
+    """A trade id whose wording matches once "+", "to" and "increased" are left out - only when exactly one does."""
+    from .trade import TEXT2SID
+    if _LOOSE["n"] != len(TEXT2SID):
+        m = {}
+        for key, sid in TEXT2SID.items():
+            m.setdefault(_loosen(key), set()).add(sid)
+        _LOOSE.update(n=len(TEXT2SID), map=m)
+    hits = _LOOSE["map"].get(_loosen(k)) or set()
+    return next(iter(hits)) if len(hits) == 1 else None
+
+
 def live_ids(text):
     """2.79.0: a mod the game data doesn't know -> its id on the trade site's own stat list (the daily download),
     trying the wording as it is, then a granted skill without its level. -> [id] or []."""
@@ -75,6 +94,9 @@ def live_ids(text):
         k = norm(t)
         if k in TEXT2SID:
             return [TEXT2SID[k]]
+    hit = _loose_id(norm(text))                       # 2.103.2 (feedback: "Monsters have +21% Critical Damage Bonus"
+    if hit:                                          # wasn't found): the wording without "+" / "to" / "increased"
+        return [hit]
     for n in names:                                  # 2.79.1: any granted-skill wording ending in the skill's name
         tail = norm(n)
         for k, v in TEXT2SID.items():
