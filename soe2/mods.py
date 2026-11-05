@@ -790,6 +790,16 @@ def option_for(sid, text):
         o = (OPTS.get(i) or {}).get(norm(text))
         if o is not None:
             return o
+    try:                                    # 2.98.4 (feedback: a Mageblood couldn't be priced): the trade site's list
+        from . import gamedata              # isn't loaded yet / didn't match - the game data's own choices
+        want = norm(text)
+        for st in gamedata.load().get("stats") or []:
+            if sid in [i for ids in st["trade"].values() for i in ids]:
+                for mt in st.get("matchers") or []:
+                    if mt.get("value") is not None and norm(mt.get("string", "")) == want:
+                        return int(mt["value"])
+    except Exception:
+        pass
     return None
 
 

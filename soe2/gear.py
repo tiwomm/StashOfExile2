@@ -289,7 +289,32 @@ def parse_gear(text):
         mods.append(m)
         refs_of.append(stat["ref"] if stat else None)
 
-    totals, notes = [], []
+    # 2.98.4 (feedback: "I am unable to accurately price check a mageblood"): what a Mageblood's price hangs on -
+    # its Legacies (which ones, how many of each: searched as Min N), its charm slots, and - with a duplicate - the
+    # "increased effect per duplicate" roll (at least its value)
+    notes = []
+    picks = [m for m in mods if m.get("option") is not None]
+    if unique and picks:
+        from collections import Counter
+        n = Counter((m["sid"], m["option"]) for m in picks)
+        dup = any(v > 1 for v in n.values())
+        for m in mods:
+            low = m["text"].lower()
+            if "per duplicate" in low and m["sid"]:
+                if dup:
+                    m.update(auto="high", covered=None, novalue=False,
+                             note="your Legacies have a duplicate: this roll counts - searched at least this high")
+                else:
+                    m["note"] = "no duplicate Legacy: this roll doesn't count (tick it to search on it anyway)"
+            elif m["kind"] == "Implicit" and "charm slot" in low and m["sid"] and m.get("value"):
+                m.update(auto="high", covered=None,
+                         note=f"{int(m['value'])} charm slots - searched at least that")
+        name = {(x["sid"], x["option"]): x["shown"] for x in picks}
+        legs = ", ".join(name[k] + (f" ×{v}" if v > 1 else "") for k, v in n.items())
+        if legs:
+            notes.append("Legacies: " + legs)
+
+    totals = []
     q = g.get("quality") or 0
     if cls in ARMOUR_CLASSES and not unique:
         for key, (prop, name, feeders) in DEFENCES.items():
