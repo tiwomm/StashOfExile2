@@ -661,6 +661,8 @@ class AlertsPage:
                                 self.breach_cfg().get("on"):
                             self.breach_set_pending(breach_level(data["text"]))
                             self.breach_alert(text=data["text"])
+                        elif kind == "death":
+                            self.recap_death(data.get("who"))
                         elif kind == "whisper":
                             self.ww_whisper(data)                  # 2.98.1: Trade Whisper Watcher
                         elif kind == "brequel_tree":
