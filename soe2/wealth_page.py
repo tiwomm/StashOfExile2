@@ -21,7 +21,7 @@ from .wealth import (
     parse_price_text, parse_trade_link, WEALTH, WEALTH_CURRENCIES, wealth_display_name, wealth_key,
     wealth_rows, WEALTH_SYNC, wealth_trade_url, WPRICES, WEALTH_RARES, rare_sig, parse_stack, COUNTED_TAB, COUNTED_LABEL,
 )
-from .style import C, FONT_TITLE, SegBar
+from .style import C, FONT_TITLE, SegBar, Tooltip
 
 
 class _MenuItem:
@@ -86,6 +86,11 @@ class WealthPage:
         self.w_stop_btn.pack(side="right", padx=(0, 8))
         self.w_count_btn = ttk.Button(abar, text="Count currency…", command=self.wealth_count_toggle)
         self.w_count_btn.pack(side="right", padx=(0, 8))
+        self.w_scan_btn = ttk.Button(abar, text="Scan stash (beta)…", command=self.stash_scan_start)    # 2.101.0
+        self.w_scan_btn.pack(side="right", padx=(0, 8))
+        Tooltip(self.w_scan_btn, "BETA - may not work. Reads your Currency, Abyss, Delirium and Breach tabs from "
+                                  "the screen instead of Ctrl+C on every stack. You check the numbers before they're "
+                                  "saved. Only looks: no keys, no clicks; the picture is never saved.")
         self.w_sync_btn = ttk.Button(abar, text="⟳ Sync stash tabs", style="Primary.TButton", command=self.wealth_sync)
         self.w_sync_btn.pack(side="right", padx=(0, 8))
         self.w_msg = tk.Label(tab, text="", anchor="w", justify="left", bg=P1, fg=C["muted"], padx=12,

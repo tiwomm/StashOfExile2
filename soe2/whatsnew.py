@@ -21,6 +21,11 @@ NEXT = [
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.101.0": [
+        "Wealth › Scan stash (beta - may not work): open your Currency, Abyss, Delirium and Breach tabs one at a time "
+        "and press Start reading on the card over the game - no Ctrl+C on every stack.",
+        "You check every number before it's saved; the screen picture is never kept.",
+    ],
     "2.100.0": [
         "List rows light up under the mouse, and clickable icons brighten.",
         "Press Tab to move around: the focused button, switch or list shows a ring.",
