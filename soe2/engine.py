@@ -319,12 +319,27 @@ class Engine(TabReaderJobs, WealthJobs, StratCostJobs, threading.Thread):
     def price_rec(self, rec, tell=lambda: None):
         """Price a record (its mods resolved first). tell() is called whenever its state changes.
         2.4.1: the item's own search filters (rec["opts"], set in the item panel) apply to every search for it."""
-        from .trade import use_opts
+        from .trade import listing_rules, use_opts
         use_opts(rec.get("opts"))
         try:
-            return self._price_rec(rec, tell)
+            out = self._price_rec(rec, tell)
+            if self._none_found(rec) and listing_rules()[1]:     # 2.99.0 (feedback: a rare white base found nothing):
+                use_opts(dict(rec.get("opts") or {}, age_any=True))  # nothing listed lately - look at older listings
+                out = self._price_rec(rec, tell)                 # once, and say so
+                if not self._none_found(rec):
+                    rec["older"] = True
+                    rec["label"] = (rec.get("label") or "") + f" · older listings (none in the last {SETTINGS.get('age') or '3 days'})"
+                    tell()
+            return out
         finally:
             use_opts(None)
+
+    @staticmethod
+    def _none_found(rec):
+        """Priced, and no listing at all (not skipped, by hand, under the floor or an error)."""
+        return (rec.get("state") == "done" and not rec.get("prices") and rec.get("est") is None
+                and not (rec.get("total") or 0) and not rec.get("manual") and not rec.get("skip")
+                and not rec.get("floor"))
 
     def _floor(self, rec, searchable):
         from .ratemods import floor_check
@@ -633,15 +648,20 @@ class Engine(TabReaderJobs, WealthJobs, StratCostJobs, threading.Thread):
             steps = [(name, must, opt, k, values) for name, k in gear.ladder(len(opt))]
         if rec.get("src") in self.URGENT and len(steps) > 1:     # 2.87.0: Price Checks search exactly what you ticked
             steps = steps[:1]
-        for name, must_s, opt_s, k, vals in steps:
+        base_steps = gear.base_ladder(item)                    # 2.99.0 (feedback: an Exceptional Druidic Crown -
+        if base_steps:                                         # ilvl 81, 29% quality - found nothing): white / blue
+            steps = [(name, must, opt, 0, values, it_) for name, it_ in base_steps]    # bases widen step by step
+        for step_ in steps:
+            name, must_s, opt_s, k, vals = step_[:5]
+            it_ = step_[5] if len(step_) > 5 else item
             self._turn(rec)
-            q = gear.build_query(item, must_s, opt_s, k, vals)
+            q = gear.build_query(it_, must_s, opt_s, k, vals)
             try:
                 total, ids, qid = gear.run_search(league, q)
             except RuntimeError as e:
                 if not str(e).startswith("400 "):
                     raise
-                q = gear.build_query(item, must_s, opt_s, k, vals, plain=True)   # refused: once more, the simplest form
+                q = gear.build_query(it_, must_s, opt_s, k, vals, plain=True)   # refused: once more, the simplest form
                 total, ids, qid = gear.run_search(league, q)
             st = self._stage(item["base"], name, [{"mods": check}], total, ids, qid, hours, league, verify_tot, record=False)
             st["k"] = k
@@ -665,6 +685,8 @@ class Engine(TabReaderJobs, WealthJobs, StratCostJobs, threading.Thread):
         label = chosen["name"] if len(steps) > 1 or opt else "search"
         if item.get("waystone") and step > 0:
             label = chosen["name"] + " (your exact values found too few)"
+        elif base_steps:
+            label = chosen["name"] + (" (the exact base found too few)" if step > 0 else "")
         elif dropped:
             label = f"{len(opt) - dropped} of {len(opt)} ☑ mods had to match (exact search found too few)"
         label += f" · {how.lower()}"

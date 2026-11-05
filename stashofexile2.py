@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU GPL v3.0 (see LICENSE). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.98.6
+VERSION 2.99.0
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,6 +19,22 @@ VERSION 2.98.6
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.99.0
+       Mod book (feedback: no rules for armour, belts, rings, amulets ... or uniques; "What the app learned" should sit
+       with the rules it belongs to):
+       - Gear rules: pick an item class (27 - every armour, jewellery and weapon class) and every line that can roll
+         on it is listed (tierdata.json, RePoE), with how many tiers it has. Rate S-F: S / A = High (always
+         searched), B / C / D = Normal, F = Ignore (never searched). These are the same rules Rate on Price Checks
+         sets (gear:<class>:<wording>); saved ones lose their leading "+" once so both match (gear_plus_299).
+       - Unique rules: pick a unique (the ones you've price checked first). Its lines come from your price checks
+         (unique_mods.json - item wording only, on this PC); a line with a choice lists every option the trade site
+         has (Mageblood: every Legacy). A priced unique uses its own rules (unique:<name>:<wording>) - an F Legacy
+         isn't searched. Rate mods lists every gear class and each unique you've priced.
+       - What the app learned is no longer a tab: each tab has Rules | What the app learned, showing only its own rows
+         (a learned row's base -> tablet / jewel / waystone / relic / gear class / a unique's bases).
+       Price checks (feedback: an Exceptional white base found nothing): white / blue bases widen step by step when
+       the exact base finds too few (item level or higher -> 21%+ quality -> any quality; gear.base_ladder), and a
+       search with no listing inside "listed within" is tried once more with any age ("older listings" on the card).
   2.98.6
        Expedition remnant prices (feedback: they stopped showing): since 2.83.0 the watcher skipped any map where it
        hadn't seen the Expedition mark under MAP CONTENT - a strict picture match (0.85, three sizes) that misses
@@ -2330,7 +2346,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.98.6"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.99.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 

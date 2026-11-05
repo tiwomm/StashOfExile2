@@ -35,17 +35,20 @@ class RateModsPage:
 
     # ---------------------------------------------------------------- the rater
     def rm_sets(self):
-        """[(set, label)]: the four rule sets, then each gear class you've price checked."""
-        out = list(SETS)
-        seen = {}
-        for rec in self.records.values():
-            s = RM.set_of(rec)
-            if s and s.startswith("gear:") and s not in seen:
-                seen[s] = (rec.get("item") or {}).get("class") or s[5:].title()
-        return out + sorted(((s, f"Gear: {n}") for s, n in seen.items()), key=lambda x: x[1])
+        """[(set, label)]: the four rule sets, every gear class (2.99.0: from the game data), then each unique you've
+        price checked."""
+        from . import gearbook as GB
+        out = list(SETS) + [(f"gear:{c}", f"Gear: {n}") for c, n in GB.classes()]
+        uniq = sorted(GB.store(), key=str.lower)
+        return out + [(f"unique:{n.lower()}", f"Unique: {n}") for n in uniq]
 
     def rm_gear_mods(self, set_name):
-        out = []
+        from . import gearbook as GB
+        if set_name.startswith("gear:"):                     # 2.99.0: every line that rolls on the class
+            out = [(r["key"], r["text"]) for r in GB.class_mods(set_name[5:])]
+        else:
+            name = next((n for n in GB.store() if f"unique:{n.lower()}" == set_name), None)
+            out = [(r["key"], r["text"]) for r in GB.unique_rows(name)] if name else []
         for rec in self.records.values():
             if RM.set_of(rec) != set_name:
                 continue
@@ -56,7 +59,7 @@ class RateModsPage:
         return out
 
     def rm_queue(self, s):
-        return RM.queue(s, self.rm_gear_mods(s) if s.startswith("gear:") else None)
+        return RM.queue(s, self.rm_gear_mods(s) if s.startswith(("gear:", "unique:")) else None)
 
     def rm_open(self, set_name=None):
         """The rater. set_name: straight to that set (the Mod book's button); None: first, which you know best."""
