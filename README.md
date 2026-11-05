@@ -35,7 +35,7 @@ Hover an item in game and press **Ctrl+D** to price check it, or **Ctrl+Alt+C** 
 - **Expedition Remnant Price Checker:** open a remnant's reward book and each reward gets its poe.ninja price next to it, with the best one marked ★. The idea comes from [PoE Ancients Price Helper](https://github.com/pedro-quiterio/PoeAncientsPriceHelper) by Pedro Quitério. None of its code is used, because it isn't open source.
 - **Utilities:** chat command keys and a sticky note over the game.
 - **Advanced tools (Settings › Advanced):** Under the hood (with, for board admins, the Listing order lab) and the Mod book, which learns which mods are worth money from listings and, if you opt in, from pooled community price checks.
-- **Labs (off by default):** Wealth (stash value over time), Market Insights and an offline game-data search.
+- **Labs (off by default):** Wealth (stash value over time; Scan stash - beta - reads your Currency, Abyss, Delirium and Breach tabs from the screen, and you check the numbers before they are saved), Market Insights and an offline game-data search.
 
 ## Install
 
