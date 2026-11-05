@@ -223,7 +223,7 @@ Most-used first; pages that share data go together so their doubles can be merge
 | P7 | Regex, Game search |
 | P8 | Under the hood: Mod book, Rate mods - and remove the Listing order lab (an admin tool, done its job). |
 | P9 | Exchange rates, Notes, Calculator |
-| P10 | Settings (every tab), Privacy & community, About, the welcome / what's new card, first start - plus Settings › Advanced › Developer options (off and hidden until switched on): a Debug mode for Windows and Linux builds (more detail in the error log, a debug line in the status bar, nothing personal logged). |
+| P10 | Settings (every tab), Privacy & community, About, the welcome / what's new card, first start - plus Settings › Advanced › Developer options (off and hidden until switched on): a Debug mode for Windows and Linux builds (more detail in the error log, a debug line in the status bar, nothing personal logged); an Unmatched mods page - every mod the app couldn't find on the trade list (unmatched_mods.txt) beside the closest trade wording, so each mismatch points at its fix. |
 
 ### Page standard (every pass checks the same things, in this order)
 
