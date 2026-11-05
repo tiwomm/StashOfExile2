@@ -260,11 +260,15 @@ Most-used first; pages that share data go together so their doubles can be merge
 - **Trials & Simulacrum tracker** (Overlay ↳ Trials): counts Trial of Sekhemas, Trial of Chaos and Simulacrum runs from the game's log (entering the area; finishing, if the log says so), with a "Got it!" for each mechanic's chase item (your own list; defaults such as Simulacrum → Voices, Trial of Chaos → Adorned, checked against current drop info first). Shows runs, runs since the last chase drop, the drop history and your runs per drop; a small run counter on the overlay inside a trial. Later: drop rates pooled through Community data sharing (opt-in).
 - **Community FAQ → Community forum** (expanded 2.85.1; mockups first, when it comes up): the FAQ works like a forum, a hybrid of two popular forums - threads in sections (Questions, Farm strats, Trading, Builds, General), each post under the player's community name (asked once at start-up), replies, and upvotes that count for both farm strats and FAQ answers. The asker marks the answer that solved it, and that answer goes to the searchable FAQ (e.g. "Can Sanctify add a socket, or only corruption?" -> "Corruption only ..."); players who opted in get unanswered questions offered to them. A player profile shows their posts and total upvotes (reputation), as on the trading-style popular forum. Moderation follows admin privileges plus the 2.85.0 reviewers: reports with reasons, hide / lock / pin / move threads, edit history, bans. Runs on the community board server (board/). **To solve first:** how the app gets updates - pulling new threads, replies, votes and moderation changes (when to poll and how often, what to cache on this PC, unread counts, notifications, staying inside the board's free-plan limits).
 
+- **Character Appraisal** (Price Checks ↳ Character Appraisal): paste a Path of Building code and every item on the character - gear, jewels, charms, flasks - is priced with the gear checker and your Gear / Unique rules, with a total and the most valuable pieces first. Read from the code you paste; nothing is fetched about the character.
+- **Patch notes** (Toolkit menu, beside What's new): GGG's PoE2 patch-notes forum feed (public RSS), opt-in - a "New patch notes" card or a small dot when a new post appears, opening it in your browser. Checked at most a few times a day; nothing is sent.
+
 ## 💤 Parked (not planned unless something changes)
 
 - **One-key copy:** stays an experiment; Ctrl+Alt+C is the reliable way.
 - **Automatic loot logging, auto-syncing stash tabs:** too intrusive / too many trade-site requests.
 - **Gold from selling in the Session tracker:** no reliable way to count it.
+- **"Item sold" alerts from the trade site's history page; a login token for price checks:** both need your login session stored on this PC (full account access if it leaked), and a logged-in trade search is not faster - it adds the account's own, stricter rate limit on top of the per-IP one.
 - **One-click price note, "worth listing vs vendor" split, price history charts, map stats by waystone mod:** good ideas, not needed right now.
 
 ## How the app is organised (decided in 2.33.0)
