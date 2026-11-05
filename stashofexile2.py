@@ -32,6 +32,11 @@ VERSION HISTORY
          rows (Panel and Game bar). Switching either on turns the overlay on.
        - A character past the campaign: its campaign line and Vendor ▾ show again in campaign zones (towns too)
          and hide in maps / the hideout; the finished run (splits, rewards, route) isn't touched.
+       - Price Checks (feedback): Rate ▾ beside each mod (a menu: S to F, for every item like it; rated, it shows
+         your grade) replaces ▲ / ▼. The card's side takes about a third of the page (380-620 px) and the card and
+         the listings are drawn again for the width they have, so nothing is cut off; the scrollbar shows only when
+         there's more to see (Favorites too). Fractured only / Desecrated only ticks the mod too (an unticked mod
+         wasn't searched at all).
   2.96.1
        Overlay ↳ Settings regrouped (feedback: doubles, cut-off text, black boxes behind the helpers' switches):
        - On the bar: one switch per item - Session timer, Map timer, Maps done, Average map time, Map rank: S-D, Map
