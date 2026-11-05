@@ -134,8 +134,9 @@ class AlertsPage:
 
     def log_wanted(self):
         """Client.txt is followed while Breach or Ritual needs it (Ritual: to know when you leave a map)."""
+        from . import whispers as _W
         return bool(self.breach_cfg().get("on") or self.ritual_cfg().get("on") or self.ws_cfg().get("on")
-                    or self.remnant_cfg().get("on")
+                    or self.remnant_cfg().get("on") or _W.cfg()["on"]
                     or (hasattr(self, "fl_counting") and self.fl_counting()))     # 2.45.0: the Strat Tracker's runs
 
     def alerts_init(self):
@@ -177,6 +178,10 @@ class AlertsPage:
                                    "and then (Overlay ↳ Game Plan)", lambda: self.ov_intro_setup("focus")),
                 ("campaign", "Campaign", "Campaign Helper: where you are in the campaign, what's next and what it's "
                                          "worth (reads Client.txt)", lambda: self.camp_route_show()),
+                # 2.98.1: Trade Whisper Watcher - at league start your items sell by whisper; don't miss one
+                ("whispers", "Trade whispers", "Trade Whisper Watcher: a card over the game when someone whispers to buy "
+                                               "an item you listed - easy to miss in chat while you run the campaign "
+                                               "(reads Client.txt; nothing is saved)", lambda: self.ww_show_test()),
                 ("desecrate", "Desecration (Beta)", "Desecration Helper (Beta): at The Well of Souls each revealed "
                                                     "option shows its tier (T1 = best for that item type) - on only "
                                                     "while you're there (reads Client.txt, then your screen)",
@@ -219,6 +224,14 @@ class AlertsPage:
                 Tooltip(ab, "Prices show by themselves when a remnant's reward book opens: the app watches the spot "
                             "where it opens (scaled to your resolution, like the Delirium watcher) - no box to draw. "
                             "Off: only the key prices it.")
+            if key == "whispers":                  # 2.98.1: on during the campaign; this keeps it on after
+                from . import whispers as _W
+                self.al_wafter = tk.BooleanVar(value=bool(_W.cfg()["after"]))
+                wa = ttk.Checkbutton(row, text="Keep on after the campaign", variable=self.al_wafter, style=CB,
+                                     command=self.ww_after_changed)
+                wa.pack(side="left", padx=(4, 0))
+                Tooltip(wa, "Off: it watches only while your character is in the campaign (league start, before maps "
+                            "and the Currency Exchange). On: always.")
             if key == "ritual":                    # 2.14.0
                 self.al_rleave = tk.BooleanVar(value=bool(self.ritual_cfg().get("leave_reminder", True)))
                 ttk.Checkbutton(row, text="Remind me when I leave the map", variable=self.al_rleave, style=CB,
@@ -243,6 +256,9 @@ class AlertsPage:
         from . import campaign as _CP, focus as _F
         self.al_rows["focus"]["on"].set(bool(_F.cfg()["on"]))                          # 2.90.0
         self.al_rows["campaign"]["on"].set(bool(_CP.cfg()["on"]))
+        from . import whispers as _W                                                    # 2.98.1
+        self.al_rows["whispers"]["on"].set(bool(_W.cfg()["on"]))
+        self.al_rows["whispers"]["sound"].set(bool(_W.cfg()["sound"]))
         try:
             from .utilities import DELIRIUM
             self.al_rows["delirium"]["sound"].set(bool(DELIRIUM.get_sound()))
@@ -298,6 +314,15 @@ class AlertsPage:
         elif key == "campaign":
             self.camp_set_on(bool(want))
             self._helper_needs_overlay(want, "The Campaign Helper")
+        elif key == "whispers":                               # 2.98.1
+            from . import whispers as _W
+            _W.cfg()["on"] = bool(want)
+            _W.save()
+            if want:
+                self.breach_start()                           # (the helpers' Client.txt reader)
+            else:
+                self.breach_stop()
+            self._helper_needs_overlay(want, "The Trade Whisper Watcher")
         else:
             SETTINGS["util_delirium_autostart"] = want       # on = it also starts with the app next time
             save_json("settings.json", SETTINGS)
@@ -318,8 +343,84 @@ class AlertsPage:
         except Exception:
             self.log_error("the overlay")
 
+    # ================================================================ 2.98.1: Trade Whisper Watcher
+    def ww_after_changed(self):
+        from . import whispers as W
+        W.cfg()["after"] = bool(self.al_wafter.get())
+        W.save()
+        self.alerts_refresh()
+
+    def ww_whisper(self, data):
+        """A whisper to you (from the log). A trade request while the watcher is active -> the card."""
+        from . import whispers as W
+        if not W.active():
+            return None
+        trade = W.parse_trade(data.get("msg"))
+        if trade is None:
+            return None
+        self.ww_last = time.strftime("%H:%M")
+        return self.ww_show(data.get("who") or "", trade)
+
+    def ww_show_test(self):
+        return self.ww_show("ExampleBuyer", {"item": "Havoc Visage Ancestral Tiara", "price": "90 divine",
+                                             "league": "", "tab": "~b/o 90 divine", "left": 3, "top": 5}, test=True)
+
+    def ww_show(self, who, trade, test=False):
+        """A card at the top of the game: who wants what, for how much, where it is in your tab. It stays until you
+        close it or for its time (Settings: 20 s), several stack; the overlay's own look. Nothing is saved."""
+        from . import whispers as W
+        from .overlaywin import OverlayWindow, pal
+        if not test and not self.ov_enabled():
+            return None
+        P = pal()
+        r = game_rect() or (0, 0, self.root.winfo_screenwidth(), self.root.winfo_screenheight())
+        Wd = self.ov_px(420)
+        cards = [c for c in getattr(self, "ww_cards", []) if c.winfo_exists()]
+        while len(cards) >= 3:                                   # at most 3 at once - the oldest goes
+            old = cards.pop(0)
+            try:
+                old.destroy()
+            except tk.TclError:
+                pass
+        y = r[1] + int(r[3] * 0.08) + sum(c.winfo_height() + 8 for c in cards)
+        w = OverlayWindow(self.root, "Trade whisper", "💬", (r[0] + (r[2] - Wd) // 2, y, Wd, None), palette=P,
+                          lockable=False, follow_game=True, no_activate=True, on_close=None)
+        bg = P["bg"]
+        body = tk.Frame(w.body, bg=bg, padx=16, pady=8)
+        body.pack(fill="both", expand=True)
+        tk.Label(body, text=trade.get("item") or "Someone wants to buy an item", bg=bg, fg=P["head"],
+                 font=(P["font"], self.ov_font(12), "bold"), anchor="w", justify="left",
+                 wraplength=Wd - 40).pack(fill="x")
+        if trade.get("price"):
+            tk.Label(body, text=f"for {trade['price']}", bg=bg, fg=P["text"], font=(P["font"], self.ov_font(11)),
+                     anchor="w").pack(fill="x")
+        spot = W.where(trade)
+        if spot:
+            tk.Label(body, text=spot, bg=bg, fg=P["muted"], font=(P["font"], self.ov_font(9)), anchor="w").pack(fill="x")
+        if who:
+            tk.Label(body, text=f"from {who}" + ("   (a test)" if test else ""), bg=bg, fg=P["muted"],
+                     font=(P["font"], self.ov_font(9)), anchor="w").pack(fill="x", pady=(4, 0))
+        w.show()
+        cards.append(w)
+        self.ww_cards = cards
+        secs = int(W.cfg().get("secs") or 20)
+        self.root.after(secs * 1000, lambda: w.winfo_exists() and w.destroy())
+        if W.cfg().get("sound") and not test:
+            try:
+                import winsound
+                winsound.MessageBeep(winsound.MB_ICONASTERISK)
+            except Exception:
+                pass
+        self.alerts_refresh()
+        return w
+
     def alerts_sound(self, key):
         r = self.al_rows[key]
+        if key == "whispers":
+            from . import whispers as _W
+            _W.cfg()["sound"] = bool(r["sound"].get())
+            _W.save()
+            return
         if key in ("breach", "ritual"):
             cfg = {"breach": self.breach_cfg, "ritual": self.ritual_cfg}[key]()
             cfg["sound"] = bool(r["sound"].get())
@@ -404,7 +505,11 @@ class AlertsPage:
 
     def _alert_states_more(self):
         from . import campaign as _CP, focus as _F                                # 2.90.0
-        return {"focus": "on" if _F.cfg()["on"] else "off", "campaign": "on" if _CP.cfg()["on"] else "off"}
+        from . import whispers as _W
+        w = "off" if not _W.cfg()["on"] else ("on" if _W.active() and getattr(self, "br_reader", None) is not None
+                                              else "warn" if getattr(self, "br_reader", None) is None else "off")
+        return {"focus": "on" if _F.cfg()["on"] else "off", "campaign": "on" if _CP.cfg()["on"] else "off",
+                "whispers": w}
 
     def alerts_refresh(self):
         """Every 2 s (util_refresh) and after a change: dots, checkboxes and status lines."""
@@ -451,8 +556,19 @@ class AlertsPage:
         rows["campaign"]["on"].set(bool(_CP.cfg()["on"]))
         ftxt = ("On - " + (self.focus_line()[0] or "pick a goal in Overlay ↳ Game Plan")) if _F.cfg()["on"] else rows["focus"]["what"]
         ctxt = ("On - " + (_CP.line_text() or "waits for a campaign zone in the game's log")) if _CP.cfg()["on"] else rows["campaign"]["what"]
+        from . import whispers as _W                                              # 2.98.1
+        rows["whispers"]["on"].set(bool(_W.cfg()["on"]))
+        if not _W.cfg()["on"]:
+            vtxt = rows["whispers"]["what"]
+        elif getattr(self, "br_reader", None) is None:
+            vtxt = self.br_note or "On - looking for Client.txt…"
+        elif not _W.active():
+            vtxt = "On - resting: your character is past the campaign (tick Keep on after the campaign to watch now)"
+        else:
+            last = getattr(self, "ww_last", None)
+            vtxt = "On - watching your whispers" + (f" (last trade whisper {last})" if last else "")
         for k, txt in (("delirium", dtxt), ("breach", btxt), ("ritual", rtxt), ("remnant", mtxt), ("desecrate", wtxt),
-                       ("focus", ftxt), ("campaign", ctxt)):
+                       ("focus", ftxt), ("campaign", ctxt), ("whispers", vtxt)):
             st = states[k]
             lbl = rows[k]["status"]                 # 2.37.0: a helper that's off (and has nothing to say) takes one line
             show = st != "off" or txt != rows[k]["what"]
@@ -545,6 +661,8 @@ class AlertsPage:
                                 self.breach_cfg().get("on"):
                             self.breach_set_pending(breach_level(data["text"]))
                             self.breach_alert(text=data["text"])
+                        elif kind == "whisper":
+                            self.ww_whisper(data)                  # 2.98.1: Trade Whisper Watcher
                         elif kind == "brequel_tree":
                             self.breach_set_pending(None)          # spent (the tree was opened)
                             self.breach_dismiss()

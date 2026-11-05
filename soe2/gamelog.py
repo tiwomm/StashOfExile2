@@ -117,6 +117,11 @@ def parse(line):
         return "breach", ts, {"text": b.group(1).strip()}
     if BREQUEL_TREE.search(text):
         return "brequel_tree", ts, {}
+    if text.startswith("@From "):                       # 2.98.1: a whisper TO you (Trade Whisper Watcher)
+        from .whispers import parse_from
+        w = parse_from(text)
+        if w:
+            return "whisper", ts, {"who": w[0], "msg": w[1]}
     return None
 
 

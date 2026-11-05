@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU GPL v3.0 (see LICENSE). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.98.0
+VERSION 2.98.1
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,6 +19,17 @@ VERSION 2.98.0
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.98.1
+       Trade Whisper Watcher (feedback: at league start items sell by whisper before the trade system opens up -
+       easy to miss one in chat): Overlay > Settings > Helpers > Trade whispers. A whisper TO you that asks to buy
+       ("Hi, I would like to buy your ..." - the trade site's whisper, or the bulk form) shows a card at the top of
+       the game: the item, the price, its tab and spot, who's asking; up to 3 stack, each closes after 20 s or with
+       x; Sound. On by default during the campaign (a character before maps); Keep on after the campaign. Nothing
+       is saved (the buyer's name is on the card only). gamelog.parse -> "whisper"; soe2/whispers.py; the helpers'
+       Client.txt reader (log_wanted) follows the log while it's on. GGG ToS: reads Client.txt only - never
+       invites, types or trades.
+       README / ROADMAP: gamedata.json's source credited correctly (Exiled Exchange 2's MIT data files).
+       (Responsive part 2 moves to 2.98.2.)
   2.98.0
        Polish 5 - Responsive, part 1 (decided 2026-11-05: everything drawn to a width follows the window):
        - Every wrapped label that fills its row re-wraps to the width it has (style.responsive: one class binding
@@ -2262,7 +2273,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.98.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.98.1"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
