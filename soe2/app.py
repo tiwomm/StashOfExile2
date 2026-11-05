@@ -634,16 +634,7 @@ class App(GearBookPage, PriceCheckPage, FavoritesPage, BoardModPage, Leaderboard
         bar2.pack(fill="x")
         lab = dict(bg=C["panel2"], fg=C["muted"])
         # 2.74.5: the actions share the filters' row (one row less), right side first: never squeezed out
-        # P1 (2.103.0): Export CSV and Clear list live in "⋯" (rarely used; Clear list was a second red button)
-        more = ttk.Menubutton(bar2, text="⋯", style="Quiet.TButton", width=3)
-        mm = tk.Menu(more, tearoff=0)
-        mm.add_command(label="Export CSV…", command=self.export)
-        mm.add_separator()
-        mm.add_command(label="Clear list…", command=self.clear)
-        more.config(menu=mm)
-        more.pack(side="right")
-        Tooltip(more, "More: Export CSV, Clear list")
-        self.checks_more, self.checks_more_menu = more, mm
+        ttk.Button(bar2, text="Export CSV", command=self.export, style="Quiet.TButton").pack(side="right")
         self.pause_btn = ttk.Button(bar2, text="Pause", command=self.toggle_pause, width=8)
         self.pause_btn.pack(side="right", padx=8)
         ttk.Button(bar2, text="⟳ Re-price all", style="Primary.TButton", command=self.reprice_all).pack(side="right")
@@ -663,13 +654,8 @@ class App(GearBookPage, PriceCheckPage, FavoritesPage, BoardModPage, Leaderboard
         self.build_tab_reader(tb)                                # 2.8.0: Add items from Ctrl+Alt+C | Stash tab
 
         # ---- row 2: the list filters (2.0 beta 3) + 2.63.0 search and "only ★"
-        # P1 (2.103.0): behind "Filters ▾" on row 2 - their own row opens under it (and stays open while one is set)
+        frow = bar2                                         # (2.103.1, feedback: always on screen, as before)
         flab = dict(bg=C["panel"], fg=C["muted"])
-        self.filt_btn = ttk.Button(bar2, text="Filters ▾", command=self.filters_toggle)
-        self.filt_btn.pack(side="left")
-        Tooltip(self.filt_btn, "Show, Category, Rarity, Type, order")
-        frow = tk.Frame(tb, bg=C["panel"], padx=8, pady=4)
-        self.filt_row, self.filt_open = frow, False
         tk.Label(frow, text="Show", **flab).pack(side="left", padx=(0, 8))
         vbox = ttk.Combobox(frow, textvariable=self.view_var, values=VIEWS, state="readonly", width=11)
         vbox.pack(side="left")
@@ -701,7 +687,6 @@ class App(GearBookPage, PriceCheckPage, FavoritesPage, BoardModPage, Leaderboard
         from .style import flowify                          # 2.98.0: these rows wrap in a narrow window
         flowify(srow)
         flowify(bar2)
-        flowify(frow)
 
         # ---- the key bar, at the bottom of this window (claims its space first)
         kbf = tk.Frame(body, bg=C["panel"])
@@ -723,8 +708,9 @@ class App(GearBookPage, PriceCheckPage, FavoritesPage, BoardModPage, Leaderboard
         # under the list: what to do with the picked rows
         acts = tk.Frame(lcol, bg=C["panel"], pady=4)
         acts.pack(fill="x", side="bottom")
+        ttk.Button(acts, text="Clear list", command=self.clear, style="Danger.TButton").pack(side="right")  # (2.103.1: back)
         self.delete_btn = ttk.Button(acts, text="🗑 Delete", command=self.remove_selected, style="Danger.TButton", state="disabled")      # 2.0 beta 19
-        self.delete_btn.pack(side="right", padx=(8, 0))         # P1 (2.103.0): Clear list is in ⋯ (one red button)
+        self.delete_btn.pack(side="right", padx=8)
         self.remove_btn = ttk.Button(acts, text="✖ Mark removed", command=lambda: self.mark_selected("removed"), state="disabled")
         self.remove_btn.pack(side="right")
         self.mark_btn = ttk.Button(acts, text="✔ Mark listed", command=lambda: self.mark_selected("listed"), state="disabled")
@@ -757,6 +743,7 @@ class App(GearBookPage, PriceCheckPage, FavoritesPage, BoardModPage, Leaderboard
         self.tree.tag_configure("removed", foreground=C["muted"])
         self.tree.tag_configure("sold", foreground="#7fe0c0")              # 2.21.0
         self.tree.bind("<<TreeviewSelect>>", self._on_select_soon)
+        self.tree.bind("<<TreeviewSelect>>", lambda e: self.update_mark_buttons(), add="+")   # 2.103.1: lit at once
         self.tree.bind("<Double-1>", lambda e: self.open_trade())
         # 2.63.0: the item shows in the panel on the right - no more pop-up box over the list
         self.empty_lbl = tk.Label(left, bg=C["panel"], fg=C["muted"], font=("Segoe UI", 12), justify="center",
@@ -3448,23 +3435,6 @@ class App(GearBookPage, PriceCheckPage, FavoritesPage, BoardModPage, Leaderboard
             on = ((self.cat_var.get(), self.rar_var.get(), self.type_var.get()) != (self.ALL_CATS, "All", "All")
                   or bool(self.search_var.get().strip()) or self.star_var.get())
             btn.config(state="normal" if on else "disabled")
-        fb = getattr(self, "filt_btn", None)
-        if fb is not None:                              # P1 (2.103.0): "Filters ▾ (2)" - how many are set
-            n = sum(1 for v, d in ((self.cat_var.get(), self.ALL_CATS), (self.rar_var.get(), "All"),
-                                   (self.type_var.get(), "All")) if v != d)
-            fb.config(text=f"Filters ▾ ({n})" if n else "Filters ▾")
-            if n and not self.filt_open:
-                self.filters_toggle(True)
-
-    def filters_toggle(self, want=None):
-        """P1 (2.103.0): open / close the list filters' row (Show, Category, Rarity, Type, Order added)."""
-        want = (not self.filt_open) if want is None else bool(want)
-        self.filt_open = want
-        if want:
-            self.filt_row.pack(fill="x")
-        else:
-            self.filt_row.pack_forget()
-        return want
 
     def cat_reset(self):
         self.cat_var.set(self.ALL_CATS)
@@ -5194,7 +5164,8 @@ class App(GearBookPage, PriceCheckPage, FavoritesPage, BoardModPage, Leaderboard
         from .ratemods import key_for
         rkey = key_for(rec, m) if can else None
         if rkey:
-            right += 30                                      # 2.97.0: Rate ▾ (was ▲ / ▼)
+            right = 2 * CARD_BOX + 16 + 20 + 30              # 2.97.0: Rate ▾; 2.103.1: it sits by the Min / Max column,
+                                                             # so a row without boxes keeps that room too (no overlap)
         fl0 = m.get("flags") or ()
         src0 = next((x for x in ("fractured", "desecrated") if x in fl0 or str(m.get("sid") or "").startswith(x + ".")),
                     None)
@@ -5258,6 +5229,8 @@ class App(GearBookPage, PriceCheckPage, FavoritesPage, BoardModPage, Leaderboard
     # ---------------- 2.78.3 (feedback: "we don't have the option to check ilvl ... to enter mod values / ranges"):
     # on the card itself - the item level with its own check box, Min / Max beside each mod
     def _card_has_vals(self, rec, m):
+        if m.get("typed_only"):                             # 2.103.1: a waystone's mods - a range only if you type one
+            return m.get("value") is not None and bool(m.get("sid"))
         return m.get("value") is not None and not m.get("novalue") and (bool(m.get("sid")) or not rec.get("resolved"))
 
     def _card_entry(self, cv, text, enabled=True):

@@ -21,6 +21,11 @@ NEXT = [
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.103.1": [
+        "Bulk Pricing: the filters, Export CSV and Clear list are back where they were.",
+        "Waystones: type a Min / Max on any mod on the card to search on it.",
+        "Ticking a mod on Price Checks no longer flickers.",
+    ],
     "2.103.0": [
         "Price Checks: when nothing matched, it says why and offers Search again or Search with fewer mods.",
         "Bulk Pricing: Filters ▾ opens the list filters; Export CSV and Clear list are under ⋯; the Status column "
