@@ -39,7 +39,7 @@ Hover an item in game and press **Ctrl+D** to price check it, or **Ctrl+Alt+C** 
 
 ## Install
 
-Download `StashOfExile2.exe` from [Releases](../../releases) and run it. It can update itself (Settings > General > Updates). Each new version comes out as a preview first and becomes a full release once it has been played in game; turn on **Preview builds** there to get previews too. Your settings live in `%APPDATA%\StashOfExile2`, so updates never touch them.
+Download `StashOfExile2.exe` from [Releases](../../releases) and run it. It can update itself (Settings > General > Updates): it looks for a new version every time it starts and every hour, and the tray icon's menu has Check for updates. Each new version comes out as a preview first and becomes a full release once it has been played in game; turn on **Preview builds** there to get previews too. Your settings live in `%APPDATA%\StashOfExile2`, so updates never touch them.
 
 **From source** (Windows, Python 3.12 from python.org):
 
