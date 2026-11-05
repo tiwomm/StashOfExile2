@@ -212,14 +212,14 @@ Most-used first; pages that share data go together so their doubles can be merge
 |---|---|
 | P1 | Price Checks (list, item card, Bulk Pricing, Search) |
 | P2 | Price Checks' children: Favorites, Checks, Market Insights |
-| P3 | Wealth |
+| P3 | Wealth - and remove the public stash tabs from Wealth (Stash tabs page, Sync stash tabs, the odd-price setup, synced items, every step / chip / help line about it): Scan stash replaces it. Price Checks › Add items from: Stash tab stays (it still has a use there). |
 | P4 | Overlay hub, Overlay › Settings, the bar itself (Panel and Game bar), helpers' pop-ups |
 | P5 | Overlay's children: Game Plan, Map library, Leaderboards |
 | P6 | Money Makers (Strats, Lucrative Strats, Tablet Craft Helper, Farm Tracker, strat editor) |
 | P7 | Regex, Game search |
-| P8 | Under the hood: Mod book, Rate mods, Listing order lab |
+| P8 | Under the hood: Mod book, Rate mods - and remove the Listing order lab (an admin tool, done its job). |
 | P9 | Exchange rates, Notes, Calculator |
-| P10 | Settings (every tab), Privacy & community, About, the welcome / what's new card, first start |
+| P10 | Settings (every tab), Privacy & community, About, the welcome / what's new card, first start - plus Settings › Advanced › Developer options (off and hidden until switched on): a Debug mode for Windows and Linux builds (more detail in the error log, a debug line in the status bar, nothing personal logged). |
 
 ### Page standard (every pass checks the same things, in this order)
 
