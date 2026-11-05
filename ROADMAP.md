@@ -4,7 +4,7 @@
 
 > **Who we build for - read second.** Path of Exile players are utilitarian: they love data and information, problem solving and creative thinking. So every feature shows its numbers *and how they were worked out*, lets you sort, filter, compare and export them (CSV), keeps power-user depth (keys, versions, raw data) one click away instead of hiding it, explains in plain words, and leaves the decision to the player. Pretty is welcome; vague is not.
 
-**Current version: 2.98.5**
+**Current version: 2.98.6**
 
 Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds features, 2.10.1 only fixes. Each step below is one release; we work through them top to bottom.
 
@@ -173,6 +173,7 @@ Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds f
 | 2.97.0 | Polish 4 - feedback round: the Rate mods ask says what it is (Count me in! / Not now / Never ask again) and opens in front; Rate mods starts with "Which items do you know best?", lights only your rating, Back / Next / Done under it; F is the ignore tier everywhere tiers show (saved as Ignore); Focus / Campaign on = their line shows (no line switch; both on = one bar, two rows, in Panel and Game bar), switching one on turns the overlay on; a finished character's campaign line and Vendor ▾ come back in campaign zones; Price Checks: Rate ▾ replaces ▲ / ▼, the card and listings fit the window (scrollbar only when needed), Fractured only ticks the mod. |
 | 2.97.1 | Price Checks card: a rune's line and an affix with the same wording are ticked apart; runes in their own AUGMENTS section (no RUNE / SOCKETED lines); Fractured / Desecrated only small, right under its mod, the mod in its color. |
 | 2.97.2 | Price Checks card - visual hierarchy: a mod's color says where it comes from (affix blue, rune light blue, fractured tan, desecrated green, pseudo pink; unticked = dimmed, not grey), the listing cards match; every section folds with how many are ticked, Fold all / Unfold all. |
+| 2.98.6 | Expedition remnant prices back in every map (the mark check no longer blocks; a 2+ reward book confirms the map; looser mark match); runeshape tips box: Never show again. |
 | 2.98.5 | Stockpile item box pick-only (the name box narrows it); map supplies "when it's used up" (Omen of Amelioration: poked back in town after the map the log says used it); the first map rank card has Opt out; Map library › Share › Upload my ranks to the community (opt-in, once per 45 min, matches the board's limit).; Two affixes with one stat (Rarity prefix + suffix) added up and searched as one line; after a No, Community data sharing is never asked again; roadmap: Privacy & data hub, "opting out is final". |
 | 2.98.4 | Mageblood priced on its Legacies (Min N each; known from the game data when the trade site's list isn't loaded), its charm slots and, with a duplicate, the per-duplicate roll (the planned Mageblood search helper, built into the price check). |
 | 2.98.3 | Dialogs open over the app on its monitor; One-key copy and "Other ways of copying" gone; poe2db key under Tools; Fine tuning under Price checking; no Settings › Tools (rates switch on Exchange rates); About › Credits with GitHub links. |
