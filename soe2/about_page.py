@@ -61,6 +61,22 @@ def open_link(url):
         pass
 
 
+# 2.98.3: who we thank, and their GitHub pages (README › Credits says the same)
+CREDITS = (
+    ("RePoE (repoe-fork)", "the game data behind the mod lists, Regex, Game search and tiers - exported from Path of "
+                           "Exile 2's own files.", "https://github.com/repoe-fork/repoe-fork"),
+    ("poe.ninja (rasmuskl)", "the economy data: Exchange rates, the rates window over the game, Remnant prices and "
+                             "currency values.", "https://github.com/rasmuskl"),
+    ("Exiled Exchange 2 (Kvan7)", "general ideas, and the base types, mod wordings, trade-site stat ids and "
+                                  "pseudo-total rules in gamedata.json, from its data files under its MIT license. "
+                                  "Nothing else of it is used.", "https://github.com/Kvan7/Exiled-Exchange-2"),
+    ("Sidekick", "general ideas. None of its code is used.", "https://github.com/Sidekick-Poe/Sidekick"),
+    ("hypr-exiled (gfsd3v)", "the idea for the Trade Whisper Watcher - ours is built from scratch, none of its code "
+                             "is used.", "https://github.com/gfsd3v/hypr-exiled"),
+    ("Path of Building PoE2", "the anoint recipes.", "https://github.com/PathOfBuildingCommunity/PathOfBuilding-PoE2"),
+)
+
+
 class AboutPage:
     """Mixed into App."""
 
@@ -114,22 +130,26 @@ class AboutPage:
                 "GPL-3.0 license.",
                 "It only reads your clipboard, the game's log file (Client.txt) and your screen - never the game's "
                 "memory - and it respects the trade site's limits. One key press = one action.",
-                "Game data comes from RePoE; prices from the official trade site and poe.ninja. Not affiliated with "
-                "or endorsed by Grinding Gear Games."):
+                "Prices come from the official trade site and poe.ninja. Not affiliated with or endorsed by Grinding "
+                "Gear Games."):
             tk.Label(box, text=line, bg=P2, fg=C["text"], anchor="w", justify="left", wraplength=600,
                      font=("Segoe UI", 9)).pack(fill="x", pady=(4, 0))
-        # 2.96.1: poe.ninja's economy data - thank you
-        tk.Label(box, text="Economy data (Exchange rates, the rates window, Remnant prices, currency values): poe.ninja, "
-                           "by rasmuskl - thank you!", bg=P2, fg=C["text"],
-                 anchor="w", justify="left", wraplength=600, font=("Segoe UI", 9)).pack(fill="x", pady=(4, 0))
-        # 2.37.0: credit for an idea (no code used - that project isn't open source)
+        # 2.98.3 (feedback): credit where it's due - each with a link to its developers' GitHub page
+        box = tk.Frame(wrap, bg=P2, padx=16, pady=8, highlightthickness=1, highlightbackground=C["line"])
+        box.pack(fill="x", pady=(0, 8))
+        tk.Label(box, text="Credits - thank you!", bg=P2, fg=C["accent"], font=("Segoe UI", 12, "bold"),
+                 anchor="w").pack(fill="x")
         from .remnant import CREDIT_NAME, CREDIT_URL
-        cr = tk.Label(box, text=f"Expedition Remnant Price Checker: the idea comes from {CREDIT_NAME} - thank you! "
-                                "None of its code is used (it isn't open source); this is our own version. "
-                                "Its GitHub page ›", bg=P2, fg=C["blue"], anchor="w", justify="left", wraplength=600,
-                      font=("Segoe UI", 9), cursor="hand2")
-        cr.pack(fill="x", pady=(4, 0))
-        cr.bind("<Button-1>", lambda e: open_link(CREDIT_URL))
+        for name, what, url in CREDITS + ((CREDIT_NAME, "the idea for the Expedition Remnant Price Checker. None of "
+                                                        "its code is used (it isn't open source).", CREDIT_URL),):
+            row = tk.Frame(box, bg=P2)
+            row.pack(fill="x", pady=(8, 0))
+            ln = tk.Label(row, text=name + " ›", bg=P2, fg=C["blue"], anchor="w", font=("Segoe UI", 9, "bold"),
+                          cursor="hand2")
+            ln.pack(anchor="w")
+            ln.bind("<Button-1>", lambda e, u=url: open_link(u))
+            tk.Label(row, text=what, bg=P2, fg=C["text"], anchor="w", justify="left", wraplength=600,
+                     font=("Segoe UI", 9)).pack(fill="x")
 
     # ================================================================ quick start (first start)
     def show_quickstart(self, force=False):

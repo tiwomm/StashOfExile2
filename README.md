@@ -72,9 +72,15 @@ Questions, ideas and bug reports: [Discord](https://discord.gg/Ta8EVnxx4T). The 
 
 ## Credits
 
-- **[poe.ninja](https://poe.ninja)** (by rasmuskl): the economy data behind Exchange rates, the rates window over the game, the Remnant prices and currency values. Thank you!
-- **[Exiled Exchange 2](https://github.com/Kvan7/Exiled-Exchange-2)** (MIT): the base types, mod wordings, trade-site stat ids and pseudo-total rules in `gamedata.json`. Thank you!
-- **[PoE Ancients Price Helper](https://github.com/pedro-quiterio/PoeAncientsPriceHelper)** by Pedro Quitério: the idea for the Expedition Remnant Price Checker. None of its code is used.
+Thank you! Each links to its developers' GitHub page.
+
+- **[RePoE](https://github.com/repoe-fork/repoe-fork)** (repoe-fork): the game data behind the mod lists, Regex, Game search and tiers, exported from Path of Exile 2's own files.
+- **[poe.ninja](https://github.com/rasmuskl)** (rasmuskl): the economy data behind Exchange rates, the rates window over the game, the Remnant prices and currency values.
+- **[Exiled Exchange 2](https://github.com/Kvan7/Exiled-Exchange-2)** (Kvan7, MIT): general ideas, and the base types, mod wordings, trade-site stat ids and pseudo-total rules in `gamedata.json`, from its data files under its license. Nothing else of it is used.
+- **[Sidekick](https://github.com/Sidekick-Poe/Sidekick)**: general ideas. None of its code is used.
+- **[hypr-exiled](https://github.com/gfsd3v/hypr-exiled)** (gfsd3v): the idea for the Trade Whisper Watcher, built from scratch here; none of its code is used.
+- **[Path of Building PoE2](https://github.com/PathOfBuildingCommunity/PathOfBuilding-PoE2)**: the anoint recipes.
+- **[PoE Ancients Price Helper](https://github.com/pedro-quiterio/PoeAncientsPriceHelper)** (Pedro Quitério): the idea for the Expedition Remnant Price Checker. None of its code is used.
 
 ## License
 

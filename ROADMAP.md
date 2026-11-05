@@ -4,7 +4,7 @@
 
 > **Who we build for - read second.** Path of Exile players are utilitarian: they love data and information, problem solving and creative thinking. So every feature shows its numbers *and how they were worked out*, lets you sort, filter, compare and export them (CSV), keeps power-user depth (keys, versions, raw data) one click away instead of hiding it, explains in plain words, and leaves the decision to the player. Pretty is welcome; vague is not.
 
-**Current version: 2.98.2**
+**Current version: 2.98.3**
 
 Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds features, 2.10.1 only fixes. Each step below is one release; we work through them top to bottom.
 
@@ -173,6 +173,7 @@ Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds f
 | 2.97.0 | Polish 4 - feedback round: the Rate mods ask says what it is (Count me in! / Not now / Never ask again) and opens in front; Rate mods starts with "Which items do you know best?", lights only your rating, Back / Next / Done under it; F is the ignore tier everywhere tiers show (saved as Ignore); Focus / Campaign on = their line shows (no line switch; both on = one bar, two rows, in Panel and Game bar), switching one on turns the overlay on; a finished character's campaign line and Vendor ▾ come back in campaign zones; Price Checks: Rate ▾ replaces ▲ / ▼, the card and listings fit the window (scrollbar only when needed), Fractured only ticks the mod. |
 | 2.97.1 | Price Checks card: a rune's line and an affix with the same wording are ticked apart; runes in their own AUGMENTS section (no RUNE / SOCKETED lines); Fractured / Desecrated only small, right under its mod, the mod in its color. |
 | 2.97.2 | Price Checks card - visual hierarchy: a mod's color says where it comes from (affix blue, rune light blue, fractured tan, desecrated green, pseudo pink; unticked = dimmed, not grey), the listing cards match; every section folds with how many are ticked, Fold all / Unfold all. |
+| 2.98.3 | Dialogs open over the app on its monitor; One-key copy and "Other ways of copying" gone; poe2db key under Tools; Fine tuning under Price checking; no Settings › Tools (rates switch on Exchange rates); About › Credits with GitHub links. |
 | 2.98.2 | Corrupted items priced as corrupted: Twice Corrupted counts; Corruption Enhancements read and searched (enchant ids, at least their value); a corrupted item's sockets searched. The Toolkit menu stays on the app's monitor. |
 | 2.98.1 | Trade Whisper Watcher (Overlay › Settings › Helpers): a card over the game for each "I would like to buy your…" whisper - item, price, tab spot, who; on during the campaign, Keep on after the campaign; nothing saved. README credits the gamedata.json source correctly. |
 | 2.98.0 | Polish 5 - Responsive, part 1: wrapped labels re-wrap to their width everywhere; button rows wrap (flowify) on Bulk Pricing, Regex, Money Makers, Game Plan, Overlay; Overlay › Settings switch grids drop columns; the status bar's meters step aside when narrow; one-line notes wrap. |
@@ -220,7 +221,7 @@ Most-used first; pages that share data go together so their doubles can be merge
 3. **Layout:** anything drawn to a width redraws when the window changes size (nothing cut off, no stale widths); section cards (same title, padding, spacing); most-used first; related controls grouped; rarely used actions in "⋯ More"; nothing cut off at 100-150 % text.
 4. **Words:** plain US English, short labels, no jargon; a tooltip for anything that isn't obvious; numbers right-aligned.
 5. **Controls:** switch for on / off, segmented bar for 2-4 choices, dropdown for 5+; a choice that matters is asked as a question ("Which items do you know best?"), not a bare dropdown.
-6. **Flows and pop-ups:** open in front, focused, centered on the app; steps end with **Back | Next | Done** centered at the bottom; an ask offers **Yes-action | Not now | Never ask again** (Not now asks once more, later) and says how long it takes and that you can stop any time - never an open-ended "a few".
+6. **Flows and pop-ups:** open in front, focused, centered on the app and on the app's monitor (never another screen - menus, dialogs, tooltips, cards); steps end with **Back | Next | Done** centered at the bottom; an ask offers **Yes-action | Not now | Never ask again** (Not now asks once more, later) and says how long it takes and that you can stop any time - never an open-ended "a few".
 7. **States:** empty (what to do next, with the button), loading, error and disabled states say why; selected / your choice is lit on its own (one highlight, never two), and not by color alone.
 8. **Feedback:** every action confirms (toast or inline); deletes ask or can be undone.
 9. **Tiers and ratings:** S / A / B / C / D / F everywhere tiers show; F = ignore, with "F = ignore" said where it appears.

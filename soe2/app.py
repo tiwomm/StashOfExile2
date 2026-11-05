@@ -962,8 +962,8 @@ class App(PriceCheckPage, FavoritesPage, BoardModPage, LeaderboardPage, OrderLab
         self.set_nb = SegBook(body)
         self.set_nb.pack(fill="both", expand=True, padx=8, pady=(8, 0))
         pages = {}
-        for name in ("General", "Appearance", "Hotkeys", "Price checking", "Tools", "Chat commands", "Privacy & community",
-                     "Advanced", "About"):
+        for name in ("General", "Appearance", "Hotkeys", "Price checking", "Chat commands", "Privacy & community",
+                     "Advanced", "About"):                       # (2.98.3: no Tools tab - its one switch is on Exchange rates)
             sa = ScrollArea(self.set_nb, P1)
             wrap = tk.Frame(sa.inner, bg=P1, padx=8, pady=4)
             wrap.pack(fill="both", expand=True)
@@ -982,13 +982,8 @@ class App(PriceCheckPage, FavoritesPage, BoardModPage, LeaderboardPage, OrderLab
         self.build_about(pages["About"][1])                      # 2.10.0
         self.set_anchors = {}
         self.build_pc_settings(section)                          # 2.59.0: Settings › Price checking
-        row = section("Tools", "Exchange rates", "Rates come from poe.ninja and turn prices into the currency you pick "
-                                                 "(Settings › Price checking › Prices in).")
-        self.set_anchors["rates"] = row.master
-        self.rates_auto_var = tk.BooleanVar(value=SETTINGS.get("rates_auto", True))
-        ttk.Checkbutton(row, text="Check for new rates every hour", variable=self.rates_auto_var,
-                        command=self.on_rates_auto).pack(side="left")
-        ttk.Button(row, text="Exchange rates…", style="Quiet.TButton", command=self.open_rates).pack(side="left", padx=16)
+        # (2.98.3, feedback: Settings › Tools › Exchange rates is gone - "Check for new rates every hour" sits on the
+        # Exchange rates page, by Refresh now)
         row = section("Price checking", "Copy marker", "After Ctrl+Alt+C, a small + shows where your mouse was, so you can "
                                                 "see which items you've already copied. It only draws on the screen: "
                                                 "nothing is sent to the game.")
@@ -1192,7 +1187,7 @@ class App(PriceCheckPage, FavoritesPage, BoardModPage, LeaderboardPage, OrderLab
 
         # ======== Advanced
         # 2.59.0: settings that had no place in the app (only in settings.json)
-        row = section("Advanced", "Fine tuning", "Settings most players never touch. Each one saves at once; Defaults "
+        row = section("Price checking", "Advanced fine tuning", "Settings most players never touch. Each one saves at once; Defaults "
                                                  "puts all of them back.")
         self.set_anchors["fine"] = row.master
         self.build_fine_tuning(row)
@@ -2465,10 +2460,9 @@ class App(PriceCheckPage, FavoritesPage, BoardModPage, LeaderboardPage, OrderLab
         self.rates_status = tk.Label(top, text="", bg=C["panel"], fg=C["text"], anchor="w", justify="left", wraplength=360)
         self.rates_status.pack(side="left", fill="x", expand=True)
         ttk.Button(top, text="Refresh now", style="Primary.TButton", command=self.refresh_rates_now).pack(side="right")
-        lk = tk.Label(w, text="⚙ Settings › Tools: check for new rates every hour", bg=C["panel"], fg=C["accent"],
-                      cursor="hand2", font=("Segoe UI", 9, "underline"))     # 2.59.0: the switch lives in Settings
-        lk.pack(anchor="w", padx=16)
-        lk.bind("<Button-1>", lambda e: self.settings_open("Tools", "rates"))
+        self.rates_auto_var = tk.BooleanVar(value=SETTINGS.get("rates_auto", True))   # 2.98.3: here (was Settings)
+        ttk.Checkbutton(top, text="Check for new rates every hour", variable=self.rates_auto_var,
+                        command=self.on_rates_auto).pack(side="right", padx=(0, 16))
         cvo, conv = chrome_section(w, "Convert")              # 2.69.0: header strip + sunken frame
         cvo.pack(fill="x", padx=16, pady=8)
         row = tk.Frame(conv, bg=C["panel2"])
