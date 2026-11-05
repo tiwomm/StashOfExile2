@@ -1,0 +1,35 @@
+# 2.97.3: makes a preview (pre-release) the full release everyone's "Check for updates" finds.
+# Actions > Promote release > Run workflow. Leave the version empty for the newest preview, or type one (2.97.3).
+# Nothing is built here: the exe that was played is the exe that ships.
+name: Promote release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version to promote (empty = the newest preview)"
+        required: false
+        default: ""
+
+permissions:
+  contents: write
+
+jobs:
+  promote:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Promote
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          WANT: ${{ inputs.version }}
+        run: |
+          if [ -n "$WANT" ]; then
+            TAG="v${WANT#v}"
+          else
+            TAG=$(gh release list -R "$REPO" --limit 30 --json tagName,isPrerelease,isDraft \
+                  --jq '[.[] | select(.isPrerelease and (.isDraft | not))][0].tagName')
+          fi
+          if [ -z "$TAG" ] || [ "$TAG" = "null" ]; then echo "::error::No preview to promote."; exit 1; fi
+          gh release edit "$TAG" -R "$REPO" --prerelease=false --latest
+          echo "$TAG is now the full release."

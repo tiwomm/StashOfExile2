@@ -14,7 +14,8 @@ from .config import APP_UA
 REPO = "tiwomm/StashOfExile2"
 
 
-RELEASE_URL = f"https://api.github.com/repos/{REPO}/releases/latest"
+RELEASE_URL = f"https://api.github.com/repos/{REPO}/releases/latest"      # GitHub's "latest": full releases only
+RELEASES_URL = f"https://api.github.com/repos/{REPO}/releases?per_page=20"  # 2.97.3: previews too (opt-in)
 
 
 FROZEN = bool(getattr(sys, "frozen", False))       # True when running as the built .exe
@@ -58,8 +59,29 @@ def pick_asset(rel, frozen=None):
     return order[0] if order else None
 
 
-def latest_release():
-    """-> ("ok", release dict) / ("none", msg) / ("error", msg). One small public request; nothing is sent about you."""
+def newest(rels):
+    """2.97.3: the newest published release in a list - previews (pre-releases) included, drafts never."""
+    ok = [r for r in rels or [] if isinstance(r, dict) and not r.get("draft") and r.get("tag_name")]
+    return max(ok, key=lambda r: vtuple(r["tag_name"])) if ok else None
+
+
+def latest_release(preview=False):
+    """-> ("ok", release dict) / ("none", msg) / ("error", msg). One small public request; nothing is sent about you.
+    2.97.3: every new version is published as a preview first and becomes a full release once it's been played;
+    preview=True (Settings › Updates › Preview builds, opt-in) offers previews too."""
+    if preview:
+        try:
+            r = requests.get(RELEASES_URL, headers={"Accept": "application/vnd.github+json", "User-Agent": APP_UA},
+                             timeout=20)
+        except Exception as e:
+            return "error", f"Could not reach GitHub ({e}). Check your internet."
+        if r.status_code != 200:
+            return "error", f"GitHub answered {r.status_code}."
+        try:
+            rel = newest(r.json())
+        except Exception:
+            return "error", "GitHub's answer could not be read."
+        return ("ok", rel) if rel else ("none", "No release has been published yet.")
     try:
         r = requests.get(RELEASE_URL, headers={"Accept": "application/vnd.github+json", "User-Agent": APP_UA}, timeout=20)
     except Exception as e:

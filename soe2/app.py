@@ -1045,6 +1045,13 @@ class App(PriceCheckPage, FavoritesPage, BoardModPage, LeaderboardPage, OrderLab
                         variable=self.auto_check_var, command=lambda: self.on_update_options("check")).pack(anchor="w")
         ttk.Checkbutton(row2, text="Install updates automatically when the app starts (no questions; it restarts itself)",
                         variable=self.auto_update_var, command=lambda: self.on_update_options("update")).pack(anchor="w")
+        self.update_preview_var = tk.BooleanVar(value=bool(SETTINGS.get("update_preview")))   # 2.97.3
+        pv = ttk.Checkbutton(row2, text="Preview builds: get new versions before they're tested in game (opt-in)",
+                             variable=self.update_preview_var, command=lambda: self.on_update_options("preview"))
+        pv.pack(anchor="w")
+        Tooltip(pv, "Each new version comes out as a preview first and becomes a full update once it's been played. "
+                    "On: you get previews too - with the switches above, checked or installed by themselves. "
+                    "They may have rough edges.")
 
         # ======== Appearance
         tk.Label(pages["Appearance"][1], text="THE APP", bg=P1, fg=C["muted"], font=("Segoe UI", 9, "bold"),
@@ -1549,7 +1556,12 @@ class App(PriceCheckPage, FavoritesPage, BoardModPage, LeaderboardPage, OrderLab
             self.auto_update_var.set(False)
         SETTINGS["auto_check_updates"] = bool(self.auto_check_var.get())
         SETTINGS["auto_update"] = bool(self.auto_update_var.get())
+        if getattr(self, "update_preview_var", None) is not None:
+            SETTINGS["update_preview"] = bool(self.update_preview_var.get())
         save_json("settings.json", SETTINGS)
+        if which == "preview":
+            return self._say("Saved: " + ("you'll get preview builds too." if SETTINGS["update_preview"] else
+                                          "full releases only."), 8)
         self._say("Saved: " + ("updates install by themselves when the app starts." if SETTINGS["auto_update"] else
                                "the app looks for updates when it starts." if SETTINGS["auto_check_updates"] else
                                "updates only when you press Check for updates."), 8)
@@ -1792,7 +1804,7 @@ class App(PriceCheckPage, FavoritesPage, BoardModPage, LeaderboardPage, OrderLab
             self._say("Checking GitHub for a new version...", 15)
 
         def work():
-            kind, data = latest_release()
+            kind, data = latest_release(preview=bool(SETTINGS.get("update_preview")))
             self.ui_q.put(("update", kind, data))
         threading.Thread(target=work, daemon=True).start()
 

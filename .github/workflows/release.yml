@@ -1,6 +1,8 @@
 # Builds StashOfExile2.exe on GitHub's own Windows machine and publishes a release (same steps as build_exe.bat).
 # Runs when main gets a new version: the version in stashofexile2.py (APP_VERSION) that has no "v<version>" tag yet.
-# It makes that tag, builds the exe and publishes the release; the app's "Check for updates" finds it there.
+# It makes that tag, builds the exe and publishes it as a PREVIEW (pre-release, 2.97.3): only players who turned on
+# Settings > Updates > Preview builds get it. Once it's been played, Actions > Promote release makes it the full
+# release that everyone's "Check for updates" finds.
 # Nothing happens for changes that don't change the version. Also runs by hand (Actions > Release > Run workflow).
 name: Release
 
@@ -75,8 +77,8 @@ jobs:
           target_commitish: ${{ github.sha }}
           name: StashOfExile2 v${{ steps.ver.outputs.version }}
           body_path: notes.md
-          make_latest: ${{ !contains(steps.ver.outputs.version, '-') }}
-          prerelease: ${{ contains(steps.ver.outputs.version, '-') }}
+          make_latest: false        # 2.97.3: a preview first - Actions > Promote release makes it the full release
+          prerelease: true          # (the app offers previews only to players who opted in)
           files: |
             dist/StashOfExile2.exe
             StashOfExile2_build_kit_*.zip

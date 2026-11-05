@@ -24,6 +24,8 @@ NOTES = {
     "2.97.3": [
         "Money Makers is a Labs feature now: turn on Labs in Settings to see it.",
         "Price Checks: Add to favorites and Open on trade site are under Search.",
+        "Updates: new versions are tested in game before everyone gets them. Want them sooner? Settings › Updates › "
+        "Preview builds.",
     ],
     "2.97.2": [
         "Price Checks: each mod's color shows where it comes from (affix, rune, fractured, desecrated, pseudo).",
