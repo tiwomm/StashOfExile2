@@ -214,10 +214,12 @@ class PriceCheckPage:
         head.pack(fill="x")
         self.pc_count_lbl = tk.Label(head, text="", bg=C["panel"], fg=C["text"], font=("Segoe UI", 10, "bold"))
         self.pc_count_lbl.pack(side="left")
-        self.pc_open_btn = ttk.Button(head, text="Open on trade site", command=self.pc_open_trade, state="disabled")
-        self.pc_open_btn.pack(side="right")
-        self.pc_fav_btn = ttk.Button(head, text="☆ Add to favorites", command=self.pc_add_fav, state="disabled")
-        self.pc_fav_btn.pack(side="right", padx=(0, 8))           # 2.84.0
+        # 2.97.3 (feedback): Add to favorites / Open on trade site sit under Search and Clear (pcv_card makes them
+        # with each card); these two stand in, unshown, while there's no item
+        self.pc_open_btn0 = self.pc_open_btn = ttk.Button(head, text="Open on trade site", command=self.pc_open_trade,
+                                                          state="disabled")
+        self.pc_fav_btn0 = self.pc_fav_btn = ttk.Button(head, text="☆ Add to favorites", command=self.pc_add_fav,
+                                                        state="disabled")
         self.pc_rcanvas, self.pc_list = self._pc_scroller(right, padx=12, bg_key="panel")
         self.pcv = PCView(self.pc_left, self.pc_lcanvas, self.pc_list, self.pc_rcanvas, self.pc_count_lbl,
                           self.pc_open_btn)
@@ -404,6 +406,8 @@ class PriceCheckPage:
         for w in self.pc_left.winfo_children():
             w.destroy()
         self.pc_rid = rec["id"] if rec else None
+        self.pc_open_btn, self.pc_fav_btn = self.pc_open_btn0, self.pc_fav_btn0     # (until a card makes its own)
+        self.pcv.open_btn = self.pc_open_btn
         self.pc_refresh_hist()
         P2 = C["panel2"]
         if rec is None:
@@ -430,6 +434,14 @@ class PriceCheckPage:
         btn.pack(side="left", fill="x", expand=True)
         if v is getattr(self, "pcv", None):                 # 2.93.1 (feedback): Clear - empties Price Checks
             ttk.Button(btns, text="Clear", command=self.pc_clear).pack(side="left", padx=(8, 0))
+            more = tk.Frame(v.left, bg=P2)                  # 2.97.3 (feedback): under Search and Clear
+            more.pack(fill="x", pady=(8, 0))
+            self.pc_fav_btn = ttk.Button(more, text="☆ Add to favorites", command=self.pc_add_fav, state="disabled")
+            self.pc_fav_btn.pack(side="left", fill="x", expand=True)
+            self.pc_open_btn = ttk.Button(more, text="Open on trade site", command=self.pc_open_trade,
+                                          state="disabled")
+            self.pc_open_btn.pack(side="left", fill="x", expand=True, padx=(8, 0))
+            v.open_btn = self.pc_open_btn
         note = self._detail_note(rec)
         if note:
             tk.Label(v.left, text=note[0], bg=P2, fg=note[1], font=("Segoe UI", 9), anchor="w", justify="left",

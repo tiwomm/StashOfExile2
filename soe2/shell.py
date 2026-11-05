@@ -1422,8 +1422,8 @@ class Shell:
             self._task_dot_frame = f
         self.task_dots = {}
         for k, mod in self.modules.items():
-            if mod.kind != "utility" or not self.listed(mod):
-                continue
+            if True:                         # 2.97.3 (feedback): no "● Overlay" on the taskbar - the sidebar's dot
+                continue                     # shows it already (task_dots stays, empty)
             lab = tk.Label(f, text=f"● {mod.short}", bg="#111b30", fg="#5a6a88", font=("Segoe UI", 9), cursor="hand2")
             lab.pack(side="left", padx=4)
             lab.bind("<Button-1>", lambda e, kk=k: self.open(kk))
