@@ -2005,6 +2005,9 @@ class App(PriceCheckPage, FavoritesPage, BoardModPage, LeaderboardPage, OrderLab
         otherwise asks, and then(…) runs if you say Share."""
         if self.cm_sharing():
             return True
+        if self.cm_asked():                              # 2.98.5: you said no - never asked again; just say where it is
+            self._say("Community data sharing is off - nothing was sent. Settings › Privacy & community turns it on.", 8)
+            return False
         self.cm_ask(lambda on: on and then())
         return False
 

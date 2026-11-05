@@ -94,7 +94,13 @@ class OverlayParts:
             self.maprank_btns[rk] = b
         row2 = tk.Frame(body, bg=bg)
         row2.pack(fill="x", pady=(8, 0))
-        for key, label in (("later", "Not now"), ("never", "Never for this map")):
+        from .config import SETTINGS, save_json
+        opts = [("later", "Not now"), ("never", "Never for this map")]
+        if not SETTINGS.get("rank_card_seen"):              # 2.98.5: the first card you see: a way out of ranking
+            SETTINGS["rank_card_seen"] = True
+            save_json("settings.json", SETTINGS)
+            opts.append(("optout", "Opt out"))
+        for key, label in opts:
             b = ttk.Button(row2, text=label, style=self.ov_btn("Quiet.TButton"), command=lambda k=key: self.maprank_skip(name, k))
             b.pack(side="left", padx=(0, 8))
             self.maprank_btns[key] = b
@@ -115,6 +121,15 @@ class OverlayParts:
             pass
 
     def maprank_skip(self, name, how):
+        if how == "optout":                                  # 2.98.5: no more rank cards (Overlay › Settings brings them back)
+            self.tracker_cfg()["rank_ask"] = False
+            self.tracker_save()
+            v = getattr(self, "tk_rank_ask", None)
+            if v is not None:
+                v.set(False)
+            self.maprank_close()
+            self._say("No more map rank cards. Turn them back on: Overlay › Settings › Ask me to rank maps.", 8)
+            return
         if how == "never":
             from .config import SETTINGS, save_json
             SETTINGS.setdefault("rank_never", [])

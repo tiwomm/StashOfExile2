@@ -175,6 +175,7 @@ class MapLibraryPage:
         m.add_command(label="Import ranks…", command=self.ml_import)
         m.add_separator()
         m.add_command(label="Take the community's ranks…", command=self.ml_take_community)
+        m.add_command(label="Upload my ranks to the community", command=self.ml_upload)     # 2.98.5
         m.tk_popup(btn.winfo_rootx(), btn.winfo_rooty() + btn.winfo_height())
 
     def ml_export(self, path=None):
@@ -204,6 +205,45 @@ class MapLibraryPage:
                            "Community map ranks")
             return None
         return self.ml_take(incoming, "Community map ranks", mode)
+
+    def ml_upload(self):
+        """2.98.5: send your map ranks now instead of with the hourly sync. Opt-in (Community data sharing); at most
+        once per 45 minutes here and on the board (which also limits each address per day)."""
+        from . import board as BRD
+        from . import communitymods as CM
+        title = "Upload map ranks"
+        if not BRD.configured():
+            self.app_toast("The community board isn't switched on yet.", title)
+            return "off"
+        if not self.cm_need_sharing(self.ml_upload):
+            return "ask"
+        if getattr(self, "_ml_uploading", False):
+            return "busy"
+        if not CM.maps_unsent():
+            self._say("Your map ranks are already up - nothing new to upload.", 6)
+            return "none"
+        wait = CM.upload_wait()
+        if wait:
+            self._say(f"Uploaded a little while ago. Try again in {max(1, -(-wait // 60))} min.", 6)
+            return "wait"
+        self._ml_uploading = True
+
+        def work():
+            from .market import MARKET
+            from .mods import RULES
+            return CM.sync(MARKET, dict(RULES))
+
+        def done(res):
+            self._ml_uploading = False
+            push = res[0] if res else (False, "busy")
+            if push[0]:
+                self._say("Map ranks uploaded. Everyone sees them after the community's next update.", 8)
+            elif "too soon" in str(push[1]) or "too many" in str(push[1]):
+                self._say("The board says it's too soon - try again later.", 6)
+            else:
+                self._say("Couldn't upload right now - the hourly sync will try again.", 6)
+        self._lb_bg(work, done)
+        return "sent"
 
     def ml_take(self, incoming, title, mode=None):
         """Ask how to bring these ranks in: Replace all / Add and update / Add new only (keep mine)."""

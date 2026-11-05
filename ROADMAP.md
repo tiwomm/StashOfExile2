@@ -4,7 +4,7 @@
 
 > **Who we build for - read second.** Path of Exile players are utilitarian: they love data and information, problem solving and creative thinking. So every feature shows its numbers *and how they were worked out*, lets you sort, filter, compare and export them (CSV), keeps power-user depth (keys, versions, raw data) one click away instead of hiding it, explains in plain words, and leaves the decision to the player. Pretty is welcome; vague is not.
 
-**Current version: 2.98.4**
+**Current version: 2.98.5**
 
 Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds features, 2.10.1 only fixes. Each step below is one release; we work through them top to bottom.
 
@@ -173,6 +173,7 @@ Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds f
 | 2.97.0 | Polish 4 - feedback round: the Rate mods ask says what it is (Count me in! / Not now / Never ask again) and opens in front; Rate mods starts with "Which items do you know best?", lights only your rating, Back / Next / Done under it; F is the ignore tier everywhere tiers show (saved as Ignore); Focus / Campaign on = their line shows (no line switch; both on = one bar, two rows, in Panel and Game bar), switching one on turns the overlay on; a finished character's campaign line and Vendor ▾ come back in campaign zones; Price Checks: Rate ▾ replaces ▲ / ▼, the card and listings fit the window (scrollbar only when needed), Fractured only ticks the mod. |
 | 2.97.1 | Price Checks card: a rune's line and an affix with the same wording are ticked apart; runes in their own AUGMENTS section (no RUNE / SOCKETED lines); Fractured / Desecrated only small, right under its mod, the mod in its color. |
 | 2.97.2 | Price Checks card - visual hierarchy: a mod's color says where it comes from (affix blue, rune light blue, fractured tan, desecrated green, pseudo pink; unticked = dimmed, not grey), the listing cards match; every section folds with how many are ticked, Fold all / Unfold all. |
+| 2.98.5 | Stockpile item box pick-only (the name box narrows it); map supplies "when it's used up" (Omen of Amelioration: poked back in town after the map the log says used it); the first map rank card has Opt out; Map library › Share › Upload my ranks to the community (opt-in, once per 45 min, matches the board's limit).; Two affixes with one stat (Rarity prefix + suffix) added up and searched as one line; after a No, Community data sharing is never asked again; roadmap: Privacy & data hub, "opting out is final". |
 | 2.98.4 | Mageblood priced on its Legacies (Min N each; known from the game data when the trade site's list isn't loaded), its charm slots and, with a duplicate, the per-duplicate roll (the planned Mageblood search helper, built into the price check). |
 | 2.98.3 | Dialogs open over the app on its monitor; One-key copy and "Other ways of copying" gone; poe2db key under Tools; Fine tuning under Price checking; no Settings › Tools (rates switch on Exchange rates); About › Credits with GitHub links. |
 | 2.98.2 | Corrupted items priced as corrupted: Twice Corrupted counts; Corruption Enhancements read and searched (enchant ids, at least their value); a corrupted item's sockets searched. The Toolkit menu stays on the app's monitor. |
@@ -191,6 +192,7 @@ Order (decided 2.34.0): the Polish basics first, so new features are built on th
 | Before 1.0 (Dec 11) | **Campaign guide pack refresh** for 0.5.5 and then 1.0: Dreadnought Vanguard is gone (Jamanra in The Dreadnought), Azarian moved to the Heart of Keth, the Waterways levers are pressure pads, the Primal Arena's +2 points moved to Omniphobia, the Whakapanu shark's permanent choice and Plunder's Point are missing, and about 10 Interlude zones are missing. 1.0 may bring Acts 5-6. |
 | - | (Responsive part 2 - text size overlaps, sharp DPI - is folded into the page passes; started on branch wip-text-scale.) |
 | 2.99.0 | **Polish 6 - Hover, focus, motion (global):** the same hover and pressed look on every button, row, icon and tab; a visible keyboard focus ring everywhere; short (120-180 ms) fades for popups and toasts, never on lists; a "Reduce motion" setting. Everything over the game matches the overlay's own theme (both looks): tooltips, pop-ups, cards, notices, toasts. |
+| Next | **Privacy & data hub** (one home - Settings › Privacy & community): every point where data is collected, typed in or shared, and every community vote, listed in one place - what it is, what's sent (if anything), where it goes, why, its on / off switch and "delete mine". Covers Community data sharing (mod prices, Mod book votes, map ranks, campaign zones), Rate mods, map rank cards, Leaderboards, Money Makers strats / votes / reports / pictures, the community name, Trade Whisper Watcher (nothing saved), the Strat Tracker, Wealth (never leaves the PC) and anything added later (each new one must join this list). Opting out of anything is final: it's never asked again - not later, not in a few days. |
 | Next | **Polish 7 - Page passes** (one version per pass, below): each page is gone through with the Page standard; I bring a findings list + mockup, you suggest changes, then I build it. |
 | Later | **More overlay bar styles** beside Panel and Game bar (each with the goal bar, Focus / Campaign rows, menus and helpers drawn in that style). |
 | - | **Linux:** player-built. `build_linux.sh` stays in the repo; the project builds and tests Windows only (decided 2026-11-04). |
@@ -226,7 +228,7 @@ Most-used first; pages that share data go together so their doubles can be merge
 8. **Feedback:** every action confirms (toast or inline); deletes ask or can be undone.
 9. **Tiers and ratings:** S / A / B / C / D / F everywhere tiers show; F = ignore, with "F = ignore" said where it appears.
 10. **Over the game:** the overlay's theme; works in every bar style (Panel, Game bar); one switch per item, no doubles.
-11. **Privacy:** nothing personal shown or logged; anything shared is opt-in and says what, why and where.
+11. **Privacy:** nothing personal shown or logged; anything shared is opt-in and says what, why and where; it's listed in the Privacy & data hub; an opt-out (No, Never, a switch turned off) is never asked again.
 12. **Accessibility:** keyboard reachable, focus ring, contrast (WCAG AA), icon buttons named.
 13. **Proof:** before / after screenshots in the PR; tests updated.
 
@@ -283,6 +285,7 @@ The GGG Terms of Service check in [TOS.md](TOS.md) comes first; these follow fro
 
 - **Lean pull requests.** Only what the app or its build needs: no screenshots or pictures (except the matching templates in `soe2/templates/` and the app icon), no scratch files. Before / after pictures go in the PR's description, not in the repository.
 
+- **Opting out is final.** When you say no to anything (sharing, an ask, a card), it's never asked again - not later, not in a few days. Only you turn it back on, from its switch.
 - **One action per key press.** Nothing is automated in the game.
 - **Only reads what's yours to read.** No game memory or packets; only your clipboard, the game's own log file and your own screen.
 - **Respects the trade site.** Its limits are respected and nothing syncs on a timer.

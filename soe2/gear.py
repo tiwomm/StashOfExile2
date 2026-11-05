@@ -203,6 +203,47 @@ def _pseudo_id(ref):
     return None
 
 
+def _merge_same_stat(mods, refs_of):
+    """2.98.5 (feedback: a rare with a Rarity prefix AND a Rarity suffix found listings without them): the game and
+    the trade site add two mods with the same stat into one line ("34% increased Rarity of Items found"), so two
+    filters on one stat don't match the way the card shows. Two affixes with one stat -> one mod, the values added.
+    Fractured / desecrated / crafted ones stay apart (Fractured only searches the mod on its own)."""
+    first = {}
+    i = 0
+    while i < len(mods):
+        m = mods[i]
+        k = m.get("sid")
+        if (not k or m["kind"] not in AFFIX_KINDS or m["value"] is None or m["flags"] or m.get("option") is not None
+                or m.get("skill")):
+            i += 1
+            continue
+        j = first.get(k)
+        if j is None or mods[j]["mid"] == m["mid"]:
+            first.setdefault(k, i)
+            i += 1
+            continue
+        a = mods[j]
+        parts = a.get("parts") or [a["value"]]
+        parts.append(m["value"])
+        a["value"] = sum(parts)
+        if a["lo"] is not None and m["lo"] is not None and a["hi"] is not None and m["hi"] is not None:
+            a["lo"], a["hi"] = a["lo"] + m["lo"], a["hi"] + m["hi"]
+        else:
+            a["lo"] = a["hi"] = None
+        a["parts"] = parts
+        a["roll"] = roll_pct(a)
+        nums = " + ".join(f"{p:g}" for p in parts)
+        a["shown"] = re.sub(r"-?\d+(?:\.\d+)?", f"{a['value']:g}", a["shown"], count=1) + f"  ({nums})"
+        tiers = [t for t in (a["tier"], m["tier"]) if t]
+        a["tier"] = min(tiers, key=lambda t: int(t) if t.isdigit() else 99) if tiers else None
+        if a.get("auto") == "ignore" and m.get("auto") != "ignore":
+            a.pop("auto", None)
+            a["note"] = None
+        a["note"] = (a["note"] + "; " if a["note"] else "") + f"two mods add up ({nums}): searched as one line, like the trade site"
+        del mods[i]
+        del refs_of[i]
+
+
 def parse_gear(text):
     """A copied piece of gear -> a price-check item (same shape as a tablet / jewel item, plus "gear": True and the
     search plan), or None if it isn't gear."""
@@ -288,6 +329,7 @@ def parse_gear(text):
                 m["note"] = f"low tier (T{gm['tier']}) - rarely adds to the price, not searched (tick it to search on it)"
         mods.append(m)
         refs_of.append(stat["ref"] if stat else None)
+    _merge_same_stat(mods, refs_of)
 
     # 2.98.4 (feedback: "I am unable to accurately price check a mageblood"): what a Mageblood's price hangs on -
     # its Legacies (which ones, how many of each: searched as Min N), its charm slots, and - with a duplicate - the

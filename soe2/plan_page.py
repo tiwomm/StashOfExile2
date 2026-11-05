@@ -322,12 +322,17 @@ class GamePlanPage:
                                         postcommand=self.gp_stock_catalog)
         self.gp_s_catbox.pack(side="left")
         self.gp_s_catbox.bind("<<ComboboxSelected>>", lambda e: self.gp_stock_filter())
-        self.gp_s_pickbox = ttk.Combobox(r0, textvariable=self.gp_s_pick, postcommand=self.gp_stock_filter)
+        # 2.98.5 (feedback): the item box is pick-only - typing goes in the name box below, which also narrows it
+        self.gp_s_pickbox = ttk.Combobox(r0, textvariable=self.gp_s_pick, state="readonly",
+                                         postcommand=lambda: self.gp_stock_filter(typed=True))
         self.gp_s_pickbox.pack(side="left", fill="x", expand=True, padx=(8, 0))
-        self.gp_s_pickbox.bind("<KeyRelease>", lambda e: self.gp_stock_filter(typed=True))
-        Tooltip(self.gp_s_pickbox, "Pick an item, or type to narrow the list")
+        self.gp_s_pickbox.bind("<<ComboboxSelected>>", lambda e: self.gp_s_name.set(""))
+        Tooltip(self.gp_s_pickbox, "Pick an item. Type in the box below to narrow this list.")
         self._gp_label(form, 1, "Or any item by name")
-        ttk.Entry(form, textvariable=self.gp_s_name).grid(row=1, column=1, sticky="ew", pady=2)
+        ne = ttk.Entry(form, textvariable=self.gp_s_name)
+        ne.grid(row=1, column=1, sticky="ew", pady=2)
+        ne.bind("<KeyRelease>", lambda e: self.gp_stock_filter(typed=True))
+        Tooltip(ne, "Any item by name. What you type here also narrows the list above.")
         self._gp_label(form, 2, "Quantity")
         r2 = tk.Frame(form, bg=P2)
         r2.grid(row=2, column=1, sticky="ew", pady=2)
@@ -358,14 +363,16 @@ class GamePlanPage:
         g = self.gp_s_cat.get() or "All"
         names = ([n for ns in self.gp_s_groups.values() for n in ns] if g == "All"
                  else list(self.gp_s_groups.get(g, [])))
-        q = self.gp_s_pick.get().strip().lower() if typed else ""
+        q = self.gp_s_name.get().strip().lower() if typed else ""
         if q:
             names = [n for n in names if q in n.lower()]
         self.gp_s_pickbox.configure(values=names[:400])
         return names
 
     def gp_add_stock(self):
-        name = self.gp_s_name.get().strip() or self.gp_s_pick.get().strip()   # typed by hand wins
+        typed, pick = self.gp_s_name.get().strip(), self.gp_s_pick.get().strip()
+        # typed by hand wins - unless it only narrowed the list to the item you then picked (2.98.5)
+        name = pick if pick and (not typed or typed.lower() in pick.lower()) else typed
         if not name:
             return None
         row = F.add_stock(name, int(_num(self.gp_s_goal.get()) or 0), _num(self.gp_s_under.get()))
@@ -441,7 +448,8 @@ class GamePlanPage:
     def _gp_supplies(self, parent):
         P2 = C["panel2"]
         o, box = chrome_section(parent, "Map supplies", "What you use up in maps and when to refill it - every N "
-                                                         "maps or N minutes in maps, counted from the game's log. "
+                                                         "maps, N minutes in maps, or when the game's log says it "
+                                                         "was used up (Omen of Amelioration). "
                                                          "The poke comes between maps, in town or your hideout.",
                                 wrap=True)
         o.pack(fill="x", pady=(0, 12))
@@ -454,15 +462,21 @@ class GamePlanPage:
         self.gp_u_name, self.gp_u_every = tk.StringVar(), tk.StringVar(value="10")
         self.gp_u_rule = tk.StringVar(value=F.SUPPLY_RULES[0][1])
         self._gp_label(form, 0, "Supply")
-        ttk.Combobox(form, textvariable=self.gp_u_name, values=F.SUPPLY_PRESETS).grid(row=0, column=1, sticky="ew",
-                                                                                      pady=2)
+        nb = ttk.Combobox(form, textvariable=self.gp_u_name, values=F.SUPPLY_PRESETS)
+        nb.grid(row=0, column=1, sticky="ew", pady=2)
+        nb.bind("<<ComboboxSelected>>", lambda e: self.gp_supply_preset())
         self._gp_label(form, 1, "Refill every")
         r1 = tk.Frame(form, bg=P2)
         r1.grid(row=1, column=1, sticky="ew", pady=2)
         ttk.Spinbox(r1, from_=1, to=500, textvariable=self.gp_u_every, width=4).pack(side="left")
         ttk.Combobox(r1, textvariable=self.gp_u_rule, values=[n for _k, n in F.SUPPLY_RULES], state="readonly",
-                     width=11).pack(side="left", padx=(4, 0))
+                     width=15).pack(side="left", padx=(4, 0))
         ttk.Button(r1, text="+ Add", command=self.gp_add_supply).pack(side="right")
+
+    def gp_supply_preset(self):
+        """2.98.5: Omen of Amelioration is used up when you die - its rule is "when it's used up"."""
+        if self.gp_u_name.get().strip().lower() in (n.lower() for n in F.USED_UP):
+            self.gp_u_rule.set(dict(F.SUPPLY_RULES)["used"])
 
     def gp_sup_switch(self):
         F.cfg()["pokes"]["supplies"] = bool(self.gp_sup_on.get())
@@ -505,15 +519,18 @@ class GamePlanPage:
             ef.grid(row=i, column=1, sticky="w", padx=(0, 12), pady=1)
             ev = tk.StringVar(value=str(r["every"]))
             e = ttk.Entry(ef, textvariable=ev, width=4)
-            e.pack(side="left")
+            if r["rule"] != "used":                          # 2.98.5: no count for "when it's used up"
+                e.pack(side="left")
             e.bind("<Return>", lambda _e, sid=r["id"], ev=ev: self.gp_set_supply(sid, every=ev.get()))
             e.bind("<FocusOut>", lambda _e, sid=r["id"], ev=ev: self.gp_set_supply(sid, every=ev.get()))
             rv = tk.StringVar(value=dict(F.SUPPLY_RULES)[r["rule"]])
-            cb = ttk.Combobox(ef, textvariable=rv, values=[n for _k, n in F.SUPPLY_RULES], state="readonly", width=11)
-            cb.pack(side="left", padx=(4, 0))
+            cb = ttk.Combobox(ef, textvariable=rv, values=[n for _k, n in F.SUPPLY_RULES], state="readonly", width=15)
+            cb.pack(side="left", padx=(4 if r["rule"] != "used" else 0, 0))
             cb.bind("<<ComboboxSelected>>", lambda _e, sid=r["id"], rv=rv: self.gp_set_supply(sid, rv.get()))
             up = used >= every
-            lab = tk.Label(box, text=f"{used} / {every}" + ("  · refill" if up else ""), bg=P2,
+            txt = (("used up  · refill" if up else "waiting") if r["rule"] == "used"
+                   else f"{used} / {every}" + ("  · refill" if up else ""))
+            lab = tk.Label(box, text=txt, bg=P2,
                            fg=C["orange"] if up else C["text"], font=("Segoe UI", 9, "bold" if up else "normal"),
                            anchor="w")
             lab.grid(row=i, column=2, sticky="w", padx=(0, 12), pady=1)
