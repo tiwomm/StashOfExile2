@@ -374,6 +374,9 @@ class App(GearBookPage, PriceCheckPage, FavoritesPage, BoardModPage, Leaderboard
             self.root.focus_force()
             if hasattr(self, "shell"):
                 self.root.after(30, self.shell.show_all)
+        elif what == "updates":                         # 2.100.0: the tray's Check for updates - the app comes back
+            self.ev_tray("show")                         # first, so the answer shows over it
+            self.root.after(300, lambda: self.check_updates("ask"))
         elif what == "quit":
             self.tray.hide_icon()
             self.on_close()
@@ -1788,11 +1791,15 @@ class App(GearBookPage, PriceCheckPage, FavoritesPage, BoardModPage, Leaderboard
     # ---------------- updates
     def startup_update_check(self):
         """2.0 beta 7: Settings > Updates. Auto-update installs a newer version without asking; auto-check only
-        tells you (a card with Update now). Both stay quiet when you are up to date or GitHub can't be reached."""
+        tells you (a card with Update now). Both stay quiet when you are up to date or GitHub can't be reached.
+        2.100.0: every start looks once (closing and reopening the app checks again) - with both switches off it only
+        lights the update badge; the hourly look (feedback_page.quiet_update_check) carries on from there."""
         if SETTINGS.get("auto_update"):
             self.check_updates(mode="auto")
         elif SETTINGS.get("auto_check_updates"):
             self.check_updates(mode="silent")
+        else:
+            self.check_updates(mode="badge")
 
     def check_updates(self, mode="ask"):
         """mode: "ask" (the button: tells you the result, asks before downloading), "silent" (at start: only speaks up
@@ -1816,9 +1823,13 @@ class App(GearBookPage, PriceCheckPage, FavoritesPage, BoardModPage, Leaderboard
 
     def ev_update(self, kind, data):
         self._upd_done()
+        if kind == "ok":                                    # 2.100.0: this check speaks for itself - no second card
+            self._upd_told = data.get("tag_name")
         if kind == "ok" and hasattr(self, "upd_badge"):            # 2.48.0: the taskbar badge follows every check
             self.ev_update_badge(data.get("tag_name"))
         mode = getattr(self, "_upd_mode", "ask")
+        if mode == "badge":                                 # 2.100.0: start-up look with the switches off: badge only
+            return
         if mode != "ask":                                   # automatic check at start: quiet unless there is news
             if kind != "ok" or not is_newer(data.get("tag_name", ""), APP_VERSION):
                 self.status_text, self.status_until = ("Update check: " + (f"you have the newest version ({pretty_version()})."

@@ -21,6 +21,10 @@ NEXT = [
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.99.1": [
+        "Updates are checked every time the app starts and every hour - preview builds too, when you've opted in.",
+        "Right-click the tray icon › Check for updates.",
+    ],
     "2.99.0": [
         "Mod book › Gear rules: every item class (helmets, belts, rings, amulets, weapons ...) with every mod it can "
         "roll. Rate them S-F: S / A are always searched, F never.",

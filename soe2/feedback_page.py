@@ -45,16 +45,33 @@ class FeedbackPage:
         self.root.after(15000, self.quiet_update_check)
 
     def quiet_update_check(self):
-        """Every hour: is there a newer release? Only shows the badge."""
+        """Every hour: is there a newer release? Shows the badge. 2.100.0 (feedback): it follows Preview builds (it
+        only ever looked at full releases, so with previews on it never found one), and with Settings' update
+        switches on, a newer version also gets a card - Install now, or it installs when the app next starts."""
+        from .config import SETTINGS
+
         def work():
             from .updates import latest_release
             try:
-                kind, data = latest_release()
+                kind, data = latest_release(preview=bool(SETTINGS.get("update_preview")))
             except Exception:
                 kind, data = "error", {}
             self.ui_q.put(("update_badge", data.get("tag_name") if kind == "ok" else None))
         threading.Thread(target=work, daemon=True).start()
         self.root.after(UPDATE_EVERY * 1000, self.quiet_update_check)
+
+    def update_found(self, tag):
+        """A check during the session found a newer version: a card once per version (when an update switch is on)."""
+        from .config import SETTINGS, pretty_version
+        if getattr(self, "_upd_told", None) == tag or getattr(self, "_upd_busy", False):
+            return False
+        if not (SETTINGS.get("auto_update") or SETTINGS.get("auto_check_updates")):
+            return False
+        self._upd_told = tag
+        later = "Later" if not SETTINGS.get("auto_update") else "When I next start the app"
+        self.info_card(f"Version {pretty_version(tag)} is out (you have {pretty_version()}).",
+                       [("Install now", lambda: self.check_updates("ask")), (later, lambda: None)], secs=120)
+        return True
 
     def ev_update_badge(self, tag):
         from .updates import is_newer
@@ -62,6 +79,10 @@ class FeedbackPage:
         sb = getattr(self.shell, "sidebar", None)
         if tag and is_newer(tag, APP_VERSION):
             self.upd_latest = tag
+            try:
+                self.update_found(tag)
+            except Exception:
+                pass
             self.upd_badge.config(text=f"⬆ Update {pretty_version(tag)}")
             if sb is not None:                               # 2.74.2: in the sidebar, above Toolkit and Settings
                 sb.redraw()

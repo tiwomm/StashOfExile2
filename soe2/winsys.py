@@ -340,6 +340,7 @@ class Tray:
         try:
             ps = self.pystray
             menu = ps.Menu(ps.MenuItem("Show StashOfExile2", lambda i, it: self.post("show"), default=True),
+                           ps.MenuItem("Check for updates", lambda i, it: self.post("updates")),    # 2.100.0
                            ps.MenuItem("Quit", lambda i, it: self.post("quit")))
             self.icon = ps.Icon("StashOfExile2", self.image, APP_TITLE, menu)
             self.icon.run_detached()
