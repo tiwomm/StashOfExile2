@@ -201,7 +201,8 @@ def _rewrap(e):
     except Exception:
         pad = 0
     new = max(120, e.width - pad - 4)
-    if abs(new - wl) > 6:
+    squeezed = e.width < w.winfo_reqwidth() - 1          # its parent gives it less than it asks for
+    if (new > wl + 6) or (squeezed and new < wl - 6):     # (a window that sizes to its text never shrinks it)
         try:
             w.configure(wraplength=new)
         except Exception:

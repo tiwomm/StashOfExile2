@@ -74,9 +74,9 @@ class RateModsPage:
         self.rm_box = tk.Frame(w, bg=P2, padx=16, pady=16)
         self.rm_box.pack(fill="both", expand=True)
         for k, g in (("s", "S"), ("a", "A"), ("b", "B"), ("c", "C"), ("d", "D"), ("f", "ignore"), ("i", "ignore")):
-            w.bind(k, lambda e, g=g: self.rm_rate(g) if getattr(self, "rm_view", "") == "rate" else None)
-        w.bind("<Right>", lambda e: self.rm_step(1))
-        w.bind("<Left>", lambda e: self.rm_step(-1))
+            w.bind(k, lambda e=None, g=g: self.rm_rate(g) if getattr(self, "rm_view", "") == "rate" else None)
+        w.bind("<Right>", lambda e=None: self.rm_step(1))
+        w.bind("<Left>", lambda e=None: self.rm_step(-1))
         w.protocol("WM_DELETE_WINDOW", self.rm_close)
         self.rm_rated = 0
         self.rm_q, self.rm_i = [], 0
