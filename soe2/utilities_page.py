@@ -131,7 +131,8 @@ class UtilitiesPage:
         return True
 
     def quick_copy_key(self, vk, ctrl, alt, shift):
-        """Price checks' one-key copy (2.0 beta 15): your key -> the game's Ctrl+Alt+C on the item under the mouse."""
+        """Price checks' one-key copy (2.0 beta 15) - 2.98.3: gone (not a viable way to copy). Never acts."""
+        return False
         from .overlay import parse_key, game_active, send_copy, POE_TITLE
         k = parse_key(SETTINGS.get("quick_copy_key") or "")
         if not k or k != (vk, ctrl, alt, shift):

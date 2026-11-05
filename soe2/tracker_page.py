@@ -1247,10 +1247,8 @@ class TrackerPage:
         rows = [("Price check the item under the mouse (in game)", SETTINGS.get("pc_key", "Ctrl+D"), "Price Checks",
                  "checks:pc_key"),
                 ("Add the item under the mouse to Bulk Pricing", "Ctrl+Alt+C", "Bulk Pricing", None),
-                ("One-key copy (experimental, in game)", SETTINGS.get("quick_copy_key", ""), "Bulk Pricing",
-                 "checks:quick_copy_key"),
-                ("Open poe2db's modifier list in your browser", SETTINGS.get("poe2db_key", ""), "Bulk Pricing",
-                 "checks:poe2db_key"),
+                ("Open poe2db's modifier list in your browser", SETTINGS.get("poe2db_key", ""), "Tools",
+                 "checks:poe2db_key"),                        # (2.98.3: its own group - not Bulk Pricing)
                 ("Copy your stash search (in game)", SETTINGS.get("regex_key", ""), "Regex", "checks:regex_key"),
                 ("Session timer: pause / resume (or ⏸ / ▶ on the overlay)", tc.get("key_pause", ""), "Overlays",
                  "tracker:key_pause"),

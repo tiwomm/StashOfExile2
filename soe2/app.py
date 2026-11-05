@@ -165,6 +165,10 @@ class App(PriceCheckPage, FavoritesPage, BoardModPage, LeaderboardPage, OrderLab
         from . import listkit                        # 2.12.0: keys, right-click menus and striped rows everywhere
         listkit.install(self)
         SETTINGS.setdefault("poe2db_key", "Ctrl+Shift+D")
+        if not SETTINGS.get("copy_2983"):                    # 2.98.3: One-key copy and "Other ways of copying" are
+            SETTINGS["copy_2983"] = True                     # gone - Bulk Pricing adds only your own Ctrl+Alt+C
+            SETTINGS["quick_copy_key"] = ""
+            SETTINGS["hotkey_only"] = True
         SETTINGS.setdefault("copy_marker", True)            # 2.19.0: a mark where you pressed Ctrl+Alt+C
         SETTINGS.setdefault("copy_marker_secs", 10)         # 2.24.0: how long it stays
         SETTINGS.setdefault("copy_marker_hold", False)      # 2.24.0: or until Esc is tapped twice (2.25.0)
@@ -1183,13 +1187,8 @@ class App(PriceCheckPage, FavoritesPage, BoardModPage, LeaderboardPage, OrderLab
             ttk.Checkbutton(row, text=label, variable=v, style="Card.TCheckbutton",
                             command=lambda k=k, v=v: (SETTINGS.__setitem__(k, bool(v.get())), save_json("settings.json", SETTINGS))
                             ).pack(side="left", padx=(0, 16))
-        row = section("Hotkeys", "Other ways of copying", "Bulk Pricing only adds items you copy with your own "
-                                                          "Ctrl+Alt+C, so other tools' copy keys don't "
-                                                          "fill your list. Tick this to also add items copied any other "
-                                                          "way.")
-        self.any_copy_var = tk.BooleanVar(value=not SETTINGS.get("hotkey_only", True))
-        ttk.Checkbutton(row, text="Also add items copied another way", variable=self.any_copy_var,
-                        command=self.on_any_copy).pack(side="left")
+        # (2.98.3, feedback: "Other ways of copying" was a dead switch - Bulk Pricing adds only what you copy with
+        # Ctrl+Alt+C, always)
 
         # ======== Advanced
         # 2.59.0: settings that had no place in the app (only in settings.json)
@@ -1639,14 +1638,7 @@ class App(PriceCheckPage, FavoritesPage, BoardModPage, LeaderboardPage, OrderLab
                 tk.Label(f, text="the game's own copy - always on", bg=P2, fg=C["muted"],
                          font=("Segoe UI", 9)).grid(row=i, column=2, sticky="w", padx=(12, 0))
             i += 1
-        key = SETTINGS.get("quick_copy_key", "")
-        if key:                                                   # 2.0 beta 21: a warning and the way back
-            warn = tk.Frame(f, bg="#2a2110", padx=8, pady=8, highlightthickness=1, highlightbackground="#7a6428")
-            warn.grid(row=i + 1, column=0, columnspan=3, sticky="we", pady=(8, 0))
-            tk.Label(warn, text="⚠ One-key copy is experimental. Ctrl+Alt+C is the reliable way to copy items: if "
-                                "copies go missing or keys seem stuck in game, reset it.", bg="#2a2110",
-                     fg=C["good"], wraplength=520, justify="left", anchor="w").pack(side="left", fill="x", expand=True)
-            ttk.Button(warn, text="Reset to Ctrl+Alt+C only", command=self.reset_quick_copy).pack(side="right", padx=(8, 0))
+        # (2.98.3, feedback: One-key copy is gone - not a viable way to copy; Ctrl+Alt+C is)
 
     def hotkeys_open(self, kid=None):
         """2.57.0: Settings › Hotkeys, where every key is set - the row asked for is lit up for a moment."""
