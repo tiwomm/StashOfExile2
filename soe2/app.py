@@ -427,7 +427,7 @@ class App(PriceCheckPage, FavoritesPage, BoardModPage, LeaderboardPage, OrderLab
         self.status = tk.Label(strip, text="Starting...", anchor="w", bg=C["bg"], fg=C["muted"], padx=16, pady=4)
         self.status.pack(side="left", fill="x", expand=True)
 
-        # ---- taskbar, right side: league (opens Settings), utilities, always on top, clock
+        # ---- taskbar, right side: league (opens Settings), clock (2.97.3: no utility dots, no 📌)
         tb = "#111b30"
         self.league_chip = tk.Label(self.shell.task_right, text="", bg="#162544", fg=C["good"], padx=8, pady=4,
                                     cursor="hand2", font=("Segoe UI", 9, "bold"), highlightthickness=1,
@@ -438,9 +438,7 @@ class App(PriceCheckPage, FavoritesPage, BoardModPage, LeaderboardPage, OrderLab
         self._league_chip()
         self.build_feedback()                                  # 2.48.0: ⬆ Update badge, 🐞 Report a bug
         self.shell.make_task_dots()
-        self.pin_lbl = tk.Label(self.shell.task_right, text="📌", bg=tb, font=("Segoe UI Emoji", 10), cursor="hand2")
-        self.pin_lbl.pack(side="left", padx=(8, 0), before=self.shell.clock)
-        self.pin_lbl.bind("<Button-1>", lambda e: (self.top_var.set(not self.top_var.get()), self.on_top_toggle()))
+        # (2.97.3, feedback: no 📌 on the status bar - Always on top is in Settings › General › Window)
         self._top_label()
         from . import shell as _shell
         _shell.CLOCK["format"] = SETTINGS.get("clock_format", "auto")
@@ -1020,7 +1018,7 @@ class App(PriceCheckPage, FavoritesPage, BoardModPage, LeaderboardPage, OrderLab
         # 2.31.0 / 2.69.1: Community data sharing - 2.94.0: on its own page with your community name
         self.build_privacy_community(section)
         row = section("General", "Window", "Always on top keeps StashOfExile2 in front of the game (and brings it "
-                                           "back if something minimizes it). The 📌 on the taskbar does the same. "
+                                           "back if something minimizes it). "
                                            "The overlay (timer, Mechanic Helper, Notes) is shown over the game: "
                                            "normally only while the game is the window in front.")
         self.top_btn = ttk.Checkbutton(row, text="Always on top", variable=self.top_var, command=self.on_top_toggle)
