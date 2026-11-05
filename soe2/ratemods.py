@@ -3,7 +3,7 @@ are your vote in the community's ratings, which earn rep when they match.
 
   * ▲ / ▼ beside each mod on Price Checks: "did this mod matter for the price?" ▲ = High, ▼ = Ignore, again = clear.
     Gear has its own rules per item class ("gear:helmet:# to maximum life"), so a helmet's ▲ doesn't touch rings.
-  * Rate mods: one mod at a time, S / A / B / C / D or Ignore, from one rule set (Tablets, Jewels, Waystones, Relics,
+  * Rate mods: one mod at a time, S / A / B / C / D or F (ignore), from one rule set (Tablets, Jewels, Waystones, Relics,
     or a gear class you've price checked). S / A count as High, B / C / D as Normal (the tier says what's left out first).
   * The ask: once, after you've priced enough items; Not now asks again once, at random 3-7 days later; No thanks
     never asks again. Rate mods is always in the Mod book.
@@ -68,7 +68,7 @@ def apply(keys, grade):
             TIERS.pop(k, None)
             continue
         imp = {"up": "high", "down": "ignore", "ignore": "ignore"}.get(grade) or ("high" if grade in ("S", "A") else "normal")
-        if imp == auto_impact(k) and grade not in TIER_ORDER:
+        if imp == auto_impact(k) and grade not in TIER_ORDER + ("ignore",):   # 2.97.0: an F you gave stays yours
             RULES.pop(k, None)
         else:
             RULES[k] = imp

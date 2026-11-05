@@ -1059,13 +1059,20 @@ class MergedOverlay:
         foot = y + int(2 * k)
         fy = foot + int(11 * k)
         gx = self._mg_glyphs(w, cv, P, gx1 - int(4 * k), fy)
+        menus_left = gx
         if self.bar_buttons_on():
-            self._mg_bar_buttons(w, cv, P, gx - 4, fy, anchor="e")
+            menus_left = self._mg_bar_buttons(w, cv, P, gx - 4, fy, anchor="e")
+        extra = 0
         if want["timer"] and cfg.get("clock", True):
             self._mg_clock(w, cv, P, gx0 + int(4 * k), fy, anchor="w", on_bar=False)
             self.tk_ov_clock.config = (lambda fn: (lambda text="", **kw: fn(text=text.splitlines()[0]
                                                                             if text else "")))(self.tk_ov_clock.config)
-        H = fy + int(12 * k) + fw
+            import tkinter.font as _tkf
+            cw = _tkf.Font(root=cv, family=P["font"], size=self._hf(9)).measure("12:00 AM")
+            if gx0 + int(4 * k) + cw + int(8 * k) > menus_left:   # 2.97.0: four menus and the clock don't fit - clock below
+                extra = int(18 * k)
+                cv.move("mg_clock", 0, extra)
+        H = fy + extra + int(12 * k) + fw
         art = hudart.card(cv, W, H, (by0, by1), grids, foot)
         if art is not None:
             cv.create_image(0, 0, image=art, anchor="nw", tags=("hudbg",))

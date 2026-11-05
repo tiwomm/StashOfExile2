@@ -489,7 +489,7 @@ class RegexPage:
         kind = self.rx_kind.get()
         keys = [rule_key(kind, norm(l)) for l in (m.get("lines") or [m["line"]])]
         menu = tk.Menu(self.root, tearoff=0, bg=C["panel2"], fg=C["text"], activebackground="#2c4a84")
-        for label, imp in (("★ Valuable (Mod book: High)", "high"), ("Normal", "normal"), ("Not worth anything (Ignore)", "ignore")):
+        for label, imp in (("★ Valuable (Mod book: High)", "high"), ("Normal", "normal"), ("Not worth anything (F - ignore)", "ignore")):
             menu.add_command(label=label, command=lambda i=imp: (self.set_rules(keys, i), self.rx_refresh_values()))
         menu.tk_popup(e.x_root, e.y_root)
 

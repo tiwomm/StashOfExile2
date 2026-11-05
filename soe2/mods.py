@@ -339,7 +339,7 @@ def roll_pct(mod):
 IMPACTS = ("normal", "high", "ignore")          # the order the button on a mod clicks through them
 
 
-IMPACT_LABEL = {"high": "▲ High", "normal": "● Normal", "ignore": "✕ Ignore"}
+IMPACT_LABEL = {"high": "▲ High", "normal": "● Normal", "ignore": "✕ Ignore (F)"}
 
 
 # Starting point only - every mod can be changed on the Mod rules tab or with the button on the mod itself.
@@ -381,6 +381,11 @@ def scoped(k):
 # ---- 2.20.0: tiers - how much a mod matters, S (most) to D (least). When no listing has all of an item's mods, the
 # lowest tier is left out first. A mod you haven't given a tier: High = A, Normal = C (Ignore isn't searched at all).
 TIER_ORDER = ("S", "A", "B", "C", "D")
+# 2.97.0: F is the ignore tier - shown as "F" wherever tiers show; saved as an Ignore rule (not a tier), so nothing
+# that reads rules changes. F_TIP says what it means wherever F appears.
+TIER_F = "F"
+SHOWN_TIERS = TIER_ORDER + (TIER_F,)
+F_TIP = "F = ignore: buyers don't pay for it, so it's left out of searches."
 TIERS = load_json("mod_tiers.json", {})        # your tiers: rule key -> "S".."D"
 
 
