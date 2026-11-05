@@ -145,7 +145,8 @@ class WealthPage:
         head2.pack(fill="x")
         self.w_bd_mode = SegBar(head2, ["Divines", "Percent"], command=lambda v: self.wealth_breakdown(), size=9, pad=(8, 4))
         self.w_bd_mode.pack(side="right")
-        self.w_bd_note = tk.Label(c2, text="", bg=P2, fg=C["muted"], anchor="w", font=("Segoe UI", 9))
+        self.w_bd_note = tk.Label(c2, text="", bg=P2, fg=C["muted"], anchor="w", font=("Segoe UI", 9), justify="left",
+                                  wraplength=200)                              # (2.98.0: wraps to its width)
         self.w_bd_note.pack(fill="x", pady=(2, 4))
         self.w_bd = tk.Frame(c2, bg=P2)
         self.w_bd.pack(fill="both", expand=True)

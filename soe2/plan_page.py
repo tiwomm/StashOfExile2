@@ -332,10 +332,14 @@ class GamePlanPage:
         r2 = tk.Frame(form, bg=P2)
         r2.grid(row=2, column=1, sticky="ew", pady=2)
         ttk.Entry(r2, textvariable=self.gp_s_goal, width=7).pack(side="left")
-        tk.Label(r2, text="Buy under", bg=P2, fg=C["muted"], font=("Segoe UI", 9)).pack(side="left", padx=(12, 8))
-        ttk.Entry(r2, textvariable=self.gp_s_under, width=7).pack(side="left")
-        tk.Label(r2, text="div each", bg=P2, fg=C["muted"], font=("Segoe UI", 9)).pack(side="left", padx=(4, 0))
+        bu = tk.Frame(r2, bg=P2)                             # (2.98.0: "Buy under [ ] div each" stays together)
+        bu.pack(side="left", padx=(12, 0))
+        tk.Label(bu, text="Buy under", bg=P2, fg=C["muted"], font=("Segoe UI", 9)).pack(side="left", padx=(0, 8))
+        ttk.Entry(bu, textvariable=self.gp_s_under, width=7).pack(side="left")
+        tk.Label(bu, text="div each", bg=P2, fg=C["muted"], font=("Segoe UI", 9)).pack(side="left", padx=(4, 0))
         ttk.Button(r2, text="+ Add", command=self.gp_add_stock).pack(side="right")
+        from .style import flowify
+        flowify(r2)                                          # 2.98.0: wraps in a narrow window
 
     def gp_stock_catalog(self):
         """The Currency Exchange's groups (Currency, Omens, Essences ...) for the first box."""

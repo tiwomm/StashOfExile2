@@ -83,7 +83,8 @@ class InsightsPage:
         def table(r, c, key, title, hint, cols, colspan=1):
             fo, f = chrome_section(grid, title, padx=8, pady=8)                # 2.69.0
             fo.grid(row=r, column=c, columnspan=colspan, sticky="nsew", padx=4, pady=4)
-            tk.Label(f, text=hint, bg=P2, fg=C["muted"], font=("Segoe UI", 9), anchor="w", justify="left").pack(fill="x")
+            tk.Label(f, text=hint, bg=P2, fg=C["muted"], font=("Segoe UI", 9), anchor="w", justify="left",
+                     wraplength=240).pack(fill="x")                      # (2.98.0: wraps to its width)
             box = tk.Frame(f, bg=P2)
             box.pack(fill="both", expand=True, pady=(4, 0))
             tv = ttk.Treeview(box, columns=[k for k, *_ in cols], show="headings", height=5)

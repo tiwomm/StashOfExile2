@@ -168,6 +168,264 @@ def switches(root, s):
         s.configure(name, padding=(0, 2))
 
 
+# ---------------------------------------------------------------- 2.98.0: responsive (decided 2026-11-05: everything
+# drawn to a width redraws when the window changes size - the default for the whole app)
+def _fills_x(w):
+    """Does this widget get the width its parent gives it (pack fill x / both, grid sticky e+w, place relwidth)?"""
+    try:
+        mgr = w.winfo_manager()
+        if mgr == "pack":
+            return w.pack_info().get("fill") in ("x", "both")
+        if mgr == "grid":
+            st = str(w.grid_info().get("sticky", ""))
+            return "e" in st and "w" in st
+        if mgr == "place":
+            return bool(w.place_info().get("relwidth"))
+    except Exception:
+        pass
+    return False
+
+
+def _rewrap(e):
+    """A wrapped label that fills its row re-wraps to the width it has (was a fixed wraplength, cut off or
+    leaving a gap when the window changed size). Labels with their own <Configure> rule keep it."""
+    w = e.widget
+    try:
+        wl = int(float(str(w.cget("wraplength")) or 0))
+    except Exception:
+        return
+    if wl <= 0 or w.bind("<Configure>") or not _fills_x(w):
+        return
+    try:
+        pad = int(float(str(w.cget("padx")) or 0)) * 2
+    except Exception:
+        pad = 0
+    new = max(120, e.width - pad - 4)
+    if abs(new - wl) > 6:
+        try:
+            w.configure(wraplength=new)
+        except Exception:
+            pass
+
+
+def responsive(root):
+    """Once, at start: every wrapped Label / ttk Label in the app re-wraps to its width (see _rewrap)."""
+    for cls in ("Label", "TLabel"):
+        root.bind_class(cls, "<Configure>", _rewrap, add="+")
+
+
+def fit(widget, fn, min_delta=12, delay=150):
+    """Call fn() again (debounced) whenever widget's width changes by min_delta or more - for anything drawn to a
+    width (a canvas card, a chart, a list of cards). The first size it gets doesn't count (it was drawn for it)."""
+    st = {"w": 0, "after": None}
+
+    def cfg(e):
+        if abs(e.width - st["w"]) < min_delta:
+            return
+        first = not st["w"]
+        st["w"] = e.width
+        if first:
+            return
+        if st["after"] is not None:
+            try:
+                widget.after_cancel(st["after"])
+            except Exception:
+                pass
+
+        def go():
+            st["after"] = None
+            try:
+                fn()
+            except Exception:
+                pass
+        st["after"] = widget.after(delay, go)
+    widget.bind("<Configure>", cfg, add="+")
+    return st
+
+
+class Flow(tk.Frame):
+    """2.98.0: a toolbar that wraps. Children go left to right (flow.add(w, gap=8)); when the row runs out of room
+    the next one starts a new line, so nothing is cut off in a narrow window. right=True keeps a child at the end of
+    the first line while there's room (it wraps like the rest when there isn't)."""
+
+    def __init__(self, parent, gap=8, vgap=6, **kw):
+        kw.setdefault("bg", parent.cget("bg") if "bg" in parent.keys() else C["panel"])
+        super().__init__(parent, **kw)
+        self.gap, self.vgap, self.items, self._w = gap, vgap, [], 0
+        self.bind("<Configure>", self._cfg, add="+")
+
+    def add(self, w, gap=None, right=False):
+        self.items.append((w, self.gap if gap is None else gap, right))
+        w.bind("<Configure>", lambda e: self.after_idle(self.relayout), add="+")
+        self.after_idle(self.relayout)
+        return w
+
+    def _cfg(self, e):
+        if e.width != self._w:
+            self._w = e.width
+            self.relayout()
+
+    def relayout(self):
+        try:
+            W = self.winfo_width()
+        except tk.TclError:
+            return
+        if W <= 1:
+            W = sum(w.winfo_reqwidth() + g for w, g, _r in self.items) or 1
+        x = y = line_h = 0
+        rights = [(w, g) for w, g, r in self.items if r]
+        lefts = [(w, g) for w, g, r in self.items if not r]
+        rw = sum(w.winfo_reqwidth() + g for w, g in rights)
+        first = True
+        for w, g in lefts:
+            ww, wh = w.winfo_reqwidth(), w.winfo_reqheight()
+            limit = W - (rw if first else 0)
+            if x and x + ww > limit:
+                x, y, line_h, first = 0, y + line_h + self.vgap, 0, False
+            w.place(x=x, y=y)
+            x += ww + g
+            line_h = max(line_h, wh)
+        if rights:
+            if first and x + rw - rights[-1][1] <= W:
+                rx = W - rw + rights[-1][1]
+                for w, g in rights:
+                    w.place(x=rx, y=0)
+                    rx += w.winfo_reqwidth() + g
+                    line_h = max(line_h, w.winfo_reqheight())
+            else:
+                for w, g in rights:
+                    ww = w.winfo_reqwidth()
+                    if x and x + ww > W:
+                        x, y, line_h = 0, y + line_h + self.vgap, 0
+                    w.place(x=x, y=y)
+                    x += ww + g
+                    line_h = max(line_h, w.winfo_reqheight())
+        h = y + line_h
+        if int(self.cget("height") or 0) != h:
+            self.configure(height=max(1, h))
+
+
+def _pads(v):
+    try:
+        parts = [int(float(x)) for x in str(v).split()]
+    except ValueError:
+        return 0, 0
+    return (parts[0], parts[-1]) if parts else (0, 0)
+
+
+def flowify(row, vgap=6):
+    """2.98.0: turn a row of side-by-side widgets (pack side=left / right) into one that wraps when the window is
+    too narrow - each child keeps its order, padding, right-alignment and stretch (expand=True takes the rest of
+    its line). Call it once, after the row is built. Children added later are packed as usual (not wrapped)."""
+    kids = []
+    for w in row.pack_slaves():
+        info = w.pack_info()
+        l, r = _pads(info.get("padx", 0))
+        kids.append({"w": w, "right": info.get("side") == "right", "l": l, "r": r, "hidden": False,
+                     "grow": bool(int(info.get("expand", 0) or 0)) and info.get("fill") in ("x", "both")})
+    if not kids:
+        return row
+    try:
+        row.pack_propagate(False)
+    except tk.TclError:
+        pass
+    lefts = [k for k in kids if not k["right"]]
+    rights = list(reversed([k for k in kids if k["right"]]))      # (pack draws right-side ones outside in)
+    for k in kids:
+        k["w"].pack_forget()
+    state = {"w": 0, "busy": False}
+
+    def width(k):
+        return k["l"] + k["w"].winfo_reqwidth() + k["r"]
+
+    def layout(_e=None):
+        if state["busy"]:
+            return
+        state["busy"] = True
+        try:
+            try:
+                px = int(float(str(row.cget("padx") or 0)))
+                py = int(float(str(row.cget("pady") or 0)))
+            except Exception:
+                px = py = 0
+            W = row.winfo_width() - 2 * px
+            if W <= 1 - 2 * px:
+                W = sum(width(k) for k in kids)
+            lines, cur, x = [], [], 0
+            for k in kids:
+                if k["hidden"]:
+                    k["w"].place_forget()
+            seq = [k for k in lefts + rights if not k["hidden"]]
+            rw = sum(width(k) for k in rights if not k["hidden"])
+            for k in seq:
+                kw = width(k)
+                room = W - (rw if (not lines and k in lefts) else 0)
+                if cur and x + kw > room and not (k in rights and not lines and x + rw <= W):
+                    lines.append(cur)
+                    cur, x = [], 0
+                cur.append(k)
+                x += kw
+            if cur:
+                lines.append(cur)
+            y = 0
+            for li, line in enumerate(lines):
+                h = max(k["w"].winfo_reqheight() for k in line)
+                ls = [k for k in line if k in lefts]
+                rs = [k for k in line if k in rights]
+                used = sum(width(k) for k in line)
+                grow = [k for k in ls if k["grow"]]
+                extra = max(0, W - used) // len(grow) if grow else 0
+                x = 0
+                for k in ls:
+                    ww = k["w"].winfo_reqwidth() + (extra if k in grow else 0)
+                    k["w"].place(x=px + x + k["l"], y=py + y + (h - k["w"].winfo_reqheight()) // 2, width=ww)
+                    x += k["l"] + ww + k["r"]
+                rx = max(x, W - sum(width(k) for k in rs))      # right-aligned, in their on-screen order
+                for k in rs:
+                    ww = k["w"].winfo_reqwidth()
+                    k["w"].place(x=px + rx + k["l"], y=py + y + (h - k["w"].winfo_reqheight()) // 2, width=ww)
+                    rx += k["l"] + ww + k["r"]
+                y += h + (vgap if li < len(lines) - 1 else 0)
+            if int(row.cget("height") or 0) != y + 2 * py:
+                row.configure(height=y + 2 * py)
+        finally:
+            state["busy"] = False
+
+    def cfg(e):
+        if e.widget is row and e.width != state["w"]:
+            state["w"] = e.width
+            layout()
+    row.bind("<Configure>", cfg, add="+")
+    for k in kids:
+        k["w"].bind("<Configure>", lambda e: row.after_idle(layout), add="+")
+    row.after_idle(layout)
+    row._flow_layout = layout
+    row._flow_kids = kids
+    row._flow_lefts = lefts
+    return row
+
+
+def flow_add(row, w, padx=(0, 0), shown=True):
+    """Add a widget to a flowify'd row, after its other left-side widgets (e.g. one that shows only sometimes)."""
+    l, r = (padx, padx) if isinstance(padx, int) else padx
+    k = {"w": w, "right": False, "l": l, "r": r, "hidden": not shown, "grow": False}
+    row._flow_kids.append(k)
+    row._flow_lefts.append(k)
+    w.bind("<Configure>", lambda e: row.after_idle(row._flow_layout), add="+")
+    row.after_idle(row._flow_layout)
+    return w
+
+
+def flow_show(row, w, on):
+    """Show / hide one widget of a flowify'd row (instead of pack / pack_forget)."""
+    for k in getattr(row, "_flow_kids", ()):
+        if k["w"] is w:
+            k["hidden"] = not on
+    lay = getattr(row, "_flow_layout", None)
+    if lay is not None:
+        lay()
+
+
 def setup_style(root):
     """The ttk styles, from the running theme pack (2.60.0). Called at start and again after a live theme swap."""
     from . import themes as TH

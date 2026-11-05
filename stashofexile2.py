@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU GPL v3.0 (see LICENSE). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.97.3
+VERSION 2.98.0
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,6 +19,20 @@ VERSION 2.97.3
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.98.0
+       Polish 5 - Responsive, part 1 (decided 2026-11-05: everything drawn to a width follows the window):
+       - Every wrapped label that fills its row re-wraps to the width it has (style.responsive: one class binding
+         for Label / TLabel; labels with their own <Configure> rule keep it).
+       - Button rows wrap instead of being cut off (style.flowify: turns a packed row into a wrapping one in place -
+         order, padding, right-alignment and stretch kept; flow_add / flow_show for widgets shown only sometimes):
+         Bulk Pricing (Add items from, the filters and actions, the buttons under the list), Regex (the key row, the
+         filter and ★ rows), Money Makers (Tag / tier / Sort and the buttons), Game Plan (stockpile quantity),
+         Overlay (the Session row). style.fit(widget, fn) redraws anything drawn to a width (debounced).
+       - Overlay > Settings switch grids drop to fewer columns when narrow (no "Rege", "Feature ti").
+       - The status bar: in a narrow window the trade-limit meters step aside so the message keeps its room.
+       - Market Insights, Under the hood, Wealth: their one-line notes wrap; the Bulk Pricing empty-list hint wraps.
+       Part 2 (2.98.1): a pixel scale for the drawn layouts, then the text size setting and sharp text on
+       high-DPI screens (they need every layout to grow with the text first).
   2.97.3
        Tidy-ups (feedback):
        - Money Makers is a Labs feature: hidden while Labs is off, like Wealth and Game search (was BETA, always
@@ -2248,7 +2262,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.97.3"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.98.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
