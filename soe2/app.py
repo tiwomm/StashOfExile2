@@ -2438,6 +2438,12 @@ class App(GearBookPage, PriceCheckPage, FavoritesPage, BoardModPage, Leaderboard
         kb.itemconfigure(self.key_dot, fill=C["good"] if self.engine.paused else C["green"])
 
     # ---------------- rate limit display
+    def limit_banner(self, parent, before):
+        """2.103.3: the same "Staying under the trade site's limits" line as Bulk Pricing, on another page."""
+        ban = tk.Label(parent, text="", anchor="w", padx=12, pady=2, font=("Segoe UI", 9), justify="left")
+        self.limit_banners = getattr(self, "limit_banners", []) + [(ban, before)]
+        return ban
+
     def update_limit_ui(self):
         st = LIMITER.state()
         waiting = sum(1 for r in self.records.values() if r["state"] in ("queued", "pricing"))
@@ -2454,12 +2460,16 @@ class App(GearBookPage, PriceCheckPage, FavoritesPage, BoardModPage, Leaderboard
             bg, fg = "#2e2514", C["good"]
         else:
             txt = ""
-        if txt:
-            self.banner.config(text=txt, bg=bg, fg=fg)
-            if not self.banner.winfo_ismapped():
-                self.banner.pack(fill="x", padx=8, pady=(0, 4), before=self.checks_area)
-        elif self.banner.winfo_ismapped():
-            self.banner.pack_forget()
+        for ban, before in [(self.banner, self.checks_area)] + list(getattr(self, "limit_banners", [])):
+            try:                                   # 2.103.3 (feedback): Price Checks and Favorites show it too
+                if txt:
+                    ban.config(text=txt, bg=bg, fg=fg)
+                    if not ban.winfo_ismapped():
+                        ban.pack(fill="x", padx=8, pady=(0, 4), before=before)
+                elif ban.winfo_ismapped():
+                    ban.pack_forget()
+            except tk.TclError:
+                pass
         parts, worst = [], 0
         for cls in ("search", "fetch"):
             h, mx, per = max(LIMITER.usage(cls), key=lambda u: u[0] / u[1])
@@ -3631,9 +3641,11 @@ class App(GearBookPage, PriceCheckPage, FavoritesPage, BoardModPage, Leaderboard
             rec["changed"] = True
             self.dirty = True
             if getattr(self, "_card_quiet", False):       # 2.103.3: the row is painted in place
-                return None
+                return self.fav_rec_changed(rec, redraw=False) if rec.get("src") == "fav" else None
             if rec.get("src") == "pc" and rec["id"] == getattr(self, "pc_rid", None):
                 return self.pc_show(rec, card_only=True)    # 2.103.2: the listings stay (they flickered)
+            if rec.get("src") == "fav":                     # 2.103.3: the listings stay (they flickered)
+                return self.fav_rec_changed(rec, card_only=True)
             return self.refresh_detail_if_selected(rec["id"])
         self.reprice([rec["id"]])
 
@@ -5378,11 +5390,21 @@ class App(GearBookPage, PriceCheckPage, FavoritesPage, BoardModPage, Leaderboard
         if getattr(self, "shown_rec", None) is rec:
             self.show_detail(rec)
 
-    def _card_row_of(self, rec, m):
-        if rec.get("src") != "pc" or rec["id"] != getattr(self, "pc_rid", None):
+    def _card_view(self, rec):
+        """2.103.3: the Price Checks / Favorites view showing this record's card, or None."""
+        v = getattr(self, "pcv", None) if rec.get("src") == "pc" else \
+            getattr(self, "favv", None) if rec.get("src") == "fav" else None
+        if v is None or getattr(v, "card_paint", None) is None:
             return None
-        return next((i for i, (mm, _on, _r) in (getattr(self, "card_rows", {}) or {}).items()
-                     if mm is m and i in getattr(self, "card_paint", {})), None)
+        if rec["id"] != (getattr(self, "pc_rid", None) if rec.get("src") == "pc" else v.rid):
+            return None
+        return v
+
+    def _card_row_of(self, rec, m):
+        v = self._card_view(rec)
+        if v is None:
+            return None
+        return next((i for i, (mm, _on, _r) in v.card_rows.items() if mm is m and i in v.card_paint), None)
 
     def card_set(self, rec, m, imp):
         """2.103.3 (feedback: every tick still flickered - the whole card was built again): on Price Checks a tick or
@@ -5396,19 +5418,19 @@ class App(GearBookPage, PriceCheckPage, FavoritesPage, BoardModPage, Leaderboard
             self.set_item_impact(rec, m, imp)
         finally:
             self._card_quiet = False
-        self._card_row_paint(idx)
+        self._card_row_paint(self._card_view(rec), idx)
         return True
 
-    def _card_row_paint(self, idx):
+    def _card_row_paint(self, v, idx):
         from . import themes as _th2
-        p = self.card_paint[idx]
-        cv, rec, m, can = p["cv"], p["rec"], self.card_rows[idx][0], p["can"]
+        p = v.card_paint[idx]
+        cv, rec, m, can = p["cv"], p["rec"], v.card_rows[idx][0], p["can"]
         imp = mod_impact(rec, m)
         on = imp != "ignore"
         try:
             cv.itemconfigure(f"cardtxt{idx}", fill=p["colr"] if on and can else
                              (_th2.mix(p["colr"], C["odd"], .5) if can else C["muted"]))
-            rect = self.card_rows[idx][2]
+            rect = v.card_rows[idx][2]
             cv.itemconfigure(rect, fill=C["accent"] if on and can else C["odd"])
             cv.delete(f"cardchk{idx}")
             if on and can:
@@ -5417,12 +5439,12 @@ class App(GearBookPage, PriceCheckPage, FavoritesPage, BoardModPage, Leaderboard
                                tags=(p["tag"], f"cardchk{idx}"))
             cv.itemconfigure(f"cardstar{idx}", text="★" if imp == "high" else "☆",
                              fill=C["good"] if imp == "high" else C["muted"])
-            for e in (self.card_vals.get(id(m)) or {}).values():
+            for e in (v.card_vals.get(id(m)) or {}).values():
                 e.config(state="normal" if on and can else "disabled")
         except tk.TclError:
             return
-        self.card_rows[idx] = (m, on, rect)
-        btn = getattr(self, "pc_search_btn", None)
+        v.card_rows[idx] = (m, on, rect)
+        btn = getattr(self, "pc_search_btn", None) if rec.get("src") == "pc" else getattr(v, "search_btn", None)
         if btn is not None:
             try:
                 btn.config(text="Search  •  filters changed" if rec.get("changed") else "Search")
