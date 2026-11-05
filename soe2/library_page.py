@@ -24,7 +24,7 @@ class LibraryPage:
         self.lib_q = tk.StringVar()
         self.lib_q.trace_add("write", lambda *a: self.root.after_idle(self.lib_fill))
         ttk.Entry(bar, textvariable=self.lib_q, width=30).pack(side="left")
-        self.lib_info = tk.Label(bar, text="", anchor="w", padx=16, **lab)
+        self.lib_info = tk.Label(bar, text="", anchor="w", padx=16, justify="left", wraplength=300, **lab)   # (2.98.0)
         self.lib_info.pack(side="left", fill="x", expand=True)
 
         purpose = tk.Label(tab, text="Part of Bulk Pricing, for the curious: how the price checker reads an item. Paste a "

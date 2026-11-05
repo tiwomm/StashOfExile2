@@ -126,6 +126,11 @@ class MoneyMakersPage:
         for text, cmd in (("⬇ Download Format", self.mm_download_format), ("Import file…", self.mm_import),
                           ("+ Add my own", self.mm_add)):
             ttk.Button(fbar, text=text, command=cmd, style="Quiet.TButton").pack(side="right", padx=(8, 0))
+        from .style import flowify, flow_add
+        flowify(fbar)                                        # 2.98.0: wraps in a narrow window
+        flow_add(fbar, self.mm_bsort_lab, (12, 8), shown=False)
+        flow_add(fbar, self.mm_bsort_box, shown=False)
+        self.mm_fbar = fbar
 
         pane = ttk.PanedWindow(page, orient="horizontal")
         pane.pack(fill="both", expand=True, padx=8, pady=(0, 8))
@@ -499,11 +504,10 @@ class MoneyMakersPage:
 
     def mm_view_changed(self):
         community = self.mm_view.get() == "Community"
+        from .style import flow_show
         for w in (self.mm_bsort_lab, self.mm_bsort_box):
-            w.pack_forget()
+            flow_show(self.mm_fbar, w, community)            # 2.98.0: the row wraps (was pack / pack_forget)
         if community:
-            self.mm_bsort_lab.pack(side="left", padx=(12, 8))
-            self.mm_bsort_box.pack(side="left")
             self.mm_board_fetch()
         self.mm_sel = None
         self.mm_reload()

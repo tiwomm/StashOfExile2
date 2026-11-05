@@ -150,6 +150,8 @@ class TrackerPage:
         self.tk_keys_lbl = tk.Label(top, text="", bg=P2, fg=C["muted"], font=("Segoe UI", 9))       # 2.10.0
         self.tk_keys_lbl.pack(side="right", padx=8)
         self.tracker_keys_hint()
+        from .style import flowify
+        flowify(top)                                         # 2.98.0: wraps in a narrow window
         self.tk_strip = tk.Frame(body, bg="#2a2110", padx=12, pady=8, highlightthickness=1, highlightbackground="#7a6428")
         self.tk_strip_lbl = tk.Label(self.tk_strip, text="", bg="#2a2110", fg=C["text"], anchor="w", justify="left",
                                      wraplength=640)
@@ -412,14 +414,33 @@ class TrackerPage:
             return b
 
         def switches(parent, items, cols, prefix=""):
+            """2.98.0: up to cols columns - fewer when the card is narrow, so no switch is cut off."""
             g = tk.Frame(parent, bg=P2)
             g.pack(fill="x")
-            for i, (label, v, fn) in enumerate(items):
+            cbs = []
+            for label, v, fn in items:
                 cb = ttk.Checkbutton(g, text=label, variable=v, command=fn, style="Card.TCheckbutton")
-                cb.grid(row=i // cols, column=i % cols, sticky="w", padx=(0, 24), pady=2)
+                cbs.append(cb)
                 self.tk_ov_switches[prefix + label] = cb
-            for c in range(cols):
-                g.columnconfigure(c, uniform="sw")
+            st = {"n": 0}
+
+            def place(n):
+                if n == st["n"]:
+                    return
+                st["n"] = n
+                for c in range(cols):
+                    g.columnconfigure(c, uniform="", weight=0, minsize=0)
+                for i, cb in enumerate(cbs):
+                    cb.grid(row=i // n, column=i % n, sticky="w", padx=(0, 24), pady=2)
+                for c in range(n):
+                    g.columnconfigure(c, uniform="sw")
+
+            def fit(e=None):
+                w = g.winfo_width()
+                need = max((cb.winfo_reqwidth() for cb in cbs), default=1) + 24
+                place(max(1, min(cols, w // need)) if w > 1 else cols)
+            place(cols)
+            g.bind("<Configure>", lambda e: fit(), add="+")
             return g
 
         def sub(parent, text, top=0):

@@ -132,6 +132,8 @@ class App(PriceCheckPage, FavoritesPage, BoardModPage, LeaderboardPage, OrderLab
         self.paint_titlebar()                            # 2.61.0: Windows' own title bar in the theme's colors
         root.after(1500, self.paint_titlebar)            # (again once the window is really on screen)
         setup_style(root)
+        from .style import responsive
+        responsive(root)                                   # 2.98.0: wrapped labels follow their width
         self.records, self.next_id = {}, 1
         self.ui_q = queue.Queue()
         _STATUS_HOOK[0] = lambda s: self.ui_q.put(("status", s))
@@ -409,7 +411,8 @@ class App(PriceCheckPage, FavoritesPage, BoardModPage, LeaderboardPage, OrderLab
         self.limit_lbl = tk.Label(strip, text="", bg=C["bg"], fg=C["muted"], padx=16, cursor="hand2", font=(MONO, 9))
         self.limit_lbl.bind("<Button-1>", self.open_limits)      # (2.60.0: the meters below say it; kept for code)
         self.limit_meters, self.limit_counts = {}, {}             # 2.60.0: the trade limits as the theme's meters
-        tk.Frame(strip, bg=C["bg"], width=8).pack(side="right")
+        _meter_ws = [tk.Frame(strip, bg=C["bg"], width=8)]
+        _meter_ws[0].pack(side="right")
         for cls in ("fetch", "search"):
             cnt = tk.Label(strip, text="", bg=C["bg"], fg=C["muted"], cursor="hand2", font=(MONO, 9))
             cnt.pack(side="right", padx=(4, 0))
@@ -417,6 +420,7 @@ class App(PriceCheckPage, FavoritesPage, BoardModPage, LeaderboardPage, OrderLab
             m.pack(side="right", padx=(4, 0))
             lab = tk.Label(strip, text=cls.title(), bg=C["bg"], fg=C["muted"], cursor="hand2", font=("Segoe UI", 9))
             lab.pack(side="right", padx=(16, 0))
+            _meter_ws += [cnt, m, lab]
             for w in (cnt, m, lab):
                 w.bind("<Button-1>", self.open_limits)
             m.configure(cursor="hand2")
@@ -426,6 +430,23 @@ class App(PriceCheckPage, FavoritesPage, BoardModPage, LeaderboardPage, OrderLab
         self.rates_lbl.bind("<Button-1>", self.open_rates)
         self.status = tk.Label(strip, text="Starting...", anchor="w", bg=C["bg"], fg=C["muted"], padx=16, pady=4)
         self.status.pack(side="left", fill="x", expand=True)
+        self._strip_all = [w for w in strip.pack_slaves() if w in _meter_ws or w is self.rates_lbl]   # (pack order;
+        # only the meters and Rates - the taskbar's own pieces are never touched)
+        self._strip_pk = {w: {k: v for k, v in w.pack_info().items() if k != "in"} for w in self._strip_all}
+
+        def strip_fit():                                       # 2.98.0: the status message keeps its room - the
+            narrow = strip.winfo_width() < 1250               # trade-limit meters step aside in a narrow window
+            hide = [w for w in self._strip_all if w is not self.rates_lbl]   # (a click on Rates / the limits
+            shown = any(w.winfo_manager() for w in hide)                       # window still has them)
+            if narrow and shown:
+                for w in hide:
+                    w.pack_forget()
+            elif not narrow and not shown:
+                for w in self._strip_all:
+                    w.pack_forget()
+                for w in self._strip_all:
+                    w.pack(**self._strip_pk[w], before=self.status)
+        strip.bind("<Configure>", lambda e: e.widget is strip and strip_fit(), add="+")
 
         # ---- taskbar, right side: league (opens Settings), clock (2.97.3: no utility dots, no 📌)
         tb = "#111b30"
@@ -650,6 +671,9 @@ class App(PriceCheckPage, FavoritesPage, BoardModPage, LeaderboardPage, OrderLab
         tk.Label(srow, text="🔍 Search", **flab).pack(side="right", padx=(12, 8))
         self.search_var.trace_add("write", lambda *a: self.on_filter_text(soon=True))
         self.search_box.bind("<Escape>", lambda e: (self.search_var.set(""), "break")[1])
+        from .style import flowify                          # 2.98.0: these rows wrap in a narrow window
+        flowify(srow)
+        flowify(bar2)
 
         # ---- the key bar, at the bottom of this window (claims its space first)
         kbf = tk.Frame(body, bg=C["panel"])
@@ -681,6 +705,7 @@ class App(PriceCheckPage, FavoritesPage, BoardModPage, LeaderboardPage, OrderLab
         self.undo_btn = ttk.Button(acts, text="↺ Undo", command=self.undo_mark, state="disabled", width=7, style="Quiet.TButton")
         self.undo_btn.pack(side="right")
         self.undo = []                                   # [(record id, previous mark, previous listed-at)] of the last mark
+        flowify(acts)
         vp = Viewport(lcol)
         vp.pack(fill="both", expand=True)
         left = vp.body
@@ -710,6 +735,7 @@ class App(PriceCheckPage, FavoritesPage, BoardModPage, LeaderboardPage, OrderLab
         self.empty_lbl = tk.Label(left, bg=C["panel"], fg=C["muted"], font=("Segoe UI", 12), justify="center",
                                   text=self.empty_text)
         self.empty_lbl.place(relx=0.5, rely=0.45, anchor="center")
+        left.bind("<Configure>", lambda e: self.empty_lbl.config(wraplength=max(200, e.width - 40)), add="+")   # 2.98.0
 
         pw = int(SETTINGS.get("panel_w", 430) or 430)
         if pw < 250:                   # 2.0 beta 22: bring back an item panel that was saved squeezed to nothing

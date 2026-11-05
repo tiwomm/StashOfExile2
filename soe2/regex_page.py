@@ -88,7 +88,9 @@ class RegexPage:
         self.rx_hk_box.pack(side="left", padx=8)
         self.rx_hk_box.bind("<<ComboboxSelected>>", lambda e: self.rx_hotkey_pick())
         tk.Label(hk, text="- press it in game, then Ctrl+F and Ctrl+V in your stash.", bg=P1, fg=C["muted"],
-                 font=("Segoe UI", 9)).pack(side="left")
+                 font=("Segoe UI", 9), wraplength=380, justify="left").pack(side="left")
+        from .style import flowify
+        flowify(hk)                                          # 2.98.0: wraps in a narrow window
 
         # ---- the search string
         rso, res = chrome_section(tab, "Your search", padx=12, pady=8)   # 2.69.0: header strip + sunken frame
@@ -125,7 +127,8 @@ class RegexPage:
         ttk.Entry(fbar, textvariable=self.rx_q, width=30).pack(side="left")
         tk.Label(fbar, text="Click a mod to select it (click again to remove it). In \"I want\", click its Value to type: 50 = at "
                             "least 50, 50-80 = from 50 to 80, <80 = at most 80. \"I don't want\" leaves items with "
-                            "that mod out.", bg=P1, fg=C["muted"], font=("Segoe UI", 9)).pack(side="left", padx=12)
+                            "that mod out.", bg=P1, fg=C["muted"], font=("Segoe UI", 9), wraplength=520,
+                 justify="left").pack(side="left", padx=12)
         self.rx_info = tk.Label(fbar, text="", bg=P1, fg=C["muted"])
         self.rx_info.pack(side="right")
         # 2.0 beta 20: the Mod book's view of each mod
@@ -141,6 +144,8 @@ class RegexPage:
                         command=self.rx_filter).pack(side="left", padx=(8, 0))
         self.rx_val_btn = ttk.Button(vbar, text="★ Select valuable", command=self.rx_select_valuable)
         self.rx_val_btn.pack(side="left", padx=(16, 0))
+        flowify(fbar)
+        flowify(vbar)
         lists = tk.Frame(tab, bg=P1)
         lists.pack(fill="both", expand=True, padx=8, pady=(0, 8))
         lists.columnconfigure(0, weight=1, uniform="l")

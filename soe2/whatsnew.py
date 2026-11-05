@@ -21,6 +21,10 @@ NEXT = [
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.98.0": [
+        "Narrow windows: button rows wrap and text re-wraps instead of being cut off; Overlay settings switches "
+        "fall into fewer columns.",
+    ],
     "2.97.3": [
         "Money Makers is a Labs feature now: turn on Labs in Settings to see it.",
         "Price Checks: Add to favorites and Open on trade site are under Search.",
