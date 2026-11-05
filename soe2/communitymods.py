@@ -22,6 +22,7 @@ from .config import SETTINGS, load_json, save_json
 FILE = "community_mods.json"          # what was downloaded: {league, stats, ratings, players, ts}
 SENT = "community_sent.json"          # {last_ts, votes: {key: value}, helped: {league: n}}
 EVERY = 3600
+UPLOAD_EVERY = 45 * 60      # 2.98.5: "Upload to community" - the board takes one batch per install per 45 min
 MIN_N, MIN_BATCHES = 12, 3            # a pooled price counts once this many listings from this many summaries
 VOTE_MIN, VOTE_SHARE = 3, 0.6
 
@@ -145,12 +146,27 @@ def push(market, rules, call=None):
     if not ok:
         return False, d
     CP.pooled(zones)
+    st["pushed"] = time.time()
     st["last_ts"] = newest
     st["votes"] = {k: v for k, v in dict(rules).items() if v in ("high", "normal", "ignore")}
     st["maps"] = dict(mine_maps)
     st.setdefault("helped", {})[league] = int(st.get("helped", {}).get(league, 0)) + int(d.get("prices", 0))
     save_json(SENT, st)
     return True, int(d.get("prices", 0))
+
+
+def upload_wait(now=None):
+    """2.98.5: seconds until the next upload is allowed (0 = now). Matches the board's own limit, so a button
+    can't be used to spam it."""
+    last = float(sent_state().get("pushed", 0) or 0)
+    return max(0, int(UPLOAD_EVERY - ((now or time.time()) - last)))
+
+
+def maps_unsent():
+    """2.98.5: how many of your map ranks the board doesn't have yet."""
+    from .maplib import ranks as map_ranks
+    mine, before = map_ranks(), sent_state().get("maps", {})
+    return sum(1 for k, v in mine.items() if before.get(k) != v) + sum(1 for k in before if k not in mine)
 
 
 # ---------------------------------------------------------------- what everyone pooled

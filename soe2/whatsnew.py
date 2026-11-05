@@ -21,6 +21,15 @@ NEXT = [
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.98.5": [
+        "Game Plan › Stockpile: pick from the list, or type any item in the name box (it narrows the list too).",
+        "Map supplies: Omen of Amelioration pokes you once you're back from a map where the game used it up.",
+        "The first map rank card has Opt out.",
+        "Map library › Share › Upload my ranks to the community (Community data sharing; once per 45 min).",
+        "Price checks: a Rarity prefix and suffix (or any two mods with one stat) are added up and searched as one "
+        "line, like the trade site shows them.",
+        "Saying no to Community data sharing is final: it's never asked again.",
+    ],
     "2.98.4": [
         "Mageblood is priced on its Legacies (how many of each), its charm slots and, with a duplicate, its "
         "per-duplicate roll.",

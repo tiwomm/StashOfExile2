@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU GPL v3.0 (see LICENSE). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.98.4
+VERSION 2.98.5
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,6 +19,25 @@ VERSION 2.98.4
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.98.5
+       Feedback round:
+       - Game Plan > Stockpile: the item box is pick-only; typing goes in "Or any item by name", which also narrows
+         the list (picking an item the typed text narrowed to adds that item).
+       - Map supplies: a third refill rule, "when it's used up". The game's log says when an omen was used up
+         (gamelog "omen" event: ": Omen of  Amelioration in your inventory has been consumed", two spaces;
+         the game's own messages only, never chat); the poke comes once you're back in town or
+         your hideout from that map - not every N maps. Omen of Amelioration uses it (a saved row moves over once).
+       - The first "Rank this map" card has Opt out: no more rank cards (Overlay > Settings > Ask me to rank maps
+         brings them back).
+       - Map library > Share > Upload my ranks to the community: sends your ranks now instead of with the hourly
+         sync. Opt-in (Community data sharing), and only when something changed; at most once per 45 minutes, the
+         board's own limit per install (it also limits each address per day).
+       - Price checks: two affixes with the same stat (a Rarity prefix and a Rarity suffix) are one mod with the
+         values added ("34% increased Rarity of Items found (18 + 16)"), searched as one line - the game and the
+         trade site add them up, so two filters on one stat found listings without them (feedback).
+         Fractured / desecrated / crafted ones stay apart (gear._merge_same_stat).
+       - Opting out is final: after a No to Community data sharing, an upload no longer asks again - it says where
+         the switch is. Roadmap: the Privacy & data hub (every data point and switch in one place), and the rule.
   2.98.4
        Mageblood (feedback: it couldn't be priced accurately): priced on what sets its price, like the Mageblood
        search on the roadmap - its Legacies (which ones, Min N for each one it has more than once), its charm slots
@@ -2301,7 +2320,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.98.4"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.98.5"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 

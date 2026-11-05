@@ -40,6 +40,11 @@ def cfg():
     f = SETTINGS.setdefault("focus", {})
     for k, v in DEFAULTS.items():
         f.setdefault(k, copy.deepcopy(v))
+    if not f.get("sup_2985"):                              # 2.98.5: Omen of Amelioration -> "when it's used up"
+        f["sup_2985"] = True
+        for r in f.get("supplies") or []:
+            if r.get("name", "").strip().lower() in (n.lower() for n in USED_UP):
+                r["rule"], r["used"] = "used", False
     for k, v in DEFAULTS["pokes"].items():
         f["pokes"].setdefault(k, v)
     for k, v in DEFAULTS["lock"].items():
@@ -281,7 +286,9 @@ def line_text(worth=None):
 # Things you use up in maps (wisdom scrolls, omens, a currency) and when to refill them: every N maps, or every N
 # minutes spent in maps. Both come from the game's log (a new waystone map = one map; time from entering a map to
 # leaving it). Not from Wealth: it doesn't track live.
-SUPPLY_RULES = (("maps", "maps"), ("minutes", "min in maps"))
+SUPPLY_RULES = (("maps", "maps"), ("minutes", "min in maps"), ("used", "when it's used up"))
+# 2.98.5: supplies the game says it used up (log) - poked once you're back from that map, not every N maps
+USED_UP = ("Omen of Amelioration",)
 SUPPLY_PRESETS = ("Scroll of Wisdom", "Omen of Amelioration", "Exalted Orb", "Regal Orb", "Chaos Orb",
                   "Orb of Alchemy", "Distilled Emotion", "Simulacrum Splinter")
 
@@ -309,6 +316,8 @@ def set_supply(sid, rule=None, every=None):
     r = supply(sid)
     if r is not None:
         if rule in dict(SUPPLY_RULES):
+            if rule != r.get("rule"):
+                r["used"] = False
             r["rule"] = rule
         if every is not None:
             r["every"] = max(1, int(every))
@@ -317,7 +326,10 @@ def set_supply(sid, rule=None, every=None):
 
 
 def supply_used(row):
-    """-> (used so far, every) in the row's unit: maps run, or whole minutes in maps, since the last refill."""
+    """-> (used so far, every) in the row's unit: maps run, or whole minutes in maps, since the last refill.
+    2.98.5 "used": (1, 1) once the log said it was used up, else (0, 1)."""
+    if row.get("rule") == "used":
+        return (1 if row.get("used") else 0), 1
     st = state()
     if row["rule"] == "minutes":
         return int((st["map_secs"] - row.get("at_secs", 0)) // 60), row["every"]
@@ -327,6 +339,7 @@ def supply_used(row):
 def refilled(row):
     st = state()
     row["at_maps"], row["at_secs"], row["snooze"] = st["maps"], st["map_secs"], 0
+    row["used"] = False
 
 
 def supplies_due(now=None):
@@ -398,6 +411,15 @@ def log_event(kind, data, area_kind=None, now=None):
         return "milestone"
     if kind == "area":
         save()
+    if kind == "omen":                                     # 2.98.5: the game used it up -> due back in town
+        name = (data.get("name") or "").strip().lower()
+        hit = False
+        for r in f["supplies"]:
+            if r.get("rule") == "used" and r["name"].strip().lower() == name and not r.get("used"):
+                r["used"], hit = True, True
+        if hit:
+            save()
+        return None
     if kind == "level":
         who, lvl = data.get("who", ""), int(data.get("level") or 0)
         known = who in st["chars"]
@@ -577,10 +599,16 @@ def poke_text(poke):
         lines = []
         for r in rows:
             used, every = supply_used(r)
+            if r["rule"] == "used":
+                lines.append(f"{r['name']} - used up in your last map.")
+                continue
             unit = "maps" if r["rule"] == "maps" else "min in maps"
             lines.append(f"{r['name']} - {used} {unit} since you last refilled (you said every {every}).")
         body = "Time to restock before the next map:\n" + "\n".join(lines or ["(removed)"])
-        return ("REFILL YOUR MAP SUPPLIES", body, "Why now: you're between maps and a refill rule you set is up.",
+        why = ("Why now: you're back from a map and the game's log said it was used up."
+               if rows and all(r["rule"] == "used" for r in rows) else
+               "Why now: you're between maps and a refill rule you set is up.")
+        return ("REFILL YOUR MAP SUPPLIES", body, why,
                 [("refilled", "Refilled"), ("snooze", f"Snooze {int(f['pokes'].get('snooze_min') or 60)} min"),
                  ("skip", "Skip this time")])
     if k == "guard":
