@@ -70,6 +70,7 @@ from .ledger_page import LedgerPage           # 2.45.0: Money Makers > Strat Tra
 from .feedback_page import FeedbackPage       # 2.48.0: the update badge and Report a bug (taskbar)
 from .feed_page import FeedPage               # 2.51.0: Mod book › Manual feed
 from .merged_page import MergedOverlay        # 2.55.0: one overlay window for timer, Mechanic Helper and Notes
+from .ovlight import LightOverlay             # 2.101.0: the light looks (Hairline, Slate, Flanks, Micro)
 from .utilities_page import UtilitiesPage
 from .tracker_page import TrackerPage
 from .search_page import SearchPage
@@ -99,7 +100,7 @@ MISC_ROWS = (("corrupted", "Corrupted"), ("fractured", "Fractured"), ("desecrate
              ("sanctified", "Sanctified"), ("mirrored", "Mirrored"), ("unidentified", "Unidentified"))
 
 
-class App(GearBookPage, PriceCheckPage, FavoritesPage, BoardModPage, LeaderboardPage, OrderLabPage, WellSoulsPage, RumoursPage, ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, ExchangePage, WealthPage, LibraryPage, RegexPage, UtilitiesPage, TrackerPage, SearchPage, CalcOverlay, InsightsPage, MoneyMakersPage, MapLibraryPage, RemnantPage, LedgerPage, FeedbackPage, FeedPage, MergedOverlay, GamePlanPage, FocusPokes, OverlayHelp, OverlayParts, CampaignUI, OverlayRates, CommunityPage, RateModsPage, OverlayRecap):
+class App(GearBookPage, PriceCheckPage, FavoritesPage, BoardModPage, LeaderboardPage, OrderLabPage, WellSoulsPage, RumoursPage, ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, ExchangePage, WealthPage, LibraryPage, RegexPage, UtilitiesPage, TrackerPage, SearchPage, CalcOverlay, InsightsPage, MoneyMakersPage, MapLibraryPage, RemnantPage, LedgerPage, FeedbackPage, FeedPage, MergedOverlay, LightOverlay, GamePlanPage, FocusPokes, OverlayHelp, OverlayParts, CampaignUI, OverlayRates, CommunityPage, RateModsPage, OverlayRecap):
     COLS = [("added", "#", 46, "e"), ("name", "Item", 220, "w"), ("type", "Type", 110, "w"), ("mark", "Status", 90, "center"),
             ("est", "Est. value", 110, "e"), ("conf", "Confidence", 95, "center"), ("listings", "Listings", 70, "e"), ("priced", "Priced at", 130, "w"),
             ("match", "How it was priced", 300, "w"), ("vmods", "Valuable mods", 100, "center"),
@@ -1446,8 +1447,8 @@ class App(GearBookPage, PriceCheckPage, FavoritesPage, BoardModPage, Leaderboard
         # 2.66.0: no Style list - everything over the game is drawn in the app's theme (Settings › Appearance ›
         # Theme). The Layout says the shape.
         # 2.74.0: one area - Layout, Opacity and Click-through (were the Overlay layout and Opacity sections)
-        row = section("Appearance", "Overlay settings", "The overlay over the game (timer, Mechanic Helper, Focus), in "
-                                                        "the game's own style. Notes, the calculator and the remnant "
+        row = section("Appearance", "Overlay settings", "The overlay over the game (timer, Mechanic Helper, Focus): "
+                                                        "pick a style, its shape and its colours. Notes, the calculator and the remnant "
                                                         "price tags use your theme's colors.")
         from .merged_page import LAYOUTS
         g = tk.Frame(row, bg=P2)
@@ -1459,20 +1460,47 @@ class App(GearBookPage, PriceCheckPage, FavoritesPage, BoardModPage, Leaderboard
                                                                                    pady=(8 if r else 0, 0))
 
         def hint(r, text):
-            tk.Label(g, text=text, bg=P2, fg=C["muted"], font=("Segoe UI", 9), justify="left", wraplength=560,
-                     anchor="w").grid(row=r, column=1, columnspan=2, sticky="w", pady=(2, 0))
-        label(0, "Layout")
+            lab = tk.Label(g, text=text, bg=P2, fg=C["muted"], font=("Segoe UI", 9), justify="left", wraplength=560,
+                           anchor="w")
+            lab.grid(row=r, column=1, columnspan=2, sticky="w", pady=(2, 0))
+            return lab
+        # 2.101.0: the Style first (Classic or one of the light looks), then its Layout, then its Colours
+        from .ovlight import COLORS, STYLES
+        label(0, "Style")
+        self.ov_look_var = tk.StringVar(value=STYLES[self.ov_look()])
+        sc = ttk.Combobox(g, textvariable=self.ov_look_var, values=list(STYLES.values()), state="readonly", width=24)
+        sc.grid(row=0, column=1, sticky="w")
+        sc.bind("<<ComboboxSelected>>", lambda e: self.on_ov_look(
+            style=next((k for k, t in STYLES.items() if t == self.ov_look_var.get()), "classic")))
+        hint(1, "Classic: carved stone and bronze, like the game's own bar. The light ones are plain lines and text "
+                "(lighter on the PC too): Hairline - no box, one thin line; Slate - a flat box; Flanks - no box, "
+                "numbers by the life orb and switches by the mana orb; Micro - the smallest.")
+        label(2, "Layout")
         self.ov_layout_var = tk.StringVar(value=LAYOUTS.get(self.merged_layout(), LAYOUTS["xpbar"]))
         lc = ttk.Combobox(g, textvariable=self.ov_layout_var, values=list(LAYOUTS.values()), state="readonly", width=24)
-        lc.grid(row=0, column=1, sticky="w")
+        lc.grid(row=2, column=1, sticky="w", pady=(8, 0))
         lc.bind("<<ComboboxSelected>>", lambda e: self.merged_set(
             layout=next((k for k, t in LAYOUTS.items() if t == self.ov_layout_var.get()), "xpbar")))
-        hint(1, "Game bar: rests on the game's XP bar (unlocked, drag it; picking it again puts it back). "
+        hint(3, "Game bar: rests on the game's XP bar (unlocked, drag it; picking it again puts it back). "
                 "Panel: a card like the game's vendor windows - place it anywhere.")
+        label(4, "Colours")
+        cr = tk.Frame(g, bg=P2)
+        cr.grid(row=4, column=1, sticky="w", pady=(8, 0))
+        self.ov_colors_var = tk.StringVar(value=COLORS[self.ov_look_colors()][0])
+        cc = ttk.Combobox(cr, textvariable=self.ov_colors_var, values=[c[0] for c in COLORS.values()],
+                          state="readonly", width=24)
+        cc.pack(side="left")
+        cc.bind("<<ComboboxSelected>>", lambda e: self.on_ov_look(
+            colors=next((k for k, c in COLORS.items() if c[0] == self.ov_colors_var.get()), None)))
+        self.ov_colors_combo = cc
+        self.ov_colors_swatch = tk.Canvas(cr, width=150, height=22, bg=P2, highlightthickness=0)
+        self.ov_colors_swatch.pack(side="left", padx=(8, 0))
+        self.ov_colors_hint = hint(5, "")
+        self._ov_look_paint()
         # 2.56.1: ONE opacity for everything over the game (it was one slider each)
-        label(2, "Opacity")
+        label(6, "Opacity")
         op = tk.Frame(g, bg=P2)
-        op.grid(row=2, column=1, sticky="w", pady=(8, 0))
+        op.grid(row=6, column=1, sticky="w", pady=(8, 0))
         v = tk.IntVar(value=self.ov_opacity_get("session"))
         self.ov_op_vars = {"all": v}
         ttk.Scale(op, from_=60, to=255, variable=v, orient="horizontal", length=260,
@@ -1481,15 +1509,15 @@ class App(GearBookPage, PriceCheckPage, FavoritesPage, BoardModPage, Leaderboard
                        anchor="e")
         pct.pack(side="left", padx=(8, 0))
         self.ov_op_pct = {"all": pct}
-        hint(3, "100% = fully solid. Lower = see-through, text and all (24% is the lowest). Over a busy spot, "
+        hint(7, "100% = fully solid. Lower = see-through, text and all (24% is the lowest). Over a busy spot, "
                 "95-100% reads best.")
-        label(4, "Click-through")
+        label(8, "Click-through")
         self.ov_ct_var = tk.BooleanVar(value=bool(self.tracker_cfg().get("click_through", False)))
         ct = ttk.Checkbutton(g, text="Clicks go through the overlay to the game",
                              variable=self.ov_ct_var, command=self.on_click_through, style="Card.TCheckbutton")
-        ct.grid(row=4, column=1, sticky="w", pady=(8, 0))
+        ct.grid(row=8, column=1, sticky="w", pady=(8, 0))
         self.ov_ct_switch = ct
-        hint(5, "On: the overlay's bar can't be clicked - its switches, ⏸ / ▶, Notes ▾ and Calc ▾ too (the Pause key "
+        hint(9, "On: the overlay's bar can't be clicked - its switches, ⏸ / ▶, Notes ▾ and Calc ▾ too (the Pause key "
                 "still pauses the timer). The lock only stops it moving. Notes and the calculator always take clicks.")
         row = section("Appearance", "Notes", "The note uses the style's colors and font; only its text size is "
                                              "yours.")
@@ -1505,6 +1533,35 @@ class App(GearBookPage, PriceCheckPage, FavoritesPage, BoardModPage, Leaderboard
         self.reduce_motion_var = tk.BooleanVar(value=reduced())
         ttk.Checkbutton(row, text="Reduce motion", variable=self.reduce_motion_var, style="Card.TCheckbutton",
                         command=self.on_reduce_motion).pack(side="left")
+
+    def on_ov_look(self, style=None, colors=None):
+        """2.101.0: Settings › Appearance › Overlay settings › Style / Colours - saved and shown at once."""
+        self.ov_look_set(style=style, colors=colors)
+        self._ov_look_paint()
+
+    def _ov_look_paint(self):
+        """The Colours row: a small sample of the set (its box, accent line, numbers and an "on" switch); greyed out
+        with Classic, which keeps its own stone-and-bronze colours."""
+        from .ovlight import palette
+        cv = getattr(self, "ov_colors_swatch", None)
+        if cv is None:
+            return
+        light = self.ov_light()
+        try:
+            self.ov_colors_combo.configure(state="readonly" if light else "disabled")
+            cv.delete("all")
+            if light:
+                P = palette("slate", self.ov_look_colors())
+                cv.create_rectangle(0, 0, 149, 21, fill=P["box"], outline=P["line"])
+                cv.create_line(1, 20, 148, 20, fill=P["accent"])
+                cv.create_text(8, 11, text="0:42:17", anchor="w", fill=P["big"], font=("Segoe UI", 9, "bold"))
+                cv.create_text(70, 11, text="\u25c6 Breach", anchor="w", fill=P["accent"], font=("Segoe UI", 9))
+            self.ov_colors_hint.configure(text=(
+                "Exile Gold is the Classic bar's own colours; the others are the theme packs' (Settings › Appearance "
+                "› Theme). Follow the app theme changes with it." if light else
+                "Classic keeps its own stone-and-bronze colours - pick a light style to choose colours."))
+        except (tk.TclError, AttributeError):
+            pass
 
     def on_reduce_motion(self):
         """2.100.0: Settings › Appearance › Reduce motion (saved; from then on your choice beats Windows')."""

@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU GPL v3.0 (see LICENSE). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.100.0
+VERSION 2.101.0
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,6 +19,25 @@ VERSION 2.100.0
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.101.0
+       Overlay styles (from the mockups; feedback: "a lightweight one is needed desperately"): Settings > Appearance >
+       Overlay settings > Style - Classic (the stone-and-bronze Game bar and Panel, as before) or one of four light
+       looks drawn with plain canvas lines and text (soe2/ovlight.py; no Pillow artwork, nothing re-rendered when the
+       game window changes size), each as a Game bar and a Panel:
+       - Hairline: no box - outlined text and one thin accent line; one row, or two when the XP bar is too narrow
+         (the switches and menus on top).
+       - Slate: a flat box with thin dividers; a switch that's on is underlined (a bar on its left in the Panel).
+       - Flanks: no box - the numbers right of the life orb, the switches left of the mana orb (two small windows,
+         the middle of the screen stays clear); the Panel stacks the two halves.
+       - Micro: the smallest - the times, the rank and the switches as lettered squares (Ritual shows its count).
+       Then Colours: Exile Gold (the Classic bar's own), nine theme packs' colours (Gilded Crypt, Sunstep Temple,
+       Emberforge, Ashen Rite, Daybreak Stalker, Midnight Steel, Hollow Deep, Jade Circuit, Neon Chassis) or Follow
+       the app theme; a small sample shows next to it. Every part is there as in Classic (timer and ⏸ / ▶, the map,
+       where you are, its rank - click to rank -, Maps, Avg, the clock, the switches with their hover help, Notes /
+       Calc / Regex / Vendor ▾, lock, ⚙), each part's switch in Overlay > Options still applies, and the goal bar
+       (Focus / Campaign) is drawn in the same style. No box uses Windows' see-through colour key (other systems get
+       the colour set's box). A bar is fitted to the XP bar (drag it while unlocked; picking the style or layout
+       again puts it back, and a new game size fits it again).
   2.100.0
        Polish 6 - hover, focus, motion (the same everywhere; motion.py, installed once at start):
        - Hover: a list row lights under the mouse (every list - a class binding on Treeview; Tk paints the tag made
@@ -2366,7 +2385,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.100.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.101.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
