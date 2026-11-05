@@ -315,7 +315,7 @@ class RemnantPage:
     def ev_remnant_done(self, rect, rows, err):
         self.rm_busy = False
         if err:
-            self.rm_problem = err if "text reader" in err or "Windows" in err else self.rm_problem
+            self.rm_problem = err if "text reader" in err or "Windows" in err or "Tesseract" in err else self.rm_problem
             self.rm_last = "couldn't read the screen"
             self.app_toast(err, "Expedition Remnant Price Checker", kind="error")
         elif not rows:

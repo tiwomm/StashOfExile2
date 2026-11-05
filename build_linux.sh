@@ -1,9 +1,12 @@
 #!/usr/bin/env bash
 # Linux build (UNTESTED groundwork, 2.10.0). The official releases are Windows-only; see linux/README.md.
-# Needs: python3 with Tk built with Xft (fonts), pip install pyinstaller requests pillow pystray
+# Needs: python3 with Tk built with Xft (fonts), pip install pyinstaller requests pillow pystray numpy mss
+# OCR (Remnant / Rumours / Well of Souls) runs the system's tesseract (+ English data); Wayland pictures use grim.
+# Neither is bundled - install them with the package manager (linux/README.md).
 set -euo pipefail
 cd "$(dirname "$0")"
 python3 -c "import tkinter; r=tkinter.Tk(); r.withdraw(); print('Tk', tkinter.TkVersion)" >/dev/null
+for t in tesseract grim; do command -v "$t" >/dev/null || echo "note: $t not found - OCR / screen reads need it at run time (linux/README.md)"; done
 python3 -m PyInstaller --noconfirm --onefile --name StashOfExile2 \
   --add-data "gamedata.json:." --add-data "searchdata.json:." --add-data "anointdata.json:." --add-data "cxnames.json:." --add-data "moneymakers.json:." --add-data "mapdata.json:." --add-data "campaign.json:." --add-data "tierdata.json:." --add-data "themes:themes" --add-data "regexdata.json:." \
   --add-data "default_rules.json:." --add-data "jewels.txt:." --add-data "tabs.txt:." \

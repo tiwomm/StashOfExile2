@@ -2,7 +2,7 @@
 
 How: with a remnant's list open, press its key (Session tracker > Alerts, default Ctrl+Alt+R). The app takes ONE picture
 of the game window, reads the text in it with Windows' own OCR (Windows.Media.Ocr - part of Windows, nothing to
-install), finds the lines that are items (an item name, often with an amount like "Orb of Alchemy x3"), and puts a
+install; on Linux the Tesseract OCR program, see ocr_linux), finds the lines that are items (an item name, often with an amount like "Orb of Alchemy x3"), and puts a
 price tag next to each from poe.ninja (the same prices as Wealth), the best one marked ★. One action per key press:
 nothing is sent to the game; the tags go away after a while or with the key again.
 
@@ -19,7 +19,10 @@ or images are used here - this is our own implementation of the idea.
 ToS (TOS.md): this only LOOKS at the screen (a capture, like a screenshot) and SHOWS something; it never presses,
 clicks, types or sends anything to the game, and never reads the game's memory or traffic."""
 import difflib
+import os
 import re
+import shutil
+import subprocess
 import sys
 
 CREDIT_NAME = "PoE Ancients Price Helper by Pedro Quitério"
@@ -231,6 +234,10 @@ def changed(a, b, tol=6.0):
 # ================================================================ the picture and the OCR (Windows)
 def grab(rect):
     """(left, top, right, bottom) of the screen -> PIL image."""
+    if sys.platform.startswith("linux"):
+        img = grab_wayland(rect)
+        if img is not None:
+            return img
     import mss
     from PIL import Image
     l_, t, r, b = rect
@@ -239,10 +246,111 @@ def grab(rect):
     return Image.frombytes("RGB", shot.size, shot.rgb)
 
 
+# ---------------------------------------------------------------- Linux (2.103.0 linux branch)
+# Same shapes as on Windows: grab() -> PIL image the size of the rect, ocr() -> [(line text, (x0, y0, x1, y1))].
+# Screen: Wayland (Hyprland) -> grim, one picture of the rect in layout coordinates (the same ones linsys.game_rect
+# gives), "-s 1" so 1 image pixel = 1 layout pixel at any output scale; X11 or no grim -> mss as on Windows.
+# Text: the Tesseract program (Arch: tesseract tesseract-data-eng; Debian/Ubuntu: tesseract-ocr), run once per read
+# with the picture on stdin, word boxes back as TSV. Nothing is installed or downloaded by the app.
+TESS_PSM = os.environ.get("SOE2_TESS_PSM", "11")      # 11 = sparse text (UI labels here and there); 6 = one block
+_TESS_LANGS = None
+
+
+def grab_wayland(rect):
+    """Wayland + grim: (left, top, right, bottom) -> PIL image, else None (then mss)."""
+    if not os.environ.get("WAYLAND_DISPLAY") or not shutil.which("grim"):
+        return None
+    from io import BytesIO
+    from PIL import Image
+    l_, t, r, b = (int(v) for v in rect)
+    w, h = max(1, r - l_), max(1, b - t)
+    try:
+        out = subprocess.run(["grim", "-s", "1", "-t", "ppm", "-g", f"{l_},{t} {w}x{h}", "-"],
+                             capture_output=True, timeout=5, check=True).stdout
+        img = Image.open(BytesIO(out)).convert("RGB")
+    except Exception:
+        return None
+    return img if img.size == (w, h) else img.resize((w, h))
+
+
+def _tess_langs():
+    global _TESS_LANGS
+    if _TESS_LANGS is None:
+        try:
+            out = subprocess.run([shutil.which("tesseract") or "tesseract", "--list-langs"], capture_output=True,
+                                 text=True, timeout=10).stdout
+            _TESS_LANGS = {ln.strip() for ln in out.splitlines()[1:] if ln.strip()}
+        except Exception:
+            _TESS_LANGS = set()
+    return _TESS_LANGS
+
+
+def ocr_linux_available():
+    if not shutil.which("tesseract"):
+        return "needs the Tesseract OCR program (Arch: tesseract tesseract-data-eng; Debian/Ubuntu: tesseract-ocr)"
+    if "eng" not in _tess_langs():
+        return "Tesseract has no English data (Arch: tesseract-data-eng; Debian/Ubuntu: tesseract-ocr-eng)"
+    return ""
+
+
+def tsv_lines(tsv, scale=1.0):
+    """Tesseract TSV -> [(line text, (x0, y0, x1, y1))], words joined per (block, paragraph, line), boxes / scale."""
+    lines = {}
+    for row in tsv.splitlines()[1:]:
+        f = row.split("\t")
+        if len(f) < 12 or f[0] != "5" or not f[11].strip():
+            continue
+        try:
+            if float(f[10]) < 0:
+                continue
+            key = (int(f[1]), int(f[2]), int(f[3]), int(f[4]))
+            x, y, w, h = (int(v) for v in f[6:10])
+        except ValueError:
+            continue
+        words, box = lines.setdefault(key, ([], [x, y, x + w, y + h]))
+        words.append(f[11].strip())
+        box[0], box[1], box[2], box[3] = min(box[0], x), min(box[1], y), max(box[2], x + w), max(box[3], y + h)
+    out = []
+    for key in sorted(lines, key=lambda k: (lines[k][1][1], lines[k][1][0])):
+        words, b = lines[key]
+        out.append((" ".join(words), tuple(int(v / scale) for v in b)))
+    return out
+
+
+def ocr_linux(img):
+    """PIL image -> [(line text, (x0, y0, x1, y1))] with Tesseract. Tesseract reads dark text on light best: grey,
+    flipped when the picture is mostly dark (the reward book, option boxes; the Rumours card is light already),
+    made up to 2x bigger (game text is small)."""
+    why = ocr_linux_available()
+    if why:
+        raise OcrUnavailable(why)
+    from io import BytesIO
+    from PIL import ImageOps
+    scale = min(2.0, 4000 / max(img.size))
+    from PIL import ImageStat
+    g = img.convert("L")
+    if ImageStat.Stat(g).mean[0] < 128:
+        g = ImageOps.invert(g)
+    if abs(scale - 1) > 0.05:
+        g = g.resize((max(1, int(g.width * scale)), max(1, int(g.height * scale))))
+    buf = BytesIO()
+    g.save(buf, "PNG")
+    try:
+        res = subprocess.run([shutil.which("tesseract"), "stdin", "stdout", "-l", "eng", "--psm", TESS_PSM, "tsv"],
+                             input=buf.getvalue(), capture_output=True, timeout=20)
+    except subprocess.TimeoutExpired:
+        raise OcrUnavailable("Tesseract took too long")
+    if res.returncode != 0:
+        raise OcrUnavailable(f"Tesseract failed ({res.stderr.decode(errors='replace').strip()[:120]})")
+    return tsv_lines(res.stdout.decode("utf-8", errors="replace"), scale)
+
+
 def ocr_available():
-    """'' when Windows' OCR can be used, else why not."""
+    """'' when the OCR can be used, else why not."""
+    if sys.platform.startswith("linux"):
+        return ocr_linux_available()
     if sys.platform != "win32":
-        return "needs Windows (its built-in text reader)"
+        return "needs Windows (its built-in text reader) or Linux with Tesseract"
     try:
         from winrt.windows.media.ocr import OcrEngine  # noqa: F401
     except Exception:
@@ -266,7 +374,9 @@ def _engine():
 
 
 def ocr(img):
-    """PIL image -> [(line text, (x0, y0, x1, y1) in the image's pixels)] with Windows.Media.Ocr."""
+    """PIL image -> [(line text, (x0, y0, x1, y1) in the image's pixels)] with Windows.Media.Ocr (Linux: Tesseract)."""
+    if sys.platform.startswith("linux"):
+        return ocr_linux(img)
     if sys.platform != "win32":
         raise OcrUnavailable(ocr_available())
     try:
@@ -316,7 +426,10 @@ def selftest():
     try:
         font = ImageFont.truetype("arial.ttf", 40)
     except Exception:
-        font = ImageFont.load_default()
+        try:
+            font = ImageFont.truetype("DejaVuSans.ttf", 40)     # Linux
+        except Exception:
+            font = ImageFont.load_default()
     ImageDraw.Draw(img).text((20, 30), "Orb of Alchemy x3", fill=(220, 210, 190), font=font)
     try:
         return " | ".join(t for t, _b in ocr(img))
