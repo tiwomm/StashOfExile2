@@ -209,10 +209,43 @@ def _rewrap(e):
             pass
 
 
+def center_over(win, parent):
+    """2.98.3: put a dialog in the middle of `parent` (the app), kept on the monitor the app is on - never pushed to
+    the main monitor (feedback: Privacy & community's questions opened on the other screen)."""
+    win.update_idletasks()
+    w, h = win.winfo_reqwidth(), win.winfo_reqheight()
+    try:
+        px, py, pw, ph = parent.winfo_rootx(), parent.winfo_rooty(), parent.winfo_width(), parent.winfo_height()
+    except tk.TclError:
+        px, py, pw, ph = 0, 0, win.winfo_screenwidth(), win.winfo_screenheight()
+    cx, cy = px + pw // 2, py + ph // 2
+    l, t, r, b = monitor_rect(parent, cx, cy)
+    x = max(l, min(cx - w // 2, r - w))
+    y = max(t, min(cy - h // 2, b - h))
+    win.geometry(f"+{x}+{y}")
+    return x, y
+
+
+def _place_dialog(w, parent=None):
+    """tkinter.simpledialog's own placement kept dialogs inside the MAIN monitor (it clamps to winfo_vroot*, which
+    on Windows is the main monitor) - so on two screens they opened on the other one. Over the app instead."""
+    w.wm_withdraw()
+    w.update_idletasks()
+    par = parent if parent is not None and parent.winfo_ismapped() else w._root()
+    center_over(w, par)
+    w.wm_deiconify()
+
+
 def responsive(root):
-    """Once, at start: every wrapped Label / ttk Label in the app re-wraps to its width (see _rewrap)."""
+    """Once, at start: every wrapped Label / ttk Label in the app re-wraps to its width (see _rewrap); 2.98.3: the
+    simple question dialogs (askstring / askinteger) open over the app, on its monitor."""
     for cls in ("Label", "TLabel"):
         root.bind_class(cls, "<Configure>", _rewrap, add="+")
+    try:
+        import tkinter.simpledialog as _sd
+        _sd._place_window = _place_dialog
+    except Exception:
+        pass
 
 
 def fit(widget, fn, min_delta=12, delay=150):
