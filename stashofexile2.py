@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU GPL v3.0 (see LICENSE). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.103.1
+VERSION 2.103.2
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,6 +19,16 @@ VERSION 2.103.1
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.103.2
+       P1 feedback, round 2:
+       - Price Checks: a tick (or a typed Min / Max) redraws only the card - the listings beside it stay put (redrawing
+         them, pictures and all, was the flicker 2.103.1 didn't catch).
+       - Waystones: a Waystone tier row under Properties (ticked: the same tier, as before; type a range, e.g. 14-16,
+         or untick it for any tier - the trade site's map_tier).
+       - A mod the trade list words without "+" (Monsters have +21% Critical Damage Bonus) is found: when the exact
+         wording isn't on the list, it's matched without "+", "to" and "increased" - only when exactly one stat fits.
+       - Rows that wrap in a narrow window (2.98.0) lost their gaps: Tk hands a padding pair back as a tuple and it
+         was read as none. Read right now - Clear filters and Order added (and every such row) have their room back.
   2.103.1
        P1 feedback:
        - Bulk Pricing: the list filters are on screen again (no Filters ▾), Export CSV is back on the toolbar and Clear
@@ -2426,7 +2436,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.103.1"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.103.2"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 

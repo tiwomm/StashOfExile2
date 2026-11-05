@@ -3,6 +3,7 @@
 Part of StashOfExile2. Split out of the single-file app in 1.37 (see the launcher's VERSION HISTORY)."""
 
 import sys
+import re
 import tkinter as tk
 from tkinter import ttk
 
@@ -340,10 +341,12 @@ class Flow(tk.Frame):
 
 
 def _pads(v):
-    try:
-        parts = [int(float(x)) for x in str(v).split()]
-    except ValueError:
-        return 0, 0
+    """pack's padx -> (left, right). 2.103.2: Tk hands a pair back as a tuple, (12, 0) - it was read as no padding,
+    so every row made with flowify lost its gaps (Clear filters touched Order added)."""
+    if isinstance(v, (tuple, list)):
+        parts = [int(float(str(x))) for x in v]
+    else:
+        parts = [int(float(x)) for x in re.findall(r"-?\d+(?:\.\d+)?", str(v))]
     return (parts[0], parts[-1]) if parts else (0, 0)
 
 

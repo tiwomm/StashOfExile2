@@ -137,7 +137,8 @@ CURRENCY_CHOICES = [("Exalted Orb Equivalent", None), ("Divine Orbs", "divine"),
 
 
 # 2.79.0: every filter the item panel offers - opts key, the trade site's group and name
-NUM_OPTS = (("ilvl", "type_filters", "ilvl"), ("quality", "type_filters", "quality"),
+NUM_OPTS = (("tier", "map_filters", "map_tier"),        # 2.103.2: a waystone's tier (feedback)
+            ("ilvl", "type_filters", "ilvl"), ("quality", "type_filters", "quality"),
             ("sockets", "equipment_filters", "rune_sockets"), ("req_lvl", "req_filters", "lvl"),
             ("req_str", "req_filters", "str"), ("req_dex", "req_filters", "dex"), ("req_int", "req_filters", "int"))
 MISC_OPTS = (("fractured", "fractured_item", False), ("desecrated", "desecrated", False),

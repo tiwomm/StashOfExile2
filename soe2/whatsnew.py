@@ -21,6 +21,11 @@ NEXT = [
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.103.2": [
+        "Price Checks: ticking a mod no longer redraws the listings (no flicker).",
+        "Waystones: a Waystone tier row - widen the tier range or untick it for any tier.",
+        "Buttons in toolbars have their spacing back.",
+    ],
     "2.103.1": [
         "Bulk Pricing: the filters, Export CSV and Clear list are back where they were.",
         "Waystones: type a Min / Max on any mod on the card to search on it.",

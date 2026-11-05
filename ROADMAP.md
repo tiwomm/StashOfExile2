@@ -4,7 +4,7 @@
 
 > **Who we build for - read second.** Path of Exile players are utilitarian: they love data and information, problem solving and creative thinking. So every feature shows its numbers *and how they were worked out*, lets you sort, filter, compare and export them (CSV), keeps power-user depth (keys, versions, raw data) one click away instead of hiding it, explains in plain words, and leaves the decision to the player. Pretty is welcome; vague is not.
 
-**Current version: 2.103.1**
+**Current version: 2.103.2**
 
 Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds features, 2.10.1 only fixes. Each step below is one release; we work through them top to bottom.
 
@@ -173,6 +173,7 @@ Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds f
 | 2.97.0 | Polish 4 - feedback round: the Rate mods ask says what it is (Count me in! / Not now / Never ask again) and opens in front; Rate mods starts with "Which items do you know best?", lights only your rating, Back / Next / Done under it; F is the ignore tier everywhere tiers show (saved as Ignore); Focus / Campaign on = their line shows (no line switch; both on = one bar, two rows, in Panel and Game bar), switching one on turns the overlay on; a finished character's campaign line and Vendor ▾ come back in campaign zones; Price Checks: Rate ▾ replaces ▲ / ▼, the card and listings fit the window (scrollbar only when needed), Fractured only ticks the mod. |
 | 2.97.1 | Price Checks card: a rune's line and an affix with the same wording are ticked apart; runes in their own AUGMENTS section (no RUNE / SOCKETED lines); Fractured / Desecrated only small, right under its mod, the mod in its color. |
 | 2.97.2 | Price Checks card - visual hierarchy: a mod's color says where it comes from (affix blue, rune light blue, fractured tan, desecrated green, pseudo pink; unticked = dimmed, not grey), the listing cards match; every section folds with how many are ticked, Fold all / Unfold all. |
+| 2.103.2 | P1 feedback 2: a tick redraws only the card (no flicker); Waystone tier row (range / any); "+" mod wordings found on the trade list; toolbar rows keep their gaps again. |
 | 2.103.1 | P1 feedback: Bulk Pricing filters, Export CSV and Clear list back where they were; row actions light at once; no flicker on a tick; waystone mods take a typed Min / Max; long mods keep clear of Rate ▾. |
 | 2.103.0 | Polish 7 P1 - Price Checks and Bulk Pricing: a check that finds nothing says why (Search again / Search with fewer mods); Bulk Pricing filters behind Filters ▾, Export CSV and Clear list in ⋯, row actions lit only with rows picked, a Status column (Priced / Review / Pricing), "0 div"; one font in the status bar. |
 | 2.102.0 | Wealth › Scan stash (beta, may not work): a card over the game asks for one tab at a time (Currency, Abyss, Delirium, Breach › Catalysts) - Start reading finds the panel, checks the tab, reads each slot's stack number; a check window before Save (fix / drop rows); the picture is never kept; only digit shapes and slot boxes ship. |
