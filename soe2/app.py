@@ -82,6 +82,7 @@ from .wellsouls_page import WellSoulsPage      # 2.81.0: Desecration Helper (tie
 from .rumours_page import RumoursPage          # 2.83.0: Island Rumours; where the Remnant watcher looks
 from .favorites_page import FavoritesPage      # 2.84.0: Price Checks ↳ Favorites
 from .boardmod_page import BoardModPage        # 2.85.0: your community name, Suggest an edit, History, reviewers
+from .gearbook_page import GearBookPage  # 2.99.0: Mod book › Gear rules, Unique rules, Learned per tab
 from .leaderboard_page import LeaderboardPage  # 2.86.0: Overlay ↳ Leaderboards
 from .orderlab_page import OrderLabPage        # 2.88.0: Under the hood ↳ Listing order lab (admins)
 from . import gamedata
@@ -98,7 +99,7 @@ MISC_ROWS = (("corrupted", "Corrupted"), ("fractured", "Fractured"), ("desecrate
              ("sanctified", "Sanctified"), ("mirrored", "Mirrored"), ("unidentified", "Unidentified"))
 
 
-class App(PriceCheckPage, FavoritesPage, BoardModPage, LeaderboardPage, OrderLabPage, WellSoulsPage, RumoursPage, ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, ExchangePage, WealthPage, LibraryPage, RegexPage, UtilitiesPage, TrackerPage, SearchPage, CalcOverlay, InsightsPage, MoneyMakersPage, MapLibraryPage, RemnantPage, LedgerPage, FeedbackPage, FeedPage, MergedOverlay, GamePlanPage, FocusPokes, OverlayHelp, OverlayParts, CampaignUI, OverlayRates, CommunityPage, RateModsPage, OverlayRecap):
+class App(GearBookPage, PriceCheckPage, FavoritesPage, BoardModPage, LeaderboardPage, OrderLabPage, WellSoulsPage, RumoursPage, ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, ExchangePage, WealthPage, LibraryPage, RegexPage, UtilitiesPage, TrackerPage, SearchPage, CalcOverlay, InsightsPage, MoneyMakersPage, MapLibraryPage, RemnantPage, LedgerPage, FeedbackPage, FeedPage, MergedOverlay, GamePlanPage, FocusPokes, OverlayHelp, OverlayParts, CampaignUI, OverlayRates, CommunityPage, RateModsPage, OverlayRecap):
     COLS = [("added", "#", 46, "e"), ("name", "Item", 220, "w"), ("type", "Type", 110, "w"), ("mark", "Status", 90, "center"),
             ("est", "Est. value", 110, "e"), ("conf", "Confidence", 95, "center"), ("listings", "Listings", 70, "e"), ("priced", "Priced at", 130, "w"),
             ("match", "How it was priced", 300, "w"), ("vmods", "Valuable mods", 100, "center"),
@@ -792,46 +793,33 @@ class App(PriceCheckPage, FavoritesPage, BoardModPage, LeaderboardPage, OrderLab
 
     # ---------------- the Mod book window: what the app learned + your mod rules
     def build_modbook(self, book_tab):
+        """2.99.0: one tab per rule set - Tablets, Jewels, Waystones, Relics, Gear (by item class), Uniques - each with
+        its own "What the app learned" view (that tab is gone: its rows sit with the rules they belong to)."""
         self.mb_nb = SegBook(book_tab)                         # real buttons, not notebook tabs (2.0 beta 7)
         self.mb_nb.pack(fill="both", expand=True, padx=8, pady=8)
-        memory_tab = tk.Frame(self.mb_nb, bg=C["panel"])
-        rules_tab = tk.Frame(self.mb_nb, bg=C["panel"])
-        jrules_tab = tk.Frame(self.mb_nb, bg=C["panel"])
-        wrules_tab = tk.Frame(self.mb_nb, bg=C["panel"])                # 2.6.0
-        rrules_tab = tk.Frame(self.mb_nb, bg=C["panel"])
+        self.MEM_VIEWS = ["Mod priority", "Single mods", "Mod combinations", "Old mod book"]
+        self.mem_view = tk.StringVar(value=self.MEM_VIEWS[0])
+        self.mem_filter = tk.StringVar()
+        self.mem_filter.trace_add("write", lambda *a: self.refresh_memory(True))
+        self.mem_tv = None
+        self.mb_show = {}
+        tabs = {}
+        for cat, title in self.MB_TABS:
+            tabs[cat] = tk.Frame(self.mb_nb, bg=C["panel"])
+            self.mb_nb.add(tabs[cat], text=title)
         feed_tab = tk.Frame(self.mb_nb, bg=C["panel"])                 # 2.51.0
-        self.mb_nb.add(memory_tab, text="What the app learned")
-        self.mb_nb.add(rules_tab, text="Tablet rules")
-        self.mb_nb.add(jrules_tab, text="Jewel rules")
-        self.mb_nb.add(wrules_tab, text="Waystone rules")
-        self.mb_nb.add(rrules_tab, text="Relic rules")
         self.mb_nb.add(feed_tab, text="Manual feed")
         self.mb_nb.bind("<<NotebookTabChanged>>", lambda e: (self.refresh_rules(), self.refresh_memory()))
         if getattr(self, "shell", None) is not None:          # 2.64.0: its tabs are listed in the sidebar
             self.shell.register_tabs("modbook", self.mb_nb)
-        mbar = tk.Frame(memory_tab, bg=C["panel"], padx=8, pady=8)
-        mbar.pack(fill="x")
-        tk.Label(mbar, text="Show", bg=C["panel"], fg=C["muted"]).pack(side="left", padx=(0, 8))
-        self.MEM_VIEWS = ["Mod priority", "Single mods", "Mod combinations", "Old mod book"]
-        self.mem_view = tk.StringVar(value=self.MEM_VIEWS[0])
-        mv = ttk.Combobox(mbar, textvariable=self.mem_view, values=self.MEM_VIEWS, state="readonly", width=18)
-        mv.pack(side="left")
-        mv.bind("<<ComboboxSelected>>", lambda e: (self.refresh_memory(True), self.root.after(20, self.root.focus_set)))
-        tk.Label(mbar, text="Filter", bg=C["panel"], fg=C["muted"]).pack(side="left", padx=(16, 8))
-        self.mem_filter = tk.StringVar()
-        self.mem_filter.trace_add("write", lambda *a: self.refresh_memory(True))
-        ttk.Entry(mbar, textvariable=self.mem_filter, width=24).pack(side="left")
-        ttk.Button(mbar, text="Refresh", command=lambda: self.refresh_memory(True)).pack(side="left", padx=8)
-        self.mem_info = tk.Label(memory_tab, bg=C["panel"], fg=C["muted"], justify="left", anchor="w", padx=12)
-        self.mem_info.pack(fill="x")
-        self.mem_frame = tk.Frame(memory_tab, bg=C["panel"])
-        self.mem_frame.pack(fill="both", expand=True)
-        self.mem_tv = None
-        self.mem_empty = tk.Label(memory_tab, bg=C["panel"], fg=C["muted"], font=("Segoe UI", 10), justify="center", wraplength=640)
-        self.build_rules_page(rules_tab, "tablet")
-        self.build_rules_page(jrules_tab, "jewel")
-        self.build_rules_page(wrules_tab, "waystone")
-        self.build_rules_page(rrules_tab, "relic")
+        for cat, _title in self.MB_TABS:
+            rf, lf, show, _v = self.mb_split(tabs[cat], cat)
+            if cat in ("gear", "unique"):
+                self.build_picker_rules(rf, cat)
+            else:
+                self.build_rules_page(rf, cat)
+            self.mb_learned(lf, self.rt[cat])
+            self.mb_show[cat] = show
         self.build_feed(feed_tab)
 
     def build_pc_settings(self, section):
@@ -3077,6 +3065,11 @@ class App(PriceCheckPage, FavoritesPage, BoardModPage, LeaderboardPage, OrderLab
             self.pctab_mode()
         rid = self.next_id
         self.next_id += 1
+        try:                                           # 2.99.0: a unique's lines for Mod book › Unique rules
+            from .gearbook import learn
+            learn(item)
+        except Exception:
+            self.log_error("remembering a unique's lines")
         self.records[rid] = {"id": rid, "item": item, "state": "queued", "label": "", "total": 0,
                              "prices": [], "est": None, "qid": None, "time": time.time(), "resolved": False,
                              "mark": "new", "raw": text, "src": src}
@@ -3747,7 +3740,15 @@ class App(PriceCheckPage, FavoritesPage, BoardModPage, LeaderboardPage, OrderLab
         self.list_register("modbook", ns.tv)                                      # 2.4.0: Ctrl+A, Shift / Ctrl+click
 
     def migrate_rules_once(self):
-        """2.6.0, once: waystone / relic rules set from Regex move to their own names (mods.migrate_scoped_rules)."""
+        """2.6.0, once: waystone / relic rules set from Regex move to their own names (mods.migrate_scoped_rules).
+        2.99.0, once: gear rules lose their leading "+" (Mod book › Gear rules lists lines without one)."""
+        if not SETTINGS.get("gear_plus_299"):
+            from .gearbook import migrate_plus
+            if migrate_plus(RULES, TIERS):
+                save_json("mod_rules.json", RULES)
+                save_json("mod_tiers.json", TIERS)
+            SETTINGS["gear_plus_299"] = True
+            save_json("settings.json", SETTINGS)
         if SETTINGS.get("rules_scoped_26"):
             return
         try:
@@ -3762,17 +3763,24 @@ class App(PriceCheckPage, FavoritesPage, BoardModPage, LeaderboardPage, OrderLab
         except Exception:
             self.log_error("moving waystone / relic rules")
 
+    MB_TABS = (("tablet", "Tablet rules"), ("jewel", "Jewel rules"), ("waystone", "Waystone rules"),
+               ("relic", "Relic rules"), ("gear", "Gear rules"), ("unique", "Unique rules"))
+
     def rules_cat(self):
-        """Which rules page is showing: 'tablet', 'jewel', 'waystone' or 'relic'."""
+        """Which rules page is showing: 'tablet', 'jewel', 'waystone', 'relic', 'gear' or 'unique'."""
         try:
-            return {2: "jewel", 3: "waystone", 4: "relic"}.get(self.mb_nb.index(self.mb_nb.select()), "tablet")
+            i = self.mb_nb.index(self.mb_nb.select())
+            return self.MB_TABS[i][0] if 0 <= i < len(self.MB_TABS) else "tablet"
         except Exception:
             return "tablet"
 
     def refresh_rules(self, cat=None):
-        for c in ((cat,) if cat else ("tablet", "jewel", "waystone", "relic")):
+        for c in ((cat,) if cat else [c for c, _t in self.MB_TABS]):
             if c in self.rt:
-                self._refresh_rules(c)
+                if c in ("gear", "unique"):
+                    self._refresh_picker_rules(c)
+                else:
+                    self._refresh_rules(c)
 
     def _refresh_scoped_rules(self, cat):
         """2.6.0: the Waystone / Relic rules page - every mod from the game data (regexdata.json, RePoE), one row per
@@ -4080,8 +4088,10 @@ class App(PriceCheckPage, FavoritesPage, BoardModPage, LeaderboardPage, OrderLab
             else:
                 RULES[k] = impact
         save_json("mod_rules.json", RULES)
+        from .ratemods import key_for
         affected = [rid for rid, rec in self.records.items()
-                    if rec.get("mark", "new") == "new" and any(norm(m["text"]) in keys for m in rec["item"]["mods"])]
+                    if rec.get("mark", "new") == "new" and any(norm(m["text"]) in keys or key_for(rec, m) in keys
+                                                               for m in rec["item"]["mods"])]
         self.reprice(affected)
         self.refresh_all()
         self.refresh_rules()
@@ -5208,7 +5218,8 @@ class App(PriceCheckPage, FavoritesPage, BoardModPage, LeaderboardPage, OrderLab
     def card_rate_menu(self, e, rec, m, key, cur):
         from .ratemods import set_of
         s = set_of(rec) or ""
-        what = (rec.get("item") or {}).get("class") if s.startswith("gear:") else \
+        what = (rec.get("item") or {}).get("name") if s.startswith("unique:") else \
+            (rec.get("item") or {}).get("class") if s.startswith("gear:") else \
             {"tablet": "tablet", "jewel": "jewel", "waystone": "waystone", "relic": "relic"}.get(s, "item")
         menu = tk.Menu(self.root, tearoff=0)
         menu.add_command(label=f"Rate this mod for every {str(what).lower()}:", state="disabled")
@@ -5398,8 +5409,13 @@ class App(PriceCheckPage, FavoritesPage, BoardModPage, LeaderboardPage, OrderLab
     def refresh_memory(self, force=False):
         """The 'Mod book' page: everything learned from the listings the app has fetched. Asking prices only - never sale
         prices, and mostly the cheap end."""
-        if not hasattr(self, "mem_frame") or (not force and not self.page_open("Mod book")):
+        if not hasattr(self, "mem_view") or (not force and not self.page_open("Mod book")):
             return
+        cat = self.rules_cat()                         # 2.99.0: the learned rows of the tab showing
+        ns = self.rt.get(cat)
+        if ns is None or not hasattr(ns, "mem_frame"):
+            return
+        self.mem_frame, self.mem_info, self.mem_empty = ns.mem_frame, ns.mem_info, ns.mem_empty
         for w in self.mem_frame.winfo_children():
             w.destroy()
         view = self.mem_view.get()
@@ -5409,27 +5425,31 @@ class App(PriceCheckPage, FavoritesPage, BoardModPage, LeaderboardPage, OrderLab
             t = SIDTEXT.get(sid, sid)
             return re.sub(r"\s+(found )?in map$", "", t)
         if view == "Mod priority":
-            cols = [("base", "Tablet / jewel", 120, "w"), ("mod", "Mod", 420, "w"), ("n", "Listings", 70, "e"),
+            cols = [("base", "Base", 140, "w"), ("mod", "Mod", 420, "w"), ("n", "Listings", 70, "e"),
                     ("med", "Median ask", 100, "e"), ("lift", "Worth vs others", 135, "e"), ("data", "Data says", 110, "w"),
                     ("mine", "Your mark", 90, "w"), ("check", "Check", 330, "w")]
-            data = [r for r in self.priority_rows() if not q or q in (r[0] + " " + nice(r[1])).lower()]
+            data = [r for r in self.priority_rows() if (not q or q in (r[0] + " " + nice(r[1])).lower())
+                    and self.mb_base_ok(r[0], cat)]
             note = "Which mods the data says are valuable, next to your own marks. Rows that need a look come first."
         elif view == "Single mods":
-            cols = [("base", "Tablet / jewel", 120, "w"), ("mod", "Mod", 480, "w"), ("n", "Listings seen", 90, "e"),
+            cols = [("base", "Base", 140, "w"), ("mod", "Mod", 480, "w"), ("n", "Listings seen", 90, "e"),
                     ("lo", "Cheapest ask", 110, "e"), ("med", "Median ask", 110, "e"), ("hi", "Highest ask", 110, "e"),
                     ("age", "Last seen", 90, "e")]
-            data = [r for r in MARKET.mod_summary() if not q or q in (r[0] + " " + nice(r[1])).lower()]
+            data = [r for r in MARKET.mod_summary() if (not q or q in (r[0] + " " + nice(r[1])).lower())
+                    and self.mb_base_ok(r[0], cat)]
             note = "Every mod seen on a fetched listing, and what those listings asked."
         elif view == "Mod combinations":
-            cols = [("base", "Tablet / jewel", 120, "w"), ("mods", "Mods searched together", 560, "w"),
+            cols = [("base", "Base", 140, "w"), ("mods", "Mods searched together", 560, "w"),
                     ("seen", "Searches", 70, "e"), ("best", "Highest cheapest-listing", 150, "e"),
                     ("last", "Latest cheapest", 110, "e"), ("est", "Latest estimate", 110, "e"), ("age", "Last seen", 90, "e")]
-            data = [r for r in MARKET.combos() if not q or q in (r[0] + " " + " ".join(nice(f[0]) for f in r[1])).lower()]
+            data = [r for r in MARKET.combos() if (not q or q in (r[0] + " " + " ".join(nice(f[0]) for f in r[1])).lower())
+                    and self.mb_base_ok(r[0], cat)]
             note = "Every set of mods that was searched together, and the price it came out at."
         else:
             cols = [("star", "★", 46, "center"), ("base", "Base", 140, "w"), ("text", "Mod", 420, "w"),
                     ("floor", "Cheapest with this mod", 160, "e"), ("total", "Listings", 80, "e"), ("age", "Checked", 100, "e")]
-            data = sorted((e for e in MODBOOK.values() if not q or q in (e.get("base", "") + " " + e.get("text", "")).lower()),
+            data = sorted((e for e in MODBOOK.values() if (not q or q in (e.get("base", "") + " " + e.get("text", "")).lower())
+                           and self.mb_base_ok(e.get("base", ""), cat)),
                           key=lambda e: (e.get("floor") is None, -(e.get("floor") or 0)))
             note = ("The old Mod book, kept as it was and no longer updated. Mods it found valuable carry on as learned "
                     "'High' (see Mod priority); this league's own data overrules them.")

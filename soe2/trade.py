@@ -110,6 +110,8 @@ def listing_rules():
     """-> (API status value, API 'listed within' value, max age in hours or None) from the two dropdowns."""
     status = dict(STATUS_OPTIONS).get(SETTINGS.get("status"), "securable")      # unknown -> Instant Buyout
     api_age, hours = next(((a, h) for lab, a, h in AGE_OPTIONS if lab == SETTINGS.get("age")), ("3days", 48))
+    if (current_opts() or {}).get("age_any"):        # 2.99.0: nothing listed lately - this search looks at any age
+        return status, None, None
     return status, api_age, hours
 
 
@@ -165,6 +167,8 @@ def apply_opts(query, item=None, opts=None):
                 flt.pop(group, None)
         else:
             g[key] = val
+    if o.get("age_any"):                       # 2.99.0: the retry with older listings (no "listed within")
+        put("trade_filters", "indexed", None)
     if o.get("status") in dict((v, k) for k, v in STATUS_CHOICES):
         query["status"] = {"option": o["status"]}
     if "currency" in o:

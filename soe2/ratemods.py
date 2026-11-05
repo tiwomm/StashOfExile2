@@ -33,6 +33,8 @@ def set_of(rec):
     cls = str(it.get("class") or "")
     if cls.lower().startswith("relic"):
         return "relic"
+    if it.get("gear") and it.get("rarity") == "Unique" and it.get("name"):     # 2.99.0: a unique has its own rules
+        return "unique:" + str(it["name"]).strip().lower()
     if it.get("gear"):
         return "gear:" + str(it.get("gclass") or cls or "gear").lower()
     base = str(it.get("base") or "")
@@ -47,8 +49,9 @@ def key_for(rec, m):
     k = norm(m["text"])
     if s is None:
         return None
-    if s.startswith("gear:"):
-        return f"{s}:{k}"
+    if s.startswith(("gear:", "unique:")):            # 2.99.0: no leading "+" (the Mod book's Gear / Unique rules)
+        from .gearbook import gkey
+        return f"{s}:{gkey(m['text'])}"
     return rule_key(s, k)
 
 
@@ -87,7 +90,7 @@ def apply(keys, grade):
 def queue(set_name, gear_mods=None):
     """Mods to rate in one set, the ones you haven't rated first: [(keys, text)]."""
     out = []
-    if set_name.startswith("gear:"):
+    if set_name.startswith(("gear:", "unique:")):
         seen = set()
         for k, text in gear_mods or []:
             if k not in seen:

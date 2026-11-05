@@ -447,6 +447,26 @@ def parse_gear(text):
             "ilvl": g.get("ilvl"), "group_id": g.get("group"), "search": search, "notes": notes}
 
 
+def base_ladder(item):
+    """2.99.0: a white / blue base's searches, exact first, each a little wider: [(label, item with that search)].
+    [] for anything else. Exact item level + quality -> item level or higher -> 21%+ quality (still exceptional) ->
+    any quality."""
+    s = item.get("search") or {}
+    if item.get("rarity") not in ("Normal", "Magic") or not s.get("ilvl_max"):
+        return []
+    lv, q = s.get("ilvl_min"), s.get("quality_min")
+
+    def var(**kw):
+        return dict(item, search=dict(s, **kw))
+    out = [(f"item level {lv}" + (f", {q}%+ quality" if q else ""), item),
+           (f"item level {lv}+" + (f", {q}%+ quality" if q else ""), var(ilvl_max=None))]
+    if q and q > 21:
+        out.append((f"item level {lv}+, 21%+ quality (exceptional)", var(ilvl_max=None, quality_min=21)))
+    if q:
+        out.append((f"item level {lv}+, any quality", var(ilvl_max=None, quality_min=None)))
+    return out
+
+
 # ---------------------------------------------------------------- searching
 def _stat_filter(m, value):
     f = {"id": search_sid(m)}

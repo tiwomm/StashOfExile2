@@ -21,6 +21,14 @@ NEXT = [
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.99.0": [
+        "Mod book › Gear rules: every item class (helmets, belts, rings, amulets, weapons ...) with every mod it can "
+        "roll. Rate them S-F: S / A are always searched, F never.",
+        "Mod book › Unique rules: rate a unique's mods and each option - every Mageblood Legacy, for example.",
+        "What the app learned now sits inside each Mod book tab, showing only that tab's mods.",
+        "Price checks: a rare white base widens its search when the exact one finds too few, and when nothing was "
+        "listed recently, older listings are searched once (the card says so).",
+    ],
     "2.98.6": [
         "Expedition remnant prices show again in maps where the app didn't spot the Expedition mark.",
         "The runeshape tips box has Never show again.",
