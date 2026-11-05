@@ -139,6 +139,8 @@ class Toasts:
         self.place()
         w.deiconify()
         no_activate(w)
+        from .motion import fade_in                       # 2.100.0: a short fade in (off with Reduce motion)
+        fade_in(w)
         self._resume(t)
         self._keep_up()
         return t

@@ -478,7 +478,8 @@ def _setup_style(root, TH):
     t = TH.ST.theme
     ns = "%s_%s" % (t.id, C["accent"].lstrip("#"))          # element names: per pack + accent (ttk can't remake one)
     s.configure(".", background=C["bg"], foreground=C["text"], fieldbackground=C["odd"],
-                bordercolor=C["line"], lightcolor=C["bg"], darkcolor=C["bg"], troughcolor=C["odd"])
+                bordercolor=C["line"], lightcolor=C["bg"], darkcolor=C["bg"], troughcolor=C["odd"],
+                focuscolor=C["accent"], focusthickness=1)       # 2.100.0: a visible focus ring (Tab) everywhere
     # ---- list headings: a bevelled face from the pack
     hh = 34
     head = ns + ".Treeheading.face"
@@ -491,7 +492,8 @@ def _setup_style(root, TH):
     s.configure("Treeview.Heading", foreground=TH.text_of(t, "heading", "text", C["text"]),
                 font=("Segoe UI", 9, "bold"), padding=(8, 8))
     sel_fg = t.c("selection_text", "#ffffff")
-    s.map("Treeview", background=[("selected", C["sel"])], foreground=[("selected", sel_fg)])
+    s.map("Treeview", background=[("selected", C["sel"])], foreground=[("selected", sel_fg)],
+          bordercolor=[("focus", C["accent"])])                  # 2.100.0: a list you Tab to shows it
     s.map("Treeview.Heading", foreground=[("active", TH.text_of(t, "heading", "text_hover", t.c("text_strong")))])
     s.configure("TNotebook", background=C["bg"], borderwidth=1, bordercolor=C["line"], lightcolor=C["bg"],
                 darkcolor=C["bg"], tabmargins=(0, 8, 0, 0))
@@ -544,8 +546,9 @@ def _setup_style(root, TH):
             ("Danger.TButton", "danger", [("disabled", "d"), ("pressed", "p"), ("active", "h")])):
         el = "%s.%s.face" % (ns, style_name.split(".")[0] if "." in style_name else "Button")
         TH.make_element(root, s, el, t, spec, bh, states)
-        s.layout(style_name, [(el, {"sticky": "nswe", "children": [("Button.padding", {"sticky": "nswe", "children": [
-            ("Button.label", {"sticky": "nswe"})]})]})])
+        s.layout(style_name, [(el, {"sticky": "nswe", "children": [("Button.focus", {"sticky": "nswe", "children": [
+            ("Button.padding", {"sticky": "nswe", "children": [("Button.label", {"sticky": "nswe"})]})]})]})])
+        s.configure(style_name, focuscolor=C["accent"], focusthickness=1)     # 2.100.0: the focus ring (Tab)
     face = TH.grad_at(t.grad(TH.button_spec(t, "primary")["fill"]), 0.5)
     pri_text = TH.text_of(t, "primary", "text", text_on(face))
     s.configure("TButton", foreground=TH.text_of(t, "normal", "text", C["text"]), padding=(12, 8),
@@ -562,8 +565,8 @@ def _setup_style(root, TH):
     s.map("Danger.TButton", foreground=[("disabled", C["muted"])])
     # 2.34.0 button hierarchy: Primary (one per area), TButton = secondary, Quiet (no bevel), Danger (deletes)
     s.configure("Quiet.TButton", background=C["panel"], foreground=C["steel"], relief="flat", borderwidth=1,
-                bordercolor=C["panel"], lightcolor=C["panel"], darkcolor=C["panel"], focuscolor=C["panel"],
-                padding=(12, 8), font=("Segoe UI", BODY))
+                bordercolor=C["panel"], lightcolor=C["panel"], darkcolor=C["panel"], focuscolor=C["accent"],
+                padding=(12, 8), font=("Segoe UI", BODY), focusthickness=1)
     s.map("Quiet.TButton", background=[("pressed", C["odd"]), ("active", C["panel2"])],
           bordercolor=[("active", C["line"])], lightcolor=[("active", C["panel2"])], darkcolor=[("active", C["panel2"])],
           foreground=[("active", C["text"]), ("disabled", C["muted"])])
@@ -706,9 +709,23 @@ class Tooltip:
             self.win.attributes("-topmost", True)
         except tk.TclError:
             pass
-        tk.Label(self.win, text=self.text, bg=C["panel2"], fg=C["text"], font=("Segoe UI", SMALL), justify="left",
-                 wraplength=420, padx=8, pady=4, highlightthickness=1, highlightbackground=C["line"]).pack()
+        bg, fg, edge = self._colors()                   # 2.100.0: over the game, the overlay's own look
+        tk.Label(self.win, text=self.text, bg=bg, fg=fg, font=("Segoe UI", SMALL), justify="left",
+                 wraplength=420, padx=8, pady=4, highlightthickness=1, highlightbackground=edge).pack()
         place_near(self.w.winfo_toplevel(), self.win, x, y)
+        from .motion import fade_in
+        fade_in(self.win, 1.0)
+
+    def _colors(self):
+        """(bg, fg, edge): the app's colors - or, on a window over the game, the overlay's (its theme and look)."""
+        try:
+            from .overlaywin import OverlayWindow, pal
+            if isinstance(self.w.winfo_toplevel(), OverlayWindow):
+                P = pal()
+                return P["bg"], P["text"], P.get("edge") or P.get("leather") or C["line"]
+        except Exception:
+            pass
+        return C["panel2"], C["text"], C["line"]
 
     def hide(self):
         if self.win is not None:

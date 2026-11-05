@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU GPL v3.0 (see LICENSE). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.99.1
+VERSION 2.100.0
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,6 +19,17 @@ VERSION 2.99.1
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.100.0
+       Polish 6 - hover, focus, motion (the same everywhere; motion.py, installed once at start):
+       - Hover: a list row lights under the mouse (every list - a class binding on Treeview; Tk paints the tag made
+         first, so the row's stripe steps aside while the mouse is on it); a clickable icon or link (a Label with a
+         hand cursor: ✕, ↻, ⋯, Never show again ...) brightens. Buttons already had hover / pressed faces.
+       - Focus: Tab to a button, switch, box or list and it shows a ring in the accent color (Button.focus in the
+         button layouts, focuscolor / focusthickness; a focused list's border).
+       - Motion: tooltips, toasts and windows over the game fade in over ~150 ms (an over-the-game window only the
+         first time it shows, not on every alt-tab); lists never animate. Settings > Appearance > Motion: Reduce motion
+         (until you choose, it follows Windows' "Show animations").
+       - Tooltips on windows over the game use the overlay's colors.
   2.99.1
        Updates (feedback): the hourly look for a new version (the update badge) only ever asked GitHub for full
        releases, so with Preview builds on it never found one - it follows Preview builds now. Every start looks once
@@ -2355,7 +2366,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.99.1"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.100.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 

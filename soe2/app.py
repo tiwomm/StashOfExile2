@@ -136,6 +136,8 @@ class App(GearBookPage, PriceCheckPage, FavoritesPage, BoardModPage, Leaderboard
         setup_style(root)
         from .style import responsive
         responsive(root)                                   # 2.98.0: wrapped labels follow their width
+        from .motion import install as motion_install
+        motion_install(root)                               # 2.100.0: hover on list rows and clickable icons
         self.records, self.next_id = {}, 1
         self.ui_q = queue.Queue()
         _STATUS_HOOK[0] = lambda s: self.ui_q.put(("status", s))
@@ -1496,6 +1498,20 @@ class App(GearBookPage, PriceCheckPage, FavoritesPage, BoardModPage, Leaderboard
         ttk.Spinbox(row, from_=8, to=24, textvariable=self.notes_font_var, width=5,
                     command=self.on_notes_font).pack(side="left", padx=8)
         self.notes_font_var.trace_add("write", lambda *_a: self.root.after(300, self.on_notes_font))
+        row = section("Appearance", "Motion", "Tooltips, notices and windows over the game fade in for a moment. "
+                                              "Reduce motion makes them appear at once. Until you choose, it "
+                                              "follows Windows' own \"Show animations\" setting.")
+        from .motion import reduced
+        self.reduce_motion_var = tk.BooleanVar(value=reduced())
+        ttk.Checkbutton(row, text="Reduce motion", variable=self.reduce_motion_var, style="Card.TCheckbutton",
+                        command=self.on_reduce_motion).pack(side="left")
+
+    def on_reduce_motion(self):
+        """2.100.0: Settings › Appearance › Reduce motion (saved; from then on your choice beats Windows')."""
+        SETTINGS["reduce_motion"] = bool(self.reduce_motion_var.get())
+        save_json("settings.json", SETTINGS)
+        self._say("Saved: " + ("windows appear at once." if SETTINGS["reduce_motion"] else
+                               "tooltips, notices and windows over the game fade in."), 6)
 
     @staticmethod
     def marker_colour():

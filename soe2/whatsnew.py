@@ -21,6 +21,11 @@ NEXT = [
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.100.0": [
+        "List rows light up under the mouse, and clickable icons brighten.",
+        "Press Tab to move around: the focused button, switch or list shows a ring.",
+        "Tooltips and notices fade in for a moment - Settings › Appearance › Reduce motion turns that off.",
+    ],
     "2.99.1": [
         "Updates are checked every time the app starts and every hour - preview builds too, when you've opted in.",
         "Right-click the tray icon › Check for updates.",
