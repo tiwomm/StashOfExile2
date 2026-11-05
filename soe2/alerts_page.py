@@ -223,11 +223,7 @@ class AlertsPage:
                 self.al_rleave = tk.BooleanVar(value=bool(self.ritual_cfg().get("leave_reminder", True)))
                 ttk.Checkbutton(row, text="Remind me when I leave the map", variable=self.al_rleave, style=CB,
                                 command=self.alerts_ritual_leave_changed).pack(side="left", padx=(4, 0))
-            lv = {"focus": getattr(self, "tk_fline_var", None), "campaign": getattr(self, "tk_cline_var", None)}.get(key)
-            if lv is not None:                     # 2.96.1: Focus / Campaign - their line above the bar, here
-                ttk.Checkbutton(row, text="Its line above the bar", variable=lv, style=CB,
-                                command=(lambda v=lv: self.tracker_fline_switch(v)) if key == "focus" else
-                                (lambda v=lv: self.camp_line_switch(v))).pack(side="left", padx=(4, 0))
+            # (2.97.0: no "Its line above the bar" - Focus / Campaign on = its line shows; both on = one bar, two rows)
             bv = (getattr(self, "tk_bar_vars", None) or {}).get(key)
             if bv is not None:                     # 2.96.1: its switch on the bar, here (was a list in On the bar)
                 sb_ = ttk.Checkbutton(row, text="Switch on the bar", variable=bv, style=CB, command=self.tracker_bar_switch)
@@ -298,8 +294,10 @@ class AlertsPage:
             r["note"] = err or ""
         elif key == "focus":                                  # 2.90.0
             self.focus_set_on(bool(want))
+            self._helper_needs_overlay(want, "League Focus")
         elif key == "campaign":
             self.camp_set_on(bool(want))
+            self._helper_needs_overlay(want, "The Campaign Helper")
         else:
             SETTINGS["util_delirium_autostart"] = want       # on = it also starts with the app next time
             save_json("settings.json", SETTINGS)
@@ -310,6 +308,15 @@ class AlertsPage:
         if rows:
             self.alerts_refresh()
         self.alerts_overlay_redraw()
+
+    def _helper_needs_overlay(self, want, name):
+        """2.97.0: Focus and Campaign live on the overlay's bar - switching one on turns the overlay on too."""
+        try:
+            if want and not self.ov_enabled():
+                self.ov_enable(True)
+                self._say(f"{name} shows on the overlay, so the overlay is on now.", 6)
+        except Exception:
+            self.log_error("the overlay")
 
     def alerts_sound(self, key):
         r = self.al_rows[key]

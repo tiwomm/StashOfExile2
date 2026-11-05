@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU GPL v3.0 (see LICENSE). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.96.1
+VERSION 2.97.0
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,6 +19,19 @@ VERSION 2.96.1
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.97.0
+       Polish 4 - a feedback round (and the polish plan: ROADMAP.md › Page passes, Page standard):
+       - Help rate mods? says what it is: pick the items you know best, rate one mod at a time, Done ends it.
+         Count me in! | Not now (asks once more, days later) | Never ask again. It opens in front of the app.
+       - Rate mods starts with "Which items do you know best?" (each set with how many of its mods you haven't
+         rated; Change goes back). Only your rating is lit; Back | Next | Done centered under the tiers; the last
+         mod stays put when rated.
+       - F is the ignore tier wherever tiers show (Rate mods, Mod book tiers and its Tier column, Regex, ▲ / ▼'s
+         Ignore = F); saved as an Ignore rule, so nothing that reads rules changes. A tier on an F mod un-ignores it.
+       - Focus / Campaign: no "Its line above the bar" - on means its line shows; both on = one goal bar with two
+         rows (Panel and Game bar). Switching either on turns the overlay on.
+       - A character past the campaign: its campaign line and Vendor ▾ show again in campaign zones (towns too)
+         and hide in maps / the hideout; the finished run (splits, rewards, route) isn't touched.
   2.96.1
        Overlay ↳ Settings regrouped (feedback: doubles, cut-off text, black boxes behind the helpers' switches):
        - On the bar: one switch per item - Session timer, Map timer, Maps done, Average map time, Map rank: S-D, Map
@@ -2203,7 +2216,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.96.1"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.97.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 

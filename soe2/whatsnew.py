@@ -21,6 +21,12 @@ NEXT = [
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.97.0": [
+        "Rate mods starts by asking which items you know best, and Back / Next / Done sit under the tiers.",
+        "F is the ignore tier, wherever tiers show.",
+        "League Focus and the Campaign Helper: switch one on and its line shows on the overlay (both on: one bar). "
+        "Past the campaign, its line and Vendor ▾ come back when you visit a campaign zone.",
+    ],
     "2.96.1": [
         "Overlay ↳ Settings is tidier: one switch per item on the bar, each helper's options on its own row, and "
         "Options for how the overlay behaves.",

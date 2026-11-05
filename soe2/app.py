@@ -33,7 +33,7 @@ from .mods import (
     auto_impact, COMMUNITY, COMMUNITY_ACTIVE, COMMUNITY_DISAGREE, default_impact, impact_key, IMPACT_LABEL,
     IMPACTS, JEWEL_KINDS, JEWELS, LEARNED, learned_info, mod_cat, norm, parse_item, pretty, rebuild_community,
     RULES, SHARE_MAX_HIGH, SIDTEXT, TAB_KINDS, TABS, TEXT2SID, vfilter, rule_key, SCOPED_CATS, migrate_scoped_rules,
-    default_tier, scoped, tier_key, TIER_ORDER, TIERS,
+    default_tier, scoped, tier_key, TIER_ORDER, TIERS, SHOWN_TIERS, TIER_F, F_TIP,
 )
 from .mods import DUPS, find_stat, current_key
 from .trade import ago, mod_impact, CURRENCY_CHOICES, STATUS_CHOICES
@@ -3673,11 +3673,14 @@ class App(PriceCheckPage, FavoritesPage, BoardModPage, LeaderboardPage, OrderLab
             tbar = tk.Frame(tab, bg=C["panel"], padx=8)
             tbar.pack(fill="x")
             tk.Label(tbar, text="Tier for selected:", bg=C["panel"], fg=C["muted"]).pack(side="left", padx=(0, 8))
-            for t in TIER_ORDER:
-                ttk.Button(tbar, text=t, width=3, command=lambda t=t: self.tiers_selected(t)).pack(side="left", padx=(0, 4))
+            for t in SHOWN_TIERS:                   # 2.97.0: F = ignore
+                tb_ = ttk.Button(tbar, text=t, width=3, command=lambda t=t: self.tiers_selected(t))
+                tb_.pack(side="left", padx=(0, 4))
+                if t == TIER_F:
+                    Tooltip(tb_, F_TIP)
             ttk.Button(tbar, text="Auto", command=lambda: self.tiers_selected(None), style="Quiet.TButton").pack(side="left", padx=(4, 0))
-            tk.Label(tbar, text="S matters most, D least. When no listing has all of an item's mods, the D-tier mods "
-                                "are left out first, then C. Not set: High = A, Normal = C.",
+            tk.Label(tbar, text="S matters most, D least, F = ignore. When no listing has all of an item's mods, the "
+                                "D-tier mods are left out first, then C. Not set: High = A, Normal = C.",
                      bg=C["panel"], fg=C["muted"], font=("Segoe UI", 9)).pack(side="left", padx=12)
         for imp in ("ignore", "normal", "high"):
             ttk.Button(rbar, text=IMPACT_LABEL[imp], command=lambda i=imp: self.rules_selected(i)).pack(side="right", padx=(8, 0))
@@ -3833,7 +3836,7 @@ class App(PriceCheckPage, FavoritesPage, BoardModPage, LeaderboardPage, OrderLab
             else:
                 learned = ""
             t = tier_key(k)
-            tier = (t + ("" if k in TIERS else " (auto)")) if t else ""
+            tier = (t + ("" if k in TIERS else " (auto)")) if t else (TIER_F if imp == "ignore" else "")   # 2.97.0
             ns.tv.insert("", "end", iid=iid, values=(IMPACT_LABEL[imp], tier, learned, "/".join(sorted(kd)) if len(kd) == 1 else ("Both" if kd else ""), text, on),
                                  tags=(imp,) if imp != "normal" else ())
             if k in keep:
@@ -4013,6 +4016,11 @@ class App(PriceCheckPage, FavoritesPage, BoardModPage, LeaderboardPage, OrderLab
             keys |= set(k if isinstance(k, list) else [k] if k else [])
         if not keys:
             return self._say("Select mods first (Ctrl+A for all, Shift / Ctrl + click), then pick a tier.", 8)
+        if tier == TIER_F:                                # 2.97.0: F is the ignore tier - an Ignore rule
+            return self.set_rules(sorted(keys), "ignore")
+        back = sorted(k for k in keys if impact_key(k) == "ignore")
+        if back:                                          # a tier on an F mod: it's searched again
+            self.set_rules(back, "normal")
         for k in keys:
             if tier is None or tier == default_tier(k):
                 TIERS.pop(k, None)

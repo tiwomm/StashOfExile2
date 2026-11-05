@@ -268,7 +268,7 @@ NO_GOAL = "No goal yet - click to set one in Game Plan"
 def line_text(worth=None):
     """The overlay's focus line: "NOW  <goal>" (+ progress), or "" when there is nothing to show."""
     f = cfg()
-    if not (f["on"] and f["line"]):
+    if not f["on"]:                                    # 2.97.0: on = its line shows (no line switch)
         return "", None
     g = current()
     if not g:

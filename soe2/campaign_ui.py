@@ -54,7 +54,8 @@ class CampaignUI:
             self._camp_later = set()                               # a new town: "Remind me in town" asks again
             self.camp_ask_show()                                   # in town: the rewards to answer
         if out == "maps" and CP.cfg()["off_at_maps"]:
-            self._say("Maps! The Campaign Helper turns itself off (Overlay › Options › Campaign).", 6)
+            self._say("Maps! The campaign line hides in maps and comes back in campaign zones (Overlay › Settings › "
+                      "Campaign).", 6)
         if out or CP.line_text() != before:
             self.camp_refresh()
         if CP.needs_route() and getattr(self, "camp_rq_win", None) is None:
@@ -131,7 +132,7 @@ class CampaignUI:
         return bool(d) and (d["in_town"] or bool(getattr(self, "_camp_town", False)))
 
     def camp_on_bar(self):
-        return bool(CP.cfg()["line"]) and CP.active()
+        return CP.active()                                  # 2.97.0: on = its line shows (no line switch)
 
     def camp_set_on(self, on):
         CP.cfg()["on"] = bool(on)
@@ -171,6 +172,9 @@ class CampaignUI:
         right = rgt
         # (2.92.2: Vendor ▾ moved to the bar's menus, beside Notes / Calc / Regex)
         info = "   ".join(t for t in (d["levels"], d["step"]) if t)
+        fi = tkfont.Font(root=cv, family=P["font"], size=self._hf(9))
+        if info and fi.measure(info) + 14 > (rgt - x) * 0.45:      # 2.97.0: narrow (Panel) - the step only, or none
+            info = d["step"] if d["step"] and fi.measure(d["step"]) + 14 <= (rgt - x) * 0.45 else ""
         if info:
             cv.create_text(right, mid, text=info, anchor="e", fill=P["muted"], font=(P["font"], self._hf(9)),
                            tags=("mg", "campinfo"))
@@ -567,7 +571,7 @@ class CampaignUI:
         opts = (("ask_route", "Ask Speedrun or Full rewards when a campaign starts"),   # 2.89.0
                 ("optional", "Optional zones"), ("tips", "Tips (bosses, vendor checks)"),
                 ("warn", "Missing rewards - warn when I leave an act"),
-                ("off_at_maps", "Turn itself off once I reach maps"))
+                ("off_at_maps", "Hide it in maps (back in campaign zones)"))
         # (2.96.1: no Act timer switch - act times are always kept; the Leaderboards get them only if you share data)
         for i, (k, label) in enumerate(opts):
             v = tk.BooleanVar(value=bool(c[k]))

@@ -31,7 +31,7 @@ SHORT_GIVES = {"points": "+{n} points", "spirit": "+{n} spirit", "res_cold": "+{
                "res_lightning": "+{n}% lightning", "life": "+{n} life", "mana": "+{n}% mana"}
 DEFAULTS = {
     "on": True,                   # the feature (Overlay › Options › On the overlay, and the Campaign switch on the bar)
-    "line": True,                 # its line on the goal bar
+    "line": True,                 # its line on the goal bar (2.97.0: always - on means it shows)
     "vendor": True,               # Vendor search, in town
     "route": "full",              # the default guide (2.89.0: each character's run keeps its own, run["route"])
     "ask_route": True,            # 2.89.0: a new campaign asks Speedrun or Full rewards
@@ -183,7 +183,7 @@ def char(name=None):
         run["league"] = SETTINGS.get("league") or ""
     for k, v in (("act", None), ("zone", None), ("here", None), ("seen", {}), ("levels", {}), ("rewards", {}),
                  ("ask", []), ("secs", {}), ("last_ts", None), ("afk", False), ("done", False), ("zone_level", 0),
-                 ("pending", None), ("unknown", None)):
+                 ("pending", None), ("unknown", None), ("visit", False)):
         run.setdefault(k, copy.deepcopy(v))
     return run
 
@@ -407,6 +407,7 @@ def log_event(kind, ts, data, area_kind=None):
         aid = data.get("area", "")
         ak = act_of_id(aid)
         if area_kind == "map":
+            run["visit"] = False
             _tick(run, ts)
             if not run["done"]:
                 run["done"] = True
@@ -416,6 +417,7 @@ def log_event(kind, ts, data, area_kind=None):
                 return "maps"
             return out
         if ak is None:
+            run["visit"] = False                                  # 2.97.0: left the campaign zones
             _tick(run, ts)
             run["last_ts"] = ts                                   # (a hideout: time there isn't the act's)
             return out
@@ -443,6 +445,12 @@ def _enter(run, name, area_id, level, ts, id_act=None):
     key = key or id_act or act_of_id(area_id)
     if key is None:
         return None
+    if run.get("done"):                                       # 2.97.0: back in a campaign zone after maps - the line
+        run["visit"] = True                                   # (and Vendor ▾) show here; the finished run is kept
+        run["act"], run["zone"], run["here"], run["zone_level"] = key, name, None, int(level or 0)
+        run["unknown"] = None
+        save()
+        return "zone"
     out = "zone"
     prev = run.get("act")
     if prev is not None and prev != key and act_order(key) > act_order(prev):
@@ -480,7 +488,8 @@ def active(run=None):
     if not run.get("done") and run.get("act") is not None and char_level() >= MAPS_LEVEL:
         run["done"] = True              # 2.90.0: maps were reached while the log wasn't being read (it showed in the
                                         # hideout, post-campaign)
-    return bool(c["on"]) and run.get("act") is not None and not (run.get("done") and c["off_at_maps"])
+    return bool(c["on"]) and run.get("act") is not None and not (run.get("done") and c["off_at_maps"]
+                                                                 and not run.get("visit"))
 
 
 def line(run=None):
