@@ -18,7 +18,8 @@ _class_by_text = {}    # "body armours" -> class id
 _fallback = [None]     # 1.40: the window plugs in a lookup on the trade site's own stat list (for lines not in gamedata)
 LEARNED_FILE = "learned_stats.json"     # wordings learned that way, kept between sessions
 # lines that describe the whole item, not a mod
-FLAG_LINES = {"Corrupted": "corrupted", "Unidentified": "unidentified", "Mirrored": "mirrored", "Split": "split",
+FLAG_LINES = {"Corrupted": "corrupted", "Twice Corrupted": "corrupted",       # 2.98.2: Vaal'd twice
+              "Unidentified": "unidentified", "Mirrored": "mirrored", "Split": "split",
               "Fractured Item": "fractured", "Synthesised Item": "synthesised", "Sanctified": "sanctified",
               "Unmodifiable": "unmodifiable"}
 SOURCES = ("fractured", "desecrated", "crafted")
@@ -174,6 +175,7 @@ PROP_RE = {
     "ilvl": re.compile(r"^Item Level:\s*(\d+)"),
     "stack": re.compile(r"^Stack Size:\s*([\d,.\s]+)(?:/\s*([\d,.\s]+))?"),
 }
+CORRUPTION_HEADER = re.compile(r"^\{\s*Corruption Enhancement\b[^}]*\}\s*$", re.I)
 MOD_HEADER = re.compile(r'^\{\s*(?P<kind>[A-Za-z ]+?)\s+Modifier(?:\s+"(?P<name>[^"]*)")?(?:\s*\(Tier:\s*(?P<tier>\d+)\))?')
 
 
@@ -260,6 +262,8 @@ def read_item(text):
                 item["sockets"], item["socket_types"] = len(letters), "".join(letters).upper()   # S = socket, J = jewel
             if l in FLAG_LINES and FLAG_LINES[l] not in item["flags"]:
                 item["flags"].append(FLAG_LINES[l])
+            if l == "Twice Corrupted" and "twice_corrupted" not in item["flags"]:
+                item["flags"].append("twice_corrupted")
             if l.startswith("Item Level:"):
                 mods_from = i + 1
     item["corrupted"] = "corrupted" in item["flags"]
@@ -274,6 +278,9 @@ def read_item(text):
             continue
         kind, tier, mname, source = None, None, None, None
         for l in sec:
+            if CORRUPTION_HEADER.match(l):                    # 2.98.2: "{ Corruption Enhancement — Mana }" - what a
+                kind, tier, mname, source = "enchant", None, None, None      # Vaal Orb added (an enchantment)
+                continue
             h = MOD_HEADER.match(l)
             if h:                                             # advanced copy: "{ Fractured Suffix Modifier "of X" (Tier: 1) }"
                 words = h.group("kind").strip().lower().split()

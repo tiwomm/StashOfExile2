@@ -234,6 +234,8 @@ def parse_gear(text):
             tr = stat["trade"]
             grp = "explicit" if kind in AFFIX_KINDS else gm["kind"]
             ids = list(tr.get(grp) or tr.get("explicit") or next(iter(tr.values()), []))
+            if kind == "Enchant" and not tr.get("enchant"):  # 2.98.2: a corruption enchantment - the trade site's
+                ids = ["enchant." + i.split(".", 1)[1] for i in ids if "." in i] or ids  # own id (same number)
             if gm.get("source") and kind in AFFIX_KINDS:     # a fractured / desecrated / crafted mod: listed either way
                 ids += [i for i in tr.get(gm["source"], []) if i not in ids]
         m = {"text": clean, "shown": re.sub(r"\(-?\d+(?:\.\d+)?-+\d+(?:\.\d+)?\)", "", strip_markup(clean)),
@@ -259,10 +261,15 @@ def parse_gear(text):
             m.update(option=opt, novalue=True)
         if not stat and not m["sid"]:
             m["note"] = m["note"] or "not found in the library or on the trade site's stat list"
-        if kind not in AFFIX_KINDS:
+        if kind == "Enchant" and g.get("corrupted") and m["sid"]:    # 2.98.2 (feedback): a corrupted item's
+            m["auto"] = "high"                                       # enchantment is what the corruption gave it -
+            m["note"] = "corruption enchantment - searched"          # listings must have it too
+        elif kind not in AFFIX_KINDS:
             m["covered"] = {"Implicit": "implicit: comes with the base", "Rune": "socketed rune: can be swapped",
                             "Enchant": "enchant"}.get(kind, kind.lower())
-        if unique and not m["covered"] and m.get("option") is not None:      # 2.74.1: which one it has sets the price
+        if kind == "Enchant" and m.get("auto") == "high":
+            pass                                             # (2.98.2: the corruption enchantment, searched above)
+        elif unique and not m["covered"] and m.get("option") is not None:    # 2.74.1: which one it has sets the price
             m["auto"] = "high"
             m["note"] = "which one it has decides the price - searched"
         elif unique and not m["covered"]:                    # 2.72.0: uniques by roll
@@ -358,6 +365,13 @@ def parse_gear(text):
     if need and g.get("sockets", 0) >= need and not g.get("corrupted"):
         search["sockets_min"] = g["sockets"]
         notes.append(f"exceptional: {g['sockets']} sockets")
+    elif g.get("corrupted") and g.get("sockets"):           # 2.98.2 (feedback): a corrupted item can't get more
+        search["sockets_min"] = g["sockets"]                 # sockets - the ones it has are part of what it is
+        notes.append(f"corrupted with {g['sockets']} socket{'s' if g['sockets'] != 1 else ''}: searched at least that")
+    if g.get("corrupted"):
+        ench = [m for m in mods if m["kind"] == "Enchant" and m.get("auto") == "high"]
+        notes.append("corrupted" + (": " + ", ".join(m["shown"] for m in ench) if ench else "") + " - only corrupted "
+                     "listings are compared")
     if q > 20:
         notes.append(f"exceptional: {q}% quality")
     return {"class": cinfo.get("name") or g.get("class_text") or "Gear", "gear": True, "gclass": cls,
