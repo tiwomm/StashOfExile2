@@ -21,15 +21,18 @@ NEXT = [
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.103.3": [
+        "Price Checks: a tick or a star changes only that mod's row - the card is no longer built again.",
+        "Waystones: a tier range (or an unticked tier) now searches every waystone in that range.",
+    ],
     "2.103.2": [
-        "Price Checks: ticking a mod no longer redraws the listings (no flicker).",
-        "Waystones: a Waystone tier row - widen the tier range or untick it for any tier.",
+        "Price Checks: ticking a mod no longer redraws the listings.",
+        "Waystones: a Waystone tier row (a range searches only from 2.103.3).",
         "Buttons in toolbars have their spacing back.",
     ],
     "2.103.1": [
         "Bulk Pricing: the filters, Export CSV and Clear list are back where they were.",
         "Waystones: type a Min / Max on any mod on the card to search on it.",
-        "Ticking a mod on Price Checks no longer flickers.",
     ],
     "2.103.0": [
         "Price Checks: when nothing matched, it says why and offers Search again or Search with fewer mods.",

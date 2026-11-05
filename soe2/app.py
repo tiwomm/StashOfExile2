@@ -3630,6 +3630,8 @@ class App(GearBookPage, PriceCheckPage, FavoritesPage, BoardModPage, Leaderboard
         if rec.get("src") in ("pc", "fav"):
             rec["changed"] = True
             self.dirty = True
+            if getattr(self, "_card_quiet", False):       # 2.103.3: the row is painted in place
+                return None
             if rec.get("src") == "pc" and rec["id"] == getattr(self, "pc_rid", None):
                 return self.pc_show(rec, card_only=True)    # 2.103.2: the listings stay (they flickered)
             return self.refresh_detail_if_selected(rec["id"])
@@ -4828,6 +4830,7 @@ class App(GearBookPage, PriceCheckPage, FavoritesPage, BoardModPage, Leaderboard
         self.card_rows, self.card_vals, self.card_opts, self.card_tris = {}, {}, {}, {}
         self.card_onlys = {}
         self.card_thumbs = {}
+        self.card_paint = {}
         with _th.raw():
             bg = C["odd"]
             cv.create_rectangle(0, 0, w - 1, 199, fill=bg, outline=t.c(t.part("card", "border", default="border_light")),
@@ -5178,7 +5181,7 @@ class App(GearBookPage, PriceCheckPage, FavoritesPage, BoardModPage, Leaderboard
         from . import themes as _th2                         # unticked: its own color, dimmed (not grey)
         shown_c = colr if on and can else (_th2.mix(colr, C["odd"], .5) if can else C["muted"])
         tid = cv.create_text(tx, y, text=text, anchor="nw", font=font, width=w - tx - 12 - right, justify="left",
-                             fill=shown_c, tags=("cardmod", tag))
+                             fill=shown_c, tags=("cardmod", tag, f"cardtxt{idx}"))
         bb = cv.bbox(tid)
         y1 = (bb[3] if bb else y + 16) + 4
         if not can:                                          # not on the trade site: nothing to tick
@@ -5189,7 +5192,9 @@ class App(GearBookPage, PriceCheckPage, FavoritesPage, BoardModPage, Leaderboard
         rect = cv.create_rectangle(bx, by, bx + box, by + box, outline=C["muted"] if can else C["line"],
                                    fill=C["accent"] if on and can else C["odd"], tags=("cardbox", tag))
         if on and can:
-            cv.create_line(bx + 3, by + 7, bx + 6, by + 10, bx + 11, by + 4, fill="#120a04", width=2, tags=(tag,))
+            cv.create_line(bx + 3, by + 7, bx + 6, by + 10, bx + 11, by + 4, fill="#120a04", width=2,
+                           tags=(tag, f"cardchk{idx}"))
+        self.card_paint[idx] = {"cv": cv, "rec": rec, "colr": colr, "can": can, "bx": bx, "by": by, "tag": tag}
         fl = m.get("flags") or ()
         src = next((x for x in ("fractured", "desecrated") if x in fl or str(m.get("sid") or "").startswith(x + ".")),
                    None)
@@ -5219,10 +5224,10 @@ class App(GearBookPage, PriceCheckPage, FavoritesPage, BoardModPage, Leaderboard
             star = cv.create_text(w - 14, y + 1, text="★" if imp == "high" else "☆", anchor="ne",
                                   font=("Segoe UI", 10), fill=C["good"] if imp == "high" else C["muted"],
                                   tags=(f"cardstar{idx}",))
-            cv.tag_bind(star, "<Button-1>", lambda e, mm=m, cur=imp: self.set_item_impact(
-                rec, mm, "normal" if cur == "high" else "high"))
+            cv.tag_bind(star, "<Button-1>", lambda e, mm=m: self.card_set(      # 2.103.3: painted in place
+                rec, mm, "normal" if mod_impact(rec, mm) == "high" else "high"))
         if can:
-            cv.tag_bind(tag, "<Button-1>", lambda e, mm=m, v=on: self.card_toggle(rec, mm, not v))
+            cv.tag_bind(tag, "<Button-1>", lambda e, mm=m: self.card_toggle(rec, mm, mod_impact(rec, mm) == "ignore"))
             cv.tag_bind(tag, "<Enter>", lambda e: cv.configure(cursor="hand2"))
             cv.tag_bind(tag, "<Leave>", lambda e: cv.configure(cursor=""))
         if rkey:
@@ -5367,9 +5372,62 @@ class App(GearBookPage, PriceCheckPage, FavoritesPage, BoardModPage, Leaderboard
 
     def card_toggle(self, rec, m, checked):
         """2.74.4: a tick on the card - the same as the mod's switch further down (this item only)."""
-        self.toggle_mod(rec, m, checked)
+        g = impact_key(norm(m["text"]))
+        if self.card_set(rec, m, ("normal" if g == "ignore" else g) if checked else "ignore"):
+            return
         if getattr(self, "shown_rec", None) is rec:
             self.show_detail(rec)
+
+    def _card_row_of(self, rec, m):
+        if rec.get("src") != "pc" or rec["id"] != getattr(self, "pc_rid", None):
+            return None
+        return next((i for i, (mm, _on, _r) in (getattr(self, "card_rows", {}) or {}).items()
+                     if mm is m and i in getattr(self, "card_paint", {})), None)
+
+    def card_set(self, rec, m, imp):
+        """2.103.3 (feedback: every tick still flickered - the whole card was built again): on Price Checks a tick or
+        a star changes only that row on the card, in place. -> True when done that way."""
+        idx = self._card_row_of(rec, m)
+        if idx is None:
+            self.set_item_impact(rec, m, imp)
+            return False
+        self._card_quiet = True
+        try:
+            self.set_item_impact(rec, m, imp)
+        finally:
+            self._card_quiet = False
+        self._card_row_paint(idx)
+        return True
+
+    def _card_row_paint(self, idx):
+        from . import themes as _th2
+        p = self.card_paint[idx]
+        cv, rec, m, can = p["cv"], p["rec"], self.card_rows[idx][0], p["can"]
+        imp = mod_impact(rec, m)
+        on = imp != "ignore"
+        try:
+            cv.itemconfigure(f"cardtxt{idx}", fill=p["colr"] if on and can else
+                             (_th2.mix(p["colr"], C["odd"], .5) if can else C["muted"]))
+            rect = self.card_rows[idx][2]
+            cv.itemconfigure(rect, fill=C["accent"] if on and can else C["odd"])
+            cv.delete(f"cardchk{idx}")
+            if on and can:
+                bx, by = p["bx"], p["by"]
+                cv.create_line(bx + 3, by + 7, bx + 6, by + 10, bx + 11, by + 4, fill="#120a04", width=2,
+                               tags=(p["tag"], f"cardchk{idx}"))
+            cv.itemconfigure(f"cardstar{idx}", text="★" if imp == "high" else "☆",
+                             fill=C["good"] if imp == "high" else C["muted"])
+            for e in (self.card_vals.get(id(m)) or {}).values():
+                e.config(state="normal" if on and can else "disabled")
+        except tk.TclError:
+            return
+        self.card_rows[idx] = (m, on, rect)
+        btn = getattr(self, "pc_search_btn", None)
+        if btn is not None:
+            try:
+                btn.config(text="Search  •  filters changed" if rec.get("changed") else "Search")
+            except tk.TclError:
+                pass
 
     def _detail_how(self, d, rec, wrap):
         """2.60.0: How it's priced - what was searched, why this confidence, each search."""
