@@ -179,6 +179,12 @@ def apply_opts(query, item=None, opts=None):
     if o.get("corrupted") in ("any", "yes", "no"):
         put("misc_filters", "corrupted", None if o["corrupted"] == "any" else
             {"option": "true" if o["corrupted"] == "yes" else "false"})
+    wt = re.match(r"Waystone \(Tier (\d+)\)$", str(query.get("type") or ""))
+    if wt and "tier" in o:                     # 2.103.3 (feedback): the base name holds the tier, so a range other
+        t, tv = int(wt.group(1)), o["tier"]    # than its own searches every waystone (the trade site's way)
+        if not (isinstance(tv, dict) and tv.get("min") == t and tv.get("max") == t):
+            query.pop("type", None)
+            put("type_filters", "category", {"option": "map.waystone"})
     for key, group, name in NUM_OPTS:          # 2.79.0: a number (at least) or {"min", "max"}
         if key in o:
             v = o[key]
