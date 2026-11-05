@@ -39,14 +39,15 @@ class RumoursPage:
             self.ru_stop()
 
     def rm_zone_ok(self):
-        """The Remnant watcher looks only where remnants can be: not in a hideout, town or the campaign; in a map
-        only once the Expedition mark under MAP CONTENT was seen (rm_mark_check); a Grand Expedition always."""
+        """The Remnant watcher looks only where remnants can be: not in a hideout, town or the campaign.
+        2.98.6 (feedback: the helper stopped working): maps always - a map whose Expedition mark wasn't seen is
+        "unsure" (rm_unsure) and needs a fuller book before tags show; 2.83.0 skipped such maps altogether, and the
+        mark is easy to miss (UI scale, the map overlay, a hidden panel)."""
         z = getattr(self, "rm_zone", None)
-        if z in ("hideout", "town", "other"):
-            return False
-        if z == "map":
-            return bool(getattr(self, "rm_map_exp", False))
-        return True
+        return z not in ("hideout", "town", "other")
+
+    def rm_unsure(self):
+        return getattr(self, "rm_zone", None) == "map" and not getattr(self, "rm_map_exp", False)
 
     def rm_mark_check(self, rect):
         """In a map until the mark is seen: a look at the right edge every few seconds (cheap). Thread-side."""

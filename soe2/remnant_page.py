@@ -109,6 +109,18 @@ class RemnantPage:
             self.rm_auto_sig = None
             self.ev_remnant_auto(self.rm_rect, list(self.rm_kept.values()))
 
+    def remnant_tips_never(self):
+        """2.98.6: the tips box's "Never show again" - off for good (only its switch turns it back on)."""
+        self.remnant_tips_changed(False)
+        for w in list(getattr(self, "rm_win", None) or []):
+            if getattr(w, "rm_tips", False):
+                try:
+                    w.destroy()
+                except tk.TclError:
+                    pass
+                self.rm_win.remove(w)
+        self._say("Runeshape tips are off. Overlay › Settings › Helpers › Expedition › Runeshape tips turns them back on.", 8)
+
     def remnant_auto_changed(self, on):
         self.remnant_cfg()["auto"] = bool(on)
         save_json("settings.json", SETTINGS)
@@ -151,7 +163,8 @@ class RemnantPage:
                 rect = (g[0], g[1], g[0] + g[2], g[1] + g[3])
                 self.rm_mark_check(rect)              # 2.83.0: in a map, is there an Expedition?
                 if not self.rm_zone_ok():
-                    continue                          # not in hideouts / towns / campaign; maps only with Expedition
+                    continue                          # not in hideouts / towns / campaign
+                unsure = self.rm_unsure()             # 2.98.6: a map whose Expedition mark wasn't seen (yet)
                 ar = RM.area_rect(area, rect)
                 try:
                     img = RM.grab(ar)
@@ -175,6 +188,10 @@ class RemnantPage:
                 except Exception:
                     continue
                 misses = 0                       # 2.43.0: the book is still open - a read with fewer rows (the
+                if rows and unsure:              # 2.98.6: mark not seen - a real book lists several rewards; once
+                    if len(rows) < RM.UNSURE_ROWS:   # one is read, this map has an Expedition
+                        continue
+                    self.rm_map_exp = True
                 if rows:                         # game's tooltip over a reward) never takes tags away; only the
                     self.ui_q.put(("remnant_auto", rect, rows))      # book closing does
                     settle = min(settle, 1)      # (found them: one more read to catch the rest of the list)
@@ -448,6 +465,11 @@ class RemnantPage:
         tk.Label(box, text=f"S-A: players' picks · B-D: grouped by effect ({RM.RUNE_TIPS_UPDATED})", bg=BG,
                  fg=MUT,
                  font=("Segoe UI", small), anchor="w").pack(fill="x", pady=(2, 0))
+        never = tk.Label(box, text="Never show again", bg=BG, fg=MUT, cursor="hand2",      # 2.98.6 (feedback)
+                         font=("Segoe UI", small, "underline"), anchor="e")
+        never.pack(fill="x", pady=(4, 0))
+        never.bind("<Button-1>", lambda _e: self.remnant_tips_never())
+        w.rm_never = never
         w.update_idletasks()
         if P.get("texture") and skinned():                    # 2.56.2: the parchment shows round the lines
             from .overlaywin import texture
@@ -466,9 +488,10 @@ class RemnantPage:
         w.geometry(f"+{int(x)}+{int(y)}")
         w.deiconify()
         try:
-            from .alerts_page import click_through, force_topmost
-            click_through(w)
-            force_topmost(w)
+            from .alerts_page import force_topmost
+            from .toasts import no_activate
+            no_activate(w)                                    # 2.98.6: clickable (Never show again), but it never
+            force_topmost(w)                                  # takes the keyboard from the game
         except Exception:
             pass
         no_capture(w)

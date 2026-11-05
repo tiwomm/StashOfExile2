@@ -21,6 +21,10 @@ NEXT = [
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.98.6": [
+        "Expedition remnant prices show again in maps where the app didn't spot the Expedition mark.",
+        "The runeshape tips box has Never show again.",
+    ],
     "2.98.5": [
         "Game Plan › Stockpile: pick from the list, or type any item in the name box (it narrows the list too).",
         "Map supplies: Omen of Amelioration pokes you once you're back from a map where the game used it up.",
