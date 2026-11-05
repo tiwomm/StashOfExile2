@@ -484,6 +484,10 @@ class OverlayWindow(tk.Toplevel):
             self.attributes("-topmost", True)
         except tk.TclError:
             pass
+        if not getattr(self, "_faded", False):          # 2.100.0: fades in the first time it shows (not on every
+            self._faded = True                          # alt-tab back to the game); off with Reduce motion
+            from .motion import fade_in
+            fade_in(self)
         if sys.platform != "win32":
             return
         try:
