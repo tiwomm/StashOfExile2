@@ -182,7 +182,7 @@ class OverlayParts:
             return
         try:
             main = getattr(self, "mg_win", None)
-            if main is not None and abs(main.winfo_width() - w.winfo_width()) > 1 and \
+            if main is not None and not self.ov_light() and abs(main.winfo_width() - w.winfo_width()) > 1 and \
                     not getattr(self, "_gb_rebuilding", False):        # 2.85.2: the bar changed width - match it
                 self._gb_rebuilding = True
                 try:
@@ -203,6 +203,8 @@ class OverlayParts:
         try:
             main.update_idletasks()
             mx, my, mw, mh = main.winfo_x(), main.winfo_y(), main.winfo_width(), main.winfo_height()
+            if self.ov_light():                               # 2.101.0: round both halves of the Flanks bar
+                mx, my, mw, mh = self._mg_bounds()
             if mw <= 1:
                 raise tk.TclError
         except (tk.TclError, AttributeError):
@@ -232,11 +234,18 @@ class OverlayParts:
         cfg = self.tracker_cfg()
         layout = self.merged_layout()
         hud = layout == "xpbar"
-        P = hudart.palette(pal()) if hud else hudart.card_palette(pal())
+        light = self.ov_light()                               # 2.101.0: drawn in the light look's style
+        if light:
+            from .ovlight import palette as light_palette
+            P = light_palette(self.ov_look(), self.ov_look_colors())
+        else:
+            P = hudart.palette(pal()) if hud else hudart.card_palette(pal())
         _seed(TH, P)
         try:
             main.update_idletasks()
             mw, mh = main.winfo_width(), main.winfo_height()
+            if light:
+                _x, _y, mw, mh = self._mg_bounds()
         except tk.TclError:
             mw, mh = 600, 60
         mw = mw if mw > 1 else 600
@@ -259,12 +268,22 @@ class OverlayParts:
                           on_lock=lambda on: self.overlay_lock(on), on_moved=moved, follow_game=True,
                           no_activate=True, resizable=False, titlebar=False, palette=P)
         w.withdraw()
+        if light and P.get("boxless"):
+            from .ovlight import KEY
+            try:
+                w.attributes("-transparentcolor", KEY)
+            except tk.TclError:
+                pass
         cv = w.canvas_body()
         W, H = gw - 2, gh - 2
         cv.configure(width=W, height=H)
         if not cfg.get("mlocked") and not self.goalbar_docked():     # docked: it moves with the bar
             w.draggable(cv)
-        if hud:
+        if light:                                             # 2.101.0: no artwork - the box (or none) and a rule
+            lft, rgt = self._u(12), W - self._u(12)
+            if P.get("boxless"):
+                cv.create_line(lft, H - 2, rgt, H - 2, fill=P["accent"], tags=("mg",))
+        elif hud:
             ends, self._hud_ends = getattr(self, "_hud_ends", None), ("amber", "amber")
             from . import hudart as _ha                       # 2.85.2: the same end caps as the bar under it
             lft, rgt = self._hud_frame(cv, P, W, H, cap=_ha.cap_width(mh - 2) if self.goalbar_docked() else None)
@@ -280,6 +299,8 @@ class OverlayParts:
         self.gb_rows = rows
         if "campaign" in rows:
             self.camp_draw_row(cv, P, lft, rgt, mids[rows.index("campaign")], f)
+            if light:
+                self._lt_halo_tags(cv, P, ("camp",))
             if len(rows) > 1:
                 y = (mids[0] + mids[1]) // 2
                 cv.create_line(lft, y, rgt, y, fill=P["line"], tags=("mg",))

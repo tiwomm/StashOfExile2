@@ -21,6 +21,11 @@ NEXT = [
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.101.0": [
+        "New overlay styles: Settings › Appearance › Overlay settings › Style - Hairline, Slate, Flanks and Micro "
+        "are light, plain looks (no box for Hairline and Flanks); Classic is the stone-and-bronze look you know.",
+        "Each comes as a Game bar or a Panel (Layout), in ten colour sets or your app theme's (Colours).",
+    ],
     "2.100.0": [
         "List rows light up under the mouse, and clickable icons brighten.",
         "Press Tab to move around: the focused button, switch or list shows a ring.",

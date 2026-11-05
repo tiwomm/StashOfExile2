@@ -327,6 +327,7 @@ class MergedOverlay:
         if layout in LAYOUTS:
             if layout != cfg.get("layout"):                 # 2.66.0: a Game bar layout picked again starts fitted
                 (cfg.get("hud_pos") or {}).pop(layout, None)
+                cfg.pop("lt_pos", None)                      # 2.101.0: the light looks' bars too
             cfg["layout"] = layout
         self.tracker_save()
         self.mg_timer = timer
@@ -427,6 +428,8 @@ class MergedOverlay:
         self.mg_built = dict(want)
         if not any(want.values()):
             return None
+        if self.ov_light():                                 # 2.101.0: Hairline, Slate, Flanks or Micro (ovlight.py)
+            return self._mg_light_build(want)
         if self.merged_layout() in HUD:                     # 2.65.0
             return self._mg_hud_build(want)
         from . import hudart, themes as TH
@@ -515,7 +518,7 @@ class MergedOverlay:
 
     # ---------------------------------------------------------------- pieces
     def _mg_halo(self, P):
-        return P.get("halo") if P.get("texture") else None
+        return P.get("halo") if (P.get("texture") or P.get("boxless")) else None     # 2.101.0: box-less looks
 
     def _hud_map_part(self, cv, P, x0, x1, y, font, show_map=True, show_where=True, show_rank=True):
         """2.90.0: the map's time and where you are, as one centered text between x0 and x1. The area's name is shown
