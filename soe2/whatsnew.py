@@ -24,6 +24,9 @@ NOTES = {
     "2.103.3": [
         "Price Checks: a tick or a star changes only that mod's row - the card is no longer built again.",
         "Waystones: a tier range (or an unticked tier) now searches every waystone in that range.",
+        "Favorites: same - a tick changes only its row, and the listings stay put.",
+        "Favorites: Add trade link asks what to call the bookmark.",
+        "Price Checks and Favorites show the \"Staying under the trade site's limits\" line, like Bulk Pricing.",
     ],
     "2.103.2": [
         "Price Checks: ticking a mod no longer redraws the listings.",

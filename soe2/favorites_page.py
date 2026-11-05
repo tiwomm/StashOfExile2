@@ -66,6 +66,7 @@ class FavoritesPage:
                                 bg=P1, fg=C["muted"], anchor="w", justify="left", padx=12)
         self.fav_msg.pack(fill="x")
         wrap = tk.Frame(body, bg=P2)
+        self.limit_banner(body, wrap)                     # 2.103.3 (feedback): the "Staying under the limits" line
         wrap.pack(fill="both", expand=True, pady=(8, 0))
         # ---- your favorites
         lf = tk.Frame(wrap, bg=P1, width=340)
@@ -118,7 +119,8 @@ class FavoritesPage:
         self.favv = PCView(left, lcanvas, lst, rcanvas, count, ob)
         self.favv.rid = None
         self.favv.redraw = lambda: self.fav_show()
-        self.favv.recard = lambda: self.fav_show()
+        self.favv.recard = lambda: self.fav_show(card_only=True)
+        self.favv.search_btn = None
         self.pcv_fit(self.favv, wrap, mid)                  # 2.97.0: scale to fit
         self.fav_fill()
         self.fav_show()
@@ -253,10 +255,14 @@ class FavoritesPage:
     def ev_fav_link_read(self, url, info, err, group):
         if err:
             return self.fav_say(err, C["red"])
-        f = self.favs().add_link(url, info, group=group or "")
+        name = simpledialog.askstring("Name this bookmark", "Name:", initialvalue=FV.link_name(info["query"]),
+                                      parent=self.root)     # 2.103.3 (feedback): a name when it's added
+        if name is None:
+            return self.fav_say("Not added.")
+        f = self.favs().add_link(url, info, name=name.strip() or None, group=group or "")
         self.fav_link_var.set("")
         self.fav_changed([f["id"]])
-        self.fav_say(f"Added \"{f['name']}\". Rename it with F2 or right-click.", C["green"])
+        self.fav_say(f"Added \"{f['name']}\".", C["green"])
         self.fav_pick(f["id"])
 
     def fav_new_group(self):
@@ -566,15 +572,33 @@ class FavoritesPage:
         self.dirty = True
         return self.records[rid]
 
-    def fav_show(self, first=False):
-        """Draw the selected favorite (first: it was just picked - search it if it hasn't been this session)."""
+    def fav_show(self, first=False, card_only=False):
+        """Draw the selected favorite (first: it was just picked - search it if it hasn't been this session).
+        2.103.3 (feedback: every action flickered): the card is built out of sight and swapped in at once, and
+        card_only keeps the listings as they are."""
         v = getattr(self, "favv", None)
         if v is None:
             return
         f = self.favs().get(self.fav_sel) if self.fav_sel else None
-        for w in v.left.winfo_children():
-            w.destroy()
+        keep = card_only and f is not None and f.get("kind") == "item" and v.rid is not None
+        real, old = v.left, list(v.left.winfo_children())
+        top = v.lcanvas.yview()[0] if keep else 0
+        holder = tk.Frame(real, bg=C["panel2"])
+        v.left = holder
+        try:
+            self._fav_show_into(v, f, first, keep)
+        finally:
+            v.left = real
+            for w in old:
+                w.destroy()
+            holder.pack(fill="both", expand=True)
+            v.lcanvas.update_idletasks()
+            v.lcanvas.yview_moveto(top)
+
+    def _fav_show_into(self, v, f, first, keep):
+        rid0 = v.rid
         v.rid = None
+        v.search_btn = None
         if f is None:
             n = len(self._fav_ids()) if hasattr(self, "fav_tv") else 0
             tk.Label(v.left, text=f"{n} favorites selected" if n > 1 else "Pick a favorite on the left.",
@@ -585,9 +609,10 @@ class FavoritesPage:
         if f.get("kind") == "item":
             rec = self.fav_rec(f)
             v.rid = rec["id"]
-            self.pcv_card(v, rec)
+            _card, v.search_btn = self.pcv_card(v, rec)
             self._fav_note(v, f)
-            self.pcv_list(v, rec)
+            if not (keep and rid0 == rec["id"]):
+                self.pcv_list(v, rec)
             if first and not rec.get("fav_searched"):
                 rec["fav_searched"] = True
                 self.reprice([rec["id"]])
@@ -614,8 +639,9 @@ class FavoritesPage:
             tk.Label(v.left, text=f["note"], bg=C["panel2"], fg=C["muted"], font=("Segoe UI", 9, "italic"),
                      anchor="w", justify="left", wraplength=330).pack(fill="x", pady=(8, 0))
 
-    def fav_rec_changed(self, rec):
-        """Price Checks' card machinery changed an item favorite (a filter, a search): keep it, redraw it."""
+    def fav_rec_changed(self, rec, redraw=True, card_only=False):
+        """Price Checks' card machinery changed an item favorite (a filter, a search): keep it, redraw it.
+        2.103.3: redraw=False - a tick painted in place; card_only - the listings stay."""
         f = self.favs().get(rec.get("fav"))
         if f is not None:
             f["item"], f["opts"] = FV.pack_item(rec["item"]), copy.deepcopy(rec.get("opts") or {})
@@ -624,8 +650,8 @@ class FavoritesPage:
                 self.fav_store_last(f, rec)
             self._fav_save_soon()
         v = getattr(self, "favv", None)
-        if v is not None and v.rid == rec["id"]:
-            self.fav_show()
+        if redraw and v is not None and v.rid == rec["id"]:
+            self.fav_show(card_only=card_only)
 
     def fav_store_last(self, f, rec):
         from .pricefmt import fmt_div, fmt_price

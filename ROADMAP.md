@@ -173,7 +173,7 @@ Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds f
 | 2.97.0 | Polish 4 - feedback round: the Rate mods ask says what it is (Count me in! / Not now / Never ask again) and opens in front; Rate mods starts with "Which items do you know best?", lights only your rating, Back / Next / Done under it; F is the ignore tier everywhere tiers show (saved as Ignore); Focus / Campaign on = their line shows (no line switch; both on = one bar, two rows, in Panel and Game bar), switching one on turns the overlay on; a finished character's campaign line and Vendor ▾ come back in campaign zones; Price Checks: Rate ▾ replaces ▲ / ▼, the card and listings fit the window (scrollbar only when needed), Fractured only ticks the mod. |
 | 2.97.1 | Price Checks card: a rune's line and an affix with the same wording are ticked apart; runes in their own AUGMENTS section (no RUNE / SOCKETED lines); Fractured / Desecrated only small, right under its mod, the mod in its color. |
 | 2.97.2 | Price Checks card - visual hierarchy: a mod's color says where it comes from (affix blue, rune light blue, fractured tan, desecrated green, pseudo pink; unticked = dimmed, not grey), the listing cards match; every section folds with how many are ticked, Fold all / Unfold all. |
-| 2.103.3 | P1 feedback 3: a tick repaints only its row (the card was still built again - it flickered); a waystone tier range searches every waystone (category + map_tier). |
+| 2.103.3 | P1 feedback 3: a tick repaints only its row on Price Checks and Favorites (the card was still built again - it flickered); Favorites keeps its listings on a card change; a waystone tier range searches every waystone (category + map_tier); Add trade link asks for a name; the "Staying under the limits" line on Price Checks and Favorites. |
 | 2.103.2 | P1 feedback 2: a tick no longer redraws the listings (still flickered); Waystone tier row (range / any); "+" mod wordings found on the trade list; toolbar rows keep their gaps again. |
 | 2.103.1 | P1 feedback: Bulk Pricing filters, Export CSV and Clear list back where they were; row actions light at once; no flicker on a tick; waystone mods take a typed Min / Max; long mods keep clear of Rate ▾. |
 | 2.103.0 | Polish 7 P1 - Price Checks and Bulk Pricing: a check that finds nothing says why (Search again / Search with fewer mods); Bulk Pricing filters behind Filters ▾, Export CSV and Clear list in ⋯, row actions lit only with rows picked, a Status column (Priced / Review / Pricing), "0 div"; one font in the status bar. |
@@ -217,8 +217,9 @@ Most-used first; pages that share data go together so their doubles can be merge
 |---|---|
 | P1 | Price Checks (list, item card, Bulk Pricing, Search) |
 | P2 | Price Checks' children: Favorites, Checks, Market Insights |
+| P2.5 | **Controls refresh** (feedback: "the buttons feel amateur, the UI a bit generic"): one app-wide pass on the controls themselves, in style.py, so every later pass gets them - buttons (shape, depth, hover / press, icon + text), toggle switches, entries, dropdowns, check boxes, tabs, headings. Mockup first (2-3 directions per theme), you pick, then build. |
 | P3 | Wealth - and remove the public stash tabs from Wealth (Stash tabs page, Sync stash tabs, the odd-price setup, synced items, every step / chip / help line about it): Scan stash replaces it. Price Checks › Add items from: Stash tab stays (it still has a use there). |
-| P4 | Overlay hub, Overlay › Settings, the bar itself (Panel and Game bar), helpers' pop-ups |
+| P4 | Overlay hub, Overlay › Settings, the bar itself (Panel and Game bar), helpers' pop-ups - remove the "In game: Pause / resume Pause" line at the top of the Overlay page; Overlay Enabled / Disabled becomes a toggle switch. |
 | P5 | Overlay's children: Game Plan, Map library, Leaderboards |
 | P6 | Money Makers (Strats, Lucrative Strats, Tablet Craft Helper, Farm Tracker, strat editor) |
 | P7 | Regex, Game search |

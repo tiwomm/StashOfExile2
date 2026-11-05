@@ -27,6 +27,11 @@ VERSION HISTORY
        - Waystones: the tier range did nothing - the search was for the base "Waystone (Tier 15)", which holds the
          tier. A range other than its own (or an unticked tier) now searches category map.waystone with map_tier, as
          the trade site does.
+       - Favorites flickered the same way, on every action: a tick or a star is painted in place there too; other
+         card changes build the card out of sight and swap it in, and keep the listings. Each view keeps its own card
+         rows (Price Checks and Favorites shared them).
+       - Favorites: Add trade link asks for the bookmark's name (Cancel = not added).
+       - Price Checks and Favorites show Bulk Pricing's "Staying under the trade site's limits" line.
   2.103.2
        P1 feedback, round 2:
        - Price Checks: a tick (or a typed Min / Max) redraws only the card - the listings beside it stay put (redrawing

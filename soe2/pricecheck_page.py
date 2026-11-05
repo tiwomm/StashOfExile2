@@ -194,6 +194,7 @@ class PriceCheckPage:
         self._pc_art_cache, self._pc_art_wait = {}, set()
         P2 = C["panel2"]
         wrap = tk.Frame(body, bg=P2)
+        self.limit_banner(body, wrap)                # 2.103.3: the "Staying under the limits" line
         wrap.pack(fill="both", expand=True)
         # ---- left: the item card (scrolls)
         left = tk.Frame(wrap, bg=P2, width=380)
@@ -446,6 +447,7 @@ class PriceCheckPage:
         top = v.lcanvas.yview()[0] if same else 0
         v.shown_rid = rec["id"]
         self._detail_card(v.left, rec, rec["item"], wrap)
+        v.card_rows, v.card_paint, v.card_vals = self.card_rows, self.card_paint, self.card_vals   # 2.103.3: per view
         card = self.detail_card
         btns = tk.Frame(v.left, bg=P2)
         btns.pack(fill="x", pady=(8, 0))
