@@ -14,7 +14,8 @@ GROUPS = (("module", "Modules"), ("tool", "Tools"), ("utility", "In game"))
 
 class Sidebar(tk.Canvas):
     def __init__(self, shell, parent):
-        super().__init__(parent, width=WIDE, highlightthickness=0, bd=0, bg=C["panel2"])
+        from .style import px
+        super().__init__(parent, width=px(WIDE), highlightthickness=0, bd=0, bg=C["panel2"])
         self.shell = shell
         self.hover, self.compact, self._rows = None, False, []
         self.folded = set()                    # 2.65.0: open tools folded shut by a click
@@ -77,7 +78,8 @@ class Sidebar(tk.Canvas):
     def set_compact(self, on):
         if on != self.compact:
             self.compact = on
-            self.configure(width=NARROW if on else WIDE)
+            from .style import px
+            self.configure(width=px(NARROW if on else WIDE))
             self.redraw()
 
     # ---- mouse
@@ -141,6 +143,10 @@ class Sidebar(tk.Canvas):
             TH.texture(self, t, nav["texture"], 0, 0, w, h, bg,
                        glow=t.c(nav["texture_color"]) if nav.get("texture_color") else None)
         self.create_line(w - 1, 0, w - 1, h, fill=C["line"])
+        from .style import TEXT_K, scale_drawing          # 2.98.2: the rows are drawn at 100 % and grown to the
+        k = TEXT_K[0]                                     # text size (fonts already are), so nothing overlaps
+        self.addtag_all("sb_bg")
+        w, h = int(w / k), int(h / k)
         acc = t.c(nav.get("marker_color", "accent")) if nav.get("marker_color") else C["accent"]
         sel_bg = t.c(nav.get("sel_bg", "selection"))
         hov_bg = t.c(nav.get("hover_bg", "surface_high"))
@@ -222,6 +228,10 @@ class Sidebar(tk.Canvas):
                     self.create_text(x1 - 6, cy, text="BETA", anchor="e", font=("Segoe UI", 7, "bold"), fill=acc)
             self._rows.append((k, y0, y1))
             y = y1 + 2
+        self.addtag_all("sb_rows")
+        self.dtag("sb_bg", "sb_rows")
+        kk = scale_drawing(self, "sb_rows")
+        self._rows = [(r, a * kk, b * kk) for r, a, b in self._rows]
 
     def update_tag(self):
         """2.74.2: the newer version the quiet check found (feedback_page), or None."""

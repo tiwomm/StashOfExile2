@@ -1054,6 +1054,104 @@ def _accent(accent):
     return ACCENTS.get(accent, (None, None))[1]
 
 
+TEXT_K = [1.0]           # 2.98.2: the text size (Settings › Appearance) as a factor - px() grows layouts with it
+
+
+def px(n):
+    """2.98.2: a size in pixels at this text size (100 % = n). For layouts drawn by hand, so they grow with the text."""
+    return int(round(n * TEXT_K[0]))
+
+
+def scale_drawing(cv, tag="all"):
+    """2.98.2: a canvas drawn at 100 % sizes -> grown to the text size in one go (text already is: Tk scales fonts)."""
+    k = TEXT_K[0]
+    if abs(k - 1.0) > 0.01:
+        cv.scale(tag, 0, 0, k, k)
+    return k
+
+
+class Scaled:
+    """2.98.2: a canvas drawn in 100 % units, shown at the text size. Every coordinate and size given to it is
+    multiplied by k, every one read back (bbox, coords) divided by it - so a hand-drawn layout (the item card, the
+    listing cards) grows with the text that Tk already scales. Anything else goes straight to the canvas."""
+
+    def __init__(self, cv, k):
+        self._cv, self._k = cv, k
+
+    def __getattr__(self, name):
+        return getattr(self._cv, name)
+
+    def _flat(self, args):
+        out = []
+        for a in args:
+            if isinstance(a, (list, tuple)):
+                out.extend(self._flat(a))
+            else:
+                out.append(a)
+        return out
+
+    def _sc(self, args):
+        return [a * self._k if isinstance(a, (int, float)) and not isinstance(a, bool) else a for a in self._flat(args)]
+
+    def _kw(self, kw, keys=("width", "height")):
+        for key in keys:
+            if isinstance(kw.get(key), (int, float)) and not isinstance(kw.get(key), bool):
+                kw[key] = kw[key] * self._k
+        return kw
+
+    def _make(self, kind, args, kw):
+        return getattr(self._cv, "create_" + kind)(*self._sc(args), **self._kw(dict(kw)))
+
+    def create_line(self, *a, **kw):
+        return self._make("line", a, kw)
+
+    def create_rectangle(self, *a, **kw):
+        return self._make("rectangle", a, kw)
+
+    def create_oval(self, *a, **kw):
+        return self._make("oval", a, kw)
+
+    def create_polygon(self, *a, **kw):
+        return self._make("polygon", a, kw)
+
+    def create_text(self, *a, **kw):
+        return self._make("text", a, kw)
+
+    def create_image(self, *a, **kw):
+        return self._make("image", a, kw)
+
+    def create_window(self, *a, **kw):
+        return self._make("window", a, kw)
+
+    def coords(self, tag, *a):
+        if a:
+            return self._cv.coords(tag, *self._sc(a))
+        return [c / self._k for c in self._cv.coords(tag)]
+
+    def bbox(self, *a):
+        r = self._cv.bbox(*a)
+        return tuple(int(round(v / self._k)) for v in r) if r else r
+
+    def move(self, tag, dx, dy):
+        return self._cv.move(tag, dx * self._k, dy * self._k)
+
+    def configure(self, cnf=None, **kw):
+        return self._cv.configure(cnf, **self._kw(dict(kw)))
+
+    config = configure
+
+    def itemconfigure(self, tag, cnf=None, **kw):
+        return self._cv.itemconfigure(tag, cnf, **self._kw(dict(kw), ("width",)))
+
+    itemconfig = itemconfigure
+
+
+def scaled_canvas(cv):
+    """The canvas itself at 100 %, else a Scaled view of it."""
+    k = TEXT_K[0]
+    return cv if abs(k - 1.0) < 0.01 else Scaled(cv, k)
+
+
 def apply_look(theme=None, accent=THEME_ACCENT, scale=100, root=None):
     """Call once at start-up, before any window is built. relook() swaps it later, live."""
     import tkinter.ttk as _ttk
@@ -1101,6 +1199,7 @@ def apply_look(theme=None, accent=THEME_ACCENT, scale=100, root=None):
         try:
             base = float(root.tk.call("tk", "scaling"))
             root.tk.call("tk", "scaling", base * scale / 100)
+            TEXT_K[0] = scale / 100
         except Exception:
             pass
     return _themes.ST.theme
