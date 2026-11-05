@@ -403,8 +403,22 @@ class PriceCheckPage:
     def pc_show(self, rec):
         if not hasattr(self, "pc_left"):
             return
-        for w in self.pc_left.winfo_children():
+        old = list(self.pc_left.winfo_children())
+        if rec is not None and old:                      # 2.103.1 (feedback: a tick made the card flicker): the new
+            return self._pc_show_swap(rec, old)          # card is built beside the old one, then swapped in
+        for w in old:
             w.destroy()
+        self._pc_show_into(rec)
+
+    def _pc_show_swap(self, rec, old):
+        holder = tk.Frame(self.pc_left, bg=C["panel2"])
+        self.pcv.left = holder
+        try:
+            self._pc_show_into(rec, swap=(holder, old))
+        finally:
+            self.pcv.left = self.pc_left
+
+    def _pc_show_into(self, rec, swap=None):
         self.pc_rid = rec["id"] if rec else None
         self.pc_open_btn, self.pc_fav_btn = self.pc_open_btn0, self.pc_fav_btn0     # (until a card makes its own)
         self.pcv.open_btn = self.pc_open_btn
@@ -416,11 +430,12 @@ class PriceCheckPage:
                      bg=P2, fg=C["muted"], font=("Segoe UI", 10), justify="left", anchor="nw").pack(fill="x", pady=12)
             self.pc_draw_list(None)
             return
-        self.pc_card, self.pc_search_btn = self.pcv_card(self.pcv, rec)
+        self.pc_card, self.pc_search_btn = self.pcv_card(self.pcv, rec, swap=swap)
         self.pc_draw_list(rec)
 
-    def pcv_card(self, v, rec):
-        """The item card with every filter and the Search button, into a view's left side."""
+    def pcv_card(self, v, rec, swap=None):
+        """The item card with every filter and the Search button, into a view's left side. swap = (new holder, old
+        widgets): built into the holder, then the old ones go and the holder shows - in one go (no flicker)."""
         P2, wrap = C["panel2"], self.pcv_wrap(v)
         same = getattr(v, "shown_rid", None) == rec["id"]        # 2.88.2: a tick on the same card keeps the scroll
         top = v.lcanvas.yview()[0] if same else 0
@@ -446,6 +461,11 @@ class PriceCheckPage:
         if note:
             tk.Label(v.left, text=note[0], bg=P2, fg=note[1], font=("Segoe UI", 9), anchor="w", justify="left",
                      wraplength=wrap).pack(fill="x", pady=(8, 0))
+        if swap:
+            holder, old = swap
+            for w in old:
+                w.destroy()
+            holder.pack(fill="both", expand=True)
         v.lcanvas.update_idletasks()
         v.lcanvas.yview_moveto(top)
         return card, btn

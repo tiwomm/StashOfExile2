@@ -317,12 +317,12 @@ def vfilter(mod):
     2.79.1: a stat with a choice carries its option in the id (search_sid), no value."""
     if mod.get("option") is not None:
         return None
-    if mod.get("novalue"):
-        return None
     uv = mod.get("uval")
-    if uv is not None:
+    if uv is not None and (mod.get("typed_only") or not mod.get("novalue")):     # 2.103.1: a range you typed
         out = {k: v for k, v in uv.items() if k in ("min", "max") and v is not None}
         return out or None
+    if mod.get("novalue"):
+        return None
     t = min_for(mod)
     if t is None:
         return None
