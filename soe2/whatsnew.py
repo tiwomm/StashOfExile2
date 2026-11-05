@@ -21,6 +21,11 @@ NEXT = [
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.97.1": [
+        "Price Checks: socketed runes have their own Augments section, and a rune's line no longer ticks an affix "
+        "with the same wording.",
+        "Fractured only / Desecrated only sits right under its mod, small, and the mod shows in its color.",
+    ],
     "2.97.0": [
         "Rate mods starts by asking which items you know best, and Back / Next / Done sit under the tiers.",
         "F is the ignore tier, wherever tiers show.",

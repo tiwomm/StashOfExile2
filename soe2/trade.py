@@ -75,9 +75,18 @@ def uses_filter(table, is_tablet, own_uses):
     return [{"id": sid, "value": {"min": n}}], f" · {n}+ uses"
 
 
+def ov_key(mod):
+    """2.97.1 (feedback: ticking the fractured lightning res ticked the rune's too): the name a tick on THIS item is
+    saved under - the wording, plus where the line comes from when it isn't an affix (a rune's "+18% to Lightning
+    Resistance" and a fractured "+37% to Lightning Resistance" are different lines)."""
+    k = norm(mod["text"])
+    kind = str(mod.get("kind") or "")
+    return f"{kind.lower()}:{k}" if kind in ("Rune", "Implicit", "Enchant") else k
+
+
 def mod_impact(rec, mod):
     """What this mod counts for on THIS item: your tick/star on the item first, else the global rule."""
-    ov = (rec.get("ov") or {}).get(norm(mod["text"]))
+    ov = (rec.get("ov") or {}).get(ov_key(mod))
     if ov in IMPACTS:
         return ov
     if mod.get("covered"):                  # gear (1.41): already counted in a total, or an implicit / rune

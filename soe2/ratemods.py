@@ -40,9 +40,9 @@ def set_of(rec):
 
 
 def key_for(rec, m):
-    """The rule a ▲ / ▼ on this mod sets, or None (totals, pseudo totals and lines with no trade id can't be rated)."""
-    if m.get("kind") == "Total" or m.get("group") in ("total", "pseudo") or not m.get("text"):
-        return None
+    """The rule Rate ▾ on this mod sets, or None (totals, pseudo totals and lines with no trade id can't be rated)."""
+    if m.get("kind") in ("Total", "Rune") or m.get("group") in ("total", "pseudo") or not m.get("text"):
+        return None                     # (2.97.1: a socketed rune isn't rated - it shares an affix's wording)
     s = set_of(rec)
     k = norm(m["text"])
     if s is None:
