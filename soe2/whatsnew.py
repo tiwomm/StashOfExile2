@@ -21,6 +21,10 @@ NEXT = [
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.98.1": [
+        "Trade Whisper Watcher: at league start, a card over the game when someone whispers to buy an item you "
+        "listed (Overlay › Settings › Helpers › Trade whispers). On during the campaign; it can stay on after.",
+    ],
     "2.98.0": [
         "Narrow windows: button rows wrap and text re-wraps instead of being cut off; Overlay settings switches "
         "fall into fewer columns.",
