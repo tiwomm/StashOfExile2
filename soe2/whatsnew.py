@@ -21,6 +21,11 @@ NEXT = [
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.98.3": [
+        "Dialogs open over the app, on its monitor.",
+        "Settings: Fine tuning is under Price checking; the every-hour rates switch is on the Exchange rates page.",
+        "About › Credits: everyone we thank, with a link to their GitHub page.",
+    ],
     "2.98.2": [
         "Corrupted uniques (and other corrupted gear) are priced as corrupted: Twice Corrupted counts, and the "
         "corruption enhancement and the sockets it has are searched.",
