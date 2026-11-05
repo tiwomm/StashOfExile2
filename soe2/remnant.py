@@ -257,20 +257,12 @@ _TESS_LANGS = None
 
 
 def grab_wayland(rect):
-    """Wayland + grim: (left, top, right, bottom) -> PIL image, else None (then mss)."""
-    if not os.environ.get("WAYLAND_DISPLAY") or not shutil.which("grim"):
+    """Wayland + grim: (left, top, right, bottom) -> PIL image, else None (then mss). See screengrab."""
+    from .screengrab import grim_image, use_grim
+    if not use_grim():
         return None
-    from io import BytesIO
-    from PIL import Image
     l_, t, r, b = (int(v) for v in rect)
-    w, h = max(1, r - l_), max(1, b - t)
-    try:
-        out = subprocess.run(["grim", "-s", "1", "-t", "ppm", "-g", f"{l_},{t} {w}x{h}", "-"],
-                             capture_output=True, timeout=5, check=True).stdout
-        img = Image.open(BytesIO(out)).convert("RGB")
-    except Exception:
-        return None
-    return img if img.size == (w, h) else img.resize((w, h))
+    return grim_image(l_, t, r - l_, b - t)
 
 
 def _tess_langs():

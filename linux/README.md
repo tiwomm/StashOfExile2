@@ -22,16 +22,15 @@ StashOfExile2's releases are Windows-only. Since 2.10.0 the code has a start on 
 | Build script | `build_linux.sh` | tested by a player on Arch + Hyprland, Python 3.12+, for every release 2.20 - 2.101.0: a venv with `pyinstaller requests pillow pystray`, Tk with Xft, `PATH` pointing at the venv -> a ~136 MB onefile `dist/StashOfExile2` that runs on Hyprland |
 | Desk windows, the What's new card and the Toolkit menu inside the app's window (InDesk: they move, hide and change workspace with the app; `SOE2_REAL_WINDOWS=1` turns it off) | `soe2/shell.py` | tested by a player in daily use on Hyprland (as their own patch, 2.20 - 2.101.0) |
 | Screen text (OCR) for the Expedition Remnant Price Checker, Island Rumours and Well of Souls: Tesseract instead of Windows' OCR, the picture from `grim` on Wayland (`mss` on X11). Needs `tesseract` + English data and `grim` installed | `soe2/remnant.py` (`ocr_linux`, `grab_wayland`) | written, tested here on drawn game-style pictures only - not in the game yet |
+| Screen pictures for the Delirium and Ritual watchers and Wealth › Scan stash: `grim` on Wayland, `mss` on X11; Delirium / Ritual find the game window through Hyprland | `soe2/screengrab.py`, `soe2/delirium_alert.py` | written, tested here with a stand-in `grim` only - not in the game yet |
 
 ## Still Windows-only
 
 - Global hotkeys and Ctrl+Alt+C detection (`winsys.KeyWatch`, a Windows keyboard hook). Plan: a Hyprland `bindn` pass-through bind that writes to a local socket the app listens on, plus `wl-paste --watch` for the clipboard.
 - Chat command keys (`SendInput`). Plan: `wtype`.
-- Delirium alert screen reads (`mss`). Plan: `grim -g "x,y wxh"` with the rect from `linsys.game_rect()`.
 - `winsound` beeps (fall back to the Tk bell).
 - The Remnant key (Ctrl+Alt+R) needs the Windows key hook - on Linux use the Remnant's Auto mode.
 - Leaving our own tags out of screen pictures (`WDA_EXCLUDEFROMCAPTURE`) is Windows-only: on Linux an OCR read can also see the app's tags if they sit inside the read area.
-- Wealth › Scan stash (2.102.0) reads the screen with `mss` - untested on Linux; under Wayland it likely needs `grim` like the Delirium reads.
 
 ## Known issues
 
@@ -67,7 +66,7 @@ Emoji and symbol fonts (`Segoe UI Emoji` → `Noto Color Emoji`, `Segoe UI Symbo
 #   Arch: sudo pacman -S tesseract tesseract-data-eng grim
 #   Debian/Ubuntu: sudo apt install tesseract-ocr tesseract-ocr-eng grim
 python3 -m venv .venv && . .venv/bin/activate
-pip install requests pillow pystray numpy mss
+pip install requests pillow pystray numpy mss opencv-python-headless
 python stashofexile2.py
 ```
 

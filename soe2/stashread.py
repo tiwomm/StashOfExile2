@@ -226,9 +226,9 @@ def read_tab(bgr, game_h, want):
 def grab_bgr(rect):
     """(l, t, r, b) of the game -> a BGR picture (numpy), kept in memory only."""
     cv2, np = _np()
-    import mss
+    from .screengrab import screen
     l_, t, r, b = rect
-    with mss.mss() as sct:
+    with screen() as sct:                         # mss; Wayland: grim (2.103.0 linux branch)
         shot = sct.grab({"left": int(l_), "top": int(t), "width": int(r - l_), "height": int(b - t)})
         a = np.asarray(shot)                       # BGRA
     return np.ascontiguousarray(a[..., :3])

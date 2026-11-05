@@ -371,6 +371,10 @@ def make_dpi_aware():
 def find_game_rect():
     """(width, height, left, top) of the PoE2 window's game area in screen pixels,
     or None if it isn't open / is minimised. Only looks at window title & position."""
+    if sys.platform.startswith("linux"):         # Hyprland (2.103.0 linux branch); None elsewhere -> main screen
+        from .linsys import game_rect
+        g = game_rect(CONFIG["game_window_title"])
+        return (g[2], g[3], g[0], g[1]) if g and g[2] > 0 and g[3] > 0 else None
     if sys.platform != "win32":
         return None
     import ctypes
@@ -699,8 +703,8 @@ def run(debug=False, test_alert=False):
     make_dpi_aware()
     load_settings()
     import tkinter as tk
-    import mss
-    sct = mss.MSS() if hasattr(mss, "MSS") else mss.mss()
+    from .screengrab import screen
+    sct = screen()                              # mss; Wayland: grim (2.103.0 linux branch)
 
     def primary():
         m = next((m for m in sct.monitors[1:] if m["left"] == 0 and m["top"] == 0), sct.monitors[1])

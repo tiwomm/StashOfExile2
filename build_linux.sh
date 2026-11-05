@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Linux build (UNTESTED groundwork, 2.10.0). The official releases are Windows-only; see linux/README.md.
-# Needs: python3 with Tk built with Xft (fonts), pip install pyinstaller requests pillow pystray numpy mss
-# OCR (Remnant / Rumours / Well of Souls) runs the system's tesseract (+ English data); Wayland pictures use grim.
+# Needs: python3 with Tk built with Xft (fonts), pip install pyinstaller requests pillow pystray numpy mss opencv-python-headless
+# OCR (Remnant / Rumours / Well of Souls) runs the system's tesseract (+ English data); on Wayland every screen
+# picture (OCR, Delirium, Ritual, Scan stash) uses grim (soe2/screengrab.py).
 # Neither is bundled - install them with the package manager (linux/README.md).
 set -euo pipefail
 cd "$(dirname "$0")"

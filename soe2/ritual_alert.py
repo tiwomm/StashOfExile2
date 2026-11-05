@@ -257,8 +257,8 @@ def main(argv):
     threading.Thread(target=read_stdin, daemon=True).start()
     try:
         import cv2
-        import mss
         import numpy as np
+        from .screengrab import screen
         from . import delirium_alert as D
         D.make_dpi_aware()
         base = getattr(sys, "_MEIPASS", None)
@@ -274,7 +274,7 @@ def main(argv):
     say("state watching")
     last, pending, shown, state = None, None, None, "watching"
     rect_seen, best_log = None, 0.0
-    with mss.mss() as sct:
+    with screen() as sct:                         # mss; Wayland: grim (2.103.0 linux branch)
         while True:
             while cmds:
                 c = cmds.pop(0)
