@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU GPL v3.0 (see LICENSE). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.101.0
+VERSION 2.102.0
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,6 +19,21 @@ VERSION 2.101.0
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.102.0
+       Wealth > Scan stash (beta, may not work): count currency by looking at the open stash tab instead of Ctrl+C
+       on every stack (stashread.py, stashlayouts.py, stashscan_page.py). A card over the game asks for one tab at a
+       time - Open your Currency tab > Start reading - then Abyss, Delirium and Breach (Catalysts page); Skip tab and
+       Finish at any time. One picture per read, kept in memory and dropped; the card is left out of it.
+       - The panel: each known tab's slot frames, drawn as boxes, matched against the picture's edges (left 60% of
+         the game, worked at ~720 px high); the best tab wins - the wrong tab open says which one it looks like.
+       - A slot is filled when its dark-blue backing shows; its number is read from digit shapes (white with a black
+         outline) matched along the top edge - the longest run on one baseline. Wildcard slots, shards and the
+         crafting hole are skipped.
+       - A check window lists what was read (? = filled but unreadable); fix numbers (double-click), drop rows
+         (Delete), Save sets them in Counted by hand (replacing those counts; the rest kept). Nothing saved before.
+       - Only digit shapes and slot boxes ship; no picture of anyone's stash. tools/stash_slots.py and
+         tools/stash_glyphs.py add tabs and rebuild the digits from your own shots (keep those local).
+       Roadmap: Ritual, Expedition, Essence, Fragment and Socketables tabs for the scan.
   2.101.0
        Overlay styles (from the mockups; feedback: "a lightweight one is needed desperately"): Settings > Appearance >
        Overlay settings > Style - Classic (the stone-and-bronze Game bar and Panel, as before) or one of four light
@@ -2385,7 +2400,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.101.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.102.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
