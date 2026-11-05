@@ -30,6 +30,31 @@ PAGES = True                    # 2.62.0: one tool at a time, filling the main a
                                 # floating windows; the pages are still real windows (see DeskWindow) placed over it
 
 
+def monitor_of(win):
+    """2.98.2: (left, top, right, bottom) of the work area of the monitor a window is on (Windows), else None."""
+    if sys.platform != "win32":
+        return None
+    try:
+        import ctypes
+        from ctypes import wintypes
+
+        class MONITORINFO(ctypes.Structure):
+            _fields_ = [("cbSize", wintypes.DWORD), ("rcMonitor", wintypes.RECT), ("rcWork", wintypes.RECT),
+                        ("dwFlags", wintypes.DWORD)]
+        user32 = ctypes.windll.user32
+        user32.MonitorFromWindow.restype = ctypes.c_void_p
+        hwnd = int(win.wm_frame(), 16) if win.wm_frame() else win.winfo_id()
+        hmon = user32.MonitorFromWindow(ctypes.c_void_p(hwnd), 2)        # MONITOR_DEFAULTTONEAREST
+        mi = MONITORINFO()
+        mi.cbSize = ctypes.sizeof(MONITORINFO)
+        if not user32.GetMonitorInfoW(ctypes.c_void_p(hmon), ctypes.byref(mi)):
+            return None
+        w = mi.rcWork
+        return w.left, w.top, w.right, w.bottom
+    except Exception:
+        return None
+
+
 def is_beta(mod):
     """2.38.0: tagged BETA - a Labs one (hidden unless Labs is on) or one marked beta (always shown)."""
     return bool(getattr(mod, "labs", False) or getattr(mod, "beta", False))
@@ -1473,12 +1498,35 @@ class Shell:
             except tk.TclError:
                 need = 560
             h = min(need, self.desk.winfo_height() - 10)
-            ox, oy = self.desk_origin()
+            ox, oy = self.menu_origin()
             self.menu.geometry(f"430x{h}+{ox}+{oy}")
+
+    def menu_origin(self):
+        """2.98.2 (feedback: on two monitors the Toolkit menu sometimes opened on the main one): the desk's corner -
+        read fresh - and kept on the monitor the app is on (never 0, 0 of the main monitor because a position
+        wasn't known yet)."""
+        try:
+            self.root.update_idletasks()
+        except tk.TclError:
+            pass
+        ox, oy = self.desk_origin()
+        try:
+            rx, ry = self.root.winfo_rootx(), self.root.winfo_rooty()
+        except tk.TclError:
+            rx, ry = ox, oy
+        if (ox, oy) == (0, 0) and (rx, ry) != (0, 0):
+            ox, oy = rx, ry
+        mon = monitor_of(self.root)
+        if mon:
+            l, t, r, b = mon
+            ox = min(max(ox, l), max(l, r - 430))
+            oy = min(max(oy, t), max(t, b - 200))
+        return ox, oy
 
     def open_menu(self):
         P1 = C["panel"]
         m = tk.Toplevel(self.root, bg=P1, highlightthickness=1, highlightbackground="#3d5582")
+        m.withdraw()                                  # 2.98.2: shown only once it's in place (not at 0, 0 first)
         m.overrideredirect(True)
         try:
             m.transient(self.root)
@@ -1574,6 +1622,8 @@ class Shell:
         for col in range(3):
             foot.columnconfigure(col, weight=1, uniform="foot")
         self._place_menu()
+        m.deiconify()
+        m.lift()
         e.focus_set()
         e.bind("<Escape>", lambda ev: self.close_menu())
         e.bind("<Return>", lambda ev: self._menu_enter(q.get()))
