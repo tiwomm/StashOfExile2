@@ -26,6 +26,10 @@ VERSION HISTORY
        - The status bar: no "● Overlay" (the sidebar's dot shows it) and no 📌 (Always on top stays in Settings ›
          General › Window).
        - Price Checks: Add to favorites and Open on trade site sit under Search and Clear.
+       - Previews (decided 2026-11-05: nobody gets an untested build): every new version is published as a preview
+         (pre-release, not "latest"); Actions > Promote release makes it the full release once it's been played in
+         game. Settings > Updates > Preview builds (opt-in, off): get previews too - checked or installed by
+         themselves with the switches above. updates.latest_release(preview) / newest().
   2.97.2
        Price Checks card - visual hierarchy (feedback):
        - A mod's color says where it comes from, as the game and the trade site show it (style.MOD_COL): affixes
