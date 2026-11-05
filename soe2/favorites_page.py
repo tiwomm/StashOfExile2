@@ -118,6 +118,8 @@ class FavoritesPage:
         self.favv = PCView(left, lcanvas, lst, rcanvas, count, ob)
         self.favv.rid = None
         self.favv.redraw = lambda: self.fav_show()
+        self.favv.recard = lambda: self.fav_show()
+        self.pcv_fit(self.favv, wrap, mid)                  # 2.97.0: scale to fit
         self.fav_fill()
         self.fav_show()
 

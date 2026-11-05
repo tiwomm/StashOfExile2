@@ -24,6 +24,9 @@ NOTES = {
     "2.97.0": [
         "Rate mods starts by asking which items you know best, and Back / Next / Done sit under the tiers.",
         "F is the ignore tier, wherever tiers show.",
+        "Price Checks: Rate ▾ beside each mod (S to F, for every item like it) replaces ▲ / ▼. The card and the "
+        "listings fit the window; the scrollbar only shows when there's more to see.",
+        "Fractured only / Desecrated only now ticks the mod too, so it's searched.",
         "League Focus and the Campaign Helper: switch one on and its line shows on the overlay (both on: one bar). "
         "Past the campaign, its line and Vendor ▾ come back when you visit a campaign zone.",
     ],

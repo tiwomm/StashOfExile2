@@ -183,6 +183,7 @@ class PCView:
             left, lcanvas, lst, rcanvas, count, open_btn
         self.cards = []
         self.redraw = None           # fn() -> draw the listings again (a picture arrived)
+        self.recard = None           # 2.97.0: fn() -> draw the item card again (its side changed width)
 
 
 class PriceCheckPage:
@@ -221,23 +222,99 @@ class PriceCheckPage:
         self.pcv = PCView(self.pc_left, self.pc_lcanvas, self.pc_list, self.pc_rcanvas, self.pc_count_lbl,
                           self.pc_open_btn)
         self.pcv.redraw = lambda: self.pc_draw_list(self.records.get(self.pc_rid))
+        self.pcv.recard = lambda: self.pc_show(self.records.get(self.pc_rid))
+        self.pcv_fit(self.pcv, wrap, left)
         self.pc_refresh_hist()
         recs = self.pc_recs()
         self.pc_show(recs[0] if recs else None)
+
+    def pcv_fit(self, v, page, side):
+        """2.97.0 (feedback: scale to fit, nothing cut off): the card's side takes about a third of the page (wider
+        windows: fewer wrapped lines, so no scrollbar), and the card and the listings are drawn again for the width
+        they have when the window changes size."""
+        state = {"page": 0, "card": 0, "list": 0, "after_card": None, "after_list": None}
+
+        def side_w(pw):
+            return max(380, min(620, int(pw * 0.32)))
+
+        def page_cfg(e):
+            if abs(e.width - state["page"]) < 8:
+                return
+            state["page"] = e.width
+            try:
+                side.config(width=side_w(e.width))
+            except tk.TclError:
+                pass
+
+        def later(what):
+            slot = "after_" + what
+            if state[slot] is not None:
+                try:
+                    self.root.after_cancel(state[slot])
+                except Exception:
+                    pass
+
+            def go():
+                state[slot] = None
+                fn = v.recard if what == "card" else v.redraw
+                if fn is not None:
+                    try:
+                        fn()
+                    except Exception:
+                        self.log_error("the price check view")
+            state[slot] = self.root.after(150, go)
+
+        def card_cfg(e):
+            if abs(e.width - state["card"]) >= 12:
+                first = not state["card"]
+                state["card"] = e.width
+                if not first:
+                    later("card")
+
+        def list_cfg(e):
+            if abs(e.width - state["list"]) >= 12:
+                first = not state["list"]
+                state["list"] = e.width
+                if not first and v.cards:
+                    later("list")
+        page.bind("<Configure>", page_cfg, add="+")
+        v.lcanvas.bind("<Configure>", card_cfg, add="+")
+        v.rcanvas.bind("<Configure>", list_cfg, add="+")
+
+    def pcv_wrap(self, v):
+        """The card's text width: what its side has (2.97.0; was a fixed 330)."""
+        try:
+            cw = v.lcanvas.winfo_width()
+        except tk.TclError:
+            cw = 0
+        return max(330, cw - 24 - 12) if cw > 50 else 330
 
     def _pc_scroller(self, parent, padx=0, bg_key="panel2"):
         bg = C[bg_key]
         box = tk.Frame(parent, bg=bg)
         box.pack(fill="both", expand=True)
         sb = ttk.Scrollbar(box, orient="vertical")
-        sb.pack(side="right", fill="y")
         cv = tk.Canvas(box, bg=bg, highlightthickness=0, yscrollcommand=sb.set)
         cv.pack(side="left", fill="both", expand=True)
         sb.config(command=cv.yview)
         inner = tk.Frame(cv, bg=bg, padx=padx, pady=4)
         win = cv.create_window((0, 0), window=inner, anchor="nw")
-        cv.bind("<Configure>", lambda e: cv.itemconfigure(win, width=e.width))
-        inner.bind("<Configure>", lambda e: cv.configure(scrollregion=cv.bbox("all")))
+
+        def fit(_e=None):
+            """2.97.0 (feedback: no scrollbar when it fits): the bar shows only when there's more to see."""
+            try:
+                cv.configure(scrollregion=cv.bbox("all"))
+                need = inner.winfo_reqheight() > cv.winfo_height() + 1
+                if need and not sb.winfo_ismapped():
+                    sb.pack(side="right", fill="y", before=cv)
+                elif not need and sb.winfo_ismapped():
+                    sb.pack_forget()
+                    cv.yview_moveto(0)
+            except tk.TclError:
+                pass
+        cv.bind("<Configure>", lambda e: (cv.itemconfigure(win, width=e.width), fit()))
+        inner.bind("<Configure>", fit)
+        cv._sb = sb
 
         def wheel(e):
             d = -1 if (getattr(e, "delta", 0) > 0 or getattr(e, "num", 0) == 4) else 1
@@ -340,7 +417,7 @@ class PriceCheckPage:
 
     def pcv_card(self, v, rec):
         """The item card with every filter and the Search button, into a view's left side."""
-        P2, wrap = C["panel2"], 330
+        P2, wrap = C["panel2"], self.pcv_wrap(v)
         same = getattr(v, "shown_rid", None) == rec["id"]        # 2.88.2: a tick on the same card keeps the scroll
         top = v.lcanvas.yview()[0] if same else 0
         v.shown_rid = rec["id"]
@@ -399,7 +476,7 @@ class PriceCheckPage:
             tk.Label(v.lst, text="The listings aren't loaded any more - press Search to load them again.",
                      bg=C["panel"], fg=C["muted"], anchor="w").pack(fill="x", pady=8)
             return
-        width = max(420, v.rcanvas.winfo_width() - 40)
+        width = max(420, v.rcanvas.winfo_width() - 24 - 2)          # 2.97.0: the width it has (inner padx 12 + 12)
         for e in entries:
             v.cards.append(self._pc_card(v.lst, listing_facts(e), width))
         v.rcanvas.yview_moveto(0)

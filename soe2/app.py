@@ -4754,7 +4754,7 @@ class App(PriceCheckPage, FavoritesPage, BoardModPage, LeaderboardPage, OrderLab
             y += 20 * ((len(MISC_ROWS) + 1) // 2) + 2
             # ---- each mod
             if own:
-                section("STAT FILTERS   ▲▼ did it matter?", boxes=any(self._card_has_vals(rec, m) for m in own))
+                section("STAT FILTERS", boxes=any(self._card_has_vals(rec, m) for m in own))
                 first = [m for m in own if m.get("kind") in ("Implicit", "Enchant", "Rune")]
                 for m in first + [m for m in own if m not in first]:
                     y = self._card_mod_row(cv, rec, m, y, w, fmod, imp_c if m in first else mod_c, card_text(m))
@@ -4986,7 +4986,7 @@ class App(PriceCheckPage, FavoritesPage, BoardModPage, LeaderboardPage, OrderLab
         from .ratemods import key_for
         rkey = key_for(rec, m) if can else None
         if rkey:
-            right += 30                                      # 2.96.0: ▲ / ▼ - did this mod matter for the price?
+            right += 30                                      # 2.97.0: Rate ▾ (was ▲ / ▼)
         tid = cv.create_text(tx, y, text=text, anchor="nw", font=font, width=w - tx - 12 - right, justify="left",
                              fill=colr if on and can else C["muted"], tags=("cardmod", tag))
         bb = cv.bbox(tid)
@@ -5108,6 +5108,8 @@ class App(PriceCheckPage, FavoritesPage, BoardModPage, LeaderboardPage, OrderLab
         """2.93.0 (feedback): search this fractured / desecrated mod only as fractured / desecrated (this item only)."""
         k = norm(m["text"])
         only = rec.setdefault("only", {})
+        if on and mod_impact(rec, m) == "ignore":       # 2.97.0 (feedback: "only" did nothing): an unticked mod isn't
+            self.toggle_mod(rec, m, True)               # searched at all - "only" ticks it too
         if on:
             only[k] = True
         else:
@@ -5118,19 +5120,41 @@ class App(PriceCheckPage, FavoritesPage, BoardModPage, LeaderboardPage, OrderLab
         return on
 
     def _card_thumbs(self, cv, rec, m, key, idx, w, y):
-        """2.96.0: ▲ ▼ side by side, left of Min: your rule for this mod (High / Ignore) - for every item like it. Again:
-        cleared. With Community data sharing on it's your vote too (rep when it matches the community)."""
-        from .ratemods import thumb
-        cur = thumb(key)
+        """2.97.0 (feedback: ▲ / ▼ were a puzzle): "Rate ▾" left of Min - a menu S / A / B / C / D / F (ignore) / Clear,
+        your rule for this mod on every item like it. Rated, it shows your grade ("A ▾"). With Community data sharing
+        on it's your vote too."""
+        from .ratemods import current
+        cur = current([key])
         x = w - 12 - 18 - CARD_BOX * 2 - 4 - 22
-        for d, glyph, dx, col in (("up", "▲", 0, C["good"]), ("down", "▼", 13, C["red"])):
-            tag = f"cardthumb{idx}{d}"
-            cv.create_text(x + dx, y + 1, text=glyph, anchor="n", font=("Segoe UI", 9, "bold" if cur == d else "normal"),
-                           fill=col if cur == d else C["muted"], tags=(tag, "cardthumb"))
-            cv.tag_bind(tag, "<Button-1>", lambda e, dd=d, c=cur: self.card_thumb(rec, m, key, None if c == dd else dd))
-            cv.tag_bind(tag, "<Enter>", lambda e: cv.configure(cursor="hand2"))
-            cv.tag_bind(tag, "<Leave>", lambda e: cv.configure(cursor=""))
+        tag = f"cardrate{idx}"
+        label = ("F" if cur == "ignore" else cur) if cur else "Rate"
+        cv.create_text(x + 6, y + 1, text=label + " ▾", anchor="n", font=("Segoe UI", 8, "bold" if cur else "normal"),
+                       fill=C["accent"] if cur else C["muted"], tags=(tag, "cardthumb"))
+        cv.tag_bind(tag, "<Button-1>", lambda e: self.card_rate_menu(e, rec, m, key, cur))
+        cv.tag_bind(tag, "<Enter>", lambda e: cv.configure(cursor="hand2"))
+        cv.tag_bind(tag, "<Leave>", lambda e: cv.configure(cursor=""))
         self.card_thumbs[idx] = (m, key, cur)
+
+    def card_rate_menu(self, e, rec, m, key, cur):
+        from .ratemods import set_of
+        s = set_of(rec) or ""
+        what = (rec.get("item") or {}).get("class") if s.startswith("gear:") else \
+            {"tablet": "tablet", "jewel": "jewel", "waystone": "waystone", "relic": "relic"}.get(s, "item")
+        menu = tk.Menu(self.root, tearoff=0)
+        menu.add_command(label=f"Rate this mod for every {str(what).lower()}:", state="disabled")
+        for g, label in (("S", "S - the price hangs on it"), ("A", "A"), ("B", "B - adds a little"), ("C", "C"),
+                         ("D", "D"), ("ignore", "F - ignore (buyers don't pay for it)")):
+            menu.add_command(label=("● " if g == cur else "    ") + label,
+                             command=lambda g=g: self.card_thumb(rec, m, key, g))
+        if cur:
+            menu.add_separator()
+            menu.add_command(label="Clear my rating", command=lambda: self.card_thumb(rec, m, key, None))
+        self.card_rate_open = menu
+        try:
+            menu.tk_popup(e.x_root, e.y_root)
+        finally:
+            menu.grab_release()
+        return menu
 
     def card_thumb(self, rec, m, key, what):
         """▲ (High), ▼ (Ignore) or None (clear) for this mod's rule; the item waits for Search (Price Checks) or is
@@ -5141,9 +5165,11 @@ class App(PriceCheckPage, FavoritesPage, BoardModPage, LeaderboardPage, OrderLab
         self.card_changed(rec)
         if getattr(self, "shown_rec", None) is rec:
             self.show_detail(rec)
-        self.status_text, self.status_until = ({"up": "▲ This mod matters - searched on every item like it.",
-                                                "down": "▼ This mod doesn't matter - left out on every item like it.",
-                                                None: "Your rule for this mod is cleared."}[what], time.time() + 6)
+        msg = {"up": "This mod matters - searched on every item like it.",
+               "down": "F - this mod doesn't matter: left out on every item like it.",
+               "ignore": "F - this mod doesn't matter: left out on every item like it.",
+               None: "Your rating for this mod is cleared."}.get(what) or f"Rated {what} - on every item like it."
+        self.status_text, self.status_until = msg, time.time() + 6
         return what
 
     def card_toggle(self, rec, m, checked):
