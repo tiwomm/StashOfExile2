@@ -21,6 +21,10 @@ NEXT = [
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.98.4": [
+        "Mageblood is priced on its Legacies (how many of each), its charm slots and, with a duplicate, its "
+        "per-duplicate roll.",
+    ],
     "2.98.3": [
         "Dialogs open over the app, on its monitor.",
         "Settings: Fine tuning is under Price checking; the every-hour rates switch is on the Exchange rates page.",
