@@ -32,6 +32,7 @@ VERSION HISTORY
          Map supplies, Farm plan and Pokes (with Build lock) as tabs on the right; the stockpile form tidied.
        - Leaderboards: two toolbar rows (boards + sharing, then filters); empty texts on both lists.
        - Map library: ranking is one compact S A B C D ✖ group in the toolbar, then Clear and Share ▾.
+       - Price Checks: Recent is a panel under the item card (was a column on the left - too crunched).
   2.107.0
        Polish 7 - P2.5: Controls refresh (mockup with 3 switch directions in all 10 themes, then built; picked: B).
        - Every on / off switch (every ttk Checkbutton) is a 68 x 24 segmented ON | OFF box: the chosen half lit

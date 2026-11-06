@@ -225,22 +225,7 @@ class PriceCheckPage:
         wrap = tk.Frame(body, bg=P2)
         self.limit_banner(body, wrap)                # 2.103.3: the "Staying under the limits" line
         wrap.pack(fill="both", expand=True)
-        # ---- P2.5 (2.107.0, picked: 3 columns): Recent is a list on the left (was a dropdown over the card)
-        rec_col = tk.Frame(wrap, bg=C["panel"], width=250)
-        rec_col.pack(side="left", fill="y", padx=(0, 8))
-        rec_col.pack_propagate(False)
-        from .chrome import SectionBar
-        SectionBar(rec_col, "Recent").pack(fill="x")
-        tv = ttk.Treeview(rec_col, columns=("item", "price", "when"), show="headings", selectmode="browse")
-        for cid, title, w, a in (("item", "Item", 112, "w"), ("price", "Price", 60, "e"), ("when", "When", 52, "e")):
-            tv.heading(cid, text=title)
-            tv.column(cid, width=w, anchor=a, stretch=cid == "item")
-        tv.pack(fill="both", expand=True)
-        tv.bind("<<TreeviewSelect>>", lambda e: self.pc_pick_hist_tv())
-        self.pc_hist_tv = tv
-        self.pc_hist_empty = tk.Label(rec_col, text=f"Your last {PC_MAX} checks show here.", bg=C["panel"],
-                                      fg=C["muted"], font=("Segoe UI", 9), wraplength=220, justify="center")
-        # ---- the item card (scrolls)
+        # ---- the item card (scrolls), and Recent under it (2.108.0, feedback: "not on the side, it's too crunched")
         left = tk.Frame(wrap, bg=P2, width=380)
         left.pack(side="left", fill="y")
         left.pack_propagate(False)
@@ -249,6 +234,23 @@ class PriceCheckPage:
         self.pc_hist_var = tk.StringVar()                    # (the old dropdown: kept for its callers, never shown)
         self.pc_hist_cb = ttk.Combobox(top, textvariable=self.pc_hist_var, state="readonly")
         self.pc_hist_cb.bind("<<ComboboxSelected>>", lambda e: self.pc_pick_hist())
+        rec_col = tk.Frame(left, bg=C["panel"], height=210)
+        rec_col.pack(side="bottom", fill="x", padx=12, pady=(8, 8))
+        rec_col.pack_propagate(False)
+        from .chrome import SectionBar
+        SectionBar(rec_col, "Recent").pack(fill="x")
+        tv = ttk.Treeview(rec_col, columns=("item", "price", "when"), show="headings", selectmode="browse")
+        for cid, title, w, a in (("item", "Item", 200, "w"), ("price", "Price", 80, "e"), ("when", "When", 60, "e")):
+            tv.heading(cid, text=title)
+            tv.column(cid, width=w, anchor=a, stretch=cid == "item")
+        tsb = ttk.Scrollbar(rec_col, orient="vertical", command=tv.yview)
+        tv.configure(yscrollcommand=tsb.set)
+        tsb.pack(side="right", fill="y")
+        tv.pack(fill="both", expand=True)
+        tv.bind("<<TreeviewSelect>>", lambda e: self.pc_pick_hist_tv())
+        self.pc_hist_tv = tv
+        self.pc_hist_empty = tk.Label(rec_col, text=f"Your last {PC_MAX} checks show here.", bg=C["panel"],
+                                      fg=C["muted"], font=("Segoe UI", 9), wraplength=320, justify="center")
         self.pc_lcanvas, self.pc_left = self._pc_scroller(left, padx=12)
         # ---- right: the listings
         right = tk.Frame(wrap, bg=C["panel"])
@@ -455,7 +457,7 @@ class PriceCheckPage:
             if recs:
                 self.pc_hist_empty.place_forget()
             else:
-                self.pc_hist_empty.place(relx=0.5, rely=0.3, anchor="n")
+                self.pc_hist_empty.place(relx=0.5, rely=0.5, anchor="center")
 
     def pc_pick_hist_tv(self):
         if getattr(self, "_pc_hist_quiet", False):
