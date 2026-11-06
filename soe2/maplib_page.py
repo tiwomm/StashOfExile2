@@ -4,7 +4,7 @@ import tkinter as tk
 from tkinter import filedialog, ttk
 
 from . import maplib as ML
-from .style import C, place_near
+from .style import C, Tooltip, place_near
 from .chrome import SectionBar, Viewport
 
 RANK_TAG = {"S": "s", "A": "a", "B": "b", "C": "c", "D": "d", "Avoid": "avoid"}
@@ -34,15 +34,27 @@ class MapLibraryPage:
         self.ml_run_only = tk.BooleanVar(value=False)
         ttk.Checkbutton(bar, text="Only maps I've run", variable=self.ml_run_only, command=self.ml_fill).pack(
             side="left", padx=(12, 0))
-        exp = ttk.Button(bar, text="⋯ Share", command=lambda: self.ml_share_menu(exp))
+        exp = ttk.Button(bar, text="Share ▾", command=lambda: self.ml_share_menu(exp))
         exp.pack(side="right")
-
-        rbar = tk.Frame(page, bg=P1)
-        rbar.pack(fill="x", pady=(0, 8))
-        tk.Label(rbar, text="Rank the selected:", bg=P1, fg=C["muted"]).pack(side="left", padx=(0, 8))
-        for r in ML.RANKS + ("Clear",):
-            ttk.Button(rbar, text=r if r != "Avoid" else "✖ Avoid", width=-7,
-                       command=lambda rr=r: self.ml_set(None if rr == "Clear" else rr)).pack(side="left", padx=(0, 4))
+        # P5 (2.108.0): ranking is one compact group in the toolbar - S A B C D ✖, then Clear
+        ttk.Button(bar, text="Clear", style="Quiet.TButton", command=lambda: self.ml_set(None)).pack(
+            side="right", padx=(0, 8))
+        grp = tk.Frame(bar, bg=C["line"], padx=1, pady=1)
+        grp.pack(side="right", padx=(0, 8))
+        cols = {"S": "#ffcf40", "A": "#ffd9a8", "B": C["text"], "C": C["text"], "D": C["muted"], "Avoid": C["red"]}
+        self.ml_rank_btns = {}
+        for i, r in enumerate(ML.RANKS):
+            lab = tk.Label(grp, text="✖" if r == "Avoid" else r, bg=C["panel2"], fg=cols.get(r, C["text"]),
+                           font=("Segoe UI", 10, "bold"), width=3, pady=4, cursor="hand2")
+            lab.pack(side="left", padx=(1 if i else 0, 0))
+            lab.bind("<Button-1>", lambda e, rr=r: self.ml_set(rr))
+            lab.bind("<Enter>", lambda e, w=lab: w.config(bg=C["panel"]))
+            lab.bind("<Leave>", lambda e, w=lab: w.config(bg=C["panel2"]))
+            Tooltip(lab, "Avoid" if r == "Avoid" else f"Rank the selected {r}")
+            self.ml_rank_btns[r] = lab
+        tk.Label(bar, text="Rank", bg=P1, fg=C["muted"]).pack(side="right", padx=(12, 8))
+        from .style import flowify
+        flowify(bar)
 
         SectionBar(page, "Maps").pack(fill="x")               # 2.69.0: the list under a strip, sunken
         bvp = Viewport(page)

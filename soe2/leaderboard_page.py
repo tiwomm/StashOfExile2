@@ -18,42 +18,45 @@ TOPS = (5, 10, 20, 30, 50, 100)             # 2.104.1 (feedback): how many rows 
 class LeaderboardPage:
     def build_leaderboards(self, body):
         P1 = C["panel"]
+        # P5 (2.108.0): two rows - the board and sharing on top, the filters under it
         top = tk.Frame(body, bg=P1, padx=8, pady=8)
         top.pack(fill="x")
-        self.lb_cat = SegBar(top, [n for _k, n in LB.CATS], command=lambda v: self.lb_refresh(), size=9, pad=(12, 4))
+        top2 = tk.Frame(body, bg=P1, padx=8)
+        top2.pack(fill="x", pady=(0, 4))
+        self.lb_cat = SegBar(top, [n for _k, n in LB.CATS], command=lambda v: self.lb_refresh(), size=10, pad=(12, 4))
         self.lb_cat.pack(side="left")
-        self.lb_who = SegBar(top, ["Mine", "Everyone"], value="Everyone", command=lambda v: self.lb_refresh(), size=9,
+        from .community_page import chip_text                  # 2.94.0: your community name, as on Money Makers
+        self.lb_acct = ttk.Button(top, text=chip_text() + " ▾", command=self.community_open)
+        self.lb_acct.pack(side="right")
+        self.lb_share_var = tk.BooleanVar(value=bool(SETTINGS.get("lb_share", True)))
+        ttk.Checkbutton(top, text="Share my times", variable=self.lb_share_var, command=self.lb_share_switch,
+                        style="Card.TCheckbutton").pack(side="right", padx=(0, 12))
+        self.lb_who = SegBar(top2, ["Mine", "Everyone"], value="Everyone", command=lambda v: self.lb_refresh(), size=9,
                              pad=(12, 4))
-        self.lb_who.pack(side="left", padx=(12, 0))
-        tk.Label(top, text="League", bg=P1, fg=C["muted"]).pack(side="left", padx=(12, 4))
+        self.lb_who.pack(side="left")
+        tk.Label(top2, text="League", bg=P1, fg=C["muted"]).pack(side="left", padx=(16, 4))
         self.lb_league = tk.StringVar(value=SETTINGS.get("league") or ALL_LEAGUES)   # 2.104.1: the league's name
-        cb = ttk.Combobox(top, textvariable=self.lb_league, values=self.lb_league_names(), state="readonly",
+        cb = ttk.Combobox(top2, textvariable=self.lb_league, values=self.lb_league_names(), state="readonly",
                           width=22)
         cb.pack(side="left")
         cb.bind("<<ComboboxSelected>>", lambda e: self.lb_refresh())
         self.lb_league_box = cb
-        tk.Label(top, text="Show", bg=P1, fg=C["muted"]).pack(side="left", padx=(12, 4))
-        top_n = SETTINGS.get("lb_top", 10)
-        self.lb_top = tk.StringVar(value=f"Top {top_n if top_n in TOPS else 10}")
-        tb = ttk.Combobox(top, textvariable=self.lb_top, values=[f"Top {n}" for n in TOPS], state="readonly", width=8)
-        tb.pack(side="left")
-        tb.bind("<<ComboboxSelected>>", lambda e: self.lb_top_pick())
-        tk.Label(top, text="Class", bg=P1, fg=C["muted"]).pack(side="left", padx=(12, 4))
+        tk.Label(top2, text="Class", bg=P1, fg=C["muted"]).pack(side="left", padx=(12, 4))
         self.lb_cls = tk.StringVar(value="All")
-        self.lb_cls_box = ttk.Combobox(top, textvariable=self.lb_cls, values=("All",), state="readonly", width=16)
+        self.lb_cls_box = ttk.Combobox(top2, textvariable=self.lb_cls, values=("All",), state="readonly", width=16)
         self.lb_cls_box.pack(side="left")
         self.lb_cls_box.bind("<<ComboboxSelected>>", lambda e: self.lb_refresh())
         from .style import Tooltip
         Tooltip(self.lb_cls_box, "Your class comes from the game's log: it names it at every level-up "
                                  "(\"ExampleWitch (Invoker) is now level 24\"). Everyone's: the classes players shared.")
-        ttk.Button(top, text="↻ Refresh", style="Quiet.TButton", command=lambda: self.lb_refresh(send=True)).pack(
+        tk.Label(top2, text="Show", bg=P1, fg=C["muted"]).pack(side="left", padx=(12, 4))
+        top_n = SETTINGS.get("lb_top", 10)
+        self.lb_top = tk.StringVar(value=f"Top {top_n if top_n in TOPS else 10}")
+        tb = ttk.Combobox(top2, textvariable=self.lb_top, values=[f"Top {n}" for n in TOPS], state="readonly", width=8)
+        tb.pack(side="left")
+        tb.bind("<<ComboboxSelected>>", lambda e: self.lb_top_pick())
+        ttk.Button(top2, text="↻ Refresh", style="Quiet.TButton", command=lambda: self.lb_refresh(send=True)).pack(
             side="right")
-        from .community_page import chip_text                  # 2.94.0: your community name, as on Money Makers
-        self.lb_acct = ttk.Button(top, text=chip_text() + " ▾", command=self.community_open)
-        self.lb_acct.pack(side="right", padx=(0, 8))
-        self.lb_share_var = tk.BooleanVar(value=bool(SETTINGS.get("lb_share", True)))
-        ttk.Checkbutton(top, text="Share my times", variable=self.lb_share_var, command=self.lb_share_switch).pack(
-            side="right", padx=(0, 12))
         self.lb_msg = tk.Label(body, text="", bg=P1, fg=C["muted"], anchor="w", justify="left", padx=12)
         self.lb_msg.pack(fill="x")
         split = tk.Frame(body, bg=P1)
@@ -71,6 +74,9 @@ class LeaderboardPage:
             kv.column(c, width=w, anchor="e", stretch=False)
         kv.pack(fill="both", expand=True)
         kv.bind("<<TreeviewSelect>>", lambda e: self.lb_board_fill())
+        self.lb_keys_empty = tk.Label(left, text="No times on this board yet.\n\nPlay the campaign with the Campaign "
+                                                 "Helper, or run maps with the session timer - your times show here.",
+                                      bg=self._lb_field(), fg=C["muted"], wraplength=300, justify="center")
         self.lb_keys_tv = kv
         right = tk.Frame(split, bg=P1)
         right.pack(side="left", fill="both", expand=True, padx=(8, 0))
@@ -90,6 +96,7 @@ class LeaderboardPage:
         bv.tag_configure("me", foreground=C["green"])
         bv.tag_configure("hidden", foreground=C["muted"])
         bv.pack(fill="both", expand=True, pady=(4, 0))
+        self.lb_board_empty = tk.Label(right, text="Pick a board on the left.", bg=self._lb_field(), fg=C["muted"])
         bv.menu_actions = self.lb_menu_actions
         self.list_register("leaderboards", bv, multi=False)
         self.list_register("leaderboards", kv, multi=False)
@@ -101,6 +108,13 @@ class LeaderboardPage:
                  bg=P1, fg=C["muted"], font=("Segoe UI", 9), anchor="w", justify="left", wraplength=760).pack(
             fill="x", pady=(8, 0))
         self.lb_rows = {}                                     # (filled when the page is opened: on_show)
+
+    @staticmethod
+    def _lb_field():
+        try:
+            return ttk.Style().lookup("Treeview", "fieldbackground") or C["bg"]
+        except tk.TclError:
+            return C["bg"]
 
     # ---------------------------------------------------------------- data
     def lb_cat_key(self):
@@ -248,7 +262,11 @@ class LeaderboardPage:
         if not keys:
             self.lb_msg.config(text="No times yet. Run maps with the overlay's session timer on, or play the campaign "
                                     "with the Campaign Helper - your times show here." if self.lb_who.get() == "Mine"
-                               else "No times on this board yet.", fg=C["muted"])
+                               else "", fg=C["muted"])
+        if keys:
+            self.lb_keys_empty.place_forget()
+        else:
+            self.lb_keys_empty.place(relx=0.5, rely=0.45, anchor="center")
         sel = keep[0] if keep and kv.exists(keep[0]) else (keys[0] if keys else None)
         if sel:
             kv.selection_set(sel)
@@ -262,7 +280,9 @@ class LeaderboardPage:
         sel = self.lb_keys_tv.selection()
         if not sel:
             self.lb_title.config(text="")
+            self.lb_board_empty.place(in_=bv, relx=0.5, rely=0.45, anchor="center")
             return
+        self.lb_board_empty.place_forget()
         key, cat = sel[0], self.lb_cat_key()
         league, cls = self.lb_filters()
         self.lb_title.config(text=f"🏆 {key}" + (f" · {cls}" if cls else "") + (f" · {league}" if league else " · all leagues"))
