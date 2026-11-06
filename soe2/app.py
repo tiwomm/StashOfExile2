@@ -4911,7 +4911,7 @@ class App(GearBookPage, PriceCheckPage, FavoritesPage, BoardModPage, Leaderboard
                 for m in totals:
                     y = self._card_mod_row(cv, rec, m, y, w, fmod, C["good"], card_text(m))
                 if it.get("waystone") and it.get("tier"):     # 2.103.2 (feedback): the tier can be widened
-                    y = self._card_opt_row(cv, rec, "tier", f"Waystone tier: {it['tier']}", it["tier"], y, w)
+                    y = self._card_opt_row(cv, rec, "tier", "Waystone tier:", it["tier"], y, w)
                 if it.get("ilvl"):
                     y = self._card_opt_row(cv, rec, "ilvl", f"Item level: {it['ilvl']}", it["ilvl"], y, w)
                 if it.get("sockets"):
