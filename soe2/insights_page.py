@@ -12,10 +12,11 @@ from .market import MARKET
 from .valuelog import VALUE_LOG, sig_of
 from .mods import impact_key, JEWEL_BASE, norm, SIDTEXT
 from .pricefmt import fmt_div
-from .style import C, FONT_TITLE, SegBar
+from .style import C, SegBar
 from .chrome import SectionBar, Viewport, section as chrome_section
 
-KINDS = ["Tablets", "Waystones", "Jewels", "Relics"]
+KINDS = ["All", "Gear", "Tablets", "Waystones", "Jewels", "Relics"]     # P2 (2.104.0): All and Gear (gear showed nowhere)
+ONE = {"All": "item", "Gear": "gear", "Tablets": "tablet", "Waystones": "waystone", "Jewels": "jewel", "Relics": "relic"}
 
 
 def kind_of(base, cls=""):
@@ -31,6 +32,11 @@ def kind_of(base, cls=""):
     return None
 
 
+def kind_match(kind):
+    """P2: a kind_fn for this tab - All takes everything, Gear what isn't a tablet, waystone, jewel or relic."""
+    return lambda base, cls="": kind if kind == "All" or (kind_of(base, cls) or "Gear") == kind else None
+
+
 def _mod_text(sid):
     t = SIDTEXT.get(sid, sid)
     return re.sub(r"\s+(found )?in map$", "", t)
@@ -41,16 +47,12 @@ class InsightsPage:
 
     def build_insights_window(self, body):
         P1, P2 = C["panel"], C["panel2"]
-        top = tk.Frame(body, bg=P1, padx=12, pady=8)
-        top.pack(fill="x")
-        tk.Label(top, text="Market Insights", bg=P1, fg=C["text"], font=(FONT_TITLE, 16, "bold")).pack(side="left")
+        top = tk.Frame(body, bg=P1, padx=12, pady=8)     # P2 (2.104.0): the breadcrumb names the page; no Refresh
+        top.pack(fill="x")                               # (it fills in on open and after each price)
         self.ins_kind = SegBar(top, KINDS, command=lambda v: self.refresh_insights(), size=9, pad=(12, 4))
-        self.ins_kind.pack(side="left", padx=16)
-        ttk.Button(top, text="Refresh", command=self.refresh_insights).pack(side="right")
-        tk.Label(body, text="The most valuable things your price checks have found so far - kept even after you clear "
-                            "the Bulk Pricing list. The more you price, the more this fills in. Nothing is searched "
-                            "for this page.", bg=P1, fg=C["muted"], anchor="w", padx=12, font=("Segoe UI", 9),
-                 justify="left", wraplength=760).pack(fill="x")
+        self.ins_kind.pack(side="left")
+        tk.Label(top, text="Your price checks, this league - nothing is searched here", bg=P1, fg=C["muted"],
+                 font=("Segoe UI", 9)).pack(side="right")
         # 2.73.2: the picked row's item in a panel at the side (like Price checks) - it was a pop-up at the mouse
         main = tk.Frame(body, bg=P1)
         main.pack(fill="both", expand=True, padx=8, pady=(8, 8))
@@ -58,16 +60,16 @@ class InsightsPage:
         deto.pack(side="right", fill="y", padx=(4, 4), pady=4)
         deto.configure(width=360)
         deto.pack_propagate(False)
-        dbar = tk.Frame(det, bg=P2)
-        dbar.pack(side="bottom", fill="x")
+        dbar = tk.Frame(det, bg=P2)                          # P2: under the card (toasts covered it at the bottom)
         self.ins_det_btns = {
             "open": ttk.Button(dbar, text="Show in Bulk Pricing", command=self.ins_open_record),
             "again": ttk.Button(dbar, text="Price it again", command=self.ins_price_again),
             "trade": ttk.Button(dbar, text="Open the search", command=self.ins_open_search),
             "remove": ttk.Button(dbar, text="✕ Remove from here", command=self.ins_remove_picked, style="Quiet.TButton")}
-        self.undo_button(dbar, "insights").pack(side="bottom", pady=(8, 0))
+        self.undo_button(dbar, "insights", side="bottom", pady=(8, 0))   # P2: only with something to undo
         self.ins_card = tk.Frame(det, bg=P2)
         self.ins_card.pack(fill="x")
+        dbar.pack(fill="x", pady=(8, 0))
         self.ins_det = tk.Label(det, text="Pick a row to see its item here.", bg=P2, fg=C["muted"], anchor="nw",
                                 justify="left", font=("Segoe UI", 9), wraplength=320)
         self.ins_det.pack(fill="both", expand=True, pady=(8, 0))
@@ -100,10 +102,10 @@ class InsightsPage:
             self.ins_tables[key] = (tv, empty)
             tv.bind("<<TreeviewSelect>>", lambda e, k=key: self.ins_show(k))
             return tv
-        mine = table(0, 0, "mine", "Your most valuable", "Everything you've priced (this league). Delete removes rows "
-                                                         "from here only; Ctrl+Z undoes.",
-                     (("name", "Item", 160, "w"), ("base", "Type", 110, "w"), ("est", "Worth", 70, "e"),
-                      ("status", "Status", 70, "w")))
+        mine = table(0, 0, "mine", "Your most valuable", "Everything you've priced. Delete hides a row here; Ctrl+Z "
+                                                         "brings it back.",
+                     (("name", "Item", 110, "w"), ("base", "Type", 96, "w"), ("est", "Worth", 72, "e"),
+                      ("status", "Status", 66, "w")))
         mine.bind("<Double-1>", lambda e: self.ins_open_record())
         self.list_register("insights", mine, delete=self.ins_forget)
         mine.menu_actions = lambda sel: [("Show in Bulk Pricing", lambda: (self.ins_show("mine"), self.ins_open_record())),
@@ -111,9 +113,9 @@ class InsightsPage:
                                          ("✕ Remove from Market Insights", lambda: self.ins_forget(sel), bool(sel), "Del")]
         table(0, 1, "mods", "Mods worth the most", "What the Mod book learned: the typical asking price of listings "
                                                     "with this mod. ★ = valuable in your Mod book.",
-              (("mod", "Mod", 220, "w"), ("base", "On", 90, "w"), ("med", "Typical", 70, "e"), ("n", "Seen", 45, "e")))
-        table(1, 0, "seen", "Most expensive listings seen", "The most expensive listings your price checks came across on the "
-                                                     "trade site (this league).",
+              (("mod", "Mod", 120, "w"), ("base", "On", 76, "w"), ("med", "Typical", 76, "e"), ("n", "Seen", 52, "e")))
+        table(1, 0, "seen", "Most expensive listings seen", "The priciest listings your checks came across on the "
+                                                     "trade site.",
               (("price", "Asking", 90, "e"), ("name", "Item", 200, "w"), ("mods", "Mods", 360, "w"),
                ("when", "Seen", 70, "w")), colspan=2)
         self.list_register("insights", self.ins_tables["seen"][0], delete=self.ins_forget_seen)    # 2.73.2: Delete
@@ -143,12 +145,12 @@ class InsightsPage:
                 added = VALUE_LOG.add(r, league) or added
         if added:
             VALUE_LOG.save()
-        recs = VALUE_LOG.top(league, kind_of, kind)
+        recs = VALUE_LOG.top(league, kind_match(kind), kind)
         for e in recs:
             iid = tv.insert("", "end", values=(e["name"], e["base"], fmt_div(e["est"]),
                                                {"listed": "listed", "removed": "removed"}.get(e.get("mark"), "")))
             self.ins_rowmap[iid] = e
-        self._ins_empty(empty, not recs, f"No priced {kind.lower()} yet.\nPrice some with Ctrl+Alt+C.")
+        self._ins_empty(empty, not recs, f"No priced {ONE[kind]}s yet.\nPrice some with Ctrl+Alt+C or Bulk Pricing.")
         # ---- mods worth the most (the Mod book's data)
         tv, empty = self.ins_tables["mods"]
         tv.delete(*tv.get_children())
@@ -158,7 +160,7 @@ class InsightsPage:
         stats = MARKET.cached_stats()
         hid = set(SETTINGS.get("ins_hidden_mods") or [])           # 2.73.2: removed by you
         rows = [(base, sid, st) for (base, sid), st in stats.items()
-                if kind_of(base) == kind and st.get("n", 0) >= 3 and st.get("med") is not None
+                if kind_match(kind)(base) == kind and st.get("n", 0) >= 3 and st.get("med") is not None
                 and f"{base}|{sid}" not in hid]
         self.ins_modmap = {}
         rows.sort(key=lambda r: -r[2]["med"])
@@ -169,7 +171,8 @@ class InsightsPage:
                                                base.replace(" Tablet", ""), fmt_div(st["med"]), st["n"]),
                             tags=("star",) if star else ())
             self.ins_modmap[iid] = f"{base}|{sid}"
-        why = f"Nothing learned about {kind[:-1].lower()} mods yet.\nIt fills in as you price {kind.lower()}."
+        why = (f"Nothing learned about {ONE[kind]} mods yet.\nPrice a few {ONE[kind]}s (Ctrl+Alt+C or Bulk Pricing) -\n"
+               f"each one teaches the Mod book.")
         self._ins_empty(empty, not rows, why)
         self._ins_fill_seen(kind)
 
@@ -179,7 +182,7 @@ class InsightsPage:
         from .mods import impact_key, rule_key
         cat = "waystone" if kind == "Waystones" else "relic"
         league = SETTINGS.get("league")
-        priced = VALUE_LOG.top(league, kind_of, kind, limit=3000)
+        priced = VALUE_LOG.top(league, kind_match(kind), kind, limit=3000)
         have = [({norm(t) for t in e.get("mods") or []}, e) for e in priced]
         rows = []
         for m in R.mods(cat):
@@ -204,7 +207,7 @@ class InsightsPage:
         tv.delete(*tv.get_children())
         # 2.18.0: rows with neither mod lines nor stat ids (saved by an older version) say nothing: left out
         hidden = set(SETTINGS.get("ins_hidden") or [])           # 2.73.2: removed by you
-        seen = [x for x in MARKET.top_listings(detail=True) if kind_of(x["base"]) == kind
+        seen = [x for x in MARKET.top_listings(detail=True) if kind_match(kind)(x["base"]) == kind
                 and (x.get("lines") or x.get("sids")) and self.ins_seen_key(x) not in hidden][:50]
         now = time.time()
         self.ins_seenmap = {}
@@ -216,7 +219,8 @@ class InsightsPage:
             name = x["name"] or x["base"]
             iid = tv.insert("", "end", values=(x["price"] or fmt_div(x["div"]), name, mods, when))
             self.ins_seenmap[iid] = x
-        self._ins_empty(empty, not seen, "Nothing seen yet." if kind != "Relics" else "Relics aren't price-checked yet.")
+        self._ins_empty(empty, not seen, "Nothing seen yet.\nIt fills in as your price checks find listings."
+                        if kind != "Relics" else "Relics aren't price-checked yet.")
 
     @staticmethod
     def ins_listing_mods(x):
@@ -258,7 +262,9 @@ class InsightsPage:
                    + (f", {e['conf']} confidence" if e.get("conf") and e["conf"] != "-" else "") + f"\nPriced {when}"
                    + ("" if here else " · no longer in your Bulk Pricing list") + (f"\n{mods}" if mods else ""))
             self.ins_draw_card(self.ins_card, "mine", e)          # 2.73.2: the item, in the panel
-            self.ins_det.config(text=txt.split("\n", 2)[1] if "\n" in txt else "", fg=C["muted"])
+            self.ins_det.config(text="" if here else "No longer in your Bulk Pricing list.", fg=C["muted"])
+            for k in ("open", "again"):                       # P2: the one that fits is the main button
+                self.ins_det_btns[k].config(style="Primary.TButton")
             (self.ins_det_btns["open"] if here else self.ins_det_btns["again"]).pack(fill="x")
             self.ins_det_btns["remove"].pack(fill="x", pady=(8, 0))
         elif key == "seen":
@@ -273,6 +279,7 @@ class InsightsPage:
             self.ins_draw_card(self.ins_card, "seen", x)          # 2.73.2
             self.ins_det.config(text=txt, fg=C["text"])
             if x.get("qid"):
+                self.ins_det_btns["trade"].config(style="Primary.TButton")
                 self.ins_det_btns["trade"].pack(fill="x")
             self.ins_det_btns["remove"].pack(fill="x", pady=(8, 0))
         else:

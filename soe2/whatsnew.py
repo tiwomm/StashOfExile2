@@ -21,6 +21,15 @@ NEXT = [
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.104.0": [
+        "Favorites: an empty list says how to add one; the link box says what goes in it.",
+        "Favorites: a wider item card; Search and Open on trade site sit under it, like Price Checks.",
+        "Favorites: a check that found nothing says why, with Search again / Search with fewer mods.",
+        "Favorites: Undo shows only when there's something to undo; a failed price shows \"-\".",
+        "Market Insights: All and Gear tabs - priced gear shows here now.",
+        "Market Insights: no Refresh button (it fills in by itself); the item's buttons sit under its card.",
+        "Waystones: the tier row says just \"Waystone tier:\" - the boxes hold the numbers.",
+    ],
     "2.103.4": [
         "Charm slots (\"Has 1 Charm Slot\") get a Min box and search as a number.",
         "Waystones: a tier you type is kept when you press Search (no Enter needed).",
