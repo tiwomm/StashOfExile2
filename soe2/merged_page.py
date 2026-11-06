@@ -336,6 +336,12 @@ class MergedOverlay:
             self.overlay.show_notes()
         if getattr(self, "ovr_win", None) is not None:      # 2.91.0: the rates window takes the new look too
             self.ovr_build()
+        try:                                                # 2.109.0: Calc and Regex favorites too
+            self.calc_ov_restyle()
+            if self.rx_ov_shown():
+                self.rx_ov_show()
+        except Exception:
+            self.log_error("restyling the overlay's windows")
 
     # ---------------------------------------------------------------- the window
     def merged_destroy(self):

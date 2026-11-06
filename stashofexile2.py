@@ -23,6 +23,9 @@ VERSION HISTORY
        Regex: the option cards are one card with a row of buttons per setting (Rarity, Type, Uses remaining…), the
        way Money Makers' filters look. ★ first, Only ★ and Select valuable are gone (★ still marks valuable mods).
        PoE 2 has no find key: every "copied" hint now says Ctrl+V into the stash (or shop) search.
+       Everything over the game follows the overlay's Style and Colours (Settings › Appearance › Overlay settings):
+       Notes, Calc, Regex favorites, Rates, the goal bar and every card - they used the app theme or the Classic
+       colours before, so none matched. Windows keep a box in Hairline / Flanks. One palette: App.ov_palette.
   2.108.0
        Polish 7 - P4 + P5 + P6 + P7: the overlay and its children, Money Makers, Regex, Game search.
        - Right-click the overlay's cog = Quick settings, a small box over the game (soe2/ovquick.py): Overlay, Sound,
