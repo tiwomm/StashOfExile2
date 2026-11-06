@@ -225,16 +225,29 @@ class PriceCheckPage:
         wrap = tk.Frame(body, bg=P2)
         self.limit_banner(body, wrap)                # 2.103.3: the "Staying under the limits" line
         wrap.pack(fill="both", expand=True)
-        # ---- left: the item card (scrolls)
+        # ---- P2.5 (2.107.0, picked: 3 columns): Recent is a list on the left (was a dropdown over the card)
+        rec_col = tk.Frame(wrap, bg=C["panel"], width=250)
+        rec_col.pack(side="left", fill="y", padx=(0, 8))
+        rec_col.pack_propagate(False)
+        from .chrome import SectionBar
+        SectionBar(rec_col, "Recent").pack(fill="x")
+        tv = ttk.Treeview(rec_col, columns=("item", "price", "when"), show="headings", selectmode="browse")
+        for cid, title, w, a in (("item", "Item", 112, "w"), ("price", "Price", 60, "e"), ("when", "When", 52, "e")):
+            tv.heading(cid, text=title)
+            tv.column(cid, width=w, anchor=a, stretch=cid == "item")
+        tv.pack(fill="both", expand=True)
+        tv.bind("<<TreeviewSelect>>", lambda e: self.pc_pick_hist_tv())
+        self.pc_hist_tv = tv
+        self.pc_hist_empty = tk.Label(rec_col, text=f"Your last {PC_MAX} checks show here.", bg=C["panel"],
+                                      fg=C["muted"], font=("Segoe UI", 9), wraplength=220, justify="center")
+        # ---- the item card (scrolls)
         left = tk.Frame(wrap, bg=P2, width=380)
         left.pack(side="left", fill="y")
         left.pack_propagate(False)
-        top = tk.Frame(left, bg=P2, padx=12, pady=8)
+        top = tk.Frame(left, bg=P2, padx=12, pady=4)
         top.pack(fill="x")
-        tk.Label(top, text="Recent", bg=P2, fg=C["muted"], font=("Segoe UI", 9)).pack(side="left")
-        self.pc_hist_var = tk.StringVar()
+        self.pc_hist_var = tk.StringVar()                    # (the old dropdown: kept for its callers, never shown)
         self.pc_hist_cb = ttk.Combobox(top, textvariable=self.pc_hist_var, state="readonly")
-        self.pc_hist_cb.pack(side="left", fill="x", expand=True, padx=(8, 0))
         self.pc_hist_cb.bind("<<ComboboxSelected>>", lambda e: self.pc_pick_hist())
         self.pc_lcanvas, self.pc_left = self._pc_scroller(left, padx=12)
         # ---- right: the listings
@@ -246,7 +259,7 @@ class PriceCheckPage:
         self.pc_count_lbl.pack(side="left")
         # 2.97.3 (feedback): Add to favorites / Open on trade site sit under Search and Clear (pcv_card makes them
         # with each card); these two stand in, unshown, while there's no item
-        self.pc_open_btn0 = self.pc_open_btn = ttk.Button(head, text="Open on trade site", command=self.pc_open_trade,
+        self.pc_open_btn0 = self.pc_open_btn = ttk.Button(head, text="Trade Site", command=self.pc_open_trade,
                                                           state="disabled")
         self.pc_fav_btn0 = self.pc_fav_btn = ttk.Button(head, text="☆ Add to favorites", command=self.pc_add_fav,
                                                         state="disabled")
@@ -422,6 +435,35 @@ class PriceCheckPage:
         self.pc_hist_cb.config(values=[self.pc_label(r) for r in recs])
         cur = self.records.get(self.pc_rid)
         self.pc_hist_var.set(self.pc_label(cur) if cur else (f"{pc_key_label()} on an item in game" if not recs else ""))
+        tv = getattr(self, "pc_hist_tv", None)
+        if tv is not None:
+            from .pricefmt import fmt_div
+            self._pc_hist_quiet = True
+            try:
+                tv.delete(*tv.get_children())
+                for r in recs:
+                    it = r.get("item") or {}
+                    price = fmt_div(r["est"]) if r.get("est") is not None and not r.get("skip") else \
+                        ("…" if r.get("state") in ("queued", "pricing") else "-")
+                    tv.insert("", "end", iid=str(r["id"]), values=(it.get("name") or it.get("base") or "item", price,
+                                                                   time.strftime("%H:%M", time.localtime(r.get("time", 0)))))
+                if cur is not None and tv.exists(str(cur["id"])):
+                    tv.selection_set(str(cur["id"]))
+                    tv.see(str(cur["id"]))
+            finally:
+                self._pc_hist_quiet = False
+            if recs:
+                self.pc_hist_empty.place_forget()
+            else:
+                self.pc_hist_empty.place(relx=0.5, rely=0.3, anchor="n")
+
+    def pc_pick_hist_tv(self):
+        if getattr(self, "_pc_hist_quiet", False):
+            return
+        sel = self.pc_hist_tv.selection()
+        rec = self.records.get(int(sel[0])) if sel else None
+        if rec is not None and rec["id"] != getattr(self, "pc_rid", None):
+            self.pc_show(rec)
 
     def pc_pick_hist(self):
         i = self.pc_hist_cb.current()
@@ -489,12 +531,12 @@ class PriceCheckPage:
             more.pack(fill="x", pady=(8, 0))
             self.pc_fav_btn = ttk.Button(more, text="☆ Add to favorites", command=self.pc_add_fav, state="disabled")
             self.pc_fav_btn.pack(side="left", fill="x", expand=True)
-            self.pc_open_btn = ttk.Button(more, text="Open on trade site", command=self.pc_open_trade,
+            self.pc_open_btn = ttk.Button(more, text="Trade Site", command=self.pc_open_trade,
                                           state="disabled")
             self.pc_open_btn.pack(side="left", fill="x", expand=True, padx=(8, 0))
             v.open_btn = self.pc_open_btn
         elif v is getattr(self, "favv", None):              # P2 (2.104.0): Open on trade site under the card
-            ob = ttk.Button(btns, text="Open on trade site", command=self.fav_open_trade,
+            ob = ttk.Button(btns, text="Trade Site", command=self.fav_open_trade,
                             state="normal" if rec.get("qid") else "disabled")
             ob.pack(side="left", padx=(8, 0))
             v.open_btn = ob

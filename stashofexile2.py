@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU GPL v3.0 (see LICENSE). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.106.0
+VERSION 2.107.0
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,6 +19,17 @@ VERSION 2.106.0
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.107.0
+       Polish 7 - P2.5: Controls refresh (mockup with 3 switch directions in all 10 themes, then built; picked: B).
+       - Every on / off switch (every ttk Checkbutton) is a 68 x 24 segmented ON | OFF box: the chosen half lit
+         (accent / raised face), straight edges, monospace words (style._switch_img; same widgets and variables).
+       - Buttons are flat in every theme (themes.flat_spec): one color, 2 px corners, no gradient or bevel - normal
+         a raised face (accent edge on hover), primary the accent, danger an outline in the theme's danger color.
+         A pack can keep its own with "buttons": {"flat": false}.
+       - Price Checks in 3 columns: Recent is a list on the left (item, price, time) - was a dropdown.
+       - Overlay: one ON | OFF switch (was Overlay Enabled | Overlay Disabled); no "In game: Pause / resume" line;
+         Overlay ↳ Settings › Helpers: one Sound switch for every helper's alert (each row had its own).
+       - "Open on trade site" reads "Trade Site" everywhere.
   2.106.0
        Polish 7 - P3: Wealth (findings + mockup, then built). Synced stash tabs are gone (feedback: "clean start"):
        no Stash tabs page, no Sync / Stop / Re-check magic & rare items, no odd-price setup; what tabs read is
@@ -2516,7 +2527,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.106.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.107.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 

@@ -109,43 +109,74 @@ class Plate(tk.Canvas):
 _SWITCH = {}
 
 
-def _switch_img(root, on, hover=False, disabled=False, w=34, h=18, gap=8):
-    """One picture of the switch: a rounded track (accent when on), a round knob (right when on). Drawn 4x and scaled
-    down, so it's smooth. Pillow; without it a plain Tk drawing."""
-    # 2.62.0: straight from the running theme's palette (C) - these go into a picture, not through Tk's colors
-    track = C["accent"] if on else C["line"]
-    if hover and not disabled:
-        track = mix(C["accent"], "#ffffff", 0.25) if on else C["gold_dim"]
-    knob = "#ffffff" if on else C["steel"]
+_MONO = {}
+
+
+def _mono_font(size):
+    """A bold monospace font for ON / OFF (Consolas on Windows, DejaVu Sans Mono on Linux), else Pillow's own."""
+    if size in _MONO:
+        return _MONO[size]
+    from PIL import ImageFont
+    f = None
+    for name in ("consolab.ttf", "consola.ttf", "DejaVuSansMono-Bold.ttf", "LiberationMono-Bold.ttf",
+                 "/usr/share/fonts/truetype/dejavu/DejaVuSansMono-Bold.ttf"):
+        try:
+            f = ImageFont.truetype(name, size)
+            break
+        except Exception:
+            continue
+    if f is None:
+        try:
+            f = ImageFont.load_default(size=size)
+        except Exception:
+            f = ImageFont.load_default()
+    _MONO[size] = f
+    return f
+
+
+def _switch_img(root, on, hover=False, disabled=False, w=68, h=24, gap=8):
+    """P2.5 (2.107.0, picked: B - segmented): one picture of the switch - a 68 x 24 box split in two, ON | OFF; the
+    chosen half is lit (ON: the accent; OFF: a raised face). Straight edges, drawn 1:1 so they stay crisp; the
+    words in a monospace font. Pillow; without it a plain Tk drawing."""
+    acc, sunk = C["accent"], C.get("odd") or C["panel2"]
+    edge = mix(C["line"], C["text"], 0.18) if not hover or disabled else acc
+    off_face = mix(sunk, C["text"], 0.28)
+    on_text = text_on(acc)
+    words = (("ON", acc if on else sunk, on_text if on else C["muted"]),
+             ("OFF", sunk if on else off_face, C["muted"] if on else C["text"]))
     alpha = 110 if disabled else 255
     try:
         from PIL import Image, ImageDraw, ImageTk
-        k = 4
-        im = Image.new("RGBA", ((w + gap) * k, h * k), (0, 0, 0, 0))
-        d = ImageDraw.Draw(im)
 
         def rgba(c):
             c = c.lstrip("#")
             return tuple(int(c[i:i + 2], 16) for i in (0, 2, 4)) + (alpha,)
-        d.rounded_rectangle((0, 0, w * k - 1, h * k - 1), radius=h * k // 2, fill=rgba(track))
-        r = (h - 6) * k // 2
-        cx = (w - h // 2) * k if on else (h // 2) * k
-        cy = h * k // 2
-        d.ellipse((cx - r, cy - r, cx + r, cy + r), fill=rgba(knob))
-        im = im.resize((w + gap, h), Image.LANCZOS)
+        im = Image.new("RGBA", (w + gap, h), (0, 0, 0, 0))
+        d = ImageDraw.Draw(im)
+        half = w // 2
+        f = _mono_font(10)
+        for i, (word, bg, fg) in enumerate(words):
+            x0 = i * half
+            d.rectangle((x0, 0, x0 + half - (0 if i else 1), h - 1), fill=rgba(bg))
+            try:
+                l, t_, r, b = d.textbbox((0, 0), word, font=f)
+                tw, th = r - l, b - t_
+                d.text((x0 + (half - tw) // 2 - l, (h - th) // 2 - t_), word, font=f, fill=rgba(fg))
+            except Exception:
+                d.text((x0 + 6, 6), word, fill=rgba(fg))
+        d.rectangle((0, 0, w - 1, h - 1), outline=rgba(edge))
         return ImageTk.PhotoImage(im, master=root)
     except Exception:
         img = tk.PhotoImage(master=root, width=w + gap, height=h)
-        img.put(track, to=(h // 2, 2, w - h // 2, h - 2))
-        x0 = w - h + 3 if on else 3
-        img.put(knob, to=(x0, 3, x0 + h - 6, h - 3))
+        img.put(words[0][1], to=(0, 0, w // 2, h))
+        img.put(words[1][1], to=(w // 2, 0, w, h))
         return img
 
 
 def switches(root, s):
     """2.49.0 (feedback: "anywhere there's a checkbox... a modern slider in its place"): every ttk.Checkbutton
     (TCheckbutton and its Bar. / Mod. styles) shows a switch instead of a tick box. Same widgets, same variables."""
-    name = "Switch.indicator.%s" % (C["accent"] + C["line"] + C["gold_dim"] + C["steel"]).replace("#", "")
+    name = "Switch2.indicator.%s" % (C["accent"] + C["line"] + C["text"] + C["panel2"]).replace("#", "")
     if (id(root), name) in _SWITCH:           # 2.62.0: this look's switch exists - keep ITS pictures (making new
         imgs = None                           # ones here freed the old ones: switches went blank after a swap back)
     else:

@@ -279,7 +279,7 @@ class WealthPage:
         acts.pack(fill="x", pady=(8, 0))
         self.w_acts = acts
         ttk.Button(acts, text="Include / leave out", command=self.wealth_toggle_tab).pack(side="left")
-        ttk.Button(acts, text="Open on trade site", command=self.wealth_open_trade).pack(side="left", padx=8)
+        ttk.Button(acts, text="Trade Site", command=self.wealth_open_trade).pack(side="left", padx=8)
         ttk.Button(acts, text="Remove", command=self.wealth_remove_tab, style="Danger.TButton").pack(side="left")
         self.w_tabinfo = tk.Label(sf, text="", bg=P2, fg=C["muted"], justify="left", anchor="w",
                                   wraplength=700, font=("Segoe UI", 9))

@@ -843,9 +843,38 @@ def bevel_image(root, key, w, h, stops, border, inner=None, radius=0, top_line=N
     return img
 
 
+def flat_spec(t, name):
+    """P2.5 (2.107.0, feedback: "the buttons feel very amateur"): one flat look in every theme - 2 px corners, no
+    gradient or bevel; the theme still gives the colors. Normal: a raised face; primary: the accent; danger: an
+    outline in the theme's danger color; heading: list column heads."""
+    c = t.c
+    if name == "primary":
+        a = ST.C.get("accent") or c("accent")
+        return {"fill": [[0, a], [1, a]], "hover": [[0, mix(a, "#ffffff", .15)], [1, mix(a, "#ffffff", .15)]],
+                "pressed": [[0, mix(a, "#000000", .2)], [1, mix(a, "#000000", .2)]], "border": a,
+                "hover_border": mix(a, "#ffffff", .35), "inner": None, "radius": 2, "text": None, "text_hover": None}
+    if name == "danger":
+        b, bg = c("bad"), c("surface")
+        return {"fill": [[0, bg], [1, bg]], "hover": [[0, mix(bg, b, .18)], [1, mix(bg, b, .18)]],
+                "pressed": [[0, mix(bg, b, .3)], [1, mix(bg, b, .3)]], "border": b, "hover_border": b, "inner": None,
+                "radius": 2, "text": b, "text_hover": c("text_strong")}
+    if name == "heading":
+        f = c("surface_raised")
+        return {"fill": [[0, f], [1, f]], "hover": [[0, c("surface_high")], [1, c("surface_high")]],
+                "pressed": [[0, c("surface_sunken")], [1, c("surface_sunken")]], "border": c("border"),
+                "hover_border": c("border"), "inner": None, "radius": 0, "text": c("text_muted"),
+                "text_hover": c("text")}
+    f = c("surface_high")
+    return {"fill": [[0, f], [1, f]], "hover": [[0, mix(f, c("accent"), .14)], [1, mix(f, c("accent"), .14)]],
+            "pressed": [[0, c("surface_sunken")], [1, c("surface_sunken")]], "border": c("border_light"),
+            "hover_border": c("accent"), "inner": None, "radius": 2, "text": c("text"), "text_hover": c("text_strong")}
+
+
 def button_spec(t, name):
     """A button face spec from the pack; primary / danger are made from the accent / danger color when a pack
-    doesn't draw them itself."""
+    doesn't draw them itself. P2.5 (2.107.0): flat in every theme unless a pack says "buttons": {"flat": false}."""
+    if name in ("normal", "primary", "danger", "heading") and (t.part("buttons", "flat") is not False):
+        return flat_spec(t, name)
     spec = t.part("buttons", name)
     if spec:
         return spec

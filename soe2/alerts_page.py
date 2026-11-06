@@ -164,6 +164,12 @@ class AlertsPage:
         self.al_bar = tk.BooleanVar(value=True)
         CB = "Card.TCheckbutton"                        # (2.96.1: the card's own background - no black boxes)
         self.al_rows = {}
+        # P2.5 (2.107.0, feedback): ONE Sound switch for every helper (each row had its own)
+        srow = tk.Frame(box, bg=P2)
+        srow.pack(fill="x")
+        self.al_sound_all = tk.BooleanVar(value=bool(SETTINGS.get("helpers_sound", True)))
+        ttk.Checkbutton(srow, text="Sound - every helper's alert", variable=self.al_sound_all, style=CB,
+                        command=self.alerts_sound_all).pack(side="left")
         for key, name, what, test in (
                 ("delirium", "Delirium", "END DELIRIUM when you finish a map with Delirium still on (reads your screen)",
                  self.alerts_test_delirium),
@@ -195,10 +201,7 @@ class AlertsPage:
                                  command=lambda k=key: self.alerts_toggle(k))
             nb.pack(side="left", padx=(4, 0))
             Tooltip(nb, what)                       # 2.37.0: what it does - the line under a row shows only while on
-            snd = tk.BooleanVar(value=True)
-            if key not in ("remnant", "desecrate", "focus", "campaign"):   # 2.39.0: no sound for these
-                ttk.Checkbutton(row, text="Sound", variable=snd, style=CB,
-                                command=lambda k=key: self.alerts_sound(k)).pack(side="left")
+            snd = tk.BooleanVar(value=True)                 # (P2.5: no Sound switch per row - one for all, above)
             ttk.Button(row, text="Open" if key in ("focus", "campaign") else "Test", command=test, width=6).pack(side="right")
             if key == "breach":                    # 2.11.0
                 self.al_leave = tk.BooleanVar(value=bool(self.breach_cfg().get("leave_reminder", True)))
@@ -413,6 +416,17 @@ class AlertsPage:
                 pass
         self.alerts_refresh()
         return w
+
+    def alerts_sound_all(self):
+        """P2.5: the one Sound switch - every helper's alert sound on or off."""
+        on = bool(self.al_sound_all.get())
+        SETTINGS["helpers_sound"] = on
+        save_json("settings.json", SETTINGS)
+        for key in ("delirium", "breach", "ritual", "whispers"):
+            r = (getattr(self, "al_rows", None) or {}).get(key)
+            if r is not None:
+                r["sound"].set(on)
+                self.alerts_sound(key)
 
     def alerts_sound(self, key):
         r = self.al_rows[key]

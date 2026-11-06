@@ -117,7 +117,7 @@ class FavoritesPage:
         head.pack(fill="x")
         count = tk.Label(head, text="", bg=P1, fg=C["text"], font=("Segoe UI", 10, "bold"))
         count.pack(side="left")
-        ob = ttk.Button(head, text="Open on trade site", command=self.fav_open_trade, state="disabled")
+        ob = ttk.Button(head, text="Trade Site", command=self.fav_open_trade, state="disabled")
         rcanvas, lst = self._pc_scroller(right, padx=12, bg_key="panel")
         self.favv = PCView(left, lcanvas, lst, rcanvas, count, ob)
         self.favv.rid = None
@@ -229,7 +229,7 @@ class FavoritesPage:
         acts = []
         if one:
             acts += [("Search now", self.fav_search, True, "Enter"),
-                     ("Open on trade site", self.fav_open_trade, True),
+                     ("Trade Site", self.fav_open_trade, True),
                      ("Copy trade link", self.fav_copy_link, True), None,
                      ("Rename…", self.fav_rename, True, "F2"),
                      ("Edit…", self.fav_edit, True),
@@ -981,7 +981,7 @@ class FavoritesPage:
         btns.pack(fill="x", pady=(8, 0))
         ttk.Button(btns, text="Search", style="Primary.TButton", command=self.fav_search).pack(
             side="left", fill="x", expand=True)
-        ob = ttk.Button(btns, text="Open on trade site", command=self.fav_open_trade)   # P2: under the card
+        ob = ttk.Button(btns, text="Trade Site", command=self.fav_open_trade)   # P2: under the card
         ob.pack(side="left", padx=(8, 0))
         v.open_btn = ob
         v.lcanvas.yview_moveto(0)
