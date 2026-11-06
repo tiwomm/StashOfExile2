@@ -542,8 +542,8 @@ def build_query(item, must, optional, count_min, values, plain=False):
         ids = _ids(m, plain)
         if len(ids) > 1:                                     # same wording under several ids: any one of them
             query["stats"].append({"type": "count", "value": {"min": 1}, "filters": [_stat_filter({"sid": i}, v) for i in ids]})
-        else:
-            and_f.append(_stat_filter(m, v))
+        else:                                                # (2.105.0: its own id - "fractured only" too)
+            and_f.append(dict(_stat_filter(m, v), id=ids[0]))
     and_f = merge_dups(and_f)                                # 2.79.1: two Legacy of Quicksilver -> one, Min 2
     if and_f or not query["stats"]:
         query["stats"].insert(0, {"type": "and", "filters": and_f})
