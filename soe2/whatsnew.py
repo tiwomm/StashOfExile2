@@ -21,6 +21,11 @@ NEXT = [
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.105.1": [
+        "Favorites: ticking a stat on a trade-link favorite turns its group on - ticked mods are searched.",
+        "Favorites: trade-link favorites use your Seller setting (Instant Buyout) unless you pick one on the card.",
+        "Open on trade site: always opens what the card shows now - changed filters are searched first.",
+    ],
     "2.105.0": [
         "Price Checks and Favorites: Base type, tier, item level, Corrupted / Mirrored / Desecrated, Seller and "
         "\"only\" boxes change in place - the card no longer redraws on each click.",

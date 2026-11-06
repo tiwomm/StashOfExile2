@@ -4,7 +4,7 @@
 
 > **Who we build for - read second.** Path of Exile players are utilitarian: they love data and information, problem solving and creative thinking. So every feature shows its numbers *and how they were worked out*, lets you sort, filter, compare and export them (CSV), keeps power-user depth (keys, versions, raw data) one click away instead of hiding it, explains in plain words, and leaves the decision to the player. Pretty is welcome; vague is not.
 
-**Current version: 2.105.0**
+**Current version: 2.105.1**
 
 Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds features, 2.10.1 only fixes. Each step below is one release; we work through them top to bottom.
 
@@ -173,6 +173,7 @@ Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds f
 | 2.97.0 | Polish 4 - feedback round: the Rate mods ask says what it is (Count me in! / Not now / Never ask again) and opens in front; Rate mods starts with "Which items do you know best?", lights only your rating, Back / Next / Done under it; F is the ignore tier everywhere tiers show (saved as Ignore); Focus / Campaign on = their line shows (no line switch; both on = one bar, two rows, in Panel and Game bar), switching one on turns the overlay on; a finished character's campaign line and Vendor ▾ come back in campaign zones; Price Checks: Rate ▾ replaces ▲ / ▼, the card and listings fit the window (scrollbar only when needed), Fractured only ticks the mod. |
 | 2.97.1 | Price Checks card: a rune's line and an affix with the same wording are ticked apart; runes in their own AUGMENTS section (no RUNE / SOCKETED lines); Fractured / Desecrated only small, right under its mod, the mod in its color. |
 | 2.97.2 | Price Checks card - visual hierarchy: a mod's color says where it comes from (affix blue, rune light blue, fractured tan, desecrated green, pseudo pink; unticked = dimmed, not grey), the listing cards match; every section folds with how many are ticked, Fold all / Unfold all. |
+| 2.105.1 | Feedback: a ticked stat turns its group on (link favorites); link favorites follow your Seller setting; Open on trade site opens the card as it is now. |
 | 2.105.0 | Feedback: every box on the card (base, tier, item level, Corrupted / Mirrored / ..., Seller, "only") changes in place - no card redraw; Rates ▾ on the overlay bar; Map: / Avg.: labels; Leaderboards: league names and Top 5-100; Island Rumours: two causes fixed (needs an in-game check); exact searches need every ticked mod; amulet quality and anoints; 15 searches / 5 min; Market Insights slot / tablet kind and trade-site card; listing marks removed; Convert under Exchange Helper, hourly rates always. |
 | 2.104.0 | Polish 7 P2 - Favorites and Market Insights: empty list says how to add; link box hint; wider card with Search / Open on trade site under it; "why nothing matched" on Favorites; Undo only when there's something to undo; Market Insights All and Gear tabs, no Refresh, columns fit, buttons under the item. |
 | 2.103.4 | P1 feedback 4: "Has 1 Charm Slot" takes a Min (was read as a choice); a typed waystone tier is kept on Search; the Favorites list changes in place (it was built again on every save - the flicker); Bulk Pricing paints a tick in place. |
