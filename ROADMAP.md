@@ -276,6 +276,7 @@ Most-used first; pages that share data go together so their doubles can be merge
 
 ## 💤 Parked (not planned unless something changes)
 
+- **Bulk Pricing speed** (on the shelf): fewer searches per list, never more than the limits (no proxies / VPNs - clause 22). Check what the app already does, then: poe.ninja first for stackables and uniques, one search for identical items, reuse a recent result, 10 listings per fetch, fewer lowered tries when they rarely help, price obvious junk without a search unless ticked, run right at the limits the site sends back.
 - **Campaign guide pack refresh** (shelved until the 1.0 data is out - nothing can be done before it) for 0.5.5 and then 1.0: Dreadnought Vanguard is gone (Jamanra in The Dreadnought), Azarian moved to the Heart of Keth, the Waterways levers are pressure pads, the Primal Arena's +2 points moved to Omniphobia, the Whakapanu shark's permanent choice and Plunder's Point are missing, and about 10 Interlude zones are missing. 1.0 may bring Acts 5-6. The pace choice stays: Full rewards (normal pace), Speedrun and My own, each switching the optional steps on / off (2.89.0).
 - **One-key copy:** stays an experiment; Ctrl+Alt+C is the reliable way.
 - **Automatic loot logging, auto-syncing stash tabs:** too intrusive / too many trade-site requests.
