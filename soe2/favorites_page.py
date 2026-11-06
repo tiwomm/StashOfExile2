@@ -745,9 +745,21 @@ class FavoritesPage:
             else:
                 self.fav_search_link(f)
 
+    @staticmethod
+    def fav_status(f):
+        """2.105.1 (feedback: a link favorite searched "Any"): Seller follows your Seller setting (Settings) unless
+        you picked one on this card - a trade link's own status (the site's default) doesn't count."""
+        from .trade import STATUS_CHOICES
+        q = f.setdefault("query", {})
+        st = q.setdefault("status", {"option": "securable"})
+        if not f.get("status_own"):
+            st["option"] = dict(STATUS_CHOICES).get(SETTINGS.get("status"), "securable")
+        return st
+
     def fav_search_link(self, f):
         if f["id"] in self.fav_busy:
             return
+        self.fav_status(f)
         self.fav_busy.add(f["id"])
         league = SETTINGS.get("league") or f.get("league") or "Standard"
         body = {"query": FV.clean_query(f.get("query")), "sort": f.get("sort") or {"price": "asc"}}
@@ -790,10 +802,14 @@ class FavoritesPage:
             rec = self.fav_rec(f, make=False)
             qid = rec.get("qid") if rec else None
             return f"https://www.pathofexile.com/trade2/search/poe2/{quote(SETTINGS['league'])}/{qid}" if qid else None
-        res = self.fav_res.get(f["id"]) or {}
-        if res.get("qid"):
-            return f"https://www.pathofexile.com/trade2/search/poe2/{quote(res.get('league') or '')}/{res['qid']}"
-        return f.get("url")
+        # 2.105.1 (feedback: it opened without the mods ticked on the card): the search as the card has it now -
+        # the trade site takes it in the link (?q=), so nothing is searched from here
+        import json
+        self.fav_status(f)
+        league = SETTINGS.get("league") or f.get("league") or "Standard"
+        body = {"query": FV.clean_query(f.get("query")), "sort": f.get("sort") or {"price": "asc"}}
+        return (f"https://www.pathofexile.com/trade2/search/poe2/{quote(league)}?q="
+                + quote(json.dumps(body, separators=(",", ":"))))
 
     def _fav_one(self):
         ids = self._fav_ids()
@@ -801,11 +817,15 @@ class FavoritesPage:
 
     def fav_open_trade(self):
         f = self._fav_one()
+        if f and f.get("kind") == "item":                   # 2.105.1: changes on the card are searched first
+            rec = self.fav_rec(f, make=False)
+            if rec is not None and (rec.get("changed") or rec.get("qid")):
+                return self.open_rec_trade(rec)
         url = self._fav_url(f) if f else None
         if url:
             webbrowser.open(url)
         elif f:
-            self.fav_say("Search it first (Enter) - then it opens on the trade site.")
+            self.fav_say("Search it first (Enter) - then it opens on the trade site.")    # (an item not searched yet)
 
     def fav_copy_link(self):
         f = self._fav_one()
@@ -862,12 +882,15 @@ class FavoritesPage:
             e.bind("<Return>", lambda _e: (keep(), self.fav_search(), "break")[-1])
             return e
 
-        def switch(row, holder, text, fg=C["text"]):
+        def switch(row, holder, text, fg=C["text"], group=None):
             var = tk.BooleanVar(value=not holder.get("disabled"))
 
             def flip():
                 if var.get():
                     holder.pop("disabled", None)
+                    if group is not None and group[0].get("disabled"):    # 2.105.1 (feedback: ticked legacies
+                        group[0].pop("disabled", None)                     # weren't searched - their group was
+                        group[1].set(True)                                 # off): a ticked stat turns it on
                 else:
                     holder["disabled"] = True
                 changed()
@@ -875,6 +898,7 @@ class FavoritesPage:
                                 fg=fg, activeforeground=fg, text=text, anchor="w", justify="left", wraplength=210,
                                 font=("Segoe UI", 9), highlightthickness=0, bd=0)
             cb.pack(side="left", fill="x", expand=True)
+            cb.var = var
             return cb
         # ---- what it searches for
         item_rows = [(k, q.get(k)) for k in ("name", "type", "term") if q.get(k)]
@@ -898,7 +922,7 @@ class FavoritesPage:
             section(f"STATS  ·  {title.upper()}")
             row = tk.Frame(card, bg=bg)
             row.pack(fill="x")
-            switch(row, g, "this whole group", C["muted"])
+            gcb = switch(row, g, "this whole group", C["muted"])
             if g.get("type") in ("count", "weight", "weight2"):
                 g.setdefault("value", {})
                 tk.Label(row, text="min", bg=bg, fg=C["muted"], font=("Segoe UI", 9)).pack(side="left")
@@ -912,7 +936,7 @@ class FavoritesPage:
                 kind = sid.split(".")[0] if "." in sid else ""
                 if kind and kind not in ("explicit",):
                     text = f"{text}  ({kind})"
-                switch(row, flt, text)
+                switch(row, flt, text, group=(g, gcb.var))
                 flt.setdefault("value", {})
                 if isinstance(flt["value"], dict) and "option" not in flt["value"]:
                     vbox(row, flt["value"], "max").pack(side="right", padx=(2, 0))
@@ -946,13 +970,13 @@ class FavoritesPage:
                             side="right", padx=(0, 4))
         # ---- seller
         section("SELLER")
-        st = q.setdefault("status", {"option": "securable"})
+        st = self.fav_status(f)
         names = [n for n, _v in STATUS_CHOICES]
-        var = tk.StringVar(value=next((n for n, val in STATUS_CHOICES if val == st.get("option")), names[-1]))
+        var = tk.StringVar(value=next((n for n, val in STATUS_CHOICES if val == st.get("option")), names[0]))
         cb = ttk.Combobox(card, textvariable=var, values=names, state="readonly")
         cb.pack(fill="x")
         cb.bind("<<ComboboxSelected>>", lambda e: (st.__setitem__("option", dict(STATUS_CHOICES)[var.get()]),
-                                                   changed()))
+                                                   f.__setitem__("status_own", True), changed()))
         btns = tk.Frame(v.left, bg=P2)
         btns.pack(fill="x", pady=(8, 0))
         ttk.Button(btns, text="Search", style="Primary.TButton", command=self.fav_search).pack(

@@ -3295,6 +3295,8 @@ class App(GearBookPage, PriceCheckPage, FavoritesPage, BoardModPage, Leaderboard
         rec = self.records.get(rid)
         if not rec:
             return
+        if rec.pop("open_after", False) and rec.get("qid") and not rec.get("changed"):
+            self.open_qid(rec["qid"])                         # 2.105.1: Open on trade site waited for the search
         if rec.get("src") == "ledger":                        # 2.45.0: a Strat Tracker setup item, priced out of sight
             return self.fl_priced(rid)
         if rid == getattr(self, "lib_rid", None):            # priced from the Item library: show it there too
@@ -4600,7 +4602,20 @@ class App(GearBookPage, PriceCheckPage, FavoritesPage, BoardModPage, Leaderboard
         sel = self.tree.selection()
         if len(sel) != 1:
             return
-        rec = self.records[int(sel[0])]
+        self.open_rec_trade(self.records[int(sel[0])])
+
+    def open_rec_trade(self, rec):
+        """2.105.1 (feedback: it opened without the changes on the card): filters changed since the last search -
+        search them first, then the trade site opens on that search."""
+        if not rec:
+            return
+        if rec.get("changed") or (not rec.get("qid") and rec.get("state") in ("queued", "pricing")):
+            rec["open_after"] = True
+            if rec.get("changed"):
+                self.reprice([rec["id"]])
+            self.status_text, self.status_until = "Searching your changes first - the trade site opens when it's done.", \
+                time.time() + 8
+            return
         if rec.get("qid"):
             self.open_qid(rec["qid"])
 

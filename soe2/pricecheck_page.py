@@ -725,9 +725,7 @@ class PriceCheckPage:
         return cv
 
     def pc_open_trade(self):
-        rec = self.records.get(self.pc_rid)
-        if rec and rec.get("qid"):
-            self.open_qid(rec["qid"])
+        self.open_rec_trade(self.records.get(self.pc_rid))     # 2.105.1: changes are searched first
 
     # ---------------------------------------------------------------- pictures (the trade site's image server)
     def _pc_art_path(self, url):
