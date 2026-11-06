@@ -21,7 +21,13 @@ NEXT = [
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
-    "2.105.1": [
+    "2.106.0": [
+        "Wealth: synced stash tabs are gone - count your currency (Ctrl+C) or Scan stash (beta). Old tab data is "
+        "cleared once; what you counted stays.",
+        "Wealth: Items show where each stack came from (Counted, Scanned, Added by hand) - filter by it.",
+        "Wealth › Snapshots: what happened each time, the change since the one before, and the picked one beside "
+        "the list.",
+        "Wealth: the chart's line uses its height, so ups and downs show.",
         "Favorites: ticking a stat on a trade-link favorite turns its group on - ticked mods are searched.",
         "Favorites: trade-link favorites use your Seller setting (Instant Buyout) unless you pick one on the card.",
         "Open on trade site: always opens what the card shows now - changed filters are searched first.",
