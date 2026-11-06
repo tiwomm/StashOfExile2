@@ -763,7 +763,7 @@ class MoneyMakersPage:
                            command=lambda: self.mm_item_copy(rx, "all the tablets"))
             self.mm_all_tabs_btn = b
             t.window_create("end", window=b)
-            t.insert("end", "  stash or vendor: Ctrl+F, Ctrl+V · Trade: the ★ mods, cheapest first\n", "meta")
+            t.insert("end", "  stash or vendor: Ctrl+V in the search · Trade: the ★ mods, cheapest first\n", "meta")
 
     def mm_item_copy(self, rx, what):
         if not rx:
@@ -771,7 +771,7 @@ class MoneyMakersPage:
         self.root.clipboard_clear()
         self.root.clipboard_append(rx)
         self.own_clip = rx
-        self._say(f"Copied the search for {what}. In game: Ctrl+F, Ctrl+V.", 6)
+        self._say(f"Copied the search for {what}. In game: Ctrl+V in the stash search.", 6)
         return rx
 
     def mm_item_trade(self, it):
@@ -1232,7 +1232,7 @@ class MoneyMakersPage:
             self.root.clipboard_clear()
             self.root.clipboard_append(s["regex"])
             self.own_clip = s["regex"]
-            self._say("Copied the strat's stash search. In game: Ctrl+F, Ctrl+V.", 6)
+            self._say("Copied the strat's stash search. In game: Ctrl+V in the stash search.", 6)
 
     def mm_export(self):
         s = self.mm_current()
@@ -1821,7 +1821,7 @@ class MoneyMakersPage:
         self.root.clipboard_clear()
         self.root.clipboard_append(s)
         self.own_clip = s
-        self._say(f"Copied the stash search for {what}. In game: Ctrl+F, Ctrl+V.", 6)
+        self._say(f"Copied the stash search for {what}. In game: Ctrl+V in the stash search.", 6)
         return s
 
     def mm_tab_copy_all(self):

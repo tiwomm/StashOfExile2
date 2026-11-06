@@ -21,6 +21,10 @@ NEXT = [
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.109.0": [
+        "Regex: all options in one card, a button for each setting.",
+        "Copied a search? Just Ctrl+V into the stash search in game.",
+    ],
     "2.108.0": [
         "Right-click the overlay's cog: Quick settings over the game - overlay, sound, lock, what's on the bar. "
         "Left-click still opens the full settings.",
