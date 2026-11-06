@@ -29,6 +29,10 @@ NOTES = {
         "Leaderboards: a tidier toolbar, and a hint when a board is empty.",
         "Map library: rank buttons S A B C D ✖ sit together in the toolbar.",
         "Price Checks: Recent sits under the item card, so the page has more room.",
+        "Overlay bar: no stray \"-\" after Map: and Avg.: before your first map.",
+        "Money Makers: Import file and Download Format are in the ⋯ menu next to + Add my own.",
+        "Regex: item kinds are tabs, options are click-to-toggle chips, and the Regex key line sits under your search.",
+        "Game search: click a Try example, or one of your recent searches.",
     ],
     "2.107.0": [
         "New look for controls: every switch is a clear ON | OFF box, and buttons are flat in every theme.",

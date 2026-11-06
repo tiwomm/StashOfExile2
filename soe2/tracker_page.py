@@ -1133,15 +1133,19 @@ class TrackerPage:
         s = self.tk_session
         live = s is not None and s.ended is None
         show_where = bool(self.tracker_cfg()["lines"].get("where", True))       # 2.70.1
+
+        def val(k):                                # 2.108.0 (feedback): no "-" after Map: / Avg.: while empty
+            v = n.get(k)
+            return "" if v in (None, "-") else v
         texts = {"session": n.get("time", "0:00") if live else "not tracking",
-                 "map": f"Map: {n.get('map', '-')}" + (f"   {n.get('where', '')}" if show_where and live and
+                 "map": f"Map: {val('map')}" + (f"   {n.get('where', '')}" if show_where and live and
                                                        n.get("where") not in ("-", None) else "")
                         + self._ov_rank(n.get("where") if live else None),
-                 "maps": f"Maps: {n.get('maps', '0')}", "avg": f"Avg.: {n.get('avg', '-')}",   # 2.90.0
+                 "maps": f"Maps: {n.get('maps', '0')}", "avg": f"Avg.: {val('avg')}",   # 2.90.0
                  }
         if getattr(self, "tk_ov_cv", None) is not None:    # 2.47.0: the skins' two columns
             where = n.get("where") if show_where and live and n.get("where") not in ("-", None) else ""
-            texts.update(map=f"Map: {n.get('map', '-')}", where=where.strip())      # 2.76.0: the rank is its own part
+            texts.update(map=f"Map: {val('map')}", where=where.strip())      # 2.76.0: the rank is its own part
         texts["rank"] = self.rank_text(n.get("where") if live and getattr(self, "_mr_in", None) else None)
         texts["focus"] = self.focus_line()[0]                 # 2.73.0: League Focus's line
         from . import campaign as CP

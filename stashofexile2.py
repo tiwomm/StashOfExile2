@@ -20,7 +20,7 @@ VERSION 2.108.0
 
 VERSION HISTORY
   2.108.0
-       Polish 7 - P4 + P5: the overlay and its children (mockups first, then built).
+       Polish 7 - P4 + P5 + P6 + P7: the overlay and its children, Money Makers, Regex, Game search.
        - Right-click the overlay's cog = Quick settings, a small box over the game (soe2/ovquick.py): Overlay, Sound,
          Lock overlay, Hide from screen captures, and Overlays - chips for what sits on the bar - plus All settings….
          Left-click still opens Overlay ↳ Settings. Esc, ✕, a click elsewhere or the cog again closes it.
@@ -33,6 +33,11 @@ VERSION HISTORY
        - Leaderboards: two toolbar rows (boards + sharing, then filters); empty texts on both lists.
        - Map library: ranking is one compact S A B C D ✖ group in the toolbar, then Clear and Share ▾.
        - Price Checks: Recent is a panel under the item card (was a column on the left - too crunched).
+       - Overlay bar: no "-" after Map: / Avg.: while there's nothing to show yet.
+       - Money Makers: + Add my own, with Import file… and Download Format in a ⋯ menu beside it.
+       - Regex: Tablets / Waystones / Relics / Jewels / Gear items are tabs; the Regex key line sits under the
+         search; rarity / type / options are toggle chips; the how-to text is a ? tooltip.
+       - Game search: the empty page shows Try examples (click one) and your recent searches (Clear empties them).
   2.107.0
        Polish 7 - P2.5: Controls refresh (mockup with 3 switch directions in all 10 themes, then built; picked: B).
        - Every on / off switch (every ttk Checkbutton) is a 68 x 24 segmented ON | OFF box: the chosen half lit

@@ -123,9 +123,11 @@ class MoneyMakersPage:
         self.mm_bsort_lab = tk.Label(fbar, text="Board", bg=P1, fg=C["muted"])
         self.mm_bsort_box = ttk.Combobox(fbar, textvariable=self.mm_bsort, values=("Top", "New"), state="readonly", width=5)
         self.mm_bsort_box.bind("<<ComboboxSelected>>", lambda e: (self.mm_board_fetch(), self.root.after(20, self.root.focus_set)))
-        for text, cmd in (("⬇ Download Format", self.mm_download_format), ("Import file…", self.mm_import),
-                          ("+ Add my own", self.mm_add)):
-            ttk.Button(fbar, text=text, command=cmd, style="Quiet.TButton").pack(side="right", padx=(8, 0))
+        # P6 (2.108.0): + Add my own, and a ⋯ menu for Import file… / Download Format
+        more = ttk.Button(fbar, text="⋯", width=3, command=lambda: self.mm_more_menu(more))
+        more.pack(side="right", padx=(8, 0))
+        Tooltip(more, "Import file… · Download Format")
+        ttk.Button(fbar, text="+ Add my own", command=self.mm_add).pack(side="right", padx=(8, 0))
         from .style import flowify, flow_add
         flowify(fbar)                                        # 2.98.0: wraps in a narrow window
         flow_add(fbar, self.mm_bsort_lab, (12, 8), shown=False)
@@ -1262,6 +1264,13 @@ class MoneyMakersPage:
                 f.write(MM.to_csv(s))
         self._say(f"Saved {path}", 6)
         return path
+
+    def mm_more_menu(self, btn):
+        m = tk.Menu(self.root, tearoff=0, bg=C["panel2"], fg=C["text"], activebackground="#2c4a84")
+        m.add_command(label="Import file…", command=self.mm_import)
+        m.add_command(label="⬇ Download Format", command=self.mm_download_format)
+        m.tk_popup(btn.winfo_rootx(), btn.winfo_rooty() + btn.winfo_height())
+        return m
 
     def mm_download_format(self, path=None):
         """The blank standard layout as a CSV file (2.46.0; opens in Excel / Google Sheets, the "note" column says
