@@ -850,13 +850,14 @@ def flat_spec(t, name):
     c = t.c
     if name == "primary":
         a = ST.C.get("accent") or c("accent")
-        return {"fill": [[0, a], [1, a]], "hover": [[0, mix(a, "#ffffff", .15)], [1, mix(a, "#ffffff", .15)]],
+        hv = mix(a, "#000000", .12) if t.data.get("light") else mix(a, "#ffffff", .15)   # (light themes: darker)
+        return {"fill": [[0, a], [1, a]], "hover": [[0, hv], [1, hv]],
                 "pressed": [[0, mix(a, "#000000", .2)], [1, mix(a, "#000000", .2)]], "border": a,
                 "hover_border": mix(a, "#ffffff", .35), "inner": None, "radius": 2, "text": None, "text_hover": None}
     if name == "danger":
         b, bg = c("bad"), c("surface")
-        return {"fill": [[0, bg], [1, bg]], "hover": [[0, mix(bg, b, .18)], [1, mix(bg, b, .18)]],
-                "pressed": [[0, mix(bg, b, .3)], [1, mix(bg, b, .3)]], "border": b, "hover_border": b, "inner": None,
+        return {"fill": [[0, bg], [1, bg]], "hover": [[0, mix(bg, b, .08)], [1, mix(bg, b, .08)]],
+                "pressed": [[0, mix(bg, b, .16)], [1, mix(bg, b, .16)]], "border": b, "hover_border": b, "inner": None,
                 "radius": 2, "text": b, "text_hover": c("text_strong")}
     if name == "heading":
         f = c("surface_raised")
