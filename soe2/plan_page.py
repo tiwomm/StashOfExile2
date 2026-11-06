@@ -80,12 +80,6 @@ class GamePlanPage:
         self.gp_on = tk.BooleanVar(value=bool(f["on"]))
         ttk.Checkbutton(top, text="League Focus", variable=self.gp_on, command=self.gp_switch,
                         style="Card.TCheckbutton").pack(side="left")
-        tk.Frame(top, bg=C["line"], width=1, height=22).pack(side="left", padx=12)
-        tk.Label(top, text="PHASE", bg=P2, fg=C["muted"], font=("Segoe UI", 9, "bold")).pack(side="left", padx=(0, 8))
-        self.gp_phase = SegBar(top, [n for _k, n in F.PHASES], command=lambda v: self.gp_phase_pick(v), size=9,
-                               pad=(8, 4), bg=P2)
-        self.gp_phase.pack(side="left")
-        self.gp_phase.pick(F.phase_name(f["phase"]), notify=False)
         self.gp_summary = tk.Label(top, text="", bg=P2, fg=C["text"], font=("Segoe UI", 9), anchor="e")
         self.gp_summary.pack(side="right")
         tk.Label(page, text="Set it once - the overlay's focus line and pokes bring it back when it matters.",
@@ -100,13 +94,36 @@ class GamePlanPage:
         left.grid(row=0, column=0, sticky="nsew", padx=(0, 8))
         right.grid(row=0, column=1, sticky="nsew", padx=(8, 0))
         self._gp_goals(left)
-        self._gp_pokes(left)
-        self._gp_stock(right)
-        self._gp_supplies(right)
-        self._gp_farms(right)
-        self._gp_lock(right)
+        # P5 (2.108.0): the right side is tabs - one part at a time
+        tabs = ("Stockpile", "Map supplies", "Farm plan", "Pokes")
+        self.gp_tabs = SegBar(right, list(tabs), command=self.gp_tab, size=10, pad=(12, 4), bg=P1)
+        self.gp_tabs.pack(anchor="w", pady=(0, 8))
+        self.gp_tab_frames = {}
+        for name, fn in zip(tabs, ((self._gp_stock,), (self._gp_supplies,), (self._gp_farms,),
+                                   (self._gp_pokes, self._gp_lock))):
+            fr = tk.Frame(right, bg=P1)
+            for build in fn:
+                build(fr)
+            self.gp_tab_frames[name] = fr
+        self.gp_tab(tabs[0])
         self.gp_fill()
         return page
+
+    def gp_tab(self, name):
+        for n, fr in self.gp_tab_frames.items():
+            if n == name:
+                fr.pack(fill="x")
+            else:
+                fr.pack_forget()
+        if self.gp_tabs.get() != name:
+            self.gp_tabs.pick(name, notify=False)
+
+    def gp_view_pick(self, name):
+        """P5 (2.108.0): the Goals tabs show one phase; + Add adds to the phase on show."""
+        self.gp_new_phase.set(name)
+        if self.gp_view.get() != name:
+            self.gp_view.pick(name, notify=False)
+        self._gp_goal_rows()
 
     def gp_summary_text(self):
         f = F.cfg()
@@ -124,24 +141,27 @@ class GamePlanPage:
     # ---------------- A: goals by phase
     def _gp_goals(self, parent):
         P2 = C["panel2"]
-        o, box = chrome_section(parent, "Goals by phase", "League start, when you reach maps, long term. ▸ puts one "
-                                                          "on the overlay's focus line.", wrap=True)
+        o, box = chrome_section(parent, "Goals", "One phase at a time. ▸ puts a goal on the overlay's focus line.",
+                                wrap=True)
         o.pack(fill="x", pady=(0, 12))
+        f = F.cfg()
+        self.gp_new_phase = tk.StringVar(value=F.phase_name(f["phase"]))
+        self.gp_view = SegBar(box, [n for _k, n in F.PHASES], command=self.gp_view_pick, size=9, pad=(8, 4), bg=P2)
+        self.gp_view.pack(anchor="w", pady=(0, 8))
+        self.gp_view.pick(self.gp_new_phase.get(), notify=False)
+        self.gp_now_row = tk.Frame(box, bg=P2)
+        self.gp_now_row.pack(fill="x", pady=(0, 4))
         self.gp_goal_box = tk.Frame(box, bg=P2)
         self.gp_goal_box.pack(fill="x")
-        form = self._gp_add_area(box, "ADD A GOAL")
+        form = self._gp_add_area(box, "ADD A GOAL TO THIS PHASE")
         self._gp_label(form, 0, "Goal")
         self.gp_new = tk.StringVar()
         e = ttk.Entry(form, textvariable=self.gp_new)
         e.grid(row=0, column=1, columnspan=3, sticky="ew", pady=2)
         e.bind("<Return>", lambda ev: self.gp_add_goal())
-        self._gp_label(form, 1, "Phase")
+        self._gp_label(form, 1, "Poke me")
         r1 = tk.Frame(form, bg=P2)
         r1.grid(row=1, column=1, columnspan=3, sticky="ew", pady=2)
-        self.gp_new_phase = tk.StringVar(value=F.PHASES[0][1])
-        ttk.Combobox(r1, textvariable=self.gp_new_phase, values=[n for _k, n in F.PHASES], state="readonly",
-                     width=17).pack(side="left")
-        tk.Label(r1, text="Poke me", bg=P2, fg=C["muted"], font=("Segoe UI", 9)).pack(side="left", padx=(12, 8))
         self.gp_new_trig = tk.StringVar(value=F.TRIGGERS[0][1])
         ttk.Combobox(r1, textvariable=self.gp_new_trig, values=[n for _k, n in F.TRIGGERS], state="readonly",
                      width=24).pack(side="left", fill="x", expand=True)
@@ -203,58 +223,67 @@ class GamePlanPage:
         cur = F.current()
         self.gp_goal_vars = {}
         trig = dict(F.TRIGGERS)
-        for i, (key, name) in enumerate(F.PHASES):
-            gs = F.goals_of(key)
-            now_phase = f["phase"] == key
-            h = self._gp_head(box, name.upper(), C["good"] if now_phase else C["steel"], top=0 if i == 0 else 12,
-                              count=f"{sum(1 for g in gs if g['done'])} / {len(gs)} done" if gs else None)
-            if now_phase:
-                tk.Label(h, text=" NOW ", bg=C["good"], fg=C["bg"], font=("Segoe UI", 9, "bold")).pack(side="left",
-                                                                                                  padx=(8, 0))
-            if not gs:
-                self._gp_empty(box, "Nothing yet.")
-            for g in gs:
-                r = tk.Frame(box, bg=P2)
-                r.pack(fill="x", pady=(2, 0))
-                v = tk.BooleanVar(value=bool(g["done"]))
-                self.gp_goal_vars[g["id"]] = v
-                ttk.Checkbutton(r, text=g["text"], variable=v, style="Card.TCheckbutton",
-                                command=lambda gid=g["id"], v=v: (F.set_done(gid, v.get()), self.gp_fill(),
-                                                                  self.gp_overlay())).pack(side="left")
-                x = tk.Label(r, text="✕", bg=P2, fg=C["muted"], cursor="hand2")
-                x.pack(side="right")
-                x.bind("<Button-1>", lambda e, gid=g["id"]: (F.remove_goal(gid), self.gp_fill(), self.gp_overlay()))
-                Tooltip(x, "Remove this goal")
-                now = cur is not None and cur["id"] == g["id"]
-                b = tk.Label(r, text="▸ on the overlay" if now else "▸", bg=P2, fg=C["accent"] if now else C["muted"],
-                             cursor="hand2", font=("Segoe UI", 9, "bold" if now else "normal"))
-                b.pack(side="right", padx=8)
-                b.bind("<Button-1>", lambda e, gid=g["id"]: self.gp_set_now(gid))
-                Tooltip(b, "Show this one on the overlay's focus line")
-                meta = tk.Frame(box, bg=P2)                # the quieter second line: target, then when it pokes
-                meta.pack(fill="x", padx=(24, 0), pady=(0, 4))
-                kind, target = F.goal_target(g)
-                if kind:
-                    have, _t = F.progress(g)
-                    if kind in F.AUTO_TARGETS:
-                        tk.Label(meta, text=F.progress_text(g), bg=P2, fg=C["text"], font=("Segoe UI", 9)).pack(
-                            side="left")
-                        tk.Label(meta, text=" from the log", bg=P2, fg=C["muted"], font=("Segoe UI", 9)).pack(
-                            side="left")
-                    else:
-                        tk.Label(meta, text="Act" if kind == "act" else "have", bg=P2, fg=C["muted"],
-                                 font=("Segoe UI", 9)).pack(side="left")
-                        hv = tk.StringVar(value=f"{g.get('have') or 0:g}")
-                        he = ttk.Entry(meta, textvariable=hv, width=5)
-                        he.pack(side="left", padx=4)
-                        he.bind("<Return>", lambda e, gid=g["id"], hv=hv: self.gp_goal_have(gid, hv.get()))
-                        he.bind("<FocusOut>", lambda e, gid=g["id"], hv=hv: self.gp_goal_have(gid, hv.get()))
-                        unit = next((u for k, _n, u in F.TARGETS if k == kind), "")
-                        tk.Label(meta, text=f"/ {target:g}" + (f" {unit}" if unit and kind != "act" else ""), bg=P2,
-                                 fg=C["muted"], font=("Segoe UI", 9)).pack(side="left")
-                    self._gp_bar(meta, have / target if target else 0).pack(side="left", padx=(8, 0))
-                tk.Label(meta, text="poke: " + trig.get(g["trigger"], g["trigger"]), bg=P2, fg=C["muted"],
-                         font=("Segoe UI", 9)).pack(side="right")
+        name = self.gp_new_phase.get() if hasattr(self, "gp_new_phase") else F.phase_name(f["phase"])
+        key = next((k for k, n in F.PHASES if n == name), f["phase"])
+        nr = getattr(self, "gp_now_row", None)
+        if nr is not None:                                 # P5 (2.108.0): which phase you're in, one click to move
+            for w in nr.winfo_children():
+                w.destroy()
+            if f["phase"] == key:
+                tk.Label(nr, text=" NOW ", bg=C["good"], fg=C["bg"], font=("Segoe UI", 9, "bold")).pack(side="left")
+                tk.Label(nr, text="  the phase you're in", bg=P2, fg=C["muted"], font=("Segoe UI", 9)).pack(side="left")
+            else:
+                tk.Label(nr, text="You're in " + F.phase_name(f["phase"]), bg=P2, fg=C["muted"],
+                         font=("Segoe UI", 9)).pack(side="left")
+                ttk.Button(nr, text="I'm here now", style="Quiet.TButton",
+                           command=lambda n=name: self.gp_phase_pick(n)).pack(side="left", padx=(8, 0))
+        gs = F.goals_of(key)
+        if gs:
+            self._gp_head(box, f"{sum(1 for g in gs if g['done'])} / {len(gs)} done", top=0)
+        if not gs:
+            self._gp_empty(box, "No goals for this phase yet - add one below.")
+        for g in gs:
+            r = tk.Frame(box, bg=P2)
+            r.pack(fill="x", pady=(2, 0))
+            v = tk.BooleanVar(value=bool(g["done"]))
+            self.gp_goal_vars[g["id"]] = v
+            ttk.Checkbutton(r, text=g["text"], variable=v, style="Card.TCheckbutton",
+                            command=lambda gid=g["id"], v=v: (F.set_done(gid, v.get()), self.gp_fill(),
+                                                              self.gp_overlay())).pack(side="left")
+            x = tk.Label(r, text="✕", bg=P2, fg=C["muted"], cursor="hand2")
+            x.pack(side="right")
+            x.bind("<Button-1>", lambda e, gid=g["id"]: (F.remove_goal(gid), self.gp_fill(), self.gp_overlay()))
+            Tooltip(x, "Remove this goal")
+            now = cur is not None and cur["id"] == g["id"]
+            b = tk.Label(r, text="▸ on the overlay" if now else "▸", bg=P2, fg=C["accent"] if now else C["muted"],
+                         cursor="hand2", font=("Segoe UI", 9, "bold" if now else "normal"))
+            b.pack(side="right", padx=8)
+            b.bind("<Button-1>", lambda e, gid=g["id"]: self.gp_set_now(gid))
+            Tooltip(b, "Show this one on the overlay's focus line")
+            meta = tk.Frame(box, bg=P2)                # the quieter second line: target, then when it pokes
+            meta.pack(fill="x", padx=(24, 0), pady=(0, 4))
+            kind, target = F.goal_target(g)
+            if kind:
+                have, _t = F.progress(g)
+                if kind in F.AUTO_TARGETS:
+                    tk.Label(meta, text=F.progress_text(g), bg=P2, fg=C["text"], font=("Segoe UI", 9)).pack(
+                        side="left")
+                    tk.Label(meta, text=" from the log", bg=P2, fg=C["muted"], font=("Segoe UI", 9)).pack(
+                        side="left")
+                else:
+                    tk.Label(meta, text="Act" if kind == "act" else "have", bg=P2, fg=C["muted"],
+                             font=("Segoe UI", 9)).pack(side="left")
+                    hv = tk.StringVar(value=f"{g.get('have') or 0:g}")
+                    he = ttk.Entry(meta, textvariable=hv, width=5)
+                    he.pack(side="left", padx=4)
+                    he.bind("<Return>", lambda e, gid=g["id"], hv=hv: self.gp_goal_have(gid, hv.get()))
+                    he.bind("<FocusOut>", lambda e, gid=g["id"], hv=hv: self.gp_goal_have(gid, hv.get()))
+                    unit = next((u for k, _n, u in F.TARGETS if k == kind), "")
+                    tk.Label(meta, text=f"/ {target:g}" + (f" {unit}" if unit and kind != "act" else ""), bg=P2,
+                             fg=C["muted"], font=("Segoe UI", 9)).pack(side="left")
+                self._gp_bar(meta, have / target if target else 0).pack(side="left", padx=(8, 0))
+            tk.Label(meta, text="poke: " + trig.get(g["trigger"], g["trigger"]), bg=P2, fg=C["muted"],
+                     font=("Segoe UI", 9)).pack(side="right")
 
     def gp_set_now(self, gid):
         F.cfg()["now"] = gid
@@ -264,6 +293,9 @@ class GamePlanPage:
 
     def gp_phase_pick(self, name):
         F.set_phase(next((k for k, n in F.PHASES if n == name), "start"))
+        if hasattr(self, "gp_view"):
+            self.gp_new_phase.set(name)
+            self.gp_view.pick(name, notify=False)
         self.gp_fill()
         self.gp_overlay()
 
@@ -306,7 +338,7 @@ class GamePlanPage:
     # ---------------- B: stockpile
     def _gp_stock(self, parent):
         P2 = C["panel2"]
-        o, box = chrome_section(parent, "Stockpile while it's cheap", "What to buy and sit on. Have = what you type "
+        o, box = chrome_section(parent, "Stockpile", "What to buy and sit on. Have = what you type "
                                                                        "(Enter keeps it); Now = poe.ninja for your "
                                                                        "league (or the bulk exchange).", wrap=True)
         o.pack(fill="x", pady=(0, 12))
@@ -315,7 +347,7 @@ class GamePlanPage:
         form = self._gp_add_area(box, "ADD TO STOCKPILE")
         self.gp_s_name, self.gp_s_goal, self.gp_s_under = tk.StringVar(), tk.StringVar(), tk.StringVar()
         self.gp_s_cat, self.gp_s_pick = tk.StringVar(value="All"), tk.StringVar()
-        self._gp_label(form, 0, "From the exchange")
+        self._gp_label(form, 0, "Item")
         r0 = tk.Frame(form, bg=P2)
         r0.grid(row=0, column=1, sticky="ew", pady=2)
         self.gp_s_catbox = ttk.Combobox(r0, textvariable=self.gp_s_cat, state="readonly", width=14,
@@ -328,20 +360,19 @@ class GamePlanPage:
         self.gp_s_pickbox.pack(side="left", fill="x", expand=True, padx=(8, 0))
         self.gp_s_pickbox.bind("<<ComboboxSelected>>", lambda e: self.gp_s_name.set(""))
         Tooltip(self.gp_s_pickbox, "Pick an item. Type in the box below to narrow this list.")
-        self._gp_label(form, 1, "Or any item by name")
+        self._gp_label(form, 1, "Or any name")
         ne = ttk.Entry(form, textvariable=self.gp_s_name)
         ne.grid(row=1, column=1, sticky="ew", pady=2)
         ne.bind("<KeyRelease>", lambda e: self.gp_stock_filter(typed=True))
         Tooltip(ne, "Any item by name. What you type here also narrows the list above.")
-        self._gp_label(form, 2, "Quantity")
+        self._gp_label(form, 2, "How many")
         r2 = tk.Frame(form, bg=P2)
         r2.grid(row=2, column=1, sticky="ew", pady=2)
         ttk.Entry(r2, textvariable=self.gp_s_goal, width=7).pack(side="left")
         bu = tk.Frame(r2, bg=P2)                             # (2.98.0: "Buy under [ ] div each" stays together)
         bu.pack(side="left", padx=(12, 0))
-        tk.Label(bu, text="Buy under", bg=P2, fg=C["muted"], font=("Segoe UI", 9)).pack(side="left", padx=(0, 8))
+        tk.Label(bu, text="Buy under (div)", bg=P2, fg=C["muted"], font=("Segoe UI", 9)).pack(side="left", padx=(0, 8))
         ttk.Entry(bu, textvariable=self.gp_s_under, width=7).pack(side="left")
-        tk.Label(bu, text="div each", bg=P2, fg=C["muted"], font=("Segoe UI", 9)).pack(side="left", padx=(4, 0))
         ttk.Button(r2, text="+ Add", command=self.gp_add_stock).pack(side="right")
         from .style import flowify
         flowify(r2)                                          # 2.98.0: wraps in a narrow window

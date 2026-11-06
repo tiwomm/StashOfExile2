@@ -119,7 +119,7 @@ class OverlayQuick:
         box.pack(padx=1, pady=1)
         head = tk.Frame(box, bg=P2, padx=12, pady=8, highlightthickness=0)
         head.pack(fill="x")
-        tk.Label(head, text="Quick settings", bg=P2, fg=C["text"], font=("Segoe UI", 11, "bold")).pack(side="left")
+        tk.Label(head, text="Quick settings", bg=P2, fg=C["text"], font=("Segoe UI", 12, "bold")).pack(side="left")
         ttk.Button(head, text="✕", width=3, style="Quiet.TButton", command=self.ov_quick_close).pack(side="right")
         tk.Frame(box, bg=C["accent"], height=2).pack(fill="x")
         body = tk.Frame(box, bg=P1, padx=12, pady=8)
@@ -138,13 +138,13 @@ class OverlayQuick:
         row("Sound", SETTINGS.get("helpers_sound", True), self.helpers_sound_set)
         row("Lock overlay", cfg.get("mlocked"), self._ovq_lock)
         row("Hide from screen captures", cfg.get("hide_capture", False), self._ovq_hidecap)
-        tk.Label(body, text="OVERLAYS", bg=P1, fg=C["muted"], font=("Segoe UI", 8, "bold"), anchor="w").pack(
+        tk.Label(body, text="OVERLAYS", bg=P1, fg=C["muted"], font=("Segoe UI", 9, "bold"), anchor="w").pack(
             fill="x", pady=(8, 4))
         grid = tk.Frame(body, bg=P1)
         grid.pack(fill="x")
         self.ovq_chips = {}
         for i, (label, key) in enumerate(QUICK_BAR):
-            b = tk.Label(grid, text=label, font=("Segoe UI", 9), padx=10, pady=4, cursor="hand2",
+            b = tk.Label(grid, text=label, font=("Segoe UI", 9), padx=8, pady=4, cursor="hand2",
                          highlightthickness=1)
             b.grid(row=i // 4, column=i % 4, sticky="ew", padx=(0, 4), pady=(0, 4))
             b.bind("<Button-1>", lambda _e, k=key: self._ovq_chip(k))

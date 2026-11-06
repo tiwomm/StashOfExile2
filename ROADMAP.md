@@ -4,7 +4,7 @@
 
 > **Who we build for - read second.** Path of Exile players are utilitarian: they love data and information, problem solving and creative thinking. So every feature shows its numbers *and how they were worked out*, lets you sort, filter, compare and export them (CSV), keeps power-user depth (keys, versions, raw data) one click away instead of hiding it, explains in plain words, and leaves the decision to the player. Pretty is welcome; vague is not.
 
-**Current version: 2.107.0**
+**Current version: 2.108.0**
 
 Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds features, 2.10.1 only fixes. Each step below is one release; we work through them top to bottom.
 
@@ -173,6 +173,7 @@ Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds f
 | 2.97.0 | Polish 4 - feedback round: the Rate mods ask says what it is (Count me in! / Not now / Never ask again) and opens in front; Rate mods starts with "Which items do you know best?", lights only your rating, Back / Next / Done under it; F is the ignore tier everywhere tiers show (saved as Ignore); Focus / Campaign on = their line shows (no line switch; both on = one bar, two rows, in Panel and Game bar), switching one on turns the overlay on; a finished character's campaign line and Vendor ▾ come back in campaign zones; Price Checks: Rate ▾ replaces ▲ / ▼, the card and listings fit the window (scrollbar only when needed), Fractured only ticks the mod. |
 | 2.97.1 | Price Checks card: a rune's line and an affix with the same wording are ticked apart; runes in their own AUGMENTS section (no RUNE / SOCKETED lines); Fractured / Desecrated only small, right under its mod, the mod in its color. |
 | 2.97.2 | Price Checks card - visual hierarchy: a mod's color says where it comes from (affix blue, rune light blue, fractured tan, desecrated green, pseudo pink; unticked = dimmed, not grey), the listing cards match; every section folds with how many are ticked, Fold all / Unfold all. |
+| 2.108.0 | Polish 7 P4 + P5 - right-click the cog = Quick settings over the game, one Island rumours panel, Game Plan in tabs, Leaderboards two-row toolbar, Map library rank group. |
 | 2.107.0 | Polish 7 P2.5 - Controls refresh: segmented ON / OFF switches everywhere, flat buttons in every theme, Price Checks in 3 columns (Recent list), Overlay ON / OFF switch, one Sound switch for helpers, "Trade Site". |
 | 2.106.0 | Polish 7 P3 - Wealth: synced stash tabs removed (clean start for old tab data); Count currency first, Scan stash beside it; Items From: Counted / Scanned / Added by hand; Snapshots say what happened, the change, and the picked one beside the list; the chart uses its height. Also: link favorites (a ticked stat turns its group on, Seller follows your setting, Open on trade site opens the card as it is). |
 | 2.105.1 (in 2.106.0) | Feedback: a ticked stat turns its group on (link favorites); link favorites follow your Seller setting; Open on trade site opens the card as it is now. |
@@ -227,8 +228,8 @@ Most-used first; pages that share data go together so their doubles can be merge
 | P2 | Price Checks' children: Favorites, Market Insights (Bulk Pricing was in P1) - ✅ 2.104.0 |
 | P2.5 | ✅ 2.107.0 - **Controls refresh** (feedback: "the buttons feel amateur, the UI a bit generic"): one app-wide pass on the controls themselves, in style.py, so every later pass gets them - buttons (shape, depth, hover / press, icon + text), toggle switches, entries, dropdowns, check boxes, tabs, headings. Mockup first (2-3 directions per theme), you pick, then build. |
 | P3 | ✅ 2.106.0 - Wealth - and remove the public stash tabs from Wealth (Stash tabs page, Sync stash tabs, the odd-price setup, synced items, every step / chip / help line about it): Scan stash replaces it. Price Checks › Add items from: Stash tab stays (it still has a use there). |
-| P4 | Overlay hub, Overlay › Settings, the bar itself (Panel and Game bar), helpers' pop-ups (done in 2.107.0: the "In game: Pause / resume" line gone, Overlay ON / OFF switch, one Sound switch); right-click the cog wheel = a small settings pop-up over the game (left click still opens the full Settings in the app). |
-| P5 | Overlay's children: Game Plan, Map library, Leaderboards |
+| P4 | ✅ 2.108.0 - Overlay hub, Overlay › Settings, the bar itself (Panel and Game bar), helpers' pop-ups (done in 2.107.0: the "In game: Pause / resume" line gone, Overlay ON / OFF switch, one Sound switch); right-click the cog wheel = a small settings pop-up over the game (left click still opens the full Settings in the app). |
+| P5 | ✅ 2.108.0 - Overlay's children: Game Plan, Map library, Leaderboards |
 | P6 | Money Makers (Strats, Lucrative Strats, Tablet Craft Helper, Farm Tracker, strat editor) |
 | P7 | Regex, Game search |
 | P8 | Under the hood: Mod book, Rate mods - and remove the Listing order lab (an admin tool, done its job). |

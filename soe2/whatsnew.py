@@ -21,6 +21,14 @@ NEXT = [
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.108.0": [
+        "Right-click the overlay's cog: Quick settings over the game - overlay, sound, lock, what's on the bar. "
+        "Left-click still opens the full settings.",
+        "Expedition: the island rumours show in one panel beside the card.",
+        "Game Plan: goals by phase in tabs, and Stockpile / Map supplies / Farm plan / Pokes in tabs.",
+        "Leaderboards: a tidier toolbar, and a hint when a board is empty.",
+        "Map library: rank buttons S A B C D ✖ sit together in the toolbar.",
+    ],
     "2.107.0": [
         "New look for controls: every switch is a clear ON | OFF box, and buttons are flat in every theme.",
         "Price Checks: your recent checks are a list on the left (was a dropdown).",

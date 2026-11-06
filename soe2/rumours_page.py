@@ -181,7 +181,7 @@ class RumoursPage:
         except tk.TclError:
             pass
         edge_col = P.get("edge") or P.get("leather") or P["line"]
-        box = tk.Frame(w, bg=P["bg"], highlightthickness=1, highlightbackground=edge_col, padx=10, pady=6)
+        box = tk.Frame(w, bg=P["bg"], highlightthickness=1, highlightbackground=edge_col, padx=8, pady=8)
         box.pack()
         hf = tkfont.Font(root=w, family="Segoe UI", size=-max(11, line_h - 4), weight="bold")
         tk.Label(box, text="Island rumours", bg=P["bg"], fg=P["muted"], font=hf, anchor="w").grid(
