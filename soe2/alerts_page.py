@@ -20,7 +20,7 @@ from tkinter import ttk
 
 from .config import save_json, SETTINGS
 from .gamelog import area_kind as gl_area_kind, find_log, LogReader
-from .style import C, Tooltip
+from .style import C, flowify, Tooltip
 
 REPEAT_SECS = 45          # the game repeats a warning (twice in 2 s, then every ~15 s when full): one banner per level
 RETRY_TICKS = 15          # Client.txt not found: look again every this many seconds
@@ -192,36 +192,40 @@ class AlertsPage:
                                                     "option shows its tier (T1 = best for that item type) - on only "
                                                     "while you're there (reads Client.txt, then your screen)",
                  self.alerts_test_desecrate)):
-            row = tk.Frame(box, bg=P2)
-            row.pack(fill="x", pady=(8, 0))
+            rowbox = tk.Frame(box, bg=P2)                # P4 (2.108.0): the row and, under it, its options -
+            rowbox.pack(fill="x", pady=(8, 0))           # they wrap (the Expedition row ran under its Test button)
+            row = tk.Frame(rowbox, bg=P2)
+            row.pack(fill="x")
+            opts = tk.Frame(rowbox, bg=P2)
+            opts.pack(fill="x", padx=(24, 8))
             dot = tk.Label(row, text="●", bg=P2, fg=DOT["off"], font=("Segoe UI", 10))
             dot.pack(side="left")
             on = tk.BooleanVar(value=False)
             nb = ttk.Checkbutton(row, text=name, variable=on, width=18 if key == "desecrate" else 12, style=CB,
                                  command=lambda k=key: self.alerts_toggle(k))
-            nb.pack(side="left", padx=(4, 0))
+            nb.pack(side="left", padx=(4, 12))
             Tooltip(nb, what)                       # 2.37.0: what it does - the line under a row shows only while on
             snd = tk.BooleanVar(value=True)                 # (P2.5: no Sound switch per row - one for all, above)
             ttk.Button(row, text="Open" if key in ("focus", "campaign") else "Test", command=test, width=6).pack(side="right")
             if key == "breach":                    # 2.11.0
                 self.al_leave = tk.BooleanVar(value=bool(self.breach_cfg().get("leave_reminder", True)))
-                ttk.Checkbutton(row, text="Remind me when I leave the map", variable=self.al_leave, style=CB,
-                                command=self.alerts_leave_changed).pack(side="left", padx=(4, 0))
+                ttk.Checkbutton(opts, text="Remind me when I leave the map", variable=self.al_leave, style=CB,
+                                command=self.alerts_leave_changed).pack(side="left", padx=(4, 12))
             if key == "remnant":                   # 2.37.0: Auto - the list is found and priced by itself
                 self.al_rauto = tk.BooleanVar(value=bool(self.remnant_cfg().get("auto")))
-                ab = ttk.Checkbutton(row, text="Auto (no key needed)", variable=self.al_rauto, style=CB,
+                ab = ttk.Checkbutton(opts, text="Auto (no key needed)", variable=self.al_rauto, style=CB,
                                      command=lambda: self.remnant_auto_changed(self.al_rauto.get()))
-                ab.pack(side="left", padx=(4, 0))
+                ab.pack(side="left", padx=(4, 12))
                 self.al_rru = tk.BooleanVar(value=bool(self.remnant_cfg().get("rumours", True)))   # 2.83.0
-                rb_ = ttk.Checkbutton(row, text="Island rumours (in your hideout)", variable=self.al_rru, style=CB,
+                rb_ = ttk.Checkbutton(opts, text="Island rumours (in your hideout)", variable=self.al_rru, style=CB,
                                       command=lambda: self.ru_changed(self.al_rru.get()))
-                rb_.pack(side="left", padx=(4, 0))
+                rb_.pack(side="left", padx=(4, 12))
                 Tooltip(rb_, "On the world map's Uncharted Waters card, each rumour gets the island it leads to and "
                              "your Map library rank for it. Only in your hideout.")
                 self.al_rtips = tk.BooleanVar(value=bool(self.remnant_cfg().get("tips", True)))      # 2.40.0
-                tb_ = ttk.Checkbutton(row, text="Runeshape tips", variable=self.al_rtips, style=CB,
+                tb_ = ttk.Checkbutton(opts, text="Runeshape tips", variable=self.al_rtips, style=CB,
                                       command=lambda: self.remnant_tips_changed(self.al_rtips.get()))
-                tb_.pack(side="left", padx=(4, 0))
+                tb_.pack(side="left", padx=(4, 12))
                 Tooltip(tb_, "A small list next to the prices: the runeshapes players rate best for loot (S and A "
                              "tier). It shows and goes with the prices.")
                 Tooltip(ab, "Prices show by themselves when a remnant's reward book opens: the app watches the spot "
@@ -230,26 +234,27 @@ class AlertsPage:
             if key == "whispers":                  # 2.98.1: on during the campaign; this keeps it on after
                 from . import whispers as _W
                 self.al_wafter = tk.BooleanVar(value=bool(_W.cfg()["after"]))
-                wa = ttk.Checkbutton(row, text="Keep on after the campaign", variable=self.al_wafter, style=CB,
+                wa = ttk.Checkbutton(opts, text="Keep on after the campaign", variable=self.al_wafter, style=CB,
                                      command=self.ww_after_changed)
-                wa.pack(side="left", padx=(4, 0))
+                wa.pack(side="left", padx=(4, 12))
                 Tooltip(wa, "Off: it watches only while your character is in the campaign (league start, before maps "
                             "and the Currency Exchange). On: always.")
             if key == "ritual":                    # 2.14.0
                 self.al_rleave = tk.BooleanVar(value=bool(self.ritual_cfg().get("leave_reminder", True)))
-                ttk.Checkbutton(row, text="Remind me when I leave the map", variable=self.al_rleave, style=CB,
-                                command=self.alerts_ritual_leave_changed).pack(side="left", padx=(4, 0))
+                ttk.Checkbutton(opts, text="Remind me when I leave the map", variable=self.al_rleave, style=CB,
+                                command=self.alerts_ritual_leave_changed).pack(side="left", padx=(4, 12))
             # (2.97.0: no "Its line above the bar" - Focus / Campaign on = its line shows; both on = one bar, two rows)
             bv = (getattr(self, "tk_bar_vars", None) or {}).get(key)
             if bv is not None:                     # 2.96.1: its switch on the bar, here (was a list in On the bar)
-                sb_ = ttk.Checkbutton(row, text="Switch on the bar", variable=bv, style=CB, command=self.tracker_bar_switch)
-                sb_.pack(side="left", padx=(4, 0))
+                sb_ = ttk.Checkbutton(opts, text="Switch on the bar", variable=bv, style=CB, command=self.tracker_bar_switch)
+                sb_.pack(side="left", padx=(4, 12))
                 if hasattr(self, "tk_ov_switches"):
                     self.tk_ov_switches["bar:" + name.split(" (")[0]] = sb_
+            flowify(opts)                                 # (wraps in a narrow window)
             st = tk.Label(box, text=what, bg=P2, fg=C["muted"], anchor="w", justify="left", font=("Segoe UI", 9))
             st.pack(fill="x", padx=(24, 8))                   # 2.11.0: its own line, so it never gets cut off
             st.bind("<Configure>", lambda e, l=st: l.config(wraplength=max(200, e.width - 10)))
-            self.al_rows[key] = {"dot": dot, "on": on, "sound": snd, "status": st, "what": what, "note": "", "row": row}
+            self.al_rows[key] = {"dot": dot, "on": on, "sound": snd, "status": st, "what": what, "note": "", "row": rowbox}
         self.al_rows["breach"]["on"].set(bool(self.breach_cfg().get("on")))
         self.al_rows["breach"]["sound"].set(bool(self.breach_cfg().get("sound", True)))
         self.al_rows["ritual"]["on"].set(bool(self.ritual_cfg().get("on")))
@@ -419,14 +424,7 @@ class AlertsPage:
 
     def alerts_sound_all(self):
         """P2.5: the one Sound switch - every helper's alert sound on or off."""
-        on = bool(self.al_sound_all.get())
-        SETTINGS["helpers_sound"] = on
-        save_json("settings.json", SETTINGS)
-        for key in ("delirium", "breach", "ritual", "whispers"):
-            r = (getattr(self, "al_rows", None) or {}).get(key)
-            if r is not None:
-                r["sound"].set(on)
-                self.alerts_sound(key)
+        self.helpers_sound_set(bool(self.al_sound_all.get()))     # (P4: shared with Quick settings)
 
     def alerts_sound(self, key):
         r = self.al_rows[key]

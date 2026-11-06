@@ -161,6 +161,8 @@ class RumoursPage:
         self.ru_show(rows, edge)
 
     def ru_show(self, rows, edge):
+        """P4 (2.108.0, feedback: "all of the information in a single panel instead of individual bars"): one panel
+        beside the Uncharted Waters card - each rumour's island and your Map library rank, in the card's order."""
         self.ru_hide()
         from tkinter import font as tkfont
         from . import maplib
@@ -170,33 +172,39 @@ class RumoursPage:
         P = pal()
         mine = maplib.ranks()
         good = {"S": P.get("warn") or "#ffd25a", "A": P.get("warn") or "#ffd25a", "Avoid": P.get("bad") or "#e06c5a"}
-        wins = []
-        for _r, island, (x0, y0, x1, y1) in rows:
+        line_h = max(14, min(int((rows[0][2][3] - rows[0][2][1]) * 0.75), 28)) if rows else 16
+        w = tk.Toplevel(self.root)
+        w.withdraw()
+        w.overrideredirect(True)
+        try:
+            w.attributes("-topmost", True)
+        except tk.TclError:
+            pass
+        edge_col = P.get("edge") or P.get("leather") or P["line"]
+        box = tk.Frame(w, bg=P["bg"], highlightthickness=1, highlightbackground=edge_col, padx=10, pady=6)
+        box.pack()
+        hf = tkfont.Font(root=w, family="Segoe UI", size=-max(11, line_h - 4), weight="bold")
+        tk.Label(box, text="Island rumours", bg=P["bg"], fg=P["muted"], font=hf, anchor="w").grid(
+            row=0, column=0, columnspan=2, sticky="w", pady=(0, 4))
+        f = tkfont.Font(root=w, family="Segoe UI", size=-line_h, weight="bold")
+        for i, (_r, island, _box) in enumerate(rows, 1):
             rank = mine.get(island)
-            w = tk.Toplevel(self.root)
-            w.withdraw()
-            w.overrideredirect(True)
-            try:
-                w.attributes("-topmost", True)
-            except tk.TclError:
-                pass
-            size = -max(11, int((y1 - y0) * 0.75))
-            f = tkfont.Font(root=w, family="Segoe UI", size=size, weight="bold")
             col = good.get(rank, P["text"] if rank else P["muted"])
-            tk.Label(w, text=RU.tag_text(island, rank), fg=col, bg=P["bg"], font=f, padx=8, pady=1,
-                     highlightthickness=1, highlightbackground=col if rank in ("S", "A") else P["line"]).pack()
-            w.update_idletasks()
-            x = (edge[0] if edge else x1) + 12
-            w.geometry(f"+{int(x)}+{int((y0 + y1) / 2 - w.winfo_reqheight() / 2)}")
-            w.deiconify()
-            try:
-                click_through(w)
-                force_topmost(w)
-            except Exception:
-                pass
-            no_capture(w)
-            wins.append(w)
-        self.ru_wins = wins or None
+            tk.Label(box, text=island, bg=P["bg"], fg=P["text"], font=f, anchor="w").grid(row=i, column=0, sticky="w")
+            tk.Label(box, text=rank or "not ranked", bg=P["bg"], fg=col, font=f, anchor="e").grid(
+                row=i, column=1, sticky="e", padx=(16, 0))
+        w.update_idletasks()
+        x = (edge[0] if edge else max(b[2] for _r, _i, b in rows)) + 12
+        y = edge[1] if edge else min(b[1] for _r, _i, b in rows)
+        w.geometry(f"+{int(x)}+{int(y)}")
+        w.deiconify()
+        try:
+            click_through(w)
+            force_topmost(w)
+        except Exception:
+            pass
+        no_capture(w)
+        self.ru_wins = [w]
 
     def ru_hide(self):
         wins, self.ru_wins = getattr(self, "ru_wins", None), None

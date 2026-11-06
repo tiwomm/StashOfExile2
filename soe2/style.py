@@ -712,6 +712,8 @@ class Tooltip:
         widget.bind("<Enter>", self._enter, add="+")
         widget.bind("<Leave>", self._leave, add="+")
         widget.bind("<ButtonPress>", self._leave, add="+")
+        widget.bind("<Unmap>", self._leave, add="+")       # P4 (2.108.0): a tip stayed up when its page was left
+        widget.bind("<Destroy>", self._leave, add="+")
 
     def _enter(self, _e=None):
         self._cancel()
@@ -749,6 +751,22 @@ class Tooltip:
         place_near(self.w.winfo_toplevel(), self.win, x, y)
         from .motion import fade_in
         fade_in(self.win, 1.0)
+        self.w.after(400, self._watch)
+
+    def _watch(self):
+        """P4: gone as soon as its widget isn't on screen (a page change doesn't send a Leave)."""
+        if self.win is None:
+            return
+        try:
+            gone = not self.w.winfo_viewable()
+        except tk.TclError:
+            gone = True
+        if gone:
+            return self.hide()
+        try:
+            self.w.after(400, self._watch)
+        except tk.TclError:
+            self.hide()
 
     def _colors(self):
         """(bg, fg, edge): the app's colors - or, on a window over the game, the overlay's (its theme and look)."""
