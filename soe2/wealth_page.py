@@ -159,7 +159,7 @@ class WealthPage:
         ibar = tk.Frame(right, bg=P1)
         ibar.pack(fill="x", pady=(0, 8))
         # P3 (2.105.1): where a stack came from - Counted / Scanned / Added by hand (was the stash tab picker)
-        self.w_from = SegBar(ibar, ["All", "Counted", "Scanned", "Added by hand"], size=9, pad=(10, 4),
+        self.w_from = SegBar(ibar, ["All", "Counted", "Scanned", "Added by hand"], size=9, pad=(8, 4),
                              command=lambda v: self.wealth_pick_tab(None if v == "All" else v))
         self.w_from.pack(side="left", padx=(0, 12))
         self.w_filter = tk.StringVar()
@@ -886,9 +886,9 @@ class WealthPage:
         self.w_step_btns = {}
 
         def card(col, title, text, label, fn, main):
-            f = tk.Frame(row, bg=P1, padx=12, pady=10, highlightthickness=1,
+            f = tk.Frame(row, bg=P1, padx=12, pady=8, highlightthickness=1,
                          highlightbackground=C["accent"] if main else C["line"])
-            f.grid(row=0, column=col, sticky="nsew", padx=(0, 6) if col == 0 else (6, 0))
+            f.grid(row=0, column=col, sticky="nsew", padx=(0, 8) if col == 0 else (6, 0))
             mid = tk.Frame(f, bg=P1)
             mid.pack(side="left", fill="x", expand=True)
             tk.Label(mid, text=title, bg=P1, fg=C["text"], font=("Segoe UI", 10, "bold"), anchor="w").pack(fill="x")
