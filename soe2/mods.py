@@ -797,7 +797,9 @@ def option_for(sid, text):
             if sid in [i for ids in st["trade"].values() for i in ids]:
                 for mt in st.get("matchers") or []:
                     if mt.get("value") is not None and norm(mt.get("string", "")) == want:
-                        return int(mt["value"])
+                        if "#" in mt.get("string", ""):
+                            continue                # 2.103.4 (feedback): "Has # Charm Slot" = 1 is the one-slot
+                        return int(mt["value"])     # wording of a number, not a choice - it takes a Min
     except Exception:
         pass
     return None
