@@ -12,6 +12,7 @@ import re
 import sys
 import threading
 import time
+import types
 import tkinter as tk
 import traceback
 import types
@@ -4763,6 +4764,8 @@ class App(GearBookPage, PriceCheckPage, FavoritesPage, BoardModPage, Leaderboard
             return
         it = rec["item"]
         self._detail_card(d, rec, it, wrap)
+        self.bulkv = types.SimpleNamespace(card_rows=self.card_rows, card_paint=self.card_paint,  # 2.103.4: ticks
+                                           card_vals=self.card_vals, rid=rec["id"], search_btn=None)  # in place
         btns = tk.Frame(d, bg=P2)
         btns.pack(fill="x", pady=(8, 0))
         self.detail_search_btn = ttk.Button(btns, text="Search again  [Enter]", style="Primary.TButton",
@@ -5044,8 +5047,21 @@ class App(GearBookPage, PriceCheckPage, FavoritesPage, BoardModPage, Leaderboard
             self._card_opt_store(rec, key, vals)
             self.card_changed(rec)
             return vals
+        def keep(_e=None):                      # 2.103.4 (feedback: a typed tier went back to 15 on Search): a
+            vals = {}                           # number is kept as you type, like the mods' Min / Max - not only
+            for k, e in boxes.items():          # on Enter
+                tx = e.get().strip().replace(",", ".")
+                try:
+                    vals[k] = int(float(tx)) if tx else None
+                    e.config(highlightbackground=C["line"])
+                except ValueError:
+                    e.config(highlightbackground=C["red"])
+                    return
+            self._card_opt_store(rec, key, vals if vals["min"] is not None or vals["max"] is not None else None)
+            rec["changed"] = True
         self._card_click(cv, tag, lambda: take(not on))
         for e in boxes.values():
+            e.bind("<KeyRelease>", keep, add="+")
             e.bind("<Return>", lambda _e: (take(True), "break")[-1])
         self.card_opts[key] = (boxes, on)
         if key == "ilvl":
@@ -5393,10 +5409,12 @@ class App(GearBookPage, PriceCheckPage, FavoritesPage, BoardModPage, Leaderboard
     def _card_view(self, rec):
         """2.103.3: the Price Checks / Favorites view showing this record's card, or None."""
         v = getattr(self, "pcv", None) if rec.get("src") == "pc" else \
-            getattr(self, "favv", None) if rec.get("src") == "fav" else None
+            getattr(self, "favv", None) if rec.get("src") == "fav" else getattr(self, "bulkv", None)
         if v is None or getattr(v, "card_paint", None) is None:
             return None
         if rec["id"] != (getattr(self, "pc_rid", None) if rec.get("src") == "pc" else v.rid):
+            return None
+        if rec.get("src") not in ("pc", "fav") and getattr(self, "shown_rec", None) is not rec:
             return None
         return v
 

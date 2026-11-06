@@ -21,6 +21,12 @@ NEXT = [
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.103.4": [
+        "Charm slots (\"Has 1 Charm Slot\") get a Min box and search as a number.",
+        "Waystones: a tier you type is kept when you press Search (no Enter needed).",
+        "Favorites: the list on the left changes in place instead of being built again.",
+        "Bulk Pricing: a tick on the item panel changes only that row first.",
+    ],
     "2.103.3": [
         "Price Checks: a tick or a star changes only that mod's row - the card is no longer built again.",
         "Waystones: a tier range (or an unticked tier) now searches every waystone in that range.",

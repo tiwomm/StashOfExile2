@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU GPL v3.0 (see LICENSE). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.103.3
+VERSION 2.103.4
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,6 +19,15 @@ VERSION 2.103.3
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.103.4
+       P1 feedback, round 4:
+       - "Has 1 Charm Slot" was read as a fixed choice (the game data writes the one-slot wording as "# = 1", like
+         Mageblood's Legacy of Gold), so it had no Min box. A wording with "#" in it is a number, not a choice.
+       - Waystones: the tier went back to 15 on Search - the boxes were kept only on Enter. Now every key keeps them,
+         like the mods' Min / Max.
+       - Favorites still flickered: every save (400 ms after a change) built the whole list on the left again. Now
+         when the rows are the same, only their words change.
+       - Bulk Pricing's item panel paints a tick in place too (its own card rows, like Price Checks and Favorites).
   2.103.3
        P1 feedback, round 3:
        - Price Checks: every tick still flickered - 2.103.1 / 2.103.2 still built the whole card again on each one.
@@ -2449,7 +2458,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.103.3"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.103.4"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 

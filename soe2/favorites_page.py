@@ -132,6 +132,17 @@ class FavoritesPage:
             return
         st = self.favs()
         keep = list(select) if select is not None else list(tv.selection())
+        want = [("", f["id"]) for f in st.in_group("")] + [x for g in st.groups for x in
+                [("", GROUP_PRE + g["id"])] + [(GROUP_PRE + g["id"], f["id"]) for f in st.in_group(g["id"])]]
+        have = [x for c in tv.get_children("") for x in [("", c)] + [(c, i) for i in tv.get_children(c)]]
+        if want == have:
+            self._fav_fill_same(st)                   # 2.103.4 (feedback: Favorites still flickered): same rows -
+            if select is not None:                    # their words change in place, nothing is built again
+                keep = [i for i in keep if tv.exists(i)]
+                if keep and list(tv.selection()) != keep:
+                    tv.selection_set(keep)
+                    tv.see(keep[0])
+            return
         tv.delete(*tv.get_children())
         for f in st.in_group(""):
             self._fav_row("", f)
@@ -149,6 +160,21 @@ class FavoritesPage:
             self.fav_empty.place_forget()
         else:
             self.fav_empty.place(relx=0.5, rely=0.35, anchor="center")
+
+    def _fav_fill_same(self, st):
+        tv = self.fav_tv
+        for f in st.items:
+            last = f.get("last") or {}
+            text = ("🔗 " if f.get("kind") == "link" else "◆ ") + f["name"]
+            vals = (last.get("price") or "", _ago(last.get("ts")))
+            if tv.item(f["id"], "text") != text or tuple(str(x) for x in tv.item(f["id"], "values")) != vals:
+                tv.item(f["id"], text=text, values=vals)
+        for g in st.groups:
+            text = f"{g['name']}  ({len(st.in_group(g['id']))})"
+            if tv.item(GROUP_PRE + g["id"], "text") != text:
+                tv.item(GROUP_PRE + g["id"], text=text)
+            if bool(tv.item(GROUP_PRE + g["id"], "open")) != bool(g.get("open", True)):
+                tv.item(GROUP_PRE + g["id"], open=g.get("open", True))
 
     def _fav_row(self, parent, f):
         last = f.get("last") or {}
