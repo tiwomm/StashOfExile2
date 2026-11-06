@@ -141,14 +141,13 @@ class TrackerPage:
         self.tk_ov_master = tk.StringVar(value="on" if self.ov_enabled() else "off")
         mf = tk.Frame(top, bg=P2)
         mf.pack(side="right")
-        self.tk_ov_master_btns = {}
-        for val, label in (("on", "Overlay Enabled"), ("off", "Overlay Disabled")):
-            rb = ttk.Radiobutton(mf, text=label, value=val, variable=self.tk_ov_master, style="Card.TRadiobutton",
-                                 command=lambda: self.ov_enable(self.tk_ov_master.get() == "on"))
-            rb.pack(side="left", padx=(8, 0))
-            self.tk_ov_master_btns[val] = rb
-        self.tk_keys_lbl = tk.Label(top, text="", bg=P2, fg=C["muted"], font=("Segoe UI", 9))       # 2.10.0
-        self.tk_keys_lbl.pack(side="right", padx=8)
+        # P2.5 (2.107.0, feedback): one ON | OFF switch (was Overlay Enabled | Overlay Disabled)
+        sw = ttk.Checkbutton(mf, text="Overlay", variable=self.tk_ov_master, onvalue="on", offvalue="off",
+                             style="Card.TCheckbutton", command=lambda: self.ov_enable(self.tk_ov_master.get() == "on"))
+        sw.pack(side="left", padx=(8, 0))
+        self.tk_ov_master_btns = {"on": sw, "off": sw}
+        # (P2.5: no "In game: Pause / resume ..." line here - the keys are in Settings › Hotkeys)
+        self.tk_keys_lbl = tk.Label(top, text="", bg=P2, fg=C["muted"], font=("Segoe UI", 9))       # (never shown)
         self.tracker_keys_hint()
         from .style import flowify
         flowify(top)                                         # 2.98.0: wraps in a narrow window

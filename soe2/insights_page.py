@@ -104,7 +104,7 @@ class InsightsPage:
         self.ins_det_btns = {
             "open": ttk.Button(dbar, text="Show in Bulk Pricing", command=self.ins_open_record),
             "again": ttk.Button(dbar, text="Price it again", command=self.ins_price_again),
-            "trade": ttk.Button(dbar, text="Open on trade site", command=self.ins_open_search),
+            "trade": ttk.Button(dbar, text="Trade Site", command=self.ins_open_search),
             "remove": ttk.Button(dbar, text="Remove", command=self.ins_remove_picked, style="Quiet.TButton")}
         self.undo_button(dbar, "insights", side="bottom", pady=(8, 0))   # P2: only with something to undo
         self.ins_card = tk.Frame(det, bg=P2)
@@ -159,7 +159,7 @@ class InsightsPage:
                ("when", "Seen", 70, "w")), colspan=2)
         self.list_register("insights", self.ins_tables["seen"][0], delete=self.ins_forget_seen)    # 2.73.2: Delete
         self.ins_tables["seen"][0].menu_actions = lambda sel: [            # 2.36.0
-            ("Open on trade site", lambda: (self.ins_show("seen"), self.ins_open_search())),
+            ("Trade Site", lambda: (self.ins_show("seen"), self.ins_open_search())),
             ("Remove", lambda: self.ins_forget_seen(sel), bool(sel), "Del")]
         body.bind("<Unmap>", lambda e: self.ins_preview_close(), add="+")
         self.list_register("insights", self.ins_tables["mods"][0], delete=self.ins_forget_mods)   # 2.73.2: Delete

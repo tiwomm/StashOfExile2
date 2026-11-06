@@ -21,6 +21,12 @@ NEXT = [
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.107.0": [
+        "New look for controls: every switch is a clear ON | OFF box, and buttons are flat in every theme.",
+        "Price Checks: your recent checks are a list on the left (was a dropdown).",
+        "Overlay: one ON | OFF switch for the overlay, and one Sound switch for every helper's alert.",
+        "\"Open on trade site\" is now \"Trade Site\".",
+    ],
     "2.106.0": [
         "Wealth: synced stash tabs are gone - count your currency (Ctrl+C) or Scan stash (beta). Old tab data is "
         "cleared once; what you counted stays.",

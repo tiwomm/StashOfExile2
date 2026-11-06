@@ -768,7 +768,7 @@ class App(GearBookPage, PriceCheckPage, FavoritesPage, BoardModPage, Leaderboard
         self.item_head.pack(fill="x", padx=(8, 0))
         # 2.63.0: the picked item's own buttons, at the foot of its panel
         ifoot = tk.Frame(outer, bg=C["panel2"], pady=8)       # 2.79.0: not shown - the card has these (no duplicates)
-        self.item_trade_btn = ttk.Button(ifoot, text="Open on trade site", command=self.open_trade, state="disabled")
+        self.item_trade_btn = ttk.Button(ifoot, text="Trade Site", command=self.open_trade, state="disabled")
         self.item_trade_btn.pack(side="left", padx=(8, 0))
         self.item_mark_btn = ttk.Button(ifoot, text="✔ Mark listed", command=lambda: self.mark_selected("listed"),
                                         state="disabled")
@@ -4568,7 +4568,7 @@ class App(GearBookPage, PriceCheckPage, FavoritesPage, BoardModPage, Leaderboard
                 None,
                 (f"Re-price{n}", lambda: self.reprice(rids), bool(rids)),
                 ("Copy name", lambda: self.copy_name(one, True), one is not None, "C"),
-                ("Open on trade site", self.open_trade, bool(one and one.get("qid")), "O")]   # (2.105.0: no Mark ...)
+                ("Trade Site", self.open_trade, bool(one and one.get("qid")), "O")]   # (2.105.0: no Mark ...)
 
     # ---------------- 2.73.2: pause / reorder the items waiting to be priced
     def pricing_hold(self, rids, on=True):
@@ -4776,7 +4776,7 @@ class App(GearBookPage, PriceCheckPage, FavoritesPage, BoardModPage, Leaderboard
         self.detail_search_btn = ttk.Button(btns, text="Search again  [Enter]", style="Primary.TButton",
                                             command=lambda: self.reprice([rec["id"]]))
         self.detail_search_btn.pack(side="left", fill="x", expand=True)
-        self.detail_open_btn = ttk.Button(btns, text="Open on trade site  [O]", command=self.open_trade)
+        self.detail_open_btn = ttk.Button(btns, text="Trade Site  [O]", command=self.open_trade)
         self.detail_open_btn.pack(side="left", fill="x", expand=True, padx=(8, 0))
         if not rec.get("qid"):
             self.detail_open_btn.state(["disabled"])
@@ -5594,7 +5594,7 @@ class App(GearBookPage, PriceCheckPage, FavoritesPage, BoardModPage, Leaderboard
                      anchor="w").pack(fill="x", pady=(8, 0))
         self._detail_stages(d, rec, wrap)
         if rec.get("qid"):
-            ttk.Button(d, text="Open on trade site  [O]", style="Primary.TButton",
+            ttk.Button(d, text="Trade Site  [O]", style="Primary.TButton",
                        command=self.open_trade).pack(fill="x", pady=(8, 0))
 
     def _detail_raw(self, d, rec, wrap):
