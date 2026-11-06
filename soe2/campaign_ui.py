@@ -502,7 +502,7 @@ class CampaignUI:
         self.camp_vendor_close()
         w, body, P = self._camp_card("Vendor search", "🔎", 420, top=0.14, on_close=lambda: self.camp_vendor_close())
         bg = P["bg"]
-        tk.Label(body, text="Click one = copied · Ctrl+F, Ctrl+V in the shop", bg=bg, fg=P["muted"],
+        tk.Label(body, text="Click one = copied · Ctrl+V in the shop search", bg=bg, fg=P["muted"],
                  font=(P["font"], self.ov_font(9)), anchor="w").pack(fill="x")
         self.camp_vendor_btns = {}
 

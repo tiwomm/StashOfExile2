@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU GPL v3.0 (see LICENSE). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.108.0
+VERSION 2.109.0
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,6 +19,10 @@ VERSION 2.108.0
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.109.0
+       Regex: the option cards are one card with a row of buttons per setting (Rarity, Type, Uses remaining…), the
+       way Money Makers' filters look. ★ first, Only ★ and Select valuable are gone (★ still marks valuable mods).
+       PoE 2 has no find key: every "copied" hint now says Ctrl+V into the stash (or shop) search.
   2.108.0
        Polish 7 - P4 + P5 + P6 + P7: the overlay and its children, Money Makers, Regex, Game search.
        - Right-click the overlay's cog = Quick settings, a small box over the game (soe2/ovquick.py): Overlay, Sound,
@@ -2531,7 +2535,7 @@ PRICING (how a tablet or jewel is priced)
   Only Instant Buyout listings from the last 1-2 days with enough uses remaining (default 10) count.
 
 TRACKING
-  Click a row: its name is copied (paste it into the stash search with Ctrl+F). Under the mods
+  Click a row: its name is copied (Ctrl+V it into the stash search). Under the mods
   press "Mark listed" once you've listed it, or "Mark removed" if you reforged / changed it.
   The list is saved between sessions (session.json).
 
@@ -2548,7 +2552,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.108.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.109.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 

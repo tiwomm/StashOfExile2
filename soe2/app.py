@@ -3508,7 +3508,7 @@ class App(GearBookPage, PriceCheckPage, FavoritesPage, BoardModPage, Leaderboard
         except tk.TclError:
             return
         if announce:
-            self.status_text, self.status_until = f"Copied \"{name}\" - Ctrl+F in your stash and paste it", time.time() + 6
+            self.status_text, self.status_until = f"Copied \"{name}\" - Ctrl+V in your stash search", time.time() + 6
 
     def mark_selected(self, mark):
         sel = [int(i) for i in self.tree.selection()]

@@ -847,7 +847,7 @@ class MergedOverlay:
         w, body, P = self._camp_card("Regex favorites", "★", 380, top=0.14, on_close=lambda: self.rx_ov_toggle(False))
         bg = P["bg"]
         favs = self.rx_ov_favs()
-        tip = "Click one = copied · Ctrl+F, Ctrl+V in the stash or a shop" if favs else \
+        tip = "Click one = copied · Ctrl+V in the stash or shop search" if favs else \
             "No favorites yet. Build a search on the Regex page, then press ☆ Add to Favorites."
         tk.Label(body, text=tip, bg=bg, fg=P["muted"], font=(P["font"], self.ov_font(9)), anchor="w", justify="left",
                  wraplength=self.ov_px(340)).pack(fill="x")

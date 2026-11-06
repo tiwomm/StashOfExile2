@@ -9,7 +9,7 @@ from tkinter import simpledialog, ttk
 from . import regex as R
 from .clipboard import read_clipboard_text
 from .config import load_json, save_json, SETTINGS
-from .style import C, MONO, SegBar, Tooltip
+from .style import C, MONO, SegBar, Tooltip, flowify
 from .chrome import section as chrome_section
 
 KIND_NAMES = {"tablet": "Tablets", "waystone": "Waystones", "relic": "Relics", "jewel": "Jewels",
@@ -111,7 +111,7 @@ class RegexPage:
         self.rx_hk_box = ttk.Combobox(hk, textvariable=self.rx_hk_var, state="readonly", width=26)
         self.rx_hk_box.pack(side="left", padx=8)
         self.rx_hk_box.bind("<<ComboboxSelected>>", lambda e: self.rx_hotkey_pick())
-        tk.Label(hk, text="then Ctrl+F, Ctrl+V in your stash.", bg=P2, fg=C["muted"], font=sm).pack(side="left")
+        tk.Label(hk, text="then Ctrl+V in the stash search.", bg=P2, fg=C["muted"], font=sm).pack(side="left")
         from .style import flowify
         flowify(hk)                                          # 2.98.0: wraps in a narrow window
 
@@ -134,20 +134,7 @@ class RegexPage:
                     "★ = valuable in your Mod book (your rules, or learned from prices). Right-click a mod to rate it.")
         self.rx_info = tk.Label(fbar, text="", bg=P1, fg=C["muted"])
         self.rx_info.pack(side="right")
-        # 2.0 beta 20: the Mod book's view of each mod
-        vbar = tk.Frame(tab, bg=P1)
-        vbar.pack(fill="x", padx=8, pady=(0, 4))
-        tk.Label(vbar, text="★ = valuable (Mod book)", bg=P1, fg="#ffd9a8", font=("Segoe UI", 9)).pack(side="left")
-        self.rx_val_first = tk.BooleanVar(value=bool(self.rx_state.get("_val_first", True)))
-        self.rx_only_val = tk.BooleanVar(value=False)
-        ttk.Checkbutton(vbar, text="★ first", variable=self.rx_val_first,
-                        command=self.rx_val_opts).pack(side="left", padx=(16, 0))
-        ttk.Checkbutton(vbar, text="Only ★", variable=self.rx_only_val,
-                        command=self.rx_filter).pack(side="left", padx=(8, 0))
-        self.rx_val_btn = ttk.Button(vbar, text="★ Select valuable", command=self.rx_select_valuable)
-        self.rx_val_btn.pack(side="left", padx=(16, 0))
-        flowify(fbar)
-        flowify(vbar)
+        flowify(fbar)                                       # 2.109.0: ★ first / Only ★ / Select valuable gone
         lists = tk.Frame(tab, bg=P1)
         lists.pack(fill="both", expand=True, padx=8, pady=(0, 8))
         lists.columnconfigure(0, weight=1, uniform="l")
@@ -282,18 +269,24 @@ class RegexPage:
 
     @staticmethod
     def rx_chip(parent, label, var, command):
-        """P7 (2.108.0): a toggle chip - lit (accent edge, warm fill) when on."""
-        b = tk.Checkbutton(parent, text=label, variable=var, command=command, indicatoron=False, relief="flat",
-                           bd=0, padx=8, pady=4, cursor="hand2", font=("Segoe UI", 9), bg=C["panel2"],
-                           fg=C["text"], activebackground=C["panel"], activeforeground=C["text"],
-                           selectcolor=C.get("sel") or C["panel"], highlightthickness=1, highlightbackground=C["line"])
+        """2.109.0: a toggle button like the Money Makers filters - accent fill when on."""
+        b = tk.Label(parent, text=label, padx=8, pady=4, cursor="hand2", highlightthickness=1)
 
         def paint(*_a):
             try:
-                b.config(highlightbackground=C["accent"] if var.get() else C["line"],
-                         fg=C["text"] if var.get() else C["muted"])
+                on = bool(var.get())
+                b.config(bg=C["accent"] if on else C["panel2"], fg=C["bg"] if on else C["text"],
+                         font=("Segoe UI", 9, "bold" if on else "normal"),
+                         highlightbackground=C["accent"] if on else C["line"])
             except tk.TclError:
                 pass
+
+        def click(_e=None):
+            var.set(not var.get())
+            command()
+        b.bind("<Button-1>", click)
+        b.bind("<Enter>", lambda e: None if var.get() else b.config(bg=C["sel"]))
+        b.bind("<Leave>", lambda e: paint())
         var.trace_add("write", paint)
         paint()
         return b
@@ -316,7 +309,7 @@ class RegexPage:
         if save:
             self.rx_save()
 
-    # ---------------- option cards
+    # ---------------- option card (2.109.0: one card, a row of buttons per setting - as Money Makers)
     def rx_build_cards(self):
         box = self.rx_cards
         for w in box.winfo_children():
@@ -325,98 +318,91 @@ class RegexPage:
         kind = self.rx_kind.get()
         o = self._rx()["opts"]
         self.rx_vars = {}
+        name = {"tablet": "TABLET", "waystone": "WAYSTONE", "relic": "RELIC", "jewel": "JEWEL", "gear": "GEAR"}[kind]
+        fo, card = chrome_section(box, name.capitalize() + " options", padx=12, pady=8)
+        fo.pack(fill="x")
 
         def changed(*_a):
             self.rx_read_opts()
             self.rx_schedule_opts()
 
-        def card(title, col):                               # 2.69.0: header strip + sunken frame
-            fo, f = chrome_section(box, title.capitalize() if title.isupper() else title, padx=12, pady=8)
-            fo.grid(row=0, column=col, sticky="nsew", padx=(0 if col == 0 else 4, 0 if col == 2 else 4))
-            tk.Frame(f, bg=P2, height=1).grid(row=0, column=0, columnspan=4)
+        def row(label):
+            r = tk.Frame(card, bg=P2)
+            r.pack(fill="x", pady=2)
+            tk.Label(r, text=label, bg=P2, fg=C["muted"], width=16, anchor="w").pack(side="left", anchor="n", pady=(4, 0))
+            f = tk.Frame(r, bg=P2)
+            f.pack(side="left", fill="x", expand=True)
             return f
 
-        def check(parent, key, label, row, col=0, value=None):
+        def check(parent, key, label, value=None):
             v = tk.BooleanVar(value=bool(o.get(key)) if value is None else value)
             self.rx_vars[key] = v
-            self.rx_chip(parent, label, v, changed).grid(row=row, column=col, sticky="w", pady=2, padx=(0, 8))
+            self.rx_chip(parent, label, v, changed).pack(side="left", padx=(0, 8), pady=2)
 
-        def number(parent, key, label, row, col=0):
-            tk.Label(parent, text=label, bg=P2, fg=C["text"], anchor="w").grid(row=row, column=col, sticky="w", pady=1)
+        def number(parent, key, label):
+            tk.Label(parent, text=label, bg=P2, fg=C["text"]).pack(side="left", padx=(0, 4), pady=2)
             v = tk.StringVar(value="" if o.get(key) in (None, "") else str(o[key]))
             self.rx_vars[key] = v
-            ent = tk.Entry(parent, textvariable=v, width=6, justify="center", bg=C["odd"], fg=C["text"], relief="flat",
+            ent = tk.Entry(parent, textvariable=v, width=5, justify="center", bg=C["odd"], fg=C["text"], relief="flat",
                            insertbackground=C["text"], highlightthickness=1, highlightbackground=C["line"],
                            font=("Segoe UI", 9))
-            ent.grid(row=row, column=col + 1, sticky="e", padx=(8, 4), pady=1)
+            ent.pack(side="left", padx=(0, 16), pady=2, ipady=4)
             ent.bind("<FocusOut>", lambda _e: self.rx_commit_opts())
-            parent.columnconfigure(col, weight=1)
             v.trace_add("write", changed)
 
-        for c in range(3):
-            box.columnconfigure(c, weight=1, uniform="cards")
+        def chips(label, prefix, values, have, text=None):
+            f = row(label)
+            for val in values:
+                check(f, prefix + val, text(val) if text else val, value=val in have)
+            return f
+
         rarity = set(o.get("rarity") or [])
-        name = {"tablet": "TABLET", "waystone": "WAYSTONE", "relic": "RELIC", "jewel": "JEWEL", "gear": "GEAR"}[kind]
+        rows = []
         if kind == "tablet":
-            c1 = card("TABLET RARITY", 0)
-            for i, r in enumerate(R.RARITIES):
-                check(c1, "rar:" + r, r, i + 1, value=r in rarity)
-            c2 = card("TABLET TYPE", 1)
-            have = set(o.get("types") or [])
-            for i, t in enumerate(R.TABLET_TYPES):
-                check(c2, "type:" + t, t, 1 + i % 4, i // 4, value=t in have)
-            c3 = card("MODIFIER", 2)
-            number(c3, "uses", "Min. uses remaining", 1)
-            check(c3, "round10", "Round down to 10 (shorter)", 2)
+            rows.append(chips("Rarity", "rar:", R.RARITIES, rarity))
+            rows.append(chips("Type", "type:", R.TABLET_TYPES, set(o.get("types") or [])))
+            f = row("Uses remaining")
+            number(f, "uses", "At least")
+            check(f, "round10", "Round down to 10 (shorter)")
+            rows.append(f)
         elif kind == "waystone":
-            c1 = card("QUANTITY & YIELD", 0)
-            for i, (key, label, _w) in enumerate(R.WAYSTONE_PROPS):
-                number(c1, key, label + " at least", i + 1)
-            c2 = card("TIER & REVIVES", 1)
-            number(c2, "tier_min", "Minimum tier", 1)
-            number(c2, "tier_max", "Maximum tier", 2)
-            number(c2, "revives_min", "Minimum revives", 3)
-            number(c2, "revives_max", "Maximum revives", 4)
-            c3 = card("RARITY & STATE", 2)
-            for i, r in enumerate(R.RARITIES):
-                check(c3, "rar:" + r, r, 1 + i, value=r in rarity)
-            check(c3, "cor_only", "Corrupted waystones", 1, 1, value=o.get("corrupted") == "only")
-            check(c3, "cor_not", "Uncorrupted waystones", 2, 1, value=o.get("corrupted") == "not")
-            check(c3, "round10", "Round down to 10 (shorter)", 3, 1)
-        elif kind == "jewel":                                # 2.22.0
-            c1 = card("JEWEL RARITY", 0)
-            for i, r in enumerate(R.RARITIES):
-                check(c1, "rar:" + r, r, i + 1, value=r in rarity)
-            c2 = card("JEWEL TYPE", 1)
-            have = set(o.get("types") or [])
-            for i, t in enumerate(R.JEWEL_TYPES):
-                check(c2, "type:" + t, t, 1 + i % 3, i // 3, value=t in have)
-            c3 = card("OPTIONS", 2)
-            check(c3, "cor_only", "Corrupted", 1, value=o.get("corrupted") == "only")
-            check(c3, "cor_not", "Not corrupted", 2, value=o.get("corrupted") == "not")
-            check(c3, "round10", "Round down to 10 (shorter)", 3)
-        elif kind == "gear":                                 # 2.22.0
-            c1 = card("GEAR RARITY", 0)
-            for i, r in enumerate(R.RARITIES):
-                check(c1, "rar:" + r, r, i + 1, value=r in rarity)
-            c2 = card("SHOW MODS FOR", 1)
-            have = set(o.get("slots") or [])
-            for i, t in enumerate(R.GEAR_SLOTS):
-                check(c2, "slot:" + t, t, 1 + i % 4, i // 4, value=t in have)
-            c3 = card("OPTIONS", 2)
-            check(c3, "cor_only", "Corrupted", 1, value=o.get("corrupted") == "only")
-            check(c3, "cor_not", "Not corrupted", 2, value=o.get("corrupted") == "not")
-            check(c3, "round10", "Round down to 10 (shorter)", 3)
+            f = chips("Rarity", "rar:", R.RARITIES, rarity)
+            check(f, "cor_only", "Corrupted", value=o.get("corrupted") == "only")
+            check(f, "cor_not", "Uncorrupted", value=o.get("corrupted") == "not")
+            rows.append(f)
+            f = row("Tier & revives")
+            for key, label in (("tier_min", "Tier from"), ("tier_max", "to"), ("revives_min", "Revives from"),
+                               ("revives_max", "to")):
+                number(f, key, label)
+            rows.append(f)
+            f = row("Quantity & yield")
+            for key, label, _w in R.WAYSTONE_PROPS:
+                number(f, key, label + " at least")
+            check(f, "round10", "Round down to 10 (shorter)")
+            rows.append(f)
+        elif kind == "jewel":
+            f = chips("Rarity", "rar:", R.RARITIES, rarity)
+            check(f, "cor_only", "Corrupted", value=o.get("corrupted") == "only")
+            check(f, "cor_not", "Not corrupted", value=o.get("corrupted") == "not")
+            rows.append(f)
+            f = chips("Type", "type:", R.JEWEL_TYPES, set(o.get("types") or []))
+            check(f, "round10", "Round down to 10 (shorter)")
+            rows.append(f)
+        elif kind == "gear":
+            f = chips("Rarity", "rar:", R.RARITIES, rarity)
+            check(f, "cor_only", "Corrupted", value=o.get("corrupted") == "only")
+            check(f, "cor_not", "Not corrupted", value=o.get("corrupted") == "not")
+            check(f, "round10", "Round down to 10 (shorter)")
+            rows.append(f)
+            rows.append(chips("Show mods for", "slot:", R.GEAR_SLOTS, set(o.get("slots") or [])))
         else:
-            c1 = card("RELIC RARITY", 0)
-            for i, r in enumerate(R.RARITIES):
-                check(c1, "rar:" + r, r, i + 1, value=r in rarity)
-            c2 = card("RELIC SIZE", 1)
-            have = set(o.get("sizes") or [])
-            for i, (size, bases) in enumerate(R.RELIC_SIZES.items()):
-                check(c2, "size:" + size, f"{size}  ({', '.join(bases)})", i + 1, value=size in have)
-            c3 = card("OPTIONS", 2)
-            check(c3, "round10", "Round down to 10 (shorter)", 1)
+            f = chips("Rarity", "rar:", R.RARITIES, rarity)
+            check(f, "round10", "Round down to 10 (shorter)")
+            rows.append(f)
+            rows.append(chips("Size", "size:", list(R.RELIC_SIZES), set(o.get("sizes") or []),
+                              text=lambda sz: f"{sz}  ({', '.join(R.RELIC_SIZES[sz])})"))
+        for f in rows:
+            flowify(f)
         self.rx_card_name = name
 
     def rx_read_opts(self):
@@ -701,9 +687,9 @@ class RegexPage:
         self.root.clipboard_clear()
         self.root.clipboard_append(s)
         self.own_clip = s                       # our own copy: the clipboard watcher ignores it
-        self._say(f"Copied ({len(s)} characters). In game: open the stash, Ctrl+F, Ctrl+V.", 8)
+        self._say(f"Copied ({len(s)} characters). In game: open the stash, Ctrl+V in its search.", 8)
 
-    # ---------------- 2.2.0: one key copies a stash search (in game: Ctrl+F, Ctrl+V)
+    # ---------------- 2.2.0: one key copies a stash search (in game: Ctrl+V in the stash search)
     def rx_hotkey_choices(self):
         """[(label, value)]: the search shown for each item type, and every saved search."""
         out = [(f"{KIND_NAMES[k][:-1]} search (as set up here)", f"current:{k}") for k in R.KINDS]
@@ -740,7 +726,7 @@ class RegexPage:
         self.root.clipboard_clear()
         self.root.clipboard_append(s)
         self.toast.show("Stash search copied", [f"{label} ({len(s)} characters)",
-                                                "In your stash: Ctrl+F, then Ctrl+V."], C["accent"], 4)
+                                                "In your stash: Ctrl+V in the search."], C["accent"], 4)
 
     def _rx_key_text(self):
         from .overlay import key_label
@@ -905,8 +891,8 @@ class RegexPage:
         self.own_clip = s
         self.root.clipboard_clear()
         self.root.clipboard_append(s)
-        self._say(f"Copied \"{f['name']}\" ({len(s)} characters). In game: open the stash, Ctrl+F, Ctrl+V.", 8)
-        self.app_toast(f"\"{f['name']}\" is on the clipboard. In game: open the stash, Ctrl+F, Ctrl+V.",
+        self._say(f"Copied \"{f['name']}\" ({len(s)} characters). In game: open the stash, Ctrl+V in its search.", 8)
+        self.app_toast(f"\"{f['name']}\" is on the clipboard. In game: open the stash, Ctrl+V in its search.",
                        title="Copied", kind="success")
 
     def rx_fav_open(self):
