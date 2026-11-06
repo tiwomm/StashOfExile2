@@ -21,9 +21,14 @@ NEXT = [
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
-    "2.104.1": [
+    "2.105.0": [
         "Price Checks and Favorites: Base type, tier, item level, Corrupted / Mirrored / Desecrated, Seller and "
         "\"only\" boxes change in place - the card no longer redraws on each click.",
+        "Overlay: Rates ▾ on the bar when Exchange rates is on - click it to open or close the rates.",
+        "Overlay: the bar reads Map: and Avg.:.",
+        "Leaderboards: pick a league by name, and how many rows to show (Top 5 to Top 100).",
+        "Island Rumours: two problems fixed (starting the app in your hideout; a card read while opening). "
+        "Not confirmed in game yet - tell us if tags still don't show.",
     ],
     "2.104.0": [
         "Favorites: an empty list says how to add one; the link box says what goes in it.",

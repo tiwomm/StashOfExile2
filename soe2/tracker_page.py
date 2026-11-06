@@ -477,7 +477,7 @@ class TrackerPage:
         switches(bar, (("Notes ▾", self.tk_notes_var, lambda: (self.tracker_bar_switch(), self.tracker_notes_switch())),
                        ("Calc ▾", self.tk_calc_var, lambda: (self.tracker_bar_switch(), self.tracker_calc_switch())),
                        ("Regex ▾", self.tk_bar_vars["regex"], self.tracker_bar_switch),
-                       ("Exchange rates", ov_, lambda: self.ovr_switch(bool(ov_.get())))), 3, prefix="bar:")
+                       ("Rates ▾", ov_, lambda: self.ovr_switch(bool(ov_.get())))), 3, prefix="bar:")
         # (the lines above the bar and each helper's switch on the bar: in Helpers, beside the helper)
         self.tk_fline_var = tk.BooleanVar(value=bool(F.cfg()["line"]))
         self.tk_cline_var = tk.BooleanVar(value=bool(CP.cfg()["line"]))
@@ -1125,14 +1125,14 @@ class TrackerPage:
         live = s is not None and s.ended is None
         show_where = bool(self.tracker_cfg()["lines"].get("where", True))       # 2.70.1
         texts = {"session": n.get("time", "0:00") if live else "not tracking",
-                 "map": f"Map  {n.get('map', '-')}" + (f"   {n.get('where', '')}" if show_where and live and
+                 "map": f"Map: {n.get('map', '-')}" + (f"   {n.get('where', '')}" if show_where and live and
                                                        n.get("where") not in ("-", None) else "")
                         + self._ov_rank(n.get("where") if live else None),
-                 "maps": f"Maps: {n.get('maps', '0')}", "avg": f"Avg. {n.get('avg', '-')}",   # 2.90.0
+                 "maps": f"Maps: {n.get('maps', '0')}", "avg": f"Avg.: {n.get('avg', '-')}",   # 2.90.0
                  }
         if getattr(self, "tk_ov_cv", None) is not None:    # 2.47.0: the skins' two columns
             where = n.get("where") if show_where and live and n.get("where") not in ("-", None) else ""
-            texts.update(map=f"Map  {n.get('map', '-')}", where=where.strip())      # 2.76.0: the rank is its own part
+            texts.update(map=f"Map: {n.get('map', '-')}", where=where.strip())      # 2.76.0: the rank is its own part
         texts["rank"] = self.rank_text(n.get("where") if live and getattr(self, "_mr_in", None) else None)
         texts["focus"] = self.focus_line()[0]                 # 2.73.0: League Focus's line
         from . import campaign as CP

@@ -146,7 +146,7 @@ class _Num(CanvasText):
     def config(self, **kw):
         if "text" in kw:
             import re
-            m = re.match(r"^\s*(?:Map|Maps:?|Avg\.?|★)\s+(.*)$", str(kw["text"]))
+            m = re.match(r"^\s*(?:Map:?|Maps:?|Avg\.?:?|★)\s+(.*)$", str(kw["text"]))
             if m:
                 kw["text"] = m.group(1)
             elif "tracking" in str(kw["text"]):              # (no session running)
@@ -764,9 +764,11 @@ class MergedOverlay:
         return (bb[0] if bb else x) - 12
 
     def bar_buttons(self):
-        """2.92.2: the menus on the bar, left to right: Notes ▾, Calc ▾, Regex ▾, Vendor ▾ (each only when it's on)."""
+        """2.92.2: the menus on the bar, left to right: Notes ▾, Calc ▾, Regex ▾, Rates ▾, Vendor ▾ (each only when
+        it's on). 2.104.1: Rates ▾ (the exchange rates window)."""
         return [k for k, on in (("notes", self.notes_on_bar()), ("calc", self.calc_on_bar()),
-                                ("regex", self.regex_on_bar()), ("vendor", self.vendor_on_bar())) if on]
+                                ("regex", self.regex_on_bar()), ("rates", bool(self.ovr_cfg()["on"])),
+                                ("vendor", self.vendor_on_bar())) if on]
 
     def regex_on_bar(self):
         return bool(self.bar_cfg().get("regex", True))
@@ -801,6 +803,7 @@ class MergedOverlay:
         name, shown, click = {
             "calc": ("Calc", self.calc_ov_shown, self.calc_ov_toggle),
             "regex": ("Regex", self.rx_ov_shown, self.rx_ov_toggle),
+            "rates": ("Rates", self.ovr_shown, self.ovr_toggle),
             "vendor": ("Vendor", lambda: getattr(self, "camp_vendor_win", None) is not None, self.camp_vendor_toggle),
         }[what]
         tag = "mg_" + what
@@ -1294,7 +1297,7 @@ class MergedOverlay:
         if two:                                              # ---- row 1: the switches, centered; Notes at the end
             ch = int(H * 0.28)                               # (the socket: about 2.73.5's size)
             gap = self._hud_gap()
-            room = (rgt - lft) * 0.75 - sum(self._hf(70 if k in ("notes", "vendor", "regex") else 60)
+            room = (rgt - lft) * 0.75 - sum(self._hf(70 if k in ("notes", "vendor", "regex", "rates") else 60)
                                             for k in self.bar_buttons())
             short = sum(self._hud_cell_w(cv, P, k, False) + gap for k in self.bar_chips()) > room
             total = sum(self._hud_cell_w(cv, P, k, short) + gap for k in self.bar_chips()) - gap
@@ -1349,7 +1352,7 @@ class MergedOverlay:
             # 2.90.0: | Map 3:12  Arcane Isle | Maps: 4 | Avg. 6:01 | - the map and where you are share one part,
             # each part's text is centered between its dividers, and the area's name is shown whole (smaller type
             # before it is ever cut)
-            mw, aw = fm.measure("Maps: 000") + 16, fm.measure("Avg. 00:00") + 16
+            mw, aw = fm.measure("Maps: 000") + 16, fm.measure("Avg.: 00:00") + 16
             fixed = [k for k, on in (("maps", ln.get("maps")), ("avg", ln.get("avg"))) if on]
             widths = {"maps": mw, "avg": aw}
             map_on = bool(ln.get("map", True) or ln.get("where", True))

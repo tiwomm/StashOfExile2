@@ -11,6 +11,9 @@ from . import leaderboard as LB
 from .config import SETTINGS, save_json
 from .style import C, SegBar
 
+ALL_LEAGUES = "All leagues"
+TOPS = (5, 10, 20, 30, 50, 100)             # 2.104.1 (feedback): how many rows a board shows
+
 
 class LeaderboardPage:
     def build_leaderboards(self, body):
@@ -23,11 +26,18 @@ class LeaderboardPage:
                              pad=(12, 4))
         self.lb_who.pack(side="left", padx=(12, 0))
         tk.Label(top, text="League", bg=P1, fg=C["muted"]).pack(side="left", padx=(12, 4))
-        self.lb_league = tk.StringVar(value="This league")
-        cb = ttk.Combobox(top, textvariable=self.lb_league, values=("This league", "All leagues"), state="readonly",
-                          width=12)
+        self.lb_league = tk.StringVar(value=SETTINGS.get("league") or ALL_LEAGUES)   # 2.104.1: the league's name
+        cb = ttk.Combobox(top, textvariable=self.lb_league, values=self.lb_league_names(), state="readonly",
+                          width=22)
         cb.pack(side="left")
         cb.bind("<<ComboboxSelected>>", lambda e: self.lb_refresh())
+        self.lb_league_box = cb
+        tk.Label(top, text="Show", bg=P1, fg=C["muted"]).pack(side="left", padx=(12, 4))
+        top_n = SETTINGS.get("lb_top", 10)
+        self.lb_top = tk.StringVar(value=f"Top {top_n if top_n in TOPS else 10}")
+        tb = ttk.Combobox(top, textvariable=self.lb_top, values=[f"Top {n}" for n in TOPS], state="readonly", width=8)
+        tb.pack(side="left")
+        tb.bind("<<ComboboxSelected>>", lambda e: self.lb_top_pick())
         tk.Label(top, text="Class", bg=P1, fg=C["muted"]).pack(side="left", padx=(12, 4))
         self.lb_cls = tk.StringVar(value="All")
         self.lb_cls_box = ttk.Combobox(top, textvariable=self.lb_cls, values=("All",), state="readonly", width=16)
@@ -99,8 +109,31 @@ class LeaderboardPage:
     def lb_mine(self):
         return LB.mine(self.tk_sessions.items if hasattr(self, "tk_sessions") else [], getattr(self, "tk_session", None))
 
+    def lb_league_names(self, more=()):
+        """The current league first, then the others your times or the board name, then All leagues."""
+        cur = SETTINGS.get("league") or ""
+        mine = [e.get("league") for e in (getattr(self, "lb_my", None) or [])]
+        names = [n for n in dict.fromkeys([cur] + mine + list(more)) if n and n != ALL_LEAGUES]
+        return names + [ALL_LEAGUES]
+
+    def lb_top_n(self):
+        try:
+            n = int(str(self.lb_top.get()).split()[-1])
+        except (ValueError, IndexError, AttributeError):
+            n = 10
+        return n if n in TOPS else 10
+
+    def lb_top_pick(self):
+        SETTINGS["lb_top"] = self.lb_top_n()
+        save_json("settings.json", SETTINGS)
+        self.lb_board_fill()
+
     def lb_filters(self):
-        league = SETTINGS.get("league") or "" if self.lb_league.get() == "This league" else ""
+        v = self.lb_league.get()
+        if v == "This league":                        # (before 2.104.1)
+            v = SETTINGS.get("league") or ALL_LEAGUES
+            self.lb_league.set(v)
+        league = "" if v == ALL_LEAGUES else v
         cls = "" if self.lb_cls.get() in ("All", "") else self.lb_cls.get()
         return league, cls
 
@@ -173,6 +206,7 @@ class LeaderboardPage:
         mine = self.lb_mine()
         self.lb_my = mine
         self.lb_my_keys = {k: (b, n) for k, b, n in LB.keys_of(mine, cat, league or None, cls or None)}
+        self.lb_league_box.config(values=self.lb_league_names())
         classes = sorted({e["cls"] for e in mine if e.get("cls")})
         if self.lb_who.get() == "Mine":
             self._lb_keys_fill(None, classes)
@@ -192,6 +226,7 @@ class LeaderboardPage:
                 return self._lb_keys_fill(None, classes)
             n = len(d.get("keys") or [])
             self.lb_msg.config(text=f"{n} board{'s' if n != 1 else ''}. Pick one on the left.", fg=C["muted"])
+            self.lb_league_box.config(values=self.lb_league_names(d.get("leagues") or ()))
             self._lb_keys_fill(d, sorted(set(classes) | set(d.get("classes") or [])))
         self._lb_bg(lambda: B.lb_keys(cat, league, cls), done)
 
@@ -234,7 +269,7 @@ class LeaderboardPage:
         if self.lb_who.get() == "Mine":
             rows = sorted((e for e in self.lb_my if e["cat"] == cat and e["key"] == key
                            and (not league or e["league"] == league) and (not cls or e.get("cls") == cls)),
-                          key=lambda e: e["secs"])[:100]
+                          key=lambda e: e["secs"])[:self.lb_top_n()]
             for i, e in enumerate(rows):
                 bv.insert("", "end", iid=f"m{i}", values=(i + 1, e.get("char") or "me", LB.fmt(e["secs"]),
                                                           e.get("cls") or "", e.get("level") or "", e.get("deaths", 0),
@@ -258,7 +293,8 @@ class LeaderboardPage:
                                                       LB.fmt(r["secs"]), r.get("cls") or "", r.get("level") or "",
                                                       r.get("deaths", 0), r.get("league", ""),
                                                       time.strftime("%b %d", time.localtime(r["at"]))), tags=tags)
-        self._lb_bg(lambda: B.lb_board(cat, key, league, cls), done)
+        top = self.lb_top_n()
+        self._lb_bg(lambda: B.lb_board(cat, key, league, cls, limit=top), done)
 
     # ---------------------------------------------------------------- reports / reviewers
     def lb_menu_actions(self, sel):

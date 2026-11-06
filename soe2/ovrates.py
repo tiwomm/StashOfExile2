@@ -42,20 +42,47 @@ class OverlayRates:
     def ovr_cfg(self):
         c = SETTINGS.setdefault("rates_ov", {})
         c.setdefault("on", False)                 # off until you turn it on
+        c.setdefault("shown", bool(c["on"]))      # 2.104.1: Rates ▾ on the bar opens / closes it
         c.setdefault("x", None)
         c.setdefault("y", None)
         return c
 
     def ovr_switch(self, on):
-        self.ovr_cfg()["on"] = bool(on)
+        """2.104.1 (feedback: it didn't work like Notes / Calc / Regex): the switch puts Rates ▾ on the bar; the
+        button opens / closes the window."""
+        c = self.ovr_cfg()
+        c["on"] = bool(on)
+        if not on:
+            c["shown"] = False
         save_json("settings.json", SETTINGS)
-        if on and self.ov_enabled():
+        if not on:
+            self.ovr_close()
+        self._ovr_bar()
+
+    def ovr_shown(self):
+        return getattr(self, "ovr_win", None) is not None
+
+    def ovr_toggle(self, show=None):
+        show = (not self.ovr_shown()) if show is None else bool(show)
+        c = self.ovr_cfg()
+        c["shown"] = bool(show and c["on"])
+        save_json("settings.json", SETTINGS)
+        if c["shown"] and self.ov_enabled():
             self.ovr_build()
         else:
             self.ovr_close()
+        self._ovr_bar()
+        return c["shown"]
+
+    def _ovr_bar(self):
+        if getattr(self, "mg_win", None) is not None:
+            try:
+                self.merged_build()                      # (Rates ▾ / ▴ on the bar)
+            except Exception:
+                pass
 
     def ovr_restore(self):
-        if self.ovr_cfg()["on"] and self.ov_enabled():            # 2.92.2: not while the overlay is disabled
+        if self.ovr_cfg()["on"] and self.ovr_cfg()["shown"] and self.ov_enabled():   # 2.92.2: not while disabled
             try:
                 self.ovr_build()
             except Exception:
@@ -102,7 +129,7 @@ class OverlayRates:
             save_json("settings.json", SETTINGS)
         x, y = self._ovr_spot()
         w = OverlayWindow(self.root, "Exchange rates", "⇄", (x, y, None, None), palette=P, locked=locked,
-                          on_lock=self.overlay_lock, on_close=lambda: self.ovr_switch(False), on_moved=moved,
+                          on_lock=self.overlay_lock, on_close=lambda: self.ovr_toggle(False), on_moved=moved,
                           follow_game=True, resizable=False, no_activate=True)
         w.withdraw()
         body = tk.Frame(w.body, bg=P["bg"], padx=8, pady=8)
