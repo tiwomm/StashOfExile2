@@ -21,10 +21,12 @@ PACES = {
     # margin: fraction of every limit we keep unused; gap: minimum seconds between two searches
     # cap300: most searches (and most fetches) we allow ourselves per 5 minutes - real 429s came at 10-15 even though
     #         the site reports 30, so this is deliberately lower. Every penalty lowers it by 1 (never below 3).
+    #         2.105.0 (feedback: 8 per 5 min was far too slow): Balanced 15, Fast 20, Gentle 8 - still half the
+    #         site's 30 (the trade site in your browser counts against the same limit).
     # learn_cap: only learn mods in the background while usage is below this (None = never learn)
-    "Fast":     {"margin": 0.05, "gap": 1.5,  "cap300": 10, "learn_cap": 0.60},
-    "Balanced": {"margin": 0.15, "gap": 4.0,  "cap300": 8,  "learn_cap": 0.40},
-    "Gentle":   {"margin": 0.25, "gap": 10.0, "cap300": 6,  "learn_cap": None},
+    "Fast":     {"margin": 0.05, "gap": 1.5,  "cap300": 20, "learn_cap": 0.60},
+    "Balanced": {"margin": 0.15, "gap": 4.0,  "cap300": 15, "learn_cap": 0.40},
+    "Gentle":   {"margin": 0.25, "gap": 10.0, "cap300": 8,  "learn_cap": None},
 }
 
 

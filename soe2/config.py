@@ -144,7 +144,7 @@ DEFAULTS = {
     "stale_days": 3,       # re-check a learned mod after this many days
     "status": "Instant Buyout",   # which listings count: the trade site's own "listing status" choices
     "age": "2 days",              # ignore listings older than this (stale / banned-account / outdated prices)
-    "view": "Not yet listed",     # which items the list shows
+    "view": "All",                # which items the list shows (2.105.0: always All - listing marks are gone)
     "auto_copy": True,            # copy the item's name to the clipboard when you click it
     "listen": True,               # watch the clipboard for copied items (always on)
     "col_widths": {},             # remembered column widths of the item list
@@ -224,8 +224,7 @@ if SETTINGS["age"] not in [a[0] for a in AGE_OPTIONS]:
     SETTINGS["age"] = DEFAULTS["age"]
 
 
-if SETTINGS["view"] not in VIEWS:
-    SETTINGS["view"] = DEFAULTS["view"]
+SETTINGS["view"] = "All"          # 2.105.0: the Show box is gone - every item shows
 
 
 if SETTINGS["uses"] not in USES_OPTIONS:

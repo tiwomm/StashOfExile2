@@ -30,6 +30,18 @@ VERSION HISTORY
        Top 5 / 10 / 20 / 30 / 50 / 100 (kept).
        Island Rumours: the log's last lines say where you are when the watcher starts (started in your hideout, it
        never ran); a card read while still opening is read again until its rumours show; its first error is logged.
+       Price Checks (feedback: an amulet's exact search found listings without its +186 Mana): when every ☑ mod must
+       match, they're searched like ★ mods (gear.build_query) - the "count" over each mod's several ids (explicit,
+       fractured, desecrated) let one mod count two or three times. "All but N" steps count one id per mod.
+       Amulets: "Quality (Caster Modifiers): +40%" is the quality; "{ Enhancement }" heads the anoint - an enchant
+       ("Allocates Paragon", enchant.stat_2954116742 with its notable); " — Unscalable Value" is dropped first.
+       Searches: Balanced 15 per 5 min (was 8), Fast 20, Gentle 8 (net.PACES cap300).
+       Listing marks are gone (feedback: nobody uses them): no Mark listed / sold / removed buttons or menu items,
+       no LISTING STATUS block, no Show box (every item shows); Market Insights has no Status column.
+       Market Insights: Gear / Tablets get a slot / tablet-kind box (the full list, subs_for / sub_match); the item
+       is drawn like a trade-site card (ins_draw_card: picture - learned per base from listings, icons.json - name
+       band, properties, item level, tiers, mod colors, worth); "Open on trade site", "Remove".
+       Exchange rates: Convert sits under Exchange Helper; no "Check for new rates every hour" switch (always on).
   2.104.0
        Polish 7 - P2: Favorites and Market Insights (findings + mockup, then built).
        Favorites:
