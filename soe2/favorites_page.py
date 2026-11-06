@@ -124,6 +124,7 @@ class FavoritesPage:
         self.favv.redraw = lambda: self.fav_show()
         self.favv.recard = lambda: self.fav_show(card_only=True)
         self.favv.search_btn = None
+        self.favv.head_open = ob                            # P2: the card's own button replaces it while shown
         self.pcv_fit(self.favv, wrap, mid, lo=460, share=0.42)   # 2.97.0: scale to fit; P2: a wider card
         self.fav_fill()
         self.fav_show()
@@ -649,6 +650,7 @@ class FavoritesPage:
         rid0 = v.rid
         v.rid = None
         v.search_btn = None
+        v.open_btn = v.head_open                            # (the old card's button is gone with the old card)
         if f is None:
             n = len(self._fav_ids()) if hasattr(self, "fav_tv") else 0
             if not (self.favs().items or self.favs().groups):
