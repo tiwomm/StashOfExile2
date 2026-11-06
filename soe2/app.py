@@ -3645,7 +3645,15 @@ class App(GearBookPage, PriceCheckPage, FavoritesPage, BoardModPage, Leaderboard
             if rec.get("src") == "fav":                     # 2.103.3: the listings stay (they flickered)
                 return self.fav_rec_changed(rec, card_only=True)
             return self.refresh_detail_if_selected(rec["id"])
-        self.reprice([rec["id"]])
+        # 2.108.0 (feedback: Bulk Pricing searched on every tick and redrew the card): Bulk Pricing waits for
+        # Search again too, and a tick is painted in place - as on Price Checks
+        rec["changed"] = True
+        self.dirty = True
+        if getattr(self, "_card_quiet", False):
+            return None
+        if getattr(self, "shown_rec", None) is rec:
+            return self.show_detail(rec)
+        return None
 
     def set_item_impact(self, rec, mod, imp):
         """Tick / untick / star a mod on this one item only (pack size is worth money on some tablets, not all).
@@ -3686,7 +3694,7 @@ class App(GearBookPage, PriceCheckPage, FavoritesPage, BoardModPage, Leaderboard
             pc = rec.get("src") in ("pc", "fav")                 # 2.80.0: Price Checks go first (2.84.0: Favorites)
             if pc:                                               # 2.87.0: a new Search replaces its older one
                 rec["gen"] = rec.get("gen", 0) + 1
-                rec.pop("changed", None)
+            rec.pop("changed", None)
             self.batch_ids.add(rid)
             self.update_row(rid)
             self.refresh_detail_if_selected(rid)
@@ -4774,9 +4782,10 @@ class App(GearBookPage, PriceCheckPage, FavoritesPage, BoardModPage, Leaderboard
                                            card_vals=self.card_vals, rid=rec["id"], search_btn=None)  # in place
         btns = tk.Frame(d, bg=P2)
         btns.pack(fill="x", pady=(8, 0))
-        self.detail_search_btn = ttk.Button(btns, text="Search again  [Enter]", style="Primary.TButton",
+        self.detail_search_btn = ttk.Button(btns, text=self._bulk_search_text(rec), style="Primary.TButton",
                                             command=lambda: self.reprice([rec["id"]]))
         self.detail_search_btn.pack(side="left", fill="x", expand=True)
+        self.bulkv.search_btn = self.detail_search_btn
         self.detail_open_btn = ttk.Button(btns, text="Trade Site  [O]", command=self.open_trade)
         self.detail_open_btn.pack(side="left", fill="x", expand=True, padx=(8, 0))
         if not rec.get("qid"):
@@ -4794,6 +4803,10 @@ class App(GearBookPage, PriceCheckPage, FavoritesPage, BoardModPage, Leaderboard
         self.detail_adv_head = head
         if adv:
             self._detail_advanced(d, rec, it, wrap)
+
+    @staticmethod
+    def _bulk_search_text(rec):
+        return "Search again  •  filters changed" if rec.get("changed") else "Search again  [Enter]"
 
     def _detail_note(self, rec):
         """One short line under the buttons when the price needs a word: no match, by hand, an error, a used tablet."""
@@ -5014,7 +5027,7 @@ class App(GearBookPage, PriceCheckPage, FavoritesPage, BoardModPage, Leaderboard
         """2.104.1 (feedback: every box on the card still flickered - only the mods were painted in place): a filter
         on the card changed. On Price Checks / Favorites nothing is built again - the caller paints its own row.
         -> True when quiet (paint the row), False when the card was built again (or Bulk Pricing prices it)."""
-        v = self._card_view(rec) if rec.get("src") in ("pc", "fav") else None
+        v = self._card_view(rec)                      # (2.108.0: Bulk Pricing too)
         if v is None:
             self.card_changed(rec)
             return False
@@ -5030,6 +5043,8 @@ class App(GearBookPage, PriceCheckPage, FavoritesPage, BoardModPage, Leaderboard
         btn = getattr(self, "pc_search_btn", None) if rec.get("src") == "pc" else getattr(v, "search_btn", None)
         if btn is not None:
             try:
+                if rec.get("src") not in ("pc", "fav"):
+                    return btn.config(text=self._bulk_search_text(rec))
                 btn.config(text="Search  •  filters changed" if rec.get("changed") else "Search")
             except tk.TclError:
                 pass
@@ -5417,7 +5432,7 @@ class App(GearBookPage, PriceCheckPage, FavoritesPage, BoardModPage, Leaderboard
         on = not bool((rec.get("only") or {}).get(norm(m["text"])))
         idx = self._card_row_of(rec, m)
         v = self._card_view(rec)
-        if idx is None or rec.get("src") not in ("pc", "fav"):
+        if idx is None or v is None:                  # (2.108.0: Bulk Pricing too)
             return self.card_only(rec, m, on)
         self._card_quiet = True
         try:
