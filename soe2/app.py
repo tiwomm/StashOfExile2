@@ -4959,7 +4959,7 @@ class App(GearBookPage, PriceCheckPage, FavoritesPage, BoardModPage, Leaderboard
                     var = tk.StringVar(value=next((n for n, v in choices if v == cur.get(key)), names[0]))
                     cb = ttk.Combobox(cv, textvariable=var, values=names, state="readonly")
                     cb.bind("<<ComboboxSelected>>", lambda e, k=key, v=var, c=choices: (
-                        self.search_opt_set(rec, k, dict(c)[v.get()], redraw=False), self.card_changed(rec)))
+                        self.search_opt_set(rec, k, dict(c)[v.get()], redraw=False), self._card_mark(rec)))
                     cv.create_window(110, y, window=cb, anchor="nw", width=w - 126, height=26)
                     self.card_opts[key] = var
                     y += 30
@@ -4988,9 +4988,45 @@ class App(GearBookPage, PriceCheckPage, FavoritesPage, BoardModPage, Leaderboard
     def _card_box(self, cv, x, y, on, tag, enabled=True):
         box = 14
         cv.create_rectangle(x, y, x + box, y + box, outline=C["muted"] if enabled else C["line"],
-                            fill=C["accent"] if on and enabled else C["odd"], tags=("cardbox", tag))
+                            fill=C["accent"] if on and enabled else C["odd"], tags=("cardbox", tag, tag + "_box"))
         if on and enabled:
-            cv.create_line(x + 3, y + 7, x + 6, y + 10, x + 11, y + 4, fill="#120a04", width=2, tags=(tag,))
+            cv.create_line(x + 3, y + 7, x + 6, y + 10, x + 11, y + 4, fill="#120a04", width=2,
+                           tags=(tag, tag + "_chk"))
+
+    def _card_box_paint(self, cv, x, y, on, tag):
+        """2.104.1: tick / untick a box drawn by _card_box, in place."""
+        try:
+            cv.itemconfigure(tag + "_box", fill=C["accent"] if on else C["odd"])
+            cv.delete(tag + "_chk")
+            if on:
+                cv.create_line(x + 3, y + 7, x + 6, y + 10, x + 11, y + 4, fill="#120a04", width=2,
+                               tags=(tag, tag + "_chk"))
+        except tk.TclError:
+            pass
+
+    def _card_mark(self, rec):
+        """2.104.1 (feedback: every box on the card still flickered - only the mods were painted in place): a filter
+        on the card changed. On Price Checks / Favorites nothing is built again - the caller paints its own row.
+        -> True when quiet (paint the row), False when the card was built again (or Bulk Pricing prices it)."""
+        v = self._card_view(rec) if rec.get("src") in ("pc", "fav") else None
+        if v is None:
+            self.card_changed(rec)
+            return False
+        self._card_quiet = True
+        try:
+            self.card_changed(rec)
+        finally:
+            self._card_quiet = False
+        self._card_search_paint(rec, v)
+        return True
+
+    def _card_search_paint(self, rec, v):
+        btn = getattr(self, "pc_search_btn", None) if rec.get("src") == "pc" else getattr(v, "search_btn", None)
+        if btn is not None:
+            try:
+                btn.config(text="Search  •  filters changed" if rec.get("changed") else "Search")
+            except tk.TclError:
+                pass
 
     def _card_click(self, cv, tag, fn):
         cv.tag_bind(tag, "<Button-1>", lambda e: fn())
@@ -5005,10 +5041,22 @@ class App(GearBookPage, PriceCheckPage, FavoritesPage, BoardModPage, Leaderboard
         tag = "cardbase"
         cv.create_rectangle(4, y - 2, w - 4, y + 18, outline="", fill=C["odd"], tags=(tag,))
         self._card_box(cv, 10, y + 2, on, tag)
-        cv.create_text(32, y, text=f"Base type: {it['base']}" if on else f"Any {it.get('class') or 'base'}",
-                       anchor="nw", font=("Segoe UI", 10), fill=C["text"] if on else C["muted"], tags=(tag,))
-        self._card_click(cv, tag, lambda: (self.search_opt_set(rec, "base", "class" if on else "same", redraw=False),
-                                           self.card_changed(rec)))
+        txt = cv.create_text(32, y, text=f"Base type: {it['base']}" if on else f"Any {it.get('class') or 'base'}",
+                             anchor="nw", font=("Segoe UI", 10), fill=C["text"] if on else C["muted"], tags=(tag,))
+        st = {"on": on}
+
+        def click():
+            st["on"] = not st["on"]
+            self.search_opt_set(rec, "base", "same" if st["on"] else "class", redraw=False)
+            self.card_opts["base"] = st["on"]
+            if self._card_mark(rec):                  # 2.104.1: painted in place
+                self._card_box_paint(cv, 10, y + 2, st["on"], tag)
+                try:
+                    cv.itemconfigure(txt, text=f"Base type: {it['base']}" if st["on"] else
+                                     f"Any {it.get('class') or 'base'}", fill=C["text"] if st["on"] else C["muted"])
+                except tk.TclError:
+                    pass
+        self._card_click(cv, tag, click)
         self.card_opts["base"] = on
         return y + 22
 
@@ -5024,8 +5072,9 @@ class App(GearBookPage, PriceCheckPage, FavoritesPage, BoardModPage, Leaderboard
         tag = f"cardopt_{key}"
         cv.create_rectangle(4, y - 2, w - 4 - (2 * CARD_BOX + 34), y + 18, outline="", fill=C["odd"], tags=(tag,))
         self._card_box(cv, 10, y + 2, on, tag)
-        cv.create_text(32, y, text=label, anchor="nw", font=("Segoe UI", 10), fill=C["text"] if on else C["muted"],
-                       tags=(tag,))
+        txt = cv.create_text(32, y, text=label, anchor="nw", font=("Segoe UI", 10),
+                             fill=C["text"] if on else C["muted"], tags=(tag,))
+        st = {"on": on}
         boxes = {}
         for i, (k, v) in enumerate((("min", lo if on else have), ("max", hi if on else None))):
             e = self._card_entry(cv, "" if v is None else f"{v:g}" if isinstance(v, float) else str(v))
@@ -5045,7 +5094,16 @@ class App(GearBookPage, PriceCheckPage, FavoritesPage, BoardModPage, Leaderboard
             if not turn_on or (vals["min"] is None and vals["max"] is None):
                 vals = None
             self._card_opt_store(rec, key, vals)
-            self.card_changed(rec)
+            st["on"] = vals is not None
+            self.card_opts[key] = (boxes, st["on"])
+            if key == "ilvl":
+                self.card_ilvl = (boxes["min"], st["on"])
+            if self._card_mark(rec):                  # 2.104.1: painted in place
+                self._card_box_paint(cv, 10, y + 2, st["on"], tag)
+                try:
+                    cv.itemconfigure(txt, fill=C["text"] if st["on"] else C["muted"])
+                except tk.TclError:
+                    pass
             return vals
         def keep(_e=None):                      # 2.103.4 (feedback: a typed tier went back to 15 on Search): a
             vals = {}                           # number is kept as you type, like the mods' Min / Max - not only
@@ -5059,7 +5117,7 @@ class App(GearBookPage, PriceCheckPage, FavoritesPage, BoardModPage, Leaderboard
                     return
             self._card_opt_store(rec, key, vals if vals["min"] is not None or vals["max"] is not None else None)
             rec["changed"] = True
-        self._card_click(cv, tag, lambda: take(not on))
+        self._card_click(cv, tag, lambda: take(not st["on"]))
         for e in boxes.values():
             e.bind("<KeyRelease>", keep, add="+")
             e.bind("<Return>", lambda _e: (take(True), "break")[-1])
@@ -5091,12 +5149,29 @@ class App(GearBookPage, PriceCheckPage, FavoritesPage, BoardModPage, Leaderboard
         tag = f"cardtri_{key}"
         cv.create_text(x, y, text=label, anchor="nw", font=("Segoe UI", 9),
                        fill=C["text"] if key in has else C["muted"], tags=(tag,))
-        cv.create_text(x + 92, y, text=f"{cur.title()} ▾", anchor="nw", font=("Segoe UI", 9, "bold"),
-                       fill=C["accent"] if cur != "any" else C["text"], tags=(tag,))
-        nxt = {"any": "yes", "yes": "no", "no": "any"}[cur]
-        self._card_click(cv, tag, lambda: (self.search_opt_set(rec, key, nxt, redraw=False),
-                                           self.card_changed(rec)))
+        val = cv.create_text(x + 92, y, text=f"{cur.title()} ▾", anchor="nw", font=("Segoe UI", 9, "bold"),
+                             fill=C["accent"] if cur != "any" else C["text"], tags=(tag,))
+        st = {"cur": cur}
+
+        def click():
+            st["cur"] = nxt = {"any": "yes", "yes": "no", "no": "any"}[st["cur"]]
+            self.search_opt_set(rec, key, nxt, redraw=False)
+            self.card_tris[key] = nxt
+            if self._card_mark(rec):                  # 2.104.1: painted in place
+                try:
+                    cv.itemconfigure(val, text=f"{nxt.title()} ▾", fill=C["accent"] if nxt != "any" else C["text"])
+                    self._card_misc_count(cv, rec)
+                except tk.TclError:
+                    pass
+        self._card_click(cv, tag, click)
         self.card_tris[key] = cur
+
+    def _card_misc_count(self, cv, rec):
+        """MISCELLANEOUS  (n) - the count follows the picks, in place."""
+        from .searchopts_page import default_opts
+        cur = {**default_opts(rec["item"]), **(rec.get("opts") or {})}
+        n = sum(1 for key, _l in MISC_ROWS if cur.get(key) not in (None, "any", "", "Any"))
+        cv.itemconfigure("cardsec_misc", text="▾ MISCELLANEOUS" + (f"  ({n})" if n else ""))
 
     # ---------------- ▸ Advanced (2.79.0): everything that isn't a filter
     def _detail_advanced(self, d, rec, it, wrap):
@@ -5233,12 +5308,15 @@ class App(GearBookPage, PriceCheckPage, FavoritesPage, BoardModPage, Leaderboard
             ob = 8                                           # ...and a small box right under it, tied with └
             cv.create_text(tx, y1 - 3, text="└", anchor="nw", font=("Segoe UI", 8), fill=fc, tags=(otag,))
             bx0 = tx + 12
-            cv.create_rectangle(bx0, y1, bx0 + ob, y1 + ob, outline=fc, fill=fc if only else C["odd"], tags=(otag,))
+            cv.create_rectangle(bx0, y1, bx0 + ob, y1 + ob, outline=fc, fill=fc if only else C["odd"],
+                                tags=(otag, otag + "_r"))
             if only:
-                cv.create_line(bx0 + 1, y1 + 4, bx0 + 3, y1 + 7, bx0 + 7, y1 + 1, fill="#120a04", width=2, tags=(otag,))
+                cv.create_line(bx0 + 1, y1 + 4, bx0 + 3, y1 + 7, bx0 + 7, y1 + 1, fill="#120a04", width=2,
+                               tags=(otag, otag + "_c"))
+            self.card_paint[idx].update(obx=bx0, oby=y1, ofc=fc)
             ox = cv.create_text(bx0 + ob + 4, y1 - 2, text=f"{src} only", anchor="nw", font=("Segoe UI", 8), fill=fc,
                                 tags=(otag,))
-            cv.tag_bind(otag, "<Button-1>", lambda e, mm=m, v=only: self.card_only(rec, mm, not v))
+            cv.tag_bind(otag, "<Button-1>", lambda e, mm=m: self.card_only_click(rec, mm))
             cv.tag_bind(otag, "<Enter>", lambda e: cv.configure(cursor="hand2"))
             cv.tag_bind(otag, "<Leave>", lambda e: cv.configure(cursor=""))
             self.card_onlys[idx] = (m, only, src)
@@ -5328,6 +5406,33 @@ class App(GearBookPage, PriceCheckPage, FavoritesPage, BoardModPage, Leaderboard
         self.card_vals[id(m)] = boxes
         return boxes
 
+    def card_only_click(self, rec, m):
+        """2.104.1: the "fractured / desecrated only" box flips in place on Price Checks / Favorites."""
+        on = not bool((rec.get("only") or {}).get(norm(m["text"])))
+        idx = self._card_row_of(rec, m)
+        v = self._card_view(rec)
+        if idx is None or rec.get("src") not in ("pc", "fav"):
+            return self.card_only(rec, m, on)
+        self._card_quiet = True
+        try:
+            self.card_only(rec, m, on)
+        finally:
+            self._card_quiet = False
+        self._card_row_paint(v, idx)
+        p = v.card_paint[idx]
+        cv, otag = p["cv"], f"cardonly{idx}"
+        if "obx" in p:
+            try:
+                bx0, y1 = p["obx"], p["oby"]
+                cv.itemconfigure(otag + "_r", fill=p["ofc"] if on else C["odd"])
+                cv.delete(otag + "_c")
+                if on:
+                    cv.create_line(bx0 + 1, y1 + 4, bx0 + 3, y1 + 7, bx0 + 7, y1 + 1, fill="#120a04", width=2,
+                                   tags=(otag, otag + "_c"))
+            except tk.TclError:
+                pass
+        return on
+
     def card_only(self, rec, m, on):
         """2.93.0 (feedback): search this fractured / desecrated mod only as fractured / desecrated (this item only)."""
         k = norm(m["text"])
@@ -5339,7 +5444,7 @@ class App(GearBookPage, PriceCheckPage, FavoritesPage, BoardModPage, Leaderboard
         else:
             only.pop(k, None)
         self.card_changed(rec)
-        if getattr(self, "shown_rec", None) is rec:
+        if getattr(self, "shown_rec", None) is rec and not getattr(self, "_card_quiet", False):
             self.show_detail(rec)
         return on
 
@@ -5462,12 +5567,7 @@ class App(GearBookPage, PriceCheckPage, FavoritesPage, BoardModPage, Leaderboard
         except tk.TclError:
             return
         v.card_rows[idx] = (m, on, rect)
-        btn = getattr(self, "pc_search_btn", None) if rec.get("src") == "pc" else getattr(v, "search_btn", None)
-        if btn is not None:
-            try:
-                btn.config(text="Search  •  filters changed" if rec.get("changed") else "Search")
-            except tk.TclError:
-                pass
+        self._card_search_paint(rec, v)
 
     def _detail_how(self, d, rec, wrap):
         """2.60.0: How it's priced - what was searched, why this confidence, each search."""

@@ -21,6 +21,10 @@ NEXT = [
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.104.1": [
+        "Price Checks and Favorites: Base type, tier, item level, Corrupted / Mirrored / Desecrated, Seller and "
+        "\"only\" boxes change in place - the card no longer redraws on each click.",
+    ],
     "2.104.0": [
         "Favorites: an empty list says how to add one; the link box says what goes in it.",
         "Favorites: a wider item card; Search and Open on trade site sit under it, like Price Checks.",
