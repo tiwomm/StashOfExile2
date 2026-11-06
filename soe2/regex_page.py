@@ -9,7 +9,7 @@ from tkinter import simpledialog, ttk
 from . import regex as R
 from .clipboard import read_clipboard_text
 from .config import load_json, save_json, SETTINGS
-from .style import C, MONO, SegBar
+from .style import C, MONO, SegBar, Tooltip
 from .chrome import section as chrome_section
 
 KIND_NAMES = {"tablet": "Tablets", "waystone": "Waystones", "relic": "Relics", "jewel": "Jewels",
@@ -63,34 +63,14 @@ class RegexPage:
         tab.pack(fill="both", expand=True)
         self.rx_build_favorites(self.rx_fav_page)
 
-        # ---- top row: what to search, add to favorites
+        # ---- top row: what to search (P7, 2.108.0: tabs), add to favorites
         top = tk.Frame(tab, bg=P1, padx=8, pady=8)
         top.pack(fill="x")
-        for k in R.KINDS:
-            ttk.Radiobutton(top, text=KIND_NAMES[k], value=k, variable=self.rx_kind,
-                            command=self.rx_kind_changed).pack(side="left", padx=(0, 16))
+        self.rx_kind_bar = SegBar(top, [KIND_NAMES[k] for k in R.KINDS], value=KIND_NAMES[self.rx_kind.get()],
+                                  command=self.rx_kind_tab, size=10, pad=(16, 4))
+        self.rx_kind_bar.pack(side="left")
         ttk.Button(top, text="☆ Add to Favorites", command=self.rx_save_preset).pack(side="right")
         self.rx_preset = tk.StringVar()                  # (the favorite last opened or saved, for its name)
-        # 2.2.0: the Regex key - one key in game puts a search on the clipboard
-        hk = tk.Frame(tab, bg=P1, padx=8)
-        hk.pack(fill="x", pady=(0, 8))
-        tk.Label(hk, text="Regex key", bg=P1, fg=C["text"]).pack(side="left")
-        self.rx_key_var = tk.StringVar(value=SETTINGS.get("regex_key", ""))
-        # 2.57.0: shown here, set in Settings › Hotkeys (the one place for keys)
-        self.rx_key_lbl = tk.Label(hk, text="", bg=P1, fg=C["text"], font=("Consolas", 10))
-        self.rx_key_lbl.pack(side="left", padx=8)
-        ttk.Button(hk, text="Change…", style="Quiet.TButton",
-                   command=lambda: self.hotkeys_open("checks:regex_key")).pack(side="left", padx=(0, 8))
-        self._rx_key_text()
-        tk.Label(hk, text="copies", bg=P1, fg=C["muted"]).pack(side="left")
-        self.rx_hk_var = tk.StringVar()
-        self.rx_hk_box = ttk.Combobox(hk, textvariable=self.rx_hk_var, state="readonly", width=34)
-        self.rx_hk_box.pack(side="left", padx=8)
-        self.rx_hk_box.bind("<<ComboboxSelected>>", lambda e: self.rx_hotkey_pick())
-        tk.Label(hk, text="- press it in game, then Ctrl+F and Ctrl+V in your stash.", bg=P1, fg=C["muted"],
-                 font=("Segoe UI", 9), wraplength=380, justify="left").pack(side="left")
-        from .style import flowify
-        flowify(hk)                                          # 2.98.0: wraps in a narrow window
 
         # ---- the search string
         rso, res = chrome_section(tab, "Your search", padx=12, pady=8)   # 2.69.0: header strip + sunken frame
@@ -113,6 +93,27 @@ class RegexPage:
         self.rx_test_out.pack(side="left", fill="x", expand=True, padx=(16, 0))
         self.rx_test_out.bind("<Configure>", lambda e: self.rx_test_out.config(wraplength=max(200, e.width - 8)))
         self.rx_pick_btn = ttk.Button(info, text="Select its mods", command=self.rx_tick_item)
+        # 2.2.0: the Regex key - one key in game puts a search on the clipboard (P7: a small line under the search)
+        hk = tk.Frame(res, bg=P2)
+        hk.pack(fill="x", pady=(8, 0))
+        sm = ("Segoe UI", 9)
+        tk.Label(hk, text="Regex key", bg=P2, fg=C["muted"], font=sm).pack(side="left")
+        self.rx_key_var = tk.StringVar(value=SETTINGS.get("regex_key", ""))
+        # 2.57.0: shown here, set in Settings › Hotkeys (the one place for keys)
+        self.rx_key_lbl = tk.Label(hk, text="", bg=P2, fg=C["text"], font=("Consolas", 9, "bold"))
+        self.rx_key_lbl.pack(side="left", padx=8)
+        ch = tk.Label(hk, text="Change…", bg=P2, fg=C["accent"], font=sm, cursor="hand2")
+        ch.pack(side="left", padx=(0, 8))
+        ch.bind("<Button-1>", lambda e: self.hotkeys_open("checks:regex_key"))
+        self._rx_key_text()
+        tk.Label(hk, text="- it copies", bg=P2, fg=C["muted"], font=sm).pack(side="left")
+        self.rx_hk_var = tk.StringVar()
+        self.rx_hk_box = ttk.Combobox(hk, textvariable=self.rx_hk_var, state="readonly", width=26)
+        self.rx_hk_box.pack(side="left", padx=8)
+        self.rx_hk_box.bind("<<ComboboxSelected>>", lambda e: self.rx_hotkey_pick())
+        tk.Label(hk, text="then Ctrl+F, Ctrl+V in your stash.", bg=P2, fg=C["muted"], font=sm).pack(side="left")
+        from .style import flowify
+        flowify(hk)                                          # 2.98.0: wraps in a narrow window
 
         # ---- option cards (rebuilt per item type)
         self.rx_cards = tk.Frame(tab, bg=P1)
@@ -125,17 +126,18 @@ class RegexPage:
         self.rx_q = tk.StringVar()
         self.rx_q.trace_add("write", lambda *a: self.root.after_idle(self.rx_filter))
         ttk.Entry(fbar, textvariable=self.rx_q, width=30).pack(side="left")
-        tk.Label(fbar, text="Click a mod to select it (click again to remove it). In \"I want\", click its Value to type: 50 = at "
-                            "least 50, 50-80 = from 50 to 80, <80 = at most 80. \"I don't want\" leaves items with "
-                            "that mod out.", bg=P1, fg=C["muted"], font=("Segoe UI", 9), wraplength=520,
-                 justify="left").pack(side="left", padx=12)
+        hq = tk.Label(fbar, text=" ? ", bg=P1, fg=C["muted"], cursor="question_arrow", highlightthickness=1,
+                      highlightbackground=C["line"])
+        hq.pack(side="left", padx=12)
+        Tooltip(hq, "Click a mod to select it (click again to remove it). In \"I want\", click its Value to type: 50 = at "
+                    "least 50, 50-80 = from 50 to 80, <80 = at most 80. \"I don't want\" leaves items with that mod out.\n"
+                    "★ = valuable in your Mod book (your rules, or learned from prices). Right-click a mod to rate it.")
         self.rx_info = tk.Label(fbar, text="", bg=P1, fg=C["muted"])
         self.rx_info.pack(side="right")
         # 2.0 beta 20: the Mod book's view of each mod
         vbar = tk.Frame(tab, bg=P1)
         vbar.pack(fill="x", padx=8, pady=(0, 4))
-        tk.Label(vbar, text="★ = valuable in your Mod book (your rules, or learned from prices). Right-click a mod to rate it.", bg=P1,
-                 fg="#ffd9a8", font=("Segoe UI", 9)).pack(side="left")
+        tk.Label(vbar, text="★ = valuable (Mod book)", bg=P1, fg="#ffd9a8", font=("Segoe UI", 9)).pack(side="left")
         self.rx_val_first = tk.BooleanVar(value=bool(self.rx_state.get("_val_first", True)))
         self.rx_only_val = tk.BooleanVar(value=False)
         ttk.Checkbutton(vbar, text="★ first", variable=self.rx_val_first,
@@ -272,7 +274,34 @@ class RegexPage:
         self.rx_state["_kind"] = self.rx_kind.get()
         save_json(STATE_FILE, self.rx_state)
 
+    def rx_kind_tab(self, name):
+        k = next((k for k in R.KINDS if KIND_NAMES[k] == name), None)
+        if k and k != self.rx_kind.get():
+            self.rx_kind.set(k)
+            self.rx_kind_changed()
+
+    @staticmethod
+    def rx_chip(parent, label, var, command):
+        """P7 (2.108.0): a toggle chip - lit (accent edge, warm fill) when on."""
+        b = tk.Checkbutton(parent, text=label, variable=var, command=command, indicatoron=False, relief="flat",
+                           bd=0, padx=8, pady=4, cursor="hand2", font=("Segoe UI", 9), bg=C["panel2"],
+                           fg=C["text"], activebackground=C["panel"], activeforeground=C["text"],
+                           selectcolor=C.get("sel") or C["panel"], highlightthickness=1, highlightbackground=C["line"])
+
+        def paint(*_a):
+            try:
+                b.config(highlightbackground=C["accent"] if var.get() else C["line"],
+                         fg=C["text"] if var.get() else C["muted"])
+            except tk.TclError:
+                pass
+        var.trace_add("write", paint)
+        paint()
+        return b
+
     def rx_kind_changed(self, save=True):
+        bar = getattr(self, "rx_kind_bar", None)
+        if bar is not None and bar.get() != KIND_NAMES.get(self.rx_kind.get()):
+            bar.pick(KIND_NAMES[self.rx_kind.get()], notify=False)
         self._rx_cancel_opts_job()
         if getattr(self, "_rx_last_kind", None) not in (None, self.rx_kind.get()):
             self.rx_test_text = ""                           # a copied tablet says nothing about waystones
@@ -310,7 +339,7 @@ class RegexPage:
         def check(parent, key, label, row, col=0, value=None):
             v = tk.BooleanVar(value=bool(o.get(key)) if value is None else value)
             self.rx_vars[key] = v
-            ttk.Checkbutton(parent, text=label, variable=v, command=changed).grid(row=row, column=col, sticky="w", pady=0, padx=(0, 8))
+            self.rx_chip(parent, label, v, changed).grid(row=row, column=col, sticky="w", pady=2, padx=(0, 8))
 
         def number(parent, key, label, row, col=0):
             tk.Label(parent, text=label, bg=P2, fg=C["text"], anchor="w").grid(row=row, column=col, sticky="w", pady=1)
@@ -338,7 +367,7 @@ class RegexPage:
                 check(c2, "type:" + t, t, 1 + i % 4, i // 4, value=t in have)
             c3 = card("MODIFIER", 2)
             number(c3, "uses", "Min. uses remaining", 1)
-            check(c3, "round10", "Round down to nearest 10 (saves a lot of space)", 2)
+            check(c3, "round10", "Round down to 10 (shorter)", 2)
         elif kind == "waystone":
             c1 = card("QUANTITY & YIELD", 0)
             for i, (key, label, _w) in enumerate(R.WAYSTONE_PROPS):
@@ -353,7 +382,7 @@ class RegexPage:
                 check(c3, "rar:" + r, r, 1 + i, value=r in rarity)
             check(c3, "cor_only", "Corrupted waystones", 1, 1, value=o.get("corrupted") == "only")
             check(c3, "cor_not", "Uncorrupted waystones", 2, 1, value=o.get("corrupted") == "not")
-            check(c3, "round10", "Round down to nearest 10", 3, 1)
+            check(c3, "round10", "Round down to 10 (shorter)", 3, 1)
         elif kind == "jewel":                                # 2.22.0
             c1 = card("JEWEL RARITY", 0)
             for i, r in enumerate(R.RARITIES):
@@ -365,7 +394,7 @@ class RegexPage:
             c3 = card("OPTIONS", 2)
             check(c3, "cor_only", "Corrupted", 1, value=o.get("corrupted") == "only")
             check(c3, "cor_not", "Not corrupted", 2, value=o.get("corrupted") == "not")
-            check(c3, "round10", "Round down to nearest 10", 3)
+            check(c3, "round10", "Round down to 10 (shorter)", 3)
         elif kind == "gear":                                 # 2.22.0
             c1 = card("GEAR RARITY", 0)
             for i, r in enumerate(R.RARITIES):
@@ -377,7 +406,7 @@ class RegexPage:
             c3 = card("OPTIONS", 2)
             check(c3, "cor_only", "Corrupted", 1, value=o.get("corrupted") == "only")
             check(c3, "cor_not", "Not corrupted", 2, value=o.get("corrupted") == "not")
-            check(c3, "round10", "Round down to nearest 10", 3)
+            check(c3, "round10", "Round down to 10 (shorter)", 3)
         else:
             c1 = card("RELIC RARITY", 0)
             for i, r in enumerate(R.RARITIES):
@@ -387,7 +416,7 @@ class RegexPage:
             for i, (size, bases) in enumerate(R.RELIC_SIZES.items()):
                 check(c2, "size:" + size, f"{size}  ({', '.join(bases)})", i + 1, value=size in have)
             c3 = card("OPTIONS", 2)
-            check(c3, "round10", "Round down to nearest 10 (saves a lot of space)", 1)
+            check(c3, "round10", "Round down to 10 (shorter)", 1)
         self.rx_card_name = name
 
     def rx_read_opts(self):

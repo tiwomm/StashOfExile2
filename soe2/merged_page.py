@@ -146,7 +146,7 @@ class _Num(CanvasText):
     def config(self, **kw):
         if "text" in kw:
             import re
-            m = re.match(r"^\s*(?:Map:?|Maps:?|Avg\.?:?|★)\s+(.*)$", str(kw["text"]))
+            m = re.match(r"^\s*(?:Map:?|Maps:?|Avg\.?:?|★)\s*(.*)$", str(kw["text"]))
             if m:
                 kw["text"] = m.group(1)
             elif "tracking" in str(kw["text"]):              # (no session running)
