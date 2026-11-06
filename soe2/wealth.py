@@ -325,7 +325,8 @@ def wealth_item(entry, tab):
 
 
 COUNTED_TAB = "counted"               # the "tab" of everything counted by hand
-COUNTED_LABEL = "Counted by hand"
+COUNTED_LABEL = "Counted"
+SRC_LABEL = {"counted": "Counted", "scanned": "Scanned", "hand": "Added by hand"}   # 2.105.1: where a stack came from
 CLASS_CAT = {"stackable currency": "currency", "map fragments": "fragment", "omen": "currency", "socketable": "currency",
              "delirium instill": "currency", "essence": "currency", "splinter": "fragment", "catalyst": "currency",
              "divination card": "card", "uncut gem": "gem"}
@@ -334,7 +335,8 @@ CLASS_CAT = {"stackable currency": "currency", "map fragments": "fragment", "ome
 def holding_item(name, h):
     """A counted stack as a Wealth item (same shape as one read from a tab)."""
     cls = (h.get("cls") or "").lower()
-    return {"lid": "held:" + name, "tab": COUNTED_TAB, "stash": COUNTED_LABEL, "name": "", "type": name, "base": name,
+    return {"lid": "held:" + name, "tab": COUNTED_TAB, "stash": SRC_LABEL.get(h.get("src"), COUNTED_LABEL), "name": "",
+            "type": name, "base": name,
             "frame": 5, "qty": int(h.get("qty") or 0), "ilvl": None, "corrupted": False,
             "cat": CLASS_CAT.get(cls, "currency" if not cls else cls.split()[0]), "level": None, "mods": [], "text": None,
             "held": True}
@@ -444,7 +446,13 @@ class WealthStore:
         self.results = d.get("results", {})        # tab id -> {total, fetched, warnings, error, qid, ts}
         self.last_sync = d.get("last_sync", 0)
         self.rare_prices = d.get("rare_prices", {})  # 2.0: listing id -> {est, sig, ts, label, conf, qid, league}
-        self.holdings = d.get("holdings", {})      # 2.0 beta 7: counted by hand: name -> {qty, cls, ts}
+        self.holdings = d.get("holdings", {})      # 2.0 beta 7: counted by hand: name -> {qty, cls, ts, src}
+        # 2.105.1 (feedback: synced stash tabs are gone - "clean start"): what tabs read is dropped once - the tabs,
+        # their items, results and rare prices, and the history they were part of. Counted currency stays.
+        if self.tabs or self.items or self.results or self.rare_prices:
+            self.tabs, self.items, self.results, self.rare_prices, self.snapshots = [], {}, {}, {}, []
+            self.last_sync = 0
+            self.save()
 
     def save(self):
         with self.lock:
@@ -465,14 +473,16 @@ class WealthStore:
             return out + [holding_item(n, h) for n, h in sorted(self.holdings.items())]
 
     # ---- counted by hand (2.0 beta 7): currency and other stacks you copy (Ctrl+C) or type in
-    def set_holding(self, name, qty, cls=""):
+    def set_holding(self, name, qty, cls="", src=None):
+        """src (2.105.1): counted (Ctrl+C) / scanned (Scan stash) / hand (typed in) - the Items list's From."""
         name = name.strip()
         with self.lock:
             if qty is None or qty <= 0:
                 self.holdings.pop(name, None)
             else:
                 old = self.holdings.get(name) or {}
-                self.holdings[name] = {"qty": int(qty), "cls": cls or old.get("cls", ""), "ts": time.time()}
+                self.holdings[name] = {"qty": int(qty), "cls": cls or old.get("cls", ""), "ts": time.time(),
+                                       "src": src or old.get("src") or "counted"}
         self.save()
 
     def holding(self, name):
