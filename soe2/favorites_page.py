@@ -53,32 +53,33 @@ class FavoritesPage:
         bar = tk.Frame(body, bg=P1, padx=8, pady=8)
         bar.pack(fill="x")
         self.fav_link_var = tk.StringVar()
+        tk.Label(bar, text="Trade link", bg=P1, fg=C["muted"], font=("Segoe UI", 9)).pack(side="left", padx=(4, 8))
         ent = ttk.Entry(bar, textvariable=self.fav_link_var)
         ent.pack(side="left", fill="x", expand=True)
+        self._fav_hint(ent)                               # P2 (2.104.0): a hint in the empty box
         ent.bind("<Return>", lambda e: self.fav_add_link())
         self.fav_link_entry = ent
         ttk.Button(bar, text="Add trade link", style="Primary.TButton", command=self.fav_add_link).pack(
             side="left", padx=(8, 0))
         ttk.Button(bar, text="New group", command=self.fav_new_group).pack(side="left", padx=(8, 0))
-        self.undo_button(bar, KEY).pack(side="left", padx=(8, 0))
-        self.fav_msg = tk.Label(body, text="Paste a trade-site link above, or press ☆ Add to favorites on Price Checks. "
-                                           "Right-click a favorite for everything you can do; drag to reorder.",
+        self.undo_button(bar, KEY, side="left", padx=(8, 0))     # P2: only while there's something to undo
+        self.fav_msg = tk.Label(body, text="Right-click a favorite for everything you can do; drag to reorder.",
                                 bg=P1, fg=C["muted"], anchor="w", justify="left", padx=12)
         self.fav_msg.pack(fill="x")
         wrap = tk.Frame(body, bg=P2)
         self.limit_banner(body, wrap)                     # 2.103.3 (feedback): the "Staying under the limits" line
         wrap.pack(fill="both", expand=True, pady=(8, 0))
         # ---- your favorites
-        lf = tk.Frame(wrap, bg=P1, width=340)
+        lf = tk.Frame(wrap, bg=P1, width=300)             # P2: narrower list, wider card
         lf.pack(side="left", fill="y")
         lf.pack_propagate(False)
         tv = ttk.Treeview(lf, columns=("price", "when"), show="tree headings", selectmode="extended")
         tv.heading("#0", text="Name")
-        tv.heading("price", text="Last price")
+        tv.heading("price", text="Price")
         tv.heading("when", text="Checked")
-        tv.column("#0", width=190, stretch=True)
-        tv.column("price", width=80, anchor="e", stretch=False)
-        tv.column("when", width=62, anchor="e", stretch=False)
+        tv.column("#0", width=110, minwidth=80, stretch=True)
+        tv.column("price", width=72, anchor="e", stretch=False)
+        tv.column("when", width=78, anchor="e", stretch=False)
         sb = ttk.Scrollbar(lf, orient="vertical", command=tv.yview)
         tv.configure(yscrollcommand=sb.set)
         sb.pack(side="right", fill="y")
@@ -99,10 +100,13 @@ class FavoritesPage:
         tv.bind("<ButtonRelease-1>", self.fav_drag_end, add="+")
         tv.bind("<<TreeviewOpen>>", lambda e: self.fav_group_open(True))
         tv.bind("<<TreeviewClose>>", lambda e: self.fav_group_open(False))
-        self.fav_empty = tk.Label(lf, text="No favorites yet.\n\nPaste a trade link above,\nor ☆ Add to favorites\n"
-                                           "on Price Checks.", bg=P1, fg=C["muted"], justify="center")
+        self.fav_empty = tk.Label(lf, text="No favorites yet\n\nTwo ways to add one:\n\n1. Price an item (Ctrl+Alt+C),\n"
+                                           "then ☆ Add to favorites under its card.\n\n2. Paste a trade-site link above\n"
+                                           "and press Add trade link.", bg=P1, fg=C["muted"], justify="left",
+                                  font=("Segoe UI", 9), padx=12, pady=12, highlightthickness=1,
+                                  highlightbackground=C["line"])
         # ---- the card
-        mid = tk.Frame(wrap, bg=P2, width=380)
+        mid = tk.Frame(wrap, bg=P2, width=480)
         mid.pack(side="left", fill="y")
         mid.pack_propagate(False)
         lcanvas, left = self._pc_scroller(mid, padx=12)
@@ -114,14 +118,13 @@ class FavoritesPage:
         count = tk.Label(head, text="", bg=P1, fg=C["text"], font=("Segoe UI", 10, "bold"))
         count.pack(side="left")
         ob = ttk.Button(head, text="Open on trade site", command=self.fav_open_trade, state="disabled")
-        ob.pack(side="right")
         rcanvas, lst = self._pc_scroller(right, padx=12, bg_key="panel")
         self.favv = PCView(left, lcanvas, lst, rcanvas, count, ob)
         self.favv.rid = None
         self.favv.redraw = lambda: self.fav_show()
         self.favv.recard = lambda: self.fav_show(card_only=True)
         self.favv.search_btn = None
-        self.pcv_fit(self.favv, wrap, mid)                  # 2.97.0: scale to fit
+        self.pcv_fit(self.favv, wrap, mid, lo=460, share=0.42)   # 2.97.0: scale to fit; P2: a wider card
         self.fav_fill()
         self.fav_show()
 
@@ -136,6 +139,7 @@ class FavoritesPage:
                 [("", GROUP_PRE + g["id"])] + [(GROUP_PRE + g["id"], f["id"]) for f in st.in_group(g["id"])]]
         have = [x for c in tv.get_children("") for x in [("", c)] + [(c, i) for i in tv.get_children(c)]]
         if want == have:
+            self._fav_empty_show(st)
             self._fav_fill_same(st)                   # 2.103.4 (feedback: Favorites still flickered): same rows -
             if select is not None:                    # their words change in place, nothing is built again
                 keep = [i for i in keep if tv.exists(i)]
@@ -156,10 +160,30 @@ class FavoritesPage:
         if keep:
             tv.selection_set(keep)
             tv.see(keep[0])
+        self._fav_empty_show(st)
+
+    def _fav_empty_show(self, st):
         if st.items or st.groups:
             self.fav_empty.place_forget()
         else:
-            self.fav_empty.place(relx=0.5, rely=0.35, anchor="center")
+            self.fav_empty.place(relx=0.5, rely=0.3, anchor="center")
+
+    def _fav_hint(self, ent):
+        """P2: "Paste a trade-site search link here" in grey while the box is empty and not being typed in."""
+        hint = "Paste a trade-site search link here"
+        lab = tk.Label(ent, text=hint, bg=C["odd"], fg=C["muted"],
+                       font=("Segoe UI", 9), anchor="w", cursor="xterm")
+
+        def show(_e=None):
+            if not self.fav_link_var.get() and self.root.focus_get() is not ent:
+                lab.place(x=6, rely=0.5, anchor="w")
+            else:
+                lab.place_forget()
+        lab.bind("<Button-1>", lambda e: (lab.place_forget(), ent.focus_set()))
+        ent.bind("<FocusIn>", show, add="+")
+        ent.bind("<FocusOut>", show, add="+")
+        self.fav_link_var.trace_add("write", lambda *a: show())
+        self.root.after(50, show)
 
     def _fav_fill_same(self, st):
         tv = self.fav_tv
@@ -627,6 +651,9 @@ class FavoritesPage:
         v.search_btn = None
         if f is None:
             n = len(self._fav_ids()) if hasattr(self, "fav_tv") else 0
+            if not (self.favs().items or self.favs().groups):
+                v.open_btn.config(state="disabled")             # P2: the empty list says what to do
+                return self.pcv_entries(v, None, 0, 0, "")
             tk.Label(v.left, text=f"{n} favorites selected" if n > 1 else "Pick a favorite on the left.",
                      bg=C["panel2"], fg=C["muted"], font=("Segoe UI", 10), anchor="nw", justify="left").pack(
                 fill="x", pady=12)
@@ -663,7 +690,7 @@ class FavoritesPage:
     def _fav_note(self, v, f):
         if f.get("note"):
             tk.Label(v.left, text=f["note"], bg=C["panel2"], fg=C["muted"], font=("Segoe UI", 9, "italic"),
-                     anchor="w", justify="left", wraplength=330).pack(fill="x", pady=(8, 0))
+                     anchor="w", justify="left", wraplength=440).pack(fill="x", pady=(8, 0))
 
     def fav_rec_changed(self, rec, redraw=True, card_only=False):
         """Price Checks' card machinery changed an item favorite (a filter, a search): keep it, redraw it.
@@ -684,7 +711,7 @@ class FavoritesPage:
         if rec.get("state") != "done":
             return
         price = fmt_div(rec["est"]) if rec.get("est") is not None else fmt_price(rec["prices"][0]) \
-            if rec.get("prices") else ("none" if not rec.get("total") else "")
+            if rec.get("prices") else ("-" if not rec.get("total") else "")    # P2: "-" (was "none")
         f["last"] = {"price": price, "total": rec.get("total") or 0, "ts": time.time()}
 
     def _fav_save_soon(self):
@@ -928,4 +955,7 @@ class FavoritesPage:
         btns.pack(fill="x", pady=(8, 0))
         ttk.Button(btns, text="Search", style="Primary.TButton", command=self.fav_search).pack(
             side="left", fill="x", expand=True)
+        ob = ttk.Button(btns, text="Open on trade site", command=self.fav_open_trade)   # P2: under the card
+        ob.pack(side="left", padx=(8, 0))
+        v.open_btn = ob
         v.lcanvas.yview_moveto(0)

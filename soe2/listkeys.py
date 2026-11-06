@@ -129,6 +129,12 @@ class ListKeys:
         for btn in getattr(self, "_undo_btns", {}).get(key, []):
             try:
                 btn.config(state="normal" if self.can_undo(key) else "disabled")
+                hide = getattr(btn, "_hide_pack", None)     # P2 (2.104.0): shown only with something to undo
+                if hide is not None:
+                    if self.can_undo(key) and not btn.winfo_ismapped():
+                        btn.pack(**hide)
+                    elif not self.can_undo(key) and btn.winfo_ismapped():
+                        btn.pack_forget()
             except tk.TclError:
                 pass
 
@@ -136,6 +142,10 @@ class ListKeys:
         from tkinter import ttk
         b = ttk.Button(parent, text="↶ Undo", command=lambda: self.undo_last(key), state="disabled", style="Quiet.TButton")
         self.__dict__.setdefault("_undo_btns", {}).setdefault(key, []).append(b)
+        if pack:                                    # P2 (2.104.0): undo_button(parent, key, side=...) - packed only
+            b._hide_pack = pack                     # while there's something to undo
+            if self.can_undo(key):
+                b.pack(**pack)
         return b
 
 

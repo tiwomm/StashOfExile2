@@ -231,14 +231,14 @@ class PriceCheckPage:
         recs = self.pc_recs()
         self.pc_show(recs[0] if recs else None)
 
-    def pcv_fit(self, v, page, side):
+    def pcv_fit(self, v, page, side, lo=380, share=0.32):
         """2.97.0 (feedback: scale to fit, nothing cut off): the card's side takes about a third of the page (wider
         windows: fewer wrapped lines, so no scrollbar), and the card and the listings are drawn again for the width
         they have when the window changes size."""
         state = {"page": 0, "card": 0, "list": 0, "after_card": None, "after_list": None}
 
         def side_w(pw):
-            return max(380, min(620, int(pw * 0.32)))
+            return max(lo, min(620, int(pw * share)))
 
         def page_cfg(e):
             if abs(e.width - state["page"]) < 8:
@@ -464,6 +464,11 @@ class PriceCheckPage:
                                           state="disabled")
             self.pc_open_btn.pack(side="left", fill="x", expand=True, padx=(8, 0))
             v.open_btn = self.pc_open_btn
+        elif v is getattr(self, "favv", None):              # P2 (2.104.0): Open on trade site under the card
+            ob = ttk.Button(btns, text="Open on trade site", command=self.fav_open_trade,
+                            state="normal" if rec.get("qid") else "disabled")
+            ob.pack(side="left", padx=(8, 0))
+            v.open_btn = ob
         note = self._detail_note(rec)
         if note:
             tk.Label(v.left, text=note[0], bg=P2, fg=note[1], font=("Segoe UI", 9), anchor="w", justify="left",
@@ -499,7 +504,7 @@ class PriceCheckPage:
         if st != "done":
             self.pcv_entries(v, None, 0, 0, "Searching the trade site…" if st == "pricing" else
                              ("Couldn't search" if st == "error" else "Waiting in line…"))
-            if st == "error" and v is getattr(self, "pcv", None):
+            if st == "error" and v in (getattr(self, "pcv", None), getattr(self, "favv", None)):
                 why = rec.get("label") or "The trade site didn't answer."
                 low = why.lower()
                 tip = ("Too many filters for one search: untick a few mods." if "complex" in low else
@@ -509,17 +514,18 @@ class PriceCheckPage:
             return
         entries, total, n = self.pc_entries(rec)
         self.pcv_entries(v, entries, total, n)
-        if not total and not n and v is getattr(self, "pcv", None):
-            on = len(self.pc_ticked(rec))
+        if not total and not n and v in (getattr(self, "pcv", None), getattr(self, "favv", None)):
+            on = len(self.pc_ticked(rec))                    # P2: Favorites says why too
             self.pc_why_box(v, rec, "No listings matched these filters",
                             (f"{on} mod filter{'s are' if on != 1 else ' is'} on. " if on else "")
                             + "Untick the rarest mod or lower a Min, then press Search.", fewer=on > 1)
 
     def pc_ticked(self, rec):
         """P1 (2.103.0): the card's ticked mods, top to bottom (the card on screen)."""
-        if getattr(self, "pc_rid", None) != rec.get("id"):
+        v = self._card_view(rec)                            # P2: Price Checks or Favorites, whichever shows it
+        if v is None:
             return []
-        rows = getattr(self, "card_rows", {}) or {}
+        rows = v.card_rows or {}
         return [m for _i, (m, on, _r) in sorted(rows.items()) if on and m.get("sid")]
 
     def pc_why_box(self, v, rec, title, text, fewer=False):

@@ -4,7 +4,7 @@
 
 > **Who we build for - read second.** Path of Exile players are utilitarian: they love data and information, problem solving and creative thinking. So every feature shows its numbers *and how they were worked out*, lets you sort, filter, compare and export them (CSV), keeps power-user depth (keys, versions, raw data) one click away instead of hiding it, explains in plain words, and leaves the decision to the player. Pretty is welcome; vague is not.
 
-**Current version: 2.103.4**
+**Current version: 2.104.0**
 
 Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds features, 2.10.1 only fixes. Each step below is one release; we work through them top to bottom.
 
@@ -173,6 +173,7 @@ Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds f
 | 2.97.0 | Polish 4 - feedback round: the Rate mods ask says what it is (Count me in! / Not now / Never ask again) and opens in front; Rate mods starts with "Which items do you know best?", lights only your rating, Back / Next / Done under it; F is the ignore tier everywhere tiers show (saved as Ignore); Focus / Campaign on = their line shows (no line switch; both on = one bar, two rows, in Panel and Game bar), switching one on turns the overlay on; a finished character's campaign line and Vendor ▾ come back in campaign zones; Price Checks: Rate ▾ replaces ▲ / ▼, the card and listings fit the window (scrollbar only when needed), Fractured only ticks the mod. |
 | 2.97.1 | Price Checks card: a rune's line and an affix with the same wording are ticked apart; runes in their own AUGMENTS section (no RUNE / SOCKETED lines); Fractured / Desecrated only small, right under its mod, the mod in its color. |
 | 2.97.2 | Price Checks card - visual hierarchy: a mod's color says where it comes from (affix blue, rune light blue, fractured tan, desecrated green, pseudo pink; unticked = dimmed, not grey), the listing cards match; every section folds with how many are ticked, Fold all / Unfold all. |
+| 2.104.0 | Polish 7 P2 - Favorites and Market Insights: empty list says how to add; link box hint; wider card with Search / Open on trade site under it; "why nothing matched" on Favorites; Undo only when there's something to undo; Market Insights All and Gear tabs, no Refresh, columns fit, buttons under the item. |
 | 2.103.4 | P1 feedback 4: "Has 1 Charm Slot" takes a Min (was read as a choice); a typed waystone tier is kept on Search; the Favorites list changes in place (it was built again on every save - the flicker); Bulk Pricing paints a tick in place. |
 | 2.103.3 | P1 feedback 3: a tick repaints only its row on Price Checks and Favorites (the card was still built again - it flickered); Favorites keeps its listings on a card change; a waystone tier range searches every waystone (category + map_tier); Add trade link asks for a name; the "Staying under the limits" line on Price Checks and Favorites. |
 | 2.103.2 | P1 feedback 2: a tick no longer redraws the listings (still flickered); Waystone tier row (range / any); "+" mod wordings found on the trade list; toolbar rows keep their gaps again. |
@@ -217,7 +218,7 @@ Most-used first; pages that share data go together so their doubles can be merge
 | Pass | Pages |
 |---|---|
 | P1 | Price Checks (list, item card, Bulk Pricing, Search) |
-| P2 | Price Checks' children: Favorites, Checks, Market Insights |
+| P2 | Price Checks' children: Favorites, Market Insights (Bulk Pricing was in P1) - ✅ 2.104.0 |
 | P2.5 | **Controls refresh** (feedback: "the buttons feel amateur, the UI a bit generic"): one app-wide pass on the controls themselves, in style.py, so every later pass gets them - buttons (shape, depth, hover / press, icon + text), toggle switches, entries, dropdowns, check boxes, tabs, headings. Mockup first (2-3 directions per theme), you pick, then build. |
 | P3 | Wealth - and remove the public stash tabs from Wealth (Stash tabs page, Sync stash tabs, the odd-price setup, synced items, every step / chip / help line about it): Scan stash replaces it. Price Checks › Add items from: Stash tab stays (it still has a use there). |
 | P4 | Overlay hub, Overlay › Settings, the bar itself (Panel and Game bar), helpers' pop-ups - remove the "In game: Pause / resume Pause" line at the top of the Overlay page; Overlay Enabled / Disabled becomes a toggle switch. |
