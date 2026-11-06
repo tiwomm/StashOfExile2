@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU GPL v3.0 (see LICENSE). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.104.1
+VERSION 2.105.0
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,11 +19,17 @@ VERSION 2.104.1
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
-  2.104.1
+  2.105.0
        Feedback: the card still flickered on every box that isn't a mod - Base type, Quality / Waystone tier /
        Item level / Sockets / requirements, Corrupted / Mirrored / Desecrated ..., Seller / Priced in, and
        "fractured / desecrated only". 2.103.3's in-place painting now covers all of them (_card_mark,
        _card_box_paint): on Price Checks and Favorites only that box changes; the MISCELLANEOUS count follows.
+       Overlay: Rates ▾ on the bar (like Notes / Calc / Regex): the switch puts it there, the button opens / closes
+       the exchange rates window (its x hides it). The labels read Map: and Avg.: .
+       Leaderboards: the League box names the leagues (current first, then others seen, then All leagues); Show:
+       Top 5 / 10 / 20 / 30 / 50 / 100 (kept).
+       Island Rumours: the log's last lines say where you are when the watcher starts (started in your hideout, it
+       never ran); a card read while still opening is read again until its rumours show; its first error is logged.
   2.104.0
        Polish 7 - P2: Favorites and Market Insights (findings + mockup, then built).
        Favorites:
@@ -2479,7 +2485,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.104.1"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.105.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 

@@ -84,12 +84,11 @@ def palette(style, cid):
 
 
 class _Clean(CanvasText):
-    """"Maps: 4" -> "Maps 4", "Avg. 6:01" -> "Avg 6:01", "Map  3:12" -> "Map 3:12"."""
+    """Spaces tidied: "Map:  3:12" -> "Map: 3:12" (2.104.1 feedback: the labels keep their colon - Map:, Avg.:)."""
 
     def config(self, **kw):
         if "text" in kw:
-            t = " ".join(str(kw["text"]).split())
-            kw["text"] = re.sub(r"^(Maps|Avg)[:.]", r"\1", t)
+            kw["text"] = " ".join(str(kw["text"]).split())
         super().config(**kw)
     configure = config
 
@@ -212,12 +211,13 @@ class LightOverlay:
     def _lt_menus(self, w, cv, P, x, y, anchor="e"):
         """Notes ▾ / Calc ▾ / Regex ▾ / Vendor ▾ (MergedOverlay draws them). -> the far edge."""
         x = self._mg_bar_buttons(w, cv, P, x, y, anchor=anchor)
-        self._lt_halo_tags(cv, P, ("mg_notes", "mg_calc", "mg_regex", "mg_vendor"))
+        self._lt_halo_tags(cv, P, ("mg_notes", "mg_calc", "mg_regex", "mg_rates", "mg_vendor"))
         return x
 
     def _lt_menus_w(self, cv, P):
         f = self._lt_fm(cv, P, 9)
-        names = {"notes": "Notes  ▾", "calc": "Calc  ▾", "regex": "Regex  ▾", "vendor": "Vendor  ▾"}
+        names = {"notes": "Notes  ▾", "calc": "Calc  ▾", "regex": "Regex  ▾", "rates": "Rates  ▾",
+                 "vendor": "Vendor  ▾"}
         return sum(f.measure(names[k]) + 12 for k in self.bar_buttons()) + self._u(6)
 
     def _lt_time(self, cv, P, x, y, size, num=False, below=False):

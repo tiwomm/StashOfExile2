@@ -130,17 +130,24 @@ class RumoursPage:
                     th = RM.thumb(img.crop(card))
                     if not RM.changed(last, th):
                         continue
-                    last = th
                     rows, edge = self.ru_read(rect, img)
-                except RM.OcrUnavailable:
+                    if rows:                    # 2.104.1 (feedback: nothing showed): a card read while it was still
+                        last = th               # opening gave no rumours and was never read again - now it's read
+                except RM.OcrUnavailable:       # until its rumours are found
                     break
                 except Exception:
+                    if not getattr(self, "_ru_err", False):
+                        self._ru_err = True
+                        self.ui_q.put(("ru_err",))
                     continue
                 if rows:
                     self.ui_q.put(("ru_tags", rows, edge))
         finally:
             if gen == getattr(self, "ru_gen", 0):
                 self.ru_alive = False
+
+    def ev_ru_err(self):
+        self.log_error("reading the Uncharted Waters card")
 
     def ev_ru_tags(self, rows, edge):
         if not rows:

@@ -633,8 +633,15 @@ class AlertsPage:
                             "tracker to pick it.")
         else:
             self.br_reader = LogReader(path)
-            self.br_reader.start()                    # only what the game writes from now on
+            tail = self.br_reader.start()             # only what the game writes from now on
             self.br_note = ""
+            last = next((d for k, _t, d in reversed(tail or []) if k == "area"), None)
+            if last is not None:                      # 2.104.1 (feedback: Island Rumours never showed): started in
+                try:                                  # your hideout, the helpers knew only after the next area
+                    self.expedition_area(last.get("area"), gl_area_kind(
+                        last.get("area"), last.get("seed"), last.get("level", 0)))
+                except Exception:
+                    self.log_error("the area helpers")
         if not self._br_ticking:
             self._br_ticking = True
             self.root.after(1000, self.breach_tick)
