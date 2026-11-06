@@ -262,7 +262,7 @@ class InsightsPage:
                    + (f", {e['conf']} confidence" if e.get("conf") and e["conf"] != "-" else "") + f"\nPriced {when}"
                    + ("" if here else " · no longer in your Bulk Pricing list") + (f"\n{mods}" if mods else ""))
             self.ins_draw_card(self.ins_card, "mine", e)          # 2.73.2: the item, in the panel
-            self.ins_det.config(text="" if here else "No longer in your Bulk Pricing list.", fg=C["muted"])
+            self.ins_det.config(text="" if here else "Priced earlier - no longer in your Bulk Pricing list.", fg=C["muted"])
             for k in ("open", "again"):                       # P2: the one that fits is the main button
                 self.ins_det_btns[k].config(style="Primary.TButton")
             (self.ins_det_btns["open"] if here else self.ins_det_btns["again"]).pack(fill="x")
