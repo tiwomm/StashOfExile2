@@ -239,7 +239,7 @@ class OverlayParts:
             from .ovlight import palette as light_palette
             P = light_palette(self.ov_look(), self.ov_look_colors())
         else:
-            P = hudart.palette(pal()) if hud else hudart.card_palette(pal())
+            P = pal()                                         # 2.109.0: the overlay's chosen style
         _seed(TH, P)
         try:
             main.update_idletasks()

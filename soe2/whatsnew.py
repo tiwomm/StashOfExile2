@@ -24,6 +24,7 @@ NOTES = {
     "2.109.0": [
         "Regex: all options in one card, a button for each setting.",
         "Copied a search? Just Ctrl+V into the stash search in game.",
+        "Notes, Calc, Regex favorites, Rates and every card over the game now match your overlay's Style and Colours.",
     ],
     "2.108.0": [
         "Right-click the overlay's cog: Quick settings over the game - overlay, sound, lock, what's on the bar. "

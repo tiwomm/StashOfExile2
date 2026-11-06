@@ -116,6 +116,8 @@ class App(GearBookPage, PriceCheckPage, FavoritesPage, BoardModPage, Leaderboard
 
     def __init__(self, root):
         self.root = root
+        from . import overlaywin as _ow
+        _ow.OV_PAL[0] = self.ov_palette                   # 2.109.0: everything over the game in the overlay's style
         self._fresh_install = not SETTINGS.get("seen_version")   # 2.90.0: a new install starts with a clean bar
         root.title(APP_TITLE)
         if sys.platform == "win32":      # own taskbar entry with our icon (not python's)

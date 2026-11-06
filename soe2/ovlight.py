@@ -62,19 +62,19 @@ def can_see_through():
     return sys.platform == "win32"
 
 
-def palette(style, cid):
+def palette(style, cid, boxed=False):
     """The colours, font and shape of a light look. "theme" takes the app theme's (a light theme's dark text can't
     be read over the game without a box, so the box-less styles use Exile Gold then)."""
-    from .overlaywin import pal
+    from .overlaywin import theme_palette
     c = COLORS.get(cid) or COLORS[DEFAULT_COLORS]
     if cid == "theme":
-        b = pal()
+        b = theme_palette()
         if b.get("light") and style in BOXLESS:
             c = COLORS["exile"]
         else:
             c = ("Follow the app theme", b["field"], b["line"], b["text"], b["big"], b["muted"], b.get("accent", b["head"]))
     _name, box, line, text, strong, muted, acc = c
-    boxless = style in BOXLESS and can_see_through()
+    boxless = style in BOXLESS and can_see_through() and not boxed   # (windows - Notes, Calc… - always get a box)
     bg = KEY if boxless else box
     return dict(_P, leather=bg if boxless else line, edge=bg if boxless else "#000000", border=0 if boxless else 1,
                 bg=bg, band=bg, field=bg, box=box, head=acc, accent=acc, text=text, big=strong, icon=strong, sub=text,
@@ -134,6 +134,20 @@ class LightOverlay:
 
     def ov_light(self):
         return self.ov_look() in LIGHT
+
+    def ov_palette(self):
+        """2.109.0: the one look of everything over the game - the bar's Style, Colours and Layout. Notes, Calc,
+        Regex favorites, Rates, the goal bar and every card take it (they used the app theme or the Classic colours
+        before, so none matched)."""
+        from . import hudart, themes as TH
+        from .overlaywin import theme_palette, _seed
+        if self.ov_light():
+            P = palette(self.ov_look(), self.ov_look_colors(), boxed=True)
+        else:
+            base = theme_palette()
+            P = hudart.palette(base) if self.merged_layout() == "xpbar" else hudart.card_palette(base)
+        _seed(TH, P)
+        return P
 
     def ov_look_set(self, style=None, colors=None):
         """Settings › Appearance › Overlay settings: Style / Colours picked - the overlay is built again."""

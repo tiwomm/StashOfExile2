@@ -112,11 +112,8 @@ class OverlayRates:
 
     def ovr_palette(self):
         """The overlay's own look: the Game bar's colours over the game bar layout, the Panel's card colours otherwise."""
-        from . import hudart, themes as TH
-        from .overlaywin import _seed, pal
-        P = hudart.palette(pal()) if self.merged_layout() == "xpbar" else hudart.card_palette(pal())
-        _seed(TH, P)
-        return P
+        from .overlaywin import pal
+        return pal()                                     # 2.109.0: the overlay's chosen style
 
     def ovr_build(self):
         from .overlaywin import OverlayWindow

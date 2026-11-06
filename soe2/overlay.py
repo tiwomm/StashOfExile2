@@ -368,11 +368,8 @@ class Overlay:
 
     def note_palette(self):
         """2.67.0: the note in the overlay's own look (the Panel's: dark leather, a metal frame, antique gold)."""
-        from .overlaywin import pal, _seed
-        from . import hudart, themes as TH
-        P = hudart.card_palette(pal())
-        _seed(TH, P)
-        return P
+        from .overlaywin import pal
+        return pal()                                     # 2.109.0: the overlay's chosen style
 
     def note_colours(self):
         """(background, text) of the note's page."""
@@ -400,7 +397,7 @@ class Overlay:
                           on_moved=moved, follow_game=True, palette=P)
         w.withdraw()                           # show_notes() shows it
         host = w.body
-        if w.parch:                            # 2.67.0: the page inside the overlay's metal frame (drawn to its size)
+        if w.parch and P.get("poe"):           # 2.67.0: the page inside the overlay's metal frame (2.109.0: Classic only)
             from . import hudart
             cv = w.canvas_body()
             host = tk.Frame(cv, bg=bg)

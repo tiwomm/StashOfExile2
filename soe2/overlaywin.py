@@ -119,8 +119,18 @@ def _seed(TH, P):
             TH.ST.cache[v.lower()] = v.lower()
 
 
+OV_PAL = [None]                  # 2.109.0: App.ov_palette - the overlay's own Style / Colours / Layout
+
+
 def pal():
-    """The colors, font and shape of the windows over the game, for their content (2.66.0: the app's theme)."""
+    """The colors, font and shape of everything over the game (2.109.0: the overlay's chosen style - the bar, Notes,
+    Calc, Regex favorites, Rates and every card match it; the app theme only when nothing is set)."""
+    f = OV_PAL[0]
+    if f is not None:
+        try:
+            return f()
+        except Exception:
+            pass
     return theme_palette()
 
 
