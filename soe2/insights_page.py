@@ -19,6 +19,43 @@ KINDS = ["All", "Gear", "Tablets", "Waystones", "Jewels", "Relics"]     # P2 (2.
 ONE = {"All": "item", "Gear": "gear", "Tablets": "tablet", "Waystones": "waystone", "Jewels": "jewel", "Relics": "relic"}
 
 
+# 2.105.0 (feedback): Gear and Tablets get a second choice - the slot / the kind of tablet (the full list, always)
+GEAR_SUBS = [("Helmets", ("helmet",)), ("Body Armours", ("body_armour",)), ("Gloves", ("gloves",)),
+             ("Boots", ("boots",)), ("Belts", ("belt",)), ("Amulets", ("amulet",)), ("Rings", ("ring",)),
+             ("One-hand weapons", ("one_hand_axe", "one_hand_mace", "one_hand_sword", "dagger", "claw", "wand",
+                                   "sceptre", "flail", "spear")),
+             ("Two-hand weapons", ("two_hand_axe", "two_hand_mace", "two_hand_sword", "quarterstaff", "staff")),
+             ("Bows & Crossbows", ("bow", "crossbow")), ("Shields & Bucklers", ("shield", "buckler")),
+             ("Foci", ("focus",)), ("Quivers", ("quiver",)), ("Flasks", ("flask",)), ("Charms", ("charm",)),
+             ("Talismans", ("talisman",))]
+TABLET_SUBS = ["Abyss", "Breach", "Delirium", "Expedition", "Irradiated", "Overseer", "Ritual", "Temple"]
+ALL_SUB = "All"
+
+
+def subs_for(kind):
+    if kind == "Gear":
+        return [ALL_SUB] + [n for n, _c in GEAR_SUBS]
+    if kind == "Tablets":
+        return [ALL_SUB] + [f"{t} Tablets" for t in TABLET_SUBS]
+    return []
+
+
+def sub_match(kind, sub, base, cls=""):
+    """Is this base in the picked slot / tablet kind?"""
+    if not sub or sub == ALL_SUB or kind not in ("Gear", "Tablets"):
+        return True
+    b = str(base or "")
+    if kind == "Tablets":
+        return b.startswith(sub.replace(" Tablets", "") + " ")
+    from . import gamedata
+    info = gamedata.base(b) or {}
+    c = info.get("class") or ""
+    if not c and cls:
+        txt = str(cls).lower().rstrip("s").replace(" ", "_")
+        c = next((k for _n, ks in GEAR_SUBS for k in ks if k == txt or txt.startswith(k)), "")
+    return c in dict(GEAR_SUBS).get(sub, ())
+
+
 def kind_of(base, cls=""):
     b, c = str(base or ""), str(cls or "").lower()
     if b.endswith("Tablet") or "tablet" in c:
@@ -49,8 +86,11 @@ class InsightsPage:
         P1, P2 = C["panel"], C["panel2"]
         top = tk.Frame(body, bg=P1, padx=12, pady=8)     # P2 (2.104.0): the breadcrumb names the page; no Refresh
         top.pack(fill="x")                               # (it fills in on open and after each price)
-        self.ins_kind = SegBar(top, KINDS, command=lambda v: self.refresh_insights(), size=9, pad=(12, 4))
+        self.ins_kind = SegBar(top, KINDS, command=lambda v: self.ins_kind_changed(), size=9, pad=(12, 4))
         self.ins_kind.pack(side="left")
+        self.ins_sub = tk.StringVar(value=ALL_SUB)          # 2.105.0: Gear / Tablets - which slot / kind
+        self.ins_sub_box = ttk.Combobox(top, textvariable=self.ins_sub, state="readonly", width=18)
+        self.ins_sub_box.bind("<<ComboboxSelected>>", lambda e: self.refresh_insights())
         tk.Label(top, text="Your price checks, this league - nothing is searched here", bg=P1, fg=C["muted"],
                  font=("Segoe UI", 9)).pack(side="right")
         # 2.73.2: the picked row's item in a panel at the side (like Price checks) - it was a pop-up at the mouse
@@ -64,8 +104,8 @@ class InsightsPage:
         self.ins_det_btns = {
             "open": ttk.Button(dbar, text="Show in Bulk Pricing", command=self.ins_open_record),
             "again": ttk.Button(dbar, text="Price it again", command=self.ins_price_again),
-            "trade": ttk.Button(dbar, text="Open the search", command=self.ins_open_search),
-            "remove": ttk.Button(dbar, text="✕ Remove from here", command=self.ins_remove_picked, style="Quiet.TButton")}
+            "trade": ttk.Button(dbar, text="Open on trade site", command=self.ins_open_search),
+            "remove": ttk.Button(dbar, text="Remove", command=self.ins_remove_picked, style="Quiet.TButton")}
         self.undo_button(dbar, "insights", side="bottom", pady=(8, 0))   # P2: only with something to undo
         self.ins_card = tk.Frame(det, bg=P2)
         self.ins_card.pack(fill="x")
@@ -104,13 +144,12 @@ class InsightsPage:
             return tv
         mine = table(0, 0, "mine", "Your most valuable", "Everything you've priced. Delete hides a row here; Ctrl+Z "
                                                          "brings it back.",
-                     (("name", "Item", 110, "w"), ("base", "Type", 96, "w"), ("est", "Worth", 72, "e"),
-                      ("status", "Status", 66, "w")))
+                     (("name", "Item", 120, "w"), ("base", "Type", 110, "w"), ("est", "Worth", 72, "e")))
         mine.bind("<Double-1>", lambda e: self.ins_open_record())
         self.list_register("insights", mine, delete=self.ins_forget)
         mine.menu_actions = lambda sel: [("Show in Bulk Pricing", lambda: (self.ins_show("mine"), self.ins_open_record())),
                                          ("Price it again", lambda: (self.ins_show("mine"), self.ins_price_again())),
-                                         ("✕ Remove from Market Insights", lambda: self.ins_forget(sel), bool(sel), "Del")]
+                                         ("Remove", lambda: self.ins_forget(sel), bool(sel), "Del")]
         table(0, 1, "mods", "Mods worth the most", "What the Mod book learned: the typical asking price of listings "
                                                     "with this mod. ★ = valuable in your Mod book.",
               (("mod", "Mod", 120, "w"), ("base", "On", 76, "w"), ("med", "Typical", 76, "e"), ("n", "Seen", 52, "e")))
@@ -120,15 +159,32 @@ class InsightsPage:
                ("when", "Seen", 70, "w")), colspan=2)
         self.list_register("insights", self.ins_tables["seen"][0], delete=self.ins_forget_seen)    # 2.73.2: Delete
         self.ins_tables["seen"][0].menu_actions = lambda sel: [            # 2.36.0
-            ("Open the search", lambda: (self.ins_show("seen"), self.ins_open_search())),
-            ("✕ Remove from Market Insights", lambda: self.ins_forget_seen(sel), bool(sel), "Del")]
+            ("Open on trade site", lambda: (self.ins_show("seen"), self.ins_open_search())),
+            ("Remove", lambda: self.ins_forget_seen(sel), bool(sel), "Del")]
         body.bind("<Unmap>", lambda e: self.ins_preview_close(), add="+")
         self.list_register("insights", self.ins_tables["mods"][0], delete=self.ins_forget_mods)   # 2.73.2: Delete
         self.ins_tables["mods"][0].menu_actions = lambda sel: [
-            ("✕ Remove from Market Insights", lambda: self.ins_forget_mods(sel), bool(sel), "Del")]
+            ("Remove", lambda: self.ins_forget_mods(sel), bool(sel), "Del")]
         self.ins_modmap = {}
         self.ins_rowmap, self.ins_seenmap = {}, {}
         self.refresh_insights()
+
+    def ins_kind_changed(self):
+        """Gear / Tablets show the slot / tablet kind box (All at first); the other tabs hide it."""
+        subs = subs_for(self.ins_kind.get())
+        self.ins_sub.set(ALL_SUB)
+        if subs:
+            self.ins_sub_box.config(values=subs)
+            if not self.ins_sub_box.winfo_ismapped():
+                self.ins_sub_box.pack(side="left", padx=(12, 0))
+        else:
+            self.ins_sub_box.pack_forget()
+        self.refresh_insights()
+
+    def ins_kind_fn(self, kind):
+        """kind_match plus the picked slot / tablet kind."""
+        km, sub = kind_match(kind), self.ins_sub.get() if hasattr(self, "ins_sub") else ALL_SUB
+        return lambda base, cls="": km(base, cls) if km(base, cls) == kind and sub_match(kind, sub, base, cls) else None
 
     def refresh_insights(self):
         if not hasattr(self, "ins_tables"):
@@ -145,10 +201,9 @@ class InsightsPage:
                 added = VALUE_LOG.add(r, league) or added
         if added:
             VALUE_LOG.save()
-        recs = VALUE_LOG.top(league, kind_match(kind), kind)
-        for e in recs:
-            iid = tv.insert("", "end", values=(e["name"], e["base"], fmt_div(e["est"]),
-                                               {"listed": "listed", "removed": "removed"}.get(e.get("mark"), "")))
+        recs = VALUE_LOG.top(league, self.ins_kind_fn(kind), kind)
+        for e in recs:                                     # 2.105.0: no Status column (listing marks are gone)
+            iid = tv.insert("", "end", values=(e["name"], e["base"], fmt_div(e["est"])))
             self.ins_rowmap[iid] = e
         self._ins_empty(empty, not recs, f"No priced {ONE[kind]}s yet.\nPrice some with Ctrl+Alt+C or Bulk Pricing.")
         # ---- mods worth the most (the Mod book's data)
@@ -160,7 +215,7 @@ class InsightsPage:
         stats = MARKET.cached_stats()
         hid = set(SETTINGS.get("ins_hidden_mods") or [])           # 2.73.2: removed by you
         rows = [(base, sid, st) for (base, sid), st in stats.items()
-                if kind_match(kind)(base) == kind and st.get("n", 0) >= 3 and st.get("med") is not None
+                if self.ins_kind_fn(kind)(base) == kind and st.get("n", 0) >= 3 and st.get("med") is not None
                 and f"{base}|{sid}" not in hid]
         self.ins_modmap = {}
         rows.sort(key=lambda r: -r[2]["med"])
@@ -207,7 +262,7 @@ class InsightsPage:
         tv.delete(*tv.get_children())
         # 2.18.0: rows with neither mod lines nor stat ids (saved by an older version) say nothing: left out
         hidden = set(SETTINGS.get("ins_hidden") or [])           # 2.73.2: removed by you
-        seen = [x for x in MARKET.top_listings(detail=True) if kind_match(kind)(x["base"]) == kind
+        seen = [x for x in MARKET.top_listings(detail=True) if self.ins_kind_fn(kind)(x["base"]) == kind
                 and (x.get("lines") or x.get("sids")) and self.ins_seen_key(x) not in hidden][:50]
         now = time.time()
         self.ins_seenmap = {}
@@ -273,9 +328,7 @@ class InsightsPage:
                 return
             self.ins_pick = ("seen", x)
             when = datetime.fromtimestamp(x["seen"]).strftime("%b %d %H:%M") if x.get("seen") else "?"
-            mods = "\n".join("  " + m for m in self.ins_listing_mods(x))
-            txt = (f"{x['name'] or x['base']}  -  asking {x['price'] or fmt_div(x['div'])} (≈ {fmt_div(x['div'])})"
-                   f"\nSeen {when} while pricing a {x['base']}\n{mods}")
+            txt = f"Seen {when} while pricing a {x['base']}."      # (2.105.0: the card shows the rest)
             self.ins_draw_card(self.ins_card, "seen", x)          # 2.73.2
             self.ins_det.config(text=txt, fg=C["text"])
             if x.get("qid"):
@@ -354,27 +407,152 @@ class InsightsPage:
         return [h for h in head if h], rar, self.ins_listing_mods(obj), price, (f"Seen on the trade site {when}"
                                                                                 if when else "")
 
-    def ins_draw_card(self, parent, key, obj):
-        """2.73.2: the item drawn like the game's tooltip, inside the Item panel (it used to pop up at the mouse)."""
+    def ins_facts(self, key, obj):
+        """2.105.0: a row of Your most valuable / listings seen -> what the trade-site style card shows."""
         head, rar, mods, price, foot = self.ins_preview_item(key, obj)
-        fg = self.RARITY_FG.get(rar, "#c8c8c8")
-        box = tk.Frame(parent, bg="#0b0b0e", highlightthickness=2, highlightbackground="#7a5a2e")
-        box.pack(fill="x")
-        top = tk.Frame(box, bg="#1d1712", padx=12, pady=8)
-        top.pack(fill="x")
-        for h in head:
-            tk.Label(top, text=h, bg="#1d1712", fg=fg, font=("Fontin SmallCaps", 12, "bold"), wraplength=300).pack()
-        body = tk.Frame(box, bg="#0b0b0e", padx=12, pady=8)
-        body.pack(fill="x")
-        for m in mods or ["(no mods saved)"]:
-            tk.Label(body, text=m, bg="#0b0b0e", fg="#8888ff" if mods else "#7f7f7f", font=("Segoe UI", 9),
-                     wraplength=300, justify="center").pack()
-        tk.Frame(box, bg="#5a4630", height=1).pack(fill="x", padx=12)
-        tk.Label(box, text=price, bg="#0b0b0e", fg="#ffd9a8", font=("Segoe UI", 10, "bold"), pady=8,
-                 wraplength=300).pack()
-        if foot:
-            tk.Label(box, text=foot, bg="#0b0b0e", fg="#9a9a9a", font=("Segoe UI", 9)).pack(pady=(0, 8))
-        return box
+        name = head[0] if head else (obj.get("name") or "")
+        base = head[1] if len(head) > 1 else (obj.get("base") or name)
+        parts, ilvl, req, rows = [], None, "", []
+        raw = obj.get("raw") or "" if key == "mine" else ""
+        if raw:
+            from . import gamedata
+            secs, cur = [], []
+            for l in raw.splitlines():
+                l = l.strip()
+                if l.startswith("--------"):
+                    secs.append(cur)
+                    cur = []
+                elif l:
+                    cur.append(l)
+            secs.append(cur)
+            for sec in secs[1:]:
+                if any(l.startswith(("{", "Item Level:")) for l in sec):
+                    break
+                for l in sec:
+                    if l.startswith("Requires"):
+                        req = l
+                    elif ":" in l and not l.startswith("Note:"):
+                        lab, val = l.split(":", 1)
+                        aug = "(augmented)" in val
+                        parts.append((lab.strip(), val.replace("(augmented)", "").strip(), aug))
+            try:
+                g = gamedata.read_item(raw)
+            except Exception:
+                g = None
+            if g:
+                ilvl = g.get("ilvl")
+                for m in g.get("mods") or []:
+                    k = m.get("kind") or "explicit"
+                    t = m.get("tier")
+                    tier = (("P" if k == "prefix" else "S" if k == "suffix" else "") + str(t)) if t and \
+                        k in ("prefix", "suffix") else ""
+                    text = re.sub(r"\(-?\d+(?:\.\d+)?--?\d+(?:\.\d+)?\)", "", m["text"])
+                    rows.append((tier, text, m.get("source") or (k if k in ("implicit", "rune", "enchant") else
+                                                                "explicit")))
+        if not rows:
+            rows = [("", m, "explicit") for m in mods]
+        from .pricecheck_page import icons
+        return {"name": name, "base": base, "rarity": rar, "parts": parts, "ilvl": ilvl, "req": req, "mods": rows,
+                "price": price, "foot": foot, "icon": icons().get(obj.get("base") or base) or ""}
+
+    def ins_draw_card(self, parent, key, obj, w=330):
+        """2.105.0 (feedback): the item laid out like the trade site's cards (Price Checks' listings) - its picture,
+        the name band, properties, item level, the mods with their tiers - and what it's worth at the foot."""
+        from tkinter import font as tkfont
+        from . import themes as _th
+        from .pricecheck_page import ART_PX, RARITY_COL
+        from .style import MOD_COL
+        f = self.ins_facts(key, obj)
+        t = _th.ST.theme
+        bg, panel = C["odd"], C["panel2"]
+        rk = RARITY_COL.get(f["rarity"])
+        col = t.c("unique", "#af6025") if rk == "unique" else (C[rk] if rk else C["text"])
+        cv = tk.Canvas(parent, width=w, height=200, bg=panel, highlightthickness=0, bd=0)
+        cv.pack(fill="x")
+        blue, red = "#8888ff", "#d26e5e"
+        cx, y = w // 2, 0
+        with _th.raw():
+            img = self.pc_art(f["icon"]) if f["icon"] and SETTINGS.get("pc_art", True) else None
+            if img is not None:
+                cv.create_image(cx, 4, image=img, anchor="n")
+                cv._art = img
+                y = ART_PX + 10
+            elif f["icon"]:
+                cv._art_url = f["icon"]
+            top = y
+            box = cv.create_rectangle(0, top, w - 1, top + 10, fill=bg,
+                                      outline=t.c(t.part("card", "border", default="border_light")))
+            two = bool(f["name"]) and f["name"] != f["base"]
+            hh = 46 if two else 30
+            name_c = _th.card_header(cv, 2, top + 2, w - 3, top + hh, col, bg)
+            if two:
+                cv.create_text(cx, top + 14, text=f["name"], fill=name_c, font=(_th.head_font(), 11, "bold"))
+                cv.create_text(cx, top + 33, text=f["base"], fill=name_c, font=(_th.head_font(), 10, "bold"))
+            else:
+                cv.create_text(cx, top + hh // 2 + 1, text=f["base"] or f["name"], fill=name_c,
+                               font=(_th.head_font(), 11, "bold"))
+            font = ("Segoe UI", 9)
+            tw = w - 48
+            y = top + hh + 10
+            fm = tkfont.Font(root=cv, family="Segoe UI", size=9)
+
+            def sep():
+                nonlocal y
+                y += 1
+                cv.create_line(cx - 110, y, cx + 110, y, fill=C["line"])
+                y += 8
+
+            def line(text, fill, bold=False):
+                nonlocal y
+                tid = cv.create_text(cx, y, text=text, fill=fill, font=("Segoe UI", 9, "bold") if bold else font,
+                                     width=tw, justify="center", anchor="n")
+                bb = cv.bbox(tid)
+                y = (bb[3] if bb else y + 14) + 1
+
+            def pair(label, value, aug):
+                nonlocal y
+                if not value:
+                    return line(label, C["muted"])
+                a = label + ": "
+                x0 = cx - (fm.measure(a) + fm.measure(value)) // 2
+                cv.create_text(x0, y, text=a, fill=C["muted"], font=font, anchor="nw")
+                cv.create_text(x0 + fm.measure(a), y, text=value, fill=blue if aug else C["text"], font=font,
+                               anchor="nw")
+                y += 15
+            for p in f["parts"]:
+                pair(*p)
+            if f["ilvl"] or f["req"]:
+                if f["parts"]:
+                    sep()
+                if f["ilvl"]:
+                    pair("Item Level", str(f["ilvl"]), False)
+                if f["req"]:
+                    line(f["req"], C["muted"])
+            kc = {"implicit": MOD_COL["implicit"], "rune": MOD_COL["rune"], "enchant": MOD_COL["enchant"],
+                  "fractured": MOD_COL["fractured"], "desecrated": MOD_COL["desecrated"], "crafted": MOD_COL["enchant"]}
+            first = [m for m in f["mods"] if m[2] in ("enchant", "implicit", "rune")]
+            rest = [m for m in f["mods"] if m not in first]
+            for group in (first, rest):
+                if not group:
+                    continue
+                sep()
+                for tier, text, kind in group:
+                    if tier:
+                        cv.create_text(8, y, text=tier, anchor="nw", font=("Segoe UI", 8, "bold"),
+                                       fill=red if tier[:1] == "P" else blue)
+                    line(text, kc.get(kind, MOD_COL["explicit"]))
+            if not f["mods"]:
+                sep()
+                line("(no mods saved)", C["muted"])
+            sep()
+            line(f["price"], C["good"], bold=True)
+            if f["foot"]:
+                line(f["foot"], C["muted"])
+            y += 8
+            cv.coords(box, 0, top, w - 1, y)
+            cv.configure(height=y + 1)
+        cv._facts = f
+        return cv
 
     def ins_remove_picked(self):
         if not self.ins_pick:

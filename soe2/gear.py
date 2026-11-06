@@ -526,8 +526,10 @@ def build_query(item, must, optional, count_min, values, plain=False):
     eq, mp = {}, {}
     if item.get("waystone") and item.get("tier") is not None:
         mp["map_tier"] = {"min": item["tier"], "max": item["tier"]}     # 2.10.0: same tier only
-    and_f = []
-    for m in must:
+    if optional and count_min >= len(optional):         # 2.105.0 (feedback: an amulet's exact search found listings
+        must, optional = list(must) + list(optional), []   # without its +186 Mana): every mod must match, like ★ mods -
+    and_f = []                                          # a count over each mod's several ids (fractured, desecrated
+    for m in must:                                      # ...) let one mod count two or three times
         v = values.get(id(m))
         if m["sid"].startswith("equip:"):
             if v:
@@ -545,8 +547,8 @@ def build_query(item, must, optional, count_min, values, plain=False):
     and_f = merge_dups(and_f)                                # 2.79.1: two Legacy of Quicksilver -> one, Min 2
     if and_f or not query["stats"]:
         query["stats"].insert(0, {"type": "and", "filters": and_f})
-    if optional:
-        opt = merge_dups([_stat_filter({"sid": i}, values.get(id(m))) for m in optional for i in _ids(m, plain)])
+    if optional:                                      # "all but N": one id per mod, so each counts once
+        opt = merge_dups([_stat_filter({"sid": _ids(m, plain)[0]}, values.get(id(m))) for m in optional])
         query["stats"].append({"type": "count", "value": {"min": count_min}, "filters": opt})
     if s.get("sockets_min") and not plain:
         eq["rune_sockets"] = {"min": s["sockets_min"]}

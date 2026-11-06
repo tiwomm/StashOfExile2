@@ -168,14 +168,14 @@ def currency(name):
 
 # ---------------------------------------------------------------- reading a copied item (any class)
 PROP_RE = {
-    "quality": re.compile(r"^Quality:\s*\+?(\d+)%"),
+    "quality": re.compile(r"^Quality(?:\s*\([^)]*\))?:\s*\+?(\d+)%"),   # 2.105.0: "Quality (Caster Modifiers): +40%"
     "armour": re.compile(r"^Armour:\s*(\d+)"),
     "evasion": re.compile(r"^Evasion Rating:\s*(\d+)"),
     "energy_shield": re.compile(r"^Energy Shield:\s*(\d+)"),
     "ilvl": re.compile(r"^Item Level:\s*(\d+)"),
     "stack": re.compile(r"^Stack Size:\s*([\d,.\s]+)(?:/\s*([\d,.\s]+))?"),
 }
-CORRUPTION_HEADER = re.compile(r"^\{\s*Corruption Enhancement\b[^}]*\}\s*$", re.I)
+CORRUPTION_HEADER = re.compile(r"^\{\s*(?:Corruption\s+)?Enhancement\b[^}]*\}\s*$", re.I)   # 2.105.0: "{ Enhancement }"
 MOD_HEADER = re.compile(r'^\{\s*(?P<kind>[A-Za-z ]+?)\s+Modifier(?:\s+"(?P<name>[^"]*)")?(?:\s*\(Tier:\s*(?P<tier>\d+)\))?')
 
 
@@ -292,6 +292,7 @@ def read_item(text):
             if l in FLAG_LINES or l.startswith(("Note:", "Place into", "Right click")):
                 continue
             l = _WRANGE.sub("", l)                           # 2.74.1: "Legacy of Gold (Amethyst-Topaz)" -> "Legacy of Gold"
+            l = re.sub(r"\s+[—-]\s+Unscalable Value.*$", "", l)     # 2.105.0: "Allocates Paragon — Unscalable Value"
             tag = _TAGS.search(l)
             tagged = tag.group(1).lower() if tag else None
             k = kind or (tagged if tagged in ("implicit", "rune", "enchant") else "explicit")

@@ -143,9 +143,38 @@ def mod_rows(item):
     return out
 
 
+_ICONS = None
+
+
+def icons():
+    """2.105.0: base -> the trade site's picture of it (learned from listings; Market Insights' cards use it)."""
+    global _ICONS
+    if _ICONS is None:
+        from .config import load_json
+        try:
+            _ICONS = dict(load_json("icons.json", {}) or {})
+        except Exception:
+            _ICONS = {}
+    return _ICONS
+
+
+def icon_learn(base, url):
+    if not base or not str(url or "").startswith("https://"):
+        return
+    ic = icons()
+    if ic.get(base) != url:
+        ic[base] = url
+        try:
+            from .config import save_json
+            save_json("icons.json", ic)
+        except Exception:
+            pass
+
+
 def listing_facts(e):
     """One trade-site entry -> what its card shows."""
     it, lst = (e or {}).get("item") or {}, (e or {}).get("listing") or {}
+    icon_learn(_clean(it.get("baseType") or it.get("typeLine")), it.get("icon"))
     price = lst.get("price") or {}
     ts = None
     try:
@@ -759,5 +788,11 @@ class PriceCheckPage:
         for v in (getattr(self, "pcv", None), getattr(self, "favv", None)):      # 2.84.0: each view with cards
             if v is not None and v.redraw and any(getattr(c, "_art_url", None) in done for c in v.cards):
                 v.redraw()
+        card = next(iter(getattr(self, "ins_card", None) and self.ins_card.winfo_children() or []), None)
+        if card is not None and getattr(card, "_art_url", None) in done and getattr(self, "ins_pick", None):
+            try:                                          # 2.105.0: Market Insights' card gets its picture too
+                self.ins_show(self.ins_pick[0])
+            except Exception:
+                pass
         if self._pc_art_wait:
             self.root.after(500, self._pc_art_poll)

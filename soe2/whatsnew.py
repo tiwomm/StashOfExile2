@@ -29,6 +29,15 @@ NOTES = {
         "Leaderboards: pick a league by name, and how many rows to show (Top 5 to Top 100).",
         "Island Rumours: two problems fixed (starting the app in your hideout; a card read while opening). "
         "Not confirmed in game yet - tell us if tags still don't show.",
+        "Price Checks: an exact search now needs every mod you ticked (a fractured or desecrated mod could count "
+        "twice, so listings missing one of your mods showed up).",
+        "Amulets: catalyst quality (\"Quality (Caster Modifiers)\") and the anoint (\"Allocates ...\") are read "
+        "and can be searched.",
+        "Searches: up to 15 per 5 minutes on the Balanced pace (was 8), still well under the trade site's limit.",
+        "Market Insights: Gear and Tablets get a second box - the slot (Helmets, Rings ...) or tablet kind.",
+        "Market Insights: the item shows like a trade-site card; \"Open on trade site\" and \"Remove\".",
+        "Exchange rates: Convert moved to Exchange Helper; rates always refresh hourly (no switch).",
+        "Bulk Pricing: no more Mark listed / sold / removed - every item shows.",
     ],
     "2.104.0": [
         "Favorites: an empty list says how to add one; the link box says what goes in it.",

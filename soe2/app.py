@@ -657,10 +657,7 @@ class App(GearBookPage, PriceCheckPage, FavoritesPage, BoardModPage, Leaderboard
         # ---- row 2: the list filters (2.0 beta 3) + 2.63.0 search and "only ★"
         frow = bar2                                         # (2.103.1, feedback: always on screen, as before)
         flab = dict(bg=C["panel"], fg=C["muted"])
-        tk.Label(frow, text="Show", **flab).pack(side="left", padx=(0, 8))
-        vbox = ttk.Combobox(frow, textvariable=self.view_var, values=VIEWS, state="readonly", width=11)
-        vbox.pack(side="left")
-        vbox.bind("<<ComboboxSelected>>", self.on_view)
+        # 2.105.0: no "Show: Not yet listed / Listed / Sold / Removed" (listing marks are gone) - every item shows
         self.cat_var, self.rar_var, self.type_var = tk.StringVar(value=self.ALL_CATS), tk.StringVar(value="All"), tk.StringVar(value="All")
         self.cat_box = ttk.Combobox(frow, textvariable=self.cat_var, state="readonly", width=13)
         self.rar_box = ttk.Combobox(frow, textvariable=self.rar_var, state="readonly", width=8)
@@ -671,7 +668,7 @@ class App(GearBookPage, PriceCheckPage, FavoritesPage, BoardModPage, Leaderboard
         self.cat_box.bind("<<ComboboxSelected>>", lambda e: self.on_cat(changed="cat"))
         self.rar_box.bind("<<ComboboxSelected>>", lambda e: self.on_cat(changed="rar"))
         self.type_box.bind("<<ComboboxSelected>>", lambda e: self.on_cat(changed="type"))
-        for cb in (vbox, self.cat_box, self.rar_box, self.type_box):
+        for cb in (self.cat_box, self.rar_box, self.type_box):
             cb.bind("<<ComboboxSelected>>", lambda e: self.root.after(20, self.root.focus_set), add="+")
         self.star_var = tk.BooleanVar(value=False)          # 2.74.5: the "Only ★" switch is gone (kept off)
         # 2.26.4: was "Show all" - it clears Category / Rarity / Type / search / ★, and only lights up when one is set
@@ -713,9 +710,8 @@ class App(GearBookPage, PriceCheckPage, FavoritesPage, BoardModPage, Leaderboard
         self.delete_btn = ttk.Button(acts, text="🗑 Delete", command=self.remove_selected, style="Danger.TButton", state="disabled")      # 2.0 beta 19
         self.delete_btn.pack(side="right", padx=8)
         self.remove_btn = ttk.Button(acts, text="✖ Mark removed", command=lambda: self.mark_selected("removed"), state="disabled")
-        self.remove_btn.pack(side="right")
         self.mark_btn = ttk.Button(acts, text="✔ Mark listed", command=lambda: self.mark_selected("listed"), state="disabled")
-        self.mark_btn.pack(side="right", padx=8)
+        # 2.105.0 (feedback: nobody marks items listed / sold / removed): those buttons aren't shown any more
         self.undo_btn = ttk.Button(acts, text="↺ Undo", command=self.undo_mark, state="disabled", width=7, style="Quiet.TButton")
         self.undo_btn.pack(side="right")
         self.undo = []                                   # [(record id, previous mark, previous listed-at)] of the last mark
@@ -2493,7 +2489,7 @@ class App(GearBookPage, PriceCheckPage, FavoritesPage, BoardModPage, Leaderboard
             lg = SETTINGS.get("league")
             age = RATES.age()
             stale = RATES.league != lg or age is None or age > 3600
-            if lg and SETTINGS.get("rates_auto", True) and stale and not self._rates_busy and time.time() - RATES.attempt > 600:
+            if lg and stale and not self._rates_busy and time.time() - RATES.attempt > 600:
                 self._rates_busy = True
                 threading.Thread(target=self._rates_worker, args=(lg, False), daemon=True).start()
             old = age is None or age > 7200
@@ -2549,25 +2545,7 @@ class App(GearBookPage, PriceCheckPage, FavoritesPage, BoardModPage, Leaderboard
         self.rates_status = tk.Label(top, text="", bg=C["panel"], fg=C["text"], anchor="w", justify="left", wraplength=360)
         self.rates_status.pack(side="left", fill="x", expand=True)
         ttk.Button(top, text="Refresh now", style="Primary.TButton", command=self.refresh_rates_now).pack(side="right")
-        self.rates_auto_var = tk.BooleanVar(value=SETTINGS.get("rates_auto", True))   # 2.98.3: here (was Settings)
-        ttk.Checkbutton(top, text="Check for new rates every hour", variable=self.rates_auto_var,
-                        command=self.on_rates_auto).pack(side="right", padx=(0, 16))
-        cvo, conv = chrome_section(w, "Convert")              # 2.69.0: header strip + sunken frame
-        cvo.pack(fill="x", padx=16, pady=8)
-        row = tk.Frame(conv, bg=C["panel2"])
-        row.pack(fill="x")
-        tk.Label(row, text="What is", bg=C["panel2"], fg=C["muted"]).pack(side="left")
-        sel = self.tree.selection() if hasattr(self, "tree") else ()
-        start = ""
-        if len(sel) == 1 and self.records.get(int(sel[0]), {}).get("est"):
-            start = _num(self.records[int(sel[0])]["est"])
-        self.conv_var = tk.StringVar(value=start or "8.5")
-        ttk.Entry(row, textvariable=self.conv_var, width=9).pack(side="left", padx=8)
-        tk.Label(row, text="divines worth in the other currencies?", bg=C["panel2"], fg=C["muted"]).pack(side="left")
-        self.conv_out = tk.Label(conv, text="", bg=C["panel2"], fg=C["good"], font=(MONO, 10, "bold"), anchor="w", justify="left",
-                                 wraplength=580)
-        self.conv_out.pack(fill="x", pady=(8, 0))
-        self.conv_var.trace_add("write", lambda *a: self.draw_rates())
+        # (2.105.0, feedback: no "Check for new rates every hour" switch - they're always checked hourly)
         # ---- 2.2.0: what to post on the in-game Currency Exchange (2.4.0: its own tab, "Exchange Helper")
         hp = self.rates_pages["Exchange Helper"]
         exo, ex = chrome_section(hp, "Exchange Helper")
@@ -2598,6 +2576,22 @@ class App(GearBookPage, PriceCheckPage, FavoritesPage, BoardModPage, Leaderboard
                  bg=C["panel2"], fg=C["muted"], font=("Segoe UI", 9), anchor="w", justify="left",
                  wraplength=560).pack(fill="x", pady=(8, 0))
         self.ex_amt.trace_add("write", lambda *a: self.draw_exchange())
+        cvo, conv = chrome_section(hp, "Convert")   # 2.105.0 (feedback): under Exchange Helper (was on Rates)
+        cvo.pack(fill="x", padx=16, pady=8)
+        row = tk.Frame(conv, bg=C["panel2"])
+        row.pack(fill="x")
+        tk.Label(row, text="What is", bg=C["panel2"], fg=C["muted"]).pack(side="left")
+        sel = self.tree.selection() if hasattr(self, "tree") else ()
+        start = ""
+        if len(sel) == 1 and self.records.get(int(sel[0]), {}).get("est"):
+            start = _num(self.records[int(sel[0])]["est"])
+        self.conv_var = tk.StringVar(value=start or "8.5")
+        ttk.Entry(row, textvariable=self.conv_var, width=9).pack(side="left", padx=8)
+        tk.Label(row, text="divines worth in the other currencies?", bg=C["panel2"], fg=C["muted"]).pack(side="left")
+        self.conv_out = tk.Label(conv, text="", bg=C["panel2"], fg=C["good"], font=(MONO, 10, "bold"), anchor="w", justify="left",
+                                 wraplength=580)
+        self.conv_out.pack(fill="x", pady=(8, 0))
+        self.conv_var.trace_add("write", lambda *a: self.draw_rates())
         cols = [("cur", "Currency", 200, "w"), ("worth", "Worth (divines)", 120, "e"), ("per", "1 divine buys", 120, "e"),
                 ("vol", "Traded (div)", 110, "e")]
         tk.Label(w, text="Rates come from poe.ninja's public exchange overview (they refresh about hourly) and are approximate. "
@@ -4572,11 +4566,7 @@ class App(GearBookPage, PriceCheckPage, FavoritesPage, BoardModPage, Leaderboard
                 None,
                 (f"Re-price{n}", lambda: self.reprice(rids), bool(rids)),
                 ("Copy name", lambda: self.copy_name(one, True), one is not None, "C"),
-                ("Open on trade site", self.open_trade, bool(one and one.get("qid")), "O"),
-                None,
-                (f"✔ Mark listed{n}", lambda: self.mark_selected("listed"), bool(rids)),
-                (f"💰 Mark sold{n}", lambda: self.mark_selected("sold"), bool(rids)),
-                (f"✖ Mark removed{n}", lambda: self.mark_selected("removed"), bool(rids))]
+                ("Open on trade site", self.open_trade, bool(one and one.get("qid")), "O")]   # (2.105.0: no Mark ...)
 
     # ---------------- 2.73.2: pause / reorder the items waiting to be priced
     def pricing_hold(self, rids, on=True):
@@ -5182,7 +5172,7 @@ class App(GearBookPage, PriceCheckPage, FavoritesPage, BoardModPage, Leaderboard
             f.pack(fill="x", pady=(8, 0))
             tk.Label(f, text=title, bg=P1, fg=C["steel"], font=("Segoe UI", 9, "bold"), anchor="w").pack(fill="x")
             return f
-        self._detail_listing(block("LISTING STATUS"), rec)
+        # (2.105.0: no LISTING STATUS - "Listed at" / "Sold for" are gone)
         if rec.get("est") is not None and not rec.get("nomatch") and not rec.get("manual") and not rec.get("skip"):
             eq, opt = RATES.equivalents(rec["est"]), RATES.list_options(rec["est"])
             if eq or opt:
