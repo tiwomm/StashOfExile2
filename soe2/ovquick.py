@@ -1,0 +1,220 @@
+"""P4 (2.108.0, feedback: "a mini settings page over the game when we right click the cog wheel"): right-click the
+overlay's ⚙ = Quick settings, a small box over the game, above the cog and on the game's monitor. Left-click still
+opens the full Overlay ↳ Settings in the app. Overlay, Sound, Lock, Hide from screen captures, and Overlays - what
+sits on the bar (each helper and tool). Esc, ✕, a click elsewhere or the cog again closes it.
+GGG ToS: a window over the game; nothing is sent to the game."""
+import tkinter as tk
+from tkinter import ttk
+
+from .config import SETTINGS, save_json
+from .style import C
+
+# what the Overlays buttons switch: (label, key)
+QUICK_BAR = (("Breach", "breach"), ("Delirium", "delirium"), ("Ritual", "ritual"), ("Expedition", "remnant"),
+             ("Focus", "focus"), ("Campaign", "campaign"), ("Notes", "notes"), ("Calc", "calc"), ("Regex", "regex"),
+             ("Rates", "rates"))
+
+
+class OverlayQuick:
+    """Mixed into App."""
+
+    # ---------------------------------------------------------------- the one Sound (shared with Overlay ↳ Settings)
+    def helpers_sound_set(self, on):
+        """Every helper's alert sound on or off (the Sound switch here and on Overlay ↳ Settings › Helpers)."""
+        on = bool(on)
+        SETTINGS["helpers_sound"] = on
+        try:
+            self.breach_cfg()["sound"] = on
+            self.ritual_cfg()["sound"] = on
+        except Exception:
+            pass
+        save_json("settings.json", SETTINGS)
+        try:
+            from . import whispers as _W
+            _W.cfg()["sound"] = on
+            _W.save()
+        except Exception:
+            pass
+        try:
+            from .utilities import DELIRIUM
+            DELIRIUM.set_sound(on)
+        except Exception:
+            pass
+        for key in ("delirium", "breach", "ritual", "whispers"):
+            r = (getattr(self, "al_rows", None) or {}).get(key)
+            if r is not None:
+                r["sound"].set(on)
+        v = getattr(self, "al_sound_all", None)
+        if v is not None and bool(v.get()) != on:
+            v.set(on)
+
+    # ---------------------------------------------------------------- what's on the bar
+    def quick_bar_on(self, key):
+        b = self.bar_cfg()
+        if key == "notes":
+            return self.notes_on_bar()
+        if key == "calc":
+            return self.calc_on_bar()
+        if key == "rates":
+            return bool(self.ovr_cfg()["on"])
+        return bool(b.get(key, True))
+
+    def quick_bar_set(self, key, on):
+        on = bool(on)
+        b = self.bar_cfg()
+        if key == "rates":
+            self.ovr_switch(on)
+        elif key == "notes":
+            b["notes"] = on
+            self.overlay.cfg["notes_choice"] = True
+            self.overlay.set_notes(on)
+        elif key == "calc":
+            b["calc"] = on
+            self.calc_cfg()["on"] = on
+            if not on:
+                self.calc_ov_close(remember=False)
+            self.calc_save()
+        else:
+            b[key] = on
+            if key == "regex" and not on:
+                self.rx_ov_close()
+            if on and key in self.HELPERS:
+                self.tracker_cfg()["alerts_bar"] = True
+        self.tracker_save()
+        try:
+            self.tracker_helpers_sync()
+        except Exception:
+            pass
+        v = (getattr(self, "tk_bar_vars", None) or {}).get(key)
+        if v is not None and bool(v.get()) != on:
+            v.set(on)
+        self.merged_build()
+
+    # ---------------------------------------------------------------- the box
+    def ov_quick_toggle(self, e=None):
+        if getattr(self, "ov_quick_win", None) is not None:
+            return self.ov_quick_close()
+        self.ov_quick_show(e)
+
+    def ov_quick_close(self, _e=None):
+        w, self.ov_quick_win = getattr(self, "ov_quick_win", None), None
+        if w is not None:
+            try:
+                w.destroy()
+            except tk.TclError:
+                pass
+
+    def ov_quick_show(self, e=None):
+        self.ov_quick_close()
+        P1, P2 = C["panel"], C["panel2"]
+        w = tk.Toplevel(self.root, bg=C["line"])
+        w.withdraw()
+        w.overrideredirect(True)
+        try:
+            w.attributes("-topmost", True)
+        except tk.TclError:
+            pass
+        self.ov_quick_win = w
+        box = tk.Frame(w, bg=P1, padx=0, pady=0)
+        box.pack(padx=1, pady=1)
+        head = tk.Frame(box, bg=P2, padx=12, pady=8, highlightthickness=0)
+        head.pack(fill="x")
+        tk.Label(head, text="Quick settings", bg=P2, fg=C["text"], font=("Segoe UI", 11, "bold")).pack(side="left")
+        ttk.Button(head, text="✕", width=3, style="Quiet.TButton", command=self.ov_quick_close).pack(side="right")
+        tk.Frame(box, bg=C["accent"], height=2).pack(fill="x")
+        body = tk.Frame(box, bg=P1, padx=12, pady=8)
+        body.pack(fill="x")
+        CB = "Bar.TCheckbutton"
+        self.ovq_vars = {}
+
+        def row(label, value, fn):
+            v = tk.BooleanVar(value=bool(value))
+            cb = ttk.Checkbutton(body, text=label, variable=v, style=CB, command=lambda: fn(bool(v.get())))
+            cb.pack(anchor="w", pady=2)
+            self.ovq_vars[label] = v
+            return v
+        cfg = self.tracker_cfg()
+        row("Overlay", self.ov_enabled(), self._ovq_overlay)
+        row("Sound", SETTINGS.get("helpers_sound", True), self.helpers_sound_set)
+        row("Lock overlay", cfg.get("mlocked"), self._ovq_lock)
+        row("Hide from screen captures", cfg.get("hide_capture", False), self._ovq_hidecap)
+        tk.Label(body, text="OVERLAYS", bg=P1, fg=C["muted"], font=("Segoe UI", 8, "bold"), anchor="w").pack(
+            fill="x", pady=(8, 4))
+        grid = tk.Frame(body, bg=P1)
+        grid.pack(fill="x")
+        self.ovq_chips = {}
+        for i, (label, key) in enumerate(QUICK_BAR):
+            b = tk.Label(grid, text=label, font=("Segoe UI", 9), padx=10, pady=4, cursor="hand2",
+                         highlightthickness=1)
+            b.grid(row=i // 4, column=i % 4, sticky="ew", padx=(0, 4), pady=(0, 4))
+            b.bind("<Button-1>", lambda _e, k=key: self._ovq_chip(k))
+            self.ovq_chips[key] = b
+            self._ovq_paint(key)
+        foot = tk.Frame(box, bg=P1, padx=12, pady=8)
+        foot.pack(fill="x")
+        ttk.Button(foot, text="All settings…", command=lambda: (self.ov_quick_close(), self.overlay_settings_go())).pack(
+            fill="x")
+        w.bind("<Escape>", self.ov_quick_close)
+        w.update_idletasks()
+        ww, wh = w.winfo_reqwidth(), w.winfo_reqheight()
+        x0, y0 = (e.x_root, e.y_root) if e is not None else (self.root.winfo_pointerx(), self.root.winfo_pointery())
+        try:
+            from .alerts_page import game_rect
+            g = game_rect()
+        except Exception:
+            g = None
+        if not g:
+            g = (0, 0, self.root.winfo_screenwidth(), self.root.winfo_screenheight())
+        gx, gy, gw, gh = g
+        x = min(max(gx, x0 - ww + 20), gx + gw - ww)              # (stays on the game's monitor)
+        y = y0 - wh - 12 if y0 - wh - 12 >= gy else min(y0 + 16, gy + gh - wh)
+        w.geometry(f"+{int(x)}+{int(y)}")
+        w.deiconify()
+        try:
+            w.focus_force()
+        except tk.TclError:
+            pass
+        w.bind("<FocusOut>", lambda _e: self.root.after(150, self._ovq_focus_gone))
+
+    def _ovq_focus_gone(self):
+        w = getattr(self, "ov_quick_win", None)
+        if w is None:
+            return
+        try:
+            f = w.focus_get()
+        except (tk.TclError, KeyError):
+            f = None
+        if f is None or not str(f).startswith(str(w)):
+            self.ov_quick_close()
+
+    def _ovq_paint(self, key):
+        b = (getattr(self, "ovq_chips", None) or {}).get(key)
+        if b is None:
+            return
+        on = self.quick_bar_on(key)
+        try:
+            b.config(bg=C["sel"] if on and "sel" in C else (C["panel2"] if on else C["panel"]),
+                     fg=C["text"] if on else C["muted"], highlightbackground=C["accent"] if on else C["line"])
+        except tk.TclError:
+            pass
+
+    def _ovq_chip(self, key):
+        self.quick_bar_set(key, not self.quick_bar_on(key))
+        self._ovq_paint(key)
+
+    def _ovq_overlay(self, on):
+        self.ov_enable(on)
+        v = getattr(self, "tk_ov_master", None)
+        if v is not None:
+            v.set("on" if on else "off")
+
+    def _ovq_lock(self, on):
+        self.overlay_lock(on)
+
+    def _ovq_hidecap(self, on):
+        self.tracker_cfg()["hide_capture"] = bool(on)
+        v = getattr(self, "tk_hidecap", None)
+        if v is not None and bool(v.get()) != bool(on):
+            v.set(bool(on))
+        self.tracker_save()
+        self.overlay_click_through()

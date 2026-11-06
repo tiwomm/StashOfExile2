@@ -210,6 +210,10 @@ class TrackerPage:
             tv.column(cid, width=w, anchor=a, stretch=(cid == "map"))
         tv.pack(fill="both", expand=True)
         self.tk_maps = tv
+        self.tk_maps_empty = tk.Label(pm, text="No maps yet this session.\nPress Start tracking, then run maps - each "
+                                               "one shows here with its time.", bg=C["panel"], fg=C["muted"],
+                                      font=("Segoe UI", 10), justify="center")   # P4 (2.108.0): empty said nothing
+        self.tk_maps_empty.place(relx=0.5, rely=0.45, anchor="center")
         self.list_register("tracker", tv)
         self.tk_pages["This session's maps"] = pm
         ph = tk.Frame(body, bg=P1)
@@ -1004,6 +1008,12 @@ class TrackerPage:
         tv = self.tk_maps
         tv.delete(*tv.get_children())
         s = self.tk_session
+        emp = getattr(self, "tk_maps_empty", None)
+        if emp is not None:
+            if s and s.maps:
+                emp.place_forget()
+            else:
+                emp.place(relx=0.5, rely=0.45, anchor="center")
         if not s:
             return
         now = time.time()

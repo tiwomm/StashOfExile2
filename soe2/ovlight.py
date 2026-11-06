@@ -193,6 +193,8 @@ class LightOverlay:
                                 font=("Segoe UI Symbol", self._hf(9)), tags=("mg", tag))
             CanvasText(cv, it, P["bg"], halo=P.get("halo"))
             cv.tag_bind(tag, "<Button-1>", lambda e, c=cmd: c())
+            if tag == "mg_cog":                          # P4 (2.108.0): right-click = Quick settings over the game
+                cv.tag_bind(tag, "<Button-3>", lambda e: self.ov_quick_toggle(e))
             cv.tag_bind(tag, "<Enter>", lambda e: cv.configure(cursor="hand2"))
             cv.tag_bind(tag, "<Leave>", lambda e: cv.configure(cursor=""))
             bb = cv.bbox(it)
