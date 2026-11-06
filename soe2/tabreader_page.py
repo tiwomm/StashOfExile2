@@ -257,13 +257,8 @@ class TabReaderPage:
     def pctab_wealth_link(self):
         """Show "Count it in Wealth" once a tab was read and Wealth doesn't have it yet."""
         from .wealth import WEALTH
-        cfg = SETTINGS.get("pctab") or {}
-        have = any(t["amount"] == cfg.get("amount") and t["currency"] == cfg.get("currency") for t in WEALTH.tabs)
-        if cfg.get("amount") and cfg.get("read_ok") and not have:
-            if not self.pc_to_wealth.winfo_ismapped():
-                self.pc_to_wealth.pack(side="right", padx=(0, 8))
-        else:
-            self.pc_to_wealth.pack_forget()
+        _ = WEALTH                                    # 2.105.1: Wealth has no stash tabs any more - never shown
+        self.pc_to_wealth.pack_forget()
 
     def pctab_to_wealth(self):
         cfg = SETTINGS.get("pctab") or {}

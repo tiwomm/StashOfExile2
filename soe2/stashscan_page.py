@@ -249,10 +249,10 @@ class StashScanPage:
     def stash_scan_save(self, got):
         from .wealth import WEALTH
         for name, q in got:
-            WEALTH.set_holding(name, q, _cls(name))
+            WEALTH.set_holding(name, q, _cls(name), src="scanned")
         if got:
             self._w_tell(f"Scan stash: saved {len(got)} stack count{'s' if len(got) != 1 else ''}.", "ok")
             lg = SETTINGS.get("league")
             if lg:
-                threading.Thread(target=self._w_prices_then_snapshot, args=(lg,), daemon=True).start()
+                threading.Thread(target=self._w_prices_then_snapshot, args=(lg, "scanned"), daemon=True).start()
         self.refresh_wealth(force=True)
