@@ -34,6 +34,8 @@ VERSION HISTORY
        - Map library: ranking is one compact S A B C D ✖ group in the toolbar, then Clear and Share ▾.
        - Price Checks: Recent is a panel under the item card (was a column on the left - too crunched).
        - Overlay bar: no "-" after Map: / Avg.: while there's nothing to show yet.
+       - Bulk Pricing: a tick or a filter on the item card waits for Search again (it searched on every click) and
+         is painted in place (the whole card was drawn again) - as on Price Checks.
        - Money Makers: + Add my own, with Import file… and Download Format in a ⋯ menu beside it.
        - Regex: Tablets / Waystones / Relics / Jewels / Gear items are tabs; the Regex key line sits under the
          search; rarity / type / options are toggle chips; the how-to text is a ? tooltip.

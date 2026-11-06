@@ -30,6 +30,8 @@ NOTES = {
         "Map library: rank buttons S A B C D ✖ sit together in the toolbar.",
         "Price Checks: Recent sits under the item card, so the page has more room.",
         "Overlay bar: no stray \"-\" after Map: and Avg.: before your first map.",
+        "Bulk Pricing: ticking boxes on the item card no longer searches each time or redraws the card - press "
+        "Search again when you're ready.",
         "Money Makers: Import file and Download Format are in the ⋯ menu next to + Add my own.",
         "Regex: item kinds are tabs, options are click-to-toggle chips, and the Regex key line sits under your search.",
         "Game search: click a Try example, or one of your recent searches.",
