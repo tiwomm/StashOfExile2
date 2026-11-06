@@ -730,7 +730,7 @@ class Engine(TabReaderJobs, WealthJobs, StratCostJobs, threading.Thread):
 
     def _valid_ids(self):
         """Every stat id on the trade site's downloaded list (empty if it couldn't be downloaded: then don't filter)."""
-        if getattr(self, "_valid_for", None) is not self.table:
+        if getattr(self, "_valid", None) is None or getattr(self, "_valid_for", None) is not self.table:   # (2.108.0: no list yet)
             ids = set()
             for groups in (self.table or {}).values():
                 ids.update(groups.values())
