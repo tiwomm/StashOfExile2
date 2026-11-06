@@ -28,6 +28,7 @@ NOTES = {
         "Game Plan: goals by phase in tabs, and Stockpile / Map supplies / Farm plan / Pokes in tabs.",
         "Leaderboards: a tidier toolbar, and a hint when a board is empty.",
         "Map library: rank buttons S A B C D ✖ sit together in the toolbar.",
+        "Price Checks: Recent sits under the item card, so the page has more room.",
     ],
     "2.107.0": [
         "New look for controls: every switch is a clear ON | OFF box, and buttons are flat in every theme.",
