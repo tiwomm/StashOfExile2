@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU GPL v3.0 (see LICENSE). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.114.2
+VERSION 2.114.3
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,6 +19,13 @@ VERSION 2.114.2
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.114.3
+       Feedback: switching to the Ashen Rite theme closed the app on another player's PC (latest version, fresh
+       install) and no file was written - the hang report only covers freezes. Not reproduced here (every theme to
+       Ashen Rite, overlay on, pages open, every style). hangwatch.crash_start: faulthandler writes where the app was
+       when it dies (crash_raw.tmp); the next start turns it into crash_report.txt - file NAMES, function and line,
+       the fatal error's kind, and the last steps (crash_steps.tmp, written on each step) - then a toast says so.
+       Paths are cut on either slash, so no folder or Windows user name gets in. style.relook marks its steps.
   2.114.2
        Scan stash (beta) reads the Expedition tab (the user's shots and every slot's name): stashlayouts.EXPEDITION -
        Logbook, the four Sagas (Aldur's slot left out: out of the game for now), Shattered Triskelion and The
@@ -2711,7 +2718,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.114.2"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.114.3"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 

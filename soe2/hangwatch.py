@@ -23,6 +23,7 @@ def step(what):
     with _LOCK:
         _ST["steps"].append((time.time(), str(what)[:60]))
         del _ST["steps"][:-12]
+        _crash_steps()
 
 
 def _tick():
@@ -69,6 +70,76 @@ def _watch(main_id, path, version):
         except OSError:
             pass
         _ST["written"] = time.time()
+
+
+# ---------------------------------------------------------------- 2.114.3: when the app closes by itself
+# (feedback: switching to a theme closed the app on a friend's PC, and no file was written - the hang report only
+# covers freezes). Python's faulthandler writes where it was when the process dies (Windows' "access violation" in
+# Tk, an abort) to crash_raw.tmp; the next start turns that into crash_report.txt with file NAMES only (no folders,
+# so no Windows user name), function and line, plus the last things the app was doing - then removes the raw file.
+_CRASH = {"fh": None, "steps": None}
+_FRAME = __import__("re").compile(r'File "(?P<f>[^"]+)", line (?P<l>\d+) in (?P<fn>[\w<>.]+)')
+
+
+def crash_scrub(raw, steps, version):
+    """The raw faulthandler text -> the report's lines (code locations only), or [] when there's nothing to say."""
+    import re
+    lines, head = [], ""
+    for ln in raw.splitlines():
+        t = ln.strip()
+        m = _FRAME.search(t)
+        if m:
+            name = re.split(r"[\\/]", m.group("f"))[-1]          # (either slash: no folder, no user name)
+            lines.append(f"  {name}:{m.group('fn')}:{m.group('l')}")
+        elif re.match(r"^(Windows fatal exception|Fatal Python error)\b", t) and not head:
+            head = re.sub(r"[A-Za-z]:\\[^ ]*|/[^ ]*", "", t)[:120]       # (never a path)
+        elif t.startswith(("Current thread", "Thread ")):
+            lines.append("  " + ("main thread:" if "most recent call first" in t and not lines else "another thread:"))
+    if not lines and not head:
+        return []
+    out = [f"StashOfExile2 {version} - the app closed by itself (code locations only)",
+           f"written {time.strftime('%Y-%m-%d %H:%M:%S')}", "", head or "(no reason given)", "", "Last things it was doing:"]
+    out += [f"  {s_}" for s_ in steps] or ["  (none)"]
+    out += ["", "Where it was (innermost first):"] + lines
+    return out
+
+
+def crash_start(folder, version):
+    """Turn a crash from last time into crash_report.txt (-> True when there was one), then start catching this
+    run's. Never raises."""
+    raw_p, steps_p = os.path.join(folder, "crash_raw.tmp"), os.path.join(folder, "crash_steps.tmp")
+    was = False
+    try:
+        raw = open(raw_p, encoding="utf-8", errors="replace").read() if os.path.exists(raw_p) else ""
+        steps = open(steps_p, encoding="utf-8").read().splitlines() if os.path.exists(steps_p) else []
+        rep = crash_scrub(raw, steps, version) if raw.strip() else []
+        if rep:
+            with open(os.path.join(folder, "crash_report.txt"), "w", encoding="utf-8") as f:
+                f.write("\n".join(rep) + "\n")
+            was = True
+    except Exception:
+        pass
+    try:
+        import faulthandler
+        _CRASH["fh"] = open(raw_p, "w", encoding="utf-8")
+        faulthandler.enable(file=_CRASH["fh"], all_threads=True)
+        _CRASH["steps"] = steps_p
+        open(steps_p, "w", encoding="utf-8").close()
+    except Exception:
+        pass
+    return was
+
+
+def _crash_steps():
+    """The last steps, on disk (a crash can't write them itself)."""
+    p = _CRASH["steps"]
+    if not p:
+        return
+    try:
+        with open(p, "w", encoding="utf-8") as f:
+            f.write("\n".join(f"{time.strftime('%H:%M:%S', time.localtime(t))}  {w}" for t, w in _ST["steps"]))
+    except OSError:
+        pass
 
 
 def start(root, path, version):

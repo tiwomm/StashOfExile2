@@ -1310,7 +1310,10 @@ def relook(root, theme, accent=THEME_ACCENT):
     old = _themes.snapshot()
     _themes.set_theme(_themes.packs()[_themes.pick_id(theme)], _accent(accent))
     tr = _themes._translator(old)
+    from .hangwatch import step                 # 2.114.3: where a theme change was, if the app closes on one
+    step(f"theme change to {theme}: windows")
     n = _themes.walk(root, tr)
+    step(f"theme change to {theme}: styles")
     setup_style(root)
     s = ttk.Style(root)
     _STYLE_LOG["quiet"] = True
@@ -1324,5 +1327,7 @@ def relook(root, theme, accent=THEME_ACCENT):
                 pass
     finally:
         _STYLE_LOG["quiet"] = False
+    step(f"theme change to {theme}: self-painted parts")
     _themes.notify()
+    step(f"theme change to {theme}: done")
     return n, _t.time() - t0
