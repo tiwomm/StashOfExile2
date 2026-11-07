@@ -29,6 +29,8 @@ VERSION HISTORY
        opens to the whole item (implicits, every mod, corrupted). Search again, Trade site, Open in app. Drag it by
        its title, resize from any edge - both remembered. The overlay's Style throughout (its scroll bar and buttons
        too). Other sellers' names show as on the app's card; your own account never does. It takes the keyboard
+       Readable in every overlay style: on a light style (Gilded) the game's rarity / mod colours are darkened,
+       same hue, to 4.5 : 1 (pcpop.ink); a test checks every line in all 14 styles.
        when you click a box (to type); it never redraws under your typing. Windows and Linux / Hyprland.
        Prices count each seller once (core, every search): trade.collapse_sellers keeps a seller's cheapest
        listing with how many times they listed it ("listed N times" on the cards); with fewer than 5 sellers in the
