@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU GPL v3.0 (see LICENSE). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.112.5
+VERSION 2.113.0
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,6 +19,17 @@ VERSION 2.112.5
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.113.0
+       Price check in a card over the game (a sample; soe2/pcpop.py - Price Checks in the app is unchanged and still
+       gets the item). Settings › Hotkeys › Price Checks › "Show it in a card over the game" (off by default): your
+       price check key copies the hovered item once, as before, and the card opens over the game instead of the app
+       coming forward. The card: the item (name in its rarity colour; rarity, class, base, item level, quality,
+       corrupted), the price and how sure it is, the mods searched - tick / untick, Min / Max to type in (the same
+       values as the app's card; Enter searches again) - and the cheapest listings, each a one-line summary that
+       opens to the whole item (implicits, every mod, corrupted). Search again, Trade site, Open in app. Drag it by
+       its title, resize from any edge - both remembered. The overlay's Style throughout (its scroll bar and buttons
+       too). Other sellers' names show as on the app's card; your own account never does. It takes the keyboard
+       when you click a box (to type); it never redraws under your typing. Windows and Linux / Hyprland.
   2.112.5 (hotfix)
        The Campaign / Focus line: dragging it by its text no longer opens the route card / Game Plan - a click opens
        it only when the press didn't move (merged_page.click_not_drag, also on the bar's Focus text).
@@ -2625,7 +2636,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.112.5"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.113.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 

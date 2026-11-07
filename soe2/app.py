@@ -77,6 +77,7 @@ from .utilities_page import UtilitiesPage
 from .tracker_page import TrackerPage
 from .search_page import SearchPage
 from .pricecheck_page import PriceCheckPage    # 2.80.0: Price Checks (one item, the trade site's listings)
+from .pcpop import PricePopup                  # 2.113.0: the price check in a card over the game
 from .ovrates import OverlayRates              # 2.91.0: exchange rates over the game
 from .ovquick import OverlayQuick              # P4 (2.108.0): right-click the cog - Quick settings
 from .community_page import CommunityPage      # 2.94.0: Settings › Privacy & community
@@ -122,7 +123,7 @@ def plain_notes(md):
     return "\n".join(out).strip()
 
 
-class App(GearBookPage, PriceCheckPage, FavoritesPage, BoardModPage, LeaderboardPage, OrderLabPage, WellSoulsPage, RumoursPage, ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, ExchangePage, WealthPage, LibraryPage, RegexPage, UtilitiesPage, TrackerPage, SearchPage, CalcOverlay, InsightsPage, MoneyMakersPage, MapLibraryPage, RemnantPage, LedgerPage, FeedbackPage, FeedPage, MergedOverlay, LightOverlay, GamePlanPage, FocusPokes, OverlayHelp, OverlayParts, CampaignUI, OverlayRates, CommunityPage, RateModsPage, OverlayRecap, StashScanPage, OverlayQuick):
+class App(GearBookPage, PriceCheckPage, PricePopup, FavoritesPage, BoardModPage, LeaderboardPage, OrderLabPage, WellSoulsPage, RumoursPage, ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, ExchangePage, WealthPage, LibraryPage, RegexPage, UtilitiesPage, TrackerPage, SearchPage, CalcOverlay, InsightsPage, MoneyMakersPage, MapLibraryPage, RemnantPage, LedgerPage, FeedbackPage, FeedPage, MergedOverlay, LightOverlay, GamePlanPage, FocusPokes, OverlayHelp, OverlayParts, CampaignUI, OverlayRates, CommunityPage, RateModsPage, OverlayRecap, StashScanPage, OverlayQuick):
     COLS = [("added", "#", 46, "e"), ("name", "Item", 220, "w"), ("type", "Type", 110, "w"), ("mark", "Status", 90, "center"),
             ("est", "Est. value", 110, "e"), ("conf", "Confidence", 95, "center"), ("listings", "Listings", 70, "e"), ("priced", "Priced at", 130, "w"),
             ("match", "How it was priced", 300, "w"), ("vmods", "★", 60, "center"),
@@ -1281,7 +1282,8 @@ class App(GearBookPage, PriceCheckPage, FavoritesPage, BoardModPage, Leaderboard
                                                  "to Bulk Pricing instead.")
         self.pc_set_vars = {}
         for k, label in (("pc_ctrl_c", "The price check key opens Price Checks"),
-                         ("pc_front", "Bring the app to the front"), ("pc_art", "Show the items' pictures")):
+                         ("pc_front", "Bring the app to the front"), ("pc_art", "Show the items' pictures"),
+                         ("pc_popup", "Show it in a card over the game")):          # 2.113.0
             v = tk.BooleanVar(value=bool(SETTINGS.get(k, True)))
             self.pc_set_vars[k] = v
             ttk.Checkbutton(row, text=label, variable=v, style="Card.TCheckbutton",

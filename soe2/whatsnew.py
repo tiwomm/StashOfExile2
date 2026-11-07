@@ -37,6 +37,14 @@ NEXT = [
 MAX_BIG = 3
 
 NOTES = {
+    "2.113.0": {
+        "big": [
+            ("⚖", "Price checks over the game", "Turn on \"Show it in a card over the game\": your price check key "
+             "opens the price, the mods (with Min / Max) and the cheapest listings right over the game.",
+             ("Turn it on", "settings:Hotkeys"), "Price checks"),
+        ],
+        "small": [],
+    },
     "2.112.5": {
         "big": [],
         "small": [

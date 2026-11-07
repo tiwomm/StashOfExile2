@@ -133,6 +133,7 @@ DEFAULTS = {
     "pc_ctrl_c": True,     # 2.80.0: your price check key on an item in game opens it on Price Checks
     "pc_key": "Ctrl+D",    # 2.83.1 (feedback): the price check key (was the game's plain Ctrl+C)
     "pc_front": True,      # ...and brings the app to the front
+    "pc_popup": False,     # 2.113.0: ...or shows it in a card over the game instead (pcpop.py)
     "pc_art": True,        # ...with the items' pictures from the trade site's image server
     "hotkey_only": True,   # only accept items copied while YOU press Ctrl+Alt+C (ignores other tools' copies)
     "memory_shortcut": False,   # True: skip searching when 5+ identical searches in the last memory_hours agree (see 1.21)

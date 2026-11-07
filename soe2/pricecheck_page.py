@@ -404,6 +404,13 @@ class PriceCheckPage:
             self.records.pop(r["id"], None)
         self.pc_refresh_hist()
         self.pc_show(self.records[rid])
+        from .pcpop import pop_on
+        if pop_on():                                     # 2.113.0: a card over the game; the app stays where it is
+            try:
+                self.pcpop_show(self.records[rid])
+            except Exception:
+                self.log_error("the price check card over the game")
+            return rid
         try:
             self.shell.open("pricecheck")
             if SETTINGS.get("pc_front", True):
@@ -481,6 +488,8 @@ class PriceCheckPage:
 
     # ---------------------------------------------------------------- showing it
     def pc_show(self, rec, card_only=False):
+        if rec is not None and getattr(self, "pp_win", None) is not None:
+            self.pcpop_refresh(rec)                      # 2.113.0: the card over the game follows
         if not hasattr(self, "pc_left"):
             return
         self._pc_card_only = card_only and rec is not None and rec["id"] == getattr(self, "pc_rid", None)
