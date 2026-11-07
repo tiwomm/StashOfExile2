@@ -20,6 +20,10 @@ VERSION 2.111.0
 
 VERSION HISTORY
   2.111.0
+       Ornate overlay styles, wave 2: Totem (timber frame, red war-banner bands, hide tabs), Hellfire (rusted
+       iron, rivets, ember-gold Metamorphous), Psionic (gold over deep-blue glass, cyan light, Marcellus) and
+       Guildhall (oak, brass, parchment tabs, IM FELL English SC). Same skin system as wave 1 (soe2/ovskins.py).
+       New bundled OFL fonts, shipped unmodified: Metamorphous, Marcellus, IM FELL English SC.
        What's new card: big changes are hero rows (icon, title, one line, a link to the page); the rest fold under
        "▸ N smaller changes" (area · line). NOTES entries are {"big": [...], "small": [...]} with the big / small
        standard written in soe2/whatsnew.py (max 3 big per card; skipped updates merge). Old list entries show as

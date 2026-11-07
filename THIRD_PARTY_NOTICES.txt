@@ -98,5 +98,11 @@ soe2/fonts, as OFL-<name>.txt). They are loaded for the app only, never installe
     (https://github.com/CatharsisFonts/Cormorant)
   Marcellus SC - Copyright (c) 2012 Brian J. Bonislawsky DBA Astigmatic (AOETI), Reserved Font Name "Marcellus";
     shipped unmodified (https://github.com/google/fonts/tree/main/ofl/marcellussc)
+  Marcellus - Copyright (c) 2012 Brian J. Bonislawsky DBA Astigmatic (AOETI), Reserved Font Names "Marcellus";
+    shipped unmodified (https://github.com/google/fonts/tree/main/ofl/marcellus)
+  Metamorphous - Copyright (c) 2011-2012 Sorkin Type Co, Reserved Font Name "Metamorphous"; shipped unmodified
+    (https://github.com/google/fonts/tree/main/ofl/metamorphous)
+  IM FELL English SC - Copyright (c) 2010 Igino Marini; shipped unmodified
+    (https://github.com/google/fonts/tree/main/ofl/imfellenglishsc)
 Cinzel, EB Garamond and Cormorant were converted to TTF (Latin) from Fontsource's files
 (https://github.com/fontsource/fontsource); their names are not reserved.
