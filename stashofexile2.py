@@ -35,6 +35,13 @@ VERSION HISTORY
        its old flag counts and the flag is kept (an older build put back skips it too). A failing step is logged and
        tried again next start, 3 times at most, and never stops the others; settings are saved once per stage. The
        files' own format upgrades (ledger, strats, mod rule keys) stay where they're read.
+       No window work from a background thread (Tk isn't thread-safe - a widget touched from another thread can close
+       the app with no message). Every thread was followed: the keyboard hook, tray, engine, screen watchers and
+       price fetchers already hand results back through ui_q. Five places called root.after from a worker (bug report
+       send, Money Makers' board and live list, board moderation, a community card) - they now use App.run_bg(work,
+       done) / App.on_ui(fn, ...): queued, run by poll_events on the window's thread (ev_call). ignore_clip builds its
+       list whole before swapping it in (the window's thread reads it). tools/check_threads.py follows every
+       threading.Thread target (and the methods it calls, two levels) and fails on a Tk call - run in Checks.
   2.116.0
        P10, the Settings page pass. Seven tabs: Hotkeys and Chat commands are one Keys tab - hotkeys first, then a
        Chat commands section with its rows (Go to hideout, then the commands; "+ Add a command" shows the next empty

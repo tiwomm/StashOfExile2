@@ -240,9 +240,7 @@ class FeedbackPage:
                 self._bug_close()
                 return
             self.bug_browser(title, body, why=data if isinstance(data, str) else "")
-        if getattr(self, "mm_sync", False):
-            return done(work())
-        threading.Thread(target=lambda: (lambda r: self.root.after(0, lambda: done(r)))(work()), daemon=True).start()
+        self.run_bg(work, done)
 
     def bug_browser(self, title, body, why=""):
         """The board couldn't take it: GitHub's new-issue page, filled in (you sign in to GitHub to send it)."""

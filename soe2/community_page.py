@@ -286,10 +286,7 @@ class CommunityPage:
                         lbl.config(text=R.card_text(d) if ok else str(d))
                     except tk.TclError:
                         pass
-            try:
-                self.root.after(0, paint)
-            except (RuntimeError, tk.TclError):
-                pass
+            self.on_ui(paint)                   # (2.117.0: done may be on a worker thread - never Tk from there)
         R.card(name, done, sync=bool(getattr(self, "mm_sync", False)))
         return w
 
