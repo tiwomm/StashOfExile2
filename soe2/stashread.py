@@ -7,7 +7,7 @@ hand), tab by tab.
   * Only looks: no keys, no clicks, nothing sent to the game (like the Expedition and Ritual watchers).
   * The picture stays in memory for the read and is dropped. Nothing is saved, logged or sent - counts stay on this PC
     like every Wealth number.
-  * Layouts: stashlayouts.py (Currency, Abyss, Delirium, Breach › Catalysts). Wildcard slots, shards and the
+  * Layouts: stashlayouts.py (Currency, Abyss, Delirium, Breach › Catalysts, Expedition). Wildcard slots, shards and the
     crafting hole are skipped.
 How it reads:
   1. The panel: the slot frames of each known tab, drawn as boxes, are matched against the picture's edges (left 60%
@@ -64,6 +64,9 @@ GLYPHS = {
                "AP///wAzAID//4AAAP///wBJPgD//+YAAP///wA0MwD///8AAP///wAfJwD///8AAL///5UAAAD///8AGgD///////////8A"
                "NBAAlf//lQD//78AMEAyAAAAAID//wA+OzYpUFs6AP///wAwAIAAAAAAlf//gAA3AP///7//////ADA9IQD//////5UALT5I"
                "MCQAAAAAAAA/Sj05")),
+    # 2.114.2: stacks over 9,999 show as "12.2K" (the user's Expedition tab: 12,239 Verisium)
+    "K": (13, 19, "AP///wAcSAD///8AAAD///8AAACA//8AAAAA////AAAA//8AAAAAAP///wAA//8AAAAAAAD///8A//8AAAAAAAAA//////8AABcAAAAAAP//////gAAXgCAAAAD///////8AAByAAAAA////gP///wATV4ANAP///wDm///mAFVbgAD///8AAP///4AAUQQA////AAAA////AAAvAP///wAAAL////8AAAD///8AAAAA/////wYAAAAAAAAAAAAAAAAAAAAAAAAAACJmNS8iSAAAAAAAAAaAdwBPgIAAAAAAAAAiU2qAZCpkAAAACABMYmaAgCQAAA=="),
+    ".": (5, 19, "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAASAAAAAL44AABWkgAARhJCAM4CAgIDIgHWAgCQAAABCAP//vwAA////AAAAvwAAgFMAgICAgICAgKqAgICAioCAgIA="),
 }
 _G = {}
 
@@ -179,21 +182,48 @@ def read_number(bgr, rect, k):
                 cands.append((i, d, float(col[i]), gw, int(ys[i]) + gh))
     cands.sort()
     first = round(14 * k) + (x - x0)
-    run, top = {}, (0.0, "")
+    run = {}
     for i, (cx, d, s, gw, base) in enumerate(cands):
-        here = (s - DIGIT_BASE, d) if cx <= first else None
+        here = (s - DIGIT_BASE, d) if cx <= first and _could_be(d) else None
         for j in range(i):
             px, _pd, _ps, pw, pb = cands[j]
             near = pw - round(4 * k) <= cx - px <= pw + round(2 * k)
-            if j in run and near and abs(pb - base) <= max(1, round(1.5 * k)):
+            if j in run and near and abs(pb - base) <= max(1, round(1.5 * k)) and _could_be(run[j][1] + d):
                 v = run[j][0] + s - DIGIT_BASE
                 if here is None or v > here[0]:
                     here = (v, run[j][1] + d)
         if here:
             run[i] = here
-            if here[0] > top[0]:
-                top = here
-    return int(top[1]) if top[1] else None
+    return _value(best_valid(run))
+
+
+def _could_be(txt):
+    """2.114.2: can a stack size start like this? (digits, or "12.2K" on its way) - so a stray "." or "K" match
+    never takes a run over."""
+    import re
+    return bool(re.fullmatch(r"\d+|\d{1,3}(\.\d?)?K?|\d{1,3}\.", txt))
+
+
+def best_valid(run):
+    """The best-scoring run that reads as a stack size: digits, or (2.114.2) "12.2K" - a "." only before a K."""
+    best = (0.0, "")
+    for v, txt in run.values():
+        if v > best[0] and _value(txt) is not None:
+            best = (v, txt)
+    return best[1]
+
+
+def _value(txt):
+    """'4685' -> 4685, '12.2K' -> 12200 (the game rounds stacks over 9,999), else None."""
+    import re
+    if not txt:
+        return None
+    if re.fullmatch(r"\d+", txt):
+        return int(txt)
+    m = re.fullmatch(r"(\d{1,3})(?:\.(\d))?K", txt)
+    if m:
+        return int(m.group(1)) * 1000 + int(m.group(2) or 0) * 100
+    return None
 
 
 def read_tab(bgr, game_h, want):

@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU GPL v3.0 (see LICENSE). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.114.1
+VERSION 2.114.2
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,6 +19,13 @@ VERSION 2.114.1
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.114.2
+       Scan stash (beta) reads the Expedition tab (the user's shots and every slot's name): stashlayouts.EXPEDITION -
+       Logbook, the four Sagas (Aldur's slot left out: out of the game for now), Shattered Triskelion and The
+       Triskelion Reforged (big slots), the three Verisiums, four Crests, 13 Alloys, four Fluxes. Stacks over 9,999 show
+       as "12.2K": stashread has K and "." shapes and reads it as 12,200 (_value; _could_be keeps a stray "." or "K"
+       match from taking a run over). Breach › Wombgifts stays out (they don't stack). test_v21010 extended; the
+       reference shots stay in the local test kit (wealth data).
   2.114.1
        Wombgifts (feedback: "use trade site for the 5 types of wombgifts, they do exist"): gear.type_only_item -
        TYPE_ONLY_CLASSES ("Wombgifts") items are a price-check item searched by their type alone, as the site's own
@@ -2691,7 +2698,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.114.1"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.114.2"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
