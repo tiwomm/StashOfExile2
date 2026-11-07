@@ -45,6 +45,7 @@ NOTES = {
         "small": [
             ("What's new", "This card shows the big changes first; the small ones fold under one line."),
             ("Looks", "The What's new card and About follow your app theme."),
+            ("Updates", "The update note's buttons no longer squeeze one into a blank box."),
         ],
     },
     "2.110.0": {
