@@ -216,9 +216,8 @@ SETTINGS = {**DEFAULTS, **load_json("settings.json", {})}
 
 if SETTINGS["status"] not in dict(STATUS_OPTIONS):
     SETTINGS["status"] = DEFAULTS["status"]
-if not SETTINGS.get("status_ib_2792"):              # 2.79.2 (feedback): the default seller is Instant Buyout
-    SETTINGS["status"] = "Instant Buyout"
-    SETTINGS["status_ib_2792"] = True
+from . import migrations as _migrations          # 2.117.0: one-time changes, one list (soe2/migrations.py)
+_migrations.run(SETTINGS, "settings", lambda: save_json("settings.json", SETTINGS))
 
 
 if SETTINGS["age"] not in [a[0] for a in AGE_OPTIONS]:

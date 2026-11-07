@@ -28,6 +28,13 @@ VERSION HISTORY
        aren't problems you saw); Report a bug sends them after the errors, crashes and freezes, while there's room.
        The narrow catches (tk.TclError for a closed window, OSError for a file) stay as they are. The first one
        found: a window's withdraw() ran before its ghost list existed (shell.hide_ghosts).
+       Every one-time change to your settings and data is one ordered list: soe2/migrations.py (STEPS - id, version,
+       stage "settings" at load / "app" before the windows, the function, its old flag). Were spread over app.py
+       (copy_2983, gear_plus_299, tier_only_2114, rules_scoped_26 - migrate_rules_once), config.py (status_ib_2792)
+       and market.py (modbook_imported, at import). Done ones are listed in migrations_done; a step done before under
+       its old flag counts and the flag is kept (an older build put back skips it too). A failing step is logged and
+       tried again next start, 3 times at most, and never stops the others; settings are saved once per stage. The
+       files' own format upgrades (ledger, strats, mod rule keys) stay where they're read.
   2.116.0
        P10, the Settings page pass. Seven tabs: Hotkeys and Chat commands are one Keys tab - hotkeys first, then a
        Chat commands section with its rows (Go to hideout, then the commands; "+ Add a command" shows the next empty

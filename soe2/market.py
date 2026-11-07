@@ -800,7 +800,4 @@ class Market:
 
 MARKET = Market()
 
-
-if not SETTINGS.get("modbook_imported") and MODBOOK:
-    MARKET.import_old_modbook(MODBOOK, float(SETTINGS.get("good_div", 0.5)))
-    SETTINGS["modbook_imported"] = True
+# (the 1.x mod book import runs once from soe2/migrations.py - 2.117.0)
