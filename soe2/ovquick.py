@@ -137,7 +137,7 @@ class OverlayQuick:
         # 2.110.0 (feedback): no Overlay ON | OFF here - the overlay's Style instead
         from .ovlight import STYLES
         srow = tk.Frame(body, bg=P1)
-        srow.pack(fill="x", pady=(0, 6))
+        srow.pack(fill="x", pady=(0, 8))
         tk.Label(srow, text="Style", bg=P1, fg=C["text"], font=("Segoe UI", 10)).pack(side="left")
         names = list(STYLES.values())
         self.ovq_style = tk.StringVar(value=STYLES.get(self.ov_look(), names[0]))

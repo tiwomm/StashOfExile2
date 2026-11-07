@@ -21,6 +21,11 @@ NEXT = [
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
 NOTES = {
+    "2.110.0": [
+        "Five new overlay styles: Herald, Gilded, Warbanner, Verdant and Gloom - Settings › Appearance › Overlay "
+        "settings › Style, or right-click the overlay's cog.",
+        "The bar's switches now go Campaign, Focus, Breach, Delirium, Ritual, Expedition.",
+    ],
     "2.109.0": [
         "Regex: all options in one card, a button for each setting.",
         "Copied a search? Just Ctrl+V into the stash search in game.",
