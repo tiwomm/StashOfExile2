@@ -7,7 +7,7 @@ hand), tab by tab.
   * Only looks: no keys, no clicks, nothing sent to the game (like the Expedition and Ritual watchers).
   * The picture stays in memory for the read and is dropped. Nothing is saved, logged or sent - counts stay on this PC
     like every Wealth number.
-  * Layouts: stashlayouts.py (Currency, Abyss, Delirium, Breach › Catalysts, Expedition, Ritual, Essence). Wildcard slots, shards and the
+  * Layouts: stashlayouts.py (Currency, Abyss, Delirium, Breach › Catalysts, Expedition, Ritual, Essence, Fragments › Fragments). Wildcard slots, shards and the
     crafting hole are skipped.
 How it reads:
   1. The panel: the slot frames of each known tab, drawn as boxes, are matched against the picture's edges (left 60%
@@ -25,6 +25,7 @@ SIZES = (0.94, 0.97, 1.0, 1.03, 1.06)      # UI scale wiggle around game height 
 FOUND_SCORE = 0.12      # a panel's edge match: real tabs ~0.2-0.28; no stash open ~0.0-0.08
 OTHER_TAB_BY = 0.01     # another tab must beat the one you were asked to open by this much to say "that's X"
 DIGIT_CUT, DIGIT_BASE = 0.45, 0.60      # a digit's match must reach CUT; each one adds (score - BASE) to a run
+SURE = 0.2              # 2.114.2: a slot with no backing showing counts only with a number this clear (a digit 0.8+)
 TIE = 0.0               # 2.114.2: a longer run this close to the best wins (a faint second digit)
 FILLED_SHARE = 0.06     # share of a slot's inside that is the dark-blue backing -> it holds something
 
@@ -176,8 +177,9 @@ def filled(bgr, rect):
     return float(navy.mean()) >= FILLED_SHARE
 
 
-def read_number(bgr, rect, k):
-    """The stack number in a slot's top-left corner -> int or None."""
+def read_number(bgr, rect, k, sure=0.0):
+    """The stack number in a slot's top-left corner -> int or None. sure: the run must score at least this (2.114.2:
+    for a slot whose backing doesn't show)."""
     cv2, np = _np()
     x, y, w, _h = rect
     pad = max(2, round(4 * k))
@@ -208,7 +210,7 @@ def read_number(bgr, rect, k):
                     here = (v, run[j][1] + d)
         if here:
             run[i] = here
-    return _value(best_valid(run))
+    return _value(best_valid(run, sure))
 
 
 def _could_be(txt):
@@ -218,9 +220,9 @@ def _could_be(txt):
     return bool(re.fullmatch(r"\d+|\d{1,3}(\.\d?)?K?|\d{1,3}\.", txt))
 
 
-def best_valid(run):
+def best_valid(run, sure=0.0):
     """The best-scoring run that reads as a stack size: digits, or (2.114.2) "12.2K" - a "." only before a K."""
-    best = (0.0, "")
+    best = (sure, "")
     for v, txt in run.values():
         longer = len(txt) > len(best[1]) and v >= best[0] - TIE        # (about a tie: the longer one - "11"
         if (v > best[0] or longer) and _value(txt) is not None:            # whose second 1 scores just under par)
@@ -259,6 +261,9 @@ def read_tab(bgr, game_h, want):
     for name, (x, y, w, h) in TABS[want]["slots"]:
         r = (ox + round(x * k), oy + round(y * k), round(w * k), round(h * k))
         if not filled(bgr, r):
+            n = read_number(bgr, r, k, sure=SURE)    # 2.114.2: an item that covers its whole slot (a Weathered
+            if n:                                    # Crisis Fragment) hides the backing - a clear number still counts
+                items.append((name, n))
             continue
         n = read_number(bgr, r, k)
         if n:

@@ -248,6 +248,10 @@ class StashScanPage:
 
     def stash_scan_save(self, got):
         from .wealth import WEALTH
+        total = {}                                   # 2.114.2: one item in two tabs (Breach Splinter in Breach and
+        for name, q in got:                          # in Fragments) - the two counts add up, not the last one
+            total[name] = total.get(name, 0) + q
+        got = list(total.items())
         for name, q in got:
             WEALTH.set_holding(name, q, _cls(name), src="scanned")
         if got:
