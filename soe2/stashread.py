@@ -291,17 +291,44 @@ def read_tab(bgr, game_h, want):
             "icons": icons, "wild": wild}
 
 
-def match_wild(wild, icons):
-    """Wildcard slots their own tab didn't match -> ([(name, count)], how many still unknown), matched with every
-    tab read in the scan."""
-    got, unknown = [], 0
+def match_wild(wild, icons, keep=False):
+    """Wildcard slots their own tab didn't match -> ([(name, count)], how many still unknown - or with keep, the
+    unknown [(count, picture)] themselves, to be named), matched with every tab read in the scan."""
+    got, unknown = [], []
     for n, ic in wild:
         name, _sc = _same_item(ic, icons)
         if n and name is not None:
             got.append((name, n))
         else:
-            unknown += 1
-    return got, unknown
+            unknown.append((n, ic))
+    return got, (unknown if keep else len(unknown))
+
+
+ICONS_FILE = "stash_icons.json"     # 2.114.3: pictures of items you named in a wildcard slot (40 x 26, on this PC)
+
+
+def learned_icons():
+    """{name: picture} you've named before (Sacred Bloom ...) - an item's look, nothing about your stash."""
+    cv2, np = _np()
+    from .config import load_json
+    out = {}
+    for name, b in (load_json(ICONS_FILE, {}) or {}).items():
+        try:
+            out[name] = np.frombuffer(base64.b64decode(b), np.uint8).reshape(26, 40, 3).astype(np.float32)
+        except Exception:
+            continue
+    return out
+
+
+def learn_icon(name, icon):
+    """Remember what this item looks like (the wildcard you just named)."""
+    if icon is None or not name:
+        return
+    cv2, np = _np()
+    from .config import load_json, save_json
+    d = load_json(ICONS_FILE, {}) or {}
+    d[name] = base64.b64encode(np.clip(icon, 0, 255).astype(np.uint8).tobytes()).decode()
+    save_json(ICONS_FILE, d)
 
 
 WILD_MATCH = 0.75       # 2.114.3: a wildcard's picture must look this much like a fixed slot's (and clearly most)

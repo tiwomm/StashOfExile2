@@ -42,7 +42,9 @@ VERSION HISTORY
        slots are read - what each holds is told by its picture against the tab's fixed slots in the same shot
        (stashread._icon / _same_item, a few pixels of slide; 0.75 and a clear lead), and the ones it can't place
        against every tab read at the end (match_wild). Pictures stay in memory and are dropped after. One it still
-       can't place is left out and the check window says how many. Same-name counts add up on Save (5000 + 1193).
+       can't place is shown as "? (wildcard slot)" in the check window: double-click to name it (user: the white one
+       is Sacred Bloom - on no tab's fixed slots), and its picture is remembered in stash_icons.json (40 x 26, an
+       item's look only) for next time (learn_icon / learned_icons). Same-name counts add up on Save (5000 + 1193).
   2.114.2
        Scan stash (beta) reads the Expedition tab (the user's shots and every slot's name): stashlayouts.EXPEDITION -
        Logbook, the four Sagas (Aldur's slot left out: out of the game for now), Shattered Triskelion and The
