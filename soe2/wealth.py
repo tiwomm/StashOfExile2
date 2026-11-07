@@ -504,7 +504,7 @@ class WealthStore:
         h = self.holdings.get(name.strip())
         return h["qty"] if h else 0
 
-    def snapshot(self, league, prices, why=""):
+    def snapshot(self, league, prices, why="", replace=False):
         rows, total, priced = wealth_rows(self.all_items(), prices, self.overrides)
         if not rows:
             return None
@@ -518,7 +518,8 @@ class WealthStore:
         snap = {"ts": time.time(), "league": league, "total": total, "by_tab": by_tab, "by_cat": by_cat,
                 "n": len(rows), "priced": priced, "why": why}     # why (2.3.0): counted / synced / prices / ...
         with self.lock:
-            if self.snapshots and snap["ts"] - self.snapshots[-1]["ts"] < 300 and self.snapshots[-1].get("league") == league:
+            if self.snapshots and self.snapshots[-1].get("league") == league and (
+                    replace or snap["ts"] - self.snapshots[-1]["ts"] < 300):
                 self.snapshots[-1] = snap           # a price update right after a sync: replace, don't add a twin
             else:
                 self.snapshots.append(snap)
@@ -527,6 +528,7 @@ class WealthStore:
 
 
 PRICES_VERSION = 2
+BULK_TRIED = set()          # 2.114.3: names the bulk exchange was asked about this run (no answer = too few offers)
 
 
 def slug(name):
@@ -742,8 +744,10 @@ class WealthPrices:
                 return hit[0], bulk.text(hit)
         return None, None
 
-    def bulk_missing(self, items, limit=30):
-        """2.72.1: the stackables poe.ninja has no price for that the bulk exchange knows -> [(name, exchange id)]."""
+    def bulk_missing(self, items, limit=None):
+        """2.72.1: the stackables poe.ninja has no price for that the bulk exchange knows -> [(name, exchange id)].
+        2.114.3 (feedback: scanned items weren't in the total): every one, not the first 30 - a scan of eight tabs
+        has a hundred or more."""
         from . import bulk
         out, seen = [], set()
         for it in items:
@@ -755,9 +759,19 @@ class WealthPrices:
                     seen.add(xid)
                     out.append((n, xid))
                     break
-            if len(out) >= limit:
+            if limit and len(out) >= limit:
                 break
         return out
+
+    def why_unpriced(self, it):
+        """2.114.3: why a stackable has no price - asked the bulk exchange yet or not."""
+        from . import bulk
+        names = [x for x in (it.get("type"), it.get("base")) if x]
+        if not any(bulk.exchange_id(n) for n in names):
+            return "not on poe.ninja or the trade site's exchange"
+        if any(n in BULK_TRIED for n in names):
+            return "too few offers on poe.ninja or the trade site's exchange"
+        return "not on poe.ninja - asking the trade site's exchange…"
 
 
 def rare_sig(it):

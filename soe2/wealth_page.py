@@ -1258,23 +1258,33 @@ class WealthPage:
         if not todo:
             return
         self._w_bulk_running = True
+        self._w_bulk_left = len(todo)
         league = SETTINGS.get("league") or WPRICES.league or ""        # 2.73.4: always your league
 
         def work():
             from . import bulk
             from .rates import RATES
+            from .wealth import BULK_TRIED
             got = 0
             try:
-                for _name, xid in todo:
+                for i, (name, xid) in enumerate(todo, 1):
                     try:
                         if bulk.price(league, xid, lambda a, c: RATES.to_div(a, c, league)):
                             got += 1
                     except Exception:
-                        continue
+                        pass
+                    BULK_TRIED.add(name)
+                    self._w_bulk_left = len(todo) - i
+                    if i % 5 == 0:                       # (the list fills in as it goes)
+                        self.ui_q.put(("wealth", "bulk"))
             finally:
                 self._w_bulk_running = False
-                if got:
-                    self.ui_q.put(("wealth", "bulk"))
+                self._w_bulk_left = 0
+                try:                                     # 2.114.3: the total counts them - the snapshot taken before
+                    WEALTH.snapshot(league, WPRICES, "prices", replace=True)    # they had prices is replaced
+                except Exception:
+                    pass
+                self.ui_q.put(("wealth", "bulk"))
         threading.Thread(target=work, daemon=True).start()
 
     def wealth_buttons(self):
@@ -1346,9 +1356,12 @@ class WealthPage:
         self.w_delta.config(text=delta)
         facts = []
         if rows:
-            facts.append(f"{priced} of {len(rows)} items priced.")
+            facts.append(f"{priced} of {len(rows)} items priced (all in divines)."
+                         + (f" {len(rows) - priced} without a price aren't in the total." if priced < len(rows) else ""))
+        if getattr(self, "_w_bulk_running", False):                 # 2.114.3
+            facts.append(f"Asking the trade site's exchange for the rest ({getattr(self, '_w_bulk_left', 0)} left)…")
         if WPRICES.ts:
-            facts.append(f"Prices from poe.ninja, {self._w_ago(WPRICES.ts)}.")
+            facts.append(f"Prices from poe.ninja (the rest from the trade site's exchange), {self._w_ago(WPRICES.ts)}.")
         if WPRICES.errors:
             facts.append(f"{len(WPRICES.errors)} poe.ninja categories failed last time.")
         if delta:
@@ -1475,7 +1488,7 @@ class WealthPage:
     @staticmethod
     def _w_why_unpriced(it):
         if it["frame"] not in (1, 2):
-            return "not on poe.ninja"
+            return WPRICES.why_unpriced(it)
         rp = WEALTH.rare_prices.get(str(it.get("lid")))
         if not rp or rp.get("sig") != rare_sig(it):
             return "waiting for a price check" if WEALTH_RARES["running"] else "not checked yet (Re-check rares)"

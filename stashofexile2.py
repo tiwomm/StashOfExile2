@@ -33,6 +33,11 @@ VERSION HISTORY
        once built, on the app's monitor) on the check window, the Rate mods picker and every dialog that had no place
        of its own: Favorites' group / edit, Ledger, Map library's import question, Money Makers' two, the board's
        moderation windows, Report a bug.
+       Wealth (feedback: Ancient Potent Liquid Contempt "not on poe.ninja", and scanned items not all in the total):
+       the trade site's bulk exchange is asked about EVERY stack poe.ninja has no price for (bulk_missing had a cap of
+       30 - a scan of eight tabs has far more), the list fills in as it goes, and the snapshot taken before they had
+       prices is replaced once it's done (snapshot replace=True). Why a stack has no price says which: asking the
+       exchange, too few offers, or unknown to both (why_unpriced). The totals line says how many aren't in it.
   2.114.2
        Scan stash (beta) reads the Expedition tab (the user's shots and every slot's name): stashlayouts.EXPEDITION -
        Logbook, the four Sagas (Aldur's slot left out: out of the game for now), Shattered Triskelion and The

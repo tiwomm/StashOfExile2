@@ -50,6 +50,9 @@ NOTES = {
                        "screen)."),
             ("App", "A few more windows (Favorites, Ledger, Map library, Money Makers, Report a bug) open over the app "
                     "on its screen."),
+            ("Wealth", "Everything poe.ninja has no price for (like the Ancient liquids) is now asked of the trade site's "
+                       "exchange - all of it, not just the first 30 - and the total is worked out again when that's "
+                       "done. Items still without a price say why, and the total says how many it leaves out."),
         ],
     },
     "2.114.2": {
