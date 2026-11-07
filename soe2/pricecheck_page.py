@@ -266,6 +266,14 @@ class PriceCheckPage:
                                                           state="disabled")
         self.pc_fav_btn0 = self.pc_fav_btn = ttk.Button(head, text="☆ Add to favorites", command=self.pc_add_fav,
                                                         state="disabled")
+        # 2.113.1 (feedback: the switch belongs here): the card over the game - the same switch as Settings › Hotkeys
+        ov = ttk.Checkbutton(head, text="Show over the game", variable=self.pc_pop_var(), style="Bar.TCheckbutton",
+                             command=self.pc_pop_set)
+        ov.pack(side="right")
+        from .style import Tooltip
+        Tooltip(ov, "On: your price check key shows the price in a card over the game (it takes the overlay's Style; "
+                    "drag and resize it - it remembers). Price Checks here still gets every item. Off: the app comes "
+                    "to the front, as before.")
         self.pc_rcanvas, self.pc_list = self._pc_scroller(right, padx=12, bg_key="panel")
         self.pcv = PCView(self.pc_left, self.pc_lcanvas, self.pc_list, self.pc_rcanvas, self.pc_count_lbl,
                           self.pc_open_btn)
@@ -381,6 +389,20 @@ class PriceCheckPage:
         return cv, inner
 
     # ---------------------------------------------------------------- items in
+    def pc_pop_var(self):
+        """The one switch for the card over the game (Price Checks' header and Settings › Hotkeys share it)."""
+        v = getattr(self, "_pc_pop_var", None)
+        if v is None:
+            v = self._pc_pop_var = tk.BooleanVar(value=bool(SETTINGS.get("pc_popup", False)))
+        return v
+
+    def pc_pop_set(self):
+        from .config import save_json
+        SETTINGS["pc_popup"] = bool(self.pc_pop_var().get())
+        save_json("settings.json", SETTINGS)
+        if not SETTINGS["pc_popup"]:
+            self.pcpop_close()
+
     def pc_wants(self, text):
         """An item copied with your price check key (Ctrl+D; Settings › Hotkeys), with its switch on. Set to Ctrl+C,
         the game's own plain copy counts as before."""
