@@ -23,7 +23,8 @@ import traceback
 LIMIT = 512 * 1024              # app_log.txt over this: it moves to app_log.old.txt and a new one starts
 REPEAT = 30.0                   # the same error again within this many seconds: written once
 SEND_MAX = 12000                # the most Report a bug adds (the board takes 20,000 characters in all)
-KINDS = ("error", "crash", "freeze", "slow", "net")
+KINDS = ("error", "crash", "freeze", "slow", "net", "debug")
+STATS = {"requests": 0, "slow_requests": 0}     # 2.116.0: Debug mode's status-bar line (this run only)
 _LOCK = threading.Lock()
 _SEEN = {}
 _VERSION = ["?"]
@@ -75,6 +76,21 @@ def record(kind, where, detail="", exc=None):
         return True
     except Exception:
         return False
+
+
+def debug_on():
+    """2.116.0: Settings › Advanced › Developer options › Debug mode."""
+    try:
+        from .config import SETTINGS
+        return bool(SETTINGS.get("dev_options") and SETTINGS.get("debug_mode"))
+    except Exception:
+        return False
+
+
+def debug(where, detail=""):
+    """More detail in the log - only while Debug mode is on (the same cleaning: no folders, no names)."""
+    if debug_on():
+        record("debug", where, detail=detail)
 
 
 def install(root=None, version=None):

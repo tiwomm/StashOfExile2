@@ -200,65 +200,88 @@ class UtilitiesPage:
 
     # ---------------- the Chat commands window
     def build_chat_window(self, body):
+        """Settings › Keys › Chat commands (2.116.0, P10: was its own tab). body: the section's frame. Only the rows
+        in use show; + Add a command shows the next (no eight empty rows)."""
         P2 = C["panel2"]
         ov = self._ensure_overlay().cfg
-        self.ov_vars = getattr(self, "ov_vars", {})
+        self.ov_vars = getattr(self, "ov_vars", None) or {}
         self.chat_on = tk.BooleanVar(value=bool(ov.get("chat_enabled")))
-        self.chat_st = self._util_head(
-            body, self.chat_on, "On", self.chat_toggle,
-            "Keys that type a chat command into Path of Exile 2 - only while the game is the active window; anywhere "
-            "else the key does what it normally does. Your POE2 Overlay (AutoHotkey) settings were read in the first "
-            "time: close that script so both don't type the same command.")
-        c1 = self._card(body, "Keys")
-        g = tk.Frame(c1, bg=P2)
-        g.pack(fill="x", pady=(4, 0))
-        # 2.59.0: the game window title is set in Settings › General › Game
-        self.ov_vars["poe_title"] = tk.StringVar(value=ov.get("poe_title", "") or "Path of Exile 2")
-        # 2.61.1: the keys are set right here again (click the box, press the key) - and in Settings › Hotkeys;
-        # a key that something else already uses turns red and says what has it
+        top = tk.Frame(body, bg=P2)
+        top.pack(fill="x")
+        ttk.Checkbutton(top, text="Type chat commands into the game with a key", variable=self.chat_on,
+                        command=self.chat_toggle).pack(side="left")
+        self.chat_st = tk.Label(top, text="", bg=P2, fg=C["muted"], anchor="w", font=("Segoe UI", 9, "bold"))
+        self.chat_st.pack(side="left", padx=12)
+        if "poe_title" not in self.ov_vars:                   # (the game window title: Settings › General › Game)
+            self.ov_vars["poe_title"] = tk.StringVar(value=ov.get("poe_title", "") or "Path of Exile 2")
         from .style import KeyCapture
-        self.ov_vars["hideout_key"] = tk.StringVar(value=ov.get("hideout_key", ""))
-        self.chat_keys_lbl = tk.Label(g, text="Go to hideout", bg=P2, fg=C["text"], anchor="w")
-        self.chat_keys_lbl.grid(row=1, column=0, sticky="w", pady=(4, 0), padx=(0, 8))
-        self.chat_hideout_kc = KeyCapture(g, self.ov_vars["hideout_key"], width=14,
-                                          on_change=lambda t: self.root.after(10, self.chat_key_set))
-        self.chat_hideout_kc.grid(row=1, column=1, sticky="w", pady=(4, 0))
-        tk.Label(g, text="Click a key box and press the key; right-click clears it. All keys: Settings › Hotkeys.",
-                 bg=P2, fg=C["muted"], font=("Segoe UI", 9), anchor="w").grid(row=2, column=0, columnspan=3,
-                                                                              sticky="w", pady=(4, 0))
-        c2 = self._card(body, "Your chat commands", expand=True)
-        cg = tk.Frame(c2, bg=P2)
-        cg.pack(fill="x", pady=(4, 0))
+        cg = tk.Frame(body, bg=P2)
+        cg.pack(fill="x", pady=(8, 0))
         for col, t in enumerate(("Name", "Key", "Command (e.g. /leave  /dnd  /invite Name)")):
-            tk.Label(cg, text=t, bg=P2, fg=C["muted"], font=("Segoe UI", 9, "bold"), anchor="w").grid(row=0, column=col, sticky="w")
+            tk.Label(cg, text=t, bg=P2, fg=C["muted"], font=("Segoe UI", 9, "bold"), anchor="w").grid(row=0, column=col,
+                                                                                                   sticky="w")
+        self.ov_vars["hideout_key"] = tk.StringVar(value=ov.get("hideout_key", ""))
+        self.chat_keys_lbl = tk.Label(cg, text="Go to hideout", bg=P2, fg=C["text"], anchor="w")
+        self.chat_keys_lbl.grid(row=1, column=0, sticky="w", padx=(0, 8), pady=1)
+        self.chat_hideout_kc = KeyCapture(cg, self.ov_vars["hideout_key"], width=12,
+                                          on_change=lambda t: self.root.after(10, self.chat_key_set))
+        self.chat_hideout_kc.grid(row=1, column=1, sticky="w", padx=(0, 8), pady=1)
+        tk.Label(cg, text="/hideout", bg=P2, fg=C["muted"], anchor="w", font=("Segoe UI", 9)).grid(row=1, column=2,
+                                                                                                sticky="w")
         cmds = ov.get("commands", [])
-        self.ov_cmd_vars, self.chat_key_boxes = [], []
+        self.ov_cmd_vars, self.chat_key_boxes, self.chat_rows = [], [], []
         for i in range(MAX_COMMANDS):
             c = cmds[i] if i < len(cmds) else {}
-            row = []
+            row, widgets = [], []
             for col, (k, w) in enumerate((("name", 14), ("key", 8), ("cmd", 34))):
                 v = tk.StringVar(value=c.get(k, ""))
-                if k == "key":                          # 2.61.1: set here (or in Settings › Hotkeys)
+                if k == "key":
                     kc = KeyCapture(cg, v, width=12, on_change=lambda t: self.root.after(10, self.chat_key_set))
-                    kc.grid(row=i + 1, column=col, sticky="w", padx=(0, 8), pady=1)
+                    kc.grid(row=i + 2, column=col, sticky="w", padx=(0, 8), pady=1)
                     self.chat_key_boxes.append(kc)
+                    widgets.append(kc)
                     row.append(v)
                     continue
-                tk.Entry(cg, textvariable=v, width=w, bg=C["odd"], fg=C["text"], insertbackground=C["text"], relief="flat",
-                         highlightthickness=1, highlightbackground=C["line"]).grid(row=i + 1, column=col, sticky="w",
-                                                                                  padx=(0, 8), pady=1)
-                v.trace_add("write", lambda *_a: self.ov_save_soon())   # 2.59.0: saves as you type
+                e = tk.Entry(cg, textvariable=v, width=w, bg=C["odd"], fg=C["text"], insertbackground=C["text"],
+                             relief="flat", highlightthickness=1, highlightbackground=C["line"])
+                e.grid(row=i + 2, column=col, sticky="w", padx=(0, 8), pady=1)
+                widgets.append(e)
+                v.trace_add("write", lambda *_a: self.ov_save_soon())       # 2.59.0: saves as you type
                 row.append(v)
             self.ov_cmd_vars.append(row)
-        brow = tk.Frame(body, bg=C["panel"])
-        brow.pack(fill="x", padx=8, pady=(0, 8))
-        self.ov_msg = tk.Label(brow, text="Changes save by themselves.", bg=C["panel"], fg=C["muted"], anchor="w")
+            self.chat_rows.append(widgets)
+        brow = tk.Frame(body, bg=P2)
+        brow.pack(fill="x", pady=(8, 0))
+        self.chat_add_btn = ttk.Button(brow, text="+ Add a command", style="Quiet.TButton", command=self.chat_add_row)
+        self.chat_add_btn.pack(side="left")
+        self.ov_msg = tk.Label(brow, text="Changes save by themselves.", bg=P2, fg=C["muted"], anchor="w")
         self.ov_msg.pack(side="left", fill="x", expand=True, padx=8)
+        self._chat_shown = max([i + 1 for i, r in enumerate(self.ov_cmd_vars) if any(v.get().strip() for v in r)] or [0])
+        self._chat_rows_paint()
         self._chat_keys_text()
         self.root.after(50, self.chat_key_marks)
 
+    def _chat_rows_paint(self):
+        """Show the rows in use (and any added); hide the rest."""
+        for i, widgets in enumerate(getattr(self, "chat_rows", [])):
+            for w in widgets:
+                (w.grid if i < self._chat_shown else w.grid_remove)()
+        try:
+            self.chat_add_btn.state(["disabled"] if self._chat_shown >= len(self.chat_rows) else ["!disabled"])
+        except (AttributeError, tk.TclError):
+            pass
+
+    def chat_add_row(self):
+        """+ Add a command: the next empty row shows, its name box focused."""
+        self._chat_shown = min(len(self.chat_rows), self._chat_shown + 1)
+        self._chat_rows_paint()
+        try:
+            self.chat_rows[self._chat_shown - 1][0].focus_set()
+        except (IndexError, tk.TclError):
+            pass
+
     def chat_key_set(self):
-        """2.61.1: a chat key was set in a box here - save, keep Settings › Hotkeys in step, warn about clashes."""
+        """2.61.1: a chat key was set in a box here - save, keep Settings › Keys in step, warn about clashes."""
         self.ov_save()
         if hasattr(self, "hk_frame"):
             try:
@@ -302,6 +325,7 @@ class UtilitiesPage:
             self.root.after(20, self.chat_key_marks)
 
     def open_settings_tab(self, name):
+        name = {"Hotkeys": "Keys", "Chat commands": "Keys"}.get(name, name)     # 2.116.0: one Keys tab
         self.shell.open("settings")
         try:
             self.set_nb.select(self.set_nb.titles.index(name))

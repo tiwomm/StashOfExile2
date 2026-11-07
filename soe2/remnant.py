@@ -22,7 +22,7 @@ import difflib
 import re
 import sys
 
-CREDIT_NAME = "PoE Ancients Price Helper by Pedro Quitério"
+CREDIT_NAME = "PoE Ancients Price Helper (Pedro Quitério)"
 CREDIT_URL = "https://github.com/pedro-quiterio/PoeAncientsPriceHelper"
 DEFAULT_KEY = "Ctrl+Alt+R"
 SHOW_SECS = 12                    # 2.56.2 (feedback: "on screen too long"): was 30

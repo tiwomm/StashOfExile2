@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU GPL v3.0 (see LICENSE). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.115.0
+VERSION 2.116.0
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,6 +19,27 @@ VERSION 2.115.0
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.116.0
+       P10, the Settings page pass. Seven tabs: Hotkeys and Chat commands are one Keys tab - hotkeys first, then a
+       Chat commands section with its rows (Go to hideout, then the commands; "+ Add a command" shows the next empty
+       one) - and their keys are set there once (Hotkeys lists them under CHAT COMMANDS, "set below"). Old links
+       (open_settings_tab "Hotkeys" / "Chat commands") open Keys. Price checking gets "Your price check key"
+       (Ctrl+C, come to the front, pictures - out of Hotkeys); General › Window gets Messages stay for and Minimize to
+       the system tray (FINE_WINDOW, out of Price checking's fine tuning).
+       Overlay style (feedback: the cards were "a visual indicator of the theme, if you can figure out a better
+       system, go for it"): ovstylepick.StylePicker - the 14 styles as names grouped Classic / Light / Ornate beside a
+       live preview of the bar drawn in each style's own palette (ovlight / ovskins / hudart); hover previews, a click
+       picks. Replaces the dropdown and its 10-line hint.
+       Always on top and Minimize to the system tray are off for new installs (saved settings keep theirs). Restart now
+       shows only after a text-size change (a greyed-out main button looked broken). Updates' switches shorter; the
+       note says which builds you get. What's new: "What's new · version" and "you had ...". Quick start: dots.
+       Advanced: Problems (this week's count from the app's log, Report a bug, Open the app's log). Developer options,
+       off and hidden until switched on (roadmap): Debug mode - every trade-site request with its answer and time in
+       the app's log (kind debug, cleaned the same way) and a debug line in the status bar; Unmatched mods - every mod
+       in unmatched_mods.txt beside the closest trade wording, newest first, no repeats (Copy all, Clear the list).
+       Your data shows the folder as %APPDATA%\StashOfExile2 (no Windows user name on screen).
+       Privacy & community: shorter notes, a line when nothing of yours is on the board, links to TOS.md / README.
+       About: header colours from the theme; credits name each project's author.
   2.115.0
        One bug log for the whole app (feedback: "we need one global bug logging system", and Report a bug should
        carry any crash): soe2/buglog.py - app_log.txt in the data folder, one entry per problem, kind error / crash /
@@ -2751,7 +2772,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.115.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.116.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
