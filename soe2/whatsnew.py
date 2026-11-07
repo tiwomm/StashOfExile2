@@ -39,6 +39,16 @@ NEXT = [
 MAX_BIG = 3
 
 NOTES = {
+    "2.115.0": {
+        "big": [
+            ("🐞", "One log for everything that goes wrong", "Errors, crashes, freezes, slow spots and refused trade-site "
+             "requests now all go into one log on your PC (where in the app's code - nothing about you). Report a bug "
+             "can send it, and you see every word first; after a crash the app offers to.", None, "App"),
+        ],
+        "small": [
+            ("App", "Problems that slipped through before - in a background job or a button - are written down too."),
+        ],
+    },
     "2.114.3": {
         "big": [],
         "small": [

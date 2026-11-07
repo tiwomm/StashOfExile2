@@ -1,0 +1,27 @@
+# The exact versions the Windows build uses (2.115.0) - a new release of any of these can't change or break a build
+# by itself. To move to newer ones: change them here, build, test, then release.
+requests==2.34.2
+pystray==0.19.5
+pillow==13.0.0
+pyinstaller==6.22.3
+pyinstaller-hooks-contrib==2026.9
+mss==10.2.0
+numpy==2.5.4
+opencv-python-headless==5.0.0.93
+winrt-runtime==4.1.0
+winrt-Windows.Foundation==4!10.0.28000.2957
+winrt-Windows.Foundation.Collections==4!10.0.28000.2957
+winrt-Windows.Globalization==4!10.0.28000.2957
+winrt-Windows.Graphics.Imaging==4!10.0.28000.2957
+winrt-Windows.Media.Ocr==4!10.0.28000.2957
+winrt-Windows.Storage.Streams==4!10.0.28000.2957
+certifi==2026.10.23
+charset_normalizer==3.5.2
+idna==3.20
+urllib3==2.8.0
+altgraph==0.17.5
+pefile==2024.8.26
+pywin32-ctypes==0.2.3
+six==1.17.0
+setuptools==84.2.1
+typing_extensions==4.16.0

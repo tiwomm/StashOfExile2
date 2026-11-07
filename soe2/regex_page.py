@@ -781,8 +781,8 @@ class RegexPage:
         save_json(FAV_BACKUP, data)
         if not ok and hasattr(self, "rx_fav_msg"):
             self.rx_fav_msg.config(text="⚠ Couldn't save your Favorites to the app's data folder (is another program "
-                                        "using the file?). They're kept while the app is open - details in "
-                                        "error_log.txt.", fg=C["red"])
+                                        "using the file?). They're kept while the app is open - Report a bug "
+                                        "sends the details.", fg=C["red"])
         return ok
 
     def rx_fav_index(self):

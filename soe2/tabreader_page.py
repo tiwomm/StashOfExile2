@@ -416,7 +416,7 @@ class TabReaderPage:
         from .tabreader import write_log
         PCTAB["log"].append(f"result: added {st.get('added', 0)}, already {st.get('already', 0)}, can't read "
                             f"{st.get('unreadable', 0)}, errors {st.get('failed', 0)}"
-                            + (f"; stopped" if stopped else "") + (f"; error: {PCTAB['error']}" if PCTAB["error"] else ""))
+                            + ("; stopped" if stopped else "") + (f"; error: {PCTAB['error']}" if PCTAB["error"] else ""))
         write_log(PCTAB["log"])
         if PCTAB["error"]:
             return self.pc_msg.config(text=PCTAB["error"], fg=C["red"])

@@ -189,7 +189,7 @@ SAVE_ERRORS = []                          # 2.4.0: (file, problem) - saving no l
 
 def save_json(name, data):
     """-> True when the file was written. A failure (file in use, folder not writable...) is noted in SAVE_ERRORS and
-    error_log.txt instead of passing silently."""
+    the app's log (buglog) instead of passing silently."""
     try:
         tmp = P(name) + ".tmp"
         text = json.dumps(data)           # 2.25.1: dumps (one go, the fast C encoder) - json.dump streams through
@@ -201,10 +201,8 @@ def save_json(name, data):
         SAVE_ERRORS.append((name, str(e)[:200]))
         del SAVE_ERRORS[:-20]
         try:
-            import time as _t
-            with open(P("error_log.txt"), "a", encoding="utf-8") as f:
-                from .privacy import scrub                    # 2.89.2: the error names the path (your user name)
-                f.write(f"{_t.strftime('%Y-%m-%d %H:%M:%S')} could not save {name}: {scrub(str(e))}\n")
+            from . import buglog                              # 2.115.0: the one log (paths and names cleaned)
+            buglog.record("error", f"saving {name}", detail=str(e))
         except Exception:
             pass
         return False
