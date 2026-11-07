@@ -37,6 +37,13 @@ NEXT = [
 MAX_BIG = 3
 
 NOTES = {
+    "2.112.2": {
+        "big": [
+            ("✔", "Theme changes are instant again", "Changing the app theme no longer freezes or closes the app "
+             "on Windows.", ("Pick a theme", "settings:Appearance"), "Fixes"),
+        ],
+        "small": [],
+    },
     "2.112.1": {
         "big": [],
         "small": [

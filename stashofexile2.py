@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU GPL v3.0 (see LICENSE). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.112.1
+VERSION 2.112.2
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,6 +19,13 @@ VERSION 2.112.1
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.112.2
+       Fixed: changing the app theme froze / crashed on Windows (found with 2.112.1's hang_report.txt). Every title
+       bar's redraw (about 100) asked Windows for the PC's whole font list (themes.head_font -> font.families());
+       paint_titlebar's update_idletasks ran them all, for minutes. The list is read once and the answer kept per
+       theme. Also: paint_titlebar forces pending redraws only before the window first shows, and the auto-hiding
+       scroll bars (Settings, the Price Checks card) can't flip back and forth forever (style.SbGuard: 4 flips in a
+       second = stays shown until the page settles) - that loop was found at some window widths.
   2.112.1
        Not responding? soe2/hangwatch.py: a tick on the Tk thread every 0.5 s; if it stops for 8 s, a watcher thread
        samples the main thread three times and writes hang_report.txt to the data folder - file name (no folders),
@@ -2598,7 +2605,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.112.1"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.112.2"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 

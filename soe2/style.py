@@ -965,6 +965,29 @@ class SegBook(tk.Frame):
         return self.titles[i]
 
 
+class SbGuard:
+    """2.112.2: a scroll bar that shows only when needed can loop forever: shown -> the page is narrower -> its
+    wrapped text is taller / shorter -> hidden -> wider -> shown ... Tk's idle queue never empties and the app stops
+    responding (it hung Windows on a theme change: its scroll bar and text measure differently). Count the flips:
+    after 3 within a second the bar stays shown until the page settles (2 s quiet)."""
+
+    def __init__(self):
+        self.flips = []
+        self.hold = 0.0
+
+    def may_hide(self):
+        import time as _t
+        return _t.time() >= self.hold
+
+    def flipped(self):
+        import time as _t
+        now = _t.time()
+        self.flips = [t for t in self.flips if now - t < 1.0] + [now]
+        if len(self.flips) > 3:
+            self.hold = now + 2.0
+            self.flips = []
+
+
 class ScrollArea(tk.Frame):
     """A frame whose content scrolls up and down (scroll bar + mouse wheel) when it is taller than the window
     (2.0 beta 14: Settings). Put the content in .inner; it is always as wide as the area.
@@ -982,15 +1005,20 @@ class ScrollArea(tk.Frame):
         self.canvas.bind("<Configure>", lambda e: self.canvas.itemconfigure(self._win, width=e.width))
         self.inner.bind("<Configure>", lambda e: self.canvas.configure(scrollregion=(0, 0, e.width, e.height)))
         self._hooked = None
+        self._guard = SbGuard()
         self.bind("<Map>", lambda e: self._hook(), add="+")
         self.after_idle(self._hook)
 
     def _sb_set(self, a, b):
-        """Show the scroll bar only when there is something to scroll."""
+        """Show the scroll bar only when there is something to scroll (never flipping back and forth - SbGuard)."""
+        shown = self.sb.winfo_ismapped()
         if float(a) <= 0.0 and float(b) >= 1.0:
-            self.sb.pack_forget()
-        elif not self.sb.winfo_ismapped():
+            if shown and self._guard.may_hide():
+                self.sb.pack_forget()
+                self._guard.flipped()
+        elif not shown:
             self.sb.pack(side="right", fill="y", before=self.canvas)
+            self._guard.flipped()
         self.sb.set(a, b)
 
     def _hook(self):

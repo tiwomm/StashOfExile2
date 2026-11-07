@@ -1484,8 +1484,9 @@ class App(GearBookPage, PriceCheckPage, FavoritesPage, BoardModPage, Leaderboard
         from . import themes as _th
         from .winsys import set_titlebar
         cap, txt, edge = _th.window_colors()
-        try:
-            self.root.update_idletasks()
+        try:                                     # 2.112.2: only before the window first shows - forcing every
+            if not self.root.winfo_ismapped():   # pending redraw here on each theme change could spin forever
+                self.root.update_idletasks()     # (a page relaying itself out in a loop - see style.SbGuard)
         except tk.TclError:
             return
         self.titlebar_colors = (cap, txt, edge)

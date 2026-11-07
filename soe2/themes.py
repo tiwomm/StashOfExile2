@@ -627,15 +627,25 @@ def bar_text(kind="title"):
     return t.c(spec.get("text", "#ffffff"))
 
 
+_FAMILIES = {}
+_HEAD = {}
+
+
 def head_font():
-    """The pack's heading family (first one installed)."""
+    """The pack's heading family (first one installed). 2.112.2: the PC's font list is read ONCE and the answer
+    kept per theme - every title bar asked Windows for the whole list on every redraw (about 100 bars), which
+    froze a theme change for minutes (worse once the overlay styles' own fonts were loaded)."""
     import tkinter.font as tkfont
-    fams = (ST.theme.part("fonts", "head") if ST.theme else None) or ["Segoe UI"]
-    try:
-        have = {f.lower(): f for f in tkfont.families()}
-    except Exception:
-        return fams[0]
-    return next((have[f.lower()] for f in fams if f.lower() in have), "Segoe UI")
+    fams = tuple((ST.theme.part("fonts", "head") if ST.theme else None) or ["Segoe UI"])
+    if fams in _HEAD:
+        return _HEAD[fams]
+    if not _FAMILIES:
+        try:
+            _FAMILIES.update({f.lower(): f for f in tkfont.families()})
+        except Exception:
+            return fams[0]
+    _HEAD[fams] = next((_FAMILIES[f.lower()] for f in fams if f.lower() in _FAMILIES), "Segoe UI")
+    return _HEAD[fams]
 
 
 def round_rect(cv, x0, y0, x1, y1, r, **kw):
