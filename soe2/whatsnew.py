@@ -39,6 +39,15 @@ NEXT = [
 MAX_BIG = 3
 
 NOTES = {
+    "2.114.1": {
+        "big": [],
+        "small": [
+            ("Price checks", "Wombgifts are searched on the trade site by their type, like the site's own search, so "
+                             "your price check key should give a price for them now."),
+            ("Price checks", "The card over the game has the item's properties too (base type, item level, quality, "
+                             "sockets with Min / Max), so white and magic bases should price the same as in the app."),
+        ],
+    },
     "2.114.0": {
         "big": [
             ("📖", "One rating in the Mod book", "Every mod has one rating now, S to F, like Gear rules: S / A are always "
@@ -48,8 +57,8 @@ NOTES = {
         "small": [
             ("Mod book", "Rate mods: the \"Which items do you know best?\" box is grouped and should fit over the app now."),
             ("Mod book", "Export / Import rules moved under More."),
-            ("Price checks", "Your price check key on a single currency-like item (a Wombgift, say) should now give its "
-                             "going rate in a message, from poe.ninja or the trade site's bulk exchange."),
+            ("Price checks", "Your price check key on a single currency item that isn't a stack should now "
+                             "give its going rate in a message, from poe.ninja or the trade site's bulk exchange."),
             ("Price checks", "Under the hood: Paste item and Price it (no separate Check button)."),
             ("Rates", "Exchange rates show currency names and plain numbers."),
             ("Overlay", "Opening Notes shows the note over the game. The calculator starts blank."),

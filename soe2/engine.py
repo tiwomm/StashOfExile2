@@ -636,7 +636,9 @@ class Engine(TabReaderJobs, WealthJobs, StratCostJobs, threading.Thread):
             (must if imp == "high" else opt).append(m)
         blank = dict(total=0, prices=[], est=None, qid=None, partial=False, thin=False, nomatch=False, stages=[],
                      wide=False, manual=False, conf="-", conf_why=[], memory="", skip=False)
-        if not must and not opt and item["rarity"] not in ("Unique", "Normal"):
+        if not must and not opt and item["rarity"] not in ("Unique", "Normal", "Currency") and not (
+                item["rarity"] == "Magic" and (item.get("search") or {}).get("ilvl_min")):   # 2.114.0: a magic base
+
             return dict(blank, label="nothing ticked to search on" + (f" · {unknown} mods not on the trade site" if unknown else ""))
         values = {id(m): vfilter(m) for m in must + opt}
         check = [m for m in must if m.get("group") not in ("total", "pseudo") and m.get("option") is None]

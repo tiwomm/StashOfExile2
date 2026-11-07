@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU GPL v3.0 (see LICENSE). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.114.0
+VERSION 2.114.1
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,6 +19,14 @@ VERSION 2.114.0
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.114.1
+       Wombgifts (feedback: "use trade site for the 5 types of wombgifts, they do exist"): gear.type_only_item -
+       TYPE_ONLY_CLASSES ("Wombgifts") items are a price-check item searched by their type alone, as the site's own
+       search for one (no corrupted filter); engine._price_gear lets a Currency item (and a magic base with its item
+       level filter) search with nothing ticked. Other single currency items keep the going-rate toast (2.114.0).
+       Price check card over the game (feedback: white / magic bases didn't price the same as in the app): a
+       PROPERTIES part - Base type (ticked = this base, unticked = any of its kind), Item level, Quality, Sockets with
+       Min / Max - the same rec["opts"] as the app's card (search_opt_set); Enter searches again.
   2.114.0
        P8 + P9 page passes (findings + mockup first; feedback: Tier the only rating, Rates plain, calculator plain).
        Listing order lab removed (an admin tool, done its job): orderlab.py, orderlab_page.py, modules/orderlab.py
@@ -2683,7 +2691,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.114.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.114.1"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
