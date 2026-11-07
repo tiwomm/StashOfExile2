@@ -1,0 +1,82 @@
+"""2.112.1: when the app stops responding, write down where - so a freeze that only happens on one PC can be fixed.
+
+A tick on the Tk thread every half second; a watcher thread checks it. If the app hasn't ticked for 8 seconds, the
+watcher looks at what the main thread is doing three times, two seconds apart, and writes it to hang_report.txt in
+the app's data folder (one report, replaced by the next).
+
+Privacy: only the app's own code locations are written - file NAME (no folders), function and line number, plus the
+app version and the last few things the app was doing ("theme change", "overlay rebuild"). No user names, paths,
+items, character names, chat or anything typed. Nothing is sent anywhere; you choose whether to share the file.
+GGG ToS: reads nothing from the game."""
+import os
+import sys
+import threading
+import time
+
+STALL = 8.0
+_ST = {"tick": time.time(), "steps": [], "root": None, "written": 0.0}
+_LOCK = threading.Lock()
+
+
+def step(what):
+    """Mark what the app is doing now (short, fixed words - never user data). Kept: the last 12."""
+    with _LOCK:
+        _ST["steps"].append((time.time(), str(what)[:60]))
+        del _ST["steps"][:-12]
+
+
+def _tick():
+    _ST["tick"] = time.time()
+    root = _ST["root"]
+    if root is not None:
+        try:
+            root.after(500, _tick)
+        except Exception:
+            pass
+
+
+def _where(frame):
+    """The main thread's stack, innermost last: 'file.py:function:line' - folders dropped."""
+    out = []
+    while frame is not None:
+        co = frame.f_code
+        out.append(f"{os.path.basename(co.co_filename)}:{co.co_name}:{frame.f_lineno}")
+        frame = frame.f_back
+    return list(reversed(out))[-25:]
+
+
+def _watch(main_id, path, version):
+    while True:
+        time.sleep(1.0)
+        stalled = time.time() - _ST["tick"]
+        if stalled < STALL or time.time() - _ST["written"] < 60:
+            continue
+        samples = []
+        for _ in range(3):
+            fr = sys._current_frames().get(main_id)
+            samples.append((round(time.time() - _ST["tick"], 1), _where(fr) if fr is not None else []))
+            time.sleep(2.0)
+        with _LOCK:
+            steps = list(_ST["steps"])
+        lines = [f"StashOfExile2 {version} - not responding report (code locations only)",
+                 f"written {time.strftime('%Y-%m-%d %H:%M:%S')}", "", "Last things it was doing:"]
+        lines += [f"  {time.strftime('%H:%M:%S', time.localtime(t))}  {w}" for t, w in steps] or ["  (none)"]
+        for i, (secs, stack) in enumerate(samples, 1):
+            lines += ["", f"Sample {i} - stuck for {secs} s:"] + [f"  {x}" for x in stack]
+        try:
+            with open(path, "w", encoding="utf-8") as f:
+                f.write("\n".join(lines) + "\n")
+        except OSError:
+            pass
+        _ST["written"] = time.time()
+
+
+def start(root, path, version):
+    """Start watching (once). path: where the report goes (the data folder)."""
+    if _ST["root"] is not None:
+        return
+    _ST["root"] = root
+    _tick()
+    t = threading.Thread(target=_watch, args=(threading.main_thread().ident, path, version), daemon=True,
+                         name="hangwatch")
+    t.start()

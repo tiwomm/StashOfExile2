@@ -1411,14 +1411,20 @@ class App(GearBookPage, PriceCheckPage, FavoritesPage, BoardModPage, Leaderboard
 
     def relook(self):
         from .style import relook
+        from .hangwatch import step
+        step("theme change: re-colour every window")
         n, secs = relook(self.root, SETTINGS.get("theme"), SETTINGS.get("accent", "theme"))
+        step("theme change: theme cards")
         self._paint_look_cards()
+        step("theme change: title bar")
         self.paint_titlebar()
         if getattr(self, "mg_win", None) is not None:          # the overlay over the game: built again in its style
+            step("theme change: overlay rebuild")
             try:
                 self.merged_set()
             except Exception:
                 pass
+        step("theme change: done")
         if getattr(self, "shown_rec", None) is not None or hasattr(self, "detail"):
             try:
                 self.show_detail(self.shown_rec)
@@ -6087,6 +6093,12 @@ def main():
     except Exception:
         pass
     root = tk.Tk(className="StashOfExile2")      # 2.10.0: window managers (Hyprland) see class "Stashofexile2"
+    try:                                         # 2.112.1: not responding? where it was stuck goes to hang_report.txt
+        from .hangwatch import start as _hang_start
+        from .config import P as _P
+        _hang_start(root, _P("hang_report.txt"), APP_VERSION)
+    except Exception:
+        pass
     if SETTINGS.get("splash", True):
         try:
             from .splash import Splash

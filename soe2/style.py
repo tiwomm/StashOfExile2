@@ -539,6 +539,28 @@ def _combo_on_top():
 _combo_on_top()
 
 
+def _check_on_card():
+    """2.112.1: a switch on a card (panel2) takes the card's colour - plain ttk.Checkbuttons there showed the page's
+    darker colour as a box behind their text (Settings › General › Updates was one). Wraps ttk.Checkbutton once."""
+    if getattr(ttk.Checkbutton, "_soe2_card", False):
+        return
+    orig = ttk.Checkbutton.__init__
+
+    def __init__(self, master=None, **kw):
+        if "style" not in kw and master is not None:
+            try:
+                if str(master.cget("bg")).lower() == str(C["panel2"]).lower():
+                    kw["style"] = "Card.TCheckbutton"
+            except (tk.TclError, AttributeError):
+                pass
+        orig(self, master, **kw)
+    ttk.Checkbutton.__init__ = __init__
+    ttk.Checkbutton._soe2_card = True
+
+
+_check_on_card()
+
+
 def setup_style(root):
     """The ttk styles, from the running theme pack (2.60.0). Called at start and again after a live theme swap."""
     from . import themes as TH

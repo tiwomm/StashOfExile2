@@ -37,6 +37,14 @@ NEXT = [
 MAX_BIG = 3
 
 NOTES = {
+    "2.112.1": {
+        "big": [],
+        "small": [
+            ("Fixes", "If the app ever stops responding, it notes where in hang_report.txt (your data folder) - code "
+                      "locations only, nothing personal, never sent. Share it to help fix a freeze."),
+            ("Looks", "No dark boxes behind switch text on Settings cards."),
+        ],
+    },
     "2.112.0": {
         "big": [
             ("☰", "Helpers, tidied up", "One row per helper with On bar and Remind columns, grouped by where you use "
