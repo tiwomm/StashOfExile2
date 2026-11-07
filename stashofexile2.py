@@ -24,6 +24,9 @@ VERSION HISTORY
        of card clicks swaps once, 200 ms after the last (pick_theme(wait=True) from the cards; code / tests swap at
        once); the overlay over the game is rebuilt on a theme change only in Classic - the one style that takes the
        app theme's colours - instead of closing and reopening every window over the game on each swap.
+       Flanks is shown as Split (the key stays "flanks"). The Campaign / Focus line: unlocked, it can always be
+       dragged - by a ⠿ grip at its left (see-through styles had nothing solid to grab) or its text; dragging a docked
+       line undocks it and saves the spot (in Split the bar's halves can't move, so a docked line was stuck).
   2.112.3
        Quick settings (right-click the cog): the Style list closed the moment it opened. On Windows the open list
        takes the keyboard; focus_get() can't name it (it isn't a tkinter widget), the KeyError read as "focus

@@ -1613,7 +1613,7 @@ class App(GearBookPage, PriceCheckPage, FavoritesPage, BoardModPage, Leaderboard
         sc.bind("<<ComboboxSelected>>", lambda e: self.on_ov_look(
             style=next((k for k, t in STYLES.items() if t == self.ov_look_var.get()), "classic")))
         hint(1, "Classic: carved stone and bronze, like the game's own bar. The light ones are plain lines and text "
-                "(lighter on the PC too): Hairline - no box, one thin line; Slate - a flat box; Flanks - no box, "
+                "(lighter on the PC too): Hairline - no box, one thin line; Slate - a flat box; Split - no box, "
                 "numbers by the life orb and switches by the mana orb; Micro - the smallest. The ornate ones keep "
                 "their own colours and fonts: Herald - crimson plates, gilt; Gilded - white marble, gold leaf; "
                 "Warbanner - a gold frame, royal-blue bands; Verdant - forest green, bronze; Gloom - smoky slate, "

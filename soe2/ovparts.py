@@ -259,8 +259,16 @@ class OverlayParts:
         x, y = self._goalbar_spot(layout, gw, gh)
 
         def moved(nx, ny, _w, _h):
-            if self.goalbar_docked():
-                return
+            if self.goalbar_docked():                        # 2.112.4: dragging a docked line undocks it (in Split
+                if not getattr(w, "_drag_done", False):      # the bar's halves can't move, so a docked line was stuck)
+                    return
+                cfg["goal_dock"] = False
+                v = getattr(self, "tk_goal_dock", None)
+                if v is not None:
+                    try:
+                        v.set(False)
+                    except tk.TclError:
+                        pass
             cfg.setdefault("goal_pos", {})[layout] = [int(nx), int(ny)]
             self.tracker_save()
         w = OverlayWindow(self.root, "Goal", "🎯", (x, y, gw, gh), opacity=int(cfg.get("opacity", 225)),
@@ -277,8 +285,9 @@ class OverlayParts:
         cv = w.canvas_body()
         W, H = gw - 2, gh - 2
         cv.configure(width=W, height=H)
-        if not cfg.get("mlocked") and not self.goalbar_docked():     # docked: it moves with the bar
-            w.draggable(cv)
+        if not cfg.get("mlocked"):                    # 2.112.4: unlocked, it can always be dragged (a docked one is
+            w.draggable(cv)                           # undocked by the drag); locked, it stays put
+            cv.bind("<B1-Motion>", lambda _e: setattr(w, "_drag_done", True), add="+")
         if light:                                             # 2.101.0: no artwork - the box (or none) and a rule
             lft, rgt = self._u(12), W - self._u(12)
             if P.get("boxless"):
@@ -297,6 +306,11 @@ class OverlayParts:
         mids = [int(H * (2 * i + 1) / (2 * len(rows))) for i in range(len(rows))]
         f = (P["font"], self._hf(10))
         self.gb_rows = rows
+        if not cfg.get("mlocked"):                    # 2.112.4: a grip to drag it by (see-through styles have nothing
+            g = cv.create_text(max(2, lft - self._u(12)), H // 2, text="⠿", anchor="w",   # else solid to grab)
+                               fill=P.get("muted", P["text"]), font=("Segoe UI Symbol", self._hf(10)), tags=("mg", "grip"))
+            cv.tag_bind(g, "<Enter>", lambda _e: cv.configure(cursor="fleur"))
+            cv.tag_bind(g, "<Leave>", lambda _e: cv.configure(cursor=""))
         if "campaign" in rows:
             self.camp_draw_row(cv, P, lft, rgt, mids[rows.index("campaign")], f)
             if light:
