@@ -4,7 +4,7 @@
 
 > **Who we build for - read second.** Path of Exile players are utilitarian: they love data and information, problem solving and creative thinking. So every feature shows its numbers *and how they were worked out*, lets you sort, filter, compare and export them (CSV), keeps power-user depth (keys, versions, raw data) one click away instead of hiding it, explains in plain words, and leaves the decision to the player. Pretty is welcome; vague is not.
 
-**Current version: 2.113.1**
+**Current version: 2.113.2**
 
 Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds features, 2.10.1 only fixes. Each step below is one release; we work through them top to bottom.
 
@@ -173,6 +173,7 @@ Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds f
 | 2.97.0 | Polish 4 - feedback round: the Rate mods ask says what it is (Count me in! / Not now / Never ask again) and opens in front; Rate mods starts with "Which items do you know best?", lights only your rating, Back / Next / Done under it; F is the ignore tier everywhere tiers show (saved as Ignore); Focus / Campaign on = their line shows (no line switch; both on = one bar, two rows, in Panel and Game bar), switching one on turns the overlay on; a finished character's campaign line and Vendor ▾ come back in campaign zones; Price Checks: Rate ▾ replaces ▲ / ▼, the card and listings fit the window (scrollbar only when needed), Fractured only ticks the mod. |
 | 2.97.1 | Price Checks card: a rune's line and an affix with the same wording are ticked apart; runes in their own AUGMENTS section (no RUNE / SOCKETED lines); Fractured / Desecrated only small, right under its mod, the mod in its color. |
 | 2.97.2 | Price Checks card - visual hierarchy: a mod's color says where it comes from (affix blue, rune light blue, fractured tan, desecrated green, pseudo pink; unticked = dimmed, not grey), the listing cards match; every section folds with how many are ticked, Fold all / Unfold all. |
+| 2.113.2 | Island rumours matched by letter shape too (a misread middle rumour); What's new never claims a fix. |
 | 2.113.1 | Price Checks: the Show over the game switch on its header and in Settings › Price checking (out of Hotkeys); Island rumours: the middle rumour (whole-text search, read at 2x, rumours_read.txt). |
 | 2.113.0 | Each seller counts once in every price (their cheapest, "listed N times"; listings 11-20 fetched when too few sellers); Min within the mod's tier. Island rumours: all of a card's rumours (a rumour run together with the heading matched nothing; read up to 3 times), a compact panel. Price check in a card over the game (opt-in, Settings › Hotkeys › Price Checks): item, price, mods with ticks and Min / Max, cheapest listings that open to the whole item; movable, resizable, remembered; the overlay's Style. |
 | 2.112.5 | Hotfix: dragging the Campaign / Focus line no longer opens its card. |
@@ -328,6 +329,7 @@ The GGG Terms of Service check in [TOS.md](TOS.md) comes first; these follow fro
 
 - **Opting out is final.** When you say no to anything (sharing, an ask, a card), it's never asked again - not later, not in a few days. Only you turn it back on, from its switch.
 - **Everything follows the look you picked.** App windows, cards and dialogs use the app theme's tokens (`C[...]`); everything over the game uses the overlay Style (`App.ov_palette`). No hard-coded colours (`tools/check_theme.py` checks every PR); colours that must stay fixed (item rarity) are marked `# theme-ok`.
+- **What's new never claims a fix.** A note can't know a fix worked on every PC: it says what changed and that it should help, never "Fixed X".
 - **What's new: big first.** Each version's notes are `big` (hero rows) and `small` (folded lines), by the standard in `soe2/whatsnew.py`: big = a player would notice it without being told, or needs it to keep playing the same way (new tool / style / helper, something moved or works differently, anything about data or privacy, a widely hit fix); at most 3 per card.
 - **One action per key press.** Nothing is automated in the game.
 - **Only reads what's yours to read.** No game memory or packets; only your clipboard, the game's own log file and your own screen.
