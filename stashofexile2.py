@@ -19,7 +19,7 @@ VERSION 2.112.5
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
-  2.112.5
+  2.112.5 (hotfix)
        The Campaign / Focus line: dragging it by its text no longer opens the route card / Game Plan - a click opens
        it only when the press didn't move (merged_page.click_not_drag, also on the bar's Focus text).
   2.112.4
