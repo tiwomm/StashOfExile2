@@ -33,6 +33,7 @@ RUMOURS = [
     ("The last to fall...", "Mournful Cliffside"),
 ]
 MATCH = 0.72
+WHOLE_MATCH = 0.8              # 2.113.1: in the card's whole text (stricter - more to match against)
 SCALE = 8                       # the screen is searched at 1/8 size
 MIN_AREA = 0.02                 # the card's parchment, as a share of (game height)^2
 
@@ -111,13 +112,36 @@ def find_card(img, game_h):
 
 def rows(lines):
     """OCR lines of the card -> [(rumour, island, line box)] for the lines that are rumours (the header and the
-    Requires line aren't)."""
+    Requires line aren't). 2.113.1 (feedback: the middle one of three was missed): a rumour no single line matches is
+    looked for in the card's whole text (Windows' reader can split a rumour over two lines or join it to the next),
+    a little stricter there; its box is the line it starts on."""
     out, seen = [], set()
     for text, box in lines:
         hit = match(text)
         if hit and hit[1] not in seen:
             seen.add(hit[1])
             out.append((hit[0], hit[1], box))
+    if len(out) < 3 and lines:
+        parts = [(squash(t), b) for t, b in lines]
+        full = "".join(p for p, _b in parts)
+        starts, pos = [], 0
+        for p, b in parts:
+            starts.append((pos, b))
+            pos += len(p)
+        for k, r, i in _KEYS:
+            if i in seen or len(k) < 6:
+                continue
+            best, at = 0.0, 0
+            n = len(k)
+            for a in range(0, max(1, len(full) - n + 1)):
+                sc = difflib.SequenceMatcher(None, full[a:a + n], k).ratio()
+                if sc > best:
+                    best, at = sc, a
+            if best >= WHOLE_MATCH:
+                box = next((b for s, b in reversed(starts) if s <= at), lines[0][1])
+                seen.add(i)
+                out.append((r, i, box))
+        out.sort(key=lambda x: (x[2][1], x[2][0]))
     return out
 
 

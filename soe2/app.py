@@ -952,6 +952,15 @@ class App(GearBookPage, PriceCheckPage, PricePopup, FavoritesPage, BoardModPage,
             cb.bind("<<ComboboxSelected>>", lambda e: (cmd(), self.root.after(20, self.root.focus_set)))
             return cb
 
+        # 2.113.1 (feedback: Hotkeys was the wrong place): the card over the game - the same switch as Price Checks' header
+        row = section("Price checking", "Over the game", "Your price check key shows the price in a card over the game "
+                                                          "instead of bringing the app forward. It takes the overlay's "
+                                                          "Style; drag and resize it - it remembers. Price Checks still "
+                                                          "gets every item.")
+        ttk.Checkbutton(row, text="Show price checks over the game", variable=self.pc_pop_var(),
+                        style="Card.TCheckbutton", command=self.pc_pop_set).pack(side="left")
+        self.pc_set_vars = getattr(self, "pc_set_vars", None) or {}
+        self.pc_set_vars["pc_popup"] = self.pc_pop_var()
         row = section("Price checking", "Valuable items", "A mod is valuable when the cheapest listings with it cost "
                                                            "at least this much. Valuable items are green in the list, and "
                                                            "can play a sound when they're priced.")
@@ -1280,16 +1289,11 @@ class App(GearBookPage, PriceCheckPage, PricePopup, FavoritesPage, BoardModPage,
                                                  "above): the app presses the game's own copy once and Price Checks "
                                                  "shows the item with the trade site's listings. Ctrl+Alt+C adds it "
                                                  "to Bulk Pricing instead.")
-        self.pc_set_vars = {}
+        self.pc_set_vars = getattr(self, "pc_set_vars", None) or {}
         for k, label in (("pc_ctrl_c", "The price check key opens Price Checks"),
-                         ("pc_front", "Bring the app to the front"), ("pc_art", "Show the items' pictures"),
-                         ("pc_popup", "Show it in a card over the game")):          # 2.113.0
-            if k == "pc_popup":                       # 2.113.1: the same switch as on Price Checks' header
-                v = self.pc_pop_var()
-                cmd = self.pc_pop_set
-            else:
-                v = tk.BooleanVar(value=bool(SETTINGS.get(k, True)))
-                cmd = (lambda k=k, v=v: (SETTINGS.__setitem__(k, bool(v.get())), save_json("settings.json", SETTINGS)))
+                         ("pc_front", "Bring the app to the front"), ("pc_art", "Show the items' pictures")):
+            v = tk.BooleanVar(value=bool(SETTINGS.get(k, True)))
+            cmd = (lambda k=k, v=v: (SETTINGS.__setitem__(k, bool(v.get())), save_json("settings.json", SETTINGS)))
             self.pc_set_vars[k] = v
             ttk.Checkbutton(row, text=label, variable=v, style="Card.TCheckbutton", command=cmd).pack(side="left", padx=(0, 16))
         # (2.98.3, feedback: "Other ways of copying" was a dead switch - Bulk Pricing adds only what you copy with
