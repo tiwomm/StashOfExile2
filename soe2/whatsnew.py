@@ -42,8 +42,12 @@ NOTES = {
             ("⚖", "Price checks over the game", "Turn on \"Show it in a card over the game\": your price check key "
              "opens the price, the mods (with Min / Max) and the cheapest listings right over the game.",
              ("Turn it on", "settings:Hotkeys"), "Price checks"),
+            ("👥", "Each seller counts once", "Prices come from different sellers - one seller listing five copies "
+             "can't set the price any more. Their listing says how many times they listed it.", None, "Price checks"),
         ],
         "small": [
+            ("Price checks", "A mod's Min never drops below its own tier, so your item isn't priced against weaker "
+                             "ones."),
             ("Expedition", "Island rumours: every rumour on the card shows, in a smaller panel like the Runeshape tips."),
         ],
     },

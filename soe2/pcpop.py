@@ -311,6 +311,8 @@ class PricePopup:
         seller = f.get("seller") or ""
         if seller and not self._pcpop_mine(seller):          # (yours never shows - with or without its #1234)
             when = f"{seller} · {when}" if when else seller
+        if f.get("times", 1) > 1:                             # 2.113.0: one row per seller
+            when = f"listed {f['times']}× · {when}" if when else f"listed {f['times']}×"
         if when:
             tk.Label(top, text=when, bg=P["bg"], fg=P["muted"], font=(body, 9)).pack(side="right")
         mods = [t for _tier, t, k in f.get("mods") or [] if k not in ("implicit", "enchant", "rune")]

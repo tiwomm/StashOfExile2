@@ -189,7 +189,8 @@ def listing_facts(e):
                                                  for x in it.get("pseudoMods") or []],
             "note": _clean(it.get("note")) if it.get("note") else "",
             "price": (price.get("amount"), price.get("currency")) if price.get("amount") is not None else None,
-            "seller": ((lst.get("account") or {}).get("name") or ""), "ts": ts, "id": (e or {}).get("id")}
+            "seller": ((lst.get("account") or {}).get("name") or ""), "ts": ts, "id": (e or {}).get("id"),
+            "times": int((e or {}).get("_times") or 1)}           # 2.113.0: the seller listed it this many times
 
 
 
@@ -765,8 +766,8 @@ class PriceCheckPage:
                                font=(_th.head_font(), 11, "bold"), anchor="n", width=side - 20, tags=("pcprice",))
             else:
                 cv.create_text(px, py + 18, text="no price", fill=C["muted"], font=font, anchor="n")
-            cv.create_text(px, py + 60, text=f["seller"], fill=C["text"], font=("Segoe UI", 9, "bold"),
-                           width=side - 16, anchor="n")
+            cv.create_text(px, py + 60, text=f["seller"] + (f"\nlisted {f['times']} times" if f.get("times", 1) > 1 else ""),
+                           fill=C["text"], font=("Segoe UI", 9, "bold"), width=side - 16, anchor="n", justify="center")
             if f["ts"]:
                 cv.create_text(px, py + 78, text="listed " + ago(f["ts"]), fill=C["muted"], font=("Segoe UI", 8),
                                anchor="n")
