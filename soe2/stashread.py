@@ -257,7 +257,7 @@ def read_tab(bgr, game_h, want):
     if spot["tab"] != want:                       # close call: redo the spot for the tab you named
         spot = locate(bgr, game_h, tabs=(want,))
     k, ox, oy = spot["k"], spot["x"], spot["y"]
-    items, unread = [], []
+    items, unread, icons = [], [], {}
     for name, (x, y, w, h) in TABS[want]["slots"]:
         r = (ox + round(x * k), oy + round(y * k), round(w * k), round(h * k))
         if not filled(bgr, r):
@@ -270,7 +270,71 @@ def read_tab(bgr, game_h, want):
             items.append((name, n))
         else:
             unread.append(name)
-    return {"ok": True, "tab": want, "seen": want, "items": items, "unread": unread, "why": ""}
+        icons[name] = _icon(bgr, r)
+    # 2.114.3 (feedback: "it didn't count the divs in the wildcard slot, the 1193"): a wildcard slot holds anything -
+    # what it holds is told by its picture, matched with the tab's own fixed slots in the same shot (Divine Orb's
+    # overflow looks just like the Divine Orb slot); the rest are kept for the end of the scan (match_wild: every
+    # tab read). The pictures stay in memory only.
+    wild = []
+    for x, y, w, h in TABS[want].get("wild") or ():
+        r = (ox + round(x * k), oy + round(y * k), round(w * k), round(h * k))
+        if not filled(bgr, r):
+            continue
+        n = read_number(bgr, r, k)
+        ic = _icon(bgr, r)
+        name, _sc = _same_item(ic, icons)
+        if n and name is not None:
+            items.append((name, n))
+        else:
+            wild.append((n, ic))
+    return {"ok": True, "tab": want, "seen": want, "items": items, "unread": unread, "why": "",
+            "icons": icons, "wild": wild}
+
+
+def match_wild(wild, icons):
+    """Wildcard slots their own tab didn't match -> ([(name, count)], how many still unknown), matched with every
+    tab read in the scan."""
+    got, unknown = [], 0
+    for n, ic in wild:
+        name, _sc = _same_item(ic, icons)
+        if n and name is not None:
+            got.append((name, n))
+        else:
+            unknown += 1
+    return got, unknown
+
+
+WILD_MATCH = 0.75       # 2.114.3: a wildcard's picture must look this much like a fixed slot's (and clearly most)
+
+
+def _icon(bgr, rect):
+    """A slot's picture without its number (the top third) - small, in colour, for matching."""
+    cv2, np = _np()
+    x, y, w, h = rect
+    sub = bgr[y + h // 3:y + h - max(2, h // 12), x + max(2, w // 12):x + w - max(2, w // 12)]
+    if sub.size == 0:
+        return None
+    return cv2.resize(sub, (40, 26), interpolation=cv2.INTER_AREA).astype(np.float32)
+
+
+def _same_item(icon, icons):
+    """-> (the fixed slot's name it looks like, score) or (None, score). The other slot's middle is slid a few pixels
+    over this one's picture (slots never line up to the pixel)."""
+    cv2, np = _np()
+    if icon is None:
+        return None, 0.0
+    scores = []
+    for name, ic in icons.items():
+        if ic is None:
+            continue
+        v = float(cv2.matchTemplate(icon, ic[3:-3, 4:-4], cv2.TM_CCOEFF_NORMED).max())
+        scores.append((v, name))
+    if not scores:
+        return None, 0.0
+    scores.sort(reverse=True)
+    best = scores[0]
+    lead = best[0] - (scores[1][0] if len(scores) > 1 else 0.0)
+    return (best[1], best[0]) if best[0] >= WILD_MATCH and lead >= 0.05 else (None, best[0])
 
 
 def grab_bgr(rect):
