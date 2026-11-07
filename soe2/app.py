@@ -3096,8 +3096,10 @@ class App(GearBookPage, PriceCheckPage, PricePopup, FavoritesPage, BoardModPage,
 
     def ignore_clip(self, text, secs=3.0):
         """The app itself is about to put this on the clipboard: don't treat it as your copy (called from any thread)."""
-        self._clip_ignore = {t: u for t, u in getattr(self, "_clip_ignore", {}).items() if u > time.time()}
-        self._clip_ignore[text] = time.time() + secs
+        now = time.time()               # (2.117.0: built whole, then swapped in - another thread may be reading it)
+        keep = {t: u for t, u in dict(getattr(self, "_clip_ignore", {})).items() if u > now}
+        keep[text] = now + secs
+        self._clip_ignore = keep
 
     def _clip_ignored(self, text):
         return getattr(self, "_clip_ignore", {}).get(text, 0) > time.time()
@@ -3475,6 +3477,30 @@ class App(GearBookPage, PriceCheckPage, PricePopup, FavoritesPage, BoardModPage,
             self.cat_refresh()                                # counts in the Category box
         self.engine.add(1, "resolve", rid)
         return rid
+
+    # 2.117.0: the one way back to the window from a background thread - Tk isn't thread-safe, so a worker never
+    # touches a widget (or calls root.after): it queues the call and poll_events runs it on the window's thread.
+    def on_ui(self, fn, *args):
+        """(any thread) Run fn(*args) on the window's thread, soon."""
+        self.ui_q.put(("call", fn, args))
+
+    def ev_call(self, fn, args):
+        fn(*args)
+
+    def run_bg(self, work, done):
+        """work() on a background thread, then done(result) on the window's thread. mm_sync (tests): both now.
+        An error in work() goes to the app's log and done isn't called (as before)."""
+        if getattr(self, "mm_sync", False):
+            return done(work())
+
+        def go():
+            try:
+                r = work()
+            except Exception:
+                self.log_error("a background job")
+                return
+            self.on_ui(done, r)
+        threading.Thread(target=go, daemon=True).start()
 
     def poll_events(self):
         try:

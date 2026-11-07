@@ -134,9 +134,7 @@ class BoardModPage:
 
     def _bm_bg(self, work, done):
         """Network off the window thread (mm_sync = do it now, for tests)."""
-        if getattr(self, "mm_sync", False):
-            return done(work())
-        threading.Thread(target=lambda: (lambda r: self.root.after(0, lambda: done(r)))(work()), daemon=True).start()
+        self.run_bg(work, done)
 
     def bm_next_rename(self):
         nxt = (B.signed_in() or {}).get("next_rename") or 0

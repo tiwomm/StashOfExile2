@@ -904,9 +904,7 @@ class MoneyMakersPage:
 
     # ---------------- the board (network work off the main thread; mm_sync = do it now, for tests)
     def _mm_bg(self, work, done):
-        if getattr(self, "mm_sync", False):
-            return done(work())
-        threading.Thread(target=lambda: (lambda r: self.root.after(0, lambda: done(r)))(work()), daemon=True).start()
+        self.run_bg(work, done)                     # (2.117.0: done runs on the window's thread via the queue)
 
     def mm_refresh(self):
         self.mm_check_live(force=True)
@@ -1210,10 +1208,7 @@ class MoneyMakersPage:
         if force:
             self.mm_live_lbl.config(text="Checking GitHub…", fg=C["muted"])
 
-        def work():
-            res = MM.fetch_live(force=force)
-            self.root.after(0, lambda: self.mm_live_done(res, force))
-        threading.Thread(target=work, daemon=True).start()
+        self.run_bg(lambda: MM.fetch_live(force=force), lambda res: self.mm_live_done(res, force))
 
     def mm_live_done(self, res, force):
         self._mm_checking = False
