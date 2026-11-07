@@ -12,7 +12,6 @@ To add a tab (ROADMAP: Ritual, Expedition, Essence, Fragment, Socketables):
   4. Add the tab to TABS and ORDER. Sub-pages (Breach: Catalysts | Wombgifts) are their own entry; say in "page"
      which button must be lit.
 Pending tabs and what each needs:
-  fragment    - map fragments, splinters, keys
   socketables - runes, soul cores, talismans (may be several pages)"""
 
 PANEL = 847            # the panel's inside at 1440p (it's square)
@@ -80,7 +79,7 @@ _CAT = ("Flesh", "Neural", "Adaptive", "Uul-Netol's", "Xoph's", "Tul's", "Esh's"
         "Sibilant", "Skittering", "Necrotic")
 BREACH = []
 BREACH += _row(140, (348, 438), ("Breach Splinter", "Breachstone"))
-BREACH += [("Breachlord's Sac", (358, 231, 136, 136))]
+BREACH += [("Breachlord Sac", (358, 231, 136, 136))]     # (2.114.2: the game's name - was "Breachlord's Sac")
 for _y, _p in ((416, ""), (623, "Refined ")):
     BREACH += _row(_y, (168, 258, 348, 438, 528, 618), [f"{_p}{c} Catalyst" for c in _CAT[:6]])
     BREACH += _row(_y + 90, (123, 213, 303, 393, 483, 573, 663), [f"{_p}{c} Catalyst" for c in _CAT[6:]])
@@ -145,6 +144,18 @@ for _i, _y in enumerate((26, 107, 188, 269, 350, 431, 512, 593, 674, 755)):
     if _i < len(_ESS_R):
         ESSENCE += [(n, (x, _y, E, E)) for x, n in zip((524, 596, 668, 744), _ess(_ESS_R[_i]))]
 
+# 2.114.2 (the user's Fragments tab › Fragments page, every slot named). Many of these also have a slot in their
+# own tab (Breach, Delirium, Abyss, Expedition, Ritual): a scan adds up what each tab holds.
+FRAGMENTS = []
+FRAGMENTS += _row(148, (306, 387, 468), ("Ancient Crisis Fragment", "Weathered Crisis Fragment", "Faded Crisis Fragment"))
+FRAGMENTS += _row(265, (91, 181, 387), ("Breach Splinter", "Breachstone", "Origin Spark"))
+FRAGMENTS += [("Shattered Triskelion", (602, 193, 140, 140)), ("Breachlord Sac", (101, 355, 140, 140)),
+              ("Origin Cradle", (351, 356, 140, 140)), ("The Triskelion Reforged", (602, 355, 140, 140))]
+FRAGMENTS += [("An Audience with the King", (54, 560, 70, 70)), ("Head of the King", (144, 560, 140, 70))]
+FRAGMENTS += _row(560, (305, 422, 512, 602, 719), ("Call of the Shadows", "Simulacrum Splinter", "Simulacrum",
+                                                  "Raven's Reflection", "Kulemak's Invitation"))
+FRAGMENTS += _row(695, (306, 387, 468), ("Deadly Fate", "Cowardly Fate", "Victorious Fate"))
+
 TABS = {
     "currency": {"label": "Currency", "slots": CURRENCY},
     "abyss": {"label": "Abyss", "slots": ABYSS},
@@ -153,5 +164,6 @@ TABS = {
     "expedition": {"label": "Expedition", "slots": EXPEDITION},
     "ritual": {"label": "Ritual", "slots": RITUAL},
     "essence": {"label": "Essence", "slots": ESSENCE},
+    "fragments": {"label": "Fragments", "page": "Fragments", "slots": FRAGMENTS},
 }
-ORDER = ("currency", "abyss", "delirium", "breach", "expedition", "ritual", "essence")
+ORDER = ("currency", "abyss", "delirium", "breach", "expedition", "ritual", "essence", "fragments")

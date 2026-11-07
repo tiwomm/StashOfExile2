@@ -34,6 +34,11 @@ VERSION HISTORY
        stashread: a tab's edge match is weighed by how many of its slots hold something there (locate - Essence's
        dense grid matched every panel a little and took Expedition); white strokes must be neutral white (feature - a
        Perfect essence's pink glow read as ink); a near-tie between runs can prefer the longer (TIE, 0 for now).
+       And Fragments › Fragments (20 slots: crisis fragments, splinters, breachstone, Origin Spark / Cradle, the
+       Triskelions, the King's items, Simulacrum, Raven's Reflection, Kulemak's Invitation, the three Fates). Items
+       that also have a slot in their own tab are added up on Save (stash_scan_save), not overwritten. A slot whose
+       item hides its backing (Weathered Crisis Fragment) still counts with a clear number (read_number sure=SURE).
+       Breach's sac slot uses the game's name, "Breachlord Sac".
   2.114.1
        Wombgifts (feedback: "use trade site for the 5 types of wombgifts, they do exist"): gear.type_only_item -
        TYPE_ONLY_CLASSES ("Wombgifts") items are a price-check item searched by their type alone, as the site's own
