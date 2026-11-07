@@ -6022,6 +6022,11 @@ def _splash_step(text=None, i=None):
 def main():
     if FROZEN and sys.platform == "win32":                # 2.29.1: remove what an update left behind
         threading.Thread(target=cleanup_update, args=(APP_DIR,), daemon=True).start()
+    try:
+        from .fonts import load as _load_fonts           # 2.110.0: the overlay styles' bundled fonts (this app only)
+        _load_fonts()
+    except Exception:
+        pass
     root = tk.Tk(className="StashOfExile2")      # 2.10.0: window managers (Hyprland) see class "Stashofexile2"
     if SETTINGS.get("splash", True):
         try:

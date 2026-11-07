@@ -21,9 +21,12 @@ from tkinter import font as tkfont
 
 from .overlaywin import CanvasText, OverlayWindow, _P
 
+from .ovskins import NAMES as _ORN_NAMES, ORNATE, palette as _ornate_palette
+
 STYLES = {"classic": "Classic (stone and bronze)", "hairline": "Hairline", "slate": "Slate", "flanks": "Flanks",
           "micro": "Micro"}
-LIGHT = ("hairline", "slate", "flanks", "micro")
+STYLES.update(_ORN_NAMES)                                    # 2.110.0: Herald, Gilded, Warbanner, Verdant, Gloom
+LIGHT = ("hairline", "slate", "flanks", "micro") + ORNATE
 BOXLESS = ("hairline", "flanks")
 KEY = "#010101"                    # a box-less look's see-through colour (never used for anything that shows)
 WARN = "#e0a352"
@@ -66,6 +69,8 @@ def palette(style, cid, boxed=False):
     """The colours, font and shape of a light look. "theme" takes the app theme's (a light theme's dark text can't
     be read over the game without a box, so the box-less styles use Exile Gold then)."""
     from .overlaywin import theme_palette
+    if style in ORNATE:                                      # 2.110.0: its own colours (Colours doesn't apply)
+        return _ornate_palette(style)
     c = COLORS.get(cid) or COLORS[DEFAULT_COLORS]
     if cid == "theme":
         b = theme_palette()
@@ -271,18 +276,18 @@ class LightOverlay:
         name = "Ritual 3/3" if k == "ritual" else chip_name(k)
         if style == "micro":
             return max(self._u(22), f.measure("3/3") + self._u(8))
-        if style == "slate":
+        if style == "slate" or style in ORNATE:
             return f.measure(name) + 2 * self._u(9)
         return self._lt_fm(cv, P, size, family="Segoe UI Symbol").measure("◆") + self._u(4) + f.measure(name)
 
-    def _lt_chip(self, cv, P, k, x, y0, y1, style, size=9, mark="under"):
+    def _lt_chip(self, cv, P, k, x, y0, y1, style, size=9, mark="under", width=None):
         """One switch from x, between y0 and y1 (click switches it; hover says what it does). Each style shows on
         / off its own way: ◆ / ◇ (hairline, flanks), an accent underline or left bar (slate), a filled square
         (micro). -> its width."""
         from .merged_page import chip_name
         tag = f"mgcell_{k}"
         mid = (y0 + y1) // 2
-        cw = self._lt_chip_w(cv, P, k, style, size)
+        cw = width or self._lt_chip_w(cv, P, k, style, size)
         f = (P["font"], self._hf(size))
         if style in ("hairline", "flanks"):
             dot = cv.create_text(x, mid, text=P["off_icon"], anchor="w", fill=P["off"],
@@ -305,6 +310,22 @@ class LightOverlay:
             def relit(d=d, lit=lit):
                 on = cv.itemcget(d.item, "text") == P["on_icon"]
                 cv.itemconfigure(lit, state="normal" if on else "hidden", fill=cv.itemcget(d.item, "fill") or P["on"])
+            d.on_change = relit
+        elif style in ORNATE:                               # 2.110.0: a tab, filled when on (ovskins.py)
+            g = self._u(1) if width else 0                  # (a grid of tabs: a hairline apart)
+            box = cv.create_rectangle(x + 1, y0 + g, x + cw - 1, y1 - g, fill=P["off_bg"], outline=P["line"],
+                                      tags=("mg", tag))
+            dot = cv.create_text(x, mid, text=P["off_icon"], state="hidden", tags=("mg", tag))
+            lab = cv.create_text(x + cw // 2, mid, text=chip_name(k), anchor="center", fill=P["off_fg"], font=f,
+                                 tags=("mg", tag))
+            d = CanvasText(cv, dot, P["bg"])
+            ghost = cv.create_text(x, mid, text="", state="hidden", tags=("mg", tag))   # the tab paints its own label
+            lt = CanvasText(cv, ghost, P["bg"])
+
+            def relit(d=d, box=box, lab=lab):
+                on = cv.itemcget(d.item, "text") == P["on_icon"]
+                cv.itemconfigure(box, fill=P["on_bg"] if on else P["off_bg"], outline=P["accent"] if on else P["line"])
+                cv.itemconfigure(lab, fill=P["on_fg"] if on else P["off_fg"])
             d.on_change = relit
         else:                                                # micro: a lettered square
             sq = cv.create_rectangle(x, y0, x + cw, y1, fill=P["bg"], outline=P["line"], tags=("mg", tag))
@@ -334,17 +355,19 @@ class LightOverlay:
         rh = rh or self._u(18)
         gap = self._u(12)
         colw = max([self._lt_chip_w(cv, P, k, style, size) for k in chips] or [0])
-        if style == "slate":
+        if style == "slate" or style in ORNATE:
             colw = (x1 - x0) // 2
             gap = 0
         for i, k in enumerate(chips):
             col, row = i % 2, i // 2
             if right:
                 cx = x1 - (2 - col) * colw - (1 - col) * gap
-                cx = cx + colw - self._lt_chip_w(cv, P, k, style, size) if style != "slate" else cx
+                cx = cx + colw - self._lt_chip_w(cv, P, k, style, size) if style != "slate" and style not in ORNATE \
+                    else cx
             else:
                 cx = x0 + col * (colw + gap)
-            self._lt_chip(cv, P, k, cx, y + row * rh, y + (row + 1) * rh, style, size, mark=mark)
+            self._lt_chip(cv, P, k, cx, y + row * rh, y + (row + 1) * rh, style, size, mark=mark,
+                          width=colw - self._u(4) if style in ORNATE else None)
         return y + ((len(chips) + 1) // 2) * rh
 
     def _lt_chip_grid_w(self, cv, P, style, size=9):
@@ -404,7 +427,8 @@ class LightOverlay:
             cv = w.canvas_body()
             if not cfg.get("mlocked"):
                 w.draggable(cv)
-            draw = getattr(self, f"_lt_{style}_{'bar' if bar else 'panel'}")
+            kind = "ornate" if style in ORNATE else style
+            draw = getattr(self, f"_lt_{kind}_{'bar' if bar else 'panel'}")
             W, H = draw(w, cv, P, want, spot, piece)
             cv.configure(width=W, height=H)
             if bar:
@@ -459,12 +483,13 @@ class LightOverlay:
         at 16:9): the switches and menus on top, the numbers, clock, lock and ⚙ under them."""
         from .merged_page import _MapPart, _PartOf
         u = self._u
-        slate = style == "slate"
+        slate = style == "slate" or style in ORNATE
+        ornate = style in ORNATE
         cfg, ln = self.tracker_cfg(), self.tracker_cfg()["lines"]
         fm = self._lt_fm(cv, P, 10)
         pad, sw = u(10), u(20)                              # (sw: a separator's slot)
         chips = self.bar_chips() if want["helpers"] else []
-        cgap = 0 if slate else u(12)
+        cgap = u(3) if ornate else (0 if slate else u(12))
         chips_w = sum(self._lt_chip_w(cv, P, k, style) for k in chips) + cgap * max(0, len(chips) - 1)
         menus_w = self._lt_menus_w(cv, P) if self.bar_buttons_on() else 0
         clock = want["timer"] and cfg.get("clock", True)
@@ -496,7 +521,8 @@ class LightOverlay:
         def draw_chips(x_right, y0, y1, mid):
             cx = x_right - chips_w
             for k in chips:
-                cx += self._lt_chip(cv, P, k, cx, y0 if slate else mid - u(9), y1 if slate else mid + u(9), style) + cgap
+                top, bot = (mid - u(9), mid + u(9)) if (ornate or not slate) else (y0, y1)
+                cx += self._lt_chip(cv, P, k, cx, top, bot, style) + cgap
             return x_right - chips_w
         # ---- the right end of the (bottom) row: lock, ⚙, the clock; in one row also the menus and switches
         x = self._lt_glyphs(w, cv, P, W - pad, m2)
@@ -570,6 +596,11 @@ class LightOverlay:
 
     def _lt_slate_bar(self, w, cv, P, want, spot, piece):
         return self._lt_row(w, cv, P, want, spot[2], "slate")
+
+    def _lt_ornate_bar(self, w, cv, P, want, spot, piece):
+        """2.110.0: Herald, Gilded, Warbanner, Verdant, Gloom - the Slate row in the skin's colours, fonts and tabs
+        (the frame, its inner line and the corner marks come from the window: overlaywin)."""
+        return self._lt_row(w, cv, P, want, spot[2], P["skin"])
 
     def _lt_flanks_bar(self, w, cv, P, want, spot, piece):
         """Flanks: "left" = the numbers (right of the life orb), "right" = the switches, menus, clock, lock and ⚙
@@ -730,7 +761,10 @@ class LightOverlay:
             self._lt_menus(w, cv, P, R, fy)
         return PW, fy + u(10)
 
-    def _lt_slate_panel(self, w, cv, P, want, spot, piece):
+    def _lt_ornate_panel(self, w, cv, P, want, spot, piece):
+        return self._lt_slate_panel(w, cv, P, want, spot, piece, style=P["skin"])
+
+    def _lt_slate_panel(self, w, cv, P, want, spot, piece, style="slate"):
         """Slate Panel: a SESSION header (clock, lock, ⚙ on the right), the time / Map / Maps / Avg in a 2 x 2 grid,
         where you are and the rank, the switches in two columns (an accent bar on the left when on), the menus."""
         from .merged_page import _Num
@@ -774,7 +808,8 @@ class LightOverlay:
         if want["helpers"]:
             y += u(2)
             cv.create_line(0, y, PW, y, fill=P["line"], tags=("mg",))
-            y = self._lt_chip_grid(cv, P, 0, PW, y + 1, "slate", rh=u(24), mark="left")
+            y = self._lt_chip_grid(cv, P, u(4) if style != "slate" else 0, PW - (u(4) if style != "slate" else 0),
+                                   y + 1, style, rh=u(24), mark="left")
         if self.bar_buttons_on():
             cv.create_line(0, y, PW, y, fill=P["line"], tags=("mg",))
             self._lt_menus(w, cv, P, pad, y + u(12), anchor="w")
