@@ -6,6 +6,7 @@ import threading
 import time
 import tkinter as tk
 
+from . import buglog
 from . import remnant as RM
 from . import wellsouls as W
 from .config import save_json, SETTINGS
@@ -279,7 +280,7 @@ class WellSoulsPage:
                 click_through(w)
                 force_topmost(w)
             except Exception:
-                pass
+                buglog.caught()
             no_capture(w)
             wins.append(w)
         self.ws_wins = wins or None

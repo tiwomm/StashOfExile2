@@ -7,6 +7,10 @@ Everything that goes wrong lands in app_log.txt in the data folder, one entry ea
   * freeze  - the app stopped responding (hang_report.txt)
   * slow    - a theme change slower than 1.5 s (slow_report.txt)
   * net     - the trade site / poe.ninja said no (an HTTP error, a rate limit)
+  * caught  - (2.117.0) a problem the app stepped over on purpose (`except Exception` that carries on): where in
+              the code and the error's type only - never its message. Once per place per run, at most CAUGHT_MAX a
+              run, not in the "this week" counts, and Report a bug sends them only after everything else fits.
+  * debug   - (2.116.0) Developer options › Debug mode only
 Uncaught errors anywhere - the main thread, a background thread, a Tk callback - come here too (install()).
 
 Privacy, the same for every entry: scrubbed (privacy.scrub_names - your Windows user name, account and character
@@ -23,7 +27,10 @@ import traceback
 LIMIT = 512 * 1024              # app_log.txt over this: it moves to app_log.old.txt and a new one starts
 REPEAT = 30.0                   # the same error again within this many seconds: written once
 SEND_MAX = 12000                # the most Report a bug adds (the board takes 20,000 characters in all)
-KINDS = ("error", "crash", "freeze", "slow", "net", "debug")
+KINDS = ("error", "crash", "freeze", "slow", "net", "caught", "debug")
+QUIET = ("caught", "debug")     # not in counts() - background detail, not things that went wrong for you
+CAUGHT_MAX = 100                # caught entries a run (after this: one "and more" line)
+_CAUGHT = set()
 STATS = {"requests": 0, "slow_requests": 0}     # 2.116.0: Debug mode's status-bar line (this run only)
 _LOCK = threading.Lock()
 _SEEN = {}
@@ -76,6 +83,35 @@ def record(kind, where, detail="", exc=None):
         return True
     except Exception:
         return False
+
+
+def _name(path):
+    return re.split(r"[\\/]", path or "?")[-1]
+
+
+def caught():
+    """Call in an `except Exception:` that carries on (instead of `pass`): writes where it was and the error's type,
+    once per code place per run. Fast after the first time (a set lookup) and never raises - safe in loops and
+    timers. No message, no values: an error's text can hold an item or a name."""
+    try:
+        f = sys._getframe(1)
+        place = (f.f_code.co_filename, f.f_lineno)
+        if place in _CAUGHT:
+            return
+        _CAUGHT.add(place)
+        n = len(_CAUGHT)
+        if n > CAUGHT_MAX + 1:
+            return
+        if n == CAUGHT_MAX + 1:
+            record("caught", f"more than {CAUGHT_MAX} places this run - the rest not written")
+            return
+        t, v, tb = sys.exc_info()
+        frames = traceback.extract_tb(tb)[-4:] if tb is not None else []
+        where = f"{_name(place[0])}:{f.f_code.co_name}:{place[1]}"
+        detail = "\n".join(f"  {_name(fr.filename)}:{fr.name}:{fr.lineno}" for fr in frames)
+        record("caught", where, detail=(t.__name__ if t else "?") + ("\n" + detail if detail else ""))
+    except Exception:
+        return
 
 
 def debug_on():
@@ -141,8 +177,8 @@ def _read(name, limit=None):
         return ""
 
 
-def counts(days=7):
-    """{kind: how many} in the last `days` days (for the Report a bug form's line)."""
+def counts(days=7, quiet=False):
+    """{kind: how many} in the last `days` days (for the Report a bug form's line). quiet: count QUIET kinds too."""
     cut = time.time() - days * 86400
     n = {}
     for h, _b in entries(_read("app_log.txt")):
@@ -154,7 +190,8 @@ def counts(days=7):
                 continue
         except ValueError:
             continue
-        n[m.group(2)] = n.get(m.group(2), 0) + 1
+        if quiet or m.group(2) not in QUIET:
+            n[m.group(2)] = n.get(m.group(2), 0) + 1
     return n
 
 
@@ -176,12 +213,16 @@ def diagnostics(limit=SEND_MAX):
     log = entries(_read("app_log.txt", 200000))
     room = limit - sum(len(p) for p in parts) - 200
     keep = []
-    for h, b in reversed(log):
-        e = clean(h + ("\n" + b if b else ""))
-        if len(e) + 1 > room:
-            break
-        keep.append(e)
-        room -= len(e) + 1
+    # 2.117.0: what went wrong first, newest first; then the caught / debug detail while there's room
+    loud = [(h, b) for h, b in log if not any(f"[{q}]" in h for q in QUIET)]
+    quiet = [(h, b) for h, b in log if any(f"[{q}]" in h for q in QUIET)]
+    for group in (loud, quiet):
+        for h, b in reversed(group):
+            e = clean(h + ("\n" + b if b else ""))
+            if len(e) + 1 > room:
+                break
+            keep.append(e)
+            room -= len(e) + 1
     if keep:
         parts.append(f"**App log** (app_log.txt, the last {len(keep)}, newest first)\n```\n" + "\n".join(keep) + "\n```")
     return "\n\n".join(parts)[:limit] if parts else ""

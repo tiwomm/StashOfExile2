@@ -9,6 +9,7 @@ lock button. Callers put their content in .body and get told when the window was
 import sys
 import tkinter as tk
 
+from . import buglog
 from .style import C
 from .shell import GradientBar, UTIL_TITLE, TITLE_ON, BORDER_OFF
 
@@ -130,7 +131,7 @@ def pal():
         try:
             return f()
         except Exception:
-            pass
+            buglog.caught()
     return theme_palette()
 
 
@@ -339,7 +340,7 @@ class OverlayWindow(tk.Toplevel):
         try:
             self.attributes("-alpha", max(0.15, min(1.0, int(opacity) / 255)))
         except Exception:
-            pass
+            buglog.caught()
 
     def __init__(self, root, title, icon, geo, *, opacity=230, locked=False, body_bg=BODY_BG, min_size=(140, 60),
                  on_close=None, on_lock=None, on_moved=None, drag_body=False, app_colours=False, lockable=True,
@@ -362,7 +363,7 @@ class OverlayWindow(tk.Toplevel):
             self.attributes("-topmost", True)
             self.attributes("-alpha", max(0.15, min(1.0, int(opacity) / 255)))
         except Exception:
-            pass
+            buglog.caught()
         x, y, w, h = geo
         if w is None or h is None:
             self.geometry(f"+{int(x)}+{int(y)}")
@@ -511,7 +512,7 @@ class OverlayWindow(tk.Toplevel):
             if fg and u.GetForegroundWindow() != fg:
                 u.SetForegroundWindow(fg)                     # hand the keyboard straight back
         except Exception:
-            pass
+            buglog.caught()
 
     # ---- title bar buttons
     def _place_btns(self, _e=None):

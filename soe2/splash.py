@@ -8,6 +8,7 @@ import io
 import sys
 import time
 import tkinter as tk
+from . import buglog
 
 BG, PANEL, LINE, TEXT, MUTED = "#090e17", "#0e1522", "#2b3d5f", "#dbe4f2", "#7d8da8"
 W, H = 440, 300
@@ -88,7 +89,7 @@ class Splash:
                 st = ctypes.windll.user32.GetWindowLongW(hwnd, -20)
                 ctypes.windll.user32.SetWindowLongW(hwnd, -20, st | 0x08000000 | 0x00000080)
             except Exception:
-                pass
+                buglog.caught()
         self._animate()
         self.pump()
 
@@ -131,7 +132,7 @@ class Splash:
         try:
             self.step("Ready", i=len(STEPS) - 1)
         except Exception:
-            pass
+            buglog.caught()
         self.closed = True
 
         def fade_out(a=1.0):

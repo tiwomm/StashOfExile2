@@ -10,6 +10,7 @@ import tkinter as tk
 from tkinter import font as tkfont
 from tkinter import ttk
 
+from . import buglog
 from .overlaywin import CanvasText, OverlayWindow, pal
 
 # 2.66.0: one look (the app's theme); the layout says the shape - Minimal moved here from the old Style list
@@ -195,7 +196,7 @@ class _Time(CanvasText):
                         else:
                             cv.coords(item, bb[0], bb[3] + 1)
                 except Exception:
-                    pass
+                    buglog.caught()
             return
         super().config(**kw)
     configure = config
@@ -681,7 +682,7 @@ class MergedOverlay:
             if getattr(self.overlay, "notes", None) is not None and not self.overlay._embedded():
                 self.overlay.hide_notes(remember=False)
         except Exception:
-            pass
+            buglog.caught()
         self.merged_build()
         return None
 

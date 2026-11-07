@@ -5,6 +5,7 @@ Part of StashOfExile2. Split out of the single-file app in 1.37 (see the launche
 import difflib
 import math
 import re
+from . import buglog
 from .config import load_json, P, save_json, SETTINGS
 
 
@@ -154,7 +155,7 @@ def sid_for_line(key):
             if ids:
                 return ids[0]
     except Exception:
-        pass
+        buglog.caught()
     return None
 
 
@@ -510,7 +511,7 @@ def rebuild_community(market=None):
         BOARD_RATED.update(rated_high())
         cand |= set(BOARD_RATED)
     except Exception:
-        pass
+        buglog.caught()
     bad = set()
     try:
         if market is not None:
@@ -523,7 +524,7 @@ def rebuild_community(market=None):
                 if sts and all(st["decided"] and st["tier"] != "high" for st in sts):
                     bad.add(k)                       # your own data has enough listings and says it is NOT valuable
     except Exception:
-        pass
+        buglog.caught()
     COMMUNITY_DISAGREE.clear()
     COMMUNITY_DISAGREE.update(bad)
     COMMUNITY_ACTIVE.clear()
@@ -826,7 +827,7 @@ def option_for(sid, text):
                             continue                # 2.103.4 (feedback): "Has # Charm Slot" = 1 is the one-slot
                         return int(mt["value"])     # wording of a number, not a choice - it takes a Min
     except Exception:
-        pass
+        buglog.caught()
     return None
 
 

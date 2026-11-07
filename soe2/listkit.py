@@ -18,6 +18,7 @@ import tkinter as tk
 from tkinter import ttk
 import webbrowser
 
+from . import buglog
 from .style import C
 
 POE2DB_URL = "https://poe2db.tw/us/Modifiers"
@@ -57,7 +58,7 @@ def restripe(tree):
         try:
             tree._stripe_job = None
         except Exception:
-            pass
+            buglog.caught()
 
 
 def schedule_restripe(tree):

@@ -7,6 +7,7 @@ import sqlite3
 import statistics
 import threading
 import time
+from . import buglog
 from .config import MODBOOK, P, SETTINGS
 from .rates import RATES
 from .mods import HIGH_LIFT, impact_of, LEARNED, MIN_WITH, MIN_WITHOUT, rebuild_community, search_sid, sid_for_line, SIDTEXT, TEXT2SID, vfilter
@@ -27,7 +28,7 @@ def own_marker_prices():
         from .wealth import WEALTH
         out += [(t["amount"], t["currency"]) for t in WEALTH.tabs if t.get("amount")]
     except Exception:
-        pass
+        buglog.caught()
     return list(dict.fromkeys(out))
 
 
@@ -284,7 +285,7 @@ class Market:
                 if self.last_error:
                     f.write(f"\nlast recording problem: {self.last_error}\n")
         except Exception:
-            pass
+            buglog.caught()
 
     def counts(self):
         """(searches recorded, listings stored) for the current league."""
@@ -506,7 +507,7 @@ class Market:
                 if sid not in decided and sid not in new:   # your own data for this league decides first
                     new[sid] = info
         except Exception:
-            pass
+            buglog.caught()
         LEARNED.clear()                                    # in place: other modules hold this dict
         LEARNED.update(new)
         rebuild_community(self)
@@ -583,7 +584,7 @@ class Market:
                 self.db.execute("INSERT INTO preds VALUES (?,?,?,?,?,?)", (time.time(), self.cur(), base, pred, actual, n_comp))
                 self.db.commit()
         except Exception:
-            pass
+            buglog.caught()
 
     def accuracy(self, base=None, tol=0.25, limit=300):
         """-> (checked guesses, how many landed within tol of the real search, median guess/real ratio)."""
@@ -720,10 +721,10 @@ class Market:
                 try:
                     self.db.execute("DELETE FROM sales WHERE sig=?", (sig,))
                 except Exception:
-                    pass
+                    buglog.caught()
                 self.db.commit()
         except Exception:
-            pass
+            buglog.caught()
 
     def sales(self):
         """[(base, name, sold_div, ts)] of this league's sales, newest first."""
@@ -750,7 +751,7 @@ class Market:
                                  est, listed_div))
                 self.db.commit()
         except Exception:
-            pass
+            buglog.caught()
 
     def my_listed(self, base, filt, max_mods):
         """Prices (divines) you yourself listed for items carrying these mods at least at these rolls, this league."""

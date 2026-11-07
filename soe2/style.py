@@ -7,6 +7,8 @@ import re
 import tkinter as tk
 from tkinter import ttk
 
+from . import buglog
+
 
 # ------------------------------------------------------------------ look and feel
 C = {   # Xfire-style steel blue and navy, with orange for actions and gold for money (a nod to the game's UI)
@@ -214,7 +216,7 @@ def _fills_x(w):
         if mgr == "place":
             return bool(w.place_info().get("relwidth"))
     except Exception:
-        pass
+        buglog.caught()
     return False
 
 
@@ -238,7 +240,7 @@ def _rewrap(e):
         try:
             w.configure(wraplength=new)
         except Exception:
-            pass
+            buglog.caught()
 
 
 def center_over(win, parent):
@@ -290,7 +292,7 @@ def responsive(root):
         import tkinter.simpledialog as _sd
         _sd._place_window = _place_dialog
     except Exception:
-        pass
+        buglog.caught()
 
 
 def fit(widget, fn, min_delta=12, delay=150):
@@ -309,14 +311,14 @@ def fit(widget, fn, min_delta=12, delay=150):
             try:
                 widget.after_cancel(st["after"])
             except Exception:
-                pass
+                buglog.caught()
 
         def go():
             st["after"] = None
             try:
                 fn()
             except Exception:
-                pass
+                buglog.caught()
         st["after"] = widget.after(delay, go)
     widget.bind("<Configure>", cfg, add="+")
     return st
@@ -717,7 +719,7 @@ def monitor_rect(root, x, y, full=False):
                 r = mi.rcMonitor if full else mi.rcWork     # 2.50.0: full = the whole screen (the game is
                 return r.left, r.top, r.right, r.bottom         # full screen: windows over it may sit on the taskbar)
         except Exception:
-            pass
+            buglog.caught()
     return 0, 0, root.winfo_screenwidth(), root.winfo_screenheight()
 
 
@@ -746,7 +748,7 @@ class Toast:
             try:
                 self.win.destroy()
             except Exception:
-                pass
+                buglog.caught()
             self.win = None
 
     def show(self, title, lines, color, secs):
@@ -758,7 +760,7 @@ class Toast:
         try:
             w.attributes("-alpha", 0.97)
         except Exception:
-            pass
+            buglog.caught()
         outer = tk.Frame(w, bg=color, padx=2, pady=2)
         outer.pack()
         card = tk.Frame(outer, bg=C["panel"], padx=16, pady=8)
@@ -776,7 +778,7 @@ class Toast:
                 st = ctypes.windll.user32.GetWindowLongW(hwnd, -20)
                 ctypes.windll.user32.SetWindowLongW(hwnd, -20, st | 0x08000000 | 0x00000080)
             except Exception:
-                pass
+                buglog.caught()
         w.deiconify()
         w.bind("<Button-1>", lambda e: self.hide())
         self.win = w
@@ -856,7 +858,7 @@ class Tooltip:
                 P = pal()
                 return P["bg"], P["text"], P.get("edge") or P.get("leather") or C["line"]
         except Exception:
-            pass
+            buglog.caught()
         return C["panel2"], C["text"], C["line"]
 
     def hide(self):
@@ -1312,7 +1314,7 @@ def apply_look(theme=None, accent=THEME_ACCENT, scale=100, root=None):
             base = float(root.tk.call("tk", "scaling"))
             root.tk.call("tk", "scaling", base * scale / 100)
         except Exception:
-            pass
+            buglog.caught()
     return _themes.ST.theme
 
 
@@ -1337,7 +1339,7 @@ def relook(root, theme, accent=THEME_ACCENT):
             try:
                 (s.configure if how == "configure" else s.map)(style, **kw)
             except Exception:
-                pass
+                buglog.caught()
     finally:
         _STYLE_LOG["quiet"] = False
     step(f"theme change to {theme}: self-painted parts")

@@ -9,6 +9,7 @@ import tkinter as tk
 from datetime import datetime
 from tkinter import filedialog, ttk
 
+from . import buglog
 from .config import save_json, SETTINGS
 from .gamelog import find_log, LogReader
 from .overlay import game_active, key_label, parse_key
@@ -70,7 +71,7 @@ class TrackerPage:
                 _CP.cfg()["splits"] = True
                 _CP.save()
             except Exception:
-                pass
+                buglog.caught()
         if not cfg.get("keys_210"):                  # 2.10.0: start / stop and pause get a key (only if you had none)
             cfg["keys_210"] = True
             for k, v in DEFAULT_KEYS.items():
@@ -856,7 +857,7 @@ class TrackerPage:
             if t is not None and t.winfo_exists():
                 t.destroy()
         except Exception:
-            pass
+            buglog.caught()
         self.tk_game_toast = None
 
     def tracker_game_end(self):
@@ -1226,7 +1227,7 @@ class TrackerPage:
             self.root.deiconify()
             self.root.lift()
         except Exception:
-            pass
+            buglog.caught()
 
     # ---------------- hotkeys (fed by the keyboard watcher, on its own thread)
     def tracker_on_key(self, vk, ctrl, alt, shift):

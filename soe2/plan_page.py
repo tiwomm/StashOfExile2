@@ -5,6 +5,7 @@ drawn with the app's theme (chrome sections, Card.* styles), so a theme swap rep
 import tkinter as tk
 from tkinter import ttk
 
+from . import buglog
 from . import focus as F
 from .chrome import section as chrome_section
 from .config import SETTINGS
@@ -320,7 +321,7 @@ class GamePlanPage:
         try:
             self.merged_build()
         except Exception:
-            pass
+            buglog.caught()
 
     def gp_worth(self):
         """2.73.2: not used any more (Wealth doesn't track live) - goals carry the progress you type."""
@@ -851,7 +852,7 @@ class FocusPokes:
                 if not game_active():
                     self.tray.notify(f"{title.title()}: {text.splitlines()[0]}")
             except Exception:
-                pass
+                buglog.caught()
         return w
 
     def focus_answer(self, poke, what):
@@ -868,7 +869,7 @@ class FocusPokes:
                 self.shell.open("plan")
                 self.gp_fill()
             except Exception:
-                pass
+                buglog.caught()
         elif what == "exchange":
             import webbrowser
             from urllib.parse import quote

@@ -10,6 +10,7 @@ import webbrowser
 from datetime import datetime
 from tkinter import messagebox
 from tkinter import ttk
+from . import buglog
 from .config import save_json, SETTINGS
 from .chrome import SectionBar, Viewport, section as chrome_section
 from .util import _amt, _num
@@ -34,7 +35,7 @@ class _MenuItem:
         try:
             self.menu.entryconfigure(self.index, state=state)
         except Exception:
-            pass
+            buglog.caught()
     configure = config
 
 
@@ -536,7 +537,7 @@ class WealthPage:
             WPRICES.ensure(lg)
             WEALTH.snapshot(lg, WPRICES, why)
         except Exception:
-            pass
+            buglog.caught()
         self.ui_q.put(("wealth", "prices"))
 
     def wealth_manual_add(self):
@@ -1272,7 +1273,7 @@ class WealthPage:
                         if bulk.price(league, xid, lambda a, c: RATES.to_div(a, c, league)):
                             got += 1
                     except Exception:
-                        pass
+                        buglog.caught()
                     BULK_TRIED.add(name)
                     self._w_bulk_left = len(todo) - i
                     if i % 5 == 0:                       # (the list fills in as it goes)
@@ -1283,7 +1284,7 @@ class WealthPage:
                 try:                                     # 2.114.3: the total counts them - the snapshot taken before
                     WEALTH.snapshot(league, WPRICES, "prices", replace=True)    # they had prices is replaced
                 except Exception:
-                    pass
+                    buglog.caught()
                 self.ui_q.put(("wealth", "bulk"))
         threading.Thread(target=work, daemon=True).start()
 

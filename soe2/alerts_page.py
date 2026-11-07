@@ -18,6 +18,7 @@ import time
 import tkinter as tk
 from tkinter import ttk
 
+from . import buglog
 from .config import save_json, SETTINGS
 from .gamelog import area_kind as gl_area_kind, find_log, LogReader
 from .style import C, flowify, Tooltip
@@ -58,7 +59,7 @@ def click_through(win):
         h = _hwnd(win)
         u.SetWindowLongW(h, -20, u.GetWindowLongW(h, -20) | 0x80000 | 0x20 | 0x80 | 0x08000000)
     except Exception:
-        pass
+        buglog.caught()
 
 
 def force_topmost(win):
@@ -71,7 +72,7 @@ def force_topmost(win):
                                    ctypes.c_int, ctypes.c_uint]
         u.SetWindowPos(_hwnd(win), ctypes.c_void_p(-1), 0, 0, 0, 0, 0x1 | 0x2 | 0x10)
     except Exception:
-        pass
+        buglog.caught()
 
 
 def game_rect(title="Path of Exile 2"):
@@ -325,7 +326,7 @@ class AlertsPage:
             from .utilities import DELIRIUM
             self.al_rows["delirium"]["sound"].set(bool(DELIRIUM.get_sound()))
         except Exception:
-            pass
+            buglog.caught()
         self.alerts_refresh()
         return box
 
@@ -472,7 +473,7 @@ class AlertsPage:
                 import winsound
                 winsound.MessageBeep(winsound.MB_ICONASTERISK)
             except Exception:
-                pass
+                buglog.caught()
         self.alerts_refresh()
         return w
 
@@ -691,12 +692,12 @@ class AlertsPage:
         try:
             self.tracker_helpers_paint()                           # 2.49.0: the bar stands on its own
         except Exception:
-            pass
+            buglog.caught()
         if getattr(self, "tk_overlay", None) is not None:
             try:
                 self.tracker_overlay_draw(self.tracker_numbers())
             except Exception:
-                pass
+                buglog.caught()
 
     # ================================================================ Breach: following Client.txt
     def breach_start(self):
@@ -814,7 +815,7 @@ class AlertsPage:
                 if not foreground_ok():
                     return
             except Exception:
-                pass
+                buglog.caught()
         self.br_last[level] = now
         if level == "full":
             self.br_last["almost"] = now                     # "almost" right after "full" adds nothing

@@ -6,6 +6,7 @@ flip check stays: it is arithmetic on two prices you type, and makes no requests
 import tkinter as tk
 from tkinter import ttk
 
+from . import buglog
 from . import cxnames as CXN
 from .rates import whole_ratio
 from .style import C, MONO
@@ -73,7 +74,7 @@ class ExchangePage:
                 if n:
                     return n
         except Exception:
-            pass
+            buglog.caught()
         return cid.rsplit("/", 1)[-1].replace("-", " ").title()
 
     # ---- refresh
@@ -89,16 +90,16 @@ class ExchangePage:
                 for part in (WPRICES.parts or {}).values():
                     names.update(part.get("names") or {})
             except Exception:
-                pass
+                buglog.caught()
             for cid in sorted((c for c, v in RATES.table.items() if v), key=lambda c: -(RATES.vol.get(c, 0))):
                 out.append(names.get(cid) or self.cx_name(cid))
         except Exception:
-            pass
+            buglog.caught()
         try:
             CXN.item_name("divine")                            # (loads cxnames.json)
             out += sorted(v for k, v in CXN._NAMES.items() if k != "_loaded" and isinstance(v, str))
         except Exception:
-            pass
+            buglog.caught()
         seen, uniq = set(), []
         for n in out:
             if n and n.lower() not in seen:

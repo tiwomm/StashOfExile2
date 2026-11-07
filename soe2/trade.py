@@ -8,6 +8,7 @@ import statistics
 import threading
 import time
 from datetime import datetime
+from . import buglog
 from .config import AGE_OPTIONS, APP_VERSION, BASE, P, SETTINGS, STATUS_OPTIONS
 from .net import call
 from .rates import RATES
@@ -422,7 +423,7 @@ def verify_listings(rich, mods):
                     for r in rich[:2]:
                         f.write(f"a listing says: {r['mods']}\n")
             except Exception:
-                pass
+                buglog.caught()
         return list(rich), info
     return [r for r, v in zip(rich, verdict) if v != "bad"], info
 

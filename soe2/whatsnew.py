@@ -39,6 +39,13 @@ NEXT = [
 MAX_BIG = 3
 
 NOTES = {
+    "2.117.0": {
+        "big": [],
+        "small": [
+            ("App", "Small problems the app works around are written in its log too (where in the code only), so "
+                    "Report a bug can show what led up to a bigger one."),
+        ],
+    },
     "2.116.0": {
         "big": [
             ("⌨", "Keys and chat commands on one tab", "Settings › Keys has every hotkey and your chat commands with "

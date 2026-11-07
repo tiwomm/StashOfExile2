@@ -10,6 +10,7 @@ import json
 import statistics
 import time
 
+from . import buglog
 from .config import BASE, load_json, save_json
 from .net import call
 
@@ -150,5 +151,5 @@ def catalog(static=None):
                 if names:
                     out.append((typ, names))
     except Exception:
-        pass
+        buglog.caught()
     return out

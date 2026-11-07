@@ -5,6 +5,7 @@ are the Exchange rates table the app already keeps (poe.ninja, once an hour) - n
 GGG ToS: a window on top that only shows numbers; nothing is sent to the game."""
 import tkinter as tk
 
+from . import buglog
 from .config import SETTINGS, save_json
 
 # what most players watch, in this order (poe.ninja ids); the ones the table has are shown
@@ -96,7 +97,7 @@ class OverlayRates:
             try:
                 self.merged_build()                      # (Rates ▾ / ▴ on the bar)
             except Exception:
-                pass
+                buglog.caught()
 
     def ovr_restore(self):
         if self.ovr_cfg()["on"] and self.ovr_cfg()["shown"] and self.ov_enabled():   # 2.92.2: not while disabled
@@ -111,7 +112,7 @@ class OverlayRates:
             try:
                 self.root.after_cancel(job)
             except Exception:
-                pass
+                buglog.caught()
         w, self.ovr_win = getattr(self, "ovr_win", None), None
         if w is not None:
             try:

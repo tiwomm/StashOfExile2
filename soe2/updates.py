@@ -7,6 +7,7 @@ import re
 import requests
 import sys
 
+from . import buglog
 from .config import APP_UA
 
 
@@ -169,7 +170,7 @@ def finish_update(old, me=None, tries=240, wait=0.5, run=None, popen=None, sleep
                 try:
                     run(["taskkill", "/f", "/t", "/im", image], capture_output=True, timeout=10, creationflags=NO_WINDOW)
                 except Exception:
-                    pass
+                    buglog.caught()
             sleep(wait)
     else:
         try:
