@@ -74,6 +74,14 @@ CREDITS = (
     ("hypr-exiled (gfsd3v)", "the idea for the Trade Whisper Watcher - ours is built from scratch, none of its code "
                              "is used.", "https://github.com/gfsd3v/hypr-exiled"),
     ("Path of Building PoE2", "the anoint recipes.", "https://github.com/PathOfBuildingCommunity/PathOfBuilding-PoE2"),
+    ("Cinzel (Natanael Gama)", "a font of the ornate overlay styles. SIL Open Font License.",
+     "https://github.com/NDISCOVER/Cinzel"),
+    ("EB Garamond (Georg Duffner, Octavio Pardo)", "a font of the ornate overlay styles. SIL Open Font License.",
+     "https://github.com/octaviopardo/EBGaramond12"),
+    ("Cormorant (Christian Thalmann)", "the fonts of the Gloom overlay style. SIL Open Font License.",
+     "https://github.com/CatharsisFonts/Cormorant"),
+    ("Marcellus SC (Brian J. Bonislawsky, Astigmatic)", "the font of the Warbanner overlay style. SIL Open Font "
+                                                        "License.", "https://github.com/google/fonts/tree/main/ofl/marcellussc"),
 )
 
 

@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU GPL v3.0 (see LICENSE). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.109.0
+VERSION 2.110.0
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,6 +19,17 @@ VERSION 2.109.0
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.110.0
+       Five ornate overlay styles (wave 1 of 2, from the mockups): Herald (crimson title plates, gilt line, iron
+       tabs), Gilded (white marble, gold leaf, umber text), Warbanner (a heavy gold frame with corner caps, royal-blue
+       bands), Verdant (forest green, aged bronze) and Gloom (smoky slate, pewter, ghost-pale small caps). Each is a
+       skin over the Slate layout (soe2/ovskins.py): Game bar and Panel, every window over the game, scaled to the
+       resolution. They keep their own colours (Colours doesn't apply). Classic stays the default.
+       Fonts bundled (SIL OFL, soe2/fonts): Cinzel, EB Garamond, Cormorant, Marcellus SC - loaded for the app only
+       (Windows: a private font resource; Linux: fontconfig app fonts), never installed (soe2/fonts.py).
+       The bar's switches: Campaign | Focus | Breach | Delirium | Ritual | Expedition, room for new ones after.
+       Avg: (no period). Right-click the cog: Quick settings picks the Style; the Overlay ON | OFF row is gone there
+       (the overlay's own page keeps it).
   2.109.0
        Regex: the option cards are one card with a row of buttons per setting (Rarity, Type, Uses remaining…), the
        way Money Makers' filters look. ★ first, Only ★ and Select valuable are gone (★ still marks valuable mods).
@@ -2555,7 +2566,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.109.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.110.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
