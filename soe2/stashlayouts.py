@@ -13,7 +13,6 @@ To add a tab (ROADMAP: Ritual, Expedition, Essence, Fragment, Socketables):
      which button must be lit.
 Pending tabs and what each needs:
   ritual      - every Ritual omen (none owned yet to sample)
-  expedition  - artifacts, logbooks, coinage
   essence     - every Essence tier (Lesser / normal / Greater / Perfect + the corrupted ones)
   fragment    - map fragments, splinters, keys
   socketables - runes, soul cores, talismans (may be several pages)"""
@@ -89,10 +88,27 @@ for _y, _p in ((416, ""), (623, "Refined ")):
     BREACH += _row(_y + 90, (123, 213, 303, 393, 483, 573, 663), [f"{_p}{c} Catalyst" for c in _CAT[6:]])
 # Wombgifts page: not read (user's call)
 
+# 2.114.2 (the user's Expedition tab, every slot named): Aldur's Saga's slot (74, 255) is left out - it's out of
+# the game for now. The two big slots: Shattered Triskelion and The Triskelion Reforged.
+_ALLOY = ("Runic", "Adaptive", "Protective", "Expansive", "Swift", "Cyclonic", "Prismatic", "Mystic", "Sovereign",
+          "Celestial", "Transcendent")
+EXPEDITION = []
+EXPEDITION += _row(74, (165, 345, 435, 525, 615),
+                   ("Expedition Logbook", "Medved's Saga", "Vorana's Saga", "Uhtred's Saga", "Olroth's Saga"))
+EXPEDITION += [("Shattered Triskelion", (274, 202, 140, 140)), ("The Triskelion Reforged", (435, 202, 140, 140))]
+EXPEDITION += _row(371, (255, 345, 525), ("Verisium", "Exceptional Verisium", "Liquid Verisium"))
+EXPEDITION += _row(461, (255, 345, 435, 525), ("Medved's Crest of the Circle", "Vorana's Crest of the Scythe",
+                                               "Uhtred's Crest of the Chalice", "Olroth's Crest of the Sun"))
+EXPEDITION += _row(560, (120, 210, 300, 390, 480, 570, 660), [a + " Alloy" for a in _ALLOY[:7]])
+EXPEDITION += _row(650, (165, 255, 345, 435, 525, 615), [a + " Alloy" for a in _ALLOY[7:]]
+                   + ["The Runebinder's Alloy", "The Runefather's Alloy"])
+EXPEDITION += _row(749, (255, 345, 435, 525), ("Blazing Flux", "Chilling Flux", "Crackling Flux", "Void Flux"))
+
 TABS = {
     "currency": {"label": "Currency", "slots": CURRENCY},
     "abyss": {"label": "Abyss", "slots": ABYSS},
     "delirium": {"label": "Delirium", "slots": DELIRIUM},
     "breach": {"label": "Breach", "page": "Catalysts", "slots": BREACH},
+    "expedition": {"label": "Expedition", "slots": EXPEDITION},
 }
-ORDER = ("currency", "abyss", "delirium", "breach")
+ORDER = ("currency", "abyss", "delirium", "breach", "expedition")
