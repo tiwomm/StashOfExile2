@@ -40,8 +40,10 @@ NOTES = {
     "2.113.1": {
         "big": [],
         "small": [
-            ("Price checks", "\"Show over the game\" is on the Price Checks page now (top right) - one switch turns the "
-                             "card over the game on or off."),
+            ("Price checks", "\"Show over the game\" is on the Price Checks page now (top right), and in Settings › "
+                             "Price checking - one switch, both places."),
+            ("Expedition", "Island rumours: the middle rumour shows too (read at twice the size, and found even when "
+                           "it's split over two lines)."),
         ],
     },
     "2.113.0": {

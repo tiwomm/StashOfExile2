@@ -100,10 +100,29 @@ class RumoursPage:
         x0, y0, x1, y1 = card
         pad = int((y1 - y0) * 0.1)
         cut = (max(0, x0 - pad), max(0, y0 - pad), min(img.width, x1 + pad), min(img.height, y1 + pad))
-        lines = RM.ocr(img.crop(cut))
+        crop = img.crop(cut)
+        k = 2 if crop.height < 700 else 1             # 2.113.1: the card's handwriting reads better at twice the size
+        if k > 1:
+            crop = crop.resize((crop.width * k, crop.height * k), 3)        # 3 = BICUBIC
+        lines = [(t, tuple(int(v / k) for v in b)) for t, b in RM.ocr(crop)]
+        self._ru_note(lines)
         ox, oy = rect[0] + cut[0], rect[1] + cut[1]
         out = [(r, i, (b[0] + ox, b[1] + oy, b[2] + ox, b[3] + oy)) for r, i, b in RU.rows(lines)]
         return out, (rect[0] + x1, rect[1] + y0, rect[0] + x1, rect[1] + y1)
+
+    def _ru_note(self, lines):
+        """2.113.1: what the reader saw on the last card -> rumours_read.txt in the data folder (the card's own words
+        only - nothing about you; never sent). When a rumour is missed, it shows why."""
+        try:
+            from .config import P
+            with open(P("rumours_read.txt"), "w", encoding="utf-8") as f:
+                f.write(time.strftime("%Y-%m-%d %H:%M:%S") + " - the Uncharted Waters card, as read:\n")
+                for t, _b in lines:
+                    hit = RU.match(t)
+                    f.write(f"  {t!r}" + (f"  -> {hit[1]}" if hit else "") + "\n")
+                f.write("Found: " + ", ".join(i for _r, i, _b in RU.rows(lines)) + "\n")
+        except Exception:
+            pass
 
     def _ru_watch(self, gen):
         from .alerts_page import game_rect

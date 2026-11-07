@@ -21,7 +21,12 @@ VERSION 2.113.1
 VERSION HISTORY
   2.113.1
        Price Checks: a "Show over the game" switch on its header (feedback: it belongs there) - the same switch as
-       Settings › Hotkeys › Price Checks › Show it in a card over the game (pc_pop_var, one BooleanVar for both).
+       Settings › Price checking › Over the game (pc_pop_var, one BooleanVar for both). It left Settings › Hotkeys
+       (feedback: the wrong place).
+       Island rumours (feedback: the middle of three still missing): a rumour no single line matches is looked for in
+       the card's whole text (rumours.rows, WHOLE_MATCH 0.8 - Windows' reader can split one over two lines or join it
+       to the next); the card is read at twice its size; what was read goes to rumours_read.txt (the card's words only,
+       local) so a miss shows why.
   2.113.0
        Price check in a card over the game (a sample; soe2/pcpop.py - Price Checks in the app is unchanged and still
        gets the item). Settings › Hotkeys › Price Checks › "Show it in a card over the game" (off by default): your
