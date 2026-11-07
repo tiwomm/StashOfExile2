@@ -42,6 +42,10 @@ VERSION HISTORY
        done) / App.on_ui(fn, ...): queued, run by poll_events on the window's thread (ev_call). ignore_clip builds its
        list whole before swapping it in (the window's thread reads it). tools/check_threads.py follows every
        threading.Thread target (and the methods it calls, two levels) and fails on a Tk call - run in Checks.
+       app.py split, a part at a time (it was 6,400 lines): Settings - the window, every tab and their handlers (48
+       methods, 1,100 lines) - is soe2/settings_page.py (class SettingsPage, mixed into App like the other pages).
+       Moved as they were; helpers the whole app uses (open_path, restart_app, dlg_parent, league / pace / pause,
+       relook, the title bar) stay in app.py.
   2.116.0
        P10, the Settings page pass. Seven tabs: Hotkeys and Chat commands are one Keys tab - hotkeys first, then a
        Chat commands section with its rows (Go to hideout, then the commands; "+ Add a command" shows the next empty
