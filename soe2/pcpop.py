@@ -232,6 +232,12 @@ class PricePopup:
         if rec.get("changed"):
             lab(inner, "Ticks changed - press Search again.", fg=P["accent"], size=9, pady=(4, 0), **pad)
 
+        # 2.114.0 (feedback: white / magic bases didn't price the same here): the item's own filters, as on the
+        # app's card - base type, item level, quality, sockets (a base's search is these, not its mods)
+        s_ = it.get("search") or {}
+        if it.get("gear") and s_.get("rarity") != "unique" and it.get("rarity") != "Currency":
+            self._pcpop_props(inner, P, rec, it, body, head)
+
         # the mods searched (tick = searched; a click changes it, Search again runs it)
         mods = [m for m in it.get("mods") or [] if m.get("text")]
         if mods:
@@ -371,6 +377,84 @@ class PricePopup:
                 self.pcpop_fill(rec)
         for wdg in (top, arrow, sl, *top.winfo_children()):
             wdg.bind("<Button-1>", flip)
+
+    def _pcpop_props(self, inner, P, rec, it, body, head):
+        """PROPERTIES: [✓] Base type (unticked = any base of its kind), [✓] Item level / Quality / Sockets with
+        Min / Max - the same rec["opts"] the app's card changes (search_opt_set); Enter searches again."""
+        from .searchopts_page import default_opts
+        cur = {**default_opts(it), **(rec.get("opts") or {})}
+        rows = []
+        if it.get("ilvl"):
+            rows.append(("ilvl", f"Item level: {it['ilvl']}", it["ilvl"]))
+        if it.get("quality"):
+            rows.append(("quality", f"Quality: +{it['quality']}%", it["quality"]))
+        if it.get("sockets"):
+            rows.append(("sockets", f"Sockets: {it['sockets']}", it["sockets"]))
+        hr = tk.Frame(inner, bg=P["bg"])
+        hr.pack(fill="x", padx=16, pady=(12, 2))
+        tk.Label(hr, text="PROPERTIES", bg=P["bg"], fg=P["head"], font=(head, 9, "bold")).pack(side="left")
+        if rows:
+            tk.Label(hr, text="Min      Max", bg=P["bg"], fg=P["muted"], font=(body, 9)).pack(side="right")
+
+        def tick_row(on, text, cmd):
+            row = tk.Frame(inner, bg=P["bg"])
+            row.pack(fill="x", padx=16)
+            cb = tk.Label(row, text="☑" if on else "☐", bg=P["bg"], fg=P["accent"] if on else P["muted"],
+                          font=("Segoe UI Symbol", 10), cursor="hand2")
+            cb.pack(side="left", anchor="n")
+            tl = tk.Label(row, text=text, bg=P["bg"], fg=P["text"] if on else P["muted"], font=(body, 10),
+                          anchor="w", cursor="hand2")
+            tl.pack(side="left", fill="x", expand=True, padx=(4, 0))
+            for wdg in (cb, tl):
+                wdg.bind("<Button-1>", lambda e: cmd())
+            return row
+
+        def changed():
+            rec["changed"] = True
+            self.dirty = True
+            self.pcpop_fill(rec)
+
+        same = cur.get("base") == "same"
+        tick_row(same, f"Base type: {it['base']}" if same else f"Any {it.get('class') or 'base'}",
+                 lambda: (self.search_opt_set(rec, "base", "class" if same else "same", redraw=False), changed()))
+        self.pp_props = {}
+        for key, label, have in rows:
+            v = cur.get(key)
+            lo, hi = (v.get("min"), v.get("max")) if isinstance(v, dict) else (v, None)
+            on = v not in (None, "", 0, {})
+            row = tick_row(on, label, lambda k=key, o=on, h=have: (
+                self.search_opt_set(rec, k, None if o else {"min": h}, redraw=False), changed()))
+            boxes = {}
+            for k, val in (("max", hi if on else None), ("min", lo if on else have)):    # (packed from the right)
+                e = tk.Entry(row, width=5, bg=P.get("field", P["bg"]), fg=P["text"], insertbackground=P["text"],
+                             relief="flat", highlightthickness=1, highlightbackground=P["line"],
+                             highlightcolor=P["accent"], justify="center", font=(body, 9),
+                             state="normal" if on else "disabled", disabledbackground=P["bg"],
+                             disabledforeground=P["muted"])
+                e.insert(0, "" if val is None else str(val))
+                e.pack(side="right", padx=(4, 0))
+                boxes[k] = e
+
+            def keep(_e=None, k_=key, b=boxes):
+                vals = {}
+                for k2, e2 in b.items():
+                    t = e2.get().strip()
+                    try:
+                        vals[k2] = int(float(t)) if t else None
+                        e2.config(highlightbackground=P["line"])
+                    except ValueError:
+                        e2.config(highlightbackground=C["red"])
+                        return False
+                vals = {k2: v2 for k2, v2 in vals.items() if v2 is not None}
+                self.search_opt_set(rec, k_, vals or None, redraw=False)
+                rec["changed"] = True
+                self.dirty = True
+                return True
+            for e in boxes.values():
+                e.keep = keep                                 # (tests call it, as on the mods' boxes)
+                e.bind("<KeyRelease>", keep)
+                e.bind("<Return>", lambda _e, kp=keep: (self.reprice([rec["id"]]) if kp() else None, "break")[-1])
+            self.pp_props[key] = boxes
 
     def _pcpop_vals(self, row, P, rec, m, on):
         """Min / Max for one mod, as on the app's card: what the search uses; typing changes it for this item (the same

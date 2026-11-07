@@ -266,10 +266,30 @@ def _merge_same_stat(mods, refs_of):
         del refs_of[i]
 
 
+# 2.114.0 (feedback: "the 5 types of wombgifts ... they do exist" on the trade site): currency-like items that the
+# bulk exchange doesn't trade but the trade site lists as items - searched by their type alone, like the site's own
+# search for one ({"type": "Ornate Wombgift"}).
+TYPE_ONLY_CLASSES = ("Wombgifts",)
+
+
+def type_only_item(g):
+    """A read_item() result of a TYPE_ONLY_CLASSES item -> a price-check item searched by its type, or None."""
+    if not g or g.get("rarity") != "Currency" or g.get("class_text") not in TYPE_ONLY_CLASSES or not g.get("name"):
+        return None
+    search = {"category": None, "type": g["name"], "name": None, "rarity": None, "corrupted": False,
+              "sockets_min": None}
+    return {"class": g["class_text"], "gear": True, "gclass": None, "rarity": "Currency", "name": g["name"],
+            "base": g["name"], "mods": [], "uses": None, "corrupted": False, "quality": 0, "sockets": 0,
+            "ilvl": g.get("ilvl"), "group_id": None, "search": search, "notes": ["searched by its type on the trade site"]}
+
+
 def parse_gear(text):
     """A copied piece of gear -> a price-check item (same shape as a tablet / jewel item, plus "gear": True and the
     search plan), or None if it isn't gear."""
     g = gamedata.read_item(text)
+    t = type_only_item(g)
+    if t:
+        return t
     if not is_gear(g):
         return None
     cls = g["class"]
@@ -556,7 +576,10 @@ def build_query(item, must, optional, count_min, values, plain=False):
         filters["equipment_filters"] = {"filters": eq}
     if mp:
         filters["map_filters"] = {"filters": mp}
-    filters["misc_filters"] = {"filters": {"corrupted": {"option": "true" if s.get("corrupted") else "false"}}}
+    if item.get("rarity") != "Currency":                      # (2.114.0: a Wombgift: its type only)
+        filters["misc_filters"] = {"filters": {"corrupted": {"option": "true" if s.get("corrupted") else "false"}}}
+    else:
+        filters["misc_filters"] = {"filters": {}}
     for k, name in (("fractured", "fractured_item"), ("sanctified", "sanctified")):     # 2.79.0: white / blue bases
         if s.get(k) is False:
             filters["misc_filters"]["filters"][name] = {"option": "false"}
