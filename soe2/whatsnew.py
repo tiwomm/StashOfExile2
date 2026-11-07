@@ -39,6 +39,14 @@ NEXT = [
 MAX_BIG = 3
 
 NOTES = {
+    "2.114.3": {
+        "big": [],
+        "small": [
+            ("App", "If the app ever closes by itself, the next start writes crash_report.txt in the data folder - "
+                    "where in the app's code it was, nothing about you - so the bug can be found. Share it with a bug "
+                    "report if you like."),
+        ],
+    },
     "2.114.2": {
         "big": [],
         "small": [

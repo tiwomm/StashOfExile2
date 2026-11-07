@@ -6163,6 +6163,7 @@ class App(GearBookPage, PriceCheckPage, PricePopup, FavoritesPage, BoardModPage,
 
 
 SPLASH = [None]          # the start-up screen while the app is built (2.0.0)
+CRASHED = [False]        # 2.114.3: the app closed by itself last time (crash_report.txt was written)
 
 
 def look_settings():
@@ -6201,6 +6202,9 @@ def main():
         from .hangwatch import start as _hang_start
         from .config import P as _P
         _hang_start(root, _P("hang_report.txt"), APP_VERSION)
+        from .hangwatch import crash_start as _crash_start   # 2.114.3: closed by itself last time? crash_report.txt
+        if _crash_start(os.path.dirname(_P("hang_report.txt")), APP_VERSION):
+            CRASHED[0] = True
     except Exception:
         pass
     if SETTINGS.get("splash", True):
@@ -6211,5 +6215,10 @@ def main():
             SPLASH[0] = Splash(root, ICON_B64, pretty_version(), SETTINGS.get("league") or "")
         except Exception:
             SPLASH[0] = None
-    App(root)
+    app = App(root)
+    if CRASHED[0]:
+        root.after(6000, lambda: app.app_toast(
+            "The app closed by itself last time. Where it was is in crash_report.txt in the data folder (code "
+            "locations only - nothing about you). Sharing it with the bug report helps fix it.", "Report a bug",
+            kind="warning"))
     root.mainloop()
