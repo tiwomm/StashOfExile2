@@ -536,6 +536,23 @@ class OverlayWindow(tk.Toplevel):
         w = max(c.winfo_width(), int(c.cget("width")))
         mid = self._bar_mid()
         c.delete("title")
+        if P.get("skin"):                                 # 2.110.0: an ornate style (ovskins.py)
+            h = mid * 2
+            grad = P.get("band_grad") or ()
+            if grad:                                      # a lacquered / enamelled band: horizontal strips
+                n = len(grad)
+                for i, col in enumerate(grad):
+                    c.create_rectangle(0, h * i / n, w, h * (i + 1) / n + 1, fill=col, outline="", tags="title")
+                c.create_line(0, 1, w, 1, fill=P["frame2"] or P["line"], tags="title")
+            c.create_line(0, h - 1, w, h - 1, fill=P["frame2"] or P["line"], tags="title")
+            c.create_text(w // 2, mid, text=self._title, fill=P["head"], font=self._tfont, tags="title")
+            if P.get("corners"):
+                corner_marks(c, w, None, P["corners"], top=True)
+            for it in list(self._btns) + [getattr(self, "bar_note_item", None)]:
+                if it is not None:
+                    c.tag_raise(it)
+            self._place_btns()
+            return
         if P.get("plate"):
             from tkinter import font as tkfont
             tw = tkfont.Font(root=c, family=P["font"], size=P["title_size"], weight="bold").measure(self._title)
