@@ -30,6 +30,10 @@ VERSION HISTORY
        its title, resize from any edge - both remembered. The overlay's Style throughout (its scroll bar and buttons
        too). Other sellers' names show as on the app's card; your own account never does. It takes the keyboard
        when you click a box (to type); it never redraws under your typing. Windows and Linux / Hyprland.
+       Island rumours (feedback: only two of three showed; the panel was big and clunky): a rumour read on one line
+       with the card's "Island Rumours" heading now matches (rumours._score: the best stretch of the line); each card
+       is read up to 3 times and what's found is put together (READS); the panel is small, like the Runeshape tips -
+       a title, then a rank badge, the island and the rumour per row.
   2.112.5 (hotfix)
        The Campaign / Focus line: dragging it by its text no longer opens the route card / Game Plan - a click opens
        it only when the press didn't move (merged_page.click_not_drag, also on the bar's Focus text).

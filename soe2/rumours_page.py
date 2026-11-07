@@ -17,6 +17,7 @@ from .config import save_json, SETTINGS
 POLL = 0.6
 MARK_EVERY = 2.0             # seconds between looks for the Expedition mark in a map
 GONE = 2
+READS = 3                 # 2.113.0: each card is read this many times, the rumours found put together
 GRAND = "ExpeditionLogBook_"
 
 
@@ -108,6 +109,7 @@ class RumoursPage:
         from .alerts_page import game_rect
         from .overlay import game_active
         last, misses = None, 0
+        got, reads = {}, 0
         try:
             while gen == getattr(self, "ru_gen", 0):
                 time.sleep(POLL)
@@ -128,9 +130,15 @@ class RumoursPage:
                         continue
                     misses = 0
                     th = RM.thumb(img.crop(card))
-                    if not RM.changed(last, th):
+                    if RM.changed(last, th):        # a new card: start over
+                        got, reads = {}, 0
+                    elif reads >= READS:
                         continue
                     rows, edge = self.ru_read(rect, img)
+                    reads += 1
+                    for r_ in rows:                 # 2.113.0 (feedback: only two of three showed): each card is read
+                        got.setdefault(r_[1], r_)   # up to READS times and what they found is put together
+                    rows = sorted(got.values(), key=lambda r_: r_[2][1])
                     if rows:                    # 2.104.1 (feedback: nothing showed): a card read while it was still
                         last = th               # opening gave no rumours and was never read again - now it's read
                 except RM.OcrUnavailable:       # until its rumours are found
@@ -161,18 +169,19 @@ class RumoursPage:
         self.ru_show(rows, edge)
 
     def ru_show(self, rows, edge):
-        """P4 (2.108.0, feedback: "all of the information in a single panel instead of individual bars"): one panel
-        beside the Uncharted Waters card - each rumour's island and your Map library rank, in the card's order."""
+        """One small panel beside the Uncharted Waters card (2.113.0, feedback: "too big and clunky... more like the
+        rune card helper"): a title, then one tight row per rumour - your Map library rank as a badge, the island,
+        and the rumour in small muted text - in the card's order. Click-through, left out of captures."""
         self.ru_hide()
-        from tkinter import font as tkfont
         from . import maplib
         from .overlaywin import pal
         from .alerts_page import click_through, force_topmost
         from .remnant_page import no_capture
         P = pal()
         mine = maplib.ranks()
-        good = {"S": P.get("warn") or "#ffd25a", "A": P.get("warn") or "#ffd25a", "Avoid": P.get("bad") or "#e06c5a"}
-        line_h = max(14, min(int((rows[0][2][3] - rows[0][2][1]) * 0.75), 28)) if rows else 16
+        line_h = (rows[0][2][3] - rows[0][2][1]) if rows else 20
+        size = -max(10, min(int(line_h * 0.5), 15))       # (the game's text size, a touch smaller - like the tips)
+        body = P.get("body") or P["font"]
         w = tk.Toplevel(self.root)
         w.withdraw()
         w.overrideredirect(True)
@@ -180,22 +189,33 @@ class RumoursPage:
             w.attributes("-topmost", True)
         except tk.TclError:
             pass
-        edge_col = P.get("edge") or P.get("leather") or P["line"]
-        box = tk.Frame(w, bg=P["bg"], highlightthickness=1, highlightbackground=edge_col, padx=8, pady=8)
+        edge_col = P.get("leather") or P.get("edge") or P["line"]
+        box = tk.Frame(w, bg=P["bg"], highlightthickness=max(1, int(P.get("border") or 1)),
+                       highlightbackground=edge_col, padx=8, pady=4)
         box.pack()
-        hf = tkfont.Font(root=w, family="Segoe UI", size=-max(11, line_h - 4), weight="bold")
-        tk.Label(box, text="Island rumours", bg=P["bg"], fg=P["muted"], font=hf, anchor="w").grid(
-            row=0, column=0, columnspan=2, sticky="w", pady=(0, 4))
-        f = tkfont.Font(root=w, family="Segoe UI", size=-line_h, weight="bold")
-        for i, (_r, island, _box) in enumerate(rows, 1):
+        tk.Label(box, text="Island rumours", bg=P["bg"], fg=P["head"], font=(body, size, "bold"), anchor="w").grid(
+            row=0, column=0, columnspan=3, sticky="w")
+        for i, (rumour, island, _b) in enumerate(rows, 1):
             rank = mine.get(island)
-            col = good.get(rank, P["text"] if rank else P["muted"])
-            tk.Label(box, text=island, bg=P["bg"], fg=P["text"], font=f, anchor="w").grid(row=i, column=0, sticky="w")
-            tk.Label(box, text=rank or "not ranked", bg=P["bg"], fg=col, font=f, anchor="e").grid(
-                row=i, column=1, sticky="e", padx=(16, 0))
+            bg, fg = RM.TIER_LOOK.get(rank, ("#2a1012", "#ff8a80") if rank == "Avoid" else (P["bg"], P["muted"]))
+            tk.Label(box, text=(rank or "-") if rank != "Avoid" else "✕", bg=bg, fg=fg, font=(body, size, "bold"),
+                     width=2).grid(row=i, column=0, sticky="w", pady=1)
+            tk.Label(box, text=island, bg=P["bg"], fg=P["text"], font=(body, size), anchor="w").grid(
+                row=i, column=1, sticky="w", padx=(8, 0))
+            tk.Label(box, text=rumour.rstrip(".!"), bg=P["bg"], fg=P["muted"], font=(body, size), anchor="w").grid(
+                row=i, column=2, sticky="w", padx=(8, 0))
+        if any(not mine.get(i) for _r, i, _b in rows):
+            tk.Label(box, text="- = not ranked yet (Map library)", bg=P["bg"], fg=P["muted"], font=(body, size),
+                     anchor="w").grid(row=len(rows) + 1, column=0, columnspan=3, sticky="w", pady=(2, 0))
         w.update_idletasks()
         x = (edge[0] if edge else max(b[2] for _r, _i, b in rows)) + 12
         y = edge[1] if edge else min(b[1] for _r, _i, b in rows)
+        try:
+            from .style import monitor_rect
+            _ml, _mt, mr, _mb = monitor_rect(self.root, int(x), int(y))
+            x = min(x, mr - w.winfo_reqwidth())
+        except Exception:
+            pass
         w.geometry(f"+{int(x)}+{int(y)}")
         w.deiconify()
         try:
