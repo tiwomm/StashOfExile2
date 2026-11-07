@@ -31,6 +31,23 @@ def pop_on():
     return bool(SETTINGS.get("pc_popup", False))
 
 
+def ink(c, bg):
+    """A game colour (rarity, mod kind) made readable on this card: on a light style (Gilded's marble) the light
+    blues / greens / yellows are darkened, same hue, until they reach 4.5 : 1 against it. Dark styles: as is."""
+    from .style import contrast, mix
+    try:
+        if contrast(c, bg) >= 4.5:
+            return c
+        out = c
+        for t in (0.15, 0.3, 0.45, 0.6, 0.75):
+            out = mix(c, "#000000", t)
+            if contrast(out, bg) >= 4.5:
+                return out
+        return out
+    except Exception:
+        return c
+
+
 class PricePopup:
     """Mixin on the App."""
 
@@ -180,7 +197,7 @@ class PricePopup:
             return l_
 
         # the item
-        rcol = C.get(RARITY_COL.get(it.get("rarity"), ""), P["big"])
+        rcol = ink(C.get(RARITY_COL.get(it.get("rarity"), ""), P["big"]), P["bg"])
         name = " ".join(x for x in (it.get("name"), it.get("base")) if x and x != it.get("name") or x == it.get("name")
                         ) if it.get("name") else (it.get("base") or "Item")
         lab(inner, it.get("name") or it.get("base") or "Item", fg=rcol, size=13, bold=True, font=head, pady=(8, 0), **pad)
@@ -190,7 +207,7 @@ class PricePopup:
                 f"quality {it['quality']}%" if it.get("quality") else ""]
         lab(inner, " · ".join(x for x in info if x), fg=P["muted"], size=9, **pad)
         if it.get("corrupted"):
-            lab(inner, "Corrupted", fg=C["red"], size=9, bold=True, **pad)
+            lab(inner, "Corrupted", fg=ink(C["red"], P["bg"]), size=9, bold=True, **pad)
         del name
 
         # the price
@@ -241,7 +258,7 @@ class PricePopup:
                     col = MOD_COL["fractured"]
                 elif "desecrated" in flags:
                     col = MOD_COL["desecrated"]
-                tl = tk.Label(row, text=m.get("shown") or m["text"], bg=P["bg"], fg=col if on or not can else P["muted"],
+                tl = tk.Label(row, text=m.get("shown") or m["text"], bg=P["bg"], fg=ink(col, P["bg"]) if on or not can else P["muted"],
                               font=(body, 10), anchor="w", justify="left", cursor="hand2" if can else "")
                 if can and self._card_has_vals(rec, m):
                     self._pcpop_vals(row, P, rec, m, on)
@@ -325,7 +342,7 @@ class PricePopup:
             sl.pack_forget()
             full = tk.Frame(card, bg=P["bg"])
             full.pack(fill="x", padx=(24, 8), pady=(0, 8))
-            rcol = C.get(RARITY_COL.get(f.get("rarity"), ""), P["text"])
+            rcol = ink(C.get(RARITY_COL.get(f.get("rarity"), ""), P["text"]), P["bg"])
             nm = " ".join(x for x in (f.get("name"), f.get("base")) if x)
             tk.Label(full, text=nm, bg=P["bg"], fg=rcol, font=(head, 10, "bold"), anchor="w").pack(fill="x")
             parts = " · ".join(str(p) for p in (f.get("parts") or []) if p)
@@ -337,11 +354,11 @@ class PricePopup:
                 self.pp_wraps.append(l_)
             for tier, text, kind in f.get("mods") or []:
                 l_ = tk.Label(full, text=(f"{tier}  " if tier else "") + text, bg=P["bg"],
-                              fg=MOD_COL.get(kind, P["text"]), font=(body, 10), anchor="w", justify="left")
+                              fg=ink(MOD_COL.get(kind, P["text"]), P["bg"]), font=(body, 10), anchor="w", justify="left")
                 l_.pack(fill="x")
                 self.pp_wraps.append(l_)
             if f.get("corrupted"):
-                tk.Label(full, text="Corrupted", bg=P["bg"], fg=C["red"], font=(body, 9, "bold"), anchor="w").pack(fill="x")
+                tk.Label(full, text="Corrupted", bg=P["bg"], fg=ink(C["red"], P["bg"]), font=(body, 9, "bold"), anchor="w").pack(fill="x")
             if f.get("note"):
                 l_ = tk.Label(full, text=f["note"], bg=P["bg"], fg=P["muted"], font=(body, 9), anchor="w", justify="left")
                 l_.pack(fill="x")
