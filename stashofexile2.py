@@ -29,6 +29,11 @@ VERSION HISTORY
        Scan stash reads the Ritual tab too (the user's shot, every slot named): stashlayouts.RITUAL - An Audience with
        the King, Head of the King (double wide), Call of the Shadows and 28 omens; its two empty slots held items out
        of the game - left out.
+       And the Essence tab (82 smaller slots, 63 x 63: ten Lesser / normal / Greater / Perfect lines on the left, nine
+       on the right, the six special essences in the middle; the empty big and small middle slots aren't read).
+       stashread: a tab's edge match is weighed by how many of its slots hold something there (locate - Essence's
+       dense grid matched every panel a little and took Expedition); white strokes must be neutral white (feature - a
+       Perfect essence's pink glow read as ink); a near-tie between runs can prefer the longer (TIE, 0 for now).
   2.114.1
        Wombgifts (feedback: "use trade site for the 5 types of wombgifts, they do exist"): gear.type_only_item -
        TYPE_ONLY_CLASSES ("Wombgifts") items are a price-check item searched by their type alone, as the site's own

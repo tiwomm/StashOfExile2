@@ -12,7 +12,6 @@ To add a tab (ROADMAP: Ritual, Expedition, Essence, Fragment, Socketables):
   4. Add the tab to TABS and ORDER. Sub-pages (Breach: Catalysts | Wombgifts) are their own entry; say in "page"
      which button must be lit.
 Pending tabs and what each needs:
-  essence     - every Essence tier (Lesser / normal / Greater / Perfect + the corrupted ones)
   fragment    - map fragments, splinters, keys
   socketables - runes, soul cores, talismans (may be several pages)"""
 
@@ -124,6 +123,28 @@ RITUAL += _row(741, (125, 206, 287, 404, 485, 566, 647),
                [_O + n for n in ("Resurgence", "Amelioration", "Refreshment", "the Hunt", "Answered Prayers",
                                  "Secret Compartments", "Reinforcements")])
 
+# 2.114.2 (the user's Essence tab, every slot named): smaller slots (63 x 63); each line is Lesser, normal, Greater,
+# Perfect. The big slot and the four small ones in the middle aren't read (nothing named there).
+E = 63
+_ESS_L = ("the Body", "the Mind", "Enhancement", "Flames", "Insulation", "Ice", "Thawing", "Electricity", "Grounding",
+          "Ruin")
+_ESS_R = ("Command", "Abrasion", "Sorcery", "Haste", "Alacrity", "Seeking", "Battle", "the Infinite", "Opulence")
+_ESS_MID = (("Essence of Hysteria", "Essence of Horror"), ("Essence of Delirium", "Essence of Insanity"),
+            ("Essence of the Abyss", "Essence of the Breach"))
+
+
+def _ess(n):
+    return [f"{t}Essence of {n}" for t in ("Lesser ", "", "Greater ", "Perfect ")]
+
+
+ESSENCE = []
+for _i, _y in enumerate((26, 107, 188, 269, 350, 431, 512, 593, 674, 755)):
+    ESSENCE += [(n, (x, _y, E, E)) for x, n in zip((43, 115, 187, 264), _ess(_ESS_L[_i]))]
+    if _i >= 7:
+        ESSENCE += [(n, (x, _y + 1, E - 1, E - 1)) for x, n in zip((358, 430), _ESS_MID[_i - 7])]
+    if _i < len(_ESS_R):
+        ESSENCE += [(n, (x, _y, E, E)) for x, n in zip((524, 596, 668, 744), _ess(_ESS_R[_i]))]
+
 TABS = {
     "currency": {"label": "Currency", "slots": CURRENCY},
     "abyss": {"label": "Abyss", "slots": ABYSS},
@@ -131,5 +152,6 @@ TABS = {
     "breach": {"label": "Breach", "page": "Catalysts", "slots": BREACH},
     "expedition": {"label": "Expedition", "slots": EXPEDITION},
     "ritual": {"label": "Ritual", "slots": RITUAL},
+    "essence": {"label": "Essence", "slots": ESSENCE},
 }
-ORDER = ("currency", "abyss", "delirium", "breach", "expedition", "ritual")
+ORDER = ("currency", "abyss", "delirium", "breach", "expedition", "ritual", "essence")
