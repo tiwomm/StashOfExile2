@@ -1555,8 +1555,8 @@ class App(GearBookPage, PriceCheckPage, FavoritesPage, BoardModPage, Leaderboard
                            anchor="w")
             lab.grid(row=r, column=1, columnspan=2, sticky="w", pady=(2, 0))
             return lab
-        # 2.101.0: the Style first (Classic or one of the light looks), then its Layout, then its Colours
-        from .ovlight import COLORS, STYLES
+        # 2.101.0: the Style first, then its Layout (2.111.0: no Colours - each style keeps its own)
+        from .ovlight import STYLES
         label(0, "Style")
         self.ov_look_var = tk.StringVar(value=STYLES[self.ov_look()])
         sc = ttk.Combobox(g, textvariable=self.ov_look_var, values=list(STYLES.values()), state="readonly", width=24)
@@ -1578,20 +1578,6 @@ class App(GearBookPage, PriceCheckPage, FavoritesPage, BoardModPage, Leaderboard
             layout=next((k for k, t in LAYOUTS.items() if t == self.ov_layout_var.get()), "xpbar")))
         hint(3, "Game bar: rests on the game's XP bar (unlocked, drag it; picking it again puts it back). "
                 "Panel: a card like the game's vendor windows - place it anywhere.")
-        label(4, "Colours")
-        cr = tk.Frame(g, bg=P2)
-        cr.grid(row=4, column=1, sticky="w", pady=(8, 0))
-        self.ov_colors_var = tk.StringVar(value=COLORS[self.ov_look_colors()][0])
-        cc = ttk.Combobox(cr, textvariable=self.ov_colors_var, values=[c[0] for c in COLORS.values()],
-                          state="readonly", width=24)
-        cc.pack(side="left")
-        cc.bind("<<ComboboxSelected>>", lambda e: self.on_ov_look(
-            colors=next((k for k, c in COLORS.items() if c[0] == self.ov_colors_var.get()), None)))
-        self.ov_colors_combo = cc
-        self.ov_colors_swatch = tk.Canvas(cr, width=150, height=22, bg=P2, highlightthickness=0)
-        self.ov_colors_swatch.pack(side="left", padx=(8, 0))
-        self.ov_colors_hint = hint(5, "")
-        self._ov_look_paint()
         # 2.56.1: ONE opacity for everything over the game (it was one slider each)
         label(6, "Opacity")
         op = tk.Frame(g, bg=P2)
@@ -1630,33 +1616,13 @@ class App(GearBookPage, PriceCheckPage, FavoritesPage, BoardModPage, Leaderboard
                         command=self.on_reduce_motion).pack(side="left")
 
     def on_ov_look(self, style=None, colors=None):
-        """2.101.0: Settings › Appearance › Overlay settings › Style / Colours - saved and shown at once."""
+        """2.101.0: Settings › Appearance › Overlay settings › Style - saved and shown at once."""
         self.ov_look_set(style=style, colors=colors)
         self._ov_look_paint()
 
     def _ov_look_paint(self):
-        """The Colours row: a small sample of the set (its box, accent line, numbers and an "on" switch); greyed out
-        with Classic, which keeps its own stone-and-bronze colours."""
-        from .ovlight import palette
-        cv = getattr(self, "ov_colors_swatch", None)
-        if cv is None:
-            return
-        light = self.ov_light()
-        try:
-            self.ov_colors_combo.configure(state="readonly" if light else "disabled")
-            cv.delete("all")
-            if light:
-                P = palette("slate", self.ov_look_colors())
-                cv.create_rectangle(0, 0, 149, 21, fill=P["box"], outline=P["line"])
-                cv.create_line(1, 20, 148, 20, fill=P["accent"])
-                cv.create_text(8, 11, text="0:42:17", anchor="w", fill=P["big"], font=("Segoe UI", 9, "bold"))
-                cv.create_text(70, 11, text="\u25c6 Breach", anchor="w", fill=P["accent"], font=("Segoe UI", 9))
-            self.ov_colors_hint.configure(text=(
-                "Exile Gold is the Classic bar's own colours; the others are the theme packs' (Settings › Appearance "
-                "› Theme). Follow the app theme changes with it." if light else
-                "Classic keeps its own stone-and-bronze colours - pick a light style to choose colours."))
-        except (tk.TclError, AttributeError):
-            pass
+        """(2.111.0: the Colours row is gone - nothing to paint; kept for the callers that sync the Style box.)"""
+        return
 
     def on_reduce_motion(self):
         """2.100.0: Settings › Appearance › Reduce motion (saved; from then on your choice beats Windows')."""

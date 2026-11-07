@@ -46,6 +46,7 @@ NOTES = {
             ("What's new", "This card shows the big changes first; the small ones fold under one line."),
             ("Looks", "The What's new card and About follow your app theme."),
             ("Updates", "The update note's buttons no longer squeeze one into a blank box."),
+            ("Overlay", "The Colours picker is gone from Overlay settings - each style keeps its own colours."),
         ],
     },
     "2.110.0": {
@@ -62,7 +63,7 @@ NOTES = {
     "2.109.0": {
         "big": [
             ("▣", "Everything over the game matches", "Notes, Calc, Regex favorites, Rates and every card follow "
-             "your overlay's Style and Colours.", ("Overlay settings", "settings:Appearance"), "Overlay"),
+             "your overlay's Style.", ("Overlay settings", "settings:Appearance"), "Overlay"),
             ("✱", "Regex: one card of options", "Every setting is a row of buttons in one card, like Money Makers.",
              ("Open Regex", "regex"), "Regex"),
         ],

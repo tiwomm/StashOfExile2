@@ -134,8 +134,8 @@ class LightOverlay:
         return v if v in STYLES else "classic"
 
     def ov_look_colors(self):
-        v = self.tracker_cfg().get("look_colors", DEFAULT_COLORS)
-        return v if v in COLORS else DEFAULT_COLORS
+        """2.111.0: no Colours picker any more - every light style uses its default set (Exile Gold)."""
+        return DEFAULT_COLORS
 
     def ov_light(self):
         return self.ov_look() in LIGHT
