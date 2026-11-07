@@ -37,6 +37,13 @@ NEXT = [
 MAX_BIG = 3
 
 NOTES = {
+    "2.112.0": {
+        "big": [
+            ("☰", "Helpers, tidied up", "One row per helper with On bar and Remind columns, grouped by where you use "
+             "them.", ("Open them", "ovset"), "Overlay"),
+        ],
+        "small": [],
+    },
     "2.111.0": {
         "big": [
             ("✦", "Four more overlay styles", "Totem, Hellfire, Psionic and Guildhall - nine ornate looks in all.",

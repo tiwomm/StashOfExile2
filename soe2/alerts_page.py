@@ -157,104 +157,158 @@ class AlertsPage:
 
     # ================================================================ the panel (Session tracker, main page)
     def build_alerts_panel(self, parent):
+        """2.112.0 (rework): one row per helper, the same columns for all - on / off, the name with what it's doing
+        now, its own options (chips), On bar, Remind, and Test / Open. Grouped: In maps, Play, Trading & more. One
+        Sound switch for every helper sits at the top."""
         self.alerts_init()
         P2 = C["panel2"]
         box = tk.Frame(parent, bg=P2, padx=12, pady=8, highlightthickness=1, highlightbackground=C["line"])
-        # 2.96.1: no "Mechanic Helper bar" switch - each helper has its own "Switch on the bar" on its row
         self.al_bar = tk.BooleanVar(value=True)
-        CB = "Card.TCheckbutton"                        # (2.96.1: the card's own background - no black boxes)
+        CB = "Card.TCheckbutton"
         self.al_rows = {}
-        # P2.5 (2.107.0, feedback): ONE Sound switch for every helper (each row had its own)
-        srow = tk.Frame(box, bg=P2)
-        srow.pack(fill="x")
+        sm = ("Segoe UI", 9)
+        top = tk.Frame(box, bg=P2)
+        top.pack(fill="x")
+        tk.Label(top, text="They only watch and show - they never act in the game.", bg=P2, fg=C["muted"],
+                 font=sm).pack(side="left")
         self.al_sound_all = tk.BooleanVar(value=bool(SETTINGS.get("helpers_sound", True)))
-        ttk.Checkbutton(srow, text="Sound - every helper's alert", variable=self.al_sound_all, style=CB,
-                        command=self.alerts_sound_all).pack(side="left")
-        for key, name, what, test in (
-                ("delirium", "Delirium", "END DELIRIUM when you finish a map with Delirium still on (reads your screen)",
-                 self.alerts_test_delirium),
-                ("breach", "Breach", "a banner when your stored Hiveblood is almost full, and when it's full "
-                                     "(reads Client.txt)", lambda: self.breach_alert(test=True)),
-                ("ritual", "Ritual", "reads the Ritual counter (0/3 ...) from your screen; reminds you if you leave a "
-                                     "map after starting its rituals but not finishing them", self.alerts_test_ritual),
-                ("remnant", "Expedition", "Expedition Remnant Price Checker: each reward in a remnant's book gets its "
-                                          "poe.ninja price, by itself (Auto) or with its key", self.alerts_test_remnant),
-                # 2.90.0: League Focus and the Campaign Helper sit with the others (one place for every helper)
-                ("focus", "Focus", "League Focus: your current league goal on the bar, and a short poke in town now "
-                                   "and then (Overlay ↳ Game Plan)", lambda: self.ov_intro_setup("focus")),
-                ("campaign", "Campaign", "Campaign Helper: where you are in the campaign, what's next and what it's "
-                                         "worth (reads Client.txt)", lambda: self.camp_route_show()),
-                # 2.98.1: Trade Whisper Watcher - at league start your items sell by whisper; don't miss one
-                ("whispers", "Trade whispers", "Trade Whisper Watcher: a card over the game when someone whispers to buy "
-                                               "an item you listed - easy to miss in chat while you run the campaign "
-                                               "(reads Client.txt; nothing is saved)", lambda: self.ww_show_test()),
-                ("desecrate", "Desecration (Beta)", "Desecration Helper (Beta): at The Well of Souls each revealed "
-                                                    "option shows its tier (T1 = best for that item type) - on only "
-                                                    "while you're there (reads Client.txt, then your screen)",
-                 self.alerts_test_desecrate)):
-            rowbox = tk.Frame(box, bg=P2)                # P4 (2.108.0): the row and, under it, its options -
-            rowbox.pack(fill="x", pady=(8, 0))           # they wrap (the Expedition row ran under its Test button)
-            row = tk.Frame(rowbox, bg=P2)
-            row.pack(fill="x")
-            opts = tk.Frame(rowbox, bg=P2)
-            opts.pack(fill="x", padx=(24, 8))
-            dot = tk.Label(row, text="●", bg=P2, fg=DOT["off"], font=("Segoe UI", 10))
-            dot.pack(side="left")
-            on = tk.BooleanVar(value=False)
-            nb = ttk.Checkbutton(row, text=name, variable=on, width=18 if key == "desecrate" else 12, style=CB,
-                                 command=lambda k=key: self.alerts_toggle(k))
-            nb.pack(side="left", padx=(4, 12))
-            Tooltip(nb, what)                       # 2.37.0: what it does - the line under a row shows only while on
-            snd = tk.BooleanVar(value=True)                 # (P2.5: no Sound switch per row - one for all, above)
-            ttk.Button(row, text="Open" if key in ("focus", "campaign") else "Test", command=test, width=6).pack(side="right")
-            if key == "breach":                    # 2.11.0
-                self.al_leave = tk.BooleanVar(value=bool(self.breach_cfg().get("leave_reminder", True)))
-                ttk.Checkbutton(opts, text="Remind me when I leave the map", variable=self.al_leave, style=CB,
-                                command=self.alerts_leave_changed).pack(side="left", padx=(4, 12))
-            if key == "remnant":                   # 2.37.0: Auto - the list is found and priced by itself
-                self.al_rauto = tk.BooleanVar(value=bool(self.remnant_cfg().get("auto")))
-                ab = ttk.Checkbutton(opts, text="Auto (no key needed)", variable=self.al_rauto, style=CB,
-                                     command=lambda: self.remnant_auto_changed(self.al_rauto.get()))
-                ab.pack(side="left", padx=(4, 12))
-                self.al_rru = tk.BooleanVar(value=bool(self.remnant_cfg().get("rumours", True)))   # 2.83.0
-                rb_ = ttk.Checkbutton(opts, text="Island rumours (in your hideout)", variable=self.al_rru, style=CB,
-                                      command=lambda: self.ru_changed(self.al_rru.get()))
-                rb_.pack(side="left", padx=(4, 12))
-                Tooltip(rb_, "On the world map's Uncharted Waters card, each rumour gets the island it leads to and "
-                             "your Map library rank for it. Only in your hideout.")
-                self.al_rtips = tk.BooleanVar(value=bool(self.remnant_cfg().get("tips", True)))      # 2.40.0
-                tb_ = ttk.Checkbutton(opts, text="Runeshape tips", variable=self.al_rtips, style=CB,
-                                      command=lambda: self.remnant_tips_changed(self.al_rtips.get()))
-                tb_.pack(side="left", padx=(4, 12))
-                Tooltip(tb_, "A small list next to the prices: the runeshapes players rate best for loot (S and A "
-                             "tier). It shows and goes with the prices.")
-                Tooltip(ab, "Prices show by themselves when a remnant's reward book opens: the app watches the spot "
-                            "where it opens (scaled to your resolution, like the Delirium watcher) - no box to draw. "
-                            "Off: only the key prices it.")
-            if key == "whispers":                  # 2.98.1: on during the campaign; this keeps it on after
-                from . import whispers as _W
-                self.al_wafter = tk.BooleanVar(value=bool(_W.cfg()["after"]))
-                wa = ttk.Checkbutton(opts, text="Keep on after the campaign", variable=self.al_wafter, style=CB,
-                                     command=self.ww_after_changed)
-                wa.pack(side="left", padx=(4, 12))
-                Tooltip(wa, "Off: it watches only while your character is in the campaign (league start, before maps "
-                            "and the Currency Exchange). On: always.")
-            if key == "ritual":                    # 2.14.0
-                self.al_rleave = tk.BooleanVar(value=bool(self.ritual_cfg().get("leave_reminder", True)))
-                ttk.Checkbutton(opts, text="Remind me when I leave the map", variable=self.al_rleave, style=CB,
-                                command=self.alerts_ritual_leave_changed).pack(side="left", padx=(4, 12))
-            # (2.97.0: no "Its line above the bar" - Focus / Campaign on = its line shows; both on = one bar, two rows)
-            bv = (getattr(self, "tk_bar_vars", None) or {}).get(key)
-            if bv is not None:                     # 2.96.1: its switch on the bar, here (was a list in On the bar)
-                sb_ = ttk.Checkbutton(opts, text="Switch on the bar", variable=bv, style=CB, command=self.tracker_bar_switch)
-                sb_.pack(side="left", padx=(4, 12))
-                if hasattr(self, "tk_ov_switches"):
-                    self.tk_ov_switches["bar:" + name.split(" (")[0]] = sb_
-            flowify(opts)                                 # (wraps in a narrow window)
-            st = tk.Label(box, text=what, bg=P2, fg=C["muted"], anchor="w", justify="left", font=("Segoe UI", 9))
-            st.pack(fill="x", padx=(24, 8))                   # 2.11.0: its own line, so it never gets cut off
-            st.bind("<Configure>", lambda e, l=st: l.config(wraplength=max(200, e.width - 10)))
-            self.al_rows[key] = {"dot": dot, "on": on, "sound": snd, "status": st, "what": what, "note": "", "row": rowbox}
+        ttk.Checkbutton(top, text="Sound", variable=self.al_sound_all, style=CB,
+                        command=self.alerts_sound_all).pack(side="right")
+        tbl = tk.Frame(box, bg=P2)
+        tbl.pack(fill="x", pady=(8, 0))
+        self.al_table = tbl
+        tbl.grid_columnconfigure(1, minsize=220)
+        tbl.grid_columnconfigure(2, weight=1)
+        for c, t in ((1, "Helper"), (2, "Options"), (3, "On bar"), (4, "Remind")):
+            tk.Label(tbl, text=t, bg=P2, fg=C["muted"], font=sm).grid(row=0, column=c, sticky="w" if c < 3 else "",
+                                                                       padx=(0, 12), pady=(0, 4))
+        r_ = [1]
+
+        def rule():
+            tk.Frame(tbl, bg=C["line"], height=1).grid(row=r_[0], column=0, columnspan=6, sticky="ew")
+            r_[0] += 1
+
+        def chip(parent, text, var, cmd, tip=None):
+            """An option of a helper: a small button, filled when on (as Money Makers' filters)."""
+            b = tk.Label(parent, text=text, font=sm, padx=8, pady=2, cursor="hand2", highlightthickness=1)
+
+            def paint(dim=None):
+                """Filled when on; while its helper is off, an outline only (it still switches)."""
+                if dim is not None:
+                    b.dim = dim
+                on, dim = bool(var.get()), getattr(b, "dim", False)
+                if on and not dim:
+                    b.config(bg=C["accent"], fg=C["bg"], highlightbackground=C["accent"])
+                else:
+                    b.config(bg=P2, fg=C["muted"] if dim else (C["accent"] if on else C["text"]),
+                             highlightbackground=C["accent"] if on else C["line"])
+
+            def flip(_e=None):
+                var.set(not var.get())
+                paint()
+                cmd()
+            b.bind("<Button-1>", flip)
+            b.paint = paint
+            b.var = var
+            paint()
+            if tip:
+                Tooltip(b, tip)
+            return b
+
+        self.al_chips = {}
+        what = {
+            "delirium": "END DELIRIUM when you finish a map with Delirium still on (reads your screen)",
+            "breach": "a banner when your stored Hiveblood is almost full, and when it's full (reads Client.txt)",
+            "ritual": "reads the Ritual counter (0/3 ...) from your screen; reminds you if you leave a map after "
+                      "starting its rituals but not finishing them",
+            "remnant": "Expedition Remnant Price Checker: each reward in a remnant's book gets its poe.ninja price, by "
+                       "itself (Auto) or with its key",
+            "focus": "League Focus: your current league goal on the bar, and a short poke in town now and then "
+                     "(Overlay ↳ Game Plan)",
+            "campaign": "Campaign Helper: where you are in the campaign, what's next and what it's worth (reads "
+                        "Client.txt)",
+            "whispers": "Trade Whisper Watcher: a card over the game when someone whispers to buy an item you listed - "
+                        "easy to miss in chat while you run the campaign (reads Client.txt; nothing is saved)",
+            "desecrate": "Desecration Helper (Beta): at The Well of Souls each revealed option shows its tier (T1 = best "
+                         "for that item type) - on only while you're there (reads Client.txt, then your screen)"}
+        tests = {"delirium": self.alerts_test_delirium, "breach": lambda: self.breach_alert(test=True),
+                 "ritual": self.alerts_test_ritual, "remnant": self.alerts_test_remnant,
+                 "focus": lambda: self.ov_intro_setup("focus"), "campaign": lambda: self.camp_route_show(),
+                 "whispers": lambda: self.ww_show_test(), "desecrate": self.alerts_test_desecrate}
+        names = {"delirium": "Delirium", "breach": "Breach", "ritual": "Ritual", "remnant": "Expedition",
+                 "focus": "Focus", "campaign": "Campaign", "whispers": "Trade whispers",
+                 "desecrate": "Desecration (Beta)"}
+        self.al_leave = tk.BooleanVar(value=bool(self.breach_cfg().get("leave_reminder", True)))
+        self.al_rleave = tk.BooleanVar(value=bool(self.ritual_cfg().get("leave_reminder", True)))
+        self.al_rauto = tk.BooleanVar(value=bool(self.remnant_cfg().get("auto")))
+        self.al_rru = tk.BooleanVar(value=bool(self.remnant_cfg().get("rumours", True)))
+        self.al_rtips = tk.BooleanVar(value=bool(self.remnant_cfg().get("tips", True)))
+        from . import whispers as _W
+        self.al_wafter = tk.BooleanVar(value=bool(_W.cfg()["after"]))
+        opts = {
+            "remnant": [("Auto", self.al_rauto, lambda: self.remnant_auto_changed(self.al_rauto.get()),
+                         "Prices show by themselves when a remnant's reward book opens (the app watches the spot where "
+                         "it opens). Off: only the key prices it."),
+                        ("Island rumours", self.al_rru, lambda: self.ru_changed(self.al_rru.get()),
+                         "On the world map's Uncharted Waters card, each rumour gets the island it leads to and your "
+                         "Map library rank for it. Only in your hideout."),
+                        ("Runeshape tips", self.al_rtips, lambda: self.remnant_tips_changed(self.al_rtips.get()),
+                         "A small list next to the prices: the runeshapes players rate best for loot (S and A tier).")],
+            "whispers": [("After the campaign", self.al_wafter, self.ww_after_changed,
+                          "Off: it watches only while your character is in the campaign. On: always.")]}
+        remind = {"breach": (self.al_leave, self.alerts_leave_changed),
+                  "ritual": (self.al_rleave, self.alerts_ritual_leave_changed)}
+        for group, keys in (("IN MAPS", ("breach", "delirium", "ritual", "remnant")), ("PLAY", ("campaign", "focus")),
+                            ("TRADING & MORE", ("whispers", "desecrate"))):
+            rule()
+            tk.Label(tbl, text=group, bg=P2, fg=C["muted"], font=("Segoe UI", 9, "bold")).grid(
+                row=r_[0], column=0, columnspan=6, sticky="w", pady=(8, 2))
+            r_[0] += 1
+            for key in keys:
+                rule()
+                r = r_[0]
+                on = tk.BooleanVar(value=False)
+                sw = ttk.Checkbutton(tbl, variable=on, style=CB, command=lambda k=key: self.alerts_toggle(k))
+                sw.grid(row=r, column=0, sticky="w", padx=(0, 12), pady=4)
+                cell = tk.Frame(tbl, bg=P2)
+                cell.grid(row=r, column=1, sticky="w", padx=(0, 12), pady=4)
+                nl = tk.Label(cell, text=names[key], bg=P2, fg=C["text"], font=("Segoe UI", 10, "bold"), anchor="w")
+                nl.pack(anchor="w")
+                Tooltip(nl, what[key])
+                st = tk.Label(cell, text="", bg=P2, fg=C["muted"], font=sm, anchor="w", justify="left",
+                              wraplength=260)
+                st.pack(anchor="w")
+                dot = tk.Label(cell, text="●", bg=P2, fg=DOT["off"])          # (kept for alerts_refresh; not shown)
+                oc = tk.Frame(tbl, bg=P2)
+                oc.grid(row=r, column=2, sticky="w", padx=(0, 12))
+                mine = []
+                for text, var, cmd, tip in opts.get(key, ()):
+                    c = chip(oc, text, var, cmd, tip)
+                    c.pack(side="left", padx=(0, 8), pady=2)
+                    self.al_chips[text] = c
+                    mine.append(c)
+                bv = (getattr(self, "tk_bar_vars", None) or {}).get(key)
+                if bv is not None:
+                    sb_ = ttk.Checkbutton(tbl, variable=bv, style=CB, command=self.tracker_bar_switch)
+                    sb_.grid(row=r, column=3, padx=(0, 12))
+                    Tooltip(sb_, f"{names[key].split(' (')[0]}'s switch on the overlay bar")
+                    if hasattr(self, "tk_ov_switches"):
+                        self.tk_ov_switches["bar:" + names[key].split(" (")[0]] = sb_
+                else:
+                    tk.Label(tbl, text="-", bg=P2, fg=C["muted"]).grid(row=r, column=3, padx=(0, 12))
+                if key in remind:
+                    rv, rcmd = remind[key]
+                    rs = ttk.Checkbutton(tbl, variable=rv, style=CB, command=rcmd)
+                    rs.grid(row=r, column=4, padx=(0, 12))
+                    Tooltip(rs, "Remind me when I leave the map with it unfinished")
+                else:
+                    tk.Label(tbl, text="-", bg=P2, fg=C["muted"]).grid(row=r, column=4, padx=(0, 12))
+                ttk.Button(tbl, text="Open" if key in ("focus", "campaign") else "Test", command=tests[key],
+                           width=6).grid(row=r, column=5, sticky="e")
+                r_[0] += 1
+                snd = tk.BooleanVar(value=True)
+                self.al_rows[key] = {"dot": dot, "on": on, "sound": snd, "status": st, "what": what[key], "note": "",
+                                     "row": cell, "switch": sw, "grid": True, "chips": mine}
         self.al_rows["breach"]["on"].set(bool(self.breach_cfg().get("on")))
         self.al_rows["breach"]["sound"].set(bool(self.breach_cfg().get("sound", True)))
         self.al_rows["ritual"]["on"].set(bool(self.ritual_cfg().get("on")))
@@ -582,16 +636,27 @@ class AlertsPage:
         for k, txt in (("delirium", dtxt), ("breach", btxt), ("ritual", rtxt), ("remnant", mtxt), ("desecrate", wtxt),
                        ("focus", ftxt), ("campaign", ctxt), ("whispers", vtxt)):
             st = states[k]
-            lbl = rows[k]["status"]                 # 2.37.0: a helper that's off (and has nothing to say) takes one line
-            show = st != "off" or txt != rows[k]["what"]
-            try:
-                if show and not lbl.winfo_manager():
-                    lbl.pack(fill="x", padx=(24, 8), after=rows[k]["row"])
-                elif not show and lbl.winfo_manager():
-                    lbl.pack_forget()
-            except tk.TclError:
-                pass
+            lbl = rows[k]["status"]
+            if rows[k].get("grid"):                 # 2.112.0: one short line under the name (off: "Off")
+                if st == "off" and txt == rows[k]["what"]:
+                    txt = "Off"
+                elif txt.startswith("On - "):
+                    txt = txt[5:6].upper() + txt[6:]
+            else:
+                show = st != "off" or txt != rows[k]["what"]
+                try:
+                    if show and not lbl.winfo_manager():
+                        lbl.pack(fill="x", padx=(24, 8), after=rows[k]["row"])
+                    elif not show and lbl.winfo_manager():
+                        lbl.pack_forget()
+                except tk.TclError:
+                    pass
             rows[k]["dot"].config(fg=DOT[st])
+            for c in rows[k].get("chips", ()):
+                try:
+                    c.paint(dim=st == "off")
+                except tk.TclError:
+                    pass
             rows[k]["status"].config(text=txt, fg=C["red"] if st == "warn" else C["green"] if st == "on" else C["muted"])
 
     def ritual_text(self, row):
