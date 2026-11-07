@@ -13,6 +13,7 @@
 GGG ToS: windows and the game's log only - nothing is sent to the game."""
 import tkinter as tk
 from tkinter import ttk
+from . import buglog
 
 RANK_BUTTONS = ("S", "A", "B", "C", "D", "Avoid")
 
@@ -118,7 +119,7 @@ class OverlayParts:
         try:
             self.tracker_overlay_draw(self.tracker_numbers())
         except Exception:
-            pass
+            buglog.caught()
 
     def maprank_skip(self, name, how):
         if how == "optout":                                  # 2.98.5: no more rank cards (Overlay › Settings brings them back)

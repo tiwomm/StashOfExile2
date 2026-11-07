@@ -12,6 +12,7 @@ import os
 import sys
 import threading
 import time
+from . import buglog
 
 STALL = 8.0
 _ST = {"tick": time.time(), "steps": [], "root": None, "written": 0.0}
@@ -33,7 +34,7 @@ def _tick():
         try:
             root.after(500, _tick)
         except Exception:
-            pass
+            buglog.caught()
 
 
 def _where(frame):
@@ -88,7 +89,7 @@ def _log(kind, where, text):
         from . import buglog
         buglog.record(kind, where, detail=text)
     except Exception:
-        pass
+        buglog.caught()
 
 
 def crash_scrub(raw, steps, version):
@@ -129,7 +130,7 @@ def crash_start(folder, version):
             _log("crash", "closed by itself last time", "\n".join(rep[3:]))
             was = True
     except Exception:
-        pass
+        buglog.caught()
     try:
         import faulthandler
         _CRASH["fh"] = open(raw_p, "w", encoding="utf-8")
@@ -137,7 +138,7 @@ def crash_start(folder, version):
         _CRASH["steps"] = steps_p
         open(steps_p, "w", encoding="utf-8").close()
     except Exception:
-        pass
+        buglog.caught()
     return was
 
 
@@ -190,4 +191,4 @@ def profiled(label, fn, path, version, slow=1.5):
                     f.write("\n".join(lines) + "\n")
                 _log("slow", f"slow {label} ({secs:.1f} s)", "\n".join(lines[3:15]))
             except Exception:
-                pass
+                buglog.caught()

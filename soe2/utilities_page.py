@@ -7,6 +7,7 @@ import time
 import tkinter as tk
 from tkinter import ttk
 
+from . import buglog
 from .config import DATA_DIR, save_json, SETTINGS
 from .overlay import MAX_COMMANDS, Overlay, parse_key
 from .style import C, CAPTURING, KeyCapture
@@ -51,12 +52,12 @@ class UtilitiesPage:
             if self.pc_hotkey(vk, ctrl, alt, shift):
                 return True
         except Exception:
-            pass
+            buglog.caught()
         try:
             if self.quick_copy_key(vk, ctrl, alt, shift):
                 return True
         except Exception:
-            pass
+            buglog.caught()
         try:                                           # 2.2.0: the Regex key
             k = parse_key(SETTINGS.get("regex_key") or "")
             if k and k == (vk, ctrl, alt, shift):
@@ -65,7 +66,7 @@ class UtilitiesPage:
                     self.ui_q.put(("regexcopy",))
                     return True
         except Exception:
-            pass
+            buglog.caught()
         try:                                           # 2.12.0: the poe2db key - in game or in the app only
             k = parse_key(SETTINGS.get("poe2db_key") or "")
             if k and k == (vk, ctrl, alt, shift):
@@ -75,12 +76,12 @@ class UtilitiesPage:
                     self.ui_q.put(("quicklink", "poe2db"))
                     return True
         except Exception:
-            pass
+            buglog.caught()
         try:
             if self.tracker_on_key(vk, ctrl, alt, shift):
                 return True
         except Exception:
-            pass
+            buglog.caught()
         return self.overlay.on_key(vk, ctrl, alt, shift)
 
     def ev_regexcopy(self):
@@ -110,7 +111,7 @@ class UtilitiesPage:
         try:
             keys.set_mouse(waiting or self.mouse_hotkeys_used())
         except Exception:
-            pass
+            buglog.caught()
 
     def pc_hotkey(self, vk, ctrl, alt, shift):
         """2.83.1: the price check key (Ctrl+D) in game -> the game's own Ctrl+Alt+C once (one key press, one item
@@ -151,20 +152,20 @@ class UtilitiesPage:
             self.root.deiconify()
             self.root.lift()
         except Exception:
-            pass
+            buglog.caught()
         self.shell.open(key)
 
     def stop_utilities(self):
         try:
             self.overlay.close()
         except Exception:
-            pass
+            buglog.caught()
         DELIRIUM.stop()                                  # only if the app started it
         try:
             from .utilities import RITUAL                # 2.14.0
             RITUAL.stop()
         except Exception:
-            pass
+            buglog.caught()
 
     # ---------------- shared bits
     def _util_head(self, body, title_var, label, command, text):
@@ -287,7 +288,7 @@ class UtilitiesPage:
             try:
                 self.fill_hotkeys()
             except Exception:
-                pass
+                buglog.caught()
         self.chat_key_marks()
 
     def chat_key_marks(self):

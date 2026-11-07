@@ -17,6 +17,7 @@ import tkinter as tk
 import tkinter.font as tkfont
 from tkinter import ttk
 
+from . import buglog
 from .config import APP_UA, P, SETTINGS
 from .style import C
 from .trade import ago, RAW_LISTINGS, strip_markup
@@ -168,7 +169,7 @@ def icon_learn(base, url):
             from .config import save_json
             save_json("icons.json", ic)
         except Exception:
-            pass
+            buglog.caught()
 
 
 def listing_facts(e):
@@ -308,7 +309,7 @@ class PriceCheckPage:
                 try:
                     self.root.after_cancel(state[slot])
                 except Exception:
-                    pass
+                    buglog.caught()
 
             def go():
                 state[slot] = None
@@ -856,7 +857,7 @@ class PriceCheckPage:
                     fh.write(r.content)
                 os.replace(tmp, path)
         except Exception:
-            pass
+            buglog.caught()
         finally:
             self._pc_art_done = getattr(self, "_pc_art_done", set()) | {url}
 
@@ -879,6 +880,6 @@ class PriceCheckPage:
             try:                                          # 2.105.0: Market Insights' card gets its picture too
                 self.ins_show(self.ins_pick[0])
             except Exception:
-                pass
+                buglog.caught()
         if self._pc_art_wait:
             self.root.after(500, self._pc_art_poll)

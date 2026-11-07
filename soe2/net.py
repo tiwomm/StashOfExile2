@@ -8,6 +8,7 @@ import requests
 import threading
 import time
 from datetime import datetime
+from . import buglog
 from .config import APP_VERSION, HEADERS, load_json, P, save_json, SETTINGS
 
 
@@ -60,7 +61,7 @@ def rl_log(text):
         from . import buglog
         buglog.record("net", "rate limit", detail=text)
     except Exception:
-        pass
+        buglog.caught()
 
 
 class Limiter:
@@ -98,7 +99,7 @@ class Limiter:
                 if self.hits[cls]:
                     self.last[cls] = max(self.hits[cls])
         except Exception:
-            pass
+            buglog.caught()
 
     def _save(self, force=False):
         now = time.time()
@@ -202,7 +203,7 @@ class Limiter:
                         self.hits[cls].extend([stamp] * (cur - own))
                     prev = per
         except Exception:
-            pass
+            buglog.caught()
 
     def log_429(self, cls, url, headers, retry_after, body=""):
         """Write down everything needed to see why we were limited: what we thought we'd used vs what the server said."""
@@ -224,7 +225,7 @@ class Limiter:
                     lines.append(f"    {now - t:6.1f}s ago  {c:6} {st}")
             rl_log("\n".join(lines))
         except Exception:
-            pass
+            buglog.caught()
 
     def penalized(self, retry_after):
         with self.lock:
@@ -288,7 +289,7 @@ def call(method, url, **kw):
             if buglog.debug_on():
                 buglog.debug(f"{method} {cls}", f"{r.status_code} in {ms} ms  {requests.compat.urlparse(url).path}")
         except Exception:
-            pass
+            buglog.caught()
         if r.status_code == 429:
             try:
                 retry = int(r.headers.get("Retry-After", "60"))
@@ -306,7 +307,7 @@ def call(method, url, **kw):
                         if k.lower().startswith("x-rate-limit") or k.lower() == "retry-after"}   # cookies
                 buglog.record("net", f"HTTP {r.status_code}", detail=note + f"  | headers: {keep}")
             except Exception:
-                pass
+                buglog.caught()
             raise RuntimeError(note)
         return r.json()
     raise RuntimeError("Still rate limited - try again later.")

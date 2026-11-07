@@ -9,6 +9,7 @@ import re
 import statistics
 import threading
 import time
+from . import buglog
 from .config import BASE, load_json, P, save_json, SETTINGS
 from .util import mmss
 from .net import call, STATUS
@@ -192,7 +193,7 @@ class Engine(TabReaderJobs, WealthJobs, StratCostJobs, threading.Thread):
             set_trade_currencies(data)
             self.ui_q.put(("currencies_loaded",))          # 2.40.0: Stash tab's box can show the saved currency
         except Exception:
-            pass
+            buglog.caught()
 
     def _load_stats(self):
         cache = P("stats_cache.json")
@@ -256,7 +257,7 @@ class Engine(TabReaderJobs, WealthJobs, StratCostJobs, threading.Thread):
                         with open(P("unmatched_mods.txt"), "a", encoding="utf-8") as f:
                             f.write(f"{m['text']}\t| {item.get('name')} ({item.get('base')})\n")
                     except Exception:
-                        pass
+                        buglog.caught()
                 m["key"] = f"{item['base']}|{m['sid']}" if m.get("sid") else None
             rec["resolved"] = True
             return
@@ -275,7 +276,7 @@ class Engine(TabReaderJobs, WealthJobs, StratCostJobs, threading.Thread):
                     with open(P("unmatched_mods.txt"), "a", encoding="utf-8") as f:
                         f.write(f"{m['text']}\t| closest on trade site: {m['guess']}\n")
                 except Exception:
-                    pass
+                    buglog.caught()
         rec["resolved"] = True
 
     # ---- 2.87.0 (feedback: "single price checks should take priority over bulk pricing ... if you change them and

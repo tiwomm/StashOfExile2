@@ -10,6 +10,7 @@ import threading
 import time
 import tkinter as tk
 
+from . import buglog
 from . import remnant as RM
 from . import rumours as RU
 from .config import save_json, SETTINGS
@@ -122,7 +123,7 @@ class RumoursPage:
                     f.write(f"  {t!r}" + (f"  -> {hit[1]}" if hit else "") + "\n")
                 f.write("Found: " + ", ".join(i for _r, i, _b in RU.rows(lines)) + "\n")
         except Exception:
-            pass
+            buglog.caught()
 
     def _ru_watch(self, gen):
         from .alerts_page import game_rect
@@ -234,14 +235,14 @@ class RumoursPage:
             _ml, _mt, mr, _mb = monitor_rect(self.root, int(x), int(y))
             x = min(x, mr - w.winfo_reqwidth())
         except Exception:
-            pass
+            buglog.caught()
         w.geometry(f"+{int(x)}+{int(y)}")
         w.deiconify()
         try:
             click_through(w)
             force_topmost(w)
         except Exception:
-            pass
+            buglog.caught()
         no_capture(w)
         self.ru_wins = [w]
 

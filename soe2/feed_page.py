@@ -13,6 +13,7 @@ import time
 import tkinter as tk
 from tkinter import filedialog, ttk
 
+from . import buglog
 from .market import MARKET
 from .mods import MIN_WITH, HIGH_LIFT, SCOPED_CATS, norm, rule_key, sid_for_line
 from .pricefmt import parse_price
@@ -240,7 +241,7 @@ class FeedPage:
         try:
             self.refresh_memory(True)
         except Exception:
-            pass
+            buglog.caught()
         return sig
 
     def fd_clear(self):

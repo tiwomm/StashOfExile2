@@ -7,6 +7,7 @@ import tkinter as tk
 import webbrowser
 from tkinter import filedialog, ttk
 
+from . import buglog
 from . import board as B
 from . import rep as R
 from . import moneymakers as MM
@@ -1113,7 +1114,7 @@ class MoneyMakersPage:
                 try:                                         # 2.88.0: admin-only tools show (none since 2.114.0)
                     self.shell.set_advanced(self.shell.advanced_on())
                 except Exception:
-                    pass
+                    buglog.caught()
             else:
                 self.app_toast(d, "Community")
             return ok

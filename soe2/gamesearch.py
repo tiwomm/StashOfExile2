@@ -7,6 +7,7 @@ import json
 import os
 import re
 
+from . import buglog
 from .config import APP_DIR, P
 
 try:
@@ -136,5 +137,5 @@ def inspector_query(it):
         elif gamedata.base(it["n"]) is not None:
             return it["n"]
     except Exception:
-        pass
+        buglog.caught()
     return None

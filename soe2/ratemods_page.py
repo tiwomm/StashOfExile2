@@ -4,6 +4,7 @@ import random
 import tkinter as tk
 from tkinter import ttk
 
+from . import buglog
 from . import ratemods as RM
 from .mods import F_TIP
 from .style import C, Tooltip
@@ -279,7 +280,7 @@ class RateModsPage:
         try:
             self.refresh_rules()
         except Exception:
-            pass
+            buglog.caught()
 
     # ---------------------------------------------------------------- the ask (once; Not now = once more, later)
     def rm_ask_tick(self):
@@ -289,7 +290,7 @@ class RateModsPage:
             if RM.should_ask(priced) and getattr(self, "rm_ask_win", None) is None and self.root.focus_displayof():
                 self.rm_ask()
         except Exception:
-            pass
+            buglog.caught()
         self.root.after(10 * 60 * 1000, self.rm_ask_tick)
 
     def rm_ask(self):

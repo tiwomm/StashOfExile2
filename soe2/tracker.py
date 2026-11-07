@@ -7,6 +7,7 @@ Map counting: a map is an endgame area (its id starts with "Map") with its own s
 hideout logs the same area with the same seed, so it is not counted again; a new map has a new seed."""
 import time
 
+from . import buglog
 from .config import load_json, save_json
 from .gamelog import area_kind
 
@@ -143,7 +144,7 @@ class Session:
                     from .maplib import learn
                     learn(self.where.get("area"), data["name"], self.maps[self.where["map"]].get("level"))
                 except Exception:
-                    pass
+                    buglog.caught()
             return True
         if kind == "gold":
             self.gold += data["amount"]

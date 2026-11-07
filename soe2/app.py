@@ -21,6 +21,7 @@ from datetime import datetime
 from tkinter import filedialog
 from tkinter import messagebox
 from tkinter import ttk
+from . import buglog
 from .config import (
     AGE_OPTIONS, DATA_UPDATED, APP_DIR, APP_TITLE, APP_VERSION, pretty_version, DATA_DIR, load_json, MIGRATED, MODBOOK, MODBOOK_NOTE, P,
     save_json, save_modbook, SETTINGS, STATUS_OPTIONS, VIEWS, DEFAULTS,
@@ -145,12 +146,12 @@ class App(GearBookPage, PriceCheckPage, PricePopup, FavoritesPage, BoardModPage,
                 import ctypes
                 ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID("StashOfExile2.App")
             except Exception:
-                pass
+                buglog.caught()
         try:
             self.icon_img = tk.PhotoImage(data="".join(ICON_B64.split()))     # keep on self or tk drops it
             root.iconphoto(True, self.icon_img)
         except Exception:
-            pass
+            buglog.caught()
         root.geometry(self.saved_geometry() or "1280x800")      # 2.23.1: where you left it last time
         root.minsize(1000, 560)
         root.bind("<Configure>", self._note_window, add="+")
@@ -309,7 +310,7 @@ class App(GearBookPage, PriceCheckPage, PricePopup, FavoritesPage, BoardModPage,
                 x, y = self.root.winfo_rootx(), self.root.winfo_rooty()
                 self._last_rect = (x, y - 30, x + self.root.winfo_width())
         except Exception:
-            pass
+            buglog.caught()
 
     def _hwnd(self):
         try:
@@ -353,7 +354,7 @@ class App(GearBookPage, PriceCheckPage, PricePopup, FavoritesPage, BoardModPage,
                     self._restack_bound = True          # clicking the app's own window mustn't bury them again
                     self.root.bind("<FocusIn>", self._restack_soon, add="+")
         except Exception:
-            pass
+            buglog.caught()
 
     def _restack_soon(self, e=None):
         if e is not None and e.widget is not self.root:
@@ -366,7 +367,7 @@ class App(GearBookPage, PriceCheckPage, PricePopup, FavoritesPage, BoardModPage,
             try:
                 self.shell.restack()
             except Exception:
-                pass
+                buglog.caught()
         self._restack_job = self.root.after(30, go)
 
     def _top_label(self):
@@ -1601,7 +1602,7 @@ class App(GearBookPage, PriceCheckPage, PricePopup, FavoritesPage, BoardModPage,
         try:
             self._paint_look_cards()                             # (the clicked card lights at once)
         except Exception:
-            pass
+            buglog.caught()
         self._theme_job = self.root.after(200, go)
 
     def relook(self):
@@ -1621,18 +1622,18 @@ class App(GearBookPage, PriceCheckPage, PricePopup, FavoritesPage, BoardModPage,
             try:
                 self.merged_set()
             except Exception:
-                pass
+                buglog.caught()
         step("theme change: done")
         if getattr(self, "shown_rec", None) is not None or hasattr(self, "detail"):
             try:
                 self.show_detail(self.shown_rec)
             except Exception:
-                pass
+                buglog.caught()
         if hasattr(self, "update_limit_ui"):
             try:
                 self.update_limit_ui()
             except Exception:
-                pass
+                buglog.caught()
         self.look_stats = (n, secs)             # (tests read it: how many widgets, how long)
 
     def theme_cards(self, parent, where, cols=4, scale=1.0):
@@ -1883,7 +1884,7 @@ class App(GearBookPage, PriceCheckPage, PricePopup, FavoritesPage, BoardModPage,
                 if w is not None and w.winfo_exists():
                     w.set_opacity(v)
             except Exception:
-                pass
+                buglog.caught()
         job = getattr(self, "_ov_save_job", None)              # save once the slider stops
         if job:
             self.root.after_cancel(job)
@@ -2042,7 +2043,7 @@ class App(GearBookPage, PriceCheckPage, PricePopup, FavoritesPage, BoardModPage,
                 try:
                     getattr(self, refresh)()
                 except Exception:
-                    pass
+                    buglog.caught()
         self.fill_hotkeys()
         clash = self.hotkey_clashes()
         self.hk_msg.config(text=("Not understood: " + ", ".join(bad)) if bad else
@@ -2269,7 +2270,7 @@ class App(GearBookPage, PriceCheckPage, PricePopup, FavoritesPage, BoardModPage,
                 if B.configured() and B.signed_in():
                     threading.Thread(target=B.lb_forget, daemon=True).start()
             except Exception:
-                pass
+                buglog.caught()
         SETTINGS["share_prices"] = bool(on)
         SETTINGS["share_asked"] = True
         save_json("settings.json", SETTINGS)
@@ -2385,7 +2386,7 @@ class App(GearBookPage, PriceCheckPage, PricePopup, FavoritesPage, BoardModPage,
             self.refresh_all()
             self.refresh_rules()
         except Exception:
-            pass
+            buglog.caught()
         self.cm_paint()
 
     def cm_paint(self):
@@ -2685,7 +2686,7 @@ class App(GearBookPage, PriceCheckPage, PricePopup, FavoritesPage, BoardModPage,
                 self.copy_marker.show(self.root.winfo_pointerx() + 30, self.root.winfo_pointery(), secs=2,
                                       colour=self.marker_colour())
             except Exception:
-                pass
+                buglog.caught()
         try:
             SETTINGS["copy_marker_secs"] = max(1, min(600, int(float(self.mark_secs.get()))))
         except (ValueError, AttributeError):
@@ -3049,7 +3050,7 @@ class App(GearBookPage, PriceCheckPage, PricePopup, FavoritesPage, BoardModPage,
                 self.status_text = f"Something went wrong ({where}) - Report a bug sends the details"
                 self.status_until = time.time() + 20
         except Exception:
-            pass
+            buglog.caught()
 
     def poll_clipboard(self, gen=None):
         if gen is not None and gen != self.poll_gen:
@@ -3232,7 +3233,7 @@ class App(GearBookPage, PriceCheckPage, PricePopup, FavoritesPage, BoardModPage,
                 with open(path, "a", encoding="utf-8") as f:
                     f.write(f"===== {time.strftime('%Y-%m-%d %H:%M:%S')} v{APP_VERSION}\n{text.strip()}\n")
         except Exception:
-            pass
+            buglog.caught()
         if g.get("stack") is not None and parse_stack(text):      # 2.0 beta 7: one click puts it on Wealth
             name, qty, _c = parse_stack(text)
             msg = (f"{name} x{qty:,} is a stack: stacks are counted on the Wealth window, not price-checked. "
@@ -3294,7 +3295,7 @@ class App(GearBookPage, PriceCheckPage, PricePopup, FavoritesPage, BoardModPage,
             try:
                 old.destroy()
             except Exception:
-                pass
+                buglog.caught()
         outer = tk.Frame(self.checks_body, bg=C["steel"], padx=1, pady=1)
         outer.pack(before=self.checks_area, fill="x", padx=8, pady=(0, 8))
         card = tk.Frame(outer, bg=C["panel2"], padx=16, pady=8)
@@ -3306,7 +3307,7 @@ class App(GearBookPage, PriceCheckPage, PricePopup, FavoritesPage, BoardModPage,
             try:
                 outer.destroy()
             except Exception:
-                pass
+                buglog.caught()
             if getattr(self, "_info_card", None) is outer:
                 self._info_card = None
         for label, fn in actions:
@@ -3322,7 +3323,7 @@ class App(GearBookPage, PriceCheckPage, PricePopup, FavoritesPage, BoardModPage,
             try:
                 self.app_toast(text, actions=list(actions) + [("Show", lambda: sh.open("checks"))], secs=secs)
             except Exception:
-                pass
+                buglog.caught()
 
     @staticmethod
     def item_sig(item):
@@ -3377,14 +3378,14 @@ class App(GearBookPage, PriceCheckPage, PricePopup, FavoritesPage, BoardModPage,
                     import winsound
                     winsound.MessageBeep(winsound.MB_ICONQUESTION)
             except Exception:
-                pass
+                buglog.caught()
 
     def dup_answer(self, add):
         text, item, rec, n = self.dup_pending.pop(0)
         try:
             self.dup_win.destroy()
         except Exception:
-            pass
+            buglog.caught()
         self.dup_win = None
         self.root.title(APP_TITLE)
         if add:
@@ -3970,7 +3971,7 @@ class App(GearBookPage, PriceCheckPage, PricePopup, FavoritesPage, BoardModPage,
                 hwnd = ctypes.windll.user32.GetParent(self.root.winfo_id()) or self.root.winfo_id()
                 ctypes.windll.user32.FlashWindow(hwnd, True)
             except Exception:
-                pass
+                buglog.caught()
 
     def reprice(self, rids):
         for rid in rids:
@@ -4637,7 +4638,7 @@ class App(GearBookPage, PriceCheckPage, PricePopup, FavoritesPage, BoardModPage,
                 try:
                     f()
                 except Exception:
-                    pass
+                    buglog.caught()
         u = SETTINGS["price_unit"]
         if u not in ("auto", "divine") and not RATES.value(u):
             self._say("No exchange rate for that currency yet (Exchange rates loads them): prices stay in divines "
@@ -4731,7 +4732,7 @@ class App(GearBookPage, PriceCheckPage, PricePopup, FavoritesPage, BoardModPage,
                 else:
                     self.root.bell()
             except Exception:
-                pass
+                buglog.caught()
 
     def pace_secs_per_item(self):
         """2.26.2: a first guess at how long one item takes, before any has finished: the pace's search allowance
@@ -5019,7 +5020,7 @@ class App(GearBookPage, PriceCheckPage, PricePopup, FavoritesPage, BoardModPage,
             try:
                 self.dup_win.destroy()
             except Exception:
-                pass
+                buglog.caught()
             self.dup_win = None
         self.seen_texts.clear()                      # forget which items we've seen, so re-copying one adds it again
         self.batch_ids.clear()
@@ -5069,7 +5070,7 @@ class App(GearBookPage, PriceCheckPage, PricePopup, FavoritesPage, BoardModPage,
                             "" if rec["est"] is None else round(rec["est"], 3), rec["total"], rec["label"],
                             " / ".join(m["text"] for m in rec["item"]["mods"])])
         except Exception:
-            pass
+            buglog.caught()
 
     # ---------------- detail panel
     def _canvas_resized(self, e):
@@ -6220,7 +6221,7 @@ class App(GearBookPage, PriceCheckPage, PricePopup, FavoritesPage, BoardModPage,
             if pw >= 250:              # 2.0 beta 22: a closed / minimised window reports 1 - that hid the item panel
                 SETTINGS["panel_w"] = pw
         except Exception:
-            pass
+            buglog.caught()
 
     # ---------------- 2.23.1: the window opens where you left it
     @staticmethod
@@ -6290,7 +6291,7 @@ class App(GearBookPage, PriceCheckPage, PricePopup, FavoritesPage, BoardModPage,
                 import ctypes
                 ctypes.windll.user32.ShowWindow(self._hwnd(), 3)     # SW_MAXIMIZE
         except Exception:
-            pass
+            buglog.caught()
         self.root.after(500, lambda: setattr(self, "_win_restored", True))
 
     def on_close(self):
@@ -6303,7 +6304,7 @@ class App(GearBookPage, PriceCheckPage, PricePopup, FavoritesPage, BoardModPage,
                 t.start()
                 t.join(4)
         except Exception:
-            pass
+            buglog.caught()
         try:                                         # 2.0 beta 9: a running session is kept (without a profit)
             s = getattr(self, "tk_session", None)
             if s is not None and s.ended is None:
@@ -6312,7 +6313,7 @@ class App(GearBookPage, PriceCheckPage, PricePopup, FavoritesPage, BoardModPage,
                 self.tk_sessions.add(s)
             self.merged_destroy()                    # (keeps where the overlay was)
         except Exception:
-            pass
+            buglog.caught()
         self.stop_utilities()                        # saves the notes; stops the Delirium alert if the app started it
         save_json("settings.json", SETTINGS)
         save_modbook()
@@ -6346,7 +6347,7 @@ def _splash_step(text=None, i=None):
         try:
             s.step(text, i)
         except Exception:
-            pass
+            buglog.caught()
 
 
 def main():
@@ -6356,13 +6357,13 @@ def main():
         from .fonts import load as _load_fonts           # 2.110.0: the overlay styles' bundled fonts (this app only)
         _load_fonts()
     except Exception:
-        pass
+        buglog.caught()
     root = tk.Tk(className="StashOfExile2")      # 2.10.0: window managers (Hyprland) see class "Stashofexile2"
     try:                                         # 2.115.0: every problem in one log (buglog), uncaught ones too
         from .buglog import install as _bug_install
         _bug_install(root, APP_VERSION)
     except Exception:
-        pass
+        buglog.caught()
     try:                                         # 2.112.1: not responding? where it was stuck goes to hang_report.txt
         from .hangwatch import start as _hang_start
         from .config import P as _P
@@ -6371,7 +6372,7 @@ def main():
         if _crash_start(os.path.dirname(_P("hang_report.txt")), APP_VERSION):
             CRASHED[0] = True
     except Exception:
-        pass
+        buglog.caught()
     if SETTINGS.get("splash", True):
         try:
             from .splash import Splash

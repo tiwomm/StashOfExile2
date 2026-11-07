@@ -14,6 +14,7 @@ import webbrowser
 from tkinter import simpledialog, ttk
 from urllib.parse import quote
 
+from . import buglog
 from . import favorites as FV
 from .config import SETTINGS
 from .style import over_app
@@ -268,7 +269,7 @@ class FavoritesPage:
                                                     ("Rename", lambda: (self.shell.open(KEY), self.fav_pick(f["id"]),
                                                                         self.fav_rename()))))
         except Exception:
-            pass
+            buglog.caught()
 
     def pc_fav_state(self, rec):
         b = getattr(self, "pc_fav_btn", None)

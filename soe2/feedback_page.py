@@ -17,6 +17,7 @@ import urllib.parse
 import webbrowser
 from tkinter import ttk
 
+from . import buglog
 from . import board as B
 from .config import APP_VERSION, SETTINGS
 from .style import C, over_app
@@ -80,7 +81,7 @@ class FeedbackPage:
             try:
                 self.update_found(tag)
             except Exception:
-                pass
+                buglog.caught()
             self.upd_badge.config(text=f"⬆ Update {pretty_version(tag)}")
             if sb is not None:                               # 2.74.2: in the sidebar, above Toolkit and Settings
                 sb.redraw()
@@ -251,7 +252,7 @@ class FeedbackPage:
         try:
             webbrowser.open(url)
         except Exception:
-            pass
+            buglog.caught()
         if getattr(self, "bug_win", None) is not None:
             self.bug_send_btn.config(state="normal")
             self.bug_msg.config(text=("The board couldn't take it" + (f" ({why})" if why else "") + " - GitHub's new "

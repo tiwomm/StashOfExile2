@@ -7,6 +7,7 @@
     come from the ones you price checked (unique_mods.json, on this PC only: item wording, nothing about you). A
     line with a choice (Mageblood's "Legacy of ...") brings every option the trade site lists for it.
 GGG ToS: your own settings and the app's own data; nothing touches the game, nothing extra is fetched."""
+from . import buglog
 from .config import load_json, save_json
 from .mods import norm
 
@@ -145,7 +146,7 @@ def options_of(sid):
                     if mt.get("value") is not None and w and w not in out:
                         out.append(w)
     except Exception:
-        pass
+        buglog.caught()
     return out
 
 

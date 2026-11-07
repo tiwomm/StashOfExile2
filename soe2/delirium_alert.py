@@ -32,6 +32,7 @@ from pathlib import Path
 
 import cv2
 import numpy as np
+from . import buglog
 
 if getattr(sys, "frozen", False):          # running as the compiled .exe
     HERE = Path(sys.executable).resolve().parent        # log/settings go next to the exe
@@ -365,7 +366,7 @@ def make_dpi_aware():
             try:
                 ctypes.windll.user32.SetProcessDPIAware()
             except Exception:
-                pass
+                buglog.caught()
 
 
 def find_game_rect():
@@ -595,13 +596,13 @@ class Tray:
             self.icon.title = "PoE2 Delirium watch: " + STATE_TEXT[state]
             self.icon.update_menu()
         except Exception:
-            pass
+            buglog.caught()
 
     def stop(self):
         try:
             self.icon.stop()
         except Exception:
-            pass
+            buglog.caught()
 
 
 LOG_FILE = HERE / "delirium_log.txt"
@@ -623,7 +624,7 @@ def save_calibration(data):
     try:
         CALIB_FILE.write_text(json.dumps(data, indent=2))
     except Exception:
-        pass
+        buglog.caught()
 
 
 def log(msg):
@@ -633,7 +634,7 @@ def log(msg):
         with open(LOG_FILE, "a", encoding="utf-8") as f:
             f.write(line + "\n")
     except Exception:
-        pass
+        buglog.caught()
 
 
 def beep():
@@ -661,7 +662,7 @@ def load_settings():
         if "beep" in data:
             CONFIG["beep"] = bool(data["beep"])
     except Exception:
-        pass
+        buglog.caught()
 
 
 def save_setting(key, value):

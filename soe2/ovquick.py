@@ -6,6 +6,7 @@ GGG ToS: a window over the game; nothing is sent to the game."""
 import tkinter as tk
 from tkinter import ttk
 
+from . import buglog
 from .config import SETTINGS, save_json
 from .style import C
 
@@ -27,19 +28,19 @@ class OverlayQuick:
             self.breach_cfg()["sound"] = on
             self.ritual_cfg()["sound"] = on
         except Exception:
-            pass
+            buglog.caught()
         save_json("settings.json", SETTINGS)
         try:
             from . import whispers as _W
             _W.cfg()["sound"] = on
             _W.save()
         except Exception:
-            pass
+            buglog.caught()
         try:
             from .utilities import DELIRIUM
             DELIRIUM.set_sound(on)
         except Exception:
-            pass
+            buglog.caught()
         for key in ("delirium", "breach", "ritual", "whispers"):
             r = (getattr(self, "al_rows", None) or {}).get(key)
             if r is not None:
@@ -84,7 +85,7 @@ class OverlayQuick:
         try:
             self.tracker_helpers_sync()
         except Exception:
-            pass
+            buglog.caught()
         v = (getattr(self, "tk_bar_vars", None) or {}).get(key)
         if v is not None and bool(v.get()) != on:
             v.set(on)

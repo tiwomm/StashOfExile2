@@ -9,6 +9,7 @@ import threading
 import tkinter as tk
 from tkinter import simpledialog, ttk
 
+from . import buglog
 from . import stashread as SR
 from .config import SETTINGS
 from .stashlayouts import ORDER, TABS
@@ -86,7 +87,7 @@ class StashScanPage:
             self.shell.open("wealth")
             self.root.lift()
         except Exception:
-            pass
+            buglog.caught()
         if ss["got"] or ss["unread"]:
             self.stash_scan_review(ss)
         else:
@@ -201,7 +202,7 @@ class StashScanPage:
             no_activate(w)                           # clickable, but the game keeps the keyboard (and its stash)
             force_topmost(w)
         except Exception:
-            pass
+            buglog.caught()
         from .remnant_page import no_capture
         no_capture(w)                                # never in the picture it takes
         self.ss_win = w
@@ -301,7 +302,7 @@ class StashScanPage:
             from .ratemods_page import on_top
             on_top(dlg)                                      # (in front, focused, once)
         except Exception:
-            pass
+            buglog.caught()
 
     def stash_scan_save(self, got):
         from .wealth import WEALTH

@@ -17,6 +17,7 @@ import sys
 import threading
 import time
 import tkinter as tk
+from . import buglog
 
 POE_TITLE = "Path of Exile 2"
 
@@ -235,7 +236,7 @@ def read_ahk_config(path=None):
             try:
                 out[name] = conv(v)
             except Exception:
-                pass
+                buglog.caught()
     if "notes_text" in out:
         out["notes_text"] = out["notes_text"].replace("`n", "\n")        # AutoHotkey writes new lines as `n
     cmds = []
@@ -683,7 +684,7 @@ class Overlay:
                 self.cfg.update(notes_x=w.winfo_x(), notes_y=w.winfo_y(), notes_w=w.winfo_width(), notes_h=w.winfo_height())
             self._keep_text()
         except Exception:
-            pass
+            buglog.caught()
 
     def restyle(self, store=True):
         """Colors / opacity / font / size changed in the Notes window: rebuild the note (where it is, unless the new
@@ -721,7 +722,7 @@ class Overlay:
                         self.hide_notes(remember=False)              # back when the game is
                     self._game_was_open = now_open
         except Exception:
-            pass
+            buglog.caught()
         self.root.after(500, self._tick)
 
     def set_chat(self, on):
@@ -748,5 +749,5 @@ class Overlay:
             try:
                 self._store_geometry()
             except Exception:
-                pass
+                buglog.caught()
         self.save_settings()

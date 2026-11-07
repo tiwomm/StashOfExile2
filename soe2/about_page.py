@@ -6,6 +6,7 @@ import tkinter as tk
 import webbrowser
 from tkinter import ttk
 
+from . import buglog
 from .config import APP_VERSION, pretty_version, save_json, SETTINGS
 from .style import C, FONT_TITLE
 from .updates import REPO
@@ -22,7 +23,7 @@ def _keep_discord():
         from . import themes as _th
         _th.KEEP.update({DISCORD.lower(), DISCORD_HOVER})
     except Exception:
-        pass
+        buglog.caught()
 
 
 _keep_discord()
@@ -71,7 +72,7 @@ def open_link(url):
     try:
         webbrowser.open(url)
     except Exception:
-        pass
+        buglog.caught()
 
 
 # 2.98.3: who we thank, and their GitHub pages (README › Credits says the same)

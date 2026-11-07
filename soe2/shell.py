@@ -12,6 +12,7 @@ import sys
 import time
 import tkinter as tk
 
+from . import buglog
 from .style import C
 
 TITLE_ON = ("#34508a", "#1a2a4c")
@@ -73,7 +74,7 @@ def windows_24h():
                 with winreg.OpenKey(winreg.HKEY_CURRENT_USER, r"Control Panel\International") as k:
                     CLOCK["win24"] = str(winreg.QueryValueEx(k, "iTime")[0]) == "1"
             except Exception:
-                pass
+                buglog.caught()
     return CLOCK["win24"]
 
 
@@ -434,7 +435,7 @@ class DeskWindow(tk.Toplevel):
 
     def hide_ghosts(self, api=None):
         """Hide (and un-topmost) every real window Tk left behind. -> how many were hidden."""
-        if not self._ghosts:
+        if not getattr(self, "_ghosts", None):     # (2.117.0: withdraw() runs before __init__ sets it)
             return 0
         if api is None:
             if sys.platform != "win32":
@@ -461,7 +462,7 @@ class DeskWindow(tk.Toplevel):
         try:
             live = {w._hwnd_seen for w in self.shell.windows.values()}
         except Exception:
-            pass
+            buglog.caught()
         n = 0
         for h in list(self._ghosts):
             try:
@@ -479,7 +480,7 @@ class DeskWindow(tk.Toplevel):
         try:
             self.hide_ghosts()            # 2.89.0: a left-behind copy goes too
         except Exception:
-            pass
+            buglog.caught()
 
     def _show(self):
         self.deiconify()
@@ -689,12 +690,12 @@ class Shell:
             try:
                 fn()
             except Exception:
-                pass
+                buglog.caught()
         if self.cfg.get("desktop_icons"):
             try:
                 self.draw_icons()
             except Exception:
-                pass
+                buglog.caught()
 
     def _note_typing(self, e):
         w = e.widget
@@ -759,7 +760,7 @@ class Shell:
         try:
             self.heal()
         except Exception:
-            pass
+            buglog.caught()
 
     def _follow(self):
         self._follow_job = None
@@ -1209,7 +1210,7 @@ class Shell:
         try:
             self.root.update_idletasks()                          # so the desktop has its real size for new windows
         except Exception:
-            pass
+            buglog.caught()
         saved = self.cfg["windows"]
         opened = [k for k, v in saved.items() if v.get("open") and k in self.windows and self.visible(self.modules[k])]
         if not opened:
@@ -1287,7 +1288,7 @@ class Shell:
             try:
                 mod.on_show()
             except Exception:
-                pass
+                buglog.caught()
         if key == "wealth" and hasattr(self.app, "wealth_first_open"):      # 2.3.0: the setup guide, once
             self.app.root.after(400, self.app.wealth_first_open)
         self.close_menu()
@@ -1340,7 +1341,7 @@ class Shell:
                 if not inside:
                     self.close_menu()
             except Exception:
-                pass
+                buglog.caught()
         try:
             while w is not None and not isinstance(w, DeskWindow):
                 w = w.master
@@ -1469,11 +1470,11 @@ class Shell:
                 self.sidebar.redraw()
                 self.sidebar.set_compact(self.root.winfo_width() < 1100)
         except Exception:
-            pass
+            buglog.caught()
         try:
             self.heal()
         except Exception:
-            pass
+            buglog.caught()
         self.root.after(2000, self._tick)
 
     # ---- the Toolkit menu

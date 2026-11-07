@@ -3,6 +3,7 @@ Data and ranks: maplib.py."""
 import tkinter as tk
 from tkinter import filedialog, ttk
 
+from . import buglog
 from . import maplib as ML
 from .style import over_app
 from .style import C, Tooltip, place_near
@@ -155,7 +156,7 @@ class MapLibraryPage:
         try:
             self.tracker_fill_maps()
         except Exception:
-            pass
+            buglog.caught()
 
     def ml_menu(self, e):
         tv = self.ml_tv

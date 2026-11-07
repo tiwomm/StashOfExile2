@@ -8,6 +8,7 @@ import time
 import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 
+from . import buglog
 from . import ledger as L
 from . import moneymakers as MM
 from .config import SETTINGS, save_json
@@ -1007,7 +1008,7 @@ class LedgerPage:
         try:
             self.shell.open("money")
         except Exception:
-            pass
+            buglog.caught()
         try:
             self.mm_page.pick("Strats", notify=False)
             self.mm_show_page()

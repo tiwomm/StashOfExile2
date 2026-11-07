@@ -5,6 +5,7 @@ opens that tool as the page (one page at a time).
 GGG ToS: looks only - nothing here touches the game."""
 import tkinter as tk
 
+from . import buglog
 from . import themes as TH
 from .style import C
 
@@ -215,7 +216,7 @@ class Sidebar(tk.Canvas):
                     try:
                         st = mod.status() if hasattr(mod, "status") else None
                     except Exception:
-                        pass
+                        buglog.caught()
                     col = C["green"] if st is True else C["orange"] if st == "warn" else C["muted"]
                     self.create_oval(x1 - 16, cy - 4, x1 - 8, cy + 4, fill=col, outline="")
                 elif mod is not None and _beta(mod):

@@ -22,6 +22,7 @@ import math
 import os
 import random
 import re
+from . import buglog
 
 DEFAULT = "emberforge"            # the default look (2.60.0)
 IDENTITY = "midnight"             # the look the app shipped with until 2.59.0 - no remapping at all
@@ -366,7 +367,7 @@ def notify():
         try:
             cb(ST.theme)
         except Exception:
-            pass
+            buglog.caught()
     ST.subs[:] = keep
 
 
@@ -474,7 +475,7 @@ def walk(root, tr):
                                 if nv != v.lower():
                                     tkc.call(w, "entryconfigure", i, o, nv)
         except Exception:
-            pass
+            buglog.caught()
     alive = _alive_cache(tkc)
     for k in [k for k in MEM if k[0] not in alive and k[0] != "style"]:
         MEM.pop(k, None)
@@ -516,7 +517,7 @@ def _retone_options(tkc, get, put, tr, key):
         try:
             tkc.call(*put, *new)
         except Exception:
-            pass
+            buglog.caught()
 
 
 # ------------------------------------------------------------------ chrome drawing (canvas)

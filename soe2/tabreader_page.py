@@ -3,6 +3,7 @@ Ctrl+Alt+C keeps working in both modes: the choice only shows or hides the tab r
 import tkinter as tk
 from tkinter import ttk
 
+from . import buglog
 from .config import save_json, SETTINGS
 from .style import C, SegBar, Tooltip
 from .tabreader import PCTAB
@@ -126,7 +127,7 @@ class TabReaderPage:
             self.cat_refresh()
             self.clear_btn_state()
         except Exception:
-            pass
+            buglog.caught()
 
     def pctab_tabs(self):
         """[{id, name, amount, currency, currency_name}] - your stash tabs. An older single tab becomes "Tab 1"."""
@@ -406,7 +407,7 @@ class TabReaderPage:
         try:
             self.root.after(50, self.pctab_bar)        # 2.42.0: the tab's count on its button
         except Exception:
-            pass
+            buglog.caught()
         self._pctab_finished(stopped)
 
     def _pctab_finished(self, stopped=False):

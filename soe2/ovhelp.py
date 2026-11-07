@@ -10,6 +10,7 @@ off: Overlay › Options › On the overlay › Feature tips. GGG ToS: windows o
 import tkinter as tk
 from tkinter import ttk
 
+from . import buglog
 from .config import save_json, SETTINGS
 
 # key -> (name, what it does, why you'd want it, set-up button label or None)
@@ -139,7 +140,7 @@ class OverlayHelp:
             hwnd = u.GetParent(w.winfo_id()) or w.winfo_id()
             u.SetWindowLongW(hwnd, -20, u.GetWindowLongW(hwnd, -20) | 0x08000000 | 0x20)   # + click-through
         except Exception:
-            pass
+            buglog.caught()
 
     def ov_switch_on(self, key):
         if key == "campaign":

@@ -21,6 +21,7 @@ import sys
 import threading
 import time
 from pathlib import Path
+from . import buglog
 
 BASE_H = 1440                    # the templates and offsets are measured on a 2560x1440 game
 # where to look for the icon, from the bottom centre of the game (1440p pixels): x from, x to, up from bottom (from, to)
@@ -84,7 +85,7 @@ def references():
                 for d, grid, asp in json.loads(Path(p).read_text())["glyphs"]:
                     refs.append((int(d), np.array(grid, float).reshape(GRID), float(asp)))
             except Exception:
-                pass
+                buglog.caught()
         _REFS["list"] = refs
     return _REFS["list"]
 
@@ -242,7 +243,7 @@ def main(argv):
                 sys.stdout.write(str(line).rstrip("\n") + "\n")
                 sys.stdout.flush()
             except Exception:
-                pass
+                buglog.caught()
 
     cmds = []
 
@@ -252,7 +253,7 @@ def main(argv):
                 if line.strip():
                     cmds.append(line.strip())
         except Exception:
-            pass
+            buglog.caught()
         after_stdin_ends(pid, lambda: cmds.append("quit"), log)      # 2.40.0: a broken pipe isn't "the app is gone"
     threading.Thread(target=read_stdin, daemon=True).start()
     try:
