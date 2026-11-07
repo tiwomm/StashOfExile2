@@ -26,6 +26,13 @@ VERSION HISTORY
        when it dies (crash_raw.tmp); the next start turns it into crash_report.txt - file NAMES, function and line,
        the fatal error's kind, and the last steps (crash_steps.tmp, written on each step) - then a toast says so.
        Paths are cut on either slash, so no folder or Windows user name gets in. style.relook marks its steps.
+       Scan stash (feedback: "led me through all the prompts but then did nothing"): after the last tab the app comes
+       to the front on Wealth and the check window opens centred on it, on top once and focused (it opened behind the
+       game); nothing read says so in a toast (it was a Wealth status line you couldn't see from the game).
+       Feedback: it came up on the other screen - "it should always appear over the app". style.over_app (centre_over
+       once built, on the app's monitor) on the check window, the Rate mods picker and every dialog that had no place
+       of its own: Favorites' group / edit, Ledger, Map library's import question, Money Makers' two, the board's
+       moderation windows, Report a bug.
   2.114.2
        Scan stash (beta) reads the Expedition tab (the user's shots and every slot's name): stashlayouts.EXPEDITION -
        Logbook, the four Sagas (Aldur's slot left out: out of the game for now), Shattered Triskelion and The

@@ -14,6 +14,8 @@ import platform
 import threading
 import time
 import tkinter as tk
+
+from .style import over_app
 import urllib.parse
 import webbrowser
 from tkinter import ttk
@@ -133,6 +135,7 @@ class FeedbackPage:
             except tk.TclError:
                 pass
         win = tk.Toplevel(self.root)
+        over_app(win, self.dlg_parent())               # 2.114.3: over the app, on its monitor
         win.title("Report a bug")
         win.configure(bg=P1)
         win.transient(self.root)

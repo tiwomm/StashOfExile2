@@ -88,10 +88,8 @@ class RateModsPage:
         else:
             self.rm_picker()
         try:
-            w.update_idletasks()                          # 2.114.0: centred over the app
-            hx, hy = self.root.winfo_rootx(), self.root.winfo_rooty()
-            hw, hh = self.root.winfo_width(), self.root.winfo_height()
-            w.geometry(f"+{hx + max(0, (hw - w.winfo_reqwidth()) // 2)}+{hy + max(40, (hh - w.winfo_reqheight()) // 2)}")
+            from .style import center_over                # 2.114.0: centred over the app (2.114.3: on its monitor)
+            center_over(w, self.dlg_parent())
         except tk.TclError:
             pass
         on_top(w)
@@ -330,10 +328,8 @@ class RateModsPage:
         w.protocol("WM_DELETE_WINDOW", lambda: pick("not_now"))
         self.rm_ask_pick = pick
         try:
-            w.update_idletasks()                          # 2.114.0: centred over the app
-            hx, hy = self.root.winfo_rootx(), self.root.winfo_rooty()
-            hw, hh = self.root.winfo_width(), self.root.winfo_height()
-            w.geometry(f"+{hx + max(0, (hw - w.winfo_reqwidth()) // 2)}+{hy + max(40, (hh - w.winfo_reqheight()) // 2)}")
+            from .style import center_over                # 2.114.0: centred over the app (2.114.3: on its monitor)
+            center_over(w, self.dlg_parent())
         except tk.TclError:
             pass
         on_top(w)

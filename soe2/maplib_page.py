@@ -4,6 +4,7 @@ import tkinter as tk
 from tkinter import filedialog, ttk
 
 from . import maplib as ML
+from .style import over_app
 from .style import C, Tooltip, place_near
 from .chrome import SectionBar, Viewport
 
@@ -272,6 +273,7 @@ class MapLibraryPage:
     def ml_ask_mode(self, title, total, new, same, differ):
         P1 = C["panel"]
         win = tk.Toplevel(self.root, bg=P1)
+        over_app(win, self.dlg_parent())               # 2.114.3: over the app, on its monitor
         win.title(title)
         win.transient(self.root)
         win.grab_set()

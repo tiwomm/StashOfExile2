@@ -15,6 +15,8 @@ import json
 import threading
 import time
 import tkinter as tk
+
+from .style import over_app
 from tkinter import ttk
 
 from . import board as B
@@ -79,6 +81,7 @@ class BoardModPage:
         save_json("settings.json", SETTINGS)
         P2 = C["panel2"]
         win = tk.Toplevel(self.root, bg=P2, padx=16, pady=16)
+        over_app(win, self.dlg_parent())               # 2.114.3: over the app, on its monitor
         win.title("Your community name")
         win.transient(self.root)
         self.bn_win = win
@@ -149,6 +152,7 @@ class BoardModPage:
                 pass
         P1 = C["panel"]
         win = tk.Toplevel(self.root, bg=P1)
+        over_app(win, self.dlg_parent())               # 2.114.3: over the app, on its monitor
         win.title(title)
         win.transient(self.root)
         win.geometry("980x620")

@@ -11,6 +11,7 @@ from . import board as B
 from . import rep as R
 from . import moneymakers as MM
 from .config import SETTINGS, save_json
+from .style import over_app
 from .style import C, MONO, SegBar, Tooltip, place_near
 from .chrome import SectionBar, Viewport, section as chrome_section
 
@@ -832,6 +833,7 @@ class MoneyMakersPage:
         except Exception:
             return None
         w = tk.Toplevel(self.root)
+        over_app(w, self.dlg_parent())               # 2.114.3: over the app, on its monitor
         w.title("Atlas")
         w.configure(bg=C["bg"])
         sw, sh = int(self.root.winfo_screenwidth() * 0.9), int(self.root.winfo_screenheight() * 0.85)
@@ -1342,6 +1344,7 @@ class MoneyMakersPage:
         from .style import ScrollArea
         P1 = C["panel"]
         win = tk.Toplevel(self.root, bg=P1)
+        over_app(win, self.dlg_parent())               # 2.114.3: over the app, on its monitor
         win.title("Suggest an edit" if suggest else "Your strat")
         win.transient(self.root)
         self.mm_form_win = win

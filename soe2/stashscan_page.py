@@ -64,10 +64,21 @@ class StashScanPage:
     def stash_scan_finish(self):
         ss = self.ss
         self.stash_scan_cancel()
-        if ss and (ss["got"] or ss["unread"]):
+        if ss is None:
+            return
+        # 2.114.3 (feedback: "led me through all the prompts but then did nothing"): the check window opened behind
+        # the game. The app comes to the front with it, and it's put on top once, focused, centred on the app.
+        try:
+            self.root.deiconify()
+            self.shell.open("wealth")
+            self.root.lift()
+        except Exception:
+            pass
+        if ss["got"] or ss["unread"]:
             self.stash_scan_review(ss)
-        elif ss is not None:
-            self._w_tell("Scan stash: nothing was read.", "ok")
+        else:
+            self.app_toast("Scan stash: nothing was read - no numbers were found on the tabs you opened.",
+                           "Scan stash", kind="warning")
 
     # ---------------------------------------------------------------- reading
     def stash_scan_read(self):
@@ -245,6 +256,13 @@ class StashScanPage:
         ttk.Button(btns, text="Discard", command=dlg.destroy).pack(side="right", padx=(0, 8))
         dlg.bind("<Escape>", lambda _e: dlg.destroy())
         self.ss_review = dlg
+        try:
+            from .style import center_over               # (over the app, on its monitor - feedback: it came up on
+            center_over(dlg, self.dlg_parent())          # the other screen)
+            from .ratemods_page import on_top
+            on_top(dlg)                                      # (in front, focused, once)
+        except Exception:
+            pass
 
     def stash_scan_save(self, got):
         from .wealth import WEALTH

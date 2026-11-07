@@ -13,6 +13,7 @@ from . import moneymakers as MM
 from .config import SETTINGS, save_json
 from .pricefmt import fmt_short
 from .chrome import section as chrome_section
+from .style import over_app
 from .style import C, MONO, ScrollArea, SegBar, Tooltip
 from .trade import listing_rules
 
@@ -1152,6 +1153,7 @@ class LedgerPage:
         if not cols:
             return None
         win = tk.Toplevel(self.root)
+        over_app(win, self.dlg_parent())               # 2.114.3: over the app, on its monitor
         win.title("Strat Tracker - compare")
         win.configure(bg=C["panel"])
         win.transient(self.root)
