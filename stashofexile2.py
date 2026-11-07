@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU GPL v3.0 (see LICENSE). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.116.0
+VERSION 2.117.0
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,6 +19,15 @@ VERSION 2.116.0
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.117.0
+       Nothing is stepped over silently any more: the 215 `except Exception: pass` (an error the app carries on
+       past - a window already closed, a Windows-only call, a file it couldn't read) now call buglog.caught(), which
+       writes a [caught] entry to the app's log: where in the code (file, function, line, the last 4 calls) and the
+       error's type only - never its message, which can hold an item or a name. Once per place per run (a set
+       lookup after that - safe in timers and loops), at most 100 places a run. Not in the "this week" counts (they
+       aren't problems you saw); Report a bug sends them after the errors, crashes and freezes, while there's room.
+       The narrow catches (tk.TclError for a closed window, OSError for a file) stay as they are. The first one
+       found: a window's withdraw() ran before its ghost list existed (shell.hide_ghosts).
   2.116.0
        P10, the Settings page pass. Seven tabs: Hotkeys and Chat commands are one Keys tab - hotkeys first, then a
        Chat commands section with its rows (Go to hideout, then the commands; "+ Add a command" shows the next empty
@@ -2772,7 +2781,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.116.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.117.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 

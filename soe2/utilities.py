@@ -12,6 +12,7 @@ import sys
 import threading
 import time
 
+from . import buglog
 from .config import APP_DIR, DATA_DIR
 
 FROZEN = bool(getattr(sys, "frozen", False))
@@ -30,7 +31,7 @@ def app_mark():
         k.CreateMutexW.restype = ctypes.c_void_p
         _APP_MARK[0] = k.CreateMutexW(None, False, APP_MARK.format(pid=os.getpid()))
     except Exception:
-        pass
+        buglog.caught()
 
 
 MUTEX = "PoE2DeliriumAlert_single_instance"             # the name the alert uses to allow only one copy
@@ -59,7 +60,7 @@ def kill_tree(p):
         try:
             p.kill()
         except Exception:
-            pass
+            buglog.caught()
 
 
 class DeliriumHelper:
@@ -108,7 +109,7 @@ class DeliriumHelper:
                     self.lines.append(line)
                     del self.lines[:-30]
         except Exception:
-            pass
+            buglog.caught()
         if self.proc is proc:
             self.state = "stopped"
 
@@ -191,7 +192,7 @@ class DeliriumHelper:
             with open(p, "w", encoding="utf-8") as f:
                 json.dump(data, f, indent=2)
         except Exception:
-            pass
+            buglog.caught()
 
     def get_sound(self):
         return bool(self._read().get("beep", True))
@@ -257,7 +258,7 @@ class RitualHelper(DeliriumHelper):
                     self.lines.append(line)
                     del self.lines[:-30]
         except Exception:
-            pass
+            buglog.caught()
         if self.proc is proc:
             self.state = "stopped"
 

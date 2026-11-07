@@ -8,6 +8,7 @@ import re
 import requests
 import threading
 import time
+from . import buglog
 from .config import APP_VERSION, load_json, P, save_json
 from .util import _num
 
@@ -151,7 +152,7 @@ class Rates:
                     f.write(f"{time.strftime('%Y-%m-%d %H:%M:%S')}  no exchange rate for '{cur}' (poe.ninja ids: "
                             f"{', '.join(sorted(self.table)[:40])}...)\n")
             except Exception:
-                pass
+                buglog.caught()
 
     def status_text(self):
         a = self.age()

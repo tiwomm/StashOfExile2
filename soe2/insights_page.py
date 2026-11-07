@@ -7,6 +7,7 @@ import tkinter as tk
 from datetime import datetime
 from tkinter import ttk
 
+from . import buglog
 from .config import SETTINGS, save_json
 from .market import MARKET
 from .valuelog import VALUE_LOG, sig_of
@@ -709,7 +710,7 @@ class InsightsPage:
             try:
                 self.root.after_cancel(job)
             except Exception:
-                pass
+                buglog.caught()
         w, self.__dict__["ins_pop"] = getattr(self, "ins_pop", None), None
         if w is not None:
             try:

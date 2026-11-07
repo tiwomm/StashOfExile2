@@ -11,6 +11,7 @@ Every list in the app takes:
 Keys go to the list you last clicked in the window that's in front (each window keeps its own). Typing in a box keeps
 the usual meaning of those keys. Undo keeps the last 20 removals per window, until the app closes."""
 import tkinter as tk
+from . import buglog
 
 UNDO_DEPTH = 20
 
@@ -122,7 +123,7 @@ class ListKeys:
         try:
             self._say(text, 6)
         except Exception:
-            pass
+            buglog.caught()
 
     def undo_changed(self, key):
         """Undo buttons follow whether there's something to undo."""

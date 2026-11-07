@@ -15,6 +15,7 @@ Mixed into App. GGG ToS: windows, the clipboard and the game's log only."""
 import tkinter as tk
 from tkinter import ttk
 
+from . import buglog
 from . import campaign as CP
 
 PAGES = ("Route", "Rewards", "Act times")   # 2.89.2: "Splits" said nothing to most players
@@ -100,7 +101,7 @@ class CampaignUI:
             try:
                 self.tk_camp_route.pick(dict(CP.ROUTES).get(CP.cfg()["route"]), notify=False)
             except Exception:
-                pass
+                buglog.caught()
         if getattr(self, "tk_camp_vars", None) and "ask_route" in self.tk_camp_vars:
             self.tk_camp_vars["ask_route"].set(bool(CP.cfg()["ask_route"]))
         self.camp_route_ask_close()

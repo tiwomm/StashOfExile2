@@ -15,6 +15,7 @@ import time
 import tkinter as tk
 from tkinter import ttk
 
+from . import buglog
 from .config import load_json, save_json
 from .style import BODY, C, SMALL
 
@@ -51,7 +52,7 @@ def no_activate(w):
         st = ctypes.windll.user32.GetWindowLongW(hwnd, -20)
         ctypes.windll.user32.SetWindowLongW(hwnd, -20, st | 0x08000000 | 0x00000080)   # NOACTIVATE | TOOLWINDOW
     except Exception:
-        pass
+        buglog.caught()
 
 
 class Toasts:
@@ -91,12 +92,12 @@ class Toasts:
         try:
             save_json(FILE, list(self.history))
         except Exception:
-            pass
+            buglog.caught()
         if self.on_history:
             try:
                 self.on_history()
             except Exception:
-                pass
+                buglog.caught()
         while len(self.shown) >= MAX_SHOWN:
             self.close(self.shown[0])
 

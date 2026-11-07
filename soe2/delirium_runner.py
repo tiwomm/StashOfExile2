@@ -14,6 +14,7 @@ import os
 import sys
 import threading
 from pathlib import Path
+from . import buglog
 
 
 def _reopen_std():
@@ -47,7 +48,7 @@ def _reopen_std():
         if sys.stderr is None:
             sys.stderr = sys.stdout
     except Exception:
-        pass
+        buglog.caught()
 
 
 def parent_pid(argv):
@@ -120,7 +121,7 @@ def main(argv):
                 sys.stdout.write(str(line).rstrip("\n") + "\n")
                 sys.stdout.flush()
             except Exception:
-                pass
+                buglog.caught()
 
     import builtins
     builtins_print = builtins.print
@@ -138,7 +139,7 @@ def main(argv):
         if data.get("game_window_title"):
             D.CONFIG["game_window_title"] = str(data["game_window_title"])
     except Exception:
-        pass
+        buglog.caught()
     # its messages (print) go to the app as message lines
     def relay(*a, **k):
         text = " ".join(str(x) for x in a)
@@ -163,7 +164,7 @@ def main(argv):
                     if cmd:
                         self.commands.append(cmd)
             except Exception:
-                pass
+                buglog.caught()
             after_stdin_ends(self.pid, lambda: self.commands.append("quit"))     # the app is gone: so are we
 
         def set(self, state):

@@ -9,6 +9,7 @@ import threading
 
 
 # ------------------------------------------------------------------ paths / settings
+from . import buglog
 from . import __version__ as APP_VERSION      # set in soe2/__init__.py; the launcher's file name must match
 
 
@@ -72,7 +73,7 @@ def import_old_data():
                     MIGRATED.append(name)
                     break
             except Exception:
-                pass
+                buglog.caught()
 
 
 import_old_data()
@@ -106,7 +107,7 @@ def refresh_bundled_data():
             if existed:                                  # a file new in this version isn't an "update" (1.44)
                 DATA_UPDATED.append(name)
         except Exception:
-            pass
+            buglog.caught()
     save_json("data_versions.json", seen)
 
 
@@ -205,7 +206,7 @@ def save_json(name, data):
             from . import buglog                              # 2.115.0: the one log (paths and names cleaned)
             buglog.record("error", f"saving {name}", detail=str(e))
         except Exception:
-            pass
+            buglog.caught()
         return False
 
 
@@ -254,7 +255,7 @@ def load_modbook():
         try:
             os.replace(path, P("modbook.broken.json"))
         except Exception:
-            pass
+            buglog.caught()
         return {}, "modbook.json couldn't be read - kept as modbook.broken.json and started a fresh one."
     old = 0
     for e in data.values():
@@ -291,7 +292,7 @@ def backup_modbook():
             import shutil
             shutil.copyfile(P("modbook.json"), P("modbook.backup.json"))
     except Exception:
-        pass
+        buglog.caught()
 
 
 backup_modbook()

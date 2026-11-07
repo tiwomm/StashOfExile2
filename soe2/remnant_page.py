@@ -6,6 +6,7 @@ import threading
 import time
 import tkinter as tk
 
+from . import buglog
 from . import remnant as RM
 from .config import save_json, SETTINGS
 from .pricefmt import fmt_short
@@ -26,7 +27,7 @@ def capture_affinity(win, hide=True):
         u.SetWindowDisplayAffinity.argtypes = [ctypes.c_void_p, ctypes.c_uint]
         u.SetWindowDisplayAffinity(h, 0x11 if hide else 0x0)
     except Exception:
-        pass
+        buglog.caught()
 
 
 def no_capture(win):
@@ -43,7 +44,7 @@ def no_capture(win):
         u.SetWindowDisplayAffinity.argtypes = [ctypes.c_void_p, ctypes.c_uint]
         u.SetWindowDisplayAffinity(h, 0x11)
     except Exception:
-        pass
+        buglog.caught()
 
 
 class RemnantPage:
@@ -128,7 +129,7 @@ class RemnantPage:
         try:
             self.alerts_refresh()
         except Exception:
-            pass
+            buglog.caught()
 
     # ---------------- Auto: a light watcher on the learned area
     def remnant_auto_sync(self):
@@ -215,7 +216,7 @@ class RemnantPage:
         try:
             self.alerts_refresh()
         except Exception:
-            pass
+            buglog.caught()
 
     def remnant_keep(self, rows):
         """2.43.0: while the book stays open, the tags stay. Hovering a reward puts the game's tooltip over part of the
@@ -288,7 +289,7 @@ class RemnantPage:
         try:
             WPRICES.ensure(league)
         except Exception:
-            pass
+            buglog.caught()
         names = []
         for typ in NINJA_EXCHANGE_TYPES:
             names += [ln[1] for ln in (WPRICES.parts.get(typ) or {}).get("lines", [])]
@@ -335,7 +336,7 @@ class RemnantPage:
             self.alerts_refresh()
             self.alerts_overlay_redraw()
         except Exception:
-            pass
+            buglog.caught()
 
     # ---------------- the tags over the game
     # 2.38.0: one small, solid, click-through window per tag. (2.37.0 drew them on ONE window as big as the game, made
@@ -387,7 +388,7 @@ class RemnantPage:
                 click_through(w)
                 force_topmost(w)
             except Exception:
-                pass
+                buglog.caught()
             no_capture(w)
             wins.append(w)
 
@@ -484,7 +485,7 @@ class RemnantPage:
             ml, mt, mr, mb = monitor_rect(self.root, x, y)
             x = min(x, mr - w.winfo_reqwidth())
         except Exception:
-            pass
+            buglog.caught()
         w.geometry(f"+{int(x)}+{int(y)}")
         w.deiconify()
         try:
@@ -493,7 +494,7 @@ class RemnantPage:
             no_activate(w)                                    # 2.98.6: clickable (Never show again), but it never
             force_topmost(w)                                  # takes the keyboard from the game
         except Exception:
-            pass
+            buglog.caught()
         no_capture(w)
         w.rm_tips = True
         wins.append(w)

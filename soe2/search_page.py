@@ -3,6 +3,7 @@ Mixed into App. Data and matching are in gamesearch.py."""
 import tkinter as tk
 from tkinter import ttk
 
+from . import buglog
 from . import gamesearch
 from .config import SETTINGS, save_json
 from .style import C, FONT_TITLE, SegBar
@@ -372,7 +373,7 @@ class SearchPage:
             try:
                 WPRICES.ensure_types(lg, ("Delirium",))
             except Exception:
-                pass
+                buglog.caught()
             self.ui_q.put(("search_prices",))
         threading.Thread(target=work, daemon=True).start()
 

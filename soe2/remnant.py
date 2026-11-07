@@ -21,6 +21,7 @@ clicks, types or sends anything to the game, and never reads the game's memory o
 import difflib
 import re
 import sys
+from . import buglog
 
 CREDIT_NAME = "PoE Ancients Price Helper (Pedro Quitério)"
 CREDIT_URL = "https://github.com/pedro-quiterio/PoeAncientsPriceHelper"
@@ -261,7 +262,7 @@ def _engine():
         if eng is not None:
             return eng
     except Exception:
-        pass
+        buglog.caught()
     return OcrEngine.try_create_from_user_profile_languages()
 
 
