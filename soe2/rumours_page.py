@@ -202,7 +202,7 @@ class RumoursPage:
                      width=2).grid(row=i, column=0, sticky="w", pady=1)
             tk.Label(box, text=island, bg=P["bg"], fg=P["text"], font=(body, size), anchor="w").grid(
                 row=i, column=1, sticky="w", padx=(8, 0))
-            tk.Label(box, text=rumour.rstrip(".!"), bg=P["bg"], fg=P["muted"], font=(body, size), anchor="w").grid(
+            tk.Label(box, text=str(rumour or "").rstrip(".!"), bg=P["bg"], fg=P["muted"], font=(body, size), anchor="w").grid(
                 row=i, column=2, sticky="w", padx=(8, 0))
         if any(not mine.get(i) for _r, i, _b in rows):
             tk.Label(box, text="- = not ranked yet (Map library)", bg=P["bg"], fg=P["muted"], font=(body, size),
