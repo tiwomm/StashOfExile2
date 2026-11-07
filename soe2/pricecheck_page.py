@@ -347,15 +347,21 @@ class PriceCheckPage:
         inner = tk.Frame(cv, bg=bg, padx=padx, pady=4)
         win = cv.create_window((0, 0), window=inner, anchor="nw")
 
+        from .style import SbGuard
+        guard = SbGuard()
+
         def fit(_e=None):
-            """2.97.0 (feedback: no scrollbar when it fits): the bar shows only when there's more to see."""
+            """2.97.0 (feedback: no scrollbar when it fits): the bar shows only when there's more to see (2.112.2:
+            never flipping back and forth - SbGuard)."""
             try:
                 cv.configure(scrollregion=cv.bbox("all"))
                 need = inner.winfo_reqheight() > cv.winfo_height() + 1
                 if need and not sb.winfo_ismapped():
                     sb.pack(side="right", fill="y", before=cv)
-                elif not need and sb.winfo_ismapped():
+                    guard.flipped()
+                elif not need and sb.winfo_ismapped() and guard.may_hide():
                     sb.pack_forget()
+                    guard.flipped()
                     cv.yview_moveto(0)
             except tk.TclError:
                 pass
