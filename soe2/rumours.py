@@ -45,6 +45,21 @@ def squash(text):
 _KEYS = [(squash(r), r, i) for r, i in RUMOURS]
 
 
+def _score(s, k):
+    """How well line s holds rumour k: the whole line, or (2.113.0) its best stretch of about k's length - a rumour
+    read on one line with the "Island Rumours" heading above it ("islandrumourswarmbutrisky") didn't match."""
+    best = difflib.SequenceMatcher(None, s, k).ratio()
+    if len(s) > len(k) + 3:
+        for n in (len(k) - 2, len(k), len(k) + 2):
+            if n < 4:
+                continue
+            for a in range(0, len(s) - n + 1):
+                sc = difflib.SequenceMatcher(None, s[a:a + n], k).ratio()
+                if sc > best:
+                    best = sc
+    return best
+
+
 def match(line):
     """An OCR'd line -> (rumour, island) or None."""
     s = squash(line)
@@ -52,7 +67,7 @@ def match(line):
         return None
     best, score = None, 0.0
     for k, r, i in _KEYS:
-        sc = difflib.SequenceMatcher(None, s, k).ratio()
+        sc = _score(s, k)
         if sc > score:
             best, score = (r, i), sc
     return best if score >= MATCH else None

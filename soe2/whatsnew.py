@@ -43,7 +43,9 @@ NOTES = {
              "opens the price, the mods (with Min / Max) and the cheapest listings right over the game.",
              ("Turn it on", "settings:Hotkeys"), "Price checks"),
         ],
-        "small": [],
+        "small": [
+            ("Expedition", "Island rumours: every rumour on the card shows, in a smaller panel like the Runeshape tips."),
+        ],
     },
     "2.112.5": {
         "big": [],
