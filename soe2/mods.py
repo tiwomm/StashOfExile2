@@ -410,6 +410,25 @@ def tier_key(k):
     return t if t in TIER_ORDER else default_tier(k)
 
 
+def migrate_tier_only():
+    """2.114.0 (P8: "make Tier the only rating"): before, a mod had a tier AND High / Normal / Ignore, and they could
+    disagree (High with tier C). Now the tier decides: S / A = High, B / C / D = Normal. An Ignore (F) stays and its
+    old tier goes. -> True when anything changed."""
+    changed = False
+    for k, t in list(TIERS.items()):
+        if t not in TIER_ORDER:
+            continue
+        if RULES.get(k) == "ignore":
+            TIERS.pop(k)
+            changed = True
+            continue
+        want = "high" if t in ("S", "A") else "normal"
+        if impact_key(k) != want:
+            RULES[k] = want
+            changed = True
+    return changed
+
+
 def tier_rank(t):
     """S = 0 ... D = 4; no tier (ignored) = 9."""
     return TIER_ORDER.index(t) if t in TIER_ORDER else 9

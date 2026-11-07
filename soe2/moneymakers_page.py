@@ -1108,7 +1108,7 @@ class MoneyMakersPage:
             if ok:
                 self._say("You're an admin on the board now (right-click a post for the admin tools).", 8)
                 self.mm_board_fetch()
-                try:                                         # 2.88.0: admin tools (the Listing order lab) show
+                try:                                         # 2.88.0: admin-only tools show (none since 2.114.0)
                     self.shell.set_advanced(self.shell.advanced_on())
                 except Exception:
                     pass

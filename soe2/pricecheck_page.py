@@ -420,6 +420,12 @@ class PriceCheckPage:
         want - Settings › Hotkeys)."""
         rid = self.add_item_text(text, src="pc")
         if rid is None:
+            from .wealth import parse_currency_item
+            cur = parse_currency_item(text)
+            if cur:                                      # 2.114.0: currency-like (a Wombgift, an omen ...): its
+                self.status_text, self.status_until = f"Pricing {cur[0]}...", time.time() + 10   # going rate
+                self.stack_price(cur[0], cur[1], loud=True)
+                return None
             self.status_text, self.status_until = "Copied, but that item can't be price checked yet", time.time() + 6
             return None
         old = self.pc_recs()[PC_MAX:]

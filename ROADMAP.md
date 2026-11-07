@@ -4,7 +4,7 @@
 
 > **Who we build for - read second.** Path of Exile players are utilitarian: they love data and information, problem solving and creative thinking. So every feature shows its numbers *and how they were worked out*, lets you sort, filter, compare and export them (CSV), keeps power-user depth (keys, versions, raw data) one click away instead of hiding it, explains in plain words, and leaves the decision to the player. Pretty is welcome; vague is not.
 
-**Current version: 2.113.2**
+**Current version: 2.114.0**
 
 Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds features, 2.10.1 only fixes. Each step below is one release; we work through them top to bottom.
 
@@ -174,6 +174,7 @@ Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds f
 | 2.97.1 | Price Checks card: a rune's line and an affix with the same wording are ticked apart; runes in their own AUGMENTS section (no RUNE / SOCKETED lines); Fractured / Desecrated only small, right under its mod, the mod in its color. |
 | 2.97.2 | Price Checks card - visual hierarchy: a mod's color says where it comes from (affix blue, rune light blue, fractured tan, desecrated green, pseudo pink; unticked = dimmed, not grey), the listing cards match; every section folds with how many are ticked, Fold all / Unfold all. |
 | 2.113.2 | Island rumours matched by letter shape too (a misread middle rumour); What's new never claims a fix. |
+| 2.114.0 | P8 + P9: Mod book one rating (S-F), Rate mods picker grouped, Under the hood Paste item / Price it, Exchange rates names and numbers, Notes opens the note, calculator starts blank; Listing order lab removed. |
 | 2.113.1 | Price Checks: the Show over the game switch on its header and in Settings › Price checking (out of Hotkeys); Island rumours: the middle rumour (whole-text search, read at 2x, rumours_read.txt). |
 | 2.113.0 | Each seller counts once in every price (their cheapest, "listed N times"; listings 11-20 fetched when too few sellers); Min within the mod's tier. Island rumours: all of a card's rumours (a rumour run together with the heading matched nothing; read up to 3 times), a compact panel. Price check in a card over the game (opt-in, Settings › Hotkeys › Price Checks): item, price, mods with ticks and Min / Max, cheapest listings that open to the whole item; movable, resizable, remembered; the overlay's Style. |
 | 2.112.5 | Hotfix: dragging the Campaign / Focus line no longer opens its card. |
@@ -246,8 +247,8 @@ Most-used first; pages that share data go together so their doubles can be merge
 | P5 | ✅ 2.108.0 - Overlay's children: Game Plan, Map library, Leaderboards |
 | P6 | ✅ 2.108.0 - Money Makers (Strats, Lucrative Strats, Tablet Craft Helper, Farm Tracker, strat editor) |
 | P7 | ✅ 2.108.0 - Regex, Game search |
-| P8 | Under the hood: Mod book, Rate mods - and remove the Listing order lab (an admin tool, done its job). |
-| P9 | Exchange rates, Notes, Calculator |
+| P8 | ✅ 2.114.0 - Under the hood: Mod book, Rate mods - and remove the Listing order lab (an admin tool, done its job). |
+| P9 | ✅ 2.114.0 - Exchange rates, Notes, Calculator |
 | P10 | Settings (every tab), Privacy & community, About, the welcome / what's new card, first start - plus Settings › Advanced › Developer options (off and hidden until switched on): a Debug mode for Windows and Linux builds (more detail in the error log, a debug line in the status bar, nothing personal logged); an Unmatched mods page - every mod the app couldn't find on the trade list (unmatched_mods.txt) beside the closest trade wording, so each mismatch points at its fix. |
 
 ### Page standard (every pass checks the same things, in this order)

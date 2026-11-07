@@ -88,9 +88,10 @@ class RateModsPage:
         else:
             self.rm_picker()
         try:
-            w.update_idletasks()
-            hx, hy, hw = self.root.winfo_rootx(), self.root.winfo_rooty(), self.root.winfo_width()
-            w.geometry(f"+{hx + max(0, (hw - w.winfo_reqwidth()) // 2)}+{hy + 80}")
+            w.update_idletasks()                          # 2.114.0: centred over the app
+            hx, hy = self.root.winfo_rootx(), self.root.winfo_rooty()
+            hw, hh = self.root.winfo_width(), self.root.winfo_height()
+            w.geometry(f"+{hx + max(0, (hw - w.winfo_reqwidth()) // 2)}+{hy + max(40, (hh - w.winfo_reqheight()) // 2)}")
         except tk.TclError:
             pass
         on_top(w)
@@ -111,23 +112,61 @@ class RateModsPage:
                  font=("Segoe UI", 9), anchor="w").pack(fill="x", pady=(4, 12))
         last = RM.SETTINGS.get("rate_set")
         self.rm_pick_btns = {}
-        grid = tk.Frame(box, bg=P2)
-        grid.pack(fill="x")
-        for i, (s, label) in enumerate(self.rm_sets()):
-            q = self.rm_queue(s)
-            left = sum(1 for keys, _t in q if RM.current(keys) is None)
-            sub = (f"{left} of {len(q)} not rated yet" if left else f"all {len(q)} rated") if q else "nothing to rate yet"
-            b = ttk.Button(grid, text=f"{label}\n{sub}", width=24, style="Primary.TButton" if s == last else "TButton",
-                           command=lambda s=s: self.rm_pick(s))
-            b.grid(row=i // 2, column=i % 2, sticky="ew", padx=(0 if i % 2 == 0 else 8, 0), pady=(0, 8))
-            if not q:
-                b.state(["disabled"])
-            self.rm_pick_btns[s] = b
-        grid.columnconfigure(0, weight=1, uniform="p")
-        grid.columnconfigure(1, weight=1, uniform="p")
+        # 2.114.0 (P8: the box was 40 buttons tall, past the bottom of the app): grouped - Map items, Gear, Uniques -
+        # four across, each "N to rate" with a bar; the gear / unique part scrolls when it doesn't fit.
+        groups = [("Map items", []), ("Gear", []), ("Uniques you've checked", [])]
+        for s, label in self.rm_sets():
+            g = 1 if s.startswith("gear:") else 2 if s.startswith("unique:") else 0
+            groups[g][1].append((s, label.split(": ", 1)[-1]))
+        cols = 4
+        try:
+            room = max(420, self.root.winfo_height() - 260)
+        except tk.TclError:
+            room = 500
+        from .style import ScrollArea
+        sa = ScrollArea(box, bg=P2)
+        sa.pack(fill="both", expand=True)
+        inner = sa.inner
+        for title, sets in groups:
+            if not sets:
+                continue
+            tk.Label(inner, text=title.upper(), bg=P2, fg=C["muted"], font=("Segoe UI", 9, "bold"),
+                     anchor="w").pack(fill="x", pady=(8, 4))
+            grid = tk.Frame(inner, bg=P2)
+            grid.pack(fill="x")
+            for i, (s, label) in enumerate(sets):
+                self._rm_tile(grid, s, label, last).grid(row=i // cols, column=i % cols, sticky="ew",
+                                                        padx=(0 if i % cols == 0 else 6, 0), pady=(0, 8))
+            for c in range(cols):
+                grid.columnconfigure(c, weight=1, uniform="p")
+        inner.update_idletasks()
+        sa.canvas.configure(height=min(inner.winfo_reqheight(), room), width=inner.winfo_reqwidth())
         bot = tk.Frame(box, bg=P2)
         bot.pack(fill="x", pady=(8, 0))
         ttk.Button(bot, text="Done", style="Quiet.TButton", command=self.rm_close).pack(side="right")
+
+    def _rm_tile(self, parent, s, label, last):
+        """One set: a button (its name, how many are left) and a thin bar of how much is rated."""
+        P2 = C["panel2"]
+        q = self.rm_queue(s)
+        left = sum(1 for keys, _t in q if RM.current(keys) is None)
+        sub = (f"{left} to rate" if left else "all rated") if q else "nothing yet"
+        cell = tk.Frame(parent, bg=P2)
+        st = ttk.Style()
+        for name in ("Tile.TButton", "Tile.Primary.TButton"):        # two lines, both centred
+            st.configure(name, justify="center")
+        b = ttk.Button(cell, text=f"{label}\n{sub}", width=17, style="Tile.Primary.TButton" if s == last else "Tile.TButton",
+                       command=lambda s=s: self.rm_pick(s))
+        b.pack(fill="x")
+        if not q:
+            b.state(["disabled"])
+        done = (len(q) - left) / len(q) if q else 0.0
+        bar = tk.Canvas(cell, width=1, height=3, bg=C["line"], highlightthickness=0, bd=0)
+        bar.pack(fill="x")
+        bar.bind("<Configure>", lambda e, c=bar, f=done: (c.delete("all"), c.create_rectangle(
+            0, 0, int(e.width * f), 3, fill=C["accent"], width=0)))
+        self.rm_pick_btns[s] = b
+        return cell
 
     def rm_pick(self, set_name):
         RM.SETTINGS["rate_set"] = set_name
@@ -291,9 +330,10 @@ class RateModsPage:
         w.protocol("WM_DELETE_WINDOW", lambda: pick("not_now"))
         self.rm_ask_pick = pick
         try:
-            w.update_idletasks()
-            hx, hy, hw = self.root.winfo_rootx(), self.root.winfo_rooty(), self.root.winfo_width()
-            w.geometry(f"+{hx + max(0, (hw - w.winfo_reqwidth()) // 2)}+{hy + 80}")
+            w.update_idletasks()                          # 2.114.0: centred over the app
+            hx, hy = self.root.winfo_rootx(), self.root.winfo_rooty()
+            hw, hh = self.root.winfo_width(), self.root.winfo_height()
+            w.geometry(f"+{hx + max(0, (hw - w.winfo_reqwidth()) // 2)}+{hy + max(40, (hh - w.winfo_reqheight()) // 2)}")
         except tk.TclError:
             pass
         on_top(w)

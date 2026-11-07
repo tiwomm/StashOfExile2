@@ -13,7 +13,24 @@ COMMON = ("exalted", "chaos", "annul", "vaal", "regal", "gcp", "alch", "greater-
 NAMES = {"exalted": "Exalted Orb", "chaos": "Chaos Orb", "annul": "Orb of Annulment", "vaal": "Vaal Orb",
          "regal": "Regal Orb", "gcp": "Gemcutter's Prism", "alch": "Orb of Alchemy", "greater-exalted-orb":
          "Greater Exalted Orb", "perfect-exalted-orb": "Perfect Exalted Orb", "hinekoras-lock": "Hinekora's Lock",
-         "mirror": "Mirror of Kalandra"}
+         "mirror": "Mirror of Kalandra", "divine": "Divine Orb", "chance": "Orb of Chance",
+         "transmute": "Orb of Transmutation", "aug": "Orb of Augmentation", "artificers": "Artificer's Orb",
+         "jewellers": "Jeweller's Orb", "bauble": "Glassblower's Bauble", "wisdom": "Scroll of Wisdom"}
+
+
+def cur_name(cid, names=None):
+    """2.114.0 (P9: the Rates table showed poe.ninja's ids - "hinekoras-lock", "gcp"): a currency's name. names: the
+    names poe.ninja sent with its prices, when there are any."""
+    return (names or {}).get(cid) or NAMES.get(cid) or str(cid).replace("-", " ").title()
+
+
+def fmt_worth(v):
+    """2.114.0: a worth in divines as a plain number ("0.000048", never "4.762e-05")."""
+    if v >= 0.001:
+        return f"{v:.4g}"
+    import math
+    places = min(10, 1 - int(math.floor(math.log10(v))))       # two significant digits
+    return f"{v:.{places}f}"
 REFRESH_MS = 60 * 1000
 MAX_ROWS = 8
 

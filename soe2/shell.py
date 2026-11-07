@@ -931,7 +931,7 @@ class Shell:
         return bool(self.S.get("show_advanced"))
 
     def admin_on(self):
-        """2.88.0: a community board admin (tools only they need, e.g. the Listing order lab)."""
+        """2.88.0: a community board admin (tools only they need; 2.114.0: none now - the Listing order lab is gone)."""
         try:
             from . import board as B
             return bool((B.signed_in() or {}).get("admin"))
@@ -1255,8 +1255,8 @@ class Shell:
         if key == "chat":                          # 2.27.0: Chat commands is a tab in Settings now
             self.app.open_settings_tab("Chat commands")
             return
-        if key == "notes" and hasattr(self.app, "ovh_open"):     # 2.44.0: Notes is a tab of Overlays now
-            self.app.ovh_open("Notes")
+        if key == "notes" and hasattr(self.app, "notes_open"):   # 2.44.0: on the overlay; 2.114.0: the note itself
+            self.app.notes_open()
             return
         if key == "calc" and hasattr(self.app, "calc_ov_toggle"):  # 2.74.0: the calculator is over the game now
             self.app.calc_ov_toggle(True)
