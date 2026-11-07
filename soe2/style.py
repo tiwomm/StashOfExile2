@@ -494,6 +494,51 @@ def flow_show(row, w, on):
         lay()
 
 
+def _combo_on_top():
+    """2.112.0: every dropdown's list opens above "always on top" windows (Quick settings over the game was one):
+    without it the list opened behind the box and the click picked an item blind. Wraps ttk.Combobox once."""
+    if getattr(ttk.Combobox, "_soe2_top", False):
+        return
+    orig = ttk.Combobox.__init__
+
+    oconf = ttk.Combobox.configure
+
+    def configure(self, cnf=None, **kw):
+        if isinstance(cnf, dict) and "postcommand" in cnf:
+            cnf = dict(cnf)
+            kw["postcommand"] = cnf.pop("postcommand")
+        if "postcommand" in kw:                       # the page's own list refresh runs after ours
+            self._soe2_user = kw.pop("postcommand")
+            kw["postcommand"] = self._soe2_post
+        return oconf(self, cnf, **kw)
+
+    def _post(self):
+        try:
+            pd = self.tk.call("ttk::combobox::PopdownWindow", self)
+            self.tk.call("wm", "attributes", pd, "-topmost", 1)
+        except tk.TclError:
+            pass
+        user = getattr(self, "_soe2_user", None)
+        if callable(user):
+            user()
+        elif user:
+            self.tk.eval(user)
+
+    def __init__(self, master=None, **kw):
+        user = kw.pop("postcommand", None)
+        orig(self, master, **kw)
+        self._soe2_post = self.register(lambda: _post(self))
+        self._soe2_user = user
+        oconf(self, postcommand=self._soe2_post)
+    ttk.Combobox.__init__ = __init__
+    ttk.Combobox.configure = configure
+    ttk.Combobox.config = configure
+    ttk.Combobox._soe2_top = True
+
+
+_combo_on_top()
+
+
 def setup_style(root):
     """The ttk styles, from the running theme pack (2.60.0). Called at start and again after a live theme swap."""
     from . import themes as TH

@@ -26,6 +26,8 @@ VERSION HISTORY
        Open. Grouped In maps / Play / Trading & more. Sound for every helper sits at the top right. Gone: the six
        "Switch on the bar" and two "Remind me when I leave the map" lines, the second row of switches under each
        helper, the long status sentences.
+       Dropdowns: every list opens above "always on top" windows (style.py wraps ttk.Combobox). Quick settings' Style
+       list opened behind the box over the game, so the click closed it and picked a style blind.
   2.111.0
        Ornate overlay styles, wave 2: Totem (timber frame, red war-banner bands, hide tabs), Hellfire (rusted
        iron, rivets, ember-gold Metamorphous), Psionic (gold over deep-blue glass, cyan light, Marcellus) and
