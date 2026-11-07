@@ -272,13 +272,16 @@ class MergedOverlay:
         return b
 
     def bar_chips(self):
-        """The switches on the bar: the Mechanic Helper's four (their switch on), then Focus and Campaign (their own)."""
+        """The switches on the bar, left to right (2.110.0, feedback): Campaign, Focus, then the Mechanic Helper's
+        (Breach, Delirium, Ritual, Expedition - and any new mechanic after them). Each only while its switch is on."""
         b = self.bar_cfg()
-        chips = [k for k in self.HELPERS if b.get(k, True)] if self.tracker_cfg().get("alerts_bar", True) else []
+        chips = []
+        if b.get("campaign"):                          # 2.88.3 (feedback): on the bar while its switch is on
+            chips.append("campaign")
         if b.get("focus"):
             chips.append("focus")
-        if self.bar_cfg().get("campaign"):             # 2.88.3 (feedback): always on
-            chips.append("campaign")                     # the bar while its switch is on, campaign or not
+        if self.tracker_cfg().get("alerts_bar", True):
+            chips += [k for k in self.HELPERS if b.get(k, True)]
         return chips
 
     def notes_on_bar(self):
@@ -1360,7 +1363,7 @@ class MergedOverlay:
             # 2.90.0: | Map 3:12  Arcane Isle | Maps: 4 | Avg. 6:01 | - the map and where you are share one part,
             # each part's text is centered between its dividers, and the area's name is shown whole (smaller type
             # before it is ever cut)
-            mw, aw = fm.measure("Maps: 000") + 16, fm.measure("Avg.: 00:00") + 16
+            mw, aw = fm.measure("Maps: 000") + 16, fm.measure("Avg: 00:00") + 16
             fixed = [k for k, on in (("maps", ln.get("maps")), ("avg", ln.get("avg"))) if on]
             widths = {"maps": mw, "avg": aw}
             map_on = bool(ln.get("map", True) or ln.get("where", True))
