@@ -190,11 +190,11 @@ class WealthPage:
         self.w_filter_chip.bind("<Button-1>", lambda e: self.wealth_clear_filters())
 
         # counting / "copied a stack" strip (hidden until used)
-        self.w_cstrip = tk.Frame(right, bg="#2a2110", padx=12, pady=8, highlightthickness=1, highlightbackground="#7a6428")
-        self.w_cstrip_lbl = tk.Label(self.w_cstrip, text="", bg="#2a2110", fg=C["text"], anchor="w", justify="left",
+        self.w_cstrip = tk.Frame(right, bg=C["warn_bg"], padx=12, pady=8, highlightthickness=1, highlightbackground=C["accent"])
+        self.w_cstrip_lbl = tk.Label(self.w_cstrip, text="", bg=C["warn_bg"], fg=C["text"], anchor="w", justify="left",
                                      font=("Segoe UI", 10))
         self.w_cstrip_lbl.pack(side="left", fill="x", expand=True)
-        self.w_cstrip_btns = tk.Frame(self.w_cstrip, bg="#2a2110")
+        self.w_cstrip_btns = tk.Frame(self.w_cstrip, bg=C["panel2"])
         self.w_cstrip_btns.pack(side="right")
         self.w_cstrip_lbl.bind("<Configure>", lambda e: self.w_cstrip_lbl.config(wraplength=max(260, e.width - 10)))
         # add by hand (hidden until used)

@@ -52,7 +52,7 @@ class SearchPage:
         t.tag_configure("link", foreground="#6ea8ff", underline=True)
         t.tag_configure("txt", lmargin1=0, lmargin2=0, spacing1=2)
         t.tag_configure("kw", foreground=C["steel"], font=("Segoe UI", 9, "italic"))
-        t.tag_configure("mark", background="#6a5418", foreground="#ffffff")
+        t.tag_configure("mark", background=C["accent"], foreground=C["bg"])
         t.tag_configure("sep", font=("Segoe UI", 9))
         t.tag_configure("more", foreground=C["accent"], font=("Segoe UI", 10, "bold"), underline=True)
         t.tag_configure("empty", foreground=C["muted"], font=("Segoe UI", 10), justify="center")

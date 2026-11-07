@@ -134,7 +134,7 @@ class Notice(tk.Frame):
 
     def __init__(self, parent, key, text, kind="beta"):
         from .config import SETTINGS
-        bg, fg, edge = {"beta": ("#2a2110", "#ffcf40", "#7a6428")}.get(kind, (C["panel2"], C["muted"], C["line"]))
+        bg, fg, edge = {"beta": (C["warn_bg"], "#ffcf40", C["accent"])}.get(kind, (C["panel2"], C["muted"], C["line"]))
         super().__init__(parent, bg=bg, highlightthickness=1, highlightbackground=edge)
         self.key, self._S = key, SETTINGS
         self.label = tk.Label(self, text=text, bg=bg, fg=fg, anchor="w", justify="left", padx=8, pady=2,

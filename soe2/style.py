@@ -815,7 +815,7 @@ class SegBar(tk.Frame):
             lab.config(padx=0)
             lab.pack_configure(padx=(self.pad[0], 4))
             tag = tk.Label(top, text=badge, bg="#3a2a10", fg="#ffcf40", font=("Segoe UI", SMALL - 2, "bold"), padx=4,
-                           pady=0, cursor="hand2", highlightthickness=1, highlightbackground="#7a6428")
+                           pady=0, cursor="hand2", highlightthickness=1, highlightbackground=C["accent"])
             tag.pack(side="left", padx=(0, self.pad[0]))
             tag.bind("<Enter>", lambda e, o=opt: self.paint(hover=o))
         line = tk.Frame(f, height=2)

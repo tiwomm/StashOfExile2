@@ -1,5 +1,5 @@
 # Quick checks on every pull request (2.34.0): the GGG ToS safety check (2.38.0, TOS.md), the version agrees everywhere, the code stays on the design tokens,
-# and every theme / accent keeps WCAG AA text contrast. Each is one script in tools/ - run them yourself the same way.
+# every colour follows the theme (2.111.0), and every theme / accent keeps WCAG AA text contrast. Each is one script in tools/ - run them yourself the same way.
 name: Checks
 
 on:
@@ -22,6 +22,8 @@ jobs:
         run: python tools/check_version.py
       - name: Design tokens (text sizes, spacing)
         run: python tools/check_tokens.py
+      - name: Every colour follows the theme
+        run: python tools/check_theme.py
       - name: Contrast (WCAG AA, every theme and accent)
         run: python tools/check_contrast.py
       - name: Windows text reader (OCR) for the Expedition Remnant Price Checker

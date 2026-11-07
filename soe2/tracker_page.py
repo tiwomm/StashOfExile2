@@ -151,11 +151,11 @@ class TrackerPage:
         self.tracker_keys_hint()
         from .style import flowify
         flowify(top)                                         # 2.98.0: wraps in a narrow window
-        self.tk_strip = tk.Frame(body, bg="#2a2110", padx=12, pady=8, highlightthickness=1, highlightbackground="#7a6428")
-        self.tk_strip_lbl = tk.Label(self.tk_strip, text="", bg="#2a2110", fg=C["text"], anchor="w", justify="left",
+        self.tk_strip = tk.Frame(body, bg=C["warn_bg"], padx=12, pady=8, highlightthickness=1, highlightbackground=C["accent"])
+        self.tk_strip_lbl = tk.Label(self.tk_strip, text="", bg=C["warn_bg"], fg=C["text"], anchor="w", justify="left",
                                      wraplength=640)
         self.tk_strip_lbl.pack(side="left", fill="x", expand=True)
-        self.tk_strip_btns = tk.Frame(self.tk_strip, bg="#2a2110")
+        self.tk_strip_btns = tk.Frame(self.tk_strip, bg=C["panel2"])
         self.tk_strip_btns.pack(side="right")
         lrow = tk.Frame(body, bg=P1)
         lrow.pack(fill="x", padx=12)

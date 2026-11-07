@@ -90,7 +90,7 @@ class AboutPage:
 
     # ================================================================ Settings > About
     def build_about(self, wrap):
-        from .whatsnew import notes_between
+        from .whatsnew import notes_between, plain_lines
         P1, P2 = C["panel"], C["panel2"]
         head = tk.Frame(wrap, bg="#1a2a4c", padx=16, pady=16, highlightthickness=1, highlightbackground=C["line"])
         head.pack(fill="x", pady=(0, 8))
@@ -120,11 +120,11 @@ class AboutPage:
         box.pack(fill="x", pady=(0, 8))
         tk.Label(box, text=f"What's new in {pretty_version()}", bg=P2, fg=C["accent"], font=("Segoe UI", 12, "bold"),
                  anchor="w").pack(fill="x")
-        notes = dict(notes_between(None, APP_VERSION)).get(APP_VERSION) or ["(nothing listed)"]
+        notes = plain_lines(dict(notes_between(None, APP_VERSION)).get(APP_VERSION) or ["(nothing listed)"])
         for line in notes:
             tk.Label(box, text="•  " + line, bg=P2, fg=C["text"], anchor="w", justify="left", wraplength=600,
                      font=("Segoe UI", 9)).pack(fill="x", pady=(4, 0))
-        more = tk.Label(box, text="Every version's notes", bg=P2, fg="#6ea8ff", cursor="hand2",
+        more = tk.Label(box, text="Every version's notes", bg=P2, fg=C["accent"], cursor="hand2",
                         font=("Segoe UI", 9, "underline"), anchor="w")
         more.pack(fill="x", pady=(8, 0))
         more.bind("<Button-1>", lambda e: self.show_whatsnew(True))

@@ -4,7 +4,7 @@
 
 > **Who we build for - read second.** Path of Exile players are utilitarian: they love data and information, problem solving and creative thinking. So every feature shows its numbers *and how they were worked out*, lets you sort, filter, compare and export them (CSV), keeps power-user depth (keys, versions, raw data) one click away instead of hiding it, explains in plain words, and leaves the decision to the player. Pretty is welcome; vague is not.
 
-**Current version: 2.110.0**
+**Current version: 2.111.0**
 
 Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds features, 2.10.1 only fixes. Each step below is one release; we work through them top to bottom.
 
@@ -318,6 +318,8 @@ The GGG Terms of Service check in [TOS.md](TOS.md) comes first; these follow fro
 - **Lean pull requests.** Only what the app or its build needs: no screenshots or pictures (except the matching templates in `soe2/templates/` and the app icon), no scratch files. Before / after pictures go in the PR's description, not in the repository.
 
 - **Opting out is final.** When you say no to anything (sharing, an ask, a card), it's never asked again - not later, not in a few days. Only you turn it back on, from its switch.
+- **Everything follows the look you picked.** App windows, cards and dialogs use the app theme's tokens (`C[...]`); everything over the game uses the overlay Style (`App.ov_palette`). No hard-coded colours (`tools/check_theme.py` checks every PR); colours that must stay fixed (item rarity) are marked `# theme-ok`.
+- **What's new: big first.** Each version's notes are `big` (hero rows) and `small` (folded lines), by the standard in `soe2/whatsnew.py`: big = a player would notice it without being told, or needs it to keep playing the same way (new tool / style / helper, something moved or works differently, anything about data or privacy, a widely hit fix); at most 3 per card.
 - **One action per key press.** Nothing is automated in the game.
 - **Only reads what's yours to read.** No game memory or packets; only your clipboard, the game's own log file and your own screen.
 - **Respects the trade site.** Its limits are respected and nothing syncs on a timer.

@@ -640,21 +640,21 @@ class InsightsPage:
             w.attributes("-topmost", True)
         except tk.TclError:
             pass
-        box = tk.Frame(w, bg="#0b0b0e", highlightthickness=2, highlightbackground="#7a5a2e")
+        box = tk.Frame(w, bg=C["panel"], highlightthickness=2, highlightbackground=C["accent"])
         box.pack()
-        top = tk.Frame(box, bg="#1d1712", padx=16, pady=8)
+        top = tk.Frame(box, bg=C["panel2"], padx=16, pady=8)
         top.pack(fill="x")
         for h in head:
-            tk.Label(top, text=h, bg="#1d1712", fg=fg, font=("Fontin SmallCaps", 13, "bold")).pack()
-        body = tk.Frame(box, bg="#0b0b0e", padx=16, pady=8)
+            tk.Label(top, text=h, bg=C["panel2"], fg=fg, font=("Fontin SmallCaps", 13, "bold")).pack()
+        body = tk.Frame(box, bg=C["panel"], padx=16, pady=8)
         body.pack(fill="x")
         for m in mods or ["(no mods saved)"]:
-            tk.Label(body, text=m, bg="#0b0b0e", fg="#8888ff" if mods else "#7f7f7f", font=("Segoe UI", 10),
+            tk.Label(body, text=m, bg=C["panel"], fg=C["magic"] if mods else C["muted"], font=("Segoe UI", 10),
                      wraplength=420, justify="center").pack()
-        tk.Frame(box, bg="#5a4630", height=1).pack(fill="x", padx=12)
-        tk.Label(box, text=price, bg="#0b0b0e", fg="#ffd9a8", font=("Segoe UI", 10, "bold"), pady=8).pack()
+        tk.Frame(box, bg=C["line"], height=1).pack(fill="x", padx=12)
+        tk.Label(box, text=price, bg=C["panel"], fg=C["good"], font=("Segoe UI", 10, "bold"), pady=8).pack()
         if foot:
-            tk.Label(box, text=foot, bg="#0b0b0e", fg="#7f7f7f", font=("Segoe UI", 9)).pack(pady=(0, 8))
+            tk.Label(box, text=foot, bg=C["panel"], fg=C["muted"], font=("Segoe UI", 9)).pack(pady=(0, 8))
         from .style import place_near                  # 2.25.2: on the monitor the mouse is on, not the main one
         place_near(self.root, w, x, y)
         w.deiconify()

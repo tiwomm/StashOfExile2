@@ -494,7 +494,7 @@ class App(GearBookPage, PriceCheckPage, FavoritesPage, BoardModPage, Leaderboard
 
     # ---------------- welcome / what's new (once per version)
     def show_whatsnew(self, force=False):
-        from .whatsnew import INTRO, notes_between
+        from .whatsnew import INTRO, notes_between, split_notes
         if SPLASH[0] is not None and not force:            # after the start-up screen
             self.root.after(500, self.show_whatsnew)
             return
@@ -519,14 +519,17 @@ class App(GearBookPage, PriceCheckPage, FavoritesPage, BoardModPage, Leaderboard
         self.whatsnew_follow()
         inner = tk.Frame(card, bg=P1)
         inner.pack(fill="both", expand=True)
-        head = tk.Frame(inner, bg="#1a2a4c", padx=16, pady=12)
+        # 2.111.0: the card follows the app theme (C tokens only); big changes are hero rows, the rest fold away
+        head = tk.Frame(inner, bg=P2, padx=16, pady=12)
         head.pack(fill="x")
         welcome = not seen and not force
         tk.Label(head, text="Welcome to StashOfExile2" if welcome else f"What's new in v{pretty_version()}",
-                 bg="#1a2a4c", fg="#ffffff", font=(FONT_TITLE, 16, "bold"), anchor="w").pack(fill="x")
+                 bg=P2, fg=C["text"], font=(FONT_TITLE, 16, "bold"), anchor="w").pack(fill="x")
+        ups = f"  ·  {len(notes)} updates" if len(notes) > 1 else ""
         tk.Label(head, text=f"version {pretty_version()}" + ("" if welcome or not seen or force else
-                                                              f"  (you had {pretty_version(seen)})"),
-                 bg="#1a2a4c", fg="#9fb6dd", anchor="w").pack(fill="x")
+                                                              f"  (you had {pretty_version(seen)}){ups}"),
+                 bg=P2, fg=C["muted"], anchor="w").pack(fill="x")
+        tk.Frame(inner, bg=C["accent"], height=2).pack(fill="x")
         if welcome:                                             # first start: pick your league right away
             lrow = tk.Frame(inner, bg=P2, padx=16, pady=8, highlightthickness=1, highlightbackground=C["accent"])
             lrow.pack(fill="x", padx=12, pady=(8, 0))
@@ -542,23 +545,109 @@ class App(GearBookPage, PriceCheckPage, FavoritesPage, BoardModPage, Leaderboard
         ttk.Button(foot, text="Got it", style="Primary.TButton", command=self.close_whatsnew).pack(side="right")
         tk.Label(foot, text="Shows once per version. Toolkit menu > What's new brings it back.", bg=P1, fg=C["muted"],
                  font=("Segoe UI", 9)).pack(side="left")
-        t = tk.Text(inner, bg=P2, fg=C["text"], relief="flat", wrap="word", padx=16, pady=12, highlightthickness=0,
+        t = tk.Text(inner, bg=P1, fg=C["text"], relief="flat", wrap="word", padx=12, pady=8, highlightthickness=0,
                     font=("Segoe UI", 10), cursor="arrow")
-        t.pack(fill="both", expand=True, padx=12, pady=(8, 0))
+        t.pack(fill="both", expand=True, padx=0, pady=(4, 0))
+        self.wn_text = t
         t.tag_configure("h", foreground=C["accent"], font=("Segoe UI", 12, "bold"), spacing1=8, spacing3=4)
-        t.tag_configure("p", spacing3=6, lmargin1=0, lmargin2=0)
-        t.tag_configure("li", spacing3=5, lmargin1=8, lmargin2=22)
+        t.tag_configure("p", spacing3=8, lmargin1=4, lmargin2=4)
+        t.tag_configure("li", spacing3=4, lmargin1=12, lmargin2=26, foreground=C["text"])
+        t.tag_configure("area", foreground=C["muted"])
+        t.tag_configure("fold", foreground=C["text"], font=("Segoe UI", 10, "bold"), spacing1=8, spacing3=4)
+        t.tag_configure("foldhint", foreground=C["muted"], font=("Segoe UI", 9))
         if welcome or force:
             t.insert("end", "What it is\n", "h")
             for line in INTRO:
                 t.insert("end", line + "\n", "p")
-        for v, lines in notes:
-            t.insert("end", f"New in {pretty_version(v)}\n", "h")
-            for line in lines:
-                t.insert("end", "•  " + line + "\n", "li")
+        big, small = split_notes(notes)
+        self.wn_heroes = []
+        self.wn_small = small
+        t.bind("<Configure>", lambda e: self.wn_fit(e.width))
+        for icon, title, text, go in big:
+            t.window_create("end", window=self._wn_hero(t, icon, title, text, go), padx=4, pady=4)
+            t.insert("end", "\n")
+        if small:
+            self.wn_small_open = False
+            areas = ", ".join(dict.fromkeys(a for a, _ in small if a))
+            t.mark_set("wn_fold", "end-1c")
+            t.mark_gravity("wn_fold", "left")
+            t.insert("end", f"▸  {len(small)} smaller change{'s' if len(small) != 1 else ''}", ("fold", "foldbtn"))
+            t.insert("end", f"   {areas}\n" if areas else "\n", ("foldhint", "foldbtn"))
+            t.mark_set("wn_small", "end-1c")
+            t.mark_gravity("wn_small", "left")
+            t.tag_bind("foldbtn", "<Button-1>", lambda _e: self.wn_toggle_small())
+            t.tag_bind("foldbtn", "<Enter>", lambda _e: t.config(cursor="hand2"))
+            t.tag_bind("foldbtn", "<Leave>", lambda _e: t.config(cursor="arrow"))
+            if not big:                                     # (nothing big: the small ones show at once)
+                self.wn_toggle_small()
         # (2.4.0: "Coming next" is no longer shown here - the plan lives in ROADMAP.md)
         t.config(state="disabled")
         card.lift()
+
+    def _wn_hero(self, t, icon, title, text, go):
+        """2.111.0: one big change on the What's new card - an icon, a bold title, a line, and a link to it."""
+        P2 = C["panel2"]
+        row = tk.Frame(t, bg=P2, highlightthickness=1, highlightbackground=C["line"])
+        tk.Frame(row, bg=C["accent"], width=4).pack(side="left", fill="y")
+        tk.Label(row, text=icon, bg=P2, fg=C["accent"], font=("Segoe UI Symbol", 16), width=2).pack(
+            side="left", padx=(8, 4), pady=8, anchor="n")
+        body = tk.Frame(row, bg=P2)
+        body.pack(side="left", fill="both", expand=True, padx=(4, 12), pady=8)
+        tk.Label(body, text=title, bg=P2, fg=C["text"], font=("Segoe UI", 12, "bold"), anchor="w",
+                 justify="left").pack(fill="x")
+        msg = tk.Label(body, text=text, bg=P2, fg=C["muted"], font=("Segoe UI", 10), anchor="w", justify="left",
+                       wraplength=520)
+        msg.pack(fill="x")
+        strut = tk.Frame(body, bg=P2, height=1, width=max(300, t.winfo_width() - 90))   # (the row fills the card)
+        strut.pack(anchor="w")
+        strut._wn_strut = True
+        if go:
+            label, target = go
+            link = tk.Label(body, text=label + "  ›", bg=P2, fg=C["accent"], font=("Segoe UI", 10, "bold"),
+                            cursor="hand2", anchor="w")
+            link.pack(fill="x", pady=(2, 0))
+            link.bind("<Button-1>", lambda _e, g=target: self.wn_go(g))
+        msg._wn_wrap = True
+        self.wn_heroes.append(row)
+        return row
+
+    def wn_fit(self, width):
+        """The hero rows fill the card's width and wrap their line to it."""
+        for r in getattr(self, "wn_heroes", []):
+            if not r.winfo_exists():
+                continue
+            for b in r.winfo_children():
+                for w in b.winfo_children():
+                    if getattr(w, "_wn_wrap", False):
+                        w.config(wraplength=max(200, width - 110))
+                    elif getattr(w, "_wn_strut", False):
+                        w.config(width=max(300, width - 90))
+
+    def wn_go(self, target):
+        """A hero row's link: 'settings:<tab>' opens that Settings tab, anything else is a page key."""
+        if target.startswith("settings:"):
+            self.open_settings_tab(target.split(":", 1)[1])
+        else:
+            self.shell.open(target)
+
+    def wn_toggle_small(self):
+        """▸ N smaller changes: unfolds into one line each (area · what changed); click again to fold."""
+        t, small = self.wn_text, self.wn_small
+        t.config(state="normal")
+        self.wn_small_open = not self.wn_small_open
+        t.delete("wn_fold", "wn_fold +1c")
+        t.insert("wn_fold", "▾" if self.wn_small_open else "▸", ("fold", "foldbtn"))
+        if self.wn_small_open:
+            for area, line in small:
+                if area:
+                    t.insert("end", "•  ", "li")
+                    t.insert("end", area + " · ", ("li", "area"))
+                    t.insert("end", line + "\n", "li")
+                else:
+                    t.insert("end", "•  " + line + "\n", "li")
+        else:
+            t.delete("wn_small", "end-1c")
+        t.config(state="disabled")
 
     def whatsnew_follow(self):
         w = getattr(self, "_whatsnew", None)
@@ -611,10 +700,10 @@ class App(GearBookPage, PriceCheckPage, FavoritesPage, BoardModPage, Leaderboard
         summ.pack(fill="x")
         self.tot_lbl = tk.Label(summ, text="", bg=C["panel2"], fg="#9fb6dd", font=("Segoe UI", 9, "bold"))
         self.tot_val = tk.Label(summ, text="", bg=C["panel2"], fg=C["good"], font=("Segoe UI", 16, "bold"))
-        self.chip_priced = tk.Label(summ, text="", bg="#0f2038", fg=C["green"], font=("Segoe UI", 9, "bold"), padx=8, pady=4,
-                                    highlightthickness=1, highlightbackground="#3f7a58")
-        self.chip_review = tk.Label(summ, text="", bg="#2a2110", fg=C["good"], font=("Segoe UI", 9, "bold"), padx=8, pady=4,
-                                    highlightthickness=1, highlightbackground="#7a6428")
+        self.chip_priced = tk.Label(summ, text="", bg=C["panel2"], fg=C["green"], font=("Segoe UI", 9, "bold"), padx=8, pady=4,
+                                    highlightthickness=1, highlightbackground=C["green"])
+        self.chip_review = tk.Label(summ, text="", bg=C["warn_bg"], fg=C["good"], font=("Segoe UI", 9, "bold"), padx=8, pady=4,
+                                    highlightthickness=1, highlightbackground=C["accent"])
         # 2.26.0: "pricing 12 items - about 1:30 left", next to the other two (was only in the status line)
         self.chip_eta = tk.Label(summ, text="", bg="#10203a", fg="#8fc4ff", font=("Segoe UI", 9, "bold"), padx=8,
                                  pady=4, highlightthickness=1, highlightbackground="#3f5f8f")
