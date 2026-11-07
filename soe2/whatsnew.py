@@ -42,7 +42,9 @@ NOTES = {
             ("☰", "Helpers, tidied up", "One row per helper with On bar and Remind columns, grouped by where you use "
              "them.", ("Open them", "ovset"), "Overlay"),
         ],
-        "small": [],
+        "small": [
+            ("Overlay", "Quick settings: the Style list stays open until you pick one."),
+        ],
     },
     "2.111.0": {
         "big": [
