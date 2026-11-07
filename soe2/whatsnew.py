@@ -38,7 +38,10 @@ MAX_BIG = 3
 
 NOTES = {
     "2.111.0": {
-        "big": [],
+        "big": [
+            ("✦", "Four more overlay styles", "Totem, Hellfire, Psionic and Guildhall - nine ornate looks in all.",
+             ("Pick one", "settings:Appearance"), "Overlay"),
+        ],
         "small": [
             ("What's new", "This card shows the big changes first; the small ones fold under one line."),
             ("Looks", "The What's new card and About follow your app theme."),

@@ -82,6 +82,12 @@ CREDITS = (
      "https://github.com/CatharsisFonts/Cormorant"),
     ("Marcellus SC (Brian J. Bonislawsky, Astigmatic)", "the font of the Warbanner overlay style. SIL Open Font "
                                                         "License.", "https://github.com/google/fonts/tree/main/ofl/marcellussc"),
+    ("Marcellus (Brian J. Bonislawsky, Astigmatic)", "the Psionic overlay style's text. SIL Open Font License.",
+     "https://github.com/google/fonts/tree/main/ofl/marcellus"),
+    ("Metamorphous (Sorkin Type)", "the font of the Hellfire overlay style. SIL Open Font License.",
+     "https://github.com/google/fonts/tree/main/ofl/metamorphous"),
+    ("IM FELL English SC (Igino Marini)", "the font of the Guildhall overlay style. SIL Open Font License.",
+     "https://github.com/google/fonts/tree/main/ofl/imfellenglishsc"),
 )
 
 

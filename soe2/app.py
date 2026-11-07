@@ -1568,7 +1568,8 @@ class App(GearBookPage, PriceCheckPage, FavoritesPage, BoardModPage, Leaderboard
                 "numbers by the life orb and switches by the mana orb; Micro - the smallest. The ornate ones keep "
                 "their own colours and fonts: Herald - crimson plates, gilt; Gilded - white marble, gold leaf; "
                 "Warbanner - a gold frame, royal-blue bands; Verdant - forest green, bronze; Gloom - smoky slate, "
-                "pewter.")
+                "pewter; Totem - timber and red war banners; Hellfire - rusted iron, ember gold; Psionic - gold over "
+                "deep-blue glass, cyan light; Guildhall - oak, brass and parchment.")
         label(2, "Layout")
         self.ov_layout_var = tk.StringVar(value=LAYOUTS.get(self.merged_layout(), LAYOUTS["xpbar"]))
         lc = ttk.Combobox(g, textvariable=self.ov_layout_var, values=list(LAYOUTS.values()), state="readonly", width=24)
