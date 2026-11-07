@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU GPL v3.0 (see LICENSE). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.112.2
+VERSION 2.112.3
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,6 +19,15 @@ VERSION 2.112.2
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.112.3
+       Quick settings (right-click the cog): the Style list closed the moment it opened. On Windows the open list
+       takes the keyboard; focus_get() can't name it (it isn't a tkinter widget), the KeyError read as "focus
+       left", and the box closed under it. Now Tk's own focus name is checked (ovquick._ovq_focus_gone).
+       The update question shows the notes as plain lines (plain_notes) - GitHub's ## / ** / footer showed raw.
+       Theme changes: the overlay's measuring fonts are made once per family / size (ovlight._lt_fm) instead of
+       on every build; a theme change slower than 1.5 s writes slow_report.txt (hangwatch.profiled: the 30
+       biggest steps as file:function:line, local only) - theme changes are still slow on Windows; this is to
+       find where. 2.112.2's What's new no longer claims they're instant.
   2.112.2
        Fixed: changing the app theme froze / crashed on Windows (found with 2.112.1's hang_report.txt). Every title
        bar's redraw (about 100) asked Windows for the PC's whole font list (themes.head_font -> font.families());
@@ -2605,7 +2614,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.112.2"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.112.3"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 

@@ -26,6 +26,7 @@ from .ovskins import NAMES as _ORN_NAMES, ORNATE, palette as _ornate_palette
 STYLES = {"classic": "Classic (stone and bronze)", "hairline": "Hairline", "slate": "Slate", "flanks": "Flanks",
           "micro": "Micro"}
 STYLES.update(_ORN_NAMES)                                    # 2.110.0: Herald, Gilded, Warbanner, Verdant, Gloom
+_FM_CACHE = {}                   # 2.112.3: measuring fonts, kept (see _lt_fm)
 LIGHT = ("hairline", "slate", "flanks", "micro") + ORNATE
 BOXLESS = ("hairline", "flanks")
 KEY = "#010101"                    # a box-less look's see-through colour (never used for anything that shows)
@@ -169,7 +170,14 @@ class LightOverlay:
         return max(1, int(round(n * getattr(self, "_hud_k", 1.0))))
 
     def _lt_fm(self, cv, P, size, bold=False, family=None):
-        return tkfont.Font(root=cv, family=family or P["font"], size=self._hf(size), weight="bold" if bold else "normal")
+        """A font to measure with - one per family / size / weight for the whole run (2.112.3: every chip and
+        label made a new one each time the overlay was built, and Windows makes fonts slowly)."""
+        key = (family or P["font"], self._hf(size), bool(bold))
+        cache = _FM_CACHE.get(key)
+        if cache is None:
+            cache = _FM_CACHE[key] = tkfont.Font(root=cv.winfo_toplevel().nametowidget("."), family=key[0],
+                                                 size=key[1], weight="bold" if bold else "normal")
+        return cache
 
     def _lt_text(self, cv, P, x, y, text, size, fill, anchor="w", bold=False, key=None, cls=CanvasText, tags=()):
         f = (P["font"], self._hf(size), "bold") if bold else (P["font"], self._hf(size))

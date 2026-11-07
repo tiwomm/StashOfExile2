@@ -103,6 +103,25 @@ MISC_ROWS = (("corrupted", "Corrupted"), ("fractured", "Fractured"), ("desecrate
              ("sanctified", "Sanctified"), ("mirrored", "Mirrored"), ("unidentified", "Unidentified"))
 
 
+def plain_notes(md):
+    """2.112.3: the release notes as plain lines for the update question - GitHub's markdown (## headings, **bold**,
+    the download / not-affiliated footer) showed as raw symbols in the Windows dialog."""
+    out = []
+    for line in md.replace("\r", "").split("\n"):
+        t = line.strip()
+        if not t or t.startswith(("**Download:**", "This product isn't affiliated")):
+            continue
+        if t.startswith("#"):
+            t = t.lstrip("#").strip()
+            if t.lower().startswith("what's new in"):
+                continue                                  # (the dialog already says which version)
+            t = t + ":"
+        t = re.sub(r"\*\*(.+?)\*\*", r"\1", t).replace("`", "")
+        t = "• " + t[2:] if t.startswith(("- ", "* ")) else t
+        out.append(t)
+    return "\n".join(out).strip()
+
+
 class App(GearBookPage, PriceCheckPage, FavoritesPage, BoardModPage, LeaderboardPage, OrderLabPage, WellSoulsPage, RumoursPage, ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, ExchangePage, WealthPage, LibraryPage, RegexPage, UtilitiesPage, TrackerPage, SearchPage, CalcOverlay, InsightsPage, MoneyMakersPage, MapLibraryPage, RemnantPage, LedgerPage, FeedbackPage, FeedPage, MergedOverlay, LightOverlay, GamePlanPage, FocusPokes, OverlayHelp, OverlayParts, CampaignUI, OverlayRates, CommunityPage, RateModsPage, OverlayRecap, StashScanPage, OverlayQuick):
     COLS = [("added", "#", 46, "e"), ("name", "Item", 220, "w"), ("type", "Type", 110, "w"), ("mark", "Status", 90, "center"),
             ("est", "Est. value", 110, "e"), ("conf", "Confidence", 95, "center"), ("listings", "Listings", 70, "e"), ("priced", "Priced at", 130, "w"),
@@ -1401,13 +1420,15 @@ class App(GearBookPage, PriceCheckPage, FavoritesPage, BoardModPage, Leaderboard
         self.relook()
 
     def pick_theme(self, tid):
-        """2.60.0: a theme card in Settings › Appearance - swapped live."""
+        """2.60.0: a theme card in Settings › Appearance - swapped live. (2.112.3: a swap slower than 1.5 s writes
+        slow_report.txt - code locations only - so a slow PC can show where the time goes.)"""
         from .style import THEMES
+        from .hangwatch import profiled
         SETTINGS["theme"] = tid
         save_json("settings.json", SETTINGS)
         if "theme" in getattr(self, "look_vars", {}):
             self.look_vars["theme"].set(THEMES.get(tid, (tid,))[0])
-        self.relook()
+        profiled("theme change", self.relook, P("slow_report.txt"), APP_VERSION)
 
     def relook(self):
         from .style import relook
@@ -2000,7 +2021,7 @@ class App(GearBookPage, PriceCheckPage, FavoritesPage, BoardModPage, Leaderboard
             self._say("You have the newest version.")
             return
         asset = pick_asset(data)
-        notes = (data.get("body") or "").strip()
+        notes = plain_notes(data.get("body") or "")
         notes = (notes[:700] + " ...") if len(notes) > 700 else notes
         if not asset:
             messagebox.showinfo("Check for updates", f"Version {tag.lstrip('vV')} is out, but it has no download file attached yet.\n\n"
