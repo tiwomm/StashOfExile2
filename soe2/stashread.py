@@ -7,7 +7,7 @@ hand), tab by tab.
   * Only looks: no keys, no clicks, nothing sent to the game (like the Expedition and Ritual watchers).
   * The picture stays in memory for the read and is dropped. Nothing is saved, logged or sent - counts stay on this PC
     like every Wealth number.
-  * Layouts: stashlayouts.py (Currency, Abyss, Delirium, Breach › Catalysts, Expedition, Ritual). Wildcard slots, shards and the
+  * Layouts: stashlayouts.py (Currency, Abyss, Delirium, Breach › Catalysts, Expedition, Ritual, Essence). Wildcard slots, shards and the
     crafting hole are skipped.
 How it reads:
   1. The panel: the slot frames of each known tab, drawn as boxes, are matched against the picture's edges (left 60%
@@ -25,6 +25,7 @@ SIZES = (0.94, 0.97, 1.0, 1.03, 1.06)      # UI scale wiggle around game height 
 FOUND_SCORE = 0.12      # a panel's edge match: real tabs ~0.2-0.28; no stash open ~0.0-0.08
 OTHER_TAB_BY = 0.01     # another tab must beat the one you were asked to open by this much to say "that's X"
 DIGIT_CUT, DIGIT_BASE = 0.45, 0.60      # a digit's match must reach CUT; each one adds (score - BASE) to a run
+TIE = 0.0               # 2.114.2: a longer run this close to the best wins (a faint second digit)
 FILLED_SHARE = 0.06     # share of a slot's inside that is the dark-blue backing -> it holds something
 
 # Digit shapes at 1440p: (width, height, bytes) - a "white minus outline" map, 0..255 = -1..1. Made from the stack
@@ -101,7 +102,8 @@ def feature(bgr):
     cv2, np = _np()
     f = bgr.astype(np.float32)
     lo, hi = f.min(axis=2), f.max(axis=2)
-    return np.clip((lo - 150) / 60, 0, 1) - np.clip((110 - hi) / 60, 0, 1)
+    white = np.clip((lo - 150) / 60, 0, 1) * np.clip(1 - (hi - lo - 30) / 40, 0, 1)   # 2.114.2: neutral white only -
+    return white - np.clip((110 - hi) / 60, 0, 1)            # an essence's pink / red glow behind the number isn't ink
 
 
 def _outline(tab, k, w):
@@ -125,13 +127,16 @@ def _edges(bgr, w):
 
 
 def locate(bgr, game_h, tabs=None):
-    """The stash panel in a game picture -> {"tab", "score", "scores": {tab: best}, "k", "x", "y"} or None."""
+    """The stash panel in a game picture -> {"tab", "score", "scores": {tab: best}, "k", "x", "y"} or None.
+    2.114.2: a tab's edge match is weighed by how many of its slots hold something at that spot - the Essence tab's
+    dense grid of 82 slots matched every panel's edges a little, so the edges alone took Expedition for Essence.
+    "score" stays the plain edge match (is a stash there at all); "scores" are the weighed ones (which tab)."""
     cv2, np = _np()
     w = WORK_H / float(game_h)
     left = bgr[:, :max(1, int(bgr.shape[1] * 0.6))]
     e = _edges(left, w)
     k0 = game_h / 1440.0
-    best, scores = None, {}
+    per = {}
     for tab in (tabs or ORDER):
         for f in SIZES:
             k = k0 * f
@@ -141,11 +146,20 @@ def locate(bgr, game_h, tabs=None):
             m = cv2.matchTemplate(e, t, cv2.TM_CCORR_NORMED)
             _mn, v, _l, loc = cv2.minMaxLoc(m)
             v = float(v)
-            scores[tab] = max(scores.get(tab, 0.0), v)
-            if best is None or v > best["score"]:
-                best = {"tab": tab, "score": v, "k": k, "x": round(loc[0] / w), "y": round(loc[1] / w)}
-    if best:
-        best["scores"] = scores
+            if tab not in per or v > per[tab]["score"]:
+                per[tab] = {"tab": tab, "score": v, "k": k, "x": round(loc[0] / w), "y": round(loc[1] / w)}
+    if not per:
+        return None
+    scores = {}
+    for tab, p in per.items():
+        slots = TABS[tab]["slots"]
+        n = sum(1 for _n, (x, y, sw, sh) in slots
+                if filled(bgr, (p["x"] + round(x * p["k"]), p["y"] + round(y * p["k"]), round(sw * p["k"]),
+                                round(sh * p["k"]))))
+        scores[tab] = p["score"] * (0.5 + 0.5 * n / max(1, len(slots)))
+    best = dict(per[max(scores, key=scores.get)])
+    best["scores"] = scores
+    best["weighed"] = scores[best["tab"]]
     return best
 
 
@@ -208,7 +222,8 @@ def best_valid(run):
     """The best-scoring run that reads as a stack size: digits, or (2.114.2) "12.2K" - a "." only before a K."""
     best = (0.0, "")
     for v, txt in run.values():
-        if v > best[0] and _value(txt) is not None:
+        longer = len(txt) > len(best[1]) and v >= best[0] - TIE        # (about a tie: the longer one - "11"
+        if (v > best[0] or longer) and _value(txt) is not None:            # whose second 1 scores just under par)
             best = (v, txt)
     return best[1]
 
@@ -234,7 +249,7 @@ def read_tab(bgr, game_h, want):
         return {"ok": False, "tab": want, "seen": None, "items": [], "unread": [],
                 "why": "Couldn't find the stash. Open it in game, on this tab, and try again."}
     mine = spot["scores"].get(want, 0.0)
-    if spot["tab"] != want and spot["score"] - mine > OTHER_TAB_BY:
+    if spot["tab"] != want and spot["weighed"] - mine > OTHER_TAB_BY:
         return {"ok": False, "tab": want, "seen": spot["tab"], "items": [], "unread": [],
                 "why": f"That looks like the {TABS[spot['tab']]['label']} tab. Open the {TABS[want]['label']} tab."}
     if spot["tab"] != want:                       # close call: redo the spot for the tab you named
