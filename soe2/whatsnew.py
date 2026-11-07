@@ -37,6 +37,14 @@ NEXT = [
 MAX_BIG = 3
 
 NOTES = {
+    "2.112.4": {
+        "big": [],
+        "small": [
+            ("Looks", "Clicking quickly through the theme cards changes the theme once, to the last one you clicked."),
+            ("Looks", "Theme changes no longer rebuild the overlay over the game (only Classic takes the theme's "
+                      "colours)."),
+        ],
+    },
     "2.112.3": {
         "big": [],
         "small": [

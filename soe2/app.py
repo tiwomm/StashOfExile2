@@ -1419,7 +1419,7 @@ class App(GearBookPage, PriceCheckPage, FavoritesPage, BoardModPage, Leaderboard
             return
         self.relook()
 
-    def pick_theme(self, tid):
+    def pick_theme(self, tid, wait=False):
         """2.60.0: a theme card in Settings › Appearance - swapped live. (2.112.3: a swap slower than 1.5 s writes
         slow_report.txt - code locations only - so a slow PC can show where the time goes.)"""
         from .style import THEMES
@@ -1428,7 +1428,25 @@ class App(GearBookPage, PriceCheckPage, FavoritesPage, BoardModPage, Leaderboard
         save_json("settings.json", SETTINGS)
         if "theme" in getattr(self, "look_vars", {}):
             self.look_vars["theme"].set(THEMES.get(tid, (tid,))[0])
-        profiled("theme change", self.relook, P("slow_report.txt"), APP_VERSION)
+        # 2.112.4: quick clicks through the cards swap ONCE, 200 ms after the last (each swap re-colours every window;
+        # a burst of them back to back crashed the app on Windows)
+        job = getattr(self, "_theme_job", None)
+        if job is not None:
+            try:
+                self.root.after_cancel(job)
+            except tk.TclError:
+                pass
+
+        def go():
+            self._theme_job = None
+            profiled("theme change", self.relook, P("slow_report.txt"), APP_VERSION)
+        if not wait:                                             # (code and tests: at once)
+            return go()
+        try:
+            self._paint_look_cards()                             # (the clicked card lights at once)
+        except Exception:
+            pass
+        self._theme_job = self.root.after(200, go)
 
     def relook(self):
         from .style import relook
@@ -1439,7 +1457,10 @@ class App(GearBookPage, PriceCheckPage, FavoritesPage, BoardModPage, Leaderboard
         self._paint_look_cards()
         step("theme change: title bar")
         self.paint_titlebar()
-        if getattr(self, "mg_win", None) is not None:          # the overlay over the game: built again in its style
+        if getattr(self, "mg_win", None) is not None and self.ov_look() == "classic":
+            # the overlay over the game is built again only in Classic - the one style that takes the app theme's
+            # colours (2.112.4: the others keep their own, so closing and reopening every window over the game on
+            # each swap was slow - and risky on Windows - for nothing)
             step("theme change: overlay rebuild")
             try:
                 self.merged_set()
@@ -1482,7 +1503,7 @@ class App(GearBookPage, PriceCheckPage, FavoritesPage, BoardModPage, Leaderboard
             if t.data.get("description"):
                 Tooltip(card, t.data["description"])
             for wd in (card, cv, name):
-                wd.bind("<Button-1>", lambda e, tid=t.id: self.pick_theme(tid))
+                wd.bind("<Button-1>", lambda e, tid=t.id: self.pick_theme(tid, wait=True))
             cards[t.id] = card
         self.__dict__.setdefault("look_card_sets", {})[where] = cards
         self._paint_look_cards()
