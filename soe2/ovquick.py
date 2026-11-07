@@ -1,7 +1,7 @@
 """P4 (2.108.0, feedback: "a mini settings page over the game when we right click the cog wheel"): right-click the
 overlay's ⚙ = Quick settings, a small box over the game, above the cog and on the game's monitor. Left-click still
-opens the full Overlay ↳ Settings in the app. Overlay, Sound, Lock, Hide from screen captures, and Overlays - what
-sits on the bar (each helper and tool). Esc, ✕, a click elsewhere or the cog again closes it.
+opens the full Overlay ↳ Settings in the app. Style (2.110.0 - the Overlay ON | OFF switch is gone from here), Sound,
+Lock, Hide from screen captures, and Overlays - what sits on the bar (each helper and tool). Esc, ✕, a click elsewhere or the cog again closes it.
 GGG ToS: a window over the game; nothing is sent to the game."""
 import tkinter as tk
 from tkinter import ttk
@@ -10,8 +10,8 @@ from .config import SETTINGS, save_json
 from .style import C
 
 # what the Overlays buttons switch: (label, key)
-QUICK_BAR = (("Breach", "breach"), ("Delirium", "delirium"), ("Ritual", "ritual"), ("Expedition", "remnant"),
-             ("Focus", "focus"), ("Campaign", "campaign"), ("Notes", "notes"), ("Calc", "calc"), ("Regex", "regex"),
+QUICK_BAR = (("Campaign", "campaign"), ("Focus", "focus"), ("Breach", "breach"), ("Delirium", "delirium"),
+             ("Ritual", "ritual"), ("Expedition", "remnant"), ("Notes", "notes"), ("Calc", "calc"), ("Regex", "regex"),
              ("Rates", "rates"))
 
 
@@ -134,7 +134,16 @@ class OverlayQuick:
             self.ovq_vars[label] = v
             return v
         cfg = self.tracker_cfg()
-        row("Overlay", self.ov_enabled(), self._ovq_overlay)
+        # 2.110.0 (feedback): no Overlay ON | OFF here - the overlay's Style instead
+        from .ovlight import STYLES
+        srow = tk.Frame(body, bg=P1)
+        srow.pack(fill="x", pady=(0, 6))
+        tk.Label(srow, text="Style", bg=P1, fg=C["text"], font=("Segoe UI", 10)).pack(side="left")
+        names = list(STYLES.values())
+        self.ovq_style = tk.StringVar(value=STYLES.get(self.ov_look(), names[0]))
+        cb = ttk.Combobox(srow, textvariable=self.ovq_style, values=names, state="readonly", width=24)
+        cb.pack(side="right")
+        cb.bind("<<ComboboxSelected>>", lambda _e: self._ovq_style())
         row("Sound", SETTINGS.get("helpers_sound", True), self.helpers_sound_set)
         row("Lock overlay", cfg.get("mlocked"), self._ovq_lock)
         row("Hide from screen captures", cfg.get("hide_capture", False), self._ovq_hidecap)
@@ -202,11 +211,20 @@ class OverlayQuick:
         self.quick_bar_set(key, not self.quick_bar_on(key))
         self._ovq_paint(key)
 
-    def _ovq_overlay(self, on):
-        self.ov_enable(on)
-        v = getattr(self, "tk_ov_master", None)
-        if v is not None:
-            v.set("on" if on else "off")
+    def _ovq_style(self):
+        """2.110.0: a style picked here - the overlay is drawn again in it (Settings › Appearance shows it too)."""
+        from .ovlight import STYLES
+        name = self.ovq_style.get()
+        key = next((k for k, v in STYLES.items() if v == name), None)
+        if key and key != self.ov_look():
+            self.ov_look_set(style=key)
+            v = getattr(self, "ov_look_var", None)           # (Settings › Appearance shows it too)
+            if v is not None:
+                try:
+                    v.set(name)
+                    self._ov_look_paint()
+                except tk.TclError:
+                    pass
 
     def _ovq_lock(self, on):
         self.overlay_lock(on)

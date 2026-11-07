@@ -84,7 +84,7 @@ def palette(style, cid, boxed=False):
 
 
 class _Clean(CanvasText):
-    """Spaces tidied: "Map:  3:12" -> "Map: 3:12" (2.104.1 feedback: the labels keep their colon - Map:, Avg.:)."""
+    """Spaces tidied: "Map:  3:12" -> "Map: 3:12" (2.104.1 feedback: the labels keep their colon - Map:, Avg:)."""
 
     def config(self, **kw):
         if "text" in kw:
