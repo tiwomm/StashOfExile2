@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU GPL v3.0 (see LICENSE). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.112.0
+VERSION 2.112.1
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,6 +19,13 @@ VERSION 2.112.0
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.112.1
+       Not responding? soe2/hangwatch.py: a tick on the Tk thread every 0.5 s; if it stops for 8 s, a watcher thread
+       samples the main thread three times and writes hang_report.txt to the data folder - file name (no folders),
+       function and line only, plus the last steps (theme change: re-colour / title bar / overlay rebuild). Local
+       only, never sent. For the theme-change freeze on Windows (not seen on Linux).
+       Switches on a card take the card's colour (style.py wraps ttk.Checkbutton): plain ones showed a dark box
+       behind their text (Settings › General › Updates).
   2.112.0
        Overlay ↳ Settings › Helpers reworked (feedback: hard to read): one table, one row per helper - on / off,
        the name with one short line of what it's doing now (full text on hover), its own options as chips (filled
@@ -2591,7 +2598,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.112.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.112.1"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
