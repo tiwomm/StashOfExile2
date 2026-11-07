@@ -80,3 +80,31 @@ def start(root, path, version):
     t = threading.Thread(target=_watch, args=(threading.main_thread().ident, path, version), daemon=True,
                          name="hangwatch")
     t.start()
+
+
+def profiled(label, fn, path, version, slow=1.5):
+    """2.112.3: run fn(); if it takes longer than `slow` seconds, write where the time went to slow_report.txt (the
+    data folder) - the 30 biggest steps as file NAME:function:line, how often and how long. Same privacy as the hang
+    report: code locations only, nothing personal, never sent."""
+    import cProfile
+    import pstats
+    pr = cProfile.Profile()
+    t0 = time.time()
+    pr.enable()
+    try:
+        return fn()
+    finally:
+        pr.disable()
+        secs = time.time() - t0
+        if secs >= slow:
+            try:
+                st = pstats.Stats(pr).stats
+                rows = sorted(((ct, nc, f) for f, (_cc, nc, _tt, ct, _c) in st.items()), reverse=True)[:30]
+                lines = [f"StashOfExile2 {version} - slow {label}: {secs:.1f} s (code locations only)",
+                         f"written {time.strftime('%Y-%m-%d %H:%M:%S')}", "", "  seconds   calls  where"]
+                for ct, nc, (fname, line, func) in rows:
+                    lines.append(f"  {ct:7.2f} {nc:7d}  {os.path.basename(fname)}:{func}:{line}")
+                with open(path, "w", encoding="utf-8") as f:
+                    f.write("\n".join(lines) + "\n")
+            except Exception:
+                pass

@@ -189,11 +189,11 @@ class OverlayQuick:
         w = getattr(self, "ov_quick_win", None)
         if w is None:
             return
-        try:
-            f = w.focus_get()
-        except (tk.TclError, KeyError):
-            f = None
-        if f is None or not str(f).startswith(str(w)):
+        try:                                     # 2.112.3: Tk's own name for the focus - a dropdown's open list
+            f = str(w.tk.call("focus"))          # (".…combobox.popdown.f.l") isn't a tkinter widget, so focus_get()
+        except tk.TclError:                      # failed, read as "focus left", and closed the box under the list
+            f = ""
+        if not f.startswith(str(w)):
             self.ov_quick_close()
 
     def _ovq_paint(self, key):

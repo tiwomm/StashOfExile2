@@ -37,9 +37,18 @@ NEXT = [
 MAX_BIG = 3
 
 NOTES = {
+    "2.112.3": {
+        "big": [],
+        "small": [
+            ("Overlay", "Quick settings: the Style list stays open until you pick a style."),
+            ("Updates", "The update question shows what's new as plain lines."),
+            ("Fixes", "A theme change that takes over 1.5 s notes where the time went in slow_report.txt (your data "
+                      "folder, code locations only, never sent) - share it to help speed it up."),
+        ],
+    },
     "2.112.2": {
         "big": [
-            ("✔", "Theme changes are instant again", "Changing the app theme no longer freezes or closes the app "
+            ("✔", "Theme changes no longer freeze", "Changing the app theme no longer hangs or closes the app "
              "on Windows.", ("Pick a theme", "settings:Appearance"), "Fixes"),
         ],
         "small": [],
