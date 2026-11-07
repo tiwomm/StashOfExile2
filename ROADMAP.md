@@ -4,7 +4,7 @@
 
 > **Who we build for - read second.** Path of Exile players are utilitarian: they love data and information, problem solving and creative thinking. So every feature shows its numbers *and how they were worked out*, lets you sort, filter, compare and export them (CSV), keeps power-user depth (keys, versions, raw data) one click away instead of hiding it, explains in plain words, and leaves the decision to the player. Pretty is welcome; vague is not.
 
-**Current version: 2.112.4**
+**Current version: 2.112.5**
 
 Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds features, 2.10.1 only fixes. Each step below is one release; we work through them top to bottom.
 
@@ -173,6 +173,7 @@ Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds f
 | 2.97.0 | Polish 4 - feedback round: the Rate mods ask says what it is (Count me in! / Not now / Never ask again) and opens in front; Rate mods starts with "Which items do you know best?", lights only your rating, Back / Next / Done under it; F is the ignore tier everywhere tiers show (saved as Ignore); Focus / Campaign on = their line shows (no line switch; both on = one bar, two rows, in Panel and Game bar), switching one on turns the overlay on; a finished character's campaign line and Vendor ▾ come back in campaign zones; Price Checks: Rate ▾ replaces ▲ / ▼, the card and listings fit the window (scrollbar only when needed), Fractured only ticks the mod. |
 | 2.97.1 | Price Checks card: a rune's line and an affix with the same wording are ticked apart; runes in their own AUGMENTS section (no RUNE / SOCKETED lines); Fractured / Desecrated only small, right under its mod, the mod in its color. |
 | 2.97.2 | Price Checks card - visual hierarchy: a mod's color says where it comes from (affix blue, rune light blue, fractured tan, desecrated green, pseudo pink; unticked = dimmed, not grey), the listing cards match; every section folds with how many are ticked, Fold all / Unfold all. |
+| 2.112.5 | Dragging the Campaign / Focus line no longer opens its card. |
 | 2.112.4 | Theme cards: a burst of clicks swaps once; the overlay is rebuilt on a theme change only in Classic; Flanks renamed Split; the Campaign / Focus line can be dragged (undocks it). |
 | 2.112.3 | Quick settings' Style list stays open (Windows focus check); plain update notes; slow_report.txt for slow theme changes; overlay measuring fonts kept. |
 | 2.112.2 | Fixed: app-theme changes froze / crashed on Windows (every title bar read the PC's whole font list on each redraw - now once); auto-hiding scroll bars can't flip forever. |

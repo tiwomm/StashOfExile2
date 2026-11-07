@@ -31,6 +31,19 @@ SHORT = NAMES                     # (the old short forms - Brch, Deli ... - are 
 CHIPS = ("breach", "delirium", "ritual", "remnant", "focus", "campaign")   # 2.90.0: the switches the bar can show
 
 
+def click_not_drag(cv, item, fn):
+    """2.112.5: fn() on a click of a canvas item - not when the press became a drag (the Campaign line opened its
+    route card when you dragged the line by its text)."""
+    st = {}
+    cv.tag_bind(item, "<ButtonPress-1>", lambda e: st.update(x=e.x_root, y=e.y_root), add="+")
+
+    def release(e):
+        if st and abs(e.x_root - st.get("x", e.x_root)) <= 4 and abs(e.y_root - st.get("y", e.y_root)) <= 4:
+            fn()
+        st.clear()
+    cv.tag_bind(item, "<ButtonRelease-1>", release, add="+")
+
+
 def chip_name(k):
     return NAMES.get(k, k.title())
 
@@ -299,7 +312,7 @@ class MergedOverlay:
     def _focus_click(self, cv, ft):
         """2.73.4: a click on the focus line opens Game Plan (where its goal is set)."""
         try:
-            cv.tag_bind(ft.item, "<Button-1>", lambda e: self.ov_intro_setup("focus"))
+            click_not_drag(cv, ft.item, lambda: self.ov_intro_setup("focus"))
             cv.tag_bind(ft.item, "<Enter>", lambda e: cv.configure(cursor="hand2"))
             cv.tag_bind(ft.item, "<Leave>", lambda e: cv.configure(cursor=""))
         except (AttributeError, tk.TclError):
