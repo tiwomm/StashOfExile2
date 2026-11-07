@@ -40,7 +40,9 @@ CURRENCY += _row(128, (749,), ("Artificer's Orb",))
 CURRENCY += _row(245, (569, 659, 749), ("Arcanist's Etcher", "Armourer's Scrap", "Blacksmith's Whetstone"))
 CURRENCY += _row(335, (659, 749), ("Glassblower's Bauble", "Gemcutter's Prism"))
 CURRENCY += _row(452, (749,), ("Scroll of Wisdom",))
-# not read: the 4 shards (y 569; worth little), the crafting hole (370, 321) and the 2 x 7 wildcard rows (y 668, 749)
+# not read: the 4 shards (y 569; worth little) and the crafting hole (370, 321)
+# 2.114.3: the 2 x 7 wildcard slots - anything can go there; stashread tells what by its picture
+CURRENCY_WILD = [(x, y, S, S) for y in (668, 749) for x in (146, 227, 308, 389, 470, 551, 632)]
 
 ABYSS = []
 ABYSS += _row(82, (391,), ("Kulemak's Invitation",))
@@ -157,7 +159,7 @@ FRAGMENTS += _row(560, (305, 422, 512, 602, 719), ("Call of the Shadows", "Simul
 FRAGMENTS += _row(695, (306, 387, 468), ("Deadly Fate", "Cowardly Fate", "Victorious Fate"))
 
 TABS = {
-    "currency": {"label": "Currency", "slots": CURRENCY},
+    "currency": {"label": "Currency", "slots": CURRENCY, "wild": CURRENCY_WILD},
     "abyss": {"label": "Abyss", "slots": ABYSS},
     "delirium": {"label": "Delirium", "slots": DELIRIUM},
     "breach": {"label": "Breach", "page": "Catalysts", "slots": BREACH},

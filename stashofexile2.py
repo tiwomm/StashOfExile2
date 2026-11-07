@@ -38,6 +38,11 @@ VERSION HISTORY
        30 - a scan of eight tabs has far more), the list fills in as it goes, and the snapshot taken before they had
        prices is replaced once it's done (snapshot replace=True). Why a stack has no price says which: asking the
        exchange, too few offers, or unknown to both (why_unpriced). The totals line says how many aren't in it.
+       Scan stash (feedback: "it didn't count the divs in the wildcard slot, the 1193"): Currency's 2 x 7 wildcard
+       slots are read - what each holds is told by its picture against the tab's fixed slots in the same shot
+       (stashread._icon / _same_item, a few pixels of slide; 0.75 and a clear lead), and the ones it can't place
+       against every tab read at the end (match_wild). Pictures stay in memory and are dropped after. One it still
+       can't place is left out and the check window says how many. Same-name counts add up on Save (5000 + 1193).
   2.114.2
        Scan stash (beta) reads the Expedition tab (the user's shots and every slot's name): stashlayouts.EXPEDITION -
        Logbook, the four Sagas (Aldur's slot left out: out of the game for now), Shattered Triskelion and The

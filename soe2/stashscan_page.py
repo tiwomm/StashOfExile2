@@ -64,6 +64,15 @@ class StashScanPage:
     def stash_scan_finish(self):
         ss = self.ss
         self.stash_scan_cancel()
+        if ss is not None:                          # 2.114.3: wildcard slots matched against every tab read
+            unknown = 0
+            for tab, wild in (ss.get("wild") or {}).items():
+                got, unk = SR.match_wild(wild, ss.get("icons") or {})
+                ss["got"].setdefault(tab, []).extend(got)
+                unknown += unk
+            ss["wild_unknown"] = unknown
+            ss.pop("icons", None)                   # (the pictures are dropped now)
+            ss.pop("wild", None)
         if ss is None:
             return
         # 2.114.3 (feedback: "led me through all the prompts but then did nothing"): the check window opened behind
@@ -112,6 +121,8 @@ class StashScanPage:
             return self.stash_scan_card()
         ss["got"][tab] = list(res["items"])
         ss["unread"][tab] = list(res["unread"])
+        ss.setdefault("icons", {}).update(res.get("icons") or {})        # 2.114.3: wildcards - in memory only
+        ss.setdefault("wild", {})[tab] = list(res.get("wild") or [])
         n = len(res["items"])
         miss = f" · {len(res['unread'])} couldn't be read" if res["unread"] else ""
         ss["note"], ss["kind"] = f"{TABS[tab]['label']}: read {n} stack{'s' if n != 1 else ''}{miss}.", "ok"
@@ -219,6 +230,13 @@ class StashScanPage:
         for tab, n in unread:
             tv.insert("", "end", values=(n, "?", TABS[tab]["label"]), tags=("unread",))
         tv.tag_configure("unread", foreground=C.get("red", "#e06c6c"))
+        if ss.get("wild_unknown"):
+            u = ss["wild_unknown"]
+            what = "it" if u == 1 else "them"
+            tk.Label(dlg, text=f"{u} wildcard slot{'s' if u != 1 else ''} held something that looks like nothing on the "
+                               f"tabs read - count {what} with Ctrl+C.",
+                     bg=C["panel2"], fg=C["muted"], justify="left", anchor="w", wraplength=520).pack(fill="x",
+                                                                                                   pady=(8, 0))
         if unread:
             tk.Label(dlg, text=f"{len(unread)} slot{'s' if len(unread) != 1 else ''} had something but the number "
                                "couldn't be read (?): double-click to type it, or leave it out.",
