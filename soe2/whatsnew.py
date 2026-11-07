@@ -33,16 +33,25 @@ NEXT = [
 #   * anything about their data or privacy (always big)
 #   * a fix for a problem many players hit or reported
 # Everything else is SMALL: wording, looks, order, spacing, small fixes, speed.
+# FIXES ARE NEVER CLAIMED (2.113.2, feedback): a note can't know a fix worked on every PC - say what changed and that
+# it should help ("X was doing Y; this should stop it", "should catch", "shouldn't ... any more"), never "Fixed X".
 # At most MAX_BIG big per card (skipped updates together, newest first); the rest go small.
 MAX_BIG = 3
 
 NOTES = {
+    "2.113.2": {
+        "big": [],
+        "small": [
+            ("Expedition", "Island rumours: the card's handwriting is matched by letter shape too, so a rumour Windows "
+                           "misreads (\"Wodviw' to c(riwkv..\" for Nothin' to drink) should still be recognised."),
+        ],
+    },
     "2.113.1": {
         "big": [],
         "small": [
             ("Price checks", "\"Show over the game\" is on the Price Checks page now (top right), and in Settings › "
                              "Price checking - one switch, both places."),
-            ("Expedition", "Island rumours: the middle rumour shows too (read at twice the size, and found even when "
+            ("Expedition", "Island rumours should catch the middle rumour too (read at twice the size, and found even when "
                            "it's split over two lines)."),
         ],
     },
@@ -57,13 +66,13 @@ NOTES = {
         "small": [
             ("Price checks", "A mod's Min never drops below its own tier, so your item isn't priced against weaker "
                              "ones."),
-            ("Expedition", "Island rumours: every rumour on the card shows, in a smaller panel like the Runeshape tips."),
+            ("Expedition", "Island rumours should catch every rumour on the card, in a smaller panel like the Runeshape tips."),
         ],
     },
     "2.112.5": {
         "big": [],
         "small": [
-            ("Hotfix", "Dragging the Campaign line no longer opens the route card - a plain click still does."),
+            ("Hotfix", "Dragging the Campaign line shouldn't open the route card any more - a plain click still does."),
         ],
     },
     "2.112.4": {
@@ -80,7 +89,7 @@ NOTES = {
     "2.112.3": {
         "big": [],
         "small": [
-            ("Overlay", "Quick settings: the Style list stays open until you pick a style."),
+            ("Overlay", "Quick settings: the Style list should stay open until you pick a style."),
             ("Updates", "The update question shows what's new as plain lines."),
             ("Fixes", "A theme change that takes over 1.5 s notes where the time went in slow_report.txt (your data "
                       "folder, code locations only, never sent) - share it to help speed it up."),
@@ -88,8 +97,8 @@ NOTES = {
     },
     "2.112.2": {
         "big": [
-            ("✔", "Theme changes no longer freeze", "Changing the app theme no longer hangs or closes the app "
-             "on Windows.", ("Pick a theme", "settings:Appearance"), "Fixes"),
+            ("✔", "Theme changes should no longer freeze", "Changing the app theme was hanging or closing the app on "
+             "Windows; this should stop it.", ("Pick a theme", "settings:Appearance"), "Fixes"),
         ],
         "small": [],
     },
@@ -107,7 +116,7 @@ NOTES = {
              "them.", ("Open them", "ovset"), "Overlay"),
         ],
         "small": [
-            ("Overlay", "Quick settings: the Style list stays open until you pick one."),
+            ("Overlay", "Quick settings: the Style list should stay open until you pick one."),
         ],
     },
     "2.111.0": {
@@ -118,7 +127,7 @@ NOTES = {
         "small": [
             ("What's new", "This card shows the big changes first; the small ones fold under one line."),
             ("Looks", "The What's new card and About follow your app theme."),
-            ("Updates", "The update note's buttons no longer squeeze one into a blank box."),
+            ("Updates", "The update note's buttons should no longer squeeze one into a blank box."),
             ("Overlay", "The Colours picker is gone from Overlay settings - each style keeps its own colours."),
         ],
     },

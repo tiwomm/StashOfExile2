@@ -43,7 +43,19 @@ def squash(text):
     return re.sub(r"[^a-z]", "", str(text or "").lower())
 
 
+# 2.113.2 (rumours_read.txt: "Nothin' to drink..." read as "Wodviw' to c(riwkv.."): Windows' reader swaps letters
+# that look alike in the card's handwriting - n / w / u / v / h / m, t / d / c / l, o / a. Compared by shape too:
+# rumours score 0.88+ that way, the card's other lines 0.56 or less, two rumours never above 0.64.
+SHAPE = str.maketrans({**{c: "n" for c in "nwuvhm"}, **{c: "t" for c in "tdcl"}, **{c: "i" for c in "ij"},
+                       **{c: "o" for c in "oaq"}})
+
+
+def shape(text):
+    return squash(text).translate(SHAPE)
+
+
 _KEYS = [(squash(r), r, i) for r, i in RUMOURS]
+_SHAPES = {i: shape(r) for r, i in RUMOURS}
 
 
 def _score(s, k):
@@ -62,16 +74,18 @@ def _score(s, k):
 
 
 def match(line):
-    """An OCR'd line -> (rumour, island) or None."""
-    s = squash(line)
+    """An OCR'd line -> (rumour, island) or None: by its letters, or (2.113.2) by their shapes - the best of the two,
+    with a clear lead over the next rumour."""
+    s, sh = squash(line), shape(line)
     if len(s) < 4:
         return None
-    best, score = None, 0.0
+    scores = []
     for k, r, i in _KEYS:
-        sc = _score(s, k)
-        if sc > score:
-            best, score = (r, i), sc
-    return best if score >= MATCH else None
+        scores.append((max(_score(s, k), _score(sh, _SHAPES[i])), r, i))
+    scores.sort(reverse=True)
+    best = scores[0]
+    lead = best[0] - (scores[1][0] if len(scores) > 1 else 0.0)
+    return (best[1], best[2]) if best[0] >= MATCH and lead >= 0.15 else None
 
 
 def find_card(img, game_h):
@@ -122,13 +136,14 @@ def rows(lines):
             seen.add(hit[1])
             out.append((hit[0], hit[1], box))
     if len(out) < 3 and lines:
-        parts = [(squash(t), b) for t, b in lines]
+        parts = [(shape(t), b) for t, b in lines]           # (2.113.2: by shape - see SHAPE)
         full = "".join(p for p, _b in parts)
         starts, pos = [], 0
         for p, b in parts:
             starts.append((pos, b))
             pos += len(p)
-        for k, r, i in _KEYS:
+        for _k, r, i in _KEYS:
+            k = _SHAPES[i]
             if i in seen or len(k) < 6:
                 continue
             best, at = 0.0, 0
