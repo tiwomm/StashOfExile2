@@ -4,7 +4,7 @@ Four styles drawn with plain canvas lines and text - no Pillow artwork, nothing 
 changes size - each as a Bar (resting on the XP bar) and a Panel (a card you place anywhere), in a set of colours:
   hairline  no box: outlined text and one thin accent line, on one row
   slate     a flat box with thin dividers; a switch that's on is underlined (a bar on its left in the Panel)
-  flanks    no box: the numbers beside the life orb, the switches beside the mana orb - the middle stays clear
+  flanks    (shown as Split) no box: the numbers beside the life orb, the switches beside the mana orb - the middle stays clear
   micro     the smallest: the times, the rank and the switches as lettered squares (Ritual shows its count, 2/3)
 "Classic" is the stone-and-bronze look of before (hudart.py). Settings › Appearance › Overlay settings: Style, then
 Colours ("Exile Gold" is the Game bar's own colours; the others are the theme packs'; "Follow the app theme").
@@ -23,7 +23,7 @@ from .overlaywin import CanvasText, OverlayWindow, _P
 
 from .ovskins import NAMES as _ORN_NAMES, ORNATE, palette as _ornate_palette
 
-STYLES = {"classic": "Classic (stone and bronze)", "hairline": "Hairline", "slate": "Slate", "flanks": "Flanks",
+STYLES = {"classic": "Classic (stone and bronze)", "hairline": "Hairline", "slate": "Slate", "flanks": "Split",
           "micro": "Micro"}
 STYLES.update(_ORN_NAMES)                                    # 2.110.0: Herald, Gilded, Warbanner, Verdant, Gloom
 _FM_CACHE = {}                   # 2.112.3: measuring fonts, kept (see _lt_fm)

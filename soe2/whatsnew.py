@@ -43,6 +43,9 @@ NOTES = {
             ("Looks", "Clicking quickly through the theme cards changes the theme once, to the last one you clicked."),
             ("Looks", "Theme changes no longer rebuild the overlay over the game (only Classic takes the theme's "
                       "colours)."),
+            ("Overlay", "The Flanks style is now called Split."),
+            ("Overlay", "Unlocked, the Campaign / Focus line can be dragged anywhere (by its ⠿ grip); that undocks it "
+                        "from the bar - Dock the lines to the bar puts it back."),
         ],
     },
     "2.112.3": {
