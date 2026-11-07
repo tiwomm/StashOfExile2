@@ -7,7 +7,7 @@ hand), tab by tab.
   * Only looks: no keys, no clicks, nothing sent to the game (like the Expedition and Ritual watchers).
   * The picture stays in memory for the read and is dropped. Nothing is saved, logged or sent - counts stay on this PC
     like every Wealth number.
-  * Layouts: stashlayouts.py (Currency, Abyss, Delirium, Breach › Catalysts, Expedition). Wildcard slots, shards and the
+  * Layouts: stashlayouts.py (Currency, Abyss, Delirium, Breach › Catalysts, Expedition, Ritual). Wildcard slots, shards and the
     crafting hole are skipped.
 How it reads:
   1. The panel: the slot frames of each known tab, drawn as boxes, are matched against the picture's edges (left 60%
