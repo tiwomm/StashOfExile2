@@ -1410,7 +1410,7 @@ class App(GearBookPage, PriceCheckPage, PricePopup, FavoritesPage, BoardModPage,
     def open_path(self, path):
         try:
             if sys.platform == "win32":
-                os.startfile(path)                           # noqa: the folder in Explorer
+                os.startfile(path)                           # (the folder in Explorer)
             else:
                 webbrowser.open("file://" + str(path))
         except Exception as e:
@@ -2882,16 +2882,12 @@ class App(GearBookPage, PriceCheckPage, PricePopup, FavoritesPage, BoardModPage,
 
     # ---------------- clipboard + events
     def log_error(self, where):
-        """Write an unexpected error to error_log.txt and say so in the status line - never let it stop the app."""
+        """Write an unexpected error to the app's log and say so in the status line - never let it stop the app.
+        2.115.0: one log for everything (buglog - app_log.txt; was error_log.txt), cleaned the same way."""
         try:
-            from .privacy import scrub_names
-            tb = scrub_names(traceback.format_exc())         # 2.89.2/3: no user, account or character names in the log
-            sig = tb.strip().splitlines()[-1] if tb.strip() else where
-            if time.time() - self._err_seen.get(sig, 0) > 30:          # don't repeat the same error every 100 ms
-                self._err_seen[sig] = time.time()
-                with open(P("error_log.txt"), "a", encoding="utf-8") as f:
-                    f.write(f"--- {time.strftime('%Y-%m-%d %H:%M:%S')}  v{APP_VERSION}  ({where})\n{tb}\n")
-                self.status_text = f"Something went wrong ({where}) - details are in error_log.txt"
+            from . import buglog
+            if buglog.record("error", where, exc=True):          # (the same error within 30 s: once)
+                self.status_text = f"Something went wrong ({where}) - Report a bug sends the details"
                 self.status_until = time.time() + 20
         except Exception:
             pass
@@ -6198,6 +6194,11 @@ def main():
     except Exception:
         pass
     root = tk.Tk(className="StashOfExile2")      # 2.10.0: window managers (Hyprland) see class "Stashofexile2"
+    try:                                         # 2.115.0: every problem in one log (buglog), uncaught ones too
+        from .buglog import install as _bug_install
+        _bug_install(root, APP_VERSION)
+    except Exception:
+        pass
     try:                                         # 2.112.1: not responding? where it was stuck goes to hang_report.txt
         from .hangwatch import start as _hang_start
         from .config import P as _P
@@ -6216,9 +6217,11 @@ def main():
         except Exception:
             SPLASH[0] = None
     app = App(root)
-    if CRASHED[0]:
+    if CRASHED[0]:                     # 2.115.0: Report it - the form, filled in, with the crash in the app's log
         root.after(6000, lambda: app.app_toast(
-            "The app closed by itself last time. Where it was is in crash_report.txt in the data folder (code "
-            "locations only - nothing about you). Sharing it with the bug report helps fix it.", "Report a bug",
-            kind="warning"))
+            "The app closed by itself last time. Where it was (code locations only - nothing about you) is in the "
+            "app's log; Report it sends it to be fixed.", "The app closed by itself",
+            actions=[("Report it", lambda: app.bug_report_open(
+                "The app closed by itself", "It closed by itself while I was ... (what were you doing?)")),
+                     ("Not now", lambda: None)], kind="warning"))
     root.mainloop()

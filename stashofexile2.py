@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU GPL v3.0 (see LICENSE). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.114.3
+VERSION 2.115.0
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,6 +19,20 @@ VERSION 2.114.3
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.115.0
+       One bug log for the whole app (feedback: "we need one global bug logging system", and Report a bug should
+       carry any crash): soe2/buglog.py - app_log.txt in the data folder, one entry per problem, kind error / crash /
+       freeze / slow / net. log_error, save_json failures, HTTP errors and rate limits (were error_log.txt,
+       http_error_log.txt, rate_limit_log.txt), and the hang / slow / crash reports all write there; buglog.install
+       catches anything uncaught on the main thread, any background thread (threading.excepthook) and in Tk
+       callbacks (report_callback_exception - they went nowhere before). Every entry: folders cut to file names first,
+       then privacy.scrub_names; the same error within 30 s once; capped at 512 KB (the older moves to
+       app_log.old.txt). Report a bug: "Add the app's log" sends buglog.diagnostics() - the last crash / freeze /
+       slow report from the past week and the newest log entries, newest first, at most 12,000 characters - with a
+       line saying what the log holds this week. After a crash the message has Report it (the form filled in) /
+       Not now. report.py's problem report takes app_log.txt too.
+       Builds use exact versions (requirements-build.txt - release.yml and build_exe.bat), so a library's new release
+       can't change a build by itself. Checks run ruff (undefined names, broken code) on every pull request.
   2.114.3
        Feedback: switching to the Ashen Rite theme closed the app on another player's PC (latest version, fresh
        install) and no file was written - the hang report only covers freezes. Not reproduced here (every theme to
@@ -2737,7 +2751,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.114.3"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.115.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 

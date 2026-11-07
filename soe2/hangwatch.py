@@ -69,6 +69,7 @@ def _watch(main_id, path, version):
                 f.write("\n".join(lines) + "\n")
         except OSError:
             pass
+        _log("freeze", "not responding", "\n".join(lines[2:]))        # 2.115.0: the one log too
         _ST["written"] = time.time()
 
 
@@ -79,6 +80,15 @@ def _watch(main_id, path, version):
 # so no Windows user name), function and line, plus the last things the app was doing - then removes the raw file.
 _CRASH = {"fh": None, "steps": None}
 _FRAME = __import__("re").compile(r'File "(?P<f>[^"]+)", line (?P<l>\d+) in (?P<fn>[\w<>.]+)')
+
+
+def _log(kind, where, text):
+    """2.115.0: the same report in the app's one log (buglog) - Report a bug sends it from there."""
+    try:
+        from . import buglog
+        buglog.record(kind, where, detail=text)
+    except Exception:
+        pass
 
 
 def crash_scrub(raw, steps, version):
@@ -116,6 +126,7 @@ def crash_start(folder, version):
         if rep:
             with open(os.path.join(folder, "crash_report.txt"), "w", encoding="utf-8") as f:
                 f.write("\n".join(rep) + "\n")
+            _log("crash", "closed by itself last time", "\n".join(rep[3:]))
             was = True
     except Exception:
         pass
@@ -177,5 +188,6 @@ def profiled(label, fn, path, version, slow=1.5):
                     lines.append(f"  {ct:7.2f} {nc:7d}  {os.path.basename(fname)}:{func}:{line}")
                 with open(path, "w", encoding="utf-8") as f:
                     f.write("\n".join(lines) + "\n")
+                _log("slow", f"slow {label} ({secs:.1f} s)", "\n".join(lines[3:15]))
             except Exception:
                 pass

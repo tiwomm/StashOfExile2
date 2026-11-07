@@ -3,7 +3,7 @@ rem Builds StashOfExile2.exe from stashofexile2.py + the soe2 folder (keep them 
 rem 2.0 beta 7: one exe. The Delirium alert is built in (it runs as StashOfExile2.exe --delirium, started by the app).
 cd /d "%~dp0"
 echo Installing the build tools (first time only - OpenCV is big, this can take a few minutes)...
-py -m pip install --upgrade requests pystray pillow pyinstaller mss numpy opencv-python-headless winrt-runtime winrt-Windows.Foundation winrt-Windows.Foundation.Collections winrt-Windows.Globalization winrt-Windows.Graphics.Imaging winrt-Windows.Media.Ocr winrt-Windows.Storage.Streams
+py -m pip install -r requirements-build.txt
 if errorlevel 1 goto fail
 echo Building StashOfExile2.exe - this takes a few minutes...
 py -m PyInstaller --noconfirm --clean --onefile --windowed --name StashOfExile2 --icon stashofexile2.ico --collect-submodules soe2 ^

@@ -4,7 +4,7 @@
 
 > **Who we build for - read second.** Path of Exile players are utilitarian: they love data and information, problem solving and creative thinking. So every feature shows its numbers *and how they were worked out*, lets you sort, filter, compare and export them (CSV), keeps power-user depth (keys, versions, raw data) one click away instead of hiding it, explains in plain words, and leaves the decision to the player. Pretty is welcome; vague is not.
 
-**Current version: 2.114.3**
+**Current version: 2.115.0**
 
 Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds features, 2.10.1 only fixes. Each step below is one release; we work through them top to bottom.
 
@@ -178,6 +178,7 @@ Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds f
 | 2.114.1 | Wombgifts searched on the trade site by type; the price check card over the game gets the item's properties (base type, item level, quality, sockets) like the app. |
 | 2.114.2 | Scan stash (beta) reads the Expedition, Ritual, Essence and Fragments tabs; "12.2K" stacks read as 12,200. |
 | 2.114.3 | crash_report.txt when the app closes by itself (a theme change closed it on another player's PC; not reproduced here). |
+| 2.115.0 | One bug log (app_log.txt) for errors, crashes, freezes, slow spots and refused requests; Report a bug sends it; exact build versions; ruff in Checks. |
 | 2.113.1 | Price Checks: the Show over the game switch on its header and in Settings › Price checking (out of Hotkeys); Island rumours: the middle rumour (whole-text search, read at 2x, rumours_read.txt). |
 | 2.113.0 | Each seller counts once in every price (their cheapest, "listed N times"; listings 11-20 fetched when too few sellers); Min within the mod's tier. Island rumours: all of a card's rumours (a rumour run together with the heading matched nothing; read up to 3 times), a compact panel. Price check in a card over the game (opt-in, Settings › Hotkeys › Price Checks): item, price, mods with ticks and Min / Max, cheapest listings that open to the whole item; movable, resizable, remembered; the overlay's Style. |
 | 2.112.5 | Hotfix: dragging the Campaign / Focus line no longer opens its card. |

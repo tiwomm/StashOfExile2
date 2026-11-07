@@ -267,7 +267,7 @@ def main(argv):
         if tpl is None:
             raise RuntimeError("ritual_icon.png is missing from the app")
     except Exception as e:
-        say(f"state error")
+        say("state error")
         say(f"error {type(e).__name__}: {e}")
         return 1
     log(f"started: {len(references())} digit shapes, icon template {tpl.shape}")

@@ -5,28 +5,24 @@ Update badge: a quiet look at GitHub's latest release a little after start and e
 "⬆ Update x.y.z" on the taskbar; clicking it is the same as Settings > Updates > Check for updates (asks before
 downloading). It never downloads by itself (that's still the Settings option).
 
-Report a bug: a small form - what happened, how to make it happen, what you expected - and, if you tick it, the end of
-the app's error log. You see exactly what will be sent. It goes to the community board server (board/), which opens
-a GitHub issue with its own token (the app holds none) and tells Discord. If the board can't take it, GitHub's
+Report a bug: a small form - what happened, how to make it happen, what you expected - and, if you tick it, the app's
+log (2.115.0: buglog.diagnostics - the last crash / freeze / slow report and the newest errors, cleaned).
+You see exactly what will be sent. It goes to the community board server (board/), which opens a GitHub issue with
+its own token (the app holds none) and tells Discord. If the board can't take it, GitHub's
 "new issue" page opens in your browser with everything filled in."""
-import os
 import platform
 import threading
-import time
 import tkinter as tk
-
-from .style import over_app
 import urllib.parse
 import webbrowser
 from tkinter import ttk
 
 from . import board as B
-from .config import APP_VERSION, P, SETTINGS
-from .style import C
+from .config import APP_VERSION, SETTINGS
+from .style import C, over_app
 
 REPO = "tiwomm/StashOfExile2"
 UPDATE_EVERY = 3600                 # 2.79.1 (feedback): every hour (was 6 h)
-LOG_LINES = 40
 
 
 class FeedbackPage:
@@ -117,16 +113,13 @@ class FeedbackPage:
         res = "4K" if sh >= 2000 else "1440p" if sh >= 1400 else "1080p" if sh >= 1000 else "under 1080p" if sh else "?"
         parts.append(f"**App** {APP_VERSION} · {platform.system()} {platform.release()} · {res} · "
                      f"league {public_league(SETTINGS.get('league')) or '?'}")
-        if with_log:
-            try:
-                with open(P("error_log.txt"), encoding="utf-8", errors="replace") as fh:
-                    tail = fh.read().splitlines()[-LOG_LINES:]
-            except OSError:
-                tail = []
-            parts.append("**End of error_log.txt**\n```\n" + ("\n".join(tail) or "(empty)") + "\n```")
+        if with_log:                                 # 2.115.0: the one log - the last crash / freeze / slow report and
+            from . import buglog                     # the newest entries of app_log.txt, cleaned, capped
+            parts.append(buglog.diagnostics() or "**App log**\n(nothing logged - no errors, crashes or freezes)")
         return scrub_names("\n\n".join(parts))      # 2.89.3: every word - your names / paths never reach the issue
 
-    def bug_report_open(self):
+    def bug_report_open(self, title="", what=""):
+        """title / what (2.115.0): filled in for you - the "app closed by itself" message's Report it."""
         P1, P2 = C["panel"], C["panel2"]
         if getattr(self, "bug_win", None) is not None:
             try:
@@ -174,8 +167,14 @@ class FeedbackPage:
         field("steps", "How can it be made to happen? (steps - optional)", 3)
         field("expected", "What did you expect? (optional)", 2)
         self.bug_log = tk.BooleanVar(value=True)
-        ttk.Checkbutton(f, text=f"Add the last {LOG_LINES} lines of the app's error log (helps a lot)",
-                        variable=self.bug_log, command=self._bug_preview).pack(anchor="w", pady=(8, 4))
+        from . import buglog                         # 2.115.0: what the log holds, said plainly
+        n = buglog.counts()
+        seen = ", ".join(f"{v} {k}{'es' if k == 'crash' and v != 1 else 's' if v != 1 else ''}"
+                         for k, v in sorted(n.items()) if v) or "nothing"
+        ttk.Checkbutton(f, text="Add the app's log: errors, crashes, freezes - code locations only (helps a lot)",
+                        variable=self.bug_log, command=self._bug_preview).pack(anchor="w", pady=(8, 0))
+        tk.Label(f, text=f"In the last week: {seen}.", bg=P1, fg=C["muted"], font=("Segoe UI", 9),
+                 anchor="w").pack(fill="x", padx=(24, 0), pady=(0, 4))
         b = tk.Frame(f, bg=P1)                   # 2.50.0: the buttons first, at the bottom - never cut off
         b.pack(side="bottom", fill="x", pady=(8, 0))
         tk.Label(f, text="What will be sent", bg=P1, fg=C["muted"], font=("Segoe UI", 9), anchor="w").pack(fill="x")
@@ -189,6 +188,10 @@ class FeedbackPage:
         self.bug_send_btn = ttk.Button(b, text="Send", style="Primary.TButton", command=self.bug_send)
         self.bug_send_btn.pack(side="right")
         ttk.Button(b, text="Cancel", style="Quiet.TButton", command=self._bug_close).pack(side="right", padx=(0, 8))
+        if title:
+            self.bug_vars["title"].set(title)
+        if what:
+            self.bug_vars["what"].insert("1.0", what)
         self._bug_preview()
         return win
 

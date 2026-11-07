@@ -55,9 +55,10 @@ def fmt_stamp(ts):
 
 
 def rl_log(text):
+    """2.115.0: rate limits go to the one log (buglog, "net"), like every other problem."""
     try:
-        with open(P("rate_limit_log.txt"), "a", encoding="utf-8") as f:
-            f.write(text + "\n")
+        from . import buglog
+        buglog.record("net", "rate limit", detail=text)
     except Exception:
         pass
 
@@ -285,15 +286,15 @@ def call(method, url, **kw):
                 retry = 60
             LIMITER.log_429(cls, url, r.headers, retry, r.text)
             LIMITER.penalized(retry)
-            STATUS(f"The trade site rate-limited {cls} requests (wait {retry}s) - pausing; details in rate_limit_log.txt")
+            STATUS(f"The trade site rate-limited {cls} requests (wait {retry}s) - pausing")
             continue
         if r.status_code >= 400:
             note = f"{r.status_code} for {method} {url}  | server said: {r.text[:200].strip()!r}"
             try:
-                with open(P("http_error_log.txt"), "a", encoding="utf-8") as f:
-                    keep = {k: v for k, v in r.headers.items()          # 2.89.2: only the rate-limit ones - never
-                            if k.lower().startswith("x-rate-limit") or k.lower() == "retry-after"}   # cookies
-                    f.write(time.strftime("%Y-%m-%d %H:%M:%S ") + note + f"  | headers: {keep}\n")
+                from . import buglog                                     # 2.115.0: the one log
+                keep = {k: v for k, v in r.headers.items()          # 2.89.2: only the rate-limit ones - never
+                        if k.lower().startswith("x-rate-limit") or k.lower() == "retry-after"}   # cookies
+                buglog.record("net", f"HTTP {r.status_code}", detail=note + f"  | headers: {keep}")
             except Exception:
                 pass
             raise RuntimeError(note)
