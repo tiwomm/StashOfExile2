@@ -20,17 +20,53 @@ NEXT = [
 ]
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
+#
+# 2.111.0: a version is either a plain list (old ones: all shown as small lines) or
+#   {"big": [(icon, title, one line, (link text, target) or None, area)], "small": [(area, line)]}
+# target: a page key (shell.open) or "settings:<tab>". The card shows big ones as hero rows, the small ones fold
+# under "▸ N smaller changes".
+#
+# BIG OR SMALL - the standard. A change is BIG when a player would notice it without being told, or needs to know
+# it to keep playing the same way:
+#   * a new tool, page, window, style or helper
+#   * something they use works or sits differently (keys, flow, moved, removed)
+#   * anything about their data or privacy (always big)
+#   * a fix for a problem many players hit or reported
+# Everything else is SMALL: wording, looks, order, spacing, small fixes, speed.
+# At most MAX_BIG big per card (skipped updates together, newest first); the rest go small.
+MAX_BIG = 3
+
 NOTES = {
-    "2.110.0": [
-        "Five new overlay styles: Herald, Gilded, Warbanner, Verdant and Gloom - Settings › Appearance › Overlay "
-        "settings › Style, or right-click the overlay's cog.",
-        "The bar's switches now go Campaign, Focus, Breach, Delirium, Ritual, Expedition.",
-    ],
-    "2.109.0": [
-        "Regex: all options in one card, a button for each setting.",
-        "Copied a search? Just Ctrl+V into the stash search in game.",
-        "Notes, Calc, Regex favorites, Rates and every card over the game now match your overlay's Style and Colours.",
-    ],
+    "2.111.0": {
+        "big": [],
+        "small": [
+            ("What's new", "This card shows the big changes first; the small ones fold under one line."),
+            ("Looks", "The What's new card and About follow your app theme."),
+        ],
+    },
+    "2.110.0": {
+        "big": [
+            ("✦", "Five new overlay styles", "Herald, Gilded, Warbanner, Verdant and Gloom - the bar, the panel and "
+             "every window over the game.", ("Pick one", "settings:Appearance"), "Overlay"),
+        ],
+        "small": [
+            ("Overlay", "The switches go Campaign, Focus, Breach, Delirium, Ritual, Expedition."),
+            ("Overlay", "Right-click the cog to pick a style."),
+            ("Overlay", "\"Avg:\" lost its period."),
+        ],
+    },
+    "2.109.0": {
+        "big": [
+            ("▣", "Everything over the game matches", "Notes, Calc, Regex favorites, Rates and every card follow "
+             "your overlay's Style and Colours.", ("Overlay settings", "settings:Appearance"), "Overlay"),
+            ("✱", "Regex: one card of options", "Every setting is a row of buttons in one card, like Money Makers.",
+             ("Open Regex", "regex"), "Regex"),
+        ],
+        "small": [
+            ("Regex", "Copied a search? Just Ctrl+V into the stash search in game."),
+            ("Regex", "★ first, Only ★ and Select valuable are gone."),
+        ],
+    },
     "2.108.0": [
         "Right-click the overlay's cog: Quick settings over the game - overlay, sound, lock, what's on the bar. "
         "Left-click still opens the full settings.",
@@ -1245,3 +1281,27 @@ def notes_between(seen, current):
         if vtuple(v) > vtuple(seen):
             out.append((v, lines))
     return out
+
+
+def split_notes(notes):
+    """[(version, entry)] newest first -> (big hero rows, small lines) for the card (see the standard above)."""
+    big, small = [], []
+    for _v, entry in notes:
+        if isinstance(entry, dict):
+            for icon, title, text, go, area in entry.get("big", []):
+                if len(big) < MAX_BIG:
+                    big.append((icon, title, text, go))
+                else:
+                    small.append((area, f"{title}: {text}"))
+            small += [tuple(x) for x in entry.get("small", [])]
+        else:
+            small += [("", line) for line in entry]
+    return big, small
+
+
+def plain_lines(entry):
+    """A version's notes as plain lines (About › Version), big ones first."""
+    if not isinstance(entry, dict):
+        return list(entry)
+    return [f"{title} - {text}" for _i, title, text, _go, _a in entry.get("big", [])] + \
+        [f"{a}: {t}" if a else t for a, t in entry.get("small", [])]

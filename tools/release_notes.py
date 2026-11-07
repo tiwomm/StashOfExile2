@@ -36,7 +36,12 @@ versions = sorted((k for k in notes if vt(k) <= vt(v) and (prev is None and k ==
                   key=vt, reverse=True) or [v]
 for i, ver in enumerate(versions):
     print(f"{'## What' + chr(39) + 's new in ' + ver if i == 0 else '### ' + ver}\n")
-    for line in notes.get(ver) or ["See the VERSION HISTORY at the top of stashofexile2.py."]:
+    e = notes.get(ver) or ["See the VERSION HISTORY at the top of stashofexile2.py."]
+    if isinstance(e, dict):                          # 2.111.0: big changes first (bold), then the small ones
+        for _i, title, text, _go, _a in e.get("big", []):
+            print(f"- **{title}** - {text}")
+        e = [f"{a}: {t}" if a else t for a, t in e.get("small", [])]
+    for line in e:
         print(f"- {line}")
     print()
 print("**Download:** StashOfExile2.exe (Windows). The app keeps your data in %APPDATA%\\StashOfExile2, so updating "
