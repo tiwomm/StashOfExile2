@@ -191,15 +191,11 @@ class App(GearBookPage, PriceCheckPage, PricePopup, FavoritesPage, BoardModPage,
         self._err_seen = {}
         self.dirty, self.last_save = False, 0.0
         self.rt = {}                                # per rules page ("tablet" / "jewel"): its widgets and row -> mod key
-        self.migrate_rules_once()
+        self.run_migrations()                        # 2.117.0: every one-time change, in order (soe2/migrations.py)
         self.keys = KeyWatch()                       # made before the windows (the utility windows ask about it); started below
         from . import listkit                        # 2.12.0: keys, right-click menus and striped rows everywhere
         listkit.install(self)
         SETTINGS.setdefault("poe2db_key", "Ctrl+Shift+D")
-        if not SETTINGS.get("copy_2983"):                    # 2.98.3: One-key copy and "Other ways of copying" are
-            SETTINGS["copy_2983"] = True                     # gone - Bulk Pricing adds only your own Ctrl+Alt+C
-            SETTINGS["quick_copy_key"] = ""
-            SETTINGS["hotkey_only"] = True
         SETTINGS.setdefault("copy_marker", True)            # 2.19.0: a mark where you pressed Ctrl+Alt+C
         SETTINGS.setdefault("copy_marker_secs", 10)         # 2.24.0: how long it stays
         SETTINGS.setdefault("copy_marker_hold", False)      # 2.24.0: or until Esc is tapped twice (2.25.0)
@@ -4140,37 +4136,10 @@ class App(GearBookPage, PriceCheckPage, PricePopup, FavoritesPage, BoardModPage,
             ns.tv["displaycolumns"] = ("tier", "type", "mod", "on")           # nothing is learned for these
         self.list_register("modbook", ns.tv)                                      # 2.4.0: Ctrl+A, Shift / Ctrl+click
 
-    def migrate_rules_once(self):
-        """2.6.0, once: waystone / relic rules set from Regex move to their own names (mods.migrate_scoped_rules).
-        2.99.0, once: gear rules lose their leading "+" (Mod book › Gear rules lists lines without one).
-        2.114.0, once: one rating - a tier you gave decides High / Normal (S / A = High, B-D = Normal)."""
-        if not SETTINGS.get("tier_only_2114"):
-            from .mods import migrate_tier_only
-            if migrate_tier_only():
-                save_json("mod_rules.json", RULES)
-                save_json("mod_tiers.json", TIERS)
-            SETTINGS["tier_only_2114"] = True
-            save_json("settings.json", SETTINGS)
-        if not SETTINGS.get("gear_plus_299"):
-            from .gearbook import migrate_plus
-            if migrate_plus(RULES, TIERS):
-                save_json("mod_rules.json", RULES)
-                save_json("mod_tiers.json", TIERS)
-            SETTINGS["gear_plus_299"] = True
-            save_json("settings.json", SETTINGS)
-        if SETTINGS.get("rules_scoped_26"):
-            return
-        try:
-            from . import regex as R
-
-            def lines(kind):
-                return [l for m in R.mods(kind) for l in (m.get("lines") or [m["line"]])]
-            if migrate_scoped_rules(lines("waystone"), lines("relic")):
-                save_json("mod_rules.json", RULES)
-            SETTINGS["rules_scoped_26"] = True
-            save_json("settings.json", SETTINGS)
-        except Exception:
-            self.log_error("moving waystone / relic rules")
+    def run_migrations(self):
+        """The app's one-time changes not done on this PC yet (soe2/migrations.py, stage "app") - rules, Mod book."""
+        from . import migrations
+        migrations.run(SETTINGS, "app", lambda: save_json("settings.json", SETTINGS))
 
     MB_TABS = (("tablet", "Tablet rules"), ("jewel", "Jewel rules"), ("waystone", "Waystone rules"),
                ("relic", "Relic rules"), ("gear", "Gear rules"), ("unique", "Unique rules"))
