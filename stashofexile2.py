@@ -30,6 +30,12 @@ VERSION HISTORY
        its title, resize from any edge - both remembered. The overlay's Style throughout (its scroll bar and buttons
        too). Other sellers' names show as on the app's card; your own account never does. It takes the keyboard
        when you click a box (to type); it never redraws under your typing. Windows and Linux / Hyprland.
+       Prices count each seller once (core, every search): trade.collapse_sellers keeps a seller's cheapest
+       listing with how many times they listed it ("listed N times" on the cards); with fewer than 5 sellers in the
+       first 10, listings 11-20 are fetched (trade.MORE_IDS) - one seller's seven copies no longer make up "the 5
+       cheapest". Price Checks, Bulk Pricing, Favorites, the card over the game and Money Makers' costs. A mod's
+       default Min never goes under its own tier's lowest roll (mods.min_for: 90% of a low roll searched the tier
+       below). Ideas from Exiled Exchange 2 (MIT), written our own way - credited.
        Island rumours (feedback: only two of three showed; the panel was big and clunky): a rumour read on one line
        with the card's "Island Rumours" heading now matches (rumours._score: the best stretch of the line); each card
        is read up to 3 times and what's found is put together (READS); the panel is small, like the Runeshape tips -

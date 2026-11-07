@@ -61,8 +61,14 @@ class StratCostJobs:
         prices = []
         if ids:
             got = call("GET", f"{BASE}/fetch/{','.join(ids)}", params={"query": res.get("id")})
+            seen = set()
             for e in got.get("result") or []:
-                p = ((e or {}).get("listing") or {}).get("price") or {}
+                lst = (e or {}).get("listing") or {}
+                p = lst.get("price") or {}
+                who = str((lst.get("account") or {}).get("name") or "").lower()
+                if who and who in seen:                   # 2.113.0 (core): one price per seller - their cheapest
+                    continue
+                seen.add(who) if who else None
                 if p.get("amount") is not None and p.get("currency"):
                     prices.append((p["amount"], p["currency"]))
         price = cheapest_real(prices, league) if prices else None

@@ -308,7 +308,13 @@ def min_for(mod):
         return None
     if abs(v) <= 3:
         return v
-    return math.floor(v * SETTINGS["range_factor"]) if v > 0 else math.ceil(v * SETTINGS["range_factor"])
+    if v < 0:
+        return math.ceil(v * SETTINGS["range_factor"])
+    t = math.floor(v * SETTINGS["range_factor"])
+    lo = mod.get("lo")                              # 2.113.0: never under the item's own tier (its roll range from
+    if isinstance(lo, (int, float)) and lo <= v:    # Ctrl+Alt+C) - 90% of a low roll searched the tier below too,
+        t = max(t, math.floor(lo))                  # so the item was priced against weaker ones
+    return t
 
 
 def vfilter(mod):

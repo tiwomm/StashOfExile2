@@ -245,6 +245,7 @@ def search_ids(league, base, filters, count_min, corrupted=None):
     if hit is None:
         res = call("POST", f"{BASE}/search/poe2/{league}", json={"query": query, "sort": {"price": "asc"}})
         hit = (res.get("total", 0), res.get("result", [])[:10], res.get("id"))
+        MORE_IDS[res.get("id")] = list(res.get("result", [])[10:20])   # 2.113.0: for more sellers (collapse)
         _search_cache[key] = (time.time(), hit)
     return hit
 
@@ -322,8 +323,39 @@ def fetch_rich(qid, ids, max_hours=None):
                             "name": " ".join(x for x in (strip_markup(str(it.get("name") or "")),
                                                          str(it.get("typeLine") or it.get("baseType") or "")) if x),
                             "text": [strip_markup(l) for l in lines], "qid": qid,
+                            "seller": str((lst.get("account") or {}).get("name") or "").strip().lower(),   # 2.113.0
                             "hsids": hsids})                     # 2.18.0: the stat id the site gave, per line
         _fetch_cache[key] = (time.time(), out)
+    return out
+
+
+MORE_IDS = {}                 # 2.113.0: search id -> its listings 11-20 (fetched only when too few sellers)
+MIN_SELLERS = 5
+
+
+def more_ids(qid):
+    return MORE_IDS.get(qid) or []
+
+
+def collapse_sellers(rich):
+    """2.113.0 (core, every search): one row per seller - their cheapest listing (rich is cheapest first), with how
+    many times they listed it (r["times"]). Five copies from one seller no longer make up "the 5 cheapest".
+    A listing without a seller name stays on its own. The trade site's entry remembers the count for the cards."""
+    out, by = [], {}
+    for r in rich:
+        who = r.get("seller") or ""
+        n = int(r.get("times") or 1)                  # (already put together once: its count carries over)
+        if who and who in by:
+            by[who]["times"] += n
+            continue
+        r = dict(r, times=n)
+        if who:
+            by[who] = r
+        out.append(r)
+    for r in out:
+        e = RAW_LISTINGS.get(r.get("id"))
+        if e is not None:
+            e["_times"] = r["times"]
     return out
 
 

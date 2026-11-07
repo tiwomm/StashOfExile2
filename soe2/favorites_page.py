@@ -770,11 +770,11 @@ class FavoritesPage:
             try:
                 from .config import BASE
                 from .net import call
-                from .trade import fetch_rich
+                from .trade import collapse_sellers, fetch_rich
                 res = call("POST", f"{BASE}/search/poe2/{quote(league)}", json=body)
                 ids = (res.get("result") or [])[:10]
-                if ids:
-                    fetch_rich(res.get("id"), ids)                  # (keeps each listing for the cards)
+                if ids:                                             # (keeps each listing for the cards; 2.113.0:
+                    ids = [r["id"] for r in collapse_sellers(fetch_rich(res.get("id"), ids))] or ids   # one per seller)
                 from .trade import RAW_LISTINGS
                 first = next((((RAW_LISTINGS.get(i) or {}).get("listing") or {}).get("price") for i in ids
                               if (((RAW_LISTINGS.get(i) or {}).get("listing") or {}).get("price"))), None)

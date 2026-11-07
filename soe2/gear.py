@@ -578,6 +578,8 @@ def run_search(league, query):
     if hit is None:
         res = call("POST", f"{BASE}/search/poe2/{league}", json={"query": query, "sort": {"price": "asc"}})
         hit = (res.get("total", 0), res.get("result", [])[:10], res.get("id"))
+        from .trade import MORE_IDS                   # 2.113.0: listings 11-20, for more sellers (collapse)
+        MORE_IDS[res.get("id")] = list(res.get("result", [])[10:20])
         _search_cache[key] = (time.time(), hit)
     return hit
 

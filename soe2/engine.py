@@ -18,7 +18,7 @@ from . import gear, waystone
 from .gear import only_source
 from .trade import (cheapest_real,
     _flt, build_sidtext, estimate, fetch_rich, listing_rules, mod_impact, search_ids, unconvertible,
-    uses_filter, verify_listings,
+    uses_filter, verify_listings, collapse_sellers, more_ids, MIN_SELLERS,
 )
 from .market import MARKET, Market
 from .pricefmt import confidence, fmt_div, fmt_price
@@ -779,6 +779,9 @@ class Engine(TabReaderJobs, WealthJobs, StratCostJobs, threading.Thread):
         """One search -> fetch -> check the listings really carry the mods -> remember it."""
         mods = [m for g in gs for m in g["mods"]]
         rich = fetch_rich(qid, ids, hours) if total > 0 else []
+        rich = collapse_sellers(rich)                 # 2.113.0 (core): one row per seller, their cheapest
+        if len(rich) < MIN_SELLERS and total > len(ids) and more_ids(qid):
+            rich = collapse_sellers(rich + fetch_rich(qid, more_ids(qid), hours))   # too few sellers: the next 10
         kept, info = verify_listings(rich, mods)
         if not info["unverifiable"]:
             verify_tot["bad"] += info["bad"]

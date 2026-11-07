@@ -68,8 +68,9 @@ CREDITS = (
     ("poe.ninja (rasmuskl)", "the economy data: Exchange rates, the rates window over the game, Remnant prices and "
                              "currency values.", "https://github.com/rasmuskl"),
     ("Exiled Exchange 2 (Kvan7)", "general ideas, and the base types, mod wordings, trade-site stat ids and "
-                                  "pseudo-total rules in gamedata.json, from its data files under its MIT license. "
-                                  "Nothing else of it is used.", "https://github.com/Kvan7/Exiled-Exchange-2"),
+                                  "pseudo-total rules in gamedata.json, from its data files under its MIT license; "
+                                  "and (2.113.0) the ideas of counting each seller once and keeping a mod's Min "
+                                  "within its tier - written our own way.", "https://github.com/Kvan7/Exiled-Exchange-2"),
     ("Sidekick", "general ideas. None of its code is used.", "https://github.com/Sidekick-Poe/Sidekick"),
     ("hypr-exiled (gfsd3v)", "the idea for the Trade Whisper Watcher - ours is built from scratch, none of its code "
                              "is used.", "https://github.com/gfsd3v/hypr-exiled"),
