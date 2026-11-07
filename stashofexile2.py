@@ -31,6 +31,8 @@ VERSION HISTORY
        Theme: the What's new card, the Insights item card, the Price Checks / Session / Wealth strips, the BETA tag
        and Game search's highlight use theme tokens (they kept fixed colours in every theme). tools/check_theme.py
        (on every PR) fails any colour written into the code that stays the same in every theme.
+       Toasts: action buttons wrap onto another row when they don't fit (the update note's three buttons squeezed
+       the left one, Show, into a blank box).
   2.110.0
        Five ornate overlay styles (wave 1 of 2, from the mockups): Herald (crimson title plates, gilt line, iron
        tabs), Gilded (white marble, gold leaf, umber text), Warbanner (a heavy gold frame with corner caps, royal-blue

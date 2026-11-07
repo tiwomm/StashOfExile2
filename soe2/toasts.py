@@ -124,11 +124,24 @@ class Toasts:
         body.pack(fill="x", pady=(4, 0))
         t = {"win": w, "job": None, "left": secs, "since": None, "kind": kind}
         if actions:
-            row = tk.Frame(box, bg=C["panel2"])
-            row.pack(fill="x", pady=(8, 0))
+            # 2.111.0: the buttons wrap onto another row when they don't fit (three squeezed the left one blank)
+            room = WIDTH - 4 - 2 * 12
+            row, used = None, room
             for label, fn in actions:
-                ttk.Button(row, text=label, takefocus=0,
-                           command=lambda f=fn: (self.close(t), f())).pack(side="right", padx=(8, 0))
+                if row is None or used > room:
+                    row = tk.Frame(box, bg=C["panel2"])
+                    row.pack(fill="x", pady=(8, 0))
+                    used = 0
+                b = ttk.Button(row, text=label, takefocus=0, command=lambda f=fn: (self.close(t), f()))
+                need = b.winfo_reqwidth() + 8
+                if used and used + need > room:             # this one starts the next row
+                    b.destroy()
+                    row = tk.Frame(box, bg=C["panel2"])
+                    row.pack(fill="x", pady=(8, 0))
+                    b = ttk.Button(row, text=label, takefocus=0, command=lambda f=fn: (self.close(t), f()))
+                    used = 0
+                b.pack(side="right", padx=(8, 0))
+                used += need
         x.bind("<Button-1>", lambda e: self.close(t))
         body.bind("<Button-1>", lambda e: self.close(t))
         w.bind("<Enter>", lambda e: self._pause(t))
