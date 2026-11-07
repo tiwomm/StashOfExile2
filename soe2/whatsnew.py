@@ -39,6 +39,26 @@ NEXT = [
 MAX_BIG = 3
 
 NOTES = {
+    "2.116.0": {
+        "big": [
+            ("⌨", "Keys and chat commands on one tab", "Settings › Keys has every hotkey and your chat commands with "
+             "their keys - set in one place.", ("Open Keys", "settings:Keys"), "Settings"),
+            ("🎨", "Pick an overlay style by seeing it", "Settings › Appearance lists the styles beside a live preview "
+             "of the bar - hover one to see it, click to use it.", ("Open Appearance", "settings:Appearance"),
+             "Settings"),
+            ("🛠", "Developer options", "Settings › Advanced › Developer options (off until you turn it on): a debug "
+             "mode for the app's log, and the mods the trade site didn't know beside its closest wording.", None,
+             "Settings"),
+        ],
+        "small": [
+            ("Settings", "Always on top and Minimize to the system tray start off on new installs."),
+            ("Settings", "Messages stay for and the tray setting moved to General › Window; your price check key's "
+                         "switches to Price checking."),
+            ("Settings", "Advanced › Problems shows what the app's log holds this week, with a way to open it."),
+            ("Settings", "The data folder is shown without your Windows user name."),
+            ("App", "Shorter notes on Privacy & community, About and Updates."),
+        ],
+    },
     "2.115.0": {
         "big": [
             ("🐞", "One log for everything that goes wrong", "Errors, crashes, freezes, slow spots and refused trade-site "

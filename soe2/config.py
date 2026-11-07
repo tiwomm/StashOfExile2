@@ -128,7 +128,7 @@ DEFAULTS = {
     "toast_secs": 6,
     "range_factor": 0.9,   # search for rolls >= 90% of yours
     "min_results": 3,
-    "tray": True,          # minimize to the system tray (needs pystray + pillow)
+    "tray": False,         # minimize to the system tray (needs pystray + pillow) - 2.116.0: off for new installs
     "spread_warn": 20,     # warn when the cheapest and dearest listing are this many times apart (0 = off)
     "pc_ctrl_c": True,     # 2.80.0: your price check key on an item in game opens it on Price Checks
     "pc_key": "Ctrl+D",    # 2.83.1 (feedback): the price check key (was the game's plain Ctrl+C)
@@ -152,7 +152,8 @@ DEFAULTS = {
     "panel_w": 430,               # remembered width of the side panel
     "uses": "10",                 # tablets: only compare with tablets that have at least this many uses left
     "wealth_account": "",         # Wealth page: your account name as the trade site shows it, e.g. Name#1234 (1.33)
-    "on_top": True,               # keep the window in front of other windows, and undo minimizes you didn't ask for (1.35)
+    "on_top": False,              # keep the window in front of other windows, and undo minimizes you didn't ask for (1.35)
+                                  # (2.116.0, feedback: off for new installs - a saved setting is kept)
     "auto_check_updates": False,  # 2.0 beta 7: look for a new version on GitHub when the app starts (tells you, asks first)
     "auto_update": False,         # 2.0 beta 7: ...and install it straight away, without asking
 }

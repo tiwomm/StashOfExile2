@@ -279,6 +279,16 @@ def call(method, url, **kw):
             url = requests.compat.urljoin(url, r.headers["Location"])
             r = requests.request(method, url, headers=HEADERS, timeout=25, allow_redirects=False, **kw)
         LIMITER.update(cls, r.headers)
+        try:                                            # 2.116.0: Debug mode - every request, its answer and time
+            from . import buglog
+            buglog.STATS["requests"] += 1
+            ms = int(r.elapsed.total_seconds() * 1000) if getattr(r, "elapsed", None) else 0
+            if ms > 3000:
+                buglog.STATS["slow_requests"] += 1
+            if buglog.debug_on():
+                buglog.debug(f"{method} {cls}", f"{r.status_code} in {ms} ms  {requests.compat.urlparse(url).path}")
+        except Exception:
+            pass
         if r.status_code == 429:
             try:
                 retry = int(r.headers.get("Retry-After", "60"))

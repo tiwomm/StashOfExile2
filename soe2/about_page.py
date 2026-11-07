@@ -13,6 +13,19 @@ from .updates import REPO
 GITHUB_URL = f"https://github.com/{REPO}"
 DISCORD_URL = "https://discord.gg/Ta8EVnxx4T"
 DISCORD = "#5865F2"
+DISCORD_HOVER = "#4752c4"
+
+
+def _keep_discord():
+    """2.116.0 (P10: the Join the Discord button came out grey in some themes): Discord's own colours stay."""
+    try:
+        from . import themes as _th
+        _th.KEEP.update({DISCORD.lower(), DISCORD_HOVER})
+    except Exception:
+        pass
+
+
+_keep_discord()
 
 # (title, lines). Plain words: what it's for, then how to start.
 THEME_PAGE = "Pick your look"
@@ -71,10 +84,10 @@ CREDITS = (
                                   "pseudo-total rules in gamedata.json, from its data files under its MIT license; "
                                   "and (2.113.0) the ideas of counting each seller once and keeping a mod's Min "
                                   "within its tier - written our own way.", "https://github.com/Kvan7/Exiled-Exchange-2"),
-    ("Sidekick", "general ideas. None of its code is used.", "https://github.com/Sidekick-Poe/Sidekick"),
+    ("Sidekick (Sidekick-Poe)", "general ideas. None of its code is used.", "https://github.com/Sidekick-Poe/Sidekick"),
     ("hypr-exiled (gfsd3v)", "the idea for the Trade Whisper Watcher - ours is built from scratch, none of its code "
                              "is used.", "https://github.com/gfsd3v/hypr-exiled"),
-    ("Path of Building PoE2", "the anoint recipes.", "https://github.com/PathOfBuildingCommunity/PathOfBuilding-PoE2"),
+    ("Path of Building PoE2 (PathOfBuildingCommunity)", "the anoint recipes.", "https://github.com/PathOfBuildingCommunity/PathOfBuilding-PoE2"),
     ("Cinzel (Natanael Gama)", "a font of the ornate overlay styles. SIL Open Font License.",
      "https://github.com/NDISCOVER/Cinzel"),
     ("EB Garamond (Georg Duffner, Octavio Pardo)", "a font of the ornate overlay styles. SIL Open Font License.",
@@ -99,22 +112,22 @@ class AboutPage:
     def build_about(self, wrap):
         from .whatsnew import notes_between, plain_lines
         P1, P2 = C["panel"], C["panel2"]
-        head = tk.Frame(wrap, bg="#1a2a4c", padx=16, pady=16, highlightthickness=1, highlightbackground=C["line"])
+        head = tk.Frame(wrap, bg=C["panel2"], padx=16, pady=16, highlightthickness=1, highlightbackground=C["line"])
         head.pack(fill="x", pady=(0, 8))
-        tk.Label(head, text="StashOfExile2", bg="#1a2a4c", fg="#ffffff", font=(FONT_TITLE, 18, "bold"),
+        tk.Label(head, text="StashOfExile2", bg=C["panel2"], fg=C["text"], font=(FONT_TITLE, 18, "bold"),
                  anchor="w").pack(fill="x")
         from .config import TAGLINE
-        tk.Label(head, text=TAGLINE, bg="#1a2a4c", fg="#ffd9a8", font=(FONT_TITLE, 12, "italic"),
+        tk.Label(head, text=TAGLINE, bg=C["panel2"], fg=C["accent"], font=(FONT_TITLE, 12, "italic"),
                  anchor="w").pack(fill="x")                                               # 2.73.2
         tk.Label(head, text=f"Version {pretty_version()}  ·  a toolkit for Path of Exile 2  ·  free and open source "
-                            "(GPL-3.0)", bg="#1a2a4c", fg="#9fb6dd", anchor="w").pack(fill="x")
-        btns = tk.Frame(head, bg="#1a2a4c")
+                            "(GPL-3.0)", bg=C["panel2"], fg=C["muted"], anchor="w").pack(fill="x")
+        btns = tk.Frame(head, bg=C["panel2"])
         btns.pack(fill="x", pady=(8, 0))
         self.about_discord = tk.Label(btns, text="  💬  Join the Discord  ", bg=DISCORD, fg="#ffffff", cursor="hand2",
                                       font=("Segoe UI", 12, "bold"), padx=8, pady=8)
         self.about_discord.pack(side="left")
         self.about_discord.bind("<Button-1>", lambda e: open_link(DISCORD_URL))
-        self.about_discord.bind("<Enter>", lambda e: self.about_discord.config(bg="#4752c4"))
+        self.about_discord.bind("<Enter>", lambda e: self.about_discord.config(bg=DISCORD_HOVER))
         self.about_discord.bind("<Leave>", lambda e: self.about_discord.config(bg=DISCORD))
         ttk.Button(btns, text="GitHub page", command=lambda: open_link(GITHUB_URL), style="Quiet.TButton").pack(side="left", padx=(8, 0))
         ttk.Button(btns, text="Quick start guide", command=lambda: self.show_quickstart(force=True)).pack(side="left",
@@ -186,11 +199,11 @@ class AboutPage:
         self.whatsnew_follow()
         inner = tk.Frame(card, bg=P1)
         inner.pack(fill="both", expand=True)
-        head = tk.Frame(inner, bg="#1a2a4c", padx=16, pady=12)
+        head = tk.Frame(inner, bg=C["panel2"], padx=16, pady=12)
         head.pack(fill="x")
-        self.qs_title = tk.Label(head, text="", bg="#1a2a4c", fg="#ffffff", font=(FONT_TITLE, 16, "bold"), anchor="w")
+        self.qs_title = tk.Label(head, text="", bg=C["panel2"], fg=C["text"], font=(FONT_TITLE, 16, "bold"), anchor="w")
         self.qs_title.pack(fill="x")
-        self.qs_step = tk.Label(head, text="", bg="#1a2a4c", fg="#9fb6dd", anchor="w")
+        self.qs_step = tk.Label(head, text="", bg=C["panel2"], fg=C["muted"], anchor="w")
         self.qs_step.pack(fill="x")
         foot = tk.Frame(inner, bg=P1, padx=16, pady=8)
         foot.pack(fill="x", side="bottom")
@@ -213,7 +226,8 @@ class AboutPage:
         self.qs_i = max(0, min(n - 1, self.qs_i + step))
         title, lines = QUICKSTART[self.qs_i]
         self.qs_title.config(text=title)
-        self.qs_step.config(text=f"Quick start  ·  {self.qs_i + 1} of {n}  ·  version {pretty_version()}")
+        dots = " ".join("●" if i == self.qs_i else "○" for i in range(n))     # 2.116.0 (P10): where you are, at a glance
+        self.qs_step.config(text=f"Quick start  ·  {dots}  ·  {self.qs_i + 1} of {n}")
         P2 = C["panel2"]
         for w in self.qs_body.winfo_children():
             w.destroy()
