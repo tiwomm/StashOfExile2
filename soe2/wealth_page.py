@@ -86,7 +86,7 @@ class WealthPage:
         self.w_count_btn = ttk.Button(abar, text="Count currency…", command=self.wealth_count_toggle,
                                       style="Primary.TButton")
         self.w_count_btn.pack(side="right", padx=(0, 8))
-        Tooltip(self.w_scan_btn, "BETA - may not work. Reads your Currency, Abyss, Delirium, Breach and Expedition tabs from "
+        Tooltip(self.w_scan_btn, "BETA - may not work. Reads your Currency, Abyss, Delirium, Breach, Expedition and Ritual tabs from "
                                   "the screen instead of Ctrl+C on every stack. You check the numbers before they're "
                                   "saved. Only looks: no keys, no clicks; the picture is never saved.")
         self.w_sync_btn = ttk.Button(abar, text="⟳ Sync stash tabs", command=self.wealth_sync)   # (never shown)
@@ -386,7 +386,7 @@ class WealthPage:
         ("Count currency", "Press Count currency, then hover each stack in game and press Ctrl+C: the stack and its "
                            "size are added. Stacks of the same currency add up. Double-click a quantity to change it; "
                            "select rows (Ctrl+A for all) and press Delete to remove them."),
-        ("Scan stash (beta)", "Reads your Currency, Abyss, Delirium, Breach and Expedition tabs from the screen. You check the "
+        ("Scan stash (beta)", "Reads your Currency, Abyss, Delirium, Breach, Expedition and Ritual tabs from the screen. You check the "
                               "numbers before they're saved. Only looks: no keys, no clicks; the picture is never kept."),
         ("Prices", "Currency, fragments and other stackables come from poe.ninja. Double-click a price to set your own."),
         ("Total and Where it is", "Total is everything added up; the chart shows it over time (Daily = the change "
@@ -900,7 +900,7 @@ class WealthPage:
         card(0, "Count currency", "Press Count, then in game hover each stack and press Ctrl+C. The same currency adds "
                                   "up.", "Finish counting" if self.w_counting else "Start counting",
              self.wealth_count_toggle, True)
-        card(1, "Scan stash (beta)", "Reads your Currency, Abyss, Delirium, Breach and Expedition tabs from the screen. You check "
+        card(1, "Scan stash (beta)", "Reads your Currency, Abyss, Delirium, Breach, Expedition and Ritual tabs from the screen. You check "
                                      "the numbers before they're saved.", "Scan stash…", self.stash_scan_start, False)
 
     def _wealth_status(self, top):

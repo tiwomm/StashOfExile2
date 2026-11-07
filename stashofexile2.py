@@ -26,6 +26,9 @@ VERSION HISTORY
        as "12.2K": stashread has K and "." shapes and reads it as 12,200 (_value; _could_be keeps a stray "." or "K"
        match from taking a run over). Breach › Wombgifts stays out (they don't stack). test_v21010 extended; the
        reference shots stay in the local test kit (wealth data).
+       Scan stash reads the Ritual tab too (the user's shot, every slot named): stashlayouts.RITUAL - An Audience with
+       the King, Head of the King (double wide), Call of the Shadows and 28 omens; its two empty slots held items out
+       of the game - left out.
   2.114.1
        Wombgifts (feedback: "use trade site for the 5 types of wombgifts, they do exist"): gear.type_only_item -
        TYPE_ONLY_CLASSES ("Wombgifts") items are a price-check item searched by their type alone, as the site's own

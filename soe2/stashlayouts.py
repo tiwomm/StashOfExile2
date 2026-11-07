@@ -12,7 +12,6 @@ To add a tab (ROADMAP: Ritual, Expedition, Essence, Fragment, Socketables):
   4. Add the tab to TABS and ORDER. Sub-pages (Breach: Catalysts | Wombgifts) are their own entry; say in "page"
      which button must be lit.
 Pending tabs and what each needs:
-  ritual      - every Ritual omen (none owned yet to sample)
   essence     - every Essence tier (Lesser / normal / Greater / Perfect + the corrupted ones)
   fragment    - map fragments, splinters, keys
   socketables - runes, soul cores, talismans (may be several pages)"""
@@ -104,11 +103,33 @@ EXPEDITION += _row(650, (165, 255, 345, 435, 525, 615), [a + " Alloy" for a in _
                    + ["The Runebinder's Alloy", "The Runefather's Alloy"])
 EXPEDITION += _row(749, (255, 345, 435, 525), ("Blazing Flux", "Chilling Flux", "Crackling Flux", "Void Flux"))
 
+# 2.114.2 (the user's Ritual tab, every slot named): the two empty slots (250, 173) and (165, 372) held items that
+# are out of the game - left out. Head of the King's slot is double wide.
+_O = "Omen of "
+RITUAL = []
+RITUAL += [("An Audience with the King", (251, 40, 70, 70)), ("Head of the King", (350, 40, 140, 70)),
+           ("Call of the Shadows", (520, 40, 70, 70))]
+RITUAL += _row(174, (445, 526), (_O + "Gambling", _O + "Bartering"))
+RITUAL += _row(291, (125, 206, 287, 404, 485, 566),
+               [_O + n for n in ("Sinistral Exaltation", "Dextral Exaltation", "Greater Exaltation",
+                                 "Sinistral Erasure", "Dextral Erasure", "Whittling")])
+RITUAL += _row(372, (246, 404, 485, 566, 647),
+               [_O + n for n in ("Catalysing Exaltation", "Chaotic Rarity", "Chaotic Quantity", "Chaotic Monsters",
+                                 "Chaotic Effectiveness")])
+RITUAL += _row(489, (147, 228, 345, 426, 543, 624),
+               [_O + n for n in ("Sinistral Annulment", "Dextral Annulment", "Chance", "the Ancients", "the Blessed",
+                                 "Sanctification")])
+RITUAL += _row(606, (147, 228), (_O + "Dextral Crystallisation", _O + "Sinistral Crystallisation"))
+RITUAL += _row(741, (125, 206, 287, 404, 485, 566, 647),
+               [_O + n for n in ("Resurgence", "Amelioration", "Refreshment", "the Hunt", "Answered Prayers",
+                                 "Secret Compartments", "Reinforcements")])
+
 TABS = {
     "currency": {"label": "Currency", "slots": CURRENCY},
     "abyss": {"label": "Abyss", "slots": ABYSS},
     "delirium": {"label": "Delirium", "slots": DELIRIUM},
     "breach": {"label": "Breach", "page": "Catalysts", "slots": BREACH},
     "expedition": {"label": "Expedition", "slots": EXPEDITION},
+    "ritual": {"label": "Ritual", "slots": RITUAL},
 }
-ORDER = ("currency", "abyss", "delirium", "breach", "expedition")
+ORDER = ("currency", "abyss", "delirium", "breach", "expedition", "ritual")

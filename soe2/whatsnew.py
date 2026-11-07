@@ -42,7 +42,7 @@ NOTES = {
     "2.114.2": {
         "big": [],
         "small": [
-            ("Wealth", "Scan stash (beta) reads your Expedition tab too. Stacks over 9,999 show as \"12.2K\" in game, "
+            ("Wealth", "Scan stash (beta) reads your Expedition and Ritual tabs too. Stacks over 9,999 show as \"12.2K\" in game, "
                        "so they're read as 12,200 - check the number before you save."),
         ],
     },
