@@ -258,6 +258,19 @@ def center_over(win, parent):
     return x, y
 
 
+def over_app(win, parent):
+    """2.114.3 (feedback: the Scan stash check window came up on the wrong screen - "it should always appear over the
+    app"): centre a window over `parent` (the app window in front) on its monitor once its content is built."""
+    def go():
+        try:
+            if win.winfo_exists():
+                center_over(win, parent)
+        except tk.TclError:
+            pass
+    win.after_idle(go)
+    return win
+
+
 def _place_dialog(w, parent=None):
     """tkinter.simpledialog's own placement kept dialogs inside the MAIN monitor (it clamps to winfo_vroot*, which
     on Windows is the main monitor) - so on two screens they opened on the other one. Over the app instead."""

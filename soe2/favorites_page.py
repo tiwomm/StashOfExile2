@@ -16,6 +16,7 @@ from urllib.parse import quote
 
 from . import favorites as FV
 from .config import SETTINGS
+from .style import over_app
 from .style import C
 
 KEY = "favorites"
@@ -363,6 +364,7 @@ class FavoritesPage:
         st = self.favs()
         names = ["(no group)"] + [g["name"] for g in st.groups] + ["New group…"]
         dlg = tk.Toplevel(self.root)
+        over_app(dlg, self.dlg_parent())               # 2.114.3: over the app, on its monitor
         dlg.title(title)
         dlg.configure(bg=C["panel2"], padx=16, pady=12)
         dlg.transient(self.root)
@@ -511,6 +513,7 @@ class FavoritesPage:
         st = self.favs()
         f = st.get(ids[0])
         dlg = tk.Toplevel(self.root)
+        over_app(dlg, self.dlg_parent())               # 2.114.3: over the app, on its monitor
         dlg.title("Edit favorite")
         P2 = C["panel2"]
         dlg.configure(bg=P2, padx=16, pady=12)

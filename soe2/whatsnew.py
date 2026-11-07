@@ -45,6 +45,11 @@ NOTES = {
             ("App", "If the app ever closes by itself, the next start writes crash_report.txt in the data folder - "
                     "where in the app's code it was, nothing about you - so the bug can be found. Share it with a bug "
                     "report if you like."),
+            ("Wealth", "Scan stash: after the last tab the app should come to the front with the numbers to check, "
+                       "over the app on its own screen (the check window was opening behind the game or on the other "
+                       "screen)."),
+            ("App", "A few more windows (Favorites, Ledger, Map library, Money Makers, Report a bug) open over the app "
+                    "on its screen."),
         ],
     },
     "2.114.2": {
