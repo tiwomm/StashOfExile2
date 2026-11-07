@@ -1284,11 +1284,14 @@ class App(GearBookPage, PriceCheckPage, PricePopup, FavoritesPage, BoardModPage,
         for k, label in (("pc_ctrl_c", "The price check key opens Price Checks"),
                          ("pc_front", "Bring the app to the front"), ("pc_art", "Show the items' pictures"),
                          ("pc_popup", "Show it in a card over the game")):          # 2.113.0
-            v = tk.BooleanVar(value=bool(SETTINGS.get(k, True)))
+            if k == "pc_popup":                       # 2.113.1: the same switch as on Price Checks' header
+                v = self.pc_pop_var()
+                cmd = self.pc_pop_set
+            else:
+                v = tk.BooleanVar(value=bool(SETTINGS.get(k, True)))
+                cmd = (lambda k=k, v=v: (SETTINGS.__setitem__(k, bool(v.get())), save_json("settings.json", SETTINGS)))
             self.pc_set_vars[k] = v
-            ttk.Checkbutton(row, text=label, variable=v, style="Card.TCheckbutton",
-                            command=lambda k=k, v=v: (SETTINGS.__setitem__(k, bool(v.get())), save_json("settings.json", SETTINGS))
-                            ).pack(side="left", padx=(0, 16))
+            ttk.Checkbutton(row, text=label, variable=v, style="Card.TCheckbutton", command=cmd).pack(side="left", padx=(0, 16))
         # (2.98.3, feedback: "Other ways of copying" was a dead switch - Bulk Pricing adds only what you copy with
         # Ctrl+Alt+C, always)
 

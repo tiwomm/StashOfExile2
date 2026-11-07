@@ -37,11 +37,18 @@ NEXT = [
 MAX_BIG = 3
 
 NOTES = {
+    "2.113.1": {
+        "big": [],
+        "small": [
+            ("Price checks", "\"Show over the game\" is on the Price Checks page now (top right) - one switch turns the "
+                             "card over the game on or off."),
+        ],
+    },
     "2.113.0": {
         "big": [
-            ("⚖", "Price checks over the game", "Turn on \"Show it in a card over the game\": your price check key "
+            ("⚖", "Price checks over the game", "Turn on \"Show over the game\" (top right of Price Checks): your price check key "
              "opens the price, the mods (with Min / Max) and the cheapest listings right over the game.",
-             ("Turn it on", "settings:Hotkeys"), "Price checks"),
+             ("Turn it on", "pricecheck"), "Price checks"),
             ("👥", "Each seller counts once", "Prices come from different sellers - one seller listing five copies "
              "can't set the price any more. Their listing says how many times they listed it.", None, "Price checks"),
         ],
