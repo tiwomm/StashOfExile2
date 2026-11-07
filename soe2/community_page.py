@@ -52,8 +52,9 @@ class CommunityPage:
         ttk.Button(row, text="What's shared, and why?", style="Quiet.TButton",
                    command=lambda: self.cm_ask(info=True)).pack(side="left")
         # ---- data sharing
-        from .communitymods import WHAT as CM_WHAT
-        row = section(PAGE, "Data sharing", CM_WHAT + " You always get everyone else's data, sharing or not.")
+        # 2.116.0 (P10): one line each - the whole story is behind "What's shared, and why?" (communitymods.WHAT)
+        row = section(PAGE, "Data sharing", "Off until you say yes. Anonymous only - never sold, never used for ads. You "
+                                            "get everyone else's data either way.")
         g = tk.Frame(row, bg=P2)
         g.pack(fill="x")
         self.cm_share_var = tk.BooleanVar(value=self.cm_sharing())
@@ -71,15 +72,14 @@ class CommunityPage:
             tk.Label(g, text=what, bg=P2, fg=C["muted"], font=("Segoe UI", 9), justify="left", wraplength=520,
                      anchor="w").grid(row=i, column=1, sticky="w", padx=(12, 0), pady=2)
             self.cy_rows[label] = cb
-        tk.Label(row, text="Coming later, off until you turn it on: the community FAQ.", bg=P2, fg=C["muted"],
-                 font=("Segoe UI", 9), anchor="w").pack(fill="x", pady=(8, 0))
         hr = tk.Frame(row, bg=P2)                                                               # 2.96.0
         hr.pack(fill="x", pady=(8, 0))
         ttk.Button(hr, text="Help rate mods…", command=lambda: self.rm_open()).pack(side="left")
         tk.Label(hr, text="One mod at a time - tunes your price checks, and earns rep when it matches everyone's.",
                  bg=P2, fg=C["muted"], font=("Segoe UI", 9)).pack(side="left", padx=(8, 0))
         # ---- your community name
-        row = section(PAGE, "Your community name", NAME_WHY)
+        row = section(PAGE, "Your community name", "Shown on what you post on Money Makers and beside your Leaderboard "
+                                                   "times. Nothing else uses it.")
         box = tk.Frame(row, bg=P2)
         box.pack(fill="x")
         self.cy_name_lbl = tk.Label(box, text="", bg=P2, fg=C["text"], font=("Segoe UI", 12, "bold"), anchor="w")
@@ -98,11 +98,19 @@ class CommunityPage:
                                wraplength=640)
         self.cy_msg.pack(fill="x", pady=(8, 0))
         # ---- your rights
-        row = section(PAGE, "Your rights", "Turn any switch off at any time: your leaderboard times come off at once. "
-                                           "Leave and delete my data removes everything of yours from the board - "
-                                           "name, strats, pictures, votes, suggestions and times.")
-        tk.Label(row, text="The full privacy notes: TOS.md and README.md in the app's GitHub repository.", bg=P2,
-                 fg=C["muted"], font=("Segoe UI", 9), anchor="w").pack(side="left")
+        row = section(PAGE, "Your rights", "Turn any switch off at any time - your leaderboard times come off at once. "
+                                           "Leave and delete my data (under your name above) removes everything of "
+                                           "yours from the board.")
+        self.cy_rights = tk.Label(row, text="", bg=P2, fg=C["muted"], font=("Segoe UI", 9), anchor="w")
+        self.cy_rights.pack(fill="x")
+        lr = tk.Frame(row, bg=P2)
+        lr.pack(fill="x", pady=(4, 0))
+        tk.Label(lr, text="Privacy notes:", bg=P2, fg=C["muted"], font=("Segoe UI", 9)).pack(side="left")
+        from .about_page import open_link                       # 2.116.0 (P10): links, not plain words
+        for name in ("TOS.md", "README.md"):
+            ln = tk.Label(lr, text=name + " ›", bg=P2, fg=C["blue"], font=("Segoe UI", 9, "bold"), cursor="hand2")
+            ln.pack(side="left", padx=(8, 0))
+            ln.bind("<Button-1>", lambda e, n=name: open_link(f"https://github.com/tiwomm/StashOfExile2/blob/main/{n}"))
         self.cy_paint()
 
     # ---------------------------------------------------------------- the name part
@@ -123,6 +131,10 @@ class CommunityPage:
         except tk.TclError:
             return
         me = B.signed_in()
+        try:                                                     # 2.116.0: no name - nothing of yours on the board
+            self.cy_rights.config(text="" if me else "No community name on this PC, so nothing of yours is on the board.")
+        except (AttributeError, tk.TclError):
+            pass
         if not B.configured():
             self.cy_name_lbl.config(text="The community board isn't set up yet.")
             return

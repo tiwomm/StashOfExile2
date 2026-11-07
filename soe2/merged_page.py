@@ -490,7 +490,7 @@ class MergedOverlay:
         return w
 
     def overlay_hide_toggle(self):
-        """2.59.0: F6 (Settings › Hotkeys) hides the whole overlay - timer, switches, Notes - and shows it
+        """2.59.0: F6 (Settings › Keys) hides the whole overlay - timer, switches, Notes - and shows it
         again, as it was. Nothing is switched off; it's only out of sight."""
         self.mg_hidden = not getattr(self, "mg_hidden", False)
         w = getattr(self, "mg_win", None)

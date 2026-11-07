@@ -12,7 +12,7 @@ Every box you type in (Entry, Spinbox, Combobox, Text):
   - right-click: Undo, Cut, Copy, Paste, Delete, Select all.
 A widget that already has its own right-click menu keeps it. Plain Tk class bindings - Windows and Linux alike.
 
-Also the poe2db key (Ctrl+Shift+D by default, Settings > Hotkeys): opens poe2db's modifier list in your browser. It's a
+Also the poe2db key (Ctrl+Shift+D by default, Settings > Keys): opens poe2db's modifier list in your browser. It's a
 link only - nothing is read from or copied off that site."""
 import tkinter as tk
 from tkinter import ttk

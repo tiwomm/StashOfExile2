@@ -543,12 +543,12 @@ class App(GearBookPage, PriceCheckPage, PricePopup, FavoritesPage, BoardModPage,
         head = tk.Frame(inner, bg=P2, padx=16, pady=12)
         head.pack(fill="x")
         welcome = not seen and not force
-        tk.Label(head, text="Welcome to StashOfExile2" if welcome else f"What's new in v{pretty_version()}",
+        # 2.116.0 (P10): the version once - "What's new · 2.116.0", then what you had and how many updates
+        tk.Label(head, text="Welcome to StashOfExile2" if welcome else f"What's new  ·  {pretty_version()}",
                  bg=P2, fg=C["text"], font=(FONT_TITLE, 16, "bold"), anchor="w").pack(fill="x")
         ups = f"  ·  {len(notes)} updates" if len(notes) > 1 else ""
-        tk.Label(head, text=f"version {pretty_version()}" + ("" if welcome or not seen or force else
-                                                              f"  (you had {pretty_version(seen)}){ups}"),
-                 bg=P2, fg=C["muted"], anchor="w").pack(fill="x")
+        tk.Label(head, text=f"version {pretty_version()}" if welcome or not seen or force else
+                 f"you had {pretty_version(seen)}{ups}", bg=P2, fg=C["muted"], anchor="w").pack(fill="x")
         tk.Frame(inner, bg=C["accent"], height=2).pack(fill="x")
         if welcome:                                             # first start: pick your league right away
             lrow = tk.Frame(inner, bg=P2, padx=16, pady=8, highlightthickness=1, highlightbackground=C["accent"])
@@ -961,6 +961,17 @@ class App(GearBookPage, PriceCheckPage, PricePopup, FavoritesPage, BoardModPage,
                         style="Card.TCheckbutton", command=self.pc_pop_set).pack(side="left")
         self.pc_set_vars = getattr(self, "pc_set_vars", None) or {}
         self.pc_set_vars["pc_popup"] = self.pc_pop_var()
+        # 2.116.0 (P10): the price check key's switches - here, with the card over the game (they were at the
+        # bottom of Settings › Hotkeys)
+        row = section("Price checking", "Your price check key", "Hover an item in game and press it (Ctrl+D - set it "
+                                                                "on Keys): the game copies it once and Price Checks "
+                                                                "shows it. Ctrl+Alt+C adds it to Bulk Pricing instead.")
+        for k, label in (("pc_ctrl_c", "It opens Price Checks"),
+                         ("pc_front", "Bring the app to the front"), ("pc_art", "Show the items' pictures")):
+            v = tk.BooleanVar(value=bool(SETTINGS.get(k, True)))
+            cmd = (lambda k=k, v=v: (SETTINGS.__setitem__(k, bool(v.get())), save_json("settings.json", SETTINGS)))
+            self.pc_set_vars[k] = v
+            ttk.Checkbutton(row, text=label, variable=v, style="Card.TCheckbutton", command=cmd).pack(side="left", padx=(0, 16))
         row = section("Price checking", "Valuable items", "A mod is valuable when the cheapest listings with it cost "
                                                            "at least this much. Valuable items are green in the list, and "
                                                            "can play a sound when they're priced.")
@@ -1010,12 +1021,16 @@ class App(GearBookPage, PriceCheckPage, PricePopup, FavoritesPage, BoardModPage,
             ("model_shortcut", "Let the model price an item by itself", "bool", 0, 0, 0,
              "only after 100 checked guesses at 99 percent"))
 
-    def build_fine_tuning(self, row):
+    FINE_WINDOW = ("toast_secs", "tray")      # 2.116.0 (P10): on General › Window, not Price checking
+
+    def build_fine_tuning(self, row, keys=None, defaults=True):
+        """The fine-tuning rows for `keys` (all when None); defaults: the Defaults button (for those rows)."""
         P2 = C["panel2"]
         g = tk.Frame(row, bg=P2)
         g.pack(fill="x")
-        self.fine_vars = {}
-        for r, (key, name, kind, lo, hi, step, note) in enumerate(self.FINE):
+        self.fine_vars = getattr(self, "fine_vars", None) or {}
+        spec = [f for f in self.FINE if keys is None or f[0] in keys]
+        for r, (key, name, kind, lo, hi, step, note) in enumerate(spec):
             tk.Label(g, text=name, bg=P2, fg=C["text"], anchor="w").grid(row=r, column=0, sticky="w", padx=(0, 12), pady=2)
             if kind == "bool":
                 v = tk.BooleanVar(value=bool(SETTINGS.get(key, DEFAULTS[key])))
@@ -1031,8 +1046,9 @@ class App(GearBookPage, PriceCheckPage, PricePopup, FavoritesPage, BoardModPage,
             tk.Label(g, text=note, bg=P2, fg=C["muted"], font=("Segoe UI", 9), anchor="w").grid(row=r, column=2, sticky="w",
                                                                                               padx=(8, 0))
             self.fine_vars[key] = v
-        ttk.Button(row.master, text="Defaults", style="Quiet.TButton", command=self.fine_defaults).pack(anchor="w",
-                                                                                                    pady=(8, 0))
+        if defaults:
+            ttk.Button(row.master, text="Defaults", style="Quiet.TButton",
+                       command=lambda: self.fine_defaults([f[0] for f in spec])).pack(anchor="w", pady=(8, 0))
 
     def on_fine(self, key):
         spec = next(f for f in self.FINE if f[0] == key)
@@ -1049,8 +1065,10 @@ class App(GearBookPage, PriceCheckPage, PricePopup, FavoritesPage, BoardModPage,
             v.set(str(int(n)))
         save_json("settings.json", SETTINGS)
 
-    def fine_defaults(self):
+    def fine_defaults(self, keys=None):
         for key, _n, kind, *_r in self.FINE:
+            if keys is not None and key not in keys:
+                continue
             d = DEFAULTS[key]
             self.fine_vars[key].set(bool(d) if kind == "bool" else str(round(d * 100)) if kind == "pct" else str(d))
             SETTINGS[key] = d
@@ -1077,8 +1095,8 @@ class App(GearBookPage, PriceCheckPage, PricePopup, FavoritesPage, BoardModPage,
         self.set_nb = SegBook(body)
         self.set_nb.pack(fill="both", expand=True, padx=8, pady=(8, 0))
         pages = {}
-        for name in ("General", "Appearance", "Hotkeys", "Price checking", "Chat commands", "Privacy & community",
-                     "Advanced", "About"):                       # (2.98.3: no Tools tab - its one switch is on Exchange rates)
+        # (2.98.3: no Tools tab - its one switch is on Exchange rates; 2.116.0, P10: Hotkeys + Chat commands = Keys)
+        for name in ("General", "Appearance", "Keys", "Price checking", "Privacy & community", "Advanced", "About"):
             sa = ScrollArea(self.set_nb, P1)
             wrap = tk.Frame(sa.inner, bg=P1, padx=8, pady=4)
             wrap.pack(fill="both", expand=True)
@@ -1116,7 +1134,6 @@ class App(GearBookPage, PriceCheckPage, PricePopup, FavoritesPage, BoardModPage,
                         command=self.on_copy_marker).pack(side="left")
         # (2.58.0: its color follows the overlay style - Settings › Appearance; it had its own color box here)
 
-        self.build_chat_window(pages["Chat commands"][1])        # 2.27.0: was its own Utilities window
         # ======== General
         row = section("General", "League and search pace", "The league is used everywhere: Price Checks, Bulk Pricing, Wealth and "
                                                            "the session tracker. Pace = how fast the trade site is "
@@ -1130,7 +1147,6 @@ class App(GearBookPage, PriceCheckPage, PricePopup, FavoritesPage, BoardModPage,
         pace = ttk.Combobox(row, textvariable=self.pace_var, values=list(PACES), state="readonly", width=10)
         pace.pack(side="left")
         pace.bind("<<ComboboxSelected>>", self.on_pace)
-        ttk.Button(row, text="Exchange rates…", command=self.open_rates).pack(side="left", padx=(16, 0))
         for cb in (self.league_box, pace):
             cb.bind("<<ComboboxSelected>>", lambda e: self.root.after(20, self.root.focus_set), add="+")
 
@@ -1149,6 +1165,10 @@ class App(GearBookPage, PriceCheckPage, PricePopup, FavoritesPage, BoardModPage,
         ttk.Button(g, text="Find it by itself", style="Quiet.TButton",
                    command=lambda: self.tracker_set_log("")).grid(row=0, column=3, padx=(8, 0))
         tk.Label(g, text="Game window title", bg=P2, fg=C["text"]).grid(row=1, column=0, sticky="w", padx=(0, 8), pady=(8, 0))
+        self.ov_vars = getattr(self, "ov_vars", None) or {}          # (2.116.0: Keys - and chat - are built later)
+        if "poe_title" not in self.ov_vars:
+            self.ov_vars["poe_title"] = tk.StringVar(value=self._ensure_overlay().cfg.get("poe_title", "") or
+                                                     "Path of Exile 2")
         te = ttk.Entry(g, textvariable=self.ov_vars["poe_title"], width=24)
         te.grid(row=1, column=1, sticky="w", pady=(8, 0))
         te.bind("<FocusOut>", lambda e: self.ov_save())
@@ -1166,6 +1186,9 @@ class App(GearBookPage, PriceCheckPage, PricePopup, FavoritesPage, BoardModPage,
         self.game_only_var = tk.BooleanVar(value=bool(SETTINGS.get("overlay_game_only", True)))
         ttk.Checkbutton(row, text="The overlay only while Path of Exile 2 is in front", variable=self.game_only_var,
                         command=self.on_game_only).pack(side="left", padx=(16, 0))
+        wrow = tk.Frame(row.master, bg=P2)              # 2.116.0 (P10): from Price checking › Advanced fine tuning -
+        wrow.pack(fill="x", pady=(8, 0))                # they're about the app's windows, not prices
+        self.build_fine_tuning(wrow, keys=self.FINE_WINDOW, defaults=False)
 
         row = section("General", "Labs (experimental)", "Features still being tried out: Wealth, Game search and "
                                                          "Market Insights. They work, but may change a lot or have "
@@ -1174,19 +1197,20 @@ class App(GearBookPage, PriceCheckPage, PricePopup, FavoritesPage, BoardModPage,
         ttk.Checkbutton(row, text="Show Labs features (marked BETA)", variable=self.labs_var,
                         command=self.on_labs).pack(side="left")
 
-        row = section("General", "Updates", f"You have version {pretty_version()}. Updates come from GitHub "
-                                            "(tiwomm/StashOfExile2); your settings and data are always kept.")
+        row = section("General", "Updates", f"You have {pretty_version()}"
+                                            + (" - previews too." if SETTINGS.get("update_preview") else " - full "
+                                               "releases only.") + " From GitHub; your settings and data are kept.")
         ttk.Button(row, text="Check for updates", command=self.check_updates).pack(side="left")
         row2 = tk.Frame(row.master, bg=P2)
         row2.pack(fill="x", pady=(8, 0))
         self.auto_check_var = tk.BooleanVar(value=bool(SETTINGS.get("auto_check_updates")))
         self.auto_update_var = tk.BooleanVar(value=bool(SETTINGS.get("auto_update")))
-        ttk.Checkbutton(row2, text="Check for updates when the app starts (tells you, asks before installing)",
+        ttk.Checkbutton(row2, text="Check when the app starts (asks before installing)",
                         variable=self.auto_check_var, command=lambda: self.on_update_options("check")).pack(anchor="w")
-        ttk.Checkbutton(row2, text="Install updates automatically when the app starts (no questions; it restarts itself)",
+        ttk.Checkbutton(row2, text="Install by itself when the app starts (it restarts itself)",
                         variable=self.auto_update_var, command=lambda: self.on_update_options("update")).pack(anchor="w")
         self.update_preview_var = tk.BooleanVar(value=bool(SETTINGS.get("update_preview")))   # 2.97.3
-        pv = ttk.Checkbutton(row2, text="Preview builds: get new versions before they're tested in game (opt-in)",
+        pv = ttk.Checkbutton(row2, text="Preview builds too (new versions before they're played)",
                              variable=self.update_preview_var, command=lambda: self.on_update_options("preview"))
         pv.pack(anchor="w")
         Tooltip(pv, "Each new version comes out as a preview first and becomes a full update once it's been played. "
@@ -1225,9 +1249,8 @@ class App(GearBookPage, PriceCheckPage, PricePopup, FavoritesPage, BoardModPage,
         cb.pack(side="left")
         cb.bind("<<ComboboxSelected>>", lambda e: self.on_clock())
         # 2.52.0: the switch for the clock on the Session timer moved to the timer's own options
-        ttk.Button(row, text="On the timer: Overlay › Options", style="Quiet.TButton",
-                   command=lambda: (self.ovh_open("Session timer"), self.tk_view.pick("Options"))).pack(
-            side="left", padx=(16, 0))
+        ttk.Button(row, text="On the timer: Overlay › Settings", style="Quiet.TButton",   # (2.116.0: its name now)
+                   command=lambda: self.ovh_open("Settings")).pack(side="left", padx=(16, 0))
 
 
         from .style import ACCENTS, THEMES
@@ -1256,12 +1279,11 @@ class App(GearBookPage, PriceCheckPage, PricePopup, FavoritesPage, BoardModPage,
             self.look_vars[key] = v
         brow = tk.Frame(row, bg=P2)
         brow.pack(fill="x", pady=(8, 0))
-        self.look_restart = ttk.Button(brow, text="Restart now", style="Primary.TButton", command=self.restart_app,
-                                       state="disabled")
-        self.look_restart.pack(side="left")
+        # 2.116.0 (P10): Restart now shows only once a restart is needed (a greyed-out main button looked broken)
+        self.look_restart = ttk.Button(brow, text="Restart now", style="Primary.TButton", command=self.restart_app)
         self.look_msg = tk.Label(brow, text="Text size changes after a restart (your windows and lists are kept).",
                                  bg=P2, fg=C["muted"])
-        self.look_msg.pack(side="left", padx=8)
+        self.look_msg.pack(side="left")
         self.splash_var = tk.BooleanVar(value=bool(SETTINGS.get("splash", True)))
         ttk.Checkbutton(row, text="Show the start-up screen", variable=self.splash_var,
                         command=lambda: (SETTINGS.__setitem__("splash", bool(self.splash_var.get())),
@@ -1273,11 +1295,10 @@ class App(GearBookPage, PriceCheckPage, PricePopup, FavoritesPage, BoardModPage,
         self.ov_look_top.pack(fill="x", pady=(8, 4))
         self.build_overlay_look(pages["Appearance"][1])
 
-        # ======== Hotkeys
-        row = section("Hotkeys", "Hotkeys", "Every key the app listens for - this is the only place keys are set. Click a box and press the "
-                                            "key you want (with Ctrl / Alt / Shift if you like, or a mouse button); "
-                                            "it's saved straight away. Esc keeps the old key, Backspace or "
-                                            "right-click clears it. Two things on the same key show in red.")
+        # ======== Keys (2.116.0, P10: Hotkeys and Chat commands on one tab)
+        row = section("Keys", "Hotkeys", "Every key the app listens for. Click a box and press the key (with Ctrl / "
+                                         "Alt / Shift, or a mouse button) - it saves at once. Esc keeps the old key, "
+                                         "Backspace or right-click clears it. Two things on one key show in red.")
         self.hk_frame = row
         self.hk_vars = {}
         row2 = tk.Frame(row.master, bg=P2)
@@ -1285,17 +1306,11 @@ class App(GearBookPage, PriceCheckPage, PricePopup, FavoritesPage, BoardModPage,
         self.hk_msg = tk.Label(row2, text="", bg=P2, fg=C["muted"], anchor="w", justify="left")
         self.hk_msg.pack(side="left", padx=8)
         self.fill_hotkeys()
-        row = section("Hotkeys", "Price Checks", "Hover an item in game and press your price check key (Ctrl+D, set "
-                                                 "above): the app presses the game's own copy once and Price Checks "
-                                                 "shows the item with the trade site's listings. Ctrl+Alt+C adds it "
-                                                 "to Bulk Pricing instead.")
-        self.pc_set_vars = getattr(self, "pc_set_vars", None) or {}
-        for k, label in (("pc_ctrl_c", "The price check key opens Price Checks"),
-                         ("pc_front", "Bring the app to the front"), ("pc_art", "Show the items' pictures")):
-            v = tk.BooleanVar(value=bool(SETTINGS.get(k, True)))
-            cmd = (lambda k=k, v=v: (SETTINGS.__setitem__(k, bool(v.get())), save_json("settings.json", SETTINGS)))
-            self.pc_set_vars[k] = v
-            ttk.Checkbutton(row, text=label, variable=v, style="Card.TCheckbutton", command=cmd).pack(side="left", padx=(0, 16))
+        outer, chat = chrome_section(pages["Keys"][1], "Chat commands",
+                                     "Keys that type a chat command into the game - only while it's the window in "
+                                     "front. Close any AutoHotkey script that types the same ones.")
+        outer.pack(fill="x", pady=(0, 8))
+        self.build_chat_window(chat)                             # 2.27.0: was its own window; 2.116.0: on Keys
         # (2.98.3, feedback: "Other ways of copying" was a dead switch - Bulk Pricing adds only what you copy with
         # Ctrl+Alt+C, always)
 
@@ -1304,7 +1319,7 @@ class App(GearBookPage, PriceCheckPage, PricePopup, FavoritesPage, BoardModPage,
         row = section("Price checking", "Advanced fine tuning", "Settings most players never touch. Each one saves at once; Defaults "
                                                  "puts all of them back.")
         self.set_anchors["fine"] = row.master
-        self.build_fine_tuning(row)
+        self.build_fine_tuning(row, keys=[f[0] for f in self.FINE if f[0] not in self.FINE_WINDOW])
         # 2.74.0: Under the hood (with the Mod book inside it) is hidden unless you want it - both keep working
         row = section("Advanced", "Under the hood", "How the price checker reads an item (its base, which bases it "
                                                     "is compared with, which trade-site search each mod becomes), and "
@@ -1317,17 +1332,148 @@ class App(GearBookPage, PriceCheckPage, PricePopup, FavoritesPage, BoardModPage,
                              variable=self.adv_var, command=self.advanced_switch, style="Card.TCheckbutton")
         cb.pack(side="left")
         self.adv_switch = cb
-        # 2.74.2: the same Report a bug as on the bottom bar (was a .zip you had to send yourself)
-        row = section("Advanced", "Report a bug", "Something priced badly or went wrong? Tell us what happened - it "
-                                                  "becomes an issue on GitHub, and you see exactly what's sent first.")
+        # 2.116.0 (P10): Problems - Report a bug (it's on the bottom bar too), the app's log, what it holds
+        row = section("Advanced", "Problems", "What went wrong this week is in the app's log - where in the app's "
+                                              "code, nothing about you. Report a bug can send it.")
+        self.adv_log_lbl = tk.Label(row, text="", bg=P2, fg=C["text"], anchor="w")
+        self.adv_log_lbl.pack(side="left", padx=(0, 16))
         ttk.Button(row, text="🐞 Report a bug…", command=self.bug_report_open).pack(side="left")
+        ttk.Button(row, text="Open the app's log", style="Quiet.TButton",
+                   command=lambda: self.open_path(P("app_log.txt")) if os.path.exists(P("app_log.txt")) else
+                   self._say("Nothing logged yet - no errors, crashes or freezes.", 6)).pack(side="left", padx=(8, 0))
+        self.adv_log_paint()
+        # 2.116.0 (P10 / roadmap): Developer options - off and hidden until switched on
+        row = section("Advanced", "Developer options", "For finding out why something happens. Nothing personal is "
+                                                       "logged either way.")
+        self.dev_var = tk.BooleanVar(value=bool(SETTINGS.get("dev_options")))
+        ttk.Checkbutton(row, text="Show developer options", variable=self.dev_var, command=self.dev_paint,
+                        style="Card.TCheckbutton").pack(anchor="w")
+        self.dev_box = tk.Frame(row.master, bg=P2)
+        self.debug_var = tk.BooleanVar(value=bool(SETTINGS.get("debug_mode")))
+        ttk.Checkbutton(self.dev_box, text="Debug mode - every trade-site request (its answer and time) in the app's "
+                                           "log, and a debug line in the status bar", variable=self.debug_var,
+                        command=self.dev_paint, style="Card.TCheckbutton").pack(anchor="w", padx=(24, 0), pady=(8, 0))
+        ur = tk.Frame(self.dev_box, bg=P2)
+        ur.pack(fill="x", padx=(24, 0), pady=(8, 0))
+        ttk.Button(ur, text="Unmatched mods…", command=self.unmatched_open).pack(side="left")
+        self.dev_unm_lbl = tk.Label(ur, text="", bg=P2, fg=C["muted"], font=("Segoe UI", 9))
+        self.dev_unm_lbl.pack(side="left", padx=(8, 0))
+        self.dev_paint(save=False)
         row = section("Advanced", "Recent messages", "The last 20 messages the app showed you (they go away "
                                                      "by themselves, so they're kept here). Hover one to keep it up.")
         self.build_toast_log(row)
         row = section("Advanced", "Your data", "Settings, price-check lists, the Mod book, Wealth and sessions are "
                                                "kept here, shared by every version of the app.")
-        tk.Label(row, text=str(DATA_DIR), bg=P2, fg=C["text"], font=(MONO, 9)).pack(side="left")
+        tk.Label(row, text=self.data_dir_shown(), bg=P2, fg=C["text"], font=(MONO, 9)).pack(side="left")
         ttk.Button(row, text="Open folder", command=lambda: self.open_path(DATA_DIR), style="Quiet.TButton").pack(side="left", padx=8)
+
+    @staticmethod
+    def data_dir_shown():
+        """2.116.0 (P10): the data folder without your Windows user name on screen (%APPDATA%\\StashOfExile2)."""
+        d = str(DATA_DIR)
+        for env in ("APPDATA", "LOCALAPPDATA"):
+            v = os.environ.get(env)
+            if v and d.lower().startswith(v.lower()):
+                return f"%{env}%" + d[len(v):]
+        home = os.path.expanduser("~")
+        return "~" + d[len(home):] if home and d.startswith(home) else d
+
+    def adv_log_paint(self):
+        """Settings › Advanced › Problems: what the log holds this week."""
+        from . import buglog
+        n = buglog.counts()
+        words = {"error": "error", "crash": "crash", "freeze": "freeze", "slow": "slow spot", "net": "refused request",
+                 "debug": "debug note"}
+        bits = [f"{v} {words.get(k, k)}{'es' if k == 'crash' and v != 1 else 's' if v != 1 else ''}"
+                for k, v in sorted(n.items()) if v and k != "debug"]
+        try:
+            self.adv_log_lbl.config(text="This week: " + (", ".join(bits) if bits else "nothing went wrong") + ".")
+        except (AttributeError, tk.TclError):
+            pass
+
+    def dev_paint(self, save=True):
+        """Developer options shown or hidden; Debug mode saved."""
+        SETTINGS["dev_options"] = bool(self.dev_var.get())
+        SETTINGS["debug_mode"] = bool(self.debug_var.get())
+        if save:
+            save_json("settings.json", SETTINGS)
+        if SETTINGS["dev_options"]:
+            self.dev_box.pack(fill="x")
+        else:
+            self.dev_box.pack_forget()
+        n = len(self.unmatched_rows())
+        self.dev_unm_lbl.config(text=f"{n} mod{'s' if n != 1 else ''} the trade site didn't know" if n else
+                                "none so far")
+
+    @staticmethod
+    def unmatched_rows():
+        """unmatched_mods.txt -> [(mod, closest trade wording or where it was seen)], newest first, no repeats."""
+        try:
+            with open(P("unmatched_mods.txt"), encoding="utf-8", errors="replace") as f:
+                lines = f.read().splitlines()
+        except OSError:
+            return []
+        out, seen = [], set()
+        for ln in reversed(lines):
+            mod, _sep, rest = ln.partition("\t| ")
+            mod = mod.strip()
+            if not mod or mod in seen:
+                continue
+            seen.add(mod)
+            rest = rest.strip()
+            out.append((mod, rest[len("closest on trade site: "):] if rest.startswith("closest on trade site: ")
+                        else (f"seen on {rest}" if rest else "")))
+        return out
+
+    def unmatched_open(self):
+        """2.116.0 (roadmap): Developer options › Unmatched mods - every mod the app couldn't find on the trade site
+        beside the closest trade wording, so each mismatch points at its fix."""
+        from .style import over_app
+        rows = self.unmatched_rows()
+        P1, P2 = C["panel"], C["panel2"]
+        w = tk.Toplevel(self.root, bg=P1, padx=16, pady=12)
+        over_app(w, self.dlg_parent())
+        w.title("Unmatched mods")
+        w.transient(self.root)
+        tk.Label(w, text="Mods the trade site didn't know", bg=P1, fg=C["accent"], font=("Segoe UI", 12, "bold"),
+                 anchor="w").pack(fill="x")
+        tk.Label(w, text="Each one can't be searched for. Beside it: the closest trade-site wording (or the item it "
+                         "was on). From unmatched_mods.txt in your data folder.", bg=P1, fg=C["muted"],
+                 font=("Segoe UI", 9), anchor="w", justify="left", wraplength=640).pack(fill="x", pady=(2, 8))
+        f = tk.Frame(w, bg=P1)
+        f.pack(fill="both", expand=True)
+        tv = ttk.Treeview(f, columns=("mod", "near"), show="headings", height=min(18, max(6, len(rows))))
+        for cid, title, wd in (("mod", "Mod", 360), ("near", "Closest trade wording", 320)):
+            tv.heading(cid, text=title)
+            tv.column(cid, width=wd, anchor="w", stretch=True)
+        sb = ttk.Scrollbar(f, orient="vertical", command=tv.yview)
+        tv.configure(yscrollcommand=sb.set)
+        tv.pack(side="left", fill="both", expand=True)
+        sb.pack(side="left", fill="y")
+        for mod, near in rows:
+            tv.insert("", "end", values=(mod, near or "-"))
+        if not rows:
+            tv.insert("", "end", values=("None so far - every mod you price checked was found.", ""))
+        b = tk.Frame(w, bg=P1)
+        b.pack(fill="x", pady=(8, 0))
+
+        def copy():
+            self.root.clipboard_clear()
+            self.root.clipboard_append("\n".join(f"{m}\t{n}" for m, n in rows))
+            self._say(f"Copied {len(rows)} unmatched mods.", 6)
+
+        def clear():
+            try:
+                os.replace(P("unmatched_mods.txt"), P("unmatched_mods.old.txt"))
+            except OSError:
+                pass
+            tv.delete(*tv.get_children())
+            self.dev_paint(save=False)
+        ttk.Button(b, text="Close", style="Quiet.TButton", command=w.destroy).pack(side="right")
+        ttk.Button(b, text="Copy all", command=copy).pack(side="right", padx=(0, 8))
+        ttk.Button(b, text="Clear the list", style="Quiet.TButton", command=clear).pack(side="left")
+        self.unm_win, self.unm_tv = w, tv
+        return w
 
     def on_click_through(self):
         """2.74.0: Settings › Appearance › Overlay settings › Click-through."""
@@ -1423,7 +1569,8 @@ class App(GearBookPage, PriceCheckPage, PricePopup, FavoritesPage, BoardModPage,
         SETTINGS[key] = value
         save_json("settings.json", SETTINGS)
         if key == "ui_scale":
-            self.look_restart.config(state="normal")
+            if not self.look_restart.winfo_ismapped():
+                self.look_restart.pack(side="left", before=self.look_msg, padx=(0, 8))
             self.look_msg.config(text="Saved - restart to see the new text size.", fg=C["good"])
             return
         self.relook()
@@ -1615,19 +1762,14 @@ class App(GearBookPage, PriceCheckPage, PricePopup, FavoritesPage, BoardModPage,
             return lab
         # 2.101.0: the Style first, then its Layout (2.111.0: no Colours - each style keeps its own)
         from .ovlight import STYLES
+        # 2.116.0 (P10, feedback: a visual indicator for each style): the names beside a live preview of the bar
+        # in the style under the mouse - was a dropdown over ten lines describing all fourteen
         label(0, "Style")
-        self.ov_look_var = tk.StringVar(value=STYLES[self.ov_look()])
-        sc = ttk.Combobox(g, textvariable=self.ov_look_var, values=list(STYLES.values()), state="readonly", width=24)
-        sc.grid(row=0, column=1, sticky="w")
-        sc.bind("<<ComboboxSelected>>", lambda e: self.on_ov_look(
-            style=next((k for k, t in STYLES.items() if t == self.ov_look_var.get()), "classic")))
-        hint(1, "Classic: carved stone and bronze, like the game's own bar. The light ones are plain lines and text "
-                "(lighter on the PC too): Hairline - no box, one thin line; Slate - a flat box; Split - no box, "
-                "numbers by the life orb and switches by the mana orb; Micro - the smallest. The ornate ones keep "
-                "their own colours and fonts: Herald - crimson plates, gilt; Gilded - white marble, gold leaf; "
-                "Warbanner - a gold frame, royal-blue bands; Verdant - forest green, bronze; Gloom - smoky slate, "
-                "pewter; Totem - timber and red war banners; Hellfire - rusted iron, ember gold; Psionic - gold over "
-                "deep-blue glass, cyan light; Guildhall - oak, brass and parchment.")
+        self.ov_look_var = tk.StringVar(value=STYLES[self.ov_look()])     # (the cog's Style list keeps it in step)
+        from .ovstylepick import StylePicker
+        self.ov_style_pick = StylePicker(g, self.ov_look(), lambda st: (self.ov_look_var.set(STYLES[st]),
+                                                                       self.on_ov_look(style=st)))
+        self.ov_style_pick.grid(row=0, column=1, rowspan=2, sticky="w")
         label(2, "Layout")
         self.ov_layout_var = tk.StringVar(value=LAYOUTS.get(self.merged_layout(), LAYOUTS["xpbar"]))
         lc = ttk.Combobox(g, textvariable=self.ov_layout_var, values=list(LAYOUTS.values()), state="readonly", width=24)
@@ -1679,8 +1821,14 @@ class App(GearBookPage, PriceCheckPage, PricePopup, FavoritesPage, BoardModPage,
         self._ov_look_paint()
 
     def _ov_look_paint(self):
-        """(2.111.0: the Colours row is gone - nothing to paint; kept for the callers that sync the Style box.)"""
-        return
+        """Keep Settings › Appearance's style picker in step (2.116.0: picked from the cog's list too)."""
+        pk = getattr(self, "ov_style_pick", None)
+        if pk is not None:
+            try:
+                if pk.current != self.ov_look():
+                    pk.set(self.ov_look())
+            except tk.TclError:
+                pass
 
     def on_reduce_motion(self):
         """2.100.0: Settings › Appearance › Reduce motion (saved; from then on your choice beats Windows')."""
@@ -1793,7 +1941,18 @@ class App(GearBookPage, PriceCheckPage, PricePopup, FavoritesPage, BoardModPage,
                 seen.setdefault(k, what)
         i, group = 0, None
         self.hk_rows = {}
+        chat_said = False
         for what, key, where, kid in self.all_hotkeys():
+            if where == "Chat commands":                          # 2.116.0: set in Chat commands, just below
+                if not chat_said:
+                    tk.Label(f, text="CHAT COMMANDS", bg=P2, fg=C["accent"], font=("Segoe UI", 9, "bold"),
+                             anchor="w").grid(row=i, column=0, columnspan=3, sticky="w", pady=(10 if i else 0, 2))
+                    tk.Label(f, text="set below, with their commands", bg=P2, fg=C["muted"],
+                             font=("Segoe UI", 9), anchor="w").grid(row=i + 1, column=0, columnspan=3, sticky="w",
+                                                                    padx=(12, 0))
+                    i += 2
+                    chat_said = True
+                continue
             if where != group:                                    # 2.57.0: a heading per group
                 group = where
                 tk.Label(f, text=group.upper(), bg=P2, fg=C["accent"], font=("Segoe UI", 9, "bold"), anchor="w").grid(
@@ -1820,10 +1979,10 @@ class App(GearBookPage, PriceCheckPage, PricePopup, FavoritesPage, BoardModPage,
         # (2.98.3, feedback: One-key copy is gone - not a viable way to copy; Ctrl+Alt+C is)
 
     def hotkeys_open(self, kid=None):
-        """2.57.0: Settings › Hotkeys, where every key is set - the row asked for is lit up for a moment."""
+        """2.57.0: Settings › Keys, where every key is set - the row asked for is lit up for a moment."""
         self.shell.open("settings")
         try:
-            self.set_nb.select(self.set_nb.titles.index("Hotkeys"))
+            self.set_nb.select(self.set_nb.titles.index("Keys"))
         except (ValueError, AttributeError, tk.TclError):
             pass
         row = getattr(self, "hk_rows", {}).get(kid)
@@ -2966,7 +3125,7 @@ class App(GearBookPage, PriceCheckPage, PricePopup, FavoritesPage, BoardModPage,
             return True
         if text.lstrip().startswith("Item Class:"):
             self.status_text = ("Ignored an item copy that wasn't made with your Ctrl+Alt+C (another tool?). "
-                                "Wrong? Settings > Hotkeys > \"Also add items copied another way\"")
+                                "Wrong? Settings > Keys > \"Also add items copied another way\"")
             self.status_until = time.time() + 8
         return False
 
@@ -4621,6 +4780,11 @@ class App(GearBookPage, PriceCheckPage, PricePopup, FavoritesPage, BoardModPage,
             chip.pack_forget()
         book = f"Mod book: {MARKET.mods_known()} mods learned"
         parts.append(book)
+        from . import buglog
+        if buglog.debug_on():                           # 2.116.0: Developer options › Debug mode
+            st = buglog.STATS
+            book = f"{book}   ·   debug: {st['requests']} requests ({st['slow_requests']} slow), see the app's log"
+            parts.append(f"debug: {st['requests']} requests ({st['slow_requests']} slow)")
         self.status.config(text="   ·   ".join(parts) if (n_items or self.status_text) else f"Ready   ·   {book}")
 
     # ---------------- sorting / selection / actions

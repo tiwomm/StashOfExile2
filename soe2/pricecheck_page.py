@@ -390,7 +390,7 @@ class PriceCheckPage:
 
     # ---------------------------------------------------------------- items in
     def pc_pop_var(self):
-        """The one switch for the card over the game (Price Checks' header and Settings › Hotkeys share it)."""
+        """The one switch for the card over the game (Price Checks' header and Settings › Keys share it)."""
         v = getattr(self, "_pc_pop_var", None)
         if v is None:
             v = self._pc_pop_var = tk.BooleanVar(value=bool(SETTINGS.get("pc_popup", False)))
@@ -404,7 +404,7 @@ class PriceCheckPage:
             self.pcpop_close()
 
     def pc_wants(self, text):
-        """An item copied with your price check key (Ctrl+D; Settings › Hotkeys), with its switch on. Set to Ctrl+C,
+        """An item copied with your price check key (Ctrl+D; Settings › Keys), with its switch on. Set to Ctrl+C,
         the game's own plain copy counts as before."""
         keys = getattr(self, "keys", None)
         if not SETTINGS.get("pc_ctrl_c", True) or keys is None or not getattr(keys, "active", False):
@@ -417,7 +417,7 @@ class PriceCheckPage:
 
     def pc_take(self, text):
         """An item for Price Checks: priced first in line, shown on the page (the app comes to the front if you
-        want - Settings › Hotkeys)."""
+        want - Settings › Keys)."""
         rid = self.add_item_text(text, src="pc")
         if rid is None:
             from .wealth import parse_currency_item

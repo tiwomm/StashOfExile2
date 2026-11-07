@@ -1,6 +1,6 @@
 """2.113.0: the price check in a card over the game (a sample - Price Checks in the app stays as it is).
 
-Settings › Hotkeys › Price Checks › "Show it in a card over the game": your price check key copies the hovered item
+Settings › Keys › Price Checks › "Show it in a card over the game": your price check key copies the hovered item
 (one press = one copy, as always) and, instead of bringing the app forward, a card opens over the game at a spot you
 choose - drag it by its title, resize it from any edge; both are remembered. It takes the overlay's Style.
 
