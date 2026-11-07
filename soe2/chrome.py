@@ -8,6 +8,21 @@ from . import themes as TH
 from .style import C
 
 
+class BarNote:
+    """2.114.0: ns.info.config(text=...) -> the section strip's note (the counts used to sit on their own line)."""
+
+    def __init__(self, bar):
+        self.bar = bar
+
+    def config(self, text=""):
+        self.bar.note(text)
+
+    configure = config
+
+    def cget(self, _opt="text"):
+        return self.bar.note()
+
+
 class SectionBar(tk.Canvas):
     """A header strip: title on the left, a short note on the right (bar.note(text)), optional widgets on the right
     (bar.add_right(widget) - make them with this bar as parent)."""

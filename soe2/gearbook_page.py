@@ -12,7 +12,7 @@ from tkinter import ttk
 
 from . import gearbook as GB
 from .mods import RULES, SHOWN_TIERS, TIER_F, TIERS, F_TIP, impact_key
-from .chrome import SectionBar, Viewport
+from .chrome import BarNote, SectionBar, Viewport
 from .style import C, Tooltip
 
 IMPACT_LABEL = {"high": "High", "normal": "Normal", "ignore": "Ignore"}
@@ -112,19 +112,20 @@ class GearBookPage:
                 Tooltip(b, F_TIP)
         ttk.Button(tbar, text="Clear", style="Quiet.TButton", command=lambda: self.gb_grade(cat, None)).pack(
             side="left", padx=(4, 0))
-        tk.Label(tbar, text=GRADE_TIP, bg=P, fg=C["muted"], font=("Segoe UI", 9)).pack(side="left", padx=12)
-        tk.Label(tab, text=("Every line that can roll on this item class (RePoE). Your rating is used when you price "
-                            "check one: High lines are always searched, Ignore lines never." if cat == "gear" else
+        help_ = tk.Label(tab, text=GRADE_TIP + " " + ("Every line that can roll on this item class (RePoE); your rating is "
+                                              "used when you price check one." if cat == "gear" else
                             "A unique's lines come from the ones you price check (pick it after checking one). A line "
                             "with a choice, like Mageblood's Legacies, lists every option: rate the ones that matter."),
-                 bg=P, fg=C["muted"], anchor="w", justify="left", wraplength=760, padx=12,
-                 font=("Segoe UI", 9)).pack(fill="x")
-        ns.info = tk.Label(tab, bg=P, fg=C["muted"], anchor="w", padx=12)
-        ns.info.pack(fill="x")
-        SectionBar(tab, "Gear mods" if cat == "gear" else "Unique mods").pack(fill="x", padx=8)
+                 bg=P, fg=C["muted"], anchor="w", justify="left", wraplength=900, padx=12,
+                 font=("Segoe UI", 9))
+        help_.pack(fill="x", pady=(8, 0))
+        help_.bind("<Configure>", lambda e, l=help_: l.config(wraplength=max(300, e.width - 24)))
+        bar = SectionBar(tab, "Gear mods" if cat == "gear" else "Unique mods")
+        bar.pack(fill="x", padx=8, pady=(8, 0))
+        ns.info = BarNote(bar)                      # 2.114.0: the counts in the strip
         vp = Viewport(tab)
         vp.pack(fill="both", expand=True, padx=8, pady=(0, 8))
-        cols = (("rate", "Rating", 90, "center"), ("impact", "Impact", 90, "w"), ("type", "Type", 80, "w"),
+        cols = (("rate", "Rating", 80, "w"), ("type", "Type", 80, "w"),             # 2.114.0: no Impact column
                 ("mod", "Mod", 460, "w"), ("on", "Tiers" if cat == "gear" else "", 80, "center"))
         ns.tv = ttk.Treeview(vp.body, columns=[c[0] for c in cols], show="headings", selectmode="extended")
         for cid, title, w, anchor in cols:
@@ -189,10 +190,9 @@ class GearBookPage:
         for n, r in enumerate(rows):
             k = r["key"]
             imp = impact_key(k)
-            grade = TIER_F if imp == "ignore" and k in RULES else (TIERS.get(k) if k in RULES or k in TIERS else "")
             iid = f"g{n}"
             ns.keys[iid] = k
-            ns.tv.insert("", "end", iid=iid, values=(grade or "", IMPACT_LABEL[imp] if k in RULES else "Auto",
+            ns.tv.insert("", "end", iid=iid, values=(self.mb_rating([k]),
                                                      ("Option" if r.get("option") else r.get("kind") or ""),
                                                      r["text"], r.get("tiers") or ""),
                          tags=(imp,) if k in RULES and imp != "normal" else ())

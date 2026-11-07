@@ -39,6 +39,23 @@ NEXT = [
 MAX_BIG = 3
 
 NOTES = {
+    "2.114.0": {
+        "big": [
+            ("📖", "One rating in the Mod book", "Every mod has one rating now, S to F, like Gear rules: S / A are always "
+             "searched, B-D count a little, F is ignored. The separate High / Normal / Ignore column is gone; a tier you "
+             "already gave decides it.", None, "Mod book"),
+        ],
+        "small": [
+            ("Mod book", "Rate mods: the \"Which items do you know best?\" box is grouped and should fit over the app now."),
+            ("Mod book", "Export / Import rules moved under More."),
+            ("Price checks", "Your price check key on a single currency-like item (a Wombgift, say) should now give its "
+                             "going rate in a message, from poe.ninja or the trade site's bulk exchange."),
+            ("Price checks", "Under the hood: Paste item and Price it (no separate Check button)."),
+            ("Rates", "Exchange rates show currency names and plain numbers."),
+            ("Overlay", "Opening Notes shows the note over the game. The calculator starts blank."),
+            ("App", "The Listing order lab (an admin tool) is gone."),
+        ],
+    },
     "2.113.2": {
         "big": [],
         "small": [

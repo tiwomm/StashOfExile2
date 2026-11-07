@@ -365,6 +365,21 @@ def parse_stack(text):
     return name, qty, cls
 
 
+def parse_currency_item(text):
+    """2.114.0 (feedback: a Signet Wombgift copied with the price check key did nothing): any "Rarity: Currency" item
+    -> (name, quantity, item class), a stack or a single one (no Stack Size line = 1). None for anything else."""
+    hit = parse_stack(text)
+    if hit:
+        return hit
+    lines = [l.strip() for l in (text or "").replace("\r", "").split("\n")]
+    cls = next((l.split(":", 1)[1].strip() for l in lines if l.startswith("Item Class:")), "")
+    if "Rarity: Currency" not in lines:
+        return None
+    i = lines.index("Rarity: Currency")
+    name = next((x for x in lines[i + 1:] if x and not x.startswith("--")), None)
+    return (name, 1, cls) if name else None
+
+
 def wealth_display_name(it):
     base = it["type"] or it["base"]
     return f"{it['name']} {base}".strip() if it["name"] else base

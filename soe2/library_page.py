@@ -27,11 +27,8 @@ class LibraryPage:
         self.lib_info = tk.Label(bar, text="", anchor="w", padx=16, justify="left", wraplength=300, **lab)   # (2.98.0)
         self.lib_info.pack(side="left", fill="x", expand=True)
 
-        purpose = tk.Label(tab, text="Part of Bulk Pricing, for the curious: how the price checker reads an item. Paste a "
-                           "copied item on the right to see its "
-                           "base, which bases it is compared with, and which trade-site search each mod turns into. On the "
-                           "left, every base by class and group, and every mod the trade site can search for. You never "
-                           "need this to price things.",
+        purpose = tk.Label(tab, text="How the price checker reads an item - you never need this to price things. "  # 2.114.0: shorter
+                           "Left: every base and every mod the trade site can search for. Right: paste an item.",
                  bg=C["panel"], fg=C["muted"], anchor="w", justify="left", wraplength=1100, padx=8,
                  font=("Segoe UI", 9))
         purpose.pack(fill="x", pady=(0, 8))
@@ -80,17 +77,28 @@ class LibraryPage:
 
         P2 = C["panel2"]
         tk.Label(right, text="Check an item", bg=P2, fg=C["text"], font=("Segoe UI", 12, "bold"), anchor="w").pack(fill="x")
-        tk.Label(right, text="Copy any item in game (Ctrl+C or Ctrl+Alt+C) and paste it here to see how the app reads it. Price check prices it the same way Ctrl+Alt+C in game does.",
+        tk.Label(right, text="Copy an item in game (Ctrl+C) and paste it: it's read at once. Price it runs the same "
+                             "search as your price check key.",
                  bg=P2, fg=C["muted"], anchor="w", justify="left", wraplength=420, font=("Segoe UI", 9)).pack(fill="x", pady=(2, 8))
         btns = tk.Frame(right, bg=P2)
         btns.pack(fill="x", pady=(0, 8))
-        ttk.Button(btns, text="Paste from clipboard", style="Primary.TButton", command=self.lib_paste).pack(side="left")
-        ttk.Button(btns, text="Check", command=self.lib_check).pack(side="left", padx=8)
-        ttk.Button(btns, text="Price check", command=self.lib_price).pack(side="left")
-        ttk.Button(btns, text="Clear", command=lambda: (self.lib_in.delete("1.0", "end"), self.lib_check())).pack(side="left", padx=8)
+        # 2.114.0 (P8: "Check" and "Price check" read as the same thing): Paste item reads it, Price it prices it;
+        # what you type in the box is read as you type (no Check button).
+        ttk.Button(btns, text="Paste item", style="Primary.TButton", command=self.lib_paste).pack(side="left")
+        ttk.Button(btns, text="Price it", command=self.lib_price).pack(side="left", padx=8)
+        ttk.Button(btns, text="Clear", style="Quiet.TButton",
+                   command=lambda: (self.lib_in.delete("1.0", "end"), self.lib_check())).pack(side="left")
         self.lib_in = tk.Text(right, height=9, bg=C["odd"], fg=C["text"], insertbackground=C["text"], relief="flat",
                               highlightthickness=1, highlightbackground=C["line"], font=(MONO, 9), wrap="none")
         self.lib_in.pack(fill="x")
+        self._lib_typed = None
+
+        def typed(_e=None):
+            if self._lib_typed:
+                self.root.after_cancel(self._lib_typed)
+            self._lib_typed = self.root.after(400, self.lib_check)
+        self.lib_in.bind("<KeyRelease>", typed, add="+")
+        self.lib_in.bind("<<Paste>>", lambda e: self.root.after(50, typed), add="+")
         prow = tk.Frame(right, bg=P2)                       # 1.41: the price check result for the pasted item
         prow.pack(fill="x", pady=(8, 0))
         self.lib_open_btn = ttk.Button(prow, text="Show in Bulk Pricing", command=self.lib_open_check)

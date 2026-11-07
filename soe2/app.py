@@ -45,7 +45,7 @@ from .engine import Engine
 from . import gear, waystone
 from .toasts import Toasts
 from .style import C, MOD_COL, FLAG_COLORS, FONT_TITLE, hotkey_blocked, MONO, Plate, SegBook, SegBar, setup_style, Toast, KeyCapture, Tooltip
-from .chrome import SectionBar, Viewport, section as chrome_section
+from .chrome import BarNote, SectionBar, Viewport, section as chrome_section
 from .communitymods import WHAT as CM_WHAT
 from .winsys import ICON_B64, KeyWatch, Tray
 from .wealth_page import WealthPage
@@ -89,7 +89,6 @@ from .favorites_page import FavoritesPage      # 2.84.0: Price Checks ↳ Favori
 from .boardmod_page import BoardModPage        # 2.85.0: your community name, Suggest an edit, History, reviewers
 from .gearbook_page import GearBookPage  # 2.99.0: Mod book › Gear rules, Unique rules, Learned per tab
 from .leaderboard_page import LeaderboardPage  # 2.86.0: Overlay ↳ Leaderboards
-from .orderlab_page import OrderLabPage        # 2.88.0: Under the hood ↳ Listing order lab (admins)
 from . import gamedata
 from . import modules
 from .shell import Shell
@@ -123,7 +122,8 @@ def plain_notes(md):
     return "\n".join(out).strip()
 
 
-class App(GearBookPage, PriceCheckPage, PricePopup, FavoritesPage, BoardModPage, LeaderboardPage, OrderLabPage, WellSoulsPage, RumoursPage, ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, ExchangePage, WealthPage, LibraryPage, RegexPage, UtilitiesPage, TrackerPage, SearchPage, CalcOverlay, InsightsPage, MoneyMakersPage, MapLibraryPage, RemnantPage, LedgerPage, FeedbackPage, FeedPage, MergedOverlay, LightOverlay, GamePlanPage, FocusPokes, OverlayHelp, OverlayParts, CampaignUI, OverlayRates, CommunityPage, RateModsPage, OverlayRecap, StashScanPage, OverlayQuick):
+
+class App(GearBookPage, PriceCheckPage, PricePopup, FavoritesPage, BoardModPage, LeaderboardPage, WellSoulsPage, RumoursPage, ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, ExchangePage, WealthPage, LibraryPage, RegexPage, UtilitiesPage, TrackerPage, SearchPage, CalcOverlay, InsightsPage, MoneyMakersPage, MapLibraryPage, RemnantPage, LedgerPage, FeedbackPage, FeedPage, MergedOverlay, LightOverlay, GamePlanPage, FocusPokes, OverlayHelp, OverlayParts, CampaignUI, OverlayRates, CommunityPage, RateModsPage, OverlayRecap, StashScanPage, OverlayQuick):
     COLS = [("added", "#", 46, "e"), ("name", "Item", 220, "w"), ("type", "Type", 110, "w"), ("mark", "Status", 90, "center"),
             ("est", "Est. value", 110, "e"), ("conf", "Confidence", 95, "center"), ("listings", "Listings", 70, "e"), ("priced", "Priced at", 130, "w"),
             ("match", "How it was priced", 300, "w"), ("vmods", "★", 60, "center"),
@@ -2626,6 +2626,14 @@ class App(GearBookPage, PriceCheckPage, PricePopup, FavoritesPage, BoardModPage,
             RATES.ensure(league, force=force)
         finally:
             self._rates_busy = False
+            self.ui_q.put(("rates_done",))       # 2.114.0 (P9: the status bar said "none yet" for up to 30 s after)
+
+    def ev_rates_done(self):
+        age = RATES.age()
+        old = age is None or age > 7200
+        self.rates_lbl.config(text=RATES.status_text() + "  ", fg=C["good"] if (old or RATES.error) else C["muted"])
+        if self.rates_win and self.rates_win.winfo_exists():
+            self.draw_rates()
 
     def refresh_rates_now(self):
         lg = SETTINGS.get("league")
@@ -2712,10 +2720,10 @@ class App(GearBookPage, PriceCheckPage, PricePopup, FavoritesPage, BoardModPage,
                                  wraplength=580)
         self.conv_out.pack(fill="x", pady=(8, 0))
         self.conv_var.trace_add("write", lambda *a: self.draw_rates())
-        cols = [("cur", "Currency", 200, "w"), ("worth", "Worth (divines)", 120, "e"), ("per", "1 divine buys", 120, "e"),
-                ("vol", "Traded (div)", 110, "e")]
-        tk.Label(w, text="Rates come from poe.ninja's public exchange overview (they refresh about hourly) and are approximate. "
-                         "Listings priced in a currency not in this list are left out of the price and flagged.",
+        cols = [("cur", "Currency", 200, "w"), ("worth", "In divines", 120, "e"), ("per", "1 divine buys", 120, "e"),
+                ("vol", "Volume (div)", 110, "e")]
+        tk.Label(w, text="From poe.ninja, about hourly. Volume: how much it saw traded, in divines. Prices in a "  # 2.114.0
+                         "currency not listed are left out and flagged.",
                  bg=C["panel"], fg=C["muted"], wraplength=600, justify="left", padx=16, pady=8).pack(side="bottom", fill="x")
         SectionBar(w, "Rates").pack(fill="x", padx=16)         # 2.69.0: the list under its strip, sunken
         rvp = Viewport(w)
@@ -2762,25 +2770,22 @@ class App(GearBookPage, PriceCheckPage, PricePopup, FavoritesPage, BoardModPage,
         tv.delete(*tv.get_children())
         rows = sorted(((c, v) for c, v in RATES.table.items() if v), key=lambda cv: -(RATES.vol.get(cv[0], 0)))
         names = ((WPRICES.parts.get("Currency") or {}).get("names") or {}) if WPRICES.parts else {}
+        from .ovrates import cur_name, fmt_worth                # 2.114.0: names, plain numbers
         for i, (cur, v) in enumerate(rows[:120]):
             vol = RATES.vol.get(cur, 0)
-            tv.insert("", "end", values=(names.get(cur) or cur, f"{v:.4g}", (f"{1 / v:,.0f}" if 1 / v >= 10 else f"{1 / v:.2g}"), f"{vol:,.0f}"),
+            tv.insert("", "end", values=(cur_name(cur, names), fmt_worth(v), (f"{1 / v:,.0f}" if 1 / v >= 10 else f"{1 / v:.2g}"), f"{vol:,.0f}"),
                       tags=("thin",) if vol < 5 else (("odd",) if i % 2 else ()))
 
     def ex_currencies(self):
         """[(display name, currency id)] most traded first, Divine Orb on top."""
-        known = {"exalted": "Exalted Orb", "chaos": "Chaos Orb", "annul": "Orb of Annulment", "vaal": "Vaal Orb",
-                 "regal": "Regal Orb", "alch": "Orb of Alchemy", "gcp": "Gemcutter's Prism", "mirror": "Mirror of Kalandra",
-                 "greater-exalted-orb": "Greater Exalted Orb", "perfect-exalted-orb": "Perfect Exalted Orb",
-                 "hinekoras-lock": "Hinekora's Lock", "chance": "Orb of Chance", "transmute": "Orb of Transmutation",
-                 "aug": "Orb of Augmentation", "artificers": "Artificer's Orb", "jewellers": "Jeweller's Orb"}
+        from .ovrates import cur_name                            # (2.114.0: one list of names)
         names = ((WPRICES.parts.get("Currency") or {}).get("names") or {}) if WPRICES.parts else {}
         ids = sorted((c for c, v in RATES.table.items() if v), key=lambda c: -(RATES.vol.get(c, 0)))
         first = [c for c in ("exalted", "chaos") if RATES.table.get(c)]       # the usual ones always on top
         out = [("Divine Orb", "divine")]
         for c in first + [c for c in ids if c not in first][:40]:
             if c != "divine":
-                out.append((names.get(c) or known.get(c) or c.replace("-", " ").title(), c))
+                out.append((cur_name(c, names), c))
         return out
 
     def ex_swap(self):
@@ -2910,9 +2915,7 @@ class App(GearBookPage, PriceCheckPage, PricePopup, FavoritesPage, BoardModPage,
                             self.last_clip = text
                         elif text:
                             self.last_clip = text
-                            if getattr(self, "ol_walking", False) and self.ol_wants(text):   # 2.88.0: the order lab
-                                self.ol_take(text)
-                            elif self.wealth_takes(text):        # 2.0 beta 7: a copied stack, counted on Wealth
+                            if self.wealth_takes(text):        # 2.0 beta 7: a copied stack, counted on Wealth
                                 self.wealth_clip(text)
                             elif self.pc_wants(text):            # 2.80.0: your price check key on an item -> Price Checks
                                 self.last_heard = time.time()
@@ -3087,6 +3090,12 @@ class App(GearBookPage, PriceCheckPage, PricePopup, FavoritesPage, BoardModPage,
                                "Wealth, a Labs feature: Settings > Labs.)")
             self.stack_price(name, qty)                       # 2.72.1: what it's worth, in the status line
             return
+        from .wealth import parse_currency_item
+        cur = parse_currency_item(text)
+        if cur:                                               # 2.114.0: a single currency-like item (a Wombgift)
+            self.status_text, self.status_until = f"Pricing {cur[0]}...", time.time() + 10
+            self.stack_price(cur[0], cur[1], loud=True)
+            return
         if g.get("stack") is not None:
             why = "stackable items are counted on the Wealth window, not price-checked here"
         elif g.get("rarity") == "Normal" and g.get("class") in ("tablet", "jewel", "waystone"):
@@ -3242,7 +3251,7 @@ class App(GearBookPage, PriceCheckPage, PricePopup, FavoritesPage, BoardModPage,
         """A copied item the price checker can price: tablets and jewels (their own checker), or any gear (1.41)."""
         return parse_item(text) or waystone.parse_waystone(text) or gear.parse_gear(text)
 
-    def stack_price(self, name, qty):
+    def stack_price(self, name, qty, loud=False):
         """2.72.1: a copied stack -> its worth in the status line: poe.ninja's price, or (not listed there) the trade
         site's bulk exchange (one search, kept an hour). In the background; nothing is added to the list."""
         def work():
@@ -3254,14 +3263,18 @@ class App(GearBookPage, PriceCheckPage, PricePopup, FavoritesPage, BoardModPage,
                 xid = bulk.exchange_id(name)
                 hit = bulk.price(league, xid, lambda a, c: RATES.to_div(a, c, league)) if xid else None
                 each, src = (hit[0], bulk.text(hit)) if hit else (None, None)
-            self.ui_q.put(("stack_priced", name, qty, each, src))
+            self.ui_q.put(("stack_priced", name, qty, each, src, loud))
         threading.Thread(target=work, daemon=True).start()
 
-    def ev_stack_priced(self, name, qty, each, src):
+    def ev_stack_priced(self, name, qty, each, src, loud=False):
         if each is None:
             msg = f"{name}: no price on poe.ninja or the bulk exchange right now."
+        elif qty == 1:
+            msg = f"{name}: {fmt_div(each)} ({src})."
         else:
             msg = f"{name} x{qty:,}: {fmt_div(each * qty)} ({fmt_div(each)} each, {src})."
+        if loud:                                         # 2.114.0: your price check key on it - a toast you'll see
+            self.app_toast(msg, "Price check")
         self.status_text, self.status_until = msg, time.time() + 20
         self._say(msg, 12)
         self.last_stack_price = (name, qty, each, src)
@@ -3910,32 +3923,32 @@ class App(GearBookPage, PriceCheckPage, PricePopup, FavoritesPage, BoardModPage,
         ns = types.SimpleNamespace(cat=cat, keys={}, filt=tk.StringVar())
         self.rt[cat] = ns
         ns.filt.trace_add("write", lambda *a: self.refresh_rules(cat))
+        # 2.114.0 (P8, feedback: "make Tier the only rating"): one rating, S-F - S / A = High (always searched),
+        # B / C / D = Normal, F = Ignore - as on Gear rules. (Impact and its High / Normal / Ignore buttons are gone.)
         rbar = tk.Frame(tab, bg=C["panel"], padx=8, pady=8)
         rbar.pack(fill="x")
         tk.Label(rbar, text="Filter", bg=C["panel"], fg=C["muted"]).pack(side="left", padx=(0, 8))
         ttk.Entry(rbar, textvariable=ns.filt, width=18).pack(side="left")
-        ttk.Button(rbar, text="Export rules", command=self.export_rules).pack(side="left", padx=(16, 0))
-        ttk.Button(rbar, text="Import rules", command=self.import_rules).pack(side="left", padx=(8, 0))
         ttk.Button(rbar, text="Rate mods one at a time…", style="Primary.TButton",               # 2.96.0
-                   command=lambda c=cat: self.rm_open(c)).pack(side="left", padx=(8, 0))
-        if cat not in SCOPED_CATS and any(mod_cat(k) == cat for k in COMMUNITY):   # (votes imported before 2.20.0)
-            ttk.Button(rbar, text="Remove imported", command=self.clear_imported_rules, style="Danger.TButton").pack(side="left", padx=(8, 0))
-        if cat not in SCOPED_CATS:                       # 2.20.0: tiers decide what's left out first
-            tbar = tk.Frame(tab, bg=C["panel"], padx=8)
-            tbar.pack(fill="x")
-            tk.Label(tbar, text="Tier for selected:", bg=C["panel"], fg=C["muted"]).pack(side="left", padx=(0, 8))
-            for t in SHOWN_TIERS:                   # 2.97.0: F = ignore
-                tb_ = ttk.Button(tbar, text=t, width=3, command=lambda t=t: self.tiers_selected(t))
-                tb_.pack(side="left", padx=(0, 4))
-                if t == TIER_F:
-                    Tooltip(tb_, F_TIP)
-            ttk.Button(tbar, text="Auto", command=lambda: self.tiers_selected(None), style="Quiet.TButton").pack(side="left", padx=(4, 0))
-            tk.Label(tbar, text="S matters most, D least, F = ignore. When no listing has all of an item's mods, the "
-                                "D-tier mods are left out first, then C. Not set: High = A, Normal = C.",
-                     bg=C["panel"], fg=C["muted"], font=("Segoe UI", 9)).pack(side="left", padx=12)
-        for imp in ("ignore", "normal", "high"):
-            ttk.Button(rbar, text=IMPACT_LABEL[imp], command=lambda i=imp: self.rules_selected(i)).pack(side="right", padx=(8, 0))
-        tk.Label(rbar, text="Set selected to:", bg=C["panel"], fg=C["muted"]).pack(side="right", padx=8)
+                   command=lambda c=cat: self.rm_open(c)).pack(side="left", padx=(16, 0))
+        more = ttk.Button(rbar, text="More ▾", style="Quiet.TButton")
+        more.configure(command=lambda b=more, c=cat: self.mb_more(b, c))
+        more.pack(side="right")
+        tbar = tk.Frame(tab, bg=C["panel"], padx=8)
+        tbar.pack(fill="x")
+        tk.Label(tbar, text="Rate selected:", bg=C["panel"], fg=C["muted"]).pack(side="left", padx=(0, 8))
+        for t in SHOWN_TIERS:
+            tb_ = ttk.Button(tbar, text=t, width=3, command=lambda t=t: self.tiers_selected(t))
+            tb_.pack(side="left", padx=(0, 4))
+            if t == TIER_F:
+                Tooltip(tb_, F_TIP)
+        ttk.Button(tbar, text="Clear", command=lambda: self.tiers_selected(None), style="Quiet.TButton").pack(side="left", padx=(4, 0))
+        help_ = tk.Label(tab, text="S / A = High (always searched), B / C / D = Normal, F = Ignore (never searched). When no "
+                           "listing has all of an item's mods, D mods are left out first, then C. \"auto\" = the app's "
+                           "own rating until you rate it.", bg=C["panel"], fg=C["muted"], font=("Segoe UI", 9),
+                 anchor="w", justify="left", wraplength=900, padx=12)
+        help_.pack(fill="x", pady=(8, 0))
+        help_.bind("<Configure>", lambda e, l=help_: l.config(wraplength=max(300, e.width - 24)))
         if cat in SCOPED_CATS:                           # 2.6.0: what these rules are for
             tk.Label(tab, text={"waystone": "Waystones are priced on their numbers (pack size, rarity ...), not their "
                                             "mods. Rate the mods you want or don't want, and Regex uses it: ★ on the "
@@ -3944,18 +3957,19 @@ class App(GearBookPage, PriceCheckPage, PricePopup, FavoritesPage, BoardModPage,
                                          "picks them; Market Insights lists them."}[cat],
                      bg=C["panel"], fg=C["muted"], anchor="w", justify="left", wraplength=760, padx=12,
                      font=("Segoe UI", 9)).pack(fill="x")
-        ns.info = tk.Label(tab, bg=C["panel"], fg=C["muted"], anchor="w", padx=12)
-        ns.info.pack(fill="x")
-        SectionBar(tab, {"tablet": "Tablet mods", "jewel": "Jewel mods", "waystone": "Waystone mods",
-                         "relic": "Relic mods"}.get(cat, "Mods")).pack(fill="x", padx=8)     # 2.69.0
+        bar = SectionBar(tab, {"tablet": "Tablet mods", "jewel": "Jewel mods", "waystone": "Waystone mods",
+                               "relic": "Relic mods"}.get(cat, "Mods"))     # 2.69.0
+        bar.pack(fill="x", padx=8, pady=(8, 0))
+        ns.info = BarNote(bar)                          # 2.114.0: the counts sit in the section's strip
+
         rvp = Viewport(tab)
         rvp.pack(fill="both", expand=True, padx=8, pady=(0, 8))
         rtab = rvp.body
-        ns.tv = ttk.Treeview(rtab, columns=("impact", "tier", "learned", "type", "mod", "on"), show="headings",
+        ns.tv = ttk.Treeview(rtab, columns=("tier", "type", "mod", "on", "learned"), show="headings",
                              selectmode="extended")
-        for cid, title, w, anchor in (("impact", "Impact", 100, "w"), ("tier", "Tier", 50, "center"),
-                                      ("learned", "Learned from data", 190, "w"), ("type", "Type", 80, "w"),
-                                      ("mod", "Mod", 420, "w"), ("on", "Found on", 220 if cat == "tablet" else 300, "w")):
+        for cid, title, w, anchor in (("tier", "Rating", 80, "w"), ("type", "Type", 70, "w"),
+                                      ("mod", "Mod", 420, "w"), ("on", "Found on", 150 if cat == "tablet" else 260, "w"),
+                                      ("learned", "Learned", 210, "w")):
             ns.tv.heading(cid, text=title)
             ns.tv.column(cid, width=w, anchor=anchor, stretch=(cid == "mod"))
         rsb = ttk.Scrollbar(rtab, orient="vertical", command=ns.tv.yview)
@@ -3967,12 +3981,20 @@ class App(GearBookPage, PriceCheckPage, PricePopup, FavoritesPage, BoardModPage,
         ns.tv.bind("<Double-1>", lambda e, c=cat: self.cycle_rule(e, c))
         if cat in SCOPED_CATS:
             ns.tv.heading("on", text="Tiers" if cat == "waystone" else "Relic sizes")
-            ns.tv["displaycolumns"] = ("impact", "type", "mod", "on")         # nothing is learned for these
+            ns.tv["displaycolumns"] = ("tier", "type", "mod", "on")           # nothing is learned for these
         self.list_register("modbook", ns.tv)                                      # 2.4.0: Ctrl+A, Shift / Ctrl+click
 
     def migrate_rules_once(self):
         """2.6.0, once: waystone / relic rules set from Regex move to their own names (mods.migrate_scoped_rules).
-        2.99.0, once: gear rules lose their leading "+" (Mod book › Gear rules lists lines without one)."""
+        2.99.0, once: gear rules lose their leading "+" (Mod book › Gear rules lists lines without one).
+        2.114.0, once: one rating - a tier you gave decides High / Normal (S / A = High, B-D = Normal)."""
+        if not SETTINGS.get("tier_only_2114"):
+            from .mods import migrate_tier_only
+            if migrate_tier_only():
+                save_json("mod_rules.json", RULES)
+                save_json("mod_tiers.json", TIERS)
+            SETTINGS["tier_only_2114"] = True
+            save_json("settings.json", SETTINGS)
         if not SETTINGS.get("gear_plus_299"):
             from .gearbook import migrate_plus
             if migrate_plus(RULES, TIERS):
@@ -4039,13 +4061,12 @@ class App(GearBookPage, PriceCheckPage, PricePopup, FavoritesPage, BoardModPage,
         for n, (_o, _t, keys, text, imp, side, on) in enumerate(sorted(rows)):
             iid = f"r{n}"
             ns.keys[iid] = keys
-            ns.tv.insert("", "end", iid=iid, values=(IMPACT_LABEL[imp], "", "", side, text, on),
+            ns.tv.insert("", "end", iid=iid, values=(self.mb_rating(keys), side, text, on, ""),
                          tags=(imp,) if imp != "normal" else ())
             if tuple(keys) in keep:
                 ns.tv.selection_add(iid)
         counts = {i: sum(1 for r in rows if r[4] == i) for i in IMPACTS}
-        ns.info.config(text=f"{counts['high']} high  ·  {counts['normal']} normal  ·  {counts['ignore']} ignored"
-                            + ("" if rows or q else "   (regexdata.json not found)"))
+        ns.info.config(text=self.mb_counts(counts) + ("" if rows or q else "  ·  regexdata.json not found"))
 
     def _refresh_rules(self, cat):
         if cat in SCOPED_CATS:
@@ -4101,16 +4122,46 @@ class App(GearBookPage, PriceCheckPage, PricePopup, FavoritesPage, BoardModPage,
                 learned = "Shared - your data disagrees"
             else:
                 learned = ""
-            t = tier_key(k)
-            tier = (t + ("" if k in TIERS else " (auto)")) if t else (TIER_F if imp == "ignore" else "")   # 2.97.0
-            ns.tv.insert("", "end", iid=iid, values=(IMPACT_LABEL[imp], tier, learned, "/".join(sorted(kd)) if len(kd) == 1 else ("Both" if kd else ""), text, on),
+            ns.tv.insert("", "end", iid=iid, values=(self.mb_rating([k]), "/".join(sorted(kd)) if len(kd) == 1 else ("Both" if kd else ""), text, on, learned or "-"),
                                  tags=(imp,) if imp != "normal" else ())
             if k in keep:
                 ns.tv.selection_add(iid)
         counts = {i: sum(1 for k in known if impact_key(k) == i) for i in IMPACTS}
         fname = "tabs.txt" if cat == "tablet" else "jewels.txt"
-        ns.info.config(text=f"{counts['high']} high  ·  {counts['normal']} normal  ·  {counts['ignore']} ignored"
-                            + ("" if src else f"   ({fname} not found - put it in {DATA_DIR} or next to the app and restart)"))
+        ns.info.config(text=self.mb_counts(counts) + ("" if src else f"  ·  {fname} not found - put it in {DATA_DIR} or next to the app and restart"))
+
+    @staticmethod
+    def mb_counts(counts):
+        """2.114.0: the strip's note - by rating, not High / Normal / Ignore."""
+        return f"{counts['high']} S/A  ·  {counts['normal']} B-D  ·  {counts['ignore']} F"
+
+    @staticmethod
+    def mb_rating(keys):
+        """2.114.0: a row's one rating: S-D, F (ignored), with "· auto" when it's the app's own (you haven't rated it).
+        A waystone / relic row can hold several lines: the best of them."""
+        best = None
+        for k in keys:
+            t = tier_key(k) or TIER_F
+            if best is None or SHOWN_TIERS.index(t) < SHOWN_TIERS.index(best[0]):
+                best = (t, k)
+        if best is None:
+            return ""
+        t, k = best
+        return t if (k in RULES or k in TIERS) else f"{t}  · auto"
+
+    def mb_more(self, btn, cat):
+        """2.114.0: Export / Import (and Remove imported) - used now and then, so under More."""
+        from .listkit import _menu
+        m = _menu(btn)                                   # (the app's menu look, as on right-click menus)
+        m.add_command(label="Export rules…", command=self.export_rules)
+        m.add_command(label="Import rules…", command=self.import_rules)
+        if cat not in SCOPED_CATS and any(mod_cat(k) == cat for k in COMMUNITY):     # (votes imported before 2.20.0)
+            m.add_separator()
+            m.add_command(label="Remove imported", command=self.clear_imported_rules)
+        try:
+            m.tk_popup(btn.winfo_rootx(), btn.winfo_rooty() + btn.winfo_height())
+        finally:
+            m.grab_release()
 
     # ---------------- sharing rules with other people
     def _say(self, text, secs=30):
@@ -4274,31 +4325,26 @@ class App(GearBookPage, PriceCheckPage, PricePopup, FavoritesPage, BoardModPage,
         self.set_rules(keys, impact)
 
     def tiers_selected(self, tier):
-        """2.20.0: give the selected mods a tier (None = back to automatic), then re-price items that have them."""
+        """Rate the selected mods S..D, F (= ignore) or None (clear yours: back to the app's own rating), then
+        re-price the not-yet-listed items that have them. 2.114.0: the Mod book's only rating (as on Gear rules)."""
+        from . import ratemods as RM
         ns = self.rt[self.rules_cat()]
         keys = set()
         for i in ns.tv.selection():
             k = ns.keys.get(i)
             keys |= set(k if isinstance(k, list) else [k] if k else [])
         if not keys:
-            return self._say("Select mods first (Ctrl+A for all, Shift / Ctrl + click), then pick a tier.", 8)
-        if tier == TIER_F:                                # 2.97.0: F is the ignore tier - an Ignore rule
-            return self.set_rules(sorted(keys), "ignore")
-        back = sorted(k for k in keys if impact_key(k) == "ignore")
-        if back:                                          # a tier on an F mod: it's searched again
-            self.set_rules(back, "normal")
-        for k in keys:
-            if tier is None or tier == default_tier(k):
-                TIERS.pop(k, None)
-            else:
-                TIERS[k] = tier
-        save_json("mod_tiers.json", TIERS)
+            return self._say("Select mods first (Ctrl+A for all, Shift / Ctrl + click), then pick a rating.", 8)
+        RM.apply(sorted(keys), "ignore" if tier == TIER_F else tier)
+        from .ratemods import key_for
         affected = [rid for rid, rec in self.records.items() if rec.get("mark", "new") == "new"
-                    and (rec.get("nomatch") or rec.get("partial")) and any(norm(m["text"]) in keys for m in rec["item"]["mods"])]
-        self.reprice(affected)
+                    and any(norm(m["text"]) in keys or key_for(rec, m) in keys for m in rec["item"]["mods"])]
+        if affected:
+            self.reprice(affected)
+        self.refresh_all()
         self.refresh_rules()
-        self._say(f"Tier {tier or 'automatic'} for {len(keys)} mod{'s' if len(keys) != 1 else ''}"
-                  + (f"; re-pricing {len(affected)} item(s) that didn't find every mod together" if affected else "."), 8)
+        self._say(f"{'Cleared' if tier is None else 'Rated ' + tier} {len(keys)} mod{'s' if len(keys) != 1 else ''}"
+                  + (f"; re-pricing {len(affected)} item(s)." if affected else "."), 8)
 
     def cycle_rule(self, event, cat="tablet"):
         ns = self.rt[cat]
@@ -4306,7 +4352,13 @@ class App(GearBookPage, PriceCheckPage, PricePopup, FavoritesPage, BoardModPage,
         if iid in ns.keys:
             k = ns.keys[iid]
             keys = k if isinstance(k, list) else [k]
-            self.set_rules(keys, IMPACTS[(IMPACTS.index(impact_key(keys[0])) + 1) % len(IMPACTS)])
+            from . import ratemods as RM                  # 2.114.0: double-click steps the rating S, A ... F, S
+            now = tier_key(keys[0]) or TIER_F
+            nxt = SHOWN_TIERS[(SHOWN_TIERS.index(now) + 1) % len(SHOWN_TIERS)]
+            RM.apply(keys, "ignore" if nxt == TIER_F else nxt)
+            self.gb_reprice(keys)
+            self.refresh_all()
+            self.refresh_rules()
 
     def set_rules(self, keys, impact):
         """Change what these mods count for, then re-price the not-yet-listed items that have them."""
@@ -5990,14 +6042,14 @@ class App(GearBookPage, PriceCheckPage, PricePopup, FavoritesPage, BoardModPage,
             if mine == "ignore" and says == "High":
                 check, kind = "⚠ ignored (your rule or the built-in default), but the data says it's valuable", "warn"
             elif mine == "high" and says == "Normal":
-                check, kind = "your High isn't backed by the data yet", "warn"
+                check, kind = "your S/A isn't backed by the data yet", "warn"
             elif mine == "high" and says == "High":
                 check, kind = "agree", "great"
             elif mine != "high" and says == "High":
                 check, kind = "learned: treated as High automatically", "great"
             else:
                 check, kind = "", ""
-            rows.append((base, sid, st["n"], st["med"], st["lift"], says, IMPACT_LABEL[mine], check, kind))
+            rows.append((base, sid, st["n"], st["med"], st["lift"], says, self.mb_rating([k]), check, kind))   # (2.114.0: the rating)
         rows.sort(key=lambda r: (r[8] == "", -(r[4] or 0)))
         return rows[:1000]
 

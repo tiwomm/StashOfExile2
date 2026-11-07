@@ -98,7 +98,7 @@ class CalcOverlay:
         """Show / hide it (show None: flip). -> shown."""
         show = (not self.calc_ov_shown()) if show is None else bool(show)
         if show and not self.calc_cfg()["on"]:
-            self._say("The calculator is switched off: Overlay › Options › On the overlay › Calculator.", 8)
+            self._say("The calculator is switched off: Overlay › Settings › On the bar › Calc.", 8)
             return False
         if show:
             if not self.calc_ov_shown():
@@ -178,7 +178,7 @@ class CalcOverlay:
         ent.bind("<KP_Enter>", lambda e: self.calc_go())
         ent.bind("<Escape>", lambda e: (self.calc_var.set(""), "break")[1])
         self.calc_entry = ent
-        self.calc_out = tk.Label(body, text=fmt(self.calc_last) if self.calc_last is not None else "0", bg=bg,
+        self.calc_out = tk.Label(body, text=fmt(self.calc_last) if self.calc_last is not None else "", bg=bg,   # (2.114.0: blank, not "0")
                                  fg=P["head"], font=(MONO, self.ov_font(16), "bold"), anchor="e")
         self.calc_out.pack(fill="x", pady=(4, 0))
         self.calc_msg = tk.Label(body, text="12k = 12,000  ·  ans = last", bg=bg, fg=mut, font=(P["font"], self.ov_font(8)),
@@ -201,7 +201,7 @@ class CalcOverlay:
         tk.Label(body, text="RECENT  ·  click one to use it", bg=bg, fg=P["head"], font=(P["hfont"] or P["font"], self.ov_font(8), "bold"),
                  anchor="w").pack(fill="x", pady=(8, 0))
         self.calc_hist = tk.Listbox(body, bg=bg, fg=mut, relief="flat", highlightthickness=0, height=3,
-                                    font=(MONO, self.ov_font(9)), selectbackground=P["cell_bg"], selectforeground=txt,
+                                    font=(P["font"], self.ov_font(10)), selectbackground=P["cell_bg"], selectforeground=txt,
                                     activestyle="none", width=1)
         self.calc_hist.pack(fill="x")
         for line in getattr(self, "_calc_lines", [])[:3]:

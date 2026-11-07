@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU GPL v3.0 (see LICENSE). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.113.2
+VERSION 2.114.0
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,6 +19,28 @@ VERSION 2.113.2
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.114.0
+       P8 + P9 page passes (findings + mockup first; feedback: Tier the only rating, Rates plain, calculator plain).
+       Listing order lab removed (an admin tool, done its job): orderlab.py, orderlab_page.py, modules/orderlab.py
+       and the clipboard hook; shell.admin_on stays for any later admin tool. orderlab.json on a PC is left alone.
+       Mod book: one rating, S-F (S / A = High, B / C / D = Normal, F = Ignore) on Tablet / Jewel / Waystone / Relic
+       rules as on Gear rules - the Impact column and the High / Normal / Ignore buttons are gone; tiers_selected and
+       a double-click (steps S ... F) use ratemods.apply; a row not rated by you reads "A · auto" (mb_rating). Once
+       (tier_only_2114, mods.migrate_tier_only): a tier you gave decides High / Normal; an Ignore keeps F and drops
+       its old tier. Export / Import / Remove imported under More ▾ (mb_more, listkit's menu look); the counts sit in
+       the section strip (chrome.BarNote); the help line wraps to the window; Learned is the last column.
+       Rate mods picker: grouped (Map items, Gear, Uniques you've checked), four across, "N to rate" with a bar,
+       the gear part scrolls when it doesn't fit, centred over the app (it ran past the bottom).
+       Under the hood: Paste item / Price it / Clear (Check gone - typing in the box reads it); a one-line intro.
+       Exchange rates: currency names (ovrates.cur_name, one list for Rates, Exchange Helper and the overlay), plain
+       small numbers (fmt_worth: no 4.762e-05), "In divines" / "Volume (div)"; the status bar updates as soon as a
+       fetch ends (ev_rates_done - it said "none yet" for up to 30 s).
+       Notes: opening it shows the note over the game and says where it lives (notes_open); switched off, it says
+       which switch. Calculator: starts blank (no "0"), Recent in the Style's font; its "switched off" message names
+       today's place.
+       Price check key on a single "Rarity: Currency" item with no Stack Size (feedback: a Signet Wombgift did
+       nothing): wealth.parse_currency_item -> stack_price(name, 1, loud=True) - poe.ninja or the bulk exchange, shown
+       in a toast; the same on the plain Ctrl+Alt+C path.
   2.113.2
        Island rumours (rumours_read.txt from a real card: "Nothin' to drink..." read as "Wodviw' to c(riwkv.."):
        lines are compared by letter shape too (rumours.SHAPE: n/w/u/v/h/m, t/d/c/l, o/a, i/j) - rumours 0.88+, the
@@ -2661,7 +2683,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.113.2"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.114.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
