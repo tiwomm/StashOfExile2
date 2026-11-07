@@ -37,6 +37,12 @@ NEXT = [
 MAX_BIG = 3
 
 NOTES = {
+    "2.112.5": {
+        "big": [],
+        "small": [
+            ("Overlay", "Dragging the Campaign line no longer opens the route card - a plain click still does."),
+        ],
+    },
     "2.112.4": {
         "big": [],
         "small": [

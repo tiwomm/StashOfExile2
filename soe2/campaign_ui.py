@@ -160,7 +160,7 @@ class CampaignUI:
     def camp_draw_row(self, cv, P, lft, rgt, mid, font):
         """Draw the campaign line between lft and rgt at mid. -> the items clicked for the route card."""
         import tkinter.font as tkfont
-        from .merged_page import _Trunc
+        from .merged_page import _Trunc, click_not_drag
         d = CP.line()
         if not d:
             return None
@@ -185,7 +185,7 @@ class CampaignUI:
         t.config(text="▸ " + CP.line_text())
         self.tk_ov_lbls["campaign"] = t
         for item in (head, it):
-            cv.tag_bind(item, "<Button-1>", lambda e: self.camp_route_show())
+            click_not_drag(cv, item, self.camp_route_show)      # (2.112.5: a drag moves the line, no card)
             cv.tag_bind(item, "<Enter>", lambda e: cv.configure(cursor="hand2"))
             cv.tag_bind(item, "<Leave>", lambda e: cv.configure(cursor=""))
         return head, it
