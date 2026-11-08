@@ -1100,7 +1100,7 @@ class MergedOverlay:
         fm = tkfont.Font(root=cv, family=P["font"], size=self._hf(10))
         # ---- row 2 (or the only row): the numbers - 2.73.5: a divider between each part (feedback: "more visual
         # division between the different areas of text")
-        SW = self._hf(20)                                    # a divider's slot
+        SW = self._hf(14)                                    # a divider's slot (2.118.0: 20 -> 14, one row holds more)
         sh = None
         drawn = []
 
@@ -1135,7 +1135,7 @@ class MergedOverlay:
             # 2.90.0: | Map 3:12  Arcane Isle | Maps: 4 | Avg. 6:01 | - the map and where you are share one part,
             # each part's text is centered between its dividers, and the area's name is shown whole (smaller type
             # before it is ever cut)
-            mw, aw = fm.measure("Maps: 000") + 16, fm.measure("Avg: 00:00") + 16
+            mw, aw = fm.measure("Maps: 000") + 8, fm.measure("Avg: 00:00") + 8
             fixed = [k for k, on in (("maps", ln.get("maps")), ("avg", ln.get("avg"))) if on]
             widths = {"maps": mw, "avg": aw}
             map_on = bool(ln.get("map", True) or ln.get("where", True))

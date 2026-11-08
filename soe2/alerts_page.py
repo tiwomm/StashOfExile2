@@ -131,7 +131,48 @@ class AlertsPage:
         c.setdefault("on", True)     # 2.118.0: on by default (a new install; yours is kept)
         c.setdefault("sound", True)
         c.setdefault("leave_reminder", True)
+        c.setdefault("readout", True)               # 2.118.0: the Ritual line above the overlay's bar (On screen)
         return c
+
+    def ritual_readout(self):
+        """2.118.0 (feedback: show the Ritual count and your tribute on screen, with a switch): the text of the Ritual
+        line over the game - "2 of 4 rituals done · 1,240 tribute" - while a map's Ritual counter has been seen, or
+        "" (no line). The count used to ride on the bar's Ritual switch, which is gone."""
+        c = self.ritual_cfg()
+        if not (c.get("on") and c.get("readout", True)):
+            return ""
+        from .utilities import RITUAL
+        count = RITUAL.count if RITUAL.seen == "ok" and RITUAL.count else None
+        if count is None and getattr(self, "br_area", None) == "map":
+            count = getattr(self, "rt_map", None)
+        if not count:
+            return ""
+        d, t = count
+        txt = f"{d} of {t} rituals done" + (" ✔" if d >= t else "")
+        tribute = getattr(RITUAL, "tribute", None)
+        if tribute is not None:
+            txt += f"  ·  {int(tribute):,} tribute"
+        return txt
+
+    def ritual_readout_sync(self):
+        """The line comes and goes with the count; while it shows, its text follows."""
+        try:
+            txt = self.ritual_readout()
+            shown = "ritual" in (getattr(self, "gb_rows", None) or []) and getattr(self, "gb_win", None) is not None
+            if bool(txt) != shown:
+                if getattr(self, "mg_win", None) is not None:
+                    self.goalbar_build()
+            elif txt:
+                lab = (getattr(self, "tk_ov_lbls", None) or {}).get("ritual")
+                if lab is not None and lab.cget("text") != txt:
+                    lab.config(text=txt)
+        except Exception:
+            buglog.caught()
+
+    def ritual_readout_changed(self, on):
+        self.ritual_cfg()["readout"] = bool(on)
+        save_json("settings.json", SETTINGS)
+        self.ritual_readout_sync()
 
     def log_wanted(self):
         """Client.txt is followed while Breach or Ritual needs it (Ritual: to know when you leave a map)."""
@@ -222,7 +263,7 @@ class AlertsPage:
             "ritual": "reads the Ritual counter (0/3 ...) from your screen; reminds you if you leave a map after "
                       "starting its rituals but not finishing them",
             "remnant": "Expedition Remnant Price Checker: each reward in a remnant's book gets its poe.ninja price, by "
-                       "itself (Auto) or with its key",
+                       "itself (Auto) or with its key, beside the runeshapes players rate best for loot",
             "focus": "League Focus: your current league goal on the bar, and a short poke in town now and then "
                      "(Overlay ↳ Game Plan)",
             "campaign": "Campaign Helper: where you are in the campaign, what's next and what it's worth (reads "
@@ -241,6 +282,7 @@ class AlertsPage:
         self.al_leave = tk.BooleanVar(value=bool(self.breach_cfg().get("leave_reminder", True)))
         self.al_rleave = tk.BooleanVar(value=bool(self.ritual_cfg().get("leave_reminder", True)))
         self.al_rauto = tk.BooleanVar(value=bool(self.remnant_cfg().get("auto")))
+        self.al_rshow = tk.BooleanVar(value=bool(self.ritual_cfg().get("readout", True)))
         self.al_rru = tk.BooleanVar(value=bool(self.remnant_cfg().get("rumours", True)))
         self.al_rtips = tk.BooleanVar(value=bool(self.remnant_cfg().get("tips", True)))
         from . import whispers as _W
@@ -254,6 +296,9 @@ class AlertsPage:
                          "Map library rank for it. Only in your hideout."),
                         ("Runeshape tips", self.al_rtips, lambda: self.remnant_tips_changed(self.al_rtips.get()),
                          "A small list next to the prices: the runeshapes players rate best for loot (S and A tier).")],
+            "ritual": [("On screen", self.al_rshow, lambda: self.ritual_readout_changed(self.al_rshow.get()),
+                        "A line over the overlay's bar while you're in a map with Ritual: how many rituals are done and "
+                        "your tribute.")],
             "whispers": [("After the campaign", self.al_wafter, self.ww_after_changed,
                           "Off: it watches only while your character is in the campaign. On: always.")]}
         remind = {"breach": (self.al_leave, self.alerts_leave_changed),
@@ -671,6 +716,7 @@ class AlertsPage:
         from .utilities import RITUAL
         if RITUAL.seen == "ok" and RITUAL.count and self.br_area in ("map", None):
             self.rt_map = RITUAL.count
+        self.ritual_readout_sync()
 
     def alerts_overlay_redraw(self):
         try:

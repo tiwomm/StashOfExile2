@@ -488,13 +488,11 @@ class TrackerPage:
         box = card(0, 1, "Options", "How the overlay behaves.")
         self.tk_rank_ask = tk.BooleanVar(value=self.rank_ask_on())               # 2.76.0
         self.tk_lock = tk.BooleanVar(value=bool(cfg.get("mlocked")))      # 2.59.0: ONE lock for the whole overlay
-        self.tk_tips_var = tk.BooleanVar(value=bool(cfg.get("tips", True)))      # 2.73.4: what each switch is for
         self.tk_auto = tk.BooleanVar(value=bool(cfg.get("autostart")))           # 2.14.0
         self.overlay_hide_capture()                                                    # (2.89.1: its one-time reset)
         self.tk_hidecap = tk.BooleanVar(value=bool(cfg.get("hide_capture", False)))   # 2.85.2
         dv = self.tk_goal_dock
         switches(box, (("Lock the overlay (can't be moved)", self.tk_lock, self.tracker_options_changed),
-                       ("Feature tips", self.tk_tips_var, self.tracker_tips_switch),
                        ("Start the overlay with StashOfExile2", self.tk_auto, self.tracker_options_changed),
                        ("Ask me to rank maps", self.tk_rank_ask, self.tracker_rank_ask_switch),
                        ("Dock the lines to the bar", dv, lambda: self.goal_dock_set(dv)),
@@ -502,7 +500,6 @@ class TrackerPage:
         from .style import Tooltip
         Tooltip(self.tk_ov_switches["Hide from screen captures"], "Only while the Ritual or Delirium watcher runs, and "
                 "only needed if the bar covers a counter they read. While it's on, screenshots won't show the bar.")
-        self.tk_ov_switches["tips"] = self.tk_ov_switches.pop("Feature tips")
         op = tk.Frame(box, bg=P2)
         op.pack(fill="x", pady=(8, 0))
         ttk.Button(op, text="Overlay appearance…", command=self.appearance_open).pack(side="left")
@@ -1137,6 +1134,7 @@ class TrackerPage:
             texts.update(map=f"Map: {val('map')}", where=where.strip())      # 2.76.0: the rank is its own part
         texts["rank"] = self.rank_text(n.get("where") if live and getattr(self, "_mr_in", None) else None)
         texts["focus"] = self.focus_line()[0]                 # 2.73.0: League Focus's line
+        texts["ritual"] = self.ritual_readout()               # 2.118.0: the Ritual line (count, tribute)
         from . import campaign as CP
         texts["campaign"] = "▸ " + CP.line_text() if CP.active() else ""          # 2.77.0: the campaign line
         for k, lab in self.tk_ov_lbls.items():
@@ -1165,11 +1163,6 @@ class TrackerPage:
             self.merged_build()
         self.tracker_helpers_paint()
 
-    def tracker_tips_switch(self):
-        self.tracker_cfg()["tips"] = bool(self.tk_tips_var.get())
-        if not self.tracker_cfg()["tips"]:
-            self.ov_tip_hide()
-        save_json("settings.json", SETTINGS)
 
     def tracker_helpers_settings(self):
         """2.26.0: the ⚙ on the timer's bar - 2.44.0: Overlays › Mechanic Helper, where its options are."""
