@@ -40,7 +40,11 @@ MAX_BIG = 3
 
 NOTES = {
     "2.122.0": {
-        "big": [],
+        "big": [
+            ("⚖", "Where your price check key shows the price", "\"Show over the game\" is now a row across the top of "
+             "Price Checks that says what it does: when you press Ctrl+D on an item in game, show the price On this "
+             "page or In a card over the game.", ("Open Price Checks", "pricecheck"), "Price Checks"),
+        ],
         "small": [
             ("Settings", "Leave and delete my data deletes your name, strats and leaderboard times. What you shared "
                          "anonymously (mod prices, ratings, map ranks, unmatched mods) stays in the pool for everyone."),
