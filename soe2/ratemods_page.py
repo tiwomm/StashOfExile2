@@ -81,7 +81,7 @@ class RateModsPage:
         left.pack(side="left", fill="y")
         left.pack_propagate(False)
         tk.Label(left, text="Which items do you know best?", bg=P2, fg=C["text"], font=("Segoe UI", 10, "bold"),
-                 anchor="w", padx=10, pady=8).pack(fill="x")
+                 anchor="w", padx=8, pady=8).pack(fill="x")
         sa = ScrollArea(left, bg=P2)
         sa.pack(fill="both", expand=True)
         self.rm_list = sa.inner
@@ -89,7 +89,7 @@ class RateModsPage:
         # ---- right: one mod at a time (built once)
         right = tk.Frame(wrap, bg=P1)
         right.pack(side="left", fill="both", expand=True, padx=(12, 0))
-        card = tk.Frame(right, bg=P2, padx=24, pady=20, highlightthickness=1, highlightbackground=C["line"])
+        card = tk.Frame(right, bg=P2, padx=24, pady=16, highlightthickness=1, highlightbackground=C["line"])
         card.pack(fill="x", anchor="n")
         self.rm_box = card
         top = tk.Frame(card, bg=P2)
@@ -98,8 +98,8 @@ class RateModsPage:
         self.rm_head.pack(side="left")
         self.rm_count = tk.Label(top, text="", bg=P2, fg=C["muted"], font=("Segoe UI", 9), anchor="e")
         self.rm_count.pack(side="right")
-        self.rm_mod = tk.Label(card, text="", bg=C["panel"], fg=C["magic"], font=("Segoe UI", 13), wraplength=520,
-                               justify="center", padx=12, pady=20, height=3)
+        self.rm_mod = tk.Label(card, text="", bg=C["panel"], fg=C["magic"], font=("Segoe UI", 12), wraplength=520,
+                               justify="center", padx=12, pady=16, height=3)
         self.rm_mod.pack(fill="x", pady=(12, 8))
         self.rm_now = tk.Label(card, text="", bg=P2, fg=C["muted"], font=("Segoe UI", 9))
         self.rm_now.pack()
@@ -122,7 +122,7 @@ class RateModsPage:
         self.rm_done_lbl = tk.Label(card, text="", bg=P2, fg=C["good"], font=("Segoe UI", 9))
         self.rm_done_lbl.pack(pady=(8, 0))
         tk.Label(right, text=WHAT, bg=P1, fg=C["muted"], font=("Segoe UI", 9), wraplength=560, justify="left",
-                 anchor="w").pack(fill="x", pady=(10, 0))
+                 anchor="w").pack(fill="x", pady=(8, 0))
         tk.Label(right, text="Keys: S A B C D F rate it · ← → move", bg=P1, fg=C["muted"], font=("Segoe UI", 9),
                  anchor="w").pack(fill="x", pady=(4, 0))
         for k, g in (("s", "S"), ("a", "A"), ("b", "B"), ("c", "C"), ("d", "D"), ("f", "ignore"), ("i", "ignore")):
@@ -173,8 +173,8 @@ class RateModsPage:
         for title, sets in groups:
             if not sets:
                 continue
-            tk.Label(box, text=title.upper(), bg=P2, fg=C["muted"], font=("Segoe UI", 8, "bold"), anchor="w",
-                     padx=10).pack(fill="x", pady=(8, 2))
+            tk.Label(box, text=title.upper(), bg=P2, fg=C["muted"], font=("Segoe UI", 9, "bold"), anchor="w",
+                     padx=8).pack(fill="x", pady=(8, 2))
             for s, label in sets:
                 self._rm_row(box, s, label)
         self._rm_paint_rows()
@@ -184,11 +184,11 @@ class RateModsPage:
         q = self.rm_queue(s)
         left = sum(1 for keys, _t in q if RM.current(keys) is None)
         sub = (f"{left} to rate" if left else "all rated ✓") if q else "nothing yet"
-        row = tk.Frame(parent, bg=P2, cursor="hand2" if q else "", padx=10, pady=3)
+        row = tk.Frame(parent, bg=P2, cursor="hand2" if q else "", padx=8, pady=4)
         row.pack(fill="x")
         name = tk.Label(row, text=label, bg=P2, fg=C["text"] if q else C["muted"], anchor="w", font=("Segoe UI", 9))
         name.pack(side="left")
-        cnt = tk.Label(row, text=sub, bg=P2, fg=C["muted"], anchor="e", font=("Segoe UI", 8))
+        cnt = tk.Label(row, text=sub, bg=P2, fg=C["muted"], anchor="e", font=("Segoe UI", 9))
         cnt.pack(side="right")
         if q:
             for w in (row, name, cnt):

@@ -103,7 +103,7 @@ class FavoritesPage:
         tv.bind("<<TreeviewOpen>>", lambda e: self.fav_group_open(True))
         tv.bind("<<TreeviewClose>>", lambda e: self.fav_group_open(False))
         from .chrome import EmptyState                    # 2.120.0: one empty look everywhere
-        self.fav_empty = EmptyState(lf, "★", "No favorites yet\nPress ☆ Add to favorites on a price check, or paste "
+        self.fav_empty = EmptyState(wrap, "★", "No favorites yet\nPress ☆ Add to favorites on a price check, or paste "
                                               "a trade-site link above.",
                                     button=("Open Price Checks", lambda: self.shell.open("pricecheck")))
         # ---- the card

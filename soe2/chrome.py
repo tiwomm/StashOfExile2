@@ -202,17 +202,17 @@ class EmptyState(tk.Frame):
     everywhere - an icon, what it is (one bold line), what to do (a muted line or two) and at most one button.
     set_text("Title\\nwhat to do") changes the words; place / place_forget as any widget."""
 
-    def __init__(self, parent, icon="", text="", button=None, bg_key="panel"):
+    def __init__(self, parent, icon="", text="", button=None, bg_key="panel", wrap=340):
         from tkinter import ttk
         bg = C[bg_key]
-        super().__init__(parent, bg=bg, padx=24, pady=18, highlightthickness=1, highlightbackground=C["line"])
+        super().__init__(parent, bg=bg, padx=24, pady=16, highlightthickness=1, highlightbackground=C["line"])
         if icon:
             tk.Label(self, text=icon, bg=bg, fg=C["muted"], font=("Segoe UI Symbol", 20)).pack()
-        self.title_lbl = tk.Label(self, text="", bg=bg, fg=C["text"], font=("Segoe UI", 11, "bold"), justify="center",
-                                  wraplength=340)
+        self.title_lbl = tk.Label(self, text="", bg=bg, fg=C["text"], font=("Segoe UI", 12, "bold"), justify="center",
+                                  wraplength=wrap)
         self.title_lbl.pack(pady=(4, 2))
         self.body_lbl = tk.Label(self, text="", bg=bg, fg=C["muted"], font=("Segoe UI", 9), justify="center",
-                                 wraplength=340)
+                                 wraplength=wrap)
         self.body_lbl.pack()
         self.btn = None
         if button:
@@ -229,6 +229,25 @@ class EmptyState(tk.Frame):
             self.body_lbl.pack(after=self.title_lbl)
         elif not rest and self.body_lbl.winfo_manager():
             self.body_lbl.pack_forget()
+
+    def place(self, cnf=None, **kw):
+        """Placed over its parent's other children (a list beside it was drawn later - and covered it)."""
+        super().place(cnf or {}, **kw)
+        self.lift()
+    place_configure = place
+
+    def config(self, cnf=None, **kw):
+        """text= and wraplength= go to the words (so it stands in for a plain Label); the rest to the frame."""
+        if "text" in kw:
+            self.set_text(kw.pop("text"))
+        if "wraplength" in kw:
+            wl = kw.pop("wraplength")
+            self.title_lbl.config(wraplength=wl)
+            self.body_lbl.config(wraplength=wl)
+        if cnf or kw:
+            return super().config(cnf, **kw)
+        return None
+    configure = config
 
     def cget(self, key):
         if key == "text":

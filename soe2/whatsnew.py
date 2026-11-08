@@ -39,6 +39,27 @@ NEXT = [
 MAX_BIG = 3
 
 NOTES = {
+    "2.120.0": {
+        "big": [
+            ("⭐", "Rate Mods has its own page", "Price Checks ↳ Rate Mods: pick an item kind on the left, rate one mod "
+             "at a time on the right (keys S-F, ← →). It was a window that drew badly.", ("Open Rate Mods", "ratemods"),
+             "Price Checks"),
+            ("⚙", "Settings that read faster", "Price checking is in groups, and your price check key is one choice: "
+             "over the game, in the app, or nowhere. Each section says one line; ⓘ has the rest.",
+             ("Open Price checking", "settings:Price checking"), "Settings"),
+            ("🖱", "One choice for the mouse on the overlay", "Drag to move, Locked, or Clicks pass through - in "
+             "Overlay ↳ Settings and Quick settings. Hide from captures is in Settings › Advanced.", ("Open Settings",
+                                                                                                 "ovset"), "Overlay"),
+        ],
+        "small": [
+            ("App", "The status bar says Trade site: ready, or how long to wait. Point at it for the numbers."),
+            ("App", "Empty pages show what goes there and what to do next."),
+            ("App", "Page names in Title Case, one way to write BETA; Labs is called Beta features."),
+            ("Map Library", "Ask me to rank maps is on the Map Library page now."),
+            ("Settings", "The game's window title moved to Settings › Advanced. The clock has one setting, in "
+                         "Appearance."),
+        ],
+    },
     "2.119.0": {
         "big": [
             ("⚙", "Fewer settings to think about", "Pace, Accent color, Text size and two switches nobody needed are "

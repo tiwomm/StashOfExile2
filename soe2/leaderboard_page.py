@@ -75,8 +75,9 @@ class LeaderboardPage:
         kv.pack(fill="both", expand=True)
         kv.bind("<<TreeviewSelect>>", lambda e: self.lb_board_fill())
         from .chrome import EmptyState                    # 2.120.0: one empty look everywhere
-        self.lb_keys_empty = EmptyState(left, "🏆", "No times on this board yet\nRun maps with the overlay's timer "
-                                                   "on, or play the campaign with the Campaign Helper.",
+        self.lb_keys_empty = EmptyState(left, "🏆", wrap=200,
+                                        text="No times on this board yet\nRun maps with the overlay's timer on, or "
+                                             "play the campaign with the Campaign Helper.",
                                         button=("Open the Overlay", lambda: self.shell.open("tracker")))
         self.lb_keys_tv = kv
         right = tk.Frame(split, bg=P1)

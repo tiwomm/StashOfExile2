@@ -852,10 +852,11 @@ class App(SettingsPage, GearBookPage, PriceCheckPage, PricePopup, FavoritesPage,
         self.tree.bind("<<TreeviewSelect>>", lambda e: self.update_mark_buttons(), add="+")   # 2.103.1: lit at once
         self.tree.bind("<Double-1>", lambda e: self.open_trade())
         # 2.63.0: the item shows in the panel on the right - no more pop-up box over the list
-        self.empty_lbl = tk.Label(left, bg=C["panel"], fg=C["muted"], font=("Segoe UI", 12), justify="center",
-                                  text=self.empty_text)
+        from .chrome import EmptyState                    # 2.120.0: one empty look everywhere
+        self.empty_lbl = EmptyState(left, "⚖", self.empty_text)
         self.empty_lbl.place(relx=0.5, rely=0.45, anchor="center")
-        left.bind("<Configure>", lambda e: self.empty_lbl.config(wraplength=max(200, e.width - 40)), add="+")   # 2.98.0
+        left.bind("<Configure>", lambda e: self.empty_lbl.config(wraplength=max(200, min(420, e.width - 80))),
+                  add="+")   # 2.98.0
 
         pw = int(SETTINGS.get("panel_w", 430) or 430)
         if pw < 250:                   # 2.0 beta 22: bring back an item panel that was saved squeezed to nothing
@@ -1149,9 +1150,8 @@ class App(SettingsPage, GearBookPage, PriceCheckPage, PricePopup, FavoritesPage,
             kb.itemconfigure(self.key_upd, state="normal" if fits else "hidden")
         kb.bind("<Configure>", place_scope, add="+")
 
-    EMPTY_TEXT = ("Hover an item in game and press Ctrl+Alt+C\nIt will show up here and get priced.\n\n"
-                  "Tablets, jewels, waystones and gear - weapons, armour, rings, uniques.\n"
-                  "A price the searches can't back up says Price manually.")
+    EMPTY_TEXT = ("Nothing to price yet\nHover an item in game and press Ctrl+Alt+C: it shows up here and gets "
+                  "priced. Tablets, jewels, waystones and gear - weapons, armour, rings, uniques.")
     EMPTY_TEXT_TAB = ("Type your tab's price above and press Read tab:\nevery item on it shows up here and gets priced.\n"
                       "(Ctrl+Alt+C in game still adds items one at a time.)")
 
