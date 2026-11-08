@@ -314,7 +314,7 @@ class OverlayParts:
             lft, rgt = 16, W - 16
         mids = [int(H * (2 * i + 1) / (2 * len(rows))) for i in range(len(rows))]
         f = (P["font"], self._hf(10))
-        self.gb_rows = rows
+        self.goal_rows = rows                               # (2.118.0: was gb_rows - the Gear book has a method of that name)
         if not cfg.get("mlocked"):                    # 2.112.4: a grip to drag it by (see-through styles have nothing
             g = cv.create_text(max(2, lft - self._u(12)), H // 2, text="⠿", anchor="w",   # else solid to grab)
                                fill=P.get("muted", P["text"]), font=("Segoe UI Symbol", self._hf(10)), tags=("mg", "grip"))

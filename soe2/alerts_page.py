@@ -158,7 +158,7 @@ class AlertsPage:
         """The line comes and goes with the count; while it shows, its text follows."""
         try:
             txt = self.ritual_readout()
-            shown = "ritual" in (getattr(self, "gb_rows", None) or []) and getattr(self, "gb_win", None) is not None
+            shown = "ritual" in (getattr(self, "goal_rows", None) or []) and getattr(self, "gb_win", None) is not None
             if bool(txt) != shown:
                 if getattr(self, "mg_win", None) is not None:
                     self.goalbar_build()
