@@ -58,6 +58,9 @@ NOTES = {
             ("Map Library", "Ask me to rank maps is on the Map Library page now."),
             ("Settings", "The game's window title moved to Settings › Advanced. The clock has one setting, in "
                          "Appearance."),
+            ("Price Checks", "An unidentified unique was searched by its base's name, and the trade site said "
+                             "\"unknown item name\". It's searched as the unique on that base now - this should "
+                             "stop it."),
         ],
     },
     "2.119.0": {
