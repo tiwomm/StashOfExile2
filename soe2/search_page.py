@@ -21,7 +21,7 @@ class SearchPage:
         d = gamesearch.load()
         head = tk.Frame(top, bg=P1)
         head.pack(fill="x")
-        tk.Label(head, text="Game search", bg=P1, fg=C["text"], font=(FONT_TITLE, 16, "bold")).pack(side="left")
+        tk.Label(head, text="Game Search", bg=P1, fg=C["text"], font=(FONT_TITLE, 16, "bold")).pack(side="left")
         tk.Label(head, text=f"game data {d['version']} · {len(d['rows']):,} entries", bg=P1, fg=C["muted"],
                  font=("Consolas", 9)).pack(side="left", padx=8, pady=(8, 0))
         row = tk.Frame(top, bg=P1)
@@ -102,7 +102,7 @@ class SearchPage:
             if not txt:
                 return
             m = tk.Menu(widget, tearoff=0, bg=C["panel2"], fg=C["text"], activebackground="#2c4a84")
-            m.add_command(label=f"Look up “{txt[:40]}” in Game search", command=lambda: self.gs_lookup(txt))
+            m.add_command(label=f"Look up “{txt[:40]}” in Game Search", command=lambda: self.gs_lookup(txt))
             m.tk_popup(e.x_root, e.y_root)
         widget.bind("<Button-3>", menu, add="+")
 

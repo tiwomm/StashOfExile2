@@ -276,7 +276,7 @@ class AlertsPage:
                         "Client.txt)",
             "whispers": "Trade Whisper Watcher: a card over the game when someone whispers to buy an item you listed - "
                         "easy to miss in chat while you run the campaign (reads Client.txt; nothing is saved)",
-            "desecrate": "Desecration Helper (Beta): at The Well of Souls each revealed option shows its tier (T1 = best "
+            "desecrate": "Desecration Helper (BETA): at The Well of Souls each revealed option shows its tier (T1 = best "
                          "for that item type) - on only while you're there (reads Client.txt, then your screen)"}
         tests = {"delirium": self.alerts_test_delirium, "breach": lambda: self.breach_alert(test=True),
                  "ritual": self.alerts_test_ritual, "remnant": self.alerts_test_remnant,
@@ -284,7 +284,7 @@ class AlertsPage:
                  "whispers": lambda: self.ww_show_test(), "desecrate": self.alerts_test_desecrate}
         names = {"delirium": "Delirium", "breach": "Breach", "ritual": "Ritual", "remnant": "Expedition",
                  "focus": "League Plan", "campaign": "Campaign", "whispers": "Trade whispers",
-                 "desecrate": "Desecration (Beta)"}
+                 "desecrate": "Desecration (BETA)"}
         # 2.119.0 (UX pass): what each one does, in one grey line under its name (it was only a tooltip)
         blurb = {"delirium": "END DELIRIUM when a map ends with Delirium still on",
                  "breach": "Warns when your stored Hiveblood is almost full",
@@ -304,7 +304,7 @@ class AlertsPage:
         opts = {
             "remnant": [("Island rumours", self.al_rru, lambda: self.ru_changed(self.al_rru.get()),
                          "On the world map's Uncharted Waters card, each rumour gets the island it leads to and your "
-                         "Map library rank for it. Only in your hideout."),
+                         "Map Library rank for it. Only in your hideout."),
                         ("Runeshape tips", self.al_rtips, lambda: self.remnant_tips_changed(self.al_rtips.get()),
                          "A small list next to the prices: the runeshapes players rate best for loot (S and A tier).")],
             "ritual": [("On screen", self.al_rshow, lambda: self.ritual_readout_changed(self.al_rshow.get()),

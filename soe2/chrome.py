@@ -128,10 +128,15 @@ def section(parent, title, note="", bg_key="panel2", padx=16, pady=8, expand=Fal
     vp.pack(fill="both", expand=True)
     inner = tk.Frame(vp.body, bg=C[bg_key], padx=padx, pady=pady)
     inner.pack(fill="both", expand=True)
+    short, more = split_note(note)
     if note:
-        nl = tk.Label(inner, text=note, bg=C[bg_key], fg=C["muted"], font=("Segoe UI", 9), anchor="w", justify="left",
-                      wraplength=600)
+        # 2.120.0 (UX pass 2: walls of text): one short line; the rest of the note in the ⓘ you point at
+        nl = tk.Label(inner, text=short + ("  ⓘ" if more else ""), bg=C[bg_key], fg=C["muted"], font=("Segoe UI", 9),
+                      anchor="w", justify="left", wraplength=600, cursor="question_arrow" if more else "")
         nl.pack(fill="x", pady=(0, 8))
+        if more:
+            from .style import Tooltip
+            Tooltip(nl, note)
         if wrap:                                         # 2.70.0: the note wraps to the section's width (a fixed-size
             def rewrap(e):                               # window only - damped, so it can't feed back on itself)
                 want = min(600, e.width - 4)
@@ -139,7 +144,22 @@ def section(parent, title, note="", bg_key="panel2", padx=16, pady=8, expand=Fal
                     nl.config(wraplength=want)
             nl.bind("<Configure>", rewrap)
     inner.section_outer, outer.section_title, outer.section_bar = outer, title, bar
+    outer.section_note = note                            # (Settings search finds the words in the ⓘ too)
     return outer, inner
+
+
+def split_note(note):
+    """2.120.0: a section's note -> (its first sentence, the rest or ""). A note of one sentence stays whole."""
+    note = (note or "").strip()
+    i = 0
+    while True:
+        i = note.find(". ", i)
+        if i < 0:
+            return note, ""
+        if i >= 3 and note[i - 3:i] in ("e.g", "i.e") or note[i - 1:i].isupper() and (i < 2 or note[i - 2] in " ("):
+            i += 2                                       # (e.g. / an initial - not the end of a sentence)
+            continue
+        return note[:i + 1], note[i + 2:].strip()
 
 
 class Notice(tk.Frame):
@@ -175,3 +195,43 @@ class Notice(tk.Frame):
         self._S.setdefault("notices_closed", {})[self.key] = True
         save_json("settings.json", self._S)
         self.pack_forget()
+
+
+class EmptyState(tk.Frame):
+    """2.120.0 (UX pass 2: empty pages looked broken - grey text far down the page): one look for "nothing here yet"
+    everywhere - an icon, what it is (one bold line), what to do (a muted line or two) and at most one button.
+    set_text("Title\\nwhat to do") changes the words; place / place_forget as any widget."""
+
+    def __init__(self, parent, icon="", text="", button=None, bg_key="panel"):
+        from tkinter import ttk
+        bg = C[bg_key]
+        super().__init__(parent, bg=bg, padx=24, pady=18, highlightthickness=1, highlightbackground=C["line"])
+        if icon:
+            tk.Label(self, text=icon, bg=bg, fg=C["muted"], font=("Segoe UI Symbol", 20)).pack()
+        self.title_lbl = tk.Label(self, text="", bg=bg, fg=C["text"], font=("Segoe UI", 11, "bold"), justify="center",
+                                  wraplength=340)
+        self.title_lbl.pack(pady=(4, 2))
+        self.body_lbl = tk.Label(self, text="", bg=bg, fg=C["muted"], font=("Segoe UI", 9), justify="center",
+                                 wraplength=340)
+        self.body_lbl.pack()
+        self.btn = None
+        if button:
+            self.btn = ttk.Button(self, text=button[0], command=button[1])
+            self.btn.pack(pady=(12, 0))
+        self.set_text(text)
+
+    def set_text(self, text):
+        head, _, rest = str(text or "").partition("\n")
+        self.title_lbl.config(text=head.strip())
+        rest = " ".join(rest.split())
+        self.body_lbl.config(text=rest)
+        if rest and not self.body_lbl.winfo_manager():
+            self.body_lbl.pack(after=self.title_lbl)
+        elif not rest and self.body_lbl.winfo_manager():
+            self.body_lbl.pack_forget()
+
+    def cget(self, key):
+        if key == "text":
+            return (self.title_lbl.cget("text") + ("\n" + self.body_lbl.cget("text")
+                                                   if self.body_lbl.cget("text") else ""))
+        return super().cget(key)

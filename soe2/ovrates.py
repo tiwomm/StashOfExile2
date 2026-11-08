@@ -143,7 +143,7 @@ class OverlayRates:
             self.ovr_cfg().update(x=int(x), y=int(y))
             save_json("settings.json", SETTINGS)
         x, y = self._ovr_spot()
-        w = OverlayWindow(self.root, "Exchange rates", "⇄", (x, y, None, None), palette=P, locked=locked,
+        w = OverlayWindow(self.root, "Exchange Rates", "⇄", (x, y, None, None), palette=P, locked=locked,
                           on_lock=self.overlay_lock, on_close=lambda: self.ovr_toggle(False), on_moved=moved,
                           follow_game=True, resizable=False, no_activate=True)
         w.withdraw()

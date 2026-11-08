@@ -51,7 +51,7 @@ QUICKSTART = [
     ]),
     ("Find your way around", [
         "The bar on the left opens every tool. Each one is its own window: move it, resize it, keep several open.",
-        "Mod book: rate the mods you care about. Regex: build stash searches. Exchange rates: what currency is "
+        "Mod Book: rate the mods you care about. Regex: build stash searches. Exchange Rates: what currency is "
         "worth right now.",
     ]),
     ("While you map", [
@@ -77,9 +77,9 @@ def open_link(url):
 
 # 2.98.3: who we thank, and their GitHub pages (README › Credits says the same)
 CREDITS = (
-    ("RePoE (repoe-fork)", "the game data behind the mod lists, Regex, Game search and tiers - exported from Path of "
+    ("RePoE (repoe-fork)", "the game data behind the mod lists, Regex, Game Search and tiers - exported from Path of "
                            "Exile 2's own files.", "https://github.com/repoe-fork/repoe-fork"),
-    ("poe.ninja (rasmuskl)", "the economy data: Exchange rates, the rates window over the game, Remnant prices and "
+    ("poe.ninja (rasmuskl)", "the economy data: Exchange Rates, the rates window over the game, Remnant prices and "
                              "currency values.", "https://github.com/rasmuskl"),
     ("Exiled Exchange 2 (Kvan7)", "general ideas, and the base types, mod wordings, trade-site stat ids and "
                                   "pseudo-total rules in gamedata.json, from its data files under its MIT license; "

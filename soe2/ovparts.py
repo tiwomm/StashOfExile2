@@ -65,7 +65,7 @@ class OverlayParts:
         where = getattr(self, "_mr_in", None) or getattr(self, "_mr_last", None)
         if where:
             return self.maprank_prompt(where)
-        self._say("Rank a map from the Map library (Overlay ↳ Map library), or click this while you're in one.", 6)
+        self._say("Rank a map from the Map Library (Overlay ↳ Map Library), or click this while you're in one.", 6)
         return None
 
     def maprank_prompt(self, name):
@@ -125,11 +125,11 @@ class OverlayParts:
         if how == "optout":                                  # 2.98.5: no more rank cards (Overlay › Settings brings them back)
             self.tracker_cfg()["rank_ask"] = False
             self.tracker_save()
-            v = getattr(self, "tk_rank_ask", None)
+            v = getattr(self, "ml_rank_ask", None)
             if v is not None:
                 v.set(False)
             self.maprank_close()
-            self._say("No more map rank cards. Turn them back on: Overlay › Settings › Ask me to rank maps.", 8)
+            self._say("No more map rank cards. Turn them back on: Overlay ↳ Map Library › Ask me to rank.", 8)
             return
         if how == "never":
             from .config import SETTINGS, save_json

@@ -131,7 +131,7 @@ class RegexPage:
         hq.pack(side="left", padx=12)
         Tooltip(hq, "Click a mod to select it (click again to remove it). In \"I want\", click its Value to type: 50 = at "
                     "least 50, 50-80 = from 50 to 80, <80 = at most 80. \"I don't want\" leaves items with that mod out.\n"
-                    "★ = valuable in your Mod book (your rules, or learned from prices). Right-click a mod to rate it.")
+                    "★ = valuable in your Mod Book (your rules, or learned from prices). Right-click a mod to rate it.")
         self.rx_info = tk.Label(fbar, text="", bg=P1, fg=C["muted"])
         self.rx_info.pack(side="right")
         flowify(fbar)                                       # 2.109.0: ★ first / Only ★ / Select valuable gone
@@ -483,7 +483,7 @@ class RegexPage:
         for line in m.get("lines") or [m["line"]]:
             k = rule_key(kind, norm(line))
             li = learned_info(k)
-            why = ("your Mod book rule" if k in RULES else "learned from prices" if li and li.get("tier") == "high" else
+            why = ("your Mod Book rule" if k in RULES else "learned from prices" if li and li.get("tier") == "high" else
                    "shared rules" if k in COMMUNITY_ACTIVE else "built-in rule")
             rated.append((impact_key(k), why))
         return max(rated, key=lambda r: order.index(r[0])) if rated else ("normal", "")
@@ -509,7 +509,7 @@ class RegexPage:
         kind = self.rx_kind.get()
         keys = [rule_key(kind, norm(l)) for l in (m.get("lines") or [m["line"]])]
         menu = tk.Menu(self.root, tearoff=0, bg=C["panel2"], fg=C["text"], activebackground="#2c4a84")
-        for label, imp in (("★ Valuable (Mod book: High)", "high"), ("Normal", "normal"), ("Not worth anything (F - ignore)", "ignore")):
+        for label, imp in (("★ Valuable (Mod Book: High)", "high"), ("Normal", "normal"), ("Not worth anything (F - ignore)", "ignore")):
             menu.add_command(label=label, command=lambda i=imp: (self.set_rules(keys, i), self.rx_refresh_values()))
         menu.tk_popup(e.x_root, e.y_root)
 

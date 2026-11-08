@@ -1033,6 +1033,8 @@ class Shell:
             ptitle = self.modules[par].title
             cw.title = f"{ptitle} › {mod.title}"
             cw.bar.itemconfigure(cw.lbl, text=f"{mod.icon}  {ptitle} › {mod.title}")
+            if PAGES:                     # 2.120.0 (UX pass 2): the sidebar lists the children under their parent -
+                continue                  # the same buttons in the page's title bar were a second way to the same place
             b = pw.add_child(f"{mod.icon} {mod.title}", lambda k=mod.key: self.open(k))
             b._mod = mod
         self.paint_children()
@@ -1079,7 +1081,7 @@ class Shell:
     def register(self, mod):
         """Give a module its window and its dock button. -> the window's body (where the module draws)."""
         self.modules[mod.key] = mod
-        title = mod.title + ("  (beta)" if is_beta(mod) else "")
+        title = mod.title + ("  (BETA)" if is_beta(mod) else "")
         win = DeskWindow(self, mod.key, title, mod.icon, utility=mod.kind == "utility")
         win.title = mod.title
         self.windows[mod.key] = win
@@ -1271,13 +1273,14 @@ class Shell:
         if not win:
             return
         if getattr(self.modules[key], "advanced", False) and not self.advanced_on():
-            self.app._say(f"{self.modules[key].title} is an advanced tool: Settings › Advanced › Show Under the hood.", 8)
+            self.app._say(f"{self.modules[key].title} is an advanced tool: Settings › Advanced › Show Under the Hood.", 8)
             return
         if getattr(self.modules[key], "admin_only", False) and not self.admin_on():
             self.app._say(f"{self.modules[key].title} is for community board admins.", 8)
             return
         if not self.visible(self.modules[key]):            # a Labs one while Labs is off
-            self.app._say(f"{self.modules[key].title} is a Labs (beta) feature: turn on Labs in Settings to use it.", 8)
+            self.app._say(f"{self.modules[key].title} is a beta feature: turn on Settings › General › Beta features to "
+                          "use it.", 8)
             return
         if PAGES:                                           # 2.62.0: one page at a time
             for k, w in self.windows.items():

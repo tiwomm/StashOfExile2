@@ -100,7 +100,7 @@ class GearBookPage:
         ns.picker = cb
         tk.Label(bar, text="Filter", bg=P, fg=C["muted"]).pack(side="left", padx=(16, 8))
         ttk.Entry(bar, textvariable=ns.filt, width=18).pack(side="left")
-        ttk.Button(bar, text="Rate mods one at a time…", style="Primary.TButton",
+        ttk.Button(bar, text="Rate mods one at a time ›",
                    command=lambda: self.rm_open(self.gb_set(cat) or None)).pack(side="left", padx=(16, 0))
         tbar = tk.Frame(tab, bg=P, padx=8)
         tbar.pack(fill="x")

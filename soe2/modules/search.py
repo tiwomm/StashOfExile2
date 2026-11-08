@@ -2,7 +2,7 @@ from . import Module
 
 
 class Search(Module):
-    key, title, short, icon, kind = "search", "Game search", "Search", "🔎", "tool"
+    key, title, short, icon, kind = "search", "Game Search", "Search", "🔎", "tool"
     labs = True
     blurb = "Search every skill, support, unique, base, currency, rune, modifier and keyword."
 

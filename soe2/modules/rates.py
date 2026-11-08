@@ -2,7 +2,7 @@ from . import Module
 
 
 class Rates(Module):
-    key, title, short, icon, kind = "rates", "Exchange rates", "Rates", "💱", "tool"
+    key, title, short, icon, kind = "rates", "Exchange Rates", "Rates", "💱", "tool"
     blurb = "What each currency is worth in divines (poe.ninja), and a converter."
 
     def build(self, body):
