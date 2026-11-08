@@ -4,7 +4,7 @@
 
 > **Who we build for - read second.** Path of Exile players are utilitarian: they love data and information, problem solving and creative thinking. So every feature shows its numbers *and how they were worked out*, lets you sort, filter, compare and export them (CSV), keeps power-user depth (keys, versions, raw data) one click away instead of hiding it, explains in plain words, and leaves the decision to the player. Pretty is welcome; vague is not.
 
-**Current version: 2.120.1**
+**Current version: 2.121.0**
 
 Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds features, 2.10.1 only fixes. Each step below is one release; we work through them top to bottom.
 
@@ -182,6 +182,7 @@ Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds f
 | 2.116.0 | P10: one Keys tab (hotkeys + chat commands), overlay style picker with a live preview, Developer options (Debug mode, Unmatched mods), Advanced › Problems; Always on top / tray off for new installs. |
 | 2.117.0 | Errors the app works around go to its log as [caught] (where and the type only, once per place a run); one-time settings changes in one ordered list (soe2/migrations.py); no window work from a background thread (run_bg / on_ui, tools/check_threads.py in Checks); Settings out of app.py (soe2/settings_page.py). |
 | 2.117.1 | Ashen Rite froze the app on some PCs: the desktop's settle step waits for queued layout jobs instead of forcing them (a page laying itself out again never let it return); Ashen Rite uses Georgia (was Sylfaen); a layout loop is logged once a run. |
+| 2.121.0 | Items pass: the trade site's own item list downloaded daily (bases and uniques newer than the game data; unknown unique names never sent; unknown kinds searched by type); tools/check_items.py checks every base and unique. |
 | 2.120.1 | Lock position and Click-through as two switches again (the Mouse choice was confusing); Any Belts (Base type unticked) searches the whole kind; crafted "Modifier magnitudes" lines aren't searched. |
 | 2.120.0 | UX pass 2: Rate Mods its own page (Price Checks ↳ Rate Mods); Settings › Price checking in groups, the price check key one choice; one-line section notes (ⓘ for the rest); one mouse choice for the overlay; Hide from captures and the window title in Advanced, rank maps on the Map Library; a Trade site pill instead of the limit meters; no duplicate title-bar buttons; one orange button a page; Title Case page names, one BETA, Beta features; one empty-state look. |
 | 2.119.0 | UX pass 1: the bar's timer only as wide as itself (rank in the map text on light styles), ⚙ = Quick settings on either click; one line per helper + one Client.txt banner; Expedition always Auto (no chip or key); one name, League Plan; Pace, Accent color, Text size, the start-up screen and "overlay only while the game is in front" switches gone (old settings cleaned once); Notes' text size on the note (A− / A+); rep gone from the privacy text. |
@@ -230,7 +231,8 @@ Order (decided 2026-11-05): the page passes, then the Privacy & data hub, then t
 
 | Step | Plan |
 |---|---|
-| 2.121.0 | **UX pass 3 (code):** dead code out; tools/check_removed.py (a removed feature leaves no text, setting or test behind), soe2/names.py + tools/check_names.py (one name per feature), tools/check_ux.py. |
+| 2.122.0 | **UX pass 3 (code):** dead code out; tools/check_removed.py (a removed feature leaves no text, setting or test behind), soe2/names.py + tools/check_names.py (one name per feature), tools/check_ux.py. |
+| 2.123.0+ | **UX pass round 2** (all 21 approved): paste to price, price spread, Rate ▾ on hover, card closes when the mouse leaves (hold Ctrl), Ctrl+K go to anything (Ctrl+F = this page's search), F1 keys sheet, get-started steps, Exchange Rates search/sort/pin/trend, rank on the Map Library row, one Money Makers filter bar, buttons off until a pick, one Bulk Pricing toolbar row, never color alone, Edit layout mode, hold Alt through Click-through, ↺ Defaults per section, search top left, tips on icon buttons. |
 | Plan | **Tablet Craft Helper + Mod book:** plan merging them into one place. |
 | - | (Responsive part 2 - text size overlaps, sharp DPI - is folded into the page passes; started on branch wip-text-scale.) |
 | Fix | **poe.ninja through our own server** - poe.ninja's API rules ask desktop apps to fetch through their own backend, not from players' PCs (the app fetches exchange rates straight from each PC today). Route it through the Cloudflare worker: one cached fetch an hour for everyone, and poe.ninja never sees players' internet addresses. |

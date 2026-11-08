@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU GPL v3.0 (see LICENSE). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.120.1
+VERSION 2.121.0
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,6 +19,19 @@ VERSION 2.120.1
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.121.0
+       Items pass (feedback: "you have the entire database ... how are we still having issues with unknown items or
+       unknown mods?"). The app's game data (gamedata.json) is built from Exiled Exchange 2's data files - their last
+       update is from 2026-09-06, so a base type or unique newer than that was unknown, and only the mod list was
+       downloaded daily. Now the trade site's own item list (/api/trade2/data/items: every base type and unique it
+       knows) is downloaded once a day as well (engine._load_items, trade_items.json; yesterday's copy at start) and
+       fills the gaps (gamedata.TRADE_ITEMS): a base the game data doesn't know is still read (find_base); the uniques
+       on a base include the trade site's (uniques_on, for unidentified uniques); a unique name the trade site doesn't
+       list is never sent to it ("unknown item name") - any unique on its base instead, with a note; and a kind of
+       item the app doesn't know at all is searched by its type when the trade site lists it (type_only_item) rather
+       than "can't be price checked yet".
+       tools/check_items.py: every base and unique in the game data as a copied item through the reader - its base,
+       class and a search the trade site takes, unidentified too (6114 items, none fail).
   2.120.1
        Feedback: the overlay's "Mouse" choice (Drag to move / Locked / Clicks pass through) was confusing. Back to the
        two names other overlays use, side by side in Overlay ↳ Settings › Options and Quick settings: Lock position
@@ -2910,7 +2923,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.120.1"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.121.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 

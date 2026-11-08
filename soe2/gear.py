@@ -273,14 +273,22 @@ TYPE_ONLY_CLASSES = ("Wombgifts",)
 
 
 def type_only_item(g):
-    """A read_item() result of a TYPE_ONLY_CLASSES item -> a price-check item searched by its type, or None."""
-    if not g or g.get("rarity") != "Currency" or g.get("class_text") not in TYPE_ONLY_CLASSES or not g.get("name"):
+    """A read_item() result of a TYPE_ONLY_CLASSES item -> a price-check item searched by its type, or None.
+    2.121.0 (items pass): also any kind of item the app doesn't know at all (a new item class) whose name is on the
+    trade site's own item list - searched by its type rather than "can't be price checked"."""
+    if not g or not g.get("name"):
+        return None
+    known_type = (not g.get("class") and g.get("rarity") in ("Currency", "Normal")
+                  and g["name"] in gamedata.TRADE_ITEMS["bases"])
+    if not known_type and (g.get("rarity") != "Currency" or g.get("class_text") not in TYPE_ONLY_CLASSES):
         return None
     search = {"category": None, "type": g["name"], "name": None, "rarity": None, "corrupted": False,
               "sockets_min": None}
     return {"class": g["class_text"], "gear": True, "gclass": None, "rarity": "Currency", "name": g["name"],
             "base": g["name"], "mods": [], "uses": None, "corrupted": False, "quality": 0, "sockets": 0,
-            "ilvl": g.get("ilvl"), "group_id": None, "search": search, "notes": ["searched by its type on the trade site"]}
+            "ilvl": g.get("ilvl"), "group_id": None, "search": search,
+            "notes": ["searched by its type on the trade site" + (" (a kind of item the app doesn't know yet)"
+                                                                  if known_type else "")]}
 
 
 def parse_gear(text):
@@ -459,7 +467,13 @@ def parse_gear(text):
               "corrupted": bool(g.get("corrupted")), "sockets_min": None}
     if unique:
         search.update(name=g["name"], type=g["base"], rarity="unique", category=None)
-        if "unidentified" in g.get("flags", []) or not g["name"] or g["name"] == g["base"]:
+        known = gamedata.trade_knows_unique(g["name"])
+        if known is False and g["name"] and g["name"] != g["base"] and "unidentified" not in g.get("flags", []):
+            # 2.121.0 (items pass): a unique the trade site doesn't list (yet) - its name would be refused
+            # ("unknown item name"); any unique on its base instead
+            search["name"] = None
+            notes.append(f"{g['name']} isn't on the trade site's list yet: any unique on this base")
+        elif "unidentified" in g.get("flags", []) or not g["name"] or g["name"] == g["base"]:
             # 2.120.0 (feedback: "unknown item name"): unidentified, a unique shows only its base - that's not a
             # unique's name. The one unique on that base by name; with several (or none known), any unique on it.
             on = gamedata.uniques_on(g["base"])

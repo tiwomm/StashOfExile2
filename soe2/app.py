@@ -173,6 +173,7 @@ class App(SettingsPage, GearBookPage, PriceCheckPage, PricePopup, FavoritesPage,
         _STATUS_HOOK[0] = lambda s: self.ui_q.put(("status", s))
         self.engine = Engine(self.records, self.ui_q)
         gamedata.set_fallback(self.trade_stat_lookup)          # 1.40: learn unknown mod wordings from the trade site
+        gamedata.load_trade_items()                            # 2.121.0: the trade site's item list (yesterday's copy)
         self.toast = Toast(root)
         self.toasts = Toasts(root)                 # 2.35.0: the app's toasts (in-app); self.toast = over the game
         self.sort_col, self.sort_rev = None, False

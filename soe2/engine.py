@@ -177,7 +177,25 @@ class Engine(TabReaderJobs, WealthJobs, StratCostJobs, threading.Thread):
         except Exception as e:
             self.ui_q.put(("error", "init", f"Couldn't download the trade site's mod list ({e}). Check your internet.", None))
         self._load_static()
+        self._load_items()
         self.ui_q.put(("ready",))
+
+    def _load_items(self):
+        """2.121.0 (items pass): the trade site's list of every base type and unique, once a day like the mod list -
+        bases and unique names newer than the game data (gamedata.set_trade_items). Never stops the app."""
+        from . import gamedata as _gd
+        try:
+            cache = P(_gd.TRADE_ITEMS_FILE)
+            if os.path.exists(cache) and time.time() - os.path.getmtime(cache) < 86400:
+                data = load_json(_gd.TRADE_ITEMS_FILE, {})
+            else:
+                STATUS("Downloading the trade site's item list (once a day)...")
+                data = call("GET", BASE + "/data/items")
+                save_json(_gd.TRADE_ITEMS_FILE, data)
+            _gd.set_trade_items(data)
+        except Exception:
+            buglog.caught()
+            _gd.load_trade_items()
 
     def _load_static(self):
         """2.16.0: the trade site's list of currencies (ids for every currency a stash tab can be priced in), once a
