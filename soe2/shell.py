@@ -750,11 +750,16 @@ class Shell:
         self._settle_job = self.root.after(400, self._settle)
 
     def _settle(self):
+        # 2.117.1: not update_idletasks - that runs layout jobs until none are left, and a page that keeps laying
+        # itself out again (Ashen Rite on Windows) never let it return: the app stopped responding. after_idle runs
+        # once the layout jobs already waiting are done, and the window stays responsive whatever the page does.
         self._settle_job = None
         try:
-            self.root.update_idletasks()
+            self.root.after_idle(self._settle_now)
         except tk.TclError:
             return
+
+    def _settle_now(self):
         self._last_place = None
         self._follow()
         try:

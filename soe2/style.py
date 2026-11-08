@@ -283,11 +283,47 @@ def _place_dialog(w, parent=None):
     w.wm_deiconify()
 
 
+LOOP_LIMIT = 150                  # one widget resized this many times within a second = stuck in a layout loop
+_LW = {"t": 0.0, "n": {}, "told": False}
+
+
+def _layout_watch(e):
+    """2.117.1: a widget resized LOOP_LIMIT times within a second is stuck laying itself out again and again (two
+    parts that each resize when the other does - how a theme's font sizes can freeze the app). The first one is
+    written to the app's log once a run: the widget's place in the window and its kind - no text from it."""
+    if _LW["told"]:
+        return
+    try:
+        import time as _t
+        now = _t.monotonic()
+        if now - _LW["t"] > 1.0:
+            _LW["t"], _LW["n"] = now, {}
+        k = str(e.widget)
+        n = _LW["n"][k] = _LW["n"].get(k, 0) + 1
+        if n < LOOP_LIMIT:
+            return
+        _LW["told"] = True
+        kinds, w = [], e.widget
+        while isinstance(w, tk.Misc) and len(kinds) < 8:
+            try:
+                kinds.append(w.winfo_class())
+            except tk.TclError:
+                break
+            w = w.master
+        buglog.record("freeze", "layout loop: a part of a window keeps resizing",
+                      detail=f"{k}\n  kinds: {' < '.join(kinds)}\n  size now: {e.width}x{e.height}\n"
+                             f"  theme: {getattr(getattr(_themes.ST, 'theme', None), 'id', '?')}")
+    except Exception:
+        buglog.caught()
+
+
 def responsive(root):
     """Once, at start: every wrapped Label / ttk Label in the app re-wraps to its width (see _rewrap); 2.98.3: the
-    simple question dialogs (askstring / askinteger) open over the app, on its monitor."""
+    simple question dialogs (askstring / askinteger) open over the app, on its monitor. 2.117.1: a layout loop is
+    logged (_layout_watch)."""
     for cls in ("Label", "TLabel"):
         root.bind_class(cls, "<Configure>", _rewrap, add="+")
+    root.bind_all("<Configure>", _layout_watch, add="+")
     try:
         import tkinter.simpledialog as _sd
         _sd._place_window = _place_dialog
