@@ -64,6 +64,22 @@ class Superseded(Exception):
 class Preempted(Exception):
     """(2.87.0) A Bulk Pricing item steps aside for a Price Checks item; it goes back in line."""
 
+def _game_data_id(text):
+    """2.121.0: a mod the trade site's list didn't match -> the trade-site id the game data gives its wording, or None.
+    (Gear already reads mods this way; tablets, jewels and waystones only used the trade site's list.)"""
+    try:
+        from . import gamedata
+        stat, _neg = gamedata.stat_for(text)
+        if not stat:
+            return None
+        tr = stat.get("trade") or {}
+        ids = tr.get("explicit") or next(iter(tr.values()), [])
+        return ids[0] if ids else None
+    except Exception:
+        buglog.caught()
+        return None
+
+
 class Engine(TabReaderJobs, WealthJobs, StratCostJobs, threading.Thread):
     """One background thread does all network work. Lower priority number = sooner."""
 
@@ -281,6 +297,10 @@ class Engine(TabReaderJobs, WealthJobs, StratCostJobs, threading.Thread):
             return
         for m in item["mods"]:
             m["sid"], m["group"], flipped, info = find_stat(m["text"], m["flags"], self.table, ranged=m["lo"] is not None)
+            if not m["sid"]:                     # 2.121.0 (unmatched_mods.txt: "#% chance to Daze on Hit" on a jewel):
+                gid = _game_data_id(m["text"])   # the game data's wordings know it - their trade-site id
+                if gid:
+                    m["sid"], m["group"], flipped, info = gid, gid.split(".", 1)[0], False, "matched by the game data"
             m["guess"], m["note"] = (None, info) if m["sid"] else (info, None)
             m["key"] = f"{item['base']}|{m['sid']}" if m["sid"] else None
             m["novalue"] = bool(m["sid"] and info and info.startswith("singular wording"))   # no number to filter on

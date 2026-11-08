@@ -50,6 +50,9 @@ NOTES = {
                              "note - instead of \"unknown item name\"."),
             ("Price Checks", "A kind of item the app doesn't know yet is searched by its type when the trade site "
                              "lists it."),
+            ("Price Checks", "\"#% chance to Daze on Hit\" on jewels (and other mods the trade site's list words "
+                             "differently) should be matched now; a corruption's \"{ Enhancement }\" line is never "
+                             "read as a mod."),
         ],
     },
     "2.120.1": {
