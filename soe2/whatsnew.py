@@ -39,6 +39,20 @@ NEXT = [
 MAX_BIG = 3
 
 NOTES = {
+    "2.121.1": {
+        "big": [
+            ("⌨", "Esc closes the price check card", "While the card over the game is open, Esc closes it (the game's "
+             "menu doesn't open). Change the key, or where the price shows, with the card's new ⚙.",
+             ("Open Keys", "settings:Keys"), "Price Checks"),
+            ("🛡", "Community data sharing: mods the app couldn't read", "If you share, the wording of mods your price "
+             "checks couldn't match now goes along (numbers as #, the base type - never the item's name), so they can "
+             "be fixed. Nothing new to turn on.", ("What's shared", "settings:Privacy & community"), "Settings"),
+        ],
+        "small": [
+            ("Settings", "Leave and delete my data also deletes what your install shared anonymously (Mod Book votes, "
+                         "map ranks, campaign zones, unmatched mods)."),
+        ],
+    },
     "2.121.0": {
         "big": [
             ("🔍", "New items are known the day the trade site knows them", "The app now downloads the trade "

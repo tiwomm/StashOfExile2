@@ -12,6 +12,10 @@ Trade site and Open in app sit at the bottom.
 Typing: click into a Min / Max box and the card takes the keyboard (Enter searches again); click back into the
 game and it has the keyboard again.
 
+Close key (2.121.1, feedback): Esc by default, as PoE Overlay closes its dialogs - only while the card is open and the
+game (or the card) is in front, and that press is used up (the game's menu doesn't open). Set it on Settings › Keys or
+with the card's ⚙ (Card settings: the close key, where the price shows, All price check settings…).
+
 Privacy: other players' seller names show as on the app's card (public on the trade site); your own account name
 is never shown here.
 GGG ToS: the key presses the game's copy once (overlay.py, as before); the card only shows what the app found.
@@ -67,8 +71,9 @@ class PricePopup:
         return gx + gw - W0 - 48, gy + int(gh * 0.12), W0, H0       # right of the middle, clear of the bar
 
     def pcpop_close(self):
+        self.pcpop_settings_close()
         w, self.pp_win = getattr(self, "pp_win", None), None
-        self.pp_rid = None
+        self.pp_rid, self.pp_up = None, False
         if w is not None:
             try:
                 w.destroy()
@@ -98,16 +103,172 @@ class PricePopup:
                 save_json("settings.json", SETTINGS)
             w = OverlayWindow(self.root, "Price check", "⚖", self.pcpop_geo(), opacity=255, locked=False,
                               min_size=(320, 260), on_close=self.pcpop_close, on_moved=moved, follow_game=True,
-                              no_activate=False, resizable=True, lockable=False, palette=P)   # (Min / Max: typing)
+                              no_activate=False, resizable=True, lockable=False, palette=P,   # (Min / Max: typing)
+                              extra=[("⚙", self.pcpop_settings_toggle, "Card settings")])
             self.pp_win, self.pp_P = w, P
+            w.bind("<Escape>", lambda _e: self._pcpop_esc(), add="+")    # (the card has the keyboard: Min / Max)
             self._pcpop_frame(w, P)
         self.pcpop_fill(rec)
+        self.pp_up = True                                 # (read by the keyboard watcher: the close key works now)
         w.show()
         try:
             w.lift()
         except tk.TclError:
             pass
         return w
+
+    # ---------------------------------------------------------------- the close key (2.121.1)
+    def pc_close_hotkey(self, vk, ctrl, alt, shift):
+        """Keyboard watcher thread: your close key while the card is open and the game is in front -> close it (the
+        press is used up). Anywhere else the key does its usual job."""
+        if not getattr(self, "pp_up", False):
+            return False
+        from .overlay import parse_key, game_active, POE_TITLE
+        k = parse_key(SETTINGS.get("pc_close_key", "Esc") or "")
+        if not k or k != (vk, ctrl, alt, shift):
+            return False
+        if not game_active((getattr(self, "overlay", None) and self.overlay.cfg.get("poe_title")) or POE_TITLE):
+            return False
+        self.ui_q.put(("pcclose",))
+        return True
+
+    def ev_pcclose(self):
+        if getattr(self, "pcs_win", None) is not None:   # Card settings open: that goes first
+            return self.pcpop_settings_close()
+        self.pcpop_close()
+
+    def _pcpop_esc(self):
+        """Esc while the card itself has the keyboard (typing a Min / Max) - when Esc is your close key."""
+        from .overlay import parse_key
+        if parse_key(SETTINGS.get("pc_close_key", "Esc") or "") == (0x1B, False, False, False):
+            self.ev_pcclose()
+
+    # ---------------------------------------------------------------- ⚙ Card settings (2.121.1)
+    def pcpop_settings_toggle(self):
+        if getattr(self, "pcs_win", None) is not None:
+            return self.pcpop_settings_close()
+        self.pcpop_settings_show()
+
+    def pcpop_settings_close(self, _e=None):
+        w, self.pcs_win = getattr(self, "pcs_win", None), None
+        if w is not None:
+            try:
+                w.destroy()
+            except tk.TclError:
+                pass
+
+    def pcpop_settings_show(self):
+        """A small box under the ⚙, over the game: the close key, where the price shows, All price check settings….
+        Each is the same setting as on Settings (one setting, two doors - as Quick settings on the overlay)."""
+        from .style import KeyCapture, CAPTURING
+        from .settings_page import PC_SHOW
+        self.pcpop_settings_close()
+        card = getattr(self, "pp_win", None)
+        if card is None:
+            return
+        P1, P2 = C["panel"], C["panel2"]
+        w = tk.Toplevel(self.root, bg=C["line"])
+        w.withdraw()
+        w.overrideredirect(True)
+        try:
+            w.attributes("-topmost", True)
+        except tk.TclError:
+            pass
+        self.pcs_win = w
+        box = tk.Frame(w, bg=P1)
+        box.pack(padx=1, pady=1)
+        head = tk.Frame(box, bg=P2, padx=12, pady=8)
+        head.pack(fill="x")
+        tk.Label(head, text="Card settings", bg=P2, fg=C["text"], font=("Segoe UI", 12, "bold")).pack(side="left")
+        x_ = ttk.Button(head, text="✕", width=3, style="Quiet.TButton", command=self.pcpop_settings_close)
+        x_.pack(side="right")
+        from .style import Tooltip
+        Tooltip(x_, "Close")
+        tk.Frame(box, bg=C["accent"], height=2).pack(fill="x")
+        body = tk.Frame(box, bg=P1, padx=12, pady=8)
+        body.pack(fill="x")
+        r = tk.Frame(body, bg=P1)
+        r.pack(fill="x")
+        tk.Label(r, text="Close key", bg=P1, fg=C["text"], font=("Segoe UI", 10)).pack(side="left")
+        self.pcs_key = tk.StringVar(value=SETTINGS.get("pc_close_key", "Esc") or "")
+        KeyCapture(r, self.pcs_key, width=14, on_change=self._pcs_key, allow_esc=True).pack(side="right")
+        tk.Label(body, text="Closes this card. Right-click the box for no key.", bg=P1, fg=C["muted"],
+                 font=("Segoe UI", 9), anchor="w").pack(fill="x", pady=(2, 8))
+        r = tk.Frame(body, bg=P1)
+        r.pack(fill="x")
+        tk.Label(r, text="Price shows", bg=P1, fg=C["text"], font=("Segoe UI", 10)).pack(side="left")
+        self.pcs_show = tk.StringVar(value=PC_SHOW[self.pc_show_get()])
+        cb = ttk.Combobox(r, textvariable=self.pcs_show, values=list(PC_SHOW.values()), state="readonly", width=30)
+        cb.pack(side="right", padx=(12, 0))
+        cb.bind("<<ComboboxSelected>>", lambda _e: self._pcs_show())
+        foot = tk.Frame(box, bg=P1, padx=12, pady=8)
+        foot.pack(fill="x")
+        ttk.Button(foot, text="All price check settings…", command=self._pcs_all).pack(fill="x")
+        w.bind("<Escape>", lambda e: None if CAPTURING[0] is not None else self.pcpop_settings_close())
+        w.update_idletasks()
+        ww, wh = w.winfo_reqwidth(), w.winfo_reqheight()
+        try:
+            cx, cy, cw = card.winfo_rootx(), card.winfo_rooty(), card.winfo_width()
+        except tk.TclError:
+            cx, cy, cw = self.root.winfo_pointerx(), self.root.winfo_pointery(), ww
+        try:
+            from .alerts_page import game_rect
+            g = game_rect()
+        except Exception:
+            g = None
+        if not g:
+            g = (0, 0, self.root.winfo_screenwidth(), self.root.winfo_screenheight())
+        gx, gy, gw, gh = g
+        x = min(max(gx, cx + cw - ww), gx + gw - ww)              # (under the ⚙, on the game's monitor)
+        y = min(cy + 34, gy + gh - wh)
+        w.geometry(f"+{int(x)}+{int(y)}")
+        w.deiconify()
+        try:
+            w.focus_force()
+        except tk.TclError:
+            pass
+        w.bind("<FocusOut>", lambda _e: self.root.after(150, self._pcs_focus_gone))
+
+    def _pcs_focus_gone(self):
+        w = getattr(self, "pcs_win", None)
+        if w is None:
+            return
+        from .style import CAPTURING
+        if CAPTURING[0] is not None:                       # (the key box is waiting for a key)
+            return
+        try:
+            f = str(w.tk.call("focus"))
+        except tk.TclError:
+            f = ""
+        if not f.startswith(str(w)):
+            self.pcpop_settings_close()
+
+    def _pcs_key(self, text):
+        SETTINGS["pc_close_key"] = text
+        save_json("settings.json", SETTINGS)
+        v = (getattr(self, "hk_vars", None) or {}).get("checks:pc_close_key")
+        if v is not None and v.get() != text:
+            v.set(text)
+
+    def _pcs_show(self):
+        """Same as Settings › Price checking › Where the price shows (its box follows)."""
+        var = getattr(self, "pc_show_var", None)
+        if var is None:
+            from .settings_page import PC_SHOW
+            self.pc_show_var = var = tk.StringVar(value=PC_SHOW[self.pc_show_get()])
+        var.set(self.pcs_show.get())
+        self.on_pc_show()
+
+    def _pcs_all(self):
+        self.pcpop_settings_close()
+        try:
+            self.settings_open("Price checking")
+            self.root.deiconify()
+            self.root.lift()
+            self.root.focus_force()
+        except Exception:
+            from . import buglog
+            buglog.caught()
 
     def _pcpop_frame(self, w, P):
         """The scrolling body (its bar in the style's colours) and the button row under it."""

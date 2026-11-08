@@ -10,7 +10,7 @@ import sys
 import tkinter as tk
 
 from . import buglog
-from .style import C
+from .style import C, Tooltip
 from .shell import GradientBar, UTIL_TITLE, TITLE_ON, BORDER_OFF
 
 BAR_H = 22
@@ -360,13 +360,15 @@ class OverlayWindow(tk.Toplevel):
 
     def __init__(self, root, title, icon, geo, *, opacity=230, locked=False, body_bg=BODY_BG, min_size=(140, 60),
                  on_close=None, on_lock=None, on_moved=None, drag_body=False, app_colours=False, lockable=True,
-                 follow_game=False, no_activate=False, resizable=True, titlebar=True, resize_axes="xy", palette=None):
+                 follow_game=False, no_activate=False, resizable=True, titlebar=True, resize_axes="xy", palette=None,
+                 extra=None):
         """geo = (x, y, w, h); w / h None = as big as the content. app_colours: the blue title bar of the app's own
         windows (for small pop-ups of the app) instead of the utility colors (things shown over the game).
         follow_game: only visible while the game (or the window itself) is in front; show() / hide() say whether you want it.
         no_activate: clicking it never takes the keyboard away from the game (for windows you don't type in).
         resizable=False: always the size of its content (2.38.0: the Helpers bar).
-        titlebar=False (2.55.0): no title bar - the Minimal look and the Strip layout draw their own lock and ×."""
+        titlebar=False (2.55.0): no title bar - the Minimal look and the Strip layout draw their own lock and ×.
+        extra (2.121.1): more title bar buttons, [(icon, command, tooltip)], left of × (the price check card's ⚙)."""
         parch = (skinned() or palette is not None) and not app_colours   # 2.43.0 / 2.47.0: a PoE2-style skin
         P = palette or pal()                              # 2.65.0: a layout may bring its own (the Game bar)
         if parch:
@@ -415,7 +417,7 @@ class OverlayWindow(tk.Toplevel):
             from tkinter import font as tkfont
             self._tfont = (P["font"], P["title_size"], "bold")
             need = tkfont.Font(root=root, family=P["font"], size=P["title_size"], weight="bold").measure(title) \
-                + 24 + 22 * (2 if lockable else 1)
+                + 24 + 22 * ((2 if lockable else 1) + len(extra or ()))
             self.bar = tk.Canvas(inner, height=BAR_H + (6 if P.get("plate") else 0), width=need, bg=P["band"],
                                  highlightthickness=0)
         else:
@@ -426,6 +428,10 @@ class OverlayWindow(tk.Toplevel):
         buttons = [("×", self._close, btn_bg if parch else "#7a2a20")]
         if lockable:
             buttons.append(("🔒" if self.locked else "🔓", self._toggle_lock, btn_bg))
+        tips = {0: "Close", 1: "Lock / unlock"} if lockable else {0: "Close"}
+        for txt, cmd, tip in extra or ():
+            tips[len(buttons)] = tip
+            buttons.append((txt, cmd, btn_bg))
         if parch:
             if P.get("texture"):
                 paint_texture(self.bar, seed=3)
@@ -437,18 +443,22 @@ class OverlayWindow(tk.Toplevel):
                 it = self.bar.create_text(0, BAR_H // 2, text=txt, fill=P["muted"], font=("Segoe UI Symbol", 10, "bold"),
                                           anchor="e", tags=(tag,))
                 self.bar.tag_bind(tag, "<Button-1>", lambda e, c=cmd: c())
-                self.bar.tag_bind(tag, "<Enter>", lambda e: self.bar.configure(cursor="hand2"))
-                self.bar.tag_bind(tag, "<Leave>", lambda e: self.bar.configure(cursor="" if self.locked else "fleur"))
+                self.bar.tag_bind(tag, "<Enter>", lambda e, t=tips.get(i, ""): (self.bar.configure(cursor="hand2"),
+                                                                                  self._bar_tip(t)))
+                self.bar.tag_bind(tag, "<Leave>", lambda e: (self.bar.configure(cursor="" if self.locked else "fleur"),
+                                                            self._bar_tip("")))
                 self._btns.append(it)
             self.bar.bind("<Configure>", self._paint_title, add="+")
             self._paint_title()
         else:
             self.bar.create_text(8, BAR_H // 2, text=f"{icon}  {title}", anchor="w", fill=title_fg,
                                  font=("Segoe UI", 9, "bold"))
-            for txt, cmd, bg in buttons:
+            for i, (txt, cmd, bg) in enumerate(buttons):
                 b = tk.Label(self.bar, text=txt, bg=bg, fg=title_fg, font=("Segoe UI", 9, "bold"),
                              width=2, highlightthickness=1, highlightbackground=btn_line, cursor="hand2")
                 b.bind("<Button-1>", lambda e, c=cmd: c())
+                if tips.get(i):
+                    Tooltip(b, tips[i])
                 self._btns.append(self.bar.create_window(0, BAR_H // 2, window=b, anchor="e"))
         self.bar.bind("<Configure>", self._place_btns, add="+")
         if not (parch and P.get("plate")):
@@ -521,6 +531,13 @@ class OverlayWindow(tk.Toplevel):
             buglog.caught()
 
     # ---- title bar buttons
+    def _bar_tip(self, text):
+        """2.121.1: what a title bar button does, shown in the bar while the mouse is on it (icons need words)."""
+        try:
+            self.bar.itemconfigure(self.bar_note_item, text=text or getattr(self, "_note_kept", ""))
+        except (tk.TclError, AttributeError):
+            pass
+
     def _place_btns(self, _e=None):
         if self.bar is None:
             return
@@ -594,7 +611,8 @@ class OverlayWindow(tk.Toplevel):
         except tk.TclError:
             return False
         fits = not text or right - need >= title_end + 12
-        self.bar.itemconfigure(self.bar_note_item, text=text if fits else "")
+        self._note_kept = text if fits else ""
+        self.bar.itemconfigure(self.bar_note_item, text=self._note_kept)
         return fits
 
     def canvas_body(self):

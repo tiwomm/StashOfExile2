@@ -1155,11 +1155,12 @@ class KeyCapture(tk.Label):
 
     TIMEOUT_MS = 15000
 
-    def __init__(self, parent, variable, width=12, on_change=None, **kw):
+    def __init__(self, parent, variable, width=12, on_change=None, allow_esc=False, **kw):
         super().__init__(parent, width=width, anchor="w", padx=8, cursor="hand2", takefocus=1,
                          bg=C["odd"], fg=C["text"], font=("Consolas", 9), highlightthickness=1,
                          highlightbackground=C["line"], highlightcolor=C["accent"], **kw)
         self.var, self.on_change, self.waiting, self._alt = variable, on_change, False, False
+        self.allow_esc = allow_esc          # 2.121.1: a close key may be Esc itself (a click elsewhere gives up)
         self.var.trace_add("write", lambda *a: self.show())
         self.bind("<Button-1>", lambda e: self.start())
         self.bind("<Button-3>", lambda e: self.set(""))
@@ -1222,7 +1223,9 @@ class KeyCapture(tk.Label):
         """A key (or mouse button) from the app's keyboard / mouse watcher, while this box waits (Windows)."""
         if not self.waiting:
             return
-        if vk == 0x1B:
+        if vk == 0x1B and self.allow_esc and not (ctrl or alt or shift):
+            self.set("Esc")
+        elif vk == 0x1B:
             self.stop()
         elif vk in (0x08, 0x2E) and not (ctrl or alt or shift):
             self.set("")
@@ -1253,7 +1256,10 @@ class KeyCapture(tk.Label):
         if e.keysym in _MODS:
             return "break"
         if e.keysym == "Escape":
-            self.stop()
+            if self.allow_esc and not (e.state & 0x5):
+                self.set("Esc")
+            else:
+                self.stop()
             return "break"
         if e.keysym in ("BackSpace", "Delete") and not (e.state & 0x5):
             self.set("")

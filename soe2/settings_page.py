@@ -524,7 +524,8 @@ class SettingsPage:
         tk.Label(w, text="Mods the trade site didn't know", bg=P1, fg=C["accent"], font=("Segoe UI", 12, "bold"),
                  anchor="w").pack(fill="x")
         tk.Label(w, text="Each one can't be searched for. Beside it: the closest trade-site wording (or the item it "
-                         "was on). From unmatched_mods.txt in your data folder.", bg=P1, fg=C["muted"],
+                         "was on). From unmatched_mods.txt in your data folder. With Community data sharing on, "
+                         "the wording (numbers as #) is shared so they can be fixed.", bg=P1, fg=C["muted"],
                  font=("Segoe UI", 9), anchor="w", justify="left", wraplength=640).pack(fill="x", pady=(2, 8))
         f = tk.Frame(w, bg=P1)
         f.pack(fill="both", expand=True)
@@ -907,7 +908,8 @@ class SettingsPage:
             if kid:
                 v = tk.StringVar(value=key)
                 self.hk_vars[kid] = v
-                kc = KeyCapture(f, v, width=16, on_change=lambda t: self.root.after(10, self.save_hotkeys))   # 2.0 beta 16
+                kc = KeyCapture(f, v, width=16, on_change=lambda t: self.root.after(10, self.save_hotkeys),   # 2.0 beta 16
+                                allow_esc=kid == "checks:pc_close_key")
                 kc.grid(row=i, column=1, sticky="w", pady=1)
                 self.hk_rows[kid] = (lab, kc)
                 if what in clash_keys:
