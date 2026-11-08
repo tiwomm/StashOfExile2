@@ -906,6 +906,90 @@ class Tooltip:
             self.win = None
 
 
+class Splitter(tk.Frame):
+    """2.123.4 (feedback: the divider was "janky and slow ... no visible indicator"): a left side you can widen or
+    narrow by dragging a grip you can see (a line with dots that lights up under the mouse). While dragging only a
+    thin guide line moves; the sides are laid out once, when you let go. Splitter(parent, width, lo, keep, on_set);
+    .left and .right are the two sides; sashpos(0[, x]) reads or sets the left width."""
+
+    GRIP = 9
+
+    def __init__(self, parent, width=420, lo=330, keep=300, on_set=None, bg=None, **kw):
+        super().__init__(parent, bg=bg or C["bg"], **kw)
+        self.lo, self.keep, self.on_set, self._want = lo, keep, on_set, int(width)
+        self.left = tk.Frame(self, bg=C["panel2"], width=self._want)
+        self.left.pack_propagate(False)
+        self.left.pack(side="left", fill="y")
+        self.grip = tk.Frame(self, bg=C["panel"], width=self.GRIP, cursor="sb_h_double_arrow")
+        self.grip.pack_propagate(False)
+        self.grip.pack(side="left", fill="y")
+        self._bar = tk.Frame(self.grip, bg=C["gold_dim"], width=1)
+        self._bar.place(relx=0.5, rely=0, relheight=1, anchor="n")
+        self._dots = tk.Label(self.grip, text="⋮\n⋮", bg=C["panel"], fg=C["muted"], font=("Segoe UI", 9),
+                              cursor="sb_h_double_arrow", bd=0, padx=0, pady=0)
+        self._dots.place(relx=0.5, rely=0.5, anchor="center")
+        self.right = tk.Frame(self, bg=C["panel"])
+        self.right.pack(side="left", fill="both", expand=True)
+        self._guide = tk.Frame(self, bg=C["orange"], width=2)
+        self._x0 = None
+        for w in (self.grip, self._dots, self._bar):
+            w.bind("<Enter>", lambda e: self._lit(True), add="+")
+            w.bind("<Leave>", lambda e: self._lit(self._x0 is not None), add="+")
+            w.bind("<ButtonPress-1>", self._press, add="+")
+            w.bind("<B1-Motion>", self._drag, add="+")
+            w.bind("<ButtonRelease-1>", self._release, add="+")
+        Tooltip(self.grip, "Drag to make the item side wider or narrower")
+        Tooltip(self._dots, "Drag to make the item side wider or narrower")
+        self.bind("<Configure>", lambda e: self._clamp_now(), add="+")
+
+    def _lit(self, on):
+        try:
+            self._bar.config(bg=C["orange"] if on else C["gold_dim"])
+            self._dots.config(fg=C["orange"] if on else C["muted"])
+        except tk.TclError:
+            pass
+
+    def clamp(self, x):
+        pw = self.winfo_width()
+        hi = pw - self.keep - self.GRIP if pw > self.lo + self.keep + self.GRIP else max(self.lo, x)
+        return int(max(self.lo, min(x, hi)))
+
+    def _clamp_now(self):
+        x = self.clamp(self._want)
+        if x != int(self.left.cget("width")):
+            self.left.config(width=x)
+
+    def _press(self, e):
+        self._x0 = self.winfo_rootx()
+        self._lit(True)
+        self._guide.place(x=self._want + self.GRIP // 2, y=0, relheight=1)
+        self._guide.lift()
+
+    def _drag(self, e):
+        if self._x0 is None:
+            return
+        x = self.clamp(e.x_root - self._x0)
+        self._guide.place_configure(x=x + self.GRIP // 2)
+
+    def _release(self, e):
+        if self._x0 is None:
+            return
+        x = self.clamp(e.x_root - self._x0)
+        self._x0 = None
+        self._guide.place_forget()
+        self._lit(False)
+        self.sashpos(0, x)
+        if self.on_set:
+            self.on_set(self._want)
+
+    def sashpos(self, _i=0, x=None):
+        if x is None:
+            return int(self.left.cget("width"))
+        self._want = self.clamp(int(x))
+        self.left.config(width=self._want)
+        return self._want
+
+
 class SegBar(tk.Frame):
     """A row of joined toggle buttons (2.0 beta 7), like  [ Total | Daily ].  One is picked at a time; the picked one is
     lit with an orange line under it. command(value) is called when you pick another."""
