@@ -16,7 +16,7 @@ from .style import C, MONO, SegBook, KeyCapture, Tooltip
 from .chrome import section as chrome_section
 
 
-PC_SHOW = {"over": "Over the game (a card)", "both": "Both (the card, and the app shows it too)",
+PC_SHOW = {"both": "Overlay + Here (a card over the game, and the app)",      # 2.123.3: no card-only choice
            "front": "In the app (it comes to the front)",
            "behind": "In the app (it stays behind the game)", "off": "Nowhere (the key does nothing)"}
 
@@ -171,7 +171,7 @@ class SettingsPage:
         if not SETTINGS.get("pc_ctrl_c", True):
             return "off"
         if SETTINGS.get("pc_popup", False):
-            return "both" if SETTINGS.get("pc_both") else "over"      # 2.123.2: Both
+            return "both"                                  # 2.123.3: the card always comes with the app
         return "front" if SETTINGS.get("pc_front", True) else "behind"
 
     def on_pc_show(self):
@@ -183,7 +183,7 @@ class SettingsPage:
         SETTINGS["pc_ctrl_c"] = k != "off"
         if k != "off":
             SETTINGS["pc_popup"] = k in ("over", "both")
-            SETTINGS["pc_both"] = k == "both"
+            SETTINGS["pc_both"] = SETTINGS["pc_popup"]       # 2.123.3: Overlay + Here
             if k not in ("over", "both"):
                 SETTINGS["pc_front"] = k == "front"
         save_json("settings.json", SETTINGS)

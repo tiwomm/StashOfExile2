@@ -227,13 +227,16 @@ class PriceCheckPage:
         self._pc_where_row(body)                     # 2.122.0: what your price check key does - first, full width
         self._pc_recent_row(body)                    # 2.123.0 (p6): Recent as chips (was a table under the card)
         self._pc_verdict_row(body)                   # 2.123.0 (p4): the price, how sure, why - once, across the top
-        wrap = tk.Frame(body, bg=P2)
+        # 2.123.3 (feedback: "too wide ... allow a person to resize its horizontal width"): the item and the listings
+        # share a divider you drag; its place is remembered (pc_card_w)
+        wrap = ttk.PanedWindow(body, orient="horizontal")
         self.limit_banner(body, wrap)                # 2.103.3: the "Staying under the limits" line
         wrap.pack(fill="both", expand=True)
-        # ---- the item card's filters (scrolls) - 2.123.0 (p5): about 40% of the page, one line per mod
-        left = tk.Frame(wrap, bg=P2, width=460)
-        left.pack(side="left", fill="y")
+        self.pc_pane = wrap
+        cw = max(330, int(SETTINGS.get("pc_card_w", 420) or 420))
+        left = tk.Frame(wrap, bg=P2, width=cw)
         left.pack_propagate(False)
+        wrap.add(left, weight=0)
         top = tk.Frame(left, bg=P2, padx=12, pady=4)
         top.pack(fill="x")
         self.pc_hist_var = tk.StringVar()                    # (the old dropdown: kept for its callers, never shown)
@@ -242,7 +245,7 @@ class PriceCheckPage:
         self.pc_lcanvas, self.pc_left = self._pc_scroller(left, padx=12)
         # ---- right: the listings
         right = tk.Frame(wrap, bg=C["panel"])
-        right.pack(side="left", fill="both", expand=True)
+        wrap.add(right, weight=1)
         head = tk.Frame(right, bg=C["panel"], padx=12, pady=8)
         head.pack(fill="x")
         self.pc_count_lbl = tk.Label(head, text="", bg=C["panel"], fg=C["text"], font=("Segoe UI", 10, "bold"))
@@ -252,7 +255,9 @@ class PriceCheckPage:
                           self.pc_open_btn)
         self.pcv.redraw = lambda: self.pc_draw_list(self.records.get(self.pc_rid))
         self.pcv.recard = lambda: self.pc_show(self.records.get(self.pc_rid))
-        self.pcv_fit(self.pcv, wrap, left, lo=460, share=0.40, hi=720)
+        self.pcv_fit(self.pcv, wrap, None)               # (2.123.3: no fixed share - the divider decides)
+        wrap.bind("<ButtonRelease-1>", lambda e: self.root.after(50, self._pc_pane_saved), add="+")
+        self.root.after(200, lambda: self._pc_pane_set(cw))
         self.pc_refresh_hist()
         recs = self.pc_recs()
         self.pc_show(recs[0] if recs else None)
@@ -260,7 +265,7 @@ class PriceCheckPage:
     # 2.122.0 (feedback: "Show over the game" was unclear and "randomly thrown in the top right"): one row across the
     # top of the page says what your price check key does and lets you pick where the price shows - the same setting
     # as Settings › Price checking › Where the price shows and the card's ⚙.
-    PC_WHERE = ("Here", "Overlay", "Both")     # 2.123.0 (feedback: shorter); 2.123.2: Both = the card and the app
+    PC_WHERE = ("Here", "Overlay + Here")      # 2.123.3 (feedback): the card always comes with the app (was Overlay / Both)
 
     def _pc_where_row(self, body):
         from .style import SegBar, Tooltip
@@ -274,10 +279,10 @@ class PriceCheckPage:
         tip = tk.Label(row, text="ⓘ", bg=C["panel"], fg=C["muted"], font=("Segoe UI", 10), cursor="question_arrow")
         tip.pack(side="left", padx=(8, 0))
         Tooltip(tip, "Here: the app comes to the front with the price (Settings › Price checking can keep it "
-                     "behind the game). Overlay: a small card opens over the game with the price, the "
-                     "mods searched and the cheapest listings - drag and resize it, Esc closes it, its ⚙ has its "
-                     "settings. Both: the card over the game, and the app shows the item too without taking the "
-                     "keyboard from the game (handy on a second monitor). Every check is kept in Recent here.")
+                     "behind the game). Overlay + Here: a small card opens over the game with the price, the mods "
+                     "searched and the cheapest listings (drag and resize it, Esc closes it, its ⚙ has its "
+                     "settings), and the app shows the item too without taking the keyboard from the game. Every "
+                     "check is kept in Recent here.")
         self.pc_where_note = tk.Label(row, text="", bg=C["panel"], fg=C["muted"], font=("Segoe UI", 9))
         self.pc_where_note.pack(side="left", padx=(8, 0))
         gear = tk.Label(row, text="⚙", bg=C["panel"], fg=C["accent"], cursor="hand2", font=("Segoe UI Symbol", 10))
@@ -292,15 +297,15 @@ class PriceCheckPage:
         try:
             self.pc_where_lbl.config(text=f"When you press {pc_key_label()} on an item in game, show the price")
             k = self.pc_show_get()
-            self.pc_where.pick({"over": "Overlay", "both": "Both"}.get(k, "Here"), notify=False)
+            self.pc_where.pick("Overlay + Here" if k in ("over", "both") else "Here", notify=False)
             self.pc_where_note.config(text={"off": "· the key is off (Settings › Price checking)",
                                             "behind": "· the app stays behind the game"}.get(k, ""))
         except (AttributeError, tk.TclError):
             pass
 
     def _pc_where_pick(self, label):
-        if label in ("Overlay", "Both"):
-            self.pc_show_set("over" if label == "Overlay" else "both")
+        if label == "Overlay + Here":
+            self.pc_show_set("both")
         else:
             self.pc_show_set("front" if SETTINGS.get("pc_front", True) else "behind")   # (in front or behind: kept)
 
@@ -491,9 +496,30 @@ class PriceCheckPage:
                 state["list"] = e.width
                 if not first and v.cards:
                     later("list")
-        page.bind("<Configure>", page_cfg, add="+")
+        if side is not None:
+            page.bind("<Configure>", page_cfg, add="+")
         v.lcanvas.bind("<Configure>", card_cfg, add="+")
         v.rcanvas.bind("<Configure>", list_cfg, add="+")
+
+    def _pc_pane_set(self, w):
+        try:
+            if self.pc_pane.winfo_width() > w + 200:
+                self.pc_pane.sashpos(0, w)
+        except (tk.TclError, AttributeError):
+            pass
+
+    def _pc_pane_saved(self):
+        """The divider was let go: keep the item side between 330 px and all but 300 px of the page, and remember it."""
+        try:
+            pw, x = self.pc_pane.winfo_width(), self.pc_pane.sashpos(0)
+            x2 = max(330, min(x, pw - 300)) if pw > 700 else x
+            if x2 != x:
+                self.pc_pane.sashpos(0, x2)
+            SETTINGS["pc_card_w"] = int(x2)
+            from .config import save_json
+            save_json("settings.json", SETTINGS)
+        except (tk.TclError, AttributeError):
+            pass
 
     def pcv_wrap(self, v):
         """The card's text width: what its side has (2.97.0; was a fixed 330)."""
@@ -598,7 +624,7 @@ class PriceCheckPage:
                 self.pcpop_show(self.records[rid])
             except Exception:
                 self.log_error("the price check card over the game")
-            if SETTINGS.get("pc_both"):                  # 2.123.2: Both - the app shows it too, without taking
+            if True:                                     # 2.123.3: Overlay + Here - the app shows it too, without taking
                 try:                                     # the keyboard from the game (the card stays up)
                     import sys as _sys
                     if _sys.platform == "win32":
