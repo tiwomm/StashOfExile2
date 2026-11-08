@@ -36,32 +36,12 @@ class SettingsPage:
             cb.bind("<<ComboboxSelected>>", lambda e: (cmd(), self.root.after(20, self.root.focus_set)))
             return cb
 
-        # 2.120.0 (UX pass 2, feedback: like settings together): three groups - the price check key, which prices,
-        # Bulk Pricing - then fine tuning. Ctrl+D's four switches in two sections (Over the game, It opens Price Checks,
-        # Bring the app to the front) are one choice now; Pictures stays a switch.
-        self.settings_group("Price checking", "PRICE CHECK KEY", top=True)
-        row = section("Price checking", "Where the price shows", "Hover an item in game and press your price check "
-                                                                  "key (set it on Keys). Ctrl+Alt+C adds it to Bulk "
-                                                                  "Pricing instead. Over the game, the card takes the "
-                                                                  "overlay's Style; drag and resize it - it remembers. "
-                                                                  "Price Checks still gets every item.")
-        self.pc_set_vars = getattr(self, "pc_set_vars", None) or {}
-        self.pc_set_vars["pc_popup"] = self.pc_pop_var()
-        from .overlay import key_label
-        tk.Label(row, text=f"{key_label(SETTINGS.get('pc_key') or 'Ctrl+D')} shows it", **lab).pack(side="left",
-                                                                                                   padx=(0, 8))
-        self.pc_show_var = tk.StringVar(value=PC_SHOW[self.pc_show_get()])
-        cb = combo(row, self.pc_show_var, list(PC_SHOW.values()), self.on_pc_show, 30)
-        cb.pack(side="left")
-        self.pc_set_vars["pc_show"] = self.pc_show_var
-        self.pc_pop_var().trace_add("write", lambda *_a: self.root.after_idle(       # (once Price Checks' own switch
-            lambda: self.pc_show_var.set(PC_SHOW[self.pc_show_get()])))              # has saved it)
-        v = tk.BooleanVar(value=bool(SETTINGS.get("pc_art", True)))
-        self.pc_set_vars["pc_art"] = v
-        ttk.Checkbutton(row, text="Show the items' pictures", variable=v, style="Card.TCheckbutton",
-                        command=lambda: (SETTINGS.__setitem__("pc_art", bool(v.get())),
-                                         save_json("settings.json", SETTINGS))).pack(side="left", padx=(16, 0))
-        self.settings_group("Price checking", "WHICH PRICES")
+        # 2.123.0 (UX pass 3, p1, feedback: "settings that apply globally for price checks vs settings for bulk price
+        # checks vs settings that are for regular price checks"): three groups, each saying which pages it changes.
+        # What isn't price checking moved out (Account -> General; Fine tuning's rows went to their group).
+        PC, BP, CARD = "Price Checks", "Bulk Pricing", "Card over the game"
+        self.set_anchors["pc_all"] = self.settings_group("Price checking", "ALL PRICE CHECKS", top=True,
+                                                         used=(PC, BP, CARD))
         row = section("Price checking", "Listings to price from", "Which trade listings count. Older listings are often "
                                                                    "stale or from players who are gone. New items use a "
                                                                    "change at once; Re-price all refreshes the rest.")
@@ -73,39 +53,116 @@ class SettingsPage:
                                                   "Wealth, Market Insights, the timer).")
         tk.Label(row, text="Prices in", **lab).pack(side="left", padx=(0, 8))
         combo(row, self.unit_var, [t for _k, t in PRICE_UNITS], self.on_price_unit, 22).pack(side="left")
-        ttk.Checkbutton(row, text="Copy an item's name when I click it", variable=self.copy_var,
-                        command=self.on_toggles).pack(side="left", padx=(16, 0))
-        row = section("Price checking", "Valuable items", "A mod is valuable when the cheapest listings with it cost "
-                                                           "at least this much. Valuable items are green in the list, and "
-                                                           "can play a sound when they're priced.")
+        row = section("Price checking", "Valuable mods", "A mod is valuable when the cheapest listings with it cost "
+                                                         "at least this much. Valuable items are marked ★ and green.")
         tk.Label(row, text="Valuable mod from", **lab).pack(side="left", padx=(0, 8))
         sp = ttk.Spinbox(row, from_=0.05, to=500, increment=0.25, width=6, textvariable=self.good_var, command=self.on_good)
         sp.pack(side="left")
         sp.bind("<Return>", lambda e: self.on_good())
         sp.bind("<FocusOut>", lambda e: self.on_good())
-        tk.Label(row, text="div", **lab).pack(side="left", padx=(4, 16))
-        ttk.Checkbutton(row, text="Sound", variable=self.snd_var, command=self.on_toggles).pack(side="left")
-        self.settings_group("Price checking", "BULK PRICING (CTRL+ALT+C)")
+        tk.Label(row, text="div", **lab).pack(side="left", padx=(4, 0))
+        row = section("Price checking", "How searches are made", "How close to your item's rolls a search asks for, "
+                                                                  "and how many listings a price needs.")
+        self.build_fine_tuning(row, keys=("range_factor", "min_results", "spread_warn"))
+        row = section("Price checking", "Mod Book", "What the app learns about mods by itself, from the listings your "
+                                                    "searches see.")
+        self.build_fine_tuning(row, keys=("learn", "stale_days"), defaults=False)
+
+        from .overlay import key_label
+        pck = key_label(SETTINGS.get("pc_key") or "Ctrl+D")
+        self.set_anchors["pc_single"] = self.settings_group("Price checking", f"SINGLE PRICE CHECKS ({pck.upper()})",
+                                                            used=(PC, CARD))
+        row = section("Price checking", "Where the price shows", "Hover an item in game and press your price check "
+                                                                  "key (set it on Keys). Over the game, the card takes "
+                                                                  "the overlay's Style; drag and resize it - it "
+                                                                  "remembers. Price Checks still gets every item.")
+        self.pc_set_vars = getattr(self, "pc_set_vars", None) or {}
+        self.pc_set_vars["pc_popup"] = self.pc_pop_var()
+        tk.Label(row, text=f"{pck} shows it", **lab).pack(side="left", padx=(0, 8))
+        self.pc_show_var = tk.StringVar(value=PC_SHOW[self.pc_show_get()])
+        cb = combo(row, self.pc_show_var, list(PC_SHOW.values()), self.on_pc_show, 30)
+        cb.pack(side="left")
+        self.pc_set_vars["pc_show"] = self.pc_show_var
+        self.pc_pop_var().trace_add("write", lambda *_a: self.root.after_idle(       # (once Price Checks' own switch
+            lambda: self.pc_show_var.set(PC_SHOW[self.pc_show_get()])))              # has saved it)
+        v = tk.BooleanVar(value=bool(SETTINGS.get("pc_art", True)))
+        self.pc_set_vars["pc_art"] = v
+        ttk.Checkbutton(row, text="Show the items' pictures", variable=v, style="Card.TCheckbutton",
+                        command=lambda: (SETTINGS.__setitem__("pc_art", bool(v.get())),
+                                         save_json("settings.json", SETTINGS))).pack(side="left", padx=(16, 0))
+        row = section("Price checking", "Card over the game", "Its close key is set on Keys, with every other key.")
+        self.pc_close_lbl = tk.Label(row, text="", **lab)
+        self.pc_close_lbl.pack(side="left")
+        go = tk.Label(row, text="Change on Keys ›", bg=P2, fg=C["accent"], cursor="hand2", font=("Segoe UI", 9, "underline"))
+        go.pack(side="left", padx=(12, 0))
+        go.bind("<Button-1>", lambda e: self.hotkeys_open("checks:pc_close_key"))
+        self._pc_close_text()
+
+        self.set_anchors["pc_bulk"] = self.settings_group("Price checking", "BULK PRICING (CTRL+ALT+C)", used=(BP,))
         row = section("Price checking", "Skip cheap items", "Bulk Pricing doesn't search an item when every mod it would "
                                                           "search sells for under this in the Mod Book's own data and "
                                                           "none is rated High. With only a few listings to go on it's "
                                                           "marked \"check by hand\" instead; Price Checks always search.")
         self.build_floor_settings(row)                                                           # 2.96.0
-        row = section("Price checking", "Account", "Your account name as the trade site shows it, like Name#1234. Read "
-                                                   "tab (Stash tab) and Wealth use it to find your public tabs.")
+        row = section("Price checking", "The list", "What happens in Bulk Pricing's list as items are priced.")
+        ttk.Checkbutton(row, text="Play a sound when a valuable item is priced", variable=self.snd_var,
+                        command=self.on_toggles).pack(side="left")
+        ttk.Checkbutton(row, text="Copy an item's name when I click it", variable=self.copy_var,
+                        command=self.on_toggles).pack(side="left", padx=(16, 0))
+        row = section("Price checking", "Copy marker", "After Ctrl+Alt+C, a small + shows where your mouse was, so you "
+                                                       "can see which items you've already copied. It only draws on the "
+                                                       "screen: nothing is sent to the game.")
+        self.mark_var = tk.BooleanVar(value=SETTINGS.get("copy_marker", True))
+        ttk.Checkbutton(row, text="Mark where I pressed Ctrl+Alt+C", variable=self.mark_var,
+                        command=self.on_copy_marker).pack(side="left")
+        tk.Label(row, text="for", **lab).pack(side="left", padx=(16, 4))
+        self.mark_secs = tk.StringVar(value=str(SETTINGS.get("copy_marker_secs", 10)))
+        sp = ttk.Spinbox(row, from_=1, to=600, textvariable=self.mark_secs, width=5, command=self.on_copy_marker)
+        sp.pack(side="left")
+        sp.bind("<FocusOut>", lambda e: self.on_copy_marker())
+        tk.Label(row, text="seconds", **lab).pack(side="left", padx=(4, 16))
+        self.mark_hold = tk.BooleanVar(value=bool(SETTINGS.get("copy_marker_hold")))
+        ttk.Checkbutton(row, text="Keep them until I double-tap Esc", variable=self.mark_hold,
+                        command=self.on_copy_marker).pack(side="left")
+        row = section("Price checking", "Shortcuts", "Ways Bulk Pricing can skip a search. Both are careful: off until "
+                                                     "you turn them on.")
+        self.set_anchors["fine"] = row.master
+        self.build_fine_tuning(row, keys=("memory_shortcut", "model_shortcut"), defaults=False)
+
+    def _pc_close_text(self):
+        from .overlay import key_label
+        try:
+            k = SETTINGS.get("pc_close_key", "Esc")
+            self.pc_close_lbl.config(text=f"Close the card with {key_label(k)}" if k else "The card has no close key")
+        except (AttributeError, tk.TclError):
+            pass
+
+    def build_account_settings(self, section):
+        """2.123.0 (p2): from Price checking - Stash tab and Wealth use it, not price checks."""
+        lab = dict(bg=C["panel2"], fg=C["text"])
+        row = section("General", "Your account", "Your account name as the trade site shows it, like Name#1234. Read "
+                                                 "tab (Stash tab) and Wealth use it to find your public tabs.")
         self.set_anchors["account"] = row.master
         tk.Label(row, text="Account", **lab).pack(side="left", padx=(0, 8))
         e = ttk.Entry(row, textvariable=self.acc_var, width=26)
         e.pack(side="left")
         e.bind("<Return>", lambda ev: self.root.focus_set())
 
-    def settings_group(self, page, text, top=False):
+    def settings_group(self, page, text, top=False, used=()):
         """2.120.0 (UX pass 2: hierarchy): a group title over the sections that belong together - brighter and bigger
-        than a section's note, with a rule to the edge, so a long tab reads as a few groups. -> the frame."""
-        f = tk.Frame(self.settings_pages[page][1], bg=C["panel"])
+        than a section's note, with a rule to the edge, so a long tab reads as a few groups. -> the frame.
+        used (2.123.0): the pages its settings change, as chips after the title ("Changes: Price Checks · ...")."""
+        f = tk.Frame(self.settings_pages[page][1], bg=C["panel"], highlightthickness=1,
+                     highlightbackground=C["panel"])
         f.pack(fill="x", pady=((2 if top else 14), 6))
         tk.Label(f, text=text, bg=C["panel"], fg=C["text"], font=("Segoe UI", 10, "bold"), anchor="w").pack(side="left")
+        if used:
+            tk.Label(f, text="changes", bg=C["panel"], fg=C["muted"], font=("Segoe UI", 9)).pack(side="left", padx=(12, 4))
+            for u in used:
+                tk.Label(f, text=u, bg=C["panel2"], fg=C["text"], font=("Segoe UI", 9), padx=8, pady=1,
+                         highlightthickness=1, highlightbackground=C["line"]).pack(side="left", padx=(0, 4))
         tk.Frame(f, bg=C["line"], height=1).pack(side="left", fill="x", expand=True, padx=(8, 0))
+        f.section_title = text                              # (settings_open lights the group's title row)
         return f
 
     def pc_show_get(self):
@@ -231,21 +288,6 @@ class SettingsPage:
         self.build_pc_settings(section)                          # 2.59.0: Settings › Price checking
         # (2.98.3, feedback: Settings › Tools › Exchange rates is gone - "Check for new rates every hour" sits on the
         # Exchange rates page, by Refresh now)
-        row = section("Price checking", "Copy marker", "After Ctrl+Alt+C, a small + shows where your mouse was, so you can "
-                                                "see which items you've already copied. It only draws on the screen: "
-                                                "nothing is sent to the game.")
-        self.mark_var = tk.BooleanVar(value=SETTINGS.get("copy_marker", True))
-        ttk.Checkbutton(row, text="Mark where I pressed Ctrl+Alt+C", variable=self.mark_var,
-                        command=self.on_copy_marker).pack(side="left")
-        tk.Label(row, text="for", bg=P2, fg=C["text"]).pack(side="left", padx=(16, 4))
-        self.mark_secs = tk.StringVar(value=str(SETTINGS.get("copy_marker_secs", 10)))
-        sp = ttk.Spinbox(row, from_=1, to=600, textvariable=self.mark_secs, width=5, command=self.on_copy_marker)
-        sp.pack(side="left")
-        sp.bind("<FocusOut>", lambda e: self.on_copy_marker())
-        tk.Label(row, text="seconds", bg=P2, fg=C["text"]).pack(side="left", padx=(4, 16))
-        self.mark_hold = tk.BooleanVar(value=bool(SETTINGS.get("copy_marker_hold")))
-        ttk.Checkbutton(row, text="Keep them until I double-tap Esc", variable=self.mark_hold,
-                        command=self.on_copy_marker).pack(side="left")
         # (2.58.0: its color follows the overlay style - Settings › Appearance; it had its own color box here)
 
         # ======== General
@@ -257,6 +299,7 @@ class SettingsPage:
         self.league_box.pack(side="left")
         self.league_box.bind("<<ComboboxSelected>>", self.on_league)
         self.league_box.bind("<<ComboboxSelected>>", lambda e: self.root.after(20, self.root.focus_set), add="+")
+        self.build_account_settings(section)                     # 2.123.0 (p2): was Price checking › Account
 
         # 2.59.0: the game - its log file (was a right-click in the Session timer) and window title (was in Chat commands)
         row = section("General", "Game log", "Client.txt is the game's own log file: the timer counts maps from it, "
@@ -386,11 +429,6 @@ class SettingsPage:
 
         # ======== Advanced
         # 2.59.0: settings that had no place in the app (only in settings.json)
-        self.settings_group("Price checking", "FINE TUNING")
-        row = section("Price checking", "Advanced fine tuning", "Settings most players never touch. Each one saves at once; Defaults "
-                                                 "puts all of them back.")
-        self.set_anchors["fine"] = row.master
-        self.build_fine_tuning(row, keys=[f[0] for f in self.FINE if f[0] not in self.FINE_WINDOW])
         # 2.120.0 (UX pass 2: settings most players never need, in one place): the game's window title (was General ›
         # Game) and Hide from screen captures (was Overlay ↳ Settings › Options and Quick settings)
         row = section("Advanced", "Over the game", "The overlay and the in-game keys work only while the window with "
@@ -987,7 +1025,7 @@ class SettingsPage:
         self.overlay.rebind()
         self.overlay.save_settings()
         save_json("settings.json", SETTINGS)
-        for refresh in ("_tk_keys_text", "_rx_key_text", "_chat_keys_text", "_pc_key_text"):
+        for refresh in ("_tk_keys_text", "_rx_key_text", "_chat_keys_text", "_pc_key_text", "_pc_close_text"):
             if hasattr(self, refresh):                             # 2.57.0: the places that show a key
                 try:
                     getattr(self, refresh)()
