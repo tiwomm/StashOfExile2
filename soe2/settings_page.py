@@ -16,7 +16,8 @@ from .style import C, MONO, SegBook, KeyCapture, Tooltip
 from .chrome import section as chrome_section
 
 
-PC_SHOW = {"over": "Over the game (a card)", "front": "In the app (it comes to the front)",
+PC_SHOW = {"over": "Over the game (a card)", "both": "Both (the card, and the app shows it too)",
+           "front": "In the app (it comes to the front)",
            "behind": "In the app (it stays behind the game)", "off": "Nowhere (the key does nothing)"}
 
 
@@ -170,7 +171,7 @@ class SettingsPage:
         if not SETTINGS.get("pc_ctrl_c", True):
             return "off"
         if SETTINGS.get("pc_popup", False):
-            return "over"
+            return "both" if SETTINGS.get("pc_both") else "over"      # 2.123.2: Both
         return "front" if SETTINGS.get("pc_front", True) else "behind"
 
     def on_pc_show(self):
@@ -181,8 +182,9 @@ class SettingsPage:
         Price Checks row and the card's ⚙ all set it here and follow it."""
         SETTINGS["pc_ctrl_c"] = k != "off"
         if k != "off":
-            SETTINGS["pc_popup"] = k == "over"
-            if k != "over":
+            SETTINGS["pc_popup"] = k in ("over", "both")
+            SETTINGS["pc_both"] = k == "both"
+            if k not in ("over", "both"):
                 SETTINGS["pc_front"] = k == "front"
         save_json("settings.json", SETTINGS)
         if bool(self.pc_pop_var().get()) != bool(SETTINGS.get("pc_popup")):

@@ -39,6 +39,16 @@ NEXT = [
 MAX_BIG = 3
 
 NOTES = {
+    "2.123.2": {
+        "big": [
+            ("⚖", "Here | Overlay | Both", "Your price check key can show the price in the app, in a card over the "
+             "game, or both at once (the app shows it without taking the keyboard from the game).",
+             ("Open Price Checks", "pricecheck"), "Price Checks"),
+        ],
+        "small": [
+            ("Price Checks", "Search again, Clear, Add to favorites and Trade Site are under the item again."),
+        ],
+    },
     "2.123.1": {
         "big": [
             ("⏱", "Fewer rate-limit penalties", "The trade site also limits by a rule it doesn't report. The app now "

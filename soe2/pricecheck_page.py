@@ -260,7 +260,7 @@ class PriceCheckPage:
     # 2.122.0 (feedback: "Show over the game" was unclear and "randomly thrown in the top right"): one row across the
     # top of the page says what your price check key does and lets you pick where the price shows - the same setting
     # as Settings › Price checking › Where the price shows and the card's ⚙.
-    PC_WHERE = ("Here", "Overlay")             # 2.123.0 (feedback: shorter - was On this page / In a card over the game)
+    PC_WHERE = ("Here", "Overlay", "Both")     # 2.123.0 (feedback: shorter); 2.123.2: Both = the card and the app
 
     def _pc_where_row(self, body):
         from .style import SegBar, Tooltip
@@ -276,7 +276,8 @@ class PriceCheckPage:
         Tooltip(tip, "Here: the app comes to the front with the price (Settings › Price checking can keep it "
                      "behind the game). Overlay: a small card opens over the game with the price, the "
                      "mods searched and the cheapest listings - drag and resize it, Esc closes it, its ⚙ has its "
-                     "settings. Either way every check is kept in Recent here.")
+                     "settings. Both: the card over the game, and the app shows the item too without taking the "
+                     "keyboard from the game (handy on a second monitor). Every check is kept in Recent here.")
         self.pc_where_note = tk.Label(row, text="", bg=C["panel"], fg=C["muted"], font=("Segoe UI", 9))
         self.pc_where_note.pack(side="left", padx=(8, 0))
         gear = tk.Label(row, text="⚙", bg=C["panel"], fg=C["accent"], cursor="hand2", font=("Segoe UI Symbol", 10))
@@ -291,15 +292,15 @@ class PriceCheckPage:
         try:
             self.pc_where_lbl.config(text=f"When you press {pc_key_label()} on an item in game, show the price")
             k = self.pc_show_get()
-            self.pc_where.pick(self.PC_WHERE[1] if k == "over" else self.PC_WHERE[0], notify=False)
+            self.pc_where.pick({"over": "Overlay", "both": "Both"}.get(k, "Here"), notify=False)
             self.pc_where_note.config(text={"off": "· the key is off (Settings › Price checking)",
                                             "behind": "· the app stays behind the game"}.get(k, ""))
         except (AttributeError, tk.TclError):
             pass
 
     def _pc_where_pick(self, label):
-        if label == self.PC_WHERE[1]:
-            self.pc_show_set("over")
+        if label in ("Overlay", "Both"):
+            self.pc_show_set("over" if label == "Overlay" else "both")
         else:
             self.pc_show_set("front" if SETTINGS.get("pc_front", True) else "behind")   # (in front or behind: kept)
 
@@ -375,21 +376,15 @@ class PriceCheckPage:
                                  justify="left")
         self.pc_v_why.pack(side="left", padx=(12, 0), fill="x", expand=True)
         self.pc_v_why.bind("<Configure>", lambda e: self.pc_v_why.config(wraplength=max(200, e.width - 8)))
-        btns = tk.Frame(f, bg=C["panel2"])
-        btns.pack(side="right")
-        self.pc_search_btn = ttk.Button(btns, text="Search again", style="Primary.TButton",
-                                        command=lambda: self.pc_rid is not None and self.reprice([self.pc_rid]))
-        self.pc_search_btn.pack(side="left")
-        self.pc_fewer_btn = ttk.Button(btns, text="Search with fewer mods",
-                                       command=lambda: self.pc_rid is not None and self.pc_fewer(self.records[self.pc_rid]))
-        Tooltip(self.pc_fewer_btn, "Unticks the last ticked mod and searches again.")
-        self.pc_open_btn0 = self.pc_open_btn = ttk.Button(btns, text="Trade Site", command=self.pc_open_trade,
+        # 2.123.2 (hotfix, feedback: the buttons belong under the item): Search again, fewer mods, Clear, favorites and
+        # Trade Site are made with each card, under it (pcv_card). These stand in, unshown, while there's no item.
+        hold = tk.Frame(f, bg=C["panel2"])
+        self.pc_open_btn0 = self.pc_open_btn = ttk.Button(hold, text="Trade Site", command=self.pc_open_trade,
                                                           state="disabled")
-        self.pc_open_btn.pack(side="left", padx=(8, 0))
-        self.pc_fav_btn0 = self.pc_fav_btn = ttk.Button(btns, text="☆ Add to favorites", command=self.pc_add_fav,
+        self.pc_fav_btn0 = self.pc_fav_btn = ttk.Button(hold, text="☆ Add to favorites", command=self.pc_add_fav,
                                                         state="disabled")
-        self.pc_fav_btn.pack(side="left", padx=(8, 0))
-        ttk.Button(btns, text="Clear", command=self.pc_clear).pack(side="left", padx=(8, 0))
+        self.pc_search_btn = ttk.Button(hold, text="Search again", style="Primary.TButton")
+        self.pc_fewer_btn = ttk.Button(hold, text="Search with fewer mods")
 
     def pc_verdict_paint(self, rec):
         """The strip says it with a mark and a word, never by color alone."""
@@ -437,12 +432,15 @@ class PriceCheckPage:
             self.pc_v_how.config(text="", fg=C["text"])
             why = ""
         self.pc_v_why.config(text=why)
-        self.pc_search_btn.config(text="Search  •  filters changed" if rec.get("changed") else "Search again")
-        if fewer:
-            if not self.pc_fewer_btn.winfo_manager():
-                self.pc_fewer_btn.pack(side="left", padx=(8, 0), after=self.pc_search_btn)
-        else:
-            self.pc_fewer_btn.pack_forget()
+        try:                                             # (the card's buttons - made with each card, 2.123.2)
+            self.pc_search_btn.config(text="Search  •  filters changed" if rec.get("changed") else "Search again")
+            if fewer:
+                if not self.pc_fewer_btn.winfo_manager():
+                    self.pc_fewer_btn.pack(side="left", padx=(8, 0), after=self.pc_search_btn)
+            else:
+                self.pc_fewer_btn.pack_forget()
+        except tk.TclError:
+            pass
 
     def pcv_fit(self, v, page, side, lo=380, share=0.32, hi=620):
         """2.97.0 (feedback: scale to fit, nothing cut off): the card's side takes about a third of the page (wider
@@ -600,6 +598,20 @@ class PriceCheckPage:
                 self.pcpop_show(self.records[rid])
             except Exception:
                 self.log_error("the price check card over the game")
+            if SETTINGS.get("pc_both"):                  # 2.123.2: Both - the app shows it too, without taking
+                try:                                     # the keyboard from the game (the card stays up)
+                    import sys as _sys
+                    if _sys.platform == "win32":
+                        from .overlaywin import _fg_hwnd
+                        self._pc_game_hwnd = _fg_hwnd()
+                    self.shell.open("pricecheck")
+                    if self.root.state() == "iconic":
+                        self.root.deiconify()
+                    from .overlay import game_active, POE_TITLE
+                    if game_active((getattr(self, "overlay", None) and self.overlay.cfg.get("poe_title")) or POE_TITLE):
+                        self.root.after(80, self._pc_keep_game)
+                except Exception:
+                    self.log_error("opening Price Checks")
             return rid
         try:
             self.shell.open("pricecheck")
@@ -610,6 +622,22 @@ class PriceCheckPage:
         except Exception:
             self.log_error("opening Price Checks")
         return rid
+
+    def _pc_keep_game(self):
+        """Both: hand the keyboard back to the game if opening the page took it (Windows)."""
+        import sys
+        if sys.platform != "win32":
+            return
+        try:
+            from .overlaywin import _fg_hwnd
+            import ctypes
+            u = ctypes.windll.user32
+            hw = getattr(self, "_pc_game_hwnd", None)
+            if hw and _fg_hwnd() != hw:
+                u.SetForegroundWindow(hw)
+        except Exception:
+            from . import buglog
+            buglog.caught()
 
     def pc_clear(self):
         """2.93.1: clear the single searches - every item on Price Checks (Recent too). Bulk Pricing and Favorites
@@ -704,7 +732,8 @@ class PriceCheckPage:
         self.pc_open_btn, self.pc_fav_btn = self.pc_open_btn0, self.pc_fav_btn0     # (the verdict strip's)
         self.pcv.open_btn = self.pc_open_btn
         self.pc_refresh_hist()
-        self.pc_verdict_paint(rec)
+        if rec is None:
+            self.pc_verdict_paint(None)
         P2 = C["panel2"]
         if rec is None:
             tk.Label(self.pc_left, text=f"Hover an item in game and press {pc_key_label()}.\nIt shows here with the trade "
@@ -713,6 +742,7 @@ class PriceCheckPage:
             self.pc_draw_list(None)
             return
         self.pc_card, _btn = self.pcv_card(self.pcv, rec, swap=swap)
+        self.pc_verdict_paint(rec)                       # (2.123.2: after the card - its buttons are made with it)
         if getattr(self, "_pc_card_only", False):        # 2.103.2: a tick / a typed value - the listings stay as they
             self._pc_card_only = False                   # are (redrawing them was the flicker)
             self.pc_fav_state(rec)
@@ -734,7 +764,26 @@ class PriceCheckPage:
         v.card_rows, v.card_paint, v.card_vals = self.card_rows, self.card_paint, self.card_vals   # 2.103.3: per view
         card = self.detail_card
         btn = None
-        if v is not getattr(self, "pcv", None):              # (Price Checks: Search and the rest are on the strip)
+        if v is getattr(self, "pcv", None):                 # 2.123.2 (hotfix): under the card again
+            from .style import Tooltip
+            btns = tk.Frame(v.left, bg=P2)
+            btns.pack(fill="x", pady=(8, 0))
+            btn = ttk.Button(btns, text="Search  •  filters changed" if rec.get("changed") else "Search again",
+                             style="Primary.TButton", command=lambda: self.reprice([rec["id"]]))
+            btn.pack(side="left", fill="x", expand=True)
+            self.pc_search_btn = btn
+            self.pc_fewer_btn = ttk.Button(btns, text="Search with fewer mods", command=lambda: self.pc_fewer(rec))
+            Tooltip(self.pc_fewer_btn, "Unticks the last ticked mod and searches again.")
+            ttk.Button(btns, text="Clear", command=self.pc_clear).pack(side="right", padx=(8, 0))
+            more = tk.Frame(v.left, bg=P2)
+            more.pack(fill="x", pady=(8, 0))
+            self.pc_fav_btn = ttk.Button(more, text="☆ Add to favorites", command=self.pc_add_fav, state="disabled")
+            self.pc_fav_btn.pack(side="left", fill="x", expand=True)
+            self.pc_open_btn = ttk.Button(more, text="Trade Site", command=self.pc_open_trade,
+                                          state="normal" if rec.get("qid") else "disabled")
+            self.pc_open_btn.pack(side="left", fill="x", expand=True, padx=(8, 0))
+            v.open_btn = self.pc_open_btn
+        else:
             btns = tk.Frame(v.left, bg=P2)
             btns.pack(fill="x", pady=(8, 0))
             btn = ttk.Button(btns, text="Search  •  filters changed" if rec.get("changed") else "Search",
