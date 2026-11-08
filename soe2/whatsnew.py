@@ -50,6 +50,9 @@ NOTES = {
                              "when the app's built-in rules mark one High. Only your own High (S / A) or the players' "
                              "votes keep it from being skipped."),
             ("Price Checks", "The Trade site rate limits window doesn't flicker any more."),
+            ("Settings", "Search Min is a choice like other price checkers': 0% (exact), 5%, 10% ... 30% below your "
+                         "roll. \"Warn when prices vary\" says it plainly: the highest listing costs this many times "
+                         "the lowest."),
         ],
     },
     "2.123.0": {

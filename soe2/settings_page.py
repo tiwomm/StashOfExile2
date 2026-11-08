@@ -206,6 +206,12 @@ class SettingsPage:
             if kind == "bool":
                 v = tk.BooleanVar(value=bool(SETTINGS.get(key, DEFAULTS[key])))
                 ttk.Checkbutton(g, variable=v, command=lambda k=key: self.on_fine(k)).grid(row=r, column=1, sticky="w")
+            elif kind == "below":                       # 2.123.1: "10% below" (like other price checkers)
+                v = tk.StringVar(value=self._below_text(SETTINGS.get(key, DEFAULTS[key])))
+                cb = ttk.Combobox(g, textvariable=v, state="readonly", width=12,
+                                  values=[self._below_text(1 - p / 100) for p in range(lo, hi + 1, step)])
+                cb.grid(row=r, column=1, sticky="w")
+                cb.bind("<<ComboboxSelected>>", lambda e, k=key: (self.on_fine(k), self.root.after(20, self.root.focus_set)))
             else:
                 cur = SETTINGS.get(key, DEFAULTS[key])
                 v = tk.StringVar(value=str(round(float(cur) * 100)) if kind == "pct" else str(cur))
@@ -221,12 +227,26 @@ class SettingsPage:
             ttk.Button(row.master, text="Defaults", style="Quiet.TButton",
                        command=lambda: self.fine_defaults([f[0] for f in spec])).pack(anchor="w", pady=(8, 0))
 
+    @staticmethod
+    def _below_text(factor):
+        """range_factor 0.9 -> "10% below"; 1.0 -> "0% (exact)"."""
+        try:
+            p = int(round((1 - float(factor)) * 100))
+        except (TypeError, ValueError):
+            p = 10
+        return "0% (exact)" if p <= 0 else f"{p}% below"
+
     def on_fine(self, key):
         spec = next(f for f in self.FINE if f[0] == key)
         _k, _n, kind, lo, hi, _s, _w = spec
         v = self.fine_vars[key]
         if kind == "bool":
             SETTINGS[key] = bool(v.get())
+        elif kind == "below":
+            import re as _re
+            m = _re.match(r"\s*(\d+)", str(v.get()))
+            p = max(lo, min(hi, int(m.group(1)) if m else 10))
+            SETTINGS[key] = round(1 - p / 100, 2)
         else:
             try:
                 n = max(lo, min(hi, float(v.get())))
@@ -241,7 +261,8 @@ class SettingsPage:
             if keys is not None and key not in keys:
                 continue
             d = DEFAULTS[key]
-            self.fine_vars[key].set(bool(d) if kind == "bool" else str(round(d * 100)) if kind == "pct" else str(d))
+            self.fine_vars[key].set(bool(d) if kind == "bool" else str(round(d * 100)) if kind == "pct" else
+                                    self._below_text(d) if kind == "below" else str(d))
             SETTINGS[key] = d
         save_json("settings.json", SETTINGS)
 
