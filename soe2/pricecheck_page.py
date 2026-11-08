@@ -285,11 +285,11 @@ class PriceCheckPage:
 
     def _pc_where_row(self, body):
         from .style import SegBar, Tooltip
-        row = tk.Frame(body, bg=C["panel"], padx=12, pady=6)
+        row = tk.Frame(body, bg=C["panel"], padx=12, pady=8)
         row.pack(fill="x")
         self.pc_where_lbl = tk.Label(row, text="", bg=C["panel"], fg=C["text"], font=("Segoe UI", 10))
-        self.pc_where_lbl.pack(side="left", padx=(0, 10))
-        self.pc_where = SegBar(row, list(self.PC_WHERE), value=self.PC_WHERE[0], size=9, pad=(12, 3),
+        self.pc_where_lbl.pack(side="left", padx=(0, 8))
+        self.pc_where = SegBar(row, list(self.PC_WHERE), value=self.PC_WHERE[0], size=9, pad=(12, 4),
                                command=self._pc_where_pick)
         self.pc_where.pack(side="left")
         tip = tk.Label(row, text="ⓘ", bg=C["panel"], fg=C["muted"], font=("Segoe UI", 10), cursor="question_arrow")
@@ -299,7 +299,7 @@ class PriceCheckPage:
                      "mods searched and the cheapest listings - drag and resize it, Esc closes it, its ⚙ has its "
                      "settings. Either way every check is kept in Recent here.")
         self.pc_where_note = tk.Label(row, text="", bg=C["panel"], fg=C["muted"], font=("Segoe UI", 9))
-        self.pc_where_note.pack(side="left", padx=(10, 0))
+        self.pc_where_note.pack(side="left", padx=(8, 0))
         self._pc_key_text = self.pc_where_paint          # (Settings › Keys calls it when a key changes)
         self.pc_where_paint()
 
