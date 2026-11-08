@@ -587,21 +587,28 @@ def texture(cv, t, kind, x0, y0, x1, y1, base, glow=None, tag="tex"):
 def _paint_bar(cv, kind="title", tag="grad"):
     """A title bar from the running pack: gradient, texture, top / bottom lines. No icons - every pack keeps the
     app's own icons (2.60.0)."""
-    t = ST.theme
     cv.delete(tag)
     w, h = max(cv.winfo_width(), 2), max(cv.winfo_height(), 2)
+    col = bar_into(cv, ST.theme, kind, 0, 0, w, h, tag)
+    cv.tag_lower(tag)
+    return col
+
+
+def bar_into(cv, t, kind, x0, y0, x1, y1, tag="grad"):
+    """A pack's bar (title / title_off / section) drawn into a part of a canvas -> its text colour. 2.118.0: shared
+    by the title bars and the theme picker's preview (any pack, not only the running one)."""
+    w, h = max(x1 - x0, 2), max(y1 - y0, 2)
     spec = t.part("bars", kind) or t.part("bars", "title")
     stops = t.grad(spec["fill"])
     for y in range(h):
-        cv.create_line(0, y, w, y, fill=grad_at(stops, y / max(1, h - 1)), tags=tag)
+        cv.create_line(x0, y0 + y, x0 + w, y0 + y, fill=grad_at(stops, y / max(1, h - 1)), tags=tag)
     tex = spec.get("texture", "none")
     if tex and tex != "none":
-        texture(cv, t, tex, 0, 0, w, h, grad_at(stops, .5),
+        texture(cv, t, tex, x0, y0, x0 + w, y0 + h, grad_at(stops, .5),
                 glow=t.c(spec["texture_color"]) if spec.get("texture_color") else None, tag=tag)
     for key, y in (("top", 0), ("top2", 2), ("bottom", h - 1), ("bottom2", h - 3)):
         if spec.get(key):
-            cv.create_line(0, y, w, y, fill=t.c(spec[key]), tags=tag)
-    cv.tag_lower(tag)
+            cv.create_line(x0, y0 + y, x0 + w, y0 + y, fill=t.c(spec[key]), tags=tag)
     return t.c(spec.get("text", "#ffffff"))
 
 
@@ -632,12 +639,14 @@ _FAMILIES = {}
 _HEAD = {}
 
 
-def head_font():
+def head_font(t=None, kind="head"):
     """The pack's heading family (first one installed). 2.112.2: the PC's font list is read ONCE and the answer
     kept per theme - every title bar asked Windows for the whole list on every redraw (about 100 bars), which
-    froze a theme change for minutes (worse once the overlay styles' own fonts were loaded)."""
+    froze a theme change for minutes (worse once the overlay styles' own fonts were loaded). 2.118.0: any pack
+    (t) and its "num" fonts too - for the theme picker's preview."""
     import tkinter.font as tkfont
-    fams = tuple((ST.theme.part("fonts", "head") if ST.theme else None) or ["Segoe UI"])
+    t = t or ST.theme
+    fams = tuple((t.part("fonts", kind) or t.part("fonts", "head") if t else None) or ["Segoe UI"])
     if fams in _HEAD:
         return _HEAD[fams]
     if not _FAMILIES:

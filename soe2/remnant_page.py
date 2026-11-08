@@ -50,7 +50,7 @@ def no_capture(win):
 class RemnantPage:
     def remnant_cfg(self):
         c = SETTINGS.setdefault("remnant", {})
-        c.setdefault("on", False)
+        c.setdefault("on", True)     # 2.118.0: on by default (a new install; yours is kept)
         c.setdefault("key", RM.DEFAULT_KEY)
         c.pop("sound", None)                        # 2.39.0: no sound (the tags are enough)
         c.setdefault("auto", True)                  # Auto: watch where the book opens; tags come and go by themselves

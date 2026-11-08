@@ -268,41 +268,47 @@ class Sidebar(tk.Canvas):
         return y1 + 2
 
     def _marker(self, mk, x0, y0, x1, y1, acc, sbg, bg):
-        mix = TH.mix
-        if mk == "pill":
-            TH.round_rect(self, x0, y0 + 1, x1, y1 - 1, 4, fill=sbg, outline=acc)
-            self.create_line(x0 + 4, y0 + 2, x1 - 4, y0 + 2, fill=mix(sbg, "#ffffff", .6))
-        elif mk == "glow":
-            for i in range(x1 - x0):
-                self.create_line(x0 + i, y0, x0 + i, y1, fill=mix(mix(acc, sbg, .45), bg, (i / (x1 - x0)) ** .7))
-            self.create_line(x0, y0, x0, y1, fill=mix(acc, "#ffffff", .3), width=2)
-        elif mk == "gem":
-            for i in range(x1 - x0):
-                self.create_line(x0 + i, y0, x0 + i, y1, fill=mix(sbg, bg, i / (x1 - x0)))
-            cy = (y0 + y1) // 2
-            self.create_polygon(x0 + 6, cy - 5, x0 + 11, cy, x0 + 6, cy + 5, x0 + 1, cy, fill=acc,
-                                outline=mix(acc, "#000000", .55))
-        elif mk == "bracket":
-            self.create_rectangle(x0, y0, x1, y1, fill=sbg, outline="")
-            n = 6
-            self.create_line(x0 + n, y0, x0, y0 + n, x0, y1 - n, x0 + n, y1, fill=acc, width=2)
-            self.create_line(x1 - n, y0, x1, y0 + n, x1, y1 - n, x1 - n, y1, fill=acc, width=2)
-        elif mk == "arrow":
-            self.create_rectangle(x0, y0, x1, y1, fill=sbg, outline="")
-            my = y1 - 3
-            self.create_line(x0 + 6, my, x1 - 12, my, fill=mix(acc, sbg, .3))
-            self.create_polygon(x1 - 12, my - 4, x1 - 3, my, x1 - 12, my + 4, fill=acc, outline="")
-        elif mk == "step":
-            self.create_rectangle(x0, y0, x1, y1, fill=sbg, outline="")
-            self.create_polygon(x0, y0 + 2, x0 + 3, y0 + 2, x0 + 3, y0 + 6, x0 + 6, y0 + 6, x0 + 6, y1 - 6,
-                                x0 + 3, y1 - 6, x0 + 3, y1 - 2, x0, y1 - 2, fill=acc, outline="")
-        else:                                                  # bar
-            self.create_rectangle(x0, y0, x1, y1, fill=sbg, outline="")
-            for i in range(24):
-                self.create_line(x0 + 3 + i, y0, x0 + 3 + i, y1, fill=mix(acc, sbg, .6 + .4 * i / 24))
-            self.create_rectangle(x0, y0, x0 + 3, y1, fill=acc, outline="")
+        draw_marker(self, mk, x0, y0, x1, y1, acc, sbg, bg)
 
 
 def _beta(mod):
     from .shell import is_beta
     return is_beta(mod)
+
+
+def draw_marker(cv, mk, x0, y0, x1, y1, acc, sbg, bg):
+    """The selected page's marker in the nav (bar, pill, glow, gem, bracket, arrow, step). 2.118.0: a function, so
+    the theme picker's preview draws the very same one."""
+    mix = TH.mix
+    if mk == "pill":
+        TH.round_rect(cv, x0, y0 + 1, x1, y1 - 1, 4, fill=sbg, outline=acc)
+        cv.create_line(x0 + 4, y0 + 2, x1 - 4, y0 + 2, fill=mix(sbg, "#ffffff", .6))
+    elif mk == "glow":
+        for i in range(x1 - x0):
+            cv.create_line(x0 + i, y0, x0 + i, y1, fill=mix(mix(acc, sbg, .45), bg, (i / (x1 - x0)) ** .7))
+        cv.create_line(x0, y0, x0, y1, fill=mix(acc, "#ffffff", .3), width=2)
+    elif mk == "gem":
+        for i in range(x1 - x0):
+            cv.create_line(x0 + i, y0, x0 + i, y1, fill=mix(sbg, bg, i / (x1 - x0)))
+        cy = (y0 + y1) // 2
+        cv.create_polygon(x0 + 6, cy - 5, x0 + 11, cy, x0 + 6, cy + 5, x0 + 1, cy, fill=acc,
+                            outline=mix(acc, "#000000", .55))
+    elif mk == "bracket":
+        cv.create_rectangle(x0, y0, x1, y1, fill=sbg, outline="")
+        n = 6
+        cv.create_line(x0 + n, y0, x0, y0 + n, x0, y1 - n, x0 + n, y1, fill=acc, width=2)
+        cv.create_line(x1 - n, y0, x1, y0 + n, x1, y1 - n, x1 - n, y1, fill=acc, width=2)
+    elif mk == "arrow":
+        cv.create_rectangle(x0, y0, x1, y1, fill=sbg, outline="")
+        my = y1 - 3
+        cv.create_line(x0 + 6, my, x1 - 12, my, fill=mix(acc, sbg, .3))
+        cv.create_polygon(x1 - 12, my - 4, x1 - 3, my, x1 - 12, my + 4, fill=acc, outline="")
+    elif mk == "step":
+        cv.create_rectangle(x0, y0, x1, y1, fill=sbg, outline="")
+        cv.create_polygon(x0, y0 + 2, x0 + 3, y0 + 2, x0 + 3, y0 + 6, x0 + 6, y0 + 6, x0 + 6, y1 - 6,
+                            x0 + 3, y1 - 6, x0 + 3, y1 - 2, x0, y1 - 2, fill=acc, outline="")
+    else:                                                  # bar
+        cv.create_rectangle(x0, y0, x1, y1, fill=sbg, outline="")
+        for i in range(24):
+            cv.create_line(x0 + 3 + i, y0, x0 + 3 + i, y1, fill=mix(acc, sbg, .6 + .4 * i / 24))
+        cv.create_rectangle(x0, y0, x0 + 3, y1, fill=acc, outline="")

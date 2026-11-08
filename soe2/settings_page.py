@@ -321,13 +321,15 @@ class SettingsPage:
 
         from .style import ACCENTS, THEMES
         from . import themes as _th
-        row = section("Appearance", "Theme", "The look of every window. Click one - it changes at once, nothing "
-                                             "restarts. Every theme keeps the same icons and layout; only colors, "
-                                             "bevels and textures change. Your own: put a .json in the themes "
-                                             "folder of your data folder (Settings › Advanced › Your data).")
+        row = section("Appearance", "Theme", "The look of every window. Point at one to see it; click it and the "
+                                             "app changes at once, nothing restarts. Your own: put a .json in the "
+                                             "themes folder of your data folder (Settings › Advanced › Your data).")
         self.set_anchors["theme"] = row.master
         self.look_vars = {"theme": tk.StringVar(value=THEMES.get(SETTINGS.get("theme"), (_th.DEFAULT,))[0])}
-        self.look_cards = self.theme_cards(row, "settings")
+        # 2.118.0 (feedback): names beside a big live preview, like the overlay styles (themepick.py) - were cards
+        from .themepick import ThemePicker
+        self.theme_pick = ThemePicker(row, _th.pick_id(SETTINGS.get("theme")), lambda tid: self.pick_theme(tid, wait=True))
+        self.theme_pick.pack(fill="x", anchor="w")
         self._paint_look_cards()
         grid = tk.Frame(row, bg=P2)
         grid.pack(fill="x", pady=(8, 0))
@@ -659,6 +661,13 @@ class SettingsPage:
 
     def _paint_look_cards(self):
         cur = SETTINGS.get("theme")
+        for name in ("theme_pick", "ov_style_pick"):                  # 2.118.0: the pickers (the Classic overlay
+            pk = getattr(self, name, None)                           # style takes the theme's colours too)
+            if pk is not None:
+                try:
+                    pk.set(cur if name == "theme_pick" else pk.current, redraw=name == "ov_style_pick")
+                except tk.TclError:
+                    pass
         for cards in getattr(self, "look_card_sets", {}).values():
             for tid, card in cards.items():
                 on = tid == cur
@@ -727,7 +736,7 @@ class SettingsPage:
         self.ov_look_var = tk.StringVar(value=STYLES[self.ov_look()])     # (the cog's Style list keeps it in step)
         from .ovstylepick import StylePicker
         self.ov_style_pick = StylePicker(g, self.ov_look(), lambda st: (self.ov_look_var.set(STYLES[st]),
-                                                                       self.on_ov_look(style=st)))
+                                                                       self.on_ov_look(style=st)), self.ov_preview)
         self.ov_style_pick.grid(row=0, column=1, rowspan=2, sticky="w")
         label(2, "Layout")
         self.ov_layout_var = tk.StringVar(value=LAYOUTS.get(self.merged_layout(), LAYOUTS["xpbar"]))
@@ -784,8 +793,7 @@ class SettingsPage:
         pk = getattr(self, "ov_style_pick", None)
         if pk is not None:
             try:
-                if pk.current != self.ov_look():
-                    pk.set(self.ov_look())
+                pk.set(self.ov_look(), redraw=True)          # (2.118.0: Colours change the preview too)
             except tk.TclError:
                 pass
 

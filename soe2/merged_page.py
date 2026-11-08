@@ -22,14 +22,10 @@ HUD = ("xpbar",)                 # 2.65.0: fitted to the game's own bottom bar, 
 # Where the game's bottom bar leaves room, as parts of the game window's height (PoE2 at 16:9, UI scale 100 %;
 # the orbs' panels are anchored to the left and right edges, the XP bar runs between them). (x0, x1, bottom, h)
 #   x0 / x1 >= 0: from the left edge, < 0: from the right edge; bottom: up from the bottom edge.
-HUD_SPOTS = {"xpbar": [(0.531, -0.531, 0.0205, 0.056)]}   # 2.79.1: as wide as the XP bar (measured at 1440p), over it   # 2.67.2: two rows (switches on top); 2.74.0: between 2.73.4 and 2.73.5
-# 2.89.2: full words on the bar, never short forms; the Remnant switch reads "Expedition" (what players call it)
-NAMES = {"breach": "Breach", "delirium": "Delirium", "ritual": "Ritual", "remnant": "Expedition", "focus": "Focus",
-         "campaign": "Campaign", "desecrate": "Desecration"}
-SHORT = NAMES                     # (the old short forms - Brch, Deli ... - are gone)
-
-
-CHIPS = ("breach", "delirium", "ritual", "remnant", "focus", "campaign")   # 2.90.0: the switches the bar can show
+# 2.79.1: as wide as the XP bar (measured at 1440p), over it. 2.118.0: one row (no switches above it) - 0.036 high
+# (was 0.056 for two rows); a bar you moved keeps its bottom edge where you put it (OLD_HUD_H)
+HUD_SPOTS = {"xpbar": [(0.531, -0.531, 0.0205, 0.036)]}
+OLD_HUD_H = 0.056
 
 
 def click_not_drag(cv, item, fn):
@@ -44,9 +40,6 @@ def click_not_drag(cv, item, fn):
         st.clear()
     cv.tag_bind(item, "<ButtonRelease-1>", release, add="+")
 
-
-def chip_name(k):
-    return NAMES.get(k, k.title())
 
 
 def hud_k(game_h):
@@ -73,17 +66,6 @@ def set_click_through(w, on):
     except Exception:
         return False
 
-
-class _Short(CanvasText):
-    """Minimal: the helper's short name (Ritual's live count stays: 2/3)."""
-    key = ""
-
-    def config(self, **kw):
-        if "text" in kw:
-            t = kw["text"]
-            kw["text"] = t if "/" in t else SHORT.get(self.key, t)        # 2.89.2: full words, live count too
-        super().config(**kw)
-    configure = config
 
 
 class _Trunc(CanvasText):
@@ -255,48 +237,31 @@ class MergedOverlay:
             x, y = int(x0), int(gy + gh - bot * gh - h)
             if i < len(saved) and isinstance(saved[i], (list, tuple)) and len(saved[i]) == 2:
                 x, y = int(saved[i][0]), int(saved[i][1])
+                if not cfg.get("hud_one_row"):                # (moved while it had two rows: same bottom edge)
+                    y += max(26, int(OLD_HUD_H * gh)) - h
             out.append((x, y, w, h))
         return out
 
     def merged_wants(self):
         oc = self.overlay.cfg
         if not self.ov_enabled():                         # 2.92.2: the master switch is off - nothing over the game
-            return {"timer": False, "helpers": False, "notes": False}
-        return {"timer": bool(getattr(self, "mg_timer", False)),
-                "helpers": bool(self.bar_chips()),       # 2.70.1: its own switch; 2.73.0: or the Focus switch
+            return {"bar": False, "timer": False, "helpers": False, "notes": False}
+        # 2.118.0 (feedback: the helpers' switches were "just screen clutter"): no switches on the bar - every helper
+        # is on or off in Settings › Overlay › Helpers. The bar itself (menus, clock, lock, ⚙) shows while the
+        # overlay is on; "helpers" stays False for the drawing code that used to lay the switches out.
+        return {"bar": True, "timer": bool(getattr(self, "mg_timer", False)), "helpers": False,
                 "notes": self.merged_embeds_notes() and bool(oc.get("notes_enabled")) and bool(oc.get("notes_visible"))}
 
-    # 2.73.0: what sits on the overlay's bar - each feature has an "on the bar" switch (Overlay › Options)
+    # 2.73.0: what sits on the overlay's bar - each menu has an "on the bar" switch (Overlay ↳ Settings › On the bar).
+    # 2.118.0: menus only - the helpers' switches are gone (their old keys are left as they were, unread).
     def bar_cfg(self):
         b = self.tracker_cfg().setdefault("bar", {})
-        # 2.90.0: each helper's switch can leave the bar on its own; a new install starts with none (it asks which)
-        if getattr(self, "_fresh_install", False) and not b.get("chips_set"):
-            for k in CHIPS:
-                b.setdefault(k, False)
-        b.setdefault("focus", True)
         b.setdefault("notes", True)
         b.setdefault("calc", True)                       # 2.74.0: Calc ▾ (the calculator over the game)
-        b.setdefault("campaign", True)                   # 2.77.0: the Campaign switch, and Vendor ▾ in town
-        b.setdefault("vendor", True)
+        b.setdefault("vendor", True)                     # 2.77.0: Vendor ▾ in town (campaign)
         b.setdefault("regex", True)                      # 2.92.2: Regex ▾ (your favorites)
-        b.pop("desecrate", None)                         # 2.81.1 (feedback): no Desecration switch on the bar
-        for k in self.HELPERS:
-            b.setdefault(k, True)
-        b["chips_set"] = True
         return b
 
-    def bar_chips(self):
-        """The switches on the bar, left to right (2.110.0, feedback): Campaign, Focus, then the Mechanic Helper's
-        (Breach, Delirium, Ritual, Expedition - and any new mechanic after them). Each only while its switch is on."""
-        b = self.bar_cfg()
-        chips = []
-        if b.get("campaign"):                          # 2.88.3 (feedback): on the bar while its switch is on
-            chips.append("campaign")
-        if b.get("focus"):
-            chips.append("focus")
-        if self.tracker_cfg().get("alerts_bar", True):
-            chips += [k for k in self.HELPERS if b.get(k, True)]
-        return chips
 
     def notes_on_bar(self):
         return bool(self.overlay.cfg.get("notes_enabled")) and bool(self.bar_cfg().get("notes", True))
@@ -581,36 +546,6 @@ class MergedOverlay:
         if end > x + tw + 8:
             cv.create_line(x + tw + 8, y, end, y, fill=P["line"], tags=("mg",))
 
-    def _mg_cell(self, cv, P, k, x0, y0, x1, y1, label_cls=CanvasText, label_font=None, icon_only_row=False):
-        """One mechanic switch: a box (on: green-tinted in Codex), its icon (◆ / ◇, ✓ / ✕) and its name."""
-        tag = f"mgcell_{k}"
-        rect = cv.create_rectangle(x0, y0, x1, y1, fill=P["cell_bg"], outline=P["cell_line"], tags=("mg", tag))
-        mid = (y0 + y1) // 2
-        if icon_only_row:                                   # Minimal: the icon over a short name
-            dot = cv.create_text((x0 + x1) // 2, y0 + 10, text=P["off_icon"], fill=P["off"],
-                                 font=("Segoe UI Symbol", 10), tags=("mg", tag))
-            lab = cv.create_text((x0 + x1) // 2, y1 - 9, text=SHORT[k], fill=P["text"], font=label_font,
-                                 tags=("mg", tag))
-        else:
-            dot = cv.create_text(x0 + 13, mid, text=P["off_icon"], fill=P["off"], font=("Segoe UI Symbol", self._hf(11)),
-                                 tags=("mg", tag))
-            lab = cv.create_text(x0 + 13 + self._hf(13), mid, text=chip_name(k), anchor="w", fill=P["text"],
-                                 font=label_font or (P["font"], 10, "bold" if not P.get("caps") else "normal"),
-                                 tags=("mg", tag))
-        cv.tag_bind(tag, "<Button-1>", lambda e, k=k: self.tracker_helper_click(k))
-        cv.tag_bind(tag, "<Enter>", lambda e: cv.configure(cursor="hand2"))
-        cv.tag_bind(tag, "<Leave>", lambda e: cv.configure(cursor=""))
-        self.ov_help_bind(cv, tag, k)                 # 2.73.4: what it does, on hover
-        d = CanvasText(cv, dot, P["cell_bg"])
-        lt = label_cls(cv, lab, P["cell_bg"])
-        lt.key = k
-        if P.get("on_bg"):                                  # Codex: the box itself says on / off too
-            def recolor(d=d, rect=rect):
-                on = cv.itemcget(d.item, "text") == P["on_icon"]
-                cv.itemconfigure(rect, fill=P["on_bg"] if on else P["cell_bg"],
-                                 outline=P["on_line"] if on else P["cell_line"])
-            d.on_change = recolor
-        self.tk_ov_alerts[k] = (d, lt)
 
     def _mg_clock(self, w, cv, P, x, y, anchor="ne", on_bar=True):
         clk = cv.create_text(x, y, text="", anchor=anchor, fill=P["muted"], font=(P["font"], self._hf(9)), justify="right",
@@ -673,7 +608,7 @@ class MergedOverlay:
             self.merged_build()
             self.calc_ov_restore()
             self.ovr_restore()
-            return self.ov_chips_maybe()
+            return None
         self.calc_ov_close(remember=False)
         self.ovr_close()
         self.rx_ov_close()
@@ -687,77 +622,7 @@ class MergedOverlay:
         return None
 
     # ---------------------------------------------------------------- 2.90.0: which switches on the bar
-    def ov_chips_maybe(self):
-        """Once: ask which helpers' switches go on the overlay's bar (a new install shows none until you pick)."""
-        cfg = self.tracker_cfg()
-        if cfg.get("chips_asked"):
-            return None
-        return self.ov_chips_ask()
 
-    def ov_chips_ask(self):
-        from .style import C
-        from . import ovhelp as OH
-        old = getattr(self, "ov_chips_win", None)
-        if old is not None and old.winfo_exists():
-            old.lift()
-            return old
-        P2 = C["panel2"]
-        w = self.ov_chips_win = tk.Toplevel(self.root, bg=P2)
-        w.title("Your overlay bar")
-        w.transient(self.root)
-        w.resizable(False, False)
-        box = tk.Frame(w, bg=P2, padx=16, pady=16)
-        box.pack(fill="both", expand=True)
-        tk.Label(box, text="Which switches do you want on the overlay's bar?", bg=P2, fg=C["text"],
-                 font=("Segoe UI", 12, "bold"), anchor="w").pack(fill="x")
-        tk.Label(box, text="Tick the helpers you use. Each switch turns its helper on and off mid-game; the bar fits "
-                 "itself to the ones you keep. Change this any time: Overlay ↳ Settings › On the bar.", bg=P2,
-                 fg=C["muted"], justify="left", wraplength=460, anchor="w").pack(fill="x", pady=(4, 8))
-        b = self.bar_cfg()
-        self.ov_chip_vars = {}
-        for k in CHIPS:
-            v = tk.BooleanVar(value=bool(b.get(k)) if not getattr(self, "_fresh_install", False) else False)
-            self.ov_chip_vars[k] = v
-            row = tk.Frame(box, bg=P2)
-            row.pack(fill="x", pady=2)
-            ttk.Checkbutton(row, text=chip_name(k), variable=v, width=12).pack(side="left")
-            what = (OH.HELP.get(k) or ("", ""))[1]
-            tk.Label(row, text=what, bg=P2, fg=C["muted"], font=("Segoe UI", 9), justify="left", wraplength=340,
-                     anchor="w").pack(side="left", fill="x")
-        btns = tk.Frame(box, bg=P2)
-        btns.pack(fill="x", pady=(12, 0))
-        ttk.Button(btns, text="Save", style="Primary.TButton", command=self.ov_chips_save).pack(side="right")
-        w.protocol("WM_DELETE_WINDOW", self.ov_chips_save)
-        try:
-            w.update_idletasks()
-            hx, hy, hw, hh = self.root.winfo_rootx(), self.root.winfo_rooty(), self.root.winfo_width(), self.root.winfo_height()
-            w.geometry(f"+{hx + max(0, (hw - w.winfo_reqwidth()) // 2)}+{hy + max(0, (hh - w.winfo_reqheight()) // 3)}")
-            w.lift()
-        except tk.TclError:
-            pass
-        return w
-
-    def ov_chips_save(self):
-        b = self.bar_cfg()
-        for k, v in (getattr(self, "ov_chip_vars", None) or {}).items():
-            b[k] = bool(v.get())
-        if any(b.get(k) for k in self.HELPERS):
-            self.tracker_cfg()["alerts_bar"] = True
-        self.tracker_cfg()["chips_asked"] = True
-        self.tracker_save()
-        w, self.ov_chips_win = getattr(self, "ov_chips_win", None), None
-        if w is not None:
-            try:
-                w.destroy()
-            except tk.TclError:
-                pass
-        for k, v in (getattr(self, "tk_bar_vars", None) or {}).items():
-            try:
-                v.set(bool(b.get(k)))
-            except tk.TclError:
-                pass
-        self.tracker_helpers_sync()
-        self.merged_build()
 
     def overlay_settings_go(self):
         """2.89.1 (feedback): the app comes forward on Overlay ↳ Settings."""
@@ -1060,15 +925,6 @@ class MergedOverlay:
                 if key == "rank":                            # 2.76.0: click it to rank the map
                     self._rank_click(cv, t)
             y += rows * rh + int(8 * k)
-        if want["helpers"]:
-            chips = self.bar_chips()                         # 2.73.0: + Focus (each has its "on the bar" switch)
-            nr = (len(chips) + 1) // 2
-            rh = int(30 * k)
-            grids.append((gx0, y, gx1, y + nr * rh, nr, 2))
-            for i, kk in enumerate(chips):
-                x0, y0 = gx0 + (i % 2) * colw, y + (i // 2) * rh
-                self._card_switch(cv, P, kk, x0, y0, colw, rh)
-            y += nr * rh + int(6 * k)
         ftext, fprog = "", None                              # 2.76.0: the focus line has its own bar (ovparts)
         if ftext:                                            # 2.73.0: the focus line (League Focus, I)
             rh = int(30 * k)
@@ -1111,34 +967,6 @@ class MergedOverlay:
             cv._card_imgs = [art]
         cv.configure(width=W, height=H)
 
-    def _card_switch(self, cv, P, k, x0, y0, bw, bh):
-        """One mechanic switch in its grid cell: a diamond and its name; the cell glows gold when it's on."""
-        from . import hudart
-        tag = f"mgcell_{k}"
-        g = hudart.glow(cv, bw - 4, bh - 4)
-        lit = cv.create_image(x0 + 2, y0 + 2, image=g, anchor="nw", state="hidden", tags=("mg", tag)) if g else None
-        hit = cv.create_rectangle(x0, y0, x0 + bw, y0 + bh, outline="", fill="", tags=("mg", tag))
-        mid = y0 + bh // 2
-        dot = cv.create_text(x0 + self._hf(16), mid, text=P["off_icon"], fill=P["off"],
-                             font=("Segoe UI Symbol", self._hf(11)), tags=("mg", tag))
-        lab = cv.create_text(x0 + self._hf(30), mid, text=chip_name(k), anchor="w", fill=P["text"],
-                             font=(P["font"], self._hf(11)), tags=("mg", tag))
-        cv.tag_bind(tag, "<Button-1>", lambda e, k=k: self.tracker_helper_click(k))
-        cv.tag_bind(tag, "<Enter>", lambda e: cv.configure(cursor="hand2"))
-        cv.tag_bind(tag, "<Leave>", lambda e: cv.configure(cursor=""))
-        self.ov_help_bind(cv, tag, k)                 # 2.73.4: what it does, on hover
-        d = CanvasText(cv, dot, P["cell_bg"])
-        lt = CanvasText(cv, lab, P["cell_bg"])
-        lt.key = k
-
-        def relit(d=d):
-            if lit is not None:
-                on = cv.itemcget(d.item, "text") == P["on_icon"]
-                cv.itemconfigure(lit, state="normal" if on else "hidden")
-        d.on_change = relit
-        cv._hud_socks = getattr(cv, "_hud_socks", []) + [g]
-        self.tk_ov_alerts[k] = (d, lt)
-        _ = hit
 
     # ---------------------------------------------------------------- 2.65.0: Game bar (on the XP bar / beside the orbs)
     def _mg_hud_build(self, want):
@@ -1164,6 +992,7 @@ class MergedOverlay:
                 while len(pos) < len(HUD_SPOTS[layout]):
                     pos.append(None)
                 pos[slot] = [nx, ny]
+                cfg["hud_one_row"] = True                    # (2.118.0: placed for the one-row bar)
                 from .alerts_page import game_rect
                 r = game_rect() or (0, 0, self.root.winfo_screenwidth(), self.root.winfo_screenheight())
                 cfg.setdefault("hud_res", {})[layout] = [int(r[2]), int(r[3])]       # 2.79.1: kept for this size
@@ -1252,53 +1081,6 @@ class MergedOverlay:
         else:
             cv.create_line(x, cy - h // 2, x, cy + h // 2, fill=P["line"], tags=("mg",))
 
-    def _hud_cell(self, cv, P, k, x0, y0, x1, y1, label_cls, font):
-        """One switch in a recessed socket: lit when on. Click switches it (as everywhere)."""
-        from . import hudart
-        tag = f"mgcell_{k}"
-        w_, h_ = max(8, x1 - x0), max(8, y1 - y0)
-        off_img, on_img = hudart.socket(cv, w_, h_, P, False), hudart.socket(cv, w_, h_, P, True)
-        if off_img is None:
-            return self._mg_cell(cv, P, k, x0, y0, x1, y1, label_cls=label_cls, label_font=font)
-        sock = cv.create_image(x0, y0, image=off_img, anchor="nw", tags=("mg", tag))
-        mid = (y0 + y1) // 2
-        dot = cv.create_text(x0 + 6 + self._hf(5), mid, text=P["off_icon"], fill=P["off"],
-                             font=("Segoe UI Symbol", self._hf(10)), tags=("mg", tag))
-        lab = cv.create_text(x0 + 9 + self._hf(12), mid, text=chip_name(k), anchor="w", fill=P["text"], font=font,
-                             tags=("mg", tag))
-        cv.tag_bind(tag, "<Button-1>", lambda e, k=k: self.tracker_helper_click(k))
-        cv.tag_bind(tag, "<Enter>", lambda e: cv.configure(cursor="hand2"))
-        cv.tag_bind(tag, "<Leave>", lambda e: cv.configure(cursor=""))
-        self.ov_help_bind(cv, tag, k)                 # 2.73.4: what it does, on hover
-        d = CanvasText(cv, dot, P["cell_bg"])
-        lt = label_cls(cv, lab, P["cell_bg"])
-        lt.key = k
-
-        def relit(d=d):
-            on = cv.itemcget(d.item, "text") == P["on_icon"]
-            cv.itemconfigure(sock, image=on_img if on else off_img)
-        d.on_change = relit
-        cv._hud_socks = getattr(cv, "_hud_socks", []) + [off_img, on_img]
-        self.tk_ov_alerts[k] = (d, lt)
-
-    def _hud_cell_w(self, cv, P, k, short):
-        fb = tkfont.Font(root=cv, family=P["font"], size=self._hf(9))
-        return fb.measure(SHORT[k] if short else ("Ritual 3/3" if k == "ritual" else chip_name(k))) + 16 + self._hf(12)
-
-    def _hud_cells(self, cv, P, x, y0, y1, short, cols=4, cw=None):
-        """The four switches in a row (short names when space is tight) or a 2 x 2 grid. -> right edge."""
-        lc, font = (_Short if short else CanvasText), (P["font"], self._hf(9))
-        if cols == 4:
-            for k in self.bar_chips():
-                w_ = self._hud_cell_w(cv, P, k, short)
-                self._hud_cell(cv, P, k, x, y0, x + w_, y1, lc, font)
-                x += w_ + self._hud_gap()
-            return x
-        rh = (y1 - y0 - 4) // 2
-        for i, k in enumerate(self.bar_chips()):
-            cx, cy = x + (i % 2) * (cw + 5), y0 + (i // 2) * (rh + 4)
-            self._hud_cell(cv, P, k, cx, cy, cx + cw, cy + rh, lc, font)
-        return x + 2 * cw + 5
 
     def _hud_gap(self):
         return 6                                             # 2.73.5: back to 2.73.3's spacing (room goes up / down)
@@ -1309,44 +1091,17 @@ class MergedOverlay:
                                                                         if text else "")))(self.tk_ov_clock.config)
 
     def _hud_row(self, w, cv, P, want, W, H):
-        """On the XP bar (2.67.2: two rows, feedback "too cluttered"): the four switches on top, with Notes ▾;
-        under a thin rule the time | the map and where you are | Maps · Avg ... the clock and the lock."""
-        from .themes import mix
+        """On the XP bar, one row (2.118.0: no helper switches above it): the time | the map and where you are |
+        Maps · Avg ... Notes ▾ / Calc ▾ … | the clock, the lock and ⚙."""
         cfg = self.tracker_cfg()
         lft, rgt = self._hud_frame(cv, P, W, H)
-        two = want["helpers"]
-        top_mid = int(H * 0.30)                              # 2.73.5: more room above / below each row
-        mid = int(H * 0.74) if two else H // 2 + 1
+        mid = H // 2 + 1
         f = (P["font"], self._hf(10))
         fm = tkfont.Font(root=cv, family=P["font"], size=self._hf(10))
-        if two:                                              # ---- row 1: the switches, centered; Notes at the end
-            ch = int(H * 0.28)                               # (the socket: about 2.73.5's size)
-            gap = self._hud_gap()
-            room = (rgt - lft) * 0.75 - sum(self._hf(70 if k in ("notes", "vendor", "regex", "rates") else 60)
-                                            for k in self.bar_buttons())
-            short = sum(self._hud_cell_w(cv, P, k, False) + gap for k in self.bar_chips()) > room
-            total = sum(self._hud_cell_w(cv, P, k, short) + gap for k in self.bar_chips()) - gap
-            bleft = rgt
-            if self.bar_buttons_on():                        # Notes ▾ / Calc ▾ first; the switches keep clear of them
-                bleft = self._mg_bar_buttons(w, cv, P, rgt, top_mid, anchor="e")
-            span = min(rgt - lft, 2 * (bleft - (lft + rgt) // 2) - 16) if bleft < rgt else rgt - lft
-            x0 = lft + max(0, ((rgt - lft) - total) // 2)
-            if total > span:                                 # (centered doesn't fit: as far left as needed)
-                x0 = max(lft, bleft - 16 - total)
-            elif x0 + total > bleft - 16:
-                x0 = max(lft, bleft - 16 - total)
-            self._hud_cells(cv, P, x0, top_mid - ch // 2, top_mid + ch // 2, short=short)
-            ry = int(H * 0.535)                              # a thin rule between the rows, fading at the ends
-            n = 32
-            seg = (rgt - lft) / n
-            for i in range(n):
-                a_ = 1 - abs((i + 0.5) / n - 0.5) * 2
-                cv.create_line(lft + i * seg, ry, lft + (i + 1) * seg, ry, fill=mix(P["bg"], P["rim"], a_ ** 0.8),
-                               tags=("mg",))
         # ---- row 2 (or the only row): the numbers - 2.73.5: a divider between each part (feedback: "more visual
         # division between the different areas of text")
         SW = self._hf(20)                                    # a divider's slot
-        sh = int(H * 0.34) if two else None
+        sh = None
         drawn = []
 
         def lead(x):
@@ -1361,6 +1116,9 @@ class MergedOverlay:
         if want["timer"] and cfg.get("clock", True):
             self._hud_clock(w, cv, P, gx - 2, mid)
             right = gx - fm.measure("00:00 PM") - 6 - SW
+            self._hud_sep(cv, P, right + SW // 2, H, cy=mid, h=sh)
+        if want["timer"] and self.bar_buttons_on():         # 2.118.0: one row - Notes ▾ … before the clock
+            right = self._mg_bar_buttons(w, cv, P, right - 4, mid, anchor="e") - SW
             self._hud_sep(cv, P, right + SW // 2, H, cy=mid, h=sh)
         x = lft
         ln = cfg["lines"]                                    # 2.70.1: each part has its switch (Options)
@@ -1398,5 +1156,5 @@ class MergedOverlay:
                 self._mg_text(cv, P, x + widths[k] // 2, mid, k, f, anchor="center")
                 x += widths[k]
                 drawn.append(k)
-        elif not two and self.bar_buttons_on():
+        elif self.bar_buttons_on():
             self._mg_bar_buttons(w, cv, P, x, mid, anchor="w")

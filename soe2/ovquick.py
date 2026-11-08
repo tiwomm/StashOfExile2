@@ -1,7 +1,8 @@
 """P4 (2.108.0, feedback: "a mini settings page over the game when we right click the cog wheel"): right-click the
 overlay's ⚙ = Quick settings, a small box over the game, above the cog and on the game's monitor. Left-click still
 opens the full Overlay ↳ Settings in the app. Style (2.110.0 - the Overlay ON | OFF switch is gone from here), Sound,
-Lock, Hide from screen captures, and Overlays - what sits on the bar (each helper and tool). Esc, ✕, a click elsewhere or the cog again closes it.
+Lock, Hide from screen captures, Helpers (2.118.0: each helper on / off - the bar has no switches for them any
+more) and On the bar (the tools' menus). Esc, ✕, a click elsewhere or the cog again closes it.
 GGG ToS: a window over the game; nothing is sent to the game."""
 import tkinter as tk
 from tkinter import ttk
@@ -10,10 +11,10 @@ from . import buglog
 from .config import SETTINGS, save_json
 from .style import C
 
-# what the Overlays buttons switch: (label, key)
-QUICK_BAR = (("Campaign", "campaign"), ("Focus", "focus"), ("Breach", "breach"), ("Delirium", "delirium"),
-             ("Ritual", "ritual"), ("Expedition", "remnant"), ("Notes", "notes"), ("Calc", "calc"), ("Regex", "regex"),
-             ("Rates", "rates"))
+# (label, key): the helpers switched on / off, then the tools' menus on the bar
+QUICK_HELPERS = (("Breach", "breach"), ("Delirium", "delirium"), ("Ritual", "ritual"), ("Expedition", "remnant"),
+                 ("Campaign", "campaign"), ("Focus", "focus"), ("Whispers", "whispers"))
+QUICK_BAR = (("Notes", "notes"), ("Calc", "calc"), ("Regex", "regex"), ("Rates", "rates"))
 
 
 class OverlayQuick:
@@ -58,10 +59,18 @@ class OverlayQuick:
             return self.calc_on_bar()
         if key == "rates":
             return bool(self.ovr_cfg()["on"])
+        if key in [k for _l, k in QUICK_HELPERS]:
+            return self.alert_states().get(key, "off") != "off"
         return bool(b.get(key, True))
 
     def quick_bar_set(self, key, on):
         on = bool(on)
+        if key in [k for _l, k in QUICK_HELPERS]:                 # 2.118.0: a helper itself, on / off
+            try:
+                self.alerts_toggle(key, on)
+            except Exception:
+                self.log_error(f"switching {key} from Quick settings")
+            return None
         b = self.bar_cfg()
         if key == "rates":
             self.ovr_switch(on)
@@ -79,8 +88,6 @@ class OverlayQuick:
             b[key] = on
             if key == "regex" and not on:
                 self.rx_ov_close()
-            if on and key in self.HELPERS:
-                self.tracker_cfg()["alerts_bar"] = True
         self.tracker_save()
         try:
             self.tracker_helpers_sync()
@@ -148,18 +155,19 @@ class OverlayQuick:
         row("Sound", SETTINGS.get("helpers_sound", True), self.helpers_sound_set)
         row("Lock overlay", cfg.get("mlocked"), self._ovq_lock)
         row("Hide from screen captures", cfg.get("hide_capture", False), self._ovq_hidecap)
-        tk.Label(body, text="OVERLAYS", bg=P1, fg=C["muted"], font=("Segoe UI", 9, "bold"), anchor="w").pack(
-            fill="x", pady=(8, 4))
-        grid = tk.Frame(body, bg=P1)
-        grid.pack(fill="x")
         self.ovq_chips = {}
-        for i, (label, key) in enumerate(QUICK_BAR):
-            b = tk.Label(grid, text=label, font=("Segoe UI", 9), padx=8, pady=4, cursor="hand2",
-                         highlightthickness=1)
-            b.grid(row=i // 4, column=i % 4, sticky="ew", padx=(0, 4), pady=(0, 4))
-            b.bind("<Button-1>", lambda _e, k=key: self._ovq_chip(k))
-            self.ovq_chips[key] = b
-            self._ovq_paint(key)
+        for title, items in (("HELPERS", QUICK_HELPERS), ("ON THE BAR", QUICK_BAR)):
+            tk.Label(body, text=title, bg=P1, fg=C["muted"], font=("Segoe UI", 9, "bold"), anchor="w").pack(
+                fill="x", pady=(8, 4))
+            grid = tk.Frame(body, bg=P1)
+            grid.pack(fill="x")
+            for i, (label, key) in enumerate(items):
+                b = tk.Label(grid, text=label, font=("Segoe UI", 9), padx=8, pady=4, cursor="hand2",
+                             highlightthickness=1)
+                b.grid(row=i // 4, column=i % 4, sticky="ew", padx=(0, 4), pady=(0, 4))
+                b.bind("<Button-1>", lambda _e, k=key: self._ovq_chip(k))
+                self.ovq_chips[key] = b
+                self._ovq_paint(key)
         foot = tk.Frame(box, bg=P1, padx=12, pady=8)
         foot.pack(fill="x")
         ttk.Button(foot, text="All settings…", command=lambda: (self.ov_quick_close(), self.overlay_settings_go())).pack(

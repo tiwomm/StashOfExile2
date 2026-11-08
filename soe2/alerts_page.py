@@ -119,7 +119,7 @@ class AlertsPage:
     # ================================================================ settings
     def breach_cfg(self):
         c = SETTINGS.setdefault("breach_alert", {})
-        c.setdefault("on", False)
+        c.setdefault("on", True)     # 2.118.0: on by default (a new install; yours is kept)
         c.setdefault("sound", True)
         c.setdefault("leave_reminder", True)       # 2.11.0
         c.setdefault("pending", None)              # 2.11.0: "almost" / "full" since the last warning, until the tree
@@ -128,7 +128,7 @@ class AlertsPage:
     def ritual_cfg(self):
         """2.14.0: the Ritual watcher (ritual_alert.py, its own helper process)."""
         c = SETTINGS.setdefault("ritual_alert", {})
-        c.setdefault("on", False)
+        c.setdefault("on", True)     # 2.118.0: on by default (a new install; yours is kept)
         c.setdefault("sound", True)
         c.setdefault("leave_reminder", True)
         return c
@@ -159,12 +159,11 @@ class AlertsPage:
     # ================================================================ the panel (Session tracker, main page)
     def build_alerts_panel(self, parent):
         """2.112.0 (rework): one row per helper, the same columns for all - on / off, the name with what it's doing
-        now, its own options (chips), On bar, Remind, and Test / Open. Grouped: In maps, Play, Trading & more. One
+        now, its own options (chips), Remind, and Test / Open (2.118.0: no On bar - the bar has no helper switches). Grouped: In maps, Play, Trading & more. One
         Sound switch for every helper sits at the top."""
         self.alerts_init()
         P2 = C["panel2"]
         box = tk.Frame(parent, bg=P2, padx=12, pady=8, highlightthickness=1, highlightbackground=C["line"])
-        self.al_bar = tk.BooleanVar(value=True)
         CB = "Card.TCheckbutton"
         self.al_rows = {}
         sm = ("Segoe UI", 9)
@@ -180,13 +179,13 @@ class AlertsPage:
         self.al_table = tbl
         tbl.grid_columnconfigure(1, minsize=220)
         tbl.grid_columnconfigure(2, weight=1)
-        for c, t in ((1, "Helper"), (2, "Options"), (3, "On bar"), (4, "Remind")):
+        for c, t in ((1, "Helper"), (2, "Options"), (3, "Remind")):
             tk.Label(tbl, text=t, bg=P2, fg=C["muted"], font=sm).grid(row=0, column=c, sticky="w" if c < 3 else "",
                                                                        padx=(0, 12), pady=(0, 4))
         r_ = [1]
 
         def rule():
-            tk.Frame(tbl, bg=C["line"], height=1).grid(row=r_[0], column=0, columnspan=6, sticky="ew")
+            tk.Frame(tbl, bg=C["line"], height=1).grid(row=r_[0], column=0, columnspan=5, sticky="ew")
             r_[0] += 1
 
         def chip(parent, text, var, cmd, tip=None):
@@ -263,7 +262,7 @@ class AlertsPage:
                             ("TRADING & MORE", ("whispers", "desecrate"))):
             rule()
             tk.Label(tbl, text=group, bg=P2, fg=C["muted"], font=("Segoe UI", 9, "bold")).grid(
-                row=r_[0], column=0, columnspan=6, sticky="w", pady=(8, 2))
+                row=r_[0], column=0, columnspan=5, sticky="w", pady=(8, 2))
             r_[0] += 1
             for key in keys:
                 rule()
@@ -288,24 +287,15 @@ class AlertsPage:
                     c.pack(side="left", padx=(0, 8), pady=2)
                     self.al_chips[text] = c
                     mine.append(c)
-                bv = (getattr(self, "tk_bar_vars", None) or {}).get(key)
-                if bv is not None:
-                    sb_ = ttk.Checkbutton(tbl, variable=bv, style=CB, command=self.tracker_bar_switch)
-                    sb_.grid(row=r, column=3, padx=(0, 12))
-                    Tooltip(sb_, f"{names[key].split(' (')[0]}'s switch on the overlay bar")
-                    if hasattr(self, "tk_ov_switches"):
-                        self.tk_ov_switches["bar:" + names[key].split(" (")[0]] = sb_
-                else:
-                    tk.Label(tbl, text="-", bg=P2, fg=C["muted"]).grid(row=r, column=3, padx=(0, 12))
                 if key in remind:
                     rv, rcmd = remind[key]
                     rs = ttk.Checkbutton(tbl, variable=rv, style=CB, command=rcmd)
-                    rs.grid(row=r, column=4, padx=(0, 12))
+                    rs.grid(row=r, column=3, padx=(0, 12))
                     Tooltip(rs, "Remind me when I leave the map with it unfinished")
                 else:
-                    tk.Label(tbl, text="-", bg=P2, fg=C["muted"]).grid(row=r, column=4, padx=(0, 12))
+                    tk.Label(tbl, text="-", bg=P2, fg=C["muted"]).grid(row=r, column=3, padx=(0, 12))
                 ttk.Button(tbl, text="Open" if key in ("focus", "campaign") else "Test", command=tests[key],
-                           width=6).grid(row=r, column=5, sticky="e")
+                           width=6).grid(row=r, column=4, sticky="e")
                 r_[0] += 1
                 snd = tk.BooleanVar(value=True)
                 self.al_rows[key] = {"dot": dot, "on": on, "sound": snd, "status": st, "what": what[key], "note": "",
@@ -543,12 +533,6 @@ class AlertsPage:
             return "warn"
         return "on"
 
-    def alerts_bar_changed(self):
-        self.tracker_cfg()["alerts_bar"] = bool(self.al_bar.get())
-        if getattr(self, "tk_switches_var", None) is not None:      # 2.70.1: the same switch in On the overlay
-            self.tk_switches_var.set(bool(self.al_bar.get()))
-        self.tracker_save()
-        self.tracker_helpers_sync()                                # 2.49.0: on its own, timer or not
 
     def alerts_test_delirium(self):
         err = self.dl_do_test()

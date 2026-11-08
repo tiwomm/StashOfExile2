@@ -99,17 +99,6 @@ class _Clean(CanvasText):
     configure = config
 
 
-class _Letter(CanvasText):
-    """Micro: a switch's first letter (Ritual's live count stays: 2/3)."""
-
-    def config(self, **kw):
-        if "text" in kw:
-            t = str(kw["text"])
-            m = re.search(r"(\d+/\d+)", t)
-            kw["text"] = m.group(1) if m else (t[:1].upper() or "?")
-        super().config(**kw)
-    configure = config
-
 
 class _LtClock:
     """The clock: the time only (the date line is left out)."""
@@ -126,8 +115,96 @@ class _LtClock:
     configure = config
 
 
+def _inert(cv):
+    """A preview's canvas: every click, hover and cursor binding on its items taken off (the drawing stays)."""
+    try:
+        seen = set()
+        for it in cv.find_all():
+            for t in (it,) + tuple(cv.gettags(it)):
+                if t in seen:
+                    continue
+                seen.add(t)
+                for seq in cv.tag_bind(t) or ():
+                    cv.tag_unbind(t, seq)
+        cv.configure(cursor="")
+    except tk.TclError:
+        pass
+
+
 class LightOverlay:
     """Mixed into App (with MergedOverlay, which calls _mg_light_build when a light style is chosen)."""
+
+    # ---------------------------------------------------------------- 2.118.0: the real bar as a preview
+    def ov_preview(self, host, style, width=700, scene="#17130f"):
+        """Draw the bar of `style` into `host` (a Frame) with the very code that draws it over the game - its palette,
+        frame, fonts and parts, sample numbers, at `width` px (a 1440p game's XP bar, scaled) - so Settings ›
+        Appearance shows what you'll get (feedback: the old mock-up previews had wrong colours and shapes). The
+        Colours you picked apply, as over the game. A see-through style shows `scene` (a dark bit of game) behind it.
+        Nothing in it answers clicks. The overlay over the game is left as it was. -> [canvas]"""
+        from . import hudart, themes as TH
+        from .merged_page import hud_k
+        from .overlaywin import OverlayFrame, _seed, theme_palette
+        for c in host.winfo_children():
+            c.destroy()
+        keep = ("tk_ov_lbls", "tk_ov_alerts", "tk_ov_clock", "tk_ov_cv", "tk_ov_map_part", "_play_spots", "mg_P",
+                "_hud_k", "_hud_ends", "_play_last", "_play_drawn")
+        saved = {k: getattr(self, k) for k in keep if hasattr(self, k)}
+        canvases = []
+        try:
+            scale = width / 1031                                  # (the XP bar is 1031 px wide on a 2560 x 1440 game)
+            self._hud_k = hud_k(1440) * scale
+            self.tk_ov_lbls, self.tk_ov_alerts, self.tk_ov_clock, self.tk_ov_cv = {}, {}, None, None
+            self._play_spots = []
+            self.play_glyph = lambda: "⏸"                         # (tracking, in the picture)
+            want = {"bar": True, "timer": True, "helpers": False, "notes": False}
+            if style == "classic":
+                P = hudart.palette(hudart.palette(theme_palette()))    # (as ov_palette, then _mg_hud_build)
+            else:
+                P = palette(style, self.ov_look_colors())
+                if P.get("boxless"):                              # Windows' see-through key: the game shows there
+                    P = {k: (scene if v == KEY else v) for k, v in P.items()}
+            _seed(TH, P)
+            self.mg_P = P
+            row = tk.Frame(host, bg=scene)
+            row.pack(fill="x")
+            pieces = ["left", "right"] if style == "flanks" else ["all"]
+            spot_h = max(26, int(0.036 * 1440 * scale))
+            for piece in pieces:
+                f = OverlayFrame(row, P)
+                cv = f.canvas_body()
+                if style == "classic":
+                    W, H = width - 2, spot_h - 2
+                    self._hud_ends = ("crimson", "sapphire")
+                    self._hud_row(f, cv, P, want, W, H)
+                else:
+                    kind = "ornate" if style in ORNATE else style
+                    W, H = getattr(self, f"_lt_{kind}_bar")(f, cv, P, want, (0, 0, width, spot_h), piece)
+                cv.configure(width=W, height=H)
+                side = "right" if piece == "right" else "left"
+                f.pack(side=side, anchor="s", padx=((width - W) // 2 if style == "micro" else 0, 0))
+                canvases.append(cv)
+            sample = {"session": "1:24:07", "map": "Map: 3:12", "where": "Bluff", "maps": "Maps: 6",
+                      "avg": "Avg: 6:01", "rank": "★ A"}
+            for k, lab in self.tk_ov_lbls.items():
+                try:
+                    lab.config(text=sample.get(k, ""))
+                except tk.TclError:
+                    pass
+            if self.tk_ov_clock is not None:
+                try:
+                    self.tk_ov_clock.config(text="9:41 PM")
+                except tk.TclError:
+                    pass
+            for cv in canvases:
+                _inert(cv)
+        finally:
+            self.__dict__.pop("play_glyph", None)
+            for k in keep:
+                if k in saved:
+                    setattr(self, k, saved[k])
+                else:
+                    self.__dict__.pop(k, None)
+        return canvases
 
     # ---------------------------------------------------------------- settings
     def ov_look(self):
@@ -278,110 +355,7 @@ class LightOverlay:
         return t
 
     # ---------------------------------------------------------------- the switches
-    def _lt_chip_w(self, cv, P, k, style, size=9):
-        from .merged_page import chip_name
-        f = self._lt_fm(cv, P, size)
-        name = "Ritual 3/3" if k == "ritual" else chip_name(k)
-        if style == "micro":
-            return max(self._u(22), f.measure("3/3") + self._u(8))
-        if style == "slate" or style in ORNATE:
-            return f.measure(name) + 2 * self._u(9)
-        return self._lt_fm(cv, P, size, family="Segoe UI Symbol").measure("◆") + self._u(4) + f.measure(name)
 
-    def _lt_chip(self, cv, P, k, x, y0, y1, style, size=9, mark="under", width=None):
-        """One switch from x, between y0 and y1 (click switches it; hover says what it does). Each style shows on
-        / off its own way: ◆ / ◇ (hairline, flanks), an accent underline or left bar (slate), a filled square
-        (micro). -> its width."""
-        from .merged_page import chip_name
-        tag = f"mgcell_{k}"
-        mid = (y0 + y1) // 2
-        cw = width or self._lt_chip_w(cv, P, k, style, size)
-        f = (P["font"], self._hf(size))
-        if style in ("hairline", "flanks"):
-            dot = cv.create_text(x, mid, text=P["off_icon"], anchor="w", fill=P["off"],
-                                 font=("Segoe UI Symbol", self._hf(size)), tags=("mg", tag))
-            gx = self._lt_fm(cv, P, size, family="Segoe UI Symbol").measure("◆") + self._u(4)
-            lab = cv.create_text(x + gx, mid, text=chip_name(k), anchor="w", fill=P["text"], font=f, tags=("mg", tag))
-            d = CanvasText(cv, dot, P["bg"], halo=P.get("halo"))
-            lt = CanvasText(cv, lab, P["bg"], halo=P.get("halo"))
-        elif style == "slate":
-            cv.create_rectangle(x, y0, x + cw, y1, fill=P["bg"], outline="", tags=("mg", tag))     # (the click area)
-            dot = cv.create_text(x, mid, text=P["off_icon"], state="hidden", tags=("mg", tag))
-            lab = cv.create_text(x + self._u(9), mid, text=chip_name(k), anchor="w", fill=P["text"], font=f,
-                                 tags=("mg", tag))
-            mk = self._u(2)
-            box = (x, y1 - mk, x + cw, y1) if mark == "under" else (x, y0, x + mk, y1)
-            lit = cv.create_rectangle(*box, fill=P["accent"], outline="", state="hidden", tags=("mg", tag))
-            d = CanvasText(cv, dot, P["bg"])
-            lt = CanvasText(cv, lab, P["bg"])
-
-            def relit(d=d, lit=lit):
-                on = cv.itemcget(d.item, "text") == P["on_icon"]
-                cv.itemconfigure(lit, state="normal" if on else "hidden", fill=cv.itemcget(d.item, "fill") or P["on"])
-            d.on_change = relit
-        elif style in ORNATE:                               # 2.110.0: a tab, filled when on (ovskins.py)
-            g = self._u(1) if width else 0                  # (a grid of tabs: a hairline apart)
-            box = cv.create_rectangle(x + 1, y0 + g, x + cw - 1, y1 - g, fill=P["off_bg"], outline=P["line"],
-                                      tags=("mg", tag))
-            dot = cv.create_text(x, mid, text=P["off_icon"], state="hidden", tags=("mg", tag))
-            lab = cv.create_text(x + cw // 2, mid, text=chip_name(k), anchor="center", fill=P["off_fg"], font=f,
-                                 tags=("mg", tag))
-            d = CanvasText(cv, dot, P["bg"])
-            ghost = cv.create_text(x, mid, text="", state="hidden", tags=("mg", tag))   # the tab paints its own label
-            lt = CanvasText(cv, ghost, P["bg"])
-
-            def relit(d=d, box=box, lab=lab):
-                on = cv.itemcget(d.item, "text") == P["on_icon"]
-                cv.itemconfigure(box, fill=P["on_bg"] if on else P["off_bg"], outline=P["accent"] if on else P["line"])
-                cv.itemconfigure(lab, fill=P["on_fg"] if on else P["off_fg"])
-            d.on_change = relit
-        else:                                                # micro: a lettered square
-            sq = cv.create_rectangle(x, y0, x + cw, y1, fill=P["bg"], outline=P["line"], tags=("mg", tag))
-            dot = cv.create_text(x, mid, text=P["off_icon"], state="hidden", tags=("mg", tag))
-            lab = cv.create_text(x + cw // 2, mid, text=chip_name(k)[:1], anchor="center", fill=P["muted"],
-                                 font=(P["font"], self._hf(size - 1), "bold"), tags=("mg", tag))
-            d = CanvasText(cv, dot, P["bg"])
-            lt = _Letter(cv, lab, P["bg"])
-
-            def relit(d=d, lab=lab, sq=sq):
-                on = cv.itemcget(d.item, "text") == P["on_icon"]
-                col = cv.itemcget(d.item, "fill") or P["on"]
-                cv.itemconfigure(sq, fill=col if on else P["bg"], outline=col if on else P["line"])
-                cv.itemconfigure(lab, fill=P["box"] if on else P["muted"])
-            lt.on_change = relit
-        lt.key = k
-        cv.tag_bind(tag, "<Button-1>", lambda e, k=k: self.tracker_helper_click(k))
-        cv.tag_bind(tag, "<Enter>", lambda e: cv.configure(cursor="hand2"))
-        cv.tag_bind(tag, "<Leave>", lambda e: cv.configure(cursor=""))
-        self.ov_help_bind(cv, tag, k)                       # what it does, on hover
-        self.tk_ov_alerts[k] = (d, lt)
-        return cw
-
-    def _lt_chip_grid(self, cv, P, x0, x1, y, style, right=False, size=9, rh=None, mark="under"):
-        """The switches in two columns between x0 and x1 (right=True: pushed to the right edge). -> y under them."""
-        chips = self.bar_chips()
-        rh = rh or self._u(18)
-        gap = self._u(12)
-        colw = max([self._lt_chip_w(cv, P, k, style, size) for k in chips] or [0])
-        if style == "slate" or style in ORNATE:
-            colw = (x1 - x0) // 2
-            gap = 0
-        for i, k in enumerate(chips):
-            col, row = i % 2, i // 2
-            if right:
-                cx = x1 - (2 - col) * colw - (1 - col) * gap
-                cx = cx + colw - self._lt_chip_w(cv, P, k, style, size) if style != "slate" and style not in ORNATE \
-                    else cx
-            else:
-                cx = x0 + col * (colw + gap)
-            self._lt_chip(cv, P, k, cx, y + row * rh, y + (row + 1) * rh, style, size, mark=mark,
-                          width=colw - self._u(4) if style in ORNATE else None)
-        return y + ((len(chips) + 1) // 2) * rh
-
-    def _lt_chip_grid_w(self, cv, P, style, size=9):
-        chips = self.bar_chips()
-        colw = max([self._lt_chip_w(cv, P, k, style, size) for k in chips] or [0])
-        return colw * min(2, len(chips)) + (self._u(12) if len(chips) > 1 else 0)
 
     # ---------------------------------------------------------------- the window(s)
     def _mg_light_build(self, want):
@@ -486,31 +460,18 @@ class LightOverlay:
 
     # ---------------------------------------------------------------- Bars
     def _lt_row(self, w, cv, P, want, W, style):
-        """Hairline / Slate bar, as wide as the XP bar. One row when it all fits: ⏸ time | ★ rank  Map 3:12  Arcane
-        Isle | Maps | Avg ... the switches | menus | clock, lock, ⚙. Two rows when it doesn't (the XP bar is narrow
-        at 16:9): the switches and menus on top, the numbers, clock, lock and ⚙ under them."""
+        """Hairline / Slate bar, as wide as the XP bar, one row: ⏸ time | ★ rank  Map 3:12  Arcane Isle | Maps | Avg
+        ... menus | clock, lock, ⚙. (2.118.0: no helper switches - the row never needs a second line.)"""
         from .merged_page import _MapPart, _PartOf
         u = self._u
         slate = style == "slate" or style in ORNATE
-        ornate = style in ORNATE
         cfg, ln = self.tracker_cfg(), self.tracker_cfg()["lines"]
         fm = self._lt_fm(cv, P, 10)
         pad, sw = u(10), u(20)                              # (sw: a separator's slot)
-        chips = self.bar_chips() if want["helpers"] else []
-        cgap = u(3) if ornate else (0 if slate else u(12))
-        chips_w = sum(self._lt_chip_w(cv, P, k, style) for k in chips) + cgap * max(0, len(chips) - 1)
         menus_w = self._lt_menus_w(cv, P) if self.bar_buttons_on() else 0
         clock = want["timer"] and cfg.get("clock", True)
-        clock_w = self._lt_fm(cv, P, 9).measure("00:00 PM") if clock else 0
         widths = {"maps": fm.measure("Maps 000") + u(4), "avg": fm.measure("Avg 00:00") + u(4)}
         fixed = [k for k in ("maps", "avg") if ln.get(k)] if want["timer"] else []
-        left_min = 0
-        if want["timer"]:
-            left_min = self._lt_fm(cv, P, 12, True).measure("0:00:00 PAUSED") + u(30) + sw + u(40) + u(110) + \
-                sum(widths[k] + sw for k in fixed)
-        right_w = self._lt_glyphs_w(cv, P) + (clock_w + sw if clock else 0) + (menus_w + sw if menus_w else 0) + \
-            (chips_w + sw if chips else 0)
-        two = bool(chips) and want["timer"] and left_min + right_w > W - 2 * pad
 
         def sep(x, y0, y1, mid):
             if slate:
@@ -518,47 +479,20 @@ class LightOverlay:
             else:
                 self._lt_text(cv, P, x, mid, "·", 10, P["muted"], anchor="center")
 
-        if two:
-            H = u(52)
-            r1, r2 = (0, u(25)), (u(25), H - (0 if slate else u(4)))
-        else:
-            H = u(30)
-            r1 = r2 = (0, H - (0 if slate else u(4)))
-        m1, m2 = (r1[0] + r1[1]) // 2, (r2[0] + r2[1]) // 2
-
-        def draw_chips(x_right, y0, y1, mid):
-            cx = x_right - chips_w
-            for k in chips:
-                top, bot = (mid - u(9), mid + u(9)) if (ornate or not slate) else (y0, y1)
-                cx += self._lt_chip(cv, P, k, cx, top, bot, style) + cgap
-            return x_right - chips_w
-        # ---- the right end of the (bottom) row: lock, ⚙, the clock; in one row also the menus and switches
+        H = u(30)
+        r2 = (0, H - (0 if slate else u(4)))
+        m2 = (r2[0] + r2[1]) // 2
+        # ---- the right end: lock, ⚙, the clock, the menus
         x = self._lt_glyphs(w, cv, P, W - pad, m2)
         if clock:
             x -= self._lt_clock(cv, P, x, m2) + u(4)
             sep(x - sw // 2, *r2, m2)
             x -= sw
-        if not two:
-            if menus_w:
-                x = self._lt_menus(w, cv, P, x, m2) + 12 - u(4)
+        if menus_w:
+            x = self._lt_menus(w, cv, P, x, m2) + 12 - u(4)
+            if want["timer"]:
                 sep(x - sw // 2, *r2, m2)
                 x -= sw
-            if chips:
-                x = draw_chips(x, *r2, m2) - u(4)
-                if want["timer"]:
-                    sep(x - sw // 2, *r2, m2)
-                    x -= sw
-        else:                                                # ---- the top row: switches, then the menus
-            tx = W - pad
-            if menus_w:
-                tx = self._lt_menus(w, cv, P, tx, m1) + 12 - u(4)
-                sep(tx - sw // 2, *r1, m1)
-                tx -= sw
-            draw_chips(tx, *r1, m1)
-            if slate:
-                cv.create_line(0, r1[1], W, r1[1], fill=P["line"], tags=("mg",))
-            else:
-                self._lt_rule(cv, P, pad, W - pad, r1[1], strong="c")
         right = x
         x = pad
         if want["timer"]:
@@ -646,18 +580,15 @@ class LightOverlay:
         # right
         y = u(4)
         rows_w = []
-        cw = self._lt_chip_grid_w(cv, P, "flanks") if want["helpers"] else 0
         gw = self._lt_glyphs_w(cv, P)
         clock = want["timer"] and cfg.get("clock", True)
         foot_w = gw + (self._lt_fm(cv, P, 9).measure("00:00 PM") + u(10) if clock else 0)
         menus_w = self._lt_menus_w(cv, P) if self.bar_buttons_on() else 0
-        rows_w += [cw, foot_w + (menus_w + u(6) if menus_w and foot_w + menus_w < u(320) else 0), rl]
+        rows_w += [foot_w + (menus_w + u(6) if menus_w and foot_w + menus_w < u(320) else 0), rl]
         W = max(rows_w) + 2 * pad
         R = W - pad
         self._lt_rule(cv, P, R - rl, R, y, strong="r")
         y += u(6)
-        if want["helpers"]:
-            y = self._lt_chip_grid(cv, P, pad, R, y, "flanks", right=True)
         fy = y + u(9)
         x = self._lt_glyphs(w, cv, P, R, fy)
         if clock:
@@ -696,12 +627,6 @@ class LightOverlay:
             if ln.get("rank", True):
                 x += self._lt_rank(cv, P, x, mid) + u(4)
             self.tk_ov_cv = cv
-        if want["helpers"]:
-            if x > pad:
-                x = sep(x)
-            for k in self.bar_chips():
-                x += self._lt_chip(cv, P, k, x, mid - u(9), mid + u(9), "micro") + u(4)
-            x += u(4)
         if self.bar_buttons_on():
             x = sep(x)
             mw = self._lt_menus_w(cv, P)
@@ -753,12 +678,6 @@ class LightOverlay:
                     self._lt_where(cv, P, x, cy, 26, anchor="e")
                 y += u(17)
             self.tk_ov_cv = cv
-        if want["helpers"]:
-            if want["timer"]:
-                y += u(4)
-                self._lt_rule(cv, P, R - u(150), R, y, strong="r")
-                y += u(6)
-            y = self._lt_chip_grid(cv, P, pad, R, y, "hairline", right=True, rh=u(17))
         y += u(4)
         fy = y + u(8)
         x = self._lt_glyphs(w, cv, P, R, fy)
@@ -813,11 +732,6 @@ class LightOverlay:
                     self._lt_where(cv, P, pad, cy, int((x - pad) / max(1, self._lt_fm(cv, P, 9).measure("n"))))
                 y += u(18)
             self.tk_ov_cv = cv
-        if want["helpers"]:
-            y += u(2)
-            cv.create_line(0, y, PW, y, fill=P["line"], tags=("mg",))
-            y = self._lt_chip_grid(cv, P, u(4) if style != "slate" else 0, PW - (u(4) if style != "slate" else 0),
-                                   y + 1, style, rh=u(24), mark="left")
         if self.bar_buttons_on():
             cv.create_line(0, y, PW, y, fill=P["line"], tags=("mg",))
             self._lt_menus(w, cv, P, pad, y + u(12), anchor="w")
@@ -865,8 +779,6 @@ class LightOverlay:
             y += u(4)
         self._lt_rule(cv, P, R - rl, R, y, strong="r")
         y += u(6)
-        if want["helpers"]:
-            y = self._lt_chip_grid(cv, P, pad, R, y, "flanks", right=True, rh=u(17))
         fy = y + u(9)
         x = self._lt_glyphs(w, cv, P, R, fy)
         if want["timer"] and cfg.get("clock", True):
@@ -900,12 +812,6 @@ class LightOverlay:
             row_w.append(x)
             y += u(22)
             self.tk_ov_cv = cv
-        if want["helpers"]:
-            x = pad
-            for k in self.bar_chips():
-                x += self._lt_chip(cv, P, k, x, y, y + u(18), "micro") + u(4)
-            row_w.append(x)
-            y += u(24)
         gw = self._lt_glyphs_w(cv, P)
         mw = self._lt_menus_w(cv, P) if self.bar_buttons_on() else 0
         clock = want["timer"] and cfg.get("clock", True)
