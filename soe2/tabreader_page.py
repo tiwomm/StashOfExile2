@@ -30,14 +30,13 @@ class TabReaderPage:
             cfg["mode"] = MODES[0]
         mrow = tk.Frame(tb, bg=P1, padx=8, pady=4)            # 2.74.5: lighter
         mrow.pack(fill="x", before=tb.winfo_children()[0])
-        tk.Label(mrow, text="Add items from", bg=P1, fg=C["muted"]).pack(side="left", padx=(0, 8))
+        self.pc_mrow = mrow                              # 2.123.0 (p11): the one toolbar row - search, filters, actions
         # 2.31.0: Stash tab is BETA - a good idea that doesn't work well in practice yet (2.38.0: the tag sits inside
-        # its button - next to the bar it read as a label for the hint text)
-        self.pc_mode = SegBar(mrow, MODES, value=cfg["mode"], command=lambda v: self.pctab_mode(),
-                              size=9, pad=(12, 4), badges={"Stash tab": "BETA"})
-        self.pc_mode.pack(side="left")
-        self.pc_mode_hint = tk.Label(mrow, text="", bg=P1, fg=C["muted"], font=("Segoe UI", 9))
-        self.pc_mode_hint.pack(side="left", padx=8)
+        # its button). 2.123.0 (p7): in the Items strip (build_checks places it), not a row of its own; the hint is
+        # the empty list's text
+        self.pc_mode = SegBar(tb.master, MODES, value=cfg["mode"], command=lambda v: self.pctab_mode(),
+                              size=9, pad=(8, 2), badges={"Stash tab": "BETA"})
+        self.pc_mode_hint = tk.Label(mrow, text="", bg=P1, fg=C["muted"], font=("Segoe UI", 9))   # (not shown)
         # ---- 2.42.0: your stash tabs, one list each (shown in Stash tab mode)
         self.pc_tabsrow = tk.Frame(tb, bg=P1, padx=8, pady=0)
         self.pctab_tabs()                                # (moves an older single tab into the list)

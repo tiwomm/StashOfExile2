@@ -279,7 +279,7 @@ class PriceCheckPage:
                      "settings. Either way every check is kept in Recent here.")
         self.pc_where_note = tk.Label(row, text="", bg=C["panel"], fg=C["muted"], font=("Segoe UI", 9))
         self.pc_where_note.pack(side="left", padx=(8, 0))
-        gear = tk.Label(row, text="⚙", bg=C["panel"], fg=C["accent"], cursor="hand2", font=("Segoe UI Symbol", 11))
+        gear = tk.Label(row, text="⚙", bg=C["panel"], fg=C["accent"], cursor="hand2", font=("Segoe UI Symbol", 10))
         gear.pack(side="right")                          # 2.123.0 (p3): this page's settings, one click away
         gear.bind("<Button-1>", lambda e: self.settings_open("Price checking", "pc_single"))
         Tooltip(gear, "Price check settings")
@@ -349,7 +349,7 @@ class PriceCheckPage:
             if used > room and self.pc_chips:
                 b.destroy()
                 break
-            b.pack(side="left", padx=(0, 6))
+            b.pack(side="left", padx=(0, 8))
             b.bind("<Button-1>", lambda e, rid=r["id"]: self.records.get(rid) and self.pc_show(self.records[rid]))
             self.pc_chips[r["id"]] = b
         m = self.pc_recent_menu

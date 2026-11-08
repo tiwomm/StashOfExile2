@@ -49,6 +49,13 @@ class SectionBar(tk.Canvas):
             self.redraw()
         return text
 
+    def add_left(self, widget):
+        """2.123.0: a widget right after the title (it may be made by an ancestor of this bar - it's placed in it)."""
+        TH.self_painted(widget)
+        self._left = getattr(self, "_left", []) + [widget]
+        self.redraw()
+        return widget
+
     def add_right(self, widget):
         TH.self_painted(widget)
         self._right.append(widget)
@@ -68,7 +75,15 @@ class SectionBar(tk.Canvas):
         t = TH.ST.theme
         stops = t.grad(t.part("bars", "section", "fill") or t.part("bars", "title", "fill"))
         mid = TH.grad_at(stops, .5)
-        self.create_text(12, h // 2, text=self.title, anchor="w", fill=fg, font=(TH.head_font(), 11, "bold"))
+        tid = self.create_text(12, h // 2, text=self.title, anchor="w", fill=fg, font=(TH.head_font(), 11, "bold"))
+        lx = (self.bbox(tid) or (0, 0, 12, 0))[2] + 12
+        for wd in getattr(self, "_left", []):
+            try:
+                wd.place(in_=self, x=lx, y=h // 2, anchor="w")
+                wd.lift(self)                             # (made before the bar: it would draw under it)
+                lx += wd.winfo_reqwidth() + 8
+            except tk.TclError:
+                continue
         x = w - 8
         for wd in reversed(self._right):
             try:
@@ -78,6 +93,8 @@ class SectionBar(tk.Canvas):
                 continue
             x -= wd.winfo_reqwidth()
             wd.place(in_=self, x=x, y=h // 2, anchor="w")
+            if wd.master is not self:
+                wd.lift(self)
             x -= 8
         if self._note:
             self.create_text(x, h // 2, text=self._note, anchor="e", fill=C["steel"], font=("Segoe UI", 9))
