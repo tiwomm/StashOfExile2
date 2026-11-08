@@ -758,8 +758,8 @@ class App(SettingsPage, GearBookPage, PriceCheckPage, PricePopup, FavoritesPage,
         self.pc_set_link = tk.Label(summ, text="⚙", bg=C["panel2"], fg=C["accent"], cursor="hand2",
                                     font=("Segoe UI Symbol", 10))
         self.pc_set_link.pack(side="left", padx=(8, 0))
-        self.pc_set_link.bind("<Button-1>", lambda e: self.settings_open("Price checking"))
-        Tooltip(self.pc_set_link, "Settings › Price checking")
+        self.pc_set_link.bind("<Button-1>", lambda e: self.settings_open("Price checking", "pc_bulk"))
+        Tooltip(self.pc_set_link, "Bulk Pricing settings")
         self.pc_rules_text()
         self.view_var = tk.StringVar(value=SETTINGS["view"])
         self.build_tab_reader(tb)                                # 2.8.0: Add items from Ctrl+Alt+C | Stash tab
@@ -1581,10 +1581,10 @@ class App(SettingsPage, GearBookPage, PriceCheckPage, PricePopup, FavoritesPage,
         return f"Account: {v}  ⚙" if v else "Account: not set  ⚙"
 
     def acc_link(self, parent, bg):
-        """A small 'Account: Name ⚙' label that opens Settings › Price checking, where the account is set."""
+        """A small 'Account: Name ⚙' label that opens Settings › General › Your account (2.123.0)."""
         self.pc_vars()
         lbl = tk.Label(parent, text=self.acc_text(), bg=bg, fg=C["accent"], cursor="hand2", font=("Segoe UI", 9, "underline"))
-        lbl.bind("<Button-1>", lambda e: self.settings_open("Price checking", "account"))
+        lbl.bind("<Button-1>", lambda e: self.settings_open("General", "account"))
         self.acc_links.append(lbl)
         return lbl
 

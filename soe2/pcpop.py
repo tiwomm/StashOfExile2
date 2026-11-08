@@ -249,6 +249,7 @@ class PricePopup:
         v = (getattr(self, "hk_vars", None) or {}).get("checks:pc_close_key")
         if v is not None and v.get() != text:
             v.set(text)
+        self._pc_close_text()
 
     def _pcs_show(self):
         """Same as Settings › Price checking › Where the price shows (its box follows)."""
@@ -258,7 +259,7 @@ class PricePopup:
     def _pcs_all(self):
         self.pcpop_settings_close()
         try:
-            self.settings_open("Price checking")
+            self.settings_open("Price checking", "pc_single")
             self.root.deiconify()
             self.root.lift()
             self.root.focus_force()
