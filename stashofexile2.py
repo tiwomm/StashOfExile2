@@ -30,6 +30,21 @@ VERSION HISTORY
        column and both Copy regex are gone; right-click rates a mod (the Mod Book's rating). Check my tablet / jewel
        matches whole lines (crafthelper.item_mods - the stash-search tokens over-matched), one line one mod.
        Bulk Pricing's footer said "Made for tablets, jewels & waystones" while the page prices gear too: it says so.
+       UX pass 3 (feedback: price check settings "scattered all over the page"; both pages need an overhaul - 12
+       cards, all yes): Settings › Price checking is three groups that name the pages they change (settings_group
+       used=): ALL PRICE CHECKS (listings, prices in, valuable mods, how searches are made, Mod Book), SINGLE PRICE
+       CHECKS (CTRL+D) (where the price shows, the card's close key - set on Keys), BULK PRICING (CTRL+ALT+C) (skip
+       cheap, the list's sound / copy name, copy marker, shortcuts). Fine tuning's rows went to their group; Account
+       to General › Your account. Each page's ⚙ opens its group (set_anchors pc_all / pc_single / pc_bulk).
+       Price Checks: one verdict strip (pc_verdict_paint: the price, a mark and a word for how sure, how it was worked
+       out; Search again (the one orange button), fewer mods, Trade Site, favorites, Clear) - the card and the listings
+       no longer say it again (_card_no_price, the why box is Favorites' only); the filters column is 460+ px (40%);
+       Recent is a row of chips with All ▾; the row's switch reads Here | Overlay with a ⚙.
+       Bulk Pricing: one toolbar row (search first, filters, Columns ▾ - BASE_COLS always, EXTRA_COLS by choice,
+       "Est. value" is Price - Re-price all, Pause, ⋯ = Export CSV / Order added / Clear list); Manual Add | Stash
+       tab and Delete / Undo in the Items strip (SectionBar.add_left / add_right place widgets made by an ancestor);
+       the rules line in plain words with Change…; the Item pane only while one item is picked (bulk_pane), ✕ or Esc
+       (hk_min closes it before minimizing).
   2.122.0
        Feedback: Price Checks' "Show over the game" switch was unclear ("misleading and in an odd location" - the top
        right of the listings). It's a row across the top of the page now that says what it does: "When you press

@@ -41,6 +41,13 @@ MAX_BIG = 3
 NOTES = {
     "2.123.0": {
         "big": [
+            ("⚖", "Price Checks: the answer first", "One strip across the top says the price, how sure it is (a mark and "
+             "a word) and how it was worked out, with Search again beside it. Recent checks are chips; the filters "
+             "have more room; Here | Overlay picks where your price check key shows it.", ("Open Price Checks",
+                                                                                           "pricecheck"), "Price Checks"),
+            ("⚙", "Price checking settings in three groups", "All price checks, Single Price Checks (Ctrl+D) and Bulk "
+             "Pricing (Ctrl+Alt+C) - each says which pages it changes. Your account is in Settings › General. Each "
+             "page's ⚙ opens its own group.", ("Open Price checking", "settings:Price checking"), "Settings"),
             ("⚒", "Craft Helper: tablets and jewels, rated S-F", "Money Makers › Craft Helper rates every tablet and "
              "jewel mod S to F and says where that came from - you, other players or the market. No prices: press "
              "your price check key on an item to know what it's worth. Check my tablet / jewel says what to do next.",
@@ -50,6 +57,11 @@ NOTES = {
             ("Money Makers", "The Craft Helper's Copy regex buttons are gone: the game's stash search holds 250 "
                              "characters, too few for every mod worth keeping. Regex still makes your own searches."),
             ("Bulk Pricing", "The bottom bar says \"Tablets, jewels, waystones & gear\" - it prices gear too."),
+            ("Bulk Pricing", "One toolbar row: search first, the filters, Columns ▾ (Item, Type, Status, Price and "
+                             "Listings always show), Re-price all, Pause and ⋯ (Export CSV, Order added, Clear list)."),
+            ("Bulk Pricing", "Manual Add | Stash tab, Delete and Undo sit in the Items strip. The Item pane opens when "
+                             "you pick an item; ✕ or Esc closes it."),
+            ("Bulk Pricing", "The pricing rules read in plain words at the top, with Change…"),
         ],
     },
     "2.122.0": {

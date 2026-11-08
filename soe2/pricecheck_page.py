@@ -411,7 +411,9 @@ class PriceCheckPage:
                                "low": ("!", "thin data - check by hand", C["orange"])}.get(conf, ("~", "a guess", C["orange"]))
             big = ("≥ " if rec.get("partial") else "≈ ") + fmt_div(rec["est"])
             how = f"{mark} {word}"
-            why = f"from the {min(n, 5) or n} cheapest of {total:,} listing{'s' if total != 1 else ''}"
+            total = rec.get("total") if rec.get("total") is not None else total
+            why = (f"from the {min(n, 5)} cheapest of {total:,} listing{'s' if total != 1 else ''}" if n else
+                   f"from {total:,} listing{'s' if total != 1 else ''}")
             self.pc_v_big.config(text=big, fg=C["good"])
             self.pc_v_how.config(text=how, fg=col)
         elif st == "done":
