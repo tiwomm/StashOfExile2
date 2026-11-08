@@ -13,3 +13,11 @@ tokens). After a game patch, once RePoE has published updated data:
   1. Get RePoE's PoE 2 data:  git clone --depth 1 https://github.com/repoe-fork/poe2 repoe2
   2. Next to the launcher:    py tools/build_regexdata.py repoe2\data\mods.json regexdata.json
   3. In soe2/config.py raise "regexdata.json" in BUNDLED_DATA by 1, then build the exe as usual.
+
+tools/check_items.py (2.121.0) reads every base type and unique in gamedata.json as a copied item - its base, class
+and a search the trade site takes (unidentified uniques too). Run it after rebuilding gamedata.json:
+
+  py tools/check_items.py           (prints what failed; exits 1 if anything did)
+
+Bases and uniques newer than gamedata.json don't need a rebuild to work: the app downloads the trade site's own item
+list once a day (trade_items.json in the data folder) and uses it where the game data has nothing.

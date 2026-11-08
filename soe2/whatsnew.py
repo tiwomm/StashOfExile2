@@ -39,6 +39,19 @@ NEXT = [
 MAX_BIG = 3
 
 NOTES = {
+    "2.121.0": {
+        "big": [
+            ("🔍", "New items are known the day the trade site knows them", "The app now downloads the trade "
+             "site's own list of every base type and unique once a day, like the mod list. A new base or unique "
+             "should no longer come back as unknown.", None, "Price Checks"),
+        ],
+        "small": [
+            ("Price Checks", "A unique the trade site doesn't list yet is searched as any unique on its base, with a "
+                             "note - instead of \"unknown item name\"."),
+            ("Price Checks", "A kind of item the app doesn't know yet is searched by its type when the trade site "
+                             "lists it."),
+        ],
+    },
     "2.120.1": {
         "big": [
             ("🖱", "Lock position and Click-through", "The overlay's Mouse choice is two switches again, with the names "

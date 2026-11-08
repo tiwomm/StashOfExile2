@@ -76,9 +76,12 @@ def base(name):
 
 
 def uniques_on(base_name):
-    """2.120.0: the uniques the game data knows on this base (an unidentified unique shows only its base)."""
+    """2.120.0: the uniques on this base (an unidentified unique shows only its base) - the game data's and, from
+    2.121.0, the trade site's own list."""
     b = (base_name or "").strip()
-    return sorted(n for n, bases in (load().get("uniques") or {}).items() if b in (bases or []))
+    names = {n for n, bases in (load().get("uniques") or {}).items() if b in (bases or [])}
+    names |= {n for n, types in TRADE_ITEMS["uniques"].items() if b in types}
+    return sorted(names)
 
 
 def group(gid):
@@ -98,14 +101,62 @@ def class_from_text(text):
     return _class_by_text.get((text or "").strip().lower())
 
 
+# 2.121.0 (items pass, feedback: "how are we still having issues with unknown items?"): gamedata.json is built from
+# Exiled Exchange 2's data, which can be a patch behind. The trade site's own item list (every base type and unique
+# it knows - downloaded once a day, like the mod list: engine._load_items) fills the gaps: a base or unique the game
+# data doesn't know yet is still read, and a unique name the trade site doesn't know is never sent to it.
+TRADE_ITEMS = {"bases": set(), "uniques": {}, "by_len": [], "loaded": False}
+TRADE_ITEMS_FILE = "trade_items.json"
+
+
+def set_trade_items(data):
+    """The trade site's /data/items answer -> TRADE_ITEMS. Never raises."""
+    bases, uniques = set(), {}
+    try:
+        for group in (data or {}).get("result") or []:
+            for e in group.get("entries") or []:
+                t = str(e.get("type") or "").strip()
+                if not t:
+                    continue
+                if (e.get("flags") or {}).get("unique") and e.get("name"):
+                    uniques.setdefault(str(e["name"]).strip(), []).append(t)
+                else:
+                    bases.add(t)
+    except Exception:
+        return False
+    TRADE_ITEMS.update(bases=bases, uniques=uniques, loaded=bool(bases or uniques),
+                       by_len=sorted((b for b in bases if b not in load()["bases"]), key=len, reverse=True))
+    return TRADE_ITEMS["loaded"]
+
+
+def load_trade_items():
+    """At start: the cached list (if any) - the engine downloads a fresh one once a day."""
+    if not TRADE_ITEMS["loaded"]:
+        set_trade_items(load_json(TRADE_ITEMS_FILE, {}) or {})
+    return TRADE_ITEMS["loaded"]
+
+
+def trade_knows_unique(name):
+    """True / False when the trade site's list is loaded, None when it isn't (then nobody can tell)."""
+    if not TRADE_ITEMS["loaded"]:
+        return None
+    return (name or "").strip() in TRADE_ITEMS["uniques"]
+
+
 def find_base(text):
     """The base type inside a name line: exact first, else the longest base name it contains (magic items carry
-    affixes around the base: 'Sapphire Ring of the Whale')."""
+    affixes around the base: 'Sapphire Ring of the Whale'). 2.121.0: then the trade site's own list (a base newer
+    than the game data)."""
     d = load()
     t = (text or "").strip()
     if t in d["bases"]:
         return t
     for b in _bases_by_len:
+        if re.search(rf"(?<![A-Za-z']){re.escape(b)}(?![A-Za-z'])", t):
+            return b
+    if t in TRADE_ITEMS["bases"]:
+        return t
+    for b in TRADE_ITEMS["by_len"]:
         if re.search(rf"(?<![A-Za-z']){re.escape(b)}(?![A-Za-z'])", t):
             return b
     return None
