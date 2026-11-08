@@ -51,8 +51,8 @@ NOTES = {
              "are done. Turn it off with On screen on the Ritual row in Helpers.", None, "Overlay"),
         ],
         "small": [
-            ("Community", "Rep and the contributor icon are gone, with Thank someone with rep. The board stopped "
-                          "counting it and no longer links your install's ratings to your name."),
+            ("Community", "Rep and the contributor icon are gone, with Thank someone with rep. The board deleted "
+                          "everyone's rep, and the link between your install's ratings and your name."),
             ("Overlay", "Overlay ↳ Settings › Options: Feature tips is gone with the switches it explained."),
             ("Mod book", "With Focus or Campaign's line over the bar, the Gear rules list could stop working - this "
                          "should stop it."),
