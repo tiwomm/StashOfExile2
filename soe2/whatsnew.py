@@ -39,6 +39,23 @@ NEXT = [
 MAX_BIG = 3
 
 NOTES = {
+    "2.118.0": {
+        "big": [
+            ("✦", "A cleaner overlay bar", "No more helper switches on it - one tidy row in every style. Every helper "
+             "is on; turn one off in Overlay ↳ Settings › Helpers, or right-click ⚙ for Quick settings.",
+             ("Open Helpers", "ovset"), "Overlay"),
+            ("🎨", "See a theme before you pick it", "Settings › Appearance › Theme: point at a name for a big live "
+             "preview of the app in it. The overlay styles' previews are now drawn by the real bar.",
+             ("Open Appearance", "settings:Appearance"), "Settings"),
+            ("🕯", "Your Ritual count over the bar", "In a map with Ritual, a line over the bar shows how many rituals "
+             "are done. Turn it off with On screen on the Ritual row in Helpers.", None, "Overlay"),
+        ],
+        "small": [
+            ("Community", "Rep and the contributor icon are gone, with Thank someone with rep. The board stopped "
+                          "counting it and no longer links your install's ratings to your name."),
+            ("Overlay", "Overlay ↳ Settings › Options: Feature tips is gone with the switches it explained."),
+        ],
+    },
     "2.117.1": {
         "big": [
             ("🎨", "Ashen Rite shouldn't freeze the app any more", "Switching to it could leave the app not responding "

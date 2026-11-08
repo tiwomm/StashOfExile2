@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU GPL v3.0 (see LICENSE). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.117.1
+VERSION 2.118.0
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,6 +19,35 @@ VERSION 2.117.1
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.118.0
+       Feedback: the helpers' on / off switches on the overlay's bar were "just screen clutter". The bar has none now,
+       in every style: one row (Classic was two - the switches over the numbers; HUD_SPOTS 0.056 -> 0.036 of the
+       game's height, a Classic bar you'd moved keeps its bottom edge - OLD_HUD_H, hud_one_row), with the numbers, the
+       menus (Notes / Calc / Regex / Rates / Vendor ▾), the clock, the lock and ⚙. Every helper starts on for a new
+       install (Breach, Ritual, Expedition, Focus, Delirium; Campaign, whispers and Desecration were already) - an
+       existing install keeps what it has - and goes off in Overlay ↳ Settings › Helpers (no On bar column) or Quick
+       settings (right-click ⚙: Helpers switch the helper itself, On the bar the menus). Gone with the switches: the
+       "which switches?" question when the overlay is enabled, their hover tips and first-time cards (ovhelp.py) and
+       Options › Feature tips. The Classic bar's dividers are slimmer (20 -> 14) so the area's name fits beside the
+       menus. merged_wants() has "bar" (the bar shows while the overlay is on); "helpers" stays False.
+       Ritual: the live count moved from its switch to a line over the bar (the goal bar's lines - Campaign, Ritual,
+       Focus): "2 of 4 rituals done", shown in a map once the counter's been read, with an On screen chip on the
+       Ritual row in Helpers (ritual_cfg readout). It shows your tribute too once RITUAL.tribute is known - reading it
+       off the Ritual page (V) is next. The lines over the bar keep their size (from OLD_HUD_H).
+       Feedback: some style previews showed the wrong colours and shapes (they were a mock-up). The preview is the real
+       bar now: App.ov_preview draws it with the same code as over the game (its palette with your Colours, frame -
+       overlaywin.OverlayFrame / skin_inner, fonts, parts) at a 1440p XP bar's proportions, sample numbers, every click
+       binding taken off (_inert); the overlay's own state is saved and put back. Feedback: the theme previews should
+       work like that - Settings › Appearance › Theme is a ThemePicker (themepick.py): names (Dark, Light) beside a
+       big live preview of the app in the theme under the mouse, drawn from the pack with the app's own parts
+       (themes.bar_into, sidebar.draw_marker, flat_spec, the meter, your accent). Both pickers are pickers.ListPreview
+       (hover previews after 60 ms of rest, click / Enter / Space picks). The first-start page keeps the small cards.
+       Feedback: the community rep system is gone (for now): the icon beside names on Money Makers and the
+       Leaderboards, the contributor card, your rep and its switches in Privacy & community, and an admin's Thank
+       someone with rep (rep.py, board.set_rep / admin_rep / person). The board (worker) stops counting it and no longer
+       sends it; GET /people, POST /me/rep and /admin/rep are gone; every install's link to a name (cid_link, only
+       there to count ratings toward rep) is cleared. The rep table is left as it was, unread (Leave and delete still
+       clears yours).
   2.117.1
        Feedback: switching to Ashen Rite still closed the app. Its log showed a freeze, not a crash: right after the
        theme change, the desktop's settle step (shell._settle, 0.4 s after the window moves or changes) called
@@ -2809,7 +2838,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.117.1"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.118.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
