@@ -68,7 +68,7 @@ class BoardModPage:
     def ev_bm_me(self, res):
         ok, d = res
         if ok and hasattr(self, "cy_paint"):
-            self.cy_paint()                                      # 2.95.0: your rep, fresh
+            self.cy_paint()                                      # (your name, admin / reviewer, fresh)
         if ok and (d.get("user") or {}).get("name_reset"):
             self.board_name_prompt(force=True, reset=True)
 
