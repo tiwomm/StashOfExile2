@@ -1064,18 +1064,6 @@ async function modBatch(req, env) {
   return json({ ok: true, prices: used, votes });
 }
 
-// 2.121.1: POST /mods/forget {cid} - Leave and delete my data takes this install's anonymous votes, map ranks, campaign
-// zones and unmatched lines too (pooled prices are sums, with no install in them).
-async function modForget(req, env) {
-  const body = await readBody(req);
-  const cidRaw = String(body.cid || "");
-  if (!/^[a-f0-9]{32}$/.test(cidRaw)) return fail(400, "bad cid");
-  const cid = await sha256(cidRaw);
-  await env.DB.batch(["mod_votes", "map_votes", "campaign_zones", "unmatched_mods", "contributors"].map((t) =>
-    env.DB.prepare(`DELETE FROM ${t} WHERE cid = ?`).bind(cid)));
-  return json({ ok: true });
-}
-
 async function modStats(url, env) {
   const league = String(url.searchParams.get("league") || "").slice(0, 60);
   const bases = await env.DB.prepare("SELECT base, n, w, slog, batches FROM base_prices WHERE league = ?").bind(league).all();
@@ -1214,7 +1202,6 @@ export default {
       if (path === "/auth/join" && req.method === "POST") return join(req, env);
       if (path === "/official") return official(env);
       if (path === "/mods/batch" && req.method === "POST") return modBatch(req, env);
-      if (path === "/mods/forget" && req.method === "POST") return modForget(req, env);
       if (path === "/mods/stats") return modStats(url, env);
       if (path === "/mods/ratings") return modRatings(env);
       if (path === "/mods/unmatched") return unmatchedMods(env);
