@@ -117,7 +117,11 @@ class SettingsPage:
         return "front" if SETTINGS.get("pc_front", True) else "behind"
 
     def on_pc_show(self):
-        k = next((k for k, t in PC_SHOW.items() if t == self.pc_show_var.get()), "front")
+        self.pc_show_set(next((k for k, t in PC_SHOW.items() if t == self.pc_show_var.get()), "front"))
+
+    def pc_show_set(self, k):
+        """Where your price check key shows the price (over / front / behind / off) - one setting; Settings, the
+        Price Checks row and the card's ⚙ all set it here and follow it."""
         SETTINGS["pc_ctrl_c"] = k != "off"
         if k != "off":
             SETTINGS["pc_popup"] = k == "over"
@@ -128,6 +132,10 @@ class SettingsPage:
             self.pc_pop_var().set(bool(SETTINGS.get("pc_popup")))
         if not SETTINGS.get("pc_popup"):
             self.pcpop_close()
+        var = getattr(self, "pc_show_var", None)
+        if var is not None and var.get() != PC_SHOW[self.pc_show_get()]:
+            var.set(PC_SHOW[self.pc_show_get()])
+        self.pc_where_paint()
 
     def build_fine_tuning(self, row, keys=None, defaults=True):
         """The fine-tuning rows for `keys` (all when None); defaults: the Defaults button (for those rows)."""
@@ -979,7 +987,7 @@ class SettingsPage:
         self.overlay.rebind()
         self.overlay.save_settings()
         save_json("settings.json", SETTINGS)
-        for refresh in ("_tk_keys_text", "_rx_key_text", "_chat_keys_text"):
+        for refresh in ("_tk_keys_text", "_rx_key_text", "_chat_keys_text", "_pc_key_text"):
             if hasattr(self, refresh):                             # 2.57.0: the places that show a key
                 try:
                     getattr(self, refresh)()

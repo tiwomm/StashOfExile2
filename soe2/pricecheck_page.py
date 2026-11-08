@@ -224,6 +224,7 @@ class PriceCheckPage:
         self.pc_rid = None
         self._pc_art_cache, self._pc_art_wait = {}, set()
         P2 = C["panel2"]
+        self._pc_where_row(body)                     # 2.122.0: what your price check key does - first, full width
         wrap = tk.Frame(body, bg=P2)
         self.limit_banner(body, wrap)                # 2.103.3: the "Staying under the limits" line
         wrap.pack(fill="both", expand=True)
@@ -267,14 +268,6 @@ class PriceCheckPage:
                                                           state="disabled")
         self.pc_fav_btn0 = self.pc_fav_btn = ttk.Button(head, text="☆ Add to favorites", command=self.pc_add_fav,
                                                         state="disabled")
-        # 2.113.1 (feedback: the switch belongs here): the card over the game - the same switch as Settings › Hotkeys
-        ov = ttk.Checkbutton(head, text="Show over the game", variable=self.pc_pop_var(), style="Bar.TCheckbutton",
-                             command=self.pc_pop_set)
-        ov.pack(side="right")
-        from .style import Tooltip
-        Tooltip(ov, "On: your price check key shows the price in a card over the game (it takes the overlay's Style; "
-                    "drag and resize it - it remembers). Price Checks here still gets every item. Off: the app comes "
-                    "to the front, as before.")
         self.pc_rcanvas, self.pc_list = self._pc_scroller(right, padx=12, bg_key="panel")
         self.pcv = PCView(self.pc_left, self.pc_lcanvas, self.pc_list, self.pc_rcanvas, self.pc_count_lbl,
                           self.pc_open_btn)
@@ -284,6 +277,48 @@ class PriceCheckPage:
         self.pc_refresh_hist()
         recs = self.pc_recs()
         self.pc_show(recs[0] if recs else None)
+
+    # 2.122.0 (feedback: "Show over the game" was unclear and "randomly thrown in the top right"): one row across the
+    # top of the page says what your price check key does and lets you pick where the price shows - the same setting
+    # as Settings › Price checking › Where the price shows and the card's ⚙.
+    PC_WHERE = ("On this page", "In a card over the game")
+
+    def _pc_where_row(self, body):
+        from .style import SegBar, Tooltip
+        row = tk.Frame(body, bg=C["panel"], padx=12, pady=6)
+        row.pack(fill="x")
+        self.pc_where_lbl = tk.Label(row, text="", bg=C["panel"], fg=C["text"], font=("Segoe UI", 10))
+        self.pc_where_lbl.pack(side="left", padx=(0, 10))
+        self.pc_where = SegBar(row, list(self.PC_WHERE), value=self.PC_WHERE[0], size=9, pad=(12, 3),
+                               command=self._pc_where_pick)
+        self.pc_where.pack(side="left")
+        tip = tk.Label(row, text="ⓘ", bg=C["panel"], fg=C["muted"], font=("Segoe UI", 10), cursor="question_arrow")
+        tip.pack(side="left", padx=(8, 0))
+        Tooltip(tip, "On this page: the app comes to the front with the price (Settings › Price checking can keep it "
+                     "behind the game). In a card over the game: a small card opens over the game with the price, the "
+                     "mods searched and the cheapest listings - drag and resize it, Esc closes it, its ⚙ has its "
+                     "settings. Either way every check is kept in Recent here.")
+        self.pc_where_note = tk.Label(row, text="", bg=C["panel"], fg=C["muted"], font=("Segoe UI", 9))
+        self.pc_where_note.pack(side="left", padx=(10, 0))
+        self._pc_key_text = self.pc_where_paint          # (Settings › Keys calls it when a key changes)
+        self.pc_where_paint()
+
+    def pc_where_paint(self):
+        """The row follows the setting, wherever it was changed."""
+        try:
+            self.pc_where_lbl.config(text=f"When you press {pc_key_label()} on an item in game, show the price")
+            k = self.pc_show_get()
+            self.pc_where.pick(self.PC_WHERE[1] if k == "over" else self.PC_WHERE[0], notify=False)
+            self.pc_where_note.config(text={"off": "· the key is off (Settings › Price checking)",
+                                            "behind": "· the app stays behind the game"}.get(k, ""))
+        except (AttributeError, tk.TclError):
+            pass
+
+    def _pc_where_pick(self, label):
+        if label == self.PC_WHERE[1]:
+            self.pc_show_set("over")
+        else:
+            self.pc_show_set("front" if SETTINGS.get("pc_front", True) else "behind")   # (in front or behind: kept)
 
     def pcv_fit(self, v, page, side, lo=380, share=0.32):
         """2.97.0 (feedback: scale to fit, nothing cut off): the card's side takes about a third of the page (wider
@@ -403,6 +438,7 @@ class PriceCheckPage:
         save_json("settings.json", SETTINGS)
         if not SETTINGS["pc_popup"]:
             self.pcpop_close()
+        self.pc_where_paint()
 
     def pc_wants(self, text):
         """An item copied with your price check key (Ctrl+D; Settings › Keys), with its switch on. Set to Ctrl+C,

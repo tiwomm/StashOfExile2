@@ -252,12 +252,8 @@ class PricePopup:
 
     def _pcs_show(self):
         """Same as Settings › Price checking › Where the price shows (its box follows)."""
-        var = getattr(self, "pc_show_var", None)
-        if var is None:
-            from .settings_page import PC_SHOW
-            self.pc_show_var = var = tk.StringVar(value=PC_SHOW[self.pc_show_get()])
-        var.set(self.pcs_show.get())
-        self.on_pc_show()
+        from .settings_page import PC_SHOW
+        self.pc_show_set(next((k for k, t in PC_SHOW.items() if t == self.pcs_show.get()), "front"))
 
     def _pcs_all(self):
         self.pcpop_settings_close()
