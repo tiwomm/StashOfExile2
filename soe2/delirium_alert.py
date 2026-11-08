@@ -58,7 +58,7 @@ CONFIG = {
     "arrows_region": (0.50, 0.40, 1.0, 1.0),   # bottom-right area of the game
     "arrows_band_x_px": 60,      # once found: +/- this many px horizontally
     "arrows_band_y_px": 300,     # once found: +/- this many px vertically
-    # "Map Completed" banner shows at the bottom centre of the screen.
+    # "Map Completed" banner shows at the bottom center of the screen.
     "banner_region": (0.25, 0.45, 0.75, 1.0),
     # Backup check: "Map Completed" in the Map Objectives list on the right
     # (the popup occasionally doesn't show).
@@ -69,7 +69,7 @@ CONFIG = {
     # (the banner can briefly cover things / the button can flicker).
     "arrows_memory_seconds": 20,
 
-    # Alert behaviour
+    # Alert behavior
     "alert_timeout_seconds": 45,     # auto-hide after this long
     "hide_when_arrows_gone_s": 1.5,  # hide once arrows are gone this long (you clicked them)
     "beep": True,                    # one sound per map; toggle from the tray menu
@@ -92,7 +92,7 @@ CONFIG = {
 }
 # -------------------------------------------------------------------------
 
-STATE_COLORS = {                 # ring / badge colour per state
+STATE_COLORS = {                 # ring / badge color per state
     "watching": (70, 150, 255),
     "active":   (190, 90, 255),
     "alert":    (255, 40, 40),
@@ -250,7 +250,7 @@ class Detector:
             o_score, _ = self.objective.match(grab(l, t, r, b), CONFIG["objective_threshold"],
                                               self.objective_scales(ui))
             self.last = {"banner": b_score, "objective": o_score}
-            # Report "map completed" as a single score, normalised to the banner threshold.
+            # Report "map completed" as a single score, normalized to the banner threshold.
             o_norm = o_score * CONFIG["banner_threshold"] / CONFIG["objective_threshold"]
             b_score = max(b_score, o_norm)
         else:
@@ -259,7 +259,7 @@ class Detector:
 
 
 # ------------------------------------------------------------ icon images
-KEY_RGB = (255, 0, 254)          # colour made fully transparent in the on-screen icon
+KEY_RGB = (255, 0, 254)          # color made fully transparent in the on-screen icon
 KEY_HEX = "#ff00fe"
 
 
@@ -371,7 +371,7 @@ def make_dpi_aware():
 
 def find_game_rect():
     """(width, height, left, top) of the PoE2 window's game area in screen pixels,
-    or None if it isn't open / is minimised. Only looks at window title & position."""
+    or None if it isn't open / is minimized. Only looks at window title & position."""
     if sys.platform != "win32":
         return None
     import ctypes

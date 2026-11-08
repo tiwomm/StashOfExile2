@@ -1,15 +1,15 @@
-"""2.83.0: Island Rumours helper (Expedition) - the world map's "Uncharted Waters" card lists up to three rumours;
+"""2.83.0: Island Rumors helper (Expedition) - the world map's "Uncharted Waters" card lists up to three rumors;
 each gets a tag with the island it leads to and your Map library rank for it (feedback: "use our Map library to build
 an add-on ... that operates the rumor helper").
 
-Which rumour leads where: the two newest guides agree (epoe.io's Expedition guide, reviewed for 0.5.5e, and aoeah's
+Which rumor leads where: the two newest guides agree (epoe.io's Expedition guide, reviewed for 0.5.5e, and aoeah's
 0.5 tier list). Ranks are yours - set them in the Map library (the suggested ones are in the 2.83.0 notes).
 On screen: the card is the one large light parchment patch (found on a small copy of the screen), then only that
 part is read (Windows' text reader). Only while you're in your hideout (Client.txt). GGG ToS: it looks and shows."""
 import difflib
 import re
 
-# rumour as the card words it -> the island (its name in the Map library)
+# rumor as the card words it -> the island (its name in the Map library)
 RUMOURS = [
     ("Fallen stars...", "Moor of Fallen Skies"),
     ("Crazed Chieftain...", "The Jade Isles"),
@@ -45,7 +45,7 @@ def squash(text):
 
 # 2.113.2 (rumours_read.txt: "Nothin' to drink..." read as "Wodviw' to c(riwkv.."): Windows' reader swaps letters
 # that look alike in the card's handwriting - n / w / u / v / h / m, t / d / c / l, o / a. Compared by shape too:
-# rumours score 0.88+ that way, the card's other lines 0.56 or less, two rumours never above 0.64.
+# rumors score 0.88+ that way, the card's other lines 0.56 or less, two rumors never above 0.64.
 SHAPE = str.maketrans({**{c: "n" for c in "nwuvhm"}, **{c: "t" for c in "tdcl"}, **{c: "i" for c in "ij"},
                        **{c: "o" for c in "oaq"}})
 
@@ -59,8 +59,8 @@ _SHAPES = {i: shape(r) for r, i in RUMOURS}
 
 
 def _score(s, k):
-    """How well line s holds rumour k: the whole line, or (2.113.0) its best stretch of about k's length - a rumour
-    read on one line with the "Island Rumours" heading above it ("islandrumourswarmbutrisky") didn't match."""
+    """How well line s holds rumor k: the whole line, or (2.113.0) its best stretch of about k's length - a rumor
+    read on one line with the "Island Rumors" heading above it ("islandrumourswarmbutrisky") didn't match."""
     best = difflib.SequenceMatcher(None, s, k).ratio()
     if len(s) > len(k) + 3:
         for n in (len(k) - 2, len(k), len(k) + 2):
@@ -74,8 +74,8 @@ def _score(s, k):
 
 
 def match(line):
-    """An OCR'd line -> (rumour, island) or None: by its letters, or (2.113.2) by their shapes - the best of the two,
-    with a clear lead over the next rumour."""
+    """An OCR'd line -> (rumor, island) or None: by its letters, or (2.113.2) by their shapes - the best of the two,
+    with a clear lead over the next rumor."""
     s, sh = squash(line), shape(line)
     if len(s) < 4:
         return None
@@ -125,9 +125,9 @@ def find_card(img, game_h):
 
 
 def rows(lines):
-    """OCR lines of the card -> [(rumour, island, line box)] for the lines that are rumours (the header and the
-    Requires line aren't). 2.113.1 (feedback: the middle one of three was missed): a rumour no single line matches is
-    looked for in the card's whole text (Windows' reader can split a rumour over two lines or join it to the next),
+    """OCR lines of the card -> [(rumor, island, line box)] for the lines that are rumors (the header and the
+    Requires line aren't). 2.113.1 (feedback: the middle one of three was missed): a rumor no single line matches is
+    looked for in the card's whole text (Windows' reader can split a rumor over two lines or join it to the next),
     a little stricter there; its box is the line it starts on."""
     out, seen = [], set()
     for text, box in lines:

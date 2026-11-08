@@ -291,7 +291,7 @@ def from_base(b):
     if ST.theme is not None and ST.theme.light:
         if l_ > 0.55:                         # light / bright text (white, gold, amber ...) on a light pack -> a dark
             return from_hls(h, max(0.1, min(0.36, 0.08 + (1 - l_) * 0.6)), min(s, 0.75))   # shade of the same hue
-        if l_ < 0.22:                         # dark leftovers (near-black browns / greys) -> the pack's surfaces
+        if l_ < 0.22:                         # dark leftovers (near-black browns / grays) -> the pack's surfaces
             la, ahex, key = min(ST.anchors, key=lambda a: abs(a[0] - l_))
             th, tl, ts = hls(ST.C[key])
             return from_hls(th, max(0.03, min(0.97, tl + (l_ - la) * ST.flip)), ts)
@@ -595,7 +595,7 @@ def _paint_bar(cv, kind="title", tag="grad"):
 
 
 def bar_into(cv, t, kind, x0, y0, x1, y1, tag="grad"):
-    """A pack's bar (title / title_off / section) drawn into a part of a canvas -> its text colour. 2.118.0: shared
+    """A pack's bar (title / title_off / section) drawn into a part of a canvas -> its text color. 2.118.0: shared
     by the title bars and the theme picker's preview (any pack, not only the running one)."""
     w, h = max(x1 - x0, 2), max(y1 - y0, 2)
     spec = t.part("bars", kind) or t.part("bars", "title")

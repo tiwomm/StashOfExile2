@@ -141,7 +141,7 @@ def goal_target(g):
 
 
 def char_level():
-    """The level the log last showed for your character (the build lock's, else the last one that levelled)."""
+    """The level the log last showed for your character (the build lock's, else the last one that leveled)."""
     st = state()
     lv = st.get("levels") or {}
     mine = (cfg()["lock"].get("character") or "").strip().lower()

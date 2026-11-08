@@ -1,19 +1,19 @@
 """Light looks for the overlay (2.101.0, from the mockups - feedback: "a lightweight one is needed desperately").
 
 Four styles drawn with plain canvas lines and text - no Pillow artwork, nothing to re-render when the game window
-changes size - each as a Bar (resting on the XP bar) and a Panel (a card you place anywhere), in a set of colours:
+changes size - each as a Bar (resting on the XP bar) and a Panel (a card you place anywhere), in a set of colors:
   hairline  no box: outlined text and one thin accent line, on one row
   slate     a flat box with thin dividers; a switch that's on is underlined (a bar on its left in the Panel)
   flanks    (shown as Split) no box: the numbers beside the life orb, the switches beside the mana orb - the middle stays clear
   micro     the smallest: the times, the rank and the switches as lettered squares (Ritual shows its count, 2/3)
 "Classic" is the stone-and-bronze look of before (hudart.py). Settings › Appearance › Overlay settings: Style, then
-Colours ("Exile Gold" is the Game bar's own colours; the others are the theme packs'; "Follow the app theme").
+Colors ("Exile Gold" is the Game bar's own colors; the others are the theme packs'; "Follow the app theme").
 The same parts as Classic: the timer and its ⏸ / ▶, the map's time, where you are, its rank (click to rank), Maps,
 Avg, the clock, the switches, Notes ▾ / Calc ▾ / Regex ▾ / Vendor ▾, the lock and ⚙ - each with its switch in
 Overlay › Options. The goal bar (Focus / Campaign) is drawn in the same style (ovparts.py).
 
-No box (hairline, flanks) needs Windows' see-through colour key (-transparentcolor); on other systems they get the
-colour set's box. GGG ToS: looks only - windows of the app's own; nothing here touches the game."""
+No box (hairline, flanks) needs Windows' see-through color key (-transparentcolor); on other systems they get the
+color set's box. GGG ToS: looks only - windows of the app's own; nothing here touches the game."""
 import re
 import sys
 import tkinter as tk
@@ -29,7 +29,7 @@ STYLES.update(_ORN_NAMES)                                    # 2.110.0: Herald, 
 _FM_CACHE = {}                   # 2.112.3: measuring fonts, kept (see _lt_fm)
 LIGHT = ("hairline", "slate", "flanks", "micro") + ORNATE
 BOXLESS = ("hairline", "flanks")
-KEY = "#010101"                    # a box-less look's see-through colour (never used for anything that shows)
+KEY = "#010101"                    # a box-less look's see-through color (never used for anything that shows)
 WARN = "#e0a352"
 
 # id: (name, box, line, text, strong, muted, accent) - each theme pack's own surface_sunken, border, text,
@@ -51,7 +51,7 @@ DEFAULT_COLORS = "exile"
 
 
 def _keep_colors():
-    """The colour sets keep their own colours in every app theme (like the Classic looks: overlaywin)."""
+    """The color sets keep their own colors in every app theme (like the Classic looks: overlaywin)."""
     from . import themes as _th
     for c in COLORS.values():
         _th.KEEP.update(v.lower() for v in c[1:] if v and _th.is_hex(v))
@@ -67,10 +67,10 @@ def can_see_through():
 
 
 def palette(style, cid, boxed=False):
-    """The colours, font and shape of a light look. "theme" takes the app theme's (a light theme's dark text can't
+    """The colors, font and shape of a light look. "theme" takes the app theme's (a light theme's dark text can't
     be read over the game without a box, so the box-less styles use Exile Gold then)."""
     from .overlaywin import theme_palette
-    if style in ORNATE:                                      # 2.110.0: its own colours (Colours doesn't apply)
+    if style in ORNATE:                                      # 2.110.0: its own colors (Colors doesn't apply)
         return _ornate_palette(style)
     c = COLORS.get(cid) or COLORS[DEFAULT_COLORS]
     if cid == "theme":
@@ -138,8 +138,8 @@ class LightOverlay:
     def ov_preview(self, host, style, width=700, scene="#17130f"):
         """Draw the bar of `style` into `host` (a Frame) with the very code that draws it over the game - its palette,
         frame, fonts and parts, sample numbers, at `width` px (a 1440p game's XP bar, scaled) - so Settings ›
-        Appearance shows what you'll get (feedback: the old mock-up previews had wrong colours and shapes). The
-        Colours you picked apply, as over the game. A see-through style shows `scene` (a dark bit of game) behind it.
+        Appearance shows what you'll get (feedback: the old mock-up previews had wrong colors and shapes). The
+        Colors you picked apply, as over the game. A see-through style shows `scene` (a dark bit of game) behind it.
         Nothing in it answers clicks. The overlay over the game is left as it was. -> [canvas]"""
         from . import hudart, themes as TH
         from .merged_page import hud_k
@@ -212,15 +212,15 @@ class LightOverlay:
         return v if v in STYLES else "classic"
 
     def ov_look_colors(self):
-        """2.111.0: no Colours picker any more - every light style uses its default set (Exile Gold)."""
+        """2.111.0: no Colors picker any more - every light style uses its default set (Exile Gold)."""
         return DEFAULT_COLORS
 
     def ov_light(self):
         return self.ov_look() in LIGHT
 
     def ov_palette(self):
-        """2.109.0: the one look of everything over the game - the bar's Style, Colours and Layout. Notes, Calc,
-        Regex favorites, Rates, the goal bar and every card take it (they used the app theme or the Classic colours
+        """2.109.0: the one look of everything over the game - the bar's Style, Colors and Layout. Notes, Calc,
+        Regex favorites, Rates, the goal bar and every card take it (they used the app theme or the Classic colors
         before, so none matched)."""
         from . import hudart, themes as TH
         from .overlaywin import theme_palette, _seed
@@ -233,7 +233,7 @@ class LightOverlay:
         return P
 
     def ov_look_set(self, style=None, colors=None):
-        """Settings › Appearance › Overlay settings: Style / Colours picked - the overlay is built again."""
+        """Settings › Appearance › Overlay settings: Style / Colors picked - the overlay is built again."""
         cfg = self.tracker_cfg()
         if style in STYLES and style != cfg.get("look"):
             cfg["look"] = style
@@ -275,7 +275,7 @@ class LightOverlay:
 
     def _lt_rule(self, cv, P, x0, x1, y, strong="c"):
         """A thin accent line: fading out at the ends (strong "c" = in the middle, "l" / "r" = at that end); a
-        box-less look gets a plain line (a fade would end in the see-through colour's black, not the game)."""
+        box-less look gets a plain line (a fade would end in the see-through color's black, not the game)."""
         if P.get("boxless") or x1 - x0 < 8:
             cv.create_line(x0, y, x1, y, fill=P["accent"], tags=("mg",))
             return
@@ -543,7 +543,7 @@ class LightOverlay:
         return self._lt_row(w, cv, P, want, spot[2], "slate")
 
     def _lt_ornate_bar(self, w, cv, P, want, spot, piece):
-        """2.110.0: Herald, Gilded, Warbanner, Verdant, Gloom - the Slate row in the skin's colours, fonts and tabs
+        """2.110.0: Herald, Gilded, Warbanner, Verdant, Gloom - the Slate row in the skin's colors, fonts and tabs
         (the frame, its inner line and the corner marks come from the window: overlaywin)."""
         return self._lt_row(w, cv, P, want, spot[2], P["skin"])
 

@@ -120,7 +120,7 @@ def _seed(TH, P):
             TH.ST.cache[v.lower()] = v.lower()
 
 
-OV_PAL = [None]                  # 2.109.0: App.ov_palette - the overlay's own Style / Colours / Layout
+OV_PAL = [None]                  # 2.109.0: App.ov_palette - the overlay's own Style / Colors / Layout
 
 
 def pal():
@@ -159,8 +159,8 @@ _TEX = {}
 
 
 def texture(root, w, h, seed=7, calm=False):
-    """2.47.0: a grungy parchment (feedback: "too clean") - made here, no image file: the base color, fibres and
-    grain, a few stains and darker, burnt edges. A Tk PhotoImage (None without Pillow)."""
+    """2.47.0: a grungy parchment (feedback: "too clean") - made here, no image file: the base color, fibers and
+    grain, a few stains and darker, burned edges. A Tk PhotoImage (None without Pillow)."""
     key = (w // 16 * 16 + 16, h // 16 * 16 + 16, seed, calm)
     if key in _TEX:
         return _TEX[key]
@@ -179,17 +179,17 @@ def texture(root, w, h, seed=7, calm=False):
             r, g, b = px[x, y]
             px[x, y] = (r + n, g + n, b + n - 2)
     d = ImageDraw.Draw(img, "RGBA")
-    # 2.51.0 calm: where text sits (feedback: "barely legible") - lighter grain, faint stains and fibres
+    # 2.51.0 calm: where text sits (feedback: "barely legible") - lighter grain, faint stains and fibers
     for _ in range(max(6, W * H // 6000)):                 # stains
         cx, cy, rr = rnd.randint(0, W), rnd.randint(0, H), rnd.randint(8, 40)
         d.ellipse((cx - rr, cy - rr * 0.7, cx + rr, cy + rr * 0.7),
                   fill=(120, 86, 40, rnd.randint(4, 10) if calm else rnd.randint(10, 28)))
-    for _ in range(W * H // 900):                          # fibres
+    for _ in range(W * H // 900):                          # fibers
         x0, y0 = rnd.randint(0, W), rnd.randint(0, H)
         d.line((x0, y0, x0 + rnd.randint(-14, 14), y0 + rnd.randint(-3, 3)),
                fill=(110, 80, 40, rnd.randint(6, 14) if calm else rnd.randint(14, 34)))
     img = img.filter(ImageFilter.GaussianBlur(0.6))
-    edge = Image.new("L", (W, H), 0)                       # burnt, darker edges
+    edge = Image.new("L", (W, H), 0)                       # burned, darker edges
     de = ImageDraw.Draw(edge)
     for i in range(max(0, min(14, W // 2 - 1, H // 2 - 1))):
         de.rectangle((i, i, W - 1 - i, H - 1 - i), outline=int(150 * (1 - i / 14) ** 2))
@@ -221,7 +221,7 @@ class CanvasText:
     def __init__(self, canvas, item, bg=None, halo=None):
         self.canvas, self.item, self._bg = canvas, item, bg
         self.halos = []
-        if halo:                                  # 2.51.0: a soft outline in the page colour round every letter,
+        if halo:                                  # 2.51.0: a soft outline in the page color round every letter,
             x, y = canvas.coords(item)            # so ink stays readable on the texture and over the game behind it
             for dx, dy in ((-1, 0), (1, 0), (0, -1), (0, 1)):     # 2.53.0: no diagonals - softer
                 h = canvas.create_text(x + dx, y + dy, text=canvas.itemcget(item, "text"), fill=halo,

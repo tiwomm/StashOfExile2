@@ -129,7 +129,7 @@ class OverlayRates:
         return r[0] + int(r[2] * 0.80), r[1] + int(r[3] * 0.18)
 
     def ovr_palette(self):
-        """The overlay's own look: the Game bar's colours over the game bar layout, the Panel's card colours otherwise."""
+        """The overlay's own look: the Game bar's colors over the game bar layout, the Panel's card colors otherwise."""
         from .overlaywin import pal
         return pal()                                     # 2.109.0: the overlay's chosen style
 

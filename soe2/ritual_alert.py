@@ -24,7 +24,7 @@ from pathlib import Path
 from . import buglog
 
 BASE_H = 1440                    # the templates and offsets are measured on a 2560x1440 game
-# where to look for the icon, from the bottom centre of the game (1440p pixels): x from, x to, up from bottom (from, to)
+# where to look for the icon, from the bottom center of the game (1440p pixels): x from, x to, up from bottom (from, to)
 SEARCH = (240, 620, 170, 0)
 TEXT_BOX = (50, 120, 6, 44)      # the counter's box, relative to the icon's top-left: x from, x to, y from, y to
 ICON_MIN = 0.62                  # template-match score that counts as "the icon is there"

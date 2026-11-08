@@ -119,7 +119,7 @@ _LINE_CACHE = {"n": -1, "map": {}}
 
 
 def sid_for_line(key):
-    """A listing's mod line (normalised) -> trade stat id (2.0). Exact wording first; then the other ways the game and
+    """A listing's mod line (normalized) -> trade stat id (2.0). Exact wording first; then the other ways the game and
     the trade site write the same stat: 'reduced' for a negative 'increased', '3 additional times' for
     'an additional time', '# additional rare chest' for '# additional rare chests'."""
     sid = TEXT2SID.get(key)
@@ -367,7 +367,7 @@ DEFAULT_IMPACT = [(re.compile(rx), imp) for rx, imp in (
 )]
 
 
-RULES = load_json("mod_rules.json", {})        # your own changes: normalised mod text -> impact
+RULES = load_json("mod_rules.json", {})        # your own changes: normalized mod text -> impact
 
 # 2.6.0: waystone and relic rules have their own names ("relic:#% increased movement speed"), so a relic mod never
 # picks up a jewel rule that happens to use the same words. Tablet and jewel rules keep the plain wording.
@@ -461,7 +461,7 @@ def _load_default_rules():
     return out
 
 
-DEFAULT_RULES = _load_default_rules()        # normalised mod text -> impact
+DEFAULT_RULES = _load_default_rules()        # normalized mod text -> impact
 
 
 def default_impact(k):
@@ -480,7 +480,7 @@ HIGH_LIFT, MIN_WITH, MIN_WITHOUT = 2.0, 8, 8
 
 
 def learned_info(k):
-    """What the data says about a mod (normalised text) -> {"tier", "lift", "n", "from"} or None."""
+    """What the data says about a mod (normalized text) -> {"tier", "lift", "n", "from"} or None."""
     sid = TEXT2SID.get(k)
     if not sid or not LEARNED:
         return None
@@ -491,7 +491,7 @@ def learned_info(k):
 
 
 # ---- shared rules (Export rules / Import rules). Imported votes live in their own file so they never touch YOUR rules.
-COMMUNITY = load_json("community_rules.json", {})     # normalised mod text -> {"text", "from": [sharer ids]}
+COMMUNITY = load_json("community_rules.json", {})     # normalized mod text -> {"text", "from": [sharer ids]}
 
 
 COMMUNITY_ACTIVE, COMMUNITY_DISAGREE = set(), set()
@@ -589,11 +589,11 @@ def _clean_tab_line(line):
     return [t]
 
 
-TAB_KINDS = {}      # normalised mod text -> {"Prefix", "Suffix"} as listed in tabs.txt
+TAB_KINDS = {}      # normalized mod text -> {"Prefix", "Suffix"} as listed in tabs.txt
 
 
 def load_tabs():
-    """tabs.txt -> {normalised mod text: [display text, {tablet types it can roll on}]}"""
+    """tabs.txt -> {normalized mod text: [display text, {tablet types it can roll on}]}"""
     out, cur, kind = {}, None, None
     try:
         with open(P("tabs.txt"), encoding="utf-8-sig") as f:
@@ -677,11 +677,11 @@ def clean_jewel_line(line):
     return out
 
 
-JEWEL_KINDS = {}      # normalised mod text -> {"Prefix", "Suffix"}
+JEWEL_KINDS = {}      # normalized mod text -> {"Prefix", "Suffix"}
 
 
 def load_jewels():
-    """jewels.txt -> {normalised mod text: [display text, {jewel types it can roll on}]}.  Desecrated pools are skipped
+    """jewels.txt -> {normalized mod text: [display text, {jewel types it can roll on}]}.  Desecrated pools are skipped
     (those mods are always searched as 'Any')."""
     out, cur, kind, skip = {}, None, None, False
     try:
@@ -770,7 +770,7 @@ migrate_rule_keys(DEFAULT_RULES)
 
 
 def mod_cat(k, base=None):
-    """'tablet' or 'jewel' for a normalised mod text (base = the item's base type, used when the lists don't know the mod)."""
+    """'tablet' or 'jewel' for a normalized mod text (base = the item's base type, used when the lists don't know the mod)."""
     if k in JEWELS:
         return "jewel"
     if k in TABS:
@@ -832,7 +832,7 @@ def option_for(sid, text):
 
 
 # ---- what the trade site calls each stat, so a listing's mod lines can be compared with what we searched for
-SIDTEXT = {}        # stat id -> normalised wording
+SIDTEXT = {}        # stat id -> normalized wording
 
 
-TEXT2SID = {}       # normalised wording -> stat id (explicit if there is one)
+TEXT2SID = {}       # normalized wording -> stat id (explicit if there is one)

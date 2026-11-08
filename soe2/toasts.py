@@ -19,7 +19,7 @@ from . import buglog
 from .config import load_json, save_json
 from .style import BODY, C, SMALL
 
-KINDS = {               # icon, colour key
+KINDS = {               # icon, color key
     "info": ("ℹ", "blue"),
     "success": ("✔", "green"),
     "warning": ("⚠", "good"),
@@ -110,7 +110,7 @@ class Toasts:
             pass
         outer = tk.Frame(w, bg=colour, padx=0, pady=0)
         outer.pack(fill="both", expand=True)
-        tk.Frame(outer, bg=colour, width=4).pack(side="left", fill="y")          # a coloured edge, plus the icon
+        tk.Frame(outer, bg=colour, width=4).pack(side="left", fill="y")          # a colored edge, plus the icon
         box = tk.Frame(outer, bg=C["panel2"], padx=12, pady=8)
         box.pack(side="left", fill="both", expand=True)
         head = tk.Frame(box, bg=C["panel2"])

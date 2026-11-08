@@ -3,13 +3,13 @@
   git clone --depth 1 https://github.com/repoe-fork/poe2 repoe2      (only data/mods.json is needed)
   python tools/build_regexdata.py repoe2/data/mods.json regexdata.json [repoe2/data/base_items.json]
 
-2.22.0: jewels (Ruby / Emerald / Sapphire / Diamond, Time-Lost too) and gear (rings, amulets, belts, armour, weapons)
+2.22.0: jewels (Ruby / Emerald / Sapphire / Diamond, Time-Lost too) and gear (rings, amulets, belts, armor, weapons)
 as well. base_items.json gives the gear and jewel base names, which a token must not match either.
 
 For every tablet, waystone and relic mod that can roll, it keeps the text as the game shows it (numbers as #), which
 tablet types / relic sizes / waystone tiers it rolls on, its value range, and a short SEARCH TOKEN: the shortest piece
 of its text that appears in no other mod of that item type and in none of the item's other lines (properties,
-implicits, flavour text), so the stash search never matches the wrong thing.
+implicits, flavor text), so the stash search never matches the wrong thing.
 
 RePoE is MIT licensed (code); the data itself is Grinding Gear Games' (see THIRD_PARTY_NOTICES.txt)."""
 import json
@@ -107,7 +107,7 @@ def shown_range(text):
 
 
 def singular_variant(line):
-    """'... allow rerolling favours # additional times' -> '... allow rerolling favours an additional time' (how the game
+    """'... allow rerolling favors # additional times' -> '... allow rerolling favors an additional time' (how the game
     writes a count of 1). None if the line has no '# additional <plural>'."""
     m = re.search(r"# additional ([a-z ]+?)s?(\b(?: in| from| before| when| at| on| to)\b.*)?$", line)
     if not m or not re.search(r"# additional [a-z ]*s\b", line):

@@ -1,11 +1,11 @@
-"""Every colour in the app follows the theme (2.111.0). Lists colours written into the code (bg="#...", fg=...,
+"""Every color in the app follows the theme (2.111.0). Lists colors written into the code (bg="#...", fg=...,
 fill=..., a tag's foreground / background...) that stay the same in every theme pack - use a C[...] token instead.
 
   py tools/check_theme.py        exit 1 if any
 
 Not checked: the overlay's own looks (they follow the overlay Style: ovskins, ovlight, hudart, overlaywin), the
-theme engine itself (themes.py, style.py's palette), the start-up screen, and lines marked "# theme-ok" (colours
-that must not change: item rarity, the game's own colours)."""
+theme engine itself (themes.py, style.py's palette), the start-up screen, and lines marked "# theme-ok" (colors
+that must not change: item rarity, the game's own colors)."""
 import glob
 import os
 import re
@@ -39,7 +39,7 @@ def main():
     bad = sorted(c for c, v in seen.items() if len(v) == 1 and len(themes.packs()) > 1)
     for c in bad:
         print(f"{c}  same in every theme: {', '.join(hits[c])}")
-    print("OK - every colour follows the theme" if not bad else f"{len(bad)} colour(s) ignore the theme - use C[...]")
+    print("OK - every color follows the theme" if not bad else f"{len(bad)} color(s) ignore the theme - use C[...]")
     return 1 if bad else 0
 
 

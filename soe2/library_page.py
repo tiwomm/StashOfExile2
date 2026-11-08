@@ -1,5 +1,5 @@
 """The Item library page (1.38): browse base types by class and base group, search modifier stats, and paste a copied
-item to see how the app reads it (class, base, group, defences, sockets, each mod's trade stat)."""
+item to see how the app reads it (class, base, group, defenses, sockets, each mod's trade stat)."""
 import tkinter as tk
 from tkinter import ttk
 
@@ -50,7 +50,7 @@ class LibraryPage:
 
         self.lib_tree = ttk.Treeview(tf, columns=("defence", "values", "count"), show="tree headings")
         self.lib_tree.heading("#0", text="Class / base group / base")
-        for cid, title, w, anchor in (("defence", "Defences", 120, "w"), ("values", "Base values", 140, "w"),
+        for cid, title, w, anchor in (("defence", "Defenses", 120, "w"), ("values", "Base values", 140, "w"),
                                       ("count", "Bases", 55, "e")):
             self.lib_tree.heading(cid, text=title)
             self.lib_tree.column(cid, width=w, anchor=anchor, stretch=False)

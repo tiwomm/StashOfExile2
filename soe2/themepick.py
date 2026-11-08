@@ -5,7 +5,7 @@ the whole app changes at once, as the cards did. (The first-start page keeps the
 
 The preview is drawn from the pack itself with the app's own parts - its title bar (themes.bar_into), the nav and its
 selected-page marker (sidebar.draw_marker), a section bar, the flat buttons (themes.flat_spec), list rows, the meter -
-in the pack's colours and fonts, with your Accent colour when you picked one.
+in the pack's colors and fonts, with your Accent color when you picked one.
 GGG ToS: it only draws in the app's own window."""
 import tkinter as tk
 

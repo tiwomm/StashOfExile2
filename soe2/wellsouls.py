@@ -4,8 +4,8 @@ the desecration window, compare them against tier database and show the tier ...
 How it works:
   * Client.txt says you entered The Well of Souls (area Abyss_Hub) -> the helper is on while you're there (no
     always-on watcher; feedback). A small notice over the game says so.
-  * While there, a light look at where the window opens (screen centre, or the space left of the inventory): its
-    title plate is the warm parchment colour. Only then is the option box read (Windows' own text reader).
+  * While there, a light look at where the window opens (screen center, or the space left of the inventory): its
+    title plate is the warm parchment color. Only then is the option box read (Windows' own text reader).
   * Each option -> its wording with the numbers taken out -> tierdata.json (built by tools/build_tierdata.py from
     the game data, RePoE): every tier of that mod per item type, with its value ranges. The item type comes from
     the options themselves (Movement Speed only rolls on boots ...) and from the item's picture in the slot (matched
@@ -26,10 +26,10 @@ AREAS = ("Abyss_Hub",)                    # The Well of Souls (the hub with the 
 LORDS = ("kurgal_mod", "amanamu_mod", "ulaman_mod")
 FP = 16                                   # item-art fingerprint size (FP x FP gray + mask)
 
-# Where the window is, in game heights (measured at 2560x1440, the same at any 16:9 size): the option box's centre is
-# the screen's centre, or the centre of the space left of the open inventory (INV wide).
+# Where the window is, in game heights (measured at 2560x1440, the same at any 16:9 size): the option box's center is
+# the screen's center, or the center of the space left of the open inventory (INV wide).
 INV = 0.613
-TITLE = (-0.095, 0.188, 0.095, 0.222)     # the title plate, around the centre x (x0, y0, x1, y1)
+TITLE = (-0.095, 0.188, 0.095, 0.222)     # the title plate, around the center x (x0, y0, x1, y1)
 BOX = (-0.24, 0.452, 0.24, 0.682)         # the three options
 SLOT = (-0.055, 0.236, 0.055, 0.441)      # the item's picture
 ROWS = 3
@@ -268,14 +268,14 @@ def match_art(img, candidates):
 
 # ================================================================ the window on screen
 def centre_xs(rect):
-    """Where the window's centre can be (pixels, game-relative): the screen's centre (inventory closed) and the
-    centre of the space left of the inventory."""
+    """Where the window's center can be (pixels, game-relative): the screen's center (inventory closed) and the
+    center of the space left of the inventory."""
     w, h = rect[2] - rect[0], rect[3] - rect[1]
     return [w / 2, (w - INV * h) / 2]
 
 
 def part(rect, cx, box):
-    """A part of the window (in game heights around the centre x) -> screen pixels (l, t, r, b)."""
+    """A part of the window (in game heights around the center x) -> screen pixels (l, t, r, b)."""
     h = rect[3] - rect[1]
     return (int(rect[0] + cx + box[0] * h), int(rect[1] + box[1] * h), int(rect[0] + cx + box[2] * h),
             int(rect[1] + box[3] * h))

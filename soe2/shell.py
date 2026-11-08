@@ -20,7 +20,7 @@ TITLE_OFF = ("#26324a", "#182236")
 UTIL_TITLE = ("#3a3020", "#1e1810")
 DOCK_W = 96
 KINDS = (("module", "MODULES"), ("tool", "TOOLS"), ("utility", "UTILITIES"))
-# tile colours per kind: fill, fill under the mouse, edge, gloss line
+# tile colors per kind: fill, fill under the mouse, edge, gloss line
 TILE = {"module": ("#22396a", "#2e4c88", "#5b77ad", "#3f5f9e"), "tool": ("#173836", "#21504c", "#3f9a90", "#2c5c58"),
         "utility": ("#2a2416", "#3a3220", "#a8741a", "#4a3c22")}
 EDGE = 5                        # the resize border around every window
@@ -135,7 +135,7 @@ class DeskWindow(tk.Toplevel):
         self.withdraw()
         self.overrideredirect(True)
         # 2.10.2: not transient() on Windows - with it, Tk threw away and rebuilt this window's real (Win32) window
-        # every time the app was maximised, restored or snapped, and the new one had no owner: it fell behind the
+        # every time the app was maximized, restored or snapped, and the new one had no owner: it fell behind the
         # app (windows "vanished") and the keyboard was lost. own_by_app() sets the owner instead (diag_log.txt).
         if sys.platform != "win32":
             try:
@@ -147,9 +147,9 @@ class DeskWindow(tk.Toplevel):
         self.shell, self.key, self.title, self.icon, self.utility = shell, key, title, icon, utility
         self.inner = tk.Frame(self, bg=C["panel"])
         self.inner.pack(fill="both", expand=True, padx=0 if PAGES else EDGE, pady=0 if PAGES else EDGE)
-        self.state_ = "closed"                 # closed / open / minimised
+        self.state_ = "closed"                 # closed / open / minimized
         self.maxed = False
-        self.geo = None                        # [x, y, w, h] on the desktop (kept while closed / minimised / maximised)
+        self.geo = None                        # [x, y, w, h] on the desktop (kept while closed / minimized / maximized)
         self._g = None                         # where it is now
         self._move_job = None
         colours = UTIL_TITLE if utility else TITLE_ON
@@ -788,7 +788,7 @@ class Shell:
             fn()
 
     def hide_all(self):
-        """The app went to the tray / was minimised: its windows go with it."""
+        """The app went to the tray / was minimized: its windows go with it."""
         self._all_hidden = True
         for w in self.windows.values():
             if w.state_ == "open":
@@ -821,7 +821,7 @@ class Shell:
 
     def heal(self):
         """2.10.1, every 2 s: a window that is open in the app but hidden by the system (it vanished when the app was
-        resized) is shown again, in its place. Not while the app itself is minimised or in the tray."""
+        resized) is shown again, in its place. Not while the app itself is minimized or in the tray."""
         try:
             if getattr(self, "_all_hidden", False) or self.root.state() not in ("normal", "zoomed"):
                 return
@@ -895,13 +895,13 @@ class Shell:
             if path:
                 try:
                     src = Image.open(path).convert("RGB")
-                    s = max(w / src.width, h / src.height)            # cover the desktop, centred
+                    s = max(w / src.width, h / src.height)            # cover the desktop, centered
                     src = src.resize((max(1, int(src.width * s)), max(1, int(src.height * s))), Image.LANCZOS)
                     l, t = (src.width - w) // 2, (src.height - h) // 2
                     img = src.crop((l, t, l + w, t + h))
                 except Exception:
                     img = None
-            if img is None:                                           # the default: dark, warm glow off-centre
+            if img is None:                                           # the default: dark, warm glow off-center
                 small = Image.new("RGB", (64, 40))
                 px = small.load()
                 for y in range(40):

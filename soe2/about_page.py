@@ -18,7 +18,7 @@ DISCORD_HOVER = "#4752c4"
 
 
 def _keep_discord():
-    """2.116.0 (P10: the Join the Discord button came out grey in some themes): Discord's own colours stay."""
+    """2.116.0 (P10: the Join the Discord button came out gray in some themes): Discord's own colors stay."""
     try:
         from . import themes as _th
         _th.KEEP.update({DISCORD.lower(), DISCORD_HOVER})

@@ -1,7 +1,7 @@
-"""2.83.0: Island Rumours in the app (part of the Expedition helper, Remnant's row in Overlay ↳ Settings) and the
+"""2.83.0: Island Rumors in the app (part of the Expedition helper, Remnant's row in Overlay ↳ Settings) and the
 Remnant watcher's places: it watches only where remnants can be (feedback: "it keeps popping up in random areas").
-  * Island Rumours: only in your hideout (Client.txt; feedback: "watch only in hideout"). A look at a small copy of
-    the screen for the Uncharted Waters card's parchment; only then its part is read. Each rumour gets a tag: the
+  * Island Rumors: only in your hideout (Client.txt; feedback: "watch only in hideout"). A look at a small copy of
+    the screen for the Uncharted Waters card's parchment; only then its part is read. Each rumor gets a tag: the
     island and your Map library rank.
   * Remnant: always on in a Grand Expedition island (Client.txt: ExpeditionLogBook_...), off in hideouts, towns and
     the campaign; in other maps as before.
@@ -18,14 +18,14 @@ from .config import save_json, SETTINGS
 POLL = 0.6
 MARK_EVERY = 2.0             # seconds between looks for the Expedition mark in a map
 GONE = 2
-READS = 3                 # 2.113.0: each card is read this many times, the rumours found put together
+READS = 3                 # 2.113.0: each card is read this many times, the rumors found put together
 GRAND = "ExpeditionLogBook_"
 
 
 class RumoursPage:
     # ---------------------------------------------------------------- where you are (Client.txt)
     def expedition_area(self, area_id, kind):
-        """Every area change: the Remnant watcher's zone and the rumours watcher (hideout only)."""
+        """Every area change: the Remnant watcher's zone and the rumors watcher (hideout only)."""
         a = str(area_id or "")
         self.rm_zone = "grand" if a.startswith(GRAND) else kind
         self.rm_map_exp = False                   # a map: the watcher waits for the Expedition mark on screen
@@ -66,7 +66,7 @@ class RumoursPage:
         if seen or seen is None:                      # (no OpenCV: as before - it watches)
             self.rm_map_exp = True
 
-    # ---------------------------------------------------------------- Island Rumours
+    # ---------------------------------------------------------------- Island Rumors
     def ru_on(self):
         c = self.remnant_cfg()
         return bool(c.get("on") and c.get("rumours", True))
@@ -92,7 +92,7 @@ class RumoursPage:
         self.ru_hide()
 
     def ru_read(self, rect, img=None):
-        """The game window -> [(rumour, island, box on screen)] (blocking: OCR), [] when no card."""
+        """The game window -> [(rumor, island, box on screen)] (blocking: OCR), [] when no card."""
         if img is None:
             img = RM.grab(rect)
         card = RU.find_card(img, rect[3] - rect[1])
@@ -113,7 +113,7 @@ class RumoursPage:
 
     def _ru_note(self, lines):
         """2.113.1: what the reader saw on the last card -> rumours_read.txt in the data folder (the card's own words
-        only - nothing about you; never sent). When a rumour is missed, it shows why."""
+        only - nothing about you; never sent). When a rumor is missed, it shows why."""
         try:
             from .config import P
             with open(P("rumours_read.txt"), "w", encoding="utf-8") as f:
@@ -160,8 +160,8 @@ class RumoursPage:
                         got.setdefault(r_[1], r_)   # up to READS times and what they found is put together
                     rows = sorted(got.values(), key=lambda r_: r_[2][1])
                     if rows:                    # 2.104.1 (feedback: nothing showed): a card read while it was still
-                        last = th               # opening gave no rumours and was never read again - now it's read
-                except RM.OcrUnavailable:       # until its rumours are found
+                        last = th               # opening gave no rumors and was never read again - now it's read
+                except RM.OcrUnavailable:       # until its rumors are found
                     break
                 except Exception:
                     if not getattr(self, "_ru_err", False):
@@ -190,8 +190,8 @@ class RumoursPage:
 
     def ru_show(self, rows, edge):
         """One small panel beside the Uncharted Waters card (2.113.0, feedback: "too big and clunky... more like the
-        rune card helper"): a title, then one tight row per rumour - your Map library rank as a badge, the island,
-        and the rumour in small muted text - in the card's order. Click-through, left out of captures."""
+        rune card helper"): a title, then one tight row per rumor - your Map library rank as a badge, the island,
+        and the rumor in small muted text - in the card's order. Click-through, left out of captures."""
         self.ru_hide()
         from . import maplib
         from .overlaywin import pal
@@ -213,7 +213,7 @@ class RumoursPage:
         box = tk.Frame(w, bg=P["bg"], highlightthickness=max(1, int(P.get("border") or 1)),
                        highlightbackground=edge_col, padx=8, pady=4)
         box.pack()
-        tk.Label(box, text="Island rumours", bg=P["bg"], fg=P["head"], font=(body, size, "bold"), anchor="w").grid(
+        tk.Label(box, text="Island rumors", bg=P["bg"], fg=P["head"], font=(body, size, "bold"), anchor="w").grid(
             row=0, column=0, columnspan=3, sticky="w")
         for i, (rumour, island, _b) in enumerate(rows, 1):
             rank = mine.get(island)

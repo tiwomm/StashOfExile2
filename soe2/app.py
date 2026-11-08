@@ -86,7 +86,7 @@ from .community_page import CommunityPage      # 2.94.0: Settings › Privacy & 
 from .ratemods_page import RateModsPage
 from .ovrecap import OverlayRecap        # 2.96.0: Help rate mods, the Bulk Pricing floor
 from .wellsouls_page import WellSoulsPage      # 2.81.0: Desecration Helper (tiers at The Well of Souls)
-from .rumours_page import RumoursPage          # 2.83.0: Island Rumours; where the Remnant watcher looks
+from .rumours_page import RumoursPage          # 2.83.0: Island Rumors; where the Remnant watcher looks
 from .favorites_page import FavoritesPage      # 2.84.0: Price Checks ↳ Favorites
 from .boardmod_page import BoardModPage        # 2.85.0: your community name, Suggest an edit, History, reviewers
 from .gearbook_page import GearBookPage  # 2.99.0: Mod book › Gear rules, Unique rules, Learned per tab
@@ -251,7 +251,7 @@ class App(SettingsPage, GearBookPage, PriceCheckPage, PricePopup, FavoritesPage,
         """The app's window is back: so are its windows (2.0 beta 13: they are real windows of their own)."""
         if e.widget is self.root and hasattr(self, "shell"):
             self.root.after(30, self.shell.show_all)
-            self.root.after(60, self.shell.check_owners)      # 2.10.2: maximise / restore / snap
+            self.root.after(60, self.shell.check_owners)      # 2.10.2: maximize / restore / snap
 
     def on_unmap(self, e):
         if e.widget is not self.root or self.in_tray:
@@ -259,7 +259,7 @@ class App(SettingsPage, GearBookPage, PriceCheckPage, PricePopup, FavoritesPage,
         if self.root.state() != "iconic":
             return
         if hasattr(self, "shell") and sys.platform != "win32":
-            self.shell.hide_all()        # (Windows hides and brings back a minimised window's own windows itself)
+            self.shell.hide_all()        # (Windows hides and brings back a minimized window's own windows itself)
         if SETTINGS.get("on_top", True) and not self.user_minimized():
             self.root.after(80, self.unminimize)    # minimized without you asking: bring it straight back
             return
@@ -505,7 +505,7 @@ class App(SettingsPage, GearBookPage, PriceCheckPage, PricePopup, FavoritesPage,
         _splash_step(i=2)
         self.shell.finish()
         self.shell.set_launcher(self.shell.cfg.get("launcher", "dock"))
-        self.root.after(60, self.restore_zoom)                 # 2.23.1: maximised last time -> maximised again
+        self.root.after(60, self.restore_zoom)                 # 2.23.1: maximized last time -> maximized again
         self.root.after(1500, self.show_whatsnew)              # 2.0 beta 12: once per new version
         self.root.after(4000, self.board_name_check)           # 2.85.0: your community name, asked once (2.86.1: or again if reset)
         if SPLASH[0] is not None:                              # 2.0.0: the start-up screen waits for the mod list,
@@ -710,7 +710,7 @@ class App(SettingsPage, GearBookPage, PriceCheckPage, PricePopup, FavoritesPage,
             self.rx_refresh_values()
 
     def page_open(self, title):
-        """Is that module's window open (on the desktop, not minimised)?"""
+        """Is that module's window open (on the desktop, not minimized)?"""
         sh = getattr(self, "shell", None)
         return sh is None or sh.is_open(self.page_key.get(title, title))
 
@@ -1021,7 +1021,7 @@ class App(SettingsPage, GearBookPage, PriceCheckPage, PricePopup, FavoritesPage,
     def relook(self):
         from .style import relook
         from .hangwatch import step
-        step("theme change: re-colour every window")
+        step("theme change: re-color every window")
         n, secs = relook(self.root, SETTINGS.get("theme"))
         step("theme change: theme cards")
         self._paint_look_cards()
@@ -1029,7 +1029,7 @@ class App(SettingsPage, GearBookPage, PriceCheckPage, PricePopup, FavoritesPage,
         self.paint_titlebar()
         if getattr(self, "mg_win", None) is not None and self.ov_look() == "classic":
             # the overlay over the game is built again only in Classic - the one style that takes the app theme's
-            # colours (2.112.4: the others keep their own, so closing and reopening every window over the game on
+            # colors (2.112.4: the others keep their own, so closing and reopening every window over the game on
             # each swap was slow - and risky on Windows - for nothing)
             step("theme change: overlay rebuild")
             try:
@@ -1159,7 +1159,7 @@ class App(SettingsPage, GearBookPage, PriceCheckPage, PricePopup, FavoritesPage,
         kb.bind("<Configure>", place_scope, add="+")
 
     EMPTY_TEXT = ("Nothing to price yet\nHover an item in game and press Ctrl+Alt+C: it shows up here and gets "
-                  "priced. Tablets, jewels, waystones and gear - weapons, armour, rings, uniques.")
+                  "priced. Tablets, jewels, waystones and gear - weapons, armor, rings, uniques.")
     EMPTY_TEXT_TAB = ("Type your tab's price above and press Read tab:\nevery item on it shows up here and gets priced.\n"
                       "(Ctrl+Alt+C in game still adds items one at a time.)")
 
@@ -1169,7 +1169,7 @@ class App(SettingsPage, GearBookPage, PriceCheckPage, PricePopup, FavoritesPage,
         return self.EMPTY_TEXT_TAB if SETTINGS.get("pctab", {}).get("mode") == "Stash tab" else self.EMPTY_TEXT
 
     SCOPE_TEXT = ("Bulk Pricing prices tablets, jewels, waystones and gear. Gear (2.72.0) is searched on the mods "
-                  "buyers pay for - filler mods and low tiers are left out - by its totals (defences, DPS, total "
+                  "buyers pay for - filler mods and low tiers are left out - by its totals (defenses, DPS, total "
                   "resistances), uniques by name and their well-rolled mods, crafting bases by item level. When the "
                   "listings found don't back a price up, it says Price manually: then check it on the trade site "
                   "(press O on the item).")
@@ -4644,7 +4644,7 @@ class App(SettingsPage, GearBookPage, PriceCheckPage, PricePopup, FavoritesPage,
                     None)
         if src0:                                             # 2.97.2: fractured tan, desecrated green
             colr = MOD_COL[src0]
-        from . import themes as _th2                         # unticked: its own color, dimmed (not grey)
+        from . import themes as _th2                         # unticked: its own color, dimmed (not gray)
         shown_c = colr if on and can else (_th2.mix(colr, C["odd"], .5) if can else C["muted"])
         tid = cv.create_text(tx, y, text=text, anchor="nw", font=font, width=w - tx - 12 - right, justify="left",
                              fill=shown_c, tags=("cardmod", tag, f"cardtxt{idx}"))
@@ -5228,7 +5228,7 @@ class App(SettingsPage, GearBookPage, PriceCheckPage, PricePopup, FavoritesPage,
         try:
             SETTINGS["col_widths"] = {c[0]: int(self.tree.column(c[0], "width")) for c in self.COLS}
             pw = int(self.outer.winfo_width())
-            if pw >= 250:              # 2.0 beta 22: a closed / minimised window reports 1 - that hid the item panel
+            if pw >= 250:              # 2.0 beta 22: a closed / minimized window reports 1 - that hid the item panel
                 SETTINGS["panel_w"] = pw
         except Exception:
             buglog.caught()
@@ -5261,9 +5261,9 @@ class App(SettingsPage, GearBookPage, PriceCheckPage, PricePopup, FavoritesPage,
         return f"{w}x{h}+{x}+{y}"
 
     def _note_window(self, e):
-        """Remember the window's place and size as it moves (the normal size, not maximised)."""
+        """Remember the window's place and size as it moves (the normal size, not maximized)."""
         if e.widget is not self.root or not getattr(self, "_win_restored", False):
-            return                    # 2.26.2: not while it opens - the first "normal" event wiped "maximised"
+            return                    # 2.26.2: not while it opens - the first "normal" event wiped "maximized"
         try:
             st = self.root.state()
         except tk.TclError:
@@ -5284,7 +5284,7 @@ class App(SettingsPage, GearBookPage, PriceCheckPage, PricePopup, FavoritesPage,
         self._win_save_job = self.root.after(3000, lambda: save_json("settings.json", SETTINGS))
 
     def restore_zoom(self, tries=0):
-        """Maximised last time -> maximised again. 2.25.4: only once the window is really on screen (asking before
+        """Maximized last time -> maximized again. 2.25.4: only once the window is really on screen (asking before
         that did nothing on Windows, so it opened at the plain size), and checked: if Tk didn't, Windows is asked."""
         if not (SETTINGS.get("main_window") or {}).get("zoomed"):
             self._win_restored = True                                # from now on, moves and sizes are kept

@@ -12,7 +12,7 @@ hand), tab by tab.
 How it reads:
   1. The panel: the slot frames of each known tab, drawn as boxes, are matched against the picture's edges (left 60%
      of the game, at ~720 px high so every size costs the same). The best tab + spot + size wins.
-  2. A slot is filled when its dark-blue backing shows (an empty slot is grey with a faint ghost icon).
+  2. A slot is filled when its dark-blue backing shows (an empty slot is gray with a faint ghost icon).
   3. The number: digit shapes (GLYPHS, white with a black outline, taken from 1440p shots) are matched along the
      slot's top edge; the longest run of well-matched digits side by side, on one baseline, is the stack size.
 Needs OpenCV + numpy (the app ships both for the Expedition watcher)."""
@@ -335,7 +335,7 @@ WILD_MATCH = 0.75       # 2.114.3: a wildcard's picture must look this much like
 
 
 def _icon(bgr, rect):
-    """A slot's picture without its number (the top third) - small, in colour, for matching."""
+    """A slot's picture without its number (the top third) - small, in color, for matching."""
     cv2, np = _np()
     x, y, w, h = rect
     sub = bgr[y + h // 3:y + h - max(2, h // 12), x + max(2, w // 12):x + w - max(2, w // 12)]

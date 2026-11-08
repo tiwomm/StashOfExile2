@@ -1,5 +1,5 @@
 """Bundled fonts for the overlay styles (2.110.0) - Cinzel, EB Garamond, Marcellus SC, Cormorant Garamond and
-Cormorant SC, all SIL Open Font License 1.1 (the licences sit beside them in soe2/fonts; credits in About › Credits
+Cormorant SC, all SIL Open Font License 1.1 (the licenses sit beside them in soe2/fonts; credits in About › Credits
 and the README). Loaded for this app only - nothing is installed on the PC:
   Windows: AddFontResourceExW with FR_PRIVATE (gone when the app closes)
   Linux:   FcConfigAppFontAddDir on the app's own fontconfig (Tk's Xft fonts see them)
