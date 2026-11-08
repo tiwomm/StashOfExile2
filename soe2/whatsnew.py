@@ -54,6 +54,8 @@ NOTES = {
             ("Community", "Rep and the contributor icon are gone, with Thank someone with rep. The board stopped "
                           "counting it and no longer links your install's ratings to your name."),
             ("Overlay", "Overlay ↳ Settings › Options: Feature tips is gone with the switches it explained."),
+            ("Mod book", "With Focus or Campaign's line over the bar, the Gear rules list could stop working - this "
+                         "should stop it."),
         ],
     },
     "2.117.1": {

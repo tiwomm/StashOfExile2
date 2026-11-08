@@ -48,6 +48,8 @@ VERSION HISTORY
        sends it; GET /people, POST /me/rep and /admin/rep are gone; every install's link to a name (cid_link, only
        there to count ratings toward rep) is cleared. The rep table is left as it was, unread (Leave and delete still
        clears yours).
+       Found on the way: the goal bar kept its rows in self.gb_rows - the name of the Gear book's own method - so with
+       a line over the bar (Focus, Campaign) the Gear rules list stopped working. Now goal_rows.
   2.117.1
        Feedback: switching to Ashen Rite still closed the app. Its log showed a freeze, not a crash: right after the
        theme change, the desktop's settle step (shell._settle, 0.4 s after the window moves or changes) called
