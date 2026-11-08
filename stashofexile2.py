@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU GPL v3.0 (see LICENSE). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.123.1
+VERSION 2.123.2
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,6 +19,13 @@ VERSION 2.123.1
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.123.2 (hotfix)
+       Feedback: Price Checks' buttons belong under the item, not on the strip at the top - Search again (with
+       "Search with fewer mods" when it helps) and Clear, then Add to favorites and Trade Site, are made with the
+       card again (pcv_card); the strip keeps the price, how sure and how it was worked out. And "show the price:
+       Here | Overlay | Both": Both (pc_both) = the card over the game, and the app shows the item too without taking
+       the keyboard from the game (Windows: it's handed back) - also in Settings › Where the price shows and the
+       card's ⚙.
   2.123.1
        Feedback: "I keep getting rate limited, did you change something?" The pace was the same (Balanced, since
        2.119.0 the only one - the user's earlier logs say Balanced too). Today's three 429s (app_log.txt) were all
@@ -2991,7 +2998,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.123.1"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.123.2"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 

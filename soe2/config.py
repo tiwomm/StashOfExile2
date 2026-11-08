@@ -135,6 +135,7 @@ DEFAULTS = {
     "pc_key": "Ctrl+D",    # 2.83.1 (feedback): the price check key (was the game's plain Ctrl+C)
     "pc_front": True,      # ...and brings the app to the front
     "pc_popup": False,     # 2.113.0: ...or shows it in a card over the game instead (pcpop.py)
+    "pc_both": False,      # 2.123.2: ...and the app shows it too (Here | Overlay | Both)
     "pc_close_key": "Esc",  # 2.121.1: closes that card (only while it's open and the game is in front)
     "pc_art": True,        # ...with the items' pictures from the trade site's image server
     "hotkey_only": True,   # only accept items copied while YOU press Ctrl+Alt+C (ignores other tools' copies)
