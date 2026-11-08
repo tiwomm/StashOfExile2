@@ -1906,29 +1906,53 @@ class App(SettingsPage, GearBookPage, PriceCheckPage, PricePopup, FavoritesPage,
         self.draw_limits()
 
     def draw_limits(self):
+        """2.123.1 (feedback: the window flickered - it was rebuilt every second): built once, then each second only
+        the numbers and the meters change (rebuilt only when the site's rules change)."""
         w = self.limit_win
         if not (w and w.winfo_exists()):
             return
-        for c in self.limit_body.winfo_children():
-            c.destroy()
-        for cls in ("search", "fetch"):
-            tk.Label(self.limit_body, text=cls.title(), bg=C["panel"], fg=C["text"], font=("Segoe UI", 12, "bold"),
-                     anchor="w").pack(fill="x", pady=(8, 2))
-            for h, mx, per in LIMITER.usage(cls):
-                row = tk.Frame(self.limit_body, bg=C["panel"])
-                row.pack(fill="x", pady=2)
-                tk.Label(row, text=f"{h} / {mx}  in {per_text(per)}", bg=C["panel"], fg=C["muted"], width=24,
-                         anchor="w").pack(side="left")
+        from . import themes as _th                          # 2.60.0: the theme's meter
+        usage = {cls: LIMITER.usage(cls) for cls in ("search", "fetch")}
+        shape = tuple((cls, tuple((mx, per) for _h, mx, per in u)) for cls, u in usage.items())
+        if getattr(self, "_limit_shape", None) != shape or not getattr(self, "_limit_rows", None) or \
+                not self._limit_rows[0][0].winfo_exists():
+            for c in self.limit_body.winfo_children():
+                c.destroy()
+            self._limit_shape, self._limit_rows = shape, []
+            for cls, u in usage.items():
+                tk.Label(self.limit_body, text=cls.title(), bg=C["panel"], fg=C["text"], font=("Segoe UI", 12, "bold"),
+                         anchor="w").pack(fill="x", pady=(8, 2))
+                for _h, _mx, _per in u:
+                    row = tk.Frame(self.limit_body, bg=C["panel"])
+                    row.pack(fill="x", pady=2)
+                    lab = tk.Label(row, text="", bg=C["panel"], fg=C["muted"], width=24, anchor="w")
+                    lab.pack(side="left")
+                    m = _th.Meter(row, 0, width=160, height=14)
+                    m.pack(side="left")
+                    self._limit_rows.append((lab, m))
+            self._limit_note = tk.Label(self.limit_body, text="", bg=C["panel"], fg=C["muted"], justify="left",
+                                        anchor="w", wraplength=380)
+            self._limit_note.pack(fill="x", pady=(12, 0))
+        i = 0
+        for cls, u in usage.items():
+            for h, mx, per in u:
+                lab, m = self._limit_rows[i]
+                i += 1
+                t = f"{h} / {mx}  in {per_text(per)}"
+                if lab.cget("text") != t:
+                    lab.config(text=t)
                 ratio = min(1.0, h / mx)
-                from . import themes as _th                  # 2.60.0: the theme's meter
-                _th.Meter(row, ratio, width=160, height=14,
-                          on=C["red"] if ratio >= 0.8 else C["good"] if ratio >= 0.5 else None).pack(side="left")
+                on = C["red"] if ratio >= 0.8 else C["good"] if ratio >= 0.5 else None
+                if (m.value, m.on) != (ratio, on):
+                    m.set(ratio, on)
         st = LIMITER.state()
         note = "Counts include requests from other tools on the same account or IP."
         if st["penalties"]:
             note += f"\nPenalties this session: {st['penalties']}"
-        tk.Label(self.limit_body, text=note, bg=C["panel"], fg=C["muted"], justify="left", anchor="w",
-                 wraplength=380).pack(fill="x", pady=(12, 0))
+        if st.get("careful"):
+            note += f"\nGoing slower after a penalty: {st['careful']}"
+        if self._limit_note.cget("text") != note:
+            self._limit_note.config(text=note)
         self.root.after(1000, self.draw_limits)
 
     def on_toggles(self):

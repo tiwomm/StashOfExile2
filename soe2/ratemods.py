@@ -167,8 +167,12 @@ def floor_check(rec, searchable, median_n):
     thin, top = False, 0.0
     for m, imp in searchable:
         k = rule_key(s, norm(m["text"]))
-        if imp == "high" or TIERS.get(k) in ("S", "A"):
-            return None                                # a mod you rate High: always searched
+        # 2.123.1 (feedback: "Skip cheap items" was on, yet dozens of 1-chaos tablets were searched - each had a mod
+        # the app's built-in rules mark High, which always exempted it): only YOUR High (or S / A) and the players'
+        # votes keep an item from being skipped. The built-in marks give way to the Mod Book's own prices.
+        from . import mods as _M
+        if RULES.get(k) == "high" or TIERS.get(k) in ("S", "A") or k in _M.COMMUNITY_ACTIVE:
+            return None                                # a mod you (or most players) rate High: always searched
         med, n = median_n(base, m["sid"])
         if med is None or n < MIN_N:
             return None                                # nothing known about it: search

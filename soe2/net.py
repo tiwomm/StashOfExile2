@@ -25,8 +25,13 @@ PACE = {
     #         2.105.0: 15 - half the site's 30 (the trade site in your browser counts against the same limit).
     # learn_cap: only learn mods in the background while usage is below this
     # 2.119.0 (UX pass): one fixed pace (was Fast / Balanced / Gentle in Settings) - this is the old Balanced
-    "margin": 0.15, "gap": 4.0, "cap300": 15, "learn_cap": 0.40,
+    # 2.123.1 (feedback: penalties at 9-15 searches per 5 min): the site also has a rule it doesn't report (a 429
+    #   with Retry-After 600 and no X-Rate-Limit headers, at 15, then 14 and 9 per 5 min after a first penalty).
+    #   cap300 12 by default; after such a 429 the app learns a lower cap (what it had sent, minus 3) for a day, and
+    #   for 30 minutes after any penalty it allows at most 5 per 5 minutes.
+    "margin": 0.15, "gap": 4.0, "cap300": 12, "learn_cap": 0.40,
 }
+COOLDOWN_CAP300 = 5                 # most searches / fetches per 5 minutes while cooling down after a penalty
 
 
 DEFAULT_RULES = {   # used until the first response tells us the real numbers (values from the live site)
@@ -37,7 +42,7 @@ DEFAULT_RULES = {   # used until the first response tells us the real numbers (v
 }
 
 
-COOLDOWN_AFTER_PENALTY = 900   # after a 429, stay extra careful for 15 minutes
+COOLDOWN_AFTER_PENALTY = 1800  # after a 429, stay extra careful for 30 minutes (2.123.1: was 15)
 
 
 def per_text(p):
@@ -73,6 +78,7 @@ class Limiter:
         self.wait_until, self.wait_reason = 0.0, ""
         self.penalties = 0
         self.extra_margin = 0.0                      # grows with every penalty and never shrinks during a session
+        self.hidden_cap = {}                         # 2.123.1: cls -> most per 5 min, learned from an unreported 429
         self.seen_rules = {}
         self.recent = collections.deque(maxlen=40)   # last requests with what the server said - dumped on a 429
         self.saved_at = 0.0
@@ -93,6 +99,8 @@ class Limiter:
             self.last_penalty = float(d.get("last_penalty", 0))
             self.penalties = int(d.get("penalties", 0)) if now - self.last_penalty < 86400 else 0
             self.extra_margin = float(d.get("extra_margin", 0)) if now - self.last_penalty < 86400 else 0.0
+            self.hidden_cap = {k: int(v) for k, v in (d.get("hidden_cap") or {}).items()} \
+                if now - self.last_penalty < 86400 else {}
             for cls in self.hits:
                 if self.hits[cls]:
                     self.last[cls] = max(self.hits[cls])
@@ -107,7 +115,8 @@ class Limiter:
         with self.lock:
             data = {"hits": {k: [t for t in v if now - t < 21600] for k, v in self.hits.items()},
                     "blocked_until": self.blocked_until, "cooldown_until": self.cooldown_until,
-                    "penalties": self.penalties, "extra_margin": self.extra_margin, "last_penalty": self.last_penalty}
+                    "penalties": self.penalties, "extra_margin": self.extra_margin, "last_penalty": self.last_penalty,
+                    "hidden_cap": dict(self.hidden_cap)}
         save_json("rate_state.json", data)
 
     @staticmethod
@@ -115,7 +124,7 @@ class Limiter:
         return ("search" if "/search/" in url else "fetch" if "/fetch/" in url else
                 "exchange" if "/exchange/" in url else "other")
 
-    def _pace(self):
+    def _pace(self, cls=None):
         pc = dict(PACE)
         pc["margin"] += self.extra_margin
         if time.time() < self.cooldown_until:           # recently penalised: slower and with a bigger safety margin
@@ -123,13 +132,17 @@ class Limiter:
             pc["gap"] *= 2
         pc["margin"] = min(0.6, pc["margin"])
         pc["cap300"] = max(3, pc["cap300"] - self.penalties)
+        if cls in self.hidden_cap:
+            pc["cap300"] = min(pc["cap300"], self.hidden_cap[cls])
+        if time.time() < self.cooldown_until:
+            pc["cap300"] = min(pc["cap300"], COOLDOWN_CAP300)
         return pc
 
     def _window(self, cls, period, now):
         return sorted(t for t in self.hits[cls] if now - t < period)
 
     def _need_wait(self, cls, now):
-        pc = self._pace()
+        pc = self._pace(cls)
         gap = pc["gap"] if cls == "search" else 1.0
         wait, why = self.last[cls] + gap - now, "pacing"
         for mx, period, _pen in self.rules[cls]:
@@ -225,8 +238,13 @@ class Limiter:
         except Exception:
             buglog.caught()
 
-    def penalized(self, retry_after):
+    def penalized(self, retry_after, cls=None, hidden=False):
+        """hidden (2.123.1): the 429 came with no X-Rate-Limit state - a rule the site doesn't report. Learn a cap
+        under what we had sent in the last 5 minutes."""
         with self.lock:
+            if hidden and cls in ("search", "fetch"):
+                sent = len(self._window(cls, 300, time.time()))
+                self.hidden_cap[cls] = max(3, min(self.hidden_cap.get(cls, 99), sent - 3))
             self.extra_margin = min(0.4, self.extra_margin + 0.10)
             now = time.time()
             self.blocked_until = max(self.blocked_until, now + retry_after + 1)
@@ -252,9 +270,12 @@ class Limiter:
     def state(self):
         now = time.time()
         with self.lock:
+            cool = max(0, self.cooldown_until - now)
+            careful = (f"at most {COOLDOWN_CAP300} searches per 5 min for {int(cool // 60) + 1} min" if cool else "")
+            if self.hidden_cap and not careful:
+                careful = f"at most {min(self.hidden_cap.values())} per 5 min today"
             return {"blocked": max(0, self.blocked_until - now), "wait": max(0, self.wait_until - now),
-                    "why": self.wait_reason, "cooldown": max(0, self.cooldown_until - now),
-                    "penalties": self.penalties}
+                    "why": self.wait_reason, "cooldown": cool, "penalties": self.penalties, "careful": careful}
 
 
 LIMITER = Limiter()
@@ -294,7 +315,7 @@ def call(method, url, **kw):
             except ValueError:
                 retry = 60
             LIMITER.log_429(cls, url, r.headers, retry, r.text)
-            LIMITER.penalized(retry)
+            LIMITER.penalized(retry, cls, hidden=not any(k.lower().endswith("-state") for k in r.headers))
             STATUS(f"The trade site rate-limited {cls} requests (wait {retry}s) - pausing")
             continue
         if r.status_code >= 400:

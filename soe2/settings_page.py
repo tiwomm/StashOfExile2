@@ -101,7 +101,7 @@ class SettingsPage:
         self.set_anchors["pc_bulk"] = self.settings_group("Price checking", "BULK PRICING (CTRL+ALT+C)", used=(BP,))
         row = section("Price checking", "Skip cheap items", "Bulk Pricing doesn't search an item when every mod it would "
                                                           "search sells for under this in the Mod Book's own data and "
-                                                          "none is rated High. With only a few listings to go on it's "
+                                                          "none is rated High by you or most players. With only a few listings to go on it's "
                                                           "marked \"check by hand\" instead; Price Checks always search.")
         self.build_floor_settings(row)                                                           # 2.96.0
         row = section("Price checking", "The list", "What happens in Bulk Pricing's list as items are priced.")

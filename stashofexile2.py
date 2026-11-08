@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU GPL v3.0 (see LICENSE). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.123.0
+VERSION 2.123.1
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,6 +19,17 @@ VERSION 2.123.0
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.123.1
+       Feedback: "I keep getting rate limited, did you change something?" The pace was the same (Balanced, since
+       2.119.0 the only one - the user's earlier logs say Balanced too). Today's three 429s (app_log.txt) were all
+       Retry-After 600 with no X-Rate-Limit headers - a rule the site doesn't report - at 15, then 14 and 9 searches
+       per 5 minutes while the reported limits showed 5-15 of 30. So: 12 per 5 min to start with (was 15); such a 429
+       teaches a cap of what was sent minus 3, kept for a day (Limiter.hidden_cap, rate_state.json); for 30 minutes
+       after any penalty at most 5 per 5 minutes (COOLDOWN_CAP300; the cooldown was 15 minutes). The rate limits
+       window says when it's going slower. It no longer rebuilds itself every second (it flickered).
+       Feedback ("conflicting results"): Skip cheap items was on, yet dozens of 1-chaos tablets were searched - each
+       had a mod the app's built-in rules mark High, and any High mod exempted the item. Now only your own High (S / A)
+       or the players' votes exempt it; the built-in marks give way to the Mod Book's own prices (fewer searches too).
   2.123.0
        Craft Helper overhaul, phase 1 (feedback: tablet mods on S-F, "effectiveness by itself is kind of useless",
        "see its price below" with no prices below; then: no prices at all - they move too fast, only your own price
@@ -2977,7 +2988,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.123.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.123.1"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
