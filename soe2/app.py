@@ -4149,6 +4149,8 @@ class App(SettingsPage, GearBookPage, PriceCheckPage, PricePopup, FavoritesPage,
                 s = it.get("search") or {}
                 if it.get("gear") and not it.get("waystone") and s.get("rarity") != "unique":
                     y = self._card_base_row(cv, rec, it, y, w)
+                if it.get("corrupted"):                       # 2.120.1 (feedback): in plain sight, not folded away
+                    y = self._card_corrupt_row(cv, rec, it, y, w)
                 if it.get("quality"):
                     y = self._card_opt_row(cv, rec, "quality", f"Quality: +{it['quality']}%", it["quality"], y, w)
                 for m in totals:
@@ -4303,6 +4305,25 @@ class App(SettingsPage, GearBookPage, PriceCheckPage, PricePopup, FavoritesPage,
                     pass
         self._card_click(cv, tag, click)
         self.card_opts["base"] = on
+        return y + 22
+
+    def _card_corrupt_row(self, cv, rec, it, y, w):
+        """2.120.1 (feedback: a toggle for it on the price check): a corrupted item - ticked = compared with corrupted
+        listings only (buyers pay less for them); unticked = corrupted or not. The same setting as Miscellaneous ›
+        Corrupted."""
+        from .searchopts_page import default_opts
+        cur = {**default_opts(it), **(rec.get("opts") or {})}
+        on = cur.get("corrupted") == "yes"
+        tag = "cardcorrupt"
+        cv.create_rectangle(4, y - 2, w - 4, y + 18, outline="", fill=C["odd"], tags=(tag,))
+        self._card_box(cv, 10, y + 2, on, tag)
+        cv.create_text(32, y, text="Corrupted listings only" if on else "Corrupted or not", anchor="nw",
+                       font=("Segoe UI", 10), fill=C["text"] if on else C["muted"], tags=(tag,))
+
+        def click():
+            self.search_opt_set(rec, "corrupted", "any" if on else "yes", redraw=False)
+            self.card_changed(rec)                    # (built again: Miscellaneous shows the same setting)
+        self._card_click(cv, tag, click)
         return y + 22
 
     def _card_opt_row(self, cv, rec, key, label, have, y, w):

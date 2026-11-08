@@ -46,8 +46,11 @@ NOTES = {
              "Overlay"),
         ],
         "small": [
-            ("Price Checks", "Unticking Base type (Any Belts ...) still searched the item's own base. It searches "
-                             "the whole kind now - this should match what the card says."),
+            ("Price Checks", "Unticking Base type (Any Belts, Any Rings ...) still searched the item's own base. It "
+                             "searches the whole kind now, for every kind of gear - this should match what the card "
+                             "says."),
+            ("Price Checks", "A corrupted item has a Corrupted listings only switch under Properties, on Price "
+                             "Checks and the card over the game."),
             ("Price Checks", "A crafted \"... Modifier magnitudes\" line isn't searched any more: what it adds is "
                              "already in the other mods' numbers."),
         ],

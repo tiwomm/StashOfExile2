@@ -417,6 +417,10 @@ class PricePopup:
         same = cur.get("base") == "same"
         tick_row(same, f"Base type: {it['base']}" if same else f"Any {it.get('class') or 'base'}",
                  lambda: (self.search_opt_set(rec, "base", "class" if same else "same", redraw=False), changed()))
+        if it.get("corrupted"):                              # 2.120.1 (feedback): the Corrupted toggle here too
+            cor = cur.get("corrupted") == "yes"
+            tick_row(cor, "Corrupted listings only" if cor else "Corrupted or not",
+                     lambda: (self.search_opt_set(rec, "corrupted", "any" if cor else "yes", redraw=False), changed()))
         self.pp_props = {}
         for key, label, have in rows:
             v = cur.get(key)
