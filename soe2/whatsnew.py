@@ -39,6 +39,12 @@ NEXT = [
 MAX_BIG = 3
 
 NOTES = {
+    "2.123.5": {
+        "big": [],
+        "small": [
+            ("Everywhere", "US spelling throughout: color, behavior, gray, center and the rest."),
+        ],
+    },
     "2.123.4": {
         "big": [
             ("⚒", "Craft Helper: what to do with it", "Check my tablet or jewel now says Worth pricing, Craft on, "
@@ -330,8 +336,8 @@ NOTES = {
     "2.113.2": {
         "big": [],
         "small": [
-            ("Expedition", "Island rumours: the card's handwriting is matched by letter shape too, so a rumour Windows "
-                           "misreads (\"Wodviw' to c(riwkv..\" for Nothin' to drink) should still be recognised."),
+            ("Expedition", "Island rumors: the card's handwriting is matched by letter shape too, so a rumor Windows "
+                           "misreads (\"Wodviw' to c(riwkv..\" for Nothin' to drink) should still be recognized."),
         ],
     },
     "2.113.1": {
@@ -339,7 +345,7 @@ NOTES = {
         "small": [
             ("Price checks", "\"Show over the game\" is on the Price Checks page now (top right), and in Settings › "
                              "Price checking - one switch, both places."),
-            ("Expedition", "Island rumours should catch the middle rumour too (read at twice the size, and found even when "
+            ("Expedition", "Island rumors should catch the middle rumor too (read at twice the size, and found even when "
                            "it's split over two lines)."),
         ],
     },
@@ -354,7 +360,7 @@ NOTES = {
         "small": [
             ("Price checks", "A mod's Min never drops below its own tier, so your item isn't priced against weaker "
                              "ones."),
-            ("Expedition", "Island rumours should catch every rumour on the card, in a smaller panel like the Runeshape tips."),
+            ("Expedition", "Island rumors should catch every rumor on the card, in a smaller panel like the Runeshape tips."),
         ],
     },
     "2.112.5": {
@@ -368,7 +374,7 @@ NOTES = {
         "small": [
             ("Looks", "Clicking quickly through the theme cards changes the theme once, to the last one you clicked."),
             ("Looks", "Theme changes no longer rebuild the overlay over the game (only Classic takes the theme's "
-                      "colours)."),
+                      "colors)."),
             ("Overlay", "The Flanks style is now called Split."),
             ("Overlay", "Unlocked, the Campaign / Focus line can be dragged anywhere (by its ⠿ grip); that undocks it "
                         "from the bar - Dock the lines to the bar puts it back."),
@@ -416,7 +422,7 @@ NOTES = {
             ("What's new", "This card shows the big changes first; the small ones fold under one line."),
             ("Looks", "The What's new card and About follow your app theme."),
             ("Updates", "The update note's buttons should no longer squeeze one into a blank box."),
-            ("Overlay", "The Colours picker is gone from Overlay settings - each style keeps its own colours."),
+            ("Overlay", "The Colors picker is gone from Overlay settings - each style keeps its own colors."),
         ],
     },
     "2.110.0": {
@@ -445,7 +451,7 @@ NOTES = {
     "2.108.0": [
         "Right-click the overlay's cog: Quick settings over the game - overlay, sound, lock, what's on the bar. "
         "Left-click still opens the full settings.",
-        "Expedition: the island rumours show in one panel beside the card.",
+        "Expedition: the island rumors show in one panel beside the card.",
         "Game Plan: goals by phase in tabs, and Stockpile / Map supplies / Farm plan / Pokes in tabs.",
         "Leaderboards: a tidier toolbar, and a hint when a board is empty.",
         "Map library: rank buttons S A B C D ✖ sit together in the toolbar.",
@@ -480,7 +486,7 @@ NOTES = {
         "Overlay: Rates ▾ on the bar when Exchange rates is on - click it to open or close the rates.",
         "Overlay: the bar reads Map: and Avg.:.",
         "Leaderboards: pick a league by name, and how many rows to show (Top 5 to Top 100).",
-        "Island Rumours: two problems fixed (starting the app in your hideout; a card read while opening). "
+        "Island Rumors: two problems fixed (starting the app in your hideout; a card read while opening). "
         "Not confirmed in game yet - tell us if tags still don't show.",
         "Price Checks: an exact search now needs every mod you ticked (a fractured or desecrated mod could count "
         "twice, so listings missing one of your mods showed up).",
@@ -536,7 +542,7 @@ NOTES = {
     "2.101.0": [
         "New overlay styles: Settings › Appearance › Overlay settings › Style - Hairline, Slate, Flanks and Micro "
         "are light, plain looks (no box for Hairline and Flanks); Classic is the stone-and-bronze look you know.",
-        "Each comes as a Game bar or a Panel (Layout), in ten colour sets or your app theme's (Colours).",
+        "Each comes as a Game bar or a Panel (Layout), in ten color sets or your app theme's (Colors).",
     ],
     "2.100.0": [
         "List rows light up under the mouse, and clickable icons brighten.",
@@ -691,7 +697,7 @@ NOTES = {
         "The overlay bar spells out each switch (Breach, Delirium, Ritual, Expedition ...).",
     ],
     "2.89.1": [
-        "Screenshots show the overlay again. (Overlay ↳ Settings › Behaviour can hide it, if it covers a counter the "
+        "Screenshots show the overlay again. (Overlay ↳ Settings › Behavior can hide it, if it covers a counter the "
         "Ritual or Delirium watcher reads.)",
         "A ⚙ next to the overlay's lock opens its settings.",
         "The bar's switch says Campaign; the Campaign settings no longer print two options on top of each other.",
@@ -744,7 +750,7 @@ NOTES = {
     ],
     "2.85.2": [
         "Ritual alerts work under the overlay bar again: the bar is left out of screen captures, so the watcher sees "
-        "the Ritual counter beneath it. Switch: Overlay ↳ Settings › Behaviour (off = screenshots and streams show the "
+        "the Ritual counter beneath it. Switch: Overlay ↳ Settings › Behavior (off = screenshots and streams show the "
         "bar).",
         "The Focus / campaign line docks flush on the overlay bar, with matching ends.",
     ],
@@ -773,14 +779,14 @@ NOTES = {
         "The game's plain Ctrl+C no longer opens Price Checks.",
     ],
     "2.83.0": [
-        "New: Island Rumours. Open the world map in your hideout and each rumour on the Uncharted Waters card shows "
+        "New: Island Rumors. Open the world map in your hideout and each rumor on the Uncharted Waters card shows "
         "the island it leads to and your Map library rank for it. Rank the islands in the Map library.",
         "The Remnant price tags no longer pop up in hideouts, towns, the campaign or maps without an Expedition (the "
         "app looks for the Expedition mark under Map Content); on Grand Expedition islands they're always watching.",
     ],
     "2.82.0": [
         "Overlay ↳ Settings: every overlay option on its own page, grouped - On the bar, Features, Campaign, "
-        "Behaviour and the Mechanic Helper. Open it from the sidebar or the Overlay settings button.",
+        "Behavior and the Mechanic Helper. Open it from the sidebar or the Overlay settings button.",
     ],
     "2.81.2": [
         "Desecration Helper: two-line options like Accuracy + Light Radius get their tier too.",
@@ -812,7 +818,7 @@ NOTES = {
         "Mageblood and similar uniques price correctly: two of the same Legacy (2 Quicksilver, 2 Diamond) are searched "
         "as one stat with Min 2, like the trade site does.",
         "The campaign line sits docked on top of the overlay bar and moves with it (switch: Overlay › Options › "
-        "Campaign). The bar is as wide as the XP bar, bottom centre, and refits when your resolution changes.",
+        "Campaign). The bar is as wide as the XP bar, bottom center, and refits when your resolution changes.",
         "Updates are looked for every hour.",
     ],
     "2.79.0": [
@@ -875,7 +881,7 @@ NOTES = {
     "2.74.4": [
         "Price checks: tick the mods right on the item card - ticked mods are searched on. Min / Max "
         "and key mods are under Fine-tune the search.",
-        "A unique's flavour text is never taken for a mod any more.",
+        "A unique's flavor text is never taken for a mod any more.",
     ],
     "2.74.3": [
         "The session timer has a ⏸ / ▶ button on the overlay, and the Pause key on your keyboard pauses and resumes "
@@ -891,7 +897,7 @@ NOTES = {
         "Price checks: the Item card shows the item as it reads in game - its mods and their values right on the "
         "card, with tier tags, no scrolling for them.",
         "Uniques are read properly: their mods count (they were left out), Mageblood's Legacies are searched by "
-        "name (Legacy of Gold, Quicksilver ...), and flavour text is never taken for a mod.",
+        "name (Legacy of Gold, Quicksilver ...), and flavor text is never taken for a mod.",
     ],
     "2.74.0": [
         "Under the hood and the Mod book are advanced tools now, hidden unless you want them: Settings › Advanced › "
@@ -1349,7 +1355,7 @@ NOTES = {
     ],
     "2.26.2": [
         "Regex: switching between tablets, waystones, jewels, gear ... no longer freezes the app.",
-        "Fixed: maximised when you closed it -> maximised when you open it (for real this time).",
+        "Fixed: maximized when you closed it -> maximized when you open it (for real this time).",
         "Price checks shows the time left right from the start, not only after a few items are done.",
         "Price checks: the column is called \"Valuable mods\", and a line under the list explains the stars.",
     ],
@@ -1366,7 +1372,7 @@ NOTES = {
         "Settings > Advanced: the Lag finder (was \"Slowness recorder\").",
     ],
     "2.25.4": [
-        "Fixed: maximised when you closed it -> maximised again when you open it.",
+        "Fixed: maximized when you closed it -> maximized again when you open it.",
         "Settings > Advanced > Slowness recorder: if the app feels slow, press Start and use it for a few minutes - "
         "it writes down what was busy whenever the window got stuck.",
     ],
@@ -1393,7 +1399,7 @@ NOTES = {
         "heading to sort.",
     ],
     "2.23.1": [
-        "The app opens where you left it - same place, same size, maximised if it was.",
+        "The app opens where you left it - same place, same size, maximized if it was.",
     ],
     "2.23.0": [
         "The sticky note has tabs: + adds one, double-click renames, right-click deletes.",

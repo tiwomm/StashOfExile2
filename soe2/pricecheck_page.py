@@ -960,7 +960,7 @@ class PriceCheckPage:
                 return tid
 
             def pair(label, value, aug):
-                """"Energy Shield: 211" - the label grey, the value white (blue when raised)."""
+                """"Energy Shield: 211" - the label gray, the value white (blue when raised)."""
                 nonlocal y
                 if not value:
                     return line(label, C["muted"])

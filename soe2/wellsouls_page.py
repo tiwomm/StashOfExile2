@@ -163,7 +163,7 @@ class WellSoulsPage:
         self.ws_hide()
 
     def ws_read(self, rect, cx, img_box=None, img_slot=None):
-        """The window at centre x cx -> [(row text, rating, (x0, y0, x1, y1) on screen)] (blocking: OCR)."""
+        """The window at center x cx -> [(row text, rating, (x0, y0, x1, y1) on screen)] (blocking: OCR)."""
         bl, bt, br, bb = W.part(rect, cx, W.BOX)
         if img_box is None:
             img_box = RM.grab((bl, bt, br, bb))

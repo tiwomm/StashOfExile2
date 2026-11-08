@@ -100,7 +100,7 @@ def mod_impact(rec, mod):
             return RULES[k]
     if mod.get("auto") in IMPACTS:          # 2.72.0: gear - filler and low-tier affixes left out
         return mod["auto"]
-    if mod.get("kind") == "Total":          # gear totals (defences, DPS, pseudo totals) are must-haves
+    if mod.get("kind") == "Total":          # gear totals (defenses, DPS, pseudo totals) are must-haves
         return "high"
     if (rec.get("item") or {}).get("gear"):
         return "normal"                     # 2.0: tablet / jewel rules are worded like gear mods but aren't about gear
@@ -292,7 +292,7 @@ def keep_raw(e):
 
 def fetch_rich(qid, ids, max_hours=None):
     """One fetch call for up to 10 listings -> [{id, price, ts, mods}] cheapest first.
-    mods = [(normalised text, [numbers])] straight from the listing, or None if the listing didn't say.
+    mods = [(normalized text, [numbers])] straight from the listing, or None if the listing didn't say.
     Listings older than max_hours are dropped (the search already filters, this is the double-check)."""
     key = ("rich", qid, tuple(ids), max_hours, own_account().lower())
     out = _cached(_fetch_cache, key)

@@ -46,8 +46,8 @@ class WealthPage:
     W_COLS = [("item", "Name", 320, "w"), ("tab", "From", 150, "w"), ("qty", "Quantity", 90, "e"),
               ("each", "Price", 100, "e"), ("total", "Total", 110, "e"), ("src", "Priced by", 190, "w")]
     CAT_INFO = {"currency": ("💰", "Currency"), "fragment": ("🧩", "Fragments"), "gem": ("💎", "Gems"),
-                "jewel": ("🔷", "Jewels"), "map": ("🗺", "Waystones"), "armour": ("🛡", "Armour"),
-                "weapon": ("⚔", "Weapons"), "accessory": ("💍", "Jewellery"), "card": ("🃏", "Cards"),
+                "jewel": ("🔷", "Jewels"), "map": ("🗺", "Waystones"), "armour": ("🛡", "Armor"),
+                "weapon": ("⚔", "Weapons"), "accessory": ("💍", "Jewelry"), "card": ("🃏", "Cards"),
                 "flask": ("🧪", "Flasks"), "sanctum": ("🏺", "Relics"), "relic": ("🏺", "Relics"), "other": ("📦", "Other")}
     RANGES = {"24 hours": 86400, "7 days": 7 * 86400, "30 days": 30 * 86400, "Lifetime": None}
 

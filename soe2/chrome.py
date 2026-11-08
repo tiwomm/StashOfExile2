@@ -215,7 +215,7 @@ class Notice(tk.Frame):
 
 
 class EmptyState(tk.Frame):
-    """2.120.0 (UX pass 2: empty pages looked broken - grey text far down the page): one look for "nothing here yet"
+    """2.120.0 (UX pass 2: empty pages looked broken - gray text far down the page): one look for "nothing here yet"
     everywhere - an icon, what it is (one bold line), what to do (a muted line or two) and at most one button.
     set_text("Title\\nwhat to do") changes the words; place / place_forget as any widget."""
 

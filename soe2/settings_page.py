@@ -678,7 +678,7 @@ class SettingsPage:
         save_json("settings.json", SETTINGS)
         if "theme" in getattr(self, "look_vars", {}):
             self.look_vars["theme"].set(THEMES.get(tid, (tid,))[0])
-        # 2.112.4: quick clicks through the cards swap ONCE, 200 ms after the last (each swap re-colours every window;
+        # 2.112.4: quick clicks through the cards swap ONCE, 200 ms after the last (each swap re-colors every window;
         # a burst of them back to back crashed the app on Windows)
         job = getattr(self, "_theme_job", None)
         if job is not None:
@@ -731,7 +731,7 @@ class SettingsPage:
     def _paint_look_cards(self):
         cur = SETTINGS.get("theme")
         for name in ("theme_pick", "ov_style_pick"):                  # 2.118.0: the pickers (the Classic overlay
-            pk = getattr(self, name, None)                           # style takes the theme's colours too)
+            pk = getattr(self, name, None)                           # style takes the theme's colors too)
             if pk is not None:
                 try:
                     pk.set(cur if name == "theme_pick" else pk.current, redraw=name == "ov_style_pick")
@@ -781,7 +781,7 @@ class SettingsPage:
         # Theme). The Layout says the shape.
         # 2.74.0: one area - Layout, Opacity and Click-through (were the Overlay layout and Opacity sections)
         row = section("Appearance", "Overlay settings", "The overlay over the game (timer, Mechanic Helper, League Plan): "
-                                                        "pick a style, its shape and its colours. Notes, the calculator and the remnant "
+                                                        "pick a style, its shape and its colors. Notes, the calculator and the remnant "
                                                         "price tags use your theme's colors.")
         from .merged_page import LAYOUTS
         g = tk.Frame(row, bg=P2)
@@ -797,7 +797,7 @@ class SettingsPage:
                            anchor="w")
             lab.grid(row=r, column=1, columnspan=2, sticky="w", pady=(2, 0))
             return lab
-        # 2.101.0: the Style first, then its Layout (2.111.0: no Colours - each style keeps its own)
+        # 2.101.0: the Style first, then its Layout (2.111.0: no Colors - each style keeps its own)
         from .ovlight import STYLES
         # 2.116.0 (P10, feedback: a visual indicator for each style): the names beside a live preview of the bar
         # in the style under the mouse - was a dropdown over ten lines describing all fourteen
@@ -848,7 +848,7 @@ class SettingsPage:
         pk = getattr(self, "ov_style_pick", None)
         if pk is not None:
             try:
-                pk.set(self.ov_look(), redraw=True)          # (2.118.0: Colours change the preview too)
+                pk.set(self.ov_look(), redraw=True)          # (2.118.0: Colors change the preview too)
             except tk.TclError:
                 pass
 

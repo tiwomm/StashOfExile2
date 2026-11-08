@@ -4,7 +4,7 @@ Settings › Keys › Price Checks › "Show it in a card over the game": your p
 (one press = one copy, as always) and, instead of bringing the app forward, a card opens over the game at a spot you
 choose - drag it by its title, resize it from any edge; both are remembered. It takes the overlay's Style.
 
-The card: the item (name in its rarity colour; rarity, class, base, item level, quality, corrupted), the price and
+The card: the item (name in its rarity color; rarity, class, base, item level, quality, corrupted), the price and
 how sure it is, the mods searched with their ticks (a tick changes the search; Search again runs it), and the cheapest
 listings - each a one-line summary that opens to the whole item (implicits, every mod, corrupted). Search again,
 Trade site and Open in app sit at the bottom.
@@ -36,7 +36,7 @@ def pop_on():
 
 
 def ink(c, bg):
-    """A game colour (rarity, mod kind) made readable on this card: on a light style (Gilded's marble) the light
+    """A game color (rarity, mod kind) made readable on this card: on a light style (Gilded's marble) the light
     blues / greens / yellows are darkened, same hue, until they reach 4.5 : 1 against it. Dark styles: as is."""
     from .style import contrast, mix
     try:
@@ -268,7 +268,7 @@ class PricePopup:
             buglog.caught()
 
     def _pcpop_frame(self, w, P):
-        """The scrolling body (its bar in the style's colours) and the button row under it."""
+        """The scrolling body (its bar in the style's colors) and the button row under it."""
         st = ttk.Style(self.root)
         name = "PcPop.Vertical.TScrollbar"
         st.configure(name, background=P["line"], troughcolor=P.get("field", P["bg"]), bordercolor=P["bg"],

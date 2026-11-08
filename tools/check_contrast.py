@@ -2,7 +2,7 @@
 
   py tools/check_contrast.py      prints the lowest pairs, exit 1 if any text pair is under 4.5 : 1
 
-Pairs = the text colours the app puts on its surfaces (style.C), the bevelled button / heading faces and the title
+Pairs = the text colors the app puts on its surfaces (style.C), the bevelled button / heading faces and the title
 bars - all from the pack itself."""
 import os
 import sys

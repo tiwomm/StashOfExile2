@@ -357,7 +357,7 @@ class RateModsPage:
         w.protocol("WM_DELETE_WINDOW", lambda: pick("not_now"))
         self.rm_ask_pick = pick
         try:
-            from .style import center_over                # 2.114.0: centred over the app (2.114.3: on its monitor)
+            from .style import center_over                # 2.114.0: centered over the app (2.114.3: on its monitor)
             center_over(w, self.dlg_parent())
         except tk.TclError:
             pass

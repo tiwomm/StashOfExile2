@@ -31,7 +31,7 @@ SPACE = (4, 8, 12, 16, 24)            # padding / gaps; 0-2 are allowed too, for
 XS, S_, M, L, XL = SPACE
 SMALL, BODY, HEAD, TITLE = 9, 10, 12, 16     # the four text sizes: notes / chips, normal, section heads, window titles
 DISPLAY = (18, 20, 22, 28)            # not text: icon glyphs and the big numbers (timer, totals)
-ROLE = {                              # colour roles -> which C colour plays them
+ROLE = {                              # color roles -> which C color plays them
     "surface": "bg", "surface_raised": "panel", "surface_high": "panel2", "border": "line",
     "text": "text", "text_muted": "muted", "primary": "accent", "money": "good",
     "success": "green", "danger": "red", "info": "blue", "selected": "sel",
@@ -262,7 +262,7 @@ def center_over(win, parent):
 
 def over_app(win, parent):
     """2.114.3 (feedback: the Scan stash check window came up on the wrong screen - "it should always appear over the
-    app"): centre a window over `parent` (the app window in front) on its monitor once its content is built."""
+    app"): center a window over `parent` (the app window in front) on its monitor once its content is built."""
     def go():
         try:
             if win.winfo_exists():
@@ -591,8 +591,8 @@ _combo_on_top()
 
 
 def _check_on_card():
-    """2.112.1: a switch on a card (panel2) takes the card's colour - plain ttk.Checkbuttons there showed the page's
-    darker colour as a box behind their text (Settings › General › Updates was one). Wraps ttk.Checkbutton once."""
+    """2.112.1: a switch on a card (panel2) takes the card's color - plain ttk.Checkbuttons there showed the page's
+    darker color as a box behind their text (Settings › General › Updates was one). Wraps ttk.Checkbutton once."""
     if getattr(ttk.Checkbutton, "_soe2_card", False):
         return
     orig = ttk.Checkbutton.__init__
@@ -1359,8 +1359,8 @@ class KeyCapture(tk.Label):
 
 
 # ---------------------------------------------------------------- the app's look (2.0.0: Settings > Appearance)
-# A theme recolours the whole app in one place: every colour handed to Tk passes through theme_color(), which moves the
-# app's steel-blue / navy tones to the theme's hue (lightness kept, so contrast stays the same). Colours that mean
+# A theme recolours the whole app in one place: every color handed to Tk passes through theme_color(), which moves the
+# app's steel-blue / navy tones to the theme's hue (lightness kept, so contrast stays the same). Colors that mean
 # something (item rarities, green / red, gold for money, the accent) are left alone. Applied at start-up.
 import re as _re
 
@@ -1384,7 +1384,7 @@ def apply_look(theme=None, root=None):
     if not _themes.ST.base:
         _themes.init(C, _BASE)
     _themes.set_theme(_themes.packs()[_themes.pick_id(theme)], None)
-    if not getattr(tk.Misc, "_soe2_themed", False):          # every colour given to Tk goes through theme_color
+    if not getattr(tk.Misc, "_soe2_themed", False):          # every color given to Tk goes through theme_color
         orig = tk.Misc._options
 
         def _options(self, cnf, kw=None):

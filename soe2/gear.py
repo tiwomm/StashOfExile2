@@ -1,9 +1,9 @@
-"""The gear price checker (1.41, Phase 3): turns any copied piece of gear (rings, amulets, belts, armour, weapons,
+"""The gear price checker (1.41, Phase 3): turns any copied piece of gear (rings, amulets, belts, armor, weapons,
 quivers, foci, charms, flasks ...) into a price-check record, and builds its trade-site searches.
 
 How a piece of gear is searched (the rules agreed in the roadmap doc):
-  - Armour pieces (gloves, boots, helmets, body armours, shields, bucklers, foci): searched by item category plus the
-    item's TOTAL Armour / Evasion / Energy Shield, worked out as if at 20% quality (or at its own quality if that is
+  - Armor pieces (gloves, boots, helmets, body armors, shields, bucklers, foci): searched by item category plus the
+    item's TOTAL Armor / Evasion / Energy Shield, worked out as if at 20% quality (or at its own quality if that is
     higher, i.e. exceptional). The mods that feed those totals (+# to maximum Energy Shield, % increased ES ...)
     are left out: they are already counted in the total.
   - Attack weapons: category plus physical / elemental DPS (same idea; the local damage and attack-speed mods that
@@ -14,7 +14,7 @@ How a piece of gear is searched (the rules agreed in the roadmap doc):
     resistance ...) when two or more mods feed it, so items with the same total but a different split also count.
   - Uniques: by name (their mods are fixed; tick one to search on its roll).
   - Uncorrupted items are compared with uncorrupted listings, corrupted with corrupted. Exceptional socket counts
-    (2 on gloves / boots / helmets, 3 on body armours) are required in the search.
+    (2 on gloves / boots / helmets, 3 on body armors) are required in the search.
 
 Priorities, per item (the side panel, same as tablets): ★ = must have (never dropped), ☑ = counts (may be dropped one
 or two at a time when too few listings are found), unticked = ignored. Totals start as ★.
@@ -145,7 +145,7 @@ def is_gear(g):
 
 
 def _q20(value, quality):
-    """A defence / damage value as it would be at 20% quality (or at the item's own quality if that is higher)."""
+    """A defense / damage value as it would be at 20% quality (or at the item's own quality if that is higher)."""
     q = quality or 0
     return value / (1 + q / 100) * (1 + max(20, q) / 100)
 

@@ -81,7 +81,7 @@ class StashScanPage:
         if ss is None:
             return
         # 2.114.3 (feedback: "led me through all the prompts but then did nothing"): the check window opened behind
-        # the game. The app comes to the front with it, and it's put on top once, focused, centred on the app.
+        # the game. The app comes to the front with it, and it's put on top once, focused, centered on the app.
         try:
             self.root.deiconify()
             self.shell.open("wealth")

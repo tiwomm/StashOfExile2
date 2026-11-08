@@ -56,7 +56,7 @@ class RemnantPage:
         c.pop("key", None)                          # itself; its Auto switch and Ctrl+Alt+R key are gone
         c.setdefault("area", None)                  # None = RM.AREA (an area learned by the old key is still used)
         c.setdefault("tips", True)                  # 2.40.0: the runeshape cheat sheet next to the tags
-        c.setdefault("rumours", True)               # 2.83.0: Island Rumours on the world map, in your hideout
+        c.setdefault("rumours", True)               # 2.83.0: Island Rumors on the world map, in your hideout
         return c
 
     def remnant_status(self):
@@ -84,7 +84,7 @@ class RemnantPage:
         self.rm_problem = None
         if not want:
             self.remnant_hide()
-            self.ru_stop()                            # 2.83.0: Island Rumours is part of it
+            self.ru_stop()                            # 2.83.0: Island Rumors is part of it
         elif getattr(self, "ru_here", False):
             self.ru_start()
         if want and not getattr(self, "_br_ticking", False):
@@ -260,7 +260,7 @@ class RemnantPage:
 
     # ---------------- the tags over the game
     # 2.38.0: one small, solid, click-through window per tag. (2.37.0 drew them on ONE window as big as the game, made
-    # see-through with a colour key; on some PCs the colour key isn't honoured and that window showed black over the
+    # see-through with a color key; on some PCs the color key isn't honored and that window showed black over the
     # whole game - and Auto, seeing its own black window, hid and showed it again and again.) Each tag is also hidden
     # from screen capture (Windows 10 2004+), so the watcher never reads its own tags.
     def remnant_show(self, rect, rows, secs=RM.SHOW_SECS):

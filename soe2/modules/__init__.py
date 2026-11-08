@@ -45,7 +45,7 @@ class Module:
     hidden = False
     beta = False        # 2.38.0: tagged BETA, still shown (labs: hidden unless Labs is on)
     advanced = False    # 2.74.0
-    parent = None       # 2.33.0: a child tool's parent module (see "How the app is organised" below)
+    parent = None       # 2.33.0: a child tool's parent module (see "How the app is organized" below)
 
     def __init__(self, app):
         self.app = app

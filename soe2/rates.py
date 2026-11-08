@@ -172,7 +172,7 @@ class Rates:
         return out
 
     def list_options(self, div):
-        """Plain-text help for 'is 8.5 div worth 8 or 9?': the neighbouring whole numbers, and a divine + chaos split."""
+        """Plain-text help for 'is 8.5 div worth 8 or 9?': the neighboring whole numbers, and a divine + chaos split."""
         if div is None or div < 2:
             return ""
         lo, hi = math.floor(div), math.ceil(div)

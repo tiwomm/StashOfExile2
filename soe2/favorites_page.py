@@ -24,7 +24,7 @@ KEY = "favorites"
 GROUP_PRE = "grp:"
 FILTER_NAMES = {"type_filters": "Type", "equipment_filters": "Equipment", "req_filters": "Requirements",
                 "misc_filters": "Miscellaneous", "trade_filters": "Trade", "map_filters": "Waystone",
-                "socket_filters": "Sockets", "weapon_filters": "Weapon", "armour_filters": "Armour"}
+                "socket_filters": "Sockets", "weapon_filters": "Weapon", "armour_filters": "Armor"}
 GROUP_TYPES = {"and": "All of these", "not": "None of these", "if": "If present", "count": "At least {n} of these",
                "weight": "Weighted sum ≥ {n}", "weight2": "Weighted sum ≥ {n}"}
 
@@ -171,7 +171,7 @@ class FavoritesPage:
             self.fav_empty.place(relx=0.5, rely=0.3, anchor="center")
 
     def _fav_hint(self, ent):
-        """P2: "Paste a trade-site search link here" in grey while the box is empty and not being typed in."""
+        """P2: "Paste a trade-site search link here" in gray while the box is empty and not being typed in."""
         hint = "Paste a trade-site search link here"
         lab = tk.Label(ent, text=hint, bg=C["odd"], fg=C["muted"],
                        font=("Segoe UI", 9), anchor="w", cursor="xterm")
@@ -360,7 +360,7 @@ class FavoritesPage:
                 self.fav_changed([c["id"]])
 
     def fav_group_choice(self, title, current=""):
-        """A small window: pick a group (or none, or a new one) -> group id, "" or None (cancelled)."""
+        """A small window: pick a group (or none, or a new one) -> group id, "" or None (canceled)."""
         st = self.favs()
         names = ["(no group)"] + [g["name"] for g in st.groups] + ["New group…"]
         dlg = tk.Toplevel(self.root)

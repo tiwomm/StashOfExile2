@@ -1,5 +1,5 @@
 """Ornate overlay styles (2.110.0, wave 1 - from the mockups the user picked): Herald, Gilded, Warbanner, Verdant
-and Gloom; 2.111.0, wave 2: Totem, Hellfire, Psionic and Guildhall. Each is a skin over the Slate layout (ovlight.py): its own colours, bundled fonts (fonts.py), frame,
+and Gloom; 2.111.0, wave 2: Totem, Hellfire, Psionic and Guildhall. Each is a skin over the Slate layout (ovlight.py): its own colors, bundled fonts (fonts.py), frame,
 corner marks, title band and tab-like switches. The windows over the game (Notes, Calc, Regex favorites, Rates,
 cards) take the same skin through overlaywin.pal() -> App.ov_palette().
 
@@ -22,7 +22,7 @@ ORNATE = ("herald", "gilded", "warbanner", "verdant", "gloom", "totem", "hellfir
 NAMES = {"herald": "Herald", "gilded": "Gilded", "warbanner": "Warbanner", "verdant": "Verdant", "gloom": "Gloom",
          "totem": "Totem", "hellfire": "Hellfire", "psionic": "Psionic", "guildhall": "Guildhall"}
 
-# per skin: colours, fonts, frame, title band and switch (tab) colours
+# per skin: colors, fonts, frame, title band and switch (tab) colors
 SKINS = {
     "herald": dict(bg="#141210", band="#6a0a0e", band_grad=("#9a1418", "#7a0e12", "#8a1014", "#5e080c", "#3e0508"),
                    head="#f2e2bc", text="#ece4d4", big="#f2e2bc", muted="#b8ae9c", accent="#e8a44a", line="#5a4a32",
@@ -70,7 +70,7 @@ SKINS = {
 
 
 def keep_colors():
-    """The skins keep their own colours in every app theme."""
+    """The skins keep their own colors in every app theme."""
     from . import themes as _th
     for s in SKINS.values():
         for v in s.values():

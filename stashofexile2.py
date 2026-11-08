@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU GPL v3.0 (see LICENSE). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.123.4
+VERSION 2.123.5
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,6 +19,12 @@ VERSION 2.123.4
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.123.5
+       Feedback: "we don't use the UK spelling of stuff, change any and all non US American spelling". Every string,
+       comment, docstring and doc now uses US spelling (color, behavior, gray, center, canceled, maximized, Island
+       Rumors, Jewelry, Defenses, Armor ...). Kept as the game writes them: the game's own words the app reads or
+       searches for (Armour, favours, Honour, Defences, Body Armour ...), names in the code, data keys and file
+       names. tools/check_spelling.py (on every pull request) keeps it that way.
   2.123.4
        Feedback: the Price Checks divider was "janky and slow, almost like it's in slow motion, there's also no
        visible indicator". It's a Splitter now (style.py): a grip you can see (a line with dots that lights orange
@@ -178,7 +184,7 @@ VERSION HISTORY
        (_MapPart, as on Classic); its own slot stood empty whenever a map had no rank. The ⚙ opens Quick settings on
        either click (its All settings… opens Overlay ↳ Settings in the app) - a left-click used to pull you out of
        the game into the app.
-       Helpers (Overlay ↳ Settings): each says what it does in one grey line under its name (it was only a tooltip);
+       Helpers (Overlay ↳ Settings): each says what it does in one gray line under its name (it was only a tooltip);
        its live status shows under that only while it's on. Client.txt not found is one banner over the list with
        Find it… (it was the same red line on Breach, Ritual, Trade whispers ... and pointed at a right-click on the
        Session tracker that's long gone); the duplicate "They only watch and show" line is gone.
@@ -209,8 +215,8 @@ VERSION HISTORY
        Focus): "2 of 4 rituals done", shown in a map once the counter's been read, with an On screen chip on the
        Ritual row in Helpers (ritual_cfg readout). It shows your tribute too once RITUAL.tribute is known - reading it
        off the Ritual page (V) is next. The lines over the bar keep their size (from OLD_HUD_H).
-       Feedback: some style previews showed the wrong colours and shapes (they were a mock-up). The preview is the real
-       bar now: App.ov_preview draws it with the same code as over the game (its palette with your Colours, frame -
+       Feedback: some style previews showed the wrong colors and shapes (they were a mock-up). The preview is the real
+       bar now: App.ov_preview draws it with the same code as over the game (its palette with your Colors, frame -
        overlaywin.OverlayFrame / skin_inner, fonts, parts) at a 1440p XP bar's proportions, sample numbers, every click
        binding taken off (_inert); the overlay's own state is saved and put back. Feedback: the theme previews should
        work like that - Settings › Appearance › Theme is a ThemePicker (themepick.py): names (Dark, Light) beside a
@@ -274,7 +280,7 @@ VERSION HISTORY
        live preview of the bar drawn in each style's own palette (ovlight / ovskins / hudart); hover previews, a click
        picks. Replaces the dropdown and its 10-line hint.
        Always on top and Minimize to the system tray are off for new installs (saved settings keep theirs). Restart now
-       shows only after a text-size change (a greyed-out main button looked broken). Updates' switches shorter; the
+       shows only after a text-size change (a grayed-out main button looked broken). Updates' switches shorter; the
        note says which builds you get. What's new: "What's new · version" and "you had ...". Quick start: dots.
        Advanced: Problems (this week's count from the app's log, Report a bug, Open the app's log). Developer options,
        off and hidden until switched on (roadmap): Debug mode - every trade-site request with its answer and time in
@@ -282,7 +288,7 @@ VERSION HISTORY
        in unmatched_mods.txt beside the closest trade wording, newest first, no repeats (Copy all, Clear the list).
        Your data shows the folder as %APPDATA%\StashOfExile2 (no Windows user name on screen).
        Privacy & community: shorter notes, a line when nothing of yours is on the board, links to TOS.md / README.
-       About: header colours from the theme; credits name each project's author.
+       About: header colors from the theme; credits name each project's author.
   2.115.0
        One bug log for the whole app (feedback: "we need one global bug logging system", and Report a bug should
        carry any crash): soe2/buglog.py - app_log.txt in the data folder, one entry per problem, kind error / crash /
@@ -305,9 +311,9 @@ VERSION HISTORY
        the fatal error's kind, and the last steps (crash_steps.tmp, written on each step) - then a toast says so.
        Paths are cut on either slash, so no folder or Windows user name gets in. style.relook marks its steps.
        Scan stash (feedback: "led me through all the prompts but then did nothing"): after the last tab the app comes
-       to the front on Wealth and the check window opens centred on it, on top once and focused (it opened behind the
+       to the front on Wealth and the check window opens centered on it, on top once and focused (it opened behind the
        game); nothing read says so in a toast (it was a Wealth status line you couldn't see from the game).
-       Feedback: it came up on the other screen - "it should always appear over the app". style.over_app (centre_over
+       Feedback: it came up on the other screen - "it should always appear over the app". style.over_app (center_over
        once built, on the app's monitor) on the check window, the Rate mods picker and every dialog that had no place
        of its own: Favorites' group / edit, Ledger, Map library's import question, Money Makers' two, the board's
        moderation windows, Report a bug.
@@ -362,7 +368,7 @@ VERSION HISTORY
        its old tier. Export / Import / Remove imported under More ▾ (mb_more, listkit's menu look); the counts sit in
        the section strip (chrome.BarNote); the help line wraps to the window; Learned is the last column.
        Rate mods picker: grouped (Map items, Gear, Uniques you've checked), four across, "N to rate" with a bar,
-       the gear part scrolls when it doesn't fit, centred over the app (it ran past the bottom).
+       the gear part scrolls when it doesn't fit, centered over the app (it ran past the bottom).
        Under the hood: Paste item / Price it / Clear (Check gone - typing in the box reads it); a one-line intro.
        Exchange rates: currency names (ovrates.cur_name, one list for Rates, Exchange Helper and the overlay), plain
        small numbers (fmt_worth: no 4.762e-05), "In divines" / "Volume (div)"; the status bar updates as soon as a
@@ -374,30 +380,30 @@ VERSION HISTORY
        nothing): wealth.parse_currency_item -> stack_price(name, 1, loud=True) - poe.ninja or the bulk exchange, shown
        in a toast; the same on the plain Ctrl+Alt+C path.
   2.113.2
-       Island rumours (rumours_read.txt from a real card: "Nothin' to drink..." read as "Wodviw' to c(riwkv.."):
-       lines are compared by letter shape too (rumours.SHAPE: n/w/u/v/h/m, t/d/c/l, o/a, i/j) - rumours 0.88+, the
-       card's other lines 0.56 or less, two rumours at most 0.64 alike; a match needs a 0.15 lead over the next.
+       Island rumors (rumours_read.txt from a real card: "Nothin' to drink..." read as "Wodviw' to c(riwkv.."):
+       lines are compared by letter shape too (rumors.SHAPE: n/w/u/v/h/m, t/d/c/l, o/a, i/j) - rumors 0.88+, the
+       card's other lines 0.56 or less, two rumors at most 0.64 alike; a match needs a 0.15 lead over the next.
        What's new never claims a fix (feedback): notes say what changed and that it should help; recent ones reworded.
   2.113.1
        Price Checks: a "Show over the game" switch on its header (feedback: it belongs there) - the same switch as
        Settings › Price checking › Over the game (pc_pop_var, one BooleanVar for both). It left Settings › Hotkeys
        (feedback: the wrong place).
-       Island rumours (feedback: the middle of three still missing): a rumour no single line matches is looked for in
-       the card's whole text (rumours.rows, WHOLE_MATCH 0.8 - Windows' reader can split one over two lines or join it
+       Island rumors (feedback: the middle of three still missing): a rumor no single line matches is looked for in
+       the card's whole text (rumors.rows, WHOLE_MATCH 0.8 - Windows' reader can split one over two lines or join it
        to the next); the card is read at twice its size; what was read goes to rumours_read.txt (the card's words only,
        local) so a miss shows why.
   2.113.0
        Price check in a card over the game (a sample; soe2/pcpop.py - Price Checks in the app is unchanged and still
        gets the item). Settings › Hotkeys › Price Checks › "Show it in a card over the game" (off by default): your
        price check key copies the hovered item once, as before, and the card opens over the game instead of the app
-       coming forward. The card: the item (name in its rarity colour; rarity, class, base, item level, quality,
+       coming forward. The card: the item (name in its rarity color; rarity, class, base, item level, quality,
        corrupted), the price and how sure it is, the mods searched - tick / untick, Min / Max to type in (the same
        values as the app's card; Enter searches again) - and the cheapest listings, each a one-line summary that
        opens to the whole item (implicits, every mod, corrupted). Search again, Trade site, Open in app. Drag it by
        its title, resize from any edge - both remembered. The overlay's Style throughout (its scroll bar and buttons
        too). Other sellers' names show as on the app's card; your own account never does. It takes the keyboard
        when you click a box (to type); it never redraws under your typing. Windows and Linux / Hyprland.
-       Readable in every overlay style: on a light style (Gilded) the game's rarity / mod colours are darkened,
+       Readable in every overlay style: on a light style (Gilded) the game's rarity / mod colors are darkened,
        same hue, to 4.5 : 1 (pcpop.ink); a test checks every line in all 14 styles.
        Prices count each seller once (core, every search): trade.collapse_sellers keeps a seller's cheapest
        listing with how many times they listed it ("listed N times" on the cards); with fewer than 5 sellers in the
@@ -405,10 +411,10 @@ VERSION HISTORY
        cheapest". Price Checks, Bulk Pricing, Favorites, the card over the game and Money Makers' costs. A mod's
        default Min never goes under its own tier's lowest roll (mods.min_for: 90% of a low roll searched the tier
        below). Ideas from Exiled Exchange 2 (MIT), written our own way - credited.
-       Island rumours (feedback: only two of three showed; the panel was big and clunky): a rumour read on one line
-       with the card's "Island Rumours" heading now matches (rumours._score: the best stretch of the line); each card
+       Island rumors (feedback: only two of three showed; the panel was big and clunky): a rumor read on one line
+       with the card's "Island Rumors" heading now matches (rumors._score: the best stretch of the line); each card
        is read up to 3 times and what's found is put together (READS); the panel is small, like the Runeshape tips -
-       a title, then a rank badge, the island and the rumour per row.
+       a title, then a rank badge, the island and the rumor per row.
   2.112.5 (hotfix)
        The Campaign / Focus line: dragging it by its text no longer opens the route card / Game Plan - a click opens
        it only when the press didn't move (merged_page.click_not_drag, also on the bar's Focus text).
@@ -416,7 +422,7 @@ VERSION HISTORY
        Theme changes on Windows (feedback: 1-3 s each, and quick clicks through the cards crashed the app): a burst
        of card clicks swaps once, 200 ms after the last (pick_theme(wait=True) from the cards; code / tests swap at
        once); the overlay over the game is rebuilt on a theme change only in Classic - the one style that takes the
-       app theme's colours - instead of closing and reopening every window over the game on each swap.
+       app theme's colors - instead of closing and reopening every window over the game on each swap.
        Flanks is shown as Split (the key stays "flanks"). The Campaign / Focus line: unlocked, it can always be
        dragged - by a ⠿ grip at its left (see-through styles had nothing solid to grab) or its text; dragging a docked
        line undocks it and saves the spot (in Split the bar's halves can't move, so a docked line was stuck).
@@ -439,9 +445,9 @@ VERSION HISTORY
   2.112.1
        Not responding? soe2/hangwatch.py: a tick on the Tk thread every 0.5 s; if it stops for 8 s, a watcher thread
        samples the main thread three times and writes hang_report.txt to the data folder - file name (no folders),
-       function and line only, plus the last steps (theme change: re-colour / title bar / overlay rebuild). Local
+       function and line only, plus the last steps (theme change: re-color / title bar / overlay rebuild). Local
        only, never sent. For the theme-change freeze on Windows (not seen on Linux).
-       Switches on a card take the card's colour (style.py wraps ttk.Checkbutton): plain ones showed a dark box
+       Switches on a card take the card's color (style.py wraps ttk.Checkbutton): plain ones showed a dark box
        behind their text (Settings › General › Updates).
   2.112.0
        Overlay ↳ Settings › Helpers reworked (feedback: hard to read): one table, one row per helper - on / off,
@@ -462,9 +468,9 @@ VERSION HISTORY
        standard written in soe2/whatsnew.py (max 3 big per card; skipped updates merge). Old list entries show as
        small lines. The card, About › Version and the release notes read the new form (tools/release_notes.py).
        Theme: the What's new card, the Insights item card, the Price Checks / Session / Wealth strips, the BETA tag
-       and Game search's highlight use theme tokens (they kept fixed colours in every theme). tools/check_theme.py
-       (on every PR) fails any colour written into the code that stays the same in every theme.
-       Overlay settings: the Colours picker is removed (it didn't apply reliably and was one more box); the light
+       and Game search's highlight use theme tokens (they kept fixed colors in every theme). tools/check_theme.py
+       (on every PR) fails any color written into the code that stays the same in every theme.
+       Overlay settings: the Colors picker is removed (it didn't apply reliably and was one more box); the light
        styles always use their default set (Exile Gold); ornate styles keep their own.
        Toasts: action buttons wrap onto another row when they don't fit (the update note's three buttons squeezed
        the left one, Show, into a blank box).
@@ -473,7 +479,7 @@ VERSION HISTORY
        tabs), Gilded (white marble, gold leaf, umber text), Warbanner (a heavy gold frame with corner caps, royal-blue
        bands), Verdant (forest green, aged bronze) and Gloom (smoky slate, pewter, ghost-pale small caps). Each is a
        skin over the Slate layout (soe2/ovskins.py): Game bar and Panel, every window over the game, scaled to the
-       resolution. They keep their own colours (Colours doesn't apply). Classic stays the default.
+       resolution. They keep their own colors (Colors doesn't apply). Classic stays the default.
        Fonts bundled (SIL OFL, soe2/fonts): Cinzel, EB Garamond, Cormorant, Marcellus SC - loaded for the app only
        (Windows: a private font resource; Linux: fontconfig app fonts), never installed (soe2/fonts.py).
        The bar's switches: Campaign | Focus | Breach | Delirium | Ritual | Expedition, room for new ones after.
@@ -483,9 +489,9 @@ VERSION HISTORY
        Regex: the option cards are one card with a row of buttons per setting (Rarity, Type, Uses remaining…), the
        way Money Makers' filters look. ★ first, Only ★ and Select valuable are gone (★ still marks valuable mods).
        PoE 2 has no find key: every "copied" hint now says Ctrl+V into the stash (or shop) search.
-       Everything over the game follows the overlay's Style and Colours (Settings › Appearance › Overlay settings):
+       Everything over the game follows the overlay's Style and Colors (Settings › Appearance › Overlay settings):
        Notes, Calc, Regex favorites, Rates, the goal bar and every card - they used the app theme or the Classic
-       colours before, so none matched. Windows keep a box in Hairline / Flanks. One palette: App.ov_palette.
+       colors before, so none matched. Windows keep a box in Hairline / Flanks. One palette: App.ov_palette.
   2.108.0
        Polish 7 - P4 + P5 + P6 + P7: the overlay and its children, Money Makers, Regex, Game search.
        - Right-click the overlay's cog = Quick settings, a small box over the game (soe2/ovquick.py): Overlay, Sound,
@@ -494,7 +500,7 @@ VERSION HISTORY
        - Overlay ↳ Settings › Helpers: each helper's options sit on their own line under it and wrap.
        - A tooltip can't stay stuck on screen when its widget goes away (style.Tooltip watches it).
        - Overlay: "No maps yet this session" text over the empty maps list.
-       - Expedition: the Island rumours show in one panel beside the card (was one bar per rumour).
+       - Expedition: the Island rumors show in one panel beside the card (was one bar per rumor).
        - Game Plan: Goals by phase as tabs (+ Add adds to the phase on show; "I'm here now" moves you); Stockpile,
          Map supplies, Farm plan and Pokes (with Build lock) as tabs on the right; the stockpile form tidied.
        - Leaderboards: two toolbar rows (boards + sharing, then filters); empty texts on both lists.
@@ -546,8 +552,8 @@ VERSION HISTORY
        the exchange rates window (its x hides it). The labels read Map: and Avg.: .
        Leaderboards: the League box names the leagues (current first, then others seen, then All leagues); Show:
        Top 5 / 10 / 20 / 30 / 50 / 100 (kept).
-       Island Rumours: the log's last lines say where you are when the watcher starts (started in your hideout, it
-       never ran); a card read while still opening is read again until its rumours show; its first error is logged.
+       Island Rumors: the log's last lines say where you are when the watcher starts (started in your hideout, it
+       never ran); a card read while still opening is read again until its rumors show; its first error is logged.
        Price Checks (feedback: an amulet's exact search found listings without its +186 Mana): when every ☑ mod must
        match, they're searched like ★ mods (gear.build_query) - the "count" over each mod's several ids (explicit,
        fractured, desecrated) let one mod count two or three times. "All but N" steps count one id per mod.
@@ -564,7 +570,7 @@ VERSION HISTORY
        Polish 7 - P2: Favorites and Market Insights (findings + mockup, then built).
        Favorites:
        - The empty list says how to add one (it showed nothing - a 2.103.4 refill skipped the note).
-       - The link box: a "Trade link" label and a grey hint while empty; the long help line is shorter.
+       - The link box: a "Trade link" label and a gray hint while empty; the long help line is shorter.
        - The list is 300 px (Price / Checked fit), the card at least 460 px (mods wrap less).
        - Open on trade site sits beside Search under the card (item and link favorites).
        - A check that found nothing (or couldn't search) shows the Price Checks "why" box with Search again /
@@ -660,13 +666,13 @@ VERSION HISTORY
        - Flanks: no box - the numbers right of the life orb, the switches left of the mana orb (two small windows,
          the middle of the screen stays clear); the Panel stacks the two halves.
        - Micro: the smallest - the times, the rank and the switches as lettered squares (Ritual shows its count).
-       Then Colours: Exile Gold (the Classic bar's own), nine theme packs' colours (Gilded Crypt, Sunstep Temple,
+       Then Colors: Exile Gold (the Classic bar's own), nine theme packs' colors (Gilded Crypt, Sunstep Temple,
        Emberforge, Ashen Rite, Daybreak Stalker, Midnight Steel, Hollow Deep, Jade Circuit, Neon Chassis) or Follow
        the app theme; a small sample shows next to it. Every part is there as in Classic (timer and ⏸ / ▶, the map,
        where you are, its rank - click to rank -, Maps, Avg, the clock, the switches with their hover help, Notes /
        Calc / Regex / Vendor ▾, lock, ⚙), each part's switch in Overlay > Options still applies, and the goal bar
-       (Focus / Campaign) is drawn in the same style. No box uses Windows' see-through colour key (other systems get
-       the colour set's box). A bar is fitted to the XP bar (drag it while unlocked; picking the style or layout
+       (Focus / Campaign) is drawn in the same style. No box uses Windows' see-through color key (other systems get
+       the color set's box). A bar is fitted to the XP bar (drag it while unlocked; picking the style or layout
        again puts it back, and a new game size fits it again).
   2.100.0
        Polish 6 - hover, focus, motion (the same everywhere; motion.py, installed once at start):
@@ -689,9 +695,9 @@ VERSION HISTORY
        Roadmap: Character Appraisal (a Path of Building code priced item by item) and Patch notes (opt-in, beside
        What's new) under Maybe later; "item sold" alerts and a login token for price checks parked.
   2.99.0
-       Mod book (feedback: no rules for armour, belts, rings, amulets ... or uniques; "What the app learned" should sit
+       Mod book (feedback: no rules for armor, belts, rings, amulets ... or uniques; "What the app learned" should sit
        with the rules it belongs to):
-       - Gear rules: pick an item class (27 - every armour, jewellery and weapon class) and every line that can roll
+       - Gear rules: pick an item class (27 - every armor, jewelry and weapon class) and every line that can roll
          on it is listed (tierdata.json, RePoE), with how many tiers it has. Rate S-F: S / A = High (always
          searched), B / C / D = Normal, F = Ignore (never searched). These are the same rules Rate on Price Checks
          sets (gear:<class>:<wording>); saved ones lose their leading "+" once so both match (gear_plus_299).
@@ -801,7 +807,7 @@ VERSION HISTORY
        Price Checks card - visual hierarchy (feedback):
        - A mod's color says where it comes from, as the game and the trade site show it (style.MOD_COL): affixes
          blue, socketed runes / implicits light blue, fractured tan, desecrated green, pseudo totals pink. Unticked
-         rows keep their color, dimmed (were grey). The listing cards use the same colors.
+         rows keep their color, dimmed (were gray). The listing cards use the same colors.
        - Every section folds: "▾ STAT FILTERS (3)" - a click folds / unfolds it, the number is how many are
          ticked (Miscellaneous: how many aren't Any); Requirements starts folded. Fold all / Unfold all at the top.
          Remembered for every item (settings pc_fold).
@@ -836,7 +842,7 @@ VERSION HISTORY
        - On the bar: one switch per item - Session timer, Map timer, Maps done, Average map time, Map rank: S-D, Map
          name, Clock; Notes ▾, Calc ▾, Regex ▾, Exchange rates (each one switch: the feature and its place on the bar -
          the Features card and the Menus list are gone).
-       - Options (was Behaviour, plus the Features leftovers): Lock the overlay, Feature tips, Start the overlay with
+       - Options (was Behavior, plus the Features leftovers): Lock the overlay, Feature tips, Start the overlay with
          StashOfExile2, Ask me to rank maps, Dock the lines to the bar, Hide from screen captures, Overlay appearance….
        - Helpers: each helper's options on its own row, with its "Switch on the bar" (and Focus / Campaign "Its line
          above the bar"); the "Show the Mechanic Helper bar" switch is gone (a bar that was off keeps its helpers'
@@ -933,7 +939,7 @@ VERSION HISTORY
        StashOfExile2)" (config.APP_UA) - the trade site saw "personal-stash-pricer/1.0" before; poe.ninja, GitHub and
        the community board get the same name. No name, account or email of the user is in it.
   2.91.0
-       Exchange rates over the game (ovrates.py): a small window in the overlay's own look (the Game bar's colours
+       Exchange rates over the game (ovrates.py): a small window in the overlay's own look (the Game bar's colors
        with that layout, the Panel's otherwise; rebuilt when the layout changes) listing the most-used rates - "210 :
        1 div" for cheap ones, "N div each" for dear ones - from the rates table the app already keeps (no extra
        requests). Off until turned on (Overlay ↳ Settings › Features › Exchange rates window); movable (kept, and the
@@ -1099,7 +1105,7 @@ VERSION HISTORY
        (x/3) counter is"): the overlay's bar (and the goal bar) sit over the XP bar, right where the watcher looks
        (ritual_alert.SEARCH), and the screen capture saw the bar instead of the counter. The bar windows are now left
        out of screen captures (remnant_page.capture_affinity, WDA_EXCLUDEFROMCAPTURE, Windows 10 2004+), so the Ritual
-       and Delirium watchers see the game under them. Switch: Overlay ↳ Settings › Behaviour "Hide the bar from
+       and Delirium watchers see the game under them. Switch: Overlay ↳ Settings › Behavior "Hide the bar from
        screen captures" (tracker cfg hide_capture, on by default; off = screenshots / streams show the bar).
        Docked goal / Focus line (feedback: "a fine gap between the two ... a slight width issue"): it sits right on
        the bar (no 6 px gap), uses the bar's end-cap width (hudart.plate cap=, so the frames line up) and is rebuilt
@@ -1152,12 +1158,12 @@ VERSION HISTORY
        to Price Checks, not Bulk Pricing. The game's plain Ctrl+C is left alone (Wealth, tablets and regex tests keep
        it); set the key to Ctrl+C to have the 2.80.0 way back.
   2.83.0
-       Island Rumours (feedback: "use our Map library to build an add-on for the expedition helper"): in your hideout
+       Island Rumors (feedback: "use our Map library to build an add-on for the expedition helper"): in your hideout
        (Client.txt; feedback: "watch only in hideout") the app looks for the world map's Uncharted Waters card - the
-       one large light parchment patch on a small copy of the screen - and reads only that part. Each rumour gets a
+       one large light parchment patch on a small copy of the screen - and reads only that part. Each rumor gets a
        tag beside the card: the island it leads to and your Map library rank for it ("Frigid Bluffs · A"; S / A in
-       gold). rumours.py: the 20 rumours and their islands (the newest guides agree on the pairs); matched loosely
-       (the card's handwriting reads as "clif fs"). Switch: Remnant's row, "Island rumours (in your hideout)".
+       gold). rumors.py: the 20 rumors and their islands (the newest guides agree on the pairs); matched loosely
+       (the card's handwriting reads as "clif fs"). Switch: Remnant's row, "Island rumors (in your hideout)".
        Remnant watcher (feedback: "it keeps popping up in random areas"): off in hideouts, towns and the campaign
        (Client.txt), always on in a Grand Expedition island (ExpeditionLogBook_...); in other maps only once the
        Expedition mark (its swirl or its crystal under MAP CONTENT, right edge) has been seen - a cheap look every 2 seconds until
@@ -1167,7 +1173,7 @@ VERSION HISTORY
        grouping of the toggle-able options"): the overlay's options are their own page under Overlay (in the
        sidebar, the title bar's Settings button and an "Overlay settings" button on the Overlay page), in cards:
        On the bar (the numbers; the switches and menus on it), Features (Notes, Calculator, League Focus, Focus
-       line, map rank questions, Desecration Helper), Campaign (its switches and options), Behaviour (lock, tips,
+       line, map rank questions, Desecration Helper), Campaign (its switches and options), Behavior (lock, tips,
        start tracking, look, character name, keys) and the Mechanic Helper. The Overlay page keeps the session, its
        numbers and This session's maps / Map stats / Past sessions. "Desecration" is written in full on its switch.
   2.81.2
@@ -1209,7 +1215,7 @@ VERSION HISTORY
        price check had left out (filler, low tier) removed the item's own setting instead of keeping it, so nothing
        changed; now it's kept unless it's what the mod would be anyway. The item's search starts at Instant Buyout
        (the Settings choice is reset to it once), priced in Exalted Orb Equivalent (the trade site's default; was
-       labelled "Any currency").
+       labeled "Any currency").
   2.79.1
        Mageblood and other uniques with a choice stat: searched like the trade site, with the option in the stat id
        (explicit.stat_264262054|8 = Legacy of Quicksilver), not a separate option value. The same stat more than once
@@ -1217,11 +1223,11 @@ VERSION HISTORY
        "Summon" (the trade site says "Grants Skill: Level # Rhoa Mount").
        The campaign / Focus line is docked to the top of the overlay bar by default, as wide, and moves with it
        (Overlay › Options › Campaign › "Dock it to the top of the overlay bar"; off = drag it anywhere). The Game bar
-       spans the XP bar, bottom centre, just above it; a position you dragged is kept per resolution, so another
+       spans the XP bar, bottom center, just above it; a position you dragged is kept per resolution, so another
        resolution fits it again. The update badge looks for a new release every hour (was 6 h).
   2.79.0
        The item panel, cleaned up (feedback: "a clean view ... all of those functions"). One card holds
-       every filter: Properties (base type - this base or any of its kind -, quality, defences / DPS totals, item
+       every filter: Properties (base type - this base or any of its kind -, quality, defenses / DPS totals, item
        level, sockets, each with a check box and Min / Max), Requirements (Level, Str, Dex, Int read from "Requires:",
        folded), Miscellaneous (Corrupted, Fractured, Desecrated, Sanctified, Mirrored, Unidentified: Any / Yes / No -
        a click steps), Stat filters (each mod: check box, Min / Max, ★ must match, FRACTURED tag), Pseudo filters,
@@ -1316,7 +1322,7 @@ VERSION HISTORY
        down to the switches): each mod and total is a row - [✓] tier text - ticked = searched on; a click re-prices
        this item, as the switch did (app._card_mod_row / card_toggle). Min / Max, ★ and the rolls fold away under
        "Fine-tune the search" (SETTINGS detail_tune). The card is the panel's inner width (it was 20 px wider, the
-       right edge cut off). A unique's flavour text is never read as a mod, wherever it sits - The Brass Dome's
+       right edge cut off). A unique's flavor text is never read as a mod, wherever it sits - The Brass Dome's
        lore line was read because an "Unmodifiable" section came after it (gamedata.flavour_sections). A click that
        redraws the panel no longer prints an error (shell.take_keyboard).
   2.74.3
@@ -1340,7 +1346,7 @@ VERSION HISTORY
        Gold (Amethyst-Topaz)", is read as "Legacy of Gold" (gamedata._WRANGE); stats the trade site lists with a
        choice ("Legacy of #" - Gold, Quicksilver ...) are read with their options (engine._load_stats ->
        stats_options.json, mods.OPTS / option_for) and searched as {"option": id} - which Legacies a Mageblood has
-       is searched, it sets the price. Flavour text (the lore lines at the bottom) is never read as a mod, on any
+       is searched, it sets the price. Flavor text (the lore lines at the bottom) is never read as a mod, on any
        item (gamedata.flavour_section).
   2.74.0
        Advanced tools hidden by default (feedback: "I don't think the mod book or under the hood information is
@@ -1605,7 +1611,7 @@ VERSION HISTORY
        (_fits / fold); none in the narrow icon sidebar. Registered: Money Makers (Strats, Lucrative Strats, Tablet
        Crafting, Farm Tracker), Regex (Build a search, ★ Favorites), Exchange rates (Rates, Exchange Helper,
        Arbitrage), Mod book (its six tabs). Farm Ledger is called Farm Tracker everywhere it's shown. ROADMAP's
-       "How the app is organised" has the rule. test_v2640; tests renamed to Farm Tracker.
+       "How the app is organized" has the rule. test_v2640; tests renamed to Farm Tracker.
   2.63.0
        Price checks, redesign step 2: soe2/chrome.py (SectionBar - a header strip painted from the pack's
        "bars.section", title left, note right; Viewport - the sunken frame from "panels.viewport"; both redraw
@@ -1622,7 +1628,7 @@ VERSION HISTORY
        Pages (redesign step 1 of the mockup style): shell.PAGES - one tool at a time, filling the main area. Each
        module keeps its own real window (DeskWindow) but as a page: placed over the whole desk (page_fill), no
        edge / window buttons / resize handles / drag; Shell.open withdraws the other page; after_change brings the
-       previous page back; finish opens the last page (cfg "page"); minimise = minimize the app (Esc). soe2/sidebar.py
+       previous page back; finish opens the last page (cfg "page"); minimize = minimize the app (Esc). soe2/sidebar.py
        (Sidebar canvas, self-painted from the pack's "nav": bar / glow / pill / gem / bracket / arrow / step marker,
        texture): groups Modules / Tools / In game, child tools indented with ↳, utilities' running dots, BETA tags,
        Toolkit + Settings at the bottom, icons only under 1100 px. No dock and no taskbar: the status strip is the
@@ -1748,7 +1754,7 @@ VERSION HISTORY
        (min-max) ranges dropped - price, when added, listings seen). Ctrl / Shift clicks don't; a click on it, Esc
        or 20 s closes it (app.pc_preview_at). The Session timer softer (feedback: 2.51's text "a bit too harsh"):
        rows 10 plain, the time 20 bold, Profit bold; the halo thinner (4 sides, no corners) and nearer the page
-       (#e6d6b2). US spelling in every user-facing text (colour -> color, grey -> gray ...); Notes' card "Font and
+       (#e6d6b2). US spelling in every user-facing text (UK -> US: color, gray ...); Notes' card "Font and
        Colors". test_v2530.
   2.52.0
        Menus tidied (feedback: opacity was in the Session timer's options AND in Appearance): every setting in one
@@ -1797,7 +1803,7 @@ VERSION HISTORY
        Overlays › Look: the four PoE2 looks of the 2.43.0 mockups, all to choose from - Runeshape parchment (default),
        Relic tooltip, Carved frame, Quiet HUD - plus Classic dark (overlaywin LOOKS / PALETTES, skinned()). Feedback:
        the 2.43.0 parchment didn't match mockup C and was "too clean". Now: a grungy parchment made at run time
-       (overlaywin.texture: grain, fibres, stains, burnt edges - Pillow, no image file), drawn titles and buttons on
+       (overlaywin.texture: grain, fibers, stains, burned edges - Pillow, no image file), drawn titles and buttons on
        canvases (no flat boxes on the texture), the mockup's Session layout (title + clock on the bar, the big time,
        two columns: Map 9:54 | Oasis, Maps | Avg, Profit; CanvasText answers like a Label), drawn Mechanic Helper
        cells (◆ on / ◇ off; ✓ / ✕ on the HUD), Notes as a page on the parchment. Remnant tips follow the look.
@@ -2085,8 +2091,8 @@ VERSION HISTORY
            built in the background 25 rows at a time after Regex opens (rx_warm); rows only repaint when their color
            changes. A switch: gear 920 ms -> ~180 ms, also the first time. Rows know their own type (a background
            row's placeholder used to land in the showing type's search).
-       (2) The window really opens maximised again: the first "normal" size while the window appeared was saved
-           and wiped the "maximised" flag before it was used (since 2.23.1). Nothing is recorded until the start-up
+       (2) The window really opens maximized again: the first "normal" size while the window appeared was saved
+           and wiped the "maximized" flag before it was used (since 2.23.1). Nothing is recorded until the start-up
            restore is done (_win_restored).
        (3) Price checks "Pricing 215" has a time from the start: the remembered seconds per item
            (SETTINGS price_secs_avg), or a guess from the pace's search allowance, until 3 items are done.
@@ -2109,7 +2115,7 @@ VERSION HISTORY
            are left out (thin one-sided hourly data) and the status says how many.
        (4) Settings > Advanced: "Slowness recorder" is now "Lag finder".
   2.25.4
-       (1) Maximised last time -> maximised again: restore_zoom waits until the window is on screen and the start-up
+       (1) Maximized last time -> maximized again: restore_zoom waits until the window is on screen and the start-up
            screen is gone (asking earlier did nothing on Windows: the author's settings said zoomed, yet it opened
            at 1280x800), checks, and asks Windows (ShowWindow SW_MAXIMIZE) if Tk didn't.
        (2) Settings > Advanced > Slowness recorder (perflog.py): for 5 minutes a watcher thread notes every time the
@@ -2149,7 +2155,7 @@ VERSION HISTORY
        (2) Price checks: "★ Valuable" column (one ★ per mod the Mod book rates High), shown right after Item and
            sortable. The stars no longer sit in front of the name. (Last in COLS / values, placed by displaycolumns.)
   2.23.1
-       (1) The app opens where you left it: place, size and maximised (SETTINGS main_window, kept as the window
+       (1) The app opens where you left it: place, size and maximized (SETTINGS main_window, kept as the window
            moves and written 3 s after it stops). A spot that's no longer on any monitor (all monitors together,
            GetSystemMetrics virtual screen) keeps the size and lets Windows place it.
   2.23.0
@@ -2162,7 +2168,7 @@ VERSION HISTORY
            loop that wasn't there the hour before pops up (app_toast). Settings arb_live.
   2.22.0
        (1) Regex for jewels (Ruby / Emerald / Sapphire / Diamond / Time-Lost) and gear (rings, amulets, belts,
-           armour, shields, foci, quivers, weapons). tools/build_regexdata.py: MULTI kinds from several RePoE
+           armor, shields, foci, quivers, weapons). tools/build_regexdata.py: MULTI kinds from several RePoE
            domains (misc / item / desecrated) kept by spawn tag; mods with the same text are one row; a line another
            mod shares word for word doesn't block a token; base names are noise; when no short token is unique the
            whole line is the token (^...$, numbers as \d+, mod["rx"]). Jewel type filter (base name), gear "Show
@@ -2181,7 +2187,7 @@ VERSION HISTORY
        (1) Mod book tiers S / A / B / C / D (mods.TIERS, mod_tiers.json; not set: High = A, Normal = C). Tier column and
            "Tier for selected" buttons on the Tablet / Jewel mod rules pages. When no listing has all of an item's
            mods, the engine leaves out the lowest tier and searches again (then the next; at most 2 extra searches,
-           never S) before "any roll" / "best mod alone". The price is labelled a floor.
+           never S) before "any roll" / "best mod alone". The price is labeled a floor.
        (2) Import rules really imports: rules go INTO your Mod book (mod_rules.json), your own export works as a
            backup, and differing rules ask "use the file's or keep yours". Export writes every rule of the page
            (High / Normal / Ignore + tiers, format 2) and still a "high" list older versions read. Waystone and relic
@@ -2471,7 +2477,7 @@ VERSION HISTORY
        (5) Numbering: this is 2.0.0; see "How versions are numbered" above.
   2.0 beta 22
        (1) The item panel (mods with Min / Max, Search with these values, Mark listed ...) could vanish: its width was
-           saved at close even when the Price checks window was closed or minimised (a real window since beta 13
+           saved at close even when the Price checks window was closed or minimized (a real window since beta 13
            reports 1 pixel then), or after dragging the divider to the edge. Widths under 250 are no longer saved,
            a saved one is put back to 430, and letting go of the divider near the edge leaves the panel 300 wide.
        (2) Price checks: a # column (the record id = the order items were added), "↕ Order added" next to Show all,
@@ -2529,7 +2535,7 @@ VERSION HISTORY
            waits, and it only looks at those three buttons.
        (3) Clicking a window gives it the keyboard (to the box you clicked), so typing works in every window.
        (4) "Windows open at random": restoring the app re-showed and re-stacked every window, and Notes / the timer
-           showed whenever the app was in front. Now Windows itself keeps a minimised app's windows, they are only
+           showed whenever the app was in front. Now Windows itself keeps a minimized app's windows, they are only
            re-shown after the tray; Notes / the timer show only while the game (or the note itself) is in front; and
            "Always on top" no longer touches the desktop's windows or the note / timer.
   2.0 beta 16
@@ -2731,7 +2737,7 @@ VERSION HISTORY
        sizes, corrupted or not. It shows the string and its length (the game takes 250 characters), copies it,
        saves presets, and can test the search on a copied item (and tick the mods that item has).
        Mod lists come from the game's own data (RePoE, regexdata.json); the strings are generated by the app.
-  1.43 Ritual Tablets: "Ritual Altars in Map allow rerolling Favours # additional times" now counts in the price.
+  1.43 Ritual Tablets: "Ritual Altars in Map allow rerolling Favors # additional times" now counts in the price.
        The trade site words that mod "an additional time" (no number), and listings with 2 or 3 rerolls show
        "3 additional times" - the listing check didn't accept that wording and threw those listings out. Both
        wordings are accepted now, and the mod is searched the way the trade site's own search does it (its own
@@ -2744,14 +2750,14 @@ VERSION HISTORY
        (3) Tablets: any wording of the tablet class is accepted; unique tablets and jewels are priced by name; a
        white tablet says it has no mods; anything else not priced is saved to unpriced_items.txt in the data folder.
   1.41 Gear price checker (Phase 3). Ctrl+Alt+C on any piece of gear (rings, amulets, belts, gloves, boots, helmets,
-       body armours, shields, foci, quivers, weapons, charms, flasks) now prices it, on the Price checks page like a
+       body armors, shields, foci, quivers, weapons, charms, flasks) now prices it, on the Price checks page like a
        tablet. The Item library's "Check an item" box has a Price check button that does the same.
-       - Armour pieces are searched on their total Armour / Evasion / Energy Shield (at 20% quality, or their own
+       - Armor pieces are searched on their total Armor / Evasion / Energy Shield (at 20% quality, or their own
          quality if higher), weapons on their physical / elemental DPS; the mods that feed those totals are left out.
        - Rings, amulets, belts, quivers, charms and flasks are searched by their exact base type.
        - Two or more resistance / attribute / life mods are searched as one total (the trade site's pseudo stats).
        - Uniques are searched by name. Corrupted only against corrupted, uncorrupted against uncorrupted.
-         Exceptional socket counts (2 on gloves / boots / helmets, 3 on body armours) are required.
+         Exceptional socket counts (2 on gloves / boots / helmets, 3 on body armors) are required.
        - The side panel shows the totals and every mod: star = must match, tick = counts, untick = not searched,
          and Min / Max values can be edited, as for tablets. If the exact search finds too few listings, one, then
          two ticked mods may be left out (at most 3 searches per item).
@@ -2768,13 +2774,13 @@ VERSION HISTORY
        status line says so, names the item, and puts it on the Item library page (Check an item) so you can see how
        the app reads it.
   1.38 Phase 2 of the plan: the game-data library. New page "Item library" (Page dropdown):
-       (1) Every PoE 2 base type (1,574) sorted by class and base group: body armours / helmets / gloves / boots /
-           shields / foci by defence type (Energy Shield only, Armour / Evasion ...), rings / amulets / belts / jewels /
+       (1) Every PoE 2 base type (1,574) sorted by class and base group: body armors / helmets / gloves / boots /
+           shields / foci by defense type (Energy Shield only, Armor / Evasion ...), rings / amulets / belts / jewels /
            charms one group per base (Breach Ring and Refined Breach Ring together; Runeforged / Runemastered versions
-           with their base), weapons by class (bows, wands, quarterstaves ...), with each base's defence values.
+           with their base), weapons by class (bows, wands, quarterstaves ...), with each base's defense values.
        (2) Every modifier stat (2,518): its wording, whether higher is better, its trade-site stat ids, local or not.
        (3) Check an item: paste any copied item (Ctrl+C) and see how the app reads it: class, base, base group,
-           quality, defences, sockets, item level, corrupted, and every mod with its tier, roll range and trade stat.
+           quality, defenses, sockets, item level, corrupted, and every mod with its tier, roll range and trade stat.
            Lines it can't place are shown in red.
        The data comes from Exiled Exchange 2 (MIT license, see THIRD_PARTY_NOTICES.txt) and ships as gamedata.json,
        versioned like tabs.txt. tools/build_gamedata.py rebuilds it after a patch. This is the base the gear price
@@ -2861,13 +2867,13 @@ VERSION HISTORY
        (2) Footer shows how old the rates are; click it for the Exchange rates window: every currency's worth, how much of
            it traded, a "Refresh now" button, an hourly on/off switch, and a converter ("what is 8.5 div in chaos, exalted,
            vaal?").
-       (3) The side panel has "IF YOU LIST IT": the price in chaos / exalted / vaal and the two whole-divine neighbours
+       (3) The side panel has "IF YOU LIST IT": the price in chaos / exalted / vaal and the two whole-divine neighbors
            ("8 div (-6%) or 9 div (+6%)") plus a divine + chaos split. "Listed at" now understands "8 div 50 chaos" and
            "150 vaal".
        (4) A listing priced in a currency with NO known rate used to be left out of the average without a word. It is still
            left out (guessing would be worse), but the row now says so, confidence drops, and currency_log.txt records
            the currency's name so it can be added.
-       (5) Fixed: when one listing couldn't be converted, the next listings in market.db could get its neighbour's price.
+       (5) Fixed: when one listing couldn't be converted, the next listings in market.db could get its neighbor's price.
   1.24 New look (Xfire-style steel and navy, with the game's gold for money) and the Mod book merged into one page.
        (1) Glossy header with the total valuation, a "Priced" chip and a "Require Review" chip; raised steel buttons;
            blue selection bar in the list; the side panel is cards (estimated value + confidence badge, a warning box
@@ -3015,7 +3021,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.123.4"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.123.5"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 

@@ -230,7 +230,7 @@ class MergedOverlay:
         cfg = self.tracker_cfg()
         saved = (cfg.get("hud_pos") or {}).get(layout) or []
         if saved and (cfg.get("hud_res") or {}).get(layout) != [int(gw), int(gh)]:   # 2.79.1: another resolution -
-            saved = []                                                             # fitted again, bottom centre
+            saved = []                                                             # fitted again, bottom center
         out = []
         for i, (a, b, bot, hh) in enumerate(HUD_SPOTS[layout]):
             x0 = gx + (a * gh if a >= 0 else gw + a * gh)
@@ -377,7 +377,7 @@ class MergedOverlay:
     def overlay_hide_capture(self):
         """2.85.2 (feedback: "Ritual alerts aren't working, maybe because the overlay is in the position of where the
         ritual (x/3) counter is"): the bar is left out of screen captures, so the Ritual / Delirium watchers see the
-        game's counters under it. Its own switch (Overlay ↳ Settings › Behaviour), on by default; off = screenshots
+        game's counters under it. Its own switch (Overlay ↳ Settings › Behavior), on by default; off = screenshots
         and streams show the bar."""
         cfg = self.tracker_cfg()
         if not cfg.get("hidecap_2891"):

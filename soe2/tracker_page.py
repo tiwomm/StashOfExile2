@@ -404,7 +404,7 @@ class TrackerPage:
 
     def _tracker_options(self, po):
         """2.82.0 (feedback: options "a more predominant feature ... reorganizing ... grouping"): Overlay ↳ Settings,
-        in cards - On the bar, Features, Campaign, Behaviour, then the Mechanic Helper (build_ov_settings)."""
+        in cards - On the bar, Features, Campaign, Behavior, then the Mechanic Helper (build_ov_settings)."""
         cfg, P2 = self.tracker_cfg(), C["panel2"]
         cards = tk.Frame(po, bg=C["panel"])
         cards.pack(fill="x")
@@ -544,7 +544,7 @@ class TrackerPage:
                 v.set(bool(on))
 
     def build_ov_settings(self, body):
-        """2.82.0: Overlay ↳ Settings - cards (On the bar, Features, Campaign, Behaviour) and the Mechanic Helper."""
+        """2.82.0: Overlay ↳ Settings - cards (On the bar, Features, Campaign, Behavior) and the Mechanic Helper."""
         P1 = C["panel"]
         po = ScrollArea(body, bg=P1)
         po.pack(fill="both", expand=True, padx=8, pady=8)

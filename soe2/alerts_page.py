@@ -285,7 +285,7 @@ class AlertsPage:
         names = {"delirium": "Delirium", "breach": "Breach", "ritual": "Ritual", "remnant": "Expedition",
                  "focus": "League Plan", "campaign": "Campaign", "whispers": "Trade whispers",
                  "desecrate": "Desecration (BETA)"}
-        # 2.119.0 (UX pass): what each one does, in one grey line under its name (it was only a tooltip)
+        # 2.119.0 (UX pass): what each one does, in one gray line under its name (it was only a tooltip)
         blurb = {"delirium": "END DELIRIUM when a map ends with Delirium still on",
                  "breach": "Warns when your stored Hiveblood is almost full",
                  "ritual": "Counts rituals done; reminds you if you leave early",
@@ -302,8 +302,8 @@ class AlertsPage:
         from . import whispers as _W
         self.al_wafter = tk.BooleanVar(value=bool(_W.cfg()["after"]))
         opts = {
-            "remnant": [("Island rumours", self.al_rru, lambda: self.ru_changed(self.al_rru.get()),
-                         "On the world map's Uncharted Waters card, each rumour gets the island it leads to and your "
+            "remnant": [("Island rumors", self.al_rru, lambda: self.ru_changed(self.al_rru.get()),
+                         "On the world map's Uncharted Waters card, each rumor gets the island it leads to and your "
                          "Map Library rank for it. Only in your hideout."),
                         ("Runeshape tips", self.al_rtips, lambda: self.remnant_tips_changed(self.al_rtips.get()),
                          "A small list next to the prices: the runeshapes players rate best for loot (S and A tier).")],
@@ -682,7 +682,7 @@ class AlertsPage:
             lbl = rows[k]["status"]
             if rows[k].get("grid"):                 # 2.112.0: one short line under the name
                 if st == "off" and txt == rows[k]["what"]:
-                    txt = ""                        # 2.119.0: off - the switch says so; the grey line says what it does
+                    txt = ""                        # 2.119.0: off - the switch says so; the gray line says what it does
                 elif txt.startswith("On - "):
                     txt = txt[5:6].upper() + txt[6:]
                 try:
@@ -773,7 +773,7 @@ class AlertsPage:
             tail = self.br_reader.start()             # only what the game writes from now on
             self.br_note = ""
             last = next((d for k, _t, d in reversed(tail or []) if k == "area"), None)
-            if last is not None:                      # 2.104.1 (feedback: Island Rumours never showed): started in
+            if last is not None:                      # 2.104.1 (feedback: Island Rumors never showed): started in
                 try:                                  # your hideout, the helpers knew only after the next area
                     self.expedition_area(last.get("area"), gl_area_kind(
                         last.get("area"), last.get("seed"), last.get("level", 0)))
@@ -816,7 +816,7 @@ class AlertsPage:
                             try:
                                 self.ws_area(data.get("area"))        # 2.81.0: the Desecration Helper
                                 self.expedition_area(data.get("area"), gl_area_kind(      # 2.83.0: Remnant's places,
-                                    data.get("area"), data.get("seed"), data.get("level", 0)))  # Island Rumours
+                                    data.get("area"), data.get("seed"), data.get("level", 0)))  # Island Rumors
                             except Exception:
                                 self.log_error("the area helpers")
                             self.breach_area(gl_area_kind(data.get("area"), data.get("seed"), data.get("level", 0)),

@@ -3,8 +3,8 @@ system, go for it"): Settings › Appearance › Overlay style - the styles as a
 Ornate) beside a big live preview of the bar in the style under the mouse (or the one picked), with one line about it.
 Hovering previews without changing anything; a click (or Enter / Space) picks it - the overlay over the game changes
 at once, as the old dropdown did.
-2.118.0 (feedback: some previews showed the wrong colours and shapes): the preview is the real bar - drawn by the same
-code as over the game (App.ov_preview), with your Colours - not a mock-up. The list and preview are pickers.ListPreview,
+2.118.0 (feedback: some previews showed the wrong colors and shapes): the preview is the real bar - drawn by the same
+code as over the game (App.ov_preview), with your Colors - not a mock-up. The list and preview are pickers.ListPreview,
 shared with the theme picker.
 GGG ToS: it only draws in the app's own window."""
 from .pickers import ListPreview
@@ -12,7 +12,7 @@ from .pickers import ListPreview
 GROUPS = (("Classic", ("classic",)), ("Light", ("hairline", "slate", "flanks", "micro")),
           ("Ornate", ("herald", "gilded", "warbanner", "verdant", "gloom", "totem", "hellfire", "psionic", "guildhall")))
 ABOUT = {
-    "classic": "Carved stone and bronze, like the game's own bar. Takes your app theme's colours.",
+    "classic": "Carved stone and bronze, like the game's own bar. Takes your app theme's colors.",
     "hairline": "No box - one thin line under plain text. The lightest on the game and on the PC.",
     "slate": "A flat, quiet box.",
     "flanks": "No box: the numbers sit by the life orb, the menus by the mana orb - the middle stays clear.",
