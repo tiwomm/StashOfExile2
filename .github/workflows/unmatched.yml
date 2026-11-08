@@ -18,7 +18,7 @@ jobs:
           url="$(tr -d '[:space:]' < board/url.txt)"
           [ -n "$url" ] || { echo "No board address in board/url.txt - skipping."; exit 0; }
           curl -fsS --max-time 60 "$url/mods/unmatched" -o unmatched_mods.json || { echo "Board not reachable - skipping."; exit 0; }
-          python3 -c "import json; d = json.load(open('unmatched_mods.json')); print(len(d.get('unmatched', [])), 'lines')"
+          python3 -c "import json; d = json.load(open('unmatched_mods.json')).get('unmatched', []); print(len(d), 'lines'); [print(f\"{r['n']}\t{r['text']}\t{r.get('base') or ''}\") for r in d]"
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4.6.2
         with:
           name: unmatched-mods

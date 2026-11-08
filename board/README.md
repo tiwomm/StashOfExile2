@@ -102,7 +102,6 @@ existing database by themselves (the Worker adds them on first use).
 | `POST /mods/batch` `{cid, league, prices, bases, votes}` | 2.31.0: an install's hourly summary (per base / mod: count + median) and its Mod book rule changes. One per 45 min. 2.77.0: `zones` - campaign zones the app's guide pack didn't know (`{act, zone, after, level}`). |
 | `POST /images` `{data}` | 2.78.0: an atlas screenshot (base64 JPEG, 320 KB at most; joined users, 20 a day) -> `{id}`. A strat names it `"atlas_image": "b:<id>"`. |
 | `GET /images/<id>` | 2.78.0: that JPEG (cached for good). |
-| `POST /mods/forget` `{cid}` | 2.121.1: Leave and delete my data - this install's votes, map ranks, campaign zones and unmatched lines go too. |
 | `GET /mods/unmatched` | 2.121.1: mod lines installs couldn't match (`POST /mods/batch` `unmatched`: `{text, base}`, numbers as #), pooled when 2 or more installs sent one in the last 90 days: `{text, n, base, last}` - copied weekly by the Unmatched mods workflow. |
 | `GET /campaign/zones` | 2.77.0: those zones, pooled (seen by 2 or more installs): `{act, zone, n, level, after}` - read by `tools/build_guide.py`. |
 | `GET /mods/stats?league=` · `GET /mods/ratings` | the pooled prices (median, lift, summaries) and how players rate each mod |

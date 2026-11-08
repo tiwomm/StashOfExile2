@@ -57,8 +57,9 @@ DETAILS = (
 WHERE = ("It all goes to the StashOfExile2 community server (run by the app's developer on Cloudflare) - not to GGG, "
          "not to anyone else. It is never sold and never used for ads or tracking. Your internet address is never "
          "stored: only a keyed scramble of it, to stop spam, deleted the next day. Private leagues are never shared, and "
-         "leaderboard times show the day, not the time. You can delete everything of yours: Settings › Privacy & "
-         "community › Leave and delete my data.")
+         "leaderboard times show the day, not the time. Settings › Privacy & community › Leave and delete my data "
+         "deletes your name, strats and leaderboard times. What you shared anonymously (mod prices, ratings, map "
+         "ranks, unmatched mods) stays in the pool for everyone - it was never linked to you.")
 NEVER = ("Never sent: your account or character names, your wealth (stash value, net worth), your items or stash, "
          "listing ids, files from your computer. Check a screenshot before you upload it - it's public. Bug reports are "
          "separate: they go only when you press Report a bug, and you see every word first.")
@@ -196,14 +197,6 @@ def push(market, rules, call=None):
     st.setdefault("helped", {})[league] = int(st.get("helped", {}).get(league, 0)) + int(d.get("prices", 0))
     save_json(SENT, st)
     return True, int(d.get("prices", 0))
-
-
-def forget(call=None):
-    """2.121.1: Leave and delete my data - the board drops what this install sent under its anonymous id (votes, map
-    ranks, campaign zones, unmatched lines). -> (ok, why)."""
-    if not B.configured() or not SETTINGS.get("contrib_id"):
-        return True, "nothing sent"
-    return (call or B.call)("POST", "/mods/forget", body={"cid": cid()})
 
 
 def upload_wait(now=None):

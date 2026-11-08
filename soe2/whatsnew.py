@@ -39,6 +39,13 @@ NEXT = [
 MAX_BIG = 3
 
 NOTES = {
+    "2.122.0": {
+        "big": [],
+        "small": [
+            ("Settings", "Leave and delete my data deletes your name, strats and leaderboard times. What you shared "
+                         "anonymously (mod prices, ratings, map ranks, unmatched mods) stays in the pool for everyone."),
+        ],
+    },
     "2.121.1": {
         "big": [
             ("⌨", "Esc closes the price check card", "While the card over the game is open, Esc closes it (the game's "
@@ -48,10 +55,7 @@ NOTES = {
              "checks couldn't match now goes along (numbers as #, the base type - never the item's name), so they can "
              "be fixed. Nothing new to turn on.", ("What's shared", "settings:Privacy & community"), "Settings"),
         ],
-        "small": [
-            ("Settings", "Leave and delete my data also deletes what your install shared anonymously (Mod Book votes, "
-                         "map ranks, campaign zones, unmatched mods)."),
-        ],
+        "small": [],
     },
     "2.121.0": {
         "big": [

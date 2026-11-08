@@ -32,8 +32,8 @@ VERSION HISTORY
        sharing on, the hourly batch carries the lines your price checks couldn't match (communitymods.unmatched_line:
        the wording with every number as #, and the base type; never the item's name, never a note), each line once.
        The board pools a line once 2 installs sent it (GET /mods/unmatched); a weekly workflow (Unmatched mods) keeps
-       a copy so the matcher can be fixed. Listed in What's shared, and why?. Leave and delete my data now also drops
-       what the install sent anonymously (POST /mods/forget: votes, map ranks, campaign zones, unmatched lines).
+       a copy so the matcher can be fixed. Listed in What's shared, and why?. (POST /mods/forget - Leave and delete
+       dropping the anonymous rows too - was taken back in 2.122.0, feedback: shared contributions stay in the pool.)
   2.121.0
        Items pass (feedback: "you have the entire database ... how are we still having issues with unknown items or
        unknown mods?"). The app's game data (gamedata.json) is built from Exiled Exchange 2's data files - their last
