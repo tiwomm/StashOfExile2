@@ -39,6 +39,19 @@ NEXT = [
 MAX_BIG = 3
 
 NOTES = {
+    "2.123.1": {
+        "big": [
+            ("⏱", "Fewer rate-limit penalties", "The trade site also limits by a rule it doesn't report. The app now "
+             "searches at most 12 times per 5 minutes, learns a lower limit when that rule hits, and goes slower for "
+             "30 minutes after any penalty - this should keep you clear of them.", None, "Bulk Pricing"),
+        ],
+        "small": [
+            ("Bulk Pricing", "Skip cheap items now skips an item whose mods the Mod Book's prices show are cheap, even "
+                             "when the app's built-in rules mark one High. Only your own High (S / A) or the players' "
+                             "votes keep it from being skipped."),
+            ("Price Checks", "The Trade site rate limits window doesn't flicker any more."),
+        ],
+    },
     "2.123.0": {
         "big": [
             ("⚖", "Price Checks: the answer first", "One strip across the top says the price, how sure it is (a mark and "
