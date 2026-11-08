@@ -39,6 +39,17 @@ NEXT = [
 MAX_BIG = 3
 
 NOTES = {
+    "2.117.1": {
+        "big": [
+            ("🎨", "Ashen Rite shouldn't freeze the app any more", "Switching to it could leave the app not responding "
+             "on some PCs. The step that got stuck now waits its turn, and the theme uses a font with normal line "
+             "heights (Georgia) - this should stop it.", ("Open Appearance", "settings:Appearance"), "Settings"),
+        ],
+        "small": [
+            ("App", "If a part of a window keeps resizing itself, the app's log says which one, so Report a bug can "
+                    "show it."),
+        ],
+    },
     "2.117.0": {
         "big": [],
         "small": [
