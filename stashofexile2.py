@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU GPL v3.0 (see LICENSE). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.120.0
+VERSION 2.120.1
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,6 +19,17 @@ VERSION 2.120.0
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.120.1
+       Feedback: the overlay's "Mouse" choice (Drag to move / Locked / Clicks pass through) was confusing. Back to the
+       two names other overlays use, side by side in Overlay ↳ Settings › Options and Quick settings: Lock position
+       and Click-through (clicks go to the game). Each works on its own again, as 2.74.3 asked (2.120.0's unlock also
+       turned click-through off). ov_click_through_set; OV_MOUSE / ov_mouse_* gone.
+       Feedback (a corrupted rare Heavy Belt): unticking Base type said "Any Belts" but the search still asked for a
+       Heavy Belt - an item searched on its own base has no category in its plan, and trade.apply_opts only widened
+       when it had one. It takes the class's category from the game data now (accessory.belt). And its crafted
+       "21% increased Explicit Resistance Modifier magnitudes" was searched as a mod: what it adds is already in the
+       resistances' own numbers, so asking for it only hid listings - "... Modifier magnitudes" lines are left out
+       (tick one to search on it).
   2.120.0
        UX pass, part 2. Feedback: the Rate mods window "drew really janky" and sat in Privacy & community. It's a page
        now, Price Checks ↳ Rate Mods (modules/ratemods.py, ratemods_page.build_ratemods_page): the item kinds on the
@@ -2896,7 +2907,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.120.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.120.1"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
