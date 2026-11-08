@@ -241,15 +241,11 @@ const MIGRATIONS = [
   "CREATE UNIQUE INDEX IF NOT EXISTS images_key ON images (key)",
   "UPDATE lb SET at = (at / 86400) * 86400 WHERE at % 86400 <> 0",
   "ALTER TABLE users ADD COLUMN admin_key TEXT NOT NULL DEFAULT ''",
-  // 2.95.0: rep - what each account gave the community, karma-style. One row per thing that earned (or cost) it;
-  // the account's rep is their sum (never below 0). Upvotes are keyed by a scramble, so the table never says who voted.
-  `CREATE TABLE IF NOT EXISTS rep (user_id TEXT NOT NULL, kind TEXT NOT NULL, ref TEXT NOT NULL, pts INTEGER NOT NULL,
-    created INTEGER NOT NULL, PRIMARY KEY (user_id, kind, ref))`,
-  "ALTER TABLE users ADD COLUMN rep_hidden INTEGER NOT NULL DEFAULT 0",   // 1 = no contributor icon / card for others
-  "ALTER TABLE users ADD COLUMN cid_link TEXT NOT NULL DEFAULT ''",      // opt-in: this install's ratings count (sha256)
-  // 2.118.0: rep is gone (nothing earns, shows or reads it). Every install unlinked from its name - the link existed
-  // only to count ratings toward rep. The rep table is left as it was (not read; Leave and delete still clears yours).
-  "UPDATE users SET cid_link = '' WHERE cid_link <> ''",
+  // 2.118.0: rep is gone - its table and the two account columns it used (rep_hidden, cid_link: an install's link to a
+  // name, only there to count ratings toward rep) are deleted. (2.95.0 made them; nothing reads them any more.)
+  "DROP TABLE IF EXISTS rep",
+  "ALTER TABLE users DROP COLUMN rep_hidden",
+  "ALTER TABLE users DROP COLUMN cid_link",
 ];
 async function migrate(env) {
   if (migrated) return;
@@ -803,7 +799,6 @@ async function deleteMe(env, me) {
     env.DB.prepare("DELETE FROM lb_reports WHERE user_id = ? OR lb_id IN (SELECT id FROM lb WHERE user_id = ?)").bind(me.id, me.id),
     env.DB.prepare("DELETE FROM lb WHERE user_id = ?").bind(me.id),
     env.DB.prepare("DELETE FROM sessions WHERE user_id = ?").bind(me.id),
-    env.DB.prepare("DELETE FROM rep WHERE user_id = ?").bind(me.id),
     env.DB.prepare("DELETE FROM users WHERE id = ?").bind(me.id),
   ]);
   await env.DB.prepare("UPDATE posts SET score = (SELECT COUNT(*) FROM votes v WHERE v.post_id = posts.id)").run();

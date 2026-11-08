@@ -45,9 +45,9 @@ VERSION HISTORY
        Feedback: the community rep system is gone (for now): the icon beside names on Money Makers and the
        Leaderboards, the contributor card, your rep and its switches in Privacy & community, and an admin's Thank
        someone with rep (rep.py, board.set_rep / admin_rep / person). The board (worker) stops counting it and no longer
-       sends it; GET /people, POST /me/rep and /admin/rep are gone; every install's link to a name (cid_link, only
-       there to count ratings toward rep) is cleared. The rep table is left as it was, unread (Leave and delete still
-       clears yours).
+       sends it; GET /people, POST /me/rep and /admin/rep are gone. Its data is deleted (feedback: "get rid of
+       rep"): the rep table and the two account columns it used - rep_hidden and cid_link (an install's link to a name,
+       only there to count ratings toward rep).
        Found on the way: the goal bar kept its rows in self.gb_rows - the name of the Gear book's own method - so with
        a line over the bar (Focus, Campaign) the Gear rules list stopped working. Now goal_rows.
   2.117.1
