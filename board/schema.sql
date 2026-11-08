@@ -83,6 +83,13 @@ CREATE TABLE IF NOT EXISTS campaign_zones (
   PRIMARY KEY (act, zone, cid)
 );
 
+-- 2.121.1: mod lines an install's price checks couldn't match (POST /mods/batch "unmatched": wording with numbers as #,
+-- and the base type - nothing else); GET /mods/unmatched pools those seen by 2 or more installs
+CREATE TABLE IF NOT EXISTS unmatched_mods (
+  text TEXT NOT NULL, cid TEXT NOT NULL, base TEXT NOT NULL DEFAULT '', updated INTEGER NOT NULL,
+  PRIMARY KEY (text, cid)
+);
+
 -- 2.78.0: atlas screenshots for strats (POST /images, GET /images/<id>) - small JPEGs, a strat names one "b:<id>"
 CREATE TABLE IF NOT EXISTS images (
   id INTEGER PRIMARY KEY AUTOINCREMENT, author_id TEXT NOT NULL, data BLOB NOT NULL, created INTEGER NOT NULL

@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU GPL v3.0 (see LICENSE). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.121.0
+VERSION 2.121.1
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,6 +19,21 @@ VERSION 2.121.0
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.121.1
+       Feedback: "a bind-able key for the price check overlay to close it" - checked what the others do: PoE Overlay
+       closes its latest dialog with Esc (Space closes all), Exiled Exchange 2's Ctrl+D window closes when the mouse
+       leaves it (no key). So Esc by default (pc_close_key; Settings › Keys › Price Checks): it only acts while the
+       card is open and the game (or the card) is in front, and that press is used up - the game's menu doesn't open
+       (pcpop.pc_close_hotkey, on the keyboard watcher). And "a settings cog for the price checker overlay": a ⚙ on
+       the card's title bar (OverlayWindow extra=, each button says what it does on hover) opens Card settings - the
+       close key, where the price shows, All price check settings… - the same settings as on Settings, one door more
+       (as Quick settings on the overlay). A key box can take Esc itself where Esc is the key being set (allow_esc).
+       Feedback on unmatched_mods.txt ("whatever requires no input from anyone"): no new option - with Community data
+       sharing on, the hourly batch carries the lines your price checks couldn't match (communitymods.unmatched_line:
+       the wording with every number as #, and the base type; never the item's name, never a note), each line once.
+       The board pools a line once 2 installs sent it (GET /mods/unmatched); a weekly workflow (Unmatched mods) keeps
+       a copy so the matcher can be fixed. Listed in What's shared, and why?. Leave and delete my data now also drops
+       what the install sent anonymously (POST /mods/forget: votes, map ranks, campaign zones, unmatched lines).
   2.121.0
        Items pass (feedback: "you have the entire database ... how are we still having issues with unknown items or
        unknown mods?"). The app's game data (gamedata.json) is built from Exiled Exchange 2's data files - their last
@@ -2926,7 +2941,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.121.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.121.1"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 

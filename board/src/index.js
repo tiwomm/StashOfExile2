@@ -990,6 +990,7 @@ const SID = /^[a-z_]+\.[A-Za-z0-9_.]{1,80}$/, KEY = /^.{2,200}$/s, VOTE = ["high
 const MAP_RANKS = ["S", "A", "B", "C", "D", "Avoid"];
 const okPrice = (m) => typeof m === "number" && isFinite(m) && m > 0.0005 && m < 100000;
 const ZONE_TEXT = /^[\p{L}\p{N} ',.\-]{1,80}$/u;
+const UNMATCHED_TEXT = /^[\p{L}\p{N}_ #%+\-.,'():/]{3,100}$/u, BASE_TEXT = /^[\p{L}\p{N} ',.\-]{1,60}$/u;
 const okText = (t, n = 80) => typeof t === "string" && t.length > 0 && t.length <= n;
 
 async function modBatch(req, env) {
@@ -1044,6 +1045,12 @@ async function modBatch(req, env) {
       VALUES (?1, ?2, ?3, ?4, ?5, ?6) ON CONFLICT(act, zone, cid) DO UPDATE SET after = ?4, level = ?5, updated = ?6`)
       .bind(act, zone, cid, after, level, t));
   }
+  for (const u of (Array.isArray(body.unmatched) ? body.unmatched : []).slice(0, 100)) {   // 2.121.1
+    const text = String(u?.text ?? "").trim(), base = String(u?.base ?? "").trim();
+    if (!UNMATCHED_TEXT.test(text) || (base && !BASE_TEXT.test(base))) continue;
+    stmts.push(env.DB.prepare(`INSERT INTO unmatched_mods (text, cid, base, updated) VALUES (?1, ?2, ?3, ?4)
+      ON CONFLICT(text, cid) DO UPDATE SET base = ?3, updated = ?4`).bind(text, cid, base, t));
+  }
   let votes = 0;
   for (const v of (Array.isArray(body.votes) ? body.votes : []).slice(0, MAX_VOTES)) {
     if (!KEY.test(String(v?.key ?? ""))) continue;
@@ -1055,6 +1062,18 @@ async function modBatch(req, env) {
   }
   await env.DB.batch(stmts);
   return json({ ok: true, prices: used, votes });
+}
+
+// 2.121.1: POST /mods/forget {cid} - Leave and delete my data takes this install's anonymous votes, map ranks, campaign
+// zones and unmatched lines too (pooled prices are sums, with no install in them).
+async function modForget(req, env) {
+  const body = await readBody(req);
+  const cidRaw = String(body.cid || "");
+  if (!/^[a-f0-9]{32}$/.test(cidRaw)) return fail(400, "bad cid");
+  const cid = await sha256(cidRaw);
+  await env.DB.batch(["mod_votes", "map_votes", "campaign_zones", "unmatched_mods", "contributors"].map((t) =>
+    env.DB.prepare(`DELETE FROM ${t} WHERE cid = ?`).bind(cid)));
+  return json({ ok: true });
 }
 
 async function modStats(url, env) {
@@ -1089,6 +1108,15 @@ async function campaignZones(env) {
   for (const a of after.results) best[a.act + "|" + a.zone] ??= a.after;
   return json({ zones: rows.results.map((r) => ({ act: r.act, zone: r.zone, n: r.n, level: r.level,
     after: best[r.act + "|" + r.zone] || "" })) });
+}
+
+// 2.121.1: the mod lines installs couldn't match, pooled (2 or more installs, last 90 days) - read by the weekly
+// "Unmatched mods" workflow. Wording and base type only.
+async function unmatchedMods(env) {
+  const rows = await env.DB.prepare(`SELECT text, COUNT(*) AS n, MAX(base) AS base, MAX(updated) AS last
+    FROM unmatched_mods WHERE updated > ?1 GROUP BY text HAVING COUNT(*) >= 2 ORDER BY n DESC LIMIT 1000`)
+    .bind(now() - 90 * 86400).all();
+  return json({ unmatched: rows.results.map((r) => ({ text: r.text, n: r.n, base: r.base, last: r.last })) });
 }
 
 async function modRatings(env) {
@@ -1186,8 +1214,10 @@ export default {
       if (path === "/auth/join" && req.method === "POST") return join(req, env);
       if (path === "/official") return official(env);
       if (path === "/mods/batch" && req.method === "POST") return modBatch(req, env);
+      if (path === "/mods/forget" && req.method === "POST") return modForget(req, env);
       if (path === "/mods/stats") return modStats(url, env);
       if (path === "/mods/ratings") return modRatings(env);
+      if (path === "/mods/unmatched") return unmatchedMods(env);
       if (path === "/maps/ratings") return mapRatings(env);
       if (path === "/campaign/zones") return campaignZones(env);
       if (path === "/bugs" && req.method === "POST") return bugReport(req, env);

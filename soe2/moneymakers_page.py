@@ -1120,6 +1120,11 @@ class MoneyMakersPage:
             return
         if a:
             ok, d = B.delete_me()
+            try:                                   # 2.121.1: the anonymous Community data sharing rows too
+                from . import communitymods as CM
+                CM.forget()
+            except Exception:
+                buglog.caught()
             self._say("Done - nothing of yours is on the board any more." if ok else f"Couldn't delete it ({d}).", 8)
         else:
             B.sign_out()

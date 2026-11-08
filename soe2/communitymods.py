@@ -11,6 +11,7 @@ Reading what everyone pooled works either way: it is downloaded with the same ho
   * a mod most players rate High (at least 3 votes, 60 %) counts as shared High (mods.COMMUNITY_ACTIVE).
 Your own rules always win. Nothing here searches the trade site."""
 import json
+import re
 import secrets
 import statistics
 import threading
@@ -32,7 +33,7 @@ _lock = threading.Lock()
 # 2.69.1: what "Community data sharing" sends - said the same way in Settings and in the first-run question
 WHAT = ("Community data sharing is off until you say yes. If you turn it on, the app sends anonymous data to its own "
         "community server so everyone's numbers get better: mod prices, Mod Book ratings, map ranks, your best times "
-        "for the Leaderboards, new campaign zones, and the strats you upload. No account or character names, no "
+        "for the Leaderboards, new campaign zones, mod lines it couldn't read, and the strats you upload. No account or character names, no "
         "items, no listing ids. It is never sold and never used for ads.")
 
 # 2.89.2 (feedback): each thing sent, and what it's for. Keep this list TRUE - every
@@ -47,6 +48,8 @@ DETAILS = (
      "community name, never your character's", "the Leaderboards (you can turn this one off on its own)"),
     ("Campaign zones the guide doesn't know", "the zone's name, its act and level", "the next update of the campaign "
      "guide"),
+    ("Mod lines the app couldn't read", "the wording only, numbers as #, and the item's base type (like Solar Amulet)",
+     "fixing them in the next update"),
     ("Strats you upload yourself", "only when you press Upload / Post - with rates (div per hour), never your totals",
      "the Money Makers and Strat Tracker boards"),
     ("Your community name, votes and reports", "only when you join, vote or report yourself", "the board itself"),
@@ -110,6 +113,46 @@ def summary(market, since, league):
     return prices, bases, newest
 
 
+# 2.121.1 (feedback: "unmatched_mods.txt to the cloud ... whatever requires no input from anyone"): the mod lines
+# your price checks couldn't match ride on the same switch and the same hourly batch - no new option. Only the wording
+# with every number as #, and the base type; never the item's name, never a note. The board publishes a line once
+# two installs sent it (GET /mods/unmatched); a weekly workflow keeps a copy for fixing the matcher.
+_UM_OK = re.compile(r"^[\w #%+\-.,'():/]{3,100}$")
+_UM_BASE = re.compile(r"^[\w ',.\-]{1,60}$")
+
+
+def unmatched_line(line):
+    """One unmatched_mods.txt line -> {"text", "base"} safe to share, or None."""
+    text, _, where = (line or "").rstrip("\n").partition("\t|")
+    t = re.sub(r"\d+(?:\.\d+)?", "#", text.strip())
+    t = re.sub(r"\(#-#\)", "", t)
+    t = re.sub(r"\s+", " ", t).strip()
+    if not _UM_OK.match(t) or t.lower().startswith("note") or "~" in t or "#" not in t and len(t) > 80:
+        return None
+    m = re.match(r"^\s*.*\((.+)\)\s*$", where or "")
+    base = m.group(1).strip() if m and not where.strip().startswith("closest") else ""
+    return {"text": t, "base": base if _UM_BASE.match(base or "") else ""}
+
+
+def unmatched_unsent(st=None, limit=100):
+    """The shareable unmatched lines the board hasn't had from this install yet."""
+    from .config import P
+    st = st if st is not None else sent_state()
+    done = set(st.get("unmatched") or [])
+    out, seen = [], set()
+    try:
+        with open(P("unmatched_mods.txt"), encoding="utf-8", errors="replace") as f:
+            lines = f.readlines()
+    except OSError:
+        return []
+    for line in lines:
+        u = unmatched_line(line)
+        if u and u["text"] not in done and u["text"] not in seen:
+            seen.add(u["text"])
+            out.append(u)
+    return out[-limit:]
+
+
 def vote_changes(rules, before):
     """Your Mod book rules -> the votes that changed since the last sync ({key, value}; None = you cleared it)."""
     out = [{"key": k, "value": v} for k, v in rules.items() if before.get(k) != v and v in ("high", "normal", "ignore")]
@@ -136,11 +179,12 @@ def push(market, rules, call=None):
     maps += [{"name": k, "rank": None} for k in before if k not in mine_maps]
     from . import campaign as CP                          # 2.77.0: campaign zones the guide pack didn't know
     zones = CP.to_pool()
-    if not prices and not votes and not maps and not zones:
+    unmatched = unmatched_unsent(st)                      # 2.121.1
+    if not prices and not votes and not maps and not zones and not unmatched:
         return True, 0
     ok, d = (call or B.call)("POST", "/mods/batch", body={"cid": cid(), "league": league, "prices": prices,
                                                          "bases": bases, "votes": votes, "maps": maps[:400],
-                                                         "zones": zones})
+                                                         "zones": zones, "unmatched": unmatched})
     if not ok:
         return False, d
     CP.pooled(zones)
@@ -148,9 +192,18 @@ def push(market, rules, call=None):
     st["last_ts"] = newest
     st["votes"] = {k: v for k, v in dict(rules).items() if v in ("high", "normal", "ignore")}
     st["maps"] = dict(mine_maps)
+    st["unmatched"] = (list(st.get("unmatched") or []) + [u["text"] for u in unmatched])[-2000:]
     st.setdefault("helped", {})[league] = int(st.get("helped", {}).get(league, 0)) + int(d.get("prices", 0))
     save_json(SENT, st)
     return True, int(d.get("prices", 0))
+
+
+def forget(call=None):
+    """2.121.1: Leave and delete my data - the board drops what this install sent under its anonymous id (votes, map
+    ranks, campaign zones, unmatched lines). -> (ok, why)."""
+    if not B.configured() or not SETTINGS.get("contrib_id"):
+        return True, "nothing sent"
+    return (call or B.call)("POST", "/mods/forget", body={"cid": cid()})
 
 
 def upload_wait(now=None):

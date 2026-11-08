@@ -54,6 +54,11 @@ class UtilitiesPage:
         except Exception:
             buglog.caught()
         try:
+            if self.pc_close_hotkey(vk, ctrl, alt, shift):    # 2.121.1: the price check card's close key (Esc)
+                return True
+        except Exception:
+            buglog.caught()
+        try:
             if self.quick_copy_key(vk, ctrl, alt, shift):
                 return True
         except Exception:
