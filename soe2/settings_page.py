@@ -1096,8 +1096,8 @@ class SettingsPage:
         if lbl is None:
             return
         try:
-            lbl.config(text=f"★ valuable mod ≥ {SETTINGS['good_div']:g} div  ·  {SETTINGS['status']}  ·  "
-                            f"listed within {SETTINGS['age']}")
+            lbl.config(text=f"Pricing from {SETTINGS['status']} · listed within {SETTINGS['age']} · valuable mod "
+                            f"from {SETTINGS['good_div']:g} div")      # 2.123.0 (p8): plain words
         except tk.TclError:
             pass
 
