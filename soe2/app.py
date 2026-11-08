@@ -1137,7 +1137,7 @@ class App(SettingsPage, GearBookPage, PriceCheckPage, PricePopup, FavoritesPage,
                 kb.tag_bind(t, "<Button-1>", lambda e, f=act: f())
         self.upd_btn = ttk.Button(kb, text="Check for updates", command=self.check_updates)   # (Settings > General now)
         # 2.0 beta 21: what Price checks is for, where the update button used to be
-        self.key_upd = kb.create_text(1000, 18, text="Made for tablets, jewels & waystones  ⓘ", anchor="e",
+        self.key_upd = kb.create_text(1000, 18, text="Tablets, jewels, waystones & gear  ⓘ", anchor="e",
                                       fill=C["good"], font=("Segoe UI", 9, "bold"))
         kb.tag_bind(self.key_upd, "<Button-1>", lambda e: self.explain_scope())
         kb.tag_bind(self.key_upd, "<Enter>", lambda e: kb.config(cursor="hand2"))

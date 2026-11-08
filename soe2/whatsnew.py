@@ -39,6 +39,19 @@ NEXT = [
 MAX_BIG = 3
 
 NOTES = {
+    "2.123.0": {
+        "big": [
+            ("⚒", "Craft Helper: tablets and jewels, rated S-F", "Money Makers › Craft Helper rates every tablet and "
+             "jewel mod S to F and says where that came from - you, other players or the market. No prices: press "
+             "your price check key on an item to know what it's worth. Check my tablet / jewel says what to do next.",
+             ("Open Money Makers", "money"), "Money Makers"),
+        ],
+        "small": [
+            ("Money Makers", "The Craft Helper's Copy regex buttons are gone: the game's stash search holds 250 "
+                             "characters, too few for every mod worth keeping. Regex still makes your own searches."),
+            ("Bulk Pricing", "The bottom bar says \"Tablets, jewels, waystones & gear\" - it prices gear too."),
+        ],
+    },
     "2.122.0": {
         "big": [
             ("⚖", "Where your price check key shows the price", "\"Show over the game\" is now a row across the top of "

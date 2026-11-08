@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU GPL v3.0 (see LICENSE). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.122.0
+VERSION 2.123.0
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,6 +19,17 @@ VERSION 2.122.0
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.123.0
+       Craft Helper overhaul, phase 1 (feedback: tablet mods on S-F, "effectiveness by itself is kind of useless",
+       "see its price below" with no prices below; then: no prices at all - they move too fast, only your own price
+       check can say; no stash search - 250 characters can't hold every keeper; tablets and jewels only). Money
+       Makers › Tablet Craft Helper is Craft Helper, with Tablets | Jewels (crafthelper.KINDS: each kind's types and
+       steps in one table, for league / 1.0 changes). Each mod has one S-F rating and says where it came from: you
+       (Mod Book) > players (3+ board votes) > market (items with it sell clearly above that kind's middle price,
+       12+ listings, this league - it only picks the letter) > the app's default > not enough data. The Learned price
+       column and both Copy regex are gone; right-click rates a mod (the Mod Book's rating). Check my tablet / jewel
+       matches whole lines (crafthelper.item_mods - the stash-search tokens over-matched), one line one mod.
+       Bulk Pricing's footer said "Made for tablets, jewels & waystones" while the page prices gear too: it says so.
   2.122.0
        Feedback: Price Checks' "Show over the game" switch was unclear ("misleading and in an odd location" - the top
        right of the listings). It's a row across the top of the page now that says what it does: "When you press
@@ -2951,7 +2962,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.122.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.123.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
