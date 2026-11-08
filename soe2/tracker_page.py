@@ -463,8 +463,6 @@ class TrackerPage:
         nums.append(("Clock", self.ingame_clock_var, self.on_ingame_clock))
         sub(bar, "Numbers")
         switches(bar, nums, 3)
-        self.tk_switches_var = tk.BooleanVar(value=True)
-        from .merged_page import CHIPS
         bc = self.bar_cfg()
         from . import campaign as CP
         from . import focus as F
@@ -473,7 +471,7 @@ class TrackerPage:
         self.tk_notes_var = tk.BooleanVar(value=bool(oc.get("notes_enabled", True)) and bool(bc.get("notes", True)))
         self.tk_calc_var = tk.BooleanVar(value=bool(self.calc_cfg()["on"]) and bool(bc.get("calc", True)))
         self.tk_ovr_var = tk.BooleanVar(value=bool(self.ovr_cfg()["on"]))       # 2.91.0
-        self.tk_bar_vars = {k: tk.BooleanVar(value=bool(bc.get(k, True))) for k in CHIPS + ("regex",)}
+        self.tk_bar_vars = {"regex": tk.BooleanVar(value=bool(bc.get("regex", True)))}
         self.tk_bar_vars["notes"], self.tk_bar_vars["calc"] = self.tk_notes_var, self.tk_calc_var
         self.tk_bar_vars["vendor"] = tk.BooleanVar(value=bool(bc.get("vendor", True)) and bool(CP.cfg()["vendor"]))
         ov_ = self.tk_ovr_var
@@ -482,7 +480,7 @@ class TrackerPage:
                        ("Calc ▾", self.tk_calc_var, lambda: (self.tracker_bar_switch(), self.tracker_calc_switch())),
                        ("Regex ▾", self.tk_bar_vars["regex"], self.tracker_bar_switch),
                        ("Rates ▾", ov_, lambda: self.ovr_switch(bool(ov_.get())))), 3, prefix="bar:")
-        # (the lines above the bar and each helper's switch on the bar: in Helpers, beside the helper)
+        # (the lines above the bar: in Helpers, beside Focus and Campaign)
         self.tk_fline_var = tk.BooleanVar(value=bool(F.cfg()["line"]))
         self.tk_cline_var = tk.BooleanVar(value=bool(CP.cfg()["line"]))
         self.tk_goal_dock = tk.BooleanVar(value=self.goalbar_docked())
@@ -604,19 +602,9 @@ class TrackerPage:
             b[k] = bool(v.get())
         if not b.get("regex"):
             self.rx_ov_close()
-        if any(b.get(k) for k in self.HELPERS):              # 2.90.0: a helper's own switch brings the row back
-            self.tracker_cfg()["alerts_bar"] = True
         self.tracker_save()
         self.tracker_helpers_sync()
         self.merged_build()
-
-    def tracker_switches_switch(self):
-        on = bool(self.tk_switches_var.get())
-        self.tracker_cfg()["alerts_bar"] = on
-        if getattr(self, "al_bar", None) is not None:
-            self.al_bar.set(on)
-        self.tracker_save()
-        self.tracker_helpers_sync()
 
     def overlay_lock(self, on):
         """2.59.0: one lock for everything over the game (the timer, the switches, Notes) - the 🔒 on the overlay and
@@ -1162,57 +1150,20 @@ class TrackerPage:
                 pass
 
     def tracker_helpers_paint(self):
-        """The Mechanic Helper bar's cells: on (green) / off (red) / needs attention, Ritual's live count."""
+        """A helper started or stopped: the bar goes in / out of screen captures to match (2.118.0: there are no
+        switches on the bar to repaint any more)."""
         try:
             self.overlay_capture_sync()                            # 2.88.3: hidden from captures only while watching
         except Exception:
             self.log_error("the overlay's capture setting")
-        if getattr(self, "tk_ov_alerts", None):
-            states = self.alert_states()
-            from . import focus as F                               # 2.73.0: the Focus switch on the bar
-            states["focus"] = "on" if F.cfg()["on"] else "off"
-            from . import campaign as CP                           # 2.77.0
-            states["campaign"] = "on" if CP.cfg()["on"] else "off"
-            for k, (dot, lab) in self.tk_ov_alerts.items():
-                st = states.get(k, "off")
-                from .merged_page import chip_name
-                txt = chip_name(k)                                 # 2.89.2: full words (Expedition)
-                if k == "ritual" and st == "on":                   # 2.14.0: the live count
-                    from .utilities import RITUAL
-                    if RITUAL.seen == "ok" and RITUAL.count:
-                        txt = f"Ritual {RITUAL.count[0]}/{RITUAL.count[1]}"
-                from .overlaywin import pal
-                P = getattr(self, "mg_P", None) or pal()      # 2.65.0: the Game bar brings its own colors
-                dot.config(fg=P[st], text=P["on_icon"] if st != "off" else P["off_icon"])   # green on, red off
-                lab.config(text=txt, fg=P["text"] if st != "off" else P["muted"])
 
     def tracker_helpers_sync(self):
-        """2.49.0 (feedback: "it's a different bar, independent of the session tracker"): the bar shows whenever its
-        switch is on - timer or not, session or not - and only while the game is in front (like every overlay)."""
-        on = bool(self.bar_chips())          # 2.70.1: its own switch, timer or not; 2.73.0: or the Focus switch
-        shown = set(getattr(self, "tk_ov_alerts", None) or {})
-        if on != bool(getattr(self, "mg_built", {}).get("helpers")) or (on and getattr(self, "mg_win", None) is None) \
-                or (on and shown != set(self.bar_chips())):          # 2.73.0: which switches are on the bar changed
+        """2.49.0: the bar shows while the overlay is on - timer or not, session or not - and only while the game is
+        in front (like every overlay). 2.118.0: no switches on it, so only a missing bar is built."""
+        want = self.merged_wants()
+        if want["bar"] and getattr(self, "mg_win", None) is None:
             self.merged_build()
         self.tracker_helpers_paint()
-
-    def tracker_helper_click(self, key):
-        """2.26.0: a click on a helper in the timer's bar switches it on / off."""
-        if key == "focus":                                         # 2.73.0: League Focus on / off
-            from . import focus as F
-            self.focus_set_on(not F.cfg()["on"])
-            return self.ov_intro_maybe(key)                        # 2.73.4: the first time: what it's for
-        if key == "campaign":                                      # 2.77.0: the Campaign Helper on / off
-            from . import campaign as CP
-            self.camp_set_on(not CP.cfg()["on"])
-            return self.ov_intro_maybe(key)
-        on = self.alert_states().get(key, "off") != "off"
-        try:
-            self.alerts_toggle(key, not on)
-        except Exception:
-            self.log_error(f"switching {key} from the timer")
-        self.tracker_overlay_draw(self.tracker_numbers())
-        return self.ov_intro_maybe(key)
 
     def tracker_tips_switch(self):
         self.tracker_cfg()["tips"] = bool(self.tk_tips_var.get())

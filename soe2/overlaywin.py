@@ -334,6 +334,22 @@ def resync():
             w.sync(ok)
 
 
+def skin_inner(host, P, parch, edge, body_bg):
+    """The frame inside a window over the game: the skin's second (inner) line, the hud's gold rules. -> the inner
+    frame. 2.118.0: shared with OverlayFrame, so a preview has the very same frame."""
+    outer = host
+    if parch and P.get("frame2"):                         # carved: the second, inner bronze line
+        outer = tk.Frame(host, bg=P["frame2"])
+        outer.pack(fill="both", expand=True, padx=edge, pady=edge)
+        edge = 1
+    inner = tk.Frame(outer, bg=body_bg)
+    inner.pack(fill="both", expand=True, padx=edge, pady=edge)
+    if parch and P.get("rules"):                          # hud: a gold hairline above and below
+        tk.Frame(inner, height=1, bg=P["line"]).pack(fill="x", side="top")
+        tk.Frame(inner, height=1, bg=P["line"]).pack(fill="x", side="bottom")
+    return inner
+
+
 class OverlayWindow(tk.Toplevel):
     def set_opacity(self, opacity):
         """2.43.0: Settings > Appearance > Over the game: applied at once."""
@@ -374,17 +390,7 @@ class OverlayWindow(tk.Toplevel):
         edge = 0 if self.locked else EDGE
         if parch:                                         # the binding / frame shows round the page, locked or not
             edge = max(P["border"], 0 if self.locked else 1)
-        outer = self
-        if parch and P.get("frame2"):                     # carved: the second, inner bronze line
-            outer = tk.Frame(self, bg=P["frame2"])
-            outer.pack(fill="both", expand=True, padx=edge, pady=edge)
-            edge = 1
-        inner = tk.Frame(outer, bg=body_bg)
-        inner.pack(fill="both", expand=True, padx=edge, pady=edge)
-        self.inner = inner
-        if parch and P.get("rules"):                      # hud: a gold hairline above and below
-            tk.Frame(inner, height=1, bg=P["line"]).pack(fill="x", side="top")
-            tk.Frame(inner, height=1, bg=P["line"]).pack(fill="x", side="bottom")
+        inner = self.inner = skin_inner(self, P, parch, edge, body_bg)
         title_fg, btn_bg, btn_line, accent = (("#ffffff", "#22345a", "#5b77ad", C["accent"]) if app_colours else
                                               (P["head"], P["band"], P["band"], P["line"]) if parch else
                                               ("#ffe2b8", "#3a3020", "#6a5a3a", "#8a6a3a"))
@@ -685,3 +691,37 @@ class OverlayWindow(tk.Toplevel):
     def _resized(self, _e=None):
         self._size.clear()
         self.report()
+
+
+class OverlayFrame(tk.Frame):
+    """2.118.0: a title-less, locked OverlayWindow as a plain Frame - the same frame, inner line, rules, skin texture
+    and corner marks (skin_inner, canvas_body) - so Settings can draw the real overlay bar into it as a preview.
+    Nothing in it moves, locks or closes."""
+    bar = None
+    has_bar = False
+    locked = True
+    click_through = False
+
+    def __init__(self, parent, P):
+        super().__init__(parent, bg=P["leather"], highlightthickness=1, highlightbackground=P["edge"])
+        self.P, self.parch = P, True
+        self.inner = skin_inner(self, P, True, P["border"], P["bg"])
+        self.body = tk.Frame(self.inner, bg=P["bg"])
+        self.body.pack(fill="both", expand=True)
+
+    canvas_body = OverlayWindow.canvas_body
+
+    def draggable(self, widget):
+        return None
+
+    def _toggle_lock(self):
+        return None
+
+    def bar_note(self, text):
+        return False
+
+    def show(self):
+        return None
+
+    def hide(self):
+        return None
