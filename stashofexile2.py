@@ -26,6 +26,8 @@ VERSION HISTORY
        Here | Overlay | Both": Both (pc_both) = the card over the game, and the app shows the item too without taking
        the keyboard from the game (Windows: it's handed back) - also in Settings › Where the price shows and the
        card's ⚙.
+       Feedback (Rate Mods): clicking on the last mod again kept counting up "## rated" (now the mods rated this
+       session, rm_rated_keys), and the button just clicked stayed lit (focus) on the next mod - only your rating is.
   2.123.1
        Feedback: "I keep getting rate limited, did you change something?" The pace was the same (Balanced, since
        2.119.0 the only one - the user's earlier logs say Balanced too). Today's three 429s (app_log.txt) were all
