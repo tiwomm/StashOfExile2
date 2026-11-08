@@ -32,6 +32,9 @@ VERSION HISTORY
        than "can't be price checked yet".
        tools/check_items.py: every base and unique in the game data as a copied item through the reader - its base,
        class and a search the trade site takes, unidentified too (6114 items, none fail).
+       From your unmatched_mods.txt: "9(5-10)% chance to Daze on Hit" (a jewel - its mods were matched on the trade
+       site's list only; now the game data's wordings are tried next, engine._game_data_id, as gear always did), and
+       "{ Enhancement }" read as a mod on a Solar Amulet - any { ... } line (full-width braces too) is a header now.
   2.120.1
        Feedback: the overlay's "Mouse" choice (Drag to move / Locked / Clicks pass through) was confusing. Back to the
        two names other overlays use, side by side in Overlay ↳ Settings › Options and Quick settings: Lock position

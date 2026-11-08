@@ -346,6 +346,10 @@ def read_item(text):
                 tier = int(h.group("tier")) if h.group("tier") else None
                 mname = h.group("name")
                 continue
+            if re.match(r"^[\{｛].*[\}｝]\s*$", l.strip()):         # 2.121.0 (unmatched_mods.txt: "{ Enhancement }"
+                if "enhancement" in l.lower():               # read as a mod): any { ... } line is a header, never a mod
+                    kind, tier, mname, source = "enchant", None, None, None
+                continue
             if l in FLAG_LINES or l.startswith(("Note:", "Place into", "Right click")):
                 continue
             l = _WRANGE.sub("", l)                           # 2.74.1: "Legacy of Gold (Amethyst-Topaz)" -> "Legacy of Gold"
