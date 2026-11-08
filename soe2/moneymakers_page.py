@@ -1722,9 +1722,22 @@ class MoneyMakersPage:
         self.mm_ch_hint.pack(fill="x", pady=(2, 8))
         self.mm_ch_btn = ttk.Button(left, text="Check my tablet", style="Primary.TButton", command=self.mm_tab_check)
         self.mm_ch_btn.pack(anchor="w")
-        self.mm_tab_advice = tk.Label(left, text="", bg=P2, fg=C["text"], font=("Segoe UI", 10, "bold"), anchor="w",
-                                      justify="left")
-        self.mm_tab_advice.pack(fill="x", pady=(8, 0))
+        # 2.123.4 (Craft Helper phase 2): the verdict - one word with a mark, the next step, the mods, why
+        self.mm_ch_vbox = vb = tk.Frame(left, bg=C["panel"], highlightthickness=1, highlightbackground=C["line"],
+                                        padx=8, pady=8)
+        self.mm_ch_vword = tk.Label(vb, text="", bg=C["panel"], fg=C["text"], font=("Segoe UI", 12, "bold"), anchor="w")
+        self.mm_ch_vword.pack(fill="x")
+        self.mm_tab_advice = tk.Label(vb, text="", bg=C["panel"], fg=C["text"], font=("Segoe UI", 10, "bold"),
+                                      anchor="w", justify="left")
+        self.mm_tab_advice.pack(fill="x", pady=(4, 0))
+        self.mm_ch_vwhy = tk.Label(vb, text="", bg=C["panel"], fg=C["muted"], font=("Segoe UI", 9), anchor="w",
+                                   justify="left")
+        self.mm_ch_vwhy.pack(fill="x", pady=(4, 0))
+        self.mm_ch_vwhy.bind("<Configure>", lambda e: self.mm_ch_vwhy.config(wraplength=max(150, e.width - 4)))
+        self.mm_ch_price_btn = ttk.Button(vb, text="Price it", command=self.mm_ch_price)
+        self.mm_ch_price_btn.pack(anchor="w", pady=(8, 0))
+        Tooltip(self.mm_ch_price_btn, "Run your price check on this item (one trade-site search) and open Price Checks")
+        self.mm_ch_text = ""
         self.mm_tab_advice.bind("<Configure>", lambda e: self.mm_tab_advice.config(wraplength=max(150, e.width - 4)))
 
         right = tk.Frame(pane, bg=P1)
@@ -1763,6 +1776,7 @@ class MoneyMakersPage:
         self.mm_tab_type.set("All")
         self.mm_tab_type_cb.config(values=CH.KINDS[self.mm_ch_kind]["types"])
         self.mm_tab_advice.config(text="")
+        self.mm_ch_vbox.pack_forget()
         self.mm_ch_paint()
         self.mm_tab_fill()
 
@@ -1888,16 +1902,35 @@ class MoneyMakersPage:
                 break
         else:
             one = CH.KINDS[kind]["one"]
+            self.mm_ch_vbox.pack(fill="x", pady=(8, 0))
+            self.mm_ch_vword.config(text="✕ No " + one + " copied", fg=C["red"])
             self.mm_tab_advice.config(text=f"The clipboard has no {one}: hover one in game, press Ctrl+C, then try "
-                                           "again.", fg=C["red"])
+                                           "again.", fg=C["text"])
+            self.mm_ch_vwhy.config(text="")
+            self.mm_ch_price_btn.pack_forget()
+            self.mm_ch_text = ""
             return None
         R.load()
         names = {m["id"]: m["text"] for m in R.mods(kind)}
         found = CH.item_mods(kind, text)                # (whole lines - the stash-search tokens over-matched)
         rated = {m["id"]: r for m, _g, r, _s in self.mm_tab_data(kind)}
         good = [i for i in found if rated.get(i, ("-",))[0] in CH.GOOD]
-        rarity = MM.tablet_rarity(text)
-        advice = CH.advice(kind, rarity, len(found), len(good))
-        lines = [advice, ""] + [f"{rated.get(i, ('-',))[0]}  " + names.get(i, i) for i in found]
+        letters = [rated.get(i, ("-",))[0] for i in found]
+        v = CH.verdict(kind, text, letters)
+        advice = v["next"]
+        lines = [advice, ""] + [f"{l}  " + names.get(i, i) for l, i in zip(letters, found)]
+        self.mm_ch_vbox.pack(fill="x", pady=(8, 0))
+        self.mm_ch_vword.config(text=f"{v['mark']} {v['word']}", fg=C[v["tone"]])
         self.mm_tab_advice.config(text="\n".join(lines), fg=C["text"])
+        self.mm_ch_vwhy.config(text=v["why"])
+        self.mm_ch_text, self.mm_ch_verdict = text, v["key"]
+        self.mm_ch_price_btn.pack(anchor="w", pady=(8, 0))
         return advice
+
+    def mm_ch_price(self):
+        """Price it: your own price check on the item just checked (the helper never searches by itself)."""
+        if not self.mm_ch_text:
+            return None
+        rid = self.pc_take(self.mm_ch_text)
+        self.shell.open("pricecheck")
+        return rid

@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU GPL v3.0 (see LICENSE). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.123.3
+VERSION 2.123.4
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,6 +19,15 @@ VERSION 2.123.3
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.123.4
+       Feedback: the Price Checks divider was "janky and slow, almost like it's in slow motion, there's also no
+       visible indicator". It's a Splitter now (style.py): a grip you can see (a line with dots that lights orange
+       under the mouse, with a tooltip); while you drag only a thin guide line moves, and the item is drawn again
+       once, when you let go. Same limits (330 px; all but 300 px of the page), remembered (pc_card_w).
+       Craft Helper phase 2: Check my tablet / jewel gives a verdict - ✓ Worth pricing, ↻ Craft on, ⟲ Reforge,
+       ✕ Vendor (crafthelper.verdict; a mark and a word, never color alone) - with the next step, each mod's
+       rating, and why ("2 of 4 mods rated S or A"; mods not rated yet are said). Corrupted items: price or vendor,
+       never craft. Price it runs your own price check on the item (the helper never searches by itself).
   2.123.3 (hotfix)
        Feedback: "remove Overlay or Both and change it to Overlay + Here" - the card over the game always comes with
        the app now (PC_WHERE Here | Overlay + Here; PC_SHOW has no card-only choice; an older card-only setting reads
@@ -3006,7 +3015,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.123.3"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.123.4"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 

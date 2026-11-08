@@ -19,7 +19,7 @@ from tkinter import ttk
 
 from . import buglog
 from .config import APP_UA, P, SETTINGS
-from .style import C
+from .style import C, Splitter
 from .trade import ago, RAW_LISTINGS, strip_markup
 
 PC_MAX = 20                  # items kept in Recent
@@ -229,14 +229,14 @@ class PriceCheckPage:
         self._pc_verdict_row(body)                   # 2.123.0 (p4): the price, how sure, why - once, across the top
         # 2.123.3 (feedback: "too wide ... allow a person to resize its horizontal width"): the item and the listings
         # share a divider you drag; its place is remembered (pc_card_w)
-        wrap = ttk.PanedWindow(body, orient="horizontal")
+        cw = max(330, int(SETTINGS.get("pc_card_w", 420) or 420))
+        # 2.123.4 (feedback: "janky and slow ... no visible indicator"): a grip you can see; only a guide line moves
+        # while you drag, and the item is drawn again once, when you let go
+        wrap = Splitter(body, width=cw, lo=330, keep=300, on_set=self._pc_pane_saved, bg=C["bg"])
         self.limit_banner(body, wrap)                # 2.103.3: the "Staying under the limits" line
         wrap.pack(fill="both", expand=True)
         self.pc_pane = wrap
-        cw = max(330, int(SETTINGS.get("pc_card_w", 420) or 420))
-        left = tk.Frame(wrap, bg=P2, width=cw)
-        left.pack_propagate(False)
-        wrap.add(left, weight=0)
+        left = wrap.left
         top = tk.Frame(left, bg=P2, padx=12, pady=4)
         top.pack(fill="x")
         self.pc_hist_var = tk.StringVar()                    # (the old dropdown: kept for its callers, never shown)
@@ -244,8 +244,7 @@ class PriceCheckPage:
         self.pc_hist_cb.bind("<<ComboboxSelected>>", lambda e: self.pc_pick_hist())
         self.pc_lcanvas, self.pc_left = self._pc_scroller(left, padx=12)
         # ---- right: the listings
-        right = tk.Frame(wrap, bg=C["panel"])
-        wrap.add(right, weight=1)
+        right = wrap.right
         head = tk.Frame(right, bg=C["panel"], padx=12, pady=8)
         head.pack(fill="x")
         self.pc_count_lbl = tk.Label(head, text="", bg=C["panel"], fg=C["text"], font=("Segoe UI", 10, "bold"))
@@ -256,8 +255,6 @@ class PriceCheckPage:
         self.pcv.redraw = lambda: self.pc_draw_list(self.records.get(self.pc_rid))
         self.pcv.recard = lambda: self.pc_show(self.records.get(self.pc_rid))
         self.pcv_fit(self.pcv, wrap, None)               # (2.123.3: no fixed share - the divider decides)
-        wrap.bind("<ButtonRelease-1>", lambda e: self.root.after(50, self._pc_pane_saved), add="+")
-        self.root.after(200, lambda: self._pc_pane_set(cw))
         self.pc_refresh_hist()
         recs = self.pc_recs()
         self.pc_show(recs[0] if recs else None)
@@ -501,24 +498,13 @@ class PriceCheckPage:
         v.lcanvas.bind("<Configure>", card_cfg, add="+")
         v.rcanvas.bind("<Configure>", list_cfg, add="+")
 
-    def _pc_pane_set(self, w):
+    def _pc_pane_saved(self, w=None):
+        """The divider was let go (Splitter keeps it between 330 px and all but 300 px of the page): remember it."""
         try:
-            if self.pc_pane.winfo_width() > w + 200:
-                self.pc_pane.sashpos(0, w)
-        except (tk.TclError, AttributeError):
-            pass
-
-    def _pc_pane_saved(self):
-        """The divider was let go: keep the item side between 330 px and all but 300 px of the page, and remember it."""
-        try:
-            pw, x = self.pc_pane.winfo_width(), self.pc_pane.sashpos(0)
-            x2 = max(330, min(x, pw - 300)) if pw > 700 else x
-            if x2 != x:
-                self.pc_pane.sashpos(0, x2)
-            SETTINGS["pc_card_w"] = int(x2)
+            SETTINGS["pc_card_w"] = int(self.pc_pane.sashpos(0) if w is None else w)
             from .config import save_json
             save_json("settings.json", SETTINGS)
-        except (tk.TclError, AttributeError):
+        except (tk.TclError, AttributeError, ValueError):
             pass
 
     def pcv_wrap(self, v):

@@ -39,6 +39,16 @@ NEXT = [
 MAX_BIG = 3
 
 NOTES = {
+    "2.123.4": {
+        "big": [
+            ("⚒", "Craft Helper: what to do with it", "Check my tablet or jewel now says Worth pricing, Craft on, "
+             "Reforge or Vendor, with the next step and why. Price it runs your own price check on it.",
+             ("Open Craft Helper", "money"), "Money Makers"),
+        ],
+        "small": [
+            ("Price Checks", "The divider beside the item has a grip you can see, and dragging it should feel smooth now."),
+        ],
+    },
     "2.123.3": {
         "big": [
             ("⚖", "Here | Overlay + Here", "Your price check key shows the price in the app, or in a card over the "

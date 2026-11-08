@@ -13,6 +13,10 @@ holds 250 characters, so it could never cover every keeper):
   4. default  - the app's shipped defaults (default_rules.json), High -> A, Ignore -> F
   5. none     - not enough to go on: "-".
 
+Phase 2 (2.123.4): verdict() turns a copied item into one of four words - Worth pricing, Craft on, Reforge, Vendor -
+with the next step, the mods it found with their letters, and why. It never searches by itself: "Price it" runs your
+own price check.
+
 KINDS is the per-kind data (types, the craft steps, the words) - the game will change these at 1.0 and between
 leagues, so they live in one table, not in the page code."""
 from . import mods as M
@@ -210,3 +214,57 @@ def advice(kind, rarity, n_mods, n_good):
             return f"{n_good} good mod{'s' if n_good != 1 else ''}: Chaos Orb swaps a mod - stop when it's down to junk."
         return "No good mods: vendor it."
     return f"Copy a {KINDS[kind]['one']} in game (Ctrl+C), then press Check."
+
+
+# 2.123.4 (Craft Helper phase 2): one word for what to do with the item - each with a mark, so it's never color alone
+VERDICTS = {
+    "price": ("✓", "Worth pricing", "green"),
+    "craft": ("↻", "Craft on", "good"),
+    "reforge": ("⟲", "Reforge", "good"),
+    "vendor": ("✕", "Vendor", "red"),
+}
+
+
+def verdict(kind, text, letters):
+    """A copied tablet / jewel -> {"key", "mark", "word", "tone", "next", "why"}. letters = the S-F letter of each mod
+    found on it ("-" = no rating yet). Good = S or A. Corrupted items can't be crafted on: price or vendor."""
+    from .moneymakers import tablet_rarity
+    rarity = tablet_rarity(text)
+    n, good = len(letters), sum(1 for l in letters if l in GOOD)
+    best = min(letters, key=_rank) if letters else "-"
+    corrupted = any(l.strip() == "Corrupted" for l in str(text or "").splitlines())
+    one = KINDS[kind]["one"]
+    nxt = advice(kind, rarity, n, good)
+    if corrupted:
+        key = "price" if good else "vendor"
+        nxt = ("Corrupted - it can't be crafted on. " +
+               ("Press your price check key on it." if good else "Nothing on it is rated S or A."))
+    elif rarity == "Normal" or (not rarity and n == 0):
+        key = "craft"
+    elif rarity == "Magic":
+        if n < 2 or good >= 2:
+            key = "craft"
+        elif good == 1:
+            key = "craft" if best == "S" else ("reforge" if kind == "tablet" else "vendor")
+            nxt = (f"One good mod, rated {best}: " +
+                   ("Regal Orb, then Exalted Orb." if best == "S" else
+                    "only an S mod is worth a Regal - " +
+                    ("treat it as 2 bad mods: Orb of Alchemy." if kind == "tablet" else "start over on another jewel.")))
+        else:
+            key = "reforge" if kind == "tablet" else "vendor"
+    elif rarity == "Rare":
+        full = 4
+        if (kind == "jewel" and good >= 3) or (kind == "tablet" and good and n >= full):
+            key = "price"
+        elif good or n < full:
+            key = "craft"
+        else:
+            key = "reforge" if kind == "tablet" else "vendor"
+    else:
+        key = "craft"
+    mark, word, tone = VERDICTS[key]
+    unrated = sum(1 for l in letters if l == "-")
+    why = (f"{good} of {n} mod{'s' if n != 1 else ''} rated S or A" if n else f"No mods yet - a white {one}")
+    if unrated:
+        why += f"; {unrated} not rated yet (right-click it in the list to rate it)"
+    return {"key": key, "mark": mark, "word": word, "tone": tone, "next": nxt, "why": why + "."}
