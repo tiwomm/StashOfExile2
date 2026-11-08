@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU GPL v3.0 (see LICENSE). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.123.2
+VERSION 2.123.3
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,6 +19,12 @@ VERSION 2.123.2
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.123.3 (hotfix)
+       Feedback: "remove Overlay or Both and change it to Overlay + Here" - the card over the game always comes with
+       the app now (PC_WHERE Here | Overlay + Here; PC_SHOW has no card-only choice; an older card-only setting reads
+       as Overlay + Here). And "you've made the item view too wide ... allow a person to resize it": Price Checks'
+       item and listings share a divider you drag (a ttk PanedWindow, pc_pane), 420 px to start, never under 330 or
+       over all but 300 px of the page, remembered (pc_card_w).
   2.123.2 (hotfix)
        Feedback: Price Checks' buttons belong under the item, not on the strip at the top - Search again (with
        "Search with fewer mods" when it helps) and Clear, then Add to favorites and Trade Site, are made with the
@@ -3000,7 +3006,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.123.2"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.123.3"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
