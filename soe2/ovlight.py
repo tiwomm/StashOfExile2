@@ -289,16 +289,18 @@ class LightOverlay:
                            tags=("mg",))
 
     def _lt_glyphs(self, w, cv, P, x, y):
-        """The lock and ⚙ (Overlay ↳ Settings), right to left from x. -> x left of them."""
+        """The lock and ⚙ (Quick settings), right to left from x. -> x left of them."""
         locked = bool(self.tracker_cfg().get("mlocked"))
-        for txt, cmd, tag in (("⚙", self.overlay_settings_go, "mg_cog"),
+        for txt, cmd, tag in (("⚙", None, "mg_cog"),
                               ("🔒" if locked else "🔓", lambda: w._toggle_lock(), "mg_lock")):
             it = cv.create_text(x, y, text=txt, anchor="e", fill=P["muted"],
                                 font=("Segoe UI Symbol", self._hf(9)), tags=("mg", tag))
             CanvasText(cv, it, P["bg"], halo=P.get("halo"))
-            cv.tag_bind(tag, "<Button-1>", lambda e, c=cmd: c())
-            if tag == "mg_cog":                          # P4 (2.108.0): right-click = Quick settings over the game
-                cv.tag_bind(tag, "<Button-3>", lambda e: self.ov_quick_toggle(e))
+            if tag == "mg_cog":                          # 2.119.0: either click = Quick settings over the game
+                for b in ("<Button-1>", "<Button-3>"):   # (its All settings… opens Overlay ↳ Settings in the app)
+                    cv.tag_bind(tag, b, lambda e: self.ov_quick_toggle(e))
+            else:
+                cv.tag_bind(tag, "<Button-1>", lambda e, c=cmd: c())
             cv.tag_bind(tag, "<Enter>", lambda e: cv.configure(cursor="hand2"))
             cv.tag_bind(tag, "<Leave>", lambda e: cv.configure(cursor=""))
             bb = cv.bbox(it)
@@ -326,17 +328,13 @@ class LightOverlay:
                  "vendor": "Vendor  ▾"}
         return sum(f.measure(names[k]) + 12 for k in self.bar_buttons()) + self._u(6)
 
-    def _lt_time(self, cv, P, x, y, size, num=False, below=False):
-        """The session time (bold) and its small PAUSED tag. -> the width kept for it."""
+    def _lt_time(self, cv, P, x, y, size, num=True):
+        """The session time (bold). -> the width kept for it. 2.119.0 (UX pass, feedback: long map names were cut):
+        only the time's own width - not tracking shows --:--, paused dims it (the ▶ beside it says so); there was
+        room kept for a PAUSED tag and the words "not tracking"."""
         t = self._lt_text(cv, P, x, y, "", size, P["big"], bold=True, key="session", cls=self._time_cls())
-        t.num = num
-        tag = cv.create_text(x, y, text="", anchor="nw" if below else "w", fill=P["muted"],
-                             font=(P["font"], self._hf(7), "bold"), tags=("mg",))
-        t.tag = (tag, "below" if below else "right")
-        fb, fp = self._lt_fm(cv, P, size, True), self._lt_fm(cv, P, 7, True)
-        if num:                                              # ("not tracking" shows as --:--)
-            return fb.measure("0:00:00") + 6 + fp.measure("PAUSED")
-        return max(fb.measure("0:00:00") + 6 + fp.measure("PAUSED"), fb.measure("not tracking")) + 4
+        t.num, t.dim = True, (P["big"], P["muted"])
+        return self._lt_fm(cv, P, size, True).measure("0:00:00") + 6
 
     @staticmethod
     def _time_cls():
@@ -509,18 +507,23 @@ class LightOverlay:
                 drawn.append("session")
             if ln.get("rank", True) or ln.get("map", True) or ln.get("where", True):
                 x = lead(x)
-                if ln.get("rank", True):
-                    x += self._lt_rank(cv, P, x, m2) + u(6)
                 room = right - x - sum(widths[k] + sw for k in fixed) - u(4)
                 if room > u(30) and (ln.get("map", True) or ln.get("where", True)):
+                    # 2.119.0 (UX pass): the rank rides in the map's text (as on Classic) - its own slot stood empty
+                    # whenever a map had no rank, a gap after the timer
                     it = cv.create_text(x, m2, text="", anchor="w", fill=P["text"], font=(P["font"], self._hf(10)),
                                         tags=("mg",))
                     part = _MapPart(cv, it, P["bg"], halo=P.get("halo"))
                     part.width, part.font = room, (P["font"], self._hf(10))
-                    part.show = (ln.get("map", True), ln.get("where", True), False)
+                    part.show = (ln.get("map", True), ln.get("where", True), bool(ln.get("rank", True)))
+                    part.muted = P["muted"]
                     self.tk_ov_lbls["map"] = _PartOf(part, "map")
                     self.tk_ov_lbls["where"] = _PartOf(part, "where")
+                    self.tk_ov_lbls["rank"] = _PartOf(part, "rank")
+                    self._rank_click(cv, part)
                     x += room
+                elif ln.get("rank", True):
+                    x += self._lt_rank(cv, P, x, m2) + u(6)
                 drawn.append("map")
             for k in fixed:
                 x = lead(x)
@@ -653,10 +656,10 @@ class LightOverlay:
         fm = self._lt_fm(cv, P, 9)
         if want["timer"]:
             if ln.get("session", True):
-                fb, fp = self._lt_fm(cv, P, 16, True), self._lt_fm(cv, P, 7, True)
+                fb = self._lt_fm(cv, P, 16, True)
                 tw = fb.measure("0:00:00")
                 ty = y + fb.metrics("linespace") // 2
-                tx = R - tw - fp.measure("PAUSED") - 6
+                tx = R - tw
                 self._lt_time(cv, P, tx, ty, 16)
                 d = self._hf(10) + 6
                 self._mg_play(cv, P, tx - u(6) - d, ty, anchor="w", size=10)

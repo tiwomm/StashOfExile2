@@ -1,4 +1,4 @@
-"""Overlay ↳ Game Plan (2.73.0, League Focus part 1): goals by phase, a stockpile to buy while it's cheap, the farm
+"""Overlay ↳ League Plan (2.73.0 as Game Plan / League Focus; one name from 2.119.0): goals by phase, a stockpile to buy while it's cheap, the farm
 plan, a build lock and the poke settings - set once at league start, then forget it (focus.py keeps it; the overlay's
 focus line and, from 2.73.1, the pokes bring it back when it matters). Every switch is a toggle; everything is
 drawn with the app's theme (chrome sections, Card.* styles), so a theme swap repaints it like every other page."""
@@ -79,11 +79,11 @@ class GamePlanPage:
         top = tk.Frame(page, bg=P2, padx=12, pady=8, highlightthickness=1, highlightbackground=C["line"])
         top.pack(fill="x", padx=8, pady=(8, 8))
         self.gp_on = tk.BooleanVar(value=bool(f["on"]))
-        ttk.Checkbutton(top, text="League Focus", variable=self.gp_on, command=self.gp_switch,
+        ttk.Checkbutton(top, text="Goal on the overlay + pokes", variable=self.gp_on, command=self.gp_switch,
                         style="Card.TCheckbutton").pack(side="left")
         self.gp_summary = tk.Label(top, text="", bg=P2, fg=C["text"], font=("Segoe UI", 9), anchor="e")
         self.gp_summary.pack(side="right")
-        tk.Label(page, text="Set it once - the overlay's focus line and pokes bring it back when it matters.",
+        tk.Label(page, text="Set it once - the overlay's goal line and pokes bring it back when it matters.",
                  bg=P1, fg=C["muted"], font=("Segoe UI", 9), anchor="w").pack(fill="x", padx=12, pady=(0, 4))
         sa = ScrollArea(page, bg=P1)
         sa.pack(fill="both", expand=True)
@@ -136,13 +136,13 @@ class GamePlanPage:
             bits.append(f"{len(f['supplies'])} map suppl{'ies' if len(f['supplies']) != 1 else 'y'}")
         if f["farms"]:
             bits.append(f"{len(f['farms'])} farm{'s' if len(f['farms']) != 1 else ''}")
-        bits.append(("pokes on" if int(f["pokes"].get("per_hour") or 0) else "pokes off") if f["on"] else "Focus off")
+        bits.append(("pokes on" if int(f["pokes"].get("per_hour") or 0) else "pokes off") if f["on"] else "not on the overlay")
         return "  ·  ".join(bits)
 
     # ---------------- A: goals by phase
     def _gp_goals(self, parent):
         P2 = C["panel2"]
-        o, box = chrome_section(parent, "Goals", "One phase at a time. ▸ puts a goal on the overlay's focus line.",
+        o, box = chrome_section(parent, "Goals", "One phase at a time. ▸ puts a goal on the overlay's goal line.",
                                 wrap=True)
         o.pack(fill="x", pady=(0, 12))
         f = F.cfg()
@@ -260,7 +260,7 @@ class GamePlanPage:
                          cursor="hand2", font=("Segoe UI", 9, "bold" if now else "normal"))
             b.pack(side="right", padx=8)
             b.bind("<Button-1>", lambda e, gid=g["id"]: self.gp_set_now(gid))
-            Tooltip(b, "Show this one on the overlay's focus line")
+            Tooltip(b, "Show this one on the overlay's goal line")
             meta = tk.Frame(box, bg=P2)                # the quieter second line: target, then when it pokes
             meta.pack(fill="x", padx=(24, 0), pady=(0, 4))
             kind, target = F.goal_target(g)
@@ -786,7 +786,7 @@ class FocusPokes:
         try:
             F.log_event(kind, data, ak)
         except Exception:
-            self.log_error("League Focus (log)")
+            self.log_error("League Plan (log)")
 
     def focus_tick(self, now=None):
         """-> the poke shown, or None."""

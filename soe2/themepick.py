@@ -9,17 +9,14 @@ in the pack's colours and fonts, with your Accent colour when you picked one.
 GGG ToS: it only draws in the app's own window."""
 import tkinter as tk
 
-from .config import SETTINGS
 from .pickers import ListPreview
 
 W, H = 560, 300
 
 
 def _accent(t):
-    """The pack's accent - or yours (Settings › Appearance › Accent color), as the app would use it."""
-    from .style import ACCENTS
-    a = SETTINGS.get("accent", "theme")
-    return ACCENTS[a][1] if a in ACCENTS else t.c("accent")
+    """The pack's own accent (2.119.0: the Accent color choice is gone)."""
+    return t.c("accent")
 
 
 def draw(cv, t, w=W, h=H):

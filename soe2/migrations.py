@@ -71,6 +71,18 @@ def _modbook_import(S):
         MARKET.import_old_modbook(MODBOOK, float(S.get("good_div", 0.5)))
 
 
+def _ux_2119(S):
+    """2.119.0 (UX pass): settings that are gone - Pace (always the old Balanced), Accent color and Text size (a theme
+    keeps its own look), the start-up screen switch (always shown), "The overlay only while Path of Exile 2 is in
+    front" (always) and Expedition's Auto switch and key (always Auto)."""
+    for k in ("pace", "accent", "ui_scale", "splash", "overlay_game_only"):
+        S.pop(k, None)
+    rm = S.get("remnant")
+    if isinstance(rm, dict):
+        rm.pop("auto", None)
+        rm.pop("key", None)
+
+
 STEPS = (
     ("modbook_import", "1.x", "app", _modbook_import, "modbook_imported"),
     ("rules_scoped", "2.6.0", "app", _rules_scoped, "rules_scoped_26"),
@@ -78,6 +90,7 @@ STEPS = (
     ("copy_hotkey_only", "2.98.3", "app", _copy_hotkey_only, "copy_2983"),
     ("gear_plus", "2.99.0", "app", _gear_plus, "gear_plus_299"),
     ("tier_only", "2.114.0", "app", _tier_only, "tier_only_2114"),
+    ("ux_2119", "2.119.0", "settings", _ux_2119, None),
 )
 
 

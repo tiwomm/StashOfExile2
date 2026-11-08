@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU GPL v3.0 (see LICENSE). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.118.0
+VERSION 2.119.0
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,6 +19,30 @@ VERSION 2.118.0
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.119.0
+       UX pass, part 1 (the review: every page, tab and settings tab; decisions taken one by one). The overlay's bar
+       kept room after the session time for a PAUSED tag and the words "not tracking", so long map names were cut.
+       The time now takes only its own width in every style: not tracking shows --:--, paused dims it (the ▶ beside it
+       already says so) - _Time.dim, ovlight._lt_time. On the light styles the map's rank rides in the map's text
+       (_MapPart, as on Classic); its own slot stood empty whenever a map had no rank. The ⚙ opens Quick settings on
+       either click (its All settings… opens Overlay ↳ Settings in the app) - a left-click used to pull you out of
+       the game into the app.
+       Helpers (Overlay ↳ Settings): each says what it does in one grey line under its name (it was only a tooltip);
+       its live status shows under that only while it's on. Client.txt not found is one banner over the list with
+       Find it… (it was the same red line on Breach, Ritual, Trade whispers ... and pointed at a right-click on the
+       Session tracker that's long gone); the duplicate "They only watch and show" line is gone.
+       Expedition is always Auto: no Auto chip and no Ctrl+Alt+R key (Settings › Keys) - the watcher shows the tags
+       when a remnant's book opens. An area the old key learned is still used (remnant.learn_area / inside gone).
+       One name: League Plan - the page (was Game Plan), the helper (was Focus / League Focus), Quick settings and
+       the pokes. Its goals are still goals; "focus line" in the texts is the goal line.
+       Settings, fewer switches: Pace is gone (always the old Balanced - net.PACE; PACES and the Fast warning gone);
+       Accent color and Text size are gone (a theme keeps its own look - style.ACCENTS, apply_look's scale, the
+       "restart" note); the start-up screen always shows (its switch sat under Theme); "The overlay only while Path of
+       Exile 2 is in front" is gone (it always is). Notes' text size moved onto the note: A− / A+ beside its tabs, or
+       Ctrl + mouse wheel in it (was Settings › Appearance › Notes). The old settings are taken out once
+       (migrations ux_2119); Expedition's Auto and key with them.
+       Privacy: What's shared, and why? still listed "Your rep", and Help rate mods said ratings earn rep - both
+       missed in 2.118.0. Gone.
   2.118.0
        Feedback: the helpers' on / off switches on the overlay's bar were "just screen clutter". The bar has none now,
        in every style: one row (Classic was two - the switches over the numbers; HUD_SPOTS 0.056 -> 0.036 of the
@@ -2840,7 +2864,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.118.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.119.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 

@@ -1278,15 +1278,6 @@ import re as _re
 from . import themes as _themes
 
 THEMES = {t.id: (t.name, None, 1.0) for t in _themes.ordered()}     # id: (label, -, -) - the old shape, kept
-ACCENTS = {         # name: (label, colour) - optional: overrides the pack's own accent
-    "orange": ("Orange", "#ffa63d"),
-    "gold": ("Gold", "#f2c94c"),
-    "teal": ("Teal", "#3fd0c0"),
-    "rose": ("Rose", "#ff7a9c"),
-    "ice": ("Ice blue", "#7cc7ff"),
-    "lime": ("Lime", "#a8e05f"),
-}
-THEME_ACCENT = "theme"                 # SETTINGS accent: "theme" = the pack's own (default from 2.60.0)
 _STYLE_LOG = {"quiet": False, "calls": {}}     # ttk style calls made outside setup_style - replayed after a swap
 _THEME = {"keep": set()}               # (old name, kept for code that adds to it)
 
@@ -1296,18 +1287,13 @@ def theme_color(c):
     return _themes.tone(c)
 
 
-def _accent(accent):
-    if not accent or accent == THEME_ACCENT:
-        return None
-    return ACCENTS.get(accent, (None, None))[1]
-
-
-def apply_look(theme=None, accent=THEME_ACCENT, scale=100, root=None):
-    """Call once at start-up, before any window is built. relook() swaps it later, live."""
+def apply_look(theme=None, root=None):
+    """Call once at start-up, before any window is built. relook() swaps it later, live. (2.119.0: a theme keeps its
+    own accent and the text size is fixed - Settings › Appearance had both.)"""
     import tkinter.ttk as _ttk
     if not _themes.ST.base:
         _themes.init(C, _BASE)
-    _themes.set_theme(_themes.packs()[_themes.pick_id(theme)], _accent(accent))
+    _themes.set_theme(_themes.packs()[_themes.pick_id(theme)], None)
     if not getattr(tk.Misc, "_soe2_themed", False):          # every colour given to Tk goes through theme_color
         orig = tk.Misc._options
 
@@ -1344,22 +1330,15 @@ def apply_look(theme=None, accent=THEME_ACCENT, scale=100, root=None):
             return sm(self, style, query_opt, **kw)
         _ttk.Style.configure, _ttk.Style.map = _sc, _sm
         tk.Misc._soe2_themed = True
-    if root is not None and scale and scale != 100 and not getattr(root, "_soe2_scaled", False):
-        root._soe2_scaled = True                               # text size: Tk draws point sizes bigger / smaller
-        try:
-            base = float(root.tk.call("tk", "scaling"))
-            root.tk.call("tk", "scaling", base * scale / 100)
-        except Exception:
-            buglog.caught()
     return _themes.ST.theme
 
 
-def relook(root, theme, accent=THEME_ACCENT):
+def relook(root, theme):
     """2.60.0: swap the theme while the app runs - every window, list, canvas and menu is re-colored in place."""
     import time as _t
     t0 = _t.time()
     old = _themes.snapshot()
-    _themes.set_theme(_themes.packs()[_themes.pick_id(theme)], _accent(accent))
+    _themes.set_theme(_themes.packs()[_themes.pick_id(theme)], None)
     tr = _themes._translator(old)
     from .hangwatch import step                 # 2.114.3: where a theme change was, if the app closes on one
     step(f"theme change to {theme}: windows")

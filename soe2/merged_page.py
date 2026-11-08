@@ -156,6 +156,7 @@ class _Time(CanvasText):
     cell): a small muted PAUSED tag sits beside it (XP bar) or under it (Panel)."""
     tag = None          # (canvas item, "right" / "below")
     num = False         # the Panel: "not tracking" -> --:--
+    dim = None          # 2.119.0 (XP bar): (normal, paused) colors - paused dims the time instead of a PAUSED tag
 
     def config(self, **kw):
         if "text" in kw:
@@ -165,6 +166,8 @@ class _Time(CanvasText):
             if self.num and "tracking" in t:
                 t = "--:--"
             kw["text"] = t
+            if self.dim:
+                kw["fg"] = self.dim[1] if paused else self.dim[0]
             super().config(**kw)
             if self.tag:
                 item, where = self.tag
@@ -575,12 +578,14 @@ class MergedOverlay:
         × - it was easy to hit by mistake and the overlay vanished; F6 shows / hides it.)"""
         locked = bool(self.tracker_cfg().get("mlocked"))
         for txt, cmd, tag in (("🔒" if locked else "🔓", lambda: w._toggle_lock(), "mg_lock"),
-                              ("⚙", self.overlay_settings_go, "mg_cog")):    # 2.89.1: Overlay ↳ Settings
+                              ("⚙", None, "mg_cog")):         # 2.119.0: ⚙ = Quick settings (either click)
             cv.create_text(x, y, text=txt, anchor="e", fill=P["muted"], font=("Segoe UI Symbol", 10, "bold"),
                            tags=("mg", tag))
-            cv.tag_bind(tag, "<Button-1>", lambda e, c=cmd: c())
-            if tag == "mg_cog":                          # P4 (2.108.0): right-click = Quick settings over the game
-                cv.tag_bind(tag, "<Button-3>", lambda e: self.ov_quick_toggle(e))
+            if tag == "mg_cog":                          # (its All settings… opens Overlay ↳ Settings in the app)
+                for b in ("<Button-1>", "<Button-3>"):
+                    cv.tag_bind(tag, b, lambda e: self.ov_quick_toggle(e))
+            else:
+                cv.tag_bind(tag, "<Button-1>", lambda e, c=cmd: c())
             cv.tag_bind(tag, "<Enter>", lambda e: cv.configure(cursor="hand2"))
             cv.tag_bind(tag, "<Leave>", lambda e: cv.configure(cursor=""))
             x -= 20
@@ -1126,11 +1131,11 @@ class MergedOverlay:
             if ln.get("session", True):
                 x += self._mg_play(cv, P, x, mid, anchor="w", size=12) + 8      # 2.74.3: ⏸ / ▶ before the time
                 t = self._mg_text(cv, P, x, mid, "session", (P["font"], self._hf(13), "bold"), fill=P["big"], cls=_Time)
-                pf = (P["font"], self._hf(7), "bold")          # 2.69.2: a small PAUSED tag after the time, room kept
-                t.tag = (cv.create_text(x, mid, text="", anchor="w", fill=P["muted"], font=pf, tags=("mg",)), "right")
+                # 2.119.0 (UX pass, feedback: long map names were cut): the time takes only its own width - not
+                # tracking shows --:--, paused dims it (the ▶ beside it says so); no room kept for a PAUSED tag
+                t.num, t.dim = True, (P["big"], P["muted"])
                 fb_ = tkfont.Font(root=cv, family=P["font"], size=self._hf(13), weight="bold")
-                fp_ = tkfont.Font(root=cv, family=P["font"], size=self._hf(7), weight="bold")
-                x += max(fb_.measure("0:00:00") + 6 + fp_.measure("PAUSED"), fb_.measure("not tracking")) + 4
+                x += fb_.measure("0:00:00") + 6
                 drawn.append("session")
             # 2.90.0: | Map 3:12  Arcane Isle | Maps: 4 | Avg. 6:01 | - the map and where you are share one part,
             # each part's text is centered between its dividers, and the area's name is shown whole (smaller type

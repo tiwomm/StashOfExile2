@@ -1,6 +1,6 @@
 """P4 (2.108.0, feedback: "a mini settings page over the game when we right click the cog wheel"): right-click the
-overlay's ⚙ = Quick settings, a small box over the game, above the cog and on the game's monitor. Left-click still
-opens the full Overlay ↳ Settings in the app. Style (2.110.0 - the Overlay ON | OFF switch is gone from here), Sound,
+overlay's ⚙ = Quick settings, a small box over the game, above the cog and on the game's monitor. (2.119.0: either
+click - All settings… in it opens the full Overlay ↳ Settings in the app.) Style (2.110.0 - the Overlay ON | OFF switch is gone from here), Sound,
 Lock, Hide from screen captures, Helpers (2.118.0: each helper on / off - the bar has no switches for them any
 more) and On the bar (the tools' menus). Esc, ✕, a click elsewhere or the cog again closes it.
 GGG ToS: a window over the game; nothing is sent to the game."""
@@ -13,7 +13,7 @@ from .style import C
 
 # (label, key): the helpers switched on / off, then the tools' menus on the bar
 QUICK_HELPERS = (("Breach", "breach"), ("Delirium", "delirium"), ("Ritual", "ritual"), ("Expedition", "remnant"),
-                 ("Campaign", "campaign"), ("Focus", "focus"), ("Whispers", "whispers"))
+                 ("Campaign", "campaign"), ("League Plan", "focus"), ("Whispers", "whispers"))
 QUICK_BAR = (("Notes", "notes"), ("Calc", "calc"), ("Regex", "regex"), ("Rates", "rates"))
 
 

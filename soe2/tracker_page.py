@@ -1175,8 +1175,6 @@ class TrackerPage:
 
     # ---------------- hotkeys (fed by the keyboard watcher, on its own thread)
     def tracker_on_key(self, vk, ctrl, alt, shift):
-        if self.remnant_on_key(vk, ctrl, alt, shift):                   # 2.37.0: Expedition Remnant Price Checker
-            return True
         if self.fl_on_key(vk, ctrl, alt, shift):                       # 2.45.0: Strat Tracker "a run is done"
             return True
         cfg = SETTINGS.get("tracker") or {}
@@ -1213,8 +1211,6 @@ class TrackerPage:
                 ("Show / hide the overlay", tc.get("key_overlay", ""), "Overlays", "tracker:key_overlay"),
                 ("Campaign: a step back (◀)", tc.get("key_camp_prev", ""), "Overlays", "tracker:key_camp_prev"),
                 ("Campaign: a step on (▶)", tc.get("key_camp_next", ""), "Overlays", "tracker:key_camp_next"),
-                ("Expedition Remnant Price Checker (in game)", self.remnant_cfg().get("key", ""), "Overlays",
-                 "remnant:key"),
                 ("Strat Tracker: a run is done (setups counted by key)", SETTINGS.get("ledger_key") or "Ctrl+Alt+N",
                  "Money Makers", "checks:ledger_key"),
                 ("Go to hideout", oc.get("hideout_key", ""), "Chat commands", "overlay:hideout_key")]

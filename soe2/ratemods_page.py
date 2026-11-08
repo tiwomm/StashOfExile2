@@ -185,7 +185,7 @@ class RateModsPage:
                  font=("Segoe UI", 12, "bold")).pack(side="left")
         ttk.Button(top, text="Change", style="Quiet.TButton", command=self.rm_picker).pack(side="right")
         tk.Label(box, text="One mod at a time. Each rating tunes your own price checks at once - and with Community "
-                           "data sharing on, it's your vote too (it earns rep when it matches everyone's).",
+                           "data sharing on, it's your vote in the community's ratings too.",
                  bg=P2, fg=C["muted"], font=("Segoe UI", 9), wraplength=480, justify="left", anchor="w").pack(
             fill="x", pady=(8, 8))
         self.rm_count = tk.Label(box, text="", bg=P2, fg=C["muted"], font=("Segoe UI", 9), anchor="w")

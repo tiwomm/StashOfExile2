@@ -1,5 +1,5 @@
 """Expedition Remnant Price Checker in the app (2.37.0): the "Remnant" helper next to Delirium, Breach and Ritual -
-its row in Session tracker > Alerts, its cell in the timer's Helpers bar, its key, and the price tags over the game.
+its row in Overlay › Settings › Helpers, its cell in the timer's Helpers bar, and the price tags over the game.
 The reading and matching are in remnant.py. Idea: PoE Ancients Price Helper by Pedro Quitério (no code from it)."""
 import sys
 import threading
@@ -51,10 +51,10 @@ class RemnantPage:
     def remnant_cfg(self):
         c = SETTINGS.setdefault("remnant", {})
         c.setdefault("on", True)     # 2.118.0: on by default (a new install; yours is kept)
-        c.setdefault("key", RM.DEFAULT_KEY)
         c.pop("sound", None)                        # 2.39.0: no sound (the tags are enough)
-        c.setdefault("auto", True)                  # Auto: watch where the book opens; tags come and go by themselves
-        c.setdefault("area", None)                  # None = RM.AREA; set only when a key press found it elsewhere
+        c.pop("auto", None)                         # 2.119.0 (UX pass): always Auto - the watcher shows the tags by
+        c.pop("key", None)                          # itself; its Auto switch and Ctrl+Alt+R key are gone
+        c.setdefault("area", None)                  # None = RM.AREA (an area learned by the old key is still used)
         c.setdefault("tips", True)                  # 2.40.0: the runeshape cheat sheet next to the tags
         c.setdefault("rumours", True)               # 2.83.0: Island Rumours on the world map, in your hideout
         return c
@@ -69,17 +69,12 @@ class RemnantPage:
 
     def remnant_text(self, row):
         c = self.remnant_cfg()
-        from .overlay import key_label
         if not c.get("on"):
             return row["what"]
         if self.remnant_status() == "warn":
             return f"Can't read the screen: {self.rm_problem}."
         last = getattr(self, "rm_last", "")
-        key = key_label(c.get("key") or RM.DEFAULT_KEY)
-        if c.get("auto"):
-            head = f"On - Auto: prices show by themselves when a remnant's reward book opens ({key} works too)"
-        else:
-            head = f"On - open a remnant's reward list and press {key}"
+        head = "On - prices show by themselves when a remnant's reward book opens"
         return head + (f"  ·  {last}" if last else "")
 
     def remnant_toggle(self, want):
@@ -122,20 +117,11 @@ class RemnantPage:
                 self.rm_win.remove(w)
         self._say("Runeshape tips are off. Overlay › Settings › Helpers › Expedition › Runeshape tips turns them back on.", 8)
 
-    def remnant_auto_changed(self, on):
-        self.remnant_cfg()["auto"] = bool(on)
-        save_json("settings.json", SETTINGS)
-        self.remnant_auto_sync()
-        try:
-            self.alerts_refresh()
-        except Exception:
-            buglog.caught()
-
     # ---------------- Auto: a light watcher on the learned area
     def remnant_auto_sync(self):
-        """Start / stop the watcher to match the settings (on + Auto + an area learned + OCR works)."""
+        """Start / stop the watcher to match the settings (on + OCR works)."""
         c = self.remnant_cfg()
-        want = bool(c.get("on") and c.get("auto") and self.remnant_status() == "on")
+        want = bool(c.get("on") and self.remnant_status() == "on")
         running = getattr(self, "rm_auto_gen", 0) and getattr(self, "rm_auto_alive", False)
         if want and not running:
             self.rm_auto_gen = getattr(self, "rm_auto_gen", 0) + 1
@@ -209,9 +195,9 @@ class RemnantPage:
                 self.remnant_show(rect, rows, secs=None)
                 self.rm_auto_shown = True
                 self.rm_auto_sig = sig
-                self.remnant_note(rows, auto=True)
+                self.remnant_note(rows)
         elif getattr(self, "rm_auto_shown", False) or getattr(self, "rm_win", None) is not None:
-            self.remnant_hide()                  # 2.56.2: the book closed - every tag goes (the key's too)
+            self.remnant_hide()                  # 2.56.2: the book closed - every tag goes
             self.rm_auto_sig = None
         try:
             self.alerts_refresh()
@@ -237,50 +223,9 @@ class RemnantPage:
             out = [dict(r, best=r is top) for r in out]
         return out
 
-    def remnant_note(self, rows, auto=False):
+    def remnant_note(self, rows):
         best = next((r for r in rows if r.get("best")), None)
-        self.rm_last = (f"{time.strftime('%H:%M')}: {len(rows)} priced" + (f", best {best['name']}" if best else "")
-                        + (" (Auto)" if auto else ""))
-
-    # ---------------- the key (keyboard watcher thread)
-    def remnant_on_key(self, vk, ctrl, alt, shift):
-        c = SETTINGS.get("remnant") or {}
-        if not c.get("on"):
-            return False
-        from .overlay import game_active, parse_key
-        k = parse_key(c.get("key") or RM.DEFAULT_KEY)
-        if k and k == (vk, ctrl, alt, shift):
-            self.ui_q.put(("remnant_check",))
-            return bool(game_active())
-        return False
-
-    # ---------------- one check: picture -> OCR -> prices -> tags
-    def ev_remnant_check(self):
-        if getattr(self, "rm_win", None) is not None and not getattr(self, "rm_auto_shown", False):
-            self.remnant_hide()                                # the key again: tags off
-            return
-        if getattr(self, "rm_busy", False):
-            return
-        self.rm_busy = True
-        from .alerts_page import game_rect
-        g = game_rect()
-        rect = (g[0], g[1], g[0] + g[2], g[1] + g[3]) if g else (0, 0, self.root.winfo_screenwidth(),
-                                                                  self.root.winfo_screenheight())
-        league = SETTINGS.get("league", "")
-
-        def work():
-            err, rows = "", []
-            try:
-                img = RM.grab(rect)
-                lines = RM.ocr(img)
-                rows = self.remnant_price(lines, league)
-            except RM.OcrUnavailable as e:
-                err = str(e)
-            except Exception as e:
-                err = f"{e.__class__.__name__}: {e}"
-                self.log_error("Expedition Remnant Price Checker")
-            self.ui_q.put(("remnant_done", rect, rows, err))
-        threading.Thread(target=work, daemon=True).start()
+        self.rm_last = f"{time.strftime('%H:%M')}: {len(rows)} priced" + (f", best {best['name']}" if best else "")
 
     @staticmethod
     def remnant_names_values(league):
@@ -312,31 +257,6 @@ class RemnantPage:
             names, value_of = self.remnant_names_values(league)
             cache = self.rm_names = ((league, getattr(WPRICES, "ts", 0)), names, value_of, time.time())
         return RM.price_lines(lines, cache[1], cache[2])
-
-    def ev_remnant_done(self, rect, rows, err):
-        self.rm_busy = False
-        if err:
-            self.rm_problem = err if "text reader" in err or "Windows" in err else self.rm_problem
-            self.rm_last = "couldn't read the screen"
-            self.app_toast(err, "Expedition Remnant Price Checker", kind="error")
-        elif not rows:
-            self.rm_last = "no rewards found on screen"
-            self.app_toast("No remnant rewards found on the screen. Open a remnant's reward list first, then press the "
-                           "key.", "Expedition Remnant Price Checker", kind="warning")
-        else:
-            self.remnant_show(rect, rows)
-            self.remnant_note(rows)
-            c = self.remnant_cfg()                     # found somewhere Auto doesn't look (UI scale)? look there
-            if not RM.inside(rows, c.get("area") or RM.AREA, rect):
-                c["area"] = RM.learn_area(rows, rect)
-                save_json("settings.json", SETTINGS)
-            self.rm_auto_sig = tuple((r["name"], r["qty"]) for r in rows)
-            self.remnant_auto_sync()
-        try:
-            self.alerts_refresh()
-            self.alerts_overlay_redraw()
-        except Exception:
-            buglog.caught()
 
     # ---------------- the tags over the game
     # 2.38.0: one small, solid, click-through window per tag. (2.37.0 drew them on ONE window as big as the game, made

@@ -1,5 +1,5 @@
 """2.96.0: Help rate mods - your ratings tune your own price checks at once, and (with Community data sharing on) they
-are your vote in the community's ratings, which earn rep when they match.
+are your vote in the community's ratings. (2.119.0: no rep - it was removed in 2.118.0.)
 
   * ▲ / ▼ beside each mod on Price Checks: "did this mod matter for the price?" ▲ = High, ▼ = Ignore, again = clear.
     Gear has its own rules per item class ("gear:helmet:# to maximum life"), so a helmet's ▲ doesn't touch rings.

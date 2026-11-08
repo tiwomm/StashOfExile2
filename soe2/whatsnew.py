@@ -39,6 +39,26 @@ NEXT = [
 MAX_BIG = 3
 
 NOTES = {
+    "2.119.0": {
+        "big": [
+            ("⚙", "Fewer settings to think about", "Pace, Accent color, Text size and two switches nobody needed are "
+             "gone. The overlay always hides when the game isn't in front; the start-up screen always shows.",
+             ("Open Settings", "settings:General"), "Settings"),
+            ("✦", "Helpers say what they do", "Each helper in Overlay ↳ Settings has one line under its name. If the "
+             "game's log isn't found, one note at the top says so, with Find it.", ("Open Helpers", "ovset"),
+             "Overlay"),
+            ("🧭", "Expedition prices by itself", "No Auto switch and no Ctrl+Alt+R key: the prices show when a "
+             "remnant's reward book opens. If you had Auto off, it's on again.", None, "Overlay"),
+        ],
+        "small": [
+            ("Overlay", "The bar's timer takes only its own width, so map names have more room. Paused, the time "
+                        "dims."),
+            ("Overlay", "⚙ on the bar opens Quick settings with either click; All settings… is in it."),
+            ("Overlay", "One name: League Plan (was Game Plan, League Focus and Focus)."),
+            ("Notes", "Text size is on the note now: A− / A+ beside its tabs, or Ctrl + mouse wheel."),
+            ("Privacy", "What's shared, and why? and Help rate mods no longer mention rep (gone since 2.118.0)."),
+        ],
+    },
     "2.118.0": {
         "big": [
             ("✦", "A cleaner overlay bar", "No more helper switches on it - one tidy row in every style. Every helper "

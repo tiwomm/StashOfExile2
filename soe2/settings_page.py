@@ -12,7 +12,6 @@ from .config import (
     AGE_OPTIONS, APP_VERSION, pretty_version, DATA_DIR, P,
     save_json, SETTINGS, STATUS_OPTIONS, DEFAULTS,
 )
-from .net import PACES
 from .style import C, MONO, SegBook, KeyCapture, Tooltip
 from .chrome import section as chrome_section
 
@@ -201,20 +200,14 @@ class SettingsPage:
         # (2.58.0: its color follows the overlay style - Settings › Appearance; it had its own color box here)
 
         # ======== General
-        row = section("General", "League and search pace", "The league is used everywhere: Price Checks, Bulk Pricing, Wealth and "
-                                                           "the session tracker. Pace = how fast the trade site is "
-                                                           "searched (slower = fewer waits from its limits).")
+        row = section("General", "League", "The league is used everywhere: Price Checks, Bulk Pricing, Wealth and "
+                                           "the session tracker.")
         self.set_anchors["league"] = row.master
         tk.Label(row, text="League", bg=P2, fg=C["text"]).pack(side="left", padx=(0, 8))
         self.league_box = ttk.Combobox(row, textvariable=self.league_var, state="readonly", width=24)
         self.league_box.pack(side="left")
         self.league_box.bind("<<ComboboxSelected>>", self.on_league)
-        tk.Label(row, text="Pace", bg=P2, fg=C["text"]).pack(side="left", padx=(16, 8))
-        pace = ttk.Combobox(row, textvariable=self.pace_var, values=list(PACES), state="readonly", width=10)
-        pace.pack(side="left")
-        pace.bind("<<ComboboxSelected>>", self.on_pace)
-        for cb in (self.league_box, pace):
-            cb.bind("<<ComboboxSelected>>", lambda e: self.root.after(20, self.root.focus_set), add="+")
+        self.league_box.bind("<<ComboboxSelected>>", lambda e: self.root.after(20, self.root.focus_set), add="+")
 
         # 2.59.0: the game - its log file (was a right-click in the Session timer) and window title (was in Chat commands)
         row = section("General", "Game", "Client.txt is the game's own log file: the timer counts maps from it, and "
@@ -244,14 +237,10 @@ class SettingsPage:
         # 2.31.0 / 2.69.1: Community data sharing - 2.94.0: on its own page with your community name
         self.build_privacy_community(section)
         row = section("General", "Window", "Always on top keeps StashOfExile2 in front of the game (and brings it "
-                                           "back if something minimizes it). "
-                                           "The overlay (timer, Mechanic Helper, Notes) is shown over the game: "
-                                           "normally only while the game is the window in front.")
+                                           "back if something minimizes it). The overlay shows only while the game "
+                                           "is the window in front.")
         self.top_btn = ttk.Checkbutton(row, text="Always on top", variable=self.top_var, command=self.on_top_toggle)
         self.top_btn.pack(side="left")
-        self.game_only_var = tk.BooleanVar(value=bool(SETTINGS.get("overlay_game_only", True)))
-        ttk.Checkbutton(row, text="The overlay only while Path of Exile 2 is in front", variable=self.game_only_var,
-                        command=self.on_game_only).pack(side="left", padx=(16, 0))
         wrow = tk.Frame(row.master, bg=P2)              # 2.116.0 (P10): from Price checking › Advanced fine tuning -
         wrow.pack(fill="x", pady=(8, 0))                # they're about the app's windows, not prices
         self.build_fine_tuning(wrow, keys=self.FINE_WINDOW, defaults=False)
@@ -319,7 +308,7 @@ class SettingsPage:
                    command=lambda: self.ovh_open("Settings")).pack(side="left", padx=(16, 0))
 
 
-        from .style import ACCENTS, THEMES
+        from .style import THEMES
         from . import themes as _th
         row = section("Appearance", "Theme", "The look of every window. Point at one to see it; click it and the "
                                              "app changes at once, nothing restarts. Your own: put a .json in the "
@@ -331,31 +320,8 @@ class SettingsPage:
         self.theme_pick = ThemePicker(row, _th.pick_id(SETTINGS.get("theme")), lambda tid: self.pick_theme(tid, wait=True))
         self.theme_pick.pack(fill="x", anchor="w")
         self._paint_look_cards()
-        grid = tk.Frame(row, bg=P2)
-        grid.pack(fill="x", pady=(8, 0))
-        for r, (key, label, options, default) in enumerate((
-                ("accent", "Accent color", {"theme": "The theme's own", **{k: v[0] for k, v in ACCENTS.items()}},
-                 "theme"),
-                ("ui_scale", "Text size", {90: "Smaller (90%)", 100: "Normal (100%)", 115: "Bigger (115%)",
-                                           130: "Biggest (130%)"}, 100))):
-            tk.Label(grid, text=label, bg=P2, fg=C["text"]).grid(row=r, column=0, sticky="w", padx=(0, 8), pady=4)
-            cur = SETTINGS.get(key, default)
-            v = tk.StringVar(value=options.get(cur, options[default]))
-            cb = ttk.Combobox(grid, textvariable=v, values=list(options.values()), state="readonly", width=26)
-            cb.grid(row=r, column=1, sticky="w", pady=4)
-            cb.bind("<<ComboboxSelected>>", lambda e, k=key, o=options, vv=v: self.on_look(k, o, vv))
-            self.look_vars[key] = v
-        brow = tk.Frame(row, bg=P2)
-        brow.pack(fill="x", pady=(8, 0))
-        # 2.116.0 (P10): Restart now shows only once a restart is needed (a greyed-out main button looked broken)
-        self.look_restart = ttk.Button(brow, text="Restart now", style="Primary.TButton", command=self.restart_app)
-        self.look_msg = tk.Label(brow, text="Text size changes after a restart (your windows and lists are kept).",
-                                 bg=P2, fg=C["muted"])
-        self.look_msg.pack(side="left")
-        self.splash_var = tk.BooleanVar(value=bool(SETTINGS.get("splash", True)))
-        ttk.Checkbutton(row, text="Show the start-up screen", variable=self.splash_var,
-                        command=lambda: (SETTINGS.__setitem__("splash", bool(self.splash_var.get())),
-                                         save_json("settings.json", SETTINGS))).pack(anchor="w", pady=(8, 0))
+        # 2.119.0 (UX pass): Accent color, Text size and the start-up screen switch are gone - a theme keeps its
+        # own colors and the start-up screen always shows
 
         # 2.58.0 (one Appearance tab): every look in one place - over the game too (was Overlays › Appearance)
         self.ov_look_top = tk.Label(pages["Appearance"][1], text="OVER THE GAME", bg=P1, fg=C["muted"],
@@ -587,19 +553,6 @@ class SettingsPage:
         self.toasts.on_history = fill
         fill()
 
-    def on_look(self, key, options, var):
-        value = next((k for k, t in options.items() if t == var.get()), None)
-        if value is None:
-            return
-        SETTINGS[key] = value
-        save_json("settings.json", SETTINGS)
-        if key == "ui_scale":
-            if not self.look_restart.winfo_ismapped():
-                self.look_restart.pack(side="left", before=self.look_msg, padx=(0, 8))
-            self.look_msg.config(text="Saved - restart to see the new text size.", fg=C["good"])
-            return
-        self.relook()
-
     def pick_theme(self, tid, wait=False):
         """2.60.0: a theme card in Settings › Appearance - swapped live. (2.112.3: a swap slower than 1.5 s writes
         slow_report.txt - code locations only - so a slow PC can show where the time goes.)"""
@@ -711,7 +664,7 @@ class SettingsPage:
         # 2.66.0: no Style list - everything over the game is drawn in the app's theme (Settings › Appearance ›
         # Theme). The Layout says the shape.
         # 2.74.0: one area - Layout, Opacity and Click-through (were the Overlay layout and Opacity sections)
-        row = section("Appearance", "Overlay settings", "The overlay over the game (timer, Mechanic Helper, Focus): "
+        row = section("Appearance", "Overlay settings", "The overlay over the game (timer, Mechanic Helper, League Plan): "
                                                         "pick a style, its shape and its colours. Notes, the calculator and the remnant "
                                                         "price tags use your theme's colors.")
         from .merged_page import LAYOUTS
@@ -768,13 +721,6 @@ class SettingsPage:
         self.ov_ct_switch = ct
         hint(9, "On: the overlay's bar can't be clicked - its switches, ⏸ / ▶, Notes ▾ and Calc ▾ too (the Pause key "
                 "still pauses the timer). The lock only stops it moving. Notes and the calculator always take clicks.")
-        row = section("Appearance", "Notes", "The note uses the style's colors and font; only its text size is "
-                                             "yours.")
-        tk.Label(row, text="Text size", bg=P2, fg=C["text"]).pack(side="left")
-        self.notes_font_var = tk.IntVar(value=int(self._ensure_overlay().cfg.get("notes_font", 11)))
-        ttk.Spinbox(row, from_=8, to=24, textvariable=self.notes_font_var, width=5,
-                    command=self.on_notes_font).pack(side="left", padx=8)
-        self.notes_font_var.trace_add("write", lambda *_a: self.root.after(300, self.on_notes_font))
         row = section("Appearance", "Motion", "Tooltips, notices and windows over the game fade in for a moment. "
                                               "Reduce motion makes them appear at once. Until you choose, it "
                                               "follows Windows' own \"Show animations\" setting.")
@@ -824,15 +770,6 @@ class SettingsPage:
             sa.canvas.yview_moveto((top.winfo_y() / h) if top is not None else 0)
         except (ValueError, AttributeError, tk.TclError, KeyError):
             pass
-
-    def on_notes_font(self):
-        """2.58.0: Notes' text size, with the other looks (the note's colors and font come from the style)."""
-        try:
-            self.overlay.cfg["notes_font"] = max(8, min(24, int(self.notes_font_var.get())))
-        except (ValueError, tk.TclError):
-            return
-        self.overlay.save_settings()
-        self.overlay.restyle()
 
     def ov_opacity_get(self, key="session"):
         """The opacity of the windows over the game (2.56.1: one for all; the timer's is the one kept)."""
@@ -990,8 +927,6 @@ class SettingsPage:
                 SETTINGS[key] = txt
                 if key == "regex_key" and hasattr(self, "rx_key_var") and self.rx_key_var.get() != txt:
                     self.rx_key_var.set(txt)
-            elif where == "remnant":                               # 2.37.0
-                self.remnant_cfg()[key] = txt
             elif where == "overlay":
                 self.overlay.cfg[key] = txt
                 if hasattr(self, "ov_vars") and key in self.ov_vars:
@@ -1020,13 +955,6 @@ class SettingsPage:
                                           filetypes=[("Pictures", "*.png *.jpg *.jpeg *.bmp *.gif *.webp"), ("All files", "*.*")])
         if path:
             self.shell.set_wallpaper(path)
-
-    def on_game_only(self):
-        from . import overlaywin
-        SETTINGS["overlay_game_only"] = bool(self.game_only_var.get())
-        overlaywin.GAME_ONLY[0] = SETTINGS["overlay_game_only"]
-        save_json("settings.json", SETTINGS)
-        overlaywin.resync()
 
     def on_desktop_icons(self):
         """(Before 2.0 beta 21 a checkbox; now Appearance > Launcher.)"""
