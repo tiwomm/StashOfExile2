@@ -1,8 +1,7 @@
 """P4 (2.108.0, feedback: "a mini settings page over the game when we right click the cog wheel"): right-click the
 overlay's ⚙ = Quick settings, a small box over the game, above the cog and on the game's monitor. (2.119.0: either
 click - All settings… in it opens the full Overlay ↳ Settings in the app.) Style (2.110.0 - the Overlay ON | OFF switch is gone from here), Sound,
-Mouse (2.120.0: Drag / Locked / Clicks pass through - was Lock, and Hide from screen captures moved to
-Settings › Advanced), Helpers (2.118.0: each helper on / off - the bar has no switches for them any
+Lock position, Click-through (2.120.1; Hide from screen captures is in Settings › Advanced), Helpers (2.118.0: each helper on / off - the bar has no switches for them any
 more) and On the bar (the tools' menus). Esc, ✕, a click elsewhere or the cog again closes it.
 GGG ToS: a window over the game; nothing is sent to the game."""
 import tkinter as tk
@@ -154,17 +153,9 @@ class OverlayQuick:
         cb.pack(side="right")
         cb.bind("<<ComboboxSelected>>", lambda _e: self._ovq_style())
         row("Sound", SETTINGS.get("helpers_sound", True), self.helpers_sound_set)
-        # 2.120.0: the mouse on the overlay, one choice (was Lock overlay); Hide from captures is in Settings › Advanced
-        from .tracker_page import OV_MOUSE
-        mrow = tk.Frame(body, bg=P1)
-        mrow.pack(fill="x", pady=(4, 2))
-        tk.Label(mrow, text="Mouse", bg=P1, fg=C["text"], font=("Segoe UI", 10)).pack(side="left")
-        self.ovq_mouse = tk.StringVar(value=OV_MOUSE[self.ov_mouse_get()])
-        mcb = ttk.Combobox(mrow, textvariable=self.ovq_mouse, values=list(OV_MOUSE.values()), state="readonly",
-                           width=24)
-        mcb.pack(side="right")
-        mcb.bind("<<ComboboxSelected>>", lambda _e: self.ov_mouse_set(next(
-            k for k, t in OV_MOUSE.items() if t == self.ovq_mouse.get())))
+        # 2.120.1: Lock position and Click-through, as in Options (Hide from captures is in Settings › Advanced)
+        self.ovq_lock = row("Lock position", cfg.get("mlocked"), self._ovq_lock)
+        self.ovq_ct = row("Click-through", self.click_through_on(), self.ov_click_through_set)
         self.ovq_chips = {}
         for title, items in (("HELPERS", QUICK_HELPERS), ("ON THE BAR", QUICK_BAR)):
             tk.Label(body, text=title, bg=P1, fg=C["muted"], font=("Segoe UI", 9, "bold"), anchor="w").pack(
@@ -246,4 +237,4 @@ class OverlayQuick:
                     pass
 
     def _ovq_lock(self, on):
-        self.ov_mouse_set("locked" if on else "drag")
+        self.overlay_lock(on)

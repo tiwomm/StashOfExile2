@@ -23,8 +23,6 @@ DEFAULTS = {"overlay": True, "locked": False, "x": 60, "y": 260, "w": 230, "h": 
             "character": "", "character_guess": "", "alerts_bar": True, "autostart": False,
             "clock": True,
             "merged": True, "layout": "xpbar"}   # 2.39.0 clock; 2.55.0: one overlay window; 2.74.0: Game bar
-OV_MOUSE = {"drag": "Drag to move", "locked": "Locked (it stays where it is)",
-            "through": "Clicks pass through to the game"}
 DEFAULT_KEYS = {"key_pause": "Pause",            # 2.74.3: the keyboard's Pause key (was Ctrl+Alt+P; start / stop's
                 "key_overlay": "F6"}             # Ctrl+Alt+S is gone - Ctrl+Alt keys got in the way of game input)           # 2.59.0: F6 shows / hides the whole overlay       # 2.10.0: set once, change them in Options
 # 2.54.0: the Session timer times your play; money lives in one place, Money Makers › Strat Tracker.
@@ -492,19 +490,20 @@ class TrackerPage:
         self.tk_auto = tk.BooleanVar(value=bool(cfg.get("autostart")))           # 2.14.0
         self.overlay_hide_capture()                                                    # (2.89.1: its one-time reset)
         dv = self.tk_goal_dock
-        # 2.120.0 (UX pass 2): the mouse on the overlay is one choice here - Lock (this card), Click-through
-        # (Settings › Appearance) and the 🔒 were three switches for it. Ask me to rank maps moved to the Map Library;
-        # Hide from screen captures to Settings › Advanced.
-        mrow = tk.Frame(box, bg=P2)
-        mrow.pack(fill="x", pady=(0, 8))
-        tk.Label(mrow, text="Mouse on the overlay", bg=P2, fg=C["text"]).pack(side="left", padx=(0, 8))
-        self.tk_mouse = tk.StringVar(value=OV_MOUSE[self.ov_mouse_get()])
-        mcb = ttk.Combobox(mrow, textvariable=self.tk_mouse, values=list(OV_MOUSE.values()), state="readonly", width=30)
-        mcb.pack(side="left")
-        mcb.bind("<<ComboboxSelected>>", lambda e: (self.ov_mouse_set(next(
-            k for k, t in OV_MOUSE.items() if t == self.tk_mouse.get())), self.root.after(20, self.root.focus_set)))
-        switches(box, (("Start the overlay with StashOfExile2", self.tk_auto, self.tracker_options_changed),
+        # 2.120.1 (feedback: "Mouse" was confusing): the two names other overlays use - Lock position and
+        # Click-through - side by side here and in Quick settings (2.120.0 had them as one Mouse choice; before that
+        # Click-through sat in Settings › Appearance). Each works on its own, as 2.74.3 asked.
+        self.tk_ct = tk.BooleanVar(value=self.click_through_on())
+        switches(box, (("Lock position", self.tk_lock, lambda: self.overlay_lock(bool(self.tk_lock.get()))),
+                       ("Click-through (clicks go to the game)", self.tk_ct,
+                        lambda: self.ov_click_through_set(bool(self.tk_ct.get()))),
+                       ("Start the overlay with StashOfExile2", self.tk_auto, self.tracker_options_changed),
                        ("Dock the lines to the bar", dv, lambda: self.goal_dock_set(dv))), 2)
+        from .style import Tooltip
+        Tooltip(self.tk_ov_switches["Lock position"], "The overlay stays where it is (the 🔒 on the bar too).")
+        Tooltip(self.tk_ov_switches["Click-through (clicks go to the game)"],
+                "Your clicks go through the bar to the game - its buttons can't be clicked then (the Pause key still "
+                "works). Notes and the calculator always take clicks.")
         op = tk.Frame(box, bg=P2)
         op.pack(fill="x", pady=(8, 0))
         ttk.Button(op, text="Overlay appearance…", command=self.appearance_open).pack(side="left")
@@ -534,29 +533,15 @@ class TrackerPage:
         self.tracker_save()
         self.overlay_click_through()
 
-    def ov_mouse_get(self):
-        """drag / locked / through: what the mouse does on the overlay's bar."""
-        cfg = self.tracker_cfg()
-        if cfg.get("click_through", False):
-            return "through"
-        return "locked" if cfg.get("mlocked") else "drag"
-
-    def ov_mouse_set(self, mode):
-        """2.120.0 (UX pass 2): one choice for the mouse on the overlay - Drag to move, Locked, Clicks pass through
-        (to the game; the bar can't be clicked then - the Pause key still works)."""
-        cfg = self.tracker_cfg()
-        cfg["click_through"] = mode == "through"
-        self.overlay_lock(mode != "drag")                   # (saves and redraws; syncs the 🔒)
+    def ov_click_through_set(self, on):
+        """Click-through: clicks go through the overlay's bar to the game (Options and Quick settings)."""
+        self.tracker_cfg()["click_through"] = bool(on)
+        self.tracker_save()
         self.overlay_click_through()
-        self.ov_mouse_sync()
-
-    def ov_mouse_sync(self):
-        for name in ("tk_mouse", "ovq_mouse"):
+        for name in ("tk_ct", "ovq_ct"):
             v = getattr(self, name, None)
-            if v is not None:
-                want = OV_MOUSE[self.ov_mouse_get()]
-                if v.get() != want:
-                    v.set(want)
+            if v is not None and bool(v.get()) != bool(on):
+                v.set(bool(on))
 
     def build_ov_settings(self, body):
         """2.82.0: Overlay ↳ Settings - cards (On the bar, Features, Campaign, Behaviour) and the Mechanic Helper."""
@@ -644,10 +629,9 @@ class TrackerPage:
         self.overlay.cfg["notes_locked"] = bool(on)
         if getattr(self, "tk_lock", None) is not None and bool(self.tk_lock.get()) != bool(on):
             self.tk_lock.set(bool(on))
-        if not on and cfg.get("click_through"):               # (unlocked with the 🔒: clicks are taken again)
-            cfg["click_through"] = False
-            self.overlay_click_through()
-        self.ov_mouse_sync()
+        v = getattr(self, "ovq_lock", None)
+        if v is not None and bool(v.get()) != bool(on):
+            v.set(bool(on))
         self.tracker_save()
         self.overlay.save_settings()
         self.merged_build()

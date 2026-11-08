@@ -363,7 +363,12 @@ def parse_gear(text):
                 m["covered"] = ("uniques are searched by name" + (f" - this roll is {r:.0%} of its range" if r is not None
                                                                    else "") + " (tick it to search on its roll too)")
         elif kind in AFFIX_KINDS and stat and g["rarity"] in ("Magic", "Rare"):     # 2.72.0: what buyers pay for
-            if stat["ref"] in FILLER:
+            if "modifier magnitudes" in stat["ref"].lower():
+                # 2.120.1 (feedback): "#% increased Explicit Resistance Modifier magnitudes" (a crafted line) - what
+                # it adds is already in the mods' own numbers, which are searched; asking for it too only hid listings
+                m["auto"] = "ignore"
+                m["note"] = "its effect is already in the other mods' numbers - not searched (tick it to search on it)"
+            elif stat["ref"] in FILLER:
                 m["auto"] = "ignore"
                 m["note"] = "rarely adds to a rare's price - not searched (tick it to search on it)"
             elif str(gm.get("tier") or "").isdigit() and int(gm["tier"]) >= LOW_TIER:

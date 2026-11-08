@@ -39,6 +39,19 @@ NEXT = [
 MAX_BIG = 3
 
 NOTES = {
+    "2.120.1": {
+        "big": [
+            ("🖱", "Lock position and Click-through", "The overlay's Mouse choice is two switches again, with the names "
+             "other overlays use - in Overlay ↳ Settings › Options and Quick settings.", ("Open Settings", "ovset"),
+             "Overlay"),
+        ],
+        "small": [
+            ("Price Checks", "Unticking Base type (Any Belts ...) still searched the item's own base. It searches "
+                             "the whole kind now - this should match what the card says."),
+            ("Price Checks", "A crafted \"... Modifier magnitudes\" line isn't searched any more: what it adds is "
+                             "already in the other mods' numbers."),
+        ],
+    },
     "2.120.0": {
         "big": [
             ("⭐", "Rate Mods has its own page", "Price Checks ↳ Rate Mods: pick an item kind on the left, rate one mod "

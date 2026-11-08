@@ -205,9 +205,16 @@ def apply_opts(query, item=None, opts=None):
         if o["base"] == "same" and item.get("base"):
             query["type"] = item["base"]
             put("type_filters", "category", None)
-        elif o["base"] == "class" and s.get("category"):
-            query.pop("type", None)
-            put("type_filters", "category", {"option": s["category"]})
+        elif o["base"] == "class":
+            # 2.120.1 (feedback: unticking Base type said "Any Belts" but the link still searched Heavy Belt): an item
+            # searched on its own base has no category in its plan - take its class's from the game data
+            cat = s.get("category")
+            if not cat and item.get("gclass"):
+                from . import gamedata
+                cat = (gamedata.classes().get(item["gclass"]) or {}).get("trade")
+            if cat:
+                query.pop("type", None)
+                put("type_filters", "category", {"option": cat})
     return query
 
 
