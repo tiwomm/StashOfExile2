@@ -9,7 +9,6 @@ from tkinter import filedialog, ttk
 
 from . import buglog
 from . import board as B
-from . import rep as R
 from . import moneymakers as MM
 from .config import SETTINGS, save_json
 from .style import over_app
@@ -159,10 +158,7 @@ class MoneyMakersPage:
         cols = (("name", "Strat", 170, "w"), ("type", "Type", 110, "w"),
                 ("thoughts_per_click", "🧠 Thoughts/click", 104, "center"), ("clicks_per_hour", "🖱 Clicks/h", 80, "center"),
                 ("profit", "Est. profit/h", 92, "center"), ("score", "▲", 44, "center"), ("origin", "By", 90, "w"))
-        self.mm_tree = ttk.Treeview(self.mm_listf, columns=[c[0] for c in cols], show="tree headings", selectmode="browse")
-        self.mm_tree.column("#0", width=24, minwidth=24, stretch=False, anchor="center")   # 2.95.0: the contributor icon
-        self.mm_rep_names = {}
-        self.rep_tree_hover(self.mm_tree, lambda iid: self.mm_rep_names.get(iid))
+        self.mm_tree = ttk.Treeview(self.mm_listf, columns=[c[0] for c in cols], show="headings", selectmode="browse")
         for cid, title, w, anchor in cols:
             self.mm_tree.heading(cid, text=title, command=lambda c=cid: self.mm_sort_by(c))
             self.mm_tree.column(cid, width=w, minwidth=56, anchor=anchor, stretch=cid == "name")
@@ -578,10 +574,7 @@ class MoneyMakersPage:
             post = s.get("_post") or {}
             tags = (s["origin"],) + (("hidden",) if post.get("hidden") else ())
             by = post.get("author", {}).get("name") or (s.get("author") if s["origin"] != "mine" else "me")
-            img = R.icon(self.root, post.get("author", {}).get("rep")) if post else None      # 2.95.0
-            if img is not None:
-                self.mm_rep_names[s["id"] + "|" + s["origin"]] = post["author"].get("name")
-            tv.insert("", "end", iid=s["id"] + "|" + s["origin"], tags=tags, **({"image": img} if img is not None else {}),
+            tv.insert("", "end", iid=s["id"] + "|" + s["origin"], tags=tags,
                       values=(("✔ " if post.get("voted") else "") + s["name"],
                               s.get("type", "") if self.mm_cat.get() else MM.type_text(s),
                               MM.thinking_word(s.get("thoughts_per_click")), s.get("clicks_per_hour", ""),
@@ -645,7 +638,6 @@ class MoneyMakersPage:
         t.insert("end", MM.type_text(s).upper() + "\n", "kicker")
         t.insert("end", s["name"] + "\n", "title")
         t.insert("end", "by ", "meta")
-        self.rep_text_mark(t, post.get("author", {}) if post else {}, "meta")         # 2.95.0: ◆ the contributor icon
         t.insert("end", f"{post.get('author', {}).get('name') or s.get('author', '?')} · game {s.get('patch', '?')} · "
                         f"updated {s.get('updated', '?')} · {ORIGIN.get(s['origin'], '')}"
                         + (f" · ▲ {post.get('score', 0)}" if post else "")

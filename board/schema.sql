@@ -128,7 +128,8 @@ CREATE TABLE IF NOT EXISTS lb_reports (
   PRIMARY KEY (lb_id, user_id)
 );
 
--- 2.95.0: rep (karma-style) - one row per thing that earned or cost it; an account's rep is the sum (never below 0)
+-- 2.95.0: rep (karma-style) - one row per thing that earned or cost it. 2.118.0: rep is gone - nothing writes or reads
+-- this table any more (kept as it was; Leave and delete still clears your rows).
 CREATE TABLE IF NOT EXISTS rep (
   user_id TEXT NOT NULL, kind TEXT NOT NULL, ref TEXT NOT NULL, pts INTEGER NOT NULL, created INTEGER NOT NULL,
   PRIMARY KEY (user_id, kind, ref)

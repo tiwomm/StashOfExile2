@@ -288,32 +288,6 @@ def import_key(path):
     return True, session().get("user") or {}
 
 
-def person(name):
-    """2.95.0: someone's contributor card -> (ok, {name, rep, from, since} or {name, hidden})."""
-    from urllib.parse import quote
-    return call("GET", "/people/" + quote(str(name), safe=""))
-
-
-def set_rep(hidden=None, link=None, unlink=False):
-    """2.95.0: show / hide your contributor icon; count this install's ratings toward your rep (link = its id) or stop."""
-    body = {}
-    if hidden is not None:
-        body["hidden"] = bool(hidden)
-    if unlink:
-        body["link"] = None
-    elif link:
-        body["link"] = link
-    res = call("POST", "/me/rep", body=body)
-    if res[0]:
-        me()                                                   # (keeps the saved user's rep fields fresh)
-    return res
-
-
-def admin_rep(name, pts):
-    """2.95.0: an admin thanks someone with rep (a bug report that got fixed)."""
-    return call("POST", "/admin/rep", body={"name": name, "pts": int(pts)})
-
-
 def delete_me():
     """2.89.3: leave the board and delete everything of yours on it (name, posts, pictures, votes, times). -> (ok, d)"""
     ok, d = call("DELETE", "/me")

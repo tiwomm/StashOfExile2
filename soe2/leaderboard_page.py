@@ -85,10 +85,7 @@ class LeaderboardPage:
         cols = (("rank", "#", 40, "e"), ("name", "Player", 150, "w"), ("time", "Time", 80, "e"), ("cls", "Class", 120, "w"),
                 ("lvl", "Level", 60, "e"), ("deaths", "Deaths", 66, "e"), ("league", "League", 120, "w"),
                 ("when", "When", 100, "w"))
-        bv = ttk.Treeview(right, columns=[c[0] for c in cols], show="tree headings", selectmode="browse")
-        bv.column("#0", width=24, minwidth=24, stretch=False, anchor="center")            # 2.95.0: the contributor icon
-        self.lb_rep_names = {}
-        self.rep_tree_hover(bv, lambda iid: self.lb_rep_names.get(iid))
+        bv = ttk.Treeview(right, columns=[c[0] for c in cols], show="headings", selectmode="browse")
         for cid, title, w, a in cols:
             bv.heading(cid, text=title)
             bv.column(cid, width=w, anchor=a, stretch=cid in ("name", "cls"))
@@ -305,11 +302,7 @@ class LeaderboardPage:
                 iid = f"b{r['id']}"
                 self.lb_rows[iid] = r
                 tags = ("hidden",) if r.get("hidden") else ("me",) if r.get("mine") else ("gold",) if i == 0 else ()
-                from . import rep as R
-                img = R.icon(self.root, r.get("rep"))                             # 2.95.0: the contributor icon
-                if img is not None:
-                    self.lb_rep_names[iid] = r["name"]
-                bv.insert("", "end", iid=iid, **({"image": img} if img is not None else {}), values=(i + 1, r["name"] + (" (you)" if r.get("mine") else ""),
+                bv.insert("", "end", iid=iid, values=(i + 1, r["name"] + (" (you)" if r.get("mine") else ""),
                                                       LB.fmt(r["secs"]), r.get("cls") or "", r.get("level") or "",
                                                       r.get("deaths", 0), r.get("league", ""),
                                                       time.strftime("%b %d", time.localtime(r["at"]))), tags=tags)
