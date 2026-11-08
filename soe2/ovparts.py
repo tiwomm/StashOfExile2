@@ -149,13 +149,19 @@ class OverlayParts:
 
     # ================================================================ the goal bar
     def goalbar_rows(self):
-        """What the goal bar holds, top to bottom: 'campaign' (2.77.0, while you're in the campaign), 'focus'."""
+        """What the goal bar holds, top to bottom: 'campaign' (2.77.0, while you're in the campaign), 'ritual' (2.118.0,
+        in a map with Ritual), 'focus'."""
         rows = []
         try:
             if self.camp_on_bar():
                 rows.append("campaign")
         except Exception:
             self.log_error("the campaign line")
+        try:
+            if self.ritual_readout():
+                rows.append("ritual")
+        except Exception:
+            buglog.caught()
         if self.focus_line()[0]:
             rows.append("focus")
         return rows
@@ -255,7 +261,9 @@ class OverlayParts:
         gw = max(320, int(mw * (0.6 if hud else 1.0)))
         if "campaign" in rows or self.goalbar_docked():                               # 2.78.2: as wide as the overlay's bar (feedback: "scale
             gw = mw                                          # to match the width of the other piece")
-        row_h = max(30, int((self.hud_spots("xpbar")[0][3] if hud else 60) * (0.55 if hud else 0.62)))
+        from .merged_page import HUD_SPOTS, OLD_HUD_H                  # (2.118.0: the bar is one row now - the lines
+        bar_h = self.hud_spots("xpbar")[0][3] * OLD_HUD_H / HUD_SPOTS["xpbar"][0][3]   # keep their size)
+        row_h = max(30, int((bar_h if hud else 60) * (0.55 if hud else 0.62)))
         gh = row_h + int(row_h * 0.8) * (len(rows) - 1)
         x, y = self._goalbar_spot(layout, gw, gh)
 
@@ -312,13 +320,22 @@ class OverlayParts:
                                fill=P.get("muted", P["text"]), font=("Segoe UI Symbol", self._hf(10)), tags=("mg", "grip"))
             cv.tag_bind(g, "<Enter>", lambda _e: cv.configure(cursor="fleur"))
             cv.tag_bind(g, "<Leave>", lambda _e: cv.configure(cursor=""))
+        for a, b in zip(mids, mids[1:]):                      # a thin line between two lines
+            cv.create_line(lft, (a + b) // 2, rgt, (a + b) // 2, fill=P["line"], tags=("mg",))
         if "campaign" in rows:
             self.camp_draw_row(cv, P, lft, rgt, mids[rows.index("campaign")], f)
             if light:
                 self._lt_halo_tags(cv, P, ("camp",))
-            if len(rows) > 1:
-                y = (mids[0] + mids[1]) // 2
-                cv.create_line(lft, y, rgt, y, fill=P["line"], tags=("mg",))
+        if "ritual" in rows:                                  # 2.118.0: the Ritual line
+            mid = mids[rows.index("ritual")]
+            fm = tkfont.Font(root=cv, family=P["font"], size=self._hf(10))
+            cv.create_text(lft, mid, text="▸ RITUAL", anchor="w", fill=P["head"],
+                           font=(P["hfont"], self._hf(9), "bold"), tags=("mg", "rit"))
+            rt = self._mg_text(cv, P, lft + fm.measure("▸ RITUAL ") + 8, mid, "ritual", f)
+            cv.addtag_withtag("rit", rt.item)
+            rt.config(text=self.ritual_readout())
+            if light:
+                self._lt_halo_tags(cv, P, ("rit",))
         if "focus" not in rows:
             return self._goalbar_show(w, cv)
         mid = mids[rows.index("focus")]
