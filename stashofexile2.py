@@ -30,6 +30,9 @@ VERSION HISTORY
        "21% increased Explicit Resistance Modifier magnitudes" was searched as a mod: what it adds is already in the
        resistances' own numbers, so asking for it only hid listings - "... Modifier magnitudes" lines are left out
        (tick one to search on it).
+       Feedback: the same for every kind with several bases (checked for each game-data class). And a corrupted item
+       has its own switch in Properties - Corrupted listings only / Corrupted or not (_card_corrupt_row; pcpop too) -
+       the same setting as Miscellaneous › Corrupted, which was folded away.
   2.120.0
        UX pass, part 2. Feedback: the Rate mods window "drew really janky" and sat in Privacy & community. It's a page
        now, Price Checks ↳ Rate Mods (modules/ratemods.py, ratemods_page.build_ratemods_page): the item kinds on the
