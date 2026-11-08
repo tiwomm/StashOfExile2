@@ -48,6 +48,9 @@ VERSION HISTORY
        Search, Under the Hood; their old names still open them); BETA written one way; Labs is Beta features.
        Empty pages look alike: chrome.EmptyState - an icon, what it is, what to do, at most one button - on Bulk
        Pricing, Favorites (Open Price Checks), Market Insights, Leaderboards (Open the Overlay) and the Overlay's maps.
+       Feedback: an unidentified unique (Ancient Leggings boots) - "trade site refused the search: unknown item name".
+       Unidentified, a unique shows only its base, which was searched as the unique's name. Now the one unique on that
+       base by name (gamedata.uniques_on), or any unique on it when there are several; a note says which.
   2.119.0
        UX pass, part 1 (the review: every page, tab and settings tab; decisions taken one by one). The overlay's bar
        kept room after the session time for a PAUSED tag and the words "not tracking", so long map names were cut.

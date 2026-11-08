@@ -75,6 +75,12 @@ def base(name):
     return load()["bases"].get((name or "").strip())
 
 
+def uniques_on(base_name):
+    """2.120.0: the uniques the game data knows on this base (an unidentified unique shows only its base)."""
+    b = (base_name or "").strip()
+    return sorted(n for n, bases in (load().get("uniques") or {}).items() if b in (bases or []))
+
+
 def group(gid):
     return load()["groups"].get(gid)
 

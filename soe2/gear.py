@@ -454,6 +454,13 @@ def parse_gear(text):
               "corrupted": bool(g.get("corrupted")), "sockets_min": None}
     if unique:
         search.update(name=g["name"], type=g["base"], rarity="unique", category=None)
+        if "unidentified" in g.get("flags", []) or not g["name"] or g["name"] == g["base"]:
+            # 2.120.0 (feedback: "unknown item name"): unidentified, a unique shows only its base - that's not a
+            # unique's name. The one unique on that base by name; with several (or none known), any unique on it.
+            on = gamedata.uniques_on(g["base"])
+            search["name"] = on[0] if len(on) == 1 else None
+            notes.append("unidentified: " + (f"searched as {on[0]} (the only unique on this base)" if len(on) == 1
+                                             else "any unique on this base" + (f" ({', '.join(on)})" if on else "")))
         rolls = [m["roll"] for m in mods if m["roll"] is not None and m["kind"] in AFFIX_KINDS]
         if rolls:                                           # 2.72.0: how well its rolls came out, on the whole
             avg = sum(rolls) / len(rolls)
