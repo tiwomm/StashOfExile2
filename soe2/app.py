@@ -4100,13 +4100,16 @@ class App(SettingsPage, GearBookPage, PriceCheckPage, PricePopup, FavoritesPage,
             if it.get("base") and it["base"] != it["name"]:
                 cv.create_text(w // 2, 40, text=it["base"], fill=_th.mix(name_c, C["text"], .45), font=("Segoe UI", 10))
             y = 62
-            good = st == "done" and big not in ("No match", "Check by hand")
-            cv.create_text(16, y + 14, text=big, anchor="w", font=("Segoe UI", 16, "bold"),
-                           fill=C["good"] if good else (C["red"] if st in ("done", "error") else C["muted"]),
-                           tags=("cardprice",))
-            if sub:
-                cv.create_text(w - 16, y + 14, text=sub, anchor="e", font=("Segoe UI", 9), fill=C["muted"])
-            y += 32
+            if getattr(self, "_card_no_price", False):          # 2.123.0 (p4): Price Checks' strip says the price
+                y += 18
+            else:
+                good = st == "done" and big not in ("No match", "Check by hand")
+                cv.create_text(16, y + 14, text=big, anchor="w", font=("Segoe UI", 16, "bold"),
+                               fill=C["good"] if good else (C["red"] if st in ("done", "error") else C["muted"]),
+                               tags=("cardprice",))
+                if sub:
+                    cv.create_text(w - 16, y + 14, text=sub, anchor="e", font=("Segoe UI", 9), fill=C["muted"])
+                y += 32
             sep = t.c(t.part("card", "sep", default="border"))
             mod_c, imp_c = MOD_COL["explicit"], MOD_COL["implicit"]
             fold = SETTINGS.setdefault("pc_fold", {})          # 2.97.2: each section folds; remembered
