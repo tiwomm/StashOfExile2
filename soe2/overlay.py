@@ -471,7 +471,7 @@ class Overlay:
                 from .style import Tooltip
                 Tooltip(b, "Bigger text" if d > 0 else "Smaller text")
             except Exception:
-                pass
+                buglog.caught()
         for i, t in enumerate(self.note_tabs()):
             on = i == cur
             lab = tk.Label(bar, text=t["name"][:18], bg=fg if on else bg, fg=bg if on else fg, padx=8, pady=1,
