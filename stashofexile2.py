@@ -30,6 +30,9 @@ VERSION HISTORY
        Feedback ("conflicting results"): Skip cheap items was on, yet dozens of 1-chaos tablets were searched - each
        had a mod the app's built-in rules mark High, and any High mod exempted the item. Now only your own High (S / A)
        or the players' votes exempt it; the built-in marks give way to the Mod Book's own prices (fewer searches too).
+       Feedback (wording): "Search rolls from 90 %" is "Search Min: 10% below" (0% (exact), 5% ... 30% below - the way
+       other price checkers say it; FINE kind "below", range_factor unchanged), and "times apart, cheapest to
+       dearest" is "Warn when prices vary: x - when the highest listing costs this many times the lowest".
   2.123.0
        Craft Helper overhaul, phase 1 (feedback: tablet mods on S-F, "effectiveness by itself is kind of useless",
        "see its price below" with no prices below; then: no prices at all - they move too fast, only your own price

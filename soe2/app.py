@@ -943,9 +943,13 @@ class App(SettingsPage, GearBookPage, PriceCheckPage, PricePopup, FavoritesPage,
 
 
     # (key, name, kind, low, high, step, what it does) - 2.59.0: Settings › Advanced › Fine tuning
-    FINE = (("range_factor", "Search rolls from", "pct", 50, 100, 5, "% of your item's rolls (lower = more listings)"),
+    # 2.123.1 (feedback: "every other price checker has 20% / 15% / 10% / 5% / 0%"): the Min a search asks for, as
+    # how far below your roll - 0% = your exact roll. Saved as before (range_factor 0.9 = 10% below).
+    FINE = (("range_factor", "Search Min", "below", 0, 30, 5, "below your item's roll (more = more listings; 0% = your "
+                                                               "exact roll)"),
             ("min_results", "Fewest listings for a price", "int", 1, 20, 1, "fewer than this: no price, only a hint"),
-            ("spread_warn", "Warn when prices spread", "int", 0, 200, 5, "times apart, cheapest to dearest (0 = off)"),
+            ("spread_warn", "Warn when prices vary", "int", 0, 200, 5, "x - when the highest listing costs this many "
+                                                                      "times the lowest (0 = off)"),
             ("stale_days", "Re-check a learned mod after", "int", 1, 60, 1, "days"),
             ("toast_secs", "Messages stay for", "int", 1, 60, 1, "seconds"),
             ("learn", "Learn new mods in the background", "bool", 0, 0, 0, "looks up each new mod's price, slowly"),

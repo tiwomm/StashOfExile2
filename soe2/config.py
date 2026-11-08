@@ -130,7 +130,7 @@ DEFAULTS = {
     "range_factor": 0.9,   # search for rolls >= 90% of yours
     "min_results": 3,
     "tray": False,         # minimize to the system tray (needs pystray + pillow) - 2.116.0: off for new installs
-    "spread_warn": 20,     # warn when the cheapest and dearest listing are this many times apart (0 = off)
+    "spread_warn": 20,     # warn when the highest listing costs this many times the lowest (0 = off)
     "pc_ctrl_c": True,     # 2.80.0: your price check key on an item in game opens it on Price Checks
     "pc_key": "Ctrl+D",    # 2.83.1 (feedback): the price check key (was the game's plain Ctrl+C)
     "pc_front": True,      # ...and brings the app to the front
