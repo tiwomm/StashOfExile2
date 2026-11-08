@@ -47,6 +47,8 @@ NOTES = {
         ],
         "small": [
             ("Price Checks", "Search again, Clear, Add to favorites and Trade Site are under the item again."),
+            ("Rate Mods", "The \"rated\" count counts mods, not clicks, and the button you just pressed no longer "
+                          "stays lit on the next mod - only your own rating is."),
         ],
     },
     "2.123.1": {

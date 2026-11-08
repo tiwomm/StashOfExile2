@@ -89,7 +89,7 @@ class RateModsPage:
         # ---- right: one mod at a time (built once)
         right = tk.Frame(wrap, bg=P1)
         right.pack(side="left", fill="both", expand=True, padx=(12, 0))
-        card = tk.Frame(right, bg=P2, padx=24, pady=16, highlightthickness=1, highlightbackground=C["line"])
+        card = self.rm_card = tk.Frame(right, bg=P2, padx=24, pady=16, highlightthickness=1, highlightbackground=C["line"])
         card.pack(fill="x", anchor="n")
         self.rm_box = card
         top = tk.Frame(card, bg=P2)
@@ -133,6 +133,7 @@ class RateModsPage:
             w.bind("<Left>", lambda e=None: self.rm_step(-1))
         page.bind("<Button-1>", lambda e: page.focus_set(), add="+")
         self.rm_rated, self.rm_q, self.rm_i, self.rm_set = 0, [], 0, None
+        self.rm_rated_keys = set()
         self.rm_view = "rate"
         return page
 
@@ -192,7 +193,7 @@ class RateModsPage:
         cnt.pack(side="right")
         if q:
             for w in (row, name, cnt):
-                w.bind("<Button-1>", lambda e, s=s: self.rm_pick(s))
+                w.bind("<Button-1>", lambda e=None, s=s: self.rm_pick(s))
         self.rm_rows[s] = (row, name, cnt, bool(q))
         return row
 
@@ -255,8 +256,12 @@ class RateModsPage:
         self.rm_mod.config(text=text)
         self.rm_now.config(text=f"Yours: {grade_label(cur)}" if cur else "Not rated by you yet")
         for g, b in self.rm_btns.items():
-            b.state(["!disabled"])
-            b.config(style="Primary.TButton" if g == cur else "TButton")
+            b.state(["!disabled", "!focus", "!active", "!pressed"])   # 2.123.2 (feedback: the last click stayed lit
+            b.config(style="Primary.TButton" if g == cur else "TButton")    # on the next mod) - only yours is lit
+        try:
+            self.rm_card.focus_set()                     # (the keys still work: they're bound on the card)
+        except (AttributeError, tk.TclError):
+            pass
         self.rm_nav["back"].state(["!disabled"] if i > 0 else ["disabled"])
         self.rm_nav["next"].state(["!disabled"] if i < len(q) - 1 else ["disabled"])
 
@@ -264,8 +269,11 @@ class RateModsPage:
         if not getattr(self, "rm_q", None):
             return None
         keys, _text = self.rm_q[self.rm_i]
+        # 2.123.2 (feedback: clicking again on the last mod kept counting up): the count is mods rated, not clicks
+        done = self.rm_rated_keys = getattr(self, "rm_rated_keys", set())
         RM.apply(keys, grade)
-        self.rm_rated += 1
+        done.add(tuple(keys))
+        self.rm_rated = len(done)
         last = self.rm_i >= len(self.rm_q) - 1
         self.rm_done_lbl.config(text=f"{self.rm_rated} rated - thanks!")
         affected = [rid for rid, rec in self.records.items() if rec.get("mark", "new") == "new" and rec.get("src") not in
