@@ -427,6 +427,7 @@ class Overlay:
         text.insert("1.0", tabs[i]["text"])
         text.edit_modified(False)
         text.bind("<<Modified>>", self._text_changed)
+        text.bind("<Control-MouseWheel>", lambda e: (self.note_font_step(1 if e.delta > 0 else -1), "break")[1])
         self.notes, self.notes_text = w, text
         self._paint_tabs()
 
@@ -460,6 +461,17 @@ class Overlay:
             w_.destroy()
         bg, fg = self.note_colours()
         cur = self.note_index()
+        # 2.119.0 (UX pass): the note's text size is set on the note itself (was Settings › Appearance › Notes) -
+        # packed first, so a narrow note keeps them
+        for txt, d in (("A+", 1), ("A−", -1)):
+            b = tk.Label(bar, text=txt, bg=bg, fg=fg, padx=4, cursor="hand2", font=("Segoe UI", 9, "bold"))
+            b.pack(side="right", pady=(0, 2))
+            b.bind("<Button-1>", lambda e, d=d: self.note_font_step(d))
+            try:
+                from .style import Tooltip
+                Tooltip(b, "Bigger text" if d > 0 else "Smaller text")
+            except Exception:
+                pass
         for i, t in enumerate(self.note_tabs()):
             on = i == cur
             lab = tk.Label(bar, text=t["name"][:18], bg=fg if on else bg, fg=bg if on else fg, padx=8, pady=1,
@@ -474,6 +486,21 @@ class Overlay:
         add = tk.Label(bar, text="+", bg=bg, fg=fg, padx=8, cursor="hand2", font=("Segoe UI", 9, "bold"))
         add.pack(side="left", pady=(0, 2))
         add.bind("<Button-1>", lambda e: self.add_tab())
+
+    def note_font_step(self, d):
+        """2.119.0: A− / A+ on the note (and Ctrl + mouse wheel in it) - its text size, 8 to 24, kept."""
+        c = self.cfg
+        n = max(8, min(24, int(c.get("notes_font", 11)) + d))
+        if n == int(c.get("notes_font", 11)):
+            return n
+        c["notes_font"] = n
+        self.save_settings()
+        try:
+            if self.notes_text is not None and self.notes_text.winfo_exists():
+                self.notes_text.config(font=(self.note_palette()["font"], n))
+        except (AttributeError, tk.TclError):
+            pass
+        return n
 
     # ---- 2.72.2: a sticky note's right-click menu
     def tab_menu(self, i, x=None, y=None):
@@ -707,7 +734,6 @@ class Overlay:
         try:
             from . import overlaywin
             overlaywin.GAME_TITLE[0] = self.cfg.get("poe_title") or POE_TITLE
-            overlaywin.GAME_ONLY[0] = bool(self.S.get("overlay_game_only", True))
             while self.pending:
                 action = self.pending.pop(0)
                 if action[0] == "notes":

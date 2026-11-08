@@ -142,7 +142,6 @@ DEFAULTS = {
     "model_shortcut": False,    # True: the model may set a price itself, but only after 100 checked guesses at 99 percent (1.23)
     "market_league": "",        # the league market.db's current data belongs to (1.23)
     "rates_auto": True,    # check the exchange rates once an hour (poe.ninja) so prices in other currencies can be converted
-    "pace": "Balanced",    # Fast / Balanced / Gentle - how carefully we stay under the trade site's limits
     "stale_days": 3,       # re-check a learned mod after this many days
     "status": "Instant Buyout",   # which listings count: the trade site's own "listing status" choices
     "age": "2 days",              # ignore listings older than this (stale / banned-account / outdated prices)

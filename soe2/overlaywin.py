@@ -265,7 +265,7 @@ class CanvasText:
             return False
 
 # ---- over-the-game windows only show while the game is in front (2.0 beta 15)
-GAME_ONLY = [True]                # Settings > Window: "only while Path of Exile 2 is in front"
+GAME_ONLY = [True]                # always (2.119.0: its Settings › Window switch is gone; kept for the tests)
 GAME_TITLE = ["Path of Exile 2"]  # the Chat commands window's game title
 _LIVE = []                        # windows that follow the game
 _JOB = [None]

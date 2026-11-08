@@ -4,7 +4,7 @@
 
 > **Who we build for - read second.** Path of Exile players are utilitarian: they love data and information, problem solving and creative thinking. So every feature shows its numbers *and how they were worked out*, lets you sort, filter, compare and export them (CSV), keeps power-user depth (keys, versions, raw data) one click away instead of hiding it, explains in plain words, and leaves the decision to the player. Pretty is welcome; vague is not.
 
-**Current version: 2.118.0**
+**Current version: 2.119.0**
 
 Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds features, 2.10.1 only fixes. Each step below is one release; we work through them top to bottom.
 
@@ -182,6 +182,7 @@ Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds f
 | 2.116.0 | P10: one Keys tab (hotkeys + chat commands), overlay style picker with a live preview, Developer options (Debug mode, Unmatched mods), Advanced › Problems; Always on top / tray off for new installs. |
 | 2.117.0 | Errors the app works around go to its log as [caught] (where and the type only, once per place a run); one-time settings changes in one ordered list (soe2/migrations.py); no window work from a background thread (run_bg / on_ui, tools/check_threads.py in Checks); Settings out of app.py (soe2/settings_page.py). |
 | 2.117.1 | Ashen Rite froze the app on some PCs: the desktop's settle step waits for queued layout jobs instead of forcing them (a page laying itself out again never let it return); Ashen Rite uses Georgia (was Sylfaen); a layout loop is logged once a run. |
+| 2.119.0 | UX pass 1: the bar's timer only as wide as itself (rank in the map text on light styles), ⚙ = Quick settings on either click; one line per helper + one Client.txt banner; Expedition always Auto (no chip or key); one name, League Plan; Pace, Accent color, Text size, the start-up screen and "overlay only while the game is in front" switches gone (old settings cleaned once); Notes' text size on the note (A− / A+); rep gone from the privacy text. |
 | 2.118.0 | No helper switches on the overlay bar (one row in every style; helpers on by default for a new install, off in Helpers / Quick settings); the Ritual line over the bar (count; tribute next); real-bar style previews; theme picker with a live preview; community rep removed (app and board; its data deleted). |
 | 2.113.1 | Price Checks: the Show over the game switch on its header and in Settings › Price checking (out of Hotkeys); Island rumours: the middle rumour (whole-text search, read at 2x, rumours_read.txt). |
 | 2.113.0 | Each seller counts once in every price (their cheapest, "listed N times"; listings 11-20 fetched when too few sellers); Min within the mod's tier. Island rumours: all of a card's rumours (a rumour run together with the heading matched nothing; read up to 3 times), a compact panel. Price check in a card over the game (opt-in, Settings › Hotkeys › Price Checks): item, price, mods with ticks and Min / Max, cheapest listings that open to the whole item; movable, resizable, remembered; the overlay's Style. |
@@ -227,6 +228,9 @@ Order (decided 2026-11-05): the page passes, then the Privacy & data hub, then t
 
 | Step | Plan |
 |---|---|
+| 2.120.0 | **UX pass 2:** one-line section intros (detail in an ⓘ), Ctrl+D as one choice (Over the game / In the app) + Pictures, no title-bar buttons that repeat the sidebar, one orange button per screen, one "Mouse on the overlay" choice, Rank maps → Map Library, Game window title → Advanced, the clock in one place, Title Case page names with one BETA chip (Labs → Show beta features), consistent empty states, a "Trade site: ready / wait" pill instead of the limit meters. |
+| 2.121.0 | **UX pass 3 (code):** dead code out; tools/check_removed.py (a removed feature leaves no text, setting or test behind), soe2/names.py + tools/check_names.py (one name per feature), tools/check_ux.py. |
+| Plan | **Tablet Craft Helper + Mod book:** plan merging them into one place. |
 | - | (Responsive part 2 - text size overlaps, sharp DPI - is folded into the page passes; started on branch wip-text-scale.) |
 | Fix | **poe.ninja through our own server** - poe.ninja's API rules ask desktop apps to fetch through their own backend, not from players' PCs (the app fetches exchange rates straight from each PC today). Route it through the Cloudflare worker: one cached fetch an hour for everyone, and poe.ninja never sees players' internet addresses. |
 | Fix | **Fix the Expedition rumor helper** (Session tracker › Alerts › Rumors: the island each Uncharted Waters rumor leads to) - nothing shows at all. The card can be anywhere on screen. Checked on your 6 screenshots (2560x1440, local test kit): the card finder finds the card every time, so the fault is later - the hideout gate (it starts only on an area change into a hideout), Windows' text reader on the card's handwriting, or an error the watcher swallows. 2.105.0 fixed two causes (the app started in your hideout never started it; a card read while still opening was never read again) and logs its first error - needs a check in game. Still to do if it fails: a step-by-step log under Debug mode, a test on the 6 shots. |

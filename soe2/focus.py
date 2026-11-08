@@ -1,4 +1,4 @@
-"""League Focus (2.73.0): a set-and-forget game plan for the league - goals by phase, a stockpile to buy while it's
+"""League Plan (2.73.0 as League Focus; one name from 2.119.0): a set-and-forget game plan for the league - goals by phase, a stockpile to buy while it's
 cheap, the farms you planned, a build lock - and (2.73.1) pokes over the game that remind you of it. Built for players
 who get sidetracked (ADHD-friendly): everything is optional, quiet by default, and says why it showed up.
 
@@ -267,7 +267,7 @@ def remove_farm(i):
         save()
 
 
-NO_GOAL = "No goal yet - click to set one in Game Plan"
+NO_GOAL = "No goal yet - click to set one in League Plan"
 
 
 def line_text(worth=None):
@@ -586,7 +586,7 @@ def poke_text(poke):
         if farms:
             body += "\nFarm plan: " + ", then ".join(farms)
         return ("YOU REACHED MAPS", body, "Why now: the log shows you in your first waystone map.",
-                [("plan", "Open Game Plan"), ("ok", "Got it")])
+                [("plan", "Open League Plan"), ("ok", "Got it")])
     if k == "price":
         under = poke.get("under")
         body = f"{poke['name']} is {poke['each']:.3g} div" + (f" (you buy under {under:g})." if under is not None else ".")

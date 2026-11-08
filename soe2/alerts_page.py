@@ -9,7 +9,7 @@ same way the Session tracker does) and shows a banner over the game: an "almost 
 one. Nothing is read from the game itself and no keys are sent. A banner looks like the Delirium alert's END DELIRIUM (2.12.1): big flashing text over the game,
 no box; clicks go through it. It goes after a few seconds, or as soon as you open the Genesis Tree.
 
-Remnant (2.37.0): the Expedition Remnant Price Checker (remnant.py / remnant_page.py) - a key, not a watcher.
+Remnant (2.37.0): the Expedition Remnant Price Checker (remnant.py / remnant_page.py) - a screen watcher.
 
 Delirium: the helper (utilities.DELIRIUM, delirium_runner.py) looks at your screen; its END DELIRIUM banner is its own.
 This panel only starts / stops it, sets its sound and tests it. Its splinter icon is gone (2.10.0)."""
@@ -210,15 +210,21 @@ class AlertsPage:
         sm = ("Segoe UI", 9)
         top = tk.Frame(box, bg=P2)
         top.pack(fill="x")
-        tk.Label(top, text="They only watch and show - they never act in the game.", bg=P2, fg=C["muted"],
-                 font=sm).pack(side="left")
+        # (2.119.0: "They only watch and show..." is the section's own intro - it was said twice)
         self.al_sound_all = tk.BooleanVar(value=bool(SETTINGS.get("helpers_sound", True)))
         ttk.Checkbutton(top, text="Sound", variable=self.al_sound_all, style=CB,
                         command=self.alerts_sound_all).pack(side="right")
+        # 2.119.0 (UX pass): Client.txt not found - one banner here (it was the same red line on every helper)
+        ban = tk.Frame(box, bg=C["warn_bg"], padx=8, pady=8, highlightthickness=1, highlightbackground=C["red"])
+        tk.Label(ban, text="The game's log (Client.txt) wasn't found. Breach, Ritual, Campaign, Trade whispers and "
+                           "more need it.", bg=C["warn_bg"], fg=C["text"], font=sm, anchor="w", justify="left",
+                 wraplength=520).pack(side="left", fill="x", expand=True)
+        ttk.Button(ban, text="Find it…", command=self.tracker_pick_log).pack(side="right", padx=(8, 0))
+        self.al_log_banner, self.al_log_after = ban, top
         tbl = tk.Frame(box, bg=P2)
         tbl.pack(fill="x", pady=(8, 0))
         self.al_table = tbl
-        tbl.grid_columnconfigure(1, minsize=220)
+        tbl.grid_columnconfigure(1, minsize=300)
         tbl.grid_columnconfigure(2, weight=1)
         for c, t in ((1, "Helper"), (2, "Options"), (3, "Remind")):
             tk.Label(tbl, text=t, bg=P2, fg=C["muted"], font=sm).grid(row=0, column=c, sticky="w" if c < 3 else "",
@@ -263,9 +269,9 @@ class AlertsPage:
             "ritual": "reads the Ritual counter (0/3 ...) from your screen; reminds you if you leave a map after "
                       "starting its rituals but not finishing them",
             "remnant": "Expedition Remnant Price Checker: each reward in a remnant's book gets its poe.ninja price, by "
-                       "itself (Auto) or with its key, beside the runeshapes players rate best for loot",
-            "focus": "League Focus: your current league goal on the bar, and a short poke in town now and then "
-                     "(Overlay ↳ Game Plan)",
+                       "itself, beside the runeshapes players rate best for loot",
+            "focus": "League Plan: your current goal on the bar, and a short poke in town now and then "
+                     "(Overlay ↳ League Plan)",
             "campaign": "Campaign Helper: where you are in the campaign, what's next and what it's worth (reads "
                         "Client.txt)",
             "whispers": "Trade Whisper Watcher: a card over the game when someone whispers to buy an item you listed - "
@@ -277,21 +283,26 @@ class AlertsPage:
                  "focus": lambda: self.ov_intro_setup("focus"), "campaign": lambda: self.camp_route_show(),
                  "whispers": lambda: self.ww_show_test(), "desecrate": self.alerts_test_desecrate}
         names = {"delirium": "Delirium", "breach": "Breach", "ritual": "Ritual", "remnant": "Expedition",
-                 "focus": "Focus", "campaign": "Campaign", "whispers": "Trade whispers",
+                 "focus": "League Plan", "campaign": "Campaign", "whispers": "Trade whispers",
                  "desecrate": "Desecration (Beta)"}
+        # 2.119.0 (UX pass): what each one does, in one grey line under its name (it was only a tooltip)
+        blurb = {"delirium": "END DELIRIUM when a map ends with Delirium still on",
+                 "breach": "Warns when your stored Hiveblood is almost full",
+                 "ritual": "Counts rituals done; reminds you if you leave early",
+                 "remnant": "Prices each reward in a remnant's book",
+                 "focus": "Your current goal on the bar, a nudge in town",
+                 "campaign": "Where you are in the campaign and what's next",
+                 "whispers": "A card when someone wants to buy your item",
+                 "desecrate": "Each Well of Souls option's tier"}
         self.al_leave = tk.BooleanVar(value=bool(self.breach_cfg().get("leave_reminder", True)))
         self.al_rleave = tk.BooleanVar(value=bool(self.ritual_cfg().get("leave_reminder", True)))
-        self.al_rauto = tk.BooleanVar(value=bool(self.remnant_cfg().get("auto")))
         self.al_rshow = tk.BooleanVar(value=bool(self.ritual_cfg().get("readout", True)))
         self.al_rru = tk.BooleanVar(value=bool(self.remnant_cfg().get("rumours", True)))
         self.al_rtips = tk.BooleanVar(value=bool(self.remnant_cfg().get("tips", True)))
         from . import whispers as _W
         self.al_wafter = tk.BooleanVar(value=bool(_W.cfg()["after"]))
         opts = {
-            "remnant": [("Auto", self.al_rauto, lambda: self.remnant_auto_changed(self.al_rauto.get()),
-                         "Prices show by themselves when a remnant's reward book opens (the app watches the spot where "
-                         "it opens). Off: only the key prices it."),
-                        ("Island rumours", self.al_rru, lambda: self.ru_changed(self.al_rru.get()),
+            "remnant": [("Island rumours", self.al_rru, lambda: self.ru_changed(self.al_rru.get()),
                          "On the world map's Uncharted Waters card, each rumour gets the island it leads to and your "
                          "Map library rank for it. Only in your hideout."),
                         ("Runeshape tips", self.al_rtips, lambda: self.remnant_tips_changed(self.al_rtips.get()),
@@ -320,9 +331,11 @@ class AlertsPage:
                 nl = tk.Label(cell, text=names[key], bg=P2, fg=C["text"], font=("Segoe UI", 10, "bold"), anchor="w")
                 nl.pack(anchor="w")
                 Tooltip(nl, what[key])
+                tk.Label(cell, text=blurb[key], bg=P2, fg=C["muted"], font=sm, anchor="w", justify="left",
+                         wraplength=320).pack(anchor="w")
                 st = tk.Label(cell, text="", bg=P2, fg=C["muted"], font=sm, anchor="w", justify="left",
-                              wraplength=260)
-                st.pack(anchor="w")
+                              wraplength=320)
+                st.pack(anchor="w")                 # (what it's doing now - hidden while it's off)
                 dot = tk.Label(cell, text="●", bg=P2, fg=DOT["off"])          # (kept for alerts_refresh; not shown)
                 oc = tk.Frame(tbl, bg=P2)
                 oc.grid(row=r, column=2, sticky="w", padx=(0, 12))
@@ -408,7 +421,7 @@ class AlertsPage:
             r["note"] = err or ""
         elif key == "focus":                                  # 2.90.0
             self.focus_set_on(bool(want))
-            self._helper_needs_overlay(want, "League Focus")
+            self._helper_needs_overlay(want, "League Plan")
         elif key == "campaign":
             self.camp_set_on(bool(want))
             self._helper_needs_overlay(want, "The Campaign Helper")
@@ -650,7 +663,7 @@ class AlertsPage:
         from . import campaign as _CP, focus as _F                                # 2.90.0
         rows["focus"]["on"].set(bool(_F.cfg()["on"]))
         rows["campaign"]["on"].set(bool(_CP.cfg()["on"]))
-        ftxt = ("On - " + (self.focus_line()[0] or "pick a goal in Overlay ↳ Game Plan")) if _F.cfg()["on"] else rows["focus"]["what"]
+        ftxt = ("On - " + (self.focus_line()[0] or "pick a goal in Overlay ↳ League Plan")) if _F.cfg()["on"] else rows["focus"]["what"]
         ctxt = ("On - " + (_CP.line_text() or "waits for a campaign zone in the game's log")) if _CP.cfg()["on"] else rows["campaign"]["what"]
         from . import whispers as _W                                              # 2.98.1
         rows["whispers"]["on"].set(bool(_W.cfg()["on"]))
@@ -667,11 +680,18 @@ class AlertsPage:
                        ("focus", ftxt), ("campaign", ctxt), ("whispers", vtxt)):
             st = states[k]
             lbl = rows[k]["status"]
-            if rows[k].get("grid"):                 # 2.112.0: one short line under the name (off: "Off")
+            if rows[k].get("grid"):                 # 2.112.0: one short line under the name
                 if st == "off" and txt == rows[k]["what"]:
-                    txt = "Off"
+                    txt = ""                        # 2.119.0: off - the switch says so; the grey line says what it does
                 elif txt.startswith("On - "):
                     txt = txt[5:6].upper() + txt[6:]
+                try:
+                    if txt and not lbl.winfo_manager():
+                        lbl.pack(anchor="w")
+                    elif not txt and lbl.winfo_manager():
+                        lbl.pack_forget()
+                except tk.TclError:
+                    pass
             else:
                 show = st != "off" or txt != rows[k]["what"]
                 try:
@@ -688,6 +708,16 @@ class AlertsPage:
                 except tk.TclError:
                     pass
             rows[k]["status"].config(text=txt, fg=C["red"] if st == "warn" else C["green"] if st == "on" else C["muted"])
+        ban = getattr(self, "al_log_banner", None)            # 2.119.0: Client.txt not found - one banner
+        if ban is not None:
+            want = getattr(self, "br_reader", None) is None and bool(self.br_note)
+            try:
+                if want and not ban.winfo_manager():
+                    ban.pack(fill="x", pady=(8, 0), after=self.al_log_after)
+                elif not want and ban.winfo_manager():
+                    ban.pack_forget()
+            except tk.TclError:
+                pass
 
     def ritual_text(self, row):
         from .utilities import RITUAL
@@ -737,8 +767,7 @@ class AlertsPage:
         path = find_log(tc().get("log_path") if tc else None)
         if not path:
             self.br_reader = None
-            self.br_note = ("On - but Client.txt wasn't found. Right-click the log line at the top of the Session "
-                            "tracker to pick it.")
+            self.br_note = "On - waiting for Client.txt (see the note above)"     # 2.119.0: the banner says why
         else:
             self.br_reader = LogReader(path)
             tail = self.br_reader.start()             # only what the game writes from now on

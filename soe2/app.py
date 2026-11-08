@@ -29,7 +29,7 @@ from .config import (
 )
 from .clipboard import clip_seq, read_clipboard_text
 from .util import _amt, _num, mmss
-from .net import _STATUS_HOOK, fmt_stamp, LIMITER, PACES, per_text
+from .net import _STATUS_HOOK, fmt_stamp, LIMITER, per_text
 from .updates import clean_env, cleanup_update, download_asset, FROZEN, latest_release, pick_asset, REPO, is_newer, vtuple
 from .rates import RATES
 from .mods import (
@@ -158,8 +158,8 @@ class App(SettingsPage, GearBookPage, PriceCheckPage, PricePopup, FavoritesPage,
         root.geometry(self.saved_geometry() or "1280x800")      # 2.23.1: where you left it last time
         root.minsize(1000, 560)
         root.bind("<Configure>", self._note_window, add="+")
-        from .style import apply_look                   # 2.0.0: Settings > Appearance (theme, accent, text size)
-        apply_look(*look_settings(), root)
+        from .style import apply_look                   # 2.0.0: Settings > Appearance (the theme)
+        apply_look(look_settings(), root)
         root.configure(bg=C["bg"])
         self.paint_titlebar()                            # 2.61.0: Windows' own title bar in the theme's colors
         root.after(1500, self.paint_titlebar)            # (again once the window is really on screen)
@@ -418,7 +418,6 @@ class App(SettingsPage, GearBookPage, PriceCheckPage, PricePopup, FavoritesPage,
         self.page_var = tk.StringVar(value=PAGE_CHECKS)           # the window in front (kept for older code)
         self.top_var = tk.BooleanVar(value=SETTINGS.get("on_top", True))
         self.league_var = tk.StringVar(value=SETTINGS["league"])
-        self.pace_var = tk.StringVar(value=SETTINGS["pace"] if SETTINGS["pace"] in PACES else "Balanced")
         self.total_txt = ""
         if "labs" not in SETTINGS:                   # 2.0 beta 10: Labs on for whoever already uses Wealth / the tracker
             SETTINGS["labs"] = bool(WEALTH.tabs or WEALTH.holdings or WEALTH.snapshots or os.path.exists(P("sessions.json")))
@@ -1016,7 +1015,7 @@ class App(SettingsPage, GearBookPage, PriceCheckPage, PricePopup, FavoritesPage,
         from .style import relook
         from .hangwatch import step
         step("theme change: re-colour every window")
-        n, secs = relook(self.root, SETTINGS.get("theme"), SETTINGS.get("accent", "theme"))
+        n, secs = relook(self.root, SETTINGS.get("theme"))
         step("theme change: theme cards")
         self._paint_look_cards()
         step("theme change: title bar")
@@ -1594,15 +1593,6 @@ class App(SettingsPage, GearBookPage, PriceCheckPage, PricePopup, FavoritesPage,
 
 
 
-
-    def on_pace(self, _e=None):
-        SETTINGS["pace"] = self.pace_var.get()
-        save_json("settings.json", SETTINGS)
-        if SETTINGS["pace"] == "Fast":                      # 2.18.0: say what it costs
-            self.app_toast("Fast pace searches the trade site much harder. You'll hit its rate limits quickly, and each "
-                       "one locks searches for several minutes (sometimes longer). Balanced is safer.",
-                       title="⚠  Fast pace: rate limits ahead",
-                       actions=[("Back to Balanced", lambda: (self.pace_var.set("Balanced"), self.on_pace()))])
 
     def toggle_pause(self):
         self.engine.paused = not self.engine.paused
@@ -3634,8 +3624,8 @@ class App(SettingsPage, GearBookPage, PriceCheckPage, PricePopup, FavoritesPage,
     def pace_secs_per_item(self):
         """2.26.2: a first guess at how long one item takes, before any has finished: the pace's search allowance
         (searches per 5 minutes) and about two searches an item."""
-        from .net import PACES
-        cap = PACES.get(SETTINGS.get("pace"), PACES["Balanced"]).get("cap300") or 8
+        from .net import PACE
+        cap = PACE.get("cap300") or 8
         return 300 / cap * 2
 
     def update_status(self):
@@ -5225,17 +5215,14 @@ CRASHED = [False]        # 2.114.3: the app closed by itself last time (crash_re
 
 
 def look_settings():
-    """(theme, accent, text size) from settings. 2.60.0: theme packs - everyone starts on Emberforge once (the
-    user's pick); the old default accent (orange) becomes "the theme's own"."""
+    """The theme's id from settings. 2.60.0: theme packs - everyone starts on Emberforge once (the user's pick).
+    (2.119.0: accent and text size are gone.)"""
     from . import themes as _th
     if not SETTINGS.get("theme_packs"):
         SETTINGS["theme_packs"] = 1
         SETTINGS["theme"] = _th.DEFAULT
-        if SETTINGS.get("accent", "orange") == "orange":
-            SETTINGS["accent"] = "theme"
         save_json("settings.json", SETTINGS)
-    return (_th.pick_id(SETTINGS.get("theme")), SETTINGS.get("accent", "theme"),
-            int(SETTINGS.get("ui_scale", 100) or 100))
+    return _th.pick_id(SETTINGS.get("theme"))
 
 
 def _splash_step(text=None, i=None):
@@ -5270,14 +5257,13 @@ def main():
             CRASHED[0] = True
     except Exception:
         buglog.caught()
-    if SETTINGS.get("splash", True):
-        try:
-            from .splash import Splash
-            from .style import apply_look
-            apply_look(*look_settings(), root)
-            SPLASH[0] = Splash(root, ICON_B64, pretty_version(), SETTINGS.get("league") or "")
-        except Exception:
-            SPLASH[0] = None
+    try:                               # the start-up screen (2.119.0: always - its switch is gone)
+        from .splash import Splash
+        from .style import apply_look
+        apply_look(look_settings(), root)
+        SPLASH[0] = Splash(root, ICON_B64, pretty_version(), SETTINGS.get("league") or "")
+    except Exception:
+        SPLASH[0] = None
     app = App(root)
     if CRASHED[0]:                     # 2.115.0: Report it - the form, filled in, with the crash in the app's log
         root.after(6000, lambda: app.app_toast(

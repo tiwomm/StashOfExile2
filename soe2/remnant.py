@@ -1,16 +1,12 @@
 """Expedition Remnant Price Checker (2.37.0): prices the reward list a remnant shows you, right next to each line.
 
-How: with a remnant's list open, press its key (Session tracker > Alerts, default Ctrl+Alt+R). The app takes ONE picture
-of the game window, reads the text in it with Windows' own OCR (Windows.Media.Ocr - part of Windows, nothing to
-install), finds the lines that are items (an item name, often with an amount like "Orb of Alchemy x3"), and puts a
-price tag next to each from poe.ninja (the same prices as Wealth), the best one marked ★. One action per key press:
-nothing is sent to the game; the tags go away after a while or with the key again.
-
-Auto (on by default - like the original, but without drawing a box): the app looks at the spot where the reward book
-opens (AREA, scaled to the game window like the Delirium / Ritual watchers) about every 0.7 s while the game is in
-front. Only when that spot looks like the book's parchment, and changed, is its text read; the tags come and go by
-themselves as the book opens and closes. If a key press finds the list somewhere else (another UI scale), that spot is
-learned instead. The game's log (Client.txt) says nothing when a remnant is opened, so the screen is the only way.
+How (2.119.0: always - the Auto switch and the Ctrl+Alt+R key are gone): the app looks at the spot where the reward
+book opens (AREA, scaled to the game window like the Delirium / Ritual watchers) about every 0.7 s while the game is in
+front. Only when that spot looks like the book's parchment, and changed, is its text read with Windows' own OCR
+(Windows.Media.Ocr - part of Windows, nothing to install); the lines that are items (a name, often with an amount like
+"Orb of Alchemy x3") get a price tag from poe.ninja (the same prices as Wealth), the best one marked ★. The tags come
+and go by themselves as the book opens and closes. Nothing is sent to the game. The game's log (Client.txt) says
+nothing when a remnant is opened, so the screen is the only way.
 
 Credit: the idea comes from PoE Ancients Price Helper by Pedro Quitério
 (https://github.com/pedro-quiterio/PoeAncientsPriceHelper). That project isn't open source, so none of its code, text
@@ -25,7 +21,6 @@ from . import buglog
 
 CREDIT_NAME = "PoE Ancients Price Helper (Pedro Quitério)"
 CREDIT_URL = "https://github.com/pedro-quiterio/PoeAncientsPriceHelper"
-DEFAULT_KEY = "Ctrl+Alt+R"
 SHOW_SECS = 12                    # 2.56.2 (feedback: "on screen too long"): was 30
 MATCH = 0.84                      # how close an OCR'd line must be to an item name (difflib ratio)
 LAST_WORD = 0.75                  # ... and its last word to the name's last word (2.40.0)
@@ -183,26 +178,6 @@ def area_rect(area, rect):
     l_, t, r, b = rect
     h = b - t
     return (int(l_ + area[0] * h), int(t + area[1] * h), min(r, int(l_ + area[2] * h)), min(b, int(t + area[3] * h)))
-
-
-def learn_area(rows, rect):
-    """A key press found reward lines outside the usual spot (UI scale, another layout) -> an area that covers them,
-    in game heights (a little bigger than what was seen, since a list can be longer)."""
-    if not rows:
-        return None
-    h = rect[3] - rect[1]
-    x0 = min(r["box"][0] for r in rows) / h
-    y0 = min(r["box"][1] for r in rows) / h
-    x1 = max(r["box"][2] for r in rows) / h
-    y1 = max(r["box"][3] for r in rows) / h
-    return (round(max(0.0, x0 - 0.05), 4), round(max(0.0, y0 - 0.06), 4), round(x1 + 0.05, 4), round(y1 + 0.2, 4))
-
-
-def inside(rows, area, rect):
-    """Every line a key press found is within the area (then nothing needs learning)."""
-    ar = area_rect(area, (0, 0, rect[2] - rect[0], rect[3] - rect[1]))
-    return all(ar[0] <= r["box"][0] and r["box"][2] <= ar[2] and ar[1] <= r["box"][1] and r["box"][3] <= ar[3]
-               for r in rows)
 
 
 def shift(lines, dx, dy):

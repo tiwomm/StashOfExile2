@@ -18,16 +18,14 @@ from .config import APP_VERSION, HEADERS, load_json, P, save_json, SETTINGS
 #   X-Rate-Limit-Ip-State: 12:300:0      (hits so far : seconds : seconds still restricted)
 # The limiter keeps a list of recent hits per kind of request (search / fetch / other) and waits
 # BEFORE a request would go over any limit, so we never trigger the 5-10 minute penalties.
-PACES = {
+PACE = {
     # margin: fraction of every limit we keep unused; gap: minimum seconds between two searches
     # cap300: most searches (and most fetches) we allow ourselves per 5 minutes - real 429s came at 10-15 even though
     #         the site reports 30, so this is deliberately lower. Every penalty lowers it by 1 (never below 3).
-    #         2.105.0 (feedback: 8 per 5 min was far too slow): Balanced 15, Fast 20, Gentle 8 - still half the
-    #         site's 30 (the trade site in your browser counts against the same limit).
-    # learn_cap: only learn mods in the background while usage is below this (None = never learn)
-    "Fast":     {"margin": 0.05, "gap": 1.5,  "cap300": 20, "learn_cap": 0.60},
-    "Balanced": {"margin": 0.15, "gap": 4.0,  "cap300": 15, "learn_cap": 0.40},
-    "Gentle":   {"margin": 0.25, "gap": 10.0, "cap300": 8,  "learn_cap": None},
+    #         2.105.0: 15 - half the site's 30 (the trade site in your browser counts against the same limit).
+    # learn_cap: only learn mods in the background while usage is below this
+    # 2.119.0 (UX pass): one fixed pace (was Fast / Balanced / Gentle in Settings) - this is the old Balanced
+    "margin": 0.15, "gap": 4.0, "cap300": 15, "learn_cap": 0.40,
 }
 
 
@@ -118,7 +116,7 @@ class Limiter:
                 "exchange" if "/exchange/" in url else "other")
 
     def _pace(self):
-        pc = dict(PACES.get(SETTINGS.get("pace"), PACES["Balanced"]))
+        pc = dict(PACE)
         pc["margin"] += self.extra_margin
         if time.time() < self.cooldown_until:           # recently penalised: slower and with a bigger safety margin
             pc["margin"] += 0.15
@@ -211,7 +209,7 @@ class Limiter:
             with self.lock:
                 now = time.time()
                 lines = [f"=== {time.strftime('%Y-%m-%d %H:%M:%S')}  429 on {cls}  ({url.split('/api/')[-1][:60]})  Retry-After {retry_after}s  [v{APP_VERSION}]",
-                         f"    pace {SETTINGS.get('pace')}, extra margin {self.extra_margin:.2f}, penalties so far {self.penalties}",
+                         f"    extra margin {self.extra_margin:.2f}, penalties so far {self.penalties}",
                          f"    app running for {int(time.time() - self.started)}s, sent {self.sent_total} requests since it started; "
                          f"in the last 300s: search {len(self._window('search', 300, time.time()))}, fetch {len(self._window('fetch', 300, time.time()))}, other {len(self._window('other', 300, time.time()))}",
                          "    our own count per rule (hits/max per seconds): " +
@@ -247,7 +245,7 @@ class Limiter:
         return max((h / mx for h, mx, _ in self.usage(cls)), default=0)
 
     def learn_ok(self):
-        cap = PACES.get(SETTINGS.get("pace"), PACES["Balanced"])["learn_cap"]
+        cap = PACE["learn_cap"]
         return bool(SETTINGS["learn"] and cap is not None and time.time() >= self.cooldown_until
                     and self.usage_ratio("search") < cap)
 
