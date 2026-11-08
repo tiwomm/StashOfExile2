@@ -102,11 +102,10 @@ class FavoritesPage:
         tv.bind("<ButtonRelease-1>", self.fav_drag_end, add="+")
         tv.bind("<<TreeviewOpen>>", lambda e: self.fav_group_open(True))
         tv.bind("<<TreeviewClose>>", lambda e: self.fav_group_open(False))
-        self.fav_empty = tk.Label(lf, text="No favorites yet\n\nTwo ways to add one:\n\n1. Price an item (Ctrl+Alt+C),\n"
-                                           "then ☆ Add to favorites under its card.\n\n2. Paste a trade-site link above\n"
-                                           "and press Add trade link.", bg=P1, fg=C["muted"], justify="left",
-                                  font=("Segoe UI", 9), padx=12, pady=12, highlightthickness=1,
-                                  highlightbackground=C["line"])
+        from .chrome import EmptyState                    # 2.120.0: one empty look everywhere
+        self.fav_empty = EmptyState(lf, "★", "No favorites yet\nPress ☆ Add to favorites on a price check, or paste "
+                                              "a trade-site link above.",
+                                    button=("Open Price Checks", lambda: self.shell.open("pricecheck")))
         # ---- the card
         mid = tk.Frame(wrap, bg=P2, width=480)
         mid.pack(side="left", fill="y")

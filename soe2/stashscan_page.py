@@ -213,7 +213,7 @@ class StashScanPage:
         unread = [(tab, n) for tab in ORDER for n in ss["unread"].get(tab, [])]
         par = self.dlg_parent()
         dlg = tk.Toplevel(par)
-        dlg.title("Scan stash (beta) - check the numbers")
+        dlg.title("Scan stash (BETA) - check the numbers")
         dlg.configure(bg=C["panel2"], padx=16, pady=12)
         dlg.transient(par)
         tk.Label(dlg, text="Check what was read. Double-click a number to fix it; Delete drops a row. Save sets these "

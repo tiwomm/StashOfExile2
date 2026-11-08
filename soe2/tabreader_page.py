@@ -265,7 +265,7 @@ class TabReaderPage:
         cfg = SETTINGS.get("pctab") or {}
         if not hasattr(self, "_wealth_add"):
             return
-        if cfg.get("amount") and self._wealth_add(cfg["amount"], cfg.get("currency") or "divine", "Price checks tab"):
+        if cfg.get("amount") and self._wealth_add(cfg["amount"], cfg.get("currency") or "divine", "Price Checks tab"):
             self.pc_msg.config(text="Added to Wealth. Sync there to count it (it's read the same way).", fg=C["green"])
         self.pctab_wealth_link()
 

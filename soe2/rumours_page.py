@@ -225,7 +225,7 @@ class RumoursPage:
             tk.Label(box, text=str(rumour or "").rstrip(".!"), bg=P["bg"], fg=P["muted"], font=(body, size), anchor="w").grid(
                 row=i, column=2, sticky="w", padx=(8, 0))
         if any(not mine.get(i) for _r, i, _b in rows):
-            tk.Label(box, text="- = not ranked yet (Map library)", bg=P["bg"], fg=P["muted"], font=(body, size),
+            tk.Label(box, text="- = not ranked yet (Map Library)", bg=P["bg"], fg=P["muted"], font=(body, size),
                      anchor="w").grid(row=len(rows) + 1, column=0, columnspan=3, sticky="w", pady=(2, 0))
         w.update_idletasks()
         x = (edge[0] if edge else max(b[2] for _r, _i, b in rows)) + 12

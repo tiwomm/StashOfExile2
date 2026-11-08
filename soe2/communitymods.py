@@ -31,7 +31,7 @@ _lock = threading.Lock()
 
 # 2.69.1: what "Community data sharing" sends - said the same way in Settings and in the first-run question
 WHAT = ("Community data sharing is off until you say yes. If you turn it on, the app sends anonymous data to its own "
-        "community server so everyone's numbers get better: mod prices, Mod book ratings, map ranks, your best times "
+        "community server so everyone's numbers get better: mod prices, Mod Book ratings, map ranks, your best times "
         "for the Leaderboards, new campaign zones, and the strats you upload. No account or character names, no "
         "items, no listing ids. It is never sold and never used for ads.")
 
@@ -39,8 +39,8 @@ WHAT = ("Community data sharing is off until you say yes. If you turn it on, the
 # new upload that rides on this switch gets a line here.
 DETAILS = (
     ("Mod prices your price checks see", "a summary only - how many listings and their middle price, per mod", "better "
-     "prices for everyone in the Mod book, most of all early in a league"),
-    ("Your Mod book ratings", "the S-F tier (F = ignore) you set for a mod", "the pooled ratings that decide which mods "
+     "prices for everyone in the Mod Book, most of all early in a league"),
+    ("Your Mod Book ratings", "the S-F tier (F = ignore) you set for a mod", "the pooled ratings that decide which mods "
      "matter"),
     ("Your map ranks", "the rank you gave a map", "the community map ranks"),
     ("Your best times", "map, boss, trial and act times with your class, level, deaths and league - under your "

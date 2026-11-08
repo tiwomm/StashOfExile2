@@ -119,7 +119,7 @@ class LibraryPage:
 
     # ---------------- filling
     def refresh_library(self, force=False):
-        if not force and not self.page_open("Under the hood"):
+        if not force and not self.page_open("Under the Hood"):
             return
         if not self.lib_loaded:
             self.lib_loaded = True

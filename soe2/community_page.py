@@ -71,9 +71,13 @@ class CommunityPage:
             self.cy_rows[label] = cb
         hr = tk.Frame(row, bg=P2)                                                               # 2.96.0
         hr.pack(fill="x", pady=(8, 0))
-        ttk.Button(hr, text="Help rate mods…", command=lambda: self.rm_open()).pack(side="left")
-        tk.Label(hr, text="One mod at a time - it tunes your price checks.",
-                 bg=P2, fg=C["muted"], font=("Segoe UI", 9)).pack(side="left", padx=(8, 0))
+        # 2.120.0: Rate Mods is a page under Price Checks now (it was a window opened from here)
+        tk.Label(hr, text="Your mod ratings are part of it:", bg=P2, fg=C["muted"], font=("Segoe UI", 9)).pack(
+            side="left")
+        lk = tk.Label(hr, text="Price Checks ↳ Rate Mods ›", bg=P2, fg=C["accent"], cursor="hand2",
+                      font=("Segoe UI", 9, "bold"))
+        lk.pack(side="left", padx=(6, 0))
+        lk.bind("<Button-1>", lambda e: self.rm_open())
         # ---- your community name
         row = section(PAGE, "Your community name", "Shown on what you post on Money Makers and beside your Leaderboard "
                                                    "times. Nothing else uses it.")

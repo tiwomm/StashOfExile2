@@ -139,7 +139,8 @@ class InsightsPage:
             sb.pack(side="right", fill="y")
             tv.pack(fill="both", expand=True)
             tv.tag_configure("star", foreground="#ffd9a8")
-            empty = tk.Label(box, text="", bg=C["panel"], fg=C["muted"], font=("Segoe UI", 9), justify="center")
+            from .chrome import EmptyState                    # 2.120.0: one empty look everywhere
+            empty = EmptyState(box)
             self.ins_tables[key] = (tv, empty)
             tv.bind("<<TreeviewSelect>>", lambda e, k=key: self.ins_show(k))
             return tv
@@ -151,8 +152,8 @@ class InsightsPage:
         mine.menu_actions = lambda sel: [("Show in Bulk Pricing", lambda: (self.ins_show("mine"), self.ins_open_record())),
                                          ("Price it again", lambda: (self.ins_show("mine"), self.ins_price_again())),
                                          ("Remove", lambda: self.ins_forget(sel), bool(sel), "Del")]
-        table(0, 1, "mods", "Mods worth the most", "What the Mod book learned: the typical asking price of listings "
-                                                    "with this mod. ★ = valuable in your Mod book.",
+        table(0, 1, "mods", "Mods worth the most", "What the Mod Book learned: the typical asking price of listings "
+                                                    "with this mod. ★ = valuable in your Mod Book.",
               (("mod", "Mod", 120, "w"), ("base", "On", 76, "w"), ("med", "Typical", 76, "e"), ("n", "Seen", 52, "e")))
         table(1, 0, "seen", "Most expensive listings seen", "The priciest listings your checks came across on the "
                                                      "trade site.",
@@ -228,7 +229,7 @@ class InsightsPage:
                             tags=("star",) if star else ())
             self.ins_modmap[iid] = f"{base}|{sid}"
         why = (f"Nothing learned about {ONE[kind]} mods yet.\nPrice a few {ONE[kind]}s (Ctrl+Alt+C or Bulk Pricing) -\n"
-               f"each one teaches the Mod book.")
+               f"each one teaches the Mod Book.")
         self._ins_empty(empty, not rows, why)
         self._ins_fill_seen(kind)
 
@@ -254,7 +255,7 @@ class InsightsPage:
         for _o, text, n, best in rows:
             tv.insert("", "end", values=("★ " + text, kind[:-1], fmt_div(best) if best is not None else "-",
                                          n or "-"), tags=("star",))
-        self._ins_empty(empty, not rows, f"No ★ {kind[:-1].lower()} mods yet.\nRate them in Mod book > "
+        self._ins_empty(empty, not rows, f"No ★ {kind[:-1].lower()} mods yet.\nRate them in Mod Book > "
                                          f"{kind[:-1]} rules,\nor right-click a mod in Regex.")
 
     def _ins_fill_seen(self, kind):
@@ -341,7 +342,7 @@ class InsightsPage:
             vals = tv.item(sel[0], "values")
             if self.ins_kind.get() in ("Waystones", "Relics"):
                 self.ins_det.config(fg=C["text"], text=(
-                    f"{vals[0]}  - rated valuable in your Mod book. "
+                    f"{vals[0]}  - rated valuable in your Mod Book. "
                     + (f"You've priced {vals[3]} with it; the best was worth {vals[2]}." if vals[3] != "-" else
                        "None priced with it yet.")))
             else:
@@ -759,7 +760,7 @@ class InsightsPage:
     @staticmethod
     def _ins_empty(lbl, show, text):
         if show:
-            lbl.config(text=text)
+            lbl.set_text(text)
             lbl.place(relx=0.5, rely=0.5, anchor="center")
         else:
             lbl.place_forget()

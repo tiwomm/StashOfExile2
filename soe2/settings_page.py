@@ -16,6 +16,10 @@ from .style import C, MONO, SegBook, KeyCapture, Tooltip
 from .chrome import section as chrome_section
 
 
+PC_SHOW = {"over": "Over the game (a card)", "front": "In the app (it comes to the front)",
+           "behind": "In the app (it stays behind the game)", "off": "Nowhere (the key does nothing)"}
+
+
 class SettingsPage:
     """Settings › every tab, and their handlers."""
 
@@ -32,26 +36,44 @@ class SettingsPage:
             cb.bind("<<ComboboxSelected>>", lambda e: (cmd(), self.root.after(20, self.root.focus_set)))
             return cb
 
-        # 2.113.1 (feedback: Hotkeys was the wrong place): the card over the game - the same switch as Price Checks' header
-        row = section("Price checking", "Over the game", "Your price check key shows the price in a card over the game "
-                                                          "instead of bringing the app forward. It takes the overlay's "
-                                                          "Style; drag and resize it - it remembers. Price Checks still "
-                                                          "gets every item.")
-        ttk.Checkbutton(row, text="Show price checks over the game", variable=self.pc_pop_var(),
-                        style="Card.TCheckbutton", command=self.pc_pop_set).pack(side="left")
+        # 2.120.0 (UX pass 2, feedback: like settings together): three groups - the price check key, which prices,
+        # Bulk Pricing - then fine tuning. Ctrl+D's four switches in two sections (Over the game, It opens Price Checks,
+        # Bring the app to the front) are one choice now; Pictures stays a switch.
+        self.settings_group("Price checking", "PRICE CHECK KEY", top=True)
+        row = section("Price checking", "Where the price shows", "Hover an item in game and press your price check "
+                                                                  "key (set it on Keys). Ctrl+Alt+C adds it to Bulk "
+                                                                  "Pricing instead. Over the game, the card takes the "
+                                                                  "overlay's Style; drag and resize it - it remembers. "
+                                                                  "Price Checks still gets every item.")
         self.pc_set_vars = getattr(self, "pc_set_vars", None) or {}
         self.pc_set_vars["pc_popup"] = self.pc_pop_var()
-        # 2.116.0 (P10): the price check key's switches - here, with the card over the game (they were at the
-        # bottom of Settings › Hotkeys)
-        row = section("Price checking", "Your price check key", "Hover an item in game and press it (Ctrl+D - set it "
-                                                                "on Keys): the game copies it once and Price Checks "
-                                                                "shows it. Ctrl+Alt+C adds it to Bulk Pricing instead.")
-        for k, label in (("pc_ctrl_c", "It opens Price Checks"),
-                         ("pc_front", "Bring the app to the front"), ("pc_art", "Show the items' pictures")):
-            v = tk.BooleanVar(value=bool(SETTINGS.get(k, True)))
-            cmd = (lambda k=k, v=v: (SETTINGS.__setitem__(k, bool(v.get())), save_json("settings.json", SETTINGS)))
-            self.pc_set_vars[k] = v
-            ttk.Checkbutton(row, text=label, variable=v, style="Card.TCheckbutton", command=cmd).pack(side="left", padx=(0, 16))
+        from .overlay import key_label
+        tk.Label(row, text=f"{key_label(SETTINGS.get('pc_key') or 'Ctrl+D')} shows it", **lab).pack(side="left",
+                                                                                                   padx=(0, 8))
+        self.pc_show_var = tk.StringVar(value=PC_SHOW[self.pc_show_get()])
+        cb = combo(row, self.pc_show_var, list(PC_SHOW.values()), self.on_pc_show, 30)
+        cb.pack(side="left")
+        self.pc_set_vars["pc_show"] = self.pc_show_var
+        self.pc_pop_var().trace_add("write", lambda *_a: self.pc_show_var.set(PC_SHOW[self.pc_show_get()]))
+        v = tk.BooleanVar(value=bool(SETTINGS.get("pc_art", True)))
+        self.pc_set_vars["pc_art"] = v
+        ttk.Checkbutton(row, text="Show the items' pictures", variable=v, style="Card.TCheckbutton",
+                        command=lambda: (SETTINGS.__setitem__("pc_art", bool(v.get())),
+                                         save_json("settings.json", SETTINGS))).pack(side="left", padx=(16, 0))
+        self.settings_group("Price checking", "WHICH PRICES")
+        row = section("Price checking", "Listings to price from", "Which trade listings count. Older listings are often "
+                                                                   "stale or from players who are gone. New items use a "
+                                                                   "change at once; Re-price all refreshes the rest.")
+        tk.Label(row, text="Listings", **lab).pack(side="left", padx=(0, 8))
+        combo(row, self.status_var, [l for l, _ in STATUS_OPTIONS], self.on_listing_rules, 22).pack(side="left")
+        tk.Label(row, text="Listed within", **lab).pack(side="left", padx=(16, 8))
+        combo(row, self.age_var, [a[0] for a in AGE_OPTIONS], self.on_listing_rules, 10).pack(side="left")
+        row = section("Price checking", "Prices", "The currency every price is shown in (Price Checks, Bulk Pricing, "
+                                                  "Wealth, Market Insights, the timer).")
+        tk.Label(row, text="Prices in", **lab).pack(side="left", padx=(0, 8))
+        combo(row, self.unit_var, [t for _k, t in PRICE_UNITS], self.on_price_unit, 22).pack(side="left")
+        ttk.Checkbutton(row, text="Copy an item's name when I click it", variable=self.copy_var,
+                        command=self.on_toggles).pack(side="left", padx=(16, 0))
         row = section("Price checking", "Valuable items", "A mod is valuable when the cheapest listings with it cost "
                                                            "at least this much. Valuable items are green in the list, and "
                                                            "can play a sound when they're priced.")
@@ -62,24 +84,12 @@ class SettingsPage:
         sp.bind("<FocusOut>", lambda e: self.on_good())
         tk.Label(row, text="div", **lab).pack(side="left", padx=(4, 16))
         ttk.Checkbutton(row, text="Sound", variable=self.snd_var, command=self.on_toggles).pack(side="left")
-        row = section("Price checking", "Listings to price from", "Which trade listings count. Older listings are often "
-                                                                   "stale or from players who are gone. New items use a "
-                                                                   "change at once; Re-price all refreshes the rest.")
-        tk.Label(row, text="Listings", **lab).pack(side="left", padx=(0, 8))
-        combo(row, self.status_var, [l for l, _ in STATUS_OPTIONS], self.on_listing_rules, 22).pack(side="left")
-        tk.Label(row, text="Listed within", **lab).pack(side="left", padx=(16, 8))
-        combo(row, self.age_var, [a[0] for a in AGE_OPTIONS], self.on_listing_rules, 10).pack(side="left")
+        self.settings_group("Price checking", "BULK PRICING (CTRL+ALT+C)")
         row = section("Price checking", "Skip cheap items", "Bulk Pricing doesn't search an item when every mod it would "
-                                                          "search sells for under this in the Mod book's own data and "
-                                                          "none is rated High; with only a few listings to go on it's "
-                                                          "marked \"check by hand\" instead. Price Checks always search.")
+                                                          "search sells for under this in the Mod Book's own data and "
+                                                          "none is rated High. With only a few listings to go on it's "
+                                                          "marked \"check by hand\" instead; Price Checks always search.")
         self.build_floor_settings(row)                                                           # 2.96.0
-        row = section("Price checking", "Prices", "The currency every price is shown in (Price Checks, Bulk Pricing, Wealth, Market "
-                                                  "Insights, the timer).")
-        tk.Label(row, text="Prices in", **lab).pack(side="left", padx=(0, 8))
-        combo(row, self.unit_var, [t for _k, t in PRICE_UNITS], self.on_price_unit, 22).pack(side="left")
-        ttk.Checkbutton(row, text="Copy an item's name when I click it", variable=self.copy_var,
-                        command=self.on_toggles).pack(side="left", padx=(16, 0))
         row = section("Price checking", "Account", "Your account name as the trade site shows it, like Name#1234. Read "
                                                    "tab (Stash tab) and Wealth use it to find your public tabs.")
         self.set_anchors["account"] = row.master
@@ -87,6 +97,36 @@ class SettingsPage:
         e = ttk.Entry(row, textvariable=self.acc_var, width=26)
         e.pack(side="left")
         e.bind("<Return>", lambda ev: self.root.focus_set())
+
+    def settings_group(self, page, text, top=False):
+        """2.120.0 (UX pass 2: hierarchy): a group title over the sections that belong together - brighter and bigger
+        than a section's note, with a rule to the edge, so a long tab reads as a few groups. -> the frame."""
+        f = tk.Frame(self.settings_pages[page][1], bg=C["panel"])
+        f.pack(fill="x", pady=((2 if top else 14), 6))
+        tk.Label(f, text=text, bg=C["panel"], fg=C["text"], font=("Segoe UI", 10, "bold"), anchor="w").pack(side="left")
+        tk.Frame(f, bg=C["line"], height=1).pack(side="left", fill="x", expand=True, padx=(10, 0))
+        return f
+
+    def pc_show_get(self):
+        """Where your price check key shows the price: over / front / behind / off (from the three old switches)."""
+        if not SETTINGS.get("pc_ctrl_c", True):
+            return "off"
+        if SETTINGS.get("pc_popup", False):
+            return "over"
+        return "front" if SETTINGS.get("pc_front", True) else "behind"
+
+    def on_pc_show(self):
+        k = next((k for k, t in PC_SHOW.items() if t == self.pc_show_var.get()), "front")
+        SETTINGS["pc_ctrl_c"] = k != "off"
+        if k != "off":
+            SETTINGS["pc_popup"] = k == "over"
+            if k != "over":
+                SETTINGS["pc_front"] = k == "front"
+        save_json("settings.json", SETTINGS)
+        if bool(self.pc_pop_var().get()) != bool(SETTINGS.get("pc_popup")):
+            self.pc_pop_var().set(bool(SETTINGS.get("pc_popup")))
+        if not SETTINGS.get("pc_popup"):
+            self.pcpop_close()
 
     def build_fine_tuning(self, row, keys=None, defaults=True):
         """The fine-tuning rows for `keys` (all when None); defaults: the Defaults button (for those rows)."""
@@ -210,9 +250,8 @@ class SettingsPage:
         self.league_box.bind("<<ComboboxSelected>>", lambda e: self.root.after(20, self.root.focus_set), add="+")
 
         # 2.59.0: the game - its log file (was a right-click in the Session timer) and window title (was in Chat commands)
-        row = section("General", "Game", "Client.txt is the game's own log file: the timer counts maps from it, and "
-                                         "the Breach and Ritual helpers read it. It's found by itself; pick it here if "
-                                         "not. The window title tells the app when Path of Exile 2 is in front.")
+        row = section("General", "Game log", "Client.txt is the game's own log file: the timer counts maps from it, "
+                                             "and the helpers read it. It's found by itself; pick it here if not.")
         self.set_anchors["game"] = row.master
         g = tk.Frame(row, bg=P2)
         g.pack(fill="x")
@@ -223,16 +262,8 @@ class SettingsPage:
         ttk.Button(g, text="Change…", command=self.tracker_pick_log).grid(row=0, column=2, padx=(8, 0))
         ttk.Button(g, text="Find it by itself", style="Quiet.TButton",
                    command=lambda: self.tracker_set_log("")).grid(row=0, column=3, padx=(8, 0))
-        tk.Label(g, text="Game window title", bg=P2, fg=C["text"]).grid(row=1, column=0, sticky="w", padx=(0, 8), pady=(8, 0))
-        self.ov_vars = getattr(self, "ov_vars", None) or {}          # (2.116.0: Keys - and chat - are built later)
-        if "poe_title" not in self.ov_vars:
-            self.ov_vars["poe_title"] = tk.StringVar(value=self._ensure_overlay().cfg.get("poe_title", "") or
-                                                     "Path of Exile 2")
-        te = ttk.Entry(g, textvariable=self.ov_vars["poe_title"], width=24)
-        te.grid(row=1, column=1, sticky="w", pady=(8, 0))
-        te.bind("<FocusOut>", lambda e: self.ov_save())
-        te.bind("<Return>", lambda e: (self.ov_save(), self.root.focus_set()))
         self.game_log_text()
+        # (2.120.0, UX pass 2: Game window title is in Settings › Advanced › Over the game)
 
         # 2.31.0 / 2.69.1: Community data sharing - 2.94.0: on its own page with your community name
         self.build_privacy_community(section)
@@ -245,11 +276,12 @@ class SettingsPage:
         wrow.pack(fill="x", pady=(8, 0))                # they're about the app's windows, not prices
         self.build_fine_tuning(wrow, keys=self.FINE_WINDOW, defaults=False)
 
-        row = section("General", "Labs (experimental)", "Features still being tried out: Wealth, Game search and "
-                                                         "Market Insights. They work, but may change a lot or have "
-                                                         "rough edges. When Labs is off they are hidden.")
+        # 2.120.0 (UX pass 2: one word for it): Beta features (was Labs)
+        row = section("General", "Beta features", "Features still being tried out: Wealth, Game Search and Market "
+                                                  "Insights. They work, but may change a lot or have rough edges; "
+                                                  "while this is off they are hidden.")
         self.labs_var = tk.BooleanVar(value=bool(SETTINGS.get("labs")))
-        ttk.Checkbutton(row, text="Show Labs features (marked BETA)", variable=self.labs_var,
+        ttk.Checkbutton(row, text="Show beta features (marked BETA)", variable=self.labs_var,
                         command=self.on_labs).pack(side="left")
 
         row = section("General", "Updates", f"You have {pretty_version()}"
@@ -273,8 +305,7 @@ class SettingsPage:
                     "They may have rough edges.")
 
         # ======== Appearance
-        tk.Label(pages["Appearance"][1], text="THE APP", bg=P1, fg=C["muted"], font=("Segoe UI", 9, "bold"),
-                 anchor="w").pack(fill="x", pady=(0, 4))
+        self.settings_group("Appearance", "THE APP", top=True)
         from .shell import PAGES as _PAGES
         self.launcher_var = tk.StringVar(value=dict(self.shell.LAUNCHERS).get(self.shell.cfg.get("launcher", "dock")))
         self.icons_var = tk.BooleanVar(value=bool(self.shell.cfg.get("desktop_icons")))     # (older code / tests)
@@ -292,9 +323,8 @@ class SettingsPage:
             ttk.Button(row, text="Default", command=lambda: self.shell.set_wallpaper(None), style="Quiet.TButton").pack(side="left", padx=8)
 
         from .shell import windows_24h
-        row = section("Appearance", "Clock", "The clock at the bottom right shows your PC's own time. It starts out "
-                                             "the way your Windows clock is set. The Session timer can show it "
-                                             "too, so you see the time in game.")
+        row = section("Appearance", "Clock", "How every clock reads - the one at the bottom right and the one on the "
+                                             "overlay's bar. It starts out the way your Windows clock is set.")
         fmt = SETTINGS.get("clock_format", "auto")
         if fmt not in ("12", "24"):
             fmt = "24" if windows_24h() else "12"
@@ -303,9 +333,8 @@ class SettingsPage:
                           values=["12-hour (3:45 PM)", "24-hour (15:45)"])
         cb.pack(side="left")
         cb.bind("<<ComboboxSelected>>", lambda e: self.on_clock())
-        # 2.52.0: the switch for the clock on the Session timer moved to the timer's own options
-        ttk.Button(row, text="On the timer: Overlay › Settings", style="Quiet.TButton",   # (2.116.0: its name now)
-                   command=lambda: self.ovh_open("Settings")).pack(side="left", padx=(16, 0))
+        # (2.120.0: the clock on the overlay's bar is switched in Overlay ↳ Settings › On the bar, with the other
+        # parts; this is the one place for how every clock reads)
 
 
         from .style import THEMES
@@ -324,9 +353,7 @@ class SettingsPage:
         # own colors and the start-up screen always shows
 
         # 2.58.0 (one Appearance tab): every look in one place - over the game too (was Overlays › Appearance)
-        self.ov_look_top = tk.Label(pages["Appearance"][1], text="OVER THE GAME", bg=P1, fg=C["muted"],
-                                    font=("Segoe UI", 9, "bold"), anchor="w")
-        self.ov_look_top.pack(fill="x", pady=(8, 4))
+        self.ov_look_top = self.settings_group("Appearance", "OVER THE GAME")
         self.build_overlay_look(pages["Appearance"][1])
 
         # ======== Keys (2.116.0, P10: Hotkeys and Chat commands on one tab)
@@ -350,19 +377,43 @@ class SettingsPage:
 
         # ======== Advanced
         # 2.59.0: settings that had no place in the app (only in settings.json)
+        self.settings_group("Price checking", "FINE TUNING")
         row = section("Price checking", "Advanced fine tuning", "Settings most players never touch. Each one saves at once; Defaults "
                                                  "puts all of them back.")
         self.set_anchors["fine"] = row.master
         self.build_fine_tuning(row, keys=[f[0] for f in self.FINE if f[0] not in self.FINE_WINDOW])
+        # 2.120.0 (UX pass 2: settings most players never need, in one place): the game's window title (was General ›
+        # Game) and Hide from screen captures (was Overlay ↳ Settings › Options and Quick settings)
+        row = section("Advanced", "Over the game", "The overlay and the in-game keys work only while the window with "
+                                                   "this title is in front. Change it only if your game's window has "
+                                                   "another name.")
+        g = tk.Frame(row, bg=P2)
+        g.pack(fill="x")
+        tk.Label(g, text="Game window title", bg=P2, fg=C["text"]).grid(row=0, column=0, sticky="w", padx=(0, 8))
+        self.ov_vars = getattr(self, "ov_vars", None) or {}          # (2.116.0: Keys - and chat - are built later)
+        if "poe_title" not in self.ov_vars:
+            self.ov_vars["poe_title"] = tk.StringVar(value=self._ensure_overlay().cfg.get("poe_title", "") or
+                                                     "Path of Exile 2")
+        te = ttk.Entry(g, textvariable=self.ov_vars["poe_title"], width=24)
+        te.grid(row=0, column=1, sticky="w")
+        te.bind("<FocusOut>", lambda e: self.ov_save())
+        te.bind("<Return>", lambda e: (self.ov_save(), self.root.focus_set()))
+        self.overlay_hide_capture()                                  # (2.89.1: its one-time reset)
+        self.adv_hidecap_var = tk.BooleanVar(value=bool(self.tracker_cfg().get("hide_capture", False)))
+        hc = ttk.Checkbutton(g, text="Hide the overlay from screen captures while the Ritual or Delirium watcher runs",
+                             variable=self.adv_hidecap_var, style="Card.TCheckbutton",
+                             command=lambda: self.ov_hidecap_set(bool(self.adv_hidecap_var.get())))
+        hc.grid(row=1, column=0, columnspan=2, sticky="w", pady=(8, 0))
+        Tooltip(hc, "Only needed if the bar covers a counter they read. While it's on, screenshots won't show the bar.")
         # 2.74.0: Under the hood (with the Mod book inside it) is hidden unless you want it - both keep working
-        row = section("Advanced", "Under the hood", "How the price checker reads an item (its base, which bases it "
+        row = section("Advanced", "Under the Hood", "How the price checker reads an item (its base, which bases it "
                                                     "is compared with, which trade-site search each mod becomes), and "
-                                                    "the Mod book: what it has learned about each mod from real "
+                                                    "the Mod Book: what it has learned about each mod from real "
                                                     "listings and the rules for which tablet / jewel mods count. Both "
                                                     "work on their own whether they're shown or not - learning, "
                                                     "community data sharing and Regex's ratings carry on.")
         self.adv_var = tk.BooleanVar(value=self.shell.advanced_on())
-        cb = ttk.Checkbutton(row, text="Show advanced tools - Price Checks ↳ Under the hood ↳ Mod book",
+        cb = ttk.Checkbutton(row, text="Show advanced tools - Price Checks ↳ Under the Hood ↳ Mod Book",
                              variable=self.adv_var, command=self.advanced_switch, style="Card.TCheckbutton")
         cb.pack(side="left")
         self.adv_switch = cb
@@ -396,7 +447,7 @@ class SettingsPage:
         row = section("Advanced", "Recent messages", "The last 20 messages the app showed you (they go away "
                                                      "by themselves, so they're kept here). Hover one to keep it up.")
         self.build_toast_log(row)
-        row = section("Advanced", "Your data", "Settings, price-check lists, the Mod book, Wealth and sessions are "
+        row = section("Advanced", "Your data", "Settings, price-check lists, the Mod Book, Wealth and sessions are "
                                                "kept here, shared by every version of the app.")
         tk.Label(row, text=self.data_dir_shown(), bg=P2, fg=C["text"], font=(MONO, 9)).pack(side="left")
         ttk.Button(row, text="Open folder", command=lambda: self.open_path(DATA_DIR), style="Quiet.TButton").pack(side="left", padx=8)
@@ -508,12 +559,6 @@ class SettingsPage:
         ttk.Button(b, text="Clear the list", style="Quiet.TButton", command=clear).pack(side="left")
         self.unm_win, self.unm_tv = w, tv
         return w
-
-    def on_click_through(self):
-        """2.74.0: Settings › Appearance › Overlay settings › Click-through."""
-        self.tracker_cfg()["click_through"] = bool(self.ov_ct_var.get())
-        self.tracker_save()
-        self.overlay_click_through()
 
     def advanced_switch(self):
         """2.74.0: Settings › Advanced › Show advanced tools."""
@@ -713,14 +758,7 @@ class SettingsPage:
         self.ov_op_pct = {"all": pct}
         hint(7, "100% = fully solid. Lower = see-through, text and all (24% is the lowest). Over a busy spot, "
                 "95-100% reads best.")
-        label(8, "Click-through")
-        self.ov_ct_var = tk.BooleanVar(value=bool(self.tracker_cfg().get("click_through", False)))
-        ct = ttk.Checkbutton(g, text="Clicks go through the overlay to the game",
-                             variable=self.ov_ct_var, command=self.on_click_through, style="Card.TCheckbutton")
-        ct.grid(row=8, column=1, sticky="w", pady=(8, 0))
-        self.ov_ct_switch = ct
-        hint(9, "On: the overlay's bar can't be clicked - its switches, ⏸ / ▶, Notes ▾ and Calc ▾ too (the Pause key "
-                "still pauses the timer). The lock only stops it moving. Notes and the calculator always take clicks.")
+        # (2.120.0: Click-through is part of Overlay ↳ Settings › Options › Mouse on the overlay)
         row = section("Appearance", "Motion", "Tooltips, notices and windows over the game fade in for a moment. "
                                               "Reduce motion makes them appear at once. Until you choose, it "
                                               "follows Windows' own \"Show animations\" setting.")
@@ -827,7 +865,7 @@ class SettingsPage:
         self.shell.set_labs(on)
         if not on and self.w_counting:                 # 2.10.0: the Session tracker isn't a Labs feature any more
             self.wealth_count_cancel()
-        self._say("Labs features are " + ("on (marked BETA)." if on else "hidden."), 6)
+        self._say("Beta features are " + ("on (marked BETA)." if on else "hidden."), 6)
 
     def fill_hotkeys(self):
         from .overlay import key_label, parse_key
@@ -1054,6 +1092,8 @@ class SettingsPage:
             for f in wrap.winfo_children():
                 acc = words(f, [])
                 title = getattr(f, "section_title", None)     # 2.69.0: the title is drawn on the header strip
+                if getattr(f, "section_note", ""):
+                    acc.append(f.section_note)                # 2.120.0: the whole note (most of it is in the ⓘ)
                 if title:
                     acc.insert(0, title)
                 if acc:

@@ -74,9 +74,10 @@ class LeaderboardPage:
             kv.column(c, width=w, anchor="e", stretch=False)
         kv.pack(fill="both", expand=True)
         kv.bind("<<TreeviewSelect>>", lambda e: self.lb_board_fill())
-        self.lb_keys_empty = tk.Label(left, text="No times on this board yet.\n\nPlay the campaign with the Campaign "
-                                                 "Helper, or run maps with the session timer - your times show here.",
-                                      bg=self._lb_field(), fg=C["muted"], wraplength=300, justify="center")
+        from .chrome import EmptyState                    # 2.120.0: one empty look everywhere
+        self.lb_keys_empty = EmptyState(left, "🏆", "No times on this board yet\nRun maps with the overlay's timer "
+                                                   "on, or play the campaign with the Campaign Helper.",
+                                        button=("Open the Overlay", lambda: self.shell.open("tracker")))
         self.lb_keys_tv = kv
         right = tk.Frame(split, bg=P1)
         right.pack(side="left", fill="both", expand=True, padx=(8, 0))

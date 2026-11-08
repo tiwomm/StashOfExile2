@@ -413,7 +413,7 @@ class App(SettingsPage, GearBookPage, PriceCheckPage, PricePopup, FavoritesPage,
     def build(self):
         r = self.root
         r.configure(bg=C["bg"])
-        self.PAGES = [PAGE_CHECKS, "Wealth", "Mod book", "Regex", "Notes",
+        self.PAGES = [PAGE_CHECKS, "Wealth", "Mod Book", "Regex", "Notes",
                       "Settings"]
         self.page_var = tk.StringVar(value=PAGE_CHECKS)           # the window in front (kept for older code)
         self.top_var = tk.BooleanVar(value=SETTINGS.get("on_top", True))
@@ -429,6 +429,9 @@ class App(SettingsPage, GearBookPage, PriceCheckPage, PricePopup, FavoritesPage,
         self.page_key["Item library"] = "library"                 # its names before 2.0 beta 13
         self.page_key["Item inspector"] = "library"
         self.page_key["Price breakdown"] = "library"
+        for old, key in (("Mod book", "modbook"), ("Map library", "maps"), ("Exchange rates", "rates"),
+                         ("Game search", "search"), ("Under the hood", "library")):
+            self.page_key.setdefault(old, key)                    # 2.120.0: their names before Title Case
         for m in self.mods:
             m.body = self.shell.register(m)
         self.shell.link_children()                                # 2.32.0: child tools under their parent
@@ -446,21 +449,16 @@ class App(SettingsPage, GearBookPage, PriceCheckPage, PricePopup, FavoritesPage,
         from . import themes as _th
         self.limit_lbl = tk.Label(strip, text="", bg=C["bg"], fg=C["muted"], padx=16, cursor="hand2", font=(MONO, 9))
         self.limit_lbl.bind("<Button-1>", self.open_limits)      # (2.60.0: the meters below say it; kept for code)
-        self.limit_meters, self.limit_counts = {}, {}             # 2.60.0: the trade limits as the theme's meters
+        # 2.120.0 (UX pass 2: "Search ◇◇◇◇◇ 0/5 (10s)" was jargon): one pill - Trade site: ready / wait 8s /
+        # paused 2:30 - with the numbers when you point at it (2.60.0 - 2.119.0 had two meters, Search and Fetch)
         _meter_ws = [tk.Frame(strip, bg=C["bg"], width=8)]
         _meter_ws[0].pack(side="right")
-        for cls in ("fetch", "search"):
-            cnt = tk.Label(strip, text="", bg=C["bg"], fg=C["muted"], cursor="hand2", font=("Segoe UI", 9))         # P1: one font in the bar (Segoe UI digits are fixed-width)
-            cnt.pack(side="right", padx=(4, 0))
-            m = _th.Meter(strip, 0.0, width=72, height=14, bg=C["bg"])
-            m.pack(side="right", padx=(4, 0))
-            lab = tk.Label(strip, text=cls.title(), bg=C["bg"], fg=C["muted"], cursor="hand2", font=("Segoe UI", 9))
-            lab.pack(side="right", padx=(16, 0))
-            _meter_ws += [cnt, m, lab]
-            for w in (cnt, m, lab):
-                w.bind("<Button-1>", self.open_limits)
-            m.configure(cursor="hand2")
-            self.limit_meters[cls], self.limit_counts[cls] = m, cnt
+        self.limit_pill = tk.Label(strip, text="● Trade site: ready", bg=C["bg"], fg=C["muted"], cursor="hand2",
+                                   font=("Segoe UI", 9), padx=8)
+        self.limit_pill.pack(side="right", padx=(16, 0))
+        self.limit_pill.bind("<Button-1>", self.open_limits)
+        self.limit_tip = Tooltip(self.limit_pill, "")
+        _meter_ws.append(self.limit_pill)
         self.rates_lbl = tk.Label(strip, text="Rates: …", bg=C["bg"], fg=C["muted"], padx=8, cursor="hand2", font=("Segoe UI", 9))   # P1: one font in the bar
         self.rates_lbl.pack(side="right")
         self.rates_lbl.bind("<Button-1>", self.open_rates)
@@ -947,7 +945,7 @@ class App(SettingsPage, GearBookPage, PriceCheckPage, PricePopup, FavoritesPage,
             ("toast_secs", "Messages stay for", "int", 1, 60, 1, "seconds"),
             ("learn", "Learn new mods in the background", "bool", 0, 0, 0, "looks up each new mod's price, slowly"),
             ("tray", "Minimize to the system tray", "bool", 0, 0, 0, "takes effect when the app starts"),
-            ("memory_shortcut", "Skip a search the Mod book already agrees on", "bool", 0, 0, 0,
+            ("memory_shortcut", "Skip a search the Mod Book already agrees on", "bool", 0, 0, 0,
              "5+ identical searches in the last day"),
             ("model_shortcut", "Let the model price an item by itself", "bool", 0, 0, 0,
              "only after 100 checked guesses at 99 percent"))
@@ -1640,14 +1638,21 @@ class App(SettingsPage, GearBookPage, PriceCheckPage, PricePopup, FavoritesPage,
             h, mx, per = max(LIMITER.usage(cls), key=lambda u: u[0] / u[1])
             worst = max(worst, h / mx)
             parts.append(f"{cls.title()} {h}/{mx} ({per_text(per)})")
-            m = getattr(self, "limit_meters", {}).get(cls)
-            if m is not None:
-                r = min(1.0, h / mx)
-                hot = st["blocked"] > 0 or r >= 0.8
-                m.set(r, on=C["red"] if hot else None)
-                self.limit_counts[cls].config(text=f"{h}/{mx} ({per_text(per)})",
-                                              fg=C["red"] if hot else C["muted"])
         dot = C["red"] if (st["blocked"] > 0 or worst >= 0.8) else C["good"] if worst >= 0.5 else C["green"]
+        pill = getattr(self, "limit_pill", None)
+        if pill is not None:
+            if st["blocked"] > 0:
+                ptxt, pfg = f"● Trade site: paused {mmss(st['blocked'])}", C["red"]
+            elif st["wait"] >= 2:
+                ptxt, pfg = f"● Trade site: wait {mmss(st['wait'])}", C["good"]
+            else:
+                ptxt, pfg = "● Trade site: ready", C["green"]
+            try:
+                pill.config(text=ptxt, fg=pfg)
+                self.limit_tip.text = ("How much of the trade site's limits the app has used (it stays well under "
+                                       "them):\n" + "\n".join(parts) + "\nClick for the details.")
+            except tk.TclError:
+                pass
         self.limit_lbl.config(text="    ".join(p.split(" ", 1)[1] for p in parts) + "   ", fg=dot)
 
     # ---------------- exchange rates
@@ -2133,7 +2138,7 @@ class App(SettingsPage, GearBookPage, PriceCheckPage, PricePopup, FavoritesPage,
                 self.info_card(msg, [("Add it to Wealth", lambda: (self.shell.open("wealth"), self.wealth_clip(text)))])
             else:
                 self.info_card(f"{name} x{qty:,} is a stack: currency isn't price-checked. (Counting it is part of "
-                               "Wealth, a Labs feature: Settings > Labs.)")
+                               "Wealth, a beta feature: Settings › General › Beta features.)")
             self.stack_price(name, qty)                       # 2.72.1: what it's worth, in the status line
             return
         from .wealth import parse_currency_item
@@ -2999,7 +3004,7 @@ class App(SettingsPage, GearBookPage, PriceCheckPage, PricePopup, FavoritesPage,
         rbar.pack(fill="x")
         tk.Label(rbar, text="Filter", bg=C["panel"], fg=C["muted"]).pack(side="left", padx=(0, 8))
         ttk.Entry(rbar, textvariable=ns.filt, width=18).pack(side="left")
-        ttk.Button(rbar, text="Rate mods one at a time…", style="Primary.TButton",               # 2.96.0
+        ttk.Button(rbar, text="Rate mods one at a time ›",               # 2.96.0 (2.120.0: opens Rate Mods)
                    command=lambda c=cat: self.rm_open(c)).pack(side="left", padx=(16, 0))
         more = ttk.Button(rbar, text="More ▾", style="Quiet.TButton")
         more.configure(command=lambda b=more, c=cat: self.mb_more(b, c))
@@ -3323,7 +3328,7 @@ class App(SettingsPage, GearBookPage, PriceCheckPage, PricePopup, FavoritesPage,
         changed = set(new) | (set(differ) if take else set()) | set(tiers_in)
         self._after_rules_change(changed)
         self.refresh_rules()
-        msg = (f"Imported {len(new) + (len(differ) if take else 0)} rule(s) into your Mod book"
+        msg = (f"Imported {len(new) + (len(differ) if take else 0)} rule(s) into your Mod Book"
                + (f" and {t_new} tier(s)" if t_new else "") + ".")
         if same:
             msg += f" {len(same)} you already had."
@@ -3528,7 +3533,7 @@ class App(SettingsPage, GearBookPage, PriceCheckPage, PricePopup, FavoritesPage,
                     buglog.caught()
         u = SETTINGS["price_unit"]
         if u not in ("auto", "divine") and not RATES.value(u):
-            self._say("No exchange rate for that currency yet (Exchange rates loads them): prices stay in divines "
+            self._say("No exchange rate for that currency yet (Exchange Rates loads them): prices stay in divines "
                       "until it has one.", 8)
 
     def price_manually(self, rec):
@@ -3666,7 +3671,7 @@ class App(SettingsPage, GearBookPage, PriceCheckPage, PricePopup, FavoritesPage,
                         chip.pack(side="right", padx=(0, 8))
         elif chip is not None and chip.winfo_manager():
             chip.pack_forget()
-        book = f"Mod book: {MARKET.mods_known()} mods learned"
+        book = f"Mod Book: {MARKET.mods_known()} mods learned"
         parts.append(book)
         from . import buglog
         if buglog.debug_on():                           # 2.116.0: Developer options › Debug mode
@@ -4490,7 +4495,7 @@ class App(SettingsPage, GearBookPage, PriceCheckPage, PricePopup, FavoritesPage,
             ttk.Button(srow, text="↺ Unmark sold", command=lambda: self.mark_selected("new")).pack(side="left")
         else:
             ttk.Button(srow, text="💰 Mark as sold", command=lambda: self.mark_selected("sold")).pack(side="left")
-        tk.Label(bx, text="A real sale teaches the Mod book what these mods are worth.", bg=P1, fg=C["muted"],
+        tk.Label(bx, text="A real sale teaches the Mod Book what these mods are worth.", bg=P1, fg=C["muted"],
                  font=("Segoe UI", 9), anchor="w").pack(fill="x")
         if mark == "removed":
             ttk.Button(bx, text="↺ Unmark removed", command=lambda: self.mark_selected("new")).pack(anchor="w", pady=(4, 0))
@@ -4958,7 +4963,7 @@ class App(SettingsPage, GearBookPage, PriceCheckPage, PricePopup, FavoritesPage,
     def refresh_memory(self, force=False):
         """The 'Mod book' page: everything learned from the listings the app has fetched. Asking prices only - never sale
         prices, and mostly the cheap end."""
-        if not hasattr(self, "mem_view") or (not force and not self.page_open("Mod book")):
+        if not hasattr(self, "mem_view") or (not force and not self.page_open("Mod Book")):
             return
         cat = self.rules_cat()                         # 2.99.0: the learned rows of the tab showing
         ns = self.rt.get(cat)
@@ -5000,7 +5005,7 @@ class App(SettingsPage, GearBookPage, PriceCheckPage, PricePopup, FavoritesPage,
             data = sorted((e for e in MODBOOK.values() if (not q or q in (e.get("base", "") + " " + e.get("text", "")).lower())
                            and self.mb_base_ok(e.get("base", ""), cat)),
                           key=lambda e: (e.get("floor") is None, -(e.get("floor") or 0)))
-            note = ("The old Mod book, kept as it was and no longer updated. Mods it found valuable carry on as learned "
+            note = ("The old Mod Book, kept as it was and no longer updated. Mods it found valuable carry on as learned "
                     "'High' (see Mod priority); this league's own data overrules them.")
         tv = ttk.Treeview(self.mem_frame, columns=[c[0] for c in cols], show="headings")
         for cid, title, w, anchor in cols:

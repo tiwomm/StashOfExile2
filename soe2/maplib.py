@@ -176,7 +176,7 @@ def read_ranks_file(path):
 
 def check_ranks(d):
     if not isinstance(d, dict) or d.get("format") != EXPORT_FORMAT or not isinstance(d.get("ranks"), dict):
-        raise ValueError("not a map ranks file (Map library > Export makes one)")
+        raise ValueError("not a map ranks file (Map Library > Export makes one)")
     out = {str(k)[:80]: v for k, v in d["ranks"].items() if v in RANKS and str(k).strip()}
     if not out:
         raise ValueError("it has no ranks in it")

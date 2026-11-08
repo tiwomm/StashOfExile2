@@ -37,11 +37,11 @@ class FeedPage:
         P1, P2 = C["panel"], C["panel2"]
         top = tk.Frame(tab, bg=P1, padx=12, pady=8)
         top.pack(fill="x")
-        tk.Label(top, text="Teach the Mod book a price", bg=P1, fg=C["accent"], font=("Segoe UI", 12, "bold"),
+        tk.Label(top, text="Teach the Mod Book a price", bg=P1, fg=C["accent"], font=("Segoe UI", 12, "bold"),
                  anchor="w").pack(fill="x")
         tk.Label(top, text="Know what an item is worth - an expensive tablet you saw sell, one the trade site hardly "
                            "shows? Ctrl+Alt+C it in game (or paste it), type its price if you know it, and Feed it. "
-                           "With a price it joins the listings the Mod book learns from, like a sale; the numbers "
+                           "With a price it joins the listings the Mod Book learns from, like a sale; the numbers "
                            "below show what changed. No price? Tick the mods that matter and they're rated High.",
                  bg=P1, fg=C["muted"], font=("Segoe UI", 9), wraplength=720, justify="left", anchor="w").pack(fill="x")
         body = tk.Frame(tab, bg=P1, padx=12)
@@ -70,7 +70,7 @@ class FeedPage:
         self.fd_note = tk.StringVar()
         ttk.Entry(g, textvariable=self.fd_note, width=26).grid(row=2, column=1, columnspan=2, sticky="w", padx=(8, 0))
         self.fd_rate = tk.BooleanVar(value=True)
-        ttk.Checkbutton(left, text="Also rate the ticked mods High in my Mod book", variable=self.fd_rate).pack(
+        ttk.Checkbutton(left, text="Also rate the ticked mods High in my Mod Book", variable=self.fd_rate).pack(
             anchor="w", pady=(8, 0))
         b = tk.Frame(left, bg=P2)
         b.pack(fill="x", pady=(8, 0))
@@ -85,7 +85,7 @@ class FeedPage:
         right.pack(side="left", fill="both", expand=True, padx=(12, 0))
         tk.Label(right, text="Its mods - click ☐ to pick the ones to rate High", bg=P1, fg=C["muted"],
                  font=("Segoe UI", 9), anchor="w").pack(fill="x")
-        cols = (("rate", "High", 50, "center"), ("mod", "Mod", 300, "w"), ("before", "Mod book now", 230, "w"),
+        cols = (("rate", "High", 50, "center"), ("mod", "Mod", 300, "w"), ("before", "Mod Book now", 230, "w"),
                 ("after", "After feeding", 230, "w"))
         self.fd_tv = ttk.Treeview(right, columns=[c[0] for c in cols], show="headings", height=7, selectmode="browse")
         for cid, title, w, a in cols:
@@ -174,7 +174,7 @@ class FeedPage:
                                                      _st_text(row["before"]) if sid else "the trade site doesn't know it",
                                                      ""), tags=() if sid else ("unknown",))
         known = sum(1 for s in sids if s)
-        self.fd_msg.config(text=f"{item['name']} ({item['base']}): {len(sids)} mods, {known} the Mod book can learn.",
+        self.fd_msg.config(text=f"{item['name']} ({item['base']}): {len(sids)} mods, {known} the Mod Book can learn.",
                            fg=C["muted"])
         return item
 
@@ -264,7 +264,7 @@ class FeedPage:
             MARKET.unfeed(sig)
         if sel:
             self.fd_fill_list()
-            self.fd_msg.config(text=f"Forgot {len(sel)} - the Mod book learned again without them.", fg=C["muted"])
+            self.fd_msg.config(text=f"Forgot {len(sel)} - the Mod Book learned again without them.", fg=C["muted"])
 
     def fd_export(self, path=None):
         path = path or filedialog.asksaveasfilename(parent=self.dlg_parent(), defaultextension=".csv",

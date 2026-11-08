@@ -6,7 +6,7 @@ are your vote in the community's ratings. (2.119.0: no rep - it was removed in 2
   * Rate mods: one mod at a time, S / A / B / C / D or F (ignore), from one rule set (Tablets, Jewels, Waystones, Relics,
     or a gear class you've price checked). S / A count as High, B / C / D as Normal (the tier says what's left out first).
   * The ask: once, after you've priced enough items; Not now asks again once, at random 3-7 days later; No thanks
-    never asks again. Rate mods is always in the Mod book.
+    never asks again. Rate Mods is always there (2.120.0: its own page, Price Checks ↳ Rate Mods).
   * Bulk Pricing floor: an item whose every searched mod sells for under your floor (1 div by default, per rule set)
     in the Mod book's own data - none rated High - isn't searched; with thin data it's marked "check by hand".
 GGG ToS: your own settings and the app's own data; nothing touches the game, nothing extra is fetched."""
@@ -176,7 +176,7 @@ def floor_check(rec, searchable, median_n):
             return None
         thin = thin or n < SURE_N
         top = max(top, med)
-    why = f"every mod sells for under {floor:g} div (the most: {top:.2f} div) in the Mod book"
+    why = f"every mod sells for under {floor:g} div (the most: {top:.2f} div) in the Mod Book"
     return ("hand", why + ", from few listings") if thin else ("skip", why)
 
 

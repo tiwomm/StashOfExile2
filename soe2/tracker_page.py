@@ -23,6 +23,8 @@ DEFAULTS = {"overlay": True, "locked": False, "x": 60, "y": 260, "w": 230, "h": 
             "character": "", "character_guess": "", "alerts_bar": True, "autostart": False,
             "clock": True,
             "merged": True, "layout": "xpbar"}   # 2.39.0 clock; 2.55.0: one overlay window; 2.74.0: Game bar
+OV_MOUSE = {"drag": "Drag to move", "locked": "Locked (it stays where it is)",
+            "through": "Clicks pass through to the game"}
 DEFAULT_KEYS = {"key_pause": "Pause",            # 2.74.3: the keyboard's Pause key (was Ctrl+Alt+P; start / stop's
                 "key_overlay": "F6"}             # Ctrl+Alt+S is gone - Ctrl+Alt keys got in the way of game input)           # 2.59.0: F6 shows / hides the whole overlay       # 2.10.0: set once, change them in Options
 # 2.54.0: the Session timer times your play; money lives in one place, Money Makers › Strat Tracker.
@@ -197,7 +199,7 @@ class TrackerPage:
                               size=9, pad=(12, 4))
         self.tk_view.pack(side="left")
         # 2.82.0 (feedback: Options "shouldn't be nested beside the map stats"): Overlay ↳ Settings, its own page
-        self.tk_settings_btn = ttk.Button(vrow, text="⚙  Overlay settings", style="Primary.TButton",
+        self.tk_settings_btn = ttk.Button(vrow, text="⚙  Overlay settings",     # (2.120.0: one orange per page)
                                           command=lambda: self.shell.open("ovset"))
         self.tk_settings_btn.pack(side="right")
         self.tk_pages = {}
@@ -486,20 +488,23 @@ class TrackerPage:
         self.tk_goal_dock = tk.BooleanVar(value=self.goalbar_docked())
         # ---- Options: how the overlay behaves
         box = card(0, 1, "Options", "How the overlay behaves.")
-        self.tk_rank_ask = tk.BooleanVar(value=self.rank_ask_on())               # 2.76.0
         self.tk_lock = tk.BooleanVar(value=bool(cfg.get("mlocked")))      # 2.59.0: ONE lock for the whole overlay
         self.tk_auto = tk.BooleanVar(value=bool(cfg.get("autostart")))           # 2.14.0
         self.overlay_hide_capture()                                                    # (2.89.1: its one-time reset)
-        self.tk_hidecap = tk.BooleanVar(value=bool(cfg.get("hide_capture", False)))   # 2.85.2
         dv = self.tk_goal_dock
-        switches(box, (("Lock the overlay (can't be moved)", self.tk_lock, self.tracker_options_changed),
-                       ("Start the overlay with StashOfExile2", self.tk_auto, self.tracker_options_changed),
-                       ("Ask me to rank maps", self.tk_rank_ask, self.tracker_rank_ask_switch),
-                       ("Dock the lines to the bar", dv, lambda: self.goal_dock_set(dv)),
-                       ("Hide from screen captures", self.tk_hidecap, self.tracker_hidecap_switch)), 2)
-        from .style import Tooltip
-        Tooltip(self.tk_ov_switches["Hide from screen captures"], "Only while the Ritual or Delirium watcher runs, and "
-                "only needed if the bar covers a counter they read. While it's on, screenshots won't show the bar.")
+        # 2.120.0 (UX pass 2): the mouse on the overlay is one choice here - Lock (this card), Click-through
+        # (Settings › Appearance) and the 🔒 were three switches for it. Ask me to rank maps moved to the Map Library;
+        # Hide from screen captures to Settings › Advanced.
+        mrow = tk.Frame(box, bg=P2)
+        mrow.pack(fill="x", pady=(0, 6))
+        tk.Label(mrow, text="Mouse on the overlay", bg=P2, fg=C["text"]).pack(side="left", padx=(0, 8))
+        self.tk_mouse = tk.StringVar(value=OV_MOUSE[self.ov_mouse_get()])
+        mcb = ttk.Combobox(mrow, textvariable=self.tk_mouse, values=list(OV_MOUSE.values()), state="readonly", width=30)
+        mcb.pack(side="left")
+        mcb.bind("<<ComboboxSelected>>", lambda e: (self.ov_mouse_set(next(
+            k for k, t in OV_MOUSE.items() if t == self.tk_mouse.get())), self.root.after(20, self.root.focus_set)))
+        switches(box, (("Start the overlay with StashOfExile2", self.tk_auto, self.tracker_options_changed),
+                       ("Dock the lines to the bar", dv, lambda: self.goal_dock_set(dv))), 2)
         op = tk.Frame(box, bg=P2)
         op.pack(fill="x", pady=(8, 0))
         ttk.Button(op, text="Overlay appearance…", command=self.appearance_open).pack(side="left")
@@ -520,11 +525,38 @@ class TrackerPage:
         self.camp_options(parent, into=camp)
         return o
 
-    def tracker_hidecap_switch(self):
-        """2.85.2: the bar in / out of screen captures."""
-        self.tracker_cfg()["hide_capture"] = bool(self.tk_hidecap.get())
+    def ov_hidecap_set(self, on):
+        """2.85.2: the bar in / out of screen captures (2.120.0: Settings › Advanced › Over the game)."""
+        self.tracker_cfg()["hide_capture"] = bool(on)
+        v = getattr(self, "adv_hidecap_var", None)
+        if v is not None and bool(v.get()) != bool(on):
+            v.set(bool(on))
         self.tracker_save()
         self.overlay_click_through()
+
+    def ov_mouse_get(self):
+        """drag / locked / through: what the mouse does on the overlay's bar."""
+        cfg = self.tracker_cfg()
+        if cfg.get("click_through", False):
+            return "through"
+        return "locked" if cfg.get("mlocked") else "drag"
+
+    def ov_mouse_set(self, mode):
+        """2.120.0 (UX pass 2): one choice for the mouse on the overlay - Drag to move, Locked, Clicks pass through
+        (to the game; the bar can't be clicked then - the Pause key still works)."""
+        cfg = self.tracker_cfg()
+        cfg["click_through"] = mode == "through"
+        self.overlay_lock(mode != "drag")                   # (saves and redraws; syncs the 🔒)
+        self.overlay_click_through()
+        self.ov_mouse_sync()
+
+    def ov_mouse_sync(self):
+        for name in ("tk_mouse", "ovq_mouse"):
+            v = getattr(self, name, None)
+            if v is not None:
+                want = OV_MOUSE[self.ov_mouse_get()]
+                if v.get() != want:
+                    v.set(want)
 
     def build_ov_settings(self, body):
         """2.82.0: Overlay ↳ Settings - cards (On the bar, Features, Campaign, Behaviour) and the Mechanic Helper."""
@@ -582,8 +614,9 @@ class TrackerPage:
         self.calc_save()
         self.merged_build()
 
-    def tracker_rank_ask_switch(self):
-        self.tracker_cfg()["rank_ask"] = bool(self.tk_rank_ask.get())
+    def rank_ask_set(self, on):
+        """2.76.0: the map rank cards on / off (2.120.0: the switch is on the Map Library)."""
+        self.tracker_cfg()["rank_ask"] = bool(on)
         self.tracker_save()
 
     def tracker_fline_switch(self, var=None):
@@ -611,6 +644,10 @@ class TrackerPage:
         self.overlay.cfg["notes_locked"] = bool(on)
         if getattr(self, "tk_lock", None) is not None and bool(self.tk_lock.get()) != bool(on):
             self.tk_lock.set(bool(on))
+        if not on and cfg.get("click_through"):               # (unlocked with the 🔒: clicks are taken again)
+            cfg["click_through"] = False
+            self.overlay_click_through()
+        self.ov_mouse_sync()
         self.tracker_save()
         self.overlay.save_settings()
         self.merged_build()

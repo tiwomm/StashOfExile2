@@ -62,175 +62,191 @@ class RateModsPage:
     def rm_queue(self, s):
         return RM.queue(s, self.rm_gear_mods(s) if s.startswith(("gear:", "unique:")) else None)
 
-    def rm_open(self, set_name=None):
-        """The rater. set_name: straight to that set (the Mod book's button); None: first, which you know best."""
-        old = getattr(self, "rm_win", None)
-        if old is not None and old.winfo_exists():
-            on_top(old)
-            if set_name:
-                self.rm_pick(set_name)
-            return old
-        P2 = C["panel2"]
-        w = self.rm_win = tk.Toplevel(self.root, bg=P2)
-        w.title("Rate mods")
-        w.transient(self.root)
-        w.resizable(False, False)
-        self.rm_box = tk.Frame(w, bg=P2, padx=16, pady=16)
-        self.rm_box.pack(fill="both", expand=True)
+    # 2.120.0 (UX pass 2, feedback: "window drawing is really janky"): a page, Price Checks ↳ Rate Mods - it was a
+    # window that changed size between its two views (and shared self.rm_win with the Expedition tags, so showing
+    # remnant prices could break it). The item kinds stay on the left, the rater on the right; nothing is rebuilt
+    # between mods, only re-filled.
+    def build_ratemods_page(self, body):
+        P1, P2 = C["panel"], C["panel2"]
+        page = self.rm_page = tk.Frame(body, bg=P1, takefocus=1, highlightthickness=0)
+        page.pack(fill="both", expand=True)
+        tk.Label(page, text="Rate how much each mod matters to an item's price. Your price checks use it at once; "
+                            "with Community data sharing on, it's your vote too.", bg=P1, fg=C["muted"],
+                 font=("Segoe UI", 9), anchor="w", justify="left").pack(fill="x", padx=12, pady=(8, 4))
+        wrap = tk.Frame(page, bg=P1)
+        wrap.pack(fill="both", expand=True, padx=8, pady=(4, 8))
+        # ---- left: what to rate
+        from .style import ScrollArea
+        left = tk.Frame(wrap, bg=P2, width=270, highlightthickness=1, highlightbackground=C["line"])
+        left.pack(side="left", fill="y")
+        left.pack_propagate(False)
+        tk.Label(left, text="Which items do you know best?", bg=P2, fg=C["text"], font=("Segoe UI", 10, "bold"),
+                 anchor="w", padx=10, pady=8).pack(fill="x")
+        sa = ScrollArea(left, bg=P2)
+        sa.pack(fill="both", expand=True)
+        self.rm_list = sa.inner
+        self.rm_rows = {}
+        # ---- right: one mod at a time (built once)
+        right = tk.Frame(wrap, bg=P1)
+        right.pack(side="left", fill="both", expand=True, padx=(12, 0))
+        card = tk.Frame(right, bg=P2, padx=24, pady=20, highlightthickness=1, highlightbackground=C["line"])
+        card.pack(fill="x", anchor="n")
+        self.rm_box = card
+        top = tk.Frame(card, bg=P2)
+        top.pack(fill="x")
+        self.rm_head = tk.Label(top, text="", bg=P2, fg=C["text"], font=("Segoe UI", 12, "bold"), anchor="w")
+        self.rm_head.pack(side="left")
+        self.rm_count = tk.Label(top, text="", bg=P2, fg=C["muted"], font=("Segoe UI", 9), anchor="e")
+        self.rm_count.pack(side="right")
+        self.rm_mod = tk.Label(card, text="", bg=C["panel"], fg=C["magic"], font=("Segoe UI", 13), wraplength=520,
+                               justify="center", padx=12, pady=20, height=3)
+        self.rm_mod.pack(fill="x", pady=(12, 8))
+        self.rm_now = tk.Label(card, text="", bg=P2, fg=C["muted"], font=("Segoe UI", 9))
+        self.rm_now.pack()
+        row = tk.Frame(card, bg=P2)
+        row.pack(pady=(8, 4))
+        self.rm_btns = {}
+        for g, label in SHOWN:                           # one row of tiers; yours is the lit one
+            b = ttk.Button(row, text=label, width=5, command=lambda g=g: self.rm_rate(g))
+            b.pack(side="left", padx=4)
+            self.rm_btns[g] = b
+            if g == "ignore":
+                Tooltip(b, F_TIP)
+        nav = tk.Frame(card, bg=P2)
+        nav.pack(pady=(8, 0))
+        self.rm_nav = {}
+        for k, label, cmd in (("back", "‹ Back", lambda: self.rm_step(-1)), ("next", "Next ›", lambda: self.rm_step(1))):
+            b = ttk.Button(nav, text=label, style="Quiet.TButton", width=10, command=cmd)
+            b.pack(side="left", padx=4)
+            self.rm_nav[k] = b
+        self.rm_done_lbl = tk.Label(card, text="", bg=P2, fg=C["good"], font=("Segoe UI", 9))
+        self.rm_done_lbl.pack(pady=(8, 0))
+        tk.Label(right, text=WHAT, bg=P1, fg=C["muted"], font=("Segoe UI", 9), wraplength=560, justify="left",
+                 anchor="w").pack(fill="x", pady=(10, 0))
+        tk.Label(right, text="Keys: S A B C D F rate it · ← → move", bg=P1, fg=C["muted"], font=("Segoe UI", 9),
+                 anchor="w").pack(fill="x", pady=(4, 0))
         for k, g in (("s", "S"), ("a", "A"), ("b", "B"), ("c", "C"), ("d", "D"), ("f", "ignore"), ("i", "ignore")):
-            w.bind(k, lambda e=None, g=g: self.rm_rate(g) if getattr(self, "rm_view", "") == "rate" else None)
-        w.bind("<Right>", lambda e=None: self.rm_step(1))
-        w.bind("<Left>", lambda e=None: self.rm_step(-1))
-        w.protocol("WM_DELETE_WINDOW", self.rm_close)
-        self.rm_rated = 0
-        self.rm_q, self.rm_i = [], 0
+            for w in (page, card):
+                w.bind(k, lambda e=None, g=g: self.rm_rate(g))
+        for w in (page, card):
+            w.bind("<Right>", lambda e=None: self.rm_step(1))
+            w.bind("<Left>", lambda e=None: self.rm_step(-1))
+        page.bind("<Button-1>", lambda e: page.focus_set(), add="+")
+        self.rm_rated, self.rm_q, self.rm_i, self.rm_set = 0, [], 0, None
+        self.rm_view = "rate"
+        return page
+
+    def rm_on_show(self):
+        """The page came up: the list filled (counts change as you price check), the last kind picked."""
+        self.rm_fill_list()
+        if not getattr(self, "rm_set", None):
+            sets = dict(self.rm_sets())
+            last = RM.SETTINGS.get("rate_set")
+            self.rm_pick(last if last in sets else next(iter(sets)))
+        try:
+            self.rm_page.focus_set()
+        except (AttributeError, tk.TclError):
+            pass
+
+    def rm_open(self, set_name=None):
+        """Price Checks ↳ Rate Mods (set_name: straight to that kind - the Mod book's button)."""
+        if getattr(self, "rm_page", None) is None:
+            return None
+        self.shell.open("ratemods")
         if set_name:
             self.rm_pick(set_name)
-        else:
-            self.rm_picker()
-        try:
-            from .style import center_over                # 2.114.0: centred over the app (2.114.3: on its monitor)
-            center_over(w, self.dlg_parent())
-        except tk.TclError:
-            pass
-        on_top(w)
-        return w
+        return self.rm_page
 
-    def _rm_clear(self):
-        for c in self.rm_box.winfo_children():
+    def rm_fill_list(self):
+        """The item kinds, grouped - Map items, Gear, Uniques you've checked - each with how many are left."""
+        box = getattr(self, "rm_list", None)
+        if box is None:
+            return
+        for c in box.winfo_children():
             c.destroy()
-
-    def rm_picker(self):
-        """2.97.0: which items do you know best? Each set with how many of its mods you haven't rated."""
-        self._rm_clear()
-        self.rm_view = "pick"
-        P2, box = C["panel2"], self.rm_box
-        tk.Label(box, text="Which items do you know best?", bg=P2, fg=C["text"], font=("Segoe UI", 12, "bold"),
-                 anchor="w").pack(fill="x")
-        tk.Label(box, text="Pick the one you're most sure about. You can switch any time.", bg=P2, fg=C["muted"],
-                 font=("Segoe UI", 9), anchor="w").pack(fill="x", pady=(4, 12))
-        last = RM.SETTINGS.get("rate_set")
-        self.rm_pick_btns = {}
-        # 2.114.0 (P8: the box was 40 buttons tall, past the bottom of the app): grouped - Map items, Gear, Uniques -
-        # four across, each "N to rate" with a bar; the gear / unique part scrolls when it doesn't fit.
+        self.rm_rows = {}
+        P2 = C["panel2"]
         groups = [("Map items", []), ("Gear", []), ("Uniques you've checked", [])]
         for s, label in self.rm_sets():
             g = 1 if s.startswith("gear:") else 2 if s.startswith("unique:") else 0
             groups[g][1].append((s, label.split(": ", 1)[-1]))
-        cols = 4
-        try:
-            room = max(420, self.root.winfo_height() - 260)
-        except tk.TclError:
-            room = 500
-        from .style import ScrollArea
-        sa = ScrollArea(box, bg=P2)
-        sa.pack(fill="both", expand=True)
-        inner = sa.inner
         for title, sets in groups:
             if not sets:
                 continue
-            tk.Label(inner, text=title.upper(), bg=P2, fg=C["muted"], font=("Segoe UI", 9, "bold"),
-                     anchor="w").pack(fill="x", pady=(8, 4))
-            grid = tk.Frame(inner, bg=P2)
-            grid.pack(fill="x")
-            for i, (s, label) in enumerate(sets):
-                self._rm_tile(grid, s, label, last).grid(row=i // cols, column=i % cols, sticky="ew",
-                                                        padx=(0 if i % cols == 0 else 6, 0), pady=(0, 8))
-            for c in range(cols):
-                grid.columnconfigure(c, weight=1, uniform="p")
-        inner.update_idletasks()
-        sa.canvas.configure(height=min(inner.winfo_reqheight(), room), width=inner.winfo_reqwidth())
-        bot = tk.Frame(box, bg=P2)
-        bot.pack(fill="x", pady=(8, 0))
-        ttk.Button(bot, text="Done", style="Quiet.TButton", command=self.rm_close).pack(side="right")
+            tk.Label(box, text=title.upper(), bg=P2, fg=C["muted"], font=("Segoe UI", 8, "bold"), anchor="w",
+                     padx=10).pack(fill="x", pady=(8, 2))
+            for s, label in sets:
+                self._rm_row(box, s, label)
+        self._rm_paint_rows()
 
-    def _rm_tile(self, parent, s, label, last):
-        """One set: a button (its name, how many are left) and a thin bar of how much is rated."""
+    def _rm_row(self, parent, s, label):
         P2 = C["panel2"]
         q = self.rm_queue(s)
         left = sum(1 for keys, _t in q if RM.current(keys) is None)
-        sub = (f"{left} to rate" if left else "all rated") if q else "nothing yet"
-        cell = tk.Frame(parent, bg=P2)
-        st = ttk.Style()
-        for name in ("Tile.TButton", "Tile.Primary.TButton"):        # two lines, both centred
-            st.configure(name, justify="center")
-        b = ttk.Button(cell, text=f"{label}\n{sub}", width=17, style="Tile.Primary.TButton" if s == last else "Tile.TButton",
-                       command=lambda s=s: self.rm_pick(s))
-        b.pack(fill="x")
-        if not q:
-            b.state(["disabled"])
-        done = (len(q) - left) / len(q) if q else 0.0
-        bar = tk.Canvas(cell, width=1, height=3, bg=C["line"], highlightthickness=0, bd=0)
-        bar.pack(fill="x")
-        bar.bind("<Configure>", lambda e, c=bar, f=done: (c.delete("all"), c.create_rectangle(
-            0, 0, int(e.width * f), 3, fill=C["accent"], width=0)))
-        self.rm_pick_btns[s] = b
-        return cell
+        sub = (f"{left} to rate" if left else "all rated ✓") if q else "nothing yet"
+        row = tk.Frame(parent, bg=P2, cursor="hand2" if q else "", padx=10, pady=3)
+        row.pack(fill="x")
+        name = tk.Label(row, text=label, bg=P2, fg=C["text"] if q else C["muted"], anchor="w", font=("Segoe UI", 9))
+        name.pack(side="left")
+        cnt = tk.Label(row, text=sub, bg=P2, fg=C["muted"], anchor="e", font=("Segoe UI", 8))
+        cnt.pack(side="right")
+        if q:
+            for w in (row, name, cnt):
+                w.bind("<Button-1>", lambda e, s=s: self.rm_pick(s))
+        self.rm_rows[s] = (row, name, cnt, bool(q))
+        return row
+
+    def _rm_paint_rows(self):
+        cur = getattr(self, "rm_set", None)
+        for s, (row, name, cnt, has) in getattr(self, "rm_rows", {}).items():
+            on = s == cur
+            bg = C["odd"] if on else C["panel2"]
+            try:
+                for w in (row, name, cnt):
+                    w.config(bg=bg)
+                name.config(fg=C["accent"] if on else (C["text"] if has else C["muted"]),
+                            font=("Segoe UI", 9, "bold" if on else "normal"))
+            except tk.TclError:
+                pass
+
+    def _rm_recount(self, s):
+        r = getattr(self, "rm_rows", {}).get(s)
+        if not r:
+            return
+        q = self.rm_queue(s)
+        left = sum(1 for keys, _t in q if RM.current(keys) is None)
+        try:
+            r[2].config(text=(f"{left} to rate" if left else "all rated ✓") if q else "nothing yet")
+        except tk.TclError:
+            pass
 
     def rm_pick(self, set_name):
         RM.SETTINGS["rate_set"] = set_name
         labels = dict(self.rm_sets())
         self.rm_set = set_name
         self.rm_set_label = labels.get(set_name, set_name)
-        self.rm_rater()
+        if getattr(self, "rm_head", None) is not None:
+            self.rm_head.config(text=self.rm_set_label.split(": ", 1)[-1])
+            self.rm_done_lbl.config(text="")
+        self._rm_paint_rows()
         self.rm_load()
-
-    def rm_rater(self):
-        self._rm_clear()
-        self.rm_view = "rate"
-        P2, box = C["panel2"], self.rm_box
-        top = tk.Frame(box, bg=P2)
-        top.pack(fill="x")
-        tk.Label(top, text=f"Rate mods · {self.rm_set_label}", bg=P2, fg=C["text"],
-                 font=("Segoe UI", 12, "bold")).pack(side="left")
-        ttk.Button(top, text="Change", style="Quiet.TButton", command=self.rm_picker).pack(side="right")
-        tk.Label(box, text="One mod at a time. Each rating tunes your own price checks at once - and with Community "
-                           "data sharing on, it's your vote in the community's ratings too.",
-                 bg=P2, fg=C["muted"], font=("Segoe UI", 9), wraplength=480, justify="left", anchor="w").pack(
-            fill="x", pady=(8, 8))
-        self.rm_count = tk.Label(box, text="", bg=P2, fg=C["muted"], font=("Segoe UI", 9), anchor="w")
-        self.rm_count.pack(fill="x")
-        self.rm_mod = tk.Label(box, text="", bg=C["panel"], fg=C["magic"], font=("Segoe UI", 12), wraplength=470,
-                               justify="center", padx=12, pady=16)
-        self.rm_mod.pack(fill="x", pady=(4, 8))
-        self.rm_now = tk.Label(box, text="", bg=P2, fg=C["muted"], font=("Segoe UI", 9), anchor="w")
-        self.rm_now.pack(fill="x")
-        row = tk.Frame(box, bg=P2)
-        row.pack(pady=(8, 4))
-        self.rm_btns = {}
-        for g, label in SHOWN:                           # 2.97.0: one row of tiers; yours is the lit one
-            b = ttk.Button(row, text=label, width=5, command=lambda g=g: self.rm_rate(g))
-            b.pack(side="left", padx=4)
-            self.rm_btns[g] = b
-            if g == "ignore":
-                Tooltip(b, F_TIP)
-        tk.Label(box, text=WHAT, bg=P2, fg=C["muted"], font=("Segoe UI", 9), wraplength=480, justify="left",
-                 anchor="w").pack(fill="x", pady=(8, 8))
-        self.rm_done_lbl = tk.Label(box, text="", bg=P2, fg=C["good"], font=("Segoe UI", 9))
-        self.rm_done_lbl.pack()
-        if self.rm_rated:
-            self.rm_done_lbl.config(text=f"{self.rm_rated} rated - thanks!")
-        bot = tk.Frame(box, bg=P2)                       # 2.97.0: Back | Next | Done, centered under the tiers
-        bot.pack(pady=(8, 0))
-        self.rm_nav = {}
-        for k, label, style, cmd in (("back", "Back", "TButton", lambda: self.rm_step(-1)),
-                                     ("next", "Next", "TButton", lambda: self.rm_step(1)),
-                                     ("done", "Done", "Quiet.TButton", self.rm_close)):
-            b = ttk.Button(bot, text=label, style=style, width=10, command=cmd)
-            b.pack(side="left", padx=4)
-            self.rm_nav[k] = b
 
     def rm_load(self):
         self.rm_q = self.rm_queue(self.rm_set)
-        self.rm_i = 0
+        cur = [i for i, (keys, _t) in enumerate(self.rm_q) if RM.current(keys) is None]
+        self.rm_i = cur[0] if cur else 0                 # (starts at the first one you haven't rated)
         self.rm_show()
 
     def rm_show(self):
+        if getattr(self, "rm_mod", None) is None:
+            return
         q, i = self.rm_q, self.rm_i
         if not q:
             self.rm_mod.config(text="Nothing to rate here yet - price check a few of these first.")
             self.rm_now.config(text="")
             self.rm_count.config(text="")
+            for b in list(self.rm_btns.values()) + list(self.rm_nav.values()):
+                b.state(["disabled"])
             return
         i = self.rm_i = max(0, min(i, len(q) - 1))
         keys, text = q[i]
@@ -239,14 +255,13 @@ class RateModsPage:
         self.rm_mod.config(text=text)
         self.rm_now.config(text=f"Yours: {grade_label(cur)}" if cur else "Not rated by you yet")
         for g, b in self.rm_btns.items():
+            b.state(["!disabled"])
             b.config(style="Primary.TButton" if g == cur else "TButton")
-        nav = getattr(self, "rm_nav", {})
-        if nav:
-            nav["back"].state(["!disabled"] if i > 0 else ["disabled"])
-            nav["next"].state(["!disabled"] if i < len(q) - 1 else ["disabled"])
+        self.rm_nav["back"].state(["!disabled"] if i > 0 else ["disabled"])
+        self.rm_nav["next"].state(["!disabled"] if i < len(q) - 1 else ["disabled"])
 
     def rm_rate(self, grade):
-        if not getattr(self, "rm_q", None) or getattr(self, "rm_view", "") != "rate":
+        if not getattr(self, "rm_q", None):
             return None
         keys, _text = self.rm_q[self.rm_i]
         RM.apply(keys, grade)
@@ -257,30 +272,35 @@ class RateModsPage:
                     ("pc", "fav") and any(RM.key_for(rec, m) in keys for m in rec["item"]["mods"])]
         if affected:
             self.reprice(affected)
+        self._rm_recount(self.rm_set)
+        self._rm_rules_later()
         if last:
-            self.rm_show()                                 # the last one: it stays, lit, until Done / Change
+            self.rm_show()                                 # the last one: it stays, lit
             self.rm_done_lbl.config(text=f"{self.rm_rated} rated - that's the lot here. Thanks!")
         else:
             self.rm_step(1)
         return grade
 
     def rm_step(self, d):
-        if getattr(self, "rm_view", "") != "rate":
-            return
         self.rm_i = getattr(self, "rm_i", 0) + d
         self.rm_show()
 
-    def rm_close(self):
-        w, self.rm_win = getattr(self, "rm_win", None), None
-        if w is not None:
+    def _rm_rules_later(self):
+        """The Mod book's lists follow your ratings - once you pause (they were redrawn when the window closed)."""
+        job = getattr(self, "_rm_rules_job", None)
+        if job is not None:
             try:
-                w.destroy()
+                self.root.after_cancel(job)
             except tk.TclError:
                 pass
-        try:
-            self.refresh_rules()
-        except Exception:
-            buglog.caught()
+
+        def go():
+            self._rm_rules_job = None
+            try:
+                self.refresh_rules()
+            except Exception:
+                buglog.caught()
+        self._rm_rules_job = self.root.after(1500, go)
 
     # ---------------------------------------------------------------- the ask (once; Not now = once more, later)
     def rm_ask_tick(self):
@@ -323,8 +343,8 @@ class RateModsPage:
             b = ttk.Button(row, text=label, style=style, command=lambda k=k: pick(k))
             b.pack(side="left", padx=4)
             self.rm_ask_btns[k] = b
-        tk.Label(box, text="Not now asks once more in a few days. Either way, Rate mods stays in the Mod book and "
-                           "Settings › Privacy & community.",
+        tk.Label(box, text="Not now asks once more in a few days. Either way, it's always in Price Checks ↳ "
+                           "Rate Mods.",
                  bg=P2, fg=C["muted"], font=("Segoe UI", 9), wraplength=440, justify="center").pack(pady=(12, 0))
         w.protocol("WM_DELETE_WINDOW", lambda: pick("not_now"))
         self.rm_ask_pick = pick

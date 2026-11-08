@@ -57,6 +57,13 @@ class MapLibraryPage:
         tk.Label(bar, text="Rank", bg=P1, fg=C["muted"]).pack(side="right", padx=(12, 8))
         from .style import flowify
         flowify(bar)
+        # 2.120.0 (UX pass 2: each setting where it's used): the rank cards' switch (was Overlay ↳ Settings › Options)
+        arow = tk.Frame(page, bg=P1)
+        arow.pack(fill="x", pady=(0, 8))
+        self.ml_rank_ask = tk.BooleanVar(value=self.rank_ask_on())
+        ttk.Checkbutton(arow, text="Ask me to rank a map I haven't ranked (a card when I leave it)",
+                        variable=self.ml_rank_ask, style="Card.TCheckbutton",
+                        command=lambda: self.rank_ask_set(bool(self.ml_rank_ask.get()))).pack(side="left")
 
         SectionBar(page, "Maps").pack(fill="x")               # 2.69.0: the list under a strip, sunken
         bvp = Viewport(page)

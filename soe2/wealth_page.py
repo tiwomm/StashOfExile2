@@ -82,7 +82,7 @@ class WealthPage:
         self.w_price_btn = _MenuItem(mm, 0)
         # P3 (2.105.1): no synced stash tabs - no Sync, Stop or Re-check rares; Count currency is the main button
         self.w_stop_btn = ttk.Button(abar, text="Stop", command=self.wealth_stop, state="disabled")   # (never shown)
-        self.w_scan_btn = ttk.Button(abar, text="Scan stash (beta)…", command=self.stash_scan_start)    # 2.102.0
+        self.w_scan_btn = ttk.Button(abar, text="Scan stash (BETA)…", command=self.stash_scan_start)    # 2.102.0
         self.w_scan_btn.pack(side="right", padx=(0, 8))
         self.w_count_btn = ttk.Button(abar, text="Count currency…", command=self.wealth_count_toggle,
                                       style="Primary.TButton")
@@ -246,7 +246,7 @@ class WealthPage:
         self.w_count.bind("<Configure>", lambda e: self.w_count.config(wraplength=max(200, e.width - 6)))
         self.w_empty = tk.Label(itf, bg=P1, fg=C["muted"], font=("Segoe UI", 10), justify="center",
                                 text="Nothing counted yet.\nPress Count currency and copy your stacks in game (Ctrl+C),\n"
-                                     "or Scan stash (beta).")
+                                     "or Scan stash (BETA).")
 
         # ---- Stash tabs: your priced tabs - the list, each one's last sync, adding one (always shown here)
         self.w_setup = tk.Frame(tab, bg=P1)                 # P3 (2.105.1): built, never shown (the old tab parts)
@@ -387,7 +387,7 @@ class WealthPage:
         ("Count currency", "Press Count currency, then hover each stack in game and press Ctrl+C: the stack and its "
                            "size are added. Stacks of the same currency add up. Double-click a quantity to change it; "
                            "select rows (Ctrl+A for all) and press Delete to remove them."),
-        ("Scan stash (beta)", "Reads your Currency, Abyss, Delirium, Breach, Expedition, Ritual, Essence and Fragments tabs from the screen. You check the "
+        ("Scan stash (BETA)", "Reads your Currency, Abyss, Delirium, Breach, Expedition, Ritual, Essence and Fragments tabs from the screen. You check the "
                               "numbers before they're saved. Only looks: no keys, no clicks; the picture is never kept."),
         ("Prices", "Currency, fragments and other stackables come from poe.ninja. Double-click a price to set your own."),
         ("Total and Where it is", "Total is everything added up; the chart shows it over time (Daily = the change "
@@ -901,8 +901,12 @@ class WealthPage:
         card(0, "Count currency", "Press Count, then in game hover each stack and press Ctrl+C. The same currency adds "
                                   "up.", "Finish counting" if self.w_counting else "Start counting",
              self.wealth_count_toggle, True)
-        card(1, "Scan stash (beta)", "Reads your Currency, Abyss, Delirium, Breach, Expedition, Ritual, Essence and Fragments tabs from the screen. You check "
+        card(1, "Scan stash (BETA)", "Reads your Currency, Abyss, Delirium, Breach, Expedition, Ritual, Essence and Fragments tabs from the screen. You check "
                                      "the numbers before they're saved.", "Scan stash…", self.stash_scan_start, False)
+        try:                                     # 2.120.0 (UX pass 2: one orange button a page): the card's Start
+            self.w_count_btn.config(style="TButton")   # counting is the one while the setup cards show
+        except (AttributeError, tk.TclError):
+            pass
 
     def _wealth_status(self, top):
         """After the first count: one line - when you last counted, items that need a price; each one clickable."""
@@ -964,7 +968,7 @@ class WealthPage:
 
     def wealth_add_pc_tab(self):
         got = self.wealth_pc_tab()
-        if got and self._wealth_add(got[0], got[1], "Price checks tab"):
+        if got and self._wealth_add(got[0], got[1], "Price Checks tab"):
             self._w_tell("Added the tab you read in Bulk Pricing. Press Sync to count what's on it.", "ok")
         self.wealth_pc_refresh()
 

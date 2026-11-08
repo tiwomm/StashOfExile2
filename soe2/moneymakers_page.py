@@ -1726,7 +1726,7 @@ class MoneyMakersPage:
         ttk.Checkbutton(bar, text="Only valuable", variable=self.mm_tab_only, command=self.mm_tab_fill).pack(
             side="left", padx=(12, 0))
         ttk.Button(bar, text="Copy regex (valuable)", command=self.mm_tab_copy_all).pack(side="right")
-        tk.Label(right, text="Valuable = ★ in your Mod book, or listings with it cost at least your Valuable mod "
+        tk.Label(right, text="Valuable = ★ in your Mod Book, or listings with it cost at least your Valuable mod "
                              "price. Prices are what the app learned from your price checks. Double-click a mod to "
                              "check its price on the trade site.", bg=P1, fg=C["muted"], font=("Segoe UI", 9),
                  anchor="w", justify="left", wraplength=560).pack(fill="x", pady=(0, 8))
@@ -1796,7 +1796,7 @@ class MoneyMakersPage:
             self.mm_tab_rows[m["id"]] = (m, valuable, why, learned, sid)
         if not self.mm_tab_rows and only:
             tv.insert("", "end", iid="_none", values=("", "No valuable tablet mods yet: rate some ★ in Regex "
-                                                          "(right-click) or the Mod book, or price some tablets.",
+                                                          "(right-click) or the Mod Book, or price some tablets.",
                                                       "", "", ""), tags=("plain",))
 
     def mm_tab_regex(self, ids):
