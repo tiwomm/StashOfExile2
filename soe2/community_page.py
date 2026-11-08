@@ -76,7 +76,7 @@ class CommunityPage:
             side="left")
         lk = tk.Label(hr, text="Price Checks ↳ Rate Mods ›", bg=P2, fg=C["accent"], cursor="hand2",
                       font=("Segoe UI", 9, "bold"))
-        lk.pack(side="left", padx=(6, 0))
+        lk.pack(side="left", padx=(8, 0))
         lk.bind("<Button-1>", lambda e: self.rm_open())
         # ---- your community name
         row = section(PAGE, "Your community name", "Shown on what you post on Money Makers and beside your Leaderboard "

@@ -54,7 +54,8 @@ class SettingsPage:
         cb = combo(row, self.pc_show_var, list(PC_SHOW.values()), self.on_pc_show, 30)
         cb.pack(side="left")
         self.pc_set_vars["pc_show"] = self.pc_show_var
-        self.pc_pop_var().trace_add("write", lambda *_a: self.pc_show_var.set(PC_SHOW[self.pc_show_get()]))
+        self.pc_pop_var().trace_add("write", lambda *_a: self.root.after_idle(       # (once Price Checks' own switch
+            lambda: self.pc_show_var.set(PC_SHOW[self.pc_show_get()])))              # has saved it)
         v = tk.BooleanVar(value=bool(SETTINGS.get("pc_art", True)))
         self.pc_set_vars["pc_art"] = v
         ttk.Checkbutton(row, text="Show the items' pictures", variable=v, style="Card.TCheckbutton",
@@ -104,7 +105,7 @@ class SettingsPage:
         f = tk.Frame(self.settings_pages[page][1], bg=C["panel"])
         f.pack(fill="x", pady=((2 if top else 14), 6))
         tk.Label(f, text=text, bg=C["panel"], fg=C["text"], font=("Segoe UI", 10, "bold"), anchor="w").pack(side="left")
-        tk.Frame(f, bg=C["line"], height=1).pack(side="left", fill="x", expand=True, padx=(10, 0))
+        tk.Frame(f, bg=C["line"], height=1).pack(side="left", fill="x", expand=True, padx=(8, 0))
         return f
 
     def pc_show_get(self):

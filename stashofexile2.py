@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU GPL v3.0 (see LICENSE). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.119.0
+VERSION 2.120.0
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,6 +19,35 @@ VERSION 2.119.0
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.120.0
+       UX pass, part 2. Feedback: the Rate mods window "drew really janky" and sat in Privacy & community. It's a page
+       now, Price Checks ↳ Rate Mods (modules/ratemods.py, ratemods_page.build_ratemods_page): the item kinds on the
+       left (Map items, Gear, Uniques you've checked - how many left to rate), one mod at a time on the right, built
+       once and only re-filled; keys S A B C D F and ← →. The window changed size between its two views and shared
+       self.rm_win with the Expedition tags (remnant_page) - showing remnant prices could break it. Privacy &
+       community and the Mod Book's buttons open the page; the Mod Book's lists follow your ratings 1.5 s after you
+       pause (they were redrawn when the window closed).
+       Feedback: Settings › Price checking had like settings apart. Now grouped - PRICE CHECK KEY (Where the price
+       shows), WHICH PRICES (Listings, Prices, Valuable items), BULK PRICING (Skip cheap items, Account, Copy marker),
+       FINE TUNING - under group titles (settings_group: bigger, brighter, a rule to the edge; Appearance's THE APP /
+       OVER THE GAME use it too). The price check key's four switches in two sections (Over the game, It opens Price
+       Checks, Bring the app to the front) are one choice: Over the game / In the app (to the front) / In the app
+       (behind the game) / Nowhere - the same three settings underneath (pc_popup, pc_ctrl_c, pc_front), Pictures
+       stays a switch; Price Checks' own Show over the game follows it.
+       Every section's note is one line: its first sentence, the rest in an ⓘ you point at (chrome.section,
+       split_note); Settings search still finds every word.
+       The overlay: the mouse on it is one choice in Overlay ↳ Settings › Options and Quick settings - Drag to move /
+       Locked / Clicks pass through to the game (OV_MOUSE, ov_mouse_set; was Lock in Options and Quick settings and
+       Click-through in Settings › Appearance; the 🔒 still locks and unlocks). Hide from screen captures and the
+       game's window title moved to Settings › Advanced › Over the game; Ask me to rank maps to the Map Library page.
+       The clock's format is the one clock setting (Appearance › Clock; the button to the overlay is gone).
+       The status bar: one pill, Trade site: ready / wait 0:08 / paused 2:30, with the numbers when you point at it
+       (the Search and Fetch meters were jargon). The sidebar lists every child page; their buttons in the page's
+       title bar (the same links again) are gone. One orange button a page (Overlay settings and Wealth's toolbar
+       Count were orange beside the main one). Page names in Title Case (Mod Book, Map Library, Exchange Rates, Game
+       Search, Under the Hood; their old names still open them); BETA written one way; Labs is Beta features.
+       Empty pages look alike: chrome.EmptyState - an icon, what it is, what to do, at most one button - on Bulk
+       Pricing, Favorites (Open Price Checks), Market Insights, Leaderboards (Open the Overlay) and the Overlay's maps.
   2.119.0
        UX pass, part 1 (the review: every page, tab and settings tab; decisions taken one by one). The overlay's bar
        kept room after the session time for a PAUSED tag and the words "not tracking", so long map names were cut.
@@ -2864,7 +2893,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.119.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.120.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 

@@ -213,9 +213,9 @@ class TrackerPage:
             tv.column(cid, width=w, anchor=a, stretch=(cid == "map"))
         tv.pack(fill="both", expand=True)
         self.tk_maps = tv
-        self.tk_maps_empty = tk.Label(pm, text="No maps yet this session.\nPress Start tracking, then run maps - each "
-                                               "one shows here with its time.", bg=C["panel"], fg=C["muted"],
-                                      font=("Segoe UI", 10), justify="center")   # P4 (2.108.0): empty said nothing
+        from .chrome import EmptyState                    # 2.120.0: one empty look everywhere (P4, 2.108.0: it said
+        self.tk_maps_empty = EmptyState(pm, "🗺", "No maps yet this session\nPress Start tracking, then run maps - "
+                                                 "each one shows here with its time.")   # nothing)
         self.tk_maps_empty.place(relx=0.5, rely=0.45, anchor="center")
         self.list_register("tracker", tv)
         self.tk_pages["This session's maps"] = pm
@@ -496,7 +496,7 @@ class TrackerPage:
         # (Settings › Appearance) and the 🔒 were three switches for it. Ask me to rank maps moved to the Map Library;
         # Hide from screen captures to Settings › Advanced.
         mrow = tk.Frame(box, bg=P2)
-        mrow.pack(fill="x", pady=(0, 6))
+        mrow.pack(fill="x", pady=(0, 8))
         tk.Label(mrow, text="Mouse on the overlay", bg=P2, fg=C["text"]).pack(side="left", padx=(0, 8))
         self.tk_mouse = tk.StringVar(value=OV_MOUSE[self.ov_mouse_get()])
         mcb = ttk.Combobox(mrow, textvariable=self.tk_mouse, values=list(OV_MOUSE.values()), state="readonly", width=30)
