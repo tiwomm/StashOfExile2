@@ -491,13 +491,10 @@ class App(SettingsPage, GearBookPage, PriceCheckPage, PricePopup, FavoritesPage,
         self.parent_dialogs()
         self.mods = modules.load(self)
         self.page_key = {m.title: m.key for m in self.mods}
-        self.page_key["Utilities"] = "notes"                      # 2.0 beta 6 name
-        self.page_key["Item library"] = "library"                 # its names before 2.0 beta 13
-        self.page_key["Item inspector"] = "library"
-        self.page_key["Price breakdown"] = "library"
-        for old, key in (("Mod book", "modbook"), ("Map library", "maps"), ("Exchange rates", "rates"),
-                         ("Game search", "search"), ("Under the hood", "library")):
-            self.page_key.setdefault(old, key)                    # 2.120.0: their names before Title Case
+        from .names import OLD, key_of
+        for old in OLD:                                           # 2.126.0: names used before (names.OLD) still
+            if key_of(old):                                       # open their page (old saved layouts, links)
+                self.page_key.setdefault(old, key_of(old))
         for m in self.mods:
             m.body = self.shell.register(m)
         self.shell.link_children()                                # 2.32.0: child tools under their parent

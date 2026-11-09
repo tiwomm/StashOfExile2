@@ -1,0 +1,96 @@
+"""One name per feature (2.126.0, UX rule: "One name per feature (soe2/names.py). No synonyms.").
+
+PAGES   - every page's name, by its module key (soe2/modules/). Page names are in Title Case.
+FEATURES - the names of the parts inside pages that a person meets by name (helpers, switches, sections).
+OLD     - names that were used before, or crept in as synonyms -> the one name to use. They never appear in the
+          app's text; the app still knows the old page names (App.page_key), so an old saved layout or a link opens
+          the right page.
+
+Adding a feature: put its name here first, use that exact name everywhere (labels, tooltips, What's new, README).
+Renaming one: change it here, add the old name to OLD, and run tools/check_names.py (it lists every leftover)."""
+
+PAGES = {
+    "pricecheck": "Price Checks",
+    "checks": "Bulk Pricing",
+    "favorites": "Favorites",
+    "insights": "Market Insights",
+    "library": "Under the Hood",
+    "modbook": "Mod Book",
+    "ratemods": "Rate Mods",
+    "wealth": "Wealth",
+    "money": "Money Makers",
+    "regex": "Regex",
+    "search": "Game Search",
+    "rates": "Exchange Rates",
+    "tracker": "Overlay",
+    "maps": "Map Library",
+    "leaderboards": "Leaderboards",
+    "plan": "League Plan",
+    "ovset": "Settings",
+    "notes": "Notes",
+    "settings": "Settings",
+}
+
+FEATURES = (
+    "Beta features",            # Settings › General: shows the pages and helpers marked BETA
+    "Campaign Helper",
+    "Community data sharing",
+    "Craft Helper",
+    "Data pack",                # the Craft Helper's mod data from GitHub
+    "Desecration Helper",       # at The Well of Souls
+    "Exchange Helper",
+    "Mechanic Helper",
+    "Quick settings",           # the overlay's ⚙
+    "Scan stash",
+    "Search Options",           # Settings › Price checking
+    "Session timer",
+    "Stash tab",                # Price Checks › Add items from
+    "Trade Whisper Watcher",
+)
+
+OLD = {
+    # page names before Title Case (2.120.0) and before their renames
+    "Price checks": "Price Checks",
+    "Mod book": "Mod Book",
+    "Map library": "Map Library",
+    "Exchange rates": "Exchange Rates",
+    "Game search": "Game Search",
+    "Under the hood": "Under the Hood",
+    "Item library": "Under the Hood",
+    "Item inspector": "Under the Hood",
+    "Price breakdown": "Under the Hood",
+    "Utilities": "Notes",
+    "Money makers": "Money Makers",
+    "Market insights": "Market Insights",
+    "League plan": "League Plan",
+    "Bulk pricing": "Bulk Pricing",
+    "Bulk Price Checker": "Bulk Pricing",
+    # features
+    "Labs": "Beta features",
+    "Craft helper": "Craft Helper",
+    "Desecration helper": "Desecration Helper",
+    "Well of Souls helper": "Desecration Helper",
+    "Campaign helper": "Campaign Helper",
+    "Exchange helper": "Exchange Helper",
+    "Mechanic helper": "Mechanic Helper",
+    "Whisper watcher": "Trade Whisper Watcher",
+    "Session tracker": "Session timer",
+    "Stash scan": "Scan stash",
+    "Quick Settings": "Quick settings",
+    "Community Data Sharing": "Community data sharing",
+    "How searches are made": "Search Options",
+}
+
+SMALL = {"a", "an", "the", "of", "to", "in", "on", "for", "and", "or", "by", "at"}
+
+
+def title_case(name):
+    """True if a page name is in Title Case: every word starts with a capital, except small words inside it."""
+    words = name.split()
+    return all(w[:1].isupper() or (i and w in SMALL) or not w[:1].isalpha() for i, w in enumerate(words))
+
+
+def key_of(name):
+    """The page key for a page name, old or new (None if it isn't a page)."""
+    name = OLD.get(name, name)
+    return next((k for k, v in PAGES.items() if v == name and k != "ovset"), None)
