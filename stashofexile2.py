@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU GPL v3.0 (see LICENSE). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.125.6
+VERSION 2.125.7
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,6 +19,14 @@ VERSION 2.125.6
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.125.7
+       Feedback (a player): at The Well of Souls - the Session tracker said so - the Desecration Helper (on, Beta
+       features on) showed nothing. Three gaps: it woke only on the area id Abyss_Hub (the tracker goes by the scene's
+       name), so it now wakes on the scene "The Well of Souls" too (ws_scene); started (or turned on) while already
+       at the Well, it waited for the next area - the log's last area and scene now count at start; and when Windows'
+       text reader (OCR) can't be used it said "on" and did nothing - the notice now says why, and app_log.txt has
+       it (no names, no folders).
+       Feedback: a magic tablet with 2 bad mods reads "Reforge or Alchemy" (the verdict's word; the step said it).
   2.125.6
        Feedback: "any updates to beta functions should only show in the What's new card if a person has labs/beta
        enabled". Notes whose area is a beta feature (whatsnew.BETA_AREAS: Wealth, Money Makers, Game Search, Market
@@ -3172,7 +3180,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.125.6"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.125.7"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 

@@ -56,7 +56,13 @@ class WellSoulsPage:
         return f"Can't read the screen: {self.ws_problem}." if want and self.ws_status() == "warn" else None
 
     # ---------------------------------------------------------------- the area (Client.txt)
-    def ws_area(self, area_id):
+    def ws_scene(self, name):
+        """2.125.7 (feedback: a player at the Well - the Session tracker said so - got nothing): the game's scene name
+        says it too, so a Well whose area id isn't the one known (W.AREAS) still wakes the helper."""
+        if W.is_well_name(name) and not getattr(self, "ws_here", False):
+            self.ws_area(W.AREAS[0], why=f"scene {name}")
+
+    def ws_area(self, area_id, why=None):
         """Every area change: at the Well -> on (with a notice); anywhere else -> off."""
         here = str(area_id or "") in W.AREAS
         before = getattr(self, "ws_here", False)
@@ -67,8 +73,16 @@ class WellSoulsPage:
         if not here and before:
             self.ws_ask_close()
         if here and not before and self.ws_cfg().get("on"):
-            if self.ws_cfg().get("notice", True):
-                self.ws_notice()
+            self.ws_problem = None                        # (checked again at each visit)
+            st = self.ws_status()
+            msg = f"at The Well of Souls ({why or 'area ' + str(area_id)}) - " + \
+                ("watching" if st == "on" else f"can't read the screen: {self.ws_problem}")
+            if st == "on":
+                buglog.debug("Desecration Helper", msg)
+            else:                                         # (in the log for a bug report: why it showed nothing)
+                buglog.record("error", "Desecration Helper", msg)
+            if self.ws_cfg().get("notice", True) or st != "on":
+                self.ws_notice(None if st == "on" else f"Desecration Helper can't read the screen: {self.ws_problem}")
             self.ws_start()
         elif not here and before:
             self.ws_stop()
@@ -122,8 +136,8 @@ class WellSoulsPage:
             except tk.TclError:
                 pass
 
-    def ws_notice(self):
-        """A small notice over the game: the helper is on while you're here."""
+    def ws_notice(self, problem=None):
+        """A small notice over the game: the helper is on while you're here (2.125.7: or why it can't read)."""
         try:
             from .overlaywin import pal
             from .alerts_page import game_rect, click_through, force_topmost
@@ -135,7 +149,8 @@ class WellSoulsPage:
             w.withdraw()
             w.overrideredirect(True)
             w.attributes("-topmost", True)
-            tk.Label(w, text="◆  Desecration Helper (BETA) on  -  each option at the Well shows its tier", fg=P["text"],
+            tk.Label(w, text=("◆  " + problem) if problem else
+                     "◆  Desecration Helper (BETA) on  -  each option at the Well shows its tier", fg=P["text"],
                      bg=P["bg"], font=("Segoe UI", -max(11, int(14 * ui))), padx=8, pady=4,
                      highlightthickness=1, highlightbackground=P["line"]).pack()
             w.update_idletasks()
@@ -145,7 +160,7 @@ class WellSoulsPage:
             force_topmost(w)
             no_capture(w)
             self.ws_note_win = w
-            self.root.after(NOTICE_SECS * 1000, lambda: w.winfo_exists() and w.destroy())
+            self.root.after((NOTICE_SECS * 3 if problem else NOTICE_SECS) * 1000, lambda: w.winfo_exists() and w.destroy())
         except Exception:
             self.log_error("the Desecration Helper notice")
 

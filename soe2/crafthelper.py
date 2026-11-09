@@ -395,6 +395,8 @@ def verdict(kind, text, letters, pair_lines=()):
     else:
         key = "craft"
     mark, word, tone = VERDICTS[key]
+    if key == "reforge" and rarity == "Magic":          # 2.125.7 (feedback): a magic tablet - reforge it, or alch it
+        word = "Reforge or Alchemy"
     unrated = sum(1 for l in letters if l == "-")
     why = (f"{good} of {n} mod{'s' if n != 1 else ''} rated S or A" if n else f"No mods yet - a white {one}")
     if unrated:
