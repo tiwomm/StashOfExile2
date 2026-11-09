@@ -81,6 +81,9 @@ OLD = {
     "How searches are made": "Search Options",
 }
 
+# an old page name that now means another page: before 2.80.0, Bulk Pricing was called "Price checks"
+WAS_PAGE = {"Price checks": "checks"}
+
 SMALL = {"a", "an", "the", "of", "to", "in", "on", "for", "and", "or", "by", "at"}
 
 
@@ -92,5 +95,7 @@ def title_case(name):
 
 def key_of(name):
     """The page key for a page name, old or new (None if it isn't a page)."""
+    if name in WAS_PAGE:
+        return WAS_PAGE[name]
     name = OLD.get(name, name)
     return next((k for k, v in PAGES.items() if v == name and k != "ovset"), None)
