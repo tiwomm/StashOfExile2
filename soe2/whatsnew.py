@@ -11,7 +11,7 @@ INTRO = [
     "The bar on the left opens everything. Tools work while their window is open; Utilities (chat keys, the sticky "
     "note, the Session tracker and its alerts) keep working over the game.",
     "Your league is in Settings (bottom left). Things marked BETA are still being worked on: turn them on under "
-    "Settings > General > Labs if you'd like to try them.",
+    "Settings › General › Beta features if you'd like to try them.",
 ]
 
 # What's being worked on (2.4.0: not shown in the app any more - kept for ROADMAP.md / the developer).
@@ -37,8 +37,19 @@ NEXT = [
 # it should help ("X was doing Y; this should stop it", "should catch", "shouldn't ... any more"), never "Fixed X".
 # At most MAX_BIG big per card (skipped updates together, newest first); the rest go small.
 MAX_BIG = 3
+# 2.125.6 (feedback: "any updates to beta functions should only show in the What's new card if a person has labs/beta
+# enabled"): notes in these areas show only with Settings › General › Beta features on. Name a note's area after the
+# beta feature it's about (a Labs page, or a part of a page marked BETA).
+BETA_AREAS = ("Wealth", "Money Makers", "Game Search", "Market Insights", "Craft Helper", "Stash tab", "Scan stash",
+              "Desecration Helper")
 
 NOTES = {
+    "2.125.6": {
+        "big": [],
+        "small": [
+            ("What's new", "Notes about beta features show only when Beta features is on."),
+        ],
+    },
     "2.125.5": {
         "big": [
             ("🧩", "Pairs that sell together", "The Craft Helper learns which two mods sell well together from your "
@@ -1764,17 +1775,20 @@ def notes_between(seen, current):
     return out
 
 
-def split_notes(notes):
-    """[(version, entry)] newest first -> (big hero rows, small lines) for the card (see the standard above)."""
+def split_notes(notes, beta=True):
+    """[(version, entry)] newest first -> (big hero rows, small lines) for the card (see the standard above).
+    beta=False (Beta features off): notes about a beta feature (BETA_AREAS) are left out."""
     big, small = [], []
     for _v, entry in notes:
         if isinstance(entry, dict):
             for icon, title, text, go, area in entry.get("big", []):
+                if not beta and area in BETA_AREAS:
+                    continue
                 if len(big) < MAX_BIG:
                     big.append((icon, title, text, go))
                 else:
                     small.append((area, f"{title}: {text}"))
-            small += [tuple(x) for x in entry.get("small", [])]
+            small += [tuple(x) for x in entry.get("small", []) if beta or x[0] not in BETA_AREAS]
         else:
             small += [("", line) for line in entry]
     return big, small
