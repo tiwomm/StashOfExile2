@@ -93,6 +93,15 @@ def _no_recap_2124(S):
         t.pop("goal_pos", None)
 
 
+def _cols_2125(S):
+    """2.125.3: Bulk Pricing shows every column (Columns ▾ turns them off); the old "extra columns on" list goes, and
+    the Item column's remembered width (it hid the columns after it)."""
+    S.pop("bulk_cols", None)
+    cw = S.get("col_widths")
+    if isinstance(cw, dict):
+        cw.pop("name", None)
+
+
 STEPS = (
     ("modbook_import", "1.x", "app", _modbook_import, "modbook_imported"),
     ("rules_scoped", "2.6.0", "app", _rules_scoped, "rules_scoped_26"),
@@ -102,6 +111,7 @@ STEPS = (
     ("tier_only", "2.114.0", "app", _tier_only, "tier_only_2114"),
     ("ux_2119", "2.119.0", "settings", _ux_2119, None),
     ("no_recap_2124", "2.124.0", "settings", _no_recap_2124, None),
+    ("cols_2125", "2.125.3", "settings", _cols_2125, None),
 )
 
 

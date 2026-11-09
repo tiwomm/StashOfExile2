@@ -45,6 +45,7 @@ NOTES = {
              None, "Overlay"),
         ],
         "small": [
+            ("Bulk Pricing", "Every column shows again; Columns ▾ turns any of them off."),
             ("Overlay", "The route card scrolls and fits your screen."),
             ("Overlay", "The route card should stay up while its act list is open."),
             ("Overlay", "Routes are now Full, Speedrun, Rush (carry) and My Own."),
