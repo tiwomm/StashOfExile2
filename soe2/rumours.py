@@ -88,6 +88,26 @@ def match(line):
     return (best[1], best[2]) if best[0] >= MATCH and lead >= 0.15 else None
 
 
+# 2.123.5 (feedback: the panel showed in a hideout with a lit tan floor - the floor passed the parchment color test and
+# its misread scraps loosely matched a rumor): rumors count only when the card's own fixed words are read too - its
+# heading, the logbook line or the Requires line (each fuzzy: the handwriting misreads, "ISLAND RUMOUÅSü&")
+ANCHORS = ("islandrumours", "islandrumors", "usealogbooktocharttheare", "expeditionlogbook", "unchartedwaters")
+ANCHOR_MATCH = 0.8
+
+
+def is_card(lines):
+    """OCR lines -> True when they're the Uncharted Waters card: one of its fixed lines is there."""
+    full = "".join(squash(t) for t, _b in lines)
+    for k in ANCHORS:
+        n = len(k)
+        if k in full:
+            return True
+        for a in range(0, max(1, len(full) - n + 1)):
+            if difflib.SequenceMatcher(None, full[a:a + n], k).ratio() >= ANCHOR_MATCH:
+                return True
+    return False
+
+
 def find_card(img, game_h):
     """A picture of the game window -> the card's box (x0, y0, x1, y1) in its pixels, or None: the largest connected
     patch of the card's light parchment, when it's big enough."""

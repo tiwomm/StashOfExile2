@@ -107,6 +107,9 @@ class RumoursPage:
             crop = crop.resize((crop.width * k, crop.height * k), 3)        # 3 = BICUBIC
         lines = [(t, tuple(int(v / k) for v in b)) for t, b in RM.ocr(crop)]
         self._ru_note(lines)
+        self.ru_not_card = not RU.is_card(lines)
+        if self.ru_not_card:                          # 2.123.5: a tan patch that isn't the card (a lit floor): nothing
+            return [], None
         ox, oy = rect[0] + cut[0], rect[1] + cut[1]
         out = [(r, i, (b[0] + ox, b[1] + oy, b[2] + ox, b[3] + oy)) for r, i, b in RU.rows(lines)]
         return out, (rect[0] + x1, rect[1] + y0, rect[0] + x1, rect[1] + y1)
@@ -121,14 +124,17 @@ class RumoursPage:
                 for t, _b in lines:
                     hit = RU.match(t)
                     f.write(f"  {t!r}" + (f"  -> {hit[1]}" if hit else "") + "\n")
-                f.write("Found: " + ", ".join(i for _r, i, _b in RU.rows(lines)) + "\n")
+                if RU.is_card(lines):
+                    f.write("Found: " + ", ".join(i for _r, i, _b in RU.rows(lines)) + "\n")
+                else:
+                    f.write("Not the card (none of its own lines were read) - nothing shown.\n")
         except Exception:
             buglog.caught()
 
     def _ru_watch(self, gen):
         from .alerts_page import game_rect
         from .overlay import game_active
-        last, misses = None, 0
+        last, misses, notcard = None, 0, None
         got, reads = {}, 0
         try:
             while gen == getattr(self, "ru_gen", 0):
@@ -150,11 +156,20 @@ class RumoursPage:
                         continue
                     misses = 0
                     th = RM.thumb(img.crop(card))
+                    if notcard is not None and not RM.changed(notcard, th):
+                        continue                    # 2.123.5: the same patch that wasn't the card - not read again
                     if RM.changed(last, th):        # a new card: start over
                         got, reads = {}, 0
                     elif reads >= READS:
                         continue
                     rows, edge = self.ru_read(rect, img)
+                    if getattr(self, "ru_not_card", False):
+                        notcard, rows = th, []
+                        misses += 1
+                        if misses == GONE:
+                            self.ui_q.put(("ru_tags", [], None))
+                        continue
+                    notcard = None
                     reads += 1
                     for r_ in rows:                 # 2.113.0 (feedback: only two of three showed): each card is read
                         got.setdefault(r_[1], r_)   # up to READS times and what they found is put together
