@@ -342,6 +342,42 @@ class MergedOverlay:
                 self.rx_ov_show()
         except Exception:
             self.log_error("restyling the overlay's windows")
+        try:
+            self.ov_cards_restyle()
+        except Exception:
+            self.log_error("restyling the cards over the game")
+
+    def ov_cards_restyle(self):
+        """2.125.5 (feedback: every tool over the game follows the overlay's style): the open cards are built again
+        in the new style, where they were - the route card (its page, act and size), Vendor search, the price check
+        card."""
+        def spot(w):
+            try:
+                return w.winfo_x(), w.winfo_y()
+            except (tk.TclError, AttributeError):
+                return None
+
+        def put(w, xy):
+            if w is not None and xy:
+                try:
+                    w.geometry(f"+{xy[0]}+{xy[1]}")
+                except tk.TclError:
+                    pass
+        w = getattr(self, "camp_win", None)
+        if w is not None:
+            xy, page, act = spot(w), self.camp_page, self.camp_view
+            self.camp_route_close()
+            put(self.camp_route_show(page=page, act_key=act), xy)
+        w = getattr(self, "camp_vendor_win", None)
+        if w is not None:
+            xy = spot(w)
+            self.camp_vendor_show()
+            put(getattr(self, "camp_vendor_win", None), xy)
+        w = getattr(self, "pp_win", None)
+        rid = getattr(self, "pp_rid", None)
+        if w is not None and rid is not None and rid in getattr(self, "records", {}):
+            self.pcpop_close()
+            self.pcpop_show(self.records[rid])
 
     # ---------------------------------------------------------------- the window
     def merged_destroy(self):
@@ -967,14 +1003,64 @@ class MergedOverlay:
         return int(round(n * self.ov_k()))
 
     def ov_btn(self, style="TButton"):
-        """A button style for a card over the game: its text at the game's size."""
+        """A button style for a card over the game: its text at the game's size.
+        2.125.5 (feedback: "ALL tools that open over the game ... should follow these rules for styling matching"):
+        in the overlay's style too - its colors and font, not the app's (the app's orange and blue showed on every
+        card). Primary = the one picked: the style's accent edge and strong text (Quick settings' chips)."""
+        from .overlaywin import pal
+        from .style import mix
+        P = pal()
         size = self.ov_font(10)
-        name = f"Ov{size}.{style}"
+        kind = style.split(".")[0] if "." in style else "TButton"
+        sig = "|".join(str(P.get(k)) for k in ("bg", "text", "muted", "line", "head", "accent", "cell_bg", "font", "poe"))
+        name = f"Ov{size}x{abs(hash(sig)) % 10 ** 6}.{style}"
+        acc = P["head"] if P.get("poe") else (P.get("accent") or P["head"])
+        face = P.get("cell_bg") or P["bg"]
+        on = kind == "Primary"
+        bg = mix(face, acc, 0.22) if on else face
         try:
-            ttk.Style(self.root).configure(name, font=("Segoe UI", size), padding=(self.ov_px(8), self.ov_px(4)))
+            st = ttk.Style(self.root)
+            # (the app's buttons are drawn from images in its colors - these use the plain frame in the overlay's)
+            st.layout(name, [("Button.border", {"sticky": "nswe", "border": "1", "children": [
+                ("Button.focus", {"sticky": "nswe", "children": [("Button.padding", {"sticky": "nswe", "children": [
+                    ("Button.label", {"sticky": "nswe"})]})]})]})])
+            st.configure(name, font=(P.get("font") or "Segoe UI", size, "bold" if on else "normal"), anchor="center",
+                         padding=(self.ov_px(8), self.ov_px(4)), background=bg,
+                         foreground=P["text"] if on else (P["text"] if kind != "Quiet" else P["text"]),
+                         bordercolor=acc if on else P["line"], lightcolor=bg, darkcolor=bg,
+                         focuscolor=acc, relief="solid", borderwidth=1)
+            hov = mix(bg, P["text"], 0.10)
+            st.map(name, background=[("disabled", P["bg"]), ("pressed", mix(bg, acc, 0.35)), ("active", hov),
+                                     ("!disabled", bg)],          # (the last: the app's own Primary orange never shows)
+                   foreground=[("disabled", P["muted"]), ("!disabled", P["text"])],
+                   bordercolor=[("active", acc), ("!disabled", acc if on else P["line"])],
+                   lightcolor=[("active", hov), ("!disabled", bg)], darkcolor=[("active", hov), ("!disabled", bg)])
         except tk.TclError:
             return style
         return name
+
+    def ov_combo(self, cb):
+        """2.125.5: a list (combobox) on a card over the game in the overlay's style - its field and its dropdown."""
+        from .overlaywin import pal
+        P = pal()
+        face = P.get("field") or P.get("cell_bg") or P["bg"]
+        sig = "|".join(str(P.get(k)) for k in ("bg", "text", "line", "field", "cell_bg", "font"))
+        name = f"Ov{abs(hash(sig)) % 10 ** 6}.TCombobox"
+        try:
+            st = ttk.Style(self.root)
+            st.configure(name, fieldbackground=face, background=P.get("cell_bg") or face, foreground=P["text"],
+                         arrowcolor=P["text"], bordercolor=P.get("cell_line") or P["line"], lightcolor=face,
+                         darkcolor=face, selectbackground=face, selectforeground=P["text"])
+            st.map(name, fieldbackground=[("readonly", face)], foreground=[("readonly", P["text"])],
+                   selectbackground=[("readonly", face)], selectforeground=[("readonly", P["text"])])
+            cb.configure(style=name, font=(P.get("font") or "Segoe UI", self.ov_font(10)))
+            pd = cb.tk.call("ttk::combobox::PopdownWindow", str(cb))
+            cb.tk.call(f"{pd}.f.l", "configure", "-background", P["bg"], "-foreground", P["text"],
+                       "-selectbackground", P.get("cell_bg") or P["line"], "-selectforeground", P["head"],
+                       "-font", (P.get("font") or "Segoe UI", self.ov_font(10)))
+        except tk.TclError:
+            pass
+        return cb
 
     def _hf(self, n):
         """A font size for the Bar, grown with the game window (made for 1080 px high)."""

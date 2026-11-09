@@ -39,6 +39,18 @@ NEXT = [
 MAX_BIG = 3
 
 NOTES = {
+    "2.125.5": {
+        "big": [
+            ("🧩", "Pairs that sell together", "The Craft Helper learns which two mods sell well together from your "
+             "price checks.", None, "Money Makers"),
+            ("⚖", "What's socketed", "The price check card shows your sockets and what's in them.", None, "Price Checks"),
+        ],
+        "small": [
+            ("Everywhere", "Updates should install the newest version - no second update right after."),
+            ("Overlay", "Cards over the game use your overlay style's colors and change with it."),
+            ("Money Makers", "The Craft Helper's data updates from GitHub for new game patches."),
+        ],
+    },
     "2.125.4": {
         "big": [],
         "small": [

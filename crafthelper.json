@@ -1,0 +1,101 @@
+{
+ "schema": 1,
+ "revision": 1,
+ "patch": "0.5",
+ "name": "Craft Helper data",
+ "about": "The Craft Helper's data (2.125.5): each kind's types and craft steps, and how the market picks a letter. Edit, raise revision, and the app picks it up from GitHub.",
+ "kinds": {
+  "tablet": {
+   "label": "Tablets",
+   "one": "tablet",
+   "item_class": "Tablet",
+   "types": [
+    "All",
+    "Breach",
+    "Delirium",
+    "Ritual",
+    "Expedition",
+    "Abyss",
+    "Overseer",
+    "Temple"
+   ],
+   "flow": [
+    [
+     "White tablet",
+     "Orb of Transmutation, then Orb of Augmentation: 2 mods."
+    ],
+    [
+     "2 bad mods",
+     "Orb of Alchemy."
+    ],
+    [
+     "2 good mods",
+     "Regal Orb, then Exalted Orb."
+    ],
+    [
+     "4 junk mods",
+     "Don't sell it - keep it to reforge."
+    ],
+    [
+     "Good mods",
+     "Worth pricing: press your price check key on it, then list it."
+    ]
+   ]
+  },
+  "jewel": {
+   "label": "Jewels",
+   "one": "jewel",
+   "item_class": "Jewel",
+   "types": [
+    "All",
+    "Ruby",
+    "Emerald",
+    "Sapphire",
+    "Time-Lost"
+   ],
+   "flow": [
+    [
+     "White jewel",
+     "Orb of Transmutation, then Orb of Augmentation: 2 mods."
+    ],
+    [
+     "2 good mods",
+     "Regal Orb, then Exalted Orbs to fill it."
+    ],
+    [
+     "0-1 good mods",
+     "Not worth more currency: start over on another jewel."
+    ],
+    [
+     "Rare, 1-2 good mods",
+     "Chaos Orb swaps a mod - stop when it's down to junk."
+    ],
+    [
+     "3+ good mods",
+     "Worth pricing: press your price check key on it, then list it."
+    ]
+   ]
+  }
+ },
+ "lift_tiers": [
+  [
+   3.0,
+   "S"
+  ],
+  [
+   2.0,
+   "A"
+  ],
+  [
+   1.5,
+   "B"
+  ],
+  [
+   1.2,
+   "C"
+  ]
+ ],
+ "market_min_n": 12,
+ "pair_min_n": 6,
+ "pair_gain": 1.3
+}
