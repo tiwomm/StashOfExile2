@@ -25,6 +25,11 @@ VERSION HISTORY
        Rumors, Jewelry, Defenses, Armor ...). Kept as the game writes them: the game's own words the app reads or
        searches for (Armour, favours, Honour, Defences, Body Armour ...), names in the code, data keys and file
        names. tools/check_spelling.py (on every pull request) keeps it that way.
+       Feedback: Island Rumors showed in a hideout with no card open. It looks for the card's tan parchment on screen;
+       a lit tan floor passed that color test and misread scraps loosely matched a rumor. Now rumors count only when
+       one of the card's own lines is read too - its heading, "Use a logbook to chart the area" or "Requires:
+       Expedition Logbook" (rumours.is_card, fuzzy for the handwriting); a patch that isn't the card isn't read again
+       while it stays the same, and rumours_read.txt says "Not the card".
   2.123.4
        Feedback: the Price Checks divider was "janky and slow, almost like it's in slow motion, there's also no
        visible indicator". It's a Splitter now (style.py): a grip you can see (a line with dots that lights orange

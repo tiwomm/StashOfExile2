@@ -43,6 +43,8 @@ NOTES = {
         "big": [],
         "small": [
             ("Everywhere", "US spelling throughout: color, behavior, gray, center and the rest."),
+            ("Expedition", "Island Rumors waits for the Uncharted Waters card's own words, so a lit tan floor "
+             "shouldn't bring it up any more."),
         ],
     },
     "2.123.4": {
