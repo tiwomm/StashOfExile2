@@ -4,7 +4,7 @@
 
 > **Who we build for - read second.** Path of Exile players are utilitarian: they love data and information, problem solving and creative thinking. So every feature shows its numbers *and how they were worked out*, lets you sort, filter, compare and export them (CSV), keeps power-user depth (keys, versions, raw data) one click away instead of hiding it, explains in plain words, and leaves the decision to the player. Pretty is welcome; vague is not.
 
-**Current version: 2.125.1**
+**Current version: 2.125.2**
 
 Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds features, 2.10.1 only fixes. Each step below is one release; we work through them top to bottom.
 
@@ -244,7 +244,8 @@ Order (decided 2026-11-05): the page passes, then the Privacy & data hub, then t
 | 2.124.1 | Classic Panel in the Bar's look (and the lines over it); Quick settings Layout; Panel menus inside the frame; the map's name cut before the time shrinks; the window's place saved before an update; Zone time from entering a zone; no preview flicker. |
 | 2.125.0 | Campaign Helper: a Rush (carry) route from the carrier's side (each step's rush line in the guide pack; order from poe2wiki's Acts quick guide). |
 | 2.125.1 | Quick settings in the overlay's style; the Settings preview's freeze / flicker; the start-up screen centered on a maximized app's monitor. |
-| 2.125.2 | Craft Helper phase 3: learned mod pairs and live data packs per game version. |
+| 2.125.2 | Updates: starting the new version waits (up to 20 s) while Windows still holds the downloaded file (WinError 32). |
+| 2.125.3 | Craft Helper phase 3: learned mod pairs and live data packs per game version. |
 | 2.126.0 | **UX pass 3 (code):** dead code out; tools/check_removed.py (a removed feature leaves no text, setting or test behind), soe2/names.py + tools/check_names.py (one name per feature), tools/check_ux.py. |
 | 2.126.0+ | **UX pass round 2** (all 21 approved): paste to price, price spread, Rate ▾ on hover, card closes when the mouse leaves (hold Ctrl), Ctrl+K go to anything (Ctrl+F = this page's search), F1 keys sheet, get-started steps, Exchange Rates search/sort/pin/trend, rank on the Map Library row, one Money Makers filter bar, buttons off until a pick, one Bulk Pricing toolbar row, never color alone, Edit layout mode, hold Alt through Click-through, ↺ Defaults per section, search top left, tips on icon buttons. |
 | Plan | **Tablet Craft Helper + Mod book:** plan merging them into one place. |

@@ -1513,12 +1513,29 @@ class App(SettingsPage, GearBookPage, PriceCheckPage, PricePopup, FavoritesPage,
         if not (FROZEN and sys.platform == "win32"):
             messagebox.showinfo("Update", f"Downloaded to:\n{dest}\n\nClose this program and start that file to use the new version.")
             return
-        old = sys.executable
         self.save_window_place()
+        self._upd_start_new(dest, sys.executable, 0)
+
+    UPD_TRIES = 40                                   # x 0.5 s
+
+    def _upd_start_new(self, dest, old, n):
+        """2.29.1: the new exe does the swap itself (no .bat, no console windows) - see updates.finish_update.
+        2.125.2 (feedback screenshot: "[WinError 32] ... being used by another process"): a file just downloaded is
+        often still held by the virus scanner for a few seconds - tried again every 0.5 s for up to 20 s before
+        giving up."""
+        import subprocess
         try:
-            import subprocess
-            # 2.29.1: the new exe does the swap itself (no .bat, no console windows) - see updates.finish_update
             subprocess.Popen([dest, "--finish-update", old], close_fds=True, env=clean_env())
+        except OSError as e:
+            busy = getattr(e, "winerror", None) in (5, 32, 33, 225) or isinstance(e, PermissionError)
+            if busy and n < self.UPD_TRIES:
+                if n == 0:
+                    self._say("Installing the update - waiting for Windows to finish checking the file…")
+                self.root.after(500, lambda: self._upd_start_new(dest, old, n + 1))
+                return
+            messagebox.showerror("Update", f"The new version was downloaded to:\n{dest}\n\nbut could not be installed automatically ({e}).\n"
+                                           "Close this program and replace the old file with it yourself.")
+            return
         except Exception as e:
             messagebox.showerror("Update", f"The new version was downloaded to:\n{dest}\n\nbut could not be installed automatically ({e}).\n"
                                            "Close this program and replace the old file with it yourself.")
