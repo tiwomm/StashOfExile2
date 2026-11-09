@@ -8,7 +8,7 @@ import re
 import requests
 import threading
 import time
-from .config import APP_VERSION, BASE, load_json, save_json, SETTINGS
+from .config import BASE, load_json, save_json, SETTINGS
 from .net import call
 from .rates import Rates
 from .mods import JEWEL_KINDS, norm, strip_markup, TAB_KINDS

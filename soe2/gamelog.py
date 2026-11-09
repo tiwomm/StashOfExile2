@@ -19,7 +19,6 @@ import os
 import re
 import string
 import sys
-import time
 from datetime import datetime
 
 LINE = re.compile(r"^(\d{4}/\d{2}/\d{2} \d{2}:\d{2}:\d{2}) \S+ \S+ \[(\w+) Client \d+\] (.*)$")

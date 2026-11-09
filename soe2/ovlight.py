@@ -14,7 +14,6 @@ Overlay › Options. The goal bar (Focus / Campaign) is drawn in the same style 
 
 No box (hairline, flanks) needs Windows' see-through color key (-transparentcolor); on other systems they get the
 color set's box. GGG ToS: looks only - windows of the app's own; nothing here touches the game."""
-import re
 import sys
 import tkinter as tk
 from tkinter import font as tkfont
@@ -450,24 +449,6 @@ class LightOverlay:
         if not bar and not getattr(self, "mg_hidden", False):
             self._mg_on_screen(self.mg_win)
         return self.mg_win
-
-    def _mg_bounds(self):
-        """(x, y, w, h) round the overlay's window(s) - both halves of the Flanks bar."""
-        out = None
-        for w in (getattr(self, "mg_win", None), getattr(self, "mg_win2", None)):
-            if w is None:
-                continue
-            w.update_idletasks()
-            x, y, ww, hh = w.winfo_x(), w.winfo_y(), w.winfo_width(), w.winfo_height()
-            if ww <= 1:
-                continue
-            if out is None:
-                out = [x, y, x + ww, y + hh]
-            else:
-                out = [min(out[0], x), min(out[1], y), max(out[2], x + ww), max(out[3], y + hh)]
-        if out is None:
-            raise tk.TclError("no overlay window")
-        return out[0], out[1], out[2] - out[0], out[3] - out[1]
 
     # ---------------------------------------------------------------- Bars
     def _lt_row(self, w, cv, P, want, W, style):

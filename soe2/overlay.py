@@ -377,13 +377,9 @@ class Overlay:
         P = self.note_palette()
         return P["field"], P["text"]
 
-    def _colour(self, key, default):
-        v = str(self.cfg.get(key) or default).lstrip("#")
-        return "#" + v if re.fullmatch(r"[0-9A-Fa-f]{6}", v) else "#" + default
-
     def _build_notes(self):
         """The sticky note: the shared over-the-game window (overlaywin.py) with your colors inside it."""
-        from .overlaywin import OverlayWindow, pal
+        from .overlaywin import OverlayWindow
         c = self.cfg
         bg, fg = self.note_colours()
 

@@ -20,9 +20,9 @@ from .trade import ago
 from .pricefmt import fmt_div
 from .wealth import (
     parse_price_text, parse_trade_link, WEALTH, WEALTH_CURRENCIES, wealth_display_name, wealth_key,
-    wealth_rows, WEALTH_SYNC, wealth_trade_url, WPRICES, WEALTH_RARES, rare_sig, parse_stack, COUNTED_TAB, COUNTED_LABEL,
+    wealth_rows, WEALTH_SYNC, wealth_trade_url, WPRICES, WEALTH_RARES, rare_sig, parse_stack,
 )
-from .style import C, FONT_TITLE, SegBar, Tooltip
+from .style import C, SegBar, Tooltip
 
 
 class _MenuItem:

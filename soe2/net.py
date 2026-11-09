@@ -9,7 +9,7 @@ import threading
 import time
 from datetime import datetime
 from . import buglog
-from .config import APP_VERSION, HEADERS, load_json, P, save_json, SETTINGS
+from .config import APP_VERSION, HEADERS, load_json, save_json, SETTINGS
 
 
 # ------------------------------------------------------------------ networking + rate limiting

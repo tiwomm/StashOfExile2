@@ -364,68 +364,6 @@ def fit(widget, fn, min_delta=12, delay=150):
     return st
 
 
-class Flow(tk.Frame):
-    """2.98.0: a toolbar that wraps. Children go left to right (flow.add(w, gap=8)); when the row runs out of room
-    the next one starts a new line, so nothing is cut off in a narrow window. right=True keeps a child at the end of
-    the first line while there's room (it wraps like the rest when there isn't)."""
-
-    def __init__(self, parent, gap=8, vgap=6, **kw):
-        kw.setdefault("bg", parent.cget("bg") if "bg" in parent.keys() else C["panel"])
-        super().__init__(parent, **kw)
-        self.gap, self.vgap, self.items, self._w = gap, vgap, [], 0
-        self.bind("<Configure>", self._cfg, add="+")
-
-    def add(self, w, gap=None, right=False):
-        self.items.append((w, self.gap if gap is None else gap, right))
-        w.bind("<Configure>", lambda e: self.after_idle(self.relayout), add="+")
-        self.after_idle(self.relayout)
-        return w
-
-    def _cfg(self, e):
-        if e.width != self._w:
-            self._w = e.width
-            self.relayout()
-
-    def relayout(self):
-        try:
-            W = self.winfo_width()
-        except tk.TclError:
-            return
-        if W <= 1:
-            W = sum(w.winfo_reqwidth() + g for w, g, _r in self.items) or 1
-        x = y = line_h = 0
-        rights = [(w, g) for w, g, r in self.items if r]
-        lefts = [(w, g) for w, g, r in self.items if not r]
-        rw = sum(w.winfo_reqwidth() + g for w, g in rights)
-        first = True
-        for w, g in lefts:
-            ww, wh = w.winfo_reqwidth(), w.winfo_reqheight()
-            limit = W - (rw if first else 0)
-            if x and x + ww > limit:
-                x, y, line_h, first = 0, y + line_h + self.vgap, 0, False
-            w.place(x=x, y=y)
-            x += ww + g
-            line_h = max(line_h, wh)
-        if rights:
-            if first and x + rw - rights[-1][1] <= W:
-                rx = W - rw + rights[-1][1]
-                for w, g in rights:
-                    w.place(x=rx, y=0)
-                    rx += w.winfo_reqwidth() + g
-                    line_h = max(line_h, w.winfo_reqheight())
-            else:
-                for w, g in rights:
-                    ww = w.winfo_reqwidth()
-                    if x and x + ww > W:
-                        x, y, line_h = 0, y + line_h + self.vgap, 0
-                    w.place(x=x, y=y)
-                    x += ww + g
-                    line_h = max(line_h, w.winfo_reqheight())
-        h = y + line_h
-        if int(self.cget("height") or 0) != h:
-            self.configure(height=max(1, h))
-
-
 def _pads(v):
     """pack's padx -> (left, right). 2.103.2: Tk hands a pair back as a tuple, (12, 0) - it was read as no padding,
     so every row made with flowify lost its gaps (Clear filters touched Order added)."""

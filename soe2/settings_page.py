@@ -731,10 +731,6 @@ class SettingsPage:
                 except (tk.TclError, IndexError):
                     pass
 
-    def draw_look_swatch(self):
-        """(2.0.0's swatch - the theme cards show each look now)"""
-        return None
-
     def on_launcher(self):
         mode = next((k for k, t in self.shell.LAUNCHERS if t == self.launcher_var.get()), "dock")
         self.shell.set_launcher(mode)
@@ -1002,13 +998,6 @@ class SettingsPage:
             except tk.TclError:
                 pass
 
-    def reset_quick_copy(self):
-        SETTINGS["quick_copy_key"] = ""
-        save_json("settings.json", SETTINGS)
-        self.fill_hotkeys()
-        self.update_mouse_watch()
-        self.hk_msg.config(text="Reset: items are copied with Ctrl+Alt+C only.", fg=C["green"])
-
     def save_hotkeys(self):
         from .overlay import parse_key
         bad = []
@@ -1077,7 +1066,6 @@ class SettingsPage:
         self.pop_var = tk.BooleanVar(value=SETTINGS["popups"])
         self.snd_var = tk.BooleanVar(value=SETTINGS["sound"])
         self.copy_var = tk.BooleanVar(value=SETTINGS["auto_copy"])
-        self.hk_var = tk.BooleanVar(value=SETTINGS.get("hotkey_only", True))
         self.status_var = tk.StringVar(value=SETTINGS["status"])
         self.age_var = tk.StringVar(value=SETTINGS["age"])
         self.unit_var = tk.StringVar(value=dict(PRICE_UNITS).get(SETTINGS.get("price_unit") or "auto", PRICE_UNITS[0][1]))

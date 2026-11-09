@@ -9,7 +9,7 @@ import requests
 import threading
 import time
 from . import buglog
-from .config import APP_VERSION, load_json, P, save_json
+from .config import load_json, P, save_json
 from .util import _num
 
 

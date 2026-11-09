@@ -17,7 +17,7 @@ import os
 import re
 import time
 
-from .config import APP_UA, APP_DIR, RESOURCE_DIR, P, SETTINGS, load_json, save_json
+from .config import APP_UA, APP_DIR, RESOURCE_DIR, P, SETTINGS, save_json
 
 FILE = "campaign.json"
 SCHEMA = 1
@@ -335,13 +335,6 @@ def start_here(act_key, i, run=None):
 
 
 # ---------------------------------------------------------------- rewards
-def reward_state(r, run=None):
-    """'got' / 'skip' / 'remind' / 'missed' / 'ask' / 'open'."""
-    run = run or char()
-    have = run["rewards"].get(r["id"])
-    if have:
-        return have
-    return "open"
 
 
 def set_reward(rid, state, run=None):

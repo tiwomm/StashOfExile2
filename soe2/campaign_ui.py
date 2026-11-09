@@ -241,10 +241,6 @@ class CampaignUI:
             return False
         return True
 
-    def camp_in_town(self):
-        d = CP.line()
-        return bool(d) and (d["in_town"] or bool(getattr(self, "_camp_town", False)))
-
     def camp_on_bar(self):
         return CP.active()                                  # 2.97.0: on = its line shows (no line switch)
 

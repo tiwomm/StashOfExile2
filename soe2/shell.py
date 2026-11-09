@@ -16,7 +16,6 @@ from . import buglog
 from .style import C
 
 TITLE_ON = ("#34508a", "#1a2a4c")
-TITLE_OFF = ("#26324a", "#182236")
 UTIL_TITLE = ("#3a3020", "#1e1810")
 DOCK_W = 96
 KINDS = (("module", "MODULES"), ("tool", "TOOLS"), ("utility", "UTILITIES"))
@@ -395,11 +394,6 @@ class DeskWindow(tk.Toplevel):
         self._move_soon()
 
     # (older names, kept for tests and callers)
-    def _grip_press(self, e):
-        self._resize_press(e, "se")
-
-    def _grip_drag(self, e):
-        self._resize_drag(e)
 
     # ---- show / hide
     def place_at(self, x, y, w, h):
@@ -1454,14 +1448,7 @@ class Shell:
         else:
             f = tk.Frame(self.task_right, bg="#111b30")
             self._task_dot_frame = f
-        self.task_dots = {}
-        for k, mod in self.modules.items():
-            if True:                         # 2.97.3 (feedback): no "● Overlay" on the taskbar - the sidebar's dot
-                continue                     # shows it already (task_dots stays, empty)
-            lab = tk.Label(f, text=f"● {mod.short}", bg="#111b30", fg="#5a6a88", font=("Segoe UI", 9), cursor="hand2")
-            lab.pack(side="left", padx=4)
-            lab.bind("<Button-1>", lambda e, kk=k: self.open(kk))
-            self.task_dots[k] = (lab, mod)
+        self.task_dots = {}                  # 2.97.3: no "● Overlay" on the taskbar - the sidebar's dot shows it
         if old is not None:
             return
         f.pack(side="left", padx=8)

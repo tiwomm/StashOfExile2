@@ -9,7 +9,7 @@ from tkinter import ttk
 
 from . import buglog
 from .config import SETTINGS, save_json
-from .style import C, Tooltip
+from .style import Tooltip
 
 # (label, key): the helpers switched on / off, then the tools' menus on the bar
 QUICK_HELPERS = (("Breach", "breach"), ("Delirium", "delirium"), ("Ritual", "ritual"), ("Expedition", "remnant"),

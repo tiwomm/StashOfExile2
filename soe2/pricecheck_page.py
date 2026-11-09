@@ -364,7 +364,6 @@ class PriceCheckPage:
     def _pc_verdict_row(self, body):
         """p4 (feedback: "Couldn't price" in the card and "Couldn't search" again on the right): the answer, how sure,
         how it was worked out and the next steps - one strip across the top. The only orange button: Search again."""
-        from .style import Tooltip
         f = self.pc_verdict = tk.Frame(body, bg=C["panel2"], padx=12, pady=8, highlightthickness=1,
                                        highlightbackground=C["line"])
         left = tk.Frame(f, bg=C["panel2"])
@@ -609,20 +608,20 @@ class PriceCheckPage:
                 self.pcpop_show(self.records[rid])
             except Exception:
                 self.log_error("the price check card over the game")
-            if True:                                     # 2.123.3: Overlay + Here - the app shows it too, without taking
-                try:                                     # the keyboard from the game (the card stays up)
-                    import sys as _sys
-                    if _sys.platform == "win32":
-                        from .overlaywin import _fg_hwnd
-                        self._pc_game_hwnd = _fg_hwnd()
-                    self.shell.open("pricecheck")
-                    if self.root.state() == "iconic":
-                        self.root.deiconify()
-                    from .overlay import game_active, POE_TITLE
-                    if game_active((getattr(self, "overlay", None) and self.overlay.cfg.get("poe_title")) or POE_TITLE):
-                        self.root.after(80, self._pc_keep_game)
-                except Exception:
-                    self.log_error("opening Price Checks")
+            # 2.123.3: Overlay + Here - the app shows it too, without taking the keyboard from the game (card stays up)
+            try:
+                import sys as _sys
+                if _sys.platform == "win32":
+                    from .overlaywin import _fg_hwnd
+                    self._pc_game_hwnd = _fg_hwnd()
+                self.shell.open("pricecheck")
+                if self.root.state() == "iconic":
+                    self.root.deiconify()
+                from .overlay import game_active, POE_TITLE
+                if game_active((getattr(self, "overlay", None) and self.overlay.cfg.get("poe_title")) or POE_TITLE):
+                    self.root.after(80, self._pc_keep_game)
+            except Exception:
+                self.log_error("opening Price Checks")
             return rid
         try:
             self.shell.open("pricecheck")
@@ -701,14 +700,6 @@ class PriceCheckPage:
                 self.pc_hist_empty.place_forget()
             else:
                 self.pc_hist_empty.place(relx=0.5, rely=0.5, anchor="center")
-
-    def pc_pick_hist_tv(self):
-        if getattr(self, "_pc_hist_quiet", False):
-            return
-        sel = self.pc_hist_tv.selection()
-        rec = self.records.get(int(sel[0])) if sel else None
-        if rec is not None and rec["id"] != getattr(self, "pc_rid", None):
-            self.pc_show(rec)
 
     def pc_pick_hist(self):
         i = self.pc_hist_cb.current()

@@ -1,7 +1,6 @@
 """The Money Makers window (2.28.0): community strats in one standard layout (left: the list, right: the strat) and a
 simple run tracker of its own. Data and the layout check live in moneymakers.py."""
 import json
-import threading
 import time
 import tkinter as tk
 import webbrowser

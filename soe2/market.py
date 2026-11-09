@@ -8,7 +8,7 @@ import statistics
 import threading
 import time
 from . import buglog
-from .config import MODBOOK, P, SETTINGS
+from .config import P, SETTINGS
 from .rates import RATES
 from .mods import HIGH_LIFT, impact_of, LEARNED, MIN_WITH, MIN_WITHOUT, rebuild_community, search_sid, sid_for_line, SIDTEXT, TEXT2SID, vfilter
 
@@ -656,8 +656,6 @@ class Market:
             return False
 
     # ---- 2.51.0: Manual feed - you tell the Mod book what an item is worth (an expensive tablet you saw sell, ...)
-    FEED_MAX = 10
-
     def feed(self, item, div, copies=1, price_txt="", note=""):
         """An item and its price -> one listing at that price, kept with the ones the Mod book learns from (the same
         way a sale is), and a row in 'fed' so you can see and undo it. 2.54.1: one item = one price - no

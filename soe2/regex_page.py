@@ -513,11 +513,6 @@ class RegexPage:
             menu.add_command(label=label, command=lambda i=imp: (self.set_rules(keys, i), self.rx_refresh_values()))
         menu.tk_popup(e.x_root, e.y_root)
 
-    def rx_val_opts(self):
-        self.rx_state["_val_first"] = bool(self.rx_val_first.get())
-        self.rx_save()
-        self.rx_filter()
-
     def rx_select_valuable(self):
         """Add every mod the Mod book rates High to "I want" (Match: Any - one valuable mod is enough)."""
         st = self._rx()
@@ -983,11 +978,6 @@ class RegexPage:
             self.rx_state[f["kind"]] = copy.deepcopy(f["state"])
             self.rx_kind_changed()
             self.rx_preset.set(name)
-
-    def rx_del_preset(self):
-        name = self.rx_preset.get()
-        idx = [str(i) for i, f in enumerate(self.rx_favs) if f["kind"] == self.rx_kind.get() and f["name"] == name]
-        self.rx_fav_delete(idx)
 
     # ---------------- test on a copied item
     def rx_paste_test(self, text=None):

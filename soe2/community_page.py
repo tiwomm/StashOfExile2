@@ -18,8 +18,6 @@ from .config import SETTINGS, save_json
 from .style import C
 
 PAGE = "Privacy & community"
-NAME_WHY = ("Other players see it on what you post, vote on or edit on Money Makers, and beside your times on the "
-            "Leaderboards. You only need one for those - price checks, the overlay and everything else never use it.")
 NAME_STORED = ("Stored: the name, and a key on this PC (board_session.json in your data folder) - no email, no "
                "password, never your account or character name. The board keeps a scrambled internet address for "
                "daily limits only, deleted the next day.")

@@ -218,10 +218,6 @@ def set_reviewer(on=True):
     return _keep_user(call("POST", "/auth/reviewer", body={"on": bool(on)}))
 
 
-def admin_reviewer(user_id, on):
-    return call("POST", f"/users/{user_id}/reviewer", body={"on": bool(on)})
-
-
 # ---------------------------------------------------------------- 2.86.0: global leaderboards
 def lb_send(entries):
     """Your best times (leaderboard.payload). -> (True, {"kept", "refused"}); the board takes one batch per 10 min."""

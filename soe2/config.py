@@ -138,7 +138,6 @@ DEFAULTS = {
     "pc_both": False,      # 2.123.2: ...and the app shows it too (Here | Overlay | Both)
     "pc_close_key": "Esc",  # 2.121.1: closes that card (only while it's open and the game is in front)
     "pc_art": True,        # ...with the items' pictures from the trade site's image server
-    "hotkey_only": True,   # only accept items copied while YOU press Ctrl+Alt+C (ignores other tools' copies)
     "memory_hours": 24,
     "market_league": "",        # the league market.db's current data belongs to (1.23)
     "rates_auto": True,    # check the exchange rates once an hour (poe.ninja) so prices in other currencies can be converted

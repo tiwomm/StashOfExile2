@@ -13,8 +13,8 @@ from . import buglog
 from .config import save_json, SETTINGS
 from .gamelog import find_log, LogReader
 from .overlay import game_active, key_label, parse_key
-from .style import ScrollArea, C, FONT_TITLE, SegBar
-from .chrome import SectionBar, Viewport, section as chrome_section
+from .style import ScrollArea, C, SegBar
+from .chrome import section as chrome_section
 from .tracker import fmt_time, Session, Sessions
 
 DEFAULTS = {"overlay": True, "locked": False, "x": 60, "y": 260, "w": 230, "h": 190, "opacity": 225,
@@ -99,9 +99,6 @@ class TrackerPage:
         page.pack(fill="both", expand=True)
         self.ovh_pages = {"Overlay": page, "Session timer": page}
         self.build_tracker_window(page)
-
-    def ovh_show(self):
-        pass
 
     def ovh_open(self, tab):
         """Open the Overlay screen: the Mechanic Helper or Notes part of its Options (the ⚙ on the overlay, old links).
@@ -646,21 +643,6 @@ class TrackerPage:
                                         f"Pause / resume the timer: {key_label(cfg.get('key_pause')) or 'none'} "
                                         f"(or ⏸ / ▶ on the overlay)")
 
-    def tracker_save_keys(self):
-        cfg, bad = self.tracker_cfg(), []
-        for k, v in self.tk_key_vars.items():
-            txt = v.get().strip()
-            if txt and not parse_key(txt):
-                bad.append(txt)
-                continue
-            cfg[k] = txt
-        self.tracker_save()
-        clash = self.hotkey_clashes()
-        msg = ("Not understood: " + ", ".join(bad)) if bad else ("Saved. " + ("Clash: " + "; ".join(clash) if clash else ""))
-        if getattr(self, "tk_key_msg", None) is not None:
-            self.tk_key_msg.config(text=msg, fg=C["red"] if bad or clash else C["green"])
-        self.tracker_keys_hint()
-
     def tracker_keys_hint(self):
         """The keys next to Start (2.10.0), so you know they exist."""
         from .overlay import key_label
@@ -723,12 +705,6 @@ class TrackerPage:
         self.tk_log_lbl.config(text=f"Following {path} ({size:,.0f} MB - only new lines are read). "
                                     "Right-click here to use a different Client.txt.", fg=C["muted"])
         return True
-
-    def tracker_char_set(self):
-        cfg = self.tracker_cfg()
-        cfg["character"] = self.tk_char.get().strip()
-        self.tracker_save()
-        self.tracker_char_hint()
 
     def tracker_char_hint(self):
         if getattr(self, "tk_char_hint", None) is None:          # (2.96.1: the name box is gone)
@@ -1071,15 +1047,6 @@ class TrackerPage:
             self.tracker_fill_history()
 
     # ---------------- the timer over the game
-    def tracker_overlay_toggle(self):
-        cfg = self.tracker_cfg()
-        if self.tk_overlay is not None:
-            self.tracker_overlay_hide()
-            cfg["overlay"] = False
-        else:
-            cfg["overlay"] = True
-            self.tracker_overlay_show()
-        self.tracker_save()
 
     def tracker_overlay_show(self):
         self.tracker_overlay_build()
@@ -1097,7 +1064,6 @@ class TrackerPage:
 
     # ---------------- the Mechanic Helper switches (2.59.0: part of the one overlay window)
     HELPERS = ("breach", "delirium", "ritual", "remnant")
-    HELPER_W = {"ritual": 11}                      # room for "Ritual 2/3", so the bar never changes size
 
     def tracker_helpers_build(self):
         """The four mechanic switches: part of the one overlay window (2.59.0: always one window)."""

@@ -765,7 +765,7 @@ def current_key(k):
     return next(iter(d))
 
 
-MIGRATED_RULES = migrate_rule_keys(RULES, lambda: save_json("mod_rules.json", RULES))
+migrate_rule_keys(RULES, lambda: save_json("mod_rules.json", RULES))
 migrate_rule_keys(DEFAULT_RULES)
 
 

@@ -92,7 +92,6 @@ THINKING = {1: ("Autopilot", "the same every map, no decisions"),
             3: ("Moderate", "some planning, a few mechanics at once"),
             4: ("Hard", "constant decisions, crafting or trading know-how"),
             5: ("Big brain", "deep mechanics, market timing, risky calls")}
-THOUGHTS = {k: f"{w} - {d}" for k, (w, d) in THINKING.items()}
 CLICKS = {"Chill": "slow pace, few pickups - easy on the hands",
           "Steady": "normal mapping: loot, a few stashes",
           "Busy": "lots of looting, opening and selling",
@@ -616,10 +615,6 @@ def new_strat(**kw):
 def runs():
     d = load_json(RUNS, [])
     return [r for r in d if isinstance(r, dict) and "start" in r and "end" in r] if isinstance(d, list) else []
-
-
-def save_runs(items):
-    save_json(RUNS, items[-2000:])
 
 
 def stats(items, strat=None):

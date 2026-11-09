@@ -19,7 +19,6 @@ from .config import SETTINGS
 
 CATS = (("campaign", "Campaign"), ("zone", "Campaign zones"), ("map", "Maps"), ("boss", "Bosses & pinnacles"),
         ("trial", "Trials"))
-CAT_NAMES = dict(CATS)
 TOTAL = "Whole campaign"
 # the fastest a time can honestly be (seconds) - the board checks the same
 FLOOR = {"campaign": 120, "zone": 10, "map": 30, "boss": 10, "trial": 60}

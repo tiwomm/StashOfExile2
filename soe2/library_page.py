@@ -6,8 +6,7 @@ from tkinter import ttk
 from . import gamedata
 from .clipboard import read_clipboard_text
 from .style import C, MONO
-from .chrome import SectionBar, Viewport, section as chrome_section
-from .config import PAGE_CHECKS
+from .chrome import section as chrome_section
 from .pricefmt import fmt_div
 
 DEF_SHORT = {"ar": "AR", "ev": "EV", "es": "ES"}
@@ -291,13 +290,6 @@ class LibraryPage:
             txt, col = ("Pricing… " if st == "pricing" else "Waiting in line… ") + "(it is on the Bulk Pricing page too)", C["muted"]
         self.lib_price_lbl.config(text=txt, fg=col)
         self.lib_open_btn.pack(side="right", padx=(8, 0))
-
-    def lib_inspect(self, text):
-        """Open Under the hood with this copied item in it (Price checks: 'Under the hood' on an item)."""
-        self.shell.open("library")
-        self.lib_in.delete("1.0", "end")
-        self.lib_in.insert("1.0", text or "")
-        self.lib_check()
 
     def lib_lookup(self, words):
         """Show a base or mod on the left."""

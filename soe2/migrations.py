@@ -40,8 +40,8 @@ def _status_ib(S):
 
 def _copy_hotkey_only(S):
     """2.98.3: One-key copy and "Other ways of copying" are gone - Bulk Pricing adds only your own Ctrl+Alt+C."""
-    S["quick_copy_key"] = ""
-    S["hotkey_only"] = True
+    S.pop("quick_copy_key", None)
+    S.pop("hotkey_only", None)
 
 
 def _gear_plus(S):
@@ -118,6 +118,13 @@ def _shortcuts_2126(S):
     S.pop("model_shortcut", None)
 
 
+def _leftovers_2126(S):
+    """2.126.0: settings left behind by features removed earlier (one-key copy and "Other ways of copying",
+    2.98.3) - nothing reads them."""
+    for k in ("quick_copy_key", "hotkey_only"):
+        S.pop(k, None)
+
+
 STEPS = (
     ("modbook_import", "1.x", "app", _modbook_import, "modbook_imported"),
     ("rules_scoped", "2.6.0", "app", _rules_scoped, "rules_scoped_26"),
@@ -130,6 +137,7 @@ STEPS = (
     ("cols_2125", "2.125.3", "settings", _cols_2125, None),
     ("pc_settings_2125", "2.125.5", "settings", _pc_settings_2125, None),
     ("shortcuts_2126", "2.125.6", "settings", _shortcuts_2126, None),
+    ("leftovers_2126", "2.126.0", "settings", _leftovers_2126, None),
 )
 
 

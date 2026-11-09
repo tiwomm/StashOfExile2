@@ -583,24 +583,6 @@ class MergedOverlay:
         self.tk_ov_lbls[key] = t
         return t
 
-    def _mg_header(self, cv, P, x, y, w, text, right=None, right_cmd=None):
-        """A small section title with a line after it (and a small action at the right)."""
-        f = (P.get("hfont") or P["font"], 8, "bold")
-        t = text.upper() if (P.get("caps") or P.get("rules")) else text
-        cv.create_text(x, y, text=t, anchor="w", fill=P["head"], font=f, tags=("mg",))
-        tw = tkfont.Font(root=cv, family=f[0], size=8, weight="bold").measure(t)
-        end = x + w
-        if right:
-            rid = cv.create_text(end, y, text=right, anchor="e", fill=P["muted"], font=(P["font"], 9),
-                                 tags=("mg", "mg_hdr_" + text))
-            cv.tag_bind("mg_hdr_" + text, "<Button-1>", lambda e: right_cmd())
-            cv.tag_bind("mg_hdr_" + text, "<Enter>", lambda e: cv.configure(cursor="hand2"))
-            cv.tag_bind("mg_hdr_" + text, "<Leave>", lambda e: cv.configure(cursor=""))
-            bb = cv.bbox(rid)
-            end = (bb[0] if bb else end) - 8
-        if end > x + tw + 8:
-            cv.create_line(x + tw + 8, y, end, y, fill=P["line"], tags=("mg",))
-
 
     def _mg_clock(self, w, cv, P, x, y, anchor="ne", on_bar=True):
         clk = cv.create_text(x, y, text="", anchor=anchor, fill=P["muted"], font=(P["font"], self._hf(9)), justify="right",
