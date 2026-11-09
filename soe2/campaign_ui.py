@@ -17,8 +17,48 @@ from tkinter import ttk
 
 from . import buglog
 from . import campaign as CP
+from .overlaywin import CanvasText
 
 PAGES = ("Route", "Rewards", "Act times")   # 2.89.2: "Splits" said nothing to most players
+
+
+def fit_lines(fnt, text, px, lines):
+    """2.123.7: text word-wrapped to px pixels (measured, not counted in letters) on at most `lines` lines; what's
+    left over is cut with "…" at the end of the last line."""
+    text = " ".join(str(text or "").split())
+    out, cur = [], ""
+    words = text.split(" ")
+    for i, wd in enumerate(words):
+        t = f"{cur} {wd}" if cur else wd
+        if not cur or fnt.measure(t) <= px:
+            cur = t
+            continue
+        out.append(cur)
+        cur = wd
+        if len(out) == lines:                          # no room for more: the rest goes on the last line, then cut
+            out[-1] = " ".join([out[-1]] + words[i:])
+            cur = ""
+            break
+    if cur:
+        out.append(cur)
+    for i, ln in enumerate(out):
+        if fnt.measure(ln) > px:
+            while len(ln) > 1 and fnt.measure(ln + "…") > px:
+                ln = ln[:-1]
+            out[i] = ln.rstrip(" ,.") + "…"
+    return "\n".join(out)
+
+
+class FitText(CanvasText):
+    """A canvas text that fits itself into px pixels on at most `lines` lines (the campaign line - its text is set
+    again on every overlay refresh)."""
+    fnt, px, lines = None, 200, 1
+
+    def config(self, **kw):
+        if "text" in kw and self.fnt is not None:
+            kw["text"] = fit_lines(self.fnt, kw["text"], self.px, self.lines)
+        super().config(**kw)
+    configure = config
 
 
 class CampaignUI:
@@ -158,31 +198,64 @@ class CampaignUI:
                     pass
 
     # ================================================================ L: the line (drawn on the goal bar)
-    def camp_draw_row(self, cv, P, lft, rgt, mid, font):
-        """Draw the campaign line between lft and rgt at mid. -> the items clicked for the route card."""
+    def _camp_fonts(self, P, root=None):
         import tkinter.font as tkfont
-        from .merged_page import _Trunc, click_not_drag
+        root = root or self.root
+        return (tkfont.Font(root=root, family=P["hfont"], size=self._hf(9), weight="bold"),      # the head
+                tkfont.Font(root=root, family=P["font"], size=self._hf(10)),                    # the line
+                tkfont.Font(root=root, family=P["font"], size=self._hf(9)))                     # levels / step
+
+    @staticmethod
+    def _camp_info(d, fi, room):
+        """Levels and step if they fit in room px, else the step only, else "2/14" (2.123.7), else nothing."""
+        short = d["step"].replace("step ", "").replace(" of ", "/") if d["step"] else ""
+        for info in ("   ".join(t for t in (d["levels"], d["step"]) if t), d["step"], short):
+            if info and fi.measure(info) + 14 <= room:
+                return info
+        return ""
+
+    def camp_lines(self, P, avail):
+        """2.123.7 (feedback: "you can't see any of the information"): how many text lines the campaign row needs
+        in avail px - 1 when the head and the whole line fit side by side, else the head on its own line and the
+        line under it, wrapped to at most 2 lines."""
+        d = CP.line()
+        if not d:
+            return 1
+        fh, fm, fi = self._camp_fonts(P)
+        text = "▸ " + CP.line_text()
+        side = avail - fh.measure(d["head"]) - 12
+        if fm.measure(text) <= side - (fi.measure(d["step"]) + 14 if d["step"] else 0):
+            return 1
+        return 1 + len(fit_lines(fm, text, avail, 2).split("\n"))
+
+    def camp_draw_row(self, cv, P, lft, rgt, mid, font, n=1, lh=0):
+        """Draw the campaign line between lft and rgt, centered on mid; n > 1: the head and step on top, the line
+        wrapped under them (n - 1 lines, lh px each). -> the items clicked for the route card."""
+        from .merged_page import click_not_drag
         d = CP.line()
         if not d:
             return None
         hf = (P["hfont"], self._hf(9), "bold")
-        fh = tkfont.Font(root=cv, family=P["hfont"], size=self._hf(9), weight="bold")
-        fm = tkfont.Font(root=cv, family=P["font"], size=self._hf(10))
-        head = cv.create_text(lft, mid, text=d["head"], anchor="w", fill=P["head"], font=hf, tags=("mg", "camp"))
-        x = lft + fh.measure(d["head"]) + 12
+        fh, fm, fi = self._camp_fonts(P, cv)
+        y1 = mid - (n - 1) * lh / 2 if n > 1 else mid       # the head's line
+        y2 = mid + lh / 2 if n > 1 else mid                 # the middle of the line's block under it
+        keep = fi.measure(self._camp_info(d, fi, 10 ** 6).split("   ")[-1].replace("step ", "").replace(" of ", "/")) \
+            + 26 if d["step"] else 0                         # (room for at least "2/14" beside the head)
+        head = cv.create_text(lft, y1, text=fit_lines(fh, d["head"], rgt - lft - keep, 1), anchor="w",
+                              fill=P["head"], font=hf, tags=("mg", "camp"))
+        x = lft + fh.measure(cv.itemcget(head, "text")) + 12
         right = rgt
         # (2.92.2: Vendor ▾ moved to the bar's menus, beside Notes / Calc / Regex)
-        info = "   ".join(t for t in (d["levels"], d["step"]) if t)
-        fi = tkfont.Font(root=cv, family=P["font"], size=self._hf(9))
-        if info and fi.measure(info) + 14 > (rgt - x) * 0.45:      # 2.97.0: narrow (Panel) - the step only, or none
-            info = d["step"] if d["step"] and fi.measure(d["step"]) + 14 <= (rgt - x) * 0.45 else ""
+        info = self._camp_info(d, fi, (rgt - x) if n > 1 else (rgt - x) * 0.45)
         if info:
-            cv.create_text(right, mid, text=info, anchor="e", fill=P["muted"], font=(P["font"], self._hf(9)),
+            cv.create_text(right, y1, text=info, anchor="e", fill=P["muted"], font=(P["font"], self._hf(9)),
                            tags=("mg", "campinfo"))
-            right -= tkfont.Font(root=cv, family=P["font"], size=self._hf(9)).measure(info) + 14
-        it = cv.create_text(x, mid, text="", anchor="w", fill=P["text"], font=font, tags=("mg", "campline"))
-        t = _Trunc(cv, it, P["bg"], halo=self._mg_halo(P))
-        t.limit = max(4, int((right - x) / (fm.measure("n") or 7)))
+            right -= fi.measure(info) + 14
+        if n > 1:
+            x, right = lft, rgt
+        it = cv.create_text(x, y2, text="", anchor="w", fill=P["text"], font=font, tags=("mg", "campline"))
+        t = FitText(cv, it, P["bg"], halo=self._mg_halo(P))
+        t.fnt, t.px, t.lines = fm, max(40, right - x), max(1, n - 1)
         t.config(text="▸ " + CP.line_text())
         self.tk_ov_lbls["campaign"] = t
         for item in (head, it):

@@ -230,7 +230,6 @@ class OverlayParts:
     def goalbar_build(self):
         """(Re)build the goal bar after the overlay was built. -> the window or None."""
         from .overlaywin import OverlayWindow
-        from .merged_page import _Trunc
         from . import hudart, themes as TH
         from .overlaywin import _seed, pal
         import tkinter.font as tkfont
@@ -264,7 +263,14 @@ class OverlayParts:
         from .merged_page import HUD_SPOTS, OLD_HUD_H                  # (2.118.0: the bar is one row now - the lines
         bar_h = self.hud_spots("xpbar")[0][3] * OLD_HUD_H / HUD_SPOTS["xpbar"][0][3]   # keep their size)
         row_h = max(30, int((bar_h if hud else 60) * (0.55 if hud else 0.62)))
-        gh = row_h + int(row_h * 0.8) * (len(rows) - 1)
+        hs = [row_h if i == 0 else int(row_h * 0.8) for i in range(len(rows))]
+        camp_n, camp_lh = 1, 0
+        if "campaign" in rows:                                # 2.123.7: a narrow bar wraps the line instead of cutting it
+            side = self._u(12) if light else (44 if hud else 16)          # (the most the frame takes each side)
+            camp_n = self.camp_lines(P, gw - 2 - 2 * side)
+            camp_lh = tkfont.Font(root=self.root, family=P["font"], size=self._hf(10)).metrics("linespace")
+            hs[rows.index("campaign")] += (camp_n - 1) * camp_lh
+        gh = sum(hs)
         x, y = self._goalbar_spot(layout, gw, gh)
 
         def moved(nx, ny, _w, _h):
@@ -312,7 +318,11 @@ class OverlayParts:
                 cv.create_image(0, 0, image=art, anchor="nw", tags=("hudbg",))
                 cv._card_imgs = [art]
             lft, rgt = 16, W - 16
-        mids = [int(H * (2 * i + 1) / (2 * len(rows))) for i in range(len(rows))]
+        mids, edges, top = [], [], 0
+        for h in hs:                                          # each row's middle (2.123.7: rows can differ in height)
+            mids.append(int((top + h / 2) * H / gh))
+            top += h
+            edges.append(int(top * H / gh))
         f = (P["font"], self._hf(10))
         self.goal_rows = rows                               # (2.118.0: was gb_rows - the Gear book has a method of that name)
         if not cfg.get("mlocked"):                    # 2.112.4: a grip to drag it by (see-through styles have nothing
@@ -320,10 +330,10 @@ class OverlayParts:
                                fill=P.get("muted", P["text"]), font=("Segoe UI Symbol", self._hf(10)), tags=("mg", "grip"))
             cv.tag_bind(g, "<Enter>", lambda _e: cv.configure(cursor="fleur"))
             cv.tag_bind(g, "<Leave>", lambda _e: cv.configure(cursor=""))
-        for a, b in zip(mids, mids[1:]):                      # a thin line between two lines
-            cv.create_line(lft, (a + b) // 2, rgt, (a + b) // 2, fill=P["line"], tags=("mg",))
+        for e in edges[:-1]:                                  # a thin line between two lines (at the row's edge)
+            cv.create_line(lft, e, rgt, e, fill=P["line"], tags=("mg",))
         if "campaign" in rows:
-            self.camp_draw_row(cv, P, lft, rgt, mids[rows.index("campaign")], f)
+            self.camp_draw_row(cv, P, lft, rgt, mids[rows.index("campaign")], f, n=camp_n, lh=camp_lh)
             if light:
                 self._lt_halo_tags(cv, P, ("camp",))
         if "ritual" in rows:                                  # 2.118.0: the Ritual line
@@ -346,8 +356,9 @@ class OverlayParts:
                        tags=("mg",))
         nx = lft + fm.measure("▸ NOW ") + 8
         pw = 0 if fprog is None else self._hf(56)
-        ft = self._mg_text(cv, P, nx, mid, "focus", f, cls=_Trunc)
-        ft.limit = max(4, int((rgt - nx - pw - 12) / (fm.measure("n") or 7)))
+        from .campaign_ui import FitText
+        ft = self._mg_text(cv, P, nx, mid, "focus", f, cls=FitText)
+        ft.fnt, ft.px = fm, max(40, rgt - nx - pw - 12)     # 2.123.7: fitted by width, not a count of letters
         ft.config(text=ftext)
         self._focus_click(cv, ft)
         if fprog is not None:
