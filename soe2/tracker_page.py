@@ -483,13 +483,11 @@ class TrackerPage:
         # (the lines above the bar: in Helpers, beside Focus and Campaign)
         self.tk_fline_var = tk.BooleanVar(value=bool(F.cfg()["line"]))
         self.tk_cline_var = tk.BooleanVar(value=bool(CP.cfg()["line"]))
-        self.tk_goal_dock = tk.BooleanVar(value=self.goalbar_docked())
         # ---- Options: how the overlay behaves
         box = card(0, 1, "Options", "How the overlay behaves.")
         self.tk_lock = tk.BooleanVar(value=bool(cfg.get("mlocked")))      # 2.59.0: ONE lock for the whole overlay
         self.tk_auto = tk.BooleanVar(value=bool(cfg.get("autostart")))           # 2.14.0
         self.overlay_hide_capture()                                                    # (2.89.1: its one-time reset)
-        dv = self.tk_goal_dock
         # 2.120.1 (feedback: "Mouse" was confusing): the two names other overlays use - Lock position and
         # Click-through - side by side here and in Quick settings (2.120.0 had them as one Mouse choice; before that
         # Click-through sat in Settings › Appearance). Each works on its own, as 2.74.3 asked.
@@ -497,8 +495,7 @@ class TrackerPage:
         switches(box, (("Lock position", self.tk_lock, lambda: self.overlay_lock(bool(self.tk_lock.get()))),
                        ("Click-through (clicks go to the game)", self.tk_ct,
                         lambda: self.ov_click_through_set(bool(self.tk_ct.get()))),
-                       ("Start the overlay with StashOfExile2", self.tk_auto, self.tracker_options_changed),
-                       ("Dock the lines to the bar", dv, lambda: self.goal_dock_set(dv))), 2)
+                       ("Start the overlay with StashOfExile2", self.tk_auto, self.tracker_options_changed)), 2)
         from .style import Tooltip
         Tooltip(self.tk_ov_switches["Lock position"], "The overlay stays where it is (the 🔒 on the bar too).")
         Tooltip(self.tk_ov_switches["Click-through (clicks go to the game)"],

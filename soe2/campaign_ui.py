@@ -155,18 +155,40 @@ class CampaignUI:
             except tk.TclError:
                 pass
 
-    def camp_refresh(self):
-        """The line changed: rebuild the goal bar (and an open route card)."""
+    def camp_refresh(self, card=True):
+        """The line changed: redraw it on the overlay (in place when it still fits the same rows) and the open
+        route card's pages (card=False: a click on the card already changed its own line)."""
         try:
-            self.goalbar_build()
+            if not self.camp_line_redraw():
+                self.goalbar_build()
         except Exception:
             self.log_error("the goal bar")
-        if getattr(self, "camp_win", None) is not None:
+        if card and getattr(self, "camp_win", None) is not None:
             act = CP.char().get("act")
             if act and act != getattr(self, "_camp_act", None):      # a new act: the card follows you there
                 self.camp_view = act
             self._camp_act = act
             self.camp_route_fill()
+
+    def camp_line_redraw(self):
+        """2.124.0: the campaign line redrawn where it is, when it still takes as many lines - no rebuild of the
+        overlay's lines (the window kept jumping). -> False when the lines must be built again."""
+        cv, spot = getattr(self, "gb_cv", None), getattr(self, "_gb_camp", None)
+        if cv is None or spot is None or "campaign" not in (getattr(self, "goal_rows", None) or []) \
+                or not self.camp_on_bar() or self.goalbar_rows() != self.goal_rows:
+            return False
+        P, lft, rgt, mid, f, n, lh = spot
+        if self.camp_lines(P, rgt - lft) != n:
+            return False
+        try:
+            for tag in ("camp", "campline", "campinfo"):
+                cv.delete(tag)
+            self.camp_draw_row(cv, P, lft, rgt, mid, f, n=n, lh=lh)
+            if self.ov_light():
+                self._lt_halo_tags(cv, P, ("camp",))
+        except tk.TclError:
+            return False
+        return True
 
     def camp_in_town(self):
         d = CP.line()
@@ -223,8 +245,9 @@ class CampaignUI:
             return 1
         fh, fm, fi = self._camp_fonts(P)
         text = "▸ " + CP.line_text()
-        side = avail - fh.measure(d["head"]) - 12
-        if fm.measure(text) <= side - (fi.measure(d["step"]) + 14 if d["step"] else 0):
+        side = avail - fh.measure(d["head"]) - 12              # (the same sums as camp_draw_row's one line)
+        info = self._camp_info(d, fi, side * 0.45)
+        if fm.measure(text) <= side - (fi.measure(info) + 14 if info else 0):
             return 1
         return 1 + len(fit_lines(fm, text, avail, 2).split("\n"))
 
@@ -258,6 +281,8 @@ class CampaignUI:
         t.fnt, t.px, t.lines = fm, max(40, right - x), max(1, n - 1)
         t.config(text="▸ " + CP.line_text())
         self.tk_ov_lbls["campaign"] = t
+        if cv is getattr(self, "gb_cv", None) or getattr(self, "gb_cv", None) is None:
+            self._gb_camp = (P, lft, rgt, mid, font, n, lh)
         for item in (head, it):
             click_not_drag(cv, item, self.camp_route_show)      # (2.112.5: a drag moves the line, no card)
             cv.tag_bind(item, "<Enter>", lambda e: cv.configure(cursor="hand2"))
@@ -281,15 +306,19 @@ class CampaignUI:
     # ---------------------------------------------------------------- M, N, Q: the route card
     def camp_route_show(self, page=None, act_key=None):
         if getattr(self, "camp_win", None) is not None:
-            self.camp_page = page or self.camp_page
-            self.camp_view = act_key or self.camp_view
-            self.camp_route_fill()
+            if act_key and act_key != self.camp_view:         # another act: its pages again
+                self.camp_view = act_key
+                self.camp_page = page or self.camp_page
+                self.camp_route_fill()
+            elif page:
+                self.camp_tab(page)                           # 2.124.0: a tab only swaps the page shown
             return self.camp_win
         self.camp_page = page or "Route"
         self.camp_view = act_key or CP.char().get("act") or (CP.acts()[0]["key"] if CP.acts() else None)
         self._camp_act = CP.char().get("act")
         w, body, P = self._camp_card("Campaign", "🗺", 560, on_close=lambda: self.camp_route_close())
         self.camp_win, self.camp_body, self.camp_P = w, body, P
+        self.camp_size = (0, 0)
         self.camp_route_fill()
         w.show()
         return w
@@ -303,6 +332,9 @@ class CampaignUI:
                 pass
 
     def camp_route_fill(self):
+        """Build the card: the tabs, the act list and all three pages at once (2.124.0, feedback: clicking Rewards
+        made the window resize over and over) - a tab then only swaps the page shown, and the card keeps one size,
+        the biggest page's."""
         body, P = self.camp_body, self.camp_P
         for c in body.winfo_children():
             c.destroy()
@@ -316,16 +348,62 @@ class CampaignUI:
             b.pack(side="left", padx=(0, 4))
             self.camp_page_btns[p] = b
         names = [a["name"] for a in CP.acts()]
-        if names and self.camp_page != "Act times":
+        self.camp_act_cb = None
+        if names:
             self.camp_act_var = tk.StringVar(value=CP.act_name(self.camp_view))
             cb = ttk.Combobox(top, values=names, textvariable=self.camp_act_var, state="readonly", width=12)
-            cb.pack(side="right")
-            cb.bind("<<ComboboxSelected>>", lambda e: self.camp_route_show(
-                act_key=next((a["key"] for a in CP.acts() if a["name"] == self.camp_act_var.get()), None)))
-        page = tk.Frame(body, bg=bg)
-        page.pack(fill="both", expand=True, pady=(8, 0))
-        {"Route": self._camp_route_page, "Rewards": self._camp_rewards_page,
-         "Act times": self._camp_splits_page}[self.camp_page](page, P)
+            # 2.124.0: after the list has closed - the card is built again, and the list went with it while its
+            # own dropdown still held the mouse
+            cb.bind("<<ComboboxSelected>>", lambda e: self.root.after(1, lambda: self.camp_route_show(
+                act_key=next((a["key"] for a in CP.acts() if a["name"] == self.camp_act_var.get()), None))))
+            self.camp_act_cb = cb
+        self.camp_pages, self._camp_route_dirty = {}, False
+        for name, fn in (("Route", self._camp_route_page), ("Rewards", self._camp_rewards_page),
+                         ("Act times", self._camp_splits_page)):
+            page = tk.Frame(body, bg=bg)
+            fn(page, P)
+            self.camp_pages[name] = page
+        w = self.camp_win
+        need_w, need_h = getattr(self, "camp_size", (0, 0))
+        for name in PAGES:                                    # (each page shown once to measure it)
+            self._camp_show_page(name)
+            try:
+                w.update_idletasks()
+                need_w, need_h = max(need_w, w.winfo_reqwidth()), max(need_h, w.winfo_reqheight())
+            except tk.TclError:
+                pass
+        self._camp_show_page(self.camp_page)
+        self.camp_size = (need_w, need_h)
+        try:                                                  # one fixed size: what's inside no longer resizes it
+            w.geometry(f"{need_w}x{need_h}+{w.winfo_x()}+{w.winfo_y()}")
+        except tk.TclError:
+            pass
+
+    def _camp_show_page(self, name):
+        for n, pg in self.camp_pages.items():
+            if n != name:
+                pg.pack_forget()
+        self.camp_pages[name].pack(fill="both", expand=True, pady=(8, 0))
+        cb = getattr(self, "camp_act_cb", None)
+        if cb is not None:
+            if name == "Act times":
+                cb.pack_forget()
+            elif not cb.winfo_ismapped():
+                cb.pack(side="right")
+
+    def camp_tab(self, page):
+        if page not in getattr(self, "camp_pages", {}):
+            return
+        self.camp_page = page
+        if page == "Route" and getattr(self, "_camp_route_dirty", False):
+            self._camp_route_dirty = False
+            pg = self.camp_pages["Route"]
+            for c in pg.winfo_children():
+                c.destroy()
+            self._camp_route_page(pg, self.camp_P)
+        for p, b in self.camp_page_btns.items():
+            b.configure(style=self.ov_btn("Primary.TButton" if p == page else "Quiet.TButton"))
+        self._camp_show_page(page)
 
     def _camp_route_page(self, page, P):
         bg, c, run = P["bg"], CP.cfg(), CP.char()
@@ -339,7 +417,7 @@ class CampaignUI:
                  font=(P["font"], self.ov_font(9))).pack(side="right")
         rows = CP.steps(key, run)
         self.camp_rows = []
-        marks = {"done": ("✓", P["on"]), "here": ("▸", P["head"]), "todo": ("○", P["muted"]),
+        self.camp_marks = marks = {"done": ("✓", P["on"]), "here": ("▸", P["head"]), "todo": ("○", P["muted"]),
                  "passed": ("–", P["muted"])}
         gives = {}
         for r in CP.rewards(key):
@@ -352,11 +430,14 @@ class CampaignUI:
             f = tk.Frame(page, bg=rbg, cursor="hand2")
             f.pack(fill="x", pady=1)
             mk, col = marks[s["state"]]
-            tk.Label(f, text=mk, bg=rbg, fg=col, width=2, font=(P["font"], self.ov_font(10))).pack(side="left")
+            ml = tk.Label(f, text=mk, bg=rbg, fg=col, width=2, font=(P["font"], self.ov_font(10)))
+            ml.pack(side="left")
             txt = s["zone"] + (f" - {s['do']}" if s.get("do") else "")
             fg = P["text"] if s["state"] in ("here", "todo") else P["muted"]
-            tk.Label(f, text=txt, bg=rbg, fg=fg, font=(P["font"], self.ov_font(10), "bold" if here else "normal"), anchor="w",
-                     wraplength=380, justify="left").pack(side="left", fill="x", expand=True)
+            tl = tk.Label(f, text=txt, bg=rbg, fg=fg, font=(P["font"], self.ov_font(10), "bold" if here else "normal"),
+                          anchor="w", wraplength=380, justify="left")
+            tl.pack(side="left", fill="x", expand=True)
+            f.parts = (ml, tl)
             side = ", ".join(gives.get(CP.norm(s["zone"]), []))
             if s.get("learned"):
                 side = f"not in the {patch} guide"
@@ -409,6 +490,7 @@ class CampaignUI:
     def _camp_rewards_page(self, page, P):
         bg, run = P["bg"], CP.char()
         tot = CP.totals(run)
+        self.camp_total_labs = {}
         grid = tk.Frame(page, bg=bg)
         grid.pack(fill="x")
         cells = (("SKILL POINTS", "points"), ("SPIRIT", "spirit"))
@@ -417,15 +499,15 @@ class CampaignUI:
             f = tk.Frame(grid, bg=bg)
             f.grid(row=0, column=i, sticky="w", padx=(0, 24))
             tk.Label(f, text=lab, bg=bg, fg=P["muted"], font=(P["font"], self.ov_font(8), "bold")).pack(anchor="w")
-            tk.Label(f, text=f"{have} / {of}", bg=bg, fg=P["text"], font=(P["font"], self.ov_font(15), "bold")).pack(anchor="w")
-        res = []
-        for k, name in (("res_cold", "Cold"), ("res_lightning", "Lightning"), ("res_fire", "Fire")):
-            have, of = tot.get(k, (0, 0))
-            res.append(f"{name} {'✓' if of and have >= of else '○'}")
+            self.camp_total_labs[k] = tk.Label(f, text=f"{have} / {of}", bg=bg, fg=P["text"],
+                                               font=(P["font"], self.ov_font(15), "bold"))
+            self.camp_total_labs[k].pack(anchor="w")
         f = tk.Frame(grid, bg=bg)
         f.grid(row=0, column=2, sticky="w")
         tk.Label(f, text="RESISTANCES", bg=bg, fg=P["muted"], font=(P["font"], self.ov_font(8), "bold")).pack(anchor="w")
-        tk.Label(f, text=" · ".join(res), bg=bg, fg=P["text"], font=(P["font"], self.ov_font(10), "bold")).pack(anchor="w", pady=(4, 0))
+        self.camp_total_labs["res"] = tk.Label(f, text=self._camp_res_text(tot), bg=bg, fg=P["text"],
+                                               font=(P["font"], self.ov_font(10), "bold"))
+        self.camp_total_labs["res"].pack(anchor="w", pady=(4, 0))
         tk.Label(page, text=CP.act_name(self.camp_view).upper(), bg=bg, fg=P["head"],
                  font=(P["hfont"] or P["font"], self.ov_font(9), "bold"), anchor="w").pack(fill="x", pady=(8, 2))
         self.camp_reward_vars = {}
@@ -480,20 +562,76 @@ class CampaignUI:
     # ---------------------------------------------------------------- actions
     def camp_here(self, i):
         run = CP.char()
-        if run.get("act") == self.camp_view:
+        same = run.get("act") == self.camp_view
+        if same:
             CP.set_here(i, run)
         else:
             CP.start_here(self.camp_view, i, run)                  # "Start from here" (partway through)
+        if same and self._camp_rows_restyle():                     # 2.124.0: only the rows whose mark changed
+            return self.camp_refresh(card=False)
         self.camp_refresh()
 
+    def _camp_rows_restyle(self):
+        """The route page's rows take their new state (✓ ▸ ○ –) in place. -> False when the steps changed."""
+        rows, P = CP.steps(self.camp_view, CP.char()), self.camp_P
+        frames = getattr(self, "camp_rows", None) or []
+        if len(rows) != len(frames) or any(s.get("learned") for s in rows):
+            return False
+        bg = P["bg"]
+        try:
+            for s, f in zip(rows, frames):
+                here = s["state"] == "here"
+                rbg = P.get("cell_bg", bg) if here else bg
+                mk, col = self.camp_marks[s["state"]]
+                ml, tl = f.parts
+                if ml.cget("text") == mk and f.cget("bg") == rbg:
+                    continue
+                for wdg in f.winfo_children() + [f]:
+                    wdg.configure(bg=rbg)
+                ml.configure(text=mk, fg=col)
+                tl.configure(fg=P["text"] if s["state"] in ("here", "todo") else P["muted"],
+                             font=(P["font"], self.ov_font(10), "bold" if here else "normal"))
+        except (tk.TclError, AttributeError, KeyError):
+            return False
+        return True
+
     def camp_step(self, delta):
+        """◀ ▶ on the route card: a step back or on (2.124.0: within the act, only the rows that changed)."""
         CP.step_by(delta)
-        self.camp_view = CP.char().get("act") or self.camp_view
+        act = CP.char().get("act") or self.camp_view
+        if act == self.camp_view and getattr(self, "camp_win", None) is not None and self._camp_rows_restyle():
+            return self.camp_refresh(card=False)
+        self.camp_view = act
         self.camp_refresh()
 
     def camp_tick(self, rid, on):
+        """A reward ticked on the card: its box already shows it - the totals and the overlay's line follow
+        (2.124.0: the card isn't built again)."""
         CP.set_reward(rid, "got" if on else None)
-        self.camp_refresh()
+        self._camp_totals_paint()
+        self._camp_route_dirty = True                          # (the Route page's "worth" notes: when it's shown)
+        self.camp_refresh(card=False)
+
+    def _camp_totals_paint(self):
+        tot, labs = CP.totals(CP.char()), getattr(self, "camp_total_labs", None) or {}
+        try:
+            for k, lab in labs.items():
+                have, of = tot.get(k, (0, 0))
+                if k == "res":
+                    continue
+                lab.configure(text=f"{have} / {of}")
+            if "res" in labs:
+                labs["res"].configure(text=self._camp_res_text(tot))
+        except tk.TclError:
+            pass
+
+    @staticmethod
+    def _camp_res_text(tot):
+        res = []
+        for k, name in (("res_cold", "Cold"), ("res_lightning", "Lightning"), ("res_fire", "Fire")):
+            have, of = tot.get(k, (0, 0))
+            res.append(f"{name} {'✓' if of and have >= of else '○'}")
+        return " · ".join(res)
 
     def camp_note(self, zone):
         CP.set_note(zone, self.camp_note_var.get())
@@ -664,14 +802,6 @@ class CampaignUI:
             side="left", padx=(0 if into is not None else 8, 0), pady=(4 if into is not None else 0, 0))
         ttk.Button(pk, text="Open the route", style="Quiet.TButton", command=self.camp_route_show).pack(
             side="left", padx=(8, 0), pady=(4 if into is not None else 0, 0))
-
-    def goal_dock_set(self, var=None):
-        """2.79.1: the campaign / Focus line docked to the bar (on) or where you drag it (off)."""
-        cfg = self.tracker_cfg()
-        cfg["goal_dock"] = bool((var or self.tk_goal_dock).get())
-        cfg.pop("goal_pos", None)
-        self.tracker_save()
-        self.goalbar_build()
 
     def camp_route_pick(self, name):
         CP.cfg()["route"] = next((k for k, n in CP.ROUTES if n == name), "full")
