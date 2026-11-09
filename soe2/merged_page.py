@@ -1,6 +1,6 @@
 """One overlay (2.55.0, from the mockups): the Session timer, the Mechanic Helper and Notes in ONE window
 over the game. 2.67.0: two looks, both the game's own - the Panel (a card like the game's vendor windows: header
-plate, stats in a grid, the switches) and the Game bar (on the XP bar, in the HUD's own frame). 2.67.0: the four
+plate, stats in a grid, the switches) and the Bar (on the XP bar, in the HUD's own frame). 2.67.0: the four
 switches are in both whenever the timer shows. Notes opens as its own window from Notes ▾.
 
 Which parts show: the timer while a session runs (2.70.1: each part - the timer, each number, where you are, the clock,
@@ -15,8 +15,8 @@ from .overlaywin import CanvasText, OverlayWindow, pal
 
 # 2.66.0: one look (the app's theme); the layout says the shape - Minimal moved here from the old Style list
 # 2.67.0 (feedback: "get rid of all of the other options"): the Panel in the game's vendor-window style (the
-# Treasurer's ledger) and the Game bar on the XP bar. Strip, Minimal and beside-the-orbs are gone (-> Panel).
-LAYOUTS = {"panel": "Panel", "xpbar": "Game bar"}     # 2.67.0: beside the orbs is gone; 2.74.0: "Game bar"
+# Treasurer's ledger) and the Bar on the XP bar. Strip, Minimal and beside-the-orbs are gone (-> Panel).
+LAYOUTS = {"panel": "Panel", "xpbar": "Bar"}     # 2.67.0: beside the orbs is gone; 2.74.0: "Bar"
 HUD = ("xpbar",)                 # 2.65.0: fitted to the game's own bottom bar, in its look
 
 # Where the game's bottom bar leaves room, as parts of the game window's height (PoE2 at 16:9, UI scale 100 %;
@@ -142,7 +142,7 @@ class _Num(CanvasText):
     def config(self, **kw):
         if "text" in kw:
             import re
-            m = re.match(r"^\s*(?:Map:?|Maps:?|Avg\.?:?|★)\s*(.*)$", str(kw["text"]))
+            m = re.match(r"^\s*(?:Maps:?|Map:?|Zone:?|Avg\.?:?|★)\s*(.*)$", str(kw["text"]))
             if m:
                 kw["text"] = m.group(1)
             elif "tracking" in str(kw["text"]):              # (no session running)
@@ -210,7 +210,7 @@ class MergedOverlay:
         return True
 
     def merged_layout(self):
-        v = self.tracker_cfg().get("layout", "xpbar")      # 2.74.0: the Game bar by default
+        v = self.tracker_cfg().get("layout", "xpbar")      # 2.74.0: the Bar by default
         return v if v in LAYOUTS else "panel"            # (2.67.0: an old Strip / Minimal is the Panel now)
 
     def merged_embeds_notes(self):
@@ -218,7 +218,7 @@ class MergedOverlay:
         return False
 
     def hud_spots(self, layout=None):
-        """2.65.0: the Game bar windows' places -> [(x, y, w, h)]: fitted to the game window (or the main screen),
+        """2.65.0: the Bar windows' places -> [(x, y, w, h)]: fitted to the game window (or the main screen),
         or where you dragged them (Settings › Appearance › Fit to the game puts them back)."""
         layout = layout or self.merged_layout()
         from .alerts_page import game_rect
@@ -295,6 +295,23 @@ class MergedOverlay:
         except Exception:
             return "", None
 
+    def ov_camp_mode(self):
+        """2.124.0 (feedback: in campaign areas it should say Zone, no tier rank or average): the Campaign Helper is
+        on and you're in a campaign zone - the overlay shows the act line, the session and the zone's time only."""
+        try:
+            from . import campaign as CP
+            return CP.zone_time() is not None
+        except Exception:
+            return False
+
+    def ov_lines(self):
+        """The overlay's parts that show (Options › On the overlay) - in a campaign zone without the map's rank, its
+        name, Maps and Avg."""
+        ln = dict(self.tracker_cfg()["lines"])
+        if self.ov_camp_mode():
+            ln.update(rank=False, where=False, maps=False, avg=False)
+        return ln
+
     def merged_set(self, layout=None):
         """Settings › Appearance: the style or the Layout changed - rebuild the overlay (and a dropped-down note)."""
         cfg = self.tracker_cfg()
@@ -310,7 +327,7 @@ class MergedOverlay:
                 pass
             self.overlay.notes = None
         if layout in LAYOUTS:
-            if layout != cfg.get("layout"):                 # 2.66.0: a Game bar layout picked again starts fitted
+            if layout != cfg.get("layout"):                 # 2.66.0: a Bar layout picked again starts fitted
                 (cfg.get("hud_pos") or {}).pop(layout, None)
                 cfg.pop("lt_pos", None)                      # 2.101.0: the light looks' bars too
             cfg["layout"] = layout
@@ -332,7 +349,7 @@ class MergedOverlay:
     def merged_destroy(self):
         lines_h = getattr(self, "_gb_h", 0)                           # (2.124.0: the lines on top - the bar is under them)
         self.goalbar_destroy(keep_place=False)
-        w2, self.mg_win2 = getattr(self, "mg_win2", None), None      # 2.65.0: the second Game bar half
+        w2, self.mg_win2 = getattr(self, "mg_win2", None), None      # 2.65.0: the second Bar half
         if w2 is not None:
             try:
                 w2.destroy()
@@ -416,6 +433,7 @@ class MergedOverlay:
     def _merged_build(self):
         cfg = self.tracker_cfg()
         self.merged_destroy()
+        self._ov_camp_built = self.ov_camp_mode()
         want = self.merged_wants()
         self.mg_built = dict(want)
         if not any(want.values()):
@@ -904,7 +922,7 @@ class MergedOverlay:
         if want["timer"]:                                   # 2.70.1: each number has its switch (Options)
             for key, icon in (("session", "\u23f1"), ("map", "\u231b"), ("maps", "\u2691"), ("avg", "\u2248"),
                               ("rank", "\u2605")):            # 2.76.0: the map's rank, its own cell
-                if cfg["lines"].get(key, True):
+                if self.ov_lines().get(key, True):
                     cells.append((key, icon))
         if cells:
             rows = (len(cells) + 1) // 2
@@ -973,7 +991,7 @@ class MergedOverlay:
         cv.configure(width=W, height=H)
 
 
-    # ---------------------------------------------------------------- 2.65.0: Game bar (on the XP bar / beside the orbs)
+    # ---------------------------------------------------------------- 2.65.0: Bar (on the XP bar / beside the orbs)
     def _mg_hud_build(self, want):
         """One window resting on the XP bar, or two - right of the life orb (the timer) and left of the mana orb
         (the switches, Notes, the clock) - in the game's own bar look. Fitted to the game window; drag them while
@@ -1054,7 +1072,7 @@ class MergedOverlay:
         return name
 
     def _hf(self, n):
-        """A font size for the Game bar, grown with the game window (made for 1080 px high)."""
+        """A font size for the Bar, grown with the game window (made for 1080 px high)."""
         return max(7, round(n * getattr(self, "_hud_k", 1.0)))
 
     def _hud_frame(self, cv, P, W, H, cap=None):
@@ -1125,7 +1143,7 @@ class MergedOverlay:
             right = self._mg_bar_buttons(w, cv, P, right - 4, mid, anchor="e") - SW
             self._hud_sep(cv, P, right + SW // 2, H, cy=mid, h=sh)
         x = lft
-        ln = cfg["lines"]                                    # 2.70.1: each part has its switch (Options)
+        ln = self.ov_lines()                                 # 2.70.1: each part has its switch (Options)
         if want["timer"]:
             if ln.get("session", True):
                 x += self._mg_play(cv, P, x, mid, anchor="w", size=12) + 8      # 2.74.3: ⏸ / ▶ before the time

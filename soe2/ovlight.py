@@ -7,7 +7,7 @@ changes size - each as a Bar (resting on the XP bar) and a Panel (a card you pla
   flanks    (shown as Split) no box: the numbers beside the life orb, the switches beside the mana orb - the middle stays clear
   micro     the smallest: the times, the rank and the switches as lettered squares (Ritual shows its count, 2/3)
 "Classic" is the stone-and-bronze look of before (hudart.py). Settings › Appearance › Overlay settings: Style, then
-Colors ("Exile Gold" is the Game bar's own colors; the others are the theme packs'; "Follow the app theme").
+Colors ("Exile Gold" is the Bar's own colors; the others are the theme packs'; "Follow the app theme").
 The same parts as Classic: the timer and its ⏸ / ▶, the map's time, where you are, its rank (click to rank), Maps,
 Avg, the clock, the switches, Notes ▾ / Calc ▾ / Regex ▾ / Vendor ▾, the lock and ⚙ - each with its switch in
 Overlay › Options. The goal bar (Focus / Campaign) is drawn in the same style (ovparts.py).
@@ -33,7 +33,7 @@ KEY = "#010101"                    # a box-less look's see-through color (never 
 WARN = "#e0a352"
 
 # id: (name, box, line, text, strong, muted, accent) - each theme pack's own surface_sunken, border, text,
-# text_strong, text_muted and accent (themes/*.json); Exile Gold is the Classic Game bar's (hudart.palette)
+# text_strong, text_muted and accent (themes/*.json); Exile Gold is the Classic Bar's (hudart.palette)
 COLORS = {
     "theme": ("Follow the app theme",) + (None,) * 6,
     "exile": ("Exile Gold", "#0d0c0b", "#3a362f", "#d9cfb5", "#efe4c6", "#9a8f78", "#c4a05c"),
@@ -167,12 +167,25 @@ class LightOverlay:
             self.mg_P = P
             row = tk.Frame(host, bg=scene)
             row.pack(fill="x")
-            pieces = ["left", "right"] if style == "flanks" else ["all"]
+            panel = self.merged_layout() != "xpbar"          # 2.124.0: the layout picked (the Panel too)
+            pieces = ["left", "right"] if style == "flanks" and not panel else ["all"]
             spot_h = max(26, int(0.036 * 1440 * scale))
+            if panel:
+                self._hud_k = hud_k(1440) * 0.8
             for piece in pieces:
+                if panel and style == "classic":
+                    P = hudart.card_palette(theme_palette())
+                    _seed(TH, P)
+                    self.mg_P = P
                 f = OverlayFrame(row, P)
                 cv = f.canvas_body()
-                if style == "classic":
+                if panel and style == "classic":
+                    self._mg_card(f, cv, P, want)
+                    W, H = int(cv.cget("width")), int(cv.cget("height"))
+                elif panel:
+                    kind = "ornate" if style in ORNATE else style
+                    W, H = getattr(self, f"_lt_{kind}_panel")(f, cv, P, want, (0, 0, width, spot_h), piece)
+                elif style == "classic":
                     W, H = width - 2, spot_h - 2
                     self._hud_ends = ("crimson", "sapphire")
                     self._hud_row(f, cv, P, want, W, H)
@@ -181,7 +194,7 @@ class LightOverlay:
                     W, H = getattr(self, f"_lt_{kind}_bar")(f, cv, P, want, (0, 0, width, spot_h), piece)
                 cv.configure(width=W, height=H)
                 side = "right" if piece == "right" else "left"
-                f.pack(side=side, anchor="s", padx=((width - W) // 2 if style == "micro" else 0, 0))
+                f.pack(side=side, anchor="s", padx=((width - W) // 2 if style == "micro" and not panel else 0, 0))
                 canvases.append(cv)
             sample = {"session": "1:24:07", "map": "Map: 3:12", "where": "Bluff", "maps": "Maps: 6",
                       "avg": "Avg: 6:01", "rank": "★ A"}
@@ -462,7 +475,7 @@ class LightOverlay:
         from .merged_page import _MapPart, _PartOf
         u = self._u
         slate = style == "slate" or style in ORNATE
-        cfg, ln = self.tracker_cfg(), self.tracker_cfg()["lines"]
+        cfg, ln = self.tracker_cfg(), self.ov_lines()
         fm = self._lt_fm(cv, P, 10)
         pad, sw = u(10), u(20)                              # (sw: a separator's slot)
         menus_w = self._lt_menus_w(cv, P) if self.bar_buttons_on() else 0
@@ -550,7 +563,7 @@ class LightOverlay:
         """Flanks: "left" = the numbers (right of the life orb), "right" = the switches, menus, clock, lock and ⚙
         (left of the mana orb). Each piece is as small as its content."""
         u = self._u
-        cfg, ln = self.tracker_cfg(), self.tracker_cfg()["lines"]
+        cfg, ln = self.tracker_cfg(), self.ov_lines()
         pad = u(6)
         rl = u(150)                                          # the accent rule's length
         if piece == "left":
@@ -606,7 +619,7 @@ class LightOverlay:
     def _lt_micro_bar(self, w, cv, P, want, spot, piece):
         """Micro: ⏸ time | 3:12 ★ A | B D R E | menus · lock ⚙ - only as wide as that."""
         u = self._u
-        cfg, ln = self.tracker_cfg(), self.tracker_cfg()["lines"]
+        cfg, ln = self.tracker_cfg(), self.ov_lines()
         H = u(26)
         mid = H // 2
         pad = u(8)
@@ -647,7 +660,7 @@ class LightOverlay:
         """Hairline Panel: everything right-aligned, like the game's area info (top right): the time, Map / Maps /
         Avg, where you are and its rank, a thin rule, the switches in two columns, the clock, lock and ⚙."""
         u = self._u
-        cfg, ln = self.tracker_cfg(), self.tracker_cfg()["lines"]
+        cfg, ln = self.tracker_cfg(), self.ov_lines()
         PW = u(240)
         pad = u(8)
         R = PW - pad
@@ -698,7 +711,7 @@ class LightOverlay:
         where you are and the rank, the switches in two columns (an accent bar on the left when on), the menus."""
         from .merged_page import _Num
         u = self._u
-        cfg, ln = self.tracker_cfg(), self.tracker_cfg()["lines"]
+        cfg, ln = self.tracker_cfg(), self.ov_lines()
         PW = u(250)
         pad = u(10)
         R = PW - pad
@@ -719,7 +732,7 @@ class LightOverlay:
                     cx += self._mg_play(cv, P, cx, cy, anchor="w", size=9) + u(5)
                     self._lt_time(cv, P, cx, cy, 11, num=True)
                     continue
-                lab = {"map": "Map", "maps": "Maps", "avg": "Avg"}[k]
+                lab = {"map": "Zone" if self.ov_camp_mode() else "Map", "maps": "Maps", "avg": "Avg"}[k]
                 self._lt_text(cv, P, cx, cy, lab, 8, P["muted"])
                 lw = self._lt_fm(cv, P, 8).measure(lab) + u(5)
                 self._lt_text(cv, P, cx + lw, cy, "", 12 if k == "map" else 10, P["big"], bold=k == "map", key=k,
@@ -746,7 +759,7 @@ class LightOverlay:
         """Flanks Panel: the numbers on the left under an accent rule, the switches, clock, lock and ⚙ pushed right
         under another - the bar's two halves stacked."""
         u = self._u
-        cfg, ln = self.tracker_cfg(), self.tracker_cfg()["lines"]
+        cfg, ln = self.tracker_cfg(), self.ov_lines()
         PW = u(230)
         pad = u(6)
         R = PW - pad
@@ -795,7 +808,7 @@ class LightOverlay:
         lock and ⚙ (and the menus) under them."""
         from .merged_page import _Num
         u = self._u
-        cfg, ln = self.tracker_cfg(), self.tracker_cfg()["lines"]
+        cfg, ln = self.tracker_cfg(), self.ov_lines()
         pad = u(8)
         fm = self._lt_fm(cv, P, 10)
         y = pad

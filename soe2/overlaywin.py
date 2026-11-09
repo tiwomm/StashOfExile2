@@ -84,7 +84,7 @@ _THEME_PAL = {}
 
 def theme_palette():
     """2.66.0: the windows over the game take the app's theme (one look everywhere - no separate overlay styles).
-    Built from the running theme pack: its surfaces, text, accent and border colors, its heading font; the Game bar
+    Built from the running theme pack: its surfaces, text, accent and border colors, its heading font; the Bar
     artwork uses the same colors (metal from the border and accent, the gem in the accent)."""
     from . import themes as TH
     t = TH.ST.theme
@@ -378,7 +378,7 @@ class OverlayWindow(tk.Toplevel):
         titlebar=False (2.55.0): no title bar - the Minimal look and the Strip layout draw their own lock and ×.
         extra (2.121.1): more title bar buttons, [(icon, command, tooltip)], left of × (the price check card's ⚙)."""
         parch = (skinned() or palette is not None) and not app_colours   # 2.43.0 / 2.47.0: a PoE2-style skin
-        P = palette or pal()                              # 2.65.0: a layout may bring its own (the Game bar)
+        P = palette or pal()                              # 2.65.0: a layout may bring its own (the Bar)
         if parch:
             body_bg = P["bg"]
         super().__init__(root, bg=P["leather"] if parch else BORDER_OFF, highlightthickness=1,
