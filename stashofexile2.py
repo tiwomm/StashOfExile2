@@ -28,8 +28,9 @@ VERSION HISTORY
        The campaign line fits by measured width, not a count of letters, and wraps under its head when the bar is
        narrow (feedback: "you can't see any of the information"); the step shortens to "2/14" before it goes. The NOW
        line is fitted by width too. Redrawn in place when it still takes as many lines (the window kept jumping).
-       Feedback: in campaign areas it should say Zone, no tier ranking or average. With the Campaign Helper on and
-       you in a campaign zone the overlay shows the act line, the session and the zone's time (from entering the zone
+       Feedback: in campaign areas it should say Zone, no tier ranking or average. With the Campaign Helper on, the
+       whole campaign (hideouts on the way too - Vendor ▾ left the map name no room) shows the act line, the session
+       and the zone's time (from entering the zone
        to leaving it, AFK and hideouts left out); NOW stays when League Plan is on. Each zone's best time goes to a new
        Campaign zones leaderboard, by the zone's name, only with Community data sharing on (as every board).
        Route card (feedback: Rewards made it resize over and over; a click redrew the whole window): all three pages

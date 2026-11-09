@@ -1157,7 +1157,7 @@ class TrackerPage:
         if camp:                                              # 2.124.0: the zone's time, no map numbers
             from . import campaign as _CP
             zt = _CP.zone_time()
-            texts.update(map=f"Zone: {fmt_time(zt) if zt is not None else ''}", where="", rank="", maps="", avg="")
+            texts.update(map=f"Zone: {fmt_time(zt) if zt is not None else '-'}", where="", rank="", maps="", avg="")
         texts["focus"] = self.focus_line()[0]                 # 2.73.0: League Focus's line
         texts["ritual"] = self.ritual_readout()               # 2.118.0: the Ritual line (count, tribute)
         from . import campaign as CP

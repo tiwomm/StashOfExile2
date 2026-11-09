@@ -297,10 +297,11 @@ class MergedOverlay:
 
     def ov_camp_mode(self):
         """2.124.0 (feedback: in campaign areas it should say Zone, no tier rank or average): the Campaign Helper is
-        on and you're in a campaign zone - the overlay shows the act line, the session and the zone's time only."""
+        on and its line shows (the campaign, hideouts on the way included - Vendor ▾ is on the bar then, and the map
+        numbers had no room) - the overlay shows the act line, the session and the zone's time only."""
         try:
             from . import campaign as CP
-            return CP.zone_time() is not None
+            return bool(CP.active())
         except Exception:
             return False
 
