@@ -111,6 +111,13 @@ def _pc_settings_2125(S):
     S["pc_front"] = True
 
 
+def _shortcuts_2126(S):
+    """2.125.6 (feedback): Bulk Pricing's shortcuts (skip a search the Mod Book agrees on; the model prices by itself)
+    are gone - every item is searched."""
+    S.pop("memory_shortcut", None)
+    S.pop("model_shortcut", None)
+
+
 STEPS = (
     ("modbook_import", "1.x", "app", _modbook_import, "modbook_imported"),
     ("rules_scoped", "2.6.0", "app", _rules_scoped, "rules_scoped_26"),
@@ -122,6 +129,7 @@ STEPS = (
     ("no_recap_2124", "2.124.0", "settings", _no_recap_2124, None),
     ("cols_2125", "2.125.3", "settings", _cols_2125, None),
     ("pc_settings_2125", "2.125.5", "settings", _pc_settings_2125, None),
+    ("shortcuts_2126", "2.125.6", "settings", _shortcuts_2126, None),
 )
 
 

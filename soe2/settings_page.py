@@ -51,17 +51,20 @@ class SettingsPage:
         combo(row, self.status_var, [l for l, _ in STATUS_OPTIONS], self.on_listing_rules, 22).pack(side="left")
         tk.Label(row, text="Listed within", **lab).pack(side="left", padx=(16, 8))
         combo(row, self.age_var, [a[0] for a in AGE_OPTIONS], self.on_listing_rules, 10).pack(side="left")
-        row = section("Price checking", "Prices", "The currency every price is shown in (Price Checks, Bulk Pricing, "
-                                                  "Wealth, Market Insights, the timer).")
-        tk.Label(row, text="Prices in", **lab).pack(side="left", padx=(0, 8))
-        combo(row, self.unit_var, [t for _k, t in PRICE_UNITS], self.on_price_unit, 22).pack(side="left")
         # 2.125.5 (feedback: "they don't really add anything"): no Valuable mods amount - the app's own (GOOD_DIV)
-        row = section("Price checking", "How searches are made", "How close to your item's rolls a search asks for, "
-                                                                  "and how many listings a price needs.")
+        # 2.125.6 (feedback): Prices in joins "How searches are made", now called Search Options; the Mod Book's
+        # re-check and background learning rows are gone from Settings (the app's own behavior - "people ... won't
+        # know what that even means")
+        row = section("Price checking", "Search Options", "The currency prices show in, how close to your item's "
+                                                          "rolls a search asks for, and how many listings a price "
+                                                          "needs.")
+        pr = tk.Frame(row, bg=P2)
+        pr.pack(fill="x", pady=(0, 8))
+        tk.Label(pr, text="Prices in", **lab).pack(side="left", padx=(0, 8))
+        combo(pr, self.unit_var, [t for _k, t in PRICE_UNITS], self.on_price_unit, 22).pack(side="left")
+        tk.Label(pr, text="Price Checks, Bulk Pricing, Wealth, Market Insights, the timer", bg=P2, fg=C["muted"],
+                 font=("Segoe UI", 9)).pack(side="left", padx=(12, 0))
         self.build_fine_tuning(row, keys=("range_factor", "min_results", "spread_warn"))
-        row = section("Price checking", "Mod Book", "What the app learns about mods by itself, from the listings your "
-                                                    "searches see.")
-        self.build_fine_tuning(row, keys=("learn", "stale_days"), defaults=False)
 
         from .overlay import key_label
         pck = key_label(SETTINGS.get("pc_key") or "Ctrl+D")
@@ -118,10 +121,7 @@ class SettingsPage:
         self.mark_hold = tk.BooleanVar(value=bool(SETTINGS.get("copy_marker_hold")))
         ttk.Checkbutton(row, text="Keep them until I double-tap Esc", variable=self.mark_hold,
                         command=self.on_copy_marker).pack(side="left")
-        row = section("Price checking", "Shortcuts", "Ways Bulk Pricing can skip a search. Both are careful: off until "
-                                                     "you turn them on.")
-        self.set_anchors["fine"] = row.master
-        self.build_fine_tuning(row, keys=("memory_shortcut", "model_shortcut"), defaults=False)
+        # 2.125.6 (feedback): no Shortcuts (skip a search the Mod Book agrees on / the model prices by itself) - off
 
     def build_account_settings(self, section):
         """2.123.0 (p2): from Price checking - Stash tab and Wealth use it, not price checks."""

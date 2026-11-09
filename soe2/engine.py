@@ -482,26 +482,8 @@ class Engine(TabReaderJobs, WealthJobs, StratCostJobs, threading.Thread):
         mem = MARKET.lower_bound(item["base"], vals, SETTINGS.get("memory_hours", 24) or 24)
         filt_all = Market.filters_of([m for g in plan[0][1] for m in g["mods"]])
         n_item_mods = len(item["mods"])
-        if SETTINGS.get("model_shortcut") and MARKET.model_trusted(item["base"]) and random.random() >= 0.1:
-            comp = MARKET.comparables(item["base"], filt_all, n_item_mods, days=2)     # 1 in 10 is still searched for real
-            g_ = Market.guess(comp)
-            if g_ is not None and len(comp) >= 5:
-                n_, hits_, _r = MARKET.accuracy(item["base"], 0.20, 100)
-                return dict(label=f"FROM MODEL: {len(comp)} similar stored listings from the last 2 days. The model has been "
-                                  f"right {hits_} of its last {n_} checks - no search needed",
-                            total=0, prices=[], est=g_, qid=None, partial=False, thin=False, nomatch=False, stages=[],
-                            wide=False, manual=False, conf="High", conf_why=[f"model proven: {hits_} of {n_} guesses within 20%"],
-                            memory="", model="")
-        if SETTINGS.get("memory_shortcut"):                  # 5+ identical searches lately, all agreeing within 10 percent
-            obs = MARKET.exact(item["base"], Market.filters_of([m for g in plan[0][1] for m in g["mods"]]),
-                               SETTINGS.get("memory_hours", 24) or 24)
-            ests = [o[3] for o in obs if o[1] >= 3]
-            if len(ests) >= 5 and max(ests) / max(min(ests), 1e-9) <= 1.1:
-                est = statistics.median(ests)
-                return dict(label=f"FROM MEMORY: {len(ests)} identical searches in the last {SETTINGS.get('memory_hours', 24)} h "
-                                  f"all agree ({fmt_div(min(ests))} to {fmt_div(max(ests))}) - no search needed",
-                            total=0, prices=[], est=est, qid=None, partial=False, thin=False, nomatch=False, stages=[],
-                            wide=False, manual=False, conf="High", conf_why=["identical searches agree"], memory="")
+        # 2.125.6 (feedback): no shortcuts - every item is searched (1.21's "from memory" and 1.23's "from model"
+        # skipped a search; both were off unless turned on in Settings, which few understood)
         stages, verify_tot = [], {"bad": 0, "unverifiable": False}
         for name, gs in plan:
             self._turn(rec)

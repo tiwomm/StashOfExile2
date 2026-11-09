@@ -139,9 +139,7 @@ DEFAULTS = {
     "pc_close_key": "Esc",  # 2.121.1: closes that card (only while it's open and the game is in front)
     "pc_art": True,        # ...with the items' pictures from the trade site's image server
     "hotkey_only": True,   # only accept items copied while YOU press Ctrl+Alt+C (ignores other tools' copies)
-    "memory_shortcut": False,   # True: skip searching when 5+ identical searches in the last memory_hours agree (see 1.21)
     "memory_hours": 24,
-    "model_shortcut": False,    # True: the model may set a price itself, but only after 100 checked guesses at 99 percent (1.23)
     "market_league": "",        # the league market.db's current data belongs to (1.23)
     "rates_auto": True,    # check the exchange rates once an hour (poe.ninja) so prices in other currencies can be converted
     "stale_days": 3,       # re-check a learned mod after this many days
