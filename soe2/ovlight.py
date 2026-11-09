@@ -329,9 +329,9 @@ class LightOverlay:
         self.tk_ov_clock = _LtClock(t)
         return self._lt_fm(cv, P, 9).measure("00:00 PM")
 
-    def _lt_menus(self, w, cv, P, x, y, anchor="e"):
+    def _lt_menus(self, w, cv, P, x, y, anchor="e", right=None, step=0):
         """Notes ▾ / Calc ▾ / Regex ▾ / Vendor ▾ (MergedOverlay draws them). -> the far edge."""
-        x = self._mg_bar_buttons(w, cv, P, x, y, anchor=anchor)
+        x = self._mg_bar_buttons(w, cv, P, x, y, anchor=anchor, right=right, step=step)
         self._lt_halo_tags(cv, P, ("mg_notes", "mg_calc", "mg_regex", "mg_rates", "mg_vendor"))
         return x
 
@@ -749,8 +749,8 @@ class LightOverlay:
             self.tk_ov_cv = cv
         if self.bar_buttons_on():
             cv.create_line(0, y, PW, y, fill=P["line"], tags=("mg",))
-            self._lt_menus(w, cv, P, pad, y + u(12), anchor="w")
-            y += u(24)
+            self._lt_menus(w, cv, P, pad, y + u(12), anchor="w", right=PW - pad, step=u(20))
+            y += u(24) + (getattr(self, "_mg_menu_rows", 1) - 1) * u(20)
         else:
             y += u(4)
         return PW, y

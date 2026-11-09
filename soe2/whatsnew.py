@@ -39,6 +39,26 @@ NEXT = [
 MAX_BIG = 3
 
 NOTES = {
+    "2.124.0": {
+        "big": [
+            ("🧭", "Campaign lines are part of the overlay",
+             "Campaign, Ritual and NOW sit on top of the overlay, and the overlay grows up, not down.", None, "Overlay"),
+            ("⏱", "Zone timer in the campaign",
+             "In campaign zones: the act line, your session and the zone's time - no rank, Maps or Avg.", None, "Overlay"),
+            ("🏆", "Campaign zones leaderboard",
+             "Your best time in each zone, by name - sent only with Community data sharing on.", None, "Leaderboards"),
+        ],
+        "small": [
+            ("Overlay", "The campaign line wraps on a narrow bar instead of cutting off."),
+            ("Overlay", "The route card no longer resizes or redraws itself when you switch tabs or tick a line."),
+            ("Overlay", "Many ◀ ▶ clicks and an act change shouldn't hide the overlay any more."),
+            ("Overlay", "Vendor search keeps its size when you copy a search."),
+            ("Settings", "Appearance: Layout first (Panel | Bar); the style preview shows the layout you picked."),
+            ("Overlay", "\"Game bar\" is now called Bar."),
+            ("Overlay", "Quick settings: each switch says what it does when you hover it."),
+            ("Overlay", "The Death Recap card is gone."),
+        ],
+    },
     "2.123.6": {
         "big": [],
         "small": [

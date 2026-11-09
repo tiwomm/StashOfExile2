@@ -812,7 +812,7 @@ class SettingsPage:
                 self.ov_style_pick.set(self.ov_look(), redraw=True)
             except Exception:
                 buglog.caught()
-        self.ov_layout_seg = SegBar(g, names, value=self.ov_layout_var.get(), command=layout_picked, size=9, pad=(14, 4))
+        self.ov_layout_seg = SegBar(g, names, value=self.ov_layout_var.get(), command=layout_picked, size=9, pad=(16, 4))
         self.ov_layout_seg.grid(row=0, column=1, sticky="w")
         hint(1, "Bar: rests on the game's XP bar (unlocked, drag it; picking it again puts it back). "
                 "Panel: a card like the game's vendor windows - place it anywhere.")

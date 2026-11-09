@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU GPL v3.0 (see LICENSE). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.123.6
+VERSION 2.124.0
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,6 +19,28 @@ VERSION 2.123.6
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.124.0
+       Feedback: "instead of having it as an isolated separate bar, can we just have it combine when it's enabled?"
+       The Campaign, Ritual and NOW lines are drawn at the top of the overlay's own window, as wide as it, and the
+       window grows upward by their height - the bar itself never moves (goalbar_build: a canvas packed above the
+       bar's; its saved place is the bar's, under the lines). No more separate small window, Dock switch or spot of
+       its own (settings cleaned once). Each line is one text line and a little air (feedback: too tall).
+       The campaign line fits by measured width, not a count of letters, and wraps under its head when the bar is
+       narrow (feedback: "you can't see any of the information"); the step shortens to "2/14" before it goes. The NOW
+       line is fitted by width too. Redrawn in place when it still takes as many lines (the window kept jumping).
+       Feedback: in campaign areas it should say Zone, no tier ranking or average. With the Campaign Helper on and
+       you in a campaign zone the overlay shows the act line, the session and the zone's time (from entering the zone
+       to leaving it, AFK and hideouts left out); NOW stays when League Plan is on. Each zone's best time goes to a new
+       Campaign zones leaderboard, by the zone's name, only with Community data sharing on (as every board).
+       Route card (feedback: Rewards made it resize over and over; a click redrew the whole window): all three pages
+       are built once and a tab only swaps them; the card keeps one size; a tick or a step changes only its own
+       lines. The act list switches after its dropdown has closed, and one window's error no longer stops the watch
+       that shows the overlay over the game (feedback: the overlay vanished after many ◀ ▶ clicks and an act change).
+       Vendor search: the Copied line wraps inside the card instead of widening it.
+       Settings › Appearance: Layout first (Panel | Bar), then Style - its preview shows the layout picked (the Panel
+       had none). "Game bar" is called Bar. The Panel's "Maps s: 6" reads "Maps 6" again. Its menus wrap.
+       Quick settings: every switch and chip has a one-line tip, and an on chip shows ✓.
+       The joke Death Recap card is gone (and its setting).
   2.123.6
        Feedback: "program not remembering where it was if on other monitors after it updates". Two changes: the
        "is it still on a screen?" test asks each monitor (MonitorFromPoint) instead of the box around all monitors
@@ -3033,7 +3055,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.123.6"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.124.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
