@@ -29,6 +29,11 @@ VERSION HISTORY
        Feedback: Routes ▾ and Options ▾ on the route card - the route, and the Campaign switches from Overlay
        Settings › Campaign (one setting each, kept in step both ways), as small panels inside the card, not windows.
        The routes are called Full, Speedrun, Rush (carry) and My Own; "Ask which route when a campaign starts".
+       Feedback: "where did all of the columns go on bulk price checker? ... show all of them by default but have
+       options to toggle them off". The Item column stretched and its width was remembered (1891 px), so every column
+       after it sat out of sight - and Columns ▾ ticks seemed to do nothing. Now every column shows, Columns ▾ turns
+       any of them off but Item (bulk_cols_off), Item's width isn't remembered, others are kept to 420 px at most,
+       and columns wider than the list scroll sideways. Migration cols_2125 drops bulk_cols and Item's old width.
        Feedback: Reload Overlay (⟳ next to All settings… in Quick settings) builds the overlay again and restarts the
        loop that keeps it over the game.
   2.125.2

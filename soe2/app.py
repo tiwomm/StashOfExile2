@@ -192,10 +192,13 @@ class App(SettingsPage, GearBookPage, PriceCheckPage, PricePopup, FavoritesPage,
     # 2.24.0: "★ Valuable" (how many of the item's mods your Mod book rates High) is the last column in the data, so
     # older code reading values by position keeps working, but it's shown right after the item's name
     SHOW_COLS = ("added", "name", "vmods", "type", "ilvl", "mark", "est", "conf", "listings", "priced", "match")
-    # 2.123.0 (p9, feedback: the Price column was cut off): these always show; Columns ▾ adds the rest
-    BASE_COLS = ("name", "type", "mark", "est", "listings")
-    EXTRA_COLS = (("added", "# (order added)"), ("vmods", "★ valuable mods"), ("ilvl", "Item level"),
-                  ("conf", "Confidence"), ("priced", "Priced at"), ("match", "How it was priced"))
+    # 2.125.3 (feedback: "where did all of the columns go ... show all of them by default but have options to toggle
+    # them off"): every column shows; Columns ▾ turns any of them off but Item (SETTINGS bulk_cols_off)
+    BASE_COLS = ("name",)
+    EXTRA_COLS = (("added", "# (order added)"), ("vmods", "★ Valuable mods"), ("type", "Type"), ("ilvl", "Item level"),
+                  ("mark", "Status"), ("est", "Price"), ("conf", "Confidence"), ("listings", "Listings"),
+                  ("priced", "Priced at"), ("match", "How it was priced"))
+    COL_MAX_W = 420                     # (a remembered width never pushes the other columns out of sight)
     MARK_TEXT = {"new": "", "listed": "✔ listed", "sold": "💰 sold", "removed": "✖ removed"}
     VIEW_MARK = {"Not yet listed": "new", "Listed": "listed", "Sold": "sold", "Removed": "removed"}
 
@@ -891,12 +894,21 @@ class App(SettingsPage, GearBookPage, PriceCheckPage, PricePopup, FavoritesPage,
         self.tree.menu_actions = self.checks_menu_actions          # 2.36.0: right-click / Menu key
         for cid, title, w, anchor in self.COLS:
             self.tree.heading(cid, text=title, command=lambda c=cid: self.sort_by(c))
-            self.tree.column(cid, width=max(int(SETTINGS.get("col_widths", {}).get(cid, w)), 95 if cid == "conf" else 0), minwidth=50,
-                             anchor=anchor, stretch=(cid in ("match", "name")))
+            # 2.125.3: Item stretches to fill and starts at its own width (a remembered 1891 px Item hid every column
+            # after it); the others keep their width, at most COL_MAX_W
+            keep = w if cid == "name" else min(self.COL_MAX_W, int(SETTINGS.get("col_widths", {}).get(cid, w)))
+            self.tree.column(cid, width=max(keep, 95 if cid == "conf" else 0), minwidth=50,
+                             anchor=anchor, stretch=(cid == "name"))
         self.cols_apply()
         sb = ttk.Scrollbar(left, orient="vertical", command=self.tree.yview)
         self.tree.configure(yscrollcommand=sb.set)
         sb.pack(side="right", fill="y")
+        # 2.125.3: columns wider than the list scroll sideways instead of going out of sight
+        hsb = ttk.Scrollbar(left, orient="horizontal", command=self.tree.xview)
+        self.tree.configure(xscrollcommand=lambda a, b: (hsb.pack_forget() if float(a) <= 0 and float(b) >= 1
+                                                         else hsb.pack(side="bottom", fill="x", before=self.tree),
+                                                         hsb.set(a, b)))
+        self.tree_hsb = hsb
         self.tree.pack(side="left", fill="both", expand=True)
         self.tree.tag_configure("good", foreground=C["good"])
         self.tree.tag_configure("pending", foreground=C["muted"])
@@ -4094,21 +4106,21 @@ class App(SettingsPage, GearBookPage, PriceCheckPage, PricePopup, FavoritesPage,
 
     # ---------------- 2.123.0 (UX pass 3): columns, ⋯, the item pane only when an item is picked
     def cols_apply(self):
-        extra = set(SETTINGS.get("bulk_cols") or [])
-        self.tree["displaycolumns"] = tuple(c for c in self.SHOW_COLS if c in self.BASE_COLS or c in extra)
+        off = set(SETTINGS.get("bulk_cols_off") or [])
+        self.tree["displaycolumns"] = tuple(c for c in self.SHOW_COLS if c in self.BASE_COLS or c not in off)
 
     def cols_set(self, cid, on):
-        cur = [c for c in SETTINGS.get("bulk_cols") or [] if c != cid] + ([cid] if on else [])
-        SETTINGS["bulk_cols"] = cur
+        cur = [c for c in SETTINGS.get("bulk_cols_off") or [] if c != cid] + ([] if on else [cid])
+        SETTINGS["bulk_cols_off"] = cur
         save_json("settings.json", SETTINGS)
         self.cols_apply()
 
     def cols_menu(self):
         m = tk.Menu(self.root, tearoff=0, bg=C["panel2"], fg=C["text"], activebackground=C["accent"])
-        extra = set(SETTINGS.get("bulk_cols") or [])
+        off = set(SETTINGS.get("bulk_cols_off") or [])
         self._cols_vars = {}
         for cid, label in self.EXTRA_COLS:
-            v = tk.BooleanVar(value=cid in extra)
+            v = tk.BooleanVar(value=cid not in off)
             self._cols_vars[cid] = v
             m.add_checkbutton(label=label, variable=v, command=lambda c=cid, vv=v: self.cols_set(c, bool(vv.get())))
         b = self.cols_btn
@@ -5303,7 +5315,7 @@ class App(SettingsPage, GearBookPage, PriceCheckPage, PricePopup, FavoritesPage,
 
     def save_widths(self):
         try:
-            SETTINGS["col_widths"] = {c[0]: int(self.tree.column(c[0], "width")) for c in self.COLS}
+            SETTINGS["col_widths"] = {c[0]: int(self.tree.column(c[0], "width")) for c in self.COLS if c[0] != "name"}
             pw = int(self.outer.winfo_width())
             if pw >= 250:              # 2.0 beta 22: a closed / minimized window reports 1 - that hid the item panel
                 SETTINGS["panel_w"] = pw

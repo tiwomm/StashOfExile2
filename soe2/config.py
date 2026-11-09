@@ -150,7 +150,8 @@ DEFAULTS = {
     "view": "All",                # which items the list shows (2.105.0: always All - listing marks are gone)
     "auto_copy": True,            # copy the item's name to the clipboard when you click it
     "listen": True,               # watch the clipboard for copied items (always on)
-    "col_widths": {},             # remembered column widths of the item list
+    "col_widths": {},             # remembered column widths of the item list (not Item's: it fills the rest)
+    "bulk_cols_off": [],          # 2.125.3: Bulk Pricing columns turned off in Columns ▾ (all show by default)
     "panel_w": 430,               # remembered width of the side panel
     "uses": "10",                 # tablets: only compare with tablets that have at least this many uses left
     "wealth_account": "",         # Wealth page: your account name as the trade site shows it, e.g. Name#1234 (1.33)
