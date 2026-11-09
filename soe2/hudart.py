@@ -281,10 +281,7 @@ def divider(root, h, P=None):
 # ---------------------------------------------------------------- 2.66.2: the Panel
 # Deep charcoal / dark wood / near-black leather; a heavy dark-metal frame with filigree corners; a header banner with
 # its own decorative frame; the stats (and the switches) in a 2 x 2 grid split by thin divider lines; antique gold.
-LEATHER_TOP, LEATHER_BOT = (24, 21, 19), (13, 11, 10)
-WOOD_TOP, WOOD_BOT = (40, 29, 21), (22, 15, 11)
-IRON_HI, IRON, IRON_MID, IRON_LO = (120, 104, 84), (78, 66, 52), (52, 43, 34), (20, 16, 12)
-AGOLD_HI, AGOLD, AGOLD_LO = (236, 208, 140), (176, 146, 86), (104, 84, 48)
+AGOLD = (176, 146, 86)
 
 
 def glow(root, w, h):

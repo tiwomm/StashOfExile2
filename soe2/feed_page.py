@@ -18,7 +18,7 @@ from .market import MARKET
 from .mods import MIN_WITH, HIGH_LIFT, SCOPED_CATS, norm, rule_key, sid_for_line
 from .pricefmt import parse_price
 from .style import C, Tooltip
-from .chrome import SectionBar, Viewport, section as chrome_section
+from .chrome import section as chrome_section
 
 
 def _st_text(st):

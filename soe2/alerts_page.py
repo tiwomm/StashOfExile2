@@ -21,7 +21,7 @@ from tkinter import ttk
 from . import buglog
 from .config import save_json, SETTINGS
 from .gamelog import area_kind as gl_area_kind, find_log, LogReader
-from .style import C, flowify, Tooltip
+from .style import C, Tooltip
 
 REPEAT_SECS = 45          # the game repeats a warning (twice in 2 s, then every ~15 s when full): one banner per level
 RETRY_TICKS = 15          # Client.txt not found: look again every this many seconds

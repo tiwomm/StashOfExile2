@@ -263,15 +263,3 @@ def map_stats(sessions, current=None, now=None, min_secs=MIN_RUN_SECS):
                  last=max(r["when"] for r in d["list"]),
                  levels=sorted({r["level"] for r in d["list"] if r["level"]}))
     return out
-
-
-def value_at(items, prices, overrides, wealth_key, value_fn=None):
-    """What a list of Wealth items is worth at today's prices (used for both ends of a session, so a price change
-    in between doesn't count as profit)."""
-    total = 0.0
-    for it in items:
-        ov = overrides.get(wealth_key(it))
-        each = float(ov) if ov is not None else (value_fn or prices.value)(it)[0]
-        if each is not None:
-            total += each * (it.get("qty") or 1)
-    return total

@@ -13,9 +13,8 @@ import random
 import time
 
 from .config import SETTINGS, save_json
-from .mods import (IMPACTS, RULES, TIER_ORDER, TIERS, auto_impact, impact_key, norm, rule_key)
+from .mods import (RULES, TIER_ORDER, TIERS, auto_impact, impact_key, norm, rule_key)
 
-GRADES = TIER_ORDER + ("ignore",)
 ASK_AFTER = 25                      # items priced before the first ask
 SNOOZE_DAYS = (3, 7)
 
@@ -136,7 +135,3 @@ def answer(what, rng=random):
         a.update(state="never", at=0)
     save_json("settings.json", SETTINGS)
     return a["state"]
-
-
-def valid_grade(g):
-    return g in GRADES or g in ("up", "down", None, "clear") or g in IMPACTS

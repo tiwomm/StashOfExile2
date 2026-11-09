@@ -178,7 +178,3 @@ def rows(lines):
                 out.append((r, i, box))
         out.sort(key=lambda x: (x[2][1], x[2][0]))
     return out
-
-
-def tag_text(island, rank):
-    return f"{island}  ·  {rank}" if rank else f"{island}  ·  not ranked"

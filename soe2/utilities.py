@@ -169,9 +169,6 @@ class DeliriumHelper:
             return "The standalone PoE2DeliriumAlert.exe is running: use Test alert on its tray icon."
         return self.start(test=True)
 
-    def last_message(self):
-        return "\n".join(self.lines[-3:])
-
     # ---- its settings (data folder/delirium/settings.json, the file the alert itself reads)
     def _settings_path(self):
         return os.path.join(DATA_DIR, "delirium", "settings.json")
@@ -202,14 +199,6 @@ class DeliriumHelper:
         self._write("beep", bool(on))
         self.send("sound_on" if on else "sound_off")
 
-    def get_indicator(self):
-        return bool(self._read().get("indicator", True))
-
-    def set_indicator(self, on):
-        """The small splinter on screen (shows the state while you play)."""
-        self._write("indicator", bool(on))
-        self.send("indicator_on" if on else "indicator_off")
-
     def set_title(self, title):
         self._write("game_window_title", title or "Path of Exile 2")
 
@@ -220,8 +209,6 @@ DELIRIUM = DeliriumHelper()
 class RitualHelper(DeliriumHelper):
     """2.14.0: the Ritual watcher (ritual_alert.py) - the same kind of helper process, started with --ritual.
     It reports "count 2/3" / "count none" / "count unread" and "captured <file>"."""
-    FLAG = "--ritual"
-
     def __init__(self):
         super().__init__()
         self.count = None               # (done, total) while a Ritual counter is on screen

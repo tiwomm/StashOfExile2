@@ -68,10 +68,6 @@ TARGETS = (("div", "Divines", "div"), ("level", "Character level", "level"), ("a
 AUTO_TARGETS = ("level", "maps")
 
 
-def target_name(kind):
-    return next((n for k, n, _u in TARGETS if k == kind), kind)
-
-
 def add_goal(text, phase="start", trigger="town", target_div=None, target_kind=None, target=None):
     """target_kind / target (2.73.4) - or the older target_div (a div target)."""
     if target is None and target_div is not None:

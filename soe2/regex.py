@@ -173,11 +173,6 @@ def tier_range(lo, hi):
     return f"er {inner}\\)"
 
 
-def one_of(numbers):
-    nums = sorted({int(x) for x in numbers})
-    return str(nums[0]) if len(nums) == 1 else "(" + "|".join(str(x) for x in nums) + ")"
-
-
 _SPECIAL = re.compile(r"([\\^$.|?*+()\[\]{}])")
 
 

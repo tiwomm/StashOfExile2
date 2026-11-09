@@ -364,14 +364,6 @@ def _alive(w):
         return False
 
 
-def resync():
-    """Settings changed: apply now."""
-    ok = foreground_ok()
-    for w in list(_LIVE):
-        if _alive(w):
-            w.sync(ok)
-
-
 def skin_inner(host, P, parch, edge, body_bg):
     """The frame inside a window over the game: the skin's second (inner) line, the hud's gold rules. -> the inner
     frame. 2.118.0: shared with OverlayFrame, so a preview has the very same frame."""

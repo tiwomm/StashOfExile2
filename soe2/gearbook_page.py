@@ -11,7 +11,7 @@ import tkinter as tk
 from tkinter import ttk
 
 from . import gearbook as GB
-from .mods import RULES, SHOWN_TIERS, TIER_F, TIERS, F_TIP, impact_key
+from .mods import RULES, SHOWN_TIERS, TIER_F, F_TIP, impact_key
 from .chrome import BarNote, SectionBar, Viewport
 from .style import C, Tooltip
 

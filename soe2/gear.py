@@ -131,8 +131,6 @@ FILLER = {"#% increased Light Radius", "# to # Physical Thorns damage", "# to # 
           "#% increased Knockback Distance", "Recover #% of maximum Life on Kill", "Recover #% of maximum Mana on Kill"}
 LOW_TIER = 6                 # 2.72.0: an affix of tier 6 or lower (T6, T7 ...) rarely adds to a rare's price
 GOOD_ROLL = 0.75             # 2.72.0: a unique's mod rolled in the top quarter of its range is searched on
-CRAFT_ILVL = 75              # 2.72.0: a normal / magic base this high is a crafting base: searched at its item level
-MAX_ILVL = 82                # (no mod needs more than this - a higher item level is worth the same)
 
 
 def is_gear(g):

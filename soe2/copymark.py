@@ -11,8 +11,6 @@ from .alerts_page import TRANSPARENT, click_through, force_topmost
 MARK_SECS = 10
 MAX_MARKS = 30                      # many quick copies: the oldest go first
 RING = "#ffcf40"
-COLOURS = {"Gold": "#ffcf40", "White": "#ffffff", "Red": "#ff3b3b", "Lime": "#5dff3b", "Cyan": "#3be8ff",
-           "Magenta": "#ff3df0", "Orange": "#ff9a1f", "Blue": "#4d8dff"}     # 2.25.0
 SIZE = 16                           # 2.24.0: the + is this many pixels across
 
 

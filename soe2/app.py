@@ -48,7 +48,6 @@ from . import gear, waystone
 from .toasts import Toasts
 from .style import C, MOD_COL, FLAG_COLORS, FONT_TITLE, hotkey_blocked, MONO, Plate, SegBook, SegBar, setup_style, Toast, KeyCapture, Tooltip
 from .chrome import BarNote, SectionBar, Viewport, section as chrome_section
-from .communitymods import WHAT as CM_WHAT
 from .winsys import ICON_B64, KeyWatch, Tray
 from .wealth_page import WealthPage
 from .listkeys import ListKeys
@@ -2180,11 +2179,6 @@ class App(SettingsPage, GearBookPage, PriceCheckPage, PricePopup, FavoritesPage,
         SETTINGS["auto_copy"] = self.copy_var.get()
         save_json("settings.json", SETTINGS)
 
-    def on_any_copy(self):
-        SETTINGS["hotkey_only"] = not self.any_copy_var.get()
-        self.hk_var.set(SETTINGS["hotkey_only"])
-        save_json("settings.json", SETTINGS)
-
     # ---------------- clipboard + events
     def log_error(self, where):
         """Write an unexpected error to the app's log and say so in the status line - never let it stop the app.
@@ -2263,7 +2257,7 @@ class App(SettingsPage, GearBookPage, PriceCheckPage, PricePopup, FavoritesPage,
 
     def gate_ok(self, text):
         """True if this copy may become a row: it must come from YOUR Ctrl+Alt+C (not another tool's key)."""
-        if text == self.own_clip or not SETTINGS.get("hotkey_only", True) or not self.keys.active:
+        if text == self.own_clip or not self.keys.active:
             return True
         if self.keys.combo_recent():
             return True
@@ -2941,9 +2935,6 @@ class App(SettingsPage, GearBookPage, PriceCheckPage, PricePopup, FavoritesPage,
         """Is the Price checks window the one in front? (C / O / Del / Ctrl+A act on its list.)"""
         sh = getattr(self, "shell", None)
         return sh is None or sh.active == "checks"
-
-    def toolbar_for_page(self):
-        """2.0 beta 7: each window has its own toolbar (kept so older callers don't break)."""
 
     def on_page(self, _e=None):
         """Open (or bring to the front) the window named in page_var."""
@@ -4427,7 +4418,7 @@ class App(SettingsPage, GearBookPage, PriceCheckPage, PricePopup, FavoritesPage,
             # fold all / unfold all
             keys_all = ("props", "req", "misc", "aug", "stats", "pseudo", "trade")
             all_open = any(not fold.get(k, k == "req") for k in keys_all)    # (any open: "Fold all")
-            fa = cv.create_text(w - 16, y - 2, text="Fold all ▴" if all_open else "Unfold all ▾", anchor="e",
+            cv.create_text(w - 16, y - 2, text="Fold all ▴" if all_open else "Unfold all ▾", anchor="e",
                                 font=("Segoe UI", 9), fill=C["accent"], tags=("cardfoldall",))
             self._card_click(cv, "cardfoldall", lambda: self.card_fold_all(rec, all_open))
 
@@ -4796,47 +4787,6 @@ class App(SettingsPage, GearBookPage, PriceCheckPage, PricePopup, FavoritesPage,
         b = block("RAW TEXT")
         self._detail_raw(b, rec, wrap - 30)
         ttk.Button(b, text="Copy name  [C]", command=lambda: self.copy_name(rec, True)).pack(anchor="w", pady=(8, 0))
-
-    def _detail_listing(self, bx, rec):
-        """Listed / sold / removed (2.79.0: moved into Advanced)."""
-        P1 = C["panel"]
-        mark = rec.get("mark", "new")
-        cur_txt = {"new": "Not listed yet",
-                   "listed": "✔ Listed" + (f" for {rec['list_price']}" if rec.get("list_price") else ""),
-                   "sold": "💰 Sold" + (f" for {rec['sold_price']}" if rec.get("sold_price") else ""),
-                   "removed": "✖ Removed (reforged / changed)"}[mark]
-        tk.Label(bx, text=cur_txt, bg=P1, font=("Segoe UI", 12, "bold"), anchor="w",
-                 fg={"new": C["text"], "listed": C["green"], "sold": "#7fe0c0", "removed": C["muted"]}[mark]
-                 ).pack(fill="x", pady=(2, 8))
-        prow = tk.Frame(bx, bg=P1)
-        prow.pack(fill="x", pady=(0, 8))
-        tk.Label(prow, text="Listed at", bg=P1, fg=C["muted"], width=8, anchor="w").pack(side="left")
-        suggest = rec.get("list_price") or (fmt_div(rec["est"]) if rec.get("est") is not None and not rec.get("skip") else "")
-        self.price_var = tk.StringVar(value=suggest)
-        ttk.Entry(prow, textvariable=self.price_var, width=14).pack(side="left", padx=(0, 8))
-        if mark == "listed":
-            ttk.Button(prow, text="↺ Unmark listed", command=lambda: self.mark_selected("new")).pack(side="left")
-        else:
-            ttk.Button(prow, text="✔ Mark as listed", style="Primary.TButton",
-                       command=lambda: self.mark_selected("listed")).pack(side="left")
-        srow = tk.Frame(bx, bg=P1)
-        srow.pack(fill="x", pady=(0, 8))
-        tk.Label(srow, text="Sold for", bg=P1, fg=C["muted"], width=8, anchor="w").pack(side="left")
-        self.sold_var = tk.StringVar(value=rec.get("sold_price") or "")
-        se = ttk.Entry(srow, textvariable=self.sold_var, width=14)
-        se.pack(side="left", padx=(0, 8))
-        se.bind("<Return>", lambda e: self.mark_selected("sold"))
-        if mark == "sold":
-            ttk.Button(srow, text="↺ Unmark sold", command=lambda: self.mark_selected("new")).pack(side="left")
-        else:
-            ttk.Button(srow, text="💰 Mark as sold", command=lambda: self.mark_selected("sold")).pack(side="left")
-        tk.Label(bx, text="A real sale teaches the Mod Book what these mods are worth.", bg=P1, fg=C["muted"],
-                 font=("Segoe UI", 9), anchor="w").pack(fill="x")
-        if mark == "removed":
-            ttk.Button(bx, text="↺ Unmark removed", command=lambda: self.mark_selected("new")).pack(anchor="w", pady=(4, 0))
-        else:
-            ttk.Button(bx, text="✖ Mark as removed (reforged / changed)", style="Quiet.TButton",
-                       command=lambda: self.mark_selected("removed")).pack(anchor="w", pady=(4, 0))
 
     def _card_mod_row(self, cv, rec, m, y, w, font, colr, text):
         """2.74.4: one mod on the item card: [✓] tier  text. -> the next row's y."""

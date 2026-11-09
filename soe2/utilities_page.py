@@ -8,10 +8,10 @@ import tkinter as tk
 from tkinter import ttk
 
 from . import buglog
-from .config import DATA_DIR, save_json, SETTINGS
+from .config import save_json, SETTINGS
 from .overlay import MAX_COMMANDS, Overlay, parse_key
-from .style import C, CAPTURING, KeyCapture
-from .utilities import DELIRIUM, STATES
+from .style import C, CAPTURING
+from .utilities import DELIRIUM
 
 
 class UtilitiesPage:
@@ -55,11 +55,6 @@ class UtilitiesPage:
             buglog.caught()
         try:
             if self.pc_close_hotkey(vk, ctrl, alt, shift):    # 2.121.1: the price check card's close key (Esc)
-                return True
-        except Exception:
-            buglog.caught()
-        try:
-            if self.quick_copy_key(vk, ctrl, alt, shift):
                 return True
         except Exception:
             buglog.caught()
@@ -136,21 +131,6 @@ class UtilitiesPage:
         threading.Thread(target=go, daemon=True).start()
         return True
 
-    def quick_copy_key(self, vk, ctrl, alt, shift):
-        """Price checks' one-key copy (2.0 beta 15) - 2.98.3: gone (not a viable way to copy). Never acts."""
-        return False
-        from .overlay import parse_key, game_active, send_copy, POE_TITLE
-        k = parse_key(SETTINGS.get("quick_copy_key") or "")
-        if not k or k != (vk, ctrl, alt, shift):
-            return False
-        if not game_active((getattr(self, "overlay", None) and self.overlay.cfg.get("poe_title")) or POE_TITLE):
-            return False                                   # outside the game the key does its usual job
-        def go():
-            self.keys.combo_time = time.time()             # counts as your own Ctrl+Alt+C ("Ctrl+Alt+C only")
-            send_copy()
-        threading.Thread(target=go, daemon=True).start()
-        return True
-
     def open_utilities(self, key="notes"):
         """The ⚙ on the note: bring the app up with the Notes window in front."""
         try:
@@ -173,16 +153,6 @@ class UtilitiesPage:
             buglog.caught()
 
     # ---------------- shared bits
-    def _util_head(self, body, title_var, label, command, text):
-        P2 = C["panel2"]
-        top = tk.Frame(body, bg=P2, padx=16, pady=8, highlightthickness=1, highlightbackground=C["line"])
-        top.pack(fill="x", padx=8, pady=(8, 8))
-        ttk.Checkbutton(top, text=label, variable=title_var, command=command).pack(side="left")
-        st = tk.Label(top, text="", bg=P2, fg=C["muted"], anchor="w", font=("Segoe UI", 10, "bold"))
-        st.pack(side="left", padx=12)
-        tk.Label(body, text=text, bg=C["panel"], fg=C["muted"], anchor="w", justify="left", wraplength=600,
-                 font=("Segoe UI", 9)).pack(fill="x", padx=12, pady=(0, 8))
-        return st
 
     def _card(self, body, title, expand=False):
         P2 = C["panel2"]
@@ -191,18 +161,6 @@ class UtilitiesPage:
         if title:
             tk.Label(f, text=title, bg=P2, fg=C["accent"], font=("Segoe UI", 10, "bold"), anchor="w").pack(fill="x")
         return f
-
-    def _ov_entry(self, parent, key, row, col, width=12):
-        ov = self.overlay.cfg
-        v = tk.StringVar(value=ov.get(key, ""))
-        self.ov_vars[key] = v
-        if key.endswith("_key"):                       # 2.0 beta 16: click and press the key
-            KeyCapture(parent, v, width=width + 4, on_change=lambda t: self.root.after(10, self.ov_save)).grid(row=row, column=col, sticky="w", padx=(0, 8), pady=2)
-            return v
-        tk.Entry(parent, textvariable=v, width=width, bg=C["odd"], fg=C["text"], insertbackground=C["text"],
-                 relief="flat", highlightthickness=1, highlightbackground=C["line"]).grid(
-            row=row, column=col, sticky="w", padx=(0, 8), pady=2)
-        return v
 
     # ---------------- the Chat commands window
     def build_chat_window(self, body):
@@ -343,13 +301,6 @@ class UtilitiesPage:
         self.overlay.set_chat(self.chat_on.get())
         self.util_refresh()
 
-    def ov_toggle(self):
-        """Both on / off (2.0 beta 6 had one switch)."""
-        on = bool(getattr(self, "ov_on", None) and self.ov_on.get())
-        self.chat_on.set(on)
-        self.overlay.set_enabled(on)
-        self.util_refresh()
-
     def ov_save(self):
         cfg, bad = self.overlay.cfg, []
         for key in ("hideout_key",):
@@ -456,12 +407,6 @@ class UtilitiesPage:
     def notes_status(self):
         cfg = self.overlay.cfg if getattr(self, "overlay", None) else {}
         return bool(cfg.get("notes_enabled"))
-
-    def delirium_status(self):
-        r = DELIRIUM.running()
-        if not r:
-            return False
-        return "warn" if r == "mine" and DELIRIUM.state in ("alert", "error") else True
 
     def util_refresh(self):
         if getattr(self, "_util_job", None):

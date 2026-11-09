@@ -720,10 +720,6 @@ class LedgerPage:
         self.fl_refresh()
         return s
 
-    def fl_list_menu(self, e):
-        """(kept for older callers)"""
-        return self.fl_setup_menu(e)
-
     def fl_setup_menu(self, e):
         m = tk.Menu(self.root, tearoff=0, bg=C["panel2"], fg=C["text"], activebackground="#2c4a84",
                     activeforeground="#ffffff")
@@ -1310,7 +1306,7 @@ class LedgerPage:
     def fl_prompt(self, p=None, in_app=False):
         """The box: runs since the last log, the loot (Ctrl+Alt+C each drop, or paste), its worth from poe.ninja item
         by item, cost from the setup, profit. Parchment over the game, like the Session timer."""
-        from .overlaywin import OverlayWindow, pal, parchment
+        from .overlaywin import OverlayWindow, pal
         d = self.fl_data()
         p = p or d.get("pending")
         s = L.setup(d, p.get("setup")) if p else None

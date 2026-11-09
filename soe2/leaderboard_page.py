@@ -366,6 +366,3 @@ class LeaderboardPage:
     def lb_review(self, r, vote):
         self._lb_bg(lambda: B.lb_review(r["id"], vote), lambda res: (
             self._say(("Done." if res[0] else res[1]), 6), self.lb_board_fill()))
-
-    def lb_open(self):
-        self.shell.open("leaderboards")

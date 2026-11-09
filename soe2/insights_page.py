@@ -14,7 +14,7 @@ from .valuelog import VALUE_LOG, sig_of
 from .mods import impact_key, JEWEL_BASE, norm, SIDTEXT
 from .pricefmt import fmt_div
 from .style import C, SegBar
-from .chrome import SectionBar, Viewport, section as chrome_section
+from .chrome import section as chrome_section
 
 KINDS = ["All", "Gear", "Tablets", "Waystones", "Jewels", "Relics"]     # P2 (2.104.0): All and Gear (gear showed nowhere)
 ONE = {"All": "item", "Gear": "gear", "Tablets": "tablet", "Waystones": "waystone", "Jewels": "jewel", "Relics": "relic"}
@@ -609,14 +609,6 @@ class InsightsPage:
     @staticmethod
     def ins_seen_key(x):
         return f"{x.get('name') or x.get('base')}|{x.get('div')}|{x.get('seen')}"
-
-    def ins_preview_at(self, key, e):
-        tv = self.ins_tables[key][0]
-        iid = tv.identify_row(e.y)
-        obj = (self.ins_rowmap if key == "mine" else self.ins_seenmap).get(iid)
-        if not obj or self.ins_pop_toggled_off(obj):
-            return self.ins_preview_close()
-        self.ins_preview(key, obj, e.x_root + 18, e.y_root + 10)
 
     @staticmethod
     def ins_with_value(text, lines):

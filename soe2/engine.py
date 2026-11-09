@@ -4,7 +4,6 @@ Part of StashOfExile2. Split out of the single-file app in 1.37 (see the launche
 
 import os
 import queue
-import random
 import re
 import statistics
 import threading
