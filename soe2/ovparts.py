@@ -243,12 +243,16 @@ class OverlayParts:
         fm = tkfont.Font(root=self.root, family=P["font"], size=self._hf(10))
         lh = fm.metrics("linespace")
         row_h = lh + max(8, int(10 * k))                      # 2.124.0 (feedback: too tall): one line and a little air
+        classic = not light
+        if classic and hud:                                   # 2.124.1 (feedback: the added height didn't match the bar):
+            row_h = max(row_h, int(mh * 0.85))               # a line about as tall as the bar under it
+        pad = int(10 * k) if classic and not hud else 0       # (the Panel's frame round the lines)
         hs = [row_h] * len(rows)
         camp_n = 1
         if "campaign" in rows:                                # 2.123.7: a narrow bar wraps the line instead of cutting it
             camp_n = self.camp_lines(P, W - 2 * side)
             hs[rows.index("campaign")] += (camp_n - 1) * lh
-        H = sum(hs)
+        H = sum(hs) + 2 * pad
         bg = P.get("bg", "#15130f")
         if light and P.get("boxless"):
             from .ovlight import KEY
@@ -259,9 +263,21 @@ class OverlayParts:
         if not cfg.get("mlocked"):
             main.draggable(cv)
         lft, rgt = side, W - side
-        cv.create_line(0 if not light else lft, H - 1, W if not light else rgt, H - 1,
-                       fill=P.get("accent") if light and P.get("boxless") else P.get("line", "#4a3f2c"), tags=("mg",))
-        mids, edges, top = [], [], 0
+        if classic and hud:                                   # 2.124.1 (feedback: didn't match the bar): the bar's own
+            from . import hudart                              # stone plate and end caps
+            ends, self._hud_ends = getattr(self, "_hud_ends", None), ("amber", "amber")
+            lft, rgt = self._hud_frame(cv, P, W, H, cap=hudart.cap_width(mh))
+            self._hud_ends = ends or ("crimson", "sapphire")
+        elif classic:                                         # the Panel's card frame
+            from . import hudart
+            art = hudart.card(cv, W, H, None, [(8, 6, W - 8, H - 6, 1, 1)], None)
+            if art is not None:
+                cv.create_image(0, 0, image=art, anchor="nw", tags=("hudbg",))
+                cv._card_imgs = [art]
+        else:
+            cv.create_line(lft, H - 1, rgt, H - 1, fill=P.get("accent") if P.get("boxless") else P.get("line", "#4a3f2c"),
+                           tags=("mg",))
+        mids, edges, top = [], [], pad
         for h in hs:                                          # each row's middle (2.123.7: rows can differ in height)
             mids.append(int(top + h / 2))
             top += h

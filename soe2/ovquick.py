@@ -18,6 +18,7 @@ QUICK_BAR = (("Notes", "notes"), ("Calc", "calc"), ("Regex", "regex"), ("Rates",
 # 2.124.0 (feedback: each toggle should say what it is on hover): the one-line tips (the helpers' come from
 # alerts_page.HELPER_BLURBS - the same line as on Helpers)
 QUICK_TIPS = {"Style": "How the overlay looks over the game",
+              "Layout": "Panel: a card you place anywhere. Bar: on the game's XP bar",
               "Sound": "Every helper's alert sound, on or off",
               "Lock position": "Keeps the overlay where it is - no dragging it by accident",
               "Click-through": "Clicks go through the overlay to the game",
@@ -164,6 +165,17 @@ class OverlayQuick:
         cb.pack(side="right")
         cb.bind("<<ComboboxSelected>>", lambda _e: self._ovq_style())
         Tooltip(srow, QUICK_TIPS["Style"])
+        # 2.124.1 (feedback: "quick settings needs a panel | bar toggle as well"): the Layout, as in Settings
+        from .merged_page import LAYOUTS
+        from .style import SegBar
+        lrow = tk.Frame(body, bg=P1)
+        lrow.pack(fill="x", pady=(0, 8))
+        tk.Label(lrow, text="Layout", bg=P1, fg=C["text"], font=("Segoe UI", 10)).pack(side="left")
+        self.ovq_layout = SegBar(lrow, [LAYOUTS["panel"], LAYOUTS["xpbar"]],
+                                 value=LAYOUTS.get(self.merged_layout(), LAYOUTS["xpbar"]), size=9, pad=(12, 3),
+                                 command=self._ovq_layout)
+        self.ovq_layout.pack(side="right")
+        Tooltip(lrow, QUICK_TIPS["Layout"])
         row("Sound", SETTINGS.get("helpers_sound", True), self.helpers_sound_set)
         # 2.120.1: Lock position and Click-through, as in Options (Hide from captures is in Settings › Advanced)
         self.ovq_lock = row("Lock position", cfg.get("mlocked"), self._ovq_lock)
@@ -250,6 +262,26 @@ class OverlayQuick:
                     self._ov_look_paint()
                 except tk.TclError:
                     pass
+
+    def _ovq_layout(self, name):
+        """Panel | Bar picked here - the overlay is built again (Settings › Appearance shows it too)."""
+        from .merged_page import LAYOUTS
+        key = next((k for k, t in LAYOUTS.items() if t == name), None)
+        if not key or key == self.merged_layout():
+            return
+        self.merged_set(layout=key)
+        v = getattr(self, "ov_layout_var", None)
+        seg = getattr(self, "ov_layout_seg", None)
+        try:
+            if v is not None:
+                v.set(name)
+            if seg is not None:
+                seg.pick(name, notify=False)
+            pk = getattr(self, "ov_style_pick", None)
+            if pk is not None:
+                pk.set(self.ov_look(), redraw=True)
+        except Exception:
+            buglog.caught()
 
     def _ovq_lock(self, on):
         self.overlay_lock(on)

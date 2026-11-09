@@ -239,7 +239,7 @@ class CampaignUI:
     def camp_lines(self, P, avail):
         """2.123.7 (feedback: "you can't see any of the information"): how many text lines the campaign row needs
         in avail px - 1 when the head and the whole line fit side by side, else the head on its own line and the
-        line under it, wrapped to at most 2 lines."""
+        line under it, wrapped to at most 3 lines (2.124.1: 2 cut long guide steps)."""
         d = CP.line()
         if not d:
             return 1
@@ -249,7 +249,7 @@ class CampaignUI:
         info = self._camp_info(d, fi, side * 0.45)
         if fm.measure(text) <= side - (fi.measure(info) + 14 if info else 0):
             return 1
-        return 1 + len(fit_lines(fm, text, avail, 2).split("\n"))
+        return 1 + len(fit_lines(fm, text, avail, 3).split("\n"))
 
     def camp_draw_row(self, cv, P, lft, rgt, mid, font, n=1, lh=0):
         """Draw the campaign line between lft and rgt, centered on mid; n > 1: the head and step on top, the line

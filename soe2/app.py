@@ -1128,7 +1128,7 @@ class App(SettingsPage, GearBookPage, PriceCheckPage, PricePopup, FavoritesPage,
     def restart_app(self):
         """Close and start again (2.0.0: for Appearance changes). Windows, lists and settings are saved first."""
         import subprocess
-        save_json("settings.json", SETTINGS)
+        self.save_window_place()                     # (saves settings.json too)
         try:
             if FROZEN:
                 cmd = [sys.executable, "--restarted"]
@@ -1514,6 +1514,7 @@ class App(SettingsPage, GearBookPage, PriceCheckPage, PricePopup, FavoritesPage,
             messagebox.showinfo("Update", f"Downloaded to:\n{dest}\n\nClose this program and start that file to use the new version.")
             return
         old = sys.executable
+        self.save_window_place()
         try:
             import subprocess
             # 2.29.1: the new exe does the swap itself (no .bat, no console windows) - see updates.finish_update
@@ -5322,9 +5323,19 @@ class App(SettingsPage, GearBookPage, PriceCheckPage, PricePopup, FavoritesPage,
             return f"{min(w, dw)}x{min(h, dh)}"            # off every screen now: keep the size, let Windows place it
         return f"{w}x{h}+{x}+{y}"
 
+    def save_window_place(self):
+        """2.124.1 (feedback: after an update it opened on the wrong monitor, after a plain restart the right one):
+        the window's place written to settings.json NOW - before the new version is started, which read the file
+        before this one had saved it on closing."""
+        try:
+            self._note_window(None)
+            save_json("settings.json", SETTINGS)
+        except Exception:
+            buglog.caught()
+
     def _note_window(self, e):
         """Remember the window's place and size as it moves (the normal size, not maximized)."""
-        if e.widget is not self.root or not getattr(self, "_win_restored", False):
+        if (e is not None and e.widget is not self.root) or not getattr(self, "_win_restored", False):
             return                    # 2.26.2: not while it opens - the first "normal" event wiped "maximized"
         try:
             st = self.root.state()
