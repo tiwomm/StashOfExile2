@@ -51,6 +51,7 @@ NOTES = {
             ("Settings", "Price checking: Prices in is part of Search Options; the Mod Book and Shortcuts rows are gone."),
             ("Overlay", "The price check overlay's ⚙ says In the app instead of Here."),
             ("Craft Helper", "Drag the divider to give the pairs more room."),
+            ("Craft Helper", "A tablet with 2 bad mods: reforge it, or Orb of Alchemy."),
         ],
     },
     "2.125.5": {
