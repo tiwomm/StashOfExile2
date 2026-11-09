@@ -695,19 +695,27 @@ class MergedOverlay:
         except Exception:
             return False
 
-    def _mg_bar_buttons(self, w, cv, P, x, y, anchor="e"):
+    def _mg_bar_buttons(self, w, cv, P, x, y, anchor="e", right=None, step=0):
         """2.74.0: Notes ▾ and Calc ▾ side by side (each only when it's on the bar); 2.92.2: Regex ▾ and Vendor ▾
-        too. -> the far edge."""
+        too. -> the far edge. 2.124.0 (feedback: Vendor ▾ ran off the Panel): left-anchored with right / step, a menu
+        that would pass `right` goes on a new line step px lower (self._mg_menu_rows: how many lines)."""
         order = self.bar_buttons()
         if anchor == "e":
             order.reverse()                               # drawn right to left
+        x0, first, self._mg_menu_rows = x, True, 1
         for what in order:
+            tag = "mg_notes" if what == "notes" else "mg_" + what
             if what == "notes":
                 nx = self._mg_notes_button(w, cv, P, x, y, anchor=anchor)
-                bb = cv.bbox("mg_notes")
             else:
                 nx = self._mg_menu_button(cv, P, x, y, what, anchor=anchor)
-                bb = cv.bbox("mg_" + what)
+            bb = cv.bbox(tag)
+            if anchor == "w" and right is not None and step and bb and bb[2] > right and not first:
+                cv.move(tag, x0 - bb[0], step)            # (a new line)
+                y += step
+                self._mg_menu_rows += 1
+                bb = cv.bbox(tag)
+            first = False
             x = nx if anchor == "e" else ((bb[2] if bb else x) + 12)
         return x
 
