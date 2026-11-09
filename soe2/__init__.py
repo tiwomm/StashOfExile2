@@ -1,2 +1,2 @@
 """StashOfExile2 - the app's code, one module per part (see the launcher for the version history)."""
-__version__ = "2.125.8"
+__version__ = "2.126.0"

@@ -20,7 +20,7 @@ import sys
 import tokenize
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-SKIP = {"migrations.py", "whatsnew.py"}
+SKIP = {"migrations.py", "whatsnew.py", "names.py"}      # (names.py lists old names on purpose)
 DOCS = ("README.md", "TOS.md", "linux/README.md", "themes/README.md", "strats/README.md")
 
 # (version, what it was, words a person read, names in the code / settings keys[, pending])

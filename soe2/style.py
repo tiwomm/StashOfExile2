@@ -769,6 +769,7 @@ class Tooltip:
 
     def __init__(self, widget, text, delay=450):
         self.w, self.text, self.delay, self.win, self.job = widget, text, delay, None, None
+        widget._tip = self                                  # (tools/check_ux.py: this button has a tip)
         widget.bind("<Enter>", self._enter, add="+")
         widget.bind("<Leave>", self._leave, add="+")
         widget.bind("<ButtonPress>", self._leave, add="+")

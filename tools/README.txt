@@ -21,3 +21,12 @@ and a search the trade site takes (unidentified uniques too). Run it after rebui
 
 Bases and uniques newer than gamedata.json don't need a rebuild to work: the app downloads the trade site's own item
 list once a day (trade_items.json in the data folder) and uses it where the game data has nothing.
+
+Checks a release runs (each exits 1 and lists what to fix):
+
+  py tools/check_names.py      one name per feature: page names from soe2/names.py, in Title Case; no old names
+  py tools/check_removed.py    a removed feature leaves no text, setting or test behind (REMOVED lists them;
+                               add --tests path\to\tests to look at the tests too)
+  py tools/check_ux.py         opens every page in an empty data folder (offline): one orange button and one BETA
+                               chip per screen; lists icon buttons without a tip, list pages whose search box isn't
+                               first, and buttons that are on with nothing picked (UX round 2)
