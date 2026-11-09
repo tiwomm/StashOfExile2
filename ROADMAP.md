@@ -4,7 +4,7 @@
 
 > **Who we build for - read second.** Path of Exile players are utilitarian: they love data and information, problem solving and creative thinking. So every feature shows its numbers *and how they were worked out*, lets you sort, filter, compare and export them (CSV), keeps power-user depth (keys, versions, raw data) one click away instead of hiding it, explains in plain words, and leaves the decision to the player. Pretty is welcome; vague is not.
 
-**Current version: 2.125.7**
+**Current version: 2.125.8**
 
 Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds features, 2.10.1 only fixes. Each step below is one release; we work through them top to bottom.
 
@@ -250,6 +250,7 @@ Order (decided 2026-11-05): the page passes, then the Privacy & data hub, then t
 | 2.125.5 | Craft Helper phase 3: learned mod pairs and its data pack from GitHub (per game patch). Updates fetch the newest version at download time (no double updates). Cards over the game in the overlay's style. Price check card: what's socketed. |
 | 2.125.6 | What's new shows notes about beta features only with Beta features on. Search Options (with Prices in); no Mod Book or Shortcuts rows (shortcuts removed); the overlay's ⚙ says In the app; Craft Helper's pairs on a divider. |
 | 2.125.7 | Desecration Helper wakes at The Well of Souls by its name and when started there; says why it can't read the screen. A magic tablet with 2 bad mods: Reforge or Alchemy. |
+| 2.125.8 | Leaderboards: a board looked up twice no longer draws half its rows (only the newest answer); a board with only your time says why. |
 | 2.126.0 | **UX pass 3 (code):** dead code out; tools/check_removed.py (a removed feature leaves no text, setting or test behind), soe2/names.py + tools/check_names.py (one name per feature), tools/check_ux.py. |
 | 2.126.0+ | **UX pass round 2** (all 21 approved): paste to price, price spread, Rate ▾ on hover, card closes when the mouse leaves (hold Ctrl), Ctrl+K go to anything (Ctrl+F = this page's search), F1 keys sheet, get-started steps, Exchange Rates search/sort/pin/trend, rank on the Map Library row, one Money Makers filter bar, buttons off until a pick, one Bulk Pricing toolbar row, never color alone, Edit layout mode, hold Alt through Click-through, ↺ Defaults per section, search top left, tips on icon buttons. |
 | Plan | **Tablet Craft Helper + Mod book:** plan merging them into one place. |
