@@ -1751,8 +1751,14 @@ class MoneyMakersPage:
                 "the mod sell clearly above that kind's middle price, across 12+ listings; this league). No prices "
                 "are shown here - they change too fast. To know what an item is worth, press your price check key "
                 "on it. Right-click a mod to rate it; double-click to search the trade site for it.")
-        box = tk.Frame(right, bg=P1)
-        box.pack(fill="both", expand=True)
+        # 2.125.6 (feedback: "pairs that sell together is crammed at the bottom"): the mods and the pairs share the
+        # height on a divider you drag (remembered)
+        from .style import VSplitter
+        vp = self.mm_ch_vpane = VSplitter(right, height=360, lo=120, keep=110, bg=P1,
+                                          on_set=lambda _h: self.mm_ch_split_save())
+        vp.pack(fill="both", expand=True)
+        box, low = vp.top, vp.bottom
+        self.root.after(300, self.mm_ch_split_put)
         cols = (("tier", "Rating", 56, "center"), ("mod", "Mod", 360, "w"), ("where", "Type", 90, "w"),
                 ("side", "Prefix / suffix", 90, "center"), ("from", "From", 130, "w"))
         self.mm_tab_tree = ttk.Treeview(box, columns=[c[0] for c in cols], show="headings", selectmode="extended")
@@ -1769,7 +1775,7 @@ class MoneyMakersPage:
         self.mm_tab_tree.bind("<Button-3>", self.mm_tab_menu)
         self.mm_tab_rows = {}
         # 2.125.5 (Craft Helper phase 3): learned mod pairs - two mods that sell well together
-        ph = tk.Frame(right, bg=P1)
+        ph = tk.Frame(low, bg=P1)
         ph.pack(fill="x", pady=(8, 4))
         tk.Label(ph, text="PAIRS THAT SELL TOGETHER", bg=P1, fg=C["steel"], font=("Segoe UI", 9, "bold")).pack(side="left")
         pi = tk.Label(ph, text="  Learned from your price checks.  ⓘ", bg=P1, fg=C["muted"], font=("Segoe UI", 9))
@@ -1779,8 +1785,8 @@ class MoneyMakersPage:
                     "price checks fetched this league. The letter comes from how far above that kind's middle price "
                     "they ask - no prices are shown. Hover a pair for how it was worked out. A checked item with a "
                     "pair rated S or A counts both mods as good.")
-        pbox = tk.Frame(right, bg=P1)
-        pbox.pack(fill="x")
+        pbox = tk.Frame(low, bg=P1)
+        pbox.pack(fill="both", expand=True)
         pcols = (("tier", "Rating", 56, "center"), ("mods", "Mods", 450, "w"), ("from", "From", 170, "w"))
         self.mm_ch_ptree = pt = ttk.Treeview(pbox, columns=[c[0] for c in pcols], show="headings", height=5,
                                              selectmode="browse")
@@ -1789,11 +1795,14 @@ class MoneyMakersPage:
             pt.column(cid, width=w, minwidth=w if cid == "from" else 30, anchor=anchor, stretch=cid == "mods")
         pt.tag_configure("good", foreground="#ffd9a8")
         pt.tag_configure("plain", foreground=C["muted"])
-        pt.pack(side="left", fill="x", expand=True)
+        psb = ttk.Scrollbar(pbox, orient="vertical", command=pt.yview)
+        pt.configure(yscrollcommand=psb.set)
+        psb.pack(side="right", fill="y")
+        pt.pack(side="left", fill="both", expand=True)
         self.mm_ch_ptip = Tooltip(pt, "")
         self.mm_ch_prow = None
         pt.bind("<Motion>", self.mm_ch_pair_hover, add="+")
-        self.mm_ch_pempty = tk.Frame(right, bg=P1)
+        self.mm_ch_pempty = tk.Frame(low, bg=P1)
         self.mm_ch_pempty_lbl = tk.Label(self.mm_ch_pempty, text="", bg=P1, fg=C["muted"], font=("Segoe UI", 9),
                                          anchor="w", justify="left")
         self.mm_ch_pempty_lbl.pack(side="left")
@@ -1814,6 +1823,29 @@ class MoneyMakersPage:
         cb_.pack(side="right")
         self.mm_ch_paint()
         self.root.after(1500, lambda: self.mm_ch_pack_check(False))
+
+    def mm_ch_split_put(self):
+        """2.125.6: the mods / pairs divider where you left it (a share of the height)."""
+        vp = getattr(self, "mm_ch_vpane", None)
+        try:
+            h = vp.winfo_height()
+            if h < 100:
+                return self.root.after(500, self.mm_ch_split_put)
+            share = float(SETTINGS.get("ch_split", 0.62))
+            vp.sashpos(0, int(h * min(0.9, max(0.2, share))))
+        except (tk.TclError, AttributeError, ValueError):
+            pass
+        return None
+
+    def mm_ch_split_save(self):
+        vp = getattr(self, "mm_ch_vpane", None)
+        try:
+            h = vp.winfo_height()
+            if h >= 100:
+                SETTINGS["ch_split"] = round(vp.sashpos(0) / h, 3)
+                save_json("settings.json", SETTINGS)
+        except (tk.TclError, AttributeError):
+            pass
 
     def mm_ch_pack_check(self, force):
         """2.125.5: a newer Craft Helper data pack on GitHub? (at most twice a day unless asked)"""

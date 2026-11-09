@@ -994,6 +994,88 @@ class Splitter(tk.Frame):
         return self._want
 
 
+class VSplitter(tk.Frame):
+    """2.125.6 (feedback: the Craft Helper's pairs were "crammed at the bottom"): Splitter's grip turned on its side -
+    a top part you make taller or shorter by dragging a grip you can see (a line with dots that lights up under the
+    mouse); a thin guide moves while you drag, the parts are laid out once you let go. .top and .bottom are the two
+    parts; sashpos(0[, y]) reads or sets the top's height; on_set(height) when you let go."""
+
+    GRIP = 9
+
+    def __init__(self, parent, height=360, lo=120, keep=110, on_set=None, bg=None, **kw):
+        super().__init__(parent, bg=bg or C["panel"], **kw)
+        self.lo, self.keep, self.on_set, self._want = lo, keep, on_set, int(height)
+        self.top = tk.Frame(self, bg=bg or C["panel"], height=self._want)
+        self.top.pack_propagate(False)
+        self.top.pack(side="top", fill="x")
+        self.grip = tk.Frame(self, bg=bg or C["panel"], height=self.GRIP, cursor="sb_v_double_arrow")
+        self.grip.pack_propagate(False)
+        self.grip.pack(side="top", fill="x")
+        self._bar = tk.Frame(self.grip, bg=C["gold_dim"], height=1)
+        self._bar.place(relx=0, rely=0.5, relwidth=1, anchor="w")
+        self._dots = tk.Label(self.grip, text="⋯⋯", bg=bg or C["panel"], fg=C["muted"], font=("Segoe UI", 9),
+                              cursor="sb_v_double_arrow", bd=0, padx=4, pady=0)
+        self._dots.place(relx=0.5, rely=0.5, anchor="center")
+        self.bottom = tk.Frame(self, bg=bg or C["panel"])
+        self.bottom.pack(side="top", fill="both", expand=True)
+        self._guide = tk.Frame(self, bg=C["orange"], height=2)
+        self._y0 = None
+        for w in (self.grip, self._dots, self._bar):
+            w.bind("<Enter>", lambda e: self._lit(True), add="+")
+            w.bind("<Leave>", lambda e: self._lit(self._y0 is not None), add="+")
+            w.bind("<ButtonPress-1>", self._press, add="+")
+            w.bind("<B1-Motion>", self._drag, add="+")
+            w.bind("<ButtonRelease-1>", self._release, add="+")
+        Tooltip(self._dots, "Drag to make the top part taller or shorter")
+        self.bind("<Configure>", lambda e: self._clamp_now(), add="+")
+
+    def _lit(self, on):
+        try:
+            self._bar.config(bg=C["orange"] if on else C["gold_dim"])
+            self._dots.config(fg=C["orange"] if on else C["muted"])
+        except tk.TclError:
+            pass
+
+    def clamp(self, y):
+        ph = self.winfo_height()
+        hi = ph - self.keep - self.GRIP if ph > self.lo + self.keep + self.GRIP else max(self.lo, y)
+        return int(max(self.lo, min(y, hi)))
+
+    def _clamp_now(self):
+        y = self.clamp(self._want)
+        if y != int(self.top.cget("height")):
+            self.top.config(height=y)
+
+    def _press(self, e):
+        self._y0 = self.winfo_rooty()
+        self._lit(True)
+        self._guide.place(x=0, y=self._want + self.GRIP // 2, relwidth=1)
+        self._guide.lift()
+
+    def _drag(self, e):
+        if self._y0 is None:
+            return
+        self._guide.place_configure(y=self.clamp(e.y_root - self._y0) + self.GRIP // 2)
+
+    def _release(self, e):
+        if self._y0 is None:
+            return
+        y = self.clamp(e.y_root - self._y0)
+        self._y0 = None
+        self._guide.place_forget()
+        self._lit(False)
+        self.sashpos(0, y)
+        if self.on_set:
+            self.on_set(self._want)
+
+    def sashpos(self, _i=0, y=None):
+        if y is None:
+            return int(self.top.cget("height"))
+        self._want = self.clamp(int(y))
+        self.top.config(height=self._want)
+        return self._want
+
+
 class SegBar(tk.Frame):
     """A row of joined toggle buttons (2.0 beta 7), like  [ Total | Daily ].  One is picked at a time; the picked one is
     lit with an orange line under it. command(value) is called when you pick another."""

@@ -1026,14 +1026,8 @@ class App(SettingsPage, GearBookPage, PriceCheckPage, PricePopup, FavoritesPage,
             ("min_results", "Fewest listings for a price", "int", 1, 20, 1, "fewer than this: no price, only a hint"),
             ("spread_warn", "Warn when prices vary", "int", 0, 200, 5, "x - when the highest listing costs this many "
                                                                       "times the lowest (0 = off)"),
-            ("stale_days", "Re-check a learned mod after", "int", 1, 60, 1, "days"),
             ("toast_secs", "Messages stay for", "int", 1, 60, 1, "seconds"),
-            ("learn", "Learn new mods in the background", "bool", 0, 0, 0, "looks up each new mod's price, slowly"),
-            ("tray", "Minimize to the system tray", "bool", 0, 0, 0, "takes effect when the app starts"),
-            ("memory_shortcut", "Skip a search the Mod Book already agrees on", "bool", 0, 0, 0,
-             "5+ identical searches in the last day"),
-            ("model_shortcut", "Let the model price an item by itself", "bool", 0, 0, 0,
-             "only after 100 checked guesses at 99 percent"))
+            ("tray", "Minimize to the system tray", "bool", 0, 0, 0, "takes effect when the app starts"))
 
     FINE_WINDOW = ("toast_secs", "tray")      # 2.116.0 (P10): on General › Window, not Price checking
 

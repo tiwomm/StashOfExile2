@@ -25,6 +25,13 @@ VERSION HISTORY
        Insights, Craft Helper, Stash tab, Scan stash, Desecration Helper) show only with Settings › General › Beta
        features on; an update with nothing else to say shows no card (it's marked seen). The intro names the switch
        (it said Labs). About's version history still lists everything.
+       Feedback on Settings › Price checking: Prices in joins "How searches are made", now called Search Options;
+       the Mod Book rows (re-check a learned mod after N days, learn new mods in the background - "people ... won't
+       know what that even means") are gone from Settings and keep working as they are; Shortcuts are removed (1.21's
+       "from memory" and 1.23's "from model" skipped a search - engine branches, settings, migration shortcuts_2126).
+       Feedback: over the game, the price check overlay's ⚙ says In the app | Overlay + the app ("Here" there read
+       as the overlay). Feedback: the Craft Helper's mods and Pairs That Sell Together share the height on a divider
+       with a visible grip (style.VSplitter - Splitter on its side); where you leave it is kept (ch_split).
   2.125.5
        Feedback: some players got two updates in a row. The version to install was picked when the update was offered
        (the "Update available" question, a card's Install now) - left open while a newer version came out, the older

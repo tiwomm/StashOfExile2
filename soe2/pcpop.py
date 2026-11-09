@@ -200,9 +200,11 @@ class PricePopup:
         chips.pack(fill="x", pady=(4, 8))
         cur = "Overlay + Here" if self.pc_show_get() == "both" else "Here"
         self.pcs_chips = {}
+        # 2.125.6 (feedback: "Here" = in the app): over the game, "Here" would read as the overlay - the app is named
+        words = {"Here": "In the app", "Overlay + Here": "Overlay + the app"}
         for name in self.PC_WHERE:
             on = name == cur
-            c = tk.Label(chips, text=("✓ " if on else "") + name, bg=Q["field"] if on else P1,
+            c = tk.Label(chips, text=("✓ " if on else "") + words[name], bg=Q["field"] if on else P1,
                          fg=Q["text"] if on else Q["muted"], font=(F, 10, "bold" if on else "normal"), padx=8, pady=4,
                          cursor="hand2", highlightthickness=1, highlightbackground=Q["accent"] if on else Q["line"])
             c.pack(side="left", padx=(0, 8))
