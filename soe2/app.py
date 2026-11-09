@@ -588,6 +588,11 @@ class App(SettingsPage, GearBookPage, PriceCheckPage, PricePopup, FavoritesPage,
         if not seen and not force and self.show_quickstart():     # 2.10.0: a fresh install gets the quick start
             return
         notes = notes_between(None if force or not seen else seen, APP_VERSION)
+        beta = bool(SETTINGS.get("labs"))                 # 2.125.6: beta features' notes only with them on
+        if seen and not force and notes and split_notes(notes, beta) == ([], []):
+            SETTINGS["seen_version"] = APP_VERSION        # (only beta notes, beta off: nothing to show)
+            save_json("settings.json", SETTINGS)
+            return
         self._wn_h = None
         old = getattr(self, "_whatsnew", None)
         if old is not None and old.winfo_exists():
@@ -643,7 +648,7 @@ class App(SettingsPage, GearBookPage, PriceCheckPage, PricePopup, FavoritesPage,
             t.insert("end", "What it is\n", "h")
             for line in INTRO:
                 t.insert("end", line + "\n", "p")
-        big, small = split_notes(notes)
+        big, small = split_notes(notes, beta)
         self.wn_heroes = []
         self.wn_small = small
         t.bind("<Configure>", lambda e: self.wn_fit(e.width))

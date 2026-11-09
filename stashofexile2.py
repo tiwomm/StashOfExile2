@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU GPL v3.0 (see LICENSE). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.125.5
+VERSION 2.125.6
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,6 +19,12 @@ VERSION 2.125.5
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.125.6
+       Feedback: "any updates to beta functions should only show in the What's new card if a person has labs/beta
+       enabled". Notes whose area is a beta feature (whatsnew.BETA_AREAS: Wealth, Money Makers, Game Search, Market
+       Insights, Craft Helper, Stash tab, Scan stash, Desecration Helper) show only with Settings › General › Beta
+       features on; an update with nothing else to say shows no card (it's marked seen). The intro names the switch
+       (it said Labs). About's version history still lists everything.
   2.125.5
        Feedback: some players got two updates in a row. The version to install was picked when the update was offered
        (the "Update available" question, a card's Install now) - left open while a newer version came out, the older
@@ -3157,7 +3163,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.125.5"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.125.6"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
