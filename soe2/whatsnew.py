@@ -49,6 +49,8 @@ NOTES = {
         "small": [
             ("Leaderboards", "A board should show all its times now (it could stop half-way); one with only your time "
              "says why."),
+            ("Community", "Sharing with the community? You're asked once for a community name, so your times can "
+             "show on the Leaderboards."),
         ],
     },
     "2.125.7": {
