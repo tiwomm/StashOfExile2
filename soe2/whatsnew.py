@@ -39,6 +39,12 @@ NEXT = [
 MAX_BIG = 3
 
 NOTES = {
+    "2.125.2": {
+        "big": [],
+        "small": [
+            ("Everywhere", "Updates should install even while Windows is still checking the new file."),
+        ],
+    },
     "2.125.1": {
         "big": [],
         "small": [
