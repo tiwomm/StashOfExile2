@@ -371,33 +371,3 @@ class RateModsPage:
                 w.destroy()
             except tk.TclError:
                 pass
-
-    # ---------------------------------------------------------------- Settings › Price checking › Skip cheap items
-    def build_floor_settings(self, row):
-        P2 = C["panel2"]
-        c = RM.floor_cfg()
-        self.floor_on = tk.BooleanVar(value=bool(c["on"]))
-        ttk.Checkbutton(row, text="Skip cheap items in Bulk Pricing", variable=self.floor_on,
-                        command=self.floor_save).pack(side="left")
-        self.floor_vars = {}
-        for s, label in (("tablet", "Tablets"), ("jewel", "Jewels"), ("relic", "Relics")):
-            tk.Label(row, text=label, bg=P2, fg=C["muted"]).pack(side="left", padx=(16, 4))
-            v = tk.StringVar(value=f"{float(c[s]):g}")
-            e = ttk.Entry(row, textvariable=v, width=5)
-            e.pack(side="left")
-            e.bind("<FocusOut>", lambda _e: self.floor_save())
-            e.bind("<Return>", lambda _e: self.floor_save())
-            tk.Label(row, text="div", bg=P2, fg=C["muted"]).pack(side="left", padx=(2, 0))
-            self.floor_vars[s] = v
-
-    def floor_save(self):
-        from .config import SETTINGS, save_json
-        c = RM.floor_cfg()
-        c["on"] = bool(self.floor_on.get())
-        for s, v in getattr(self, "floor_vars", {}).items():
-            try:
-                c[s] = max(0.0, float(str(v.get()).replace(",", ".")))
-            except ValueError:
-                v.set(f"{float(c[s]):g}")
-        save_json("settings.json", SETTINGS)
-        return c

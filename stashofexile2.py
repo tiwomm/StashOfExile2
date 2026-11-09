@@ -43,6 +43,13 @@ VERSION HISTORY
        together than the better one alone (6+ listings with both, 1.3x+), with a letter from how far over the kind's
        middle price they ask - no prices; hover one for how it was worked out. A checked item carrying a pair rated
        better than its mods counts both at the pair's letter, and the verdict says so.
+       Feedback on Settings › Price checking: Valuable mods ("they don't really add anything") - gone, the app's own
+       amount (good_div 0.5) again; Skip cheap items (2.96.0's Bulk Pricing floor, "don't work") - removed (floor_cfg,
+       floor_check, the engine's _floor, its settings; migration pc_settings_2125). Where the price shows: only
+       Here | Overlay + Here, as on Price Checks ("In the app, behind the game" and "Nowhere" are gone - clear the
+       key on Keys for none). "Card over the game" is called Overlay; its close key is set on Keys only (Settings'
+       row and the overlay's ⚙ key box are gone - the ⚙ shows it with Change on Keys ›). The overlay's ⚙ box is in
+       the overlay's style, with Here | Overlay + Here chips.
   2.125.4
        Feedback on the route card: "the act selection dropdown needs to be on the right" - it's now right of Routes ▾
        and Options ▾. Routes ▾ "needs some visual hierarchy ... for division of selectable options": each route is its

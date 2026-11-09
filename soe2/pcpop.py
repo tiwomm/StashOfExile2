@@ -165,16 +165,18 @@ class PricePopup:
                 pass
 
     def pcpop_settings_show(self):
-        """A small box under the ⚙, over the game: the close key, where the price shows, All price check settings….
-        Each is the same setting as on Settings (one setting, two doors - as Quick settings on the overlay)."""
-        from .style import KeyCapture, CAPTURING
-        from .settings_page import PC_SHOW
+        """A small box under the ⚙, over the game: where the price shows (Here | Overlay + Here - the same setting as
+        Settings and Price Checks), the close key (2.125.5: shown here, set on Keys only), All price check settings….
+        2.125.5 (feedback: everything over the game follows the overlay's style): in the overlay's colors and font."""
+        from .style import CAPTURING, Tooltip
+        from .overlay import key_label
         self.pcpop_settings_close()
         card = getattr(self, "pp_win", None)
         if card is None:
             return
-        P1, P2 = C["panel"], C["panel2"]
-        w = tk.Toplevel(self.root, bg=C["line"])
+        Q = self.ov_quick_style()
+        P1, P2, F = Q["bg"], Q["band"], Q["font"]
+        w = tk.Toplevel(self.root, bg=Q["line"])
         w.withdraw()
         w.overrideredirect(True)
         try:
@@ -186,31 +188,42 @@ class PricePopup:
         box.pack(padx=1, pady=1)
         head = tk.Frame(box, bg=P2, padx=12, pady=8)
         head.pack(fill="x")
-        tk.Label(head, text="Card settings", bg=P2, fg=C["text"], font=("Segoe UI", 12, "bold")).pack(side="left")
-        x_ = ttk.Button(head, text="✕", width=3, style="Quiet.TButton", command=self.pcpop_settings_close)
+        tk.Label(head, text="Price check overlay", bg=P2, fg=Q["text"], font=(Q["hfont"], 12, "bold")).pack(side="left")
+        x_ = tk.Label(head, text="✕", bg=P2, fg=Q["muted"], font=(F, 11), cursor="hand2", padx=4)
         x_.pack(side="right")
-        from .style import Tooltip
+        x_.bind("<Button-1>", lambda _e: self.pcpop_settings_close())
         Tooltip(x_, "Close")
-        tk.Frame(box, bg=C["accent"], height=2).pack(fill="x")
         body = tk.Frame(box, bg=P1, padx=12, pady=8)
         body.pack(fill="x")
+        tk.Label(body, text="Price shows", bg=P1, fg=Q["text"], font=(F, 10), anchor="w").pack(fill="x")
+        chips = tk.Frame(body, bg=P1)
+        chips.pack(fill="x", pady=(4, 8))
+        cur = "Overlay + Here" if self.pc_show_get() == "both" else "Here"
+        self.pcs_chips = {}
+        for name in self.PC_WHERE:
+            on = name == cur
+            c = tk.Label(chips, text=("✓ " if on else "") + name, bg=Q["field"] if on else P1,
+                         fg=Q["text"] if on else Q["muted"], font=(F, 10, "bold" if on else "normal"), padx=8, pady=4,
+                         cursor="hand2", highlightthickness=1, highlightbackground=Q["accent"] if on else Q["line"])
+            c.pack(side="left", padx=(0, 8))
+            c.bind("<Button-1>", lambda _e, n=name: (self._pc_where_pick(n), self.pcpop_settings_show()))
+            self.pcs_chips[name] = c
+        k = SETTINGS.get("pc_close_key", "Esc")
         r = tk.Frame(body, bg=P1)
         r.pack(fill="x")
-        tk.Label(r, text="Close key", bg=P1, fg=C["text"], font=("Segoe UI", 10)).pack(side="left")
-        self.pcs_key = tk.StringVar(value=SETTINGS.get("pc_close_key", "Esc") or "")
-        KeyCapture(r, self.pcs_key, width=14, on_change=self._pcs_key, allow_esc=True).pack(side="right")
-        tk.Label(body, text="Closes this card. Right-click the box for no key.", bg=P1, fg=C["muted"],
-                 font=("Segoe UI", 9), anchor="w").pack(fill="x", pady=(2, 8))
-        r = tk.Frame(body, bg=P1)
-        r.pack(fill="x")
-        tk.Label(r, text="Price shows", bg=P1, fg=C["text"], font=("Segoe UI", 10)).pack(side="left")
-        self.pcs_show = tk.StringVar(value=PC_SHOW[self.pc_show_get()])
-        cb = ttk.Combobox(r, textvariable=self.pcs_show, values=list(PC_SHOW.values()), state="readonly", width=30)
-        cb.pack(side="right", padx=(12, 0))
-        cb.bind("<<ComboboxSelected>>", lambda _e: self._pcs_show())
+        tk.Label(r, text=f"Close key: {key_label(k)}" if k else "Close key: none", bg=P1, fg=Q["text"],
+                 font=(F, 10)).pack(side="left")
+        go = tk.Label(r, text="Change on Keys ›", bg=P1, fg=Q["accent"], font=(F, 9, "underline"), cursor="hand2")
+        go.pack(side="right")
+        go.bind("<Button-1>", lambda _e: (self.pcpop_settings_close(), self._pcs_keys()))
         foot = tk.Frame(box, bg=P1, padx=12, pady=8)
         foot.pack(fill="x")
-        ttk.Button(foot, text="All price check settings…", command=self._pcs_all).pack(fill="x")
+        allb = tk.Label(foot, text="All price check settings…", bg=Q["field"], fg=Q["text"], font=(F, 10), pady=4,
+                        cursor="hand2", highlightthickness=1, highlightbackground=Q["line"])
+        allb.pack(fill="x")
+        allb.bind("<Button-1>", lambda _e: self._pcs_all())
+        allb.bind("<Enter>", lambda _e: allb.config(highlightbackground=Q["accent"]))
+        allb.bind("<Leave>", lambda _e: allb.config(highlightbackground=Q["line"]))
         w.bind("<Escape>", lambda e: None if CAPTURING[0] is not None else self.pcpop_settings_close())
         w.update_idletasks()
         ww, wh = w.winfo_reqwidth(), w.winfo_reqheight()
@@ -250,18 +263,15 @@ class PricePopup:
         if not f.startswith(str(w)):
             self.pcpop_settings_close()
 
-    def _pcs_key(self, text):
-        SETTINGS["pc_close_key"] = text
-        save_json("settings.json", SETTINGS)
-        v = (getattr(self, "hk_vars", None) or {}).get("checks:pc_close_key")
-        if v is not None and v.get() != text:
-            v.set(text)
-        self._pc_close_text()
-
-    def _pcs_show(self):
-        """Same as Settings › Price checking › Where the price shows (its box follows)."""
-        from .settings_page import PC_SHOW
-        self.pc_show_set(next((k for k, t in PC_SHOW.items() if t == self.pcs_show.get()), "front"))
+    def _pcs_keys(self):
+        """The overlay's close key is set on Keys (2.125.5: one place)."""
+        try:
+            self.hotkeys_open("checks:pc_close_key")
+            self.root.deiconify()
+            self.root.lift()
+        except Exception:
+            from . import buglog
+            buglog.caught()
 
     def _pcs_all(self):
         self.pcpop_settings_close()

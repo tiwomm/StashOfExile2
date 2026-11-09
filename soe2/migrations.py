@@ -102,6 +102,15 @@ def _cols_2125(S):
         cw.pop("name", None)
 
 
+def _pc_settings_2125(S):
+    """2.125.5 (feedback): Price checking lost Valuable mods (the app's amount again), Skip cheap items (gone) and the
+    two "in the app" choices of Where the price shows but Here (the app comes to the front)."""
+    from .config import DEFAULTS
+    S["good_div"] = DEFAULTS["good_div"]                 # (still read - the app's own amount, no setting)
+    S.pop("floor", None)
+    S["pc_front"] = True
+
+
 STEPS = (
     ("modbook_import", "1.x", "app", _modbook_import, "modbook_imported"),
     ("rules_scoped", "2.6.0", "app", _rules_scoped, "rules_scoped_26"),
@@ -112,6 +121,7 @@ STEPS = (
     ("ux_2119", "2.119.0", "settings", _ux_2119, None),
     ("no_recap_2124", "2.124.0", "settings", _no_recap_2124, None),
     ("cols_2125", "2.125.3", "settings", _cols_2125, None),
+    ("pc_settings_2125", "2.125.5", "settings", _pc_settings_2125, None),
 )
 
 

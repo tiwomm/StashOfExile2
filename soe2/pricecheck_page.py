@@ -275,8 +275,8 @@ class PriceCheckPage:
         self.pc_where.pack(side="left")
         tip = tk.Label(row, text="ⓘ", bg=C["panel"], fg=C["muted"], font=("Segoe UI", 10), cursor="question_arrow")
         tip.pack(side="left", padx=(8, 0))
-        Tooltip(tip, "Here: the app comes to the front with the price (Settings › Price checking can keep it "
-                     "behind the game). Overlay + Here: a small card opens over the game with the price, the mods "
+        Tooltip(tip, "Here: the app comes to the front with the price. Overlay + Here: the price check overlay "
+                     "opens over the game with the price, the mods "
                      "searched and the cheapest listings (drag and resize it, Esc closes it, its ⚙ has its "
                      "settings), and the app shows the item too without taking the keyboard from the game. Every "
                      "check is kept in Recent here.")
@@ -295,8 +295,7 @@ class PriceCheckPage:
             self.pc_where_lbl.config(text=f"When you press {pc_key_label()} on an item in game, show the price")
             k = self.pc_show_get()
             self.pc_where.pick("Overlay + Here" if k in ("over", "both") else "Here", notify=False)
-            self.pc_where_note.config(text={"off": "· the key is off (Settings › Price checking)",
-                                            "behind": "· the app stays behind the game"}.get(k, ""))
+            self.pc_where_note.config(text={"off": "· the key is off - pick one to turn it on"}.get(k, ""))
         except (AttributeError, tk.TclError):
             pass
 
@@ -304,7 +303,7 @@ class PriceCheckPage:
         if label == "Overlay + Here":
             self.pc_show_set("both")
         else:
-            self.pc_show_set("front" if SETTINGS.get("pc_front", True) else "behind")   # (in front or behind: kept)
+            self.pc_show_set("front")                        # (2.125.5: "behind the game" is gone)
 
     # ---------------------------------------------------------------- 2.123.0: Recent chips and the verdict strip
     def _pc_recent_row(self, body):

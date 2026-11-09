@@ -49,6 +49,7 @@ NOTES = {
             ("Everywhere", "Updates should install the newest version - no second update right after."),
             ("Overlay", "Cards over the game use your overlay style's colors and change with it."),
             ("Money Makers", "The Craft Helper's data updates from GitHub for new game patches."),
+            ("Settings", "Price checking is shorter: no Valuable mods or Skip cheap items; Here | Overlay + Here."),
         ],
     },
     "2.125.4": {

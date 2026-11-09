@@ -378,18 +378,7 @@ class Engine(TabReaderJobs, WealthJobs, StratCostJobs, threading.Thread):
         """Priced, and no listing at all (not skipped, by hand, under the floor or an error)."""
         return (rec.get("state") == "done" and not rec.get("prices") and rec.get("est") is None
                 and not (rec.get("total") or 0) and not rec.get("manual") and not rec.get("skip")
-                and not rec.get("floor"))
-
-    def _floor(self, rec, searchable):
-        from .ratemods import floor_check
-
-        def median_n(base, sid):
-            st = MARKET.cached_stats().get((base, sid))
-            return (st["med"], st["n"]) if st else (None, 0)
-        try:
-            return floor_check(rec, searchable, median_n)
-        except Exception:
-            return None
+                and not rec.get("floor"))                  # ("floor": a record from before 2.125.5's removal)
 
     def _price_rec(self, rec, tell):
         item, league = rec["item"], SETTINGS["league"]
@@ -425,15 +414,8 @@ class Engine(TabReaderJobs, WealthJobs, StratCostJobs, threading.Thread):
                        label="only low-impact mods - not worth a search" if low else "no searchable mods")
             tell()
             return
-        fl = self._floor(rec, searchable)                      # 2.96.0: Bulk Pricing floor
-        if fl:
-            what, why = fl
-            rec.update(state="done", total=0, prices=[], est=None, qid=None, partial=False, thin=False, nomatch=False,
-                       stages=[], priced_at=time.time(), skip=what == "skip", manual=what == "hand",
-                       manual_why=why if what == "hand" else "", floor=True,
-                       label=("under your floor - not searched" if what == "skip" else "check by hand") + f" ({why})")
-            tell()
-            return
+        # 2.125.5 (feedback: Skip cheap items "doesn't really add anything/don't work"): 2.96.0's Bulk Pricing floor
+        # is gone - every item with a searchable mod is searched
         rec["skip"] = False
         _status, _age, hours = listing_rules()
         extra, uses_note = uses_filter(self.table, item["class"] == "Tablet", item.get("uses"))
