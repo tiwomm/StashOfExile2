@@ -48,7 +48,7 @@ KINDS = {
         "label": "Tablets", "one": "tablet", "item_class": "Tablet",
         "types": ("All", "Breach", "Delirium", "Ritual", "Expedition", "Abyss", "Overseer", "Temple"),
         "flow": (("White tablet", "Orb of Transmutation, then Orb of Augmentation: 2 mods."),
-                 ("2 bad mods", "Orb of Alchemy."),
+                 ("2 bad mods", "Reforge it, or Orb of Alchemy."),     # (2.125.6, feedback: reforge or alch)
                  ("2 good mods", "Regal Orb, then Exalted Orb."),
                  ("4 junk mods", "Don't sell it - keep it to reforge."),
                  ("Good mods", "Worth pricing: press your price check key on it, then list it.")),
@@ -381,7 +381,7 @@ def verdict(kind, text, letters, pair_lines=()):
             nxt = (f"One good mod, rated {best}: " +
                    ("Regal Orb, then Exalted Orb." if best == "S" else
                     "only an S mod is worth a Regal - " +
-                    ("treat it as 2 bad mods: Orb of Alchemy." if kind == "tablet" else "start over on another jewel.")))
+                    ("treat it as 2 bad mods: reforge it, or Orb of Alchemy." if kind == "tablet" else "start over on another jewel.")))
         else:
             key = "reforge" if kind == "tablet" else "vendor"
     elif rarity == "Rare":

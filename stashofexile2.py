@@ -32,6 +32,8 @@ VERSION HISTORY
        Feedback: over the game, the price check overlay's ⚙ says In the app | Overlay + the app ("Here" there read
        as the overlay). Feedback: the Craft Helper's mods and Pairs That Sell Together share the height on a divider
        with a visible grip (style.VSplitter - Splitter on its side); where you leave it is kept (ch_split).
+       Feedback: "reforge or alch should be given as the option for 2 bad mods" - the tablet steps (data pack
+       revision 2) and the advice say "Reforge it, or Orb of Alchemy."
   2.125.5
        Feedback: some players got two updates in a row. The version to install was picked when the update was offered
        (the "Update available" question, a card's Install now) - left open while a newer version came out, the older

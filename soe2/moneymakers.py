@@ -658,8 +658,8 @@ def tablet_advice(rarity, n_mods, n_good):
             return "Both mods are good: Regal Orb, then Exalted Orb."
         if n_good == 1:
             return ("One good mod: your call - Regal + Exalt if that mod is rated S (see its rating below), "
-                    "otherwise treat it as 2 bad mods: Orb of Alchemy.")
-        return "Both mods are bad: Orb of Alchemy."
+                    "otherwise treat it as 2 bad mods: reforge it, or Orb of Alchemy.")
+        return "Both mods are bad: reforge it, or Orb of Alchemy."
     if rarity == "Rare":
         if n_good == 0 and n_mods >= 4:
             return "4 junk mods: don't sell it - keep it to reforge."

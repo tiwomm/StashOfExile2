@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "revision": 1,
+ "revision": 2,
  "patch": "0.5",
  "name": "Craft Helper data",
  "about": "The Craft Helper's data (2.125.5): each kind's types and craft steps, and how the market picks a letter. Edit, raise revision, and the app picks it up from GitHub.",
@@ -26,7 +26,7 @@
     ],
     [
      "2 bad mods",
-     "Orb of Alchemy."
+     "Reforge it, or Orb of Alchemy."
     ],
     [
      "2 good mods",
