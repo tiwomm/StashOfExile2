@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU GPL v3.0 (see LICENSE). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.125.2
+VERSION 2.125.3
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,6 +19,18 @@ VERSION 2.125.2
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.125.3
+       Feedback: the Campaign Helper's route card didn't scroll - resized, its list ran past the window. The pages
+       are now in one scroll area, and the card is at most 85% of the monitor's height.
+       Feedback: the card "disappears to the background until I click on the screen window again and again". Its
+       act list's dropdown (and a tooltip) is a window of its own; while it was in front, nothing counted as the game
+       or an overlay window, so every overlay window hid. A window's own dropdowns and tooltips now count as it
+       (overlaywin._child_hwnds).
+       Feedback: Routes ▾ and Options ▾ on the route card - the route, and the Campaign switches from Overlay
+       Settings › Campaign (one setting each, kept in step both ways), as small panels inside the card, not windows.
+       The routes are called Full, Speedrun, Rush (carry) and My Own; "Ask which route when a campaign starts".
+       Feedback: Reload Overlay (⟳ next to All settings… in Quick settings) builds the overlay again and restarts the
+       loop that keeps it over the game.
   2.125.2
        Feedback (a player's screenshot): "could not be installed automatically ([WinError 32] The process cannot
        access the file because it is being used by another process)". Starting the downloaded update right away
@@ -3096,7 +3108,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.125.2"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.125.3"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
