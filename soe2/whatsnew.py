@@ -39,6 +39,12 @@ NEXT = [
 MAX_BIG = 3
 
 NOTES = {
+    "2.123.6": {
+        "big": [],
+        "small": [
+            ("Everywhere", "The app should open on the monitor you left it on, after an update too."),
+        ],
+    },
     "2.123.5": {
         "big": [],
         "small": [
