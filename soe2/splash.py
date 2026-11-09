@@ -59,6 +59,8 @@ class Splash:
             g = SETTINGS.get("main_window") or {}
             cx, cy = int(g["x"]) + int(g["w"]) // 2, int(g["y"]) + int(g["h"]) // 2
             l, t, r, b = monitor_rect(root, cx, cy)
+            if g.get("zoomed"):                  # 2.125.1 (feedback: not centered): maximized - the monitor's middle
+                cx, cy = (l + r) // 2, (t + b) // 2  # (x / y / w / h are its normal size, somewhere else on it)
             cx, cy = max(l + W // 2, min(cx, r - W // 2)), max(t + H // 2, min(cy, b - H // 2))
         except Exception:
             cx, cy = root.winfo_screenwidth() // 2, root.winfo_screenheight() // 2
