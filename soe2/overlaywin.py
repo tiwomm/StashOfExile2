@@ -295,10 +295,10 @@ def _child_hwnds(w):
                         out.add(hid)
                         if u is not None:
                             out.add(u.GetParent(hid) or hid)
-                except Exception:
-                    pass
+                except tk.TclError:                  # (closed meanwhile)
+                    continue
     except Exception:
-        pass
+        buglog.caught()
     return out
 
 
