@@ -349,6 +349,7 @@ From a research pass on PoE1 / PoE2 tools, forum and Reddit wishes. Order to be 
 | Test | **Ultrawide pass:** the overlay, cards and Price Checks at 5120x1440 and 3840x1080. |
 | Data | **Campaign guide pack:** update the first week of December. |
 | Future | **Atlas progress tracker** (only if the log shows enough to track it), **leveling gems from a PoB code**, **debloat pass**. |
+| Future | **Buff watch** (a player's ask, 2026-11-09): one buff you pick (Guard, an aura) read from the game's buff bar and shown big near your health bar (BETA, off by default; pixels only, no memory, no keys). GGG's stance on mirroring UI is a grey area (Hinekora, AGPL-3.0, says so) - check before building. |
 
 ## 🤔 Maybe later (ideas to weigh when the plan above is done)
 
