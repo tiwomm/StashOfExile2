@@ -782,6 +782,12 @@ class AlertsPage:
                 try:                                  # your hideout, the helpers knew only after the next area
                     self.expedition_area(last.get("area"), gl_area_kind(
                         last.get("area"), last.get("seed"), last.get("level", 0)))
+                    # 2.125.7 (feedback: turned on while at the Well, nothing showed): the Desecration Helper too
+                    self.ws_area(last.get("area"))
+                    i = next((n for n, (k, _t, _d) in enumerate(tail) if _d is last), None)
+                    scene = next((d for k, _t, d in (tail[i:] if i is not None else []) if k == "scene"), None)
+                    if scene is not None:
+                        self.ws_scene(scene.get("name"))
                 except Exception:
                     self.log_error("the area helpers")
         if not self._br_ticking:
@@ -815,6 +821,11 @@ class AlertsPage:
                         elif kind == "brequel_tree":
                             self.breach_set_pending(None)          # spent (the tree was opened)
                             self.breach_dismiss()
+                        elif kind == "scene":
+                            try:
+                                self.ws_scene(data.get("name"))      # 2.125.7: the Well by its name too
+                            except Exception:
+                                self.log_error("the Desecration Helper")
                         elif kind == "area":
                             try:
                                 self.ws_area(data.get("area"))        # 2.81.0: the Desecration Helper

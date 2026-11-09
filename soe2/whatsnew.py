@@ -44,6 +44,14 @@ BETA_AREAS = ("Wealth", "Money Makers", "Game Search", "Market Insights", "Craft
               "Desecration Helper")
 
 NOTES = {
+    "2.125.7": {
+        "big": [],
+        "small": [
+            ("Desecration Helper", "It should wake at The Well of Souls more reliably, and says why if it can't read "
+             "your screen."),
+            ("Craft Helper", "A magic tablet with 2 bad mods says Reforge or Alchemy."),
+        ],
+    },
     "2.125.6": {
         "big": [],
         "small": [

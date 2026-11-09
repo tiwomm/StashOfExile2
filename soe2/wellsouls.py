@@ -23,6 +23,12 @@ from .config import APP_DIR, RESOURCE_DIR, P
 
 FILE = "tierdata.json"
 AREAS = ("Abyss_Hub",)                    # The Well of Souls (the hub with the Well; the pinnacle arena shares the name)
+WELL_NAMES = ("the well of souls", "well of souls")     # 2.125.7: the scene's name, as the Session tracker shows it
+
+
+def is_well_name(name):
+    """The game's scene name is The Well of Souls (2.125.7: a new area id still wakes the helper)."""
+    return str(name or "").strip().lower() in WELL_NAMES
 LORDS = ("kurgal_mod", "amanamu_mod", "ulaman_mod")
 FP = 16                                   # item-art fingerprint size (FP x FP gray + mask)
 
