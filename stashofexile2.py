@@ -25,6 +25,13 @@ VERSION HISTORY
        slower answer drew its rows again and stopped half-way with that error. Now only the newest answer is drawn,
        into a cleared list (lb_board_fill / lb_refresh count their looks). A board (or every board) with only your
        time says so: other players' times show once they share theirs (Community data sharing is opt-in).
+       Why every board said Players 1 since 2.86.0: times go up only with sharing on AND a community name, and the
+       name was asked only when you posted on Money Makers or flicked Share my times - players who opted in sent
+       nothing. Feedback: "ask once on first install, and after this next update ask them to set their opt-in
+       preferences ... and then pick their name if they opt-in". The quick start has a "Share with the community?"
+       page (why you'd say yes, Share / No thanks, What's shared?); Share asks for a name next (cm_name_ask). After
+       this update: not asked yet -> the sharing question (as before), then the name; sharing but no name -> the name,
+       once (lb_name_asked). A No is never asked again.
   2.125.7
        Feedback (a player): at The Well of Souls - the Session tracker said so - the Desecration Helper (on, Beta
        features on) showed nothing. Three gaps: it woke only on the area id Abyss_Hub (the tracker goes by the scene's

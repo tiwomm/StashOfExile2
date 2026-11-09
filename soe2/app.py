@@ -752,6 +752,12 @@ class App(SettingsPage, GearBookPage, PriceCheckPage, PricePopup, FavoritesPage,
         w = getattr(self, "_whatsnew", None)
         if w is not None and w.winfo_exists():
             w.lift()
+            n = getattr(self, "cm_name_win", None)        # 2.125.8: the name question it asked stays above it
+            try:
+                if n is not None and n.winfo_exists():
+                    n.lift()
+            except tk.TclError:
+                pass
 
     def close_whatsnew(self):
         SETTINGS["seen_version"] = APP_VERSION
@@ -1374,8 +1380,101 @@ class App(SettingsPage, GearBookPage, PriceCheckPage, PricePopup, FavoritesPage,
             self.root.after(CM.EVERY * 1000, self.cm_start)       # the board may get switched on later
             return
         if not self.cm_asked():
-            self.cm_ask()
+            if not self._qs_open():                       # (2.125.8: the quick start asks it on a fresh install)
+                self.cm_ask()
+        elif self.cm_sharing():
+            self.cm_name_ask()                            # 2.125.8: sharing, but no name yet - asked once
         self.root.after(60000, self.cm_tick)
+
+    def _qs_open(self):
+        w = getattr(self, "_whatsnew", None)
+        try:
+            return bool(w is not None and w.winfo_exists() and getattr(self, "qs_body", None) is not None
+                        and self.qs_body.winfo_exists())
+        except tk.TclError:
+            return False
+
+    # ---------------- 2.125.8: a community name, asked once
+    def cm_name_ask(self, force=False):
+        """2.125.8 (feedback: nobody else's times on the Leaderboards - every board said Players 1): sharing alone
+        sent no times; they also need a community name, which was only asked when you posted on Money Makers or
+        flicked Share my times. Players who share are asked once for one (No thanks is never asked again).
+        -> the window, or None."""
+        from . import board as BRD
+        if not BRD.configured() or BRD.signed_in() or not self.cm_sharing():
+            return None
+        if SETTINGS.get("lb_name_asked") and not force:
+            return None
+        old = getattr(self, "cm_name_win", None)
+        if old is not None and old.winfo_exists():
+            old.lift()
+            return old
+        SETTINGS["lb_name_asked"] = True
+        save_json("settings.json", SETTINGS)
+        P2 = C["panel2"]
+        w = self.cm_name_win = tk.Toplevel(self.root, bg=P2)
+        w.title("Your community name")
+        qs = getattr(self, "_whatsnew", None) if self._qs_open() else None
+        w.transient(qs or self.root)                      # (over the quick start when it asks)
+        if qs is not None:
+            try:
+                w.attributes("-topmost", True)
+            except tk.TclError:
+                pass
+        w.resizable(False, False)
+        box = tk.Frame(w, bg=P2, padx=16, pady=16)
+        box.pack(fill="both", expand=True)
+        tk.Label(box, text="Pick a community name?", bg=P2, fg=C["text"], font=("Segoe UI", 12, "bold"),
+                 anchor="w").pack(fill="x")
+        tk.Label(box, text="You share with the community. With a name, your best map, boss and campaign times show "
+                           "on the Leaderboards next to everyone else's - and you can post strats on Money Makers. "
+                           "Other players see the name; never your account or character. 2-24 letters or numbers.",
+                 bg=P2, fg=C["text"], justify="left", wraplength=460, anchor="w").pack(fill="x", pady=(8, 8))
+        var = tk.StringVar()
+        ent = ttk.Entry(box, textvariable=var, width=28)
+        ent.pack(anchor="w")
+        msg = tk.Label(box, text="", bg=P2, fg=C["red"], anchor="w", justify="left", wraplength=460)
+        msg.pack(fill="x", pady=(4, 8))
+        row = tk.Frame(box, bg=P2)
+        row.pack(fill="x")
+
+        def join():
+            name = var.get().strip()
+            if not name:
+                return msg.config(text="Type a name first.")
+            ok, d = BRD.join(name)
+            if not ok:
+                return msg.config(text=str(d))
+            try:
+                self.mm_account_paint()
+            except Exception:
+                buglog.caught()
+            w.destroy()
+            self.cm_name_win = None
+            self._say(f"You're on the board as {d.get('name', name)} - your times go up within a few minutes.", 8)
+            try:
+                self.lb_send(force=True)
+            except Exception:
+                buglog.caught()
+            return None
+        go = ttk.Button(row, text="Use this name", style="Primary.TButton", command=join, state="disabled")
+        go.pack(side="right")
+        var.trace_add("write", lambda *_a: go.config(state="normal" if var.get().strip() else "disabled"))
+        ent.bind("<Return>", lambda _e: join())
+        ttk.Button(row, text="No thanks", command=lambda: (w.destroy(), setattr(self, "cm_name_win", None))).pack(
+            side="right", padx=(0, 8))
+        tk.Label(box, text="Change it later: Settings › Privacy & community.", bg=P2, fg=C["muted"],
+                 font=("Segoe UI", 9), anchor="w").pack(fill="x", pady=(8, 0))
+        w.protocol("WM_DELETE_WINDOW", lambda: (w.destroy(), setattr(self, "cm_name_win", None)))
+        try:
+            w.update_idletasks()
+            hx, hy, hw, hh = self.root.winfo_rootx(), self.root.winfo_rooty(), self.root.winfo_width(), self.root.winfo_height()
+            w.geometry(f"+{hx + max(0, (hw - w.winfo_reqwidth()) // 2)}+{hy + max(0, (hh - w.winfo_reqheight()) // 3)}")
+            w.lift()
+            ent.focus_set()
+        except tk.TclError:
+            pass
+        return w
 
     # 2.69.1: sharing is opt-in - the first run asks; nothing is sent until you say yes
     def cm_sharing(self):
@@ -1458,6 +1557,8 @@ class App(SettingsPage, GearBookPage, PriceCheckPage, PricePopup, FavoritesPage,
             self.cm_set_sharing(on)
             if then:
                 then(on)
+            if on:                                       # 2.125.8: then a name, so your times can show
+                self.root.after(300, self.cm_name_ask)
         if info:
             ttk.Button(row, text="Close", command=lambda: (w.destroy(), setattr(self, "cm_ask_win", None))).pack(
                 side="right")
