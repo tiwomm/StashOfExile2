@@ -125,6 +125,66 @@ def plain_notes(md):
 
 
 
+
+def _wp_struct():
+    import ctypes
+    from ctypes import wintypes
+
+    class WINDOWPLACEMENT(ctypes.Structure):
+        _fields_ = [("length", wintypes.UINT), ("flags", wintypes.UINT), ("showCmd", wintypes.UINT),
+                    ("ptMinPosition", wintypes.POINT), ("ptMaxPosition", wintypes.POINT),
+                    ("rcNormalPosition", wintypes.RECT)]
+    return WINDOWPLACEMENT
+
+
+def get_placement(hwnd):
+    """2.123.6: Windows' own record of a window's normal place -> [left, top, right, bottom] or None."""
+    try:
+        import ctypes
+        W = _wp_struct()
+        wp = W()
+        wp.length = ctypes.sizeof(W)
+        if ctypes.windll.user32.GetWindowPlacement(hwnd, ctypes.byref(wp)):
+            r = wp.rcNormalPosition
+            if r.right - r.left > 200 and r.bottom - r.top > 200:
+                return [r.left, r.top, r.right, r.bottom]
+    except Exception:
+        buglog.caught()
+    return None
+
+
+def set_placement(hwnd, rect, zoomed):
+    """Put a window back where get_placement saw it, maximized or not. Windows moves it onto a screen if that
+    monitor is gone."""
+    import ctypes
+    W = _wp_struct()
+    wp = W()
+    wp.length = ctypes.sizeof(W)
+    ctypes.windll.user32.GetWindowPlacement(hwnd, ctypes.byref(wp))
+    wp.rcNormalPosition.left, wp.rcNormalPosition.top, wp.rcNormalPosition.right, wp.rcNormalPosition.bottom = \
+        [int(v) for v in rect]
+    wp.showCmd = 3 if zoomed else 1                     # SW_SHOWMAXIMIZED / SW_SHOWNORMAL
+    wp.flags = 0
+    return bool(ctypes.windll.user32.SetWindowPlacement(hwnd, ctypes.byref(wp)))
+
+
+def on_a_monitor(x, y):
+    """2.123.6: is the point on one of the monitors? True / False on Windows; None elsewhere (can't tell). (The old
+    test used the box around all monitors, which can't tell a gap between two monitors from a screen.)"""
+    if sys.platform != "win32":
+        return None
+    try:
+        import ctypes
+        from ctypes import wintypes
+        u = ctypes.windll.user32
+        u.MonitorFromPoint.restype = ctypes.c_void_p
+        u.MonitorFromPoint.argtypes = [wintypes.POINT, wintypes.DWORD]
+        return bool(u.MonitorFromPoint(wintypes.POINT(int(x), int(y)), 0))       # MONITOR_DEFAULTTONULL
+    except Exception:
+        buglog.caught()
+        return None
+
+
 class App(SettingsPage, GearBookPage, PriceCheckPage, PricePopup, FavoritesPage, BoardModPage, LeaderboardPage, WellSoulsPage, RumoursPage, ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, ExchangePage, WealthPage, LibraryPage, RegexPage, UtilitiesPage, TrackerPage, SearchPage, CalcOverlay, InsightsPage, MoneyMakersPage, MapLibraryPage, RemnantPage, LedgerPage, FeedbackPage, FeedPage, MergedOverlay, LightOverlay, GamePlanPage, FocusPokes, OverlayHelp, OverlayParts, CampaignUI, OverlayRates, CommunityPage, RateModsPage, OverlayRecap, StashScanPage, OverlayQuick):
     COLS = [("added", "#", 46, "e"), ("name", "Item", 220, "w"), ("type", "Type", 110, "w"), ("mark", "Status", 90, "center"),
             ("est", "Price", 110, "e"), ("conf", "Confidence", 95, "center"), ("listings", "Listings", 70, "e"), ("priced", "Priced at", 130, "w"),
@@ -5256,7 +5316,10 @@ class App(SettingsPage, GearBookPage, PriceCheckPage, PricePopup, FavoritesPage,
         w, h = max(1000, w), max(560, h)
         d = self.desktop_rect() or (0, 0, self.root.winfo_screenwidth(), self.root.winfo_screenheight())
         dx, dy, dw, dh = d
-        if x + w - 120 < dx or x + 120 > dx + dw or y < dy - 10 or y + 40 > dy + dh:
+        on = on_a_monitor(x + min(w // 2, 200), y + 10)          # 2.123.6: the title bar on one of the monitors
+        if on is None:                                           # (not Windows: the whole desktop's box)
+            on = not (x + w - 120 < dx or x + 120 > dx + dw or y < dy - 10 or y + 40 > dy + dh)
+        if not on:
             return f"{min(w, dw)}x{min(h, dh)}"            # off every screen now: keep the size, let Windows place it
         return f"{w}x{h}+{x}+{y}"
 
@@ -5278,6 +5341,9 @@ class App(SettingsPage, GearBookPage, PriceCheckPage, PricePopup, FavoritesPage,
             g["zoomed"] = True
         else:
             return
+        wp = get_placement(self._hwnd()) if sys.platform == "win32" else None
+        if wp:                                  # 2.123.6: Windows' own record of its normal place (which monitor)
+            g["wp"] = wp
         job = getattr(self, "_win_save_job", None)            # written a moment after it stops moving (a crash
         if job:                                               # keeps it too)
             self.root.after_cancel(job)
@@ -5285,8 +5351,22 @@ class App(SettingsPage, GearBookPage, PriceCheckPage, PricePopup, FavoritesPage,
 
     def restore_zoom(self, tries=0):
         """Maximized last time -> maximized again. 2.25.4: only once the window is really on screen (asking before
-        that did nothing on Windows, so it opened at the plain size), and checked: if Tk didn't, Windows is asked."""
-        if not (SETTINGS.get("main_window") or {}).get("zoomed"):
+        that did nothing on Windows, so it opened at the plain size), and checked: if Tk didn't, Windows is asked.
+        2.123.6 (feedback: "not remembering where it was if on other monitors after it updates"): on Windows the
+        window is put back with Windows' own placement record (its monitor, normal place and maximized), which
+        Windows itself keeps on a screen."""
+        g = SETTINGS.get("main_window") or {}
+        if sys.platform == "win32" and g.get("wp") and not getattr(self, "_wp_done", False):
+            try:
+                if not self.root.winfo_viewable() and tries < 60:
+                    self.root.after(250, lambda: self.restore_zoom(tries + 1))
+                    return
+                self._wp_done = True
+                set_placement(self._hwnd(), g["wp"], bool(g.get("zoomed")))
+                buglog.debug("window place", f"put back: {g['wp']}, maximized {bool(g.get('zoomed'))}")
+            except Exception:
+                buglog.caught()
+        if not g.get("zoomed"):
             self._win_restored = True                                # from now on, moves and sizes are kept
             return
         try:

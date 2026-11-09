@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU GPL v3.0 (see LICENSE). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.123.5
+VERSION 2.123.6
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,6 +19,13 @@ VERSION 2.123.5
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.123.6
+       Feedback: "program not remembering where it was if on other monitors after it updates". Two changes: the
+       "is it still on a screen?" test asks each monitor (MonitorFromPoint) instead of the box around all monitors
+       (that box comes from the virtual-screen size, which can disagree with Tk's coordinates under display scaling,
+       and a window there was sent back to the main monitor); and on Windows the app keeps Windows' own placement
+       record (GetWindowPlacement: its normal place on its monitor) and puts the window back with it
+       (SetWindowPlacement, maximized or not) - Windows keeps that on a screen itself if a monitor is gone.
   2.123.5
        Feedback: "we don't use the UK spelling of stuff, change any and all non US American spelling". Every string,
        comment, docstring and doc now uses US spelling (color, behavior, gray, center, canceled, maximized, Island
@@ -3026,7 +3033,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.123.5"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.123.6"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
