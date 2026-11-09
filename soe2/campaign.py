@@ -24,7 +24,13 @@ SCHEMA = 1
 REPO = "tiwomm/StashOfExile2"
 LIVE_URL = f"https://raw.githubusercontent.com/{REPO}/main/{FILE}"
 GAP = 15 * 60                     # a longer gap between two log lines isn't counted in a split (away, or closed)
-ROUTES = (("full", "Full rewards"), ("speed", "Speedrun"), ("mine", "My own"))
+ROUTES = (("full", "Full rewards"), ("speed", "Speedrun"), ("rush", "Rush (carry)"), ("mine", "My own"))
+# 2.125.0 (feedback: "a rush/carry helper ... in the perspective of the person giving the carry"): each route in one line
+ROUTE_LINES = {"full": "Every passive point, spirit and resistance, with the side zones that give them.",
+               "speed": "The main story. Skips side zones and most extras; keeps the rewards worth the time.",
+               "rush": "You're carrying someone: what to clear, when to bring them in, what they pick up and who they "
+                       "talk to.",
+               "mine": "The zones in the order you went last time."}
 KIND_NAMES = {"points": "passive points", "spirit": "spirit", "res_cold": "cold res", "res_fire": "fire res",
               "res_lightning": "lightning res", "life": "life", "mana": "mana", "other": "other"}
 SHORT_GIVES = {"points": "+{n} points", "spirit": "+{n} spirit", "res_cold": "+{n}% cold", "res_fire": "+{n}% fire",
@@ -233,7 +239,8 @@ def speed_reward(r):
 def steps(act_key, run=None, route=None, optional=None):
     """The route for an act -> [{zone, do, side, optional, tip, learned, state}] (state: done / here / passed / todo).
     2.89.0: Speedrun leaves out steps the pack marks "speed": {"skip": true} (and side zones), and shows a step's
-    "speed": {"do": ...} instead of its usual "do"."""
+    "speed": {"do": ...} instead of its usual "do". 2.125.0: Rush (carry) the same with "rush" (side zones with a
+    rush line stay)."""
     c = cfg()
     run = run or char()
     route = route or route_of(run)
@@ -261,6 +268,13 @@ def steps(act_key, run=None, route=None, optional=None):
         for s in rows:
             if (s.get("speed") or {}).get("do"):
                 s["do"] = s["speed"]["do"]
+    if route == "rush":                                       # 2.125.0: the carrier's guide ("rush" in the pack); a
+        def rush(s):                                          # step without one follows Speedrun
+            return s.get("rush") or s.get("speed") or {}
+        rows = [s for s in rows if not rush(s).get("skip") and (not s.get("side") or (s.get("rush") or {}).get("do"))]
+        for s in rows:
+            if rush(s).get("do"):
+                s["do"] = rush(s)["do"]
     if not optional:
         rows = [s for s in rows if not s.get("optional") or norm(s["zone"]) in _seen(run, act_key)]
     seen = _seen(run, act_key)
@@ -372,7 +386,7 @@ def _close_act(run, key, now):
     if run["seen"].get(key):
         c["mine"][key] = list(run["seen"][key])
     seen = set(_seen(run, key))
-    speed = route_of(run) == "speed"
+    speed = route_of(run) in ("speed", "rush")
     for r in rewards(key):
         st = run["rewards"].get(r["id"])
         if st in ("got", "skip"):

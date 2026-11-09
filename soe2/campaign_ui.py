@@ -113,10 +113,9 @@ class CampaignUI:
                  font=(P["font"], self.ov_font(11), "bold"), anchor="w").pack(fill="x")
         self.camp_rq_btns = {}
         for k, title, txt, style in (
-                ("speed", "Speedrun", "The main story. Skips side zones and most extras; keeps only the rewards "
-                                      "worth the time.", "Primary.TButton"),
-                ("full", "Full rewards", "Every passive point, spirit and resistance, with the side zones that give "
-                                         "them.", "TButton")):
+                ("speed", "Speedrun", CP.ROUTE_LINES["speed"], "Primary.TButton"),
+                ("full", "Full rewards", CP.ROUTE_LINES["full"], "TButton"),
+                ("rush", "Rush (carry)", CP.ROUTE_LINES["rush"], "TButton")):
             f = tk.Frame(body, bg=bg, pady=4)
             f.pack(fill="x")
             b = ttk.Button(f, text=title, style=self.ov_btn(style), width=14,
@@ -786,6 +785,9 @@ class CampaignUI:
         self.tk_camp_route = SegBar(row, names, value=dict(CP.ROUTES).get(c["route"], names[0]), size=9, pad=(12, 4),
                                     command=self.camp_route_pick)
         self.tk_camp_route.pack(side="left")
+        self.tk_camp_route_line = tk.Label(box, text=CP.ROUTE_LINES.get(c["route"], ""), bg=P2, fg=C["muted"],
+                                           font=("Segoe UI", 9), anchor="w", justify="left", wraplength=520)
+        self.tk_camp_route_line.pack(fill="x", pady=(2, 0))    # 2.125.0: what the route picked does, in one line
         grid = tk.Frame(box, bg=P2)
         grid.pack(fill="x", pady=(8, 0))
         self.tk_camp_vars = {}
@@ -814,9 +816,15 @@ class CampaignUI:
 
     def camp_route_pick(self, name):
         CP.cfg()["route"] = next((k for k, n in CP.ROUTES if n == name), "full")
+        lab = getattr(self, "tk_camp_route_line", None)
+        if lab is not None:
+            try:
+                lab.config(text=CP.ROUTE_LINES.get(CP.cfg()["route"], ""))
+            except tk.TclError:
+                pass
         run = CP.char()
-        if run.get("act") is not None and not run.get("done"):   # 2.89.0: the run you're on follows too
-            run["route"] = CP.cfg()["route"]
+        if run.get("act") is not None:              # 2.89.0: the run you're on follows too (2.125.0: a finished one
+            run["route"] = CP.cfg()["route"]         # too - a carrier's character is past the campaign)
         CP.save()
         self.camp_route_ask_close()
         self.camp_refresh()
