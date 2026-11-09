@@ -44,6 +44,13 @@ BETA_AREAS = ("Wealth", "Money Makers", "Game Search", "Market Insights", "Craft
               "Desecration Helper")
 
 NOTES = {
+    "2.125.8": {
+        "big": [],
+        "small": [
+            ("Leaderboards", "A board should show all its times now (it could stop half-way); one with only your time "
+             "says why."),
+        ],
+    },
     "2.125.7": {
         "big": [],
         "small": [

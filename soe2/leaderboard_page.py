@@ -231,14 +231,20 @@ class LeaderboardPage:
             self.lb_msg.config(text="Everyone's times show once Community data sharing is on (Settings) - yours are "
                                     "added then too.", fg=C["muted"])
         self.lb_msg.config(text="Loading…", fg=C["muted"]) if LB.sharing_on() else None
+        self._lb_kgen = kgen = getattr(self, "_lb_kgen", 0) + 1     # (2.125.8: only the newest answer is drawn)
 
         def done(res):
+            if kgen != getattr(self, "_lb_kgen", 0):
+                return None
             ok, d = res
             if not ok:
                 self.lb_msg.config(text=d, fg=C["red"])
                 return self._lb_keys_fill(None, classes)
             n = len(d.get("keys") or [])
-            self.lb_msg.config(text=f"{n} board{'s' if n != 1 else ''}. Pick one on the left.", fg=C["muted"])
+            most = max([k.get("players") or 0 for k in d.get("keys") or []] or [0])
+            self.lb_msg.config(text=f"{n} board{'s' if n != 1 else ''}. Pick one on the left." +
+                               (" Only your times so far - other players' show once they share theirs."
+                                if n and most <= 1 else ""), fg=C["muted"])
             self.lb_league_box.config(values=self.lb_league_names(d.get("leagues") or ()))
             self._lb_keys_fill(d, sorted(set(classes) | set(d.get("classes") or [])))
         self._lb_bg(lambda: B.lb_keys(cat, league, cls), done)
@@ -302,12 +308,28 @@ class LeaderboardPage:
                           tags=("gold",) if i == 0 else ())
             return
 
+        # 2.125.8 (feedback: "I still don't see anyone else's ... map times"; app_log: "Item b1767 already exists"):
+        # two looks at one board raced - the slower answer added its rows again and stopped half-way. Only the newest
+        # answer is drawn, into a cleared list.
+        self._lb_gen = gen = getattr(self, "_lb_gen", 0) + 1
+
         def done(res):
+            if gen != getattr(self, "_lb_gen", 0):
+                return None                               # (an older look - a newer one is on its way)
             ok, d = res
             if not ok:
                 return self.lb_msg.config(text=d, fg=C["red"])
-            for i, r in enumerate(d.get("rows") or []):
+            bv.delete(*bv.get_children())
+            self.lb_rows = {}
+            rows = d.get("rows") or []
+            others = sum(1 for r in rows if not r.get("mine"))
+            if rows and not others:                       # (say why it's only you - not a fault)
+                self.lb_msg.config(text="Only your time on this board so far. Other players' times show here once "
+                                        "they share theirs (Community data sharing).", fg=C["muted"])
+            for i, r in enumerate(rows):
                 iid = f"b{r['id']}"
+                if bv.exists(iid):
+                    continue
                 self.lb_rows[iid] = r
                 tags = ("hidden",) if r.get("hidden") else ("me",) if r.get("mine") else ("gold",) if i == 0 else ()
                 bv.insert("", "end", iid=iid, values=(i + 1, r["name"] + (" (you)" if r.get("mine") else ""),
