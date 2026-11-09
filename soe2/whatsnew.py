@@ -39,6 +39,16 @@ NEXT = [
 MAX_BIG = 3
 
 NOTES = {
+    "2.125.0": {
+        "big": [
+            ("🤝", "Rush (carry) route",
+             "Carrying a friend? The Campaign Helper tells you what to clear, when to bring them in and what they pick up.",
+             None, "Overlay"),
+        ],
+        "small": [
+            ("Overlay", "Settings › Campaign › Route says what each route does."),
+        ],
+    },
     "2.124.1": {
         "big": [
             ("🪨", "Classic Panel in the Bar's look",
