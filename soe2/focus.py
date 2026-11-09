@@ -39,7 +39,8 @@ DEFAULTS = {
 def cfg():
     f = SETTINGS.setdefault("focus", {})
     for k, v in DEFAULTS.items():
-        f.setdefault(k, copy.deepcopy(v))
+        if k not in f:                                   # 2.125.4: copied only when missing
+            f[k] = copy.deepcopy(v)
     if not f.get("sup_2985"):                              # 2.98.5: Omen of Amelioration -> "when it's used up"
         f["sup_2985"] = True
         for r in f.get("supplies") or []:

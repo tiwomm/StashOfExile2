@@ -39,6 +39,14 @@ NEXT = [
 MAX_BIG = 3
 
 NOTES = {
+    "2.125.4": {
+        "big": [],
+        "small": [
+            ("Overlay", "The route card should feel quicker."),
+            ("Overlay", "The route card keeps the size you give it."),
+            ("Overlay", "Route card: the act list sits on the right; Routes ▾ is easier to read."),
+        ],
+    },
     "2.125.3": {
         "big": [
             ("🗺", "Routes and Options on the route card", "Change the Campaign route and its switches right there.",

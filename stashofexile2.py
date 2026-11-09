@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU GPL v3.0 (see LICENSE). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.125.3
+VERSION 2.125.4
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,6 +19,19 @@ VERSION 2.125.3
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.125.4
+       Feedback on the route card: "the act selection dropdown needs to be on the right" - it's now right of Routes ▾
+       and Options ▾. Routes ▾ "needs some visual hierarchy ... for division of selectable options": each route is its
+       own row with a line between them, the one in use on an accent-tinted ground with a bar and "✓ In use", and
+       a row lights up under the mouse.
+       "The whole campaign card is pretty laggy": a click no longer builds the card again - only the page shown is
+       built again, the others when they're shown (camp_pages_refresh / _camp_build_page); the overlay's line is
+       redrawn after the card has drawn its change (once for a run of clicks); the line's fonts are made once per
+       look and their text widths remembered (fit_lines asked the same widths on every redraw); campaign.cfg() and
+       focus.cfg() copied every default on every read - now only missing ones.
+       "After resizing it isn't remembering size if I change to a screen that causes it to expand longer": a size you
+       give the card is saved (Campaign card_size) and used from then on, and another act or page scrolls instead of
+       growing it. It's never narrower than its toolbar (snug buttons), so Routes ▾ and Options ▾ stay in sight.
   2.125.3
        Feedback: the Campaign Helper's route card didn't scroll - resized, its list ran past the window. The pages
        are now in one scroll area, and the card is at most 85% of the monitor's height.
@@ -3113,7 +3126,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.125.3"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.125.4"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 

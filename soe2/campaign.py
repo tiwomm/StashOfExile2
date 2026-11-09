@@ -61,7 +61,8 @@ CAMP_ID = re.compile(r"^(G|P)(\d+)(?:_|$)")
 def cfg():
     c = SETTINGS.setdefault("campaign", {})
     for k, v in DEFAULTS.items():
-        c.setdefault(k, copy.deepcopy(v))
+        if k not in c:                                   # 2.125.4: copied only when missing (it ran on every call)
+            c[k] = copy.deepcopy(v)
     return c
 
 
