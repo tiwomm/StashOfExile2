@@ -284,7 +284,7 @@ def _place_dialog(w, parent=None):
 
 
 LOOP_LIMIT = 150                  # one widget resized this many times within a second = stuck in a layout loop
-_LW = {"t": 0.0, "n": {}, "told": False}
+_LW = {"t": 0.0, "n": {}, "told": False, "size": {}}
 
 
 def _layout_watch(e):
@@ -299,6 +299,10 @@ def _layout_watch(e):
         if now - _LW["t"] > 1.0:
             _LW["t"], _LW["n"] = now, {}
         k = str(e.widget)
+        size = (e.width, e.height)                   # 2.124.1: a size change only - dragging a window moves it on
+        if _LW["size"].get(k) == size:               # every mouse step, and that isn't a loop
+            return
+        _LW["size"][k] = size
         n = _LW["n"][k] = _LW["n"].get(k, 0) + 1
         if n < LOOP_LIMIT:
             return

@@ -175,14 +175,13 @@ class LightOverlay:
                 self._hud_k = hud_k(1440) * 0.8
             for piece in pieces:
                 if panel and style == "classic":
-                    P = hudart.card_palette(theme_palette())
+                    P = hudart.panel_palette(theme_palette())
                     _seed(TH, P)
                     self.mg_P = P
                 f = OverlayFrame(row, P)
                 cv = f.canvas_body()
                 if panel and style == "classic":
-                    self._mg_card(f, cv, P, want)
-                    W, H = int(cv.cget("width")), int(cv.cget("height"))
+                    W, H = self._mg_classic_panel(f, cv, P, want)
                 elif panel:
                     kind = "ornate" if style in ORNATE else style
                     W, H = getattr(self, f"_lt_{kind}_panel")(f, cv, P, want, (0, 0, width, spot_h), piece)
@@ -243,7 +242,7 @@ class LightOverlay:
             P = palette(self.ov_look(), self.ov_look_colors(), boxed=True)
         else:
             base = theme_palette()
-            P = hudart.palette(base) if self.merged_layout() == "xpbar" else hudart.card_palette(base)
+            P = hudart.palette(base) if self.merged_layout() == "xpbar" else hudart.panel_palette(base)
         _seed(TH, P)
         return P
 

@@ -4,7 +4,7 @@
 
 > **Who we build for - read second.** Path of Exile players are utilitarian: they love data and information, problem solving and creative thinking. So every feature shows its numbers *and how they were worked out*, lets you sort, filter, compare and export them (CSV), keeps power-user depth (keys, versions, raw data) one click away instead of hiding it, explains in plain words, and leaves the decision to the player. Pretty is welcome; vague is not.
 
-**Current version: 2.124.0**
+**Current version: 2.124.1**
 
 Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds features, 2.10.1 only fixes. Each step below is one release; we work through them top to bottom.
 
@@ -241,8 +241,10 @@ Order (decided 2026-11-05): the page passes, then the Privacy & data hub, then t
 | 2.123.5 | US spelling everywhere (the game's own words stay as the game writes them); `tools/check_spelling.py` on every pull request. Island Rumors only on the real card (its own lines must be read). |
 | 2.123.6 | The app opens on the monitor you left it on (Windows' own placement record; each monitor checked). |
 | 2.124.0 | The Campaign / Ritual / NOW lines inside the overlay (it grows up, the bar never moves); Zone timer in campaign zones (no rank, Maps, Avg); a Campaign zones leaderboard (opt-in); the route card swaps tabs and ticks lines in place; Layout first and Panel previews in Settings; Game bar is now Bar; Quick settings tips; no Death Recap. |
-| 2.124.1 | Craft Helper phase 3: learned mod pairs and live data packs per game version. |
-| 2.125.0 | **UX pass 3 (code):** dead code out; tools/check_removed.py (a removed feature leaves no text, setting or test behind), soe2/names.py + tools/check_names.py (one name per feature), tools/check_ux.py. |
+| 2.124.1 | Classic Panel in the Bar's look (and the lines over it); Quick settings Layout; Panel menus inside the frame; the map's name cut before the time shrinks; the window's place saved before an update; Zone time from entering a zone; no preview flicker. |
+| 2.125.0 | Campaign Helper: a Rush (carry) route, from the carrier's side. |
+| 2.125.1 | Craft Helper phase 3: learned mod pairs and live data packs per game version. |
+| 2.126.0 | **UX pass 3 (code):** dead code out; tools/check_removed.py (a removed feature leaves no text, setting or test behind), soe2/names.py + tools/check_names.py (one name per feature), tools/check_ux.py. |
 | 2.126.0+ | **UX pass round 2** (all 21 approved): paste to price, price spread, Rate ▾ on hover, card closes when the mouse leaves (hold Ctrl), Ctrl+K go to anything (Ctrl+F = this page's search), F1 keys sheet, get-started steps, Exchange Rates search/sort/pin/trend, rank on the Map Library row, one Money Makers filter bar, buttons off until a pick, one Bulk Pricing toolbar row, never color alone, Edit layout mode, hold Alt through Click-through, ↺ Defaults per section, search top left, tips on icon buttons. |
 | Plan | **Tablet Craft Helper + Mod book:** plan merging them into one place. |
 | - | (Responsive part 2 - text size overlaps, sharp DPI - is folded into the page passes; started on branch wip-text-scale.) |

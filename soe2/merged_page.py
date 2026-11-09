@@ -196,20 +196,6 @@ class _Time(CanvasText):
     configure = config
 
 
-class _Sub(_Trunc):
-    """The Panel's red subtitle: where you are, or the league when the game hasn't said yet."""
-    limit = 30
-
-    def config(self, **kw):
-        if "text" in kw and not str(kw["text"]).strip():
-            from .config import SETTINGS
-            kw["text"] = f"League: {SETTINGS.get('league') or '-'}"
-        if "text" in kw:
-            kw["text"] = str(kw["text"]).upper()             # (small caps, like the game's subtitles)
-        super().config(**kw)
-    configure = config
-
-
 class MergedOverlay:
     """Mixed into App (with TrackerPage, which builds the separate windows)."""
 
@@ -456,7 +442,7 @@ class MergedOverlay:
             return self._mg_hud_build(want)
         from . import hudart, themes as TH
         from .overlaywin import _seed
-        P = hudart.card_palette(pal())                      # 2.67.0: the game's vendor-window look, every theme
+        P = hudart.panel_palette(pal())                     # 2.124.1: the Bar's look (2.67.0: a vendor window)
         _seed(TH, P)
         self.mg_P = P
         self.hud_spots("xpbar")                             # (sizes follow the game window's height)
@@ -476,7 +462,7 @@ class MergedOverlay:
         self.tk_ov_lbls, self.tk_ov_alerts, self.tk_ov_clock = {}, {}, None
         if not cfg.get("mlocked"):
             w.draggable(cv)
-        self._mg_card(w, cv, P, want)
+        self._mg_classic_panel(w, cv, P, want)
         self.tk_overlay = w if want["timer"] else None
         self.tk_helpers = None
         self.tracker_overlay_draw(self.tracker_numbers())
@@ -896,126 +882,19 @@ class MergedOverlay:
             self.merged_build()                              # (the ▾ / ▴)
 
     # ---------------------------------------------------------------- 2.66.1: the Panel (the game's Treasurer window)
-    def _smallcaps(self, cv, P, cx, cy, text, size, fill):
-        """Small caps like the game's titles: each word's first letter bigger, the rest in smaller capitals; centered."""
-        big = tkfont.Font(root=cv, family=P["hfont"], size=self._hf(size), weight="bold")
-        small = tkfont.Font(root=cv, family=P["hfont"], size=self._hf(round(size * 0.78)), weight="bold")
-        parts = []
-        for wi, word in enumerate(text.split(" ")):
-            if wi:
-                parts.append((" ", small))
-            if word:
-                parts.append((word[0].upper(), big))
-                if word[1:]:
-                    parts.append((word[1:].upper(), small))
-        total = sum(f.measure(t_) for t_, f in parts)
-        x = cx - total / 2
-        base = cy + big.metrics("ascent") / 2 - 1
-        for t_, f in parts:
-            cv.create_text(x, base, text=t_, anchor="sw", fill=fill, font=f, tags=("mg",))
-            x += f.measure(t_)
-
-    def _mg_card(self, w, cv, P, want):
-        """The Panel: a heavy dark-metal frame with filigree corners; a header banner (SESSION in antique gold small
-        caps, where you are under it); the time, this map's time, maps done and the average in a 2 x 2 grid split by
-        thin lines - a small cream icon, a big gold number; the switches in a second 2 x 2 grid (a gold glow when
-        on); the clock, Notes ▾ and the lock under a thin rule."""
+    def _mg_classic_panel(self, w, cv, P, want):
+        """2.124.1 (feedback: "classic panel visual look needs to be the same as bar"): the Slate Panel's parts on the
+        Bar's stone and pewter frame, in its colors and type. (2.67.0-2.124.0: a vendor-window card, _mg_card.)"""
         from . import hudart
-        cfg = self.tracker_cfg()
-        k = getattr(self, "_hud_k", 1.0)
-        W = int(300 * k)
-        fw = int(12 * k)                                     # frame + its gold line
-        gx0, gx1 = fw + int(4 * k), W - fw - int(4 * k)
-        cx = W // 2
-        by0, by1 = fw + int(4 * k), fw + int(4 * k) + int(46 * k)
-        self._smallcaps(cv, P, cx, by0 + (by1 - by0) * 0.38, "Session" if want["timer"] else "Mechanics", 14, P["head"])
-        if want["timer"]:
-            self._mg_text(cv, P, cx, by0 + (by1 - by0) * 0.74, "where", (P["hfont"], self._hf(9)), fill=P["sub"],
-                          anchor="center", cls=_Sub).config(text="")
-        else:
-            cv.create_text(cx, by0 + (by1 - by0) * 0.74, text="CLICK ONE TO SWITCH IT", fill=P["sub"],
-                           font=(P["hfont"], self._hf(8)), tags=("mg",))
-        y = by1 + int(8 * k)
-        grids = []
-        colw = (gx1 - gx0) // 2
-        cells = []
-        if want["timer"]:                                   # 2.70.1: each number has its switch (Options)
-            for key, icon in (("session", "\u23f1"), ("map", "\u231b"), ("maps", "\u2691"), ("avg", "\u2248"),
-                              ("rank", "\u2605")):            # 2.76.0: the map's rank, its own cell
-                if self.ov_lines().get(key, True):
-                    cells.append((key, icon))
-        if cells:
-            rows = (len(cells) + 1) // 2
-            rh = int(40 * k)
-            grids.append((gx0, y, gx1, y + rows * rh, rows, 2 if len(cells) > 1 else 1))
-            for i, (key, icon) in enumerate(cells):
-                x0, y0 = gx0 + (i % 2) * colw, y + (i // 2) * rh
-                if key == "session":                        # 2.74.3: the ⏸ / ▶ button in the timer's place
-                    self._mg_play(cv, P, x0 + int(16 * k), y0 + rh // 2, anchor="center", size=13)
-                else:
-                    cv.create_text(x0 + int(16 * k), y0 + rh // 2, text=icon, fill=P["icon"],
-                                   font=("Segoe UI Symbol", self._hf(13)), tags=("mg",))
-                if key == "session":                        # 2.69.2: PAUSED under the time, not after it
-                    t = self._mg_text(cv, P, x0 + int(32 * k), y0 + rh // 2 - int(3 * k), key,
-                                      (P["font"], self._hf(15), "bold"), fill=P["big"], cls=_Time)
-                    t.num = True
-                    t.tag = (cv.create_text(x0 + int(32 * k), y0 + rh - int(4 * k), text="", anchor="nw",
-                                            fill=P["muted"], font=(P["font"], self._hf(7), "bold"), tags=("mg",)),
-                             "below")
-                    continue
-                t = self._mg_text(cv, P, x0 + int(32 * k), y0 + rh // 2, key,
-                                  (P["font"], self._hf(14), "bold"), fill=P["big"], cls=_Num)
-                if key == "rank":                            # 2.76.0: click it to rank the map
-                    self._rank_click(cv, t)
-            y += rows * rh + int(8 * k)
-        ftext, fprog = "", None                              # 2.76.0: the focus line has its own bar (ovparts)
-        if ftext:                                            # 2.73.0: the focus line (League Focus, I)
-            rh = int(30 * k)
-            grids.append((gx0, y, gx1, y + rh, 1, 1))
-            cv.create_text(gx0 + int(10 * k), y + rh // 2, text="NOW", anchor="w", fill=P["head"],
-                           font=(P["hfont"], self._hf(8), "bold"), tags=("mg",))
-            ft = self._mg_text(cv, P, gx0 + int(44 * k), y + rh // 2, "focus", (P["font"], self._hf(9)), cls=_Trunc)
-            ft.limit = 34 if fprog is None else 26
-            ft.config(text=ftext)
-            self._focus_click(cv, ft)
-            if fprog is not None:
-                bx1 = gx1 - int(10 * k)
-                bx0 = bx1 - int(44 * k)
-                cv.create_rectangle(bx0, y + rh // 2 - 2, bx1, y + rh // 2 + 2, fill=P["cell_bg"], outline=P["line"],
-                                    tags=("mg",))
-                cv.create_rectangle(bx0, y + rh // 2 - 2, bx0 + int((bx1 - bx0) * min(1.0, fprog)), y + rh // 2 + 2,
-                                    fill=P["on"], outline="", tags=("mg",))
-            y += rh + int(6 * k)
-        foot = y + int(2 * k)
-        fy = foot + int(11 * k)
-        gx = self._mg_glyphs(w, cv, P, gx1 - int(4 * k), fy)
-        menus_left, menu_rows = gx, 1
-        if self.bar_buttons_on():
-            menus_left = self._mg_bar_buttons(w, cv, P, gx - 4, fy, anchor="e")
-            if menus_left < gx0 + int(4 * k):                # 2.124.1 (feedback: Notes ▾ ran past the frame): wrapped
-                for t in ("mg_notes", "mg_calc", "mg_regex", "mg_rates", "mg_vendor"):   # inside it, left to right
-                    cv.delete(t)
-                self._mg_bar_buttons(w, cv, P, gx0 + int(4 * k), fy, anchor="w", right=gx - 6, step=int(18 * k))
-                menu_rows = getattr(self, "_mg_menu_rows", 1)
-                menus_left = gx0                             # (the clock goes under them)
-        extra = (menu_rows - 1) * int(18 * k)
-        if want["timer"] and cfg.get("clock", True):
-            self._mg_clock(w, cv, P, gx0 + int(4 * k), fy, anchor="w", on_bar=False)
-            self.tk_ov_clock.config = (lambda fn: (lambda text="", **kw: fn(text=text.splitlines()[0]
-                                                                            if text else "")))(self.tk_ov_clock.config)
-            import tkinter.font as _tkf
-            cw = _tkf.Font(root=cv, family=P["font"], size=self._hf(9)).measure("12:00 AM")
-            if gx0 + int(4 * k) + cw + int(8 * k) > menus_left:   # 2.97.0: four menus and the clock don't fit - clock below
-                extra += int(18 * k)
-                cv.move("mg_clock", 0, extra)
-        H = fy + extra + int(12 * k) + fw
-        art = hudart.card(cv, W, H, (by0, by1), grids, foot)
+        spot = self.hud_spots("xpbar")[0]
+        W, H = self._lt_slate_panel(w, cv, P, want, spot, "all")
+        cv.configure(width=W, height=H)
+        art = hudart.panel(cv, W, H)
         if art is not None:
             cv.create_image(0, 0, image=art, anchor="nw", tags=("hudbg",))
             cv.tag_lower("hudbg")
             cv._card_imgs = [art]
-        cv.configure(width=W, height=H)
-
+        return W, H
 
     # ---------------------------------------------------------------- 2.65.0: Bar (on the XP bar / beside the orbs)
     def _mg_hud_build(self, want):

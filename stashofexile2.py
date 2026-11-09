@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU GPL v3.0 (see LICENSE). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.124.0
+VERSION 2.124.1
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,6 +19,23 @@ VERSION 2.124.0
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.124.1
+       Feedback round on 2.124.0. Classic: the Panel is drawn in the Bar's look (stone, pewter frame, corner
+       brackets, the Bar's colors and type - the Slate Panel's parts; hudart.panel / panel_palette) instead of the
+       vendor-window card (removed with its code); the lines over it sit on the same stone, over the Bar on the Bar's
+       own plate, one line about as tall as the bar. Notes in the Classic Panel take that look too.
+       The Panel's menus stay inside its frame (wrapped). The Bar's map part cuts the area's name first and keeps the
+       time at the bar's size (feedback: map name, time and session crammed). The campaign line wraps to 3 lines and
+       reads "Burrow, then" (not "Burrow., then").
+       Feedback: after an update the app opened on the wrong monitor (a plain restart was fine): the new version read
+       settings.json before the old one saved its place on closing - now saved first (save_window_place).
+       The Zone time counts from coming into the zone (it showed 0:00 when the app started inside one); it's "-"
+       when not known. Zone times for the leaderboard: only while a character is still in the campaign - the board
+       says so when it's empty. An older run without a league gets the current one.
+       Settings › Appearance: the preview keeps its biggest size (feedback: the text under it flickered - a shorter
+       preview pulled the list under the mouse, back and forth) and always shows a map. Quick settings: Layout,
+       Panel | Bar (feedback). The layout-loop log counts size changes only (a dragged window moved on every mouse
+       step and was logged as a loop).
   2.124.0
        Feedback: "instead of having it as an isolated separate bar, can we just have it combine when it's enabled?"
        The Campaign, Ritual and NOW lines are drawn at the top of the overlay's own window, as wide as it, and the
@@ -3056,7 +3073,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.124.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.124.1"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 

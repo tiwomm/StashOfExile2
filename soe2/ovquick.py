@@ -172,7 +172,7 @@ class OverlayQuick:
         lrow.pack(fill="x", pady=(0, 8))
         tk.Label(lrow, text="Layout", bg=P1, fg=C["text"], font=("Segoe UI", 10)).pack(side="left")
         self.ovq_layout = SegBar(lrow, [LAYOUTS["panel"], LAYOUTS["xpbar"]],
-                                 value=LAYOUTS.get(self.merged_layout(), LAYOUTS["xpbar"]), size=9, pad=(12, 3),
+                                 value=LAYOUTS.get(self.merged_layout(), LAYOUTS["xpbar"]), size=9, pad=(12, 4),
                                  command=self._ovq_layout)
         self.ovq_layout.pack(side="right")
         Tooltip(lrow, QUICK_TIPS["Layout"])
