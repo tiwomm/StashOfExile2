@@ -392,7 +392,7 @@ class WealthPage:
         ("Prices", "Currency, fragments and other stackables come from poe.ninja. Double-click a price to set your own."),
         ("Total and Where it is", "Total is everything added up; the chart shows it over time (Daily = the change "
                                   "per day). Where it is splits it by kind (currency, fragments ...)."),
-        ("Snapshots", "Each count, scan or price update saves your total, so the chart and the Session tracker can "
+        ("Snapshots", "Each count, scan or price update saves your total, so the chart and the Session timer can "
                       "show how much you made. Wealth ↳ Snapshots: pick one to look back, a second to compare."),
     ]
 

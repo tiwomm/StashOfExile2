@@ -11,6 +11,7 @@ import threading
 # ------------------------------------------------------------------ paths / settings
 from . import buglog
 from . import __version__ as APP_VERSION      # set in soe2/__init__.py; the launcher's file name must match
+from .names import PAGES                       # 2.126.0: one name per feature
 
 
 def pretty_version(v=None):
@@ -295,5 +296,5 @@ def backup_modbook():
 
 backup_modbook()
 
-PAGE_CHECKS = "Bulk Pricing"        # the list page (1.40: was "Items"; 2.80.0: was "Price checks")
-PAGE_PC = "Price Checks"            # 2.80.0: one item at a time, with the trade site's listings
+PAGE_CHECKS = PAGES["checks"]       # the list page (1.40: was "Items"; 2.80.0: was "Price checks")
+PAGE_PC = PAGES["pricecheck"]       # 2.80.0: one item at a time, with the trade site's listings
