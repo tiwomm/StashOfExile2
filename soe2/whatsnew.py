@@ -39,6 +39,20 @@ NEXT = [
 MAX_BIG = 3
 
 NOTES = {
+    "2.124.1": {
+        "big": [
+            ("🪨", "Classic Panel in the Bar's look",
+             "Stone, pewter frame and the Bar's colors - the Panel and the lines over it match the Bar.", None, "Overlay"),
+        ],
+        "small": [
+            ("Overlay", "Quick settings: Layout, Panel | Bar."),
+            ("Overlay", "The Panel's menus stay inside its frame."),
+            ("Overlay", "The map's name is shortened before its time gets smaller on the Bar."),
+            ("Overlay", "The campaign line wraps to three lines; the Zone time starts when you enter a zone."),
+            ("Everywhere", "After an update the app should open on the monitor you left it on."),
+            ("Settings", "Appearance: the style preview no longer flickers."),
+        ],
+    },
     "2.124.0": {
         "big": [
             ("🧭", "Campaign lines are part of the overlay",

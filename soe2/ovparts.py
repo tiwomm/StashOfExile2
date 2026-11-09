@@ -268,9 +268,9 @@ class OverlayParts:
             ends, self._hud_ends = getattr(self, "_hud_ends", None), ("amber", "amber")
             lft, rgt = self._hud_frame(cv, P, W, H, cap=hudart.cap_width(mh))
             self._hud_ends = ends or ("crimson", "sapphire")
-        elif classic:                                         # the Panel's card frame
+        elif classic:                                         # the Panel's stone and frame (2.124.1: as the Bar)
             from . import hudart
-            art = hudart.card(cv, W, H, None, [(8, 6, W - 8, H - 6, 1, 1)], None)
+            art = hudart.panel(cv, W, H)
             if art is not None:
                 cv.create_image(0, 0, image=art, anchor="nw", tags=("hudbg",))
                 cv._card_imgs = [art]

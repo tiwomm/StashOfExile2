@@ -407,7 +407,7 @@ class Overlay:
 
             def fit(e):
                 cv.itemconfigure(win_id, width=max(40, e.width - 2 * pad), height=max(30, e.height - 2 * pad))
-                art = hudart.card(cv, max(40, e.width), max(40, e.height), None, [], 0)
+                art = hudart.panel(cv, max(40, e.width), max(40, e.height))     # 2.124.1: the Bar's look
                 cv.delete("noteart")
                 if art is not None:
                     cv.create_image(0, 0, image=art, anchor="nw", tags=("noteart",))
