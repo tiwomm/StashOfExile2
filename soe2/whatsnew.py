@@ -44,6 +44,13 @@ BETA_AREAS = ("Wealth", "Money Makers", "Game Search", "Market Insights", "Craft
               "Desecration Helper")
 
 NOTES = {
+    "2.126.0": {
+        "big": [],
+        "small": [
+            ("App", "A tidy-up behind the scenes: unused code and two leftover settings are gone. Nothing changes for "
+             "you."),
+        ],
+    },
     "2.125.8": {
         "big": [],
         "small": [
