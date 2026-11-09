@@ -3,6 +3,7 @@
 Four boards:
   * Campaign - each act's split and the whole campaign (the Campaign Helper's act times; the total once every act of
     the guide pack has one).
+  * Campaign zones (2.124.0) - each campaign zone, from entering it to leaving it, by the zone's name.
   * Maps - fastest clear per map (time inside the map; maps, towers, unique maps, citadels).
   * Bosses & pinnacles - the Map library's pinnacle fights.
   * Trials - Trial of the Sekhemas, Trial of Chaos (and other trial areas the tracker learns); pinnacle fights such
@@ -16,12 +17,13 @@ import time
 
 from .config import SETTINGS
 
-CATS = (("campaign", "Campaign"), ("map", "Maps"), ("boss", "Bosses & pinnacles"), ("trial", "Trials"))
+CATS = (("campaign", "Campaign"), ("zone", "Campaign zones"), ("map", "Maps"), ("boss", "Bosses & pinnacles"),
+        ("trial", "Trials"))
 CAT_NAMES = dict(CATS)
 TOTAL = "Whole campaign"
 # the fastest a time can honestly be (seconds) - the board checks the same
-FLOOR = {"campaign": 120, "map": 30, "boss": 10, "trial": 60}
-CEIL = {"campaign": 48 * 3600, "map": 3 * 3600, "boss": 3600, "trial": 3 * 3600}
+FLOOR = {"campaign": 120, "zone": 10, "map": 30, "boss": 10, "trial": 60}
+CEIL = {"campaign": 48 * 3600, "zone": 3 * 3600, "map": 3 * 3600, "boss": 3600, "trial": 3 * 3600}
 TRIAL = re.compile(r"trial|sekhema|simulacrum|sanctum|ultimatum|chaos", re.I)
 SEND_EVERY = 15 * 60
 
@@ -135,8 +137,24 @@ def campaign_entries():
     return out
 
 
+def zone_entries():
+    """2.124.0: each character's best time in each campaign zone (entering it to leaving it, AFK left out)."""
+    from . import campaign as CP
+    cls = classes()
+    out = []
+    for ch, run in (CP.cfg().get("chars") or {}).items():
+        league = run.get("league")
+        if not league:
+            continue
+        for zone, secs in (run.get("zone_best") or {}).items():
+            if isinstance(secs, (int, float)) and FLOOR["zone"] <= secs <= CEIL["zone"]:
+                out.append({"cat": "zone", "key": str(zone)[:80], "secs": round(float(secs), 1), "league": league,
+                            "cls": cls.get(ch, ""), "char": ch, "level": 0, "deaths": 0, "at": int(time.time())})
+    return out
+
+
 def mine(sessions, current=None):
-    return map_entries(sessions, current) + campaign_entries()
+    return map_entries(sessions, current) + campaign_entries() + zone_entries()
 
 
 def keys_of(entries, cat, league=None, cls=None):

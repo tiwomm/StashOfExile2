@@ -797,24 +797,33 @@ class SettingsPage:
                            anchor="w")
             lab.grid(row=r, column=1, columnspan=2, sticky="w", pady=(2, 0))
             return lab
-        # 2.101.0: the Style first, then its Layout (2.111.0: no Colors - each style keeps its own)
+        # 2.124.0 (feedback: the previews only showed the bar): the Layout first, then the Style - its preview
+        # shows the layout picked (2.101.0 had the Style first; 2.111.0: no Colors - each style keeps its own)
         from .ovlight import STYLES
-        # 2.116.0 (P10, feedback: a visual indicator for each style): the names beside a live preview of the bar
-        # in the style under the mouse - was a dropdown over ten lines describing all fourteen
-        label(0, "Style")
+        from .style import SegBar
+        label(0, "Layout")
+        names = [LAYOUTS["panel"], LAYOUTS["xpbar"]]
+        self.ov_layout_var = tk.StringVar(value=LAYOUTS.get(self.merged_layout(), LAYOUTS["xpbar"]))
+
+        def layout_picked(v):
+            self.ov_layout_var.set(v)
+            self.merged_set(layout=next((k for k, t in LAYOUTS.items() if t == v), "xpbar"))
+            try:
+                self.ov_style_pick.set(self.ov_look(), redraw=True)
+            except Exception:
+                buglog.caught()
+        self.ov_layout_seg = SegBar(g, names, value=self.ov_layout_var.get(), command=layout_picked, size=9, pad=(14, 4))
+        self.ov_layout_seg.grid(row=0, column=1, sticky="w")
+        hint(1, "Bar: rests on the game's XP bar (unlocked, drag it; picking it again puts it back). "
+                "Panel: a card like the game's vendor windows - place it anywhere.")
+        # 2.116.0 (P10, feedback: a visual indicator for each style): the names beside a live preview of the
+        # overlay in the style under the mouse - was a dropdown over ten lines describing all fourteen
+        label(2, "Style")
         self.ov_look_var = tk.StringVar(value=STYLES[self.ov_look()])     # (the cog's Style list keeps it in step)
         from .ovstylepick import StylePicker
         self.ov_style_pick = StylePicker(g, self.ov_look(), lambda st: (self.ov_look_var.set(STYLES[st]),
                                                                        self.on_ov_look(style=st)), self.ov_preview)
-        self.ov_style_pick.grid(row=0, column=1, rowspan=2, sticky="w")
-        label(2, "Layout")
-        self.ov_layout_var = tk.StringVar(value=LAYOUTS.get(self.merged_layout(), LAYOUTS["xpbar"]))
-        lc = ttk.Combobox(g, textvariable=self.ov_layout_var, values=list(LAYOUTS.values()), state="readonly", width=24)
-        lc.grid(row=2, column=1, sticky="w", pady=(8, 0))
-        lc.bind("<<ComboboxSelected>>", lambda e: self.merged_set(
-            layout=next((k for k, t in LAYOUTS.items() if t == self.ov_layout_var.get()), "xpbar")))
-        hint(3, "Game bar: rests on the game's XP bar (unlocked, drag it; picking it again puts it back). "
-                "Panel: a card like the game's vendor windows - place it anywhere.")
+        self.ov_style_pick.grid(row=2, column=1, rowspan=2, sticky="w", pady=(8, 0))
         # 2.56.1: ONE opacity for everything over the game (it was one slider each)
         label(6, "Opacity")
         op = tk.Frame(g, bg=P2)

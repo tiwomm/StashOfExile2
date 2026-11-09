@@ -120,7 +120,7 @@ CREATE TABLE IF NOT EXISTS limits (   -- per-day counters (edits, suggestions, r
 -- 2.86.0: global leaderboards (the Worker also creates these itself on first use)
 CREATE TABLE IF NOT EXISTS lb (
   id INTEGER PRIMARY KEY AUTOINCREMENT, user_id TEXT NOT NULL,
-  cat TEXT NOT NULL,                  -- campaign, map, boss, trial
+  cat TEXT NOT NULL,                  -- campaign, zone (2.124.0), map, boss, trial
   key TEXT NOT NULL,                  -- the act / map / fight
   league TEXT NOT NULL, cls TEXT NOT NULL DEFAULT '',
   secs REAL NOT NULL,                 -- the best time (self-reported, from the game's log)

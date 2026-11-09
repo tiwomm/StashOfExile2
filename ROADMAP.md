@@ -287,7 +287,7 @@ Most-used first; pages that share data go together so their doubles can be merge
 7. **States:** empty (what to do next, with the button), loading, error and disabled states say why; selected / your choice is lit on its own (one highlight, never two), and not by color alone.
 8. **Feedback:** every action confirms (toast or inline); deletes ask or can be undone.
 9. **Tiers and ratings:** S / A / B / C / D / F everywhere tiers show; F = ignore, with "F = ignore" said where it appears.
-10. **Over the game:** the overlay's theme; works in every bar style (Panel, Game bar); one switch per item, no doubles.
+10. **Over the game:** the overlay's theme; works in every bar style (Panel, Bar); one switch per item, no doubles.
 11. **Privacy:** nothing personal shown or logged; anything shared is opt-in and says what, why and where; it's listed in the Privacy & data hub; an opt-out (No, Never, a switch turned off) is never asked again.
 12. **Accessibility:** keyboard reachable, focus ring, contrast (WCAG AA), icon buttons named.
 13. **Proof:** before / after screenshots in the PR; tests updated.

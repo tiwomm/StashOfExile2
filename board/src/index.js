@@ -875,9 +875,10 @@ async function official(env) {
 // POST /lb {entries: [{cat, key, secs, league, cls, level, deaths, at}]} - your best times (the app sends each board's
 // best; it keeps the faster of old and new). Times come from the game's log, so they're self-reported: impossible
 // ones are refused (LB_FLOOR / LB_CEIL); reports from accounts 7+ days old, reviewers and admins hide them.
-const LB_CATS = ["campaign", "map", "boss", "trial"];
-const LB_FLOOR = { campaign: 120, map: 30, boss: 10, trial: 60 };
-const LB_CEIL = { campaign: 48 * 3600, map: 3 * 3600, boss: 3600, trial: 3 * 3600 };
+// 2.124.0: "zone" - one campaign zone, from entering it to leaving it (its name is the key)
+const LB_CATS = ["campaign", "zone", "map", "boss", "trial"];
+const LB_FLOOR = { campaign: 120, zone: 10, map: 30, boss: 10, trial: 60 };
+const LB_CEIL = { campaign: 48 * 3600, zone: 3 * 3600, map: 3 * 3600, boss: 3600, trial: 3 * 3600 };
 const LB_EVERY = 10 * 60;
 
 async function lbSend(req, env, me) {

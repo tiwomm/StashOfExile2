@@ -1,9 +1,9 @@
-"""The Game bar's artwork (2.65.1, 2.66.0): drawn here with Pillow, no image files, in Path of Exile 2's own HUD style
+"""The Bar's artwork (2.65.1, 2.66.0): drawn here with Pillow, no image files, in Path of Exile 2's own HUD style
 so it sits in the game's bottom bar like part of it - charcoal stone, an aged pewter frame with a thin gold inner
 line, corner brackets with rivets, end caps with a gothic arch holding a gem (crimson on the life side, sapphire on
 the mana side), a small crest on top, switches in square sockets like the flask and skill slots (a warm gold glow
 when on) and thin double dividers. Drawn 3x and scaled down, so edges and curves are smooth. Cached per size.
-The Game bar keeps this look in every theme - it is part of the game's bar; the other layouts use the theme.
+The Bar keeps this look in every theme - it is part of the game's bar; the other layouts use the theme.
 
 GGG ToS: looks only - nothing here touches the game."""
 import random
@@ -22,7 +22,7 @@ AMBER = ((70, 34, 6), (150, 80, 16), (220, 150, 50), (255, 226, 160))
 
 
 def palette(base):
-    """The Game bar's text and switch colors (drawn over the artwork): cream text, gold headings, a gold "on"."""
+    """The Bar's text and switch colors (drawn over the artwork): cream text, gold headings, a gold "on"."""
     P = dict(base)
     P.update(bg="#100f0d", field="#0d0c0b", text="#d9cfb5", muted="#9a8f78", big="#efe4c6", head="#c4a05c",
              line="#3a362f", on="#e3b961", off="#7d735f", warn="#e0a352", cell_bg="#0d0c0b", cell_line="#3a3630",

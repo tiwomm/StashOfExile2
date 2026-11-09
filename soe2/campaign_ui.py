@@ -1,6 +1,6 @@
 """The Campaign Helper over the game (2.77.0) - the logic is campaign.py.
 
-  * L  The campaign line, on the goal bar (over the Game bar / by the Panel): the act and zone, what to do there and
+  * L  The campaign line, on the goal bar (over the Bar / by the Panel): the act and zone, what to do there and
        what it's worth, the next zone, your level against the zone's, the step. Click it for the act's route.
   * M  The act's route: every step - ✓ done, ▸ here, ○ to do, "passed" (gone past without entering). Click a step:
        "I'm here" (a character that's partway through: pick the act, click its step). ◀ ▶ (and their keys).
@@ -731,10 +731,19 @@ class CampaignUI:
         if not CP.vendor_searches():
             tk.Label(body, text="No vendor searches for this act.", bg=bg, fg=P["muted"],
                      font=(P["font"], self.ov_font(9)), anchor="w").pack(fill="x", pady=(8, 0))
-        self.camp_vendor_msg = tk.Label(body, text="", bg=bg, fg=P["on"], font=(P["font"], self.ov_font(9)), anchor="w")
+        # 2.124.0 (feedback: a click made the card wider to fit "Copied: ..."): two lines kept for it, wrapped to the
+        # card's width, and the card keeps its size
+        self.camp_vendor_msg = tk.Label(body, text="", bg=bg, fg=P["on"], font=(P["font"], self.ov_font(9)), anchor="nw",
+                                        justify="left", height=2)
         self.camp_vendor_msg.pack(fill="x", pady=(8, 0))
         self.camp_vendor_win = w
         w.show()
+        try:
+            w.update_idletasks()
+            self.camp_vendor_msg.configure(wraplength=max(120, body.winfo_width() - 8))
+            w.geometry(f"{w.winfo_width()}x{w.winfo_height()}+{w.winfo_x()}+{w.winfo_y()}")
+        except tk.TclError:
+            pass
         return w
 
     def camp_copy(self, name, rx):
@@ -742,7 +751,7 @@ class CampaignUI:
         self.root.clipboard_append(rx)
         if getattr(self, "camp_vendor_msg", None) is not None:
             try:
-                self.camp_vendor_msg.config(text=f"Copied: {name} - paste it in the shop's search box.")
+                self.camp_vendor_msg.config(text=f"✓ Copied: {name} - paste it in the shop's search box.")
             except tk.TclError:
                 pass
         return rx

@@ -22,7 +22,7 @@ DEFAULTS = {"overlay": True, "locked": False, "x": 60, "y": 260, "w": 230, "h": 
             "key_pause": "", "key_camp_prev": "", "key_camp_next": "", "ask_count": True, "log_path": "",
             "character": "", "character_guess": "", "alerts_bar": True, "autostart": False,
             "clock": True,
-            "merged": True, "layout": "xpbar"}   # 2.39.0 clock; 2.55.0: one overlay window; 2.74.0: Game bar
+            "merged": True, "layout": "xpbar"}   # 2.39.0 clock; 2.55.0: one overlay window; 2.74.0: Bar
 DEFAULT_KEYS = {"key_pause": "Pause",            # 2.74.3: the keyboard's Pause key (was Ctrl+Alt+P; start / stop's
                 "key_overlay": "F6"}             # Ctrl+Alt+S is gone - Ctrl+Alt keys got in the way of game input)           # 2.59.0: F6 shows / hides the whole overlay       # 2.10.0: set once, change them in Options
 # 2.54.0: the Session timer times your play; money lives in one place, Money Makers › Strat Tracker.
@@ -1134,9 +1134,12 @@ class TrackerPage:
         self.tracker_helpers_paint()               # 2.49.0: the Mechanic Helper bar stands on its own
         if self.tk_overlay is None:
             return
+        camp = self.ov_camp_mode()
+        if camp != getattr(self, "_ov_camp_built", camp) and getattr(self, "mg_win", None) is not None:
+            return self.merged_build()                     # 2.124.0: in / out of the campaign - its parts change
         s = self.tk_session
         live = s is not None and s.ended is None
-        show_where = bool(self.tracker_cfg()["lines"].get("where", True))       # 2.70.1
+        show_where = bool(self.ov_lines().get("where", True))       # 2.70.1
 
         def val(k):                                # 2.108.0 (feedback): no "-" after Map: / Avg: while empty
             v = n.get(k)
@@ -1151,6 +1154,10 @@ class TrackerPage:
             where = n.get("where") if show_where and live and n.get("where") not in ("-", None) else ""
             texts.update(map=f"Map: {val('map')}", where=where.strip())      # 2.76.0: the rank is its own part
         texts["rank"] = self.rank_text(n.get("where") if live and getattr(self, "_mr_in", None) else None)
+        if camp:                                              # 2.124.0: the zone's time, no map numbers
+            from . import campaign as _CP
+            zt = _CP.zone_time()
+            texts.update(map=f"Zone: {fmt_time(zt) if zt is not None else ''}", where="", rank="", maps="", avg="")
         texts["focus"] = self.focus_line()[0]                 # 2.73.0: League Focus's line
         texts["ritual"] = self.ritual_readout()               # 2.118.0: the Ritual line (count, tribute)
         from . import campaign as CP

@@ -419,6 +419,8 @@ def log_event(kind, ts, data, area_kind=None):
         if ak is None:
             run["visit"] = False                                  # 2.97.0: left the campaign zones
             _tick(run, ts)
+            _zone_done(run)                                       # (2.124.0: a hideout ends the zone's time)
+            run["away"] = True
             run["last_ts"] = ts                                   # (a hideout: time there isn't the act's)
             return out
         run["pending"] = {"id": aid, "level": int(data.get("level") or 0), "act": ak}
@@ -436,6 +438,33 @@ def _tick(run, ts):
     dt = ts - last
     if 0 < dt < GAP:
         run["secs"][run["act"]] = run["secs"].get(run["act"], 0) + dt
+        if run.get("zone") and not run.get("away"):          # 2.124.0: the zone's own time too
+            run["zone_secs"] = run.get("zone_secs", 0) + dt
+
+
+def _zone_done(run):
+    """2.124.0: leaving a campaign zone - its time is kept, the best per zone (for the Campaign zones leaderboard)."""
+    z, secs = run.get("zone"), run.get("zone_secs") or 0
+    if z and secs > 0 and not run.get("away"):
+        b = run.setdefault("zone_best", {})
+        if z not in b or secs < b[z]:
+            b[z] = round(secs, 1)
+    run["zone_secs"] = 0
+
+
+def zone_time(run=None, now=None):
+    """The time in the campaign zone you're in (AFK and hideouts left out) -> secs or None."""
+    import time as _t
+    run = run or char()
+    if not active(run) or not run.get("zone") or run.get("away"):
+        return None
+    secs = run.get("zone_secs") or 0
+    last = run.get("last_ts")
+    if last and not run.get("afk"):
+        dt = (now or _t.time()) - last
+        if 0 < dt < GAP:
+            secs += dt
+    return secs
 
 
 def _enter(run, name, area_id, level, ts, id_act=None):
@@ -445,6 +474,8 @@ def _enter(run, name, area_id, level, ts, id_act=None):
     key = key or id_act or act_of_id(area_id)
     if key is None:
         return None
+    _zone_done(run)                                           # 2.124.0: the zone you left, timed; this one starts
+    run["away"] = False
     if run.get("done"):                                       # 2.97.0: back in a campaign zone after maps - the line
         run["visit"] = True                                   # (and Vendor ▾) show here; the finished run is kept
         run["act"], run["zone"], run["here"], run["zone_level"] = key, name, None, int(level or 0)
