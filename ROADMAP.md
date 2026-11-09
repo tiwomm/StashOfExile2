@@ -318,6 +318,33 @@ Most-used first; pages that share data go together so their doubles can be merge
 - **Resize:** text up to 150 % without cut-off text or overlapping controls.
 - **Names:** every icon-only button gets a text label or tooltip. (Tk gives screen readers little to work with on Windows, so full screen-reader support is not promised.)
 
+### Ideas Board picks (decided 2026-11-09)
+
+From a research pass on PoE1 / PoE2 tools, forum and Reddit wishes. Order to be set.
+
+| Area | Plan |
+|------|------|
+| New | **Waystone danger check:** Ctrl+D on a waystone marks each mod OK / Careful / Can't do for your build (a list you set once; mark + word, not color alone). |
+| New | **Crafting view (one place for three ideas):** the mod pool (what can still roll at this item level, tiers), which currencies can be used on the item now and what each does, and the Whittling preview (which mod an Omen of Whittling + Chaos Orb would replace). Where it lives: to decide. |
+| New | **Timers:** a countdown / stopwatch on the overlay's lines, started from Quick settings. |
+| New | **Cheat sheets:** only with a design that adds no clutter (e.g. shown while a key is held). |
+| New | **Patch notes feed:** a dot on What's new when GGG posts PoE2 patch notes (public feed). |
+| Expand | **Strat Tracker:** map run profit - juice in (waystone, tablets, omens), loot out, per map and per hour. |
+| Expand | **Trials & Simulacrum:** runs and chase drops in the Session tracker and Leaderboards. |
+| Expand | **Remnant helper:** rune combinations and Verisium (Runes of Aldur). |
+| Expand | **Ritual pricing:** the tribute board priced like remnants, reusing the Wealth / Scan stash item recognition. |
+| Expand | **Price check history:** "last time: 3 ex, 4 days ago" and a small chart, kept on this PC. |
+| Expand | **Trade whispers to your phone:** optional, inside Trade whispers (your own Discord webhook), off by default. |
+| Expand | **Bulk Pricing - where it was:** remember the screen spot of the + marker for each item; clicking the item's name in Bulk Pricing shows the + there again. |
+| UX | **One home for the overlay's look:** Style and Layout live in Settings › Appearance; Overlay Settings links there; Quick settings stays the one shortcut. |
+| UX | **"Settings" in the Overlay group becomes "Overlay Settings"** (one name per feature). |
+| UX | **Search box everywhere:** check every list page and Settings have one (top left, first in the toolbar). |
+| UX | **First-run setup:** check the current flow covers league, log, overlay, keys and sharing in one Back / Next / Done. |
+| UX | **Privacy & data hub** (planned #2) also gathers Under the Hood's info and every manual data job - Rate mods, map ranks and the like - in a "Manual data submissions" section ("when you're bored"). |
+| Test | **Ultrawide pass:** the overlay, cards and Price Checks at 5120x1440 and 3840x1080. |
+| Data | **Campaign guide pack:** update the first week of December. |
+| Future | **Atlas progress tracker** (only if the log shows enough to track it), **leveling gems from a PoB code**, **debloat pass**. |
+
 ## 🤔 Maybe later (ideas to weigh when the plan above is done)
 
 - **Trials & Simulacrum tracker** (Overlay ↳ Trials): counts Trial of Sekhemas, Trial of Chaos and Simulacrum runs from the game's log (entering the area; finishing, if the log says so), with a "Got it!" for each mechanic's chase item (your own list; defaults such as Simulacrum → Voices, Trial of Chaos → Adorned, checked against current drop info first). Shows runs, runs since the last chase drop, the drop history and your runs per drop; a small run counter on the overlay inside a trial. Later: drop rates pooled through Community data sharing (opt-in).
@@ -329,6 +356,8 @@ Most-used first; pages that share data go together so their doubles can be merge
 - **Patch notes** (Toolkit menu, beside What's new): GGG's PoE2 patch-notes forum feed (public RSS), opt-in - a "New patch notes" card or a small dot when a new post appears, opening it in your browser. Checked at most a few times a day; nothing is sent.
 
 ## 💤 Parked (not planned unless something changes)
+
+- **Not doing (Ideas Board, 2026-11-09):** loot filter quick edits (FilterBlade does it), a missing-key warning, exchange rate history (poe.ninja's history is too thin), campaign layout hints (no free data), merchant earnings (the game and trade site have it), Character Appraisal (not yet), Scan stash Socketables (too many, change every league), map stats by waystone mod, map radar / memory readers, logged-in features, model price predictions.
 
 - **Bulk Pricing speed** (on the shelf): fewer searches per list, never more than the limits (no proxies / VPNs - clause 22). Check what the app already does, then: poe.ninja first for stackables and uniques, one search for identical items, reuse a recent result, 10 listings per fetch, fewer lowered tries when they rarely help, price obvious junk without a search unless ticked, run right at the limits the site sends back.
 - **Campaign guide pack refresh** (shelved until the 1.0 data is out - nothing can be done before it) for 0.5.5 and then 1.0: Dreadnought Vanguard is gone (Jamanra in The Dreadnought), Azarian moved to the Heart of Keth, the Waterways levers are pressure pads, the Primal Arena's +2 points moved to Omniphobia, the Whakapanu shark's permanent choice and Plunder's Point are missing, and about 10 Interlude zones are missing. 1.0 may bring Acts 5-6. The pace choice stays: Full rewards (normal pace), Speedrun and My own, each switching the optional steps on / off (2.89.0).
