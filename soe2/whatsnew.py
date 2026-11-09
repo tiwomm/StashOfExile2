@@ -39,6 +39,14 @@ NEXT = [
 MAX_BIG = 3
 
 NOTES = {
+    "2.125.1": {
+        "big": [],
+        "small": [
+            ("Overlay", "Quick settings takes the overlay's style."),
+            ("Settings", "Appearance: the style preview shouldn't freeze or flicker any more."),
+            ("Everywhere", "The start-up screen opens in the middle of the app's monitor."),
+        ],
+    },
     "2.125.0": {
         "big": [
             ("🤝", "Rush (carry) route",

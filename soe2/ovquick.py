@@ -123,10 +123,22 @@ class OverlayQuick:
             except tk.TclError:
                 pass
 
+    def ov_quick_style(self):
+        """2.125.1 (feedback: "Quick settings cog UI needs to match the style chosen"): its colors and type from the
+        overlay's style (the app theme's before)."""
+        from .overlaywin import pal
+        P = pal()
+        return {"bg": P["bg"], "band": P.get("band") or P.get("field") or P["bg"], "text": P["text"],
+                "muted": P["muted"], "line": P["line"],
+                "accent": P["head"] if P.get("poe") else (P.get("accent") or P["head"]),     # (Classic: its gold)
+                "field": P.get("cell_bg") or P.get("field") or P["bg"], "font": P.get("font") or "Segoe UI",
+                "hfont": P.get("hfont") or P.get("font") or "Segoe UI"}
+
     def ov_quick_show(self, e=None):
         self.ov_quick_close()
-        P1, P2 = C["panel"], C["panel2"]
-        w = tk.Toplevel(self.root, bg=C["line"])
+        Q = self.ovq_P = self.ov_quick_style()
+        P1, P2, F = Q["bg"], Q["band"], Q["font"]
+        w = tk.Toplevel(self.root, bg=Q["line"])
         w.withdraw()
         w.overrideredirect(True)
         try:
@@ -138,17 +150,21 @@ class OverlayQuick:
         box.pack(padx=1, pady=1)
         head = tk.Frame(box, bg=P2, padx=12, pady=8, highlightthickness=0)
         head.pack(fill="x")
-        tk.Label(head, text="Quick settings", bg=P2, fg=C["text"], font=("Segoe UI", 12, "bold")).pack(side="left")
-        ttk.Button(head, text="✕", width=3, style="Quiet.TButton", command=self.ov_quick_close).pack(side="right")
-        tk.Frame(box, bg=C["accent"], height=2).pack(fill="x")
+        tk.Label(head, text="Quick settings", bg=P2, fg=Q["text"], font=(Q["hfont"], 12, "bold")).pack(side="left")
+        x = tk.Label(head, text="✕", bg=P2, fg=Q["muted"], font=(F, 11), cursor="hand2", padx=4)
+        x.pack(side="right")
+        x.bind("<Button-1>", lambda _e: self.ov_quick_close())
+        Tooltip(x, "Close")
+        tk.Frame(box, bg=Q["accent"], height=2).pack(fill="x")
         body = tk.Frame(box, bg=P1, padx=12, pady=8)
         body.pack(fill="x")
-        CB = "Bar.TCheckbutton"
         self.ovq_vars = {}
 
         def row(label, value, fn):
             v = tk.BooleanVar(value=bool(value))
-            cb = ttk.Checkbutton(body, text=label, variable=v, style=CB, command=lambda: fn(bool(v.get())))
+            cb = tk.Checkbutton(body, text=label, variable=v, command=lambda: fn(bool(v.get())), bg=P1, fg=Q["text"],
+                                activebackground=P1, activeforeground=Q["text"], selectcolor=Q["field"],
+                                font=(F, 10), anchor="w", highlightthickness=0, bd=0)
             cb.pack(anchor="w", pady=2)
             Tooltip(cb, QUICK_TIPS.get(label, ""))
             self.ovq_vars[label] = v
@@ -158,7 +174,7 @@ class OverlayQuick:
         from .ovlight import STYLES
         srow = tk.Frame(body, bg=P1)
         srow.pack(fill="x", pady=(0, 8))
-        tk.Label(srow, text="Style", bg=P1, fg=C["text"], font=("Segoe UI", 10)).pack(side="left")
+        tk.Label(srow, text="Style", bg=P1, fg=Q["text"], font=(F, 10)).pack(side="left")
         names = list(STYLES.values())
         self.ovq_style = tk.StringVar(value=STYLES.get(self.ov_look(), names[0]))
         cb = ttk.Combobox(srow, textvariable=self.ovq_style, values=names, state="readonly", width=24)
@@ -166,15 +182,18 @@ class OverlayQuick:
         cb.bind("<<ComboboxSelected>>", lambda _e: self._ovq_style())
         Tooltip(srow, QUICK_TIPS["Style"])
         # 2.124.1 (feedback: "quick settings needs a panel | bar toggle as well"): the Layout, as in Settings
+        # (2.125.1: two chips in the overlay's style, the one in use with ✓)
         from .merged_page import LAYOUTS
-        from .style import SegBar
         lrow = tk.Frame(body, bg=P1)
         lrow.pack(fill="x", pady=(0, 8))
-        tk.Label(lrow, text="Layout", bg=P1, fg=C["text"], font=("Segoe UI", 10)).pack(side="left")
-        self.ovq_layout = SegBar(lrow, [LAYOUTS["panel"], LAYOUTS["xpbar"]],
-                                 value=LAYOUTS.get(self.merged_layout(), LAYOUTS["xpbar"]), size=9, pad=(12, 4),
-                                 command=self._ovq_layout)
-        self.ovq_layout.pack(side="right")
+        tk.Label(lrow, text="Layout", bg=P1, fg=Q["text"], font=(F, 10)).pack(side="left")
+        self.ovq_layout_chips = {}
+        for key in ("xpbar", "panel"):
+            ch = tk.Label(lrow, font=(F, 9), padx=8, pady=4, cursor="hand2", highlightthickness=1)
+            ch.pack(side="right", padx=(4, 0))
+            ch.bind("<Button-1>", lambda _e, k=key: self._ovq_layout(LAYOUTS[k]))
+            self.ovq_layout_chips[key] = ch
+        self._ovq_layout_paint()
         Tooltip(lrow, QUICK_TIPS["Layout"])
         row("Sound", SETTINGS.get("helpers_sound", True), self.helpers_sound_set)
         # 2.120.1: Lock position and Click-through, as in Options (Hide from captures is in Settings › Advanced)
@@ -182,12 +201,12 @@ class OverlayQuick:
         self.ovq_ct = row("Click-through", self.click_through_on(), self.ov_click_through_set)
         self.ovq_chips = {}
         for title, items in (("HELPERS", QUICK_HELPERS), ("ON THE BAR", QUICK_BAR)):
-            tk.Label(body, text=title, bg=P1, fg=C["muted"], font=("Segoe UI", 9, "bold"), anchor="w").pack(
+            tk.Label(body, text=title, bg=P1, fg=Q["muted"], font=(F, 9, "bold"), anchor="w").pack(
                 fill="x", pady=(8, 4))
             grid = tk.Frame(body, bg=P1)
             grid.pack(fill="x")
             for i, (label, key) in enumerate(items):
-                b = tk.Label(grid, text=label, font=("Segoe UI", 9), padx=8, pady=4, cursor="hand2",
+                b = tk.Label(grid, text=label, font=(F, 9), padx=8, pady=4, cursor="hand2",
                              highlightthickness=1)
                 b.grid(row=i // 4, column=i % 4, sticky="ew", padx=(0, 4), pady=(0, 4))
                 b.bind("<Button-1>", lambda _e, k=key: self._ovq_chip(k))
@@ -198,8 +217,12 @@ class OverlayQuick:
                 self._ovq_paint(key)
         foot = tk.Frame(box, bg=P1, padx=12, pady=8)
         foot.pack(fill="x")
-        ttk.Button(foot, text="All settings…", command=lambda: (self.ov_quick_close(), self.overlay_settings_go())).pack(
-            fill="x")
+        allb = tk.Label(foot, text="All settings…", bg=Q["field"], fg=Q["text"], font=(F, 10), pady=4, cursor="hand2",
+                        highlightthickness=1, highlightbackground=Q["line"])
+        allb.pack(fill="x")
+        allb.bind("<Button-1>", lambda _e: (self.ov_quick_close(), self.overlay_settings_go()))
+        allb.bind("<Enter>", lambda _e: allb.config(highlightbackground=Q["accent"]))
+        allb.bind("<Leave>", lambda _e: allb.config(highlightbackground=Q["line"]))
         w.bind("<Escape>", self.ov_quick_close)
         w.update_idletasks()
         ww, wh = w.winfo_reqwidth(), w.winfo_reqheight()
@@ -238,11 +261,22 @@ class OverlayQuick:
         if b is None:
             return
         on = self.quick_bar_on(key)
-        try:                                     # 2.124.0: a mark and a word too, not color alone
-            b.config(text=("✓ " if on else "") + getattr(b, "label", b.cget("text").lstrip("✓ ")), bg=C["sel"] if on and "sel" in C else (C["panel2"] if on else C["panel"]),
-                     fg=C["text"] if on else C["muted"], highlightbackground=C["accent"] if on else C["line"])
+        self._ovq_chip_look(b, on, getattr(b, "label", b.cget("text").lstrip("✓ ")))
+
+    def _ovq_chip_look(self, b, on, label):
+        """A chip in the overlay's style; on: ✓, the accent edge and the strong text (2.124.0: a mark and a word, not
+        color alone)."""
+        Q = getattr(self, "ovq_P", None) or self.ov_quick_style()
+        try:
+            b.config(text=("✓ " if on else "") + label, bg=Q["field"] if on else Q["bg"],
+                     fg=Q["text"] if on else Q["muted"], highlightbackground=Q["accent"] if on else Q["line"])
         except tk.TclError:
             pass
+
+    def _ovq_layout_paint(self):
+        from .merged_page import LAYOUTS
+        for key, ch in (getattr(self, "ovq_layout_chips", None) or {}).items():
+            self._ovq_chip_look(ch, key == self.merged_layout(), LAYOUTS[key])
 
     def _ovq_chip(self, key):
         self.quick_bar_set(key, not self.quick_bar_on(key))
@@ -255,6 +289,14 @@ class OverlayQuick:
         key = next((k for k, v in STYLES.items() if v == name), None)
         if key and key != self.ov_look():
             self.ov_look_set(style=key)
+            w = getattr(self, "ov_quick_win", None)        # 2.125.1: the box takes the new style too, where it is
+            if w is not None:
+                try:
+                    x, y = w.winfo_x(), w.winfo_y()
+                    self.ov_quick_show()
+                    self.ov_quick_win.geometry(f"+{x}+{y}")
+                except tk.TclError:
+                    pass
             v = getattr(self, "ov_look_var", None)           # (Settings › Appearance shows it too)
             if v is not None:
                 try:
@@ -270,6 +312,7 @@ class OverlayQuick:
         if not key or key == self.merged_layout():
             return
         self.merged_set(layout=key)
+        self._ovq_layout_paint()
         v = getattr(self, "ov_layout_var", None)
         seg = getattr(self, "ov_layout_seg", None)
         try:

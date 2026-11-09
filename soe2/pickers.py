@@ -53,6 +53,8 @@ class ListPreview(tk.Frame):
         self.about = tk.Label(right, text="", bg=C["panel2"], fg=C["muted"], font=("Segoe UI", 9), anchor="w",
                               justify="left", wraplength=preview_width or 460)
         self.about.pack(fill="x")
+        self.about.bind("<Configure>", lambda e: None)    # 2.125.1: keeps its own wrap (style._rewrap and the held
+        self.name.bind("<Configure>", lambda e: None)     # preview size re-wrapped it back and forth - a freeze)
         self.paint()
         self.show(current)
 
@@ -87,7 +89,10 @@ class ListPreview(tk.Frame):
                 buglog.caught()
                 for c in self.host.winfo_children():
                     c.destroy()
-            self._hold_size()
+            try:
+                self.after(40, self._hold_size)           # 2.125.1: measured once Tk has laid it out (no
+            except tk.TclError:                           # update_idletasks here - it ran the loop until a freeze)
+                pass
         try:
             self.name.config(text=self.names.get(key, key) + ("  - in use" if key == self.current else
                                                                 "  - click to use it"))
@@ -99,13 +104,19 @@ class ListPreview(tk.Frame):
         """2.124.1 (feedback: the text under the preview flickered): the preview keeps the biggest size it has needed,
         so a shorter one doesn't pull the list up under the mouse (Leave -> the one in use -> Enter -> ... a loop)."""
         try:
-            self.host.pack_propagate(True)
-            self.host.update_idletasks()
-            w = max(getattr(self, "_max_w", 0), self.host.winfo_reqwidth())
-            h = max(getattr(self, "_max_h", 0), self.host.winfo_reqheight())
+            kids = self.host.winfo_children()
+            need_w = max([c.winfo_reqwidth() for c in kids] or [0])
+            need_h = sum(c.winfo_reqheight() for c in kids)
+            if need_w < 40 or need_h < 16:                # (not laid out yet - nothing held)
+                return
+            w = max(getattr(self, "_max_w", 0), need_w)
+            h = max(getattr(self, "_max_h", 0), need_h)
+            if (w, h) == (getattr(self, "_max_w", None), getattr(self, "_max_h", None)) and \
+                    not self.host.pack_propagate():
+                return                                    # (nothing to change)
             self._max_w, self._max_h = w, h
             self.host.pack_propagate(False)
-            self.host.configure(width=w, height=h)
+            self.host.configure(width=max(1, w), height=max(1, h))
         except tk.TclError:
             pass
 
