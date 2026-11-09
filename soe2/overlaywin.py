@@ -278,6 +278,30 @@ def _fg_hwnd():
     return ctypes.windll.user32.GetForegroundWindow()
 
 
+def _child_hwnds(w):
+    """The window handles of the small windows a window opened (a list's dropdown, a tooltip) - Tk's own children
+    of it that are windows of their own."""
+    out, todo = set(), [str(w)]
+    try:
+        import ctypes
+        u = ctypes.windll.user32 if sys.platform == "win32" else None
+        while todo and len(out) < 64:
+            path = todo.pop()
+            for c in w.tk.splitlist(w.tk.call("winfo", "children", path)):
+                todo.append(c)
+                try:
+                    if str(w.tk.call("winfo", "toplevel", c)) == str(c) and w.tk.call("winfo", "ismapped", c):
+                        hid = int(str(w.tk.call("winfo", "id", c)), 0)
+                        out.add(hid)
+                        if u is not None:
+                            out.add(u.GetParent(hid) or hid)
+                except Exception:
+                    pass
+    except Exception:
+        pass
+    return out
+
+
 def foreground_ok():
     """May over-the-game windows show right now? Yes while Path of Exile 2 is the window in front, or one of these
     windows itself is (you clicked the note to type in it). 2.0 beta 17: not just because the app is in front - they
@@ -300,6 +324,12 @@ def foreground_ok():
         fg = _fg_hwnd()
         for w in _LIVE:
             if _alive(w) and (u.GetParent(w.winfo_id()) or w.winfo_id()) == fg:
+                LAST_OK[0] = True
+                return True
+        # 2.125.3 (feedback: the route card "disappears to the background until I click on it again and again"): a
+        # list's dropdown or a tooltip opened from one of these windows is in front now - that counts as the window
+        for w in _LIVE:
+            if _alive(w) and fg in _child_hwnds(w):
                 LAST_OK[0] = True
                 return True
         LAST_OK[0] = False

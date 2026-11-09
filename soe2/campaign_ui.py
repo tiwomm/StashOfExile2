@@ -19,7 +19,12 @@ from . import buglog
 from . import campaign as CP
 from .overlaywin import CanvasText
 
-PAGES = ("Route", "Rewards", "Act times")   # 2.89.2: "Splits" said nothing to most players
+PAGES = ("Route", "Rewards", "Act times")
+# The Campaign Helper's switches (Overlay Settings › Campaign and the route card's Options ▾ - one setting each)
+CAMP_OPTS = (("ask_route", "Ask which route when a campaign starts"),          # 2.89.0
+             ("optional", "Optional zones"), ("tips", "Tips (bosses, vendor checks)"),
+             ("warn", "Missing rewards - warn when I leave an act"),
+             ("off_at_maps", "Hide it in maps (back in campaign zones)"))   # 2.89.2: "Splits" said nothing to most players
 
 
 def fit_lines(fnt, text, px, lines):
@@ -114,7 +119,7 @@ class CampaignUI:
         self.camp_rq_btns = {}
         for k, title, txt, style in (
                 ("speed", "Speedrun", CP.ROUTE_LINES["speed"], "Primary.TButton"),
-                ("full", "Full rewards", CP.ROUTE_LINES["full"], "TButton"),
+                ("full", "Full", CP.ROUTE_LINES["full"], "TButton"),
                 ("rush", "Rush (carry)", CP.ROUTE_LINES["rush"], "TButton")):
             f = tk.Frame(body, bg=bg, pady=4)
             f.pack(fill="x")
@@ -335,8 +340,15 @@ class CampaignUI:
         made the window resize over and over) - a tab then only swaps the page shown, and the card keeps one size,
         the biggest page's."""
         body, P = self.camp_body, self.camp_P
+        keep = getattr(getattr(self, "camp_pop", None), "kind", None)     # (a switch in Options ▾ keeps it open)
         for c in body.winfo_children():
             c.destroy()
+        try:
+            if self.camp_pop is not None:
+                self.camp_pop.destroy()
+        except (AttributeError, tk.TclError):
+            pass
+        self.camp_pop = None
         bg = P["bg"]
         top = tk.Frame(body, bg=bg)
         top.pack(fill="x")
@@ -356,10 +368,24 @@ class CampaignUI:
             cb.bind("<<ComboboxSelected>>", lambda e: self.root.after(1, lambda: self.camp_route_show(
                 act_key=next((a["key"] for a in CP.acts() if a["name"] == self.camp_act_var.get()), None))))
             self.camp_act_cb = cb
+        # 2.125.3 (feedback: "the option to select which route from that screen itself ... and the options"): Routes ▾
+        # and Options ▾, each a small panel inside the card (a window of its own sent the card behind the game)
+        for key, label, tip in (("options", "Options ▾", "The Campaign Helper's options (as in Overlay Settings)"),
+                                ("routes", "Routes ▾", "Pick the route: Full, Speedrun, Rush (carry) or My Own")):
+            b = ttk.Button(top, text=label, style=self.ov_btn("Quiet.TButton"),
+                           command=lambda k=key: self.camp_pop_toggle(k))
+            b.pack(side="right", padx=(4, 0))
+            from .style import Tooltip
+            Tooltip(b, tip)
+            setattr(self, f"camp_{key}_btn", b)
+        # 2.125.3 (feedback: "the full list doesn't scroll if the window is resized"): the pages scroll
+        from .style import ScrollArea
+        self.camp_scroll = ScrollArea(body, bg=bg)
+        self.camp_scroll.pack(fill="both", expand=True, pady=(8, 0))
         self.camp_pages, self._camp_route_dirty = {}, False
         for name, fn in (("Route", self._camp_route_page), ("Rewards", self._camp_rewards_page),
                          ("Act times", self._camp_splits_page)):
-            page = tk.Frame(body, bg=bg)
+            page = tk.Frame(self.camp_scroll.inner, bg=bg)
             fn(page, P)
             self.camp_pages[name] = page
         w = self.camp_win
@@ -368,21 +394,84 @@ class CampaignUI:
             self._camp_show_page(name)
             try:
                 w.update_idletasks()
-                need_w, need_h = max(need_w, w.winfo_reqwidth()), max(need_h, w.winfo_reqheight())
+                pg = self.camp_pages[name]
+                need_w = max(need_w, top.winfo_reqwidth() + 40, pg.winfo_reqwidth() + 40)
+                need_h = max(need_h, top.winfo_reqheight() + pg.winfo_reqheight() + 64)
             except tk.TclError:
                 pass
         self._camp_show_page(self.camp_page)
-        self.camp_size = (need_w, need_h)
-        try:                                                  # one fixed size: what's inside no longer resizes it
+        if keep == "options":
+            self.root.after(1, lambda: self.camp_pop is None and self.camp_pop_toggle("options"))
+        try:                                                  # one size (the biggest page's), at most most of the
+            from .style import monitor_rect                   # screen - the rest scrolls
+            _l, t, _r, b = monitor_rect(self.root, w.winfo_x() + 20, w.winfo_y() + 20)
+            need_h = min(need_h, int((b - t) * 0.85))
+            self.camp_size = (need_w, need_h)
             w.geometry(f"{need_w}x{need_h}+{w.winfo_x()}+{w.winfo_y()}")
         except tk.TclError:
             pass
+
+    def camp_pop_toggle(self, kind):
+        """Routes ▾ / Options ▾: a small panel under its button, inside the card; again closes it."""
+        old = getattr(self, "camp_pop", None)
+        self.camp_pop = None
+        if old is not None:
+            kind_was = getattr(old, "kind", None)
+            try:
+                old.destroy()
+            except tk.TclError:
+                pass
+            if kind_was == kind:
+                return
+        P, w = self.camp_P, self.camp_win
+        bg = P.get("cell_bg") or P["bg"]
+        pop = tk.Frame(w.body, bg=bg, highlightthickness=1, highlightbackground=P.get("accent") or P["line"],
+                       padx=8, pady=8)
+        pop.kind = kind
+        if kind == "routes":
+            cur = CP.route_of(CP.char())
+            for k, name in CP.ROUTES:
+                on = k == cur
+                row = tk.Frame(pop, bg=bg, cursor="hand2")
+                row.pack(fill="x", pady=2)
+                t = tk.Label(row, text=("✓ " if on else "   ") + name, bg=bg, fg=P["text"] if on else P["muted"],
+                             font=(P["font"], self.ov_font(10), "bold" if on else "normal"), anchor="w")
+                t.pack(fill="x")
+                d = tk.Label(row, text=CP.ROUTE_LINES.get(k, ""), bg=bg, fg=P["muted"], font=(P["font"], self.ov_font(8)),
+                             anchor="w", justify="left", wraplength=340)
+                d.pack(fill="x", padx=(16, 0))
+                for wdg in (row, t, d):
+                    wdg.bind("<Button-1>", lambda _e, n=name: (self.camp_pop_toggle("routes"),
+                                                               self.camp_route_pick(n)))
+        else:
+            c = CP.cfg()
+            for k, label in CAMP_OPTS:
+                v = tk.BooleanVar(value=bool(c[k]))
+                cb = tk.Checkbutton(pop, text=label, variable=v, bg=bg, fg=P["text"], activebackground=bg,
+                                    activeforeground=P["text"], selectcolor=P.get("field") or bg,
+                                    font=(P["font"], self.ov_font(9)), anchor="w", highlightthickness=0, bd=0,
+                                    command=lambda k=k, v=v: self.camp_opt(k, bool(v.get())))
+                cb.pack(fill="x", anchor="w", pady=1)
+        btn = getattr(self, f"camp_{kind}_btn")
+        try:
+            w.update_idletasks()
+            x = btn.winfo_rootx() - w.body.winfo_rootx() + btn.winfo_width()
+            y = btn.winfo_rooty() - w.body.winfo_rooty() + btn.winfo_height() + 2
+            pop.place(x=x, y=y, anchor="ne")
+            pop.lift()
+        except tk.TclError:
+            pass
+        self.camp_pop = pop
 
     def _camp_show_page(self, name):
         for n, pg in self.camp_pages.items():
             if n != name:
                 pg.pack_forget()
-        self.camp_pages[name].pack(fill="both", expand=True, pady=(8, 0))
+        self.camp_pages[name].pack(fill="both", expand=True)
+        try:
+            self.camp_scroll.canvas.yview_moveto(0)
+        except (AttributeError, tk.TclError):
+            pass
         cb = getattr(self, "camp_act_cb", None)
         if cb is not None:
             if name == "Act times":
@@ -791,10 +880,7 @@ class CampaignUI:
         grid = tk.Frame(box, bg=P2)
         grid.pack(fill="x", pady=(8, 0))
         self.tk_camp_vars = {}
-        opts = (("ask_route", "Ask Speedrun or Full rewards when a campaign starts"),   # 2.89.0
-                ("optional", "Optional zones"), ("tips", "Tips (bosses, vendor checks)"),
-                ("warn", "Missing rewards - warn when I leave an act"),
-                ("off_at_maps", "Hide it in maps (back in campaign zones)"))
+        opts = CAMP_OPTS
         # (2.96.1: no Act timer switch - act times are always kept; the Leaderboards get them only if you share data)
         for i, (k, label) in enumerate(opts):
             v = tk.BooleanVar(value=bool(c[k]))
@@ -816,6 +902,12 @@ class CampaignUI:
 
     def camp_route_pick(self, name):
         CP.cfg()["route"] = next((k for k, n in CP.ROUTES if n == name), "full")
+        seg = getattr(self, "tk_camp_route", None)               # 2.125.3: picked on the card - Settings follows
+        if seg is not None and getattr(seg, "value", name) != name:
+            try:
+                seg.pick(name, notify=False)
+            except Exception:
+                buglog.caught()
         lab = getattr(self, "tk_camp_route_line", None)
         if lab is not None:
             try:
@@ -829,8 +921,17 @@ class CampaignUI:
         self.camp_route_ask_close()
         self.camp_refresh()
 
-    def camp_opt(self, k):
-        CP.cfg()[k] = bool(self.tk_camp_vars[k].get())
+    def camp_opt(self, k, value=None):
+        """One Campaign option (Overlay Settings or the card's Options ▾ - the same setting, kept in step)."""
+        if value is None:
+            value = bool(self.tk_camp_vars[k].get())
+        CP.cfg()[k] = bool(value)
+        v = (getattr(self, "tk_camp_vars", None) or {}).get(k)
+        try:
+            if v is not None and bool(v.get()) != bool(value):
+                v.set(bool(value))
+        except tk.TclError:
+            pass
         CP.save()
         self.camp_refresh()
 

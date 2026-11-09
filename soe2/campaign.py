@@ -24,7 +24,7 @@ SCHEMA = 1
 REPO = "tiwomm/StashOfExile2"
 LIVE_URL = f"https://raw.githubusercontent.com/{REPO}/main/{FILE}"
 GAP = 15 * 60                     # a longer gap between two log lines isn't counted in a split (away, or closed)
-ROUTES = (("full", "Full rewards"), ("speed", "Speedrun"), ("rush", "Rush (carry)"), ("mine", "My own"))
+ROUTES = (("full", "Full"), ("speed", "Speedrun"), ("rush", "Rush (carry)"), ("mine", "My Own"))   # (2.125.3 names)
 # 2.125.0 (feedback: "a rush/carry helper ... in the perspective of the person giving the carry"): each route in one line
 ROUTE_LINES = {"full": "Every passive point, spirit and resistance, with the side zones that give them.",
                "speed": "The main story. Skips side zones and most extras; keeps the rewards worth the time.",
@@ -40,7 +40,7 @@ DEFAULTS = {
     "line": True,                 # its line on the goal bar (2.97.0: always - on means it shows)
     "vendor": True,               # Vendor search, in town
     "route": "full",              # the default guide (2.89.0: each character's run keeps its own, run["route"])
-    "ask_route": True,            # 2.89.0: a new campaign asks Speedrun or Full rewards
+    "ask_route": True,            # 2.89.0: a new campaign asks which route
     "optional": False,            # show optional zones
     "tips": True,
     "warn": True,                 # leaving an act with a reward missed or not ticked: ask
@@ -48,7 +48,7 @@ DEFAULTS = {
     "off_at_maps": True,          # turn itself off once you reach maps
     "chars": {},                  # character -> its run (see char())
     "best": {},                   # league -> {act key: seconds}
-    "mine": {},                   # act key -> [zone] (My own route: your last finished act)
+    "mine": {},                   # act key -> [zone] (My Own route: your last finished act)
     "learned": {},                # act key -> [{zone, after, level}] zones the guide didn't know
     "notes": {},                  # zone (norm) -> your note
     "optional_zones": [],         # zones you marked optional
@@ -375,7 +375,7 @@ def asks(run=None):
 
 
 def _close_act(run, key, now):
-    """Leaving an act for a later one: its split, My own route, and the rewards to ask about."""
+    """Leaving an act for a later one: its split, My Own route, and the rewards to ask about."""
     c = cfg()
     secs = run["secs"].get(key)
     if secs:

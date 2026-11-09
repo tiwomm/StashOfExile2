@@ -18,6 +18,7 @@ QUICK_BAR = (("Notes", "notes"), ("Calc", "calc"), ("Regex", "regex"), ("Rates",
 # 2.124.0 (feedback: each toggle should say what it is on hover): the one-line tips (the helpers' come from
 # alerts_page.HELPER_BLURBS - the same line as on Helpers)
 QUICK_TIPS = {"Style": "How the overlay looks over the game",
+              "Reload Overlay": "Reload Overlay: builds the overlay again - for when something looks stuck or wrong",
               "Layout": "Panel: a card you place anywhere. Bar: on the game's XP bar",
               "Sound": "Every helper's alert sound, on or off",
               "Lock position": "Keeps the overlay where it is - no dragging it by accident",
@@ -219,8 +220,17 @@ class OverlayQuick:
         foot.pack(fill="x")
         allb = tk.Label(foot, text="All settings…", bg=Q["field"], fg=Q["text"], font=(F, 10), pady=4, cursor="hand2",
                         highlightthickness=1, highlightbackground=Q["line"])
-        allb.pack(fill="x")
+        allb.pack(side="left", fill="x", expand=True)
         allb.bind("<Button-1>", lambda _e: (self.ov_quick_close(), self.overlay_settings_go()))
+        # 2.125.3 (feedback: "a Reload Overlay button to reload the overlay if it has any issues")
+        rl = tk.Label(foot, text="⟳", bg=Q["field"], fg=Q["text"], font=(F, 11), padx=8, pady=2, cursor="hand2",
+                      highlightthickness=1, highlightbackground=Q["line"])
+        rl.pack(side="left", padx=(8, 0), fill="y")
+        rl.bind("<Button-1>", lambda _e: (self.ov_quick_close(), self.overlay_reload()))
+        rl.bind("<Enter>", lambda _e: rl.config(highlightbackground=Q["accent"]))
+        rl.bind("<Leave>", lambda _e: rl.config(highlightbackground=Q["line"]))
+        Tooltip(rl, QUICK_TIPS["Reload Overlay"])
+        self.ovq_reload = rl
         allb.bind("<Enter>", lambda _e: allb.config(highlightbackground=Q["accent"]))
         allb.bind("<Leave>", lambda _e: allb.config(highlightbackground=Q["line"]))
         w.bind("<Escape>", self.ov_quick_close)
@@ -325,6 +335,25 @@ class OverlayQuick:
                 pk.set(self.ov_look(), redraw=True)
         except Exception:
             buglog.caught()
+
+    def overlay_reload(self):
+        """Reload Overlay (2.125.3): the overlay, its lines and its open helpers built again, and the loop that keeps
+        them over the game started again."""
+        from . import overlaywin as OW
+        try:
+            OW._LIVE[:] = [w for w in OW._LIVE if OW._alive(w)]
+            if OW._JOB[0] is not None:
+                try:
+                    self.root.after_cancel(OW._JOB[0])
+                except tk.TclError:
+                    pass
+                OW._JOB[0] = None
+            self.merged_set()
+            if OW._JOB[0] is None:
+                OW._JOB[0] = self.root.after(OW.TICK_MS, OW._tick, self.root)
+            self._say("Overlay reloaded")
+        except Exception:
+            self.log_error("reloading the overlay")
 
     def _ovq_lock(self, on):
         self.overlay_lock(on)

@@ -39,6 +39,18 @@ NEXT = [
 MAX_BIG = 3
 
 NOTES = {
+    "2.125.3": {
+        "big": [
+            ("🗺", "Routes and Options on the route card", "Change the Campaign route and its switches right there.",
+             None, "Overlay"),
+        ],
+        "small": [
+            ("Overlay", "The route card scrolls and fits your screen."),
+            ("Overlay", "The route card should stay up while its act list is open."),
+            ("Overlay", "Routes are now Full, Speedrun, Rush (carry) and My Own."),
+            ("Overlay", "Reload Overlay (⟳) in Quick settings builds the overlay again."),
+        ],
+    },
     "2.125.2": {
         "big": [],
         "small": [
