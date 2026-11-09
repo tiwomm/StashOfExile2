@@ -330,7 +330,8 @@ class MergedOverlay:
 
     # ---------------------------------------------------------------- the window
     def merged_destroy(self):
-        self.goalbar_destroy()                                        # 2.76.0
+        lines_h = getattr(self, "_gb_h", 0)                           # (2.124.0: the lines on top - the bar is under them)
+        self.goalbar_destroy(keep_place=False)
         w2, self.mg_win2 = getattr(self, "mg_win2", None), None      # 2.65.0: the second Game bar half
         if w2 is not None:
             try:
@@ -348,7 +349,7 @@ class MergedOverlay:
         try:
             if w.winfo_ismapped() and w.winfo_width() > 1:
                 cfg = self.tracker_cfg()
-                cfg.update(mx=w.winfo_x(), my=w.winfo_y())
+                cfg.update(mx=w.winfo_x(), my=w.winfo_y() + lines_h)
                 if w.winfo_height() > 1 and getattr(self, "mg_built", {}).get("notes"):
                     cfg.update(mw=w.winfo_width(), mh=w.winfo_height())
             w.destroy()
@@ -363,7 +364,7 @@ class MergedOverlay:
         click-through, as the lock says."""
         w = self._merged_build()
         try:
-            self.goalbar_build()                             # 2.76.0: League Focus (and the campaign) on its own bar
+            self.goalbar_build()                             # 2.124.0: the NOW / Campaign / Ritual lines, on top
         except Exception:
             self.log_error("the goal bar")
         self.overlay_click_through()
@@ -399,7 +400,7 @@ class MergedOverlay:
         """The overlay's bar windows (not Notes or the calculator - you type in those)."""
         from .remnant_page import capture_affinity
         on, hide = self.click_through_on(), self.overlay_hide_capture()
-        for w in (getattr(self, "mg_win", None), getattr(self, "mg_win2", None), getattr(self, "gb_win", None)):
+        for w in (getattr(self, "mg_win", None), getattr(self, "mg_win2", None)):
             if w is None:
                 continue
             w.click_through = on
@@ -432,9 +433,8 @@ class MergedOverlay:
         x, y = cfg.get("mx", cfg.get("x", 60)), cfg.get("my", cfg.get("y", 260))
 
         def moved(nx, ny, _ww, _hh):
-            cfg.update(mx=nx, my=ny)
+            cfg.update(mx=nx, my=ny + getattr(self, "_gb_h", 0))     # (2.124.0: where the bar is, under the lines)
             self.tracker_save()
-            self.goalbar_follow()
         w = OverlayWindow(self.root, "Session", "⏱", (x, y, None, None), opacity=int(cfg.get("opacity", 225)),
                           locked=bool(cfg.get("mlocked")), min_size=(120, 30), on_close=self.merged_close,
                           on_lock=lambda on: self.overlay_lock(on), on_moved=moved, follow_game=True,
@@ -464,7 +464,7 @@ class MergedOverlay:
         self.mg_hidden = not getattr(self, "mg_hidden", False)
         w = getattr(self, "mg_win", None)
         note = self.overlay.notes if getattr(self.overlay, "notes", None) is not None else None
-        for win in (w, getattr(self, "mg_win2", None), note, getattr(self, "gb_win", None)):
+        for win in (w, getattr(self, "mg_win2", None), note):
             if win is None:
                 continue
             try:
@@ -996,13 +996,12 @@ class MergedOverlay:
                 pos = cfg.setdefault("hud_pos", {}).setdefault(layout, [None] * len(HUD_SPOTS[layout]))
                 while len(pos) < len(HUD_SPOTS[layout]):
                     pos.append(None)
-                pos[slot] = [nx, ny]
+                pos[slot] = [nx, ny + (getattr(self, "_gb_h", 0) if slot == 0 else 0)]     # (the bar, under the lines)
                 cfg["hud_one_row"] = True                    # (2.118.0: placed for the one-row bar)
                 from .alerts_page import game_rect
                 r = game_rect() or (0, 0, self.root.winfo_screenwidth(), self.root.winfo_screenheight())
                 cfg.setdefault("hud_res", {})[layout] = [int(r[2]), int(r[3])]       # 2.79.1: kept for this size
                 self.tracker_save()
-                self.goalbar_follow()
             w = OverlayWindow(self.root, "Session", "⏱", (x, y, ww, hh), opacity=int(cfg.get("opacity", 225)),
                               locked=bool(cfg.get("mlocked")), min_size=(120, 24), on_close=self.merged_close,
                               on_lock=lambda on: self.overlay_lock(on), on_moved=moved, follow_game=True,

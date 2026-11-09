@@ -113,6 +113,18 @@ def breach_level(text):
     return "full" if "cannot store" in t or "any more" in t else "almost"
 
 
+# 2.119.0 (UX pass): what each helper does, in one line - under its name on Helpers, and (2.124.0) the tip on its
+# Quick settings chip
+HELPER_BLURBS = {"delirium": "END DELIRIUM when a map ends with Delirium still on",
+                 "breach": "Warns when your stored Hiveblood is almost full",
+                 "ritual": "Counts rituals done; reminds you if you leave early",
+                 "remnant": "Prices each reward in a remnant's book",
+                 "focus": "Your current goal on the bar, a nudge in town",
+                 "campaign": "Where you are in the campaign and what's next",
+                 "whispers": "A card when someone wants to buy your item",
+                 "desecrate": "Each Well of Souls option's tier"}
+
+
 class AlertsPage:
     """Mixed into App."""
 
@@ -158,7 +170,7 @@ class AlertsPage:
         """The line comes and goes with the count; while it shows, its text follows."""
         try:
             txt = self.ritual_readout()
-            shown = "ritual" in (getattr(self, "goal_rows", None) or []) and getattr(self, "gb_win", None) is not None
+            shown = "ritual" in (getattr(self, "goal_rows", None) or []) and getattr(self, "gb_cv", None) is not None
             if bool(txt) != shown:
                 if getattr(self, "mg_win", None) is not None:
                     self.goalbar_build()
@@ -286,14 +298,7 @@ class AlertsPage:
                  "focus": "League Plan", "campaign": "Campaign", "whispers": "Trade whispers",
                  "desecrate": "Desecration (BETA)"}
         # 2.119.0 (UX pass): what each one does, in one gray line under its name (it was only a tooltip)
-        blurb = {"delirium": "END DELIRIUM when a map ends with Delirium still on",
-                 "breach": "Warns when your stored Hiveblood is almost full",
-                 "ritual": "Counts rituals done; reminds you if you leave early",
-                 "remnant": "Prices each reward in a remnant's book",
-                 "focus": "Your current goal on the bar, a nudge in town",
-                 "campaign": "Where you are in the campaign and what's next",
-                 "whispers": "A card when someone wants to buy your item",
-                 "desecrate": "Each Well of Souls option's tier"}
+        blurb = HELPER_BLURBS
         self.al_leave = tk.BooleanVar(value=bool(self.breach_cfg().get("leave_reminder", True)))
         self.al_rleave = tk.BooleanVar(value=bool(self.ritual_cfg().get("leave_reminder", True)))
         self.al_rshow = tk.BooleanVar(value=bool(self.ritual_cfg().get("readout", True)))
@@ -805,8 +810,6 @@ class AlertsPage:
                                 self.breach_cfg().get("on"):
                             self.breach_set_pending(breach_level(data["text"]))
                             self.breach_alert(text=data["text"])
-                        elif kind == "death":
-                            self.recap_death(data.get("who"))
                         elif kind == "whisper":
                             self.ww_whisper(data)                  # 2.98.1: Trade Whisper Watcher
                         elif kind == "brequel_tree":

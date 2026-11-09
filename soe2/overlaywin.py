@@ -313,10 +313,18 @@ def _tick(root):
     _LIVE[:] = [w for w in _LIVE if _alive(w)]
     if not _LIVE:
         return
-    ok = foreground_ok()
-    for w in _LIVE:
-        w.sync(ok)
-    _JOB[0] = root.after(TICK_MS, _tick, root)
+    try:
+        ok = foreground_ok()
+        for w in list(_LIVE):
+            try:
+                w.sync(ok)
+            except Exception:                      # 2.124.0 (feedback: the overlay vanished for good after a burst
+                buglog.caught()                    # of clicks on the route card): one window's error no longer
+    finally:                                       # stops the watch for all of them
+        try:
+            _JOB[0] = root.after(TICK_MS, _tick, root)
+        except tk.TclError:
+            pass
 
 
 def _alive(w):

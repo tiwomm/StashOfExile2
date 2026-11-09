@@ -386,13 +386,12 @@ class LightOverlay:
                     pos = cfg.setdefault("lt_pos", {}).setdefault(style, [])
                     while len(pos) <= slot:
                         pos.append(None)
-                    pos[slot] = [int(nx), int(ny)]
+                    pos[slot] = [int(nx), int(ny) + (getattr(self, "_gb_h", 0) if slot == 0 else 0)]   # (under the lines)
                     rr = game_rect() or (0, 0, self.root.winfo_screenwidth(), self.root.winfo_screenheight())
                     cfg.setdefault("lt_res", {})[style] = [int(rr[2]), int(rr[3])]
                 else:
-                    cfg.update(mx=nx, my=ny)
+                    cfg.update(mx=nx, my=ny + getattr(self, "_gb_h", 0))
                 self.tracker_save()
-                self.goalbar_follow()
             px, py = (cfg.get("mx", cfg.get("x", 60)), cfg.get("my", cfg.get("y", 260))) if not bar else (0, 0)
             w = OverlayWindow(self.root, "Session", "⏱", (px, py, None, None), opacity=int(cfg.get("opacity", 225)),
                               locked=bool(cfg.get("mlocked")), min_size=(40, 16), on_close=self.merged_close,

@@ -9,12 +9,22 @@ from tkinter import ttk
 
 from . import buglog
 from .config import SETTINGS, save_json
-from .style import C
+from .style import C, Tooltip
 
 # (label, key): the helpers switched on / off, then the tools' menus on the bar
 QUICK_HELPERS = (("Breach", "breach"), ("Delirium", "delirium"), ("Ritual", "ritual"), ("Expedition", "remnant"),
                  ("Campaign", "campaign"), ("League Plan", "focus"), ("Whispers", "whispers"))
 QUICK_BAR = (("Notes", "notes"), ("Calc", "calc"), ("Regex", "regex"), ("Rates", "rates"))
+# 2.124.0 (feedback: each toggle should say what it is on hover): the one-line tips (the helpers' come from
+# alerts_page.HELPER_BLURBS - the same line as on Helpers)
+QUICK_TIPS = {"Style": "How the overlay looks over the game",
+              "Sound": "Every helper's alert sound, on or off",
+              "Lock position": "Keeps the overlay where it is - no dragging it by accident",
+              "Click-through": "Clicks go through the overlay to the game",
+              "notes": "Notes ▾ on the bar: your own notes in a window over the game",
+              "calc": "Calc ▾ on the bar: a small calculator over the game",
+              "regex": "Regex ▾ on the bar: your saved stash searches, one click to copy",
+              "rates": "Rates ▾ on the bar: today's currency exchange rates"}
 
 
 class OverlayQuick:
@@ -139,6 +149,7 @@ class OverlayQuick:
             v = tk.BooleanVar(value=bool(value))
             cb = ttk.Checkbutton(body, text=label, variable=v, style=CB, command=lambda: fn(bool(v.get())))
             cb.pack(anchor="w", pady=2)
+            Tooltip(cb, QUICK_TIPS.get(label, ""))
             self.ovq_vars[label] = v
             return v
         cfg = self.tracker_cfg()
@@ -152,6 +163,7 @@ class OverlayQuick:
         cb = ttk.Combobox(srow, textvariable=self.ovq_style, values=names, state="readonly", width=24)
         cb.pack(side="right")
         cb.bind("<<ComboboxSelected>>", lambda _e: self._ovq_style())
+        Tooltip(srow, QUICK_TIPS["Style"])
         row("Sound", SETTINGS.get("helpers_sound", True), self.helpers_sound_set)
         # 2.120.1: Lock position and Click-through, as in Options (Hide from captures is in Settings › Advanced)
         self.ovq_lock = row("Lock position", cfg.get("mlocked"), self._ovq_lock)
@@ -167,6 +179,9 @@ class OverlayQuick:
                              highlightthickness=1)
                 b.grid(row=i // 4, column=i % 4, sticky="ew", padx=(0, 4), pady=(0, 4))
                 b.bind("<Button-1>", lambda _e, k=key: self._ovq_chip(k))
+                from .alerts_page import HELPER_BLURBS
+                Tooltip(b, HELPER_BLURBS.get(key) or QUICK_TIPS.get(key, ""))
+                b.label = label
                 self.ovq_chips[key] = b
                 self._ovq_paint(key)
         foot = tk.Frame(box, bg=P1, padx=12, pady=8)
@@ -211,8 +226,8 @@ class OverlayQuick:
         if b is None:
             return
         on = self.quick_bar_on(key)
-        try:
-            b.config(bg=C["sel"] if on and "sel" in C else (C["panel2"] if on else C["panel"]),
+        try:                                     # 2.124.0: a mark and a word too, not color alone
+            b.config(text=("✓ " if on else "") + getattr(b, "label", b.cget("text").lstrip("✓ ")), bg=C["sel"] if on and "sel" in C else (C["panel2"] if on else C["panel"]),
                      fg=C["text"] if on else C["muted"], highlightbackground=C["accent"] if on else C["line"])
         except tk.TclError:
             pass

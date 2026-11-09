@@ -5,10 +5,9 @@
     Click it to rank the map. "Ask me to rank maps I haven't ranked" (on by default): leaving a map you haven't
     ranked, a small card asks - S A B C D Avoid, Not now, or Never for this map. Feedback: "isolate the Map
     Tier/rating piece on the overlay and add an option ... to prompt a user to give unrated maps a rating".
-  * The goal bar - League Focus's line (and the Campaign Helper's, 2.77.0) sat in the map's place on the bar and
-    crowded it. It has its own small bar now, in the overlay's style: a short plate over the Game bar, or a small card
-    under the Panel. Dragged where you like while unlocked; the overlay's one lock holds it. Feedback: "a second,
-    smaller version of the overlay/overlay bar".
+  * The lines - League Plan's NOW line, the Campaign Helper's (2.77.0) and Ritual's (2.118.0). 2.124.0: drawn at
+    the top of the overlay's own window (they had their own small bar), which grows upward by their height - the bar
+    never moves. Feedback: "instead of having it as an isolated separate bar, can we just have it combine".
 
 GGG ToS: windows and the game's log only - nothing is sent to the game."""
 import tkinter as tk
@@ -169,171 +168,109 @@ class OverlayParts:
     def goalbar_wanted(self):
         return bool(self.goalbar_rows())
 
-    def goalbar_destroy(self):
-        w, self.gb_win = getattr(self, "gb_win", None), None
-        if w is not None:
-            try:
-                w.destroy()
-            except tk.TclError:
-                pass
-
-    def goalbar_docked(self):
-        """2.79.1 (feedback: "force its default position to be docked to the top of the overlay bar"): the campaign /
-        Focus line sits on the bar and moves with it (Overlay › Options › Campaign › Dock it to the bar)."""
-        return bool(self.tracker_cfg().get("goal_dock", True))
-
-    def goalbar_follow(self):
-        """The bar moved: a docked line goes with it."""
-        w = getattr(self, "gb_win", None)
-        if w is None or not self.goalbar_docked():
+    def goalbar_destroy(self, keep_place=True):
+        """The lines come off the overlay's window; keep_place: the window shrinks back down to its bar (the bar
+        itself never moves)."""
+        cv, self.gb_cv = getattr(self, "gb_cv", None), None
+        h, self._gb_h = getattr(self, "_gb_h", 0), 0
+        if cv is None:
             return
+        main = getattr(self, "mg_win", None)
+        geo = self._gb_geo(main) if keep_place and main is not None else None
         try:
-            main = getattr(self, "mg_win", None)
-            if main is not None and not self.ov_light() and abs(main.winfo_width() - w.winfo_width()) > 1 and \
-                    not getattr(self, "_gb_rebuilding", False):        # 2.85.2: the bar changed width - match it
-                self._gb_rebuilding = True
-                try:
-                    return self.goalbar_build()
-                finally:
-                    self._gb_rebuilding = False
-            x, y = self._goalbar_spot(self.merged_layout(), w.winfo_width(), w.winfo_height())
-            w.geometry(f"+{x}+{y}")
+            cv.destroy()
+        except tk.TclError:
+            pass
+        if geo and h:
+            self._gb_place(main, geo, -h)
+
+    @staticmethod
+    def _gb_geo(main):
+        """(w, h, x, y) of the window before the lines go on or come off."""
+        try:
+            main.update_idletasks()
+            g = (main.winfo_width(), main.winfo_height(), main.winfo_x(), main.winfo_y())
+            return g if g[0] > 1 else (main.winfo_reqwidth(), main.winfo_reqheight(), g[2], g[3])
+        except tk.TclError:
+            return None
+
+    @staticmethod
+    def _gb_place(main, geo, dh):
+        """The window dh px taller (the lines added on top) or shorter than it was - its bottom stays put."""
+        if not geo:
+            return
+        ww, hh, x, y = geo
+        try:
+            main.geometry(f"{ww}x{max(1, hh + dh)}+{x}+{y - dh}")
         except tk.TclError:
             pass
 
-    def _goalbar_spot(self, layout, gw, gh):
-        cfg = self.tracker_cfg()
-        saved = (cfg.get("goal_pos") or {}).get(layout)
-        if not self.goalbar_docked() and isinstance(saved, (list, tuple)) and len(saved) == 2:
-            return int(saved[0]), int(saved[1])
-        main = getattr(self, "mg_win", None)
-        try:
-            main.update_idletasks()
-            mx, my, mw, mh = main.winfo_x(), main.winfo_y(), main.winfo_width(), main.winfo_height()
-            if self.ov_light():                               # 2.101.0: round both halves of the Flanks bar
-                mx, my, mw, mh = self._mg_bounds()
-            if mw <= 1:
-                raise tk.TclError
-        except (tk.TclError, AttributeError):
-            from .alerts_page import game_rect
-            r = game_rect() or (0, 0, self.root.winfo_screenwidth(), self.root.winfo_screenheight())
-            return r[0] + (r[2] - gw) // 2, r[1] + int(r[3] * 0.80)
-        if layout == "xpbar":                                 # over the Game bar, in the middle
-            # 2.85.2 (feedback: "a fine gap between the two"): docked, it sits right on the bar
-            return mx + (mw - gw) // 2, my - gh - (0 if self.goalbar_docked() else 6)
-        from .alerts_page import game_rect
-        r = game_rect() or (0, 0, self.root.winfo_screenwidth(), self.root.winfo_screenheight())
-        if my + mh + 6 + gh > r[1] + r[3]:                    # no room under the Panel: over it
-            return mx, max(r[1], my - gh - 6)
-        return mx, my + mh + 6                                # under the Panel
-
     def goalbar_build(self):
-        """(Re)build the goal bar after the overlay was built. -> the window or None."""
-        from .overlaywin import OverlayWindow
-        from . import hudart, themes as TH
-        from .overlaywin import _seed, pal
+        """2.124.0 (feedback: "instead of an isolated separate bar, can we just have it combine"): the Campaign,
+        Ritual and NOW lines are drawn at the top of the overlay's own window, as wide as it, and the window grows
+        upward by their height - the bar itself never moves. (Was its own small window, docked or dragged.)
+        -> the lines' canvas or None."""
         import tkinter.font as tkfont
         self.goalbar_destroy()
         main = getattr(self, "mg_win", None)
         if main is None or not self.goalbar_wanted():
+            self.goal_rows = []
             return None
         cfg = self.tracker_cfg()
-        layout = self.merged_layout()
-        hud = layout == "xpbar"
-        light = self.ov_light()                               # 2.101.0: drawn in the light look's style
-        if light:
-            from .ovlight import palette as light_palette
-            P = light_palette(self.ov_look(), self.ov_look_colors())
-        else:
-            P = pal()                                         # 2.109.0: the overlay's chosen style
-        _seed(TH, P)
+        hud = self.merged_layout() == "xpbar"
+        light = self.ov_light()
+        P = getattr(self, "mg_P", None) or {}
+        if "font" not in P:
+            from .overlaywin import pal
+            P = pal()
         try:
+            mcv = next(c for c in main.body.winfo_children() if isinstance(c, tk.Canvas))
             main.update_idletasks()
-            mw, mh = main.winfo_width(), main.winfo_height()
-            if light:
-                _x, _y, mw, mh = self._mg_bounds()
-        except tk.TclError:
-            mw, mh = 600, 60
-        mw = mw if mw > 1 else 600
-        mh = mh if mh > 1 else 60
+            W = int(mcv.cget("width")) or mcv.winfo_reqwidth()
+            mh = int(mcv.cget("height")) or mcv.winfo_reqheight()
+        except (StopIteration, tk.TclError, ValueError, AttributeError):
+            return None
         rows = self.goalbar_rows()
-        gw = max(320, int(mw * (0.6 if hud else 1.0)))
-        if "campaign" in rows or self.goalbar_docked():                               # 2.78.2: as wide as the overlay's bar (feedback: "scale
-            gw = mw                                          # to match the width of the other piece")
-        from .merged_page import HUD_SPOTS, OLD_HUD_H                  # (2.118.0: the bar is one row now - the lines
-        bar_h = self.hud_spots("xpbar")[0][3] * OLD_HUD_H / HUD_SPOTS["xpbar"][0][3]   # keep their size)
-        row_h = max(30, int((bar_h if hud else 60) * (0.55 if hud else 0.62)))
-        hs = [row_h if i == 0 else int(row_h * 0.8) for i in range(len(rows))]
-        camp_n, camp_lh = 1, 0
+        k = getattr(self, "_hud_k", 1.0)
+        if light:
+            side = self._u(12)
+        elif hud:
+            from . import hudart
+            side = hudart.cap_width(mh) + 14                  # (in line with the bar's well under it)
+        else:
+            side = int(16 * k)                                # (in line with the Panel's cells)
+        f = (P["font"], self._hf(10))
+        fm = tkfont.Font(root=self.root, family=P["font"], size=self._hf(10))
+        lh = fm.metrics("linespace")
+        row_h = lh + max(8, int(10 * k))                      # 2.124.0 (feedback: too tall): one line and a little air
+        hs = [row_h] * len(rows)
+        camp_n = 1
         if "campaign" in rows:                                # 2.123.7: a narrow bar wraps the line instead of cutting it
-            side = self._u(12) if light else (44 if hud else 16)          # (the most the frame takes each side)
-            camp_n = self.camp_lines(P, gw - 2 - 2 * side)
-            camp_lh = tkfont.Font(root=self.root, family=P["font"], size=self._hf(10)).metrics("linespace")
-            hs[rows.index("campaign")] += (camp_n - 1) * camp_lh
-        gh = sum(hs)
-        x, y = self._goalbar_spot(layout, gw, gh)
-
-        def moved(nx, ny, _w, _h):
-            if self.goalbar_docked():                        # 2.112.4: dragging a docked line undocks it (in Split
-                if not getattr(w, "_drag_done", False):      # the bar's halves can't move, so a docked line was stuck)
-                    return
-                cfg["goal_dock"] = False
-                v = getattr(self, "tk_goal_dock", None)
-                if v is not None:
-                    try:
-                        v.set(False)
-                    except tk.TclError:
-                        pass
-            cfg.setdefault("goal_pos", {})[layout] = [int(nx), int(ny)]
-            self.tracker_save()
-        w = OverlayWindow(self.root, "Goal", "🎯", (x, y, gw, gh), opacity=int(cfg.get("opacity", 225)),
-                          locked=bool(cfg.get("mlocked")), min_size=(200, 24), on_close=None,
-                          on_lock=lambda on: self.overlay_lock(on), on_moved=moved, follow_game=True,
-                          no_activate=True, resizable=False, titlebar=False, palette=P)
-        w.withdraw()
+            camp_n = self.camp_lines(P, W - 2 * side)
+            hs[rows.index("campaign")] += (camp_n - 1) * lh
+        H = sum(hs)
+        bg = P.get("bg", "#15130f")
         if light and P.get("boxless"):
             from .ovlight import KEY
-            try:
-                w.attributes("-transparentcolor", KEY)
-            except tk.TclError:
-                pass
-        cv = w.canvas_body()
-        W, H = gw - 2, gh - 2
-        cv.configure(width=W, height=H)
-        if not cfg.get("mlocked"):                    # 2.112.4: unlocked, it can always be dragged (a docked one is
-            w.draggable(cv)                           # undocked by the drag); locked, it stays put
-            cv.bind("<B1-Motion>", lambda _e: setattr(w, "_drag_done", True), add="+")
-        if light:                                             # 2.101.0: no artwork - the box (or none) and a rule
-            lft, rgt = self._u(12), W - self._u(12)
-            if P.get("boxless"):
-                cv.create_line(lft, H - 2, rgt, H - 2, fill=P["accent"], tags=("mg",))
-        elif hud:
-            ends, self._hud_ends = getattr(self, "_hud_ends", None), ("amber", "amber")
-            from . import hudart as _ha                       # 2.85.2: the same end caps as the bar under it
-            lft, rgt = self._hud_frame(cv, P, W, H, cap=_ha.cap_width(mh - 2) if self.goalbar_docked() else None)
-            self._hud_ends = ends or ("crimson", "sapphire")
-        else:
-            art = hudart.card(cv, W, H, None, [(8, 6, W - 8, H - 6, 1, 1)], None)
-            if art is not None:
-                cv.create_image(0, 0, image=art, anchor="nw", tags=("hudbg",))
-                cv._card_imgs = [art]
-            lft, rgt = 16, W - 16
+            bg = KEY
+        geo = self._gb_geo(main)
+        cv = tk.Canvas(main.body, bg=bg, highlightthickness=0, width=W, height=H)
+        cv.pack(side="top", fill="x", before=mcv)
+        if not cfg.get("mlocked"):
+            main.draggable(cv)
+        lft, rgt = side, W - side
+        cv.create_line(0 if not light else lft, H - 1, W if not light else rgt, H - 1,
+                       fill=P.get("accent") if light and P.get("boxless") else P.get("line", "#4a3f2c"), tags=("mg",))
         mids, edges, top = [], [], 0
         for h in hs:                                          # each row's middle (2.123.7: rows can differ in height)
-            mids.append(int((top + h / 2) * H / gh))
+            mids.append(int(top + h / 2))
             top += h
-            edges.append(int(top * H / gh))
-        f = (P["font"], self._hf(10))
+            edges.append(top)
         self.goal_rows = rows                               # (2.118.0: was gb_rows - the Gear book has a method of that name)
-        if not cfg.get("mlocked"):                    # 2.112.4: a grip to drag it by (see-through styles have nothing
-            g = cv.create_text(max(2, lft - self._u(12)), H // 2, text="⠿", anchor="w",   # else solid to grab)
-                               fill=P.get("muted", P["text"]), font=("Segoe UI Symbol", self._hf(10)), tags=("mg", "grip"))
-            cv.tag_bind(g, "<Enter>", lambda _e: cv.configure(cursor="fleur"))
-            cv.tag_bind(g, "<Leave>", lambda _e: cv.configure(cursor=""))
         for e in edges[:-1]:                                  # a thin line between two lines (at the row's edge)
             cv.create_line(lft, e, rgt, e, fill=P["line"], tags=("mg",))
         if "campaign" in rows:
-            self.camp_draw_row(cv, P, lft, rgt, mids[rows.index("campaign")], f, n=camp_n, lh=camp_lh)
+            self.camp_draw_row(cv, P, lft, rgt, mids[rows.index("campaign")], f, n=camp_n, lh=lh)
             if light:
                 self._lt_halo_tags(cv, P, ("camp",))
         if "ritual" in rows:                                  # 2.118.0: the Ritual line
@@ -347,11 +284,9 @@ class OverlayParts:
             if light:
                 self._lt_halo_tags(cv, P, ("rit",))
         if "focus" not in rows:
-            return self._goalbar_show(w, cv)
+            return self._goalbar_show(main, cv, H, geo)
         mid = mids[rows.index("focus")]
         ftext, fprog = self.focus_line()
-        f = (P["font"], self._hf(10))
-        fm = tkfont.Font(root=cv, family=P["font"], size=self._hf(10))
         cv.create_text(lft, mid, text="▸ NOW", anchor="w", fill=P["head"], font=(P["hfont"], self._hf(9), "bold"),
                        tags=("mg",))
         nx = lft + fm.measure("▸ NOW ") + 8
@@ -365,15 +300,9 @@ class OverlayParts:
             cv.create_rectangle(rgt - pw, mid - 2, rgt, mid + 2, fill=P["cell_bg"], outline=P["line"], tags=("mg",))
             cv.create_rectangle(rgt - pw, mid - 2, rgt - pw + int(pw * min(1.0, fprog)), mid + 2, fill=P["on"],
                                 outline="", tags=("mg",))
-        return self._goalbar_show(w, cv)
+        return self._goalbar_show(main, cv, H, geo)
 
-    def _goalbar_show(self, w, cv):
-        self.gb_win, self.gb_cv = w, cv
-        w.click_through = self.click_through_on()
-        from .merged_page import set_click_through
-        set_click_through(w, w.click_through)
-        if getattr(self, "mg_hidden", False):
-            w.hide()
-        else:
-            w.show()
-        return w
+    def _goalbar_show(self, main, cv, H, geo):
+        self.gb_cv, self._gb_h = cv, H
+        self._gb_place(main, geo, H)
+        return cv

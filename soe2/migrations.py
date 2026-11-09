@@ -83,6 +83,16 @@ def _ux_2119(S):
         rm.pop("key", None)
 
 
+def _no_recap_2124(S):
+    """2.124.0: the joke Death Recap card is gone; the lines over the bar are part of the overlay now (no Dock
+    switch, no spot of their own)."""
+    S.pop("recap_seen", None)
+    t = S.get("tracker")
+    if isinstance(t, dict):
+        t.pop("goal_dock", None)
+        t.pop("goal_pos", None)
+
+
 STEPS = (
     ("modbook_import", "1.x", "app", _modbook_import, "modbook_imported"),
     ("rules_scoped", "2.6.0", "app", _rules_scoped, "rules_scoped_26"),
@@ -91,6 +101,7 @@ STEPS = (
     ("gear_plus", "2.99.0", "app", _gear_plus, "gear_plus_299"),
     ("tier_only", "2.114.0", "app", _tier_only, "tier_only_2114"),
     ("ux_2119", "2.119.0", "settings", _ux_2119, None),
+    ("no_recap_2124", "2.124.0", "settings", _no_recap_2124, None),
 )
 
 
