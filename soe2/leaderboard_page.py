@@ -265,6 +265,12 @@ class LeaderboardPage:
         if keys:
             self.lb_keys_empty.place_forget()
         else:
+            # 2.124.1 (feedback: "no zone times being tracked?"): say when this board gets times
+            self.lb_keys_empty.set_text(
+                "No times on this board yet\nA zone is timed from entering it to leaving it, while a character is "
+                "still in the campaign (not visits after it, and at least 10 s)." if self.lb_cat_key() == "zone" else
+                "No times on this board yet\nRun maps with the overlay's timer on, or play the campaign with the "
+                "Campaign Helper.")
             self.lb_keys_empty.place(relx=0.5, rely=0.45, anchor="center")
         sel = keep[0] if keep and kv.exists(keep[0]) else (keys[0] if keys else None)
         if sel:

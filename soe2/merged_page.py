@@ -92,14 +92,23 @@ class _MapPart(CanvasText):
         m = self.parts["map"] if self.show[0] else ""
         wh = self.parts["where"] if self.show[1] else ""
         rk = self.parts["rank"] if self.show[2] else ""
-        text = "  ".join(t for t in (m, wh, rk) if t and t != "-")
         fam, size = self.font[0], int(self.font[1])
         rest = tuple(self.font[2:])
+
+        def join(where):
+            return "  ".join(t for t in (m, where, rk) if t and t != "-")
+        text = join(wh)
         try:
-            while size > 8 and tkfont.Font(root=self.canvas, family=fam, size=size, weight=rest[0] if rest else "normal") \
-                    .measure(text) > self.width:
-                size -= 1
             fnt = tkfont.Font(root=self.canvas, family=fam, size=size, weight=rest[0] if rest else "normal")
+            # 2.124.1 (feedback: map time, name and session crammed): the area's name is cut first, the time and
+            # rank kept whole at the bar's size; only then one size smaller, then cut
+            cut = wh
+            while cut and fnt.measure(text) > self.width:
+                cut = cut[:-2].rstrip()
+                text = join(cut + "…" if cut else "")
+            if fnt.measure(text) > self.width and size > 8:
+                size -= 1
+                fnt = tkfont.Font(root=self.canvas, family=fam, size=size, weight=rest[0] if rest else "normal")
             while len(text) > 4 and fnt.measure(text) > self.width:     # (only a very narrow bar cuts it)
                 text = text[:-2].rstrip() + "…"
             self.canvas.itemconfigure(self.item, font=(fam, size) + rest)
@@ -299,6 +308,8 @@ class MergedOverlay:
         """2.124.0 (feedback: in campaign areas it should say Zone, no tier rank or average): the Campaign Helper is
         on and its line shows (the campaign, hideouts on the way included - Vendor ▾ is on the bar then, and the map
         numbers had no room) - the overlay shows the act line, the session and the zone's time only."""
+        if getattr(self, "_ov_previewing", False):         # (Settings' preview shows a map, as its sample says)
+            return False
         try:
             from . import campaign as CP
             return bool(CP.active())
@@ -978,10 +989,16 @@ class MergedOverlay:
         foot = y + int(2 * k)
         fy = foot + int(11 * k)
         gx = self._mg_glyphs(w, cv, P, gx1 - int(4 * k), fy)
-        menus_left = gx
+        menus_left, menu_rows = gx, 1
         if self.bar_buttons_on():
             menus_left = self._mg_bar_buttons(w, cv, P, gx - 4, fy, anchor="e")
-        extra = 0
+            if menus_left < gx0 + int(4 * k):                # 2.124.1 (feedback: Notes ▾ ran past the frame): wrapped
+                for t in ("mg_notes", "mg_calc", "mg_regex", "mg_rates", "mg_vendor"):   # inside it, left to right
+                    cv.delete(t)
+                self._mg_bar_buttons(w, cv, P, gx0 + int(4 * k), fy, anchor="w", right=gx - 6, step=int(18 * k))
+                menu_rows = getattr(self, "_mg_menu_rows", 1)
+                menus_left = gx0                             # (the clock goes under them)
+        extra = (menu_rows - 1) * int(18 * k)
         if want["timer"] and cfg.get("clock", True):
             self._mg_clock(w, cv, P, gx0 + int(4 * k), fy, anchor="w", on_bar=False)
             self.tk_ov_clock.config = (lambda fn: (lambda text="", **kw: fn(text=text.splitlines()[0]
@@ -989,7 +1006,7 @@ class MergedOverlay:
             import tkinter.font as _tkf
             cw = _tkf.Font(root=cv, family=P["font"], size=self._hf(9)).measure("12:00 AM")
             if gx0 + int(4 * k) + cw + int(8 * k) > menus_left:   # 2.97.0: four menus and the clock don't fit - clock below
-                extra = int(18 * k)
+                extra += int(18 * k)
                 cv.move("mg_clock", 0, extra)
         H = fy + extra + int(12 * k) + fw
         art = hudart.card(cv, W, H, (by0, by1), grids, foot)

@@ -87,10 +87,25 @@ class ListPreview(tk.Frame):
                 buglog.caught()
                 for c in self.host.winfo_children():
                     c.destroy()
+            self._hold_size()
         try:
             self.name.config(text=self.names.get(key, key) + ("  - in use" if key == self.current else
                                                                 "  - click to use it"))
             self.about.config(text=self.about_of(key))
+        except tk.TclError:
+            pass
+
+    def _hold_size(self):
+        """2.124.1 (feedback: the text under the preview flickered): the preview keeps the biggest size it has needed,
+        so a shorter one doesn't pull the list up under the mouse (Leave -> the one in use -> Enter -> ... a loop)."""
+        try:
+            self.host.pack_propagate(True)
+            self.host.update_idletasks()
+            w = max(getattr(self, "_max_w", 0), self.host.winfo_reqwidth())
+            h = max(getattr(self, "_max_h", 0), self.host.winfo_reqheight())
+            self._max_w, self._max_h = w, h
+            self.host.pack_propagate(False)
+            self.host.configure(width=w, height=h)
         except tk.TclError:
             pass
 
@@ -107,5 +122,6 @@ class ListPreview(tk.Frame):
         self.current = key
         if redraw:
             self.shown = None
+            self._max_w = self._max_h = 0            # (another layout: its own size)
         self.paint()
         self.show(key)

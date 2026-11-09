@@ -150,6 +150,7 @@ class LightOverlay:
                 "_hud_k", "_hud_ends", "_play_last", "_play_drawn")
         saved = {k: getattr(self, k) for k in keep if hasattr(self, k)}
         canvases = []
+        self._ov_previewing = True
         try:
             scale = width / 1031                                  # (the XP bar is 1031 px wide on a 2560 x 1440 game)
             self._hud_k = hud_k(1440) * scale
@@ -211,6 +212,7 @@ class LightOverlay:
             for cv in canvases:
                 _inert(cv)
         finally:
+            self._ov_previewing = False
             self.__dict__.pop("play_glyph", None)
             for k in keep:
                 if k in saved:

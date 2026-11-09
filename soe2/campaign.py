@@ -179,8 +179,8 @@ def char(name=None):
     c = cfg()
     name = current_char() if name is None else name
     run = c["chars"].setdefault(name or "", {})
-    if not run:                                           # 2.86.0: a new run - its league (for the leaderboards)
-        run["league"] = SETTINGS.get("league") or ""
+    if not run.get("league"):                             # 2.86.0: a new run - its league (for the leaderboards)
+        run["league"] = SETTINGS.get("league") or ""      # (2.124.1: and an older run that had none)
     for k, v in (("act", None), ("zone", None), ("here", None), ("seen", {}), ("levels", {}), ("rewards", {}),
                  ("ask", []), ("secs", {}), ("last_ts", None), ("afk", False), ("done", False), ("zone_level", 0),
                  ("pending", None), ("unknown", None), ("visit", False)):
@@ -453,18 +453,18 @@ def _zone_done(run):
 
 
 def zone_time(run=None, now=None):
-    """The time in the campaign zone you're in (AFK and hideouts left out) -> secs or None."""
+    """The time since you came into the campaign zone you're in -> secs, or None (a hideout, or not known since the
+    app started - 2.124.1: it showed 0:00 then). The leaderboard's time is zone_secs (AFK left out, campaign runs
+    only)."""
     import time as _t
     run = run or char()
     if not active(run) or not run.get("zone") or run.get("away"):
         return None
-    secs = run.get("zone_secs") or 0
-    last = run.get("last_ts")
-    if last and not run.get("afk"):
-        dt = (now or _t.time()) - last
-        if 0 < dt < GAP:
-            secs += dt
-    return secs
+    t0 = run.get("zone_t0")
+    if not t0:
+        return None
+    dt = (now or _t.time()) - t0
+    return dt if 0 <= dt < 3 * 3600 else None
 
 
 def _enter(run, name, area_id, level, ts, id_act=None):
@@ -476,6 +476,7 @@ def _enter(run, name, area_id, level, ts, id_act=None):
         return None
     _zone_done(run)                                           # 2.124.0: the zone you left, timed; this one starts
     run["away"] = False
+    run["zone_t0"] = ts                                       # 2.124.1: when you came in (the overlay's Zone time)
     if run.get("done"):                                       # 2.97.0: back in a campaign zone after maps - the line
         run["visit"] = True                                   # (and Vendor ▾) show here; the finished run is kept
         run["act"], run["zone"], run["here"], run["zone_level"] = key, name, None, int(level or 0)
@@ -549,7 +550,7 @@ def line_text(run=None):
     d = line(run)
     if not d:
         return ""
-    t = d["do"] or "On you go"
+    t = (d["do"] or "On you go").rstrip(" .")             # 2.124.1: no "Burrow., then" (feedback screenshot)
     if d["gives"]:
         t += f" ({d['gives']})"
     if d["next"]:
