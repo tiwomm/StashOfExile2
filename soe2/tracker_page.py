@@ -1227,7 +1227,7 @@ class TrackerPage:
         # belongs to (a heading on the Hotkeys page); every key but Ctrl+Alt+C is set here and only here
         rows = [("Price check the item under the mouse (in game)", SETTINGS.get("pc_key", "Ctrl+D"), "Price Checks",
                  "checks:pc_key"),
-                ("Close the price check card over the game", SETTINGS.get("pc_close_key", "Esc"), "Price Checks",
+                ("Close the price check overlay", SETTINGS.get("pc_close_key", "Esc"), "Price Checks",
                  "checks:pc_close_key"),                      # 2.121.1
                 ("Add the item under the mouse to Bulk Pricing", "Ctrl+Alt+C", "Bulk Pricing", None),
                 ("Open poe2db's modifier list in your browser", SETTINGS.get("poe2db_key", ""), "Tools",

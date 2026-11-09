@@ -33,6 +33,7 @@ import os
 import statistics
 import time
 
+from . import buglog
 from . import mods as M
 from .config import APP_UA, APP_DIR, RESOURCE_DIR, P, SETTINGS, save_json
 
@@ -485,7 +486,7 @@ def sid_names(kind):
             if sid and sid not in out:
                 out[sid] = m["text"]
     except Exception:
-        pass
+        buglog.caught()
     return out
 
 
@@ -502,5 +503,5 @@ def item_pairs(kind, mod_ids, plist=None):
 try:                                                     # the data pack's values from the start
     pack()
 except Exception:
-    pass
+    buglog.caught()
 

@@ -16,9 +16,10 @@ from .style import C, MONO, SegBook, KeyCapture, Tooltip
 from .chrome import section as chrome_section
 
 
-PC_SHOW = {"both": "Overlay + Here (a card over the game, and the app)",      # 2.123.3: no card-only choice
-           "front": "In the app (it comes to the front)",
-           "behind": "In the app (it stays behind the game)", "off": "Nowhere (the key does nothing)"}
+# 2.125.5 (feedback: "we just need the Here | Overlay + Here cards"): two choices, as on Price Checks - the app comes
+# to the front ("Here"), or the price check overlay and the app ("Overlay + Here"). "Behind the game" and "Nowhere"
+# are gone (a key that does nothing: clear it on Keys).
+PC_SHOW = {"both": "Overlay + Here", "front": "Here"}
 
 
 class SettingsPage:
@@ -40,7 +41,7 @@ class SettingsPage:
         # 2.123.0 (UX pass 3, p1, feedback: "settings that apply globally for price checks vs settings for bulk price
         # checks vs settings that are for regular price checks"): three groups, each saying which pages it changes.
         # What isn't price checking moved out (Account -> General; Fine tuning's rows went to their group).
-        PC, BP, CARD = "Price Checks", "Bulk Pricing", "Card over the game"
+        PC, BP, CARD = "Price Checks", "Bulk Pricing", "Overlay"      # (2.125.5: was "Card over the game")
         self.set_anchors["pc_all"] = self.settings_group("Price checking", "ALL PRICE CHECKS", top=True,
                                                          used=(PC, BP, CARD))
         row = section("Price checking", "Listings to price from", "Which trade listings count. Older listings are often "
@@ -54,14 +55,7 @@ class SettingsPage:
                                                   "Wealth, Market Insights, the timer).")
         tk.Label(row, text="Prices in", **lab).pack(side="left", padx=(0, 8))
         combo(row, self.unit_var, [t for _k, t in PRICE_UNITS], self.on_price_unit, 22).pack(side="left")
-        row = section("Price checking", "Valuable mods", "A mod is valuable when the cheapest listings with it cost "
-                                                         "at least this much. Valuable items are marked ★ and green.")
-        tk.Label(row, text="Valuable mod from", **lab).pack(side="left", padx=(0, 8))
-        sp = ttk.Spinbox(row, from_=0.05, to=500, increment=0.25, width=6, textvariable=self.good_var, command=self.on_good)
-        sp.pack(side="left")
-        sp.bind("<Return>", lambda e: self.on_good())
-        sp.bind("<FocusOut>", lambda e: self.on_good())
-        tk.Label(row, text="div", **lab).pack(side="left", padx=(4, 0))
+        # 2.125.5 (feedback: "they don't really add anything"): no Valuable mods amount - the app's own (GOOD_DIV)
         row = section("Price checking", "How searches are made", "How close to your item's rolls a search asks for, "
                                                                   "and how many listings a price needs.")
         self.build_fine_tuning(row, keys=("range_factor", "min_results", "spread_warn"))
@@ -74,37 +68,36 @@ class SettingsPage:
         self.set_anchors["pc_single"] = self.settings_group("Price checking", f"SINGLE PRICE CHECKS ({pck.upper()})",
                                                             used=(PC, CARD))
         row = section("Price checking", "Where the price shows", "Hover an item in game and press your price check "
-                                                                  "key (set it on Keys). Over the game, the card takes "
-                                                                  "the overlay's Style; drag and resize it - it "
-                                                                  "remembers. Price Checks still gets every item.")
+                                                                  "key (set it on Keys). Here: the app comes to the "
+                                                                  "front. Overlay + Here: the price check overlay too, "
+                                                                  "in the overlay's Style.")
         self.pc_set_vars = getattr(self, "pc_set_vars", None) or {}
         self.pc_set_vars["pc_popup"] = self.pc_pop_var()
         tk.Label(row, text=f"{pck} shows it", **lab).pack(side="left", padx=(0, 8))
-        self.pc_show_var = tk.StringVar(value=PC_SHOW[self.pc_show_get()])
-        cb = combo(row, self.pc_show_var, list(PC_SHOW.values()), self.on_pc_show, 30)
-        cb.pack(side="left")
+        from .style import SegBar
+        self.pc_show_var = tk.StringVar(value=PC_SHOW.get(self.pc_show_get(), "Here"))
+        self.pc_show_seg = SegBar(row, list(self.PC_WHERE), value=self.pc_show_var.get(), size=9, pad=(12, 4),
+                                  command=lambda v: (self.pc_show_var.set(v), self._pc_where_pick(v)))
+        self.pc_show_seg.pack(side="left")
         self.pc_set_vars["pc_show"] = self.pc_show_var
-        self.pc_pop_var().trace_add("write", lambda *_a: self.root.after_idle(       # (once Price Checks' own switch
-            lambda: self.pc_show_var.set(PC_SHOW[self.pc_show_get()])))              # has saved it)
+
+        def follow():                                     # (Price Checks' own switch and the overlay's ⚙ set it too)
+            v = PC_SHOW.get(self.pc_show_get(), "Here")
+            try:
+                self.pc_show_var.set(v)
+                self.pc_show_seg.pick(v, notify=False)
+            except (tk.TclError, AttributeError):
+                pass
+        self.pc_pop_var().trace_add("write", lambda *_a: self.root.after_idle(follow))
         v = tk.BooleanVar(value=bool(SETTINGS.get("pc_art", True)))
         self.pc_set_vars["pc_art"] = v
         ttk.Checkbutton(row, text="Show the items' pictures", variable=v, style="Card.TCheckbutton",
                         command=lambda: (SETTINGS.__setitem__("pc_art", bool(v.get())),
                                          save_json("settings.json", SETTINGS))).pack(side="left", padx=(16, 0))
-        row = section("Price checking", "Card over the game", "Its close key is set on Keys, with every other key.")
-        self.pc_close_lbl = tk.Label(row, text="", **lab)
-        self.pc_close_lbl.pack(side="left")
-        go = tk.Label(row, text="Change on Keys ›", bg=P2, fg=C["accent"], cursor="hand2", font=("Segoe UI", 9, "underline"))
-        go.pack(side="left", padx=(12, 0))
-        go.bind("<Button-1>", lambda e: self.hotkeys_open("checks:pc_close_key"))
-        self._pc_close_text()
+        # 2.125.5 (feedback): the overlay's close key lives on Keys only (it was shown here too)
 
         self.set_anchors["pc_bulk"] = self.settings_group("Price checking", "BULK PRICING (CTRL+ALT+C)", used=(BP,))
-        row = section("Price checking", "Skip cheap items", "Bulk Pricing doesn't search an item when every mod it would "
-                                                          "search sells for under this in the Mod Book's own data and "
-                                                          "none is rated High by you or most players. With only a few listings to go on it's "
-                                                          "marked \"check by hand\" instead; Price Checks always search.")
-        self.build_floor_settings(row)                                                           # 2.96.0
+        # 2.125.5 (feedback: "they don't really add anything/don't work"): no Skip cheap items - every item is searched
         row = section("Price checking", "The list", "What happens in Bulk Pricing's list as items are priced.")
         ttk.Checkbutton(row, text="Play a sound when a valuable item is priced", variable=self.snd_var,
                         command=self.on_toggles).pack(side="left")
@@ -129,14 +122,6 @@ class SettingsPage:
                                                      "you turn them on.")
         self.set_anchors["fine"] = row.master
         self.build_fine_tuning(row, keys=("memory_shortcut", "model_shortcut"), defaults=False)
-
-    def _pc_close_text(self):
-        from .overlay import key_label
-        try:
-            k = SETTINGS.get("pc_close_key", "Esc")
-            self.pc_close_lbl.config(text=f"Close the card with {key_label(k)}" if k else "The card has no close key")
-        except (AttributeError, tk.TclError):
-            pass
 
     def build_account_settings(self, section):
         """2.123.0 (p2): from Price checking - Stash tab and Wealth use it, not price checks."""
@@ -172,7 +157,7 @@ class SettingsPage:
             return "off"
         if SETTINGS.get("pc_popup", False):
             return "both"                                  # 2.123.3: the card always comes with the app
-        return "front" if SETTINGS.get("pc_front", True) else "behind"
+        return "front"                                     # (2.125.5: "behind the game" is gone)
 
     def on_pc_show(self):
         self.pc_show_set(next((k for k, t in PC_SHOW.items() if t == self.pc_show_var.get()), "front"))
@@ -192,8 +177,8 @@ class SettingsPage:
         if not SETTINGS.get("pc_popup"):
             self.pcpop_close()
         var = getattr(self, "pc_show_var", None)
-        if var is not None and var.get() != PC_SHOW[self.pc_show_get()]:
-            var.set(PC_SHOW[self.pc_show_get()])
+        if var is not None and var.get() != PC_SHOW.get(self.pc_show_get(), "Here"):
+            var.set(PC_SHOW.get(self.pc_show_get(), "Here"))
         self.pc_where_paint()
 
     def build_fine_tuning(self, row, keys=None, defaults=True):
@@ -1057,7 +1042,7 @@ class SettingsPage:
         self.overlay.rebind()
         self.overlay.save_settings()
         save_json("settings.json", SETTINGS)
-        for refresh in ("_tk_keys_text", "_rx_key_text", "_chat_keys_text", "_pc_key_text", "_pc_close_text"):
+        for refresh in ("_tk_keys_text", "_rx_key_text", "_chat_keys_text", "_pc_key_text"):
             if hasattr(self, refresh):                             # 2.57.0: the places that show a key
                 try:
                     getattr(self, refresh)()
@@ -1082,24 +1067,13 @@ class SettingsPage:
             self.launcher_var.set(dict(self.shell.LAUNCHERS)[self.shell.cfg["launcher"]])
         save_json("settings.json", SETTINGS)
 
-    def on_good(self):
-        try:
-            SETTINGS["good_div"] = max(0.01, float(self.good_var.get()))
-        except ValueError:
-            return
-        save_json("settings.json", SETTINGS)
-        self.pc_rules_text()
-        if getattr(self, "tree", None) is not None:
-            self.refresh_all()
-
     # ---------------- 2.59.0: Settings › Price checking - one home for the price check settings
     def pc_vars(self):
         """The Price checking settings' variables, made once and shared by Settings, the Price checks toolbar, the
         Stash tab row and Wealth (whichever is built first makes them)."""
-        if getattr(self, "good_var", None) is not None:
+        if getattr(self, "pop_var", None) is not None:
             return
         from .pricefmt import PRICE_UNITS
-        self.good_var = tk.StringVar(value=str(SETTINGS["good_div"]))
         self.pop_var = tk.BooleanVar(value=SETTINGS["popups"])
         self.snd_var = tk.BooleanVar(value=SETTINGS["sound"])
         self.copy_var = tk.BooleanVar(value=SETTINGS["auto_copy"])
@@ -1128,9 +1102,8 @@ class SettingsPage:
         if lbl is None:
             return
         try:
-            lbl.config(text=f"Pricing from {SETTINGS['status']} · listed within {SETTINGS['age']} · valuable mod "
-                            f"from {SETTINGS['good_div']:g} div")      # 2.123.0 (p8): plain words
-        except tk.TclError:
+            lbl.config(text=f"Pricing from {SETTINGS['status']} · listed within {SETTINGS['age']}")  # (2.125.5: no
+        except tk.TclError:                                                                        # valuable-mod amount)
             pass
 
     def settings_open(self, page, anchor=None):
