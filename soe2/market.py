@@ -406,6 +406,27 @@ class Market:
             return []
 
     # ---------------- learning: which mods matter
+    def listing_rows(self, league=None, limit=30000):
+        """2.125.5: the stored listings of a league -> [(base, price in divines, set of stat ids)], newest first."""
+        if not self.db:
+            return []
+        league = self.cur() if league is None else league
+        try:
+            with self.lock:
+                rows = self.db.execute("SELECT base, price_div, sids FROM listings WHERE league=? ORDER BY seen DESC "
+                                       "LIMIT ?", (league, int(limit))).fetchall()
+        except Exception:
+            return []
+        out = []
+        for base, price, sids in rows:
+            if price is None:
+                continue
+            try:
+                out.append((base, float(price), set(json.loads(sids))))
+            except (TypeError, ValueError):
+                continue
+        return out
+
     def stats(self, league=None):
         """{(base, sid): {n, med, lift, tier}}.  lift = median ask of listings WITH the mod / median ask of listings
         WITHOUT it (same base), so a mod that merely appears on everything scores about 1.  A mod counts as 'high' when

@@ -18,8 +18,29 @@ with the next step, the mods it found with their letters, and why. It never sear
 own price check.
 
 KINDS is the per-kind data (types, the craft steps, the words) - the game will change these at 1.0 and between
-leagues, so they live in one table, not in the page code."""
+leagues, so they live in one table, not in the page code.
+
+Phase 3 (2.125.5):
+  - The data pack, crafthelper.json (the kinds, the market letters, the counts), is shipped with the app and kept
+    up to date from GitHub (one small public download, at most twice a day while the Craft Helper is open, nothing
+    sent about you), so a new game patch's types and steps don't wait for an app update. Its "patch" says which game
+    patch it was made for. The newest copy wins; KINDS is updated in place (other modules hold it).
+  - Learned mod pairs: two mods that sell well TOGETHER on your own price checks' listings (this league), clearly
+    above either mod alone - pairs(). They get one letter (no prices), and a checked item carrying a good pair
+    counts it in its verdict."""
+import json
+import os
+import statistics
+import time
+
 from . import mods as M
+from .config import APP_UA, APP_DIR, RESOURCE_DIR, P, SETTINGS, save_json
+
+FILE = "crafthelper.json"
+SCHEMA = 1
+REPO = "tiwomm/StashOfExile2"
+LIVE_URL = f"https://raw.githubusercontent.com/{REPO}/main/{FILE}"
+LIVE_EVERY = 12 * 3600
 
 KINDS = {
     "tablet": {
@@ -46,6 +67,116 @@ SOURCE_WORD = {"you": "you", "players": "players", "market": "market", "default"
                "none": "not enough data yet"}
 LIFT_TIERS = ((3.0, "S"), (2.0, "A"), (1.5, "B"), (1.2, "C"))     # market: x the kind's middle price -> letter
 MARKET_MIN_N = 12
+PAIR_MIN_N = 6                         # listings with both mods before a pair says anything
+PAIR_GAIN = 1.3                        # ... and together they must ask this much more than the better one alone
+
+_BUILTIN = {"kinds": json.loads(json.dumps(KINDS)), "lift_tiers": [list(t) for t in LIFT_TIERS],
+            "market_min_n": MARKET_MIN_N, "pair_min_n": PAIR_MIN_N, "pair_gain": PAIR_GAIN}
+_PACK = {"key": None, "data": None}
+
+
+def _read(path):
+    try:
+        with open(path, encoding="utf-8") as f:
+            d = json.load(f)
+    except (OSError, ValueError):
+        return None
+    return d if _valid(d) else None
+
+
+def _valid(d):
+    """A data pack the app can use: every kind with a label, its types and its steps."""
+    if not isinstance(d, dict) or not isinstance(d.get("kinds"), dict):
+        return False
+    for k, v in d["kinds"].items():
+        if k not in _BUILTIN["kinds"] or not isinstance(v, dict):
+            return False
+        if not isinstance(v.get("types", []), list) or not isinstance(v.get("flow", []), list):
+            return False
+        if any(not (isinstance(f, (list, tuple)) and len(f) == 2) for f in v.get("flow", [])):
+            return False
+    return True
+
+
+def _newness(d):
+    return d.get("schema", 1), d.get("revision", 0)
+
+
+def pack():
+    """-> the newest data pack (fetched, or shipped with the app)."""
+    paths = (P(FILE), os.path.join(RESOURCE_DIR, FILE), os.path.join(APP_DIR, FILE))
+    key = tuple((p, os.path.getmtime(p)) for p in paths if os.path.isfile(p))
+    if _PACK["key"] == key and _PACK["data"] is not None:
+        return _PACK["data"]
+    best = None
+    for p in paths:
+        d = _read(p)
+        if d and d.get("schema", 1) <= SCHEMA and (best is None or _newness(d) > _newness(best)):
+            best = d
+    best = best or dict(_BUILTIN, schema=SCHEMA, revision=0, patch="?")
+    _PACK.update(key=key, data=best)
+    _apply(best)
+    return best
+
+
+def _apply(d):
+    """The pack's values into KINDS (in place - other modules hold it) and the market numbers."""
+    global LIFT_TIERS, MARKET_MIN_N, PAIR_MIN_N, PAIR_GAIN
+    kinds = {}
+    for k, base in _BUILTIN["kinds"].items():
+        v = dict(base)
+        for f, val in ((d.get("kinds") or {}).get(k) or {}).items():
+            v[f] = tuple(tuple(x) for x in val) if f == "flow" else tuple(val) if f == "types" else val
+        if not isinstance(v["types"], tuple):
+            v["types"] = tuple(v["types"])
+        if not isinstance(v["flow"], tuple) or (v["flow"] and not isinstance(v["flow"][0], tuple)):
+            v["flow"] = tuple(tuple(x) for x in v["flow"])
+        kinds[k] = v
+    KINDS.clear()
+    KINDS.update(kinds)
+    try:
+        LIFT_TIERS = tuple((float(a), str(b)) for a, b in d.get("lift_tiers") or _BUILTIN["lift_tiers"])
+        MARKET_MIN_N = int(d.get("market_min_n") or _BUILTIN["market_min_n"])
+        PAIR_MIN_N = int(d.get("pair_min_n") or _BUILTIN["pair_min_n"])
+        PAIR_GAIN = float(d.get("pair_gain") or _BUILTIN["pair_gain"])
+    except (TypeError, ValueError):
+        pass
+
+
+def pack_line():
+    """The data pack in one line, for the page."""
+    d = pack()
+    return f"Data pack: game patch {d.get('patch', '?')} · revision {d.get('revision', 0)}"
+
+
+def fetch_live(get=None, force=False, now=None):
+    """Check GitHub for a newer data pack. -> ("new", line) / ("same", line) / ("skip", "") / ("error", why).
+    One small public download; nothing is sent about you."""
+    now = now or time.time()
+    c = SETTINGS.setdefault("crafthelper", {})
+    if not force and now - float(c.get("checked", 0) or 0) < LIVE_EVERY:
+        return "skip", ""
+    if get is None:
+        import requests
+        get = requests.get
+    try:
+        r = get(LIVE_URL, headers={"User-Agent": APP_UA}, timeout=15)
+        if r.status_code != 200:
+            return "error", f"GitHub answered {r.status_code}."
+        d = r.json()
+    except Exception as e:
+        return "error", f"Could not reach GitHub ({e.__class__.__name__})."
+    c["checked"] = now
+    if not _valid(d):
+        return "error", "The data pack on GitHub could not be read."
+    if d.get("schema", 1) > SCHEMA:
+        return "error", "The newest data pack needs a newer version of the app - update it."
+    if _newness(d) <= _newness(pack()):
+        return "same", pack_line()
+    save_json(FILE, d)
+    _PACK["key"] = None
+    pack()
+    return "new", pack_line()
 
 
 def type_of(kind, base):
@@ -225,7 +356,7 @@ VERDICTS = {
 }
 
 
-def verdict(kind, text, letters):
+def verdict(kind, text, letters, pair_lines=()):
     """A copied tablet / jewel -> {"key", "mark", "word", "tone", "next", "why"}. letters = the S-F letter of each mod
     found on it ("-" = no rating yet). Good = S or A. Corrupted items can't be crafted on: price or vendor."""
     from .moneymakers import tablet_rarity
@@ -267,4 +398,109 @@ def verdict(kind, text, letters):
     why = (f"{good} of {n} mod{'s' if n != 1 else ''} rated S or A" if n else f"No mods yet - a white {one}")
     if unrated:
         why += f"; {unrated} not rated yet (right-click it in the list to rate it)"
+    for pl in pair_lines:                                # 2.125.5: learned pairs it carries
+        why += f"; {pl}"
     return {"key": key, "mark": mark, "word": word, "tone": tone, "next": nxt, "why": why + "."}
+
+
+# ---------------------------------------------------------------- 2.125.5: learned mod pairs
+_PAIRS = {"key": None, "data": {}}
+
+
+def pairs(kind, rows=None, now=None):
+    """Two mods that sell well TOGETHER on your price checks' listings of this kind (this league) ->
+    [{"a", "b" (stat ids), "letter", "lift", "gain", "n", "lo", "hi", "base_n"}], best first.
+    lift = the middle ask of listings with both / the middle ask of that base's listings; gain = with both / with the
+    better one alone. A pair counts with PAIR_MIN_N+ listings, a gain of PAIR_GAIN+ and a letter of B or better.
+    Worked out per base, the pair's best showing kept. Cached for a minute."""
+    if rows is None:
+        now = now or time.time()
+        from .market import MARKET
+        key = (kind, MARKET.cur(), int(now // 60))
+        if _PAIRS["key"] == key:
+            return _PAIRS["data"]
+        rows = MARKET.listing_rows()
+    else:
+        key = None
+    by_base = {}
+    for base, price, sids in rows:
+        if _is_kind(kind, base) and price > 0:
+            by_base.setdefault(base, []).append((price, sids))
+    best = {}
+    for base, items in by_base.items():
+        if len(items) < PAIR_MIN_N * 2:
+            continue
+        mid = statistics.median(p for p, _s in items)
+        if mid <= 0:
+            continue
+        one, two = {}, {}
+        for price, sids in items:
+            ss = sorted(sids)
+            for s_ in ss:
+                one.setdefault(s_, []).append(price)
+            for i in range(len(ss)):
+                for j in range(i + 1, len(ss)):
+                    two.setdefault((ss[i], ss[j]), []).append(price)
+        for (a, b), ps in two.items():
+            if len(ps) < PAIR_MIN_N:
+                continue
+            med = statistics.median(ps)
+            alone = max(statistics.median(one[a]), statistics.median(one[b]))
+            gain = med / max(alone, 1e-9)
+            lift = med / mid
+            letter = _letter(lift)
+            if gain < PAIR_GAIN or _rank(letter) > _rank("B"):
+                continue
+            k = (a, b)
+            if k not in best or lift > best[k]["lift"]:
+                best[k] = {"a": a, "b": b, "letter": letter, "lift": round(lift, 2), "gain": round(gain, 2),
+                           "n": len(ps), "base_n": len(items), "base": type_of(kind, base) or kind}
+    out = sorted(best.values(), key=lambda r: (_rank(r["letter"]), -r["lift"], -r["n"]))
+    if key is not None:
+        _PAIRS.update(key=key, data=out)
+    return out
+
+
+def pair_text(kind, pr, names=None):
+    """A pair -> "mod one + mod two" in the regex data's words (the stat id when its words aren't known)."""
+    names = names if names is not None else sid_names(kind)
+    return f"{names.get(pr['a'], pr['a'])} + {names.get(pr['b'], pr['b'])}"
+
+
+def pair_how(pr):
+    """How a pair's letter was worked out, in one line (no prices)."""
+    return (f"{pr['n']} of {pr['base_n']} listings ({pr['base']}) have both: they ask {pr['lift']:g}x that kind's "
+            f"middle price, {pr['gain']:g}x the better mod alone. Rated {pr['letter']} from your price checks, "
+            "this league.")
+
+
+def sid_names(kind):
+    """Stat id -> the mod's words, for this kind's mods."""
+    from . import regex as R
+    out = {}
+    try:
+        R.load()
+        for m in R.mods(kind):
+            sid = _sid(m["line"])
+            if sid and sid not in out:
+                out[sid] = m["text"]
+    except Exception:
+        pass
+    return out
+
+
+def item_pairs(kind, mod_ids, plist=None):
+    """The learned pairs a checked item carries (its regex-data mod ids) -> [pair], best first."""
+    from . import regex as R
+    by = R.by_id(kind)
+    sids = {_sid(by[i]["line"]) for i in mod_ids if i in by}
+    sids.discard(None)
+    plist = plist if plist is not None else pairs(kind)
+    return [p for p in plist if p["a"] in sids and p["b"] in sids]
+
+
+try:                                                     # the data pack's values from the start
+    pack()
+except Exception:
+    pass
+

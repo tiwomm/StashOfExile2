@@ -429,7 +429,8 @@ class CampaignUI:
         self.camp_act_cb = None
         if names:
             self.camp_act_var = tk.StringVar(value=CP.act_name(self.camp_view))
-            cb = ttk.Combobox(top, values=names, textvariable=self.camp_act_var, state="readonly", width=12)
+            cb = self.ov_combo(ttk.Combobox(top, values=names, textvariable=self.camp_act_var, state="readonly",
+                                            width=12))
             # 2.124.0: after the list has closed - the card is built again, and the list went with it while its
             # own dropdown still held the mouse
             cb.bind("<<ComboboxSelected>>", lambda e: self.root.after(1, lambda: self.camp_route_show(

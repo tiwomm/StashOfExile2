@@ -1302,7 +1302,7 @@ class App(SettingsPage, GearBookPage, PriceCheckPage, PricePopup, FavoritesPage,
             if mode == "auto":
                 self.info_card(f"Updating to version {pretty_version(tag)} (auto-update is on in Settings). The app restarts "
                                "by itself when the download is done.", secs=60)
-                self._download_update(asset)
+                self._download_update(asset, tag)
             else:
                 self.info_card(f"Version {pretty_version(tag)} is available (you have {pretty_version()}).",
                                [("Update now", lambda: self.check_updates("ask")), ("Settings", lambda: self.shell.open("settings"))],
@@ -1335,20 +1335,36 @@ class App(SettingsPage, GearBookPage, PriceCheckPage, PricePopup, FavoritesPage,
                                    f"Download {asset['name']} ({mb:.1f} MB) now?\n{verify}\n{how}"):
             self._say("Update skipped.")
             return
-        self._download_update(asset)
+        self._download_update(asset, tag)
 
-    def _download_update(self, asset):
-        self._upd_busy = True
+    def _download_update(self, asset, tag=""):
+        """2.125.5 (feedback: some players updated twice in a row): the version was picked when the update was
+        offered - and the question could sit open while a newer version came out, so they got the older one, then
+        were offered the newer one straight after. Now GitHub is asked again just before the download, and the newest
+        version is the one fetched. Only one download at a time, and none once one is being installed."""
+        if getattr(self, "_upd_installing", False) or getattr(self, "_upd_downloading", False):
+            return
+        self._upd_busy = self._upd_downloading = True
         self.upd_btn.config(state="disabled")
         base = APP_DIR
-        dest = os.path.join(base, ("StashOfExile2_update.exe" if FROZEN and sys.platform == "win32" else asset["name"]))
 
         def work():
+            use, use_tag = asset, tag
+            try:
+                kind, data = latest_release(preview=bool(SETTINGS.get("update_preview")))
+                if kind == "ok" and is_newer(data.get("tag_name", ""), use_tag or APP_VERSION):
+                    newer = pick_asset(data)
+                    if newer:
+                        use, use_tag = newer, data.get("tag_name", "")
+            except Exception:
+                buglog.caught()
+            dest = os.path.join(base, ("StashOfExile2_update.exe" if FROZEN and sys.platform == "win32" else use["name"]))
+
             def prog(got, total):
                 self.status_text = f"Downloading the update... {got * 100 // total if total else 0}%"
                 self.status_until = time.time() + 5
-            ok, msg, verified = download_asset(asset, dest, prog)
-            self.ui_q.put(("update_downloaded", ok, msg, dest, verified))
+            ok, msg, verified = download_asset(use, dest, prog)
+            self.ui_q.put(("update_downloaded", ok, msg, dest, verified, use_tag if use_tag != tag else ""))
         threading.Thread(target=work, daemon=True).start()
 
     # ---------------- 2.31.0: the community Mod book (communitymods.py)
@@ -1513,8 +1529,14 @@ class App(SettingsPage, GearBookPage, PriceCheckPage, PricePopup, FavoritesPage,
     def cm_share_changed(self):
         self.cm_set_sharing(bool(self.cm_share_var.get()), say=False)
 
-    def ev_update_downloaded(self, ok, msg, dest, verified):
-        self._upd_done()
+    def ev_update_downloaded(self, ok, msg, dest, verified, newer=""):
+        self._upd_downloading = False
+        if newer:
+            self._say(f"Version {pretty_version(newer)} came out meanwhile - installing that one instead.", 10)
+        if ok and FROZEN and sys.platform == "win32":     # (2.125.5: still busy - it's being installed)
+            self._upd_installing = True
+        else:
+            self._upd_done()
         if not ok and getattr(self, "_upd_mode", "ask") == "auto":
             self.info_card("Auto-update: the download failed, nothing was changed. " + msg, secs=60)
             return
@@ -1545,10 +1567,14 @@ class App(SettingsPage, GearBookPage, PriceCheckPage, PricePopup, FavoritesPage,
                     self._say("Installing the update - waiting for Windows to finish checking the file…")
                 self.root.after(500, lambda: self._upd_start_new(dest, old, n + 1))
                 return
+            self._upd_installing = False
+            self._upd_done()
             messagebox.showerror("Update", f"The new version was downloaded to:\n{dest}\n\nbut could not be installed automatically ({e}).\n"
                                            "Close this program and replace the old file with it yourself.")
             return
         except Exception as e:
+            self._upd_installing = False
+            self._upd_done()
             messagebox.showerror("Update", f"The new version was downloaded to:\n{dest}\n\nbut could not be installed automatically ({e}).\n"
                                            "Close this program and replace the old file with it yourself.")
             return
@@ -4346,7 +4372,9 @@ class App(SettingsPage, GearBookPage, PriceCheckPage, PricePopup, FavoritesPage,
                 if it.get("ilvl"):
                     y = self._card_opt_row(cv, rec, "ilvl", f"Item level: {it['ilvl']}", it["ilvl"], y, w)
                 if it.get("sockets"):
-                    y = self._card_opt_row(cv, rec, "sockets", f"Sockets: {it['sockets']}", it["sockets"], y, w)
+                    from .pcpop import socket_words
+                    y = self._card_opt_row(cv, rec, "sockets", f"Sockets: {it['sockets']}" + socket_words(it),
+                                           it["sockets"], y, w)
             # ---- requirements (folded at first)
             req = facts.get("req") or {}
             if req and section("REQUIREMENTS", "req", summary="  ·  ".join(f"{REQ_NAMES[k]} {v}" for k, v in req.items())):

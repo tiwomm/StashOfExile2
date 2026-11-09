@@ -1768,7 +1768,118 @@ class MoneyMakersPage:
         self.mm_tab_tree.bind("<Double-1>", lambda e: self.mm_tab_trade())
         self.mm_tab_tree.bind("<Button-3>", self.mm_tab_menu)
         self.mm_tab_rows = {}
+        # 2.125.5 (Craft Helper phase 3): learned mod pairs - two mods that sell well together
+        ph = tk.Frame(right, bg=P1)
+        ph.pack(fill="x", pady=(8, 4))
+        tk.Label(ph, text="PAIRS THAT SELL TOGETHER", bg=P1, fg=C["steel"], font=("Segoe UI", 9, "bold")).pack(side="left")
+        pi = tk.Label(ph, text="  Learned from your price checks.  ⓘ", bg=P1, fg=C["muted"], font=("Segoe UI", 9))
+        pi.pack(side="left")
+        Tooltip(pi, "Two mods whose listings ask clearly more together than the better mod alone (at least "
+                    f"{CH.PAIR_MIN_N} listings with both, {CH.PAIR_GAIN:g}x or more), from the listings your own "
+                    "price checks fetched this league. The letter comes from how far above that kind's middle price "
+                    "they ask - no prices are shown. Hover a pair for how it was worked out. A checked item with a "
+                    "pair rated S or A counts both mods as good.")
+        pbox = tk.Frame(right, bg=P1)
+        pbox.pack(fill="x")
+        pcols = (("tier", "Rating", 56, "center"), ("mods", "Mods", 450, "w"), ("from", "From", 170, "w"))
+        self.mm_ch_ptree = pt = ttk.Treeview(pbox, columns=[c[0] for c in pcols], show="headings", height=5,
+                                             selectmode="browse")
+        for cid, title, w, anchor in pcols:
+            pt.heading(cid, text=title)
+            pt.column(cid, width=w, minwidth=w if cid == "from" else 30, anchor=anchor, stretch=cid == "mods")
+        pt.tag_configure("good", foreground="#ffd9a8")
+        pt.tag_configure("plain", foreground=C["muted"])
+        pt.pack(side="left", fill="x", expand=True)
+        self.mm_ch_ptip = Tooltip(pt, "")
+        self.mm_ch_prow = None
+        pt.bind("<Motion>", self.mm_ch_pair_hover, add="+")
+        self.mm_ch_pempty = tk.Frame(right, bg=P1)
+        self.mm_ch_pempty_lbl = tk.Label(self.mm_ch_pempty, text="", bg=P1, fg=C["muted"], font=("Segoe UI", 9),
+                                         anchor="w", justify="left")
+        self.mm_ch_pempty_lbl.pack(side="left")
+        ttk.Button(self.mm_ch_pempty, text="Open Price Checks", style="Quiet.TButton",
+                   command=lambda: self.shell.open("pricecheck")).pack(side="left", padx=(8, 0))
+        self.mm_ch_pairs = {}
+        # 2.125.5: the data pack (kinds, steps, market numbers) - shipped, and kept up to date from GitHub
+        pk = tk.Frame(left, bg=C["panel2"])
+        pk.pack(fill="x", side="bottom", pady=(12, 0))
+        self.mm_ch_pack_lbl = tk.Label(pk, text=CH.pack_line(), bg=C["panel2"], fg=C["muted"], font=("Segoe UI", 9),
+                                       anchor="w")
+        self.mm_ch_pack_lbl.pack(side="left")
+        Tooltip(self.mm_ch_pack_lbl, "The Craft Helper's data (types, steps, how the market picks a letter) for the "
+                                     "game patch shown. It updates from GitHub on its own - one small public "
+                                     "download, nothing about you is sent.")
+        cb_ = ttk.Button(pk, text="Check for a newer one", style="Quiet.TButton",
+                         command=lambda: self.mm_ch_pack_check(True))
+        cb_.pack(side="right")
         self.mm_ch_paint()
+        self.root.after(1500, lambda: self.mm_ch_pack_check(False))
+
+    def mm_ch_pack_check(self, force):
+        """2.125.5: a newer Craft Helper data pack on GitHub? (at most twice a day unless asked)"""
+        from . import crafthelper as CH
+        if getattr(self, "_mm_ch_checking", False):
+            return
+        self._mm_ch_checking = True
+        if force:
+            self.mm_ch_pack_lbl.config(text="Checking GitHub…")
+        self.run_bg(lambda: CH.fetch_live(force=force), lambda res: self.mm_ch_pack_done(res, force))
+
+    def mm_ch_pack_done(self, res, force):
+        from . import crafthelper as CH
+        self._mm_ch_checking = False
+        what, info = res
+        if what != "skip":
+            save_json("settings.json", SETTINGS)
+        try:
+            if what == "new":
+                self.mm_ch_pack_lbl.config(text=f"Updated - {info}")
+                self.mm_ch_pick(CH.KINDS[self.mm_ch_kind]["label"])
+            elif what == "error" and force:
+                self.mm_ch_pack_lbl.config(text=info)
+            else:
+                self.mm_ch_pack_lbl.config(text=CH.pack_line() + ("  (up to date)" if force else ""))
+        except tk.TclError:
+            pass
+
+    def mm_ch_pair_hover(self, e):
+        pt = self.mm_ch_ptree
+        row = pt.identify_row(e.y)
+        if row == self.mm_ch_prow:
+            return
+        self.mm_ch_prow = row
+        self.mm_ch_ptip._leave()
+        pr = self.mm_ch_pairs.get(row)
+        if pr:
+            from . import crafthelper as CH
+            self.mm_ch_ptip.text = CH.pair_how(pr)
+            self.mm_ch_ptip._enter()
+
+    def mm_ch_pairs_fill(self, kind, ttype, q):
+        from . import crafthelper as CH
+        pt = self.mm_ch_ptree
+        pt.delete(*pt.get_children())
+        self.mm_ch_pairs = {}
+        names = CH.sid_names(kind)
+        for i, pr in enumerate(CH.pairs(kind)):
+            if ttype not in ("All", "") and pr["base"] not in (ttype, kind):
+                continue
+            txt = CH.pair_text(kind, pr, names)
+            if q and q not in txt.lower():
+                continue
+            iid = f"p{i}"
+            pt.insert("", "end", iid=iid, tags=("good" if pr["letter"] in CH.GOOD else "plain",),
+                      values=(pr["letter"], txt[:1].upper() + txt[1:], f"price checks · {pr['n']} listings"))
+            self.mm_ch_pairs[iid] = pr
+        if self.mm_ch_pairs:
+            self.mm_ch_pempty.pack_forget()
+        else:
+            one = CH.KINDS[kind]["one"]
+            self.mm_ch_pempty_lbl.config(
+                text=("No pairs match the search." if q else
+                      f"No pairs yet: they're learned from the {one}s your price checks look up "
+                      f"({CH.PAIR_MIN_N}+ listings with both mods)."))
+            self.mm_ch_pempty.pack(fill="x", pady=(4, 0), after=pt.master)
 
     def mm_ch_pick(self, label):
         from . import crafthelper as CH
@@ -1838,6 +1949,10 @@ class MoneyMakersPage:
             tv.insert("", "end", iid=m["id"], tags=("good" if good else "plain",),
                       values=(r[0], txt[:1].upper() + txt[1:], where, m.get("side", ""), CH.source_text(r[1], r[2])))
             self.mm_tab_rows[m["id"]] = (m, good, r, sid)
+        try:
+            self.mm_ch_pairs_fill(kind, ttype, q)
+        except Exception:
+            self.log_error("the Craft Helper's pairs")
         if not self.mm_tab_rows:
             msg = (f"No {CH.KINDS[kind]['one']} mods rated S or A yet: right-click a mod to rate it, or turn off Only "
                    "S and A." if only and not q else "No mods match the search.")
@@ -1914,9 +2029,19 @@ class MoneyMakersPage:
         names = {m["id"]: m["text"] for m in R.mods(kind)}
         found = CH.item_mods(kind, text)                # (whole lines - the stash-search tokens over-matched)
         rated = {m["id"]: r for m, _g, r, _s in self.mm_tab_data(kind)}
-        good = [i for i in found if rated.get(i, ("-",))[0] in CH.GOOD]
         letters = [rated.get(i, ("-",))[0] for i in found]
-        v = CH.verdict(kind, text, letters)
+        # 2.125.5: a learned pair rated better than its mods lifts both to the pair's letter
+        by = R.by_id(kind)
+        sid_of = {i: CH._sid(by[i]["line"]) for i in found if i in by}
+        pl = CH.item_pairs(kind, found)
+        for pr in pl:
+            for n_, i in enumerate(found):
+                if sid_of.get(i) in (pr["a"], pr["b"]) and CH._rank(pr["letter"]) < CH._rank(letters[n_]):
+                    letters[n_] = pr["letter"]
+        pnames = CH.sid_names(kind)
+        v = CH.verdict(kind, text, letters,
+                       pair_lines=[f"{CH.pair_text(kind, pr, pnames)} sell as a pair (rated {pr['letter']})"
+                                   for pr in pl[:2]])
         advice = v["next"]
         lines = [advice, ""] + [f"{l}  " + names.get(i, i) for l, i in zip(letters, found)]
         self.mm_ch_vbox.pack(fill="x", pady=(8, 0))

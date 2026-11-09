@@ -512,6 +512,7 @@ def parse_gear(text):
     return {"class": cinfo.get("name") or g.get("class_text") or "Gear", "gear": True, "gclass": cls,
             "rarity": g["rarity"], "name": g["name"] or g["base"], "base": g["base"], "mods": totals + mods,
             "uses": None, "corrupted": bool(g.get("corrupted")), "quality": q, "sockets": g.get("sockets", 0),
+            "socket_types": g.get("socket_types") or "",              # 2.125.5: S augment, J jewel (the card says)
             "ilvl": g.get("ilvl"), "group_id": g.get("group"), "search": search, "notes": notes}
 
 

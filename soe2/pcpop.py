@@ -26,6 +26,13 @@ from tkinter import ttk
 from .config import SETTINGS, save_json
 from .style import C, MOD_COL
 
+def socket_words(it):
+    """2.125.5: an item's socket letters in words -> " (2 augment, 1 jewel)" or ""."""
+    t = it.get("socket_types") or ""
+    parts = [f"{n} {w}" for n, w in ((t.count("S"), "augment"), (t.count("J"), "jewel")) if n]
+    return f" ({', '.join(parts)})" if parts else ""
+
+
 KIND_COL = {"Implicit": "implicit", "Rune": "rune", "Enchant": "enchant", "Prefix": "explicit", "Suffix": "explicit",
             "Total": "pseudo"}
 W0, H0 = 430, 600                 # the first size (then yours)
@@ -397,7 +404,11 @@ class PricePopup:
             self._pcpop_props(inner, P, rec, it, body, head)
 
         # the mods searched (tick = searched; a click changes it, Search again runs it)
-        mods = [m for m in it.get("mods") or [] if m.get("text")]
+        every = [m for m in it.get("mods") or [] if m.get("text")]
+        mods = [m for m in every if m.get("kind") != "Rune"]
+        runes = [m for m in every if m.get("kind") == "Rune"]
+        if runes or "J" in (it.get("socket_types") or ""):
+            self._pcpop_socketed(inner, P, rec, it, runes, body, head)
         if mods:
             hr = tk.Frame(inner, bg=P["bg"])
             hr.pack(fill="x", padx=16, pady=(12, 2))
@@ -449,6 +460,40 @@ class PricePopup:
         self._pcpop_btn("Trade site", self.pc_open_trade, enabled=bool(rec.get("qid"))).pack(side="left", padx=(8, 0))
         self._pcpop_btn("Open in app", lambda: self._pcpop_in_app(rec)).pack(side="right")
         self.root.after_idle(lambda: self._pcpop_after(top))
+
+    def _pcpop_socketed(self, inner, P, rec, it, runes, body, head):
+        """2.125.5 (feedback: "it doesn't say slots or show what is in them"): what's in the item's sockets - the
+        game's copy gives each socketed rune / soul core / talisman's effect, marked (rune), but not its name, so
+        those effects are listed here (tick one to search it); a jewel socket says it's there."""
+        from .style import Tooltip
+        hr = tk.Frame(inner, bg=P["bg"])
+        hr.pack(fill="x", padx=16, pady=(12, 2))
+        tk.Label(hr, text="SOCKETED", bg=P["bg"], fg=P["head"], font=(head, 9, "bold")).pack(side="left")
+        info = tk.Label(hr, text=(socket_words(it).strip(" ()") or "") + "  ⓘ", bg=P["bg"], fg=P["muted"],
+                        font=(body, 9))
+        info.pack(side="left", padx=(8, 0))
+        Tooltip(info, "What the item's sockets hold. The game's copy (Ctrl+C) lists what each socketed rune, soul "
+                      "core or talisman does - not its name - and nothing about a socketed jewel. Socketed effects "
+                      "can be swapped, so they aren't searched unless you tick one.")
+        ticked = {id(m) for m in self.pc_ticked(rec)}
+        for m in runes:
+            row = tk.Frame(inner, bg=P["bg"])
+            row.pack(fill="x", padx=16)
+            on, can = id(m) in ticked, bool(m.get("sid"))
+            cb = tk.Label(row, text=("☑" if on else "☐") if can else "◆", bg=P["bg"],
+                          fg=P["accent"] if on else P["muted"], font=("Segoe UI Symbol", 10), cursor="hand2" if can else "")
+            cb.pack(side="left", anchor="n")
+            tl = tk.Label(row, text=m.get("shown") or m["text"], bg=P["bg"],
+                          fg=ink(MOD_COL["rune"], P["bg"]) if on or not can else P["muted"], font=(body, 10),
+                          anchor="w", justify="left", cursor="hand2" if can else "")
+            tl.pack(side="left", fill="x", expand=True, padx=(4, 0))
+            self.pp_wraps.append(tl)
+            if can:
+                for wdg in (cb, tl):
+                    wdg.bind("<Button-1>", lambda e, mm=m, o=on: self._pcpop_tick(rec, mm, not o))
+        if "J" in (it.get("socket_types") or ""):
+            tk.Label(inner, text="◇ A jewel socket - the game's copy doesn't say which jewel is in it.", bg=P["bg"],
+                     fg=P["muted"], font=(body, 9), anchor="w", justify="left").pack(fill="x", padx=16)
 
     def _pcpop_btn(self, text, cmd, primary=False, enabled=True):
         """A button in the overlay's Style (not the app theme's): the main one filled with its accent."""
@@ -547,7 +592,7 @@ class PricePopup:
         if it.get("quality"):
             rows.append(("quality", f"Quality: +{it['quality']}%", it["quality"]))
         if it.get("sockets"):
-            rows.append(("sockets", f"Sockets: {it['sockets']}", it["sockets"]))
+            rows.append(("sockets", f"Sockets: {it['sockets']}" + socket_words(it), it["sockets"]))
         hr = tk.Frame(inner, bg=P["bg"])
         hr.pack(fill="x", padx=16, pady=(12, 2))
         tk.Label(hr, text="PROPERTIES", bg=P["bg"], fg=P["head"], font=(head, 9, "bold")).pack(side="left")

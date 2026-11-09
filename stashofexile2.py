@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU GPL v3.0 (see LICENSE). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.125.4
+VERSION 2.125.5
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,6 +19,30 @@ VERSION 2.125.4
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.125.5
+       Feedback: some players got two updates in a row. The version to install was picked when the update was offered
+       (the "Update available" question, a card's Install now) - left open while a newer version came out, the older
+       one was fetched, and the newer one was offered straight after the restart. _download_update now asks GitHub
+       again just before the download and fetches the newest (it says so when that's a newer one); only one download
+       runs at a time, and nothing else starts while one is being installed (_upd_installing - 2.125.2's retries
+       for Windows' scanner could leave a gap for a second one).
+       Feedback: "ALL tools that open over the game ... should follow these rules for styling matching". The buttons
+       and lists on cards over the game (route card, Vendor search, Rank this map, Regex favorites, Well of Souls)
+       were the app's (its orange Primary and blue buttons, drawn from images); ov_btn now gives them the overlay
+       style's colors and font on a plain frame (the picked one: the style's accent edge, bold), and ov_combo the
+       lists (field and dropdown). A style change rebuilds the open route card (its page, act, spot and size),
+       Vendor search and the price check card (ov_cards_restyle), as Calc, Regex favorites and Rates already were.
+       Feedback (a player): the price check card "doesn't say slots or show what is in them". Sockets: 2 (1
+       augment, 1 jewel); a SOCKETED part lists what the socketed runes / soul cores / talismans do (the game's copy
+       gives their effects, marked (rune), not their names - those lines moved out of MODS SEARCHED, still tickable),
+       and says when there's a jewel socket (the copy says nothing of the jewel in it).
+       Craft Helper phase 3: its data pack, crafthelper.json (each kind's types and steps, how the market picks a
+       letter), ships with the app and updates from GitHub - at most twice a day while the page is open, one small
+       public download, nothing about you sent - with "Data pack: game patch 0.5 · revision 1" and Check for a newer
+       one on the page. Learned mod pairs: two mods whose listings (your price checks', this league) ask clearly more
+       together than the better one alone (6+ listings with both, 1.3x+), with a letter from how far over the kind's
+       middle price they ask - no prices; hover one for how it was worked out. A checked item carrying a pair rated
+       better than its mods counts both at the pair's letter, and the verdict says so.
   2.125.4
        Feedback on the route card: "the act selection dropdown needs to be on the right" - it's now right of Routes ▾
        and Options ▾. Routes ▾ "needs some visual hierarchy ... for division of selectable options": each route is its
@@ -3126,7 +3150,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.125.4"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.125.5"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
