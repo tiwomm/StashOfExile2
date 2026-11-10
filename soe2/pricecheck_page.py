@@ -615,6 +615,10 @@ class PriceCheckPage:
         want - Settings › Keybinds)."""
         from .wealth import parse_currency_item
         cur = parse_currency_item(text)
+        try:                                             # 2.131.0: an item in your open inventory - Top Up
+            self.topup_copy_learn(text)                  # learns it (and it's priced as usual)
+        except Exception:
+            buglog.caught()
         try:                                             # 2.128.0: a Favours reward - learn what it looks like
             self.favours_copy_learn(text)                # (2.129.3: exchange items, and ★ uniques - never priced)
         except Exception:

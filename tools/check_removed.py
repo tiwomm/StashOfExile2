@@ -25,6 +25,8 @@ DOCS = ("README.md", "TOS.md", "linux/README.md", "themes/README.md", "strats/RE
 
 # (version, what it was, words a person read, names in the code / settings keys[, pending])
 REMOVED = [
+    ("2.131.0", "the campaign's 4th route (your last run's zone order) - Full, Speedrun and Rush (carry) stay",
+     ("My Own",), ()),
     ("2.131.0", "the single Show beta features switch (Features has a Beta cluster); the quick start's sharing page "
                 "(the Feature Picker asks)", ("Show beta features (marked BETA)", "Share with the community?"),
      ("on_labs", "labs_var", "set_labs", "SHARE_PAGE", "qs_share_row")),

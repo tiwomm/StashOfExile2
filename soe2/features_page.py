@@ -46,7 +46,9 @@ class FeaturesPage:
                 self.ws_stop()
             except Exception:
                 buglog.caught()
-        elif self.ritual_cfg().get("on"):
+        else:
+            self.topup_start()                              # 2.131.0: Top Up (it stops itself when off)
+        if FEAT.on("overlay") and self.ritual_cfg().get("on"):
             try:
                 self.ritual_start()
             except Exception:

@@ -24,13 +24,12 @@ SCHEMA = 1
 REPO = "tiwomm/StashOfExile2"
 LIVE_URL = f"https://raw.githubusercontent.com/{REPO}/main/{FILE}"
 GAP = 15 * 60                     # a longer gap between two log lines isn't counted in a split (away, or closed)
-ROUTES = (("full", "Full"), ("speed", "Speedrun"), ("rush", "Rush (carry)"), ("mine", "My Own"))   # (2.125.3 names)
+ROUTES = (("full", "Full"), ("speed", "Speedrun"), ("rush", "Rush (carry)"))   # (2.125.3 names; 2.131.0: no 4th)
 # 2.125.0 (feedback: "a rush/carry helper ... in the perspective of the person giving the carry"): each route in one line
 ROUTE_LINES = {"full": "Every passive point, spirit and resistance, with the side zones that give them.",
                "speed": "The main story. Skips side zones and most extras; keeps the rewards worth the time.",
                "rush": "You're carrying someone: what to clear, when to bring them in, what they pick up and who they "
-                       "talk to.",
-               "mine": "The zones in the order you went last time."}
+                       "talk to."}
 KIND_NAMES = {"points": "passive points", "spirit": "spirit", "res_cold": "cold res", "res_fire": "fire res",
               "res_lightning": "lightning res", "life": "life", "mana": "mana", "other": "other"}
 SHORT_GIVES = {"points": "+{n} points", "spirit": "+{n} spirit", "res_cold": "+{n}% cold", "res_fire": "+{n}% fire",
@@ -48,7 +47,6 @@ DEFAULTS = {
     "off_at_maps": True,          # turn itself off once you reach maps
     "chars": {},                  # character -> its run (see char())
     "best": {},                   # league -> {act key: seconds}
-    "mine": {},                   # act key -> [zone] (My Own route: your last finished act)
     "learned": {},                # act key -> [{zone, after, level}] zones the guide didn't know
     "notes": {},                  # zone (norm) -> your note
     "optional_zones": [],         # zones you marked optional
@@ -63,6 +61,13 @@ def cfg():
     for k, v in DEFAULTS.items():
         if k not in c:                                   # 2.125.4: copied only when missing (it ran on every call)
             c[k] = copy.deepcopy(v)
+    if "mine" in c:                                      # 2.131.0: the 4th route is gone - a run on it is on Full
+        c.pop("mine", None)
+        if c.get("route") not in dict(ROUTES):
+            c["route"] = "full"
+        for run in (c.get("chars") or {}).values():
+            if isinstance(run, dict) and run.get("route") not in (None, *dict(ROUTES)):
+                run["route"] = "full"
     return c
 
 
@@ -259,11 +264,6 @@ def steps(act_key, run=None, route=None, optional=None):
     for s in rows:
         if norm(s["zone"]) in marked:
             s["optional"] = True
-    if route == "mine" and c["mine"].get(act_key):
-        order = [norm(z) for z in c["mine"][act_key]]
-        pos = {z: i for i, z in enumerate(order)}
-        rows = [s for _k, s in sorted(((pos.get(norm(s["zone"]), len(order) + j), s) for j, s in enumerate(rows)),
-                                      key=lambda t: t[0])]
     if route == "speed":
         rows = [s for s in rows if not s.get("side") and not (s.get("speed") or {}).get("skip")]
         for s in rows:
@@ -369,7 +369,7 @@ def asks(run=None):
 
 
 def _close_act(run, key, now):
-    """Leaving an act for a later one: its split, My Own route, and the rewards to ask about."""
+    """Leaving an act for a later one: its split and the rewards to ask about."""
     c = cfg()
     secs = run["secs"].get(key)
     if secs:
@@ -377,8 +377,6 @@ def _close_act(run, key, now):
         b = c["best"].setdefault(league, {})
         if key not in b or secs < b[key]:
             b[key] = round(secs)
-    if run["seen"].get(key):
-        c["mine"][key] = list(run["seen"][key])
     seen = set(_seen(run, key))
     speed = route_of(run) in ("speed", "rush")
     for r in rewards(key):
