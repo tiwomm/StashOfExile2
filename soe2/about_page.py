@@ -132,7 +132,7 @@ class AboutPage:
         tk.Label(head, text=TAGLINE, bg=C["panel2"], fg=C["accent"], font=(FONT_TITLE, 12, "italic"),
                  anchor="w").pack(fill="x")                                               # 2.73.2
         tk.Label(head, text=f"Version {pretty_version()}  ·  a toolkit for Path of Exile 2  ·  free and open source "
-                            "(GPL-3.0)", bg=C["panel2"], fg=C["muted"], anchor="w").pack(fill="x")
+                            "(AGPL-3.0)", bg=C["panel2"], fg=C["muted"], anchor="w").pack(fill="x")
         btns = tk.Frame(head, bg=C["panel2"])
         btns.pack(fill="x", pady=(8, 0))
         self.about_discord = tk.Label(btns, text="  💬  Join the Discord  ", bg=DISCORD, fg="#ffffff", cursor="hand2",
@@ -167,7 +167,7 @@ class AboutPage:
                  anchor="w").pack(fill="x")
         for line in (
                 "Written with AI (Claude), and open about it. Anyone may use it, change it and share it under the "
-                "GPL-3.0 license.",
+                "AGPL-3.0 license - and anything made from it stays open source too.",
                 "It only reads your clipboard, the game's log file (Client.txt) and your screen - never the game's "
                 "memory - and it respects the trade site's limits. One key press = one action.",
                 "Prices come from the official trade site and poe.ninja. Not affiliated with or endorsed by Grinding "
