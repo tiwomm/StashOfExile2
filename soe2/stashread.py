@@ -257,9 +257,11 @@ def read_tab(bgr, game_h, want):
     if spot["tab"] != want:                       # close call: redo the spot for the tab you named
         spot = locate(bgr, game_h, tabs=(want,))
     k, ox, oy = spot["k"], spot["x"], spot["y"]
-    items, unread, icons = [], [], {}
+    items, unread, icons, pics = [], [], {}, {}
     for name, (x, y, w, h) in TABS[want]["slots"]:
         r = (ox + round(x * k), oy + round(y * k), round(w * k), round(h * k))
+        if filled(bgr, r) and w == h:              # 2.129.0: an item's look, for Favours prices (one-cell slots)
+            pics[name] = bgr[r[1]:r[1] + r[3], r[0]:r[0] + r[2]].copy()
         if not filled(bgr, r):
             n = read_number(bgr, r, k, sure=SURE)    # 2.114.2: an item that covers its whole slot (a Weathered
             if n:                                    # Crisis Fragment) hides the backing - a clear number still counts
@@ -288,7 +290,7 @@ def read_tab(bgr, game_h, want):
         else:
             wild.append((n, ic))
     return {"ok": True, "tab": want, "seen": want, "items": items, "unread": unread, "why": "",
-            "icons": icons, "wild": wild}
+            "icons": icons, "wild": wild, "pics": pics}
 
 
 def match_wild(wild, icons, keep=False):

@@ -118,6 +118,19 @@ def _shortcuts_2126(S):
     S.pop("model_shortcut", None)
 
 
+def _favours_art_2129(S):
+    """2.129.0: Favours prices no longer use poe.ninja's official art - the pictures 2.128 downloaded (art/ninja in
+    the data folder) and the first learned file (whole cells) go."""
+    import os
+    import shutil
+    from .config import P
+    shutil.rmtree(os.path.join(P("art"), "ninja"), ignore_errors=True)
+    try:
+        os.remove(P("favour_icons.json"))
+    except OSError:
+        pass
+
+
 def _leftovers_2126(S):
     """2.126.0: settings left behind by features removed earlier (one-key copy and "Other ways of copying",
     2.98.3) - nothing reads them."""
@@ -138,6 +151,7 @@ STEPS = (
     ("pc_settings_2125", "2.125.5", "settings", _pc_settings_2125, None),
     ("shortcuts_2126", "2.125.6", "settings", _shortcuts_2126, None),
     ("leftovers_2126", "2.126.0", "settings", _leftovers_2126, None),
+    ("favours_art_2129", "2.129.0", "settings", _favours_art_2129, None),
 )
 
 

@@ -117,6 +117,14 @@ class StashScanPage:
         threading.Thread(target=work, daemon=True).start()
 
     def ev_stash_scan_done(self, tab, res):
+        if res.get("ok") and res.get("pics"):        # 2.129.0 (feedback: "we have the omen pictures from the stash
+            try:                                     # scan"): each slot's picture teaches Favours prices that item
+                from . import favours as FV
+                n = FV.learn_many(res["pics"])
+                if n:
+                    threading.Thread(target=lambda: self.favours_refs(fetch=False), daemon=True).start()
+            except Exception:
+                self.log_error("Favours pictures from the stash scan")
         ss = self.ss
         if not ss or ORDER[ss["i"]] != tab:
             return

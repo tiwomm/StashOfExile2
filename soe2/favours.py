@@ -7,11 +7,12 @@ How it reads (pure functions here; the watcher and the tags are in favours_page.
      the top-left of the game, scaled to the game's height. Not there = the window isn't open.
   2. The grid: 12 x 10 cells of 70 px (at 1440p), at a fixed offset from the title. A cell holds an item when its
      blue (or red) backing shows.
-  3. Each 1-cell item (omens, currency, runes ...) is compared with the pictures of everything poe.ninja's exchange
-     prices: the official art (downloaded once to art/ninja in the data folder, laid on the cell's backing) and the
-     pictures it learned on this PC (you price checked that item while the window was open). Picture and outline
-     are both compared (the game dims rewards you can't afford yet); the best one counts only when it's clearly
-     better than the next.
+  3. Each 1-cell item is compared with the pictures learned on this PC of what poe.ninja's exchange prices (omens,
+     currency, runes ...): Scan stash keeps each slot's picture of your Ritual, Currency ... tabs, and your price
+     check key on a reward while the window is open keeps that one. Picture, outline and colors are compared, the
+     stack number's corner left out (the game dims rewards you can't afford yet); the best one counts only when
+     it's sure and clearly better than the next. 2.129.0: no official art (it was never sure), no uniques - only
+     Mageblood and Headhunter get a ★ (their pictures ship in templates/).
 Only looks at the screen: no keys, no clicks, nothing sent to the game. Nothing about you is saved: the pictures are
 of items, and the log (ritual/favours_log.txt) says which item was found where and how sure."""
 import base64
@@ -25,8 +26,14 @@ CELL = 70
 COLS, ROWS = 12, 10
 EDGE = 5                                   # px left off each side of a cell when comparing (the cell's frame)
 SIDE = 48                                  # cells are compared at this size
-MATCH_MIN = 0.55                           # a picture must score this ...
-MATCH_BY = 0.06                            # ... and beat the next-best item by this
+MATCH_MIN = {"learned": 0.72}  # 2.129.0 (feedback: a junk unique, Sacred Bloom and an omen all priced
+MATCH_BY = 0.10                            # 4.6d): a picture must score this and beat the next-best item by this.
+#                                            Tried on the user's own windows with his Ritual tab's pictures (Scan
+#                                            stash): the right omen 0.74-0.88 (by 0.14-0.34), items it doesn't know up
+#                                            to 0.70 (by 0.06); official art reached 0.64 for the wrong item
+PER_NAME = 6                               # pictures kept per item (a stash slot gives 3: its size varies a little)
+BELTS = {"Mageblood": "favours_mageblood.png", "Headhunter": "favours_headhunter.png"}   # 2.129.0: a ★, no price
+BELT_MIN = 0.70
 LEARN_FILE = "favour_icons_v2.json"           # (2.128.1: the cell's top part - v1 held whole cells)
 TOP = 0.64                                 # 2.128.1: only a cell's top part is read - the price tag sits at its
 #                                            foot and shows in screenshots and streams (the watcher sees it too)
@@ -104,23 +111,46 @@ def occupied(img, grid):
 
 
 def feats(bgr):
-    """A cell's picture -> (gray, outline) at SIDE x SIDE, each with mean 0 and length 1 (so a dot product = the
-    normalized correlation)."""
+    """A cell's picture -> (gray, outline, color) at SIDE x SIDE, each with mean 0 and length 1 (so a dot product =
+    the normalized correlation). 2.129.0: the stack number's corner (top-left) is left out - "1" here, "30" in a
+    stash slot - and the colors count too (omens differ most by color)."""
     cv2, np = _cv()
-    im = cv2.resize(bgr, (SIDE, SIDE), interpolation=cv2.INTER_AREA)
+    im = cv2.resize(bgr, (SIDE, SIDE), interpolation=cv2.INTER_AREA).copy()
+    im[:int(SIDE * 0.42), :int(SIDE * 0.5)] = im[int(SIDE * 0.42):, :].reshape(-1, 3).mean(0)
     g = cv2.cvtColor(im, cv2.COLOR_BGR2GRAY).astype(np.float32)
     gx, gy = cv2.Sobel(g, cv2.CV_32F, 1, 0), cv2.Sobel(g, cv2.CV_32F, 0, 1)
+    col = cv2.resize(im, (12, 12), interpolation=cv2.INTER_AREA).astype(np.float32)
+    col = col - col.reshape(-1, 3).mean(0)
     out = []
-    for a in (g, np.sqrt(gx * gx + gy * gy)):
-        a = a - a.mean()
+    for a in (g, np.sqrt(gx * gx + gy * gy), col):
+        a = a - a.mean() if a is not col else a
         n = float(np.sqrt((a * a).sum())) or 1.0
         out.append((a / n).ravel())
     return tuple(out)
 
 
 def score(fa, fb):
-    """How alike two cells are (-1 .. 1): the better of picture and outline (outline survives the dimming)."""
-    return max(float((fa[0] * fb[0]).sum()), float((fa[1] * fb[1]).sum()))
+    """How alike two cells are (-1 .. 1): half the better of picture and outline (outline survives the dimming),
+    half the colors."""
+    shape = max(float((fa[0] * fb[0]).sum()), float((fa[1] * fb[1]).sum()))
+    return 0.5 * shape + 0.5 * float((fa[2] * fb[2]).sum())
+
+
+def scaled(bgr, k):
+    """A picture zoomed by k about its middle, the same size (a stash slot draws an item a little bigger or smaller
+    than a Favours cell)."""
+    cv2, np = _cv()
+    h, w = bgr.shape[:2]
+    nb = cv2.resize(bgr, None, fx=k, fy=k, interpolation=cv2.INTER_AREA if k < 1 else cv2.INTER_LINEAR)
+    H, W = nb.shape[:2]
+    if k >= 1:
+        y, x = (H - h) // 2, (W - w) // 2
+        return nb[y:y + h, x:x + w]
+    out = np.empty_like(bgr)
+    out[:] = bgr.reshape(-1, 3).mean(0)
+    y, x = (h - H) // 2, (w - W) // 2
+    out[y:y + H, x:x + W] = nb
+    return out
 
 
 def cell_crop(img, grid, r, c):
@@ -137,22 +167,6 @@ def top_part(bgr):
     return bgr[e:int(h * TOP), e:w - e]
 
 
-def on_backing(rgba, kind="blue", dim=0.0):
-    """Official art (RGBA, any size) laid on a Favours cell's backing, as the game draws it -> BGR. dim: 0 = as is,
-    0.6 = as dim as a reward you can't afford."""
-    cv2, np = _cv()
-    a = rgba.astype(np.float32)
-    if a.shape[2] == 3:
-        a = np.dstack([a, np.full(a.shape[:2], 255, np.float32)])
-    back = np.array((52, 14, 10) if kind == "blue" else (12, 12, 80), np.float32)      # BGR
-    alpha = a[..., 3:4] / 255.0
-    rgb = a[..., :3][..., ::-1]                                # RGBA -> BGR
-    out = rgb * alpha + back * (1 - alpha)
-    if dim:
-        out = out * (1 - dim) + back * dim
-    return np.clip(out, 0, 255).astype(np.uint8)
-
-
 class Refs:
     """The pictures to compare with: {name: [feats, ...]} - official art (normal and dimmed) and learned ones."""
 
@@ -162,23 +176,57 @@ class Refs:
     def add(self, name, bgr, src="art"):
         self.items.setdefault(name, []).append((feats(bgr), src))
 
-    def add_art(self, name, rgba):
-        for dim in (0.0, 0.55):
-            self.add(name, top_part(on_backing(rgba, "blue", dim)), "art")
+    def ranked(self, f, n=3):
+        """-> [(score, name, kind of picture)] best first."""
+        out = []
+        for name, lst in self.items.items():
+            sc, src = max(((score(f, rf), s) for rf, s in lst), key=lambda x: x[0])
+            out.append((sc, name, src))
+        out.sort(reverse=True)
+        return out[:n]
 
     def best(self, f):
-        """-> (name, score, margin over the next item) or (None, best score, 0)."""
-        scored = []
-        for name, lst in self.items.items():
-            scored.append((max(score(f, rf) for rf, _s in lst), name))
-        if not scored:
+        """-> (name, score, margin over the next item) or (None, best score, margin)."""
+        top3 = self.ranked(f, 2)
+        if not top3:
             return None, 0.0, 0.0
-        scored.sort(reverse=True)
-        top, name = scored[0]
-        nxt = scored[1][0] if len(scored) > 1 else -1.0
-        if top >= MATCH_MIN and top - nxt >= MATCH_BY:
+        top, name, src = top3[0]
+        nxt = top3[1][0] if len(top3) > 1 else -1.0
+        if top >= MATCH_MIN.get(src, 0.72) and top - nxt >= MATCH_BY:
             return name, top, top - nxt
         return None, top, top - nxt
+
+
+def rerolls_left(img, win):
+    """2.129.0: the reroll button (the dice) is red while you have rerolls, gray at 0. -> True / False (None: can't
+    tell)."""
+    _cv2, np = _cv()
+    x, y, s, _sc = win
+    cut = img[int(y + 64 * s):int(y + 154 * s), int(x - 265 * s):int(x - 180 * s)]
+    if not cut.size:
+        return None
+    a = cut.astype(np.int16)
+    red = ((a[..., 2] > a[..., 1] + 40) & (a[..., 2] > a[..., 0] + 40)).mean()
+    return bool(red > 0.12)
+
+
+def tribute_box(img, win):
+    """The "4,749 TRIBUTE" line (BGR), for reading the number."""
+    x, y, s, _sc = win
+    return img[int(y + 95 * s):int(y + 143 * s), int(x + 15 * s):int(x + 250 * s)]
+
+
+def tribute_of(lines):
+    """OCR lines of tribute_box -> the number (4749), or None."""
+    import re
+    for text, _b in lines or []:
+        m = re.search(r"(\d[\d,.\s]*\d|\d)\s*T", str(text), re.I)
+        if m:
+            try:
+                return int(re.sub(r"[^\d]", "", m.group(1)))
+            except ValueError:
+                continue
+    return None
 
 
 def single_cells(occ):
@@ -219,6 +267,28 @@ def learned():
     return out
 
 
+def learn_many(pics):
+    """{name: a stash slot's picture (its inside, a whole cell)} -> remembered like learn() (the top part, as a
+    Favours cell is read), in one write. -> how many."""
+    cv2, np = _cv()
+    from .config import load_json, save_json
+    d = load_json(LEARN_FILE, {}) or {}
+    n = 0
+    for name, bgr in (pics or {}).items():
+        if bgr is None or not bgr.size or not name:
+            continue
+        new = []
+        for k in (0.88, 1.0, 1.12):
+            small = cv2.resize(top_part(scaled(bgr, k)), (SIDE, SIDE), interpolation=cv2.INTER_AREA)
+            new.append(base64.b64encode(np.ascontiguousarray(small).tobytes()).decode())
+        lst = [x for x in (d.get(name) or []) if isinstance(x, str) and x not in new]
+        d[name] = (lst + new)[-PER_NAME:]
+        n += 1
+    if n:
+        save_json(LEARN_FILE, d)
+    return n
+
+
 def learn(name, bgr):
     """Remember what this reward looks like in the Favours window (at most 3 pictures per item)."""
     cv2, np = _cv()
@@ -228,81 +298,78 @@ def learn(name, bgr):
     small = cv2.resize(bgr, (SIDE, SIDE), interpolation=cv2.INTER_AREA)
     d = load_json(LEARN_FILE, {}) or {}
     lst = [x for x in (d.get(name) or []) if isinstance(x, str)]
-    lst = (lst + [base64.b64encode(np.ascontiguousarray(small).tobytes()).decode()])[-3:]
+    lst = (lst + [base64.b64encode(np.ascontiguousarray(small).tobytes()).decode()])[-PER_NAME:]
     d[name] = lst
     save_json(LEARN_FILE, d)
     return True
 
 
-# ---- the official art (poe.ninja's exchange items: their picture paths are in its answer)
-ART_HOST = "https://web.poecdn.com"
-
-
-def art_dir():
-    from .config import P
-    d = os.path.join(P("art"), "ninja")
-    os.makedirs(d, exist_ok=True)
-    return d
-
-
-def art_path(nid):
-    import re
-    return os.path.join(art_dir(), re.sub(r"[^a-z0-9_-]+", "_", str(nid).lower()) + ".png")
-
-
+# ---- what poe.ninja's exchange prices (only those are priced here)
 def ninja_items(parts):
-    """poe.ninja's exchange answers (WPRICES.parts) -> {id: (name, picture path)} for every item with a picture."""
+    """poe.ninja's exchange answers (WPRICES.parts) -> {id: (name, picture path)} for every exchange item - never a
+    unique."""
     out = {}
     for typ, p in (parts or {}).items():
-        imgs, names = (p or {}).get("images") or {}, (p or {}).get("names") or {}
-        for nid, path in imgs.items():
-            if path:
-                out[nid] = (names.get(nid) or nid, path)
+        if str(typ).startswith("Unique"):
+            continue
+        names = (p or {}).get("names") or {}
+        for nid, name in names.items():
+            out[nid] = (name or nid, ((p or {}).get("images") or {}).get(nid))
     return out
 
 
-def fetch_art(items, ua, limit=400):
-    """Download the pictures not on this PC yet (a background thread; a few hundred small PNGs, once). -> how many."""
-    import requests
-    n = 0
-    for nid, (_name, path) in list(items.items())[:limit]:
-        dst = art_path(nid)
-        if os.path.exists(dst):
-            continue
-        url = path if str(path).startswith("http") else ART_HOST + str(path)
-        try:
-            r = requests.get(url, headers={"User-Agent": ua}, timeout=10)
-            if r.status_code == 200 and r.content[:4] == b"\x89PNG":
-                with open(dst + ".tmp", "wb") as fh:
-                    fh.write(r.content)
-                os.replace(dst + ".tmp", dst)
-                n += 1
-        except Exception:
-            continue
-    return n
-
-
 def build_refs(items):
-    """{id: (name, path)} -> Refs from the pictures on this PC (art/ninja) and the learned ones. Only 1-cell items
-    (a square picture)."""
-    cv2, _np = _cv()
+    """{id: (name, path)} -> Refs from the pictures learned on this PC: Scan stash (each slot of your Ritual,
+    Currency ... tabs) and your price check key on a reward. 2.129.0: poe.ninja's official art is no longer used - on
+    the user's own windows it scored up to 0.64 for the wrong item and never sure for the right one."""
     refs = Refs()
-    for nid, (name, _p) in items.items():
-        f = art_path(nid)
-        if not os.path.exists(f):
-            continue
-        im = cv2.imread(f, cv2.IMREAD_UNCHANGED)
-        if im is None or im.ndim != 3:
-            continue
-        h, w = im.shape[:2]
-        if abs(w - h) > max(w, h) * 0.15:                 # (2.128.0: 1-cell items only - bigger ones later)
-            continue
-        if im.shape[2] == 4:
-            im = cv2.cvtColor(im, cv2.COLOR_BGRA2RGBA)
-        else:
-            im = cv2.cvtColor(im, cv2.COLOR_BGR2RGB)
-        refs.add_art(name, im)
+    known = {name for name, _p in items.values()}
     for name, pics in learned().items():
+        if known and name not in known:                   # 2.129.0: an exchange item only (a learned unique
+            continue                                      # - Coat of Red - is never priced)
         for p in pics:
             refs.add(name, p, "learned")
     return refs
+
+
+def belt_refs():
+    """{name: feats} of Mageblood and Headhunter (2 x 1 belts; their trade-site pictures, templates/)."""
+    cv2, _np = _cv()
+    import sys
+    from pathlib import Path
+    base = getattr(sys, "_MEIPASS", None)
+    d = Path(base) / "soe2" / "templates" if base else Path(__file__).resolve().parent / "templates"
+    out = {}
+    for name, fn in BELTS.items():
+        im = cv2.imread(str(d / fn))
+        if im is not None:
+            h = im.shape[0]
+            out[name] = feats(im[:int(h * TOP)])
+    return out
+
+
+def find_belts(img, grid, occ, refs):
+    """2.129.0 (feedback: "if a Headhunter or Mageblood appears in the favour window ... a star over the item"):
+    every two side-by-side cells that hold an item, compared with the belts -> [(name, score, (x, y, w, h))]."""
+    out = []
+    for r, c in sorted(occ):
+        if (r, c + 1) not in occ:
+            continue
+        x, y, w, h = cell_rect(grid, r, c)
+        x2, _y, w2, _h = cell_rect(grid, r, c + 1)
+        e = max(1, int(round(EDGE * w / CELL)))
+        cut = img[y + e:y + int(h * TOP), x + e:x2 + w2 - e]
+        if not cut.size:
+            continue
+        f = feats(cut)
+        for name, rf in refs.items():
+            sc = score(f, rf)
+            if sc >= BELT_MIN:
+                out.append((name, sc, (x, y, x2 + w2 - x, h)))
+    out.sort(key=lambda t: -t[1])
+    seen, keep = set(), []
+    for name, sc, box in out:
+        if name not in seen:
+            seen.add(name)
+            keep.append((name, sc, box))
+    return keep

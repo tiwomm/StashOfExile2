@@ -31,12 +31,13 @@ LEVELS = {
              "#ff2a2a"),
     # 2.11.0: you left a map after the game warned and haven't opened the Genesis Tree since
     "ritual": ("RITUALS NOT DONE", "Go back through your portal", "#2a0606", "#ff4a4a"),      # 2.14.0
+    "tribute": ("OFFER YOUR TRIBUTE", "No rerolls left - offer it to the King", "#2a1a06", "#ffb347"),   # 2.129.0
     "leave": ("SPEND YOUR HIVEBLOOD", "It was almost full when you left the map: visit the Genesis Tree  ·  click to "
                                       "close", "#2a1a06", "#ffb347"),
 }
 DOT = {"on": "#5ee08a", "off": "#6b7690", "warn": "#ffb347"}
 TRANSPARENT = "#010203"
-BANNER_SECS = {"almost": 8, "full": 10, "leave": 8, "ritual": 8}       # 2.12.1: then it goes by itself (like END DELIRIUM)
+BANNER_SECS = {"almost": 8, "full": 10, "leave": 8, "ritual": 8, "tribute": 8}       # 2.12.1: then it goes by itself (like END DELIRIUM)
 
 
 def _hwnd(win):
@@ -303,6 +304,7 @@ class AlertsPage:
         self.al_rleave = tk.BooleanVar(value=bool(self.ritual_cfg().get("leave_reminder", True)))
         self.al_rshow = tk.BooleanVar(value=bool(self.ritual_cfg().get("readout", True)))
         self.al_rfav = tk.BooleanVar(value=bool(self.ritual_cfg().setdefault("favours", True)))
+        self.al_rtrib = tk.BooleanVar(value=bool(self.ritual_cfg().setdefault("tribute_reminder", True)))
         self.al_rru = tk.BooleanVar(value=bool(self.remnant_cfg().get("rumours", True)))
         self.al_rtips = tk.BooleanVar(value=bool(self.remnant_cfg().get("tips", True)))
         from . import whispers as _W
@@ -318,7 +320,10 @@ class AlertsPage:
                         "your tribute."),
                        ("Favours prices", self.al_rfav, lambda: self.favours_changed(self.al_rfav.get()),
                         "At a Ritual altar's Favours window: poe.ninja's price on each omen and other 1-cell reward. "
-                        "Price check one there (your price check key) and it learns its picture.")],
+                        "Price check one there (your price check key) and it learns its picture."),
+                       ("Tribute reminder", self.al_rtrib, self.alerts_tribute_changed,
+                        "Close the Favours window with no rerolls left and tribute to spend: a reminder to offer it to "
+                        "the King.")],
             "whispers": [("After the campaign", self.al_wafter, self.ww_after_changed,
                           "Off: it watches only while your character is in the campaign. On: always.")]}
         remind = {"breach": (self.al_leave, self.alerts_leave_changed),
@@ -557,6 +562,10 @@ class AlertsPage:
         self.breach_cfg()["leave_reminder"] = bool(self.al_leave.get())
         save_json("settings.json", SETTINGS)
 
+    def alerts_tribute_changed(self):
+        self.ritual_cfg()["tribute_reminder"] = bool(self.al_rtrib.get())
+        save_json("settings.json", SETTINGS)
+
     def alerts_ritual_leave_changed(self):
         self.ritual_cfg()["leave_reminder"] = bool(self.al_rleave.get())
         save_json("settings.json", SETTINGS)
@@ -757,6 +766,15 @@ class AlertsPage:
         from .utilities import RITUAL
         if RITUAL.seen == "ok" and RITUAL.count and self.br_area in ("map", None):
             self.rt_map = RITUAL.count
+        # 2.129.0 (feedback: "still isn't reminding me when I leave the map"): the Ritual helper is on but its
+        # watcher isn't running (its log: it was told to stop the moment it started) - start it again, at most
+        # every 30 s; the app's log says so each time
+        if self.ritual_cfg().get("on") and not RITUAL.running() and RITUAL.state != "error":
+            now = time.time()
+            if now - getattr(self, "_rt_restart_at", 0) > 30:
+                self._rt_restart_at = now
+                buglog.record("debug", "Ritual watcher wasn't running - started again")
+                RITUAL.start()
         self.ritual_readout_sync()
 
     def alerts_overlay_redraw(self):
@@ -887,7 +905,7 @@ class AlertsPage:
         level = level or breach_level(text)
         now = time.time()
         if not test:
-            if level not in ("leave", "ritual") and now - self.br_last.get(level, 0) < REPEAT_SECS:
+            if level not in ("leave", "ritual", "tribute") and now - self.br_last.get(level, 0) < REPEAT_SECS:
                 return
             try:
                 from .overlaywin import foreground_ok        # only over the game (Settings: "only while it's in front")

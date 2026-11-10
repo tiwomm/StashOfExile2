@@ -1,5 +1,5 @@
 """Market Insights (2.12.1; was Top value, 2.1.0, a Labs tool): the most valuable things the app has seen, per kind of item - your own priced items
-(Price checks), the mods worth the most (what the Mod book learned from listings) and the dearest listings it looked
+(Price checks), the mods worth the most (what the Mod book learned from listings) and the most expensive listings it looked
 at on the trade site. Nothing is searched for this window: it only shows what earlier price checks found."""
 import re
 import time

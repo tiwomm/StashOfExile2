@@ -312,7 +312,7 @@ class Market:
         return True
 
     def lower_bound(self, base, vals, hours=24):
-        """Earlier searches (>= 2 listings) whose every filter this item also meets -> the dearest 'cheapest listing'."""
+        """Earlier searches (>= 2 listings) whose every filter this item also meets -> the highest 'cheapest listing'."""
         if not self.db:
             return None
         try:
@@ -329,7 +329,7 @@ class Market:
             return None
 
     def combos(self, limit=500):
-        """[(base, filters, seen, best floor, (ts, n, floor, est))] - the combinations with the dearest 'cheapest listing'."""
+        """[(base, filters, seen, best floor, (ts, n, floor, est))] - the combinations with the highest 'cheapest listing'."""
         if not self.db:
             return []
         try:
@@ -367,7 +367,7 @@ class Market:
         return sorted(out, key=lambda r: -r[5])[:limit]
 
     def top_listings(self, limit=2000, detail=False):
-        """[(base, seen, price in divines, [stat ids])] of this league's stored listings, dearest first (2.1.0).
+        """[(base, seen, price in divines, [stat ids])] of this league's stored listings, most expensive first (2.1.0).
         detail (2.4.0): dicts with name, the listing's mod lines, its own price and the search it came from too."""
         if not self.db:
             return []

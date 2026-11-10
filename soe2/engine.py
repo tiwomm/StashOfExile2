@@ -33,7 +33,7 @@ def spread_of(stages, league):
     (1 chaos among 2-divine listings) was enough, so many jewels and tablets came out as "check by hand".
     Now each search is measured on its own, after leaving out listings far below the rest (under a fifth of their
     median) or far above them (over five times it: a jewel with better extra mods, or a "make me an offer" price).
-    -> (largest ratio, cheapest kept (amount, currency), dearest kept) or (None, None, None)."""
+    -> (largest ratio, cheapest kept (amount, currency), most expensive kept) or (None, None, None)."""
     worst = (None, None, None)
     for st in stages:
         vals = []
@@ -644,7 +644,7 @@ class Engine(TabReaderJobs, WealthJobs, StratCostJobs, threading.Thread):
             (must if imp == "high" else opt).append(m)
         blank = dict(total=0, prices=[], est=None, qid=None, partial=False, thin=False, nomatch=False, stages=[],
                      wide=False, manual=False, conf="-", conf_why=[], memory="", skip=False)
-        if not must and not opt and item["rarity"] not in ("Unique", "Normal", "Currency", "Gem") and not (
+        if not must and not opt and item["rarity"] not in ("Unique", "Normal", "Currency") and not (
                 item["rarity"] == "Magic" and (item.get("search") or {}).get("ilvl_min")):   # 2.114.0: a magic base
 
             return dict(blank, label="nothing ticked to search on" + (f" · {unknown} mods not on the trade site" if unknown else ""))

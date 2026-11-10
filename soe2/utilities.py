@@ -256,6 +256,17 @@ class RitualHelper(DeliriumHelper):
         return err.replace("Delirium alert", "Ritual watcher") if err else None
 
     def stop(self):
+        # 2.129.0 (its log: told to quit the moment it started, at every start): who asked goes in the app's log -
+        # code places only
+        try:
+            import traceback
+            from . import buglog
+            if self.running():
+                where = " < ".join(f"{os.path.basename(f.filename)}:{f.name}:{f.lineno}"
+                                   for f in traceback.extract_stack()[-7:-1][::-1])
+                buglog.record("debug", "Ritual watcher stopped", where)
+        except Exception:
+            pass
         super().stop()
         self.count, self.seen = None, "none"
         return None

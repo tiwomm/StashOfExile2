@@ -54,17 +54,11 @@ class FavoursPage:
             self.favours_hide()
 
     # ---------------------------------------------------------------- the pictures to compare with
-    def favours_refs(self, fetch=True):
-        """Build them (a background thread): poe.ninja's exchange items with a picture, downloaded once."""
-        from .config import APP_UA
+    def favours_refs(self, fetch=False):
+        """Build them (a background thread): the pictures learned on this PC, for poe.ninja's exchange items."""
         from .wealth import WPRICES
         items = FV.ninja_items(getattr(WPRICES, "parts", None))
-        if fetch and items:
-            got = FV.fetch_art(items, APP_UA)
-            if got:
-                fv_log(f"downloaded {got} item pictures")
         self.fv_refs = FV.build_refs(items)
-        self.fv_names = {nid: name for nid, (name, _p) in items.items()}
         return self.fv_refs
 
     # ---------------------------------------------------------------- the watcher (its own thread)
@@ -88,7 +82,9 @@ class FavoursPage:
             self.favours_refs()
         except Exception as e:
             fv_log(f"pictures: {e.__class__.__name__}: {e}")
-        misses, last_sig, shown = 0, None, False
+        misses, last_sig, shown, counts = 0, None, False, {}
+        from . import remnant as RM                             # (its OCR reads the tribute)
+        belts = FV.belt_refs()
         with mss.mss() as sct:
             while gen == getattr(self, "fv_gen", 0):
                 time.sleep(POLL)
@@ -108,8 +104,24 @@ class FavoursPage:
                         if misses == GONE and shown:
                             shown, last_sig = False, None
                             self.ui_q.put(("favours", g, []))
+                            # 2.129.0 (feedback): closed with no rerolls left and tribute to spend - offer it
+                            if counts.get("rerolls") is False and (counts.get("tribute") or 0) > 0:
+                                fv_log(f"closed with 0 rerolls and {counts['tribute']:,} tribute: reminder")
+                                self.ui_q.put(("favours_tribute", counts["tribute"]))
+                            counts = {}
                         continue
                     misses = 0
+                    if time.time() - counts.get("at", 0) > 1.5:          # rerolls and tribute, now and then
+                        counts["at"] = time.time()
+                        counts["rerolls"] = FV.rerolls_left(img, win)
+                        try:
+                            from PIL import Image
+                            box = FV.tribute_box(img, win)
+                            t = FV.tribute_of(RM.ocr(Image.fromarray(box[:, :, ::-1]))) if box.size else None
+                            if t is not None:
+                                counts["tribute"] = t
+                        except Exception:                              # (no OCR: no reminder, nothing else changes)
+                            buglog.caught()
                     grid = FV.grid_box(win)
                     occ = FV.occupied(img, grid)
                     # (2.128.1: what's in the cells' top parts - the tags at their feet don't count as a change)
@@ -120,18 +132,26 @@ class FavoursPage:
                         continue
                     last_sig = sig
                     refs = getattr(self, "fv_refs", None) or FV.Refs()
-                    rows = []
+                    rows, seen = [], []
                     for r, c in FV.single_cells(occ):
                         cut = FV.cell_crop(img, grid, r, c)
                         if not cut.size:
                             continue
-                        name, sc, _m = refs.best(FV.feats(cut))
+                        f = FV.feats(cut)
+                        name, sc, _m = refs.best(f)
                         if name:
                             rows.append({"r": r, "c": c, "name": name, "score": sc,
                                          "box": FV.cell_rect(grid, r, c)})
+                        elif not shown:                      # (2.129.0: the log says how close it came)
+                            top = refs.ranked(f, 2)
+                            if top and top[0][0] > 0.45:
+                                seen.append(f"{r},{c}: " + " / ".join(f"{n} {s_:.2f} {k}" for s_, n, k in top))
+                    for name, sc, box in FV.find_belts(img, grid, occ, belts):   # ★ Mageblood / Headhunter
+                        rows.append({"name": name, "score": sc, "box": box, "belt": True})
                     if not shown:
                         fv_log(f"window open: {len(occ)} cells hold items, {len(rows)} known - "
-                               + ", ".join(f"{x['name']} ({x['score']:.2f})" for x in rows[:12]))
+                               + ", ".join(f"{x['name']} ({x['score']:.2f})" for x in rows[:12])
+                               + (f"; not sure: {'; '.join(seen[:8])}" if seen else ""))
                     shown = True
                     self.ui_q.put(("favours", g, rows))
                 except Exception as e:
@@ -145,14 +165,14 @@ class FavoursPage:
         from .wealth import WPRICES
         priced = []
         for row in rows:
-            each = WPRICES.named(row["name"])
+            each = None if row.get("belt") else WPRICES.named(row["name"])     # (a belt: a ★ and its name only)
             priced.append(dict(row, each=each))
         best = max((x for x in priced if x["each"] is not None), key=lambda x: x["each"], default=None)
         self.favours_show(g, priced, best)
 
     def favours_show(self, g, rows, best=None):
         """One small click-through tag per known reward, at the foot of its cell, in the overlay style's colors (like
-        the Expedition helper's); the dearest one in the warm color with a ★."""
+        the Expedition helper's); the most valuable one in the warm color with a ★."""
         self.favours_hide()
         from .overlaywin import pal, skinned
         P_ = pal()
@@ -165,7 +185,9 @@ class FavoursPage:
         wins = []
         for row in rows:
             x, y, w, h = row["box"]
-            if row["each"] is None:
+            if row.get("belt"):                           # 2.129.0: Mageblood / Headhunter - worth a look, no price
+                txt, fg, edge = "★ " + row["name"], WARM, WARM
+            elif row["each"] is None:
                 txt, fg, edge = "no price", MUT, EDGE
             else:
                 txt, fg, edge = fmt_short(row["each"]), TXT, EDGE
@@ -195,6 +217,12 @@ class FavoursPage:
             # (2.128.1, feedback: "show up on screenshots / screen share / streaming": not left out of captures)
             wins.append(t)
         self.fv_wins = wins or None
+
+    def ev_favours_tribute(self, tribute):
+        """2.129.0 (feedback): the Favours window closed with no rerolls left and tribute still to spend."""
+        if not self.ritual_cfg().get("tribute_reminder", True):
+            return
+        self.breach_alert(level="tribute", sub=f"{tribute:,} tribute left and no rerolls - offer it to the King")
 
     def favours_hide(self):
         wins, self.fv_wins = getattr(self, "fv_wins", None), None
