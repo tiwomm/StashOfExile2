@@ -25,7 +25,7 @@ import json
 import re
 import time
 
-from . import gamedata
+from . import buglog, gamedata
 from .config import BASE
 from .mods import merge_dups, norm, option_for, read_numbers, search_sid, roll_pct, strip_markup
 from .net import call
@@ -309,7 +309,7 @@ def lineage_item(g, text):
         if v is not None:
             notes.append(f"poe.ninja: ≈ {fmt_div(v)}")
     except Exception:
-        pass
+        buglog.caught()
     return {"class": g.get("class_text") or "Support Gems", "gear": True, "gclass": None, "rarity": "Gem",
             "name": g["name"], "base": g["name"], "mods": [], "uses": None, "corrupted": corrupted, "quality": 0,
             "sockets": 0, "ilvl": None, "group_id": None, "search": search, "notes": notes, "lineage": True}
