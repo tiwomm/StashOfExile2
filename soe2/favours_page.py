@@ -107,25 +107,25 @@ class FavoursPage:
                         if misses == GONE and shown:
                             shown, last_sig = False, None
                             self.ui_q.put(("favours", g, []))
-                            # 2.129.0 (feedback): closed with no rerolls left and tribute to spend - offer it.
-                            # 2.129.3 (feedback: "ONLY ... after I've closed the ritual window after not offering
-                            # tribute"): read from the last look before it closed, not one up to 1.5 s older
+                            # 2.129.0 (feedback): closed with tribute to spend - offer it. 2.129.3 (feedback: "you
+                            # can offer tribute no matter if you have rerolls or not ... no matter what it should
+                            # ask"): rerolls don't count; offered (0 left) - nothing.
+                            # The tribute is read from the last look before it closed, not one up to 1.5 s older
+                            # (2.129.3, feedback: "ONLY ... after ... not offering tribute").
                             last = counts.get("last")
                             if last is not None:
-                                counts["rerolls"] = FV.rerolls_left(*last)
                                 t = self.favours_tribute_read(*last, RM)
                                 if t is not None:
                                     counts["tribute"] = t
-                            if counts.get("rerolls") is False and (counts.get("tribute") or 0) > 0:
-                                fv_log(f"closed with 0 rerolls and {counts['tribute']:,} tribute: reminder")
+                            if (counts.get("tribute") or 0) > 0:
+                                fv_log(f"closed with {counts['tribute']:,} tribute left: reminder")
                                 self.ui_q.put(("favours_tribute", counts["tribute"]))
                             counts = {}
                         continue
                     misses = 0
                     counts["last"] = (img, win)
-                    if time.time() - counts.get("at", 0) > 1.5:          # rerolls and tribute, now and then
+                    if time.time() - counts.get("at", 0) > 1.5:          # the tribute, now and then
                         counts["at"] = time.time()
-                        counts["rerolls"] = FV.rerolls_left(img, win)
                         t = self.favours_tribute_read(img, win, RM)
                         if t is not None:
                             counts["tribute"] = t
@@ -257,10 +257,10 @@ class FavoursPage:
         self.fv_wins = wins or None
 
     def ev_favours_tribute(self, tribute):
-        """2.129.0 (feedback): the Favours window closed with no rerolls left and tribute still to spend."""
+        """2.129.0 (feedback): the Favours window closed with tribute still to spend (2.129.3: rerolls or not)."""
         if not self.ritual_cfg().get("tribute_reminder", True):
             return
-        self.breach_alert(level="tribute", sub=f"{tribute:,} tribute left and no rerolls - offer it to the King")
+        self.breach_alert(level="tribute", sub=f"{tribute:,} tribute left - offer it to the King")
 
     def favours_hide(self):
         wins, self.fv_wins = getattr(self, "fv_wins", None), None

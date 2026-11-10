@@ -37,12 +37,12 @@ FEATURES = (
     "Clear All",                # Bulk Pricing › Items strip: empties the list shown
     "Community data sharing",
     "Craft Helper",
-    "Data pack",
-    "Keybinds",                 # Settings: every key the app listens for (2.127.0: was Keys)                # the Craft Helper's mod data from GitHub
+    "Data pack",                # the Craft Helper's mod data from GitHub
+    "Keybinds",                 # Settings: every key the app listens for (2.127.0: was Keys)
     "Desecration Helper",       # at The Well of Souls
     "Exchange Helper",
-    "Favours prices",
-    "Tribute reminder",         # the Ritual helper: 0 rerolls and tribute left when the Favours window closes           # the Ritual helper: prices on the Favours window's rewards
+    "Favours prices",           # the Ritual helper: prices on the Favours window's rewards
+    "Tribute reminder",         # the Ritual helper: tribute left when the Favours window closes
     "Mechanic Helper",
     "Quick settings",           # the overlay's ⚙
     "Scan stash",

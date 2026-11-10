@@ -31,7 +31,7 @@ LEVELS = {
              "#ff2a2a"),
     # 2.11.0: you left a map after the game warned and haven't opened the Genesis Tree since
     "ritual": ("RITUALS NOT DONE", "Go back through your portal", "#2a0606", "#ff4a4a"),      # 2.14.0
-    "tribute": ("OFFER YOUR TRIBUTE", "No rerolls left - offer it to the King", "#2a1a06", "#ffb347"),   # 2.129.0
+    "tribute": ("OFFER YOUR TRIBUTE", "Tribute left - offer it to the King", "#2a1a06", "#ffb347"),   # 2.129.0
     "leave": ("SPEND YOUR HIVEBLOOD", "It was almost full when you left the map: visit the Genesis Tree  ·  click to "
                                       "close", "#2a1a06", "#ffb347"),
 }
@@ -321,7 +321,7 @@ class AlertsPage:
                         "At a Ritual altar's Favours window: poe.ninja's price on each omen and other 1-cell reward. "
                         "Price check one there (your price check key) and it learns its picture."),
                        ("Tribute reminder", self.al_rtrib, self.alerts_tribute_changed,
-                        "Close the Favours window with no rerolls left and tribute to spend: a reminder to offer it to "
+                        "Close the Favours window with tribute left: a reminder to offer it to "
                         "the King.")]}
         remind = {"breach": (self.al_leave, self.alerts_leave_changed),
                   "ritual": (self.al_rleave, self.alerts_ritual_leave_changed)}
