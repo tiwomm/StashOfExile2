@@ -664,6 +664,18 @@ def _setup_style(root, TH):
     s.map("Quiet.TButton", background=[("pressed", C["odd"]), ("active", C["panel2"])],
           bordercolor=[("active", C["line"])], lightcolor=[("active", C["panel2"])], darkcolor=[("active", C["panel2"])],
           foreground=[("active", C["text"]), ("disabled", C["muted"])])
+    # 2.126.0: small flat buttons for a header strip (Bulk Pricing's Items strip: Undo, Delete, Clear All) - they fit
+    # inside the strip; the delete ones have red words (and a word or icon, never the color alone)
+    for name, fg in (("Strip.TButton", C["steel"]), ("StripDanger.TButton", C["red"])):
+        s.layout(name, [("Button.border", {"sticky": "nswe", "border": "1", "children": [("Button.focus", {
+            "sticky": "nswe", "children": [("Button.padding", {"sticky": "nswe", "children": [
+                ("Button.label", {"sticky": "nswe"})]})]})]})])
+        s.configure(name, background=C["panel"], foreground=fg, relief="solid", borderwidth=1, bordercolor=C["line"],
+                    lightcolor=C["panel"], darkcolor=C["panel"], focuscolor=C["accent"], focusthickness=1,
+                    padding=(8, 1), font=("Segoe UI", 9), anchor="center", width=0)   # (as wide as its words)
+        s.map(name, background=[("pressed", C["odd"]), ("active", C["panel2"])],
+              bordercolor=[("active", C["steel"])], lightcolor=[("active", C["panel2"])], darkcolor=[("active", C["panel2"])],
+              foreground=[("disabled", C["muted"]), ("active", C["text"] if fg == C["steel"] else fg)])
     s.configure("TEntry", padding=4, **field)
     s.map("TEntry", bordercolor=[("focus", C["accent"])])
     for o in ("Vertical", "Horizontal"):
