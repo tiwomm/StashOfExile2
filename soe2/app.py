@@ -566,12 +566,38 @@ class App(SettingsPage, GearBookPage, PriceCheckPage, PricePopup, FavoritesPage,
         self.shell.set_launcher(self.shell.cfg.get("launcher", "dock"))
         self.root.after(60, self.restore_zoom)                 # 2.23.1: maximized last time -> maximized again
         self.root.after(1500, self.show_whatsnew)              # 2.0 beta 12: once per new version
+        self.root.after(4000, self.league_notice)              # 2.130.0: the new league's heads-up, once
         self.root.after(4000, self.board_name_check)           # 2.85.0: your community name, asked once (2.86.1: or again if reset)
         if SPLASH[0] is not None:                              # 2.0.0: the start-up screen waits for the mod list,
             _splash_step(i=3)                                  # but never more than 3 seconds
             self.root.after(3000, self.close_splash)
         self.bind_hotkeys()
         self.refresh_total_header()
+
+    # ---------------- 2.130.0: a new league's heads-up (once, from its start day)
+    LEAGUE_NOTICE = ("2026-12-11", "2027-01-10", "league_notice_2026_12")   # (from, until, the setting that says shown)
+
+    def league_notice(self, today=None):
+        """2.130.0 (feedback): the first time the app opens on or after the new league's day (December 11, 2026 - by
+        the PC's own calendar date, however its clock shows dates), one message: some things may not work at first.
+        Waits for What's new and the quick start to be closed. -> True when shown."""
+        import datetime as _dt
+        start, until, key = self.LEAGUE_NOTICE
+        today = today or _dt.date.today()
+        if SETTINGS.get(key) or not (_dt.date.fromisoformat(start) <= today <= _dt.date.fromisoformat(until)):
+            return False
+        busy = [getattr(self, "_whatsnew", None)]               # (What's new or the quick start)
+        if SPLASH[0] is not None or any(w is not None and w.winfo_exists() for w in busy):
+            self.root.after(2000, self.league_notice)
+            return False
+        SETTINGS[key] = True                                   # (once: it never asks again)
+        save_json("settings.json", SETTINGS)
+        messagebox.showinfo(
+            "A new league",
+            "A new league has started.\n\nSome features may not work right away: league starts bring changes to the "
+            "trade site's API, to items and to the game's data. They'll be fixed over time, through league start.\n\n"
+            "Thanks for your patience - and good luck this league!", parent=self.dlg_parent())
+        return True
 
     # ---------------- welcome / what's new (once per version)
     def show_whatsnew(self, force=False):
