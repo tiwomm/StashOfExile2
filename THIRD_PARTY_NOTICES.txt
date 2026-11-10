@@ -1,4 +1,5 @@
-StashOfExile2's own code is licensed under the GNU General Public License v3.0 (see LICENSE). It was written by an AI
+StashOfExile2's own code is licensed under the GNU Affero General Public License v3.0 (see LICENSE; versions up to 2.129.0
+were released under the GNU General Public License v3.0). It was written by an AI
 (Claude, by Anthropic) under a human's direction. The third-party parts below keep their own licences.
 
 ------------------------------------------------------------------------------
