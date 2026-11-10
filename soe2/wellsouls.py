@@ -111,7 +111,10 @@ def tiers_for(tpl, tags):
     """[(entry, tier, of)] for this template on an item with these tags. Entries: {g, k, l, r, s, a}."""
     out = []
     by_group = {}
+    heart = HEART_TAG in tags                         # 2.130.3: a Heart of the Well rolls only its own mods
     for e in data()["mods"].get(tpl) or []:
+        if heart and not e.get("h"):
+            continue
         if weight(e["s"], tags) > 0:
             by_group.setdefault(e["g"], []).append(e)
     for g, es in by_group.items():
@@ -128,11 +131,30 @@ def fits(e, vals):
     return all(lo - 0.05 <= v[0] <= hi + 0.05 for v, (lo, hi) in zip(vals, rs))
 
 
+HEART_TAG = "heart_unique_jewel_prefix"
+
+
+def heart_base():
+    return next((b for b in data()["bases"] if HEART_TAG in b["t"]), None)
+
+
+def heart_fits(texts):
+    """2.130.3: every option is one of the Heart of the Well's own mods, at a value it can roll."""
+    hb = heart_base()
+    if hb is None or not any(texts):
+        return False
+    rs = [rate(t, [hb]) for t in texts if t]
+    return all(r and r.get("tier") is not None for r in rs)
+
+
 def classes_for(tpls):
-    """Item classes (and their bases' tag sets) on which every one of these options can roll."""
+    """Item classes (and their bases' tag sets) on which every one of these options can roll (2.130.3: not the Heart
+    of the Well - heart_fits decides that one)."""
     out = {}
     for b in data()["bases"]:
         tags = set(b["t"])
+        if HEART_TAG in tags:
+            continue
         if all(any(weight(e["s"], tags) > 0 for e in data()["mods"].get(t) or []) for t in tpls if t):
             out.setdefault(b["c"], []).append(b)
     return out
@@ -183,7 +205,7 @@ def rate(text, bases):
     if vals and lo_r is not None and hi_r != lo_r:
         roll = max(0.0, min(1.0, (vals[0][0] - lo_r) / (hi_r - lo_r)))
     return {"tpl": tpl, "tier": tier, "tier_hi": hi, "of": max(r[2] for r in res), "abyss": bool(e.get("a")),
-            "range": (lo_r, hi_r), "roll": roll}
+            "heart": bool(e.get("h")), "range": (lo_r, hi_r), "roll": roll}
 
 
 # ================================================================ the item's picture
@@ -314,5 +336,6 @@ def label(r):
     if r.get("abyss"):
         lo, hi = r["range"]
         fmt = (lambda v: f"{v:g}")
-        return f"Abyss  {fmt(lo)}–{fmt(hi)}" + (f"  ·  {round(r['roll'] * 100)}%" if r.get("roll") is not None else "")
+        what = "Heart" if r.get("heart") else "Abyss"            # 2.130.3: a Heart of the Well's own mod
+        return f"{what}  {fmt(lo)}–{fmt(hi)}" + (f"  ·  {round(r['roll'] * 100)}%" if r.get("roll") is not None else "")
     return f"T{r['tier']}" if r["tier"] == r["tier_hi"] else f"T{r['tier']}–{r['tier_hi']}"   # 2.81.1: no "of N"

@@ -192,6 +192,9 @@ class WellSoulsPage:
             if img_slot is None:
                 img_slot = RM.grab(W.part(rect, cx, W.SLOT))
             bases = W.match_art(img_slot, bases)
+        if W.heart_fits(texts) and (not bases or any(W.rate(t, bases) is None or W.rate(t, bases).get("tier") is None
+                                                     for t in texts if t)):
+            bases = [W.heart_base()]                       # 2.130.3: a Heart of the Well's options
         rh = (bb - bt) / W.ROWS
         out = []
         for i, t in enumerate(texts):
