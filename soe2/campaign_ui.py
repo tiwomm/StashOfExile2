@@ -435,7 +435,7 @@ class CampaignUI:
         # 2.125.3 (feedback: "the option to select which route from that screen itself ... and the options"): Routes ▾
         # and Options ▾, each a small panel inside the card (a window of its own sent the card behind the game)
         for key, label, tip in (("options", "Options ▾", "The Campaign Helper's options (as in Overlay Settings)"),
-                                ("routes", "Routes ▾", "Pick the route: Full, Speedrun, Rush (carry) or My Own")):
+                                ("routes", "Routes ▾", "Pick the route: Full, Speedrun or Rush (carry)")):
             b = ttk.Button(top, text=label, style=self.ov_btn("Quiet.TButton"),
                            command=lambda k=key: self.camp_pop_toggle(k), width=len(label) + 1)
             b.pack(side="right", padx=(4, 0))

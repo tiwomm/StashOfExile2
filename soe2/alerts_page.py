@@ -200,7 +200,8 @@ class AlertsPage:
         from . import whispers as _W
         return bool(self.breach_cfg().get("on") or self.ritual_cfg().get("on") or self.ws_cfg().get("on")
                     or self.remnant_cfg().get("on") or _W.cfg()["on"]
-                    or (hasattr(self, "fl_counting") and self.fl_counting()))     # 2.45.0: the Strat Tracker's runs
+                    or (hasattr(self, "fl_counting") and self.fl_counting())      # 2.45.0: the Strat Tracker's runs
+                    or bool(SETTINGS.get("topup", {}).get("on")))                 # 2.131.0: Top Up (hideout / town)
 
     def alerts_init(self):
         """At start-up (start_utilities): the Breach watcher runs whether or not the tracker window was opened."""
@@ -218,6 +219,7 @@ class AlertsPage:
             self.root.after(2500, self.ritual_start)
         if self.remnant_cfg().get("on"):                 # 2.37.0: the Remnant Auto watcher
             self.root.after(3000, self.remnant_auto_sync)
+        self.root.after(3500, self.topup_start)          # 2.131.0: Top Up Reminders (only when on)
 
     # ================================================================ the panel (Session tracker, main page)
     def build_alerts_panel(self, parent):
@@ -452,6 +454,7 @@ class AlertsPage:
                     "8 h, sleep at 12 h or late at night). Play time is the Session timer's. Nothing is saved or sent.")
         Tooltip(btest, "Shows the next reminder now.")
         self.al_break_every = ecb
+        self.topup_row(box, P2, CB)                         # 2.131.0: Top Up Reminders
         self.alerts_refresh()
         return box
 
@@ -1130,6 +1133,7 @@ class AlertsPage:
             self.root.after(9000 if cfg.get("on") and cfg.get("pending") else 0,
                             lambda g=got: self.breach_alert(level="ritual", sub=f"{g[0]} of {g[1]} done - go back "
                                                                                  f"through your portal"))
+        self.topup_visit()                                   # 2.131.0: Top Up may remind once a visit
         if kind in ("hideout", "town") and before != kind:
             self.break_check()                               # 2.131.0: break reminders - in hideout / town only
         if kind == "map" and before != "map":

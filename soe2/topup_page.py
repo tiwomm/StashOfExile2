@@ -1,0 +1,330 @@
+"""2.131.0 Top Up Reminders - the watcher, teaching an item, the reminder card and the Items list (topup.py reads the
+pictures). Overlay ↳ Settings › Helpers has its switch. Off until you turn it on; looks only while the game is in front."""
+import time
+import tkinter as tk
+from tkinter import ttk
+
+from . import buglog
+from . import topup as TU
+from .config import SETTINGS, save_json
+from .style import C, Tooltip
+
+EVERY_MS = 1500                     # how often it looks for the inventory
+TEACH_SECS = 3                      # your price check key counts as teaching within this of the last look
+CARD_COLOR = "#8ec5ff"
+
+
+class TopUpPage:
+    """Mixed into App."""
+
+    # ---------------------------------------------------------------- on / off
+    def topup_on(self):
+        from . import features as FEAT
+        return bool(TU.cfg().get("on")) and FEAT.on("overlay")
+
+    def topup_set(self, on):
+        TU.cfg()["on"] = bool(on)
+        save_json("settings.json", SETTINGS)
+        if on:
+            self.topup_start()
+            if getattr(self, "br_reader", None) is None:        # (the log says when you're in a hideout / town)
+                try:
+                    self.breach_start()
+                except Exception:
+                    buglog.caught()
+
+    def topup_start(self):
+        if getattr(self, "_tu_ticking", False) or not self.topup_on():
+            return
+        self._tu_ticking = True
+        self.root.after(EVERY_MS, self.topup_tick)
+
+    # ---------------------------------------------------------------- looking
+    def topup_tick(self):
+        if not self.topup_on():
+            self._tu_ticking = False
+            return
+        try:
+            self.topup_look()
+        except Exception:
+            self.log_error("Top Up Reminders")
+        self.root.after(EVERY_MS, self.topup_tick)
+
+    def topup_look(self, force=False):
+        """One look (on a background thread): is the inventory open, and if so what's in it."""
+        if getattr(self, "_tu_busy", False):
+            return None
+        from .alerts_page import game_rect
+        g = game_rect()
+        if not force:
+            try:
+                from .overlaywin import foreground_ok
+                if not foreground_ok():
+                    return None
+            except Exception:
+                buglog.caught()
+        if not g:
+            return None
+        self._tu_busy = True
+        prev = getattr(self, "tu_last", None)
+
+        def work():
+            from .remnant import grab
+            gx, gy, gw, gh = g
+            game = (gx, gy, gw, gh)
+            if not TU.is_open(grab(TU.banner_rect(game)), gh):
+                return {"open": False}
+            rect = TU.grid_rect(game)
+            img = grab(rect)
+            if prev and prev.get("open") and prev.get("thumb") == _thumb(img):
+                cells = prev["cells"]                      # (nothing moved: no need to read it again)
+            else:
+                cells = TU.scan(img)
+            return {"open": True, "cells": cells, "img": img, "rect": rect, "game": game, "thumb": _thumb(img)}
+
+        def done(res):
+            self._tu_busy = False
+            self.topup_seen(res)
+
+        try:
+            self.run_bg(work, done)
+        except Exception:
+            self._tu_busy = False
+            raise
+        return True
+
+    def topup_seen(self, res):
+        if res is None:
+            return
+        was = bool((getattr(self, "tu_last", None) or {}).get("open"))
+        res["t"] = time.time()
+        self.tu_last = res
+        if res.get("open"):
+            self.topup_paint_seen()
+            if not was:
+                self.topup_remind()
+
+    def topup_totals(self):
+        last = getattr(self, "tu_last", None) or {}
+        if not last.get("open"):
+            return {}
+        return TU.totals(last.get("cells") or [], TU.learned())
+
+    # ---------------------------------------------------------------- the reminder
+    def topup_visit(self):
+        """A new area (alerts_page.breach_area): the next inventory look may remind again."""
+        self.tu_visit = getattr(self, "tu_visit", 0) + 1
+
+    def topup_remind(self, force=False):
+        """The inventory just opened: in your hideout or a town, once a visit, a card if something's under its
+        keep. force (Test): now, wherever you are (a sample if nothing is low)."""
+        items = TU.cfg()["items"]
+        lows = TU.low(self.topup_totals(), items)
+        if not force:
+            if not lows or getattr(self, "br_area", None) not in ("hideout", "town"):
+                return None
+            if getattr(self, "tu_reminded", None) == getattr(self, "tu_visit", 0):
+                return None
+            self.tu_reminded = getattr(self, "tu_visit", 0)
+        sub = TU.card_text(lows) if lows else ("Nothing is low" if items else "A sample - teach items first")
+        from . import alertcard
+        from .alerts_page import game_rect
+        self.tu_win = alertcard.show(self.root, "Top up before your next map", sub, color=CARD_COLOR, mark="▼",
+                                     secs=10, game=game_rect())
+        buglog.debug("Top Up", f"reminded: {len(lows)} low")
+        return lows
+
+    # ---------------------------------------------------------------- teaching (your price check key)
+    def topup_copy_learn(self, text):
+        """Your price check key (or Ctrl+C) on an item while your inventory was just seen: learn its picture under
+        the mouse, add it to your list (keep = a full stack). -> True if learned."""
+        last = getattr(self, "tu_last", None) or {}
+        if not TU.cfg().get("on") or not last.get("open") or time.time() - last.get("t", 0) > TEACH_SECS:
+            return False
+        got = TU.item_name(text)
+        if not got:
+            return False
+        name, count = got
+        try:
+            mx, my = self.root.winfo_pointerxy()
+        except tk.TclError:
+            return False
+        l_, t, r, b = last["rect"]
+        cs = (r - l_) / TU.COLS
+        c, row = int((mx - l_) // cs), int((my - t) // cs)
+        if not (0 <= row < TU.ROWS and 0 <= c < TU.COLS):
+            return False
+        cell = TU.split(last["img"])[(row, c)]
+        if not TU.learn(name, cell):
+            return False
+        if count:
+            try:
+                TU.learn_digits(cell, count)
+            except Exception:
+                buglog.caught()
+        items = TU.cfg()["items"]
+        if not any(it.get("name") == name for it in items):
+            items.append({"name": name, "keep": TU.full_stack(text) or 1})
+        save_json("settings.json", SETTINGS)
+        self.tu_last = dict(last, thumb=None)          # (read it again with this item known)
+        self.status_text, self.status_until = f"Top Up: learned {name} - set how many to keep in Items…", \
+            time.time() + 6
+        self.topup_paint_list()
+        return True
+
+    # ---------------------------------------------------------------- Overlay ↳ Settings › Helpers: its row
+    def topup_row(self, box, bg, CB):
+        sm = ("Segoe UI", 9)
+        row = tk.Frame(box, bg=bg)
+        row.pack(fill="x", pady=(8, 0))
+        self.al_topup = tk.BooleanVar(value=bool(TU.cfg()["on"]))
+        cb = ttk.Checkbutton(row, text="Top Up Reminders", variable=self.al_topup, style=CB,
+                             command=lambda: self.topup_set(bool(self.al_topup.get())))
+        cb.pack(side="left")
+        ib = ttk.Button(row, text="Items…", command=self.topup_items)
+        ib.pack(side="left", padx=(8, 0))
+        tb = ttk.Button(row, text="Test", width=6, command=lambda: self.topup_remind(force=True))
+        tb.pack(side="left", padx=(8, 0))
+        info = tk.Label(row, text="ⓘ", bg=bg, fg=C["muted"], font=sm, cursor="question_arrow")
+        info.pack(side="left", padx=(8, 0))
+        tk.Label(box, text="Says what's running low when you open your inventory in your hideout or a town.", bg=bg,
+                 fg=C["muted"], font=sm, anchor="w").pack(fill="x")
+        Tooltip(cb, "Looks only while your inventory is open and the game is in front. Off until you turn it on.")
+        Tooltip(ib, "Your items and how many of each to keep.")
+        Tooltip(tb, "Shows the reminder now, with what it last saw.")
+        Tooltip(info, "Teach an item: open your inventory, hover it and press your price check key - its name comes "
+                      "from the game. It counts every stack of it in your inventory (the number on each). Nothing is "
+                      "sent anywhere.")
+
+    # ---------------------------------------------------------------- the Items list
+    def topup_items(self):
+        old = getattr(self, "tu_items_win", None)
+        try:
+            if old is not None and old.winfo_exists():
+                old.lift()
+                return old
+        except tk.TclError:
+            pass
+        P2 = C["panel2"]
+        w = tk.Toplevel(self.root, bg=C["accent"], padx=1, pady=1)
+        w.title("Top Up Reminders")
+        try:
+            w.transient(self.root)
+        except tk.TclError:
+            pass
+        w.bind("<Escape>", lambda _e: w.destroy())
+        self.tu_items_win = w
+        inner = tk.Frame(w, bg=P2, padx=16, pady=12)
+        inner.pack(fill="both", expand=True)
+        top = tk.Frame(inner, bg=P2)
+        top.pack(fill="x")
+        tk.Label(top, text="Your items", bg=P2, fg=C["text"], font=("Segoe UI", 12, "bold")).pack(side="left")
+        tip = tk.Label(top, text="ⓘ", bg=P2, fg=C["muted"], cursor="question_arrow")
+        tip.pack(side="left", padx=8)
+        Tooltip(tip, "In hideout or town, opening your inventory with fewer than Keep shows one card. Seen: what your "
+                     "inventory held the last time it was open (every stack added up).")
+        tk.Label(inner, text="Keep at least this many of each in your inventory.", bg=P2, fg=C["muted"],
+                 anchor="w").pack(fill="x", pady=(2, 8))
+        self.tu_list = tk.Frame(inner, bg=P2)
+        self.tu_list.pack(fill="both", expand=True)
+        foot = tk.Frame(inner, bg=P2)
+        foot.pack(fill="x", pady=(8, 0))
+        ttk.Button(foot, text="Done", style="Primary.TButton", command=w.destroy).pack(side="right")
+        self.topup_paint_list()
+        try:
+            from .style import center_over
+            center_over(w, self.root)
+        except Exception:
+            buglog.caught()
+        return w
+
+    def topup_paint_list(self):
+        box = getattr(self, "tu_list", None)
+        try:
+            if box is None or not box.winfo_exists():
+                return
+        except tk.TclError:
+            return
+        for ch in box.winfo_children():
+            ch.destroy()
+        P2 = C["panel2"]
+        items = TU.cfg()["items"]
+        self.tu_keep_vars, self.tu_seen_labels, self.tu_icons = {}, {}, []
+        if not items:
+            tk.Label(box, text="No items yet. In game: open your inventory, hover an item and press your price check "
+                               "key.", bg=P2, fg=C["text"], wraplength=420, justify="left", anchor="w").pack(fill="x")
+            ttk.Button(box, text="Got it", command=lambda: self.tu_items_win.destroy()).pack(anchor="w", pady=(8, 0))
+            return
+        head = tk.Frame(box, bg=P2)
+        head.pack(fill="x")
+        for txt, wd in (("", 5), ("Item", 26), ("Keep", 8), ("Seen", 8), ("", 3)):
+            tk.Label(head, text=txt, bg=P2, fg=C["muted"], font=("Segoe UI", 9, "bold"), width=wd,
+                     anchor="w").pack(side="left")
+        tot = self.topup_totals()
+        for it in items:
+            name = it["name"]
+            r = tk.Frame(box, bg=P2)
+            r.pack(fill="x", pady=2)
+            ic = TU.icon_b64(name)
+            img = None
+            if ic:
+                try:
+                    img = tk.PhotoImage(data=ic)
+                    self.tu_icons.append(img)
+                except tk.TclError:
+                    img = None
+            tk.Label(r, image=img, bg=P2, width=40, height=40).pack(side="left", padx=(0, 8)) if img else \
+                tk.Label(r, text="", bg=P2, width=5).pack(side="left")
+            tk.Label(r, text=name, bg=P2, fg=C["text"], width=26, anchor="w").pack(side="left")
+            v = tk.StringVar(value=str(it.get("keep", 1)))
+            sp = ttk.Spinbox(r, from_=0, to=9999, textvariable=v, width=6,
+                             command=lambda n=name, v=v: self.topup_keep(n, v.get()))
+            sp.pack(side="left", padx=(0, 16))
+            sp.bind("<FocusOut>", lambda _e, n=name, v=v: self.topup_keep(n, v.get()))
+            sp.bind("<Return>", lambda _e, n=name, v=v: self.topup_keep(n, v.get()))
+            self.tu_keep_vars[name] = v
+            seen = tk.Label(r, text=_seen(tot, name), bg=P2, fg=C["text"], width=8, anchor="w")
+            seen.pack(side="left")
+            self.tu_seen_labels[name] = seen
+            x = ttk.Button(r, text="✕", width=3, command=lambda n=name: self.topup_forget(n))
+            x.pack(side="left")
+            Tooltip(x, f"Remove {name}")
+
+    def topup_paint_seen(self):
+        labels = getattr(self, "tu_seen_labels", None) or {}
+        if not labels:
+            return
+        tot = self.topup_totals()
+        for name, lab in labels.items():
+            try:
+                lab.config(text=_seen(tot, name))
+            except tk.TclError:
+                pass
+
+    def topup_keep(self, name, value):
+        try:
+            n = max(0, int(str(value).strip() or 0))
+        except ValueError:
+            return
+        for it in TU.cfg()["items"]:
+            if it.get("name") == name:
+                it["keep"] = n
+        save_json("settings.json", SETTINGS)
+
+    def topup_forget(self, name):
+        TU.cfg()["items"] = [it for it in TU.cfg()["items"] if it.get("name") != name]
+        save_json("settings.json", SETTINGS)
+        TU.forget(name)
+        self.topup_paint_list()
+
+
+def _seen(tot, name):
+    if name not in tot:
+        return "-"
+    n, sure = tot[name]
+    return f"{n}" if sure else f"{n}+ ?"
+
+
+def _thumb(img):
+    return img.convert("L").resize((48, 20)).tobytes()
+

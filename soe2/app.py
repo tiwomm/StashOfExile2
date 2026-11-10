@@ -71,6 +71,7 @@ from .stashscan_page import StashScanPage      # 2.102.0: Wealth › Scan stash 
 from .remnant_page import RemnantPage         # 2.37.0: Expedition Remnant Price Checker
 from .favours_page import FavoursPage       # 2.128.0: Favours prices (the Ritual helper)
 from .features_page import FeaturesPage     # 2.131.0: the Feature Picker
+from .topup_page import TopUpPage           # 2.131.0: Top Up Reminders
 from .ledger_page import LedgerPage           # 2.45.0: Money Makers > Strat Tracker
 from .feedback_page import FeedbackPage       # 2.48.0: the update badge and Report a bug (taskbar)
 from .feed_page import FeedPage               # 2.51.0: Mod book › Manual feed
@@ -185,7 +186,7 @@ def on_a_monitor(x, y):
         return None
 
 
-class App(SettingsPage, GearBookPage, PriceCheckPage, PricePopup, FavoritesPage, BoardModPage, LeaderboardPage, WellSoulsPage, RumoursPage, ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, ExchangePage, WealthPage, LibraryPage, RegexPage, UtilitiesPage, TrackerPage, SearchPage, CalcOverlay, InsightsPage, MoneyMakersPage, MapLibraryPage, RemnantPage, FavoursPage, LedgerPage, FeedbackPage, FeedPage, MergedOverlay, LightOverlay, GamePlanPage, FocusPokes, OverlayHelp, OverlayParts, CampaignUI, OverlayRates, CommunityPage, RateModsPage, StashScanPage, OverlayQuick, FeaturesPage):
+class App(SettingsPage, GearBookPage, PriceCheckPage, PricePopup, FavoritesPage, BoardModPage, LeaderboardPage, WellSoulsPage, RumoursPage, ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, ExchangePage, WealthPage, LibraryPage, RegexPage, UtilitiesPage, TrackerPage, SearchPage, CalcOverlay, InsightsPage, MoneyMakersPage, MapLibraryPage, RemnantPage, FavoursPage, LedgerPage, FeedbackPage, FeedPage, MergedOverlay, LightOverlay, GamePlanPage, FocusPokes, OverlayHelp, OverlayParts, CampaignUI, OverlayRates, CommunityPage, RateModsPage, StashScanPage, OverlayQuick, FeaturesPage, TopUpPage):
     COLS = [("added", "#", 46, "e"), ("name", "Item", 220, "w"), ("type", "Type", 110, "w"), ("mark", "Status", 90, "center"),
             ("est", "Price", 110, "e"), ("conf", "Confidence", 95, "center"), ("listings", "Listings", 70, "e"), ("priced", "Priced at", 130, "w"),
             ("match", "How it was priced", 300, "w"), ("vmods", "★", 60, "center"),
@@ -2343,6 +2344,11 @@ class App(SettingsPage, GearBookPage, PriceCheckPage, PricePopup, FavoritesPage,
                 return self.fl_take_clip(text)
             if self.fl_ed_open() and self.fl_ed_take(text):
                 return None
+            try:                                                  # 2.131.0: a copy while your inventory is open
+                if self.topup_copy_learn(text):                   # teaches Top Up that item
+                    return None
+            except Exception:
+                buglog.caught()
             try:                                                  # 2.129.3: a copy while the Favours window is
                 if self.favours_copy_learn(text) and not self.ADVANCED.search(text):     # open teaches that
                     self.status_text, self.status_until = "Favours prices: learned its look", time.time() + 5
