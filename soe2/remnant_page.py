@@ -146,7 +146,7 @@ class RemnantPage:
                 if opened is None and (WPRICES.league != lg or (WPRICES.age() or 1e9) > 3000):
                     self.remnant_prefetch(lg)         # 2.129.2: prices ready before a book opens
                 c = SETTINGS.get("remnant") or {}
-                area = c.get("area") or RM.AREA
+                area = RM.reading_area(c.get("area"))
                 if not game_active() or getattr(self, "rm_busy", False):
                     continue
                 g = game_rect()
@@ -325,18 +325,22 @@ class RemnantPage:
 
     POOL_SHOWN = 3                                    # the most valuable uniques named on a "Unique Ring" line
 
+    POOL_KINDS = {"jewellery": ("ring", "amulet"), "jewelry": ("ring", "amulet")}
+
     def remnant_unique_pool(self, kind):
         """2.130.0 (feedback: "show potential expensive/good uniques they COULD get out of that basetype pool"): the
         uniques of this kind (ring, belt, amulet ...) worth the most on poe.ninja right now - names only, best first."""
         from . import gamedata
         from .wealth import NINJA_ITEM_TYPES, WPRICES
+        kinds = self.POOL_KINDS.get(kind, (kind,))        # ("Unique Jewellery": rings and amulets)
         best = {}
         for typ in NINJA_ITEM_TYPES:
             for name, base, v, count, corrupted in (WPRICES.parts.get(typ) or {}).get("lines", []):
                 if corrupted or (count or 0) < 2:             # (a lone or corrupted listing says little)
                     continue
                 b = gamedata.base(base) or {}
-                if (b.get("class") or "").lower() != kind and not str(base).lower().endswith(kind):
+                cls = (b.get("class") or "").lower()
+                if not any(cls == k or str(base).lower().endswith(k) for k in kinds):
                     continue
                 if v > best.get(name, -1):
                     best[name] = v

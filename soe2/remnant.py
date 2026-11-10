@@ -249,6 +249,15 @@ def title_score(img, game_h):
         return 1.0
 
 
+def reading_area(learned):
+    """2.130.0 (feedback: "no price on greater charging rune or greater ward rune" - the book's last two lines): an
+    area learned by the old key (before 2.119.0) can be shorter than a long book - the area read is now the learned
+    one and AREA together, so every line of the book is read."""
+    if not learned or len(learned) != 4:
+        return AREA
+    return (min(learned[0], AREA[0]), min(learned[1], AREA[1]), max(learned[2], AREA[2]), max(learned[3], AREA[3]))
+
+
 def area_rect(area, rect):
     """Area in game heights from the top-left -> screen pixels (left, top, right, bottom), kept inside the game."""
     l_, t, r, b = rect
