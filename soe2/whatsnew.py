@@ -44,6 +44,14 @@ BETA_AREAS = ("Wealth", "Money Makers", "Game Search", "Market Insights", "Craft
               "Desecration Helper")
 
 NOTES = {
+    "2.130.1": {
+        "big": [],
+        "small": [
+            ("Overlay", "Place › Top: the Ritual line sits under the Bar, so it stays on screen."),
+            ("Overlay", "Place › Bottom: the Bar sits right on the XP bar (a little lower than before)."),
+            ("Ritual", "The tribute reminder should no longer come after you've offered it (the plate's 0 is read as 0)."),
+        ],
+    },
     "2.130.0": {
         "big": [
             ("💎", "Gems priced", "Your price check key on a skill, support or spirit gem searches the trade site with "

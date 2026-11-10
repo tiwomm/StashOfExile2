@@ -327,16 +327,23 @@ def tribute_box(img, win):
 
 
 def tribute_of(lines):
-    """OCR lines of tribute_box -> the number (4749), or None."""
+    """OCR lines of tribute_box -> the number (4749), or None. 2.130.1 (feedback: the reminder came after the tribute
+    was offered - the plate said "0 Tribute"): a lone 0 is often read as the letter O; "Tribute" with no number
+    readable before it counts as 0 (never a reminder from an old number)."""
     import re
+    said = False
     for text, _b in lines or []:
-        m = re.search(r"(\d[\d,.\s]*\d|\d)\s*T", str(text), re.I)
+        t = str(text)
+        m = re.search(r"(\d[\d,.\s]*\d|\d)\s*T", t, re.I)
         if m:
             try:
                 return int(re.sub(r"[^\d]", "", m.group(1)))
             except ValueError:
                 continue
-    return None
+        if re.search(r"(^|\s)[OoQD]\s*Tr", t):
+            return 0
+        said = said or bool(re.search(r"Tribu", t, re.I))
+    return 0 if said else None
 
 
 def single_cells(occ):
