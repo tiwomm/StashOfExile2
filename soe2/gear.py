@@ -289,10 +289,54 @@ def type_only_item(g):
                                                                   if known_type else "")]}
 
 
+GEM_CLASSES = ("Skill Gems", "Support Gems", "Spirit Gems", "Meta Gems")
+
+
+def gem_type(name):
+    """A gem's name as the trade site spells it ("Fragments Of The Past" read off a book -> "Fragments of the Past"),
+    from its own item list when it's loaded; else as given."""
+    n = (name or "").strip()
+    bases = gamedata.TRADE_ITEMS.get("bases") or set()
+    if n in bases or not bases:
+        return n
+    low = n.casefold()
+    return next((b for b in bases if b.casefold() == low), n)
+
+
+def gem_search(name, level=None, sockets=None, quality=0, corrupted=False):
+    """2.130.0: the trade search plan for a gem - its name, at least its level, its sockets (the 2 a gem comes with:
+    exactly 2; more: at least that many), its quality (none: no quality; some: at least that much)."""
+    return {"category": None, "type": gem_type(name), "name": None, "rarity": None, "corrupted": bool(corrupted),
+            "sockets_min": None, "gem": {"level": level, "sockets": sockets, "quality": quality or 0}}
+
+
+def gem_item(g, text):
+    """2.130.0 (feedback: "the price checker is currently unable to price skill/spirit gems"): a copied skill,
+    support or spirit gem -> a price-check item searched as the trade site's gem filters do (level, sockets,
+    quality, corrupted), or None."""
+    if not g or g.get("rarity") != "Gem" or g.get("class_text") not in GEM_CLASSES or not g.get("name"):
+        return None
+    lv = re.search(r"^Level:\s*(\d+)", text or "", re.M)
+    sk = re.search(r"^Sockets:\s*(.+)$", text or "", re.M)
+    level = int(lv.group(1)) if lv else None
+    sockets = len(sk.group(1).split()) if sk else 0
+    q = int(g.get("quality") or 0)
+    s = gem_search(g["name"], level, sockets, q, g.get("corrupted"))
+    bits = [f"level {level}+" if level else None, f"{sockets} sockets" if sockets <= 2 else f"{sockets}+ sockets",
+            f"{q}%+ quality" if q else "no quality", "corrupted" if g.get("corrupted") else "not corrupted"]
+    return {"class": g["class_text"], "gear": True, "gclass": None, "rarity": "Gem", "name": g["name"],
+            "base": g["name"], "mods": [], "uses": None, "corrupted": bool(g.get("corrupted")), "quality": q,
+            "sockets": sockets, "ilvl": None, "group_id": None, "search": s,
+            "notes": ["searched as a gem: " + ", ".join(b for b in bits if b)]}
+
+
 def parse_gear(text):
     """A copied piece of gear -> a price-check item (same shape as a tablet / jewel item, plus "gear": True and the
     search plan), or None if it isn't gear."""
     g = gamedata.read_item(text)
+    gi = gem_item(g, text)                                   # 2.130.0: skill / support / spirit gems
+    if gi:
+        return gi
     t = type_only_item(g)
     if t:
         return t
@@ -613,6 +657,16 @@ def build_query(item, must, optional, count_min, values, plain=False):
             k: v for k, v in (("min", s["ilvl_min"]), ("max", s.get("ilvl_max"))) if v}
     if s.get("quality_min"):                                  # 2.79.0: white bases
         filters.setdefault("type_filters", {"filters": {}})["filters"]["quality"] = {"min": s["quality_min"]}
+    gem = s.get("gem")
+    if gem:                                                   # 2.130.0: a gem (as the trade site's own gem filters)
+        mf = filters.setdefault("misc_filters", {"filters": {}})["filters"]
+        if gem.get("level"):
+            mf["gem_level"] = {"min": gem["level"]}
+        n = gem.get("sockets")
+        if n:
+            mf["gem_sockets"] = {"min": n, "max": n} if n <= 2 else {"min": n}
+        q = gem.get("quality") or 0
+        filters.setdefault("type_filters", {"filters": {}})["filters"]["quality"] = {"min": q} if q else {"max": 0}
     if api_age:
         filters["trade_filters"] = {"filters": {"indexed": {"option": api_age}}}
     query["filters"] = filters

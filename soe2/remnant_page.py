@@ -189,6 +189,8 @@ class RemnantPage:
                             opened = time.time()
                             RM.log(f"book seen ({share:.0%} parchment) in a {getattr(self, 'rm_zone', None)} "
                                    f"(Expedition mark {'seen' if not unsure else 'not seen yet'})")
+                    if getattr(self, "rm_force_read", False):        # 2.130.0: gem prices came in
+                        self.rm_force_read, settle = False, max(settle, 1)
                     if not RM.changed(last, th) and settle <= 0:
                         if found or time.time() - read_at < RM.RETRY_SECS:
                             continue
@@ -318,7 +320,46 @@ class RemnantPage:
                 self.remnant_prefetch(league)
             names, value_of = self.remnant_names_values(league, fetch=not held)
             cache = self.rm_names = ((league, getattr(WPRICES, "ts", 0)), names, value_of, time.time())
-        return RM.price_lines(lines, cache[1], cache[2])
+        return RM.price_lines(lines, cache[1], cache[2], lambda k, lv, n: self.remnant_gem_value(k, lv, n, league))
+
+    # ---------------- 2.130.0 (feedback): gems in a remnant's book - priced on the trade site, one search each
+    GEM_FRESH = 1800                                  # a gem's price is kept this long (seconds)
+
+    def remnant_gem_value(self, kind, level, name, league):
+        """-> (divines or None, still looking). The first time: (None, True) and a search starts in the background;
+        its price comes with the next read (the book's tags are shown again)."""
+        cache = self.__dict__.setdefault("rm_gem_prices", {})
+        key = (league, kind, level, name.casefold())
+        hit = cache.get(key)
+        if hit and time.time() - hit[1] < self.GEM_FRESH:
+            return hit[0], False
+        pend = self.__dict__.setdefault("rm_gem_wait", [])
+        if key not in pend:
+            pend.append(key)
+            if len(pend) == 1:
+                threading.Thread(target=self._remnant_gem_fetch, daemon=True).start()
+        return None, True
+
+    def _remnant_gem_fetch(self):
+        """One gem at a time (the trade site's limits): its base gem - the level the book says, the 2 sockets it
+        comes with, no quality, not corrupted - and the middle of the cheapest listings."""
+        from . import gear as G, trade as T
+        pend, cache = self.rm_gem_wait, self.rm_gem_prices
+        while pend:
+            league, kind, level, low = pend[0]
+            try:
+                name = G.gem_type(low)
+                item = {"rarity": "Gem", "search": G.gem_search(name, level, 2 if level else None, 0, False)}
+                total, ids, qid = G.run_search(league, G.build_query(item, [], [], 0, {}))
+                each = T.estimate(T.fetch_prices(qid, ids), league) if total and ids else None
+                cache[pend[0]] = (each, time.time())
+                RM.log(f"  gem {name}{f' level {level}' if level else ''}: "
+                       + (fmt_short(each) if each is not None else f"no price ({total} listed)"))
+            except Exception as ex:
+                cache[pend[0]] = (None, time.time() - self.GEM_FRESH + 120)     # (try again in 2 minutes)
+                RM.log(f"  gem {low}: search failed ({ex.__class__.__name__})")
+            pend.pop(0)
+        self.rm_force_read = True                     # (the open book is read again: its gems get their prices)
 
     # ---------------- the tags over the game
     # 2.38.0: one small, solid, click-through window per tag. (2.37.0 drew them on ONE window as big as the game, made
@@ -378,7 +419,9 @@ class RemnantPage:
         own = []
         for row in rows:
             x0, y0, x1, y1 = row["box"]
-            if row["total"] is None:                           # (2.40.0: also a reward poe.ninja doesn't list)
+            if row.get("pending"):                              # 2.130.0: a gem being looked up on the trade site
+                txt, fg = "…", MUT
+            elif row["total"] is None:                         # (2.40.0: also a reward poe.ninja doesn't list)
                 txt, fg = "no price", MUT
             else:
                 txt = fmt_short(row["total"])                   # 2.39.0: 16ex, 20c, 29d

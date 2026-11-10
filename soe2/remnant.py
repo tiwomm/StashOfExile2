@@ -142,12 +142,32 @@ def explicit_qty(text):
     return bool(QTY.search(ONE_X.sub("1x", " ".join(str(text).split()))))
 
 
-def price_lines(lines, names, value_of):
+GEM_LINE = re.compile(r"^(Skill|Support|Spirit)(?:\s+Level\s+(\d+))?\s*:\s*(.{3,})$", re.I)
+
+
+def gem_line(text):
+    """2.130.0 (feedback: gems in a remnant's book showed nothing): "Skill Level 20: Repulsion" / "Support: Concussive
+    Runes" -> ("skill" | "support" | "spirit", level or None, gem name), or None."""
+    m = GEM_LINE.match(" ".join(str(text).split()))
+    if not m:
+        return None
+    return m.group(1).lower(), (int(m.group(2)) if m.group(2) else None), m.group(3).strip()
+
+
+def price_lines(lines, names, value_of, gem_value=None):
     """[(text, box)] from OCR -> [{"text", "name", "qty", "each", "total", "box"}] for the lines that are items
     (value_of(name) -> divines each, or None when poe.ninja has no price). A reward line poe.ninja doesn't know at
-    all is kept too, with "unknown": True and no price."""
+    all is kept too, with "unknown": True and no price. 2.130.0: a gem line ("Skill Level 20: Repulsion") is priced
+    on the trade site - gem_value(kind, level, name) -> (divines or None, still looking)."""
     out = []
     for text, box in lines:
+        gl = gem_line(text) if gem_value else None
+        if gl:
+            each, pending = gem_value(*gl)
+            out.append({"text": text, "name": gl[2] + (f" (level {gl[1]})" if gl[1] else ""), "qty": 1,
+                        "each": each, "total": each, "box": box, "gem": True, "pending": pending,
+                        "unknown": each is None and not pending})
+            continue
         base, qty = split_qty(text)
         name = names.match(base)
         if not name:
