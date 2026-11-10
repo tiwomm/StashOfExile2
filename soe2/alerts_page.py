@@ -768,6 +768,10 @@ class AlertsPage:
             self.rt_done = True
             if self.rt_map and self.rt_map[0] < self.rt_map[1]:
                 self.rt_map = (self.rt_map[1], self.rt_map[1])
+        try:                                                 # 2.129.4: a Ritual map - the bar out of captures while
+            self.overlay_capture_sync()                      # its rituals are left (the watcher sees the counter)
+        except Exception:
+            buglog.caught()
         # 2.129.0 (feedback: "still isn't reminding me when I leave the map"): the Ritual helper is on but its
         # watcher isn't running (its log: it was told to stop the moment it started) - start it again, at most
         # every 30 s; the app's log says so each time
