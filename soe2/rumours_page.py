@@ -80,7 +80,8 @@ class RumoursPage:
             self.ru_stop()
 
     def ru_start(self):
-        if not self.ru_on() or getattr(self, "ru_alive", False) or RM.ocr_available():
+        from . import features as FEAT
+        if not self.ru_on() or not FEAT.on("overlay") or getattr(self, "ru_alive", False) or RM.ocr_available():
             return
         self.ru_gen = getattr(self, "ru_gen", 0) + 1
         self.ru_alive = True

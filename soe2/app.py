@@ -70,6 +70,7 @@ from .plan_page import FocusPokes, GamePlanPage
 from .stashscan_page import StashScanPage      # 2.102.0: Wealth › Scan stash (beta)
 from .remnant_page import RemnantPage         # 2.37.0: Expedition Remnant Price Checker
 from .favours_page import FavoursPage       # 2.128.0: Favours prices (the Ritual helper)
+from .features_page import FeaturesPage     # 2.131.0: the Feature Picker
 from .ledger_page import LedgerPage           # 2.45.0: Money Makers > Strat Tracker
 from .feedback_page import FeedbackPage       # 2.48.0: the update badge and Report a bug (taskbar)
 from .feed_page import FeedPage               # 2.51.0: Mod book › Manual feed
@@ -184,7 +185,7 @@ def on_a_monitor(x, y):
         return None
 
 
-class App(SettingsPage, GearBookPage, PriceCheckPage, PricePopup, FavoritesPage, BoardModPage, LeaderboardPage, WellSoulsPage, RumoursPage, ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, ExchangePage, WealthPage, LibraryPage, RegexPage, UtilitiesPage, TrackerPage, SearchPage, CalcOverlay, InsightsPage, MoneyMakersPage, MapLibraryPage, RemnantPage, FavoursPage, LedgerPage, FeedbackPage, FeedPage, MergedOverlay, LightOverlay, GamePlanPage, FocusPokes, OverlayHelp, OverlayParts, CampaignUI, OverlayRates, CommunityPage, RateModsPage, StashScanPage, OverlayQuick):
+class App(SettingsPage, GearBookPage, PriceCheckPage, PricePopup, FavoritesPage, BoardModPage, LeaderboardPage, WellSoulsPage, RumoursPage, ListKeys, AlertsPage, AboutPage, TabReaderPage, SearchOptsPage, ExchangePage, WealthPage, LibraryPage, RegexPage, UtilitiesPage, TrackerPage, SearchPage, CalcOverlay, InsightsPage, MoneyMakersPage, MapLibraryPage, RemnantPage, FavoursPage, LedgerPage, FeedbackPage, FeedPage, MergedOverlay, LightOverlay, GamePlanPage, FocusPokes, OverlayHelp, OverlayParts, CampaignUI, OverlayRates, CommunityPage, RateModsPage, StashScanPage, OverlayQuick, FeaturesPage):
     COLS = [("added", "#", 46, "e"), ("name", "Item", 220, "w"), ("type", "Type", 110, "w"), ("mark", "Status", 90, "center"),
             ("est", "Price", 110, "e"), ("conf", "Confidence", 95, "center"), ("listings", "Listings", 70, "e"), ("priced", "Priced at", 130, "w"),
             ("match", "How it was priced", 300, "w"), ("vmods", "★", 60, "center"),
@@ -567,6 +568,7 @@ class App(SettingsPage, GearBookPage, PriceCheckPage, PricePopup, FavoritesPage,
         self.root.after(60, self.restore_zoom)                 # 2.23.1: maximized last time -> maximized again
         self.root.after(1500, self.show_whatsnew)              # 2.0 beta 12: once per new version
         self.root.after(4000, self.league_notice)              # 2.130.0: the new league's heads-up, once
+        self.root.after(2500, self.features_maybe)             # 2.131.0: the Feature Picker, asked once
         self.root.after(4000, self.board_name_check)           # 2.85.0: your community name, asked once (2.86.1: or again if reset)
         if SPLASH[0] is not None:                              # 2.0.0: the start-up screen waits for the mod list,
             _splash_step(i=3)                                  # but never more than 3 seconds
@@ -611,7 +613,8 @@ class App(SettingsPage, GearBookPage, PriceCheckPage, PricePopup, FavoritesPage,
         if not seen and not force and self.show_quickstart():     # 2.10.0: a fresh install gets the quick start
             return
         notes = notes_between(None if force or not seen else seen, APP_VERSION)
-        beta = bool(SETTINGS.get("labs"))                 # 2.125.6: beta features' notes only with them on
+        from . import features as FEAT
+        beta = FEAT.any_beta()                            # 2.125.6: beta features' notes only with them on
         if seen and not force and notes and split_notes(notes, beta) == ([], []):
             SETTINGS["seen_version"] = APP_VERSION        # (only beta notes, beta off: nothing to show)
             save_json("settings.json", SETTINGS)
@@ -2304,7 +2307,8 @@ class App(SettingsPage, GearBookPage, PriceCheckPage, PricePopup, FavoritesPage,
         if not t or t <= getattr(self, "_marked_combo", 0):
             return
         self._marked_combo = t
-        if not SETTINGS.get("copy_marker", True):
+        from . import features as FEAT
+        if not SETTINGS.get("copy_marker", True) or not FEAT.on("bulk"):
             return
         try:
             from .copymark import CopyMarker
@@ -2353,6 +2357,9 @@ class App(SettingsPage, GearBookPage, PriceCheckPage, PricePopup, FavoritesPage,
         cur = parse_currency_item(text)                          # (a Wombgift: a trade search - feedback)
         if parse_stack(text) or (cur and cur[2] != "Wombgifts"):  # currency & other stacks: offer the Wealth window
             return self.not_priceable_yet(text)                  # (2.129.0: and any exchange item: its going rate)
+        from . import features as FEAT
+        if not FEAT.on("bulk") and text != self.own_clip:        # 2.131.0: Bulk Pricing is off (Features)
+            return
         if not self.ADVANCED.search(text):                       # plain Ctrl+C: no mod tiers/ranges, can't be priced well
             self.status_text = "Ignored a normal copy - use Ctrl+Alt+C so the mod details are included"
             self.status_until = time.time() + 10
@@ -2409,11 +2416,12 @@ class App(SettingsPage, GearBookPage, PriceCheckPage, PricePopup, FavoritesPage,
             msg = (f"{name} x{qty:,} is a stack: stacks are counted on the Wealth window, not price-checked. "
                    "Tip: with the Wealth window in front (or while counting), a plain Ctrl+C adds stacks there.")
             self.status_text, self.status_until = msg, time.time() + 15
-            if SETTINGS.get("labs"):
+            from . import features as FEAT
+            if FEAT.on("wealth"):
                 self.info_card(msg, [("Add it to Wealth", lambda: (self.shell.open("wealth"), self.wealth_clip(text)))])
             else:
                 self.info_card(f"{name} x{qty:,} is a stack: currency isn't price-checked. (Counting it is part of "
-                               "Wealth, a beta feature: Settings › General › Beta features.)")
+                               "Wealth, a beta feature: Settings › General › Features.)")
             self.stack_price(name, qty)                       # 2.72.1: what it's worth, in the status line
             return
         from .wealth import parse_currency_item

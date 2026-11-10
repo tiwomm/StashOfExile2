@@ -600,7 +600,9 @@ class PriceCheckPage:
         """An item copied with your price check key (Ctrl+D; Settings › Keybinds), with its switch on. Set to Ctrl+C,
         the game's own plain copy counts as before."""
         keys = getattr(self, "keys", None)
-        if not SETTINGS.get("pc_ctrl_c", True) or keys is None or not getattr(keys, "active", False):
+        from . import features as FEAT
+        if not SETTINGS.get("pc_ctrl_c", True) or keys is None or not getattr(keys, "active", False) \
+                or not FEAT.on("price"):                         # 2.131.0: Price checking off (Features)
             return False
         if not text.lstrip().startswith("Item Class:"):
             return False

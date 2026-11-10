@@ -655,7 +655,8 @@ class MergedOverlay:
         cfg = self.tracker_cfg()
         if "ov_on" not in cfg:
             cfg["ov_on"] = not getattr(self, "_fresh_install", False)
-        return bool(cfg["ov_on"])
+        from . import features as FEAT
+        return bool(cfg["ov_on"]) and FEAT.on("overlay")      # 2.131.0: Features › Game Overlay
 
     def ov_enable(self, on):
         """On: the bar, the calculator and the rates window come back as you left them - then, the first time, which

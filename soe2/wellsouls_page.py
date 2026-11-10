@@ -26,7 +26,8 @@ class WellSoulsPage:
         return c
 
     def ws_status(self):
-        if not self.ws_cfg().get("on"):
+        from . import features as FEAT
+        if not self.ws_cfg().get("on") or not FEAT.on("desecrate") or not FEAT.on("overlay"):    # 2.131.0
             return "off"
         if getattr(self, "ws_problem", None) is None:
             self.ws_problem = RM.ocr_available()
