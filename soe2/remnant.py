@@ -154,13 +154,28 @@ def gem_line(text):
     return m.group(1).lower(), (int(m.group(2)) if m.group(2) else None), m.group(3).strip()
 
 
-def price_lines(lines, names, value_of, gem_value=None):
+UNIQUE_LINE = re.compile(r"^Unique\s+([A-Za-z][A-Za-z ]{2,30})$")
+
+
+def unique_line(text):
+    """2.130.0 (feedback: "Unique Ring" showed nothing): "Unique Ring" -> "ring" (the kind of item), or None."""
+    m = UNIQUE_LINE.match(" ".join(str(text).split()))
+    return m.group(1).strip().lower() if m else None
+
+
+def price_lines(lines, names, value_of, gem_value=None, unique_pool=None):
     """[(text, box)] from OCR -> [{"text", "name", "qty", "each", "total", "box"}] for the lines that are items
     (value_of(name) -> divines each, or None when poe.ninja has no price). A reward line poe.ninja doesn't know at
     all is kept too, with "unknown": True and no price. 2.130.0: a gem line ("Skill Level 20: Repulsion") is priced
     on the trade site - gem_value(kind, level, name) -> (divines or None, still looking)."""
     out = []
     for text, box in lines:
+        ul = unique_line(text) if unique_pool else None
+        if ul:                                        # 2.130.0: a random unique of a kind - which ones it could be
+            pool = unique_pool(ul)
+            out.append({"text": text, "name": text, "qty": 1, "each": None, "total": None, "box": box,
+                        "could_be": pool, "unknown": not pool})
+            continue
         gl = gem_line(text) if gem_value else None
         if gl:
             each, pending = gem_value(*gl)
