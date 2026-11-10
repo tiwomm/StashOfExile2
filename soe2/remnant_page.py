@@ -320,7 +320,27 @@ class RemnantPage:
                 self.remnant_prefetch(league)
             names, value_of = self.remnant_names_values(league, fetch=not held)
             cache = self.rm_names = ((league, getattr(WPRICES, "ts", 0)), names, value_of, time.time())
-        return RM.price_lines(lines, cache[1], cache[2], lambda k, lv, n: self.remnant_gem_value(k, lv, n, league))
+        return RM.price_lines(lines, cache[1], cache[2], lambda k, lv, n: self.remnant_gem_value(k, lv, n, league),
+                              self.remnant_unique_pool)
+
+    POOL_SHOWN = 3                                    # the most valuable uniques named on a "Unique Ring" line
+
+    def remnant_unique_pool(self, kind):
+        """2.130.0 (feedback: "show potential expensive/good uniques they COULD get out of that basetype pool"): the
+        uniques of this kind (ring, belt, amulet ...) worth the most on poe.ninja right now - names only, best first."""
+        from . import gamedata
+        from .wealth import NINJA_ITEM_TYPES, WPRICES
+        best = {}
+        for typ in NINJA_ITEM_TYPES:
+            for name, base, v, count, corrupted in (WPRICES.parts.get(typ) or {}).get("lines", []):
+                if corrupted or (count or 0) < 2:             # (a lone or corrupted listing says little)
+                    continue
+                b = gamedata.base(base) or {}
+                if (b.get("class") or "").lower() != kind and not str(base).lower().endswith(kind):
+                    continue
+                if v > best.get(name, -1):
+                    best[name] = v
+        return [n for n, _v in sorted(best.items(), key=lambda t: -t[1])[:self.POOL_SHOWN]]
 
     # ---------------- 2.130.0 (feedback): gems in a remnant's book - priced on the trade site, one search each
     GEM_FRESH = 1800                                  # a gem's price is kept this long (seconds)
@@ -419,8 +439,10 @@ class RemnantPage:
         own = []
         for row in rows:
             x0, y0, x1, y1 = row["box"]
-            if row.get("pending"):                              # 2.130.0: a gem being looked up on the trade site
-                txt, fg = "…", MUT
+            if row.get("could_be"):                             # 2.130.0: "Unique Ring": what it could be
+                txt, fg = "Could be: " + ", ".join(row["could_be"]), MUT
+            elif row.get("pending"):                            # 2.130.0: a gem being looked up on the trade site
+                txt, fg = "Fetching price…", MUT
             elif row["total"] is None:                         # (2.40.0: also a reward poe.ninja doesn't list)
                 txt, fg = "no price", MUT
             else:
