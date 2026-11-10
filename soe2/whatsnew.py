@@ -51,7 +51,8 @@ NOTES = {
             ("Expedition", "Gem prices are kept for 6 hours and fetched a few at a time, so your own price checks keep "
              "working (the trade site has limits)."),
             ("Expedition", "Runeshapes: tiers C and D are in alphabetical order."),
-            ("Ritual", "Filter in the Ritual window is a button now, with On or Off beside it."),
+            ("Ritual", "Filter in the Ritual window is a button now, with On or Off beside it. Its Turn it on button "
+             "changes the game's setting for you while the game is closed (only that one line)."),
         ],
     },
     "2.130.3": {

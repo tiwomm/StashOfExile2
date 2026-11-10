@@ -264,7 +264,7 @@ Order (decided 2026-11-05): the page passes, then the Privacy & data hub, then t
 | 2.130.1 | Bar at the top keeps its Ritual line on screen (under it); Bar at the bottom sits on the XP bar; tribute plate's 0 read as 0 (no late reminder); a gem's Sockets option = gem sockets. |
 | 2.130.2 | No Ritual reminder through character select; theme clicks queue (no freeze); Gruvbox Dark / Light (morhetz, MIT); light themes turn all text dark; short README. |
 | 2.130.3 | Client.txt found wherever the game is installed (Windows' installed-programs list, every Steam library); Desecration Helper reads Heart of the Well options. |
-| 2.130.4 | Remnant: 10x read as IOX, Level 20 gems, gem budget + 6 h cache; runeshapes C/D alphabetical; Ritual filter button with its state. |
+| 2.130.4 | Remnant: 10x read as IOX, Level 20 gems, gem budget + 6 h cache; runeshapes C/D alphabetical; Ritual filter button with its state + Turn it on (game closed, that line only). |
 | Later | **Tribute counter under the Bar** (shelved, circle back soon): the game's tribute counter sits under the overlay's Bar in Ritual maps. Not by moving the Bar (no). |
 | 2.128.0+ | Favours prices for bigger rewards (uniques: their art by size, priced on poe.ninja's unique lists). |
 | 2.126.0+ | **UX pass round 2** (all 21 approved): paste to price, price spread, Rate ▾ on hover, card closes when the mouse leaves (hold Ctrl), Ctrl+K go to anything (Ctrl+F = this page's search), F1 keys sheet, get-started steps, Exchange Rates search/sort/pin/trend, rank on the Map Library row, one Money Makers filter bar, buttons off until a pick, one Bulk Pricing toolbar row, never color alone, Edit layout mode, hold Alt through Click-through, ↺ Defaults per section, search top left, tips on icon buttons. |

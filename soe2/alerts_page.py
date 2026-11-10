@@ -20,7 +20,7 @@ import tkinter as tk
 from tkinter import ttk
 
 from . import buglog
-from .config import save_json, SETTINGS
+from .config import P, save_json, SETTINGS
 from .gamelog import area_kind as gl_area_kind, find_log, LogReader
 from .style import C, Tooltip
 
@@ -594,7 +594,7 @@ class AlertsPage:
 
     def ritual_filter_open(self):
         """2.130.0 Filter in the Ritual window: where the game's setting is, whether it's on, and how to turn it on
-        (one line to change; the app never writes the game's files)."""
+        (one line to change). 2.130.4: Turn it on changes it for you while the game is closed."""
         from . import ritual_filter as RF
         old = getattr(self, "rf_dlg", None)
         if old is not None:
@@ -616,8 +616,9 @@ class AlertsPage:
                  fg=C["text"], font=("Segoe UI", 10), anchor="w").pack(side="left")
         tip = tk.Label(top, text="ⓘ", bg=P2, fg=C["muted"], font=("Segoe UI", 10), cursor="question_arrow")
         tip.pack(side="left", padx=(8, 0))
-        Tooltip(tip, f"A game setting with no switch in its menus: {RF.KEY} in {RF.FILE}. {RF.CREDIT}. The app only "
-                     "reads that line - you change it yourself.")
+        Tooltip(tip, f"A game setting with no switch in its menus: {RF.KEY} in {RF.FILE}. {RF.CREDIT}. The app reads "
+                     "that line; Turn it on changes it (only that line, only while the game is closed), or follow the "
+                     "steps to change it yourself.")
         status = tk.Label(dlg, text="", bg=P2, fg=C["muted"], font=("Segoe UI", 10, "bold"), anchor="w",
                           justify="left", wraplength=460)
         status.pack(fill="x", pady=(8, 2))
@@ -647,6 +648,11 @@ class AlertsPage:
             status.config(text=text, fg=col)
             where.config(text=RF.shown(path))          # (no Windows user name on screen)
             self.ritual_filter_state()
+            try:                                       # (greyed out unless it's off - nothing to turn on)
+                if wait.get("job") is None:
+                    on_btn.state(["!disabled"] if st == "off" else ["disabled"])
+            except (NameError, tk.TclError):
+                pass
             return st, path
 
         def open_folder():
@@ -674,9 +680,46 @@ class AlertsPage:
                 said.config(text=f"Copied: {RF.KEY}=false - paste it into Notepad's Find.")
             except tk.TclError:
                 said.config(text="Couldn't copy - type it: " + RF.KEY)
+        wait = {"job": None, "gone": None, "mt": None}
+
+        def file_mtime(path):
+            try:
+                return os.path.getmtime(path)
+            except OSError:
+                return None
+
+        def turn_on():
+            """2.130.4 (feedback): the game must be fully closed (it saves this file as it closes) - then the one
+            line is changed, and you're told when to start the game again."""
+            if not dlg.winfo_exists():
+                return
+            _st, path = RF.state()
+            if game_rect() is not None:
+                wait["gone"], wait["mt"] = None, None
+                said.config(text="Close the game fully (not just to the character screen) - waiting for it…",
+                            fg=C.get("warn", C["text"]))
+                on_btn.state(["disabled"])
+                wait["job"] = dlg.after(1000, turn_on)
+                return
+            now, mt = time.time(), file_mtime(path)
+            if wait["gone"] is None or mt != wait["mt"]:          # just closed (or still saving): wait 4 s quiet
+                wait["gone"], wait["mt"] = now, mt
+            if now - wait["gone"] < 4:
+                said.config(text="The game is closing - one moment…", fg=C["muted"])
+                wait["job"] = dlg.after(1000, turn_on)
+                return
+            ok, note = RF.turn_on(path, P("backups"))
+            wait["job"] = None
+            said.config(text=(note + " You can start the game again.") if ok else note,
+                        fg=C.get("good", C["text"]) if ok else C.get("warn", C["text"]))
+            check()
         btns = tk.Frame(dlg, bg=P2)
         btns.pack(fill="x", pady=(12, 0))
-        ttk.Button(btns, text="Open folder", style="Primary.TButton", command=open_folder).pack(side="left")
+        on_btn = ttk.Button(btns, text="Turn it on", style="Primary.TButton", command=turn_on)
+        on_btn.pack(side="left")
+        Tooltip(on_btn, "Changes that one line from false to true - nothing else in the file. The game must be closed; "
+                        "a copy of the file is kept in the app's data folder first.")
+        ttk.Button(btns, text="Open folder", command=open_folder).pack(side="left", padx=(8, 0))
         ttk.Button(btns, text="Copy line", command=copy_line).pack(side="left", padx=(8, 0))
         ttk.Button(btns, text="Check again", command=check).pack(side="left", padx=(8, 0))
         ttk.Button(btns, text="Close", command=dlg.destroy).pack(side="right")
@@ -688,6 +731,7 @@ class AlertsPage:
         except Exception:
             buglog.caught()
         dlg.rf_check, dlg.rf_open, dlg.rf_copy, dlg.rf_said, dlg.rf_status = check, open_folder, copy_line, said, status
+        dlg.rf_on, dlg.rf_on_btn = turn_on, on_btn
         return dlg
 
     def alerts_ritual_leave_changed(self):
