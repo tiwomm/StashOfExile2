@@ -23,6 +23,9 @@ VERSION HISTORY
        - Game log (feedback: a player who installs games elsewhere got no map counts or helpers - Client.txt wasn't
          found): gamelog.find_log also looks where Windows' installed-programs list says Path of Exile 2 is
          (installed_game_dirs, registry only) and in every Steam library (libraryfolders.vdf), at most every 20 s.
+       - Desecration Helper (feedback: "needs to learn heart of the well diamond jewel mods"): its 72 own mods (RePoE,
+         generation type "unique", heart_unique_jewel_prefix / _suffix) added to tierdata.json (build_tierdata.py
+         --heart); options that are all Heart mods at Heart values (heart_fits) are rated on it: "Heart lo-hi · roll%".
   2.130.2
        - Ritual (feedback: died, exited to character selection, came back on another character - the reminder came):
          gamelog LOGIN (the login server connect) -> "login"; a map -> hideout move after it is no leave (br_relog).

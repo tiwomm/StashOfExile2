@@ -49,6 +49,7 @@ NOTES = {
         "small": [
             ("App", "The game's log (Client.txt) should now be found wherever the game is installed: in any Steam "
              "library, or where Windows says it's installed. Map counts and helpers depend on it."),
+            ("Desecration Helper", "A Heart of the Well's options show their range and roll (\"Heart 6–12 · 83%\")."),
         ],
     },
     "2.130.2": {
