@@ -44,6 +44,16 @@ BETA_AREAS = ("Wealth", "Money Makers", "Game Search", "Market Insights", "Craft
               "Desecration Helper")
 
 NOTES = {
+    "2.130.4": {
+        "big": [],
+        "small": [
+            ("Expedition", "\"10x Divine Orb\" and gem lines with the word Skill hidden should get their prices."),
+            ("Expedition", "Gem prices are kept for 6 hours and fetched a few at a time, so your own price checks keep "
+             "working (the trade site has limits)."),
+            ("Expedition", "Runeshapes: tiers C and D are in alphabetical order."),
+            ("Ritual", "Filter in the Ritual window is a button now, with On or Off beside it."),
+        ],
+    },
     "2.130.3": {
         "big": [],
         "small": [

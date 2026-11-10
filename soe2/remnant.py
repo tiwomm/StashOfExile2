@@ -41,7 +41,7 @@ JUNK = re.compile(r"[^\w' ()\-:,.]+")
 # S and A are the guides' picks. B-D are grouped from those notes and each rune's effect: B = some upside (more
 # kills, XP), C = only makes monsters tougher, D = hazards / dangerous. Bond: reports differ, so it's marked.
 RUNE_TIPS_UPDATED = "Nov 2026"
-RUNE_TIERS = [
+RUNE_TIERS = [   # (2.130.4, feedback: C and D in alphabetical order - S-B stay in the players' order)
     ("S", "Opulent", "rarer monsters - more loot"),
     ("S", "Power", "stronger runic mods (harder)"),
     ("S", "Oath", "monsters summon allies"),
@@ -52,29 +52,29 @@ RUNE_TIERS = [
     ("B", "Rebirth", "monsters may rebirth - more kills"),
     ("B", "Wisdom", "more experience"),
     ("B", "Ward", "monsters get runic ward"),
-    ("C", "Life", "shared life - poor loot reported"),
-    ("C", "Protective", "Verisium shields - awkward"),
-    ("C", "Stone", "armored, hard to stun"),
-    ("C", "Rage", "monsters enrage"),
-    ("C", "Momentum", "faster monsters"),
     ("C", "Adaptive", "adaptation"),
     ("C", "Arcane", "energy shield, nova"),
-    ("C", "Vision", "reflects curses / shock / chill"),
-    ("C", "Fire", "extra fire damage"),
-    ("C", "Cold", "extra cold damage"),
-    ("C", "Lightning", "extra lightning damage"),
-    ("C", "Electrocuting", "electrocute, shocked ground"),
-    ("C", "Volcanic", "ignite, burning ground"),
-    ("C", "Tempest", "shock / chill on all damage"),
-    ("C", "Prismatic", "always shock, random element"),
-    ("C", "Cyclonic", "exposure, armor break, wither"),
     ("C", "Celestial", "elemental explosions on death"),
+    ("C", "Cold", "extra cold damage"),
+    ("C", "Cyclonic", "exposure, armor break, wither"),
+    ("C", "Electrocuting", "electrocute, shocked ground"),
+    ("C", "Fire", "extra fire damage"),
+    ("C", "Life", "shared life - poor loot reported"),
+    ("C", "Lightning", "extra lightning damage"),
+    ("C", "Momentum", "faster monsters"),
+    ("C", "Prismatic", "always shock, random element"),
+    ("C", "Protective", "Verisium shields - awkward"),
+    ("C", "Rage", "monsters enrage"),
+    ("C", "Stone", "armored, hard to stun"),
+    ("C", "Tempest", "shock / chill on all damage"),
+    ("C", "Vision", "reflects curses / shock / chill"),
+    ("C", "Volcanic", "ignite, burning ground"),
     ("D", "Bloodletting", "life leech, corrupted blood"),
-    ("D", "Toxic", "poison, toxic volatiles"),
     ("D", "Earth", "earthen spires (hazard)"),
     ("D", "Moon", "moon beams (hazard)"),
     ("D", "Sky", "elemental tornados (hazard)"),
     ("D", "Tidal", "tidal waves (hazard)"),
+    ("D", "Toxic", "poison, toxic volatiles"),
 ]
 TIER_LOOK = {"S": ("#2a2108", "#ffd25a"), "A": ("#16213a", "#9fc2ff"), "B": ("#13241a", "#7fd9a0"),
              "C": ("#1c1c24", "#b4bccb"), "D": ("#2a1012", "#ff8a80")}
@@ -86,11 +86,22 @@ class OcrUnavailable(Exception):
 
 # ================================================================ reading lines (pure: tested offline)
 ONE_X = re.compile(r"^[lI|i!]\s?[x×х](?=\s)")     # 2.129.0 (its log: 3 of 5 lines unread): OCR reads "1x" as "lx"
+# 2.130.4 (feedback: "doesn't read 10x divine orb" - its log: 'IOX Divine Orb'): a count whose digits OCR read as
+# letters (I/l/| for 1, O/o for 0), at the start of a line before x
+QTY_LETTERS = re.compile(r"^([0-9IlOo|]{2,4})\s?[xX×х](?=\s)")
+
+
+def _fix_qty(t):
+    m = QTY_LETTERS.match(t)
+    if not m or not re.search(r"[0-9Il|]", m.group(1)[0]):
+        return t
+    digits = m.group(1).translate(str.maketrans("IlOo|", "11001"))
+    return digits + "x" + t[m.end():]
 
 
 def split_qty(text):
     """'Orb of Alchemy x3' / '3x Orb of Alchemy' / 'Orb of Alchemy' -> ('Orb of Alchemy', 3 / 1)."""
-    t = ONE_X.sub("1x", " ".join(str(text).split()))
+    t = _fix_qty(ONE_X.sub("1x", " ".join(str(text).split())))
     m = QTY.search(t)
     qty = 1
     if m:
@@ -139,19 +150,34 @@ def same_ending(a, b):
 
 def explicit_qty(text):
     """The line has an amount ("6x ...", "... x3") - remnant reward lines always do."""
-    return bool(QTY.search(ONE_X.sub("1x", " ".join(str(text).split()))))
+    return bool(QTY.search(_fix_qty(ONE_X.sub("1x", " ".join(str(text).split())))))
 
 
 GEM_LINE = re.compile(r"^(Skill|Support|Spirit)(?:\s+Level\s+(\d+))?\s*:\s*(.{3,})$", re.I)
+# 2.130.4 (its log: 'Level 20: POWered by Verisium' - the word Skill hidden under the runeshapes): a level with no kind
+LEVEL_LINE = re.compile(r"^Level\s+(\d+)\s*:\s*(.{3,})$", re.I)
 
 
 def gem_line(text):
     """2.130.0 (feedback: gems in a remnant's book showed nothing): "Skill Level 20: Repulsion" / "Support: Concussive
     Runes" -> ("skill" | "support" | "spirit", level or None, gem name), or None."""
-    m = GEM_LINE.match(" ".join(str(text).split()))
+    t = " ".join(str(text).split())
+    m = GEM_LINE.match(t)
     if not m:
-        return None
-    return m.group(1).lower(), (int(m.group(2)) if m.group(2) else None), m.group(3).strip()
+        lv = LEVEL_LINE.match(t)
+        return ("skill", int(lv.group(1)), fix_case(lv.group(2).strip())) if lv else None
+    return m.group(1).lower(), (int(m.group(2)) if m.group(2) else None), fix_case(m.group(3).strip())
+
+
+def fix_case(name):
+    """'POWered by Verisium' -> 'Powered by Verisium': OCR's odd capitals on a word (the trade site needs the name)."""
+    small = {"of", "the", "by", "and", "in", "on", "to", "a"}
+    out = []
+    for n, w in enumerate(name.split()):
+        if sum(c.isupper() for c in w) > 1 and not w.isupper() or (w.isupper() and len(w) > 3):
+            w = w.lower() if (n and w.lower() in small) else w.capitalize()
+        out.append(w)
+    return " ".join(out)
 
 
 UNIQUE_LINE = re.compile(r"^Unique\s+([A-Za-z][A-Za-z ]{2,30})$")
