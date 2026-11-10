@@ -24,6 +24,10 @@ VERSION HISTORY
        campaign' option all together"): Trade whispers is on or off. Past the campaign, with After the campaign off,
        it was on but resting - its chip showed off, and clicking it switched on what was already on, so nothing
        changed. The option, its setting (migration whispers_after_21292) and whispers.in_campaign are gone.
+       - Remnant (feedback: "eventually popped up but took a while"; its log: the first read took 14.5 s): that read
+         fetched every poe.ninja price list first (over an hour old). The watcher now fetches them in the background
+         before a book opens (remnant_prefetch: one try in 5 minutes), and a read uses the prices held, refreshing
+         stale ones meanwhile.
   2.129.1
        Feedback ("Expedition helper isn't showing up at all anymore", "no ritual reminder", an omen not read, "offer
        tribute ... stayed on-screen too long"):

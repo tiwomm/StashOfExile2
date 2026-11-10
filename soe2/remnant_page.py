@@ -138,9 +138,13 @@ class RemnantPage:
         from .overlay import game_active
         last, misses, settle, found, read_at = None, 0, 0, False, 0.0
         opened = None                                 # 2.127.0: when this book showed (for the log)
+        from .wealth import WPRICES
         try:
             while gen == getattr(self, "rm_auto_gen", 0):
                 time.sleep(RM.AUTO_POLL)
+                lg = SETTINGS.get("league", "")
+                if opened is None and (WPRICES.league != lg or (WPRICES.age() or 1e9) > 3000):
+                    self.remnant_prefetch(lg)         # 2.129.2: prices ready before a book opens
                 c = SETTINGS.get("remnant") or {}
                 area = c.get("area") or RM.AREA
                 if not game_active() or getattr(self, "rm_busy", False):
@@ -262,13 +266,15 @@ class RemnantPage:
         self.rm_last = f"{time.strftime('%H:%M')}: {len(rows)} priced" + (f", best {best['name']}" if best else "")
 
     @staticmethod
-    def remnant_names_values(league):
-        """(Names, value_of) from the poe.ninja prices Wealth uses (fetched if over an hour old)."""
+    def remnant_names_values(league, fetch=True):
+        """(Names, value_of) from the poe.ninja prices Wealth uses (fetched if over an hour old - unless fetch is
+        False: what's held)."""
         from .wealth import NINJA_EXCHANGE_TYPES, NINJA_ITEM_TYPES, WPRICES
-        try:
-            WPRICES.ensure(league)
-        except Exception:
-            buglog.caught()
+        if fetch:
+            try:
+                WPRICES.ensure(league)
+            except Exception:
+                buglog.caught()
         names = []
         for typ in NINJA_EXCHANGE_TYPES:
             names += [ln[1] for ln in (WPRICES.parts.get(typ) or {}).get("lines", [])]
@@ -283,12 +289,34 @@ class RemnantPage:
             return max(cands, key=lambda c: c[2])[1] if cands else None
         return RM.Names(names), value_of
 
+    def remnant_prefetch(self, league):
+        """2.129.2 (feedback: "eventually popped up but took a while" - its log: the first read took 14.5 s): the
+        prices are fetched in the background, before a book is opened, and kept fresh - a read never waits on
+        poe.ninja when there are prices to use."""
+        if getattr(self, "_rm_fetching", False) or not league or time.time() - getattr(self, "_rm_fetch_at", 0) < 300:
+            return                                    # (one try in 5 minutes - poe.ninja may be down)
+        self._rm_fetching, self._rm_fetch_at = True, time.time()
+
+        def go():
+            t0 = time.time()
+            try:
+                self.remnant_names_values(league)
+                RM.log(f"prices fetched in {time.time() - t0:.1f} s (ahead of a book)")
+            except Exception:
+                buglog.caught()
+            finally:
+                self._rm_fetching = False
+        threading.Thread(target=go, daemon=True).start()
+
     def remnant_price(self, lines, league):
         from .wealth import WPRICES
         key = (league, getattr(WPRICES, "ts", 0))
         cache = getattr(self, "rm_names", None)
         if not cache or cache[0] != key or time.time() - cache[3] > 600:     # (Auto reads often: build names once)
-            names, value_of = self.remnant_names_values(league)
+            held = WPRICES.league == league and WPRICES.age() is not None      # (2.129.2: prices held - use them;
+            if held and (WPRICES.age() or 0) > 3600:                           # stale ones are refreshed meanwhile)
+                self.remnant_prefetch(league)
+            names, value_of = self.remnant_names_values(league, fetch=not held)
             cache = self.rm_names = ((league, getattr(WPRICES, "ts", 0)), names, value_of, time.time())
         return RM.price_lines(lines, cache[1], cache[2])
 

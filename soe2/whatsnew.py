@@ -49,6 +49,7 @@ NOTES = {
         "small": [
             ("Overlay", "Trade whispers is simply on or off - its switch should turn it on again (After the "
              "campaign is gone)."),
+            ("Expedition", "Remnant prices should show at once: they're fetched before you open a book."),
         ],
     },
     "2.129.1": {
