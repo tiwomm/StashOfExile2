@@ -50,7 +50,9 @@ NOTES = {
              "gets its poe.ninja price, like the Expedition helper. Price check one there and it learns its "
              "picture.", None, "Overlay"),
         ],
-        "small": [],
+        "small": [
+            ("Price Checks", "Switching pages after a theme change should no longer freeze the app."),
+        ],
     },
     "2.127.0": {
         "big": [

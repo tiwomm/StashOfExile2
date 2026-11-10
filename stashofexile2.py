@@ -32,6 +32,11 @@ VERSION HISTORY
        window is read once), click-through tags at the foot of each cell (★ on the dearest, hidden from capture) and
        ritual/favours_log.txt. 1-cell items only for now (omens, currency, runes ...). Idea looked at in poe2pricer by
        saxe78 (MIT) - our own code.
+       Freeze (feedback: after a theme change, then opening Price Checks: "not responding", every sample in
+       pcv_card's update_idletasks): no forced layout pass there (the scroll goes back after_idle), nor in
+       bulk_pane; the recent-checks row repaints only on a real width change and never from the idle loop (its
+       after_idle repaint changed the row's size, which could ask for another repaint, again and again); the
+       verdict line re-wraps only on a real change. Ritual helper: no learned-shapes file isn't an error any more.
   2.127.0
        Feedback batch:
        - Lineage support gems (Arbiter's Ignition ...) are priced: gear.lineage_item reads a "Rarity: Gem" copy whose

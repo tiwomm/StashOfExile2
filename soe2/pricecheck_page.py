@@ -320,9 +320,33 @@ class PriceCheckPage:
                                       activebackground=C["accent"])
         self.pc_recent_all.bind("<Button-1>", lambda e: self.pc_recent_menu.index("end") is not None and
                                 self.pc_recent_menu.tk_popup(e.x_root, e.y_root))
-        self.pc_recent.bind("<Configure>", lambda e: self.root.after_idle(self.pc_recent_paint), add="+")
+        self.pc_recent.bind("<Configure>", self._pc_recent_resized, add="+")
 
     PC_CHIPS = 8
+
+    def _pc_why_resized(self, e):
+        w = max(200, e.width - 8)
+        if abs(int(self.pc_v_why.cget("wraplength") or 0) - w) >= 8:
+            self.pc_v_why.config(wraplength=w)
+
+    def _pc_recent_resized(self, e):
+        """2.128.0 (feedback: the app froze after a theme change): repaint the chips only when the row's width really
+        changed, and not from inside the idle loop - each repaint changes what the row asks for, which could set off
+        another resize, again and again, inside update_idletasks."""
+        if abs(e.width - getattr(self, "_pc_recent_w", -99)) < 8:
+            return
+        self._pc_recent_w = e.width
+        job = getattr(self, "_pc_recent_job", None)
+        if job:
+            try:
+                self.root.after_cancel(job)
+            except Exception:
+                buglog.caught()
+        self._pc_recent_job = self.root.after(60, self._pc_recent_go)
+
+    def _pc_recent_go(self):
+        self._pc_recent_job = None
+        self.pc_recent_paint()
 
     def pc_recent_paint(self):
         from .pricefmt import fmt_div
@@ -375,7 +399,7 @@ class PriceCheckPage:
         self.pc_v_why = tk.Label(left, text="", bg=C["panel2"], fg=C["muted"], font=("Segoe UI", 9), anchor="w",
                                  justify="left")
         self.pc_v_why.pack(side="left", padx=(12, 0), fill="x", expand=True)
-        self.pc_v_why.bind("<Configure>", lambda e: self.pc_v_why.config(wraplength=max(200, e.width - 8)))
+        self.pc_v_why.bind("<Configure>", self._pc_why_resized)     # (2.128.0: only a real change re-wraps)
         # 2.123.2 (hotfix, feedback: the buttons belong under the item): Search again, fewer mods, Clear, favorites and
         # Trade Site are made with each card, under it (pcv_card). These stand in, unshown, while there's no item.
         hold = tk.Frame(f, bg=C["panel2"])
@@ -811,8 +835,9 @@ class PriceCheckPage:
             for w in old:
                 w.destroy()
             holder.pack(fill="both", expand=True)
-        v.lcanvas.update_idletasks()
-        v.lcanvas.yview_moveto(top)
+        # 2.128.0 (feedback: froze here after a theme change - "not responding", stuck in update_idletasks): the
+        # scroll goes back once the card is laid out, without forcing every pending resize of the app right now
+        self.root.after_idle(lambda: v.lcanvas.winfo_exists() and v.lcanvas.yview_moveto(top))
         return card, btn
 
     def pc_entries(self, rec):

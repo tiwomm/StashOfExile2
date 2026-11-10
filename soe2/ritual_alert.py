@@ -81,6 +81,8 @@ def references():
         here = Path(base) / "soe2" if base else Path(__file__).resolve().parent
         for p in (here / "ritual_glyphs.json", Path(os.environ.get("SOE2_RITUAL_LEARNED", "")) if
                   os.environ.get("SOE2_RITUAL_LEARNED") else None):
+            if p is None:                                  # (2.128.0: no learned shapes - nothing to read)
+                continue
             try:
                 for d, grid, asp in json.loads(Path(p).read_text())["glyphs"]:
                     refs.append((int(d), np.array(grid, float).reshape(GRID), float(asp)))
