@@ -662,6 +662,11 @@ class SettingsPage:
         slow_report.txt - code locations only - so a slow PC can show where the time goes.)"""
         from .style import THEMES
         from .hangwatch import profiled
+        if wait and getattr(self, "_theme_busy", False):
+            # 2.130.2 (feedback: "people keep crashing when rapidly changing themes"): a swap is running - this pick
+            # waits and only the last one is applied when it's done (clicks never stack up behind a swap)
+            self._theme_next = tid
+            return None
         SETTINGS["theme"] = tid
         save_json("settings.json", SETTINGS)
         if "theme" in getattr(self, "look_vars", {}):
@@ -677,7 +682,14 @@ class SettingsPage:
 
         def go():
             self._theme_job = None
-            profiled("theme change", self.relook, P("slow_report.txt"), APP_VERSION)
+            if not wait:
+                return profiled("theme change", self.relook, P("slow_report.txt"), APP_VERSION)
+            self._theme_busy, self._theme_next = True, None
+            self._theme_cursor("watch")
+            try:
+                profiled("theme change", self.relook, P("slow_report.txt"), APP_VERSION)
+            finally:                                             # a short rest after each swap (THEME_REST ms):
+                self.root.after(self.THEME_REST, self._theme_done)    # Windows finishes repainting first
         if not wait:                                             # (code and tests: at once)
             return go()
         try:
@@ -685,6 +697,25 @@ class SettingsPage:
         except Exception:
             buglog.caught()
         self._theme_job = self.root.after(200, go)
+
+    THEME_REST = 400                                             # 2.130.2: ms between two theme swaps
+
+    def _theme_done(self):
+        self._theme_busy = False
+        self._theme_cursor("hand2")
+        nxt, self._theme_next = getattr(self, "_theme_next", None), None
+        if nxt and nxt != SETTINGS.get("theme"):
+            self.pick_theme(nxt, wait=True)                      # (the last card clicked during the swap)
+
+    def _theme_cursor(self, cur):
+        """The theme cards show a busy cursor while a swap runs."""
+        for cards in list(getattr(self, "look_card_sets", {}).values()):
+            for card in list(cards.values()):
+                try:
+                    if card.winfo_exists():
+                        card.configure(cursor=cur)
+                except tk.TclError:
+                    pass
 
     def theme_cards(self, parent, where, cols=4, scale=1.0):
         """2.60.0 / 2.61.0: the theme cards - a small picture of each pack; click = that theme, live. Used in
