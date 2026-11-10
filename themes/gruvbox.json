@@ -1,0 +1,246 @@
+{
+ "schema": 1,
+ "id": "gruvbox",
+ "name": "Gruvbox Dark",
+ "order": 11,
+ "extends": "daybreak",
+ "description": "The retro editor scheme: warm brown-gray, cream text, soft orange and yellow (gruvbox by morhetz, MIT).",
+ "colors": {
+  "chassis": "#1d2021",
+  "surface": "#282828",
+  "surface_raised": "#32302f",
+  "surface_sunken": "#1d2021",
+  "surface_high": "#3c3836",
+  "border": "#3c3836",
+  "border_light": "#504945",
+  "border_dark": "#141617",
+  "shadow": "#000000",
+  "text": "#ebdbb2",
+  "text_muted": "#a89984",
+  "text_strong": "#fbf1c7",
+  "text_disabled": "#665c54",
+  "accent": "#fe8019",
+  "accent_2": "#8ec07c",
+  "selection": "#504945",
+  "selection_text": "#fbf1c7",
+  "hover": "#3c3836",
+  "stripe": "#242424",
+  "good": "#b8bb26",
+  "warn": "#fabd2f",
+  "bad": "#ff7362",
+  "money": "#fabd2f",
+  "link": "#83a598",
+  "purple": "#d3869b",
+  "orange": "#fe8019"
+ },
+ "fonts": {
+  "head": [
+   "Segoe UI Semibold",
+   "Segoe UI",
+   "DejaVu Sans"
+  ],
+  "num": [
+   "Consolas",
+   "Segoe UI",
+   "DejaVu Sans Mono"
+  ]
+ },
+ "bars": {
+  "title": {
+   "fill": [
+    [
+     0,
+     "#3c3836"
+    ],
+    [
+     1,
+     "#32302f"
+    ]
+   ],
+   "top": "#504945",
+   "bottom": "#1d2021",
+   "text": "#fbf1c7",
+   "texture": "none"
+  },
+  "title_off": {
+   "fill": [
+    [
+     0,
+     "#32302f"
+    ],
+    [
+     1,
+     "#282828"
+    ]
+   ],
+   "top": "#3c3836",
+   "bottom": "#1d2021",
+   "text": "text_muted",
+   "texture": "none"
+  },
+  "section": {
+   "fill": [
+    [
+     0,
+     "#32302f"
+    ],
+    [
+     1,
+     "#282828"
+    ]
+   ],
+   "top": "#3c3836",
+   "bottom": "#1d2021",
+   "text": "#fabd2f",
+   "texture": "none"
+  }
+ },
+ "buttons": {
+  "normal": {
+   "fill": [
+    [
+     0,
+     "#504945"
+    ],
+    [
+     1,
+     "#3c3836"
+    ]
+   ],
+   "hover": [
+    [
+     0,
+     "#665c54"
+    ],
+    [
+     1,
+     "#504945"
+    ]
+   ],
+   "pressed": [
+    [
+     0,
+     "#32302f"
+    ],
+    [
+     1,
+     "#3c3836"
+    ]
+   ],
+   "border": "#1d2021",
+   "hover_border": "#fe8019",
+   "inner": "#665c54",
+   "radius": 2,
+   "text": "text",
+   "text_hover": "text_strong"
+  },
+  "primary": {
+   "fill": [
+    [
+     0,
+     "#fe8019"
+    ],
+    [
+     1,
+     "#d65d0e"
+    ]
+   ],
+   "hover": [
+    [
+     0,
+     "#fe9a45"
+    ],
+    [
+     1,
+     "#e06a18"
+    ]
+   ],
+   "pressed": [
+    [
+     0,
+     "#af3a03"
+    ],
+    [
+     1,
+     "#d65d0e"
+    ]
+   ],
+   "border": "#1d2021",
+   "hover_border": "#1d2021",
+   "inner": "#feb27a",
+   "radius": 2,
+   "text": "#1d2021",
+   "text_hover": "#1d2021"
+  },
+  "heading": {
+   "fill": [
+    [
+     0,
+     "#32302f"
+    ],
+    [
+     1,
+     "#282828"
+    ]
+   ],
+   "hover": [
+    [
+     0,
+     "#3c3836"
+    ],
+    [
+     1,
+     "#32302f"
+    ]
+   ],
+   "pressed": [
+    [
+     0,
+     "#282828"
+    ],
+    [
+     1,
+     "#3c3836"
+    ]
+   ],
+   "border": "#1d2021",
+   "hover_border": "#1d2021",
+   "inner": "#3c3836",
+   "radius": 0,
+   "text": "#d5c4a1",
+   "text_hover": "accent"
+  }
+ },
+ "card": {
+  "header": "plate",
+  "border": "#504945",
+  "sep": "#3c3836"
+ },
+ "meter": {
+  "style": "bar",
+  "on": "#b8bb26",
+  "off": "#3c3836",
+  "lcd_bg": "#1d2021"
+ },
+ "nav": {
+  "bg": "surface_raised",
+  "marker": "pill",
+  "marker_color": "accent",
+  "sel_bg": "#504945",
+  "hover_bg": "#3c3836",
+  "text": "text",
+  "sel_text": "#fbf1c7",
+  "group": "#bdae93",
+  "texture": "none"
+ },
+ "panels": {
+  "viewport": {
+   "edges": [
+    [
+     "#141617",
+     "#3c3836"
+    ]
+   ]
+  }
+ }
+}
