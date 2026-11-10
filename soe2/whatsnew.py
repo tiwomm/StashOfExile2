@@ -44,6 +44,13 @@ BETA_AREAS = ("Wealth", "Money Makers", "Game Search", "Market Insights", "Craft
               "Desecration Helper")
 
 NOTES = {
+    "2.130.3": {
+        "big": [],
+        "small": [
+            ("App", "The game's log (Client.txt) should now be found wherever the game is installed: in any Steam "
+             "library, or where Windows says it's installed. Map counts and helpers depend on it."),
+        ],
+    },
     "2.130.2": {
         "big": [
             ("🎨", "Gruvbox themes", "Gruvbox Dark and Gruvbox Light in Settings › Appearance: the warm, retro editor colors "

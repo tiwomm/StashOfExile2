@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU AGPL v3.0 (see LICENSE; up to 2.129.4: GNU GPL v3.0). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.130.2
+VERSION 2.130.3
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,6 +19,10 @@ VERSION 2.130.2
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.130.3
+       - Game log (feedback: a player who installs games elsewhere got no map counts or helpers - Client.txt wasn't
+         found): gamelog.find_log also looks where Windows' installed-programs list says Path of Exile 2 is
+         (installed_game_dirs, registry only) and in every Steam library (libraryfolders.vdf), at most every 20 s.
   2.130.2
        - Ritual (feedback: died, exited to character selection, came back on another character - the reminder came):
          gamelog LOGIN (the login server connect) -> "login"; a map -> hideout move after it is no leave (br_relog).
@@ -3394,7 +3398,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.130.2"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.130.3"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
