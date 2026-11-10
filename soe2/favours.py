@@ -460,6 +460,13 @@ def build_refs(items):
             continue
         for p in pics:
             refs.add(name, p, "learned", "box")
+    sl = shipped_learned()                                # 2.130.0: learned on real windows, shipped
+    for mode in ("top", "box"):
+        for name, pics in sl[mode].items():
+            if known and name not in known:
+                continue
+            for p in pics:
+                refs.add(name, p, "learned", mode)
     for name, bgr in shipped_omens().items():             # every omen of the Ritual tab, from the app itself
         if known and name not in known:
             continue
@@ -497,6 +504,27 @@ def _templates():
     from pathlib import Path
     base = getattr(sys, "_MEIPASS", None)
     return Path(base) / "soe2" / "templates" if base else Path(__file__).resolve().parent / "templates"
+
+
+def shipped_learned():
+    """2.130.0: {"top"/"box": {name: [pictures]}} - rewards learned from real Favours windows by price checking them
+    (templates/favours_learned.json: item pictures only, 48 x 48), so nobody has to teach these again."""
+    _cv2, np = _cv()
+    import json
+    out = {"top": {}, "box": {}}
+    try:
+        d = json.loads((_templates() / "favours_learned.json").read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return out
+    for mode in out:
+        for name, pics in (d.get(mode) or {}).items():
+            for b in pics:
+                try:
+                    out[mode].setdefault(name, []).append(
+                        np.frombuffer(base64.b64decode(b), np.uint8).reshape(SIDE, SIDE, 3))
+                except Exception:
+                    continue
+    return out
 
 
 def shipped_omens():

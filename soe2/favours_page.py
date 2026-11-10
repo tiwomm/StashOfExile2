@@ -87,7 +87,19 @@ class FavoursPage:
             self.favours_refs()
         except Exception as e:
             fv_log(f"pictures: {e.__class__.__name__}: {e}")
-        misses, last_sig, shown, counts = 0, None, False, {}
+        misses, last_sig, shown, counts, seen_at = 0, None, False, {}, None
+
+        def still_open(img, at):
+            """2.130.0 (feedback: "it won't stop FLASHING TO OFFER TRIBUTE WITH THE WINDOW OPEN"): the title wasn't
+            found, but most of the cells last seen holding items still hold them where they were - the window is
+            open, a tooltip is over its title."""
+            if not at or not at[1]:
+                return False
+            try:
+                now = set(FV.occupied(img, at[0]))
+            except Exception:
+                return False
+            return len(now & at[1]) >= max(2, 0.5 * len(at[1]))
         from . import remnant as RM                             # (its OCR reads the tribute)
         belts = FV.belt_refs()
         stars = FV.star_refs()                                  # 2.129.3: Rite of Passage ...
@@ -105,6 +117,9 @@ class FavoursPage:
                     shot = sct.grab({"left": gx, "top": gy, "width": w, "height": h})
                     img = np.asarray(shot)[:, :, :3]
                     win = FV.find_window(cv2.cvtColor(img, cv2.COLOR_BGR2GRAY), tpl, gh, gw)
+                    if win is None and shown and still_open(img, seen_at):
+                        misses = 0                                   # 2.130.0: the title is covered (a reward's
+                        continue                                     # tooltip) - its cells are still there
                     if win is None:
                         misses += 1
                         if misses == GONE and shown:
@@ -137,6 +152,7 @@ class FavoursPage:
                             counts["tribute"] = t
                     grid = FV.grid_box(win)
                     occ = FV.occupied(img, grid)
+                    seen_at = (grid, set(occ))
                     # (2.128.1: what's in the cells' top parts - the tags at their feet don't count as a change)
                     sig = tuple(sorted(occ.items())), b"".join(
                         cv2.resize(FV.cell_crop(img, grid, r, c), (8, 6)).tobytes() for r, c in sorted(occ))
