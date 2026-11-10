@@ -648,7 +648,7 @@ class AlertsPage:
             status.config(text=text, fg=col)
             where.config(text=RF.shown(path))          # (no Windows user name on screen)
             self.ritual_filter_state()
-            try:                                       # (greyed out unless it's off - nothing to turn on)
+            try:                                       # (grayed out unless it's off - nothing to turn on)
                 if wait.get("job") is None:
                     on_btn.state(["!disabled"] if st == "off" else ["disabled"])
             except (NameError, tk.TclError):
