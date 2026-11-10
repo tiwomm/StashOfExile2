@@ -102,6 +102,8 @@ def installed_game_dirs():
                     except OSError:
                         continue
     except Exception:
+        from . import buglog
+        buglog.caught()
         return out
     return [d for d in out if d]
 
@@ -125,7 +127,8 @@ def steam_libraries():
             except OSError:
                 pass
     except Exception:
-        pass
+        from . import buglog
+        buglog.caught()
     libs = []
     for r in roots + [r"C:\Program Files (x86)\Steam"]:
         vdf = os.path.join(r, "steamapps", "libraryfolders.vdf")
@@ -164,7 +167,8 @@ def find_log(saved=None):
                 FOUND["p"] = p
                 return p
     except Exception:
-        pass
+        from . import buglog
+        buglog.caught()
     return None
 
 
