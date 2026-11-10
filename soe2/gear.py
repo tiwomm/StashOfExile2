@@ -316,6 +316,9 @@ def gem_item(g, text):
     quality, corrupted), or None."""
     if not g or g.get("rarity") != "Gem" or g.get("class_text") not in GEM_CLASSES or not g.get("name"):
         return None
+    from .wealth import parse_currency_item
+    if parse_currency_item(text):                            # (a lineage gem: poe.ninja's exchange prices it)
+        return None
     lv = re.search(r"^Level:\s*(\d+)", text or "", re.M)
     sk = re.search(r"^Sockets:\s*(.+)$", text or "", re.M)
     level = int(lv.group(1)) if lv else None
