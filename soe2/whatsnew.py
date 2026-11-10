@@ -58,6 +58,7 @@ NOTES = {
         "small": [
             ("Ritual", "The tribute reminder should no longer show while Favours is still open (a reward's tooltip "
              "over its title)."),
+            ("Ritual", "The Ritual line should count maps with more than 4 rituals (3 of 6 and up)."),
             ("Ritual", "More Favours rewards are known from the start: omens learned on real windows ship with the "
              "app."),
             ("Expedition", "\"Unique Ring\", \"Belt\", \"Amulet\" or \"Jewellery\" in a remnant's book show the "  # game text
