@@ -94,7 +94,7 @@ class RumoursPage:
     def ru_read(self, rect, img=None):
         """The game window -> [(rumor, island, box on screen)] (blocking: OCR), [] when no card."""
         if img is None:
-            img = RM.grab(rect)
+            img = RM.mask_own(RM.grab(rect), rect[:2], ("rumours",))
         card = RU.find_card(img, rect[3] - rect[1])
         if card is None:
             return [], None
@@ -146,7 +146,7 @@ class RumoursPage:
                     continue
                 rect = (g[0], g[1], g[0] + g[2], g[1] + g[3])
                 try:
-                    img = RM.grab(rect)
+                    img = RM.mask_own(RM.grab(rect), rect[:2], ("rumours",))    # (2.128.1: our card shows in it)
                     card = RU.find_card(img, g[3])
                     if card is None:
                         misses += 1
@@ -206,7 +206,7 @@ class RumoursPage:
     def ru_show(self, rows, edge):
         """One small panel beside the Uncharted Waters card (2.113.0, feedback: "too big and clunky... more like the
         rune card helper"): a title, then one tight row per rumor - your Map library rank as a badge, the island,
-        and the rumor in small muted text - in the card's order. Click-through, left out of captures."""
+        and the rumor in small muted text - in the card's order. Click-through; in captures (2.128.1), painted over before a read."""
         self.ru_hide()
         from . import maplib
         from .overlaywin import pal
@@ -258,10 +258,12 @@ class RumoursPage:
             force_topmost(w)
         except Exception:
             buglog.caught()
-        no_capture(w)
+        # (2.128.1, feedback: shows in screenshots and streams - the watcher paints over it before reading)
+        RM.OWN["rumours"] = [(int(x), int(y), int(x) + w.winfo_reqwidth(), int(y) + w.winfo_reqheight())]
         self.ru_wins = [w]
 
     def ru_hide(self):
+        RM.OWN["rumours"] = []
         wins, self.ru_wins = getattr(self, "ru_wins", None), None
         for w in wins or ():
             try:

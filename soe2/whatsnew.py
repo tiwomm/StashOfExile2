@@ -44,6 +44,14 @@ BETA_AREAS = ("Wealth", "Money Makers", "Game Search", "Market Insights", "Craft
               "Desecration Helper")
 
 NOTES = {
+    "2.128.1": {
+        "big": [],
+        "small": [
+            ("Expedition", "Remnant prices, the runeshape list and Island rumors now show in screenshots, screen "
+             "share and streams, like the overlay."),
+            ("Ritual", "Favours prices show in screenshots and streams too."),
+        ],
+    },
     "2.128.0": {
         "big": [
             ("🕯", "Favours prices", "At a Ritual altar, each omen and other one-cell reward in the Favours window "

@@ -234,6 +234,28 @@ def ocr_available():
 
 _ENGINE = [None]
 
+# 2.128.1 (feedback: the tags should show in screenshots, screen share and streams, like the overlay): the tags and
+# the runeshape list are no longer left out of captures, so the watchers would see them - they paint over where
+# their own windows are before reading. OWN[key] = [(left, top, right, bottom) on screen] (set by the app's thread).
+OWN = {}
+
+
+def mask_own(img, origin, keys=("remnant",)):
+    """A PIL picture of the screen whose top-left is `origin` -> the same with the helper's own windows painted over
+    in the picture's middle color (so they read as nothing: no text, the parchment's share about the same)."""
+    rects = [r for k in keys for r in list(OWN.get(k) or ())]
+    if not rects:
+        return img
+    from PIL import ImageDraw, ImageStat
+    img = img.copy()
+    col = tuple(int(v) for v in ImageStat.Stat(img.convert("RGB")).median)
+    d = ImageDraw.Draw(img)
+    ox, oy = origin
+    for l_, t, r, b in rects:
+        if r > ox and b > oy and l_ < ox + img.width and t < oy + img.height:
+            d.rectangle((l_ - ox - 2, t - oy - 2, r - ox + 2, b - oy + 2), fill=col)
+    return img
+
 
 def log(line):
     """2.127.0 (feedback: tags 10 s late, twice): the watcher's own log - when a book shows, each read (how long,

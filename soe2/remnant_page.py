@@ -155,7 +155,7 @@ class RemnantPage:
                 unsure = self.rm_unsure()             # 2.98.6: a map whose Expedition mark wasn't seen (yet)
                 ar = RM.area_rect(area, rect)
                 try:
-                    img = RM.grab(ar)
+                    img = RM.mask_own(RM.grab(ar), ar[:2])     # 2.128.1: our tags show in captures - not to us
                     share = RM.parchment_share(img)
                     if share < RM.PARCHMENT:     # no book there: nothing to read (cheap)
                         if opened is not None:
@@ -285,7 +285,8 @@ class RemnantPage:
     # 2.38.0: one small, solid, click-through window per tag. (2.37.0 drew them on ONE window as big as the game, made
     # see-through with a color key; on some PCs the color key isn't honored and that window showed black over the
     # whole game - and Auto, seeing its own black window, hid and showed it again and again.) Each tag is also hidden
-    # from screen capture (Windows 10 2004+), so the watcher never reads its own tags.
+    # from screen capture (Windows 10 2004+), so the watcher never read its own tags. 2.128.1: they show in captures (as
+    # the overlay does); the watcher paints over them (RM.OWN, RM.mask_own) before it reads.
     def remnant_show(self, rect, rows, secs=RM.SHOW_SECS):
         """2.56.2 (feedback: "very bold and large ... more compact, less intrusive"): smaller, plain-weight tags in
         the overlay style's own colors (Overlays › Appearance › Style), on its texture when it has one (the runeshape
@@ -325,6 +326,7 @@ class RemnantPage:
             hh = w.winfo_reqheight()
             w.geometry(f"+{int(x)}+{int(y_mid - hh / 2)}")
             w.rm_x = int(x)                                    # 2.43.0: for the tips' place (winfo_x is 0 until shown)
+            own.append((int(x), int(y_mid - hh / 2), int(x) + w.winfo_reqwidth(), int(y_mid + hh / 2)))
             w.deiconify()
             try:
                 from .alerts_page import click_through, force_topmost
@@ -332,9 +334,9 @@ class RemnantPage:
                 force_topmost(w)
             except Exception:
                 buglog.caught()
-            no_capture(w)
-            wins.append(w)
+            wins.append(w)                                     # (2.128.1: in captures, like the overlay)
 
+        own = []
         for row in rows:
             x0, y0, x1, y1 = row["box"]
             if row["total"] is None:                           # (2.40.0: also a reward poe.ninja doesn't list)
@@ -350,6 +352,7 @@ class RemnantPage:
             if row.get("label"):                               # (the Test: an example line to tag)
                 tag(l_ + x0, mid, row["label"], MUT, EDGE)
             tag(l_ + x1 + 10, mid, txt, fg, EDGE_BEST if row.get("best") else EDGE, bold=bool(row.get("best")))
+        RM.OWN["remnant"] = own                                # (the tips add theirs)
         if wins and self.remnant_cfg().get("tips", True):
             self._remnant_tips(wins, rect, size, no_capture)
         self.rm_win = wins or None
@@ -359,7 +362,7 @@ class RemnantPage:
 
     def _remnant_tips(self, wins, rect, size, no_capture):
         """2.40.0: "Runeshapes - community picks" next to the tags (right of the furthest one, at the book's top),
-        click-through and left out of captures like them. It comes and goes with the tags (same list).
+        click-through and (2.128.1) in captures like them. It comes and goes with the tags (same list).
         2.43.0: shown as soon as the book's prices are, and stays while the book is open (it was placed from where
         the tags were on screen - nowhere yet the first time, so it only came with a later redraw)."""
         l_, t, r, b = rect
@@ -438,11 +441,13 @@ class RemnantPage:
             force_topmost(w)                                  # takes the keyboard from the game
         except Exception:
             buglog.caught()
-        no_capture(w)
+        RM.OWN.setdefault("remnant", []).append((int(x), int(y), int(x) + w.winfo_reqwidth(),
+                                                 int(y) + w.winfo_reqheight()))
         w.rm_tips = True
         wins.append(w)
 
     def remnant_hide(self):
+        RM.OWN["remnant"] = []
         self.rm_auto_shown = False
         wins, self.rm_win = getattr(self, "rm_win", None), None
         for w in wins or ():
