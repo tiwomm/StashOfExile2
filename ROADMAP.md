@@ -4,7 +4,7 @@
 
 > **Who we build for - read second.** Path of Exile players are utilitarian: they love data and information, problem solving and creative thinking. So every feature shows its numbers *and how they were worked out*, lets you sort, filter, compare and export them (CSV), keeps power-user depth (keys, versions, raw data) one click away instead of hiding it, explains in plain words, and leaves the decision to the player. Pretty is welcome; vague is not.
 
-**Current version: 2.130.1**
+**Current version: 2.130.2**
 
 Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds features, 2.10.1 only fixes. Each step below is one release; we work through them top to bottom.
 
@@ -262,6 +262,7 @@ Order (decided 2026-11-05): the page passes, then the Privacy & data hub, then t
 | 2.129.4 | In a map with Ritual still to do, the bar is left out of captures so the watcher can read the counter under the Ritual line. |
 | 2.130.0 | AGPL-3.0 (up to 2.129.4 GPL-3.0); new league heads-up; Filter in the Ritual window guide (NeverSink, Ryonnen); Game Overlay Place + Reset position; gems priced (price check key, remnant books); remnant "Could be" uniques and long books read to the end; tribute reminder not while Favours is open; learned omens ship; Ritual counts above 4 (3/6). |
 | 2.130.1 | Bar at the top keeps its Ritual line on screen (under it); Bar at the bottom sits on the XP bar; tribute plate's 0 read as 0 (no late reminder); a gem's Sockets option = gem sockets. |
+| 2.130.2 | No Ritual reminder through character select; theme clicks queue (no freeze); Gruvbox Dark / Light (morhetz, MIT); light themes turn all text dark; short README. |
 | Later | **Tribute counter under the Bar** (shelved, circle back soon): the game's tribute counter sits under the overlay's Bar in Ritual maps. Not by moving the Bar (no). |
 | 2.128.0+ | Favours prices for bigger rewards (uniques: their art by size, priced on poe.ninja's unique lists). |
 | 2.126.0+ | **UX pass round 2** (all 21 approved): paste to price, price spread, Rate ▾ on hover, card closes when the mouse leaves (hold Ctrl), Ctrl+K go to anything (Ctrl+F = this page's search), F1 keys sheet, get-started steps, Exchange Rates search/sort/pin/trend, rank on the Map Library row, one Money Makers filter bar, buttons off until a pick, one Bulk Pricing toolbar row, never color alone, Edit layout mode, hold Alt through Click-through, ↺ Defaults per section, search top left, tips on icon buttons. |

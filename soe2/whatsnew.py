@@ -44,6 +44,19 @@ BETA_AREAS = ("Wealth", "Money Makers", "Game Search", "Market Insights", "Craft
               "Desecration Helper")
 
 NOTES = {
+    "2.130.2": {
+        "big": [
+            ("🎨", "Gruvbox themes", "Gruvbox Dark and Gruvbox Light in Settings › Appearance: the warm, retro editor colors "
+             "(gruvbox by morhetz).", None, "Settings"),
+        ],
+        "small": [
+            ("Ritual", "Going through character select (died, switched character) should no longer bring the "
+             "rituals-not-done reminder."),
+            ("App", "Clicking themes quickly should no longer freeze the app: only your last pick is applied."),
+            ("App", "Switching to a light theme turns all text dark (one line on Price Checks stayed light)."),
+            ("App", "The README is short now: one line per feature."),
+        ],
+    },
     "2.130.1": {
         "big": [],
         "small": [

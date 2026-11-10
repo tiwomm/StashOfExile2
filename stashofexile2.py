@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU AGPL v3.0 (see LICENSE; up to 2.129.4: GNU GPL v3.0). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.130.1
+VERSION 2.130.2
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,6 +19,15 @@ VERSION 2.130.1
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.130.2
+       - Ritual (feedback: died, exited to character selection, came back on another character - the reminder came):
+         gamelog LOGIN (the login server connect) -> "login"; a map -> hideout move after it is no leave (br_relog).
+       - Themes (feedback: "people keep crashing when rapidly changing themes"): clicks during a swap wait, only the
+         last is applied after THEME_REST (400 ms); busy cursor on the cards.
+       - Gruvbox Dark / Gruvbox Light packs (request; gruvbox by Pavel Pertsev / morhetz, MIT - THIRD_PARTY_NOTICES,
+         README, About). themes.walk: KEEP (overlay colors) applies only outside the app's own windows - a color an
+         overlay style shares with a pack stayed light on a light theme.
+       - README: short, one line per feature.
   2.130.1
        Feedback: "overlay at top caused the ritual portion of the bar style to be beyond the edge of the monitor";
        "bottom alignment mode is a few px above the xp bar"; the tribute reminder came "after I already dumped my
@@ -3385,7 +3394,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.130.1"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.130.2"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
