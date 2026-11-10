@@ -17,7 +17,7 @@ API's limits.
 
 1. **One key press = one action, and only when you press it.** No macro does two things, rotates, repeats, or fires on
    a timer or a game event (life, mana, flasks, logout ...).
-2. **Nothing acts in the game by itself.** Watchers (Delirium, Breach, Ritual, Expedition Remnant Price Checker) only
+2. **Nothing acts in the game by itself.** Watchers (Delirium, Breach, Ritual and its Favours prices, Expedition Remnant Price Checker) only
    *look and show*: a banner, a sound, a price tag. They never press, click, type or send anything.
 3. **Never touch the game client.** No reading or writing its memory, no injecting code, no hooking its graphics, no
    reading or changing its network traffic.

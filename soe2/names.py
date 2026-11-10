@@ -41,6 +41,7 @@ FEATURES = (
     "Keybinds",                 # Settings: every key the app listens for (2.127.0: was Keys)                # the Craft Helper's mod data from GitHub
     "Desecration Helper",       # at The Well of Souls
     "Exchange Helper",
+    "Favours prices",           # the Ritual helper: prices on the Favours window's rewards
     "Mechanic Helper",
     "Quick settings",           # the overlay's ⚙
     "Scan stash",

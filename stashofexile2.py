@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU GPL v3.0 (see LICENSE). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.127.0
+VERSION 2.128.0
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,6 +19,19 @@ VERSION 2.127.0
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.128.0
+       Favours prices (feedback: "show me the currency exchange price of the item ... the same way we do expedition
+       price helper"): the Ritual helper's new option. favours.py finds the Favours window by the word FAVOURS on its
+       title plate (templates/favours_title.png, cut from a 1440p screenshot; other screens score ~0.3, it 1.0), the
+       12 x 10 grid at a fixed offset (70 px cells at 1440p), the cells with a blue / red backing, and compares each
+       with poe.ninja's exchange items' pictures (official art from web.poecdn.com, laid on the backing, plain and
+       dimmed; cached in art/ninja) and the ones learned on this PC (favour_icons.json: your price check key on a
+       reward while the window is open). Picture and outline correlation, the best must reach 0.55 and beat the next
+       by 0.06 - the same omen across two windows scored 0.72-1.0, other items under 0.45. favours_page.py: the
+       watcher thread (twice a second while the game is in front; only the top-left of the game is captured; a still
+       window is read once), click-through tags at the foot of each cell (★ on the dearest, hidden from capture) and
+       ritual/favours_log.txt. 1-cell items only for now (omens, currency, runes ...). Idea looked at in poe2pricer by
+       saxe78 (MIT) - our own code.
   2.127.0
        Feedback batch:
        - Lineage support gems (Arbiter's Ignition ...) are priced: gear.lineage_item reads a "Rarity: Gem" copy whose
@@ -3240,7 +3253,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.127.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.128.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
