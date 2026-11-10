@@ -2313,6 +2313,12 @@ class App(SettingsPage, GearBookPage, PriceCheckPage, PricePopup, FavoritesPage,
                 return self.fl_take_clip(text)
             if self.fl_ed_open() and self.fl_ed_take(text):
                 return None
+            try:                                                  # 2.129.3: a copy while the Favours window is
+                if self.favours_copy_learn(text) and not self.ADVANCED.search(text):     # open teaches that
+                    self.status_text, self.status_until = "Favours prices: learned its look", time.time() + 5
+                    return None                                   # reward's look
+            except Exception:
+                buglog.caught()
         if not text.lstrip().startswith("Item Class:"):          # something else on the clipboard
             if text != self.own_clip:                            # (our own "copy name" isn't worth mentioning)
                 self.status_text, self.status_until = "Heard a copy, but it isn't an item (ignored)", time.time() + 6

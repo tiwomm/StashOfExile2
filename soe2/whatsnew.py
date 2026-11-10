@@ -44,6 +44,14 @@ BETA_AREAS = ("Wealth", "Money Makers", "Game Search", "Market Insights", "Craft
               "Desecration Helper")
 
 NOTES = {
+    "2.129.3": {
+        "big": [],
+        "small": [
+            ("Ritual", "Favours prices should tell look-alike omens apart by their colors, and know Sacred Bloom."),
+            ("Ritual", "Copy a reward (Ctrl+C) while the Favours window is open and it learns its look - idols too."),
+            ("Ritual", "Rite of Passage gets a ★ in the Favours window, like Mageblood and Headhunter."),
+        ],
+    },
     "2.129.2": {
         "big": [],
         "small": [

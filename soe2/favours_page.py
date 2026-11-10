@@ -60,6 +60,7 @@ class FavoursPage:
         from .wealth import WPRICES
         items = FV.ninja_items(getattr(WPRICES, "parts", None))
         self.fv_refs = FV.build_refs(items)
+        self.fv_stars = FV.star_refs()
         return self.fv_refs
 
     # ---------------------------------------------------------------- the watcher (its own thread)
@@ -86,6 +87,7 @@ class FavoursPage:
         misses, last_sig, shown, counts = 0, None, False, {}
         from . import remnant as RM                             # (its OCR reads the tribute)
         belts = FV.belt_refs()
+        stars = FV.star_refs()                                  # 2.129.3: Rite of Passage ...
         with mss.mss() as sct:
             while gen == getattr(self, "fv_gen", 0):
                 time.sleep(POLL)
@@ -105,24 +107,28 @@ class FavoursPage:
                         if misses == GONE and shown:
                             shown, last_sig = False, None
                             self.ui_q.put(("favours", g, []))
-                            # 2.129.0 (feedback): closed with no rerolls left and tribute to spend - offer it
+                            # 2.129.0 (feedback): closed with no rerolls left and tribute to spend - offer it.
+                            # 2.129.3 (feedback: "ONLY ... after I've closed the ritual window after not offering
+                            # tribute"): read from the last look before it closed, not one up to 1.5 s older
+                            last = counts.get("last")
+                            if last is not None:
+                                counts["rerolls"] = FV.rerolls_left(*last)
+                                t = self.favours_tribute_read(*last, RM)
+                                if t is not None:
+                                    counts["tribute"] = t
                             if counts.get("rerolls") is False and (counts.get("tribute") or 0) > 0:
                                 fv_log(f"closed with 0 rerolls and {counts['tribute']:,} tribute: reminder")
                                 self.ui_q.put(("favours_tribute", counts["tribute"]))
                             counts = {}
                         continue
                     misses = 0
+                    counts["last"] = (img, win)
                     if time.time() - counts.get("at", 0) > 1.5:          # rerolls and tribute, now and then
                         counts["at"] = time.time()
                         counts["rerolls"] = FV.rerolls_left(img, win)
-                        try:
-                            from PIL import Image
-                            box = FV.tribute_box(img, win)
-                            t = FV.tribute_of(RM.ocr(Image.fromarray(box[:, :, ::-1]))) if box.size else None
-                            if t is not None:
-                                counts["tribute"] = t
-                        except Exception:                              # (no OCR: no reminder, nothing else changes)
-                            buglog.caught()
+                        t = self.favours_tribute_read(img, win, RM)
+                        if t is not None:
+                            counts["tribute"] = t
                     grid = FV.grid_box(win)
                     occ = FV.occupied(img, grid)
                     # (2.128.1: what's in the cells' top parts - the tags at their feet don't count as a change)
@@ -131,9 +137,26 @@ class FavoursPage:
                     self.fv_last = (time.time(), g, grid, img)     # (price checking a reward teaches its picture)
                     if sig == last_sig:
                         continue
+                    moved = last_sig is None or set(sig[0]) != set(last_sig[0])     # (cells filled / emptied,
+                    if not moved and len(sig[1]) == len(last_sig[1]) and sig[1]:     # or most of them clearly
+                        a_ = np.frombuffer(sig[1], np.uint8).reshape(-1, 144).astype(np.int16)     # changed: a
+                        b_ = np.frombuffer(last_sig[1], np.uint8).reshape(-1, 144).astype(np.int16)  # reroll, not
+                        moved = (np.abs(a_ - b_).mean(1) > 14).mean() >= 0.6                       # a tooltip)
+                    if shown and moved and getattr(self, "fv_wins", None):   # 2.129.3: new rewards (a reroll) -
+                        self.ui_q.put(("favours", g, []))           # our tags go first: over new rewards they'd spoil
+                        time.sleep(0.3)                             # the read (each is also read whole now)
+                        img = np.asarray(sct.grab({"left": gx, "top": gy, "width": w, "height": h}))[:, :, :3]
+                        win = FV.find_window(cv2.cvtColor(img, cv2.COLOR_BGR2GRAY), tpl, gh, gw)
+                        if win is None:
+                            continue
+                        grid = FV.grid_box(win)
+                        occ = FV.occupied(img, grid)
+                        sig = tuple(sorted(occ.items())), b"".join(
+                            cv2.resize(FV.cell_crop(img, grid, r, c), (8, 6)).tobytes() for r, c in sorted(occ))
+                        self.fv_last = (time.time(), g, grid, img)
                     last_sig = sig
                     refs = getattr(self, "fv_refs", None) or FV.Refs()
-                    rows, seen = [], []
+                    rows, seen, left = [], [], []
                     for r, c in FV.single_cells(occ):
                         f = FV.cell_feats(img, grid, r, c)
                         if f is None:
@@ -142,11 +165,15 @@ class FavoursPage:
                         if name:
                             rows.append({"r": r, "c": c, "name": name, "score": sc,
                                          "box": FV.cell_rect(grid, r, c)})
-                        elif not shown:                      # (2.129.0: the log says how close it came)
+                            continue
+                        left.append((r, c))
+                        if not shown:                        # (2.129.0: the log says how close it came)
                             top = refs.ranked(f, 2)
                             if top and top[0][0] > 0.45:
                                 seen.append(f"{r},{c}: " + " / ".join(f"{n} {s_:.2f} {k}" for s_, n, k in top))
                     for name, sc, box in FV.find_belts(img, grid, occ, belts):   # ★ Mageblood / Headhunter
+                        rows.append({"name": name, "score": sc, "box": box, "belt": True})
+                    for name, sc, box in FV.find_stars(img, grid, left, getattr(self, "fv_stars", None) or stars):
                         rows.append({"name": name, "score": sc, "box": box, "belt": True})
                     if not shown:
                         fv_log(f"window open: {len(occ)} cells hold items, {len(rows)} known - "
@@ -157,6 +184,17 @@ class FavoursPage:
                 except Exception as e:
                     fv_log(f"read failed: {e.__class__.__name__}: {e}")
         self.fv_alive = False if gen == getattr(self, "fv_gen", 0) else self.fv_alive
+
+    @staticmethod
+    def favours_tribute_read(img, win, RM):
+        """The tribute number on the window's plate (OCR), or None."""
+        try:
+            from PIL import Image
+            box = FV.tribute_box(img, win)
+            return FV.tribute_of(RM.ocr(Image.fromarray(box[:, :, ::-1]))) if box.size else None
+        except Exception:                                  # (no OCR: no reminder, nothing else changes)
+            buglog.caught()
+            return None
 
     # ---------------------------------------------------------------- the tags
     def ev_favours(self, g, rows):
@@ -233,6 +271,23 @@ class FavoursPage:
                 pass
 
     # ---------------------------------------------------------------- learning a reward's picture
+    def favours_copy_learn(self, text):
+        """2.129.3 (feedback: omens, idols and Sacred Bloom went unpriced): any copy of a reward's text (Ctrl+C or
+        your price check key) while the Favours window is open teaches its picture - exchange items (priced), and the
+        uniques that get a ★ (FV.STARS). -> True if learned."""
+        if not getattr(self, "fv_last", None) or time.time() - self.fv_last[0] > 3:
+            return False
+        lines = [ln.strip() for ln in str(text or "").splitlines()]
+        i = next((k for k, ln in enumerate(lines) if ln.startswith("Rarity:")), None)
+        if i is None or i + 1 >= len(lines):
+            return False
+        rarity, name = lines[i][7:].strip(), lines[i + 1]
+        if rarity == "Unique" and name not in FV.STARS:
+            return False
+        if rarity not in ("Currency", "Unique", "Gem"):
+            return False
+        return self.favours_learn(name)
+
     def favours_learn(self, name):
         """Your price check key on a reward while the Favours window is open: remember what it looks like (the cell
         under the mouse, from the last look). -> True if learned."""

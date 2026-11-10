@@ -35,6 +35,8 @@ MATCH_SURE, MATCH_BY_SURE = 0.80, 0.06      # (a very close match may beat the n
                                            # Refreshment are the same hand in gold / teal)
 CLEAR = (0.50, 0.25)                       # 2.129.1: or far ahead of every other item (a gray, sealed reward - the
                                            # log: Sanctification 0.51, next 0.23; wrong ones were never 0.15 ahead)
+HUE_BY = 0.25                              # 2.129.3: or close, but its colors match far better (Refreshment's teal
+#                                            hand 0.54, Whittling's purple one 0.20)
 CLEAR_ITEMS = 10                           # (only among many items - with two, "far ahead" says nothing)
 #                                            Tried on the user's own windows with his Ritual tab's pictures (Scan
 #                                            stash): the right omen 0.74-0.88 (by 0.14-0.34), items it doesn't know up
@@ -42,6 +44,8 @@ CLEAR_ITEMS = 10                           # (only among many items - with two, 
 PER_NAME = 6                               # pictures kept per item (a stash slot gives 3: its size varies a little)
 BELTS = {"Mageblood": "favours_mageblood.png", "Headhunter": "favours_headhunter.png"}   # 2.129.0: a ★, no price
 BELT_MIN = 0.70
+STARS = {"Rite of Passage": "favours_rite_of_passage.png"}   # 2.129.3 (feedback): one-cell uniques worth a ★ (their
+STAR_MIN = 0.70                            # picture from the game; your Ctrl+C on one in the window teaches it too)
 LEARN_FILE = "favour_icons_v2.json"
 BOX_FILE = "favour_boxes.json"             # 2.129.0: the same items cropped to their art (art_box)
 ART_DIFF = 40                              # a pixel this far from the cell's own backing color is the item's art           # (2.128.1: the cell's top part - v1 held whole cells)
@@ -136,7 +140,34 @@ def feats(bgr):
         a = a - a.mean() if a is not col else a
         n = float(np.sqrt((a * a).sum())) or 1.0
         out.append((a / n).ravel())
+    out.append(hue(im))
     return tuple(out)
+
+
+def hue(bgr):
+    """2.129.3: which colors the item's art has (12 hue bins of its saturated pixels, summing to 1), or None (too few)
+    - the colors above take out the overall tint, so the same hand in teal (Refreshment) and purple (Whittling) looked
+    alike. Only pixels unlike the backing count; the stack number's corner is left out."""
+    cv2, np = _cv()
+    a = bgr.astype(np.float32)
+    ring = np.concatenate([a[:2].reshape(-1, 3), a[-2:].reshape(-1, 3), a[:, :2].reshape(-1, 3), a[:, -2:].reshape(-1, 3)])
+    d = np.sqrt(((a - np.median(ring, 0)) ** 2).sum(-1))
+    hsv = cv2.cvtColor(bgr, cv2.COLOR_BGR2HSV)
+    s_, v_ = hsv[..., 1].astype(np.float32), hsv[..., 2].astype(np.float32)
+    m = (d > 25) & (s_ > 60) & (v_ > 25)
+    m[:int(m.shape[0] * 0.35), :int(m.shape[1] * 0.45)] = False
+    if int(m.sum()) <= 15:
+        return None
+    h = np.bincount((hsv[..., 0][m] // 15).astype(int).ravel(), weights=(s_ * v_)[m], minlength=12)[:12]
+    t = float(h.sum())
+    return h / t if t else None
+
+
+def hue_sim(fa, fb):
+    """How alike two cells' colors are (0 .. 1), or None when either has too few colored pixels."""
+    _cv2, np = _cv()
+    a, b = (fa[3] if len(fa) > 3 else None), (fb[3] if len(fb) > 3 else None)
+    return float(np.minimum(a, b).sum()) if a is not None and b is not None else None
 
 
 def score(fa, fb):
@@ -238,29 +269,33 @@ class Refs:
     def add(self, name, bgr, src="art", mode="top"):
         self.items.setdefault(name, []).append((feats(bgr), src, mode))
 
-    def ranked(self, f, n=3):
+    def ranked(self, f, n=3, refs=False):
         """f: cell_feats() (both ways) or feats() (the top part only) -> [(score, name, kind of picture)] best first:
-        each item's best picture, each compared the same way it was taken."""
+        each item's best picture, each compared the same way it was taken. refs=True: (score, name, kind, the cell's
+        feats, the picture's feats) - for the colors."""
         both = f if isinstance(f, dict) else {"top": f}
         out = []
         for name, lst in self.items.items():
-            got = [(score(both[m], rf), s) for rf, s, m in lst if both.get(m) is not None]
+            got = [(score(both[m], rf), s, both[m], rf) for rf, s, m in lst if both.get(m) is not None]
             if got:
-                sc, src = max(got, key=lambda x: x[0])
-                out.append((sc, name, src))
-        out.sort(reverse=True)
+                sc, src, cf, rf = max(got, key=lambda x: x[0])
+                out.append((sc, name, src, cf, rf) if refs else (sc, name, src))
+        out.sort(key=lambda t: -t[0])
         return out[:n]
 
     def best(self, f):
         """-> (name, score, margin over the next item) or (None, best score, margin)."""
-        top3 = self.ranked(f, 2)
+        top3 = self.ranked(f, 2, refs=True)
         if not top3:
             return None, 0.0, 0.0
-        top, name, src = top3[0]
+        top, name, src = top3[0][:3]
         nxt = top3[1][0] if len(top3) > 1 else -1.0
         by = MATCH_BY_SURE if top >= MATCH_SURE else MATCH_BY
         sure = top >= MATCH_MIN.get(src, 0.72) and top - nxt >= by
         clear = top >= CLEAR[0] and top - nxt >= CLEAR[1] and len(self.items) >= CLEAR_ITEMS
+        if not (sure or clear) and len(top3) > 1 and top >= MATCH_MIN.get(src, 0.72):
+            h1, h2 = hue_sim(top3[0][3], top3[0][4]), hue_sim(top3[1][3], top3[1][4])
+            sure = h1 is not None and h2 is not None and h1 - h2 >= HUE_BY       # 2.129.3: same shape, other color
         if sure or clear:
             return name, top, top - nxt
         return None, top, top - nxt
@@ -424,7 +459,20 @@ def build_refs(items):
             continue
         for mode, p in slot_sides(bgr):
             refs.add(name, p, "shipped", mode)
+    for name, bgr in shipped_cells().items():             # 2.129.3: rewards seen in a Favours window (Sacred Bloom)
+        if known and name not in known:
+            continue
+        h, w = bgr.shape[:2]
+        e = max(1, int(round(EDGE * w / CELL)))
+        refs.add(name, bgr[e:int(h * TOP), e:w - e], "shipped", "top")
+        refs.add(name, art_box(bgr[e:h - e, e:w - e]), "shipped", "box")
     return refs
+
+
+def shipped_cells():
+    """{name: a whole Favours cell (70 x 70, 1440p)} - rewards not in the Ritual tab (templates/favours_cells.png, a
+    strip in the order favours_cells.json names them)."""
+    return _strip("favours_cells")
 
 
 def _templates():
@@ -437,12 +485,16 @@ def _templates():
 def shipped_omens():
     """{name: 70 x 70 stash slot picture} - the Ritual tab's omens (templates/favours_omens.png, a strip in the order
     favours_omens.json names them). Pictures of items only."""
+    return _strip("favours_omens")
+
+
+def _strip(stem):
     cv2, _np = _cv()
     import json
     d = _templates()
     try:
-        names = json.loads((d / "favours_omens.json").read_text(encoding="utf-8"))
-        strip = cv2.imread(str(d / "favours_omens.png"))
+        names = json.loads((d / f"{stem}.json").read_text(encoding="utf-8"))
+        strip = cv2.imread(str(d / f"{stem}.png"))
     except (OSError, ValueError):
         return {}
     if strip is None or not names:
@@ -464,6 +516,45 @@ def belt_refs():
         if im is not None:
             h = im.shape[0]
             out[name] = feats(im[:int(h * TOP)])
+    return out
+
+
+def star_refs():
+    """Refs of the one-cell uniques that get a ★ (STARS): their shipped picture, and pictures learned on this PC."""
+    cv2, _np = _cv()
+    refs = Refs()
+    d = _templates()
+    for name, fn in STARS.items():
+        im = cv2.imread(str(d / fn))
+        if im is None:
+            continue
+        im = cv2.resize(im, (CELL, CELL), interpolation=cv2.INTER_AREA)
+        e = EDGE
+        refs.add(name, im[e:int(CELL * TOP), e:CELL - e], "star", "top")
+        refs.add(name, art_box(im[e:CELL - e, e:CELL - e]), "star", "box")
+    for name, pics in learned().items():
+        if name in STARS:
+            for p in pics:
+                refs.add(name, p, "star", "top")
+    for name, pics in learned(BOX_FILE).items():
+        if name in STARS:
+            for p in pics:
+                refs.add(name, p, "star", "box")
+    return refs
+
+
+def find_stars(img, grid, cells, refs):
+    """One-cell uniques worth a ★ among `cells` (the ones no exchange item matched) -> [(name, score, box)]."""
+    out = []
+    if not refs.items:
+        return out
+    for r, c in cells:
+        f = cell_feats(img, grid, r, c)
+        if f is None:
+            continue
+        top = refs.ranked(f, 1)
+        if top and top[0][0] >= STAR_MIN:
+            out.append((top[0][1], top[0][0], cell_rect(grid, r, c)))
     return out
 
 
