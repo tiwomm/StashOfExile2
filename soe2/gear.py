@@ -289,37 +289,11 @@ def type_only_item(g):
                                                                   if known_type else "")]}
 
 
-def lineage_item(g, text):
-    """2.127.0 (feedback: "we need to be able to price lineage gems"): a lineage support gem (Arbiter's Ignition ...)
-    -> searched by its name on the trade site, like a currency; poe.ninja's going rate goes in its notes. None for
-    any other gem (skill and support gems aren't traded as items)."""
-    if not g or g.get("rarity") != "Gem" or not g.get("name"):
-        return None
-    tags = next((l for l in (text or "").replace("\r", "").split("\n")[3:8] if "," in l or l.strip() == "Lineage"), "")
-    if "Lineage" not in [x.strip() for x in tags.split(",")]:
-        return None
-    corrupted = bool(g.get("corrupted"))
-    search = {"category": None, "type": g["name"], "name": None, "rarity": None, "corrupted": corrupted,
-              "sockets_min": None}
-    notes = ["a lineage support gem - searched by its name on the trade site"]
-    try:
-        from .wealth import WPRICES
-        from .pricefmt import fmt_div
-        v = WPRICES.named(g["name"])
-        if v is not None:
-            notes.append(f"poe.ninja: ≈ {fmt_div(v)}")
-    except Exception:
-        buglog.caught()
-    return {"class": g.get("class_text") or "Support Gems", "gear": True, "gclass": None, "rarity": "Gem",
-            "name": g["name"], "base": g["name"], "mods": [], "uses": None, "corrupted": corrupted, "quality": 0,
-            "sockets": 0, "ilvl": None, "group_id": None, "search": search, "notes": notes, "lineage": True}
-
-
 def parse_gear(text):
     """A copied piece of gear -> a price-check item (same shape as a tablet / jewel item, plus "gear": True and the
     search plan), or None if it isn't gear."""
     g = gamedata.read_item(text)
-    t = type_only_item(g) or lineage_item(g, text)
+    t = type_only_item(g)
     if t:
         return t
     if not is_gear(g):

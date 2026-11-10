@@ -365,6 +365,11 @@ def parse_stack(text):
     return name, qty, cls
 
 
+def is_lineage(lines):
+    """A gem copy's lines -> True when its tags line says Lineage ("Support, Lineage, Spell, Fire")."""
+    return any("Lineage" in [t.strip() for t in l.split(",")] for l in lines[3:8] if "," in l or l == "Lineage")
+
+
 def parse_currency_item(text):
     """2.114.0 (feedback: a Signet Wombgift copied with the price check key did nothing): any "Rarity: Currency" item
     -> (name, quantity, item class), a stack or a single one (no Stack Size line = 1). None for anything else."""
@@ -373,6 +378,10 @@ def parse_currency_item(text):
         return hit
     lines = [l.strip() for l in (text or "").replace("\r", "").split("\n")]
     cls = next((l.split(":", 1)[1].strip() for l in lines if l.startswith("Item Class:")), "")
+    if "Rarity: Gem" in lines and is_lineage(lines):           # 2.129.0 (feedback): lineage gems are traded on the
+        i = lines.index("Rarity: Gem")                         # currency exchange - poe.ninja prices them
+        name = next((x for x in lines[i + 1:] if x and not x.startswith("--")), None)
+        return (name, 1, cls) if name else None
     if "Rarity: Currency" not in lines:
         return None
     i = lines.index("Rarity: Currency")

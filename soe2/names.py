@@ -41,7 +41,8 @@ FEATURES = (
     "Keybinds",                 # Settings: every key the app listens for (2.127.0: was Keys)                # the Craft Helper's mod data from GitHub
     "Desecration Helper",       # at The Well of Souls
     "Exchange Helper",
-    "Favours prices",           # the Ritual helper: prices on the Favours window's rewards
+    "Favours prices",
+    "Tribute reminder",         # the Ritual helper: 0 rerolls and tribute left when the Favours window closes           # the Ritual helper: prices on the Favours window's rewards
     "Mechanic Helper",
     "Quick settings",           # the overlay's ⚙
     "Scan stash",
@@ -82,6 +83,7 @@ OLD = {
     "Quick Settings": "Quick settings",
     "Community Data Sharing": "Community data sharing",
     "How searches are made": "Search Options",
+    "dearest": "most valuable",          # 2.129.0 (feedback): "nobody uses that word"
     "Clear list": "Clear All",          # Bulk Pricing's button (2.126.0: on screen, in the Items strip)
     "Settings › Keys": "Settings › Keybinds",          # 2.127.0
     "Settings > Keys": "Settings › Keybinds",

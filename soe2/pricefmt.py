@@ -85,6 +85,9 @@ def fmt_div(x):
         r = RATES.value(cur)
         if r and x / r >= 0.95:
             return f"{_num(x / r)} {name}"
+    r = RATES.value("exalted")                   # 2.129.0 (feedback: "0.001d"): worth less than an Exalted Orb -
+    if r and x > 0:                              # said in exalted, not in thousandths of a divine
+        return f"{x / r:.2f} exalted"
     return f"{x:.3f} div"
 
 
@@ -95,6 +98,11 @@ def fmt_short(x):
     """2.39.0: fmt_div with the short trade units and no space - 16ex, 20c, 29d (price tags over the game)."""
     t = fmt_div(x)
     num, _, unit = t.partition(" ")
+    try:
+        if unit == "exalted" and float(num) < 0.95:     # 2.129.0 (feedback): a tag says "<1ex", not "0.001d"
+            return "<1ex"
+    except ValueError:
+        pass
     return num + SHORT_UNITS.get(unit, unit) if unit else t
 
 

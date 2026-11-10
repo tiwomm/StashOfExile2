@@ -44,6 +44,22 @@ BETA_AREAS = ("Wealth", "Money Makers", "Game Search", "Market Insights", "Craft
               "Desecration Helper")
 
 NOTES = {
+    "2.129.0": {
+        "big": [
+            ("🕯", "Favours prices you can trust", "Only items it's sure of get a price: Scan stash teaches it each "
+             "omen's look (your Ritual tab), and so does price checking one in the window. No prices on uniques - a "
+             "★ on Mageblood and Headhunter.", None, "Overlay"),
+            ("⏰", "Tribute reminder", "Close the Favours window with no rerolls left and tribute to spend: a "
+             "reminder to offer it to the King.", None, "Overlay"),
+        ],
+        "small": [
+            ("Price Checks", "Omens, lineage gems and every currency are priced on the currency exchange's going "
+             "rate, never a trade search."),
+            ("Expedition", "The runeshape list shows only for a remnant's book (not on sandy ground), Warding Runes "
+             "get their tag, and a cheap reward says \"<1ex\"."),
+            ("Ritual", "The Ritual helper should keep watching, so leaving a map with rituals left reminds you."),
+        ],
+    },
     "2.128.1": {
         "big": [],
         "small": [
@@ -1645,7 +1661,7 @@ NOTES = {
     "2.13.0": [
         "Breach alerts look like the Delirium alert again: big flashing text over the game, no box. They go by "
         "themselves after a few seconds.",
-        "Top value is now called Market Insights; \"Dearest listings seen\" is \"Most expensive listings seen\".",
+        "Top value is now called Market Insights.",
     ],
     "2.12.0": [
         "Lists have striped rows, like a spreadsheet. Ctrl+C copies the selected rows; right-click a list to copy, "
@@ -1731,7 +1747,7 @@ NOTES = {
         "differently in the last few hours, from Grinding Gear Games' own trade history. There's also a check for a "
         "flip you see in game.",
         "Top value remembers what you've priced even after you clear Price checks, and shows the mods and price of "
-        "the dearest listings seen.",
+        "the most expensive listings seen.",
         "Session tracker > Options explains how profit per hour works, and tells you when Wealth needs setting up "
         "first.",
     ],
@@ -1760,7 +1776,7 @@ NOTES = {
         "Session tracker > Map stats: every map you've run, how many times, your best and average time, and a "
         "leaderboard of your fastest runs for each map.",
         "Top value (Labs): the most valuable tablets, waystones and jewels you've priced, the mods worth the most, and "
-        "the dearest listings your price checks came across.",
+        "the most expensive listings your price checks came across.",
         "The clock is 12-hour or 24-hour (Settings > Appearance); it starts out the way your Windows clock is set.",
     ],
     "2.0.0": [

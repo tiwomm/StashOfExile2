@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU GPL v3.0 (see LICENSE). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.128.1
+VERSION 2.129.0
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,6 +19,29 @@ VERSION 2.128.1
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.129.0
+       Feedback batch:
+       - Favours prices: wrong prices (a junk unique 34d, Sacred Bloom and omens 4.6d) - poe.ninja's official art
+         scored up to 0.64 for the wrong item and was never sure for the right one, and the 0.55 bar let those
+         through. Now only pictures learned on this PC count: Scan stash keeps each one-cell slot's picture of the tabs
+         it reads (three sizes; stashread.read_tab "pics", favours.learn_many) and the price check key on a reward
+         (exchange items only - a learned unique is never priced). Matching leaves out the stack number's corner and
+         adds colors; 0.72 and 0.10 clear of the next. Tried on the user's own windows with his Ritual tab: Bartering
+         0.88, Catalysing Exaltation 0.74, nothing wrong. No uniques; Mageblood and Headhunter get a ★ (their
+         trade-site pictures, templates/favours_*.png). Migration favours_art_2129 deletes art/ninja and the first
+         learned file. The log lists each cell's closest calls.
+       - Tribute reminder (Ritual helper option): the reroll button is gray at 0 rerolls (red otherwise) and the
+         tribute is read (OCR) while the window is open; closed with 0 rerolls and tribute left -> a banner.
+       - Remnant: reads only under the book's "Runeshape Combinations" title (templates/remnant_title.png; the book
+         1.0, sandy ground 0.2) - the parchment color alone showed the runeshape list on a map. "lx" / "Ix" read as 1x
+         (Warding Runes showed nothing); the log lists the lines it couldn't use. A tag worth less than an exalted
+         says "<1ex" (fmt_div: "0.33 exalted", not "0.001 div").
+       - Omens, lineage gems and every currency on the price check key or Ctrl+Alt+C: poe.ninja's exchange rate,
+         never a trade search (parse_currency_item first; lineage gems by their tags; 2.127's lineage trade search is
+         gone).
+       - Ritual watcher (its log: told to quit the moment it started, every start): started again when it's on but
+         not running (at most every 30 s), and who stopped it is in the app's log.
+       - "dearest" is gone from the app (names.OLD: check_names finds it).
   2.128.1
        Feedback ("I'd like the expedition helper + runeshapes to show up on screenshots / screen share / streaming
        in the same way the overlay does"): the Remnant tags, the runeshape list, the Island rumors card and the
@@ -37,7 +60,7 @@ VERSION HISTORY
        reward while the window is open). Picture and outline correlation, the best must reach 0.55 and beat the next
        by 0.06 - the same omen across two windows scored 0.72-1.0, other items under 0.45. favours_page.py: the
        watcher thread (twice a second while the game is in front; only the top-left of the game is captured; a still
-       window is read once), click-through tags at the foot of each cell (★ on the dearest, hidden from capture) and
+       window is read once), click-through tags at the foot of each cell (★ on the most valuable, hidden from capture) and
        ritual/favours_log.txt. 1-cell items only for now (omens, currency, runes ...). Idea looked at in poe2pricer by
        saxe78 (MIT) - our own code.
        Freeze (feedback: after a theme change, then opening Price Checks: "not responding", every sample in
@@ -307,7 +330,7 @@ VERSION HISTORY
        or the players' votes exempt it; the built-in marks give way to the Mod Book's own prices (fewer searches too).
        Feedback (wording): "Search rolls from 90 %" is "Search Min: 10% below" (0% (exact), 5% ... 30% below - the way
        other price checkers say it; FINE kind "below", range_factor unchanged), and "times apart, cheapest to
-       dearest" is "Warn when prices vary: x - when the highest listing costs this many times the lowest".
+       highest" is "Warn when prices vary: x - when the highest listing costs this many times the lowest".
   2.123.0
        Craft Helper overhaul, phase 1 (feedback: tablet mods on S-F, "effectiveness by itself is kind of useless",
        "see its price below" with no prices below; then: no prices at all - they move too fast, only your own price
@@ -2521,8 +2544,8 @@ VERSION HISTORY
            over the game on a see-through background, no box, clicks pass through (WS_EX_TRANSPARENT / NOACTIVATE),
            centered on the game window 22% down (END DELIRIUM sits at 62%). The text shrinks to fit the game window.
            Being click-through, they go by themselves (8 s; "full" 10 s) or when the Genesis Tree opens.
-       (2) Top value is now Market Insights (window, dock, Labs text); its "Dearest listings seen" table is "Most
-           expensive listings seen".
+       (2) Top value is now Market Insights (window, dock, Labs text); and its table
+           is "Most expensive listings seen".
   2.12.0
        (1) listkit.py: every list (ttk.Treeview) has striped rows like a spreadsheet, in every theme (tags row_a /
            row_b, background C["panel"] / C["stripe"]; the old per-list "odd" / "even" tags are replaced). Rows are
@@ -2664,7 +2687,7 @@ VERSION HISTORY
            requests, stops on 429. Plus "Check a flip you see in game". (poe.ninja can't show this: its prices come
            from each currency's busiest pair, so they always agree.)
        (5) Top value: "Your most valuable" comes from value_log.json (valuelog.py), kept after Clear list; details
-           panel; Delete + Undo. "Dearest listings seen" stores and shows each listing's name, mod lines, own price
+           panel; Delete + Undo. "Most expensive listings seen" stores and shows each listing's name, mod lines, own price
            and the search it came from (market.db listings: name, lines, price_txt, qid).
        (6) Session tracker: Profit / hour explained in Options (with the count-on-stop setting next to it, worded
            plainly); a "Profit / hour" card instead of "Wealth at start"; a note and a Set up Wealth button when
@@ -2698,7 +2721,7 @@ VERSION HISTORY
            Time = time inside the map; visits under 30 s don't count. Sortable columns; most-run first.
        (2) Top value (Labs tool, insights_page.py): per kind (Tablets, Waystones, Jewels, Relics) your most valuable
            priced items (double-click opens it in Price checks), the mods worth the most (Mod book data: median ask
-           of listings with the mod, ★ = High in your rules) and the dearest listings seen (market.db, this league;
+           of listings with the mod, ★ = High in your rules) and the most expensive listings seen (market.db, this league;
            Market.top_listings). Nothing is searched for it.
        (3) Clock: 12-hour or 24-hour only; until you pick, it follows Windows (12-hour if it can't tell).
        (4) Calculator: no Windows calculator button.
@@ -2944,7 +2967,7 @@ VERSION HISTORY
        Wealth: magic and rare items from your tabs are now price-checked, with the same checkers as Ctrl+Alt+C
        (tablets and jewels by their mods, gear by its totals and mods, used tablets by their uses left). It runs in
        the background after each sync, one item at a time, always behind anything you copy yourself (F2 pauses it,
-       Stop stops it). Only new or changed items, or prices older than 3 days, are checked again, the dearest first.
+       Stop stops it). Only new or changed items, or prices older than 3 days, are checked again, the most expensive first.
        "Re-check rares" does it on demand. The net worth includes them; "Priced by" says "price check (High)" etc.,
        or why an item has no price (waiting, no matching listings, check by hand).
   2.0 beta 3
@@ -3189,7 +3212,7 @@ VERSION HISTORY
        Windows clipboard directly (not through Tkinter, which can keep a stale copy after the app writes an item name
        to the clipboard), retries when another program is holding it, restarts itself if it ever stalls, and the status
        line says what it did with every copy (added / already in the list / not an item / normal copy).
-  1.11 Wide-spread warning. When the listings behind a price are wildly different (cheapest and dearest 20x apart or
+  1.11 Wide-spread warning. When the listings behind a price are wildly different (cheapest and most expensive 20x apart or
        more, e.g. 1 chaos vs 100 div), the row now says so and shows the lowest and highest price, and the 'worth a look'
        pop-up is not shown, because a median of a handful of far-apart prices is not a real price. The number itself is
        unchanged (median of the cheapest 5 listings). Setting "spread_warn" in settings.json (default 20, 0 = off).
@@ -3266,7 +3289,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.128.1"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.129.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 

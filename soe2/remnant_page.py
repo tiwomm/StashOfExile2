@@ -157,6 +157,8 @@ class RemnantPage:
                 try:
                     img = RM.mask_own(RM.grab(ar), ar[:2])     # 2.128.1: our tags show in captures - not to us
                     share = RM.parchment_share(img)
+                    if share >= RM.PARCHMENT and not RM.has_title(img, rect[3] - rect[1]):
+                        share = 0.0              # 2.129.0: parchment-colored, but not the book (no title)
                     if share < RM.PARCHMENT:     # no book there: nothing to read (cheap)
                         if opened is not None:
                             RM.log(f"book gone after {time.time() - opened:.1f} s")
@@ -186,8 +188,11 @@ class RemnantPage:
                     lines = RM.shift(RM.ocr(img), ar[0] - rect[0], ar[1] - rect[1])
                     rows = self.remnant_price(lines, SETTINGS.get("league", ""))
                     if not found:
+                        used = {r.get("text") for r in rows}
+                        left = [t for t, _b in lines if t not in used and len(t) > 3]
                         RM.log(f"  read at +{read_at - (opened or read_at):.1f} s took {time.time() - read_at:.2f} s: "
-                               f"{len(lines)} lines, {len(rows)} priced" + (f" ({rows[0]['name']} ...)" if rows else ""))
+                               f"{len(lines)} lines, {len(rows)} priced" + (f" ({rows[0]['name']} ...)" if rows else "")
+                               + (f"; not used: {left[:6]}" if left else ""))
                 except RM.OcrUnavailable:
                     break
                 except Exception as ex:          # 2.127.0: logged (it was silent - a read that fails is a late tag)
@@ -241,7 +246,7 @@ class RemnantPage:
             kept[(r["name"], r["qty"])] = r
         self.rm_kept = kept
         out = sorted(kept.values(), key=lambda r: r["box"][1])
-        if any(r.get("best") for r in out):                          # one best: the dearest
+        if any(r.get("best") for r in out):                          # one best: the most valuable
             top = max((r for r in out if r["total"] is not None), key=lambda r: r["total"], default=None)
             out = [dict(r, best=r is top) for r in out]
         return out
@@ -343,7 +348,7 @@ class RemnantPage:
                 txt, fg = "no price", MUT
             else:
                 txt = fmt_short(row["total"])                   # 2.39.0: 16ex, 20c, 29d
-                if row["qty"] > 1:
+                if row["qty"] > 1 and not txt.startswith("<"):  # (2.129.0: "<1ex" says it all)
                     txt = f"{txt} ({row['qty']}×{fmt_short(row['each'])})"
                 fg = BEST if row.get("best") else TXT
             if row.get("best"):

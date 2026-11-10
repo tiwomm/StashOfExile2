@@ -85,9 +85,12 @@ class OcrUnavailable(Exception):
 
 
 # ================================================================ reading lines (pure: tested offline)
+ONE_X = re.compile(r"^[lI|i!]\s?[x×х](?=\s)")     # 2.129.0 (its log: 3 of 5 lines unread): OCR reads "1x" as "lx"
+
+
 def split_qty(text):
     """'Orb of Alchemy x3' / '3x Orb of Alchemy' / 'Orb of Alchemy' -> ('Orb of Alchemy', 3 / 1)."""
-    t = " ".join(str(text).split())
+    t = ONE_X.sub("1x", " ".join(str(text).split()))
     m = QTY.search(t)
     qty = 1
     if m:
@@ -136,7 +139,7 @@ def same_ending(a, b):
 
 def explicit_qty(text):
     """The line has an amount ("6x ...", "... x3") - remnant reward lines always do."""
-    return bool(QTY.search(" ".join(str(text).split())))
+    return bool(QTY.search(ONE_X.sub("1x", " ".join(str(text).split()))))
 
 
 def price_lines(lines, names, value_of):
@@ -174,6 +177,35 @@ RETRY_SECS = 1.0                  # 2.126.0: the book open, no tags yet, the pic
 SETTLE_READS = 5                  # 2.79.0: reads right after the book appears, while it settles (~1.75 s)
 AUTO_GONE = 2                     # looks without the book = it was closed: tags off (~0.7 s)
 PARCHMENT = 0.35                  # share of the area that must look like the book's light parchment before reading
+TITLE_MIN = 0.65                  # 2.129.0: the "Runeshape Combinations" title's match (the book 1.0, other screens <0.45)
+_TITLE = [None]
+
+
+def has_title(img, game_h):
+    """2.129.0 (feedback: a map's sandy ground showed the runeshape list): the book's own title, "Runeshape
+    Combinations" (templates/remnant_title.png, cut from a 1440p game), is in the picture (PIL, the watched area).
+    No OpenCV or no template: True (as before - the parchment alone decides)."""
+    try:
+        import cv2
+        import numpy as np
+        if _TITLE[0] is None:
+            from pathlib import Path
+            base = getattr(sys, "_MEIPASS", None)
+            d = Path(base) / "soe2" / "templates" if base else Path(__file__).resolve().parent / "templates"
+            _TITLE[0] = cv2.imread(str(d / "remnant_title.png"), cv2.IMREAD_GRAYSCALE)
+        tpl = _TITLE[0]
+        if tpl is None:
+            return True
+        g = cv2.cvtColor(np.asarray(img.convert("RGB")), cv2.COLOR_RGB2GRAY)
+        s = game_h / 1440.0
+        t = cv2.resize(tpl, None, fx=s, fy=s, interpolation=cv2.INTER_AREA) if abs(s - 1) > 0.01 else tpl
+        a = g[:max(t.shape[0] + 1, int(g.shape[0] * 0.25))]           # (the title is at the area's top)
+        if a.shape[0] < t.shape[0] or a.shape[1] < t.shape[1]:
+            return False
+        return float(cv2.minMaxLoc(cv2.matchTemplate(a, t, cv2.TM_CCOEFF_NORMED))[1]) >= TITLE_MIN
+    except Exception:
+        buglog.caught()
+        return True
 
 
 def area_rect(area, rect):

@@ -611,20 +611,19 @@ class PriceCheckPage:
     def pc_take(self, text):
         """An item for Price Checks: priced first in line, shown on the page (the app comes to the front if you
         want - Settings › Keybinds)."""
+        from .wealth import parse_currency_item
+        cur = parse_currency_item(text)
         try:                                             # 2.128.0: a Favours reward - learn what it looks like
-            from . import gamedata as _gd
-            g = _gd.read_item(text) or {}
-            self.favours_learn(g.get("name") or g.get("base"))
+            if cur:                                      # (2.129.0: only what's priced on the currency exchange -
+                self.favours_learn(cur[0])               # never a unique)
         except Exception:
             buglog.caught()
+        if cur:                                          # 2.129.0 (feedback): omens, essences, lineage gems, every
+            self.status_text, self.status_until = f"Pricing {cur[0]}...", time.time() + 10     # currency: their
+            self.stack_price(cur[0], cur[1], loud=True)  # going rate on poe.ninja's exchange - never a trade search
+            return None
         rid = self.add_item_text(text, src="pc")
         if rid is None:
-            from .wealth import parse_currency_item
-            cur = parse_currency_item(text)
-            if cur:                                      # 2.114.0: currency-like (a Wombgift, an omen ...): its
-                self.status_text, self.status_until = f"Pricing {cur[0]}...", time.time() + 10   # going rate
-                self.stack_price(cur[0], cur[1], loud=True)
-                return None
             self.status_text, self.status_until = "Copied, but that item can't be price checked yet", time.time() + 6
             return None
         old = self.pc_recs()[PC_MAX:]
