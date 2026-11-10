@@ -157,8 +157,14 @@ class RemnantPage:
                 try:
                     img = RM.mask_own(RM.grab(ar), ar[:2])     # 2.128.1: our tags show in captures - not to us
                     share = RM.parchment_share(img)
-                    if share >= RM.PARCHMENT and not RM.has_title(img, rect[3] - rect[1]):
-                        share = 0.0              # 2.129.0: parchment-colored, but not the book (no title)
+                    if share >= RM.PARCHMENT and opened is None:     # 2.129.0: parchment-colored, but not the book
+                        tg = RM.grab(RM.area_rect(RM.TITLE_AREA, rect))
+                        if not RM.has_title(tg, rect[3] - rect[1]):   # (no title) - 2.129.1: the title has its own
+                            if time.time() - getattr(self, "_rm_notitle", 0) > 30:     # place (TITLE_AREA)
+                                self._rm_notitle = time.time()
+                                ts = RM.title_score(tg, rect[3] - rect[1])
+                                RM.log(f"parchment ({share:.0%}) but no book title (match {ts:.2f})")
+                            share = 0.0
                     if share < RM.PARCHMENT:     # no book there: nothing to read (cheap)
                         if opened is not None:
                             RM.log(f"book gone after {time.time() - opened:.1f} s")

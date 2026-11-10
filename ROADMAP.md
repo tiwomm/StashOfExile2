@@ -4,7 +4,7 @@
 
 > **Who we build for - read second.** Path of Exile players are utilitarian: they love data and information, problem solving and creative thinking. So every feature shows its numbers *and how they were worked out*, lets you sort, filter, compare and export them (CSV), keeps power-user depth (keys, versions, raw data) one click away instead of hiding it, explains in plain words, and leaves the decision to the player. Pretty is welcome; vague is not.
 
-**Current version: 2.129.0**
+**Current version: 2.129.1**
 
 Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds features, 2.10.1 only fixes. Each step below is one release; we work through them top to bottom.
 
@@ -256,6 +256,7 @@ Order (decided 2026-11-05): the page passes, then the Privacy & data hub, then t
 | 2.128.0 | **Favours prices:** the Ritual helper prices each 1-cell reward in the Favours window (poe.ninja art + pictures learned from your price checks). |
 | 2.128.1 | Expedition and Favours price tags show in screenshots, screen share and streams (the watchers paint over their own tags before reading). |
 | 2.129.0 | Favours prices from learned pictures only (Scan stash, price checks), no uniques, ★ Mageblood / Headhunter; Tribute reminder; Remnant reads only under its title; exchange items priced on poe.ninja; Ritual watcher restarted when it stops. |
+| 2.129.1 | Ritual watcher no longer stuck at start (it loads before reading the app's pipe); Remnant looks for the book's title in its own place; gray, sealed Favours rewards read; tribute banner 4 s. |
 | Later | **Tribute counter under the Bar** (shelved, circle back soon): the game's tribute counter sits under the overlay's Bar in Ritual maps. Not by moving the Bar (no). |
 | 2.128.0+ | Favours prices for bigger rewards (uniques: their art by size, priced on poe.ninja's unique lists). |
 | 2.126.0+ | **UX pass round 2** (all 21 approved): paste to price, price spread, Rate ▾ on hover, card closes when the mouse leaves (hold Ctrl), Ctrl+K go to anything (Ctrl+F = this page's search), F1 keys sheet, get-started steps, Exchange Rates search/sort/pin/trend, rank on the Map Library row, one Money Makers filter bar, buttons off until a pick, one Bulk Pricing toolbar row, never color alone, Edit layout mode, hold Alt through Click-through, ↺ Defaults per section, search top left, tips on icon buttons. |
