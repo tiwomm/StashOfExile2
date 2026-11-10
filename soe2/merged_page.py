@@ -628,7 +628,6 @@ class MergedOverlay:
                 except tk.TclError:
                     pass
         self.tk_ov_clock = _Clock()
-        self.ov_latency_tip(cv)
         return clk
 
     def _mg_glyphs(self, w, cv, P, x, y):
@@ -1154,9 +1153,9 @@ class MergedOverlay:
 
         gx = self._mg_glyphs(w, cv, P, rgt, mid)
         right = gx
-        if self.ov_clock_on(want, cfg):
+        if want["timer"] and cfg.get("clock", True):
             self._hud_clock(w, cv, P, gx - 2, mid)
-            right = gx - fm.measure(self.ov_clock_sample()) - 6 - SW
+            right = gx - fm.measure("00:00 PM") - 6 - SW
             self._hud_sep(cv, P, right + SW // 2, H, cy=mid, h=sh)
         if want["timer"] and self.bar_buttons_on():         # 2.118.0: one row - Notes ▾ … before the clock
             right = self._mg_bar_buttons(w, cv, P, right - 4, mid, anchor="e") - SW

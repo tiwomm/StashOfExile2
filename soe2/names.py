@@ -34,7 +34,6 @@ PAGES = {
 FEATURES = (
     "Alerts show",              # 2.131.0 Overlay › Settings › Helpers: where and how big the alert card is
     "Data folder",              # 2.131.0 where your settings and lists live (Feature Picker; Settings › Advanced)
-    "Latency",                  # 2.131.0 the game's connect time to its server, on the bar by the clock (Quick settings)
     "Feature Picker",           # 2.131.0 the popup asked once: which features you use
     "Features",                 # 2.131.0 Settings › General: one switch per feature group, plus the BETA ones
     "Break reminders",          # 2.131.0 Overlay › Settings › Helpers: a kind nudge in long sessions
