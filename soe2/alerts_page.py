@@ -957,6 +957,8 @@ class AlertsPage:
                         elif kind == "brequel_tree":
                             self.breach_set_pending(None)          # spent (the tree was opened)
                             self.breach_dismiss()
+                        elif kind == "login":
+                            self.br_relog = True             # 2.130.2: the character screen (any character)
                         elif kind == "scene":
                             try:
                                 self.ws_scene(data.get("name"))      # 2.125.7: the Well by its name too
@@ -998,6 +1000,10 @@ class AlertsPage:
             self.log_error("Strat Tracker run counting")
         cfg = self.breach_cfg()
         left = before == "map" and kind in ("hideout", "town")
+        relog, self.br_relog = getattr(self, "br_relog", False), False
+        if left and relog:          # 2.130.2 (feedback): out through the character screen (died, switched character,
+            buglog.debug("leave check", "skipped: came back through the character screen")   # logged out) - the
+            left = False            # map is still there to go back to; no reminder for leaving it
         if left and cfg.get("on") and cfg.get("pending") and cfg.get("leave_reminder", True):
             self.breach_alert(level="leave")
         rc, got = self.ritual_cfg(), self.rt_map            # 2.14.0: rituals left undone in the map you just left

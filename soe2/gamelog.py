@@ -24,6 +24,10 @@ from datetime import datetime
 LINE = re.compile(r"^(\d{4}/\d{2}/\d{2} \d{2}:\d{2}:\d{2}) \S+ \S+ \[(\w+) Client \d+\] (.*)$")
 AREA = re.compile(r'Generating level (\d+) area "([^"]+)" with seed (\d+)')
 SCENE = re.compile(r"\[SCENE\] Set Source \[(.+)\]")
+# 2.130.2 (feedback: died, exited to character selection, came back on another character - the Ritual reminder came):
+# going through the character screen connects to the login server again (seen in a real log, Nov 2026):
+#   ... [INFO Client 17636] Async connecting to wdc.login.pathofexile2.com:21268
+LOGIN = re.compile(r"^Async connecting to \S*login\.", re.I)
 GOLD = re.compile(r"local player sold an item for ([\d,]+) gold")
 SLAIN = re.compile(r"^: (.+) has been slain\.")           # 2.7.0: confirmed in a real PoE 2 log (anyone in the area)
 PARTY = re.compile(r"^: (.+) has (joined|left) the area\.")
@@ -92,6 +96,8 @@ def parse(line):
     a = AREA.search(text)
     if a:
         return "area", ts, {"level": int(a.group(1)), "area": a.group(2), "seed": int(a.group(3))}
+    if LOGIN.search(text):
+        return "login", ts, {}                    # (no server name kept)
     s = SCENE.search(text)
     if s:
         name = s.group(1)
