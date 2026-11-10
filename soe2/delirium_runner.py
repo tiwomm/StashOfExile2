@@ -74,10 +74,10 @@ def parent_alive(pid):
             k = ctypes.windll.kernel32
             k.OpenMutexW.restype = ctypes.c_void_p
             h = k.OpenMutexW(0x00100000, False, APP_MARK.format(pid=int(pid)))      # SYNCHRONIZE
-            if not h:
-                return False
-            k.CloseHandle(ctypes.c_void_p(h))
-            return True
+            if h:
+                k.CloseHandle(ctypes.c_void_p(h))
+                return True
+            return process_alive(pid)            # 2.127.0: no mark seen - is the app's process there all the same?
         except Exception:
             return True
     try:
@@ -87,11 +87,32 @@ def parent_alive(pid):
         return False
 
 
+def process_alive(pid):
+    """2.127.0 (the Ritual watcher quit the moment it started, every time since 2.12x): Windows - is that process id
+    on the list of running processes? (Only the list of ids is read; no process is opened.)"""
+    try:
+        import ctypes
+        n = 4096
+        while True:
+            arr = (ctypes.c_ulong * n)()
+            got = ctypes.c_ulong(0)
+            if not ctypes.windll.kernel32.K32EnumProcesses(ctypes.byref(arr), ctypes.sizeof(arr), ctypes.byref(got)):
+                return True
+            count = got.value // ctypes.sizeof(ctypes.c_ulong)
+            if count < n:
+                return int(pid) in set(arr[:count])
+            n *= 2
+    except Exception:
+        return True
+
+
 def after_stdin_ends(pid, quit_fn, log=None):
     """The app's pipe ended. Normally that means the app is gone: quit. 2.40.0: if the app is still running (the
     pipe was never really connected), keep working and quit only when the app goes away."""
     import time
     if not pid or not parent_alive(pid):
+        if log:
+            log(f"the app's pipe closed and the app ({pid}) isn't running - quitting")
         quit_fn()
         return
     if log:

@@ -248,12 +248,16 @@ def main(argv):
     cmds = []
 
     def read_stdin():
+        t0, why = time.time(), "end of input"
         try:
             for line in sys.stdin:
                 if line.strip():
                     cmds.append(line.strip())
-        except Exception:
+        except Exception as e:
+            why = f"{e.__class__.__name__}: {e}"
             buglog.caught()
+        # 2.127.0 (it quit the moment it started, every time): say why, so the log shows it
+        log(f"input from the app ended after {time.time() - t0:.1f} s ({why}; stdin {type(sys.stdin).__name__})")
         after_stdin_ends(pid, lambda: cmds.append("quit"), log)      # 2.40.0: a broken pipe isn't "the app is gone"
     threading.Thread(target=read_stdin, daemon=True).start()
     try:
@@ -271,7 +275,7 @@ def main(argv):
         say("state error")
         say(f"error {type(e).__name__}: {e}")
         return 1
-    log(f"started: {len(references())} digit shapes, icon template {tpl.shape}")
+    log(f"started: {len(references())} digit shapes, icon template {tpl.shape}; app {pid}")
     say("state watching")
     last, pending, shown, state = None, None, None, "watching"
     rect_seen, best_log = None, 0.0

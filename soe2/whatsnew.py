@@ -59,6 +59,9 @@ NOTES = {
              "differently."),
             ("Overlay", "Regex favorites can be locked with the overlay's lock, and stay where you put them."),
             ("Settings", "Keys is now Keybinds, with ↺ Defaults to put every key back."),
+            ("Ritual", "The Ritual helper should keep watching (it stopped as soon as it started), so leaving a map "
+             "with rituals left reminds you again."),
+            ("Expedition", "The Remnant helper keeps a log of each book it reads, to find why prices can be late."),
         ],
     },
     "2.126.0": {
