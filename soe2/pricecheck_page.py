@@ -614,8 +614,7 @@ class PriceCheckPage:
         from .wealth import parse_currency_item
         cur = parse_currency_item(text)
         try:                                             # 2.128.0: a Favours reward - learn what it looks like
-            if cur:                                      # (2.129.0: only what's priced on the currency exchange -
-                self.favours_learn(cur[0])               # never a unique)
+            self.favours_copy_learn(text)                # (2.129.3: exchange items, and ★ uniques - never priced)
         except Exception:
             buglog.caught()
         if cur and cur[2] == "Wombgifts":                # (feedback: "use trade site for the 5 types of wombgifts")

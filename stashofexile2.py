@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU GPL v3.0 (see LICENSE). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.129.2
+VERSION 2.129.3
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,6 +19,21 @@ VERSION 2.129.2
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.129.3
+       Feedback (Favours: "still missing some omens also and idols ... sacred bloom pricing missing"; "look for rite of
+       passage charm"; the tribute reminder "should ONLY pop up after I've closed the ritual window after not
+       offering tribute"):
+       - Colors: favours.feats adds a hue histogram of the art's colored pixels (hue). The color layout took out the
+         overall tint, so the same hand in teal (Refreshment) and purple (Whittling) scored 0.80 / 0.76. A close top
+         two is settled when the colors match far better (HUE_BY 0.25: 0.54 vs 0.20).
+       - Sacred Bloom ships as a Favours cell (templates/favours_cells.png + .json, shipped_cells).
+       - Any copy of a reward's text (Ctrl+C or the price check key) while the window is open teaches its look
+         (favours_copy_learn): exchange items such as idols, and the uniques that get a ★.
+       - ★ one-cell uniques (STARS: Rite of Passage, its picture from the game; star_refs, find_stars), no price.
+       - When most rewards change (a reroll), our tags are taken down before the new ones are read - each cell is
+         read whole now, and a tag over a new reward spoiled it.
+       - Tribute reminder: rerolls and tribute are read from the last look before the window closed (they were up to
+         1.5 s old).
   2.129.2
        Feedback ("whispers button doesn't work when I click it ... perhaps we need to just remove the 'After the
        campaign' option all together"): Trade whispers is on or off. Past the campaign, with After the campaign off,
@@ -3316,7 +3331,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.129.2"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.129.3"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
