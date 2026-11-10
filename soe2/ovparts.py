@@ -182,7 +182,7 @@ class OverlayParts:
         except tk.TclError:
             pass
         if geo and h:
-            self._gb_place(main, geo, -h)
+            self._gb_place(main, geo, -h, getattr(self, "_gb_below", False))
 
     @staticmethod
     def _gb_geo(main):
@@ -195,13 +195,14 @@ class OverlayParts:
             return None
 
     @staticmethod
-    def _gb_place(main, geo, dh):
-        """The window dh px taller (the lines added on top) or shorter than it was - its bottom stays put."""
+    def _gb_place(main, geo, dh, below=False):
+        """The window dh px taller (the lines added on top) or shorter than it was - its bottom stays put.
+        2.130.1: below - the lines sit under the bar (the Bar at the top of the screen): its top stays put."""
         if not geo:
             return
         ww, hh, x, y = geo
         try:
-            main.geometry(f"{ww}x{max(1, hh + dh)}+{x}+{y - dh}")
+            main.geometry(f"{ww}x{max(1, hh + dh)}+{x}+{y if below else y - dh}")
         except tk.TclError:
             pass
 
@@ -259,7 +260,13 @@ class OverlayParts:
             bg = KEY
         geo = self._gb_geo(main)
         cv = tk.Canvas(main.body, bg=bg, highlightthickness=0, width=W, height=H)
-        cv.pack(side="top", fill="x", before=mcv)
+        # 2.130.1 (feedback: "overlay at top caused the ritual portion of the bar style to be beyond the edge of the
+        # monitor"): with the Bar placed at the top, the lines go under it, and the window grows down
+        self._gb_below = bool(hud and self.ov_spot() == "top")
+        if self._gb_below:
+            cv.pack(side="top", fill="x", after=mcv)
+        else:
+            cv.pack(side="top", fill="x", before=mcv)
         if not cfg.get("mlocked"):
             main.draggable(cv)
         lft, rgt = side, W - side
@@ -320,5 +327,5 @@ class OverlayParts:
 
     def _goalbar_show(self, main, cv, H, geo):
         self.gb_cv, self._gb_h = cv, H
-        self._gb_place(main, geo, H)
+        self._gb_place(main, geo, H, getattr(self, "_gb_below", False))
         return cv
