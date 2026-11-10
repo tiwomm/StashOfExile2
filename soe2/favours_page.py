@@ -88,6 +88,7 @@ class FavoursPage:
         except Exception as e:
             fv_log(f"pictures: {e.__class__.__name__}: {e}")
         misses, last_sig, shown, counts, seen_at = 0, None, False, {}, None
+        sticky = {}                                            # 2.130.4: (r, c) -> (name, its feats, score)
 
         def still_open(img, at):
             """2.130.0 (feedback: "it won't stop FLASHING TO OFFER TRIBUTE WITH THE WINDOW OPEN"): the title wasn't
@@ -124,6 +125,7 @@ class FavoursPage:
                         misses += 1
                         if misses == GONE and shown:
                             shown, last_sig = False, None
+                            sticky.clear()
                             self.ui_q.put(("favours", g, []))
                             # 2.129.0 (feedback): closed with tribute to spend - offer it. 2.129.3 (feedback: "you
                             # can offer tribute no matter if you have rerolls or not ... no matter what it should
@@ -176,9 +178,12 @@ class FavoursPage:
                         sig = tuple(sorted(occ.items())), b"".join(
                             cv2.resize(FV.cell_crop(img, grid, r, c), (8, 6)).tobytes() for r, c in sorted(occ))
                         self.fv_last = (time.time(), g, grid, img)
+                    if moved:
+                        sticky.clear()                       # (new rewards: nothing carried over)
                     last_sig = sig
                     refs = getattr(self, "fv_refs", None) or FV.Refs()
                     rows, seen, left = [], [], []
+                    known_f, unknown_f = [], []
                     for r, c in FV.single_cells(occ):
                         f = FV.cell_feats(img, grid, r, c)
                         if f is None:
@@ -187,6 +192,21 @@ class FavoursPage:
                         if name:
                             rows.append({"r": r, "c": c, "name": name, "score": sc,
                                          "box": FV.cell_rect(grid, r, c)})
+                            known_f.append((f, name))
+                            sticky[(r, c)] = (name, f, sc)
+                            continue
+                        unknown_f.append(((r, c), f))
+                    tw = FV.twins(known_f, unknown_f)                 # 2.130.4: a copy of a named reward
+                    # 2.130.4: a cell named in an earlier look at these same rewards keeps its name when a later look
+                    # misses it (the golden omens sparkle - one frame matches, the next may not)
+                    for (r, c), f in unknown_f:
+                        old_ = sticky.get((r, c))
+                        if (r, c) not in tw and old_ and FV.score(f["top"], old_[1]["top"]) >= FV.TWIN - 0.1:
+                            tw[(r, c)] = (old_[0], old_[2])
+                    for (r, c), f in unknown_f:
+                        if (r, c) in tw:
+                            rows.append({"r": r, "c": c, "name": tw[(r, c)][0], "score": tw[(r, c)][1],
+                                         "box": FV.cell_rect(grid, r, c), "twin": True})
                             continue
                         left.append((r, c))
                         if not shown:                        # (2.129.0: the log says how close it came)
@@ -197,9 +217,14 @@ class FavoursPage:
                         rows.append({"name": name, "score": sc, "box": box, "belt": True})
                     for name, sc, box in FV.find_stars(img, grid, left, getattr(self, "fv_stars", None) or stars):
                         rows.append({"name": name, "score": sc, "box": box, "belt": True})
-                    if not shown:
-                        fv_log(f"window open: {len(occ)} cells hold items, {len(rows)} known - "
-                               + ", ".join(f"{x['name']} ({x['score']:.2f})" for x in rows[:12])
+                    said_ = (len(occ), len(rows))
+                    if shown and not tw and said_ != counts.get("said"):     # (2.130.4: a later look that differs)
+                        fv_log(f"read again: {len(occ)} cells hold items, {len(rows)} known")
+                    counts["said"] = said_
+                    if not shown or tw:
+                        fv_log(f"window {'open' if not shown else 'read again'}: {len(occ)} cells hold items, "
+                               f"{len(rows)} known ({len(tw)} as a copy of another) - "
+                               + ", ".join(f"{x['name']} ({x['score']:.2f})" for x in rows[:16])
                                + (f"; not sure: {'; '.join(seen[:8])}" if seen else ""))
                     shown = True
                     self.ui_q.put(("favours", g, rows))

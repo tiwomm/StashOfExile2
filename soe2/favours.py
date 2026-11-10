@@ -346,6 +346,26 @@ def tribute_of(lines):
     return 0 if said else None
 
 
+TWIN = 0.86                       # 2.130.4: an unknown cell this like a known one in the same window is the same item
+
+
+def twins(known, unknown):
+    """2.130.4 (feedback: "not showing some items when there's duplicates, should price all even if it's the same"):
+    known [(feats, name)], unknown [(key, feats)] -> {key: (name, score)} - a reward the pictures didn't name, but that
+    looks just like one named in this same window (same art, same light, same frame), is that item too."""
+    out = {}
+    for key, f in unknown:
+        best = None
+        for kf, name in known:
+            sc = max(score(f[m], kf[m]) for m in ("top", "box") if f.get(m) is not None and kf.get(m) is not None) \
+                if any(f.get(m) is not None and kf.get(m) is not None for m in ("top", "box")) else -1.0
+            if best is None or sc > best[1]:
+                best = (name, sc)
+        if best and best[1] >= TWIN:
+            out[key] = best
+    return out
+
+
 def single_cells(occ):
     """Cells that could be a 1-cell item. The grid fills column by column from the top-left, so a big item's cells
     can't be told apart from small ones here - every occupied cell is tried; a big item's pieces match nothing."""

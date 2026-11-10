@@ -25,6 +25,9 @@ VERSION HISTORY
        - Remnant gems (feedback: "trade site rate limited us on fetching prices"): GEM_BUDGET 3 searches per 5 min,
          prices kept 6 h on disk (remnant_gems.json), the book re-read after each.
        - RUNE_TIERS: C and D alphabetical (feedback).
+       - Favours (feedback: "not showing some items when there's duplicates"): FV.twins - an unnamed cell >= TWIN
+         like a named one in the same window takes its name; a cell named earlier keeps it while the rewards are the
+         same (sticky); later looks logged when they differ.
        - Filter in the Ritual window (feedback: "bad UI+UX"): a plain button with ✓ On / ✗ Off beside it. Turn it
          on (feedback: "ONLY if we can safely and accurately adjust that line"): ritual_filter.turn_on changes that
          one line (every other byte checked the same), copy in backups/ first, one-step replace; the dialog waits for
