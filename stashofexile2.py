@@ -36,6 +36,13 @@ VERSION HISTORY
        - Bulk Pricing's Item pane is always on screen (an empty state while nothing is picked); its ✕ and the Esc
          that closed it are gone.
        - Regex favorites over the game: the overlay's one lock locks it too, and it stays where you drag it (rx_ov).
+       - Ritual watcher (feedback: no reminder on leaving a map): its log showed it quitting the second it started,
+         every start since late October - its input from the app ended and the app's mark wasn't found. Now, with
+         no mark, the app's process id is looked up on the list of running processes (delirium_runner.process_alive,
+         no process opened); the log says why input ended and why it quits. Same for the Delirium helper.
+       - Remnant (feedback: tags ~10 s late again): remnant/remnant_log.txt logs each book - when it showed, each
+         read (how long, lines, priced), failed reads (were silent), when the tags went up. The OCR engine is made
+         once, not per read.
        - Settings › Keys is Settings › Keybinds, with ↺ Defaults (tracker_page.DEFAULT_HOTKEYS; chat command keys
          stay). names.py: OLD "Settings › Keys", FEATURES "Keybinds".
   2.126.0

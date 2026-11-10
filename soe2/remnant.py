@@ -15,8 +15,10 @@ or images are used here - this is our own implementation of the idea.
 ToS (TOS.md): this only LOOKS at the screen (a capture, like a screenshot) and SHOWS something; it never presses,
 clicks, types or sends anything to the game, and never reads the game's memory or traffic."""
 import difflib
+import os
 import re
 import sys
+import time
 from . import buglog
 
 CREDIT_NAME = "PoE Ancients Price Helper (Pedro Quitério)"
@@ -230,7 +232,34 @@ def ocr_available():
         return f"Windows' text reader didn't start ({e.__class__.__name__})"
 
 
+_ENGINE = [None]
+
+
+def log(line):
+    """2.127.0 (feedback: tags 10 s late, twice): the watcher's own log - when a book shows, each read (how long,
+    how many lines and priced rewards) and when the tags go up - in remnant/remnant_log.txt in the data folder.
+    Only what's on the reward list; nothing about you."""
+    try:
+        from .config import P
+        d = P("remnant")
+        os.makedirs(d, exist_ok=True)
+        f = os.path.join(d, "remnant_log.txt")
+        if os.path.exists(f) and os.path.getsize(f) > 300_000:
+            os.replace(f, os.path.join(d, "remnant_log.old.txt"))
+        with open(f, "a", encoding="utf-8") as fh:
+            fh.write(f"{time.strftime('%Y-%m-%d %H:%M:%S')}  {line}\n")
+    except Exception:
+        buglog.caught()
+
+
 def _engine():
+    if _ENGINE[0] is not None:                  # 2.127.0: made once (it was made for every read)
+        return _ENGINE[0]
+    _ENGINE[0] = _engine_new()
+    return _ENGINE[0]
+
+
+def _engine_new():
     from winrt.windows.media.ocr import OcrEngine
     try:
         from winrt.windows.globalization import Language
