@@ -28,6 +28,9 @@ TASK_H = 40
 MIN_W, MIN_H = 320, 200
 PAGES = True                    # 2.62.0: one tool at a time, filling the main area (a sidebar picks it) - no
                                 # floating windows; the pages are still real windows (see DeskWindow) placed over it
+# 2.131.0 (plan: Settings as a window over the app): these open over the page you're on - it stays under a dim
+# layer; Esc, × or a click on the dim layer closes them and you're back where you were
+OVER = ("settings",)
 
 
 def monitor_of(win):
@@ -161,11 +164,16 @@ class DeskWindow(tk.Toplevel):
             self.lbl = self.bar.create_text(10, 15, text=f"{icon}  {title}", anchor="w", fill=_th.bar_text("title"),
                                             font=(_th.head_font(), 10, "bold"))
         self.btns = []
-        for txt, cmd, bg in (() if PAGES else (("×", self.close, "#7a2a20"), ("□", self.toggle_max, "#22345a"),
-                                                ("_", self.minimise, "#22345a"))):
+        over = PAGES and key in OVER
+        for txt, cmd, bg in (((("×", self.close, "#7a2a20"),) if over else ()) if PAGES else
+                             (("×", self.close, "#7a2a20"), ("□", self.toggle_max, "#22345a"),
+                              ("_", self.minimise, "#22345a"))):
             b = tk.Label(self.bar, text=txt, bg=bg, fg="#cfe0ff", font=("Segoe UI", 9, "bold"), width=2,
                          highlightthickness=1, highlightbackground="#5b77ad", cursor="hand2")
             b.bind("<Button-1>", lambda e, c=cmd: c())
+            if over:
+                from .style import Tooltip
+                Tooltip(b, f"Close {title} (Esc)")
             self.btns.append(self.bar.create_window(0, 15, window=b, anchor="e"))
         self.bar.bind("<Configure>", self._bar_resized, add="+")
         if not PAGES:                                  # (a page doesn't move - the sidebar picks it)
@@ -207,6 +215,8 @@ class DeskWindow(tk.Toplevel):
             self.handles[side + "2"] = h
         self.bind("<ButtonPress-1>", self._clicked, add="+")
         self._d = {}
+        if over:
+            self.bind("<Escape>", lambda e: self.close() if self.state_ == "open" else None, add="+")
 
     # ---- title bar
     def add_child(self, text, cmd):
@@ -471,6 +481,8 @@ class DeskWindow(tk.Toplevel):
 
     def withdraw(self):
         super().withdraw()
+        if getattr(self, "key", None) in OVER and getattr(self, "shell", None) is not None:
+            self.shell.dim_hide()
         try:
             self.hide_ghosts()            # 2.89.0: a left-behind copy goes too
         except Exception:
@@ -520,8 +532,14 @@ class DeskWindow(tk.Toplevel):
             pass
 
     def page_fill(self):
-        """2.62.0: a page covers the whole main area."""
-        self.place_at(0, 0, max(MIN_W, self.shell.desk.winfo_width()), max(MIN_H, self.shell.desk.winfo_height()))
+        """2.62.0: a page covers the whole main area (2.131.0: Settings sits over it, inset, on a dim layer)."""
+        dw, dh = max(MIN_W, self.shell.desk.winfo_width()), max(MIN_H, self.shell.desk.winfo_height())
+        if self.key in OVER:
+            w, h = max(MIN_W, min(dw - 64, 1240)), max(MIN_H, dh - 48)
+            self.place_at((dw - w) // 2, 24, w, h)
+            self.shell.dim_show(lift=self.state_ != "open")      # (opening: the dim layer goes on top, then this)
+            return
+        self.place_at(0, 0, dw, dh)
 
     def open(self):
         if self.state_ == "open":
@@ -727,6 +745,58 @@ class Shell:
         self._follow_soon()
 
     # ---- the windows are real windows (2.0 beta 13): keep them on the desktop area when the app moves / resizes
+    # ---- 2.131.0: the dim layer under Settings
+    def dim_show(self, lift=True):
+        """Cover the page you're on (the main area) with a dim layer; a click on it closes what's over it."""
+        d = getattr(self, "dim", None)
+        if d is None:
+            d = self.dim = tk.Toplevel(self.root, bg="#000000")
+            d.withdraw()
+            d.overrideredirect(True)
+            if sys.platform != "win32":
+                try:
+                    d.transient(self.root)
+                except tk.TclError:
+                    pass
+            try:
+                d.attributes("-alpha", 0.55)
+            except tk.TclError:
+                pass
+            d.shell = self
+            d.bind("<Button-1>", lambda e: self.dim_click())
+            d.bind("<Escape>", lambda e: self.dim_click())
+        try:
+            ox, oy = self.desk_origin()
+            d.geometry(f"{max(1, self.desk.winfo_width())}x{max(1, self.desk.winfo_height())}+{ox}+{oy}")
+            if lift or d.state() == "withdrawn":
+                d.deiconify()
+                DeskWindow.own_by_app(d)
+                DeskWindow.follow_on_top(d)
+                d.lift()
+        except tk.TclError:
+            pass
+        return d
+
+    def dim_hide(self):
+        d = getattr(self, "dim", None)
+        if d is not None:
+            try:
+                d.withdraw()
+            except tk.TclError:
+                pass
+
+    def dim_on(self):
+        d = getattr(self, "dim", None)
+        try:
+            return d is not None and d.state() != "withdrawn"
+        except tk.TclError:
+            return False
+
+    def dim_click(self):
+        for k in OVER:
+            if self.is_open(k):
+                self.windows[k].close()
+
     def desk_origin(self):
         try:
             return self.desk.winfo_rootx(), self.desk.winfo_rooty()
@@ -892,6 +962,8 @@ class Shell:
         for k in getattr(self, "zorder", []) + [k for k in self.windows if k not in getattr(self, "zorder", [])]:
             w = self.windows.get(k)
             if w is not None and w.state_ == "open":
+                if k in OVER and not getattr(self, "_all_hidden", False):
+                    self.dim_show()                     # 2.131.0: the dim layer right under Settings
                 try:                                    # 2.10.0: an open window that went missing comes back
                     if not getattr(self, "_all_hidden", False) and w.state() == "withdrawn":
                         w.reposition()
@@ -1305,8 +1377,8 @@ class Shell:
         if not self.visible(self.modules[key]):            # 2.131.0: its feature is off
             self.app._say(f"{self.modules[key].title} is off: turn it on in Settings › General › Features.", 8)
             return
-        if PAGES:                                           # 2.62.0: one page at a time
-            for k, w in self.windows.items():
+        if PAGES and key not in OVER:                       # 2.62.0: one page at a time (2.131.0: Settings
+            for k, w in self.windows.items():               # opens over it)
                 if k != key and w.state_ != "closed":
                     w.geo = w.current_geo()
                     w.withdraw()
@@ -1414,8 +1486,11 @@ class Shell:
                       "z": (getattr(self, "zorder", []).index(k) + 1 if k in getattr(self, "zorder", []) else 1)
                       if w.state_ == "open" else 0}
         self.cfg["windows"] = out
-        if self.active:
-            self.cfg["page"] = self.active
+        page = self.active
+        if page in OVER:                                  # 2.131.0: the page under Settings is the one you're on
+            page = next((k for k in reversed(getattr(self, "zorder", [])) if k not in OVER and self.is_open(k)), None)
+        if page:
+            self.cfg["page"] = page
         self.save()
 
     # ---- taskbar

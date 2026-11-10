@@ -57,9 +57,10 @@ class FeaturesPage:
             buglog.caught()
 
     # ---------------------------------------------------------------- the switches (popup and Settings)
-    def features_rows(self, parent, bg, live=False):
+    def features_rows(self, parent, bg, live=False, two=False):
         """Each group: a switch, its name, what it does and its key; then the Beta cluster. live=True: a change
-        applies at once (Settings); else the popup's Save applies them. -> {key: BooleanVar}."""
+        applies at once (Settings); else the popup's Save applies them. two=True: groups left, Beta right (the popup
+        fits a 1080p screen). -> {key: BooleanVar}."""
         sm, bold = ("Segoe UI", 9), ("Segoe UI", 10, "bold")
         vars_ = {}
 
@@ -76,11 +77,19 @@ class FeaturesPage:
                 from .overlay import key_label
                 keys = key_label(SETTINGS.get("pc_key") or "") or ""
             tk.Label(r, text=g["what"] + (f"  Key: {keys}." if keys else ""), bg=bg, fg=C["muted"], font=sm,
-                     anchor="w", justify="left", wraplength=520).pack(fill="x", padx=(24, 0))
+                     anchor="w", justify="left", wraplength=360 if two else 520).pack(fill="x", padx=(24, 0))
+        left = right = parent
+        if two:
+            cols = tk.Frame(parent, bg=bg)
+            cols.pack(fill="x")
+            left, right = tk.Frame(cols, bg=bg), tk.Frame(cols, bg=bg)
+            left.pack(side="left", fill="y", anchor="n")
+            right.pack(side="left", fill="y", anchor="n", padx=(24, 0))
         for g in FEAT.GROUPS:
-            row(g, parent)
+            row(g, left)
+        parent = right
         head = tk.Frame(parent, bg=bg)
-        head.pack(fill="x", pady=(8, 4))
+        head.pack(fill="x", pady=(0 if two else 8, 4))
         tk.Label(head, text="Beta", bg=bg, fg=C["text"], font=bold).pack(side="left")
         tk.Label(head, text="BETA", bg=bg, fg=C["accent"], font=("Segoe UI", 9, "bold")).pack(side="left", padx=8)
         bi = tk.Label(head, text="ⓘ", bg=bg, fg=C["muted"], font=sm, cursor="question_arrow")
@@ -142,7 +151,7 @@ class FeaturesPage:
         Tooltip(tip, "Your data is kept while a feature is off. Change these any time: Settings › General › Features.")
         tk.Label(inner, text="Turn off what you don't need - it leaves the menu and its keys do nothing.", bg=P2,
                  fg=C["muted"], anchor="w").pack(fill="x", pady=(2, 8))
-        pvars = self.features_rows(inner, P2)
+        pvars = self.features_rows(inner, P2, two=True)
         share_v = None
         if not SETTINGS.get("share_asked"):                     # only if you never answered (a "no" is final)
             tk.Frame(inner, bg=C["line"], height=1).pack(fill="x", pady=(8, 8))
@@ -153,7 +162,7 @@ class FeaturesPage:
                             style="Card.TCheckbutton").pack(anchor="w")
             tk.Label(sh, text="Off until you turn it on. Price summaries and your ratings - never your name, "
                               "characters or wealth. You get everyone's data either way.", bg=P2, fg=C["muted"],
-                     font=("Segoe UI", 9), anchor="w", justify="left", wraplength=520).pack(fill="x", padx=(24, 0))
+                     font=("Segoe UI", 9), anchor="w", justify="left", wraplength=760).pack(fill="x", padx=(24, 0))
         folder = {"new": None}
         if not SETTINGS.get("data_dir_asked"):                  # the first time only (later: Settings › Advanced)
             from .config import DATA_DIR
@@ -172,7 +181,7 @@ class FeaturesPage:
             ttk.Button(fr, text="Choose…", command=pick).pack(side="left")
             tk.Label(inner, text="Settings, lists and history live here. Keep the usual place, or pick one - a USB "
                                  "stick or the app's own folder for a portable copy.", bg=P2, fg=C["muted"],
-                     font=("Segoe UI", 9), anchor="w", justify="left", wraplength=520).pack(fill="x")
+                     font=("Segoe UI", 9), anchor="w", justify="left", wraplength=760).pack(fill="x")
         foot = tk.Frame(inner, bg=P2)
         foot.pack(fill="x", pady=(16, 0))
 
