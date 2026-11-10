@@ -73,13 +73,98 @@ def candidates():
     return out
 
 
+FOUND = {}
+
+
+def installed_game_dirs():
+    """2.130.3 (feedback: a player who installs games elsewhere got nothing - Client.txt wasn't found): where Windows
+    says Path of Exile 2 is installed (its list of installed programs - Steam and the standalone client both put it
+    there). Only the registry is read; the game itself is never touched."""
+    if os.name != "nt":
+        return []
+    out = []
+    try:
+        import winreg
+        for hive, base in ((winreg.HKEY_LOCAL_MACHINE, r"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall"),
+                           (winreg.HKEY_LOCAL_MACHINE, r"SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall"),
+                           (winreg.HKEY_CURRENT_USER, r"Software\Microsoft\Windows\CurrentVersion\Uninstall")):
+            try:
+                root = winreg.OpenKey(hive, base)
+            except OSError:
+                continue
+            with root:
+                for n in range(winreg.QueryInfoKey(root)[0]):
+                    try:
+                        with winreg.OpenKey(root, winreg.EnumKey(root, n)) as k:
+                            name = str(winreg.QueryValueEx(k, "DisplayName")[0])
+                            if "path of exile 2" in name.lower():
+                                out.append(str(winreg.QueryValueEx(k, "InstallLocation")[0]))
+                    except OSError:
+                        continue
+    except Exception:
+        return out
+    return [d for d in out if d]
+
+
+def steam_libraries():
+    """2.130.3: every Steam library folder (Steam's own libraryfolders.vdf), on any drive or folder."""
+    if os.name != "nt":
+        return []
+    roots = []
+    try:
+        import winreg
+        for hive, key in ((winreg.HKEY_CURRENT_USER, r"Software\Valve\Steam"),
+                          (winreg.HKEY_LOCAL_MACHINE, r"SOFTWARE\WOW6432Node\Valve\Steam")):
+            try:
+                with winreg.OpenKey(hive, key) as k:
+                    for name in ("SteamPath", "InstallPath"):
+                        try:
+                            roots.append(winreg.QueryValueEx(k, name)[0])
+                        except OSError:
+                            pass
+            except OSError:
+                pass
+    except Exception:
+        pass
+    libs = []
+    for r in roots + [r"C:\Program Files (x86)\Steam"]:
+        vdf = os.path.join(r, "steamapps", "libraryfolders.vdf")
+        try:
+            with open(vdf, encoding="utf-8", errors="replace") as f:
+                libs += [m.replace("\\\\", "\\") for m in re.findall(r'"path"\s+"([^"]+)"', f.read())]
+        except OSError:
+            continue
+    return list(dict.fromkeys(os.path.normpath(x) for x in libs + roots if x))
+
+
+def more_candidates():
+    """2.130.3: where Windows says the game is installed, then every Steam library."""
+    out = [os.path.join(d, "logs", "Client.txt") for d in installed_game_dirs()]
+    out += [os.path.join(lib, "steamapps", "common", "Path of Exile 2", "logs", "Client.txt") for lib in steam_libraries()]
+    return out
+
+
 def find_log(saved=None):
-    """-> path of Client.txt or None. A path you picked yourself wins."""
+    """-> path of Client.txt or None. A path you picked yourself wins. 2.130.3: then the usual places, then the
+    game's install folder (as Windows lists it) and every Steam library (games installed anywhere)."""
     if saved and os.path.isfile(saved):
         return saved
+    if FOUND.get("p") and os.path.isfile(FOUND["p"]):
+        return FOUND["p"]
     for p in candidates():
         if os.path.isfile(p):
             return p
+    import time
+    if time.time() - FOUND.get("t", 0) < 20:          # (the slower look: at most every 20 s)
+        return None
+    FOUND["t"] = time.time()
+    try:
+        for p in more_candidates():
+            if os.path.isfile(p):
+                FOUND["p"] = p
+                return p
+    except Exception:
+        pass
     return None
 
 
