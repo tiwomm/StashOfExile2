@@ -771,9 +771,43 @@ class Shell:
         for w in self.windows.values():
             w.reposition()
         self.check_owners()
+        try:
+            self.monitor_check()
+        except Exception:
+            buglog.caught()
         if self.menu is not None:
             self._place_menu()
         self.app_follow()
+
+    def monitor_check(self):
+        """2.129.3 (feedback: moved the app to another screen and the Wealth page stayed on the first one): when the
+        app lands on another monitor, every page window is shown again in its place - Windows may rebuild a window
+        that crosses to a screen of another scaling and leave the old one painted where it was - and any copy left
+        behind is hidden. -> True when the monitor changed."""
+        from .style import monitor_rect
+        try:
+            cx = self.root.winfo_rootx() + self.root.winfo_width() // 2
+            cy = self.root.winfo_rooty() + self.root.winfo_height() // 2
+        except tk.TclError:
+            return False
+        mon = monitor_rect(self.root, cx, cy, full=True)
+        last, self._monitor = getattr(self, "_monitor", None), mon
+        if last is None or mon == last:
+            return False
+        buglog.record("debug", "app moved to another monitor", "page windows shown again in place")
+        for w in self.windows.values():
+            try:
+                w.check_owner()
+                if w.state_ == "open" and not getattr(self, "_all_hidden", False):
+                    w.withdraw()                     # (and hide_ghosts)
+                    w.reposition()
+                    w.deiconify()
+                else:
+                    w.hide_ghosts()
+            except tk.TclError:
+                pass
+        self.restack()
+        return True
 
     def app_follow(self):
         """Pop-ups of the app that sit on the desktop (the what's new card) follow too."""

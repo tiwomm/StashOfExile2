@@ -51,6 +51,7 @@ NOTES = {
             ("Ritual", "Copy a reward (Ctrl+C) while the Favours window is open and it learns its look - idols too."),
             ("Ritual", "Rite of Passage gets a ★ in the Favours window, like Mageblood and Headhunter."),
             ("Ritual", "The tribute reminder shows whenever you close Favours with tribute left, rerolls or not."),
+            ("App", "Moving the app to another screen should no longer leave a page behind on the first one."),
         ],
     },
     "2.129.2": {

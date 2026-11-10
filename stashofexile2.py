@@ -36,6 +36,9 @@ VERSION HISTORY
          favours window no matter what it should ask"): on any close with tribute left - rerolls no longer count. The
          tribute is read from the last look before the window closed (it was up to 1.5 s old), so after offering (0
          left) nothing shows.
+       - Feedback ("moved [the app] to another screen ... the wealth screen stayed on screen"): when the app lands on
+         another monitor, each page window is shown again in its place and any copy Windows left behind is hidden
+         (shell.monitor_check).
   2.129.2
        Feedback ("whispers button doesn't work when I click it ... perhaps we need to just remove the 'After the
        campaign' option all together"): Trade whispers is on or off. Past the campaign, with After the campaign off,
