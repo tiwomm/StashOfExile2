@@ -47,8 +47,11 @@ NOTES = {
     "2.126.0": {
         "big": [],
         "small": [
-            ("App", "A tidy-up behind the scenes: unused code and two leftover settings are gone. Nothing changes for "
-             "you."),
+            ("Bulk Pricing", "Undo, Delete and a new Clear All button sit together in the Items strip, smaller "
+             "so they fit it. Clear All was under ⋯."),
+            ("Expedition", "Remnant prices should show sooner when the game is paused or the screen is still: the "
+             "helper keeps reading the book until it finds them."),
+            ("App", "A tidy-up behind the scenes: unused code and two leftover settings are gone."),
         ],
     },
     "2.125.8": {

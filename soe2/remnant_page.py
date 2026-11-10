@@ -136,7 +136,7 @@ class RemnantPage:
     def _remnant_watch(self, gen):
         from .alerts_page import game_rect
         from .overlay import game_active
-        last, misses, settle = None, 0, 0
+        last, misses, settle, found, read_at = None, 0, 0, False, 0.0
         try:
             while gen == getattr(self, "rm_auto_gen", 0):
                 time.sleep(RM.AUTO_POLL)
@@ -156,18 +156,25 @@ class RemnantPage:
                 try:
                     img = RM.grab(ar)
                     if RM.parchment_share(img) < RM.PARCHMENT:     # no book there: nothing to read (cheap)
-                        lines, last, settle = [], None, 0
+                        lines, last, settle, found = [], None, 0, False
                         misses += 1
                         if misses == RM.AUTO_GONE:
                             self.ui_q.put(("remnant_auto", rect, []))
                         continue
                     th = RM.thumb(img)
-                    if last is None:                 # 2.79.0 (feedback: "not popping up on time"): the book just
-                        settle = RM.SETTLE_READS     # opened - its first look can land mid-animation and find no
-                    if not RM.changed(last, th) and settle <= 0:    # lines; read a few more times while it settles,
-                        continue                     # not only when the picture changes a lot
+                    # 2.79.0 (feedback: "not popping up on time"): the book just opened - its first look can land
+                    # mid-animation and find no lines; read a few more times while it settles, not only when the
+                    # picture changes a lot. 2.126.0 (feedback: "sat on this screen 10 s"): a still picture (the game
+                    # paused) was never read again, so a book read mid-animation, or before prices or the map's
+                    # Expedition mark were in, showed nothing until something moved. No tags yet: read every second
+                    if last is None:
+                        settle = RM.SETTLE_READS
+                    if not RM.changed(last, th) and settle <= 0:
+                        if found or time.time() - read_at < RM.RETRY_SECS:
+                            continue
                     settle -= 1
                     last = th
+                    read_at = time.time()
                     lines = RM.shift(RM.ocr(img), ar[0] - rect[0], ar[1] - rect[1])
                     rows = self.remnant_price(lines, SETTINGS.get("league", ""))
                 except RM.OcrUnavailable:
@@ -179,6 +186,7 @@ class RemnantPage:
                     if len(rows) < RM.UNSURE_ROWS:   # one is read, this map has an Expedition
                         continue
                     self.rm_map_exp = True
+                found = bool(rows)
                 if rows:                         # game's tooltip over a reward) never takes tags away; only the
                     self.ui_q.put(("remnant_auto", rect, rows))      # book closing does
                     settle = min(settle, 1)      # (found them: one more read to catch the rest of the list)

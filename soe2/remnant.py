@@ -168,6 +168,7 @@ def price_lines(lines, names, value_of):
 # aspect ratio (16:9, 21:9 ...), the same way the Delirium and Ritual watchers find their spot.
 AREA = (0.02, 0.10, 0.53, 0.66)   # x0, y0, x1, y1 in game heights
 AUTO_POLL = 0.35                  # seconds between looks (only while the game is in front; 2.56.2: was 0.7)
+RETRY_SECS = 1.0                  # 2.126.0: the book open, no tags yet, the picture still: read again this often
 SETTLE_READS = 5                  # 2.79.0: reads right after the book appears, while it settles (~1.75 s)
 AUTO_GONE = 2                     # looks without the book = it was closed: tags off (~0.7 s)
 PARCHMENT = 0.35                  # share of the area that must look like the book's light parchment before reading

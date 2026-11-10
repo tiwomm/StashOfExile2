@@ -34,6 +34,7 @@ PAGES = {
 FEATURES = (
     "Beta features",            # Settings › General: shows the pages and helpers marked BETA
     "Campaign Helper",
+    "Clear All",                # Bulk Pricing › Items strip: empties the list shown
     "Community data sharing",
     "Craft Helper",
     "Data pack",                # the Craft Helper's mod data from GitHub
@@ -79,6 +80,7 @@ OLD = {
     "Quick Settings": "Quick settings",
     "Community Data Sharing": "Community data sharing",
     "How searches are made": "Search Options",
+    "Clear list": "Clear All",          # Bulk Pricing's button (2.126.0: on screen, in the Items strip)
 }
 
 # an old page name that now means another page: before 2.80.0, Bulk Pricing was called "Price checks"

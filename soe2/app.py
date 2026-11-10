@@ -859,7 +859,7 @@ class App(SettingsPage, GearBookPage, PriceCheckPage, PricePopup, FavoritesPage,
         self.cols_btn.pack(side="left", padx=(8, 0))         # 2.123.0 (p9): the extra columns
         more = ttk.Button(frow, text="⋯", width=3, style="Quiet.TButton", command=lambda: self.bulk_more_menu(more))
         more.pack(side="right")
-        Tooltip(more, "More: Export CSV, Order added, Clear list")
+        Tooltip(more, "More: Export CSV, Order added")
         self.pause_btn = ttk.Button(frow, text="Pause", command=self.toggle_pause, width=7)
         self.pause_btn.pack(side="right", padx=8)
         ttk.Button(frow, text="⟳ Re-price all", style="Primary.TButton", command=self.reprice_all).pack(side="right")
@@ -884,15 +884,21 @@ class App(SettingsPage, GearBookPage, PriceCheckPage, PricePopup, FavoritesPage,
         self.list_head.pack(fill="x")
         self.list_head.add_left(self.pc_mode)               # 2.123.0 (p7): Manual Add | Stash tab, in the strip
         self.cat_count = tk.Label(lcol, text="")             # (not shown - its text is the strip's note)
-        # 2.123.0 (p11): what to do with the picked rows - in the list's strip; Clear list is under ⋯
+        # 2.126.0 (feedback): Undo, Delete and Clear All sit in the Items strip as small strip buttons, together
         acts = tk.Frame(lcol, bg=C["panel"], pady=4)        # (not shown: holds the retired mark buttons)
-        self.delete_btn = ttk.Button(body, text="🗑 Delete", command=self.remove_selected, style="Danger.TButton", state="disabled")      # 2.0 beta 19
+        self.delete_btn = ttk.Button(body, text="🗑 Delete", command=self.remove_selected, style="StripDanger.TButton",
+                                     state="disabled")      # 2.0 beta 19
+        self.clear_all_btn = ttk.Button(body, text="Clear All…", command=self.clear, style="StripDanger.TButton",
+                                        state="disabled")
         self.remove_btn = ttk.Button(acts, text="✖ Mark removed", command=lambda: self.mark_selected("removed"), state="disabled")
         self.mark_btn = ttk.Button(acts, text="✔ Mark listed", command=lambda: self.mark_selected("listed"), state="disabled")
         # 2.105.0 (feedback: nobody marks items listed / sold / removed): those buttons aren't shown any more
-        self.undo_btn = ttk.Button(body, text="↺ Undo", command=self.undo_mark, state="disabled", width=7, style="Quiet.TButton")
-        self.list_head.add_right(self.undo_btn)
-        self.list_head.add_right(self.delete_btn)
+        self.undo_btn = ttk.Button(body, text="↺ Undo", command=self.undo_mark, state="disabled", style="Strip.TButton")
+        Tooltip(self.undo_btn, "Bring back what you last deleted (Ctrl+Z)")
+        Tooltip(self.delete_btn, "Delete the picked items from the list (Del)")
+        Tooltip(self.clear_all_btn, "Remove every item from this list (asks first)")
+        for b in (self.undo_btn, self.delete_btn, self.clear_all_btn):
+            self.list_head.add_right(b)
         self.undo = []                                   # [(record id, previous mark, previous listed-at)] of the last mark
         vp = Viewport(lcol)
         vp.pack(fill="both", expand=True)
@@ -3814,6 +3820,8 @@ class App(SettingsPage, GearBookPage, PriceCheckPage, PricePopup, FavoritesPage,
 
     def update_total(self):
         self.cat_refresh()                                                    # category counts follow every change
+        if getattr(self, "clear_all_btn", None) is not None:                 # 2.126.0: lit while this list has items
+            self.clear_all_btn.config(state="normal" if any(self.in_list(r) for r in self.records.values()) else "disabled")
         shown = [r for r in self.records.values() if self.visible(r)]       # totals follow the Show filter
         done = [r for r in shown if r["state"] == "done"]
         tot = sum(r["est"] for r in done if r["est"] is not None and not self.price_manually(r))
@@ -4133,7 +4141,7 @@ class App(SettingsPage, GearBookPage, PriceCheckPage, PricePopup, FavoritesPage,
         mine = [rid for rid, r in self.records.items() if self.in_list(r)]
         src = self.list_src()
         what = "this tab's list" if src != "manual" else "the Manual Add list"
-        if mine and not messagebox.askyesno("Clear list", f"Remove all items from {what}?\n(The mod book is kept.)"):
+        if mine and not messagebox.askyesno("Clear All", f"Remove all items from {what}?\n(The mod book is kept.)"):
             return
         for rid in mine:
             del self.records[rid]
@@ -4244,8 +4252,6 @@ class App(SettingsPage, GearBookPage, PriceCheckPage, PricePopup, FavoritesPage,
         m = tk.Menu(self.root, tearoff=0, bg=C["panel2"], fg=C["text"], activebackground=C["accent"])
         m.add_command(label="Export CSV…", command=self.export)
         m.add_command(label="Order added", command=self.sort_added)
-        m.add_separator()
-        m.add_command(label="Clear list…", command=self.clear)
         m.tk_popup(btn.winfo_rootx(), btn.winfo_rooty() + btn.winfo_height())
 
     def bulk_pane(self, on):

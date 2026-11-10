@@ -97,7 +97,9 @@ class SectionBar(tk.Canvas):
                 wd.lift(self)
             x -= 8
         if self._note:
-            self.create_text(x, h // 2, text=self._note, anchor="e", fill=C["steel"], font=("Segoe UI", 9))
+            nid = self.create_text(x, h // 2, text=self._note, anchor="e", fill=C["steel"], font=("Segoe UI", 9))
+            if (self.bbox(nid) or (lx, 0, 0, 0))[0] < lx:    # 2.126.0: no room between the two sides - left out
+                self.delete(nid)
 
 
 class Viewport(tk.Frame):

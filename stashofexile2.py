@@ -33,6 +33,13 @@ VERSION HISTORY
        picked are listed for UX round 2). style.Tooltip marks its widget (_tip). check_names and check_removed run
        in CI. Found by the checks: README names (Mod Book, Exchange Rates, Notes) and a stale line about Bulk
        Pricing's floor; Wealth's old stash tab sync (hidden since 2.106.0) is listed as pending.
+       Feedback: Bulk Pricing's Undo and Delete were full-size buttons hanging out of the Items strip, and Clear list
+       was only under ⋯. Now Undo, Delete and Clear All (app.clear_all_btn, lit while the list shown has items; was
+       Clear list in ⋯) sit together in the strip as Strip.TButton / StripDanger.TButton - small, flat, sized to
+       their words, with tooltips. SectionBar leaves its note out when the two sides leave it no room.
+       Feedback (Remnant tags took ~10 s, game paused): after its settle reads the watcher only read a book again when
+       the picture changed, so a still book first read mid-animation (or before prices / the map's Expedition mark)
+       stayed bare. While no tags show it now reads again every RM.RETRY_SECS (1 s); once found, a still book isn't.
   2.125.8
        Feedback: "I still don't see anyone else's info/map times in leaderboards". app_log.txt: "Item b1767 already
        exists" while drawing a board. Picking a board looked it up twice (the pick and the list's refresh); the
