@@ -44,6 +44,23 @@ BETA_AREAS = ("Wealth", "Money Makers", "Game Search", "Market Insights", "Craft
               "Desecration Helper")
 
 NOTES = {
+    "2.127.0": {
+        "big": [
+            ("💎", "Lineage gems priced", "Your price check key or Ctrl+Alt+C on a lineage support gem searches the "
+             "trade site for it, with poe.ninja's going rate alongside.", None, "Price Checks"),
+            ("⇄", "Currency's going rate", "Your price check key on a currency shows what one is worth in exalted and "
+             "chaos, and what a Divine Orb buys of it.", None, "Price Checks"),
+            ("⏱", "Sessions survive a restart", "If the app closes, updates or crashes, your session comes back "
+             "paused and goes on when the game does.", None, "Overlay"),
+        ],
+        "small": [
+            ("Bulk Pricing", "The Item pane stays on screen, even with nothing picked."),
+            ("Price Checks", "Mageblood should search all its Legacies, even when the trade site lists them "
+             "differently."),
+            ("Overlay", "Regex favorites can be locked with the overlay's lock, and stay where you put them."),
+            ("Settings", "Keys is now Keybinds, with ↺ Defaults to put every key back."),
+        ],
+    },
     "2.126.0": {
         "big": [],
         "small": [

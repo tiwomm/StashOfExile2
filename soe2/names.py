@@ -37,7 +37,8 @@ FEATURES = (
     "Clear All",                # Bulk Pricing › Items strip: empties the list shown
     "Community data sharing",
     "Craft Helper",
-    "Data pack",                # the Craft Helper's mod data from GitHub
+    "Data pack",
+    "Keybinds",                 # Settings: every key the app listens for (2.127.0: was Keys)                # the Craft Helper's mod data from GitHub
     "Desecration Helper",       # at The Well of Souls
     "Exchange Helper",
     "Mechanic Helper",
@@ -81,6 +82,8 @@ OLD = {
     "Community Data Sharing": "Community data sharing",
     "How searches are made": "Search Options",
     "Clear list": "Clear All",          # Bulk Pricing's button (2.126.0: on screen, in the Items strip)
+    "Settings › Keys": "Settings › Keybinds",          # 2.127.0
+    "Settings > Keys": "Settings › Keybinds",
 }
 
 # an old page name that now means another page: before 2.80.0, Bulk Pricing was called "Price checks"

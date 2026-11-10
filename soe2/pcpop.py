@@ -1,6 +1,6 @@
 """2.113.0: the price check in a card over the game (a sample - Price Checks in the app stays as it is).
 
-Settings › Keys › Price Checks › "Show it in a card over the game": your price check key copies the hovered item
+Settings › Keybinds › Price Checks › "Show it in a card over the game": your price check key copies the hovered item
 (one press = one copy, as always) and, instead of bringing the app forward, a card opens over the game at a spot you
 choose - drag it by its title, resize it from any edge; both are remembered. It takes the overlay's Style.
 
@@ -13,7 +13,7 @@ Typing: click into a Min / Max box and the card takes the keyboard (Enter search
 game and it has the keyboard again.
 
 Close key (2.121.1, feedback): Esc by default, as PoE Overlay closes its dialogs - only while the card is open and the
-game (or the card) is in front, and that press is used up (the game's menu doesn't open). Set it on Settings › Keys or
+game (or the card) is in front, and that press is used up (the game's menu doesn't open). Set it on Settings › Keybinds or
 with the card's ⚙ (Card settings: the close key, where the price shows, All price check settings…).
 
 Privacy: other players' seller names show as on the app's card (public on the trade site); your own account name
@@ -89,12 +89,27 @@ class PricePopup:
 
     def pcpop_show(self, rec):
         """Open (or refill) the card for this item."""
-        from .overlaywin import OverlayWindow, pal
         if rec is None:
             return None
         if getattr(self, "pp_rid", None) != rec["id"]:
             self.pp_open = set()                          # (which listings are opened - a new item starts closed)
         self.pp_rid = rec["id"]
+        w = self._pcpop_window()
+        self.pcpop_fill(rec)
+        return self._pcpop_up(w)
+
+    def _pcpop_up(self, w):
+        self.pp_up = True                                 # (read by the keyboard watcher: the close key works now)
+        w.show()
+        try:
+            w.lift()
+        except tk.TclError:
+            pass
+        return w
+
+    def _pcpop_window(self):
+        """The card's window - the one that's open, or a new one."""
+        from .overlaywin import OverlayWindow, pal
         w = getattr(self, "pp_win", None)
         if w is not None:
             try:
@@ -115,14 +130,59 @@ class PricePopup:
             self.pp_win, self.pp_P = w, P
             w.bind("<Escape>", lambda _e: self._pcpop_esc(), add="+")    # (the card has the keyboard: Min / Max)
             self._pcpop_frame(w, P)
-        self.pcpop_fill(rec)
-        self.pp_up = True                                 # (read by the keyboard watcher: the close key works now)
-        w.show()
-        try:
-            w.lift()
-        except tk.TclError:
-            pass
         return w
+
+    # ---------------------------------------------------------------- 2.127.0: currency and lineage gems
+    def pcpop_rates(self, name, qty, each, src):
+        """2.127.0 (feedback: "ctrl+d on currency items and see the current common exchange rates"): a currency
+        (or a lineage gem, or anything poe.ninja's exchange lists) in the card - what one is worth in the
+        currencies people trade in, what a Divine / Exalted Orb buys of it, and the stack's worth."""
+        self.pp_rid, self.pp_open = None, set()
+        w = self._pcpop_window()
+        self.pcpop_rates_fill(name, qty, each, src)
+        return self._pcpop_up(w)
+
+    def pcpop_rates_fill(self, name, qty, each, src):
+        from .pricefmt import fmt_div
+        from .rates import RATES
+        P, inner, foot = self.pp_P, self.pp_inner, self.pp_foot
+        for c in list(inner.winfo_children()) + list(foot.winfo_children()):
+            c.destroy()
+        self.pp_wraps = []
+        body, head = P.get("body") or P["font"], P.get("hfont") or P["font"]
+
+        def lab(parent, text, fg=None, size=10, bold=False, font=None, **pk):
+            l_ = tk.Label(parent, text=text, bg=parent["bg"], fg=fg or P["text"], anchor="w", justify="left",
+                          font=(font or body, size, "bold") if bold else (font or body, size))
+            l_.pack(fill="x", **pk)
+            self.pp_wraps.append(l_)
+            return l_
+        lab(inner, name + (f"  ×{qty:,}" if qty > 1 else ""), fg=P["big"], size=13, bold=True, font=head,
+            pady=(8, 0), padx=16)
+        lab(inner, "Going rate" + (f" · {src}" if src else ""), fg=P["muted"], size=9, padx=16)
+        box = tk.Frame(inner, bg=P.get("field", P["bg"]), highlightthickness=1, highlightbackground=P["line"])
+        box.pack(fill="x", padx=16, pady=(8, 0))
+        if each is None:
+            lab(box, "No price on poe.ninja or the bulk exchange right now.", padx=8, pady=8)
+            return
+        lab(box, "1 ≈ " + fmt_div(each), fg=P["big"], size=16, bold=True, font=head, padx=8, pady=(8, 0))
+        worth, buys = RATES.common(each, RATES.key(name.replace(" ", "-")))
+        if worth:
+            lab(box, "1 = " + "  ·  ".join(worth), size=10, padx=8, pady=(4, 0))
+        if buys:                                           # what one of the dear ones buys of this
+            lab(box, "  ·  ".join(buys), fg=P["muted"], size=9, padx=8, pady=(4, 0))
+        if qty > 1:
+            lab(box, f"Your {qty:,}: ≈ {fmt_div(each * qty)}", bold=True, padx=8, pady=(8, 0))
+        tk.Frame(box, bg=box["bg"], height=8).pack(fill="x")
+        self._pcpop_btn("Open Exchange Rates", self._pcpop_rates_page).pack(side="right")
+
+    def _pcpop_rates_page(self):
+        try:
+            self.shell.open("rates")
+            self.root.deiconify()
+            self.root.lift()
+        except Exception:
+            self.log_error("opening Exchange Rates")
 
     # ---------------------------------------------------------------- the close key (2.121.1)
     def pc_close_hotkey(self, vk, ctrl, alt, shift):
@@ -166,7 +226,7 @@ class PricePopup:
 
     def pcpop_settings_show(self):
         """A small box under the ⚙, over the game: where the price shows (Here | Overlay + Here - the same setting as
-        Settings and Price Checks), the close key (2.125.5: shown here, set on Keys only), All price check settings….
+        Settings and Price Checks), the close key (2.125.5: shown here, set on Keybinds only), All price check settings….
         2.125.5 (feedback: everything over the game follows the overlay's style): in the overlay's colors and font."""
         from .style import CAPTURING, Tooltip
         from .overlay import key_label
@@ -215,7 +275,7 @@ class PricePopup:
         r.pack(fill="x")
         tk.Label(r, text=f"Close key: {key_label(k)}" if k else "Close key: none", bg=P1, fg=Q["text"],
                  font=(F, 10)).pack(side="left")
-        go = tk.Label(r, text="Change on Keys ›", bg=P1, fg=Q["accent"], font=(F, 9, "underline"), cursor="hand2")
+        go = tk.Label(r, text="Change in Keybinds ›", bg=P1, fg=Q["accent"], font=(F, 9, "underline"), cursor="hand2")
         go.pack(side="right")
         go.bind("<Button-1>", lambda _e: (self.pcpop_settings_close(), self._pcs_keys()))
         foot = tk.Frame(box, bg=P1, padx=12, pady=8)

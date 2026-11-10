@@ -959,11 +959,7 @@ class App(SettingsPage, GearBookPage, PriceCheckPage, PricePopup, FavoritesPage,
         self.pane.bind("<ButtonRelease-1>", keep_panel, add="+")
         self.outer = outer
         self.item_head = SectionBar(outer, "Item")
-        self.item_head.pack(fill="x", padx=(8, 0))
-        x_ = tk.Label(self.item_head, text="✕", fg=C["text"], cursor="hand2", font=("Segoe UI", 10))
-        x_.bind("<Button-1>", self.bulk_pane_close)
-        Tooltip(x_, "Close (Esc)")
-        self.item_head.add_right(x_)
+        self.item_head.pack(fill="x", padx=(8, 0))      # 2.127.0 (feedback): always on screen - no ✕
         # 2.63.0: the picked item's own buttons, at the foot of its panel
         ifoot = tk.Frame(outer, bg=C["panel2"], pady=8)       # 2.79.0: not shown - the card has these (no duplicates)
         self.item_trade_btn = ttk.Button(ifoot, text="Trade Site", command=self.open_trade, state="disabled")
@@ -1757,11 +1753,6 @@ class App(SettingsPage, GearBookPage, PriceCheckPage, PricePopup, FavoritesPage,
             self.status_text, self.status_until = "Select an item first, then press O to open its search on the trade site.", time.time() + 5
 
     def hk_min(self):
-        try:                                      # 2.123.0 (p10): Esc closes the Item pane first
-            if str(self.outer) in [str(p) for p in self.pane.panes()] and self.shell.active == "checks":
-                return self.bulk_pane_close()
-        except (AttributeError, tk.TclError):
-            pass
         self.min_ok_until = time.time() + 3       # YOU asked for it: on_unmap lets it go through
         self.root.iconify()                       # goes to the system tray when that is available (see on_unmap)
 
@@ -2270,7 +2261,7 @@ class App(SettingsPage, GearBookPage, PriceCheckPage, PricePopup, FavoritesPage,
             return True
         if text.lstrip().startswith("Item Class:"):
             self.status_text = ("Ignored an item copy that wasn't made with your Ctrl+Alt+C (another tool?). "
-                                "Wrong? Settings > Keys > \"Also add items copied another way\"")
+                                "Wrong? Settings > Keybinds > \"Also add items copied another way\"")
             self.status_until = time.time() + 8
         return False
 
@@ -2574,7 +2565,13 @@ class App(SettingsPage, GearBookPage, PriceCheckPage, PricePopup, FavoritesPage,
         else:
             msg = f"{name} x{qty:,}: {fmt_div(each * qty)} ({fmt_div(each)} each, {src})."
         if loud:                                         # 2.114.0: your price check key on it - a toast you'll see
-            self.app_toast(msg, "Price check")
+            from .pcpop import pop_on
+            if pop_on():                                 # 2.127.0: the card over the game shows its going rate
+                self.pcpop_rates(name, qty, each, src)
+            else:                                        # 2.127.0: and the toast its going rate in common currencies
+                worth, buys = RATES.common(each, RATES.key(name.replace(" ", "-"))) if each else ([], [])
+                self.app_toast(msg + "".join(f"\n{x}" for x in ("1 = " + " · ".join(worth) if worth else "",
+                                                                 " · ".join(buys)) if x), "Price check")
         self.status_text, self.status_until = msg, time.time() + 20
         self._say(msg, 12)
         self.last_stack_price = (name, qty, each, src)
@@ -4255,7 +4252,8 @@ class App(SettingsPage, GearBookPage, PriceCheckPage, PricePopup, FavoritesPage,
         m.tk_popup(btn.winfo_rootx(), btn.winfo_rooty() + btn.winfo_height())
 
     def bulk_pane(self, on):
-        """p10: the Item pane shows while one item is picked; the list has the whole width otherwise."""
+        """p10: the Item pane shows while one item is picked; the list has the whole width otherwise. 2.127.0
+        (feedback: "it helps with visual layout"): it's always on screen - show_detail always asks for it."""
         pane, outer = getattr(self, "pane", None), getattr(self, "outer", None)
         if pane is None or outer is None:
             return
@@ -4273,13 +4271,6 @@ class App(SettingsPage, GearBookPage, PriceCheckPage, PricePopup, FavoritesPage,
         except tk.TclError:
             pass
 
-    def bulk_pane_close(self, _e=None):
-        try:
-            self.tree.selection_remove(*self.tree.selection())
-        except tk.TclError:
-            pass
-        self.bulk_pane(False)
-
     def show_detail(self, rec):
         """2.79.0 (feedback: "a clean view"): the item card holds every filter - properties,
         requirements, miscellaneous, each mod, pseudo totals, trade filters - then Search again / Open on trade site,
@@ -4288,7 +4279,7 @@ class App(SettingsPage, GearBookPage, PriceCheckPage, PricePopup, FavoritesPage,
             return self.pc_show(rec)
         if rec is not None and rec.get("src") == "fav":         # 2.84.0: the card on Favorites
             return self.fav_rec_changed(rec)
-        self.bulk_pane(rec is not None)                     # 2.123.0 (p10)
+        self.bulk_pane(True)                                # 2.127.0: always on screen (2.123.0 p10: only with a pick)
         for w in self.detail.winfo_children():
             w.destroy()
         self.shown_rec = rec
@@ -4298,10 +4289,12 @@ class App(SettingsPage, GearBookPage, PriceCheckPage, PricePopup, FavoritesPage,
         self.price_var = None
         self.detail_vars = []
         P2, P1 = C["panel2"], C["panel"]
-        if rec is None:
+        if rec is None:                                     # 2.127.0: the empty pane in the one empty look
+            from .chrome import EmptyState
             n = len(self.tree.selection()) if hasattr(self, "tree") else 0
-            tk.Label(d, text=f"{n} items selected" if n > 1 else "Select an item\nto see its mods",
-                     bg=P2, fg=C["muted"], font=("Segoe UI", 10), justify="left", anchor="nw").pack(fill="x")
+            EmptyState(d, "⚖", f"{n} items picked\nPick one to see its mods and search filters." if n > 1 else
+                       "No item picked\nPick an item in the list to see its mods and search filters.",
+                       bg_key="panel2", wrap=max(200, wrap - 60)).pack(fill="x", pady=(24, 0))
             return
         it = rec["item"]
         self._detail_card(d, rec, it, wrap)
@@ -5515,12 +5508,11 @@ class App(SettingsPage, GearBookPage, PriceCheckPage, PricePopup, FavoritesPage,
                 t.join(4)
         except Exception:
             buglog.caught()
-        try:                                         # 2.0 beta 9: a running session is kept (without a profit)
-            s = getattr(self, "tk_session", None)
+        try:                                         # 2.127.0: a running session is saved as it is - the next start
+            s = getattr(self, "tk_session", None)    # goes on with it (tracker.save_live; 2.0 beta 9 ended it here)
             if s is not None and s.ended is None:
-                s.stop()
-                s.note = (s.note + " (app closed)").strip()
-                self.tk_sessions.add(s)
+                from . import tracker as TR
+                TR.save_live(s)
             self.merged_destroy()                    # (keeps where the overlay was)
         except Exception:
             buglog.caught()

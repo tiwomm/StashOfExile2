@@ -627,8 +627,14 @@ class Engine(TabReaderJobs, WealthJobs, StratCostJobs, threading.Thread):
             m.pop("search_ids", None)                       # (worked out fresh each time - ticks change)
             if valid and not str(m["sid"]).startswith(("equip:", "map:")):  # 1.42: only ids the trade site's own list has
                 m["search_ids"] = [i for i in (m.get("ids") or [m["sid"]]) if i in valid]
+                if not m["search_ids"] and m.get("option") is not None:    # 2.127.0: a Legacy whose game-data id
+                    from .mods import option_live                          # isn't the trade site's - its own, by
+                    hit = option_live(m["text"], valid)                    # the wording
+                    if hit:
+                        m["search_ids"], m["option"] = [hit[0]], hit[1]
                 if not m["search_ids"]:
                     unknown += 1
+                    m["note"] = "not on the trade site's list of mods - left out of the search"
                     continue
             src = only_source(rec, m)
             if src:                                          # 2.93.0: this mod as fractured / desecrated only
@@ -638,7 +644,7 @@ class Engine(TabReaderJobs, WealthJobs, StratCostJobs, threading.Thread):
             (must if imp == "high" else opt).append(m)
         blank = dict(total=0, prices=[], est=None, qid=None, partial=False, thin=False, nomatch=False, stages=[],
                      wide=False, manual=False, conf="-", conf_why=[], memory="", skip=False)
-        if not must and not opt and item["rarity"] not in ("Unique", "Normal", "Currency") and not (
+        if not must and not opt and item["rarity"] not in ("Unique", "Normal", "Currency", "Gem") and not (
                 item["rarity"] == "Magic" and (item.get("search") or {}).get("ilvl_min")):   # 2.114.0: a magic base
 
             return dict(blank, label="nothing ticked to search on" + (f" · {unknown} mods not on the trade site" if unknown else ""))

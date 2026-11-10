@@ -11,6 +11,7 @@ from tkinter import font as tkfont
 from tkinter import ttk
 
 from . import buglog
+from .config import SETTINGS, save_json
 from .overlaywin import CanvasText, OverlayWindow, pal
 
 # 2.66.0: one look (the app's theme); the layout says the shape - Minimal moved here from the old Style list
@@ -511,7 +512,7 @@ class MergedOverlay:
         return w
 
     def overlay_hide_toggle(self):
-        """2.59.0: F6 (Settings › Keys) hides the whole overlay - timer, switches, Notes - and shows it
+        """2.59.0: F6 (Settings › Keybinds) hides the whole overlay - timer, switches, Notes - and shows it
         again, as it was. Nothing is switched off; it's only out of sight."""
         self.mg_hidden = not getattr(self, "mg_hidden", False)
         w = getattr(self, "mg_win", None)
@@ -777,9 +778,30 @@ class MergedOverlay:
                 out.append((f.get("name") or "Favorite", s))
         return out
 
+    def rx_ov_spot(self):
+        """2.127.0: where the Regex favorites window goes - where you last left it, else centered near the top."""
+        c = SETTINGS.setdefault("rx_ov", {})
+        if c.get("x") is not None and c.get("y") is not None:
+            return int(c["x"]), int(c["y"])
+        from .alerts_page import game_rect
+        r = game_rect() or (0, 0, self.root.winfo_screenwidth(), self.root.winfo_screenheight())
+        return r[0] + (r[2] - self.ov_px(380)) // 2, r[1] + int(r[3] * 0.14)
+
     def rx_ov_show(self):
+        """2.127.0 (feedback: Notes, Calc and Rates have a lock, Regex didn't): the overlay's one lock locks it too,
+        and it stays where you drag it."""
         self.rx_ov_close()
-        w, body, P = self._camp_card("Regex favorites", "★", 380, top=0.14, on_close=lambda: self.rx_ov_toggle(False))
+        P = pal()
+
+        def moved(x, y, _w, _h):
+            SETTINGS.setdefault("rx_ov", {}).update(x=int(x), y=int(y))
+            save_json("settings.json", SETTINGS)
+        x, y = self.rx_ov_spot()
+        w = OverlayWindow(self.root, "Regex favorites", "★", (x, y, self.ov_px(380), None), palette=P,
+                          locked=bool(self.tracker_cfg().get("mlocked")), on_lock=self.overlay_lock,
+                          on_close=lambda: self.rx_ov_toggle(False), on_moved=moved, follow_game=True, no_activate=True)
+        body = tk.Frame(w.body, bg=P["bg"], padx=16, pady=8)
+        body.pack(fill="both", expand=True)
         bg = P["bg"]
         favs = self.rx_ov_favs()
         tip = "Click one = copied · Ctrl+V in the stash or shop search" if favs else \

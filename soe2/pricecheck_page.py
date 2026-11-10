@@ -286,7 +286,7 @@ class PriceCheckPage:
         gear.pack(side="right")                          # 2.123.0 (p3): this page's settings, one click away
         gear.bind("<Button-1>", lambda e: self.settings_open("Price checking", "pc_single"))
         Tooltip(gear, "Price check settings")
-        self._pc_key_text = self.pc_where_paint          # (Settings › Keys calls it when a key changes)
+        self._pc_key_text = self.pc_where_paint          # (Settings › Keybinds calls it when a key changes)
         self.pc_where_paint()
 
     def pc_where_paint(self):
@@ -558,7 +558,7 @@ class PriceCheckPage:
 
     # ---------------------------------------------------------------- items in
     def pc_pop_var(self):
-        """The one switch for the card over the game (Price Checks' header and Settings › Keys share it)."""
+        """The one switch for the card over the game (Price Checks' header and Settings › Keybinds share it)."""
         v = getattr(self, "_pc_pop_var", None)
         if v is None:
             v = self._pc_pop_var = tk.BooleanVar(value=bool(SETTINGS.get("pc_popup", False)))
@@ -573,7 +573,7 @@ class PriceCheckPage:
         self.pc_where_paint()
 
     def pc_wants(self, text):
-        """An item copied with your price check key (Ctrl+D; Settings › Keys), with its switch on. Set to Ctrl+C,
+        """An item copied with your price check key (Ctrl+D; Settings › Keybinds), with its switch on. Set to Ctrl+C,
         the game's own plain copy counts as before."""
         keys = getattr(self, "keys", None)
         if not SETTINGS.get("pc_ctrl_c", True) or keys is None or not getattr(keys, "active", False):
@@ -586,7 +586,7 @@ class PriceCheckPage:
 
     def pc_take(self, text):
         """An item for Price Checks: priced first in line, shown on the page (the app comes to the front if you
-        want - Settings › Keys)."""
+        want - Settings › Keybinds)."""
         rid = self.add_item_text(text, src="pc")
         if rid is None:
             from .wealth import parse_currency_item
