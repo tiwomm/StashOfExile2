@@ -27,14 +27,15 @@ from .style import C, Tooltip
 REPEAT_SECS = 45          # the game repeats a warning (twice in 2 s, then every ~15 s when full): one banner per level
 RETRY_TICKS = 15          # Client.txt not found: look again every this many seconds
 LEVELS = {
-    "almost": ("HIVEBLOOD ALMOST FULL", "Spend it at the Genesis Tree  ·  click to close", "#2a0d10", "#ff3df0"),
-    "full": ("CANNOT STORE ANY MORE HIVEBLOOD!", "Go to the Genesis Tree to consume it  ·  click to close", "#3a0606",
-             "#ff2a2a"),
+    # 2.131.0 (feedback: "a more elegant solution than just giant bold flashing letters"): the calm alert card's title,
+    # its detail line, its mark and its color (alertcard.py)
+    "almost": ("Hiveblood almost full", "Spend it at the Genesis Tree", "!", "#d86bd0"),
+    "full": ("Hiveblood is full", "Go to the Genesis Tree to consume it", "!", "#ff5a5a"),
     # 2.11.0: you left a map after the game warned and haven't opened the Genesis Tree since
-    "ritual": ("RITUALS NOT DONE", "Go back through your portal", "#2a0606", "#ff4a4a"),      # 2.14.0
-    "tribute": ("OFFER YOUR TRIBUTE", "Tribute left - offer it to the King", "#2a1a06", "#ffb347"),   # 2.129.0
-    "leave": ("SPEND YOUR HIVEBLOOD", "It was almost full when you left the map: visit the Genesis Tree  ·  click to "
-                                      "close", "#2a1a06", "#ffb347"),
+    "ritual": ("Rituals not done", "Go back through your portal", "!", "#ff6a5a"),      # 2.14.0
+    "tribute": ("Offer your tribute", "Tribute left - offer it to the King", "!", "#ffb347"),   # 2.129.0
+    "leave": ("Spend your Hiveblood", "It was almost full when you left the map: visit the Genesis Tree", "!",
+              "#ffb347"),
 }
 DOT = {"on": "#5ee08a", "off": "#6b7690", "warn": "#ffb347"}
 TRANSPARENT = "#010203"
@@ -235,6 +236,26 @@ class AlertsPage:
         self.al_sound_all = tk.BooleanVar(value=bool(SETTINGS.get("helpers_sound", True)))
         ttk.Checkbutton(top, text="Sound", variable=self.al_sound_all, style=CB,
                         command=self.alerts_sound_all).pack(side="right")
+        # 2.131.0: where the alert card shows and how big - one place for every helper's alert
+        from . import alertcard as _AC
+        acf = _AC.cfg()
+        tk.Label(top, text="Alerts show:", bg=P2, fg=C["text"], font=sm).pack(side="left")
+        wv = tk.StringVar(value=_AC.WHERE[acf["where"]])
+        wcb = ttk.Combobox(top, textvariable=wv, values=list(_AC.WHERE.values()), state="readonly", width=14)
+        wcb.pack(side="left", padx=(8, 0))
+        wcb.bind("<<ComboboxSelected>>", lambda _e: self.alert_card_set(
+            "where", next(k for k, v in _AC.WHERE.items() if v == wv.get())))
+        sv = tk.StringVar(value=_AC.SIZES[acf["size"]][0])
+        scb = ttk.Combobox(top, textvariable=sv, values=[v[0] for v in _AC.SIZES.values()], state="readonly", width=8)
+        scb.pack(side="left", padx=(8, 0))
+        scb.bind("<<ComboboxSelected>>", lambda _e: self.alert_card_set(
+            "size", next(k for k, v in _AC.SIZES.items() if v[0] == sv.get())))
+        tb = ttk.Button(top, text="Test", command=self.alert_card_test, width=6)
+        tb.pack(side="left", padx=(8, 0))
+        Tooltip(wcb, "Where every helper's alert card shows over the game.")
+        Tooltip(scb, "How big the alert card is.")
+        Tooltip(tb, "Shows a sample alert card over the game.")
+        self.al_card_where, self.al_card_size = wcb, scb
         # 2.119.0 (UX pass): Client.txt not found - one banner here (it was the same red line on every helper)
         ban = tk.Frame(box, bg=C["warn_bg"], padx=8, pady=8, highlightthickness=1, highlightbackground=C["red"])
         tk.Label(ban, text="The game's log (Client.txt) wasn't found. Breach, Ritual, Campaign, Trade whispers and "
@@ -1122,38 +1143,13 @@ class AlertsPage:
         if level == "full":
             self.br_last["almost"] = now                     # "almost" right after "full" adds nothing
         self.breach_dismiss()
-        big_txt, small_txt, _bg, fg = LEVELS[level]
+        title, small_txt, mark, color = LEVELS[level]
         small_txt = sub or small_txt
-        win = tk.Toplevel(self.root)                   # 2.12.1: the Delirium alert's look - big flashing text straight
-        win.overrideredirect(True)                     # over the game, no box, clicks go through to the game
-        win.attributes("-topmost", True)
-        win.configure(bg=TRANSPARENT)
-        try:
-            win.attributes("-transparentcolor", TRANSPARENT)
-        except tk.TclError:
-            pass
-        ox, oy, sw, sh = game_rect() or (0, 0, self.root.winfo_screenwidth(), self.root.winfo_screenheight())
-        ui = max(0.5, sh / 1440.0)
-        big = tk.Label(win, text=big_txt, fg=fg, bg=TRANSPARENT, font=("Segoe UI Black", -int(80 * ui), "bold"))
-        big.pack(fill="x")
-        small = tk.Label(win, text=small_txt.split("  ·  ")[0], fg="#ffffff", bg=TRANSPARENT,
-                         font=("Segoe UI Black", -int(30 * ui), "bold"))
-        small.pack(fill="x")
-        size = int(80 * ui)
-        win.update_idletasks()
-        while big.winfo_reqwidth() > sw * 0.94 and size > 24:      # always fits the game window, whatever the font
-            size -= 4
-            big.config(font=("Segoe UI Black", -size, "bold"))
-            win.update_idletasks()
-        w = max(big.winfo_reqwidth(), small.winfo_reqwidth()) + 40
-        h = big.winfo_reqheight() + small.winfo_reqheight() + 10
-        win.geometry(f"{w}x{h}+{ox + (sw - w) // 2}+{oy + int(sh * 0.22)}")
-        win.update_idletasks()
-        click_through(win)
-        force_topmost(win)
-        win.big, win.small = big, small
+        from . import alertcard
+        win = alertcard.show(self.root, title, small_txt, color=color, mark=mark,
+                             secs=5 if test else BANNER_SECS.get(level, 8), game=game_rect(),
+                             on_close=lambda: self.br_win is win and self.breach_dismiss())
         self.br_win, self.br_level = win, level
-        self._breach_flash(big, fg, True)
         if (self.ritual_cfg() if level == "ritual" else self.breach_cfg()).get("sound", True):
             try:
                 import winsound
@@ -1162,17 +1158,16 @@ class AlertsPage:
                 self.root.bell()
         self.alerts_refresh()
         self.alerts_overlay_redraw()
-        secs = 5 if test else BANNER_SECS.get(level, 8)
-        self.root.after(secs * 1000, lambda: self.br_win is win and self.breach_dismiss())
 
-    def _breach_flash(self, lbl, fg, on):
-        if self.br_win is None:
-            return
-        try:
-            lbl.config(fg=fg if on else "#ffffff")
-        except tk.TclError:
-            return
-        self.root.after(350, lambda: self._breach_flash(lbl, fg, not on))
+    def alert_card_test(self):
+        """Settings: a sample card where and how big alerts will show."""
+        self.breach_alert(test=True, level="ritual", sub="A sample - this is where alerts show")
+
+    def alert_card_set(self, key, value):
+        from . import alertcard
+        alertcard.cfg()[key] = value
+        save_json("settings.json", SETTINGS)
+        self.alert_card_test()
 
     def breach_dismiss(self):
         w, self.br_win = getattr(self, "br_win", None), None

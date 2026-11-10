@@ -25,6 +25,23 @@ def cfg():
     return c
 
 
+def no_focus(win):
+    """Windows: the card never takes the keyboard from the game (its × still takes a click)."""
+    import sys
+    if sys.platform != "win32":
+        return
+    try:
+        import ctypes
+        from .alerts_page import _hwnd
+        u = ctypes.windll.user32
+        u.GetWindowLongW.argtypes = [ctypes.c_void_p, ctypes.c_int]
+        u.SetWindowLongW.argtypes = [ctypes.c_void_p, ctypes.c_int, ctypes.c_long]
+        h = _hwnd(win)
+        u.SetWindowLongW(h, -20, u.GetWindowLongW(h, -20) | 0x80 | 0x08000000)    # tool window, no activate
+    except Exception:
+        buglog.caught()
+
+
 def place(where, game, w, h):
     """Where the card goes over the game (x, y of its top-left)."""
     gx, gy, gw, gh = game
@@ -86,6 +103,7 @@ def show(root, title, sub="", color="#ffb347", mark="!", secs=8, game=None, on_c
     try:
         from .alerts_page import force_topmost
         force_topmost(win)
+        no_focus(win)
     except Exception:
         buglog.caught()
 
