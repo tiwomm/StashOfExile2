@@ -44,6 +44,13 @@ BETA_AREAS = ("Wealth", "Money Makers", "Game Search", "Market Insights", "Craft
               "Desecration Helper")
 
 NOTES = {
+    "2.129.2": {
+        "big": [],
+        "small": [
+            ("Overlay", "Trade whispers is simply on or off - its switch should turn it on again (After the "
+             "campaign is gone)."),
+        ],
+    },
     "2.129.1": {
         "big": [],
         "small": [

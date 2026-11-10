@@ -131,6 +131,13 @@ def _favours_art_2129(S):
         pass
 
 
+def _whispers_after_21292(S):
+    """2.129.2: Trade whispers is on or off - its "after the campaign" option is gone."""
+    w = S.get("whispers")
+    if isinstance(w, dict):
+        w.pop("after", None)
+
+
 def _leftovers_2126(S):
     """2.126.0: settings left behind by features removed earlier (one-key copy and "Other ways of copying",
     2.98.3) - nothing reads them."""
@@ -152,6 +159,7 @@ STEPS = (
     ("shortcuts_2126", "2.125.6", "settings", _shortcuts_2126, None),
     ("leftovers_2126", "2.126.0", "settings", _leftovers_2126, None),
     ("favours_art_2129", "2.129.0", "settings", _favours_art_2129, None),
+    ("whispers_after_21292", "2.129.2", "settings", _whispers_after_21292, None),
 )
 
 
