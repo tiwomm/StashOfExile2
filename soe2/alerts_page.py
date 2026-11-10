@@ -289,7 +289,7 @@ class AlertsPage:
             "campaign": "Campaign Helper: where you are in the campaign, what's next and what it's worth (reads "
                         "Client.txt)",
             "whispers": "Trade Whisper Watcher: a card over the game when someone whispers to buy an item you listed - "
-                        "easy to miss in chat while you run the campaign (reads Client.txt; nothing is saved)",
+                        "easy to miss in a busy chat (reads Client.txt; nothing is saved)",
             "desecrate": "Desecration Helper (BETA): at The Well of Souls each revealed option shows its tier (T1 = best "
                          "for that item type) - on only while you're there (reads Client.txt, then your screen)"}
         tests = {"delirium": self.alerts_test_delirium, "breach": lambda: self.breach_alert(test=True),
@@ -308,8 +308,6 @@ class AlertsPage:
         self.al_rtrib = tk.BooleanVar(value=bool(self.ritual_cfg().setdefault("tribute_reminder", True)))
         self.al_rru = tk.BooleanVar(value=bool(self.remnant_cfg().get("rumours", True)))
         self.al_rtips = tk.BooleanVar(value=bool(self.remnant_cfg().get("tips", True)))
-        from . import whispers as _W
-        self.al_wafter = tk.BooleanVar(value=bool(_W.cfg()["after"]))
         opts = {
             "remnant": [("Island rumors", self.al_rru, lambda: self.ru_changed(self.al_rru.get()),
                          "On the world map's Uncharted Waters card, each rumor gets the island it leads to and your "
@@ -324,9 +322,7 @@ class AlertsPage:
                         "Price check one there (your price check key) and it learns its picture."),
                        ("Tribute reminder", self.al_rtrib, self.alerts_tribute_changed,
                         "Close the Favours window with no rerolls left and tribute to spend: a reminder to offer it to "
-                        "the King.")],
-            "whispers": [("After the campaign", self.al_wafter, self.ww_after_changed,
-                          "Off: it watches only while your character is in the campaign. On: always.")]}
+                        "the King.")]}
         remind = {"breach": (self.al_leave, self.alerts_leave_changed),
                   "ritual": (self.al_rleave, self.alerts_ritual_leave_changed)}
         for group, keys in (("IN MAPS", ("breach", "delirium", "ritual", "remnant")), ("PLAY", ("campaign", "focus")),
@@ -470,12 +466,6 @@ class AlertsPage:
             self.log_error("the overlay")
 
     # ================================================================ 2.98.1: Trade Whisper Watcher
-    def ww_after_changed(self):
-        from . import whispers as W
-        W.cfg()["after"] = bool(self.al_wafter.get())
-        W.save()
-        self.alerts_refresh()
-
     def ww_whisper(self, data):
         """A whisper to you (from the log). A trade request while the watcher is active -> the card."""
         from . import whispers as W
@@ -692,8 +682,6 @@ class AlertsPage:
             vtxt = rows["whispers"]["what"]
         elif getattr(self, "br_reader", None) is None:
             vtxt = self.br_note or "On - looking for Client.txt…"
-        elif not _W.active():
-            vtxt = "On - resting: your character is past the campaign (tick Keep on after the campaign to watch now)"
         else:
             last = getattr(self, "ww_last", None)
             vtxt = "On - watching your whispers" + (f" (last trade whisper {last})" if last else "")

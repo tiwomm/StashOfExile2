@@ -25,6 +25,8 @@ DOCS = ("README.md", "TOS.md", "linux/README.md", "themes/README.md", "strats/RE
 
 # (version, what it was, words a person read, names in the code / settings keys[, pending])
 REMOVED = [
+    ("2.129.2", "Trade whispers' After the campaign option (on is on)", ("After the campaign",
+     "Keep on after the campaign"), ("al_wafter", "ww_after_changed", "in_campaign")),
     ("2.11.0", "Recorder", ("Ritual Capture",), ()),
     ("2.31.0", "Lag finder; the toolbar's 'Ctrl+Alt+C only' box", ("Lag finder",), ()),
     ("2.92.0", "Arbitrage (Exchange Helper's flip check stays)", ("Arbitrage",), ()),
