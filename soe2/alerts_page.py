@@ -880,6 +880,8 @@ class AlertsPage:
         """2.11.0: leaving a map (to your hideout or a town) with Hiveblood still waiting -> one reminder per exit,
         every exit, until the Genesis Tree has been opened."""
         before, self.br_area = self.br_area, kind
+        if before != kind:
+            buglog.debug("area", f"{before} -> {kind}")     # 2.129.3: kinds only (map, hideout, town), no names
         try:
             self.fl_area(kind, where, before)                # 2.45.0: the Strat Tracker counts its runs
         except Exception:
