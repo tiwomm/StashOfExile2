@@ -187,6 +187,11 @@ def parse(line):
         return "area", ts, {"level": int(a.group(1)), "area": a.group(2), "seed": int(a.group(3))}
     if LOGIN.search(text):
         return "login", ts, {}                    # (no server name kept)
+    if text.startswith("Connect time"):           # 2.131.0 Latency: the game's own connect time (no address kept)
+        from .latency import log_line
+        ms = log_line(text)
+        if ms is not None:
+            return "connect_ms", ts, {"ms": ms}
     s = SCENE.search(text)
     if s:
         name = s.group(1)

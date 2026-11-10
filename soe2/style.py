@@ -861,6 +861,28 @@ class Tooltip:
             self.win = None
 
 
+
+class TagTip(Tooltip):
+    """2.131.0: a Tooltip on a canvas item (by its tag) - its text from a function, worked out when it shows (the
+    overlay's Latency: how the number was worked out, one hover away)."""
+
+    def __init__(self, cv, tag, textfn, delay=450):
+        self.w, self.textfn, self.delay, self.win, self.job = cv, textfn, delay, None, None
+        cv.tag_bind(tag, "<Enter>", self._enter, add="+")
+        cv.tag_bind(tag, "<Leave>", self._leave, add="+")
+        cv.tag_bind(tag, "<ButtonPress>", self._leave, add="+")
+
+    @property
+    def text(self):
+        try:
+            return self.textfn() or ""
+        except Exception:
+            return ""
+
+    @text.setter
+    def text(self, _v):
+        pass
+
 class Splitter(tk.Frame):
     """2.123.4 (feedback: the divider was "janky and slow ... no visible indicator"): a left side you can widen or
     narrow by dragging a grip you can see (a line with dots that lights up under the mouse). While dragging only a
