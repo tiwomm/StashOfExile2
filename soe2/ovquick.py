@@ -22,6 +22,8 @@ QUICK_TIPS = {"Style": "How the overlay looks over the game",
               "Layout": "Panel: a card you place anywhere. Bar: on the game's XP bar",
               "Sound": "Every helper's alert sound, on or off",
               "Lock position": "Keeps the overlay where it is - no dragging it by accident",
+              "Place": "Where the overlay sits: the Bar on the XP bar or at the top, the Panel left or right. Picking "
+                       "one puts it there, wherever you dragged it",
               "Click-through": "Clicks go through the overlay to the game",
               "notes": "Notes ▾ on the bar: your own notes in a window over the game",
               "calc": "Calc ▾ on the bar: a small calculator over the game",
@@ -196,6 +198,19 @@ class OverlayQuick:
             self.ovq_layout_chips[key] = ch
         self._ovq_layout_paint()
         Tooltip(lrow, QUICK_TIPS["Layout"])
+        # 2.130.0 (feedback: "a dropdown on the cog to choose location ... top or bottom for the bar style, and left
+        # or right for the panel style"): where it sits; picking one puts it there (wherever it was dragged)
+        prow = tk.Frame(body, bg=P1)
+        prow.pack(fill="x", pady=(0, 8))
+        tk.Label(prow, text="Place", bg=P1, fg=Q["text"], font=(F, 10)).pack(side="left")
+        opts = self.ov_spots()
+        self.ovq_place = tk.StringVar(value=opts.get(self.ov_spot(), next(iter(opts.values()))))
+        pc = ttk.Combobox(prow, textvariable=self.ovq_place, values=list(opts.values()), state="readonly", width=24)
+        pc.pack(side="right")
+        pc.bind("<<ComboboxSelected>>", lambda _e: self.ov_spot_set(
+            next((k for k, v in self.ov_spots().items() if v == self.ovq_place.get()), None)))
+        Tooltip(prow, QUICK_TIPS["Place"])
+        self.ovq_place_box = pc
         row("Sound", SETTINGS.get("helpers_sound", True), self.helpers_sound_set)
         # 2.120.1: Lock position and Click-through, as in Options (Hide from captures is in Settings › Advanced)
         self.ovq_lock = row("Lock position", cfg.get("mlocked"), self._ovq_lock)
@@ -323,6 +338,14 @@ class OverlayQuick:
             return
         self.merged_set(layout=key)
         self._ovq_layout_paint()
+        box = getattr(self, "ovq_place_box", None)          # (2.130.0: Place's choices follow the layout)
+        try:
+            if box is not None and box.winfo_exists():
+                opts = self.ov_spots()
+                box.configure(values=list(opts.values()))
+                self.ovq_place.set(opts[self.ov_spot()])
+        except tk.TclError:
+            pass
         v = getattr(self, "ov_layout_var", None)
         seg = getattr(self, "ov_layout_seg", None)
         try:

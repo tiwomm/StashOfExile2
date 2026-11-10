@@ -508,6 +508,9 @@ class TrackerPage:
         op = tk.Frame(box, bg=P2)
         op.pack(fill="x", pady=(8, 0))
         ttk.Button(op, text="Overlay appearance…", command=self.appearance_open).pack(side="left")
+        rp = ttk.Button(op, text="Reset position", command=self.overlay_reset_position)      # 2.130.0 (feedback)
+        rp.pack(side="left", padx=(8, 0))
+        Tooltip(rp, "Put the overlay back in its own place (the Bar: centered on the XP bar), wherever you dragged it.")
         # (2.96.1: Your character name is gone - deaths are counted for the character the game's log names; the keys
         # are in Settings › Hotkeys)
 
@@ -621,6 +624,49 @@ class TrackerPage:
         self.tracker_save()
         self.tracker_helpers_sync()
         self.merged_build()
+
+    SPOTS = {"xpbar": {"bottom": "Bottom (on the XP bar)", "top": "Top"},
+             "panel": {"left": "Left", "right": "Right"}}
+
+    def ov_spots(self):
+        """2.130.0: the places the overlay can sit, for its layout -> {key: name}."""
+        return self.SPOTS.get(self.merged_layout(), self.SPOTS["xpbar"])
+
+    def ov_spot(self):
+        """Where it sits (its layout's own: the Bar bottom / top, the Panel left / right)."""
+        spots = self.ov_spots()
+        v = (self.tracker_cfg().get("spot") or {}).get(self.merged_layout())
+        return v if v in spots else next(iter(spots))
+
+    def ov_spot_set(self, key):
+        """Quick settings › Place: there it goes (a dragged place is forgotten)."""
+        if key not in self.ov_spots():
+            return
+        self.tracker_cfg().setdefault("spot", {})[self.merged_layout()] = key
+        self.overlay_reset_position(say=False)
+
+    def ov_panel_xy(self, w=0):
+        """The Panel's own place (not dragged): at the game's left, or its right (w: the panel's width)."""
+        from .alerts_page import game_rect
+        gx, gy, gw, gh = game_rect() or (0, 0, self.root.winfo_screenwidth(), self.root.winfo_screenheight())
+        y = gy + int(gh * 0.18)
+        if self.ov_spot() == "right":
+            return gx + gw - int(gw * 0.02) - w, y
+        return gx + int(gw * 0.02), y
+
+    def overlay_reset_position(self, say=True):
+        """2.130.0 (feedback: "a button ... to move the bar overlay back to its default bottom centered location"):
+        every place the overlay was dragged to is forgotten - each layout and style goes back to its own spot."""
+        cfg = self.tracker_cfg()
+        for k in ("mx", "my", "x", "y", "hud_pos", "hud_res", "lt_pos", "lt_res"):
+            cfg.pop(k, None)
+        self.tracker_save()
+        try:
+            self.merged_set()
+        except Exception:
+            self.log_error("putting the overlay back")
+        if say:
+            self._say("The overlay is back in its place.", 5)
 
     def overlay_lock(self, on):
         """2.59.0: one lock for everything over the game (the timer, the switches, Notes) - the 🔒 on the overlay and

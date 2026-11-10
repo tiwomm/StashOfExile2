@@ -42,14 +42,11 @@ FEATURES = (
     "Desecration Helper",       # at The Well of Souls
     "Exchange Helper",
     "Favours prices",           # the Ritual helper: prices on the Favours window's rewards
-<<<<<<< HEAD
     "Tribute reminder",         # the Ritual helper: tribute left when the Favours window closes
-=======
-    "Tribute reminder",         # the Ritual helper: 0 rerolls and tribute left when the Favours window closes
     "Filter in the Ritual window",   # the Ritual helper: the game's hidden setting that applies your filter there
->>>>>>> b46678f (Filter in the Ritual window: Helpers › Ritual links a guide to the game's hidden apply_item_filter_to_ritual setting (on / off, Open folder, Copy line); credits NeverSink and Ryonnen (for the next full release))
     "Mechanic Helper",
     "Quick settings",           # the overlay's ⚙
+    "Reset position",           # Game Overlay › Settings › Options: the overlay back in its own place
     "Scan stash",
     "Search Options",           # Settings › Price checking
     "Session timer",

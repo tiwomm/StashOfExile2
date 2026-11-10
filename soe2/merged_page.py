@@ -234,6 +234,8 @@ class MergedOverlay:
             h = max(26, int(hh * gh))
             w = max(160, int(x1 - x0))
             x, y = int(x0), int(gy + gh - bot * gh - h)
+            if self.ov_spot() == "top":                      # 2.130.0: Quick settings › Place › Top
+                y = int(gy + gh * 0.012)
             if i < len(saved) and isinstance(saved[i], (list, tuple)) and len(saved[i]) == 2:
                 x, y = int(saved[i][0]), int(saved[i][1])
                 if not cfg.get("hud_one_row"):                # (moved while it had two rows: same bottom edge)
@@ -493,7 +495,8 @@ class MergedOverlay:
         _seed(TH, P)
         self.mg_P = P
         self.hud_spots("xpbar")                             # (sizes follow the game window's height)
-        x, y = cfg.get("mx", cfg.get("x", 60)), cfg.get("my", cfg.get("y", 260))
+        dx, dy = self.ov_panel_xy()                         # 2.130.0: its own place (Quick settings › Place)
+        x, y = cfg.get("mx", dx), cfg.get("my", dy)
 
         def moved(nx, ny, _ww, _hh):
             cfg.update(mx=nx, my=ny + getattr(self, "_gb_h", 0))     # (2.124.0: where the bar is, under the lines)
@@ -518,6 +521,13 @@ class MergedOverlay:
             w.hide()
             return w
         w.show()
+        if "mx" not in cfg and self.ov_spot() == "right":   # (on the right: its width is known now)
+            try:
+                w.update_idletasks()
+                rx, ry = self.ov_panel_xy(w.winfo_width())
+                w.geometry(f"+{rx}+{ry}")
+            except tk.TclError:
+                pass
         self._mg_on_screen(w)
         return w
 
