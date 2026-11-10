@@ -2,79 +2,61 @@
 
 *One tool to rule them all.*
 
-> **GGG ToS safety check - read first.** One key press = one action, only when you press it · nothing acts in the game by itself (watchers only look and show) · never touch the game's memory, code or traffic · the mouse is never moved or clicked for you · it reads only your clipboard, Client.txt, screen pixels, the trade site (within its limits) and poe.ninja. Every change must pass all of [TOS.md](TOS.md) (`tools/check_tos.py` checks the code on every PR).
+> **GGG ToS safety check - read first.** One key press = one action · nothing plays the game for you · never touches the game's memory, code or traffic · reads only your clipboard, Client.txt, your screen, the trade site and poe.ninja. Every change must pass [TOS.md](TOS.md).
 
-> **Who we build for - read second.** Path of Exile players are utilitarian: they love data and information, problem solving and creative thinking. So every feature shows its numbers *and how they were worked out*, lets you sort, filter, compare and export them (CSV), keeps power-user depth (keys, versions, raw data) one click away instead of hiding it, explains in plain words, and leaves the decision to the player. Pretty is welcome; vague is not.
-
-A Windows toolkit for **Path of Exile 2** that runs next to the game. Its main job is pricing items from the official trade site, in bulk or one at a time, with a Campaign Helper, League Plan and a session overlay alongside.
-
-Hover an item in game and press **Ctrl+D** to price check it, or **Ctrl+Alt+C** to add it to the Bulk Pricing list. Prices come from the official trade site, using the mods that decide them.
-
-> **Written by AI.** This project's code, data tools and text were written by Claude (an AI made by Anthropic), directed and tested by a human who plays the game. It's shared openly so anyone can read it, check it, change it and use it.
+A Windows toolkit that runs next to **Path of Exile 2**: price checks, bulk pricing, an overlay with helpers, and planning tools. Written by Claude (an AI by Anthropic), directed and tested by a human player. Open source.
 
 ## What it does
 
-- **Price Checks:** hover an item in game and press **Ctrl+D** (change it in Settings › Keybinds). It knows every base type and unique the trade site lists (their list is downloaded once a day, like the mod list), so new items are read the day the trade site has them. A strip across the top says the price, how sure it is and how it was worked out, with Search again beside it. The filters are on the left and the trade site's listings on the right, with mods and tiers, price, seller, when it was listed and the item's picture. Your last checks are chips under the top row (All ▾ for the rest). Here | Overlay + Here picks where your price check key shows the price (Overlay + Here: a card over the game, and the app). Drag the grip between the item and the listings to size them; it remembers. A fractured or desecrated mod can be searched as only that; hybrid resistances add a total per resistance; socketed rune lines stay out unless you tick them.
-- **Privacy & community (Settings):** what leaves your PC (nothing unless you turn it on), the data sharing switches, and your community name - why you'd want one, what's stored, rename, reviewer, admin, move it to another PC, delete everything.
-- **Rate Mods (Price Checks ↳ Rate Mods):** pick the items you know best and rate their mods one at a time (S to F; F = ignore; keys S-F and ← →), or use Rate ▾ beside each mod on Price Checks. Your ratings tune your own price checks at once.
-- **Favorites:** press ☆ Add to favorites on Price Checks, or paste a trade-site link. Each favorite opens with its filters and the trade site's listings. Sort them into groups, drag them into your order, rename, edit or duplicate them from the right-click menu.
-- **Bulk Pricing:** press **Ctrl+Alt+C** on many items (tablets, jewels, waystones, gear) and they are priced from the official trade site as a list. Each item opens in one clean panel with every trade filter: this base or any of its kind, item level, quality, sockets, requirements, Any / Yes / No flags (corrupted, fractured, desecrated, sanctified ...), and each mod with Min / Max and ★ for must-match. You also get a confidence rating and how the price was worked out. It can read a whole public stash tab, listed in the tab's own order (down each column, or across each row). One toolbar row: search, filters, Columns ▾ (Item, Type, Status, Price and Listings always show), Re-price all, Pause and ⋯ (Export CSV, Order added); Undo, Delete and Clear All in the Items strip; the item's panel opens when you pick it.
-- **Overlay over the game:** a bar on the XP bar, scaled to your resolution. One ON | OFF switch turns it on or off. It shows the session timer (only as wide as the time; paused, it dims), map, maps run, the average per map, the clock, Notes, a calculator and your Regex favorites (Vendor searches too, in campaign towns). It holds no switches for the helpers: every helper (Breach, Delirium, Ritual, Expedition, Campaign, League Plan, Trade whispers) starts on and goes off in Overlay ↳ Settings › Helpers, where each says what it does in one line. The map's time, area and rank share one part in every style. In a map with Ritual, a line over the bar shows how many rituals are done (Helpers › Ritual › On screen); at a Ritual altar, each omen and other one-cell reward in the Favours window gets its poe.ninja price once the app knows its look (every omen of the Ritual tab is known from the start; Scan stash and price checking one in the window teach the rest), Mageblood and Headhunter get a ★, and closing the window with no rerolls and tribute left reminds you to offer it (Helpers › Ritual › Favours prices, Tribute reminder); Filter in the Ritual window shows how to turn on the game's hidden setting that applies your item filter there. It shows only while the game is the window in front (always - there's no switch). Lock position and Click-through (clicks go to the game) are two switches in its settings and Quick settings. Screenshots show it; if it covers a counter the Ritual or Delirium watcher reads, Settings › Advanced hides it from captures while they run. A ⚙ by its lock opens Quick settings over the game (style, sound, lock, each helper on or off, the menus on the bar), with All settings… for the rest. Every part has its own switch. A price check can open in the price check overlay too (Here | Overlay + Here, at the top of Price Checks and in Settings › Price checking): the price, the mods with Min / Max to type in, what's socketed, and the cheapest listings, in the overlay's Style. Esc closes it (only while it's open and the game is in front; change the key on Keybinds); its ⚙ picks where the price shows. Notes, Calc, Regex favorites, Rates and the cards over the game all take the overlay's Style. Styles: Classic (default), the light Hairline, Slate, Split and Micro, and the ornate Herald, Gilded, Warbanner, Verdant, Gloom, Totem, Hellfire, Psionic and Guildhall (their own colors and bundled fonts). Settings › Appearance draws each style with the real bar, and each app theme in a live preview of the app, before you pick one.
-- **Exchange Rates over the game:** a small window in the overlay's look with today's most-used rates (off until you turn it on; then Rates ▾ on the bar opens and closes it).
-- **Trade Whisper Watcher:** at league start your items sell by whisper - a card over the game shows each "I would like to buy your…" whisper (item, price, where it is in your tab, who) so you don't miss it in chat. On or off (on by default). Nothing is saved.
-- **Campaign Helper:** where you are, what's next and which rewards you missed, act by act from the game's log, on a line at the top of the overlay (it grows upward - the bar never moves; League Plan's NOW line sits there too). In campaign zones the overlay shows the act line, your session and the zone's time instead of map numbers. It asks which route you want when a campaign starts (Full, Speedrun, Rush (carry) or My Own) and follows it; Rush (carry) guides you while you carry someone else (what to clear, when to bring them in, what they pick up). It includes act routes, Vendor tips and act splits. The route card has Routes ▾ and Options ▾ to change both there. Past the campaign it hides in maps and comes back when you visit a campaign zone.
-- **League Plan:** your goals by phase (in tabs), stockpile, farm plan and build lock, plus gentle reminders over the game (map supplies, such as an Omen of Amelioration the game used up, and cheap stockpile prices). Switching it on turns the overlay on.
-- **Money Makers (BETA):** community farming strats in one layout, with content tags (pinnacles, bosses, map content) and atlas screenshots, rated by Thoughts per Click and Clicks per hour. You can post and upvote on the Community board (no login: a community name, asked once; slurs and hate words aren't allowed). Only authors edit their strats; anyone can **Suggest an edit**, every change is kept (History), and opt-in reviewers check changes to Official strats and reported posts. It also has the Craft Helper (tablets and jewels: each mod rated S-F, with where the rating came from - you, players or the market; Check my tablet or jewel gives a verdict - Worth pricing, Craft on, Reforge or Vendor - with the next step and why, and Price it runs your own price check on it; it learns which two mods sell well together from your price checks, and its data updates from GitHub for new game patches) and the Strat Tracker (what a farming setup really makes). Strat format: [strats/README.md](strats/README.md).
-- **Regex:** builds stash-search strings for tablets, waystones, relics, jewels and gear (at least, ranges, at most), with saved Favorites. All options sit in one card, a button per setting. Copy it, then Ctrl+V into the stash search in game.
-- **Exchange Rates:** poe.ninja rates (refreshed hourly), an Exchange Helper with Convert, and a flip check for trades you see in game. (Arbitrage was removed in 2.92.0: GGG's terms for the data it read are unclear.)
-- **Leaderboards:** your fastest campaign acts, campaign zones, maps, pinnacle fights and trials, and everyone's who shares (Community data sharing). Filter by league and class, and show the Top 5 to Top 100. Times come from the game's log, so they're self-reported: the board refuses impossible ones and players can report a time.
-- **Map Library:** every map, citadel and pinnacle fight, ranked S to D or Avoid by you and the community. It can ask you to rank a map when you leave one you haven't ranked (a switch on the page). You can share ranks as a file or upload them to the community (opt-in), and opt out of rank cards from the first one.
-- **Desecration Helper (Beta):** the first time you reach The Well of Souls it asks if you want it. Then at the Well, each revealed option gets a tag with its tier for that item type (T1 = best), and the Abyss lords' own mods show their range and how good the roll is. It wakes up only while you're at the Well.
-- **Island Rumors:** open the world map in your hideout and one panel beside the Uncharted Waters card lists the island each rumor leads to and your Map Library rank for it.
-- **Expedition Remnant Price Checker:** open a remnant's reward book and each reward gets its poe.ninja price next to it, by itself (no key to press), with the best one marked ★. The idea comes from [PoE Ancients Price Helper](https://github.com/pedro-quiterio/PoeAncientsPriceHelper) by Pedro Quitério. None of its code is used, because it isn't open source.
-- **Notes:** chat command keys and a sticky note over the game, with tabs; A− / A+ on the note (or Ctrl + mouse wheel) set its text size.
-- **Settings:** General (league, the game's log, always on top, beta features, updates), Appearance (the app's theme with a live preview, the overlay's style, clock, motion), Keybinds (with ↺ Defaults), Price checking (three groups, each naming the pages it changes: All price checks, Single Price Checks (Ctrl+D), Bulk Pricing (Ctrl+Alt+C)); General also has your account name, Privacy & community, Advanced (the game's window title, hiding the overlay from captures, Under the Hood, problems, your data). Each section says what it is in one line; the ⓘ has the rest. A theme keeps its own colors and text size, and the trade site is always searched at one safe pace - there are no Accent color, Text size or Pace settings.
-- **Advanced tools (Settings › Advanced):** Under the Hood and the Mod Book, which learns which mods are worth money from listings and, if you opt in, from pooled community price checks.
-- **Beta features (off by default, Settings › General):** Wealth (what you own over time, from the currency you count with Ctrl+C or Scan stash - beta - which reads your Currency, Abyss, Delirium, Breach, Expedition, Ritual, Essence and Fragments tabs from the screen, wildcard slots included; you check the numbers before they are saved. An item you name in a wildcard slot is remembered by a tiny picture of it in `stash_icons.json`, on your PC only), Market Insights (by slot or tablet kind, each item drawn like a trade-site card) and an offline game-data search.
+**Pricing**
+- **Price Checks** - hover an item, press **Ctrl+D**: price, how sure, and how it was worked out.
+- **Bulk Pricing** - **Ctrl+Alt+C** on many items (best for tablets, waystones, jewels); priced as a list.
+- **Favorites** - save a search or paste a trade link.
+- **Rate Mods** - rate mods S to F; your ratings tune your price checks.
+- **Exchange Rates** - poe.ninja rates, a converter and a flip check.
+
+**Game Overlay** (over the game, in your chosen style)
+- **The Bar** - session timer, maps run, average per map, clock, Notes, Calc, Regex, Rates.
+- **Price check card** - the price over the game instead of in the app.
+- **Ritual** - counts rituals, prices Favours rewards, reminds you about tribute and unfinished rituals.
+- **Expedition** - prices each reward in a remnant's book.
+- **Breach / Delirium** - reminders when Hiveblood is full or a Delirium is about to end.
+- **Trade whispers** - a card for each buy whisper.
+- **Campaign Helper** - where you are, what's next, missed rewards.
+- **Island Rumors** - which island each rumor leads to.
+
+**Planning**
+- **League Plan** - goals by phase, stockpile and farm plan.
+- **Map Library** - every map ranked S to D, by you and the community.
+- **Regex** - stash search strings for tablets, waystones, relics, jewels and gear.
+- **Leaderboards** - fastest acts, maps and bosses (opt-in).
+- **Money Makers** (BETA) - community farming strats and the Craft Helper.
+
+**Beta** (off until you turn it on): Wealth, Market Insights, Game Search, Desecration Helper.
 
 ## Install
 
-Download `StashOfExile2.exe` from [Releases](../../releases) and run it. It can update itself (Settings › General › Updates): it looks for a new version every time it starts and every hour, and the tray icon's menu has Check for updates. Each new version comes out as a preview first and becomes a full release once it has been played in game; turn on **Preview builds** there to get previews too. Your settings live in `%APPDATA%\StashOfExile2`, so updates never touch them.
+Download `StashOfExile2.exe` from [Releases](../../releases) and run it. It updates itself; your settings stay in `%APPDATA%\StashOfExile2`.
 
-**From source** (Windows, Python 3.12 from python.org):
-
-```
-py -m pip install requests pystray pillow mss numpy opencv-python-headless
-py stashofexile2.py
-```
-
-**Linux:** releases and tests are Windows-only. Players can build it themselves with `build_linux.sh` (see [linux/](linux/README.md)).
-
-To build the exe yourself, run `build_exe.bat`; it makes `dist\StashOfExile2.exe`. Every version tag pushed here builds the exe automatically and publishes it as a release (`.github/workflows/release.yml`).
-
-## Community
-
-Questions, ideas and bug reports: [Discord](https://discord.gg/Ta8EVnxx4T). The plan is in [ROADMAP.md](ROADMAP.md). Next up: more of the UX pass (shorter settings text, fewer duplicate switches, clearer names), a Privacy & data hub, then the Tablet and Jewel Craft Helpers.
+From source (Python 3.12): `py -m pip install requests pystray pillow mss numpy opencv-python-headless` then `py stashofexile2.py`. Linux: see [linux/](linux/README.md).
 
 ## Privacy
 
-- **Nothing is shared unless you say yes.** Community data sharing is off until you turn it on. The question (and Settings › Privacy & community › What's shared, and why?) lists each thing sent, what it's for and where it goes.
-- **Anonymous:** no account or character names, no items, no listing ids. It goes only to the app's own community server, is never sold, and is never used for ads or tracking.
-- **Your logs stay yours:** error logs, problem reports and bug reports leave out your Windows user name, home folder, account and character names.
-- **Nobody can be singled out:** leaderboards show the day, not the time; private leagues are never shared; shared strats carry rates, never totals; your wealth never leaves your PC.
-- **When something goes wrong:** every error, crash, freeze, layout loop (a part of a window that keeps resizing), slow theme change and refused trade-site request goes into one log, `app_log.txt` in your data folder - only where in the app's own code it happened (file name, function, line) and short fixed words, never your name, folders, items, prices or chat, and capped in size. A freeze also writes `hang_report.txt`, a crash (the app closed by itself) `crash_report.txt` on the next start, a slow theme change `slow_report.txt`. Report a bug can add the log (you see every word before you press Send); after a crash the app offers to. The Island rumors helper writes what it read off the last Uncharted Waters card to `rumours_read.txt` (the card's words only). They all stay on your PC unless you send a report.
-- **Mods the app couldn't read:** they're listed in `unmatched_mods.txt` in your data folder. With Community data sharing on, only their wording (numbers as #) and the base type go along, so they can be fixed - never the item's name.
-- **Leave any time:** Settings › Privacy & community › Leave and delete my data deletes your name, strats, votes and leaderboard times from the community board. What you shared anonymously (mod prices, ratings, map ranks, unmatched mods) stays in the pool for everyone - it was never linked to you.
+- Nothing leaves your PC unless you turn on Community data sharing - and then only anonymous data, never names or wealth.
+- Logs (`app_log.txt`, `crash_report.txt`) stay on your PC and leave out your names and folders. You see every word before a bug report is sent.
+- Settings › Privacy & community › Leave and delete my data removes everything of yours from the community board.
 
 ## Fair play
 
-- **One action per key press.** It never plays the game for you.
-- **Reads nothing from the game itself:** no memory, no network traffic. Only item text you copy, the game's own `Client.txt` log, and screenshots of your own screen (Delirium, Ritual and Remnant watchers).
-- **Respects the trade site's rate limits** at one fixed pace, well under them, and nothing syncs on its own. The status bar says Trade site: ready, or how long to wait; point at it for the numbers.
+One action per key press. Nothing read from the game's memory or traffic. The trade site is searched slowly, well under its limits.
+
+## Community
+
+Questions and bug reports: [Discord](https://discord.gg/Ta8EVnxx4T). Plans: [ROADMAP.md](ROADMAP.md).
 
 ## Credits
 
-Thank you! Each links to its developers' GitHub page.
+Thank you!
 
 - **[RePoE](https://github.com/repoe-fork/repoe-fork)** (repoe-fork): the game data behind the mod lists, Regex, Game Search and tiers, exported from Path of Exile 2's own files.
 - **[poe.ninja](https://github.com/rasmuskl)** (rasmuskl): the economy data behind Exchange Rates, the rates window over the game, the Remnant prices and currency values.
