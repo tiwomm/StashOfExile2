@@ -606,7 +606,7 @@ class AlertsPage:
         where.pack(fill="x")
         steps = ("1.  Close the game (it rewrites this file when it closes).",
                  f"2.  Open folder (where your item filters are), then open {RF.FILE} in Notepad.",
-                 "3.  Press Ctrl+F and paste (Copy line puts it on your clipboard).",
+                 "3.  Use Edit › Find in Notepad and paste (Copy line puts it on your clipboard).",
                  "4.  Change false to true, then save.",
                  "5.  Start the game and open a Ritual altar's Favours window.")
         box = tk.Frame(dlg, bg=P2)
@@ -650,7 +650,7 @@ class AlertsPage:
                 self.root.clipboard_clear()
                 self.root.clipboard_append(f"{RF.KEY}=false")
                 self.own_clip = f"{RF.KEY}=false"
-                said.config(text=f"Copied: {RF.KEY}=false - paste it into Ctrl+F.")
+                said.config(text=f"Copied: {RF.KEY}=false - paste it into Notepad's Find.")
             except tk.TclError:
                 said.config(text="Couldn't copy - type it: " + RF.KEY)
         btns = tk.Frame(dlg, bg=P2)
