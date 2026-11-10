@@ -433,6 +433,16 @@ class MergedOverlay:
         game's counters under it. Its own switch (Overlay ↳ Settings › Behavior), on by default; off = screenshots
         and streams show the bar."""
         cfg = self.tracker_cfg()
+        # 2.129.4 (feedback: the line said 0 of 3 after 2 were done - the overlay's Ritual line covers the game's
+        # counter, so the watcher never saw it change): while you're in a map whose Map Content shows Ritual still to
+        # do, the bar is left out of captures by itself - the watcher sees the counter under it. Everywhere else (and
+        # once every ritual there is done) screenshots and streams show it.
+        try:
+            from .utilities import RITUAL
+            if self.ritual_cfg().get("on") and getattr(RITUAL, "content", None) == "open" and RITUAL.running():
+                return True
+        except Exception:
+            buglog.caught()
         if not cfg.get("hidecap_2891"):
             # 2.89.1 (feedback): off for everyone, once - the Ritual /
             # Delirium watchers ran all the time for anyone who had them on, so the bar was never in a screenshot.

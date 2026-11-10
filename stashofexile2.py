@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU GPL v3.0 (see LICENSE). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.129.3
+VERSION 2.129.4
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,6 +19,12 @@ VERSION 2.129.3
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.129.4
+       Feedback ("ritual thing says 0/3 rituals done but I've done 2/3"; its log: the counter was seen at 0/3, then
+       not for 9 minutes): the overlay's Ritual line sits over the game's counter, so the watcher couldn't see it
+       change. While you're in a map whose Map Content shows Ritual still to do (the watcher's "content open"), the bar
+       is left out of screen captures by itself (as Settings › Advanced's switch does, 2.85.2) - the watcher sees the
+       counter under it. Everywhere else, and once every ritual there is done, screenshots and streams show it.
   2.129.3
        Feedback (Favours: "still missing some omens also and idols ... sacred bloom pricing missing"; "look for rite of
        passage charm"; the tribute reminder "should ONLY pop up after I've closed the ritual window after not
@@ -3349,7 +3355,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.129.3"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.129.4"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 

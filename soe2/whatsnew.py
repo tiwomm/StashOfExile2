@@ -44,6 +44,13 @@ BETA_AREAS = ("Wealth", "Money Makers", "Game Search", "Market Insights", "Craft
               "Desecration Helper")
 
 NOTES = {
+    "2.129.4": {
+        "big": [],
+        "small": [
+            ("Ritual", "The Ritual line should keep count: in a map with rituals left, the bar is hidden from "
+             "screenshots so the watcher can read the game's counter under it."),
+        ],
+    },
     "2.129.3": {
         "big": [],
         "small": [
