@@ -889,6 +889,9 @@ class AlertsPage:
         if left and cfg.get("on") and cfg.get("pending") and cfg.get("leave_reminder", True):
             self.breach_alert(level="leave")
         rc, got = self.ritual_cfg(), self.rt_map            # 2.14.0: rituals left undone in the map you just left
+        if left and rc.get("on"):                           # 2.129.3 (feedback: 2 of 3 and no reminder): the log says
+            buglog.debug("Ritual leave check", f"count {got}, all done {getattr(self, 'rt_done', False)}, "   # why
+                                               f"reminder {'on' if rc.get('leave_reminder', True) else 'off'}")
         # only when you started them (2.15.0: 0 done = you chose to skip Ritual in this map)
         if (left and rc.get("on") and rc.get("leave_reminder", True) and got and 0 < got[0] < got[1]
                 and not getattr(self, "rt_done", False)):         # (2.129.3: Map Content says all done)
@@ -919,7 +922,17 @@ class AlertsPage:
             try:
                 from .overlaywin import foreground_ok        # only over the game (Settings: "only while it's in front")
                 if not foreground_ok():
+                    # 2.129.3 (feedback: left a map at 2 of 3, no reminder): a reminder waits (up to a minute) for
+                    # the game to be in front again - a screenshot tool or another window had it
+                    tries = getattr(self, "_alert_wait", {}).get(level, 0)
+                    if level in ("leave", "ritual", "tribute") and tries < 60:
+                        self.__dict__.setdefault("_alert_wait", {})[level] = tries + 1
+                        self.root.after(1000, lambda: self.breach_alert(text, level=level, sub=sub))
+                    else:
+                        getattr(self, "_alert_wait", {}).pop(level, None)
+                        buglog.debug("alert not shown", f"{level}: the game wasn't the window in front")
                     return
+                getattr(self, "_alert_wait", {}).pop(level, None)
             except Exception:
                 buglog.caught()
         self.br_last[level] = now
