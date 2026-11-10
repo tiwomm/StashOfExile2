@@ -32,8 +32,10 @@ VERSION HISTORY
        - ★ one-cell uniques (STARS: Rite of Passage, its picture from the game; star_refs, find_stars), no price.
        - When most rewards change (a reroll), our tags are taken down before the new ones are read - each cell is
          read whole now, and a tag over a new reward spoiled it.
-       - Tribute reminder: rerolls and tribute are read from the last look before the window closed (they were up to
-         1.5 s old).
+       - Tribute reminder (feedback: "you can offer tribute no matter if you have rerolls or not ... if you close the
+         favours window no matter what it should ask"): on any close with tribute left - rerolls no longer count. The
+         tribute is read from the last look before the window closed (it was up to 1.5 s old), so after offering (0
+         left) nothing shows.
   2.129.2
        Feedback ("whispers button doesn't work when I click it ... perhaps we need to just remove the 'After the
        campaign' option all together"): Trade whispers is on or off. Past the campaign, with After the campaign off,
