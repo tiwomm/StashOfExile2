@@ -405,7 +405,8 @@ class LightOverlay:
                 else:
                     cfg.update(mx=nx, my=ny + getattr(self, "_gb_h", 0))
                 self.tracker_save()
-            px, py = (cfg.get("mx", cfg.get("x", 60)), cfg.get("my", cfg.get("y", 260))) if not bar else (0, 0)
+            dx, dy = self.ov_panel_xy()                      # 2.130.0: its own place (Quick settings › Place)
+            px, py = (cfg.get("mx", dx), cfg.get("my", dy)) if not bar else (0, 0)
             w = OverlayWindow(self.root, "Session", "⏱", (px, py, None, None), opacity=int(cfg.get("opacity", 225)),
                               locked=bool(cfg.get("mlocked")), min_size=(40, 16), on_close=self.merged_close,
                               on_lock=lambda on: self.overlay_lock(on), on_moved=moved, follow_game=True,
@@ -433,6 +434,9 @@ class LightOverlay:
                 if slot < len(saved) and isinstance(saved[slot], (list, tuple)) and len(saved[slot]) == 2:
                     x, y = int(saved[slot][0]), int(saved[slot][1])
                 w.geometry(f"+{int(x)}+{int(y)}")
+            elif "mx" not in cfg and self.ov_spot() == "right":    # (the Panel on the right: its width is known)
+                rx, ry = self.ov_panel_xy(W)
+                w.geometry(f"+{int(rx)}+{int(ry)}")
             wins.append(w)
         self.mg_win = wins[0]
         self.mg_win2 = wins[1] if len(wins) > 1 else None
