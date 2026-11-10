@@ -427,6 +427,31 @@ class AlertsPage:
             self.al_rows["delirium"]["sound"].set(bool(DELIRIUM.get_sound()))
         except Exception:
             buglog.caught()
+        # 2.131.0: break reminders - off until turned on
+        from . import breaks as _BR
+        bc = _BR.cfg()
+        brow = tk.Frame(box, bg=P2)
+        brow.pack(fill="x", pady=(10, 0))
+        self.al_break = tk.BooleanVar(value=bool(bc["on"]))
+        bcb = ttk.Checkbutton(brow, text="Break reminders", variable=self.al_break, style=CB,
+                              command=lambda: self.break_set("on", bool(self.al_break.get())))
+        bcb.pack(side="left")
+        tk.Label(brow, text="every", bg=P2, fg=C["text"], font=sm).pack(side="left", padx=(8, 4))
+        ev = tk.StringVar(value=f"{bc['every']} min")
+        ecb = ttk.Combobox(brow, textvariable=ev, values=[f"{m} min" for m in _BR.EVERY], state="readonly", width=8)
+        ecb.pack(side="left")
+        ecb.bind("<<ComboboxSelected>>", lambda _e: self.break_set("every", int(ev.get().split()[0])))
+        btest = ttk.Button(brow, text="Test", width=6, command=lambda: self.break_check(force=True))
+        btest.pack(side="left", padx=(6, 0))
+        bi = tk.Label(brow, text="ⓘ", bg=P2, fg=C["muted"], font=sm, cursor="question_arrow")
+        bi.pack(side="left", padx=(6, 0))
+        tk.Label(box, text="A kind nudge in long sessions (water, stretch, food, sleep), only in your hideout or a town.",
+                 bg=P2, fg=C["muted"], font=sm, anchor="w").pack(fill="x")
+        Tooltip(bcb, "One small card every so often while you play - never in a map. Off until you turn it on.")
+        Tooltip(bi, "The lines rotate; more join the longer you play (a meal at 2 h, fresh air at 4 h, a shower at "
+                    "8 h, sleep at 12 h or late at night). Play time is the Session timer's. Nothing is saved or sent.")
+        Tooltip(btest, "Shows the next reminder now.")
+        self.al_break_every = ecb
         self.alerts_refresh()
         return box
 
@@ -1102,6 +1127,8 @@ class AlertsPage:
             self.root.after(9000 if cfg.get("on") and cfg.get("pending") else 0,
                             lambda g=got: self.breach_alert(level="ritual", sub=f"{g[0]} of {g[1]} done - go back "
                                                                                  f"through your portal"))
+        if kind in ("hideout", "town") and before != kind:
+            self.break_check()                               # 2.131.0: break reminders - in hideout / town only
         if kind == "map" and before != "map":
             # a new map: its own count. 2.40.0: back into the SAME map (same area and seed - through your portal)
             # keeps it, so a quick in-and-out still reminds you
@@ -1158,6 +1185,48 @@ class AlertsPage:
                 self.root.bell()
         self.alerts_refresh()
         self.alerts_overlay_redraw()
+
+    # ---------------------------------------------------------------- 2.131.0 break reminders
+    def break_played(self):
+        """Seconds played: the Session timer's when it runs, otherwise since this app run's first area."""
+        s = getattr(self, "tk_session", None)
+        if s is not None and not getattr(s, "ended", False):
+            try:
+                return float(s.elapsed())
+            except Exception:
+                buglog.caught()
+        start = self.__dict__.setdefault("_play_start", time.time())
+        return time.time() - start
+
+    def break_check(self, force=False):
+        from . import breaks as BR
+        c = BR.cfg()
+        if not c.get("on") and not force:
+            return None
+        played = self.break_played()
+        st = self.__dict__.setdefault("_break", {"last": 0.0, "n": 0})
+        if not force and not BR.due(played, st["last"], c["every"]):
+            return None
+        line, st["n"] = BR.next_line(played / 3600.0, st["n"])
+        st["last"] = played
+        from . import alertcard
+        try:
+            from .overlaywin import foreground_ok
+            if not force and not foreground_ok():
+                st["last"] = played - c["every"] * 60     # (not in front: the next hideout / town visit)
+                return None
+        except Exception:
+            buglog.caught()
+        self.break_win = alertcard.show(self.root, line, BR.played_text(played), color="#7fd9a0", mark="♥", secs=10,
+                                        game=game_rect())
+        return line
+
+    def break_set(self, key, value):
+        from . import breaks as BR
+        BR.cfg()[key] = value
+        save_json("settings.json", SETTINGS)
+        if key == "on" and value:
+            self.__dict__["_break"] = {"last": self.break_played(), "n": 0}     # (counted from now)
 
     def alert_card_test(self):
         """Settings: a sample card where and how big alerts will show."""
