@@ -214,6 +214,7 @@ class RitualHelper(DeliriumHelper):
         self.count = None               # (done, total) while a Ritual counter is on screen
         self.seen = "none"              # "ok" / "none" / "unread"
         self.captured = None
+        self.content = None             # 2.129.3: Map Content's Ritual icon - "done" (ticked) / "open" / None
 
     def locate(self):
         cmd, where = super().locate()
@@ -239,6 +240,9 @@ class RitualHelper(DeliriumHelper):
                         self.count, self.seen = (int(a), int(b)), "ok"
                     else:
                         self.count, self.seen = None, v
+                elif line.startswith("content "):
+                    v = line[8:].strip()
+                    self.content = v if v in ("done", "open") else None
                 elif line.startswith("captured "):
                     self.captured = line[9:].strip()
                 else:
@@ -268,7 +272,7 @@ class RitualHelper(DeliriumHelper):
         except Exception:
             buglog.caught()
         super().stop()
-        self.count, self.seen = None, "none"
+        self.count, self.seen, self.content = None, "none", None
         return None
 
     def capture(self):

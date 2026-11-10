@@ -213,6 +213,31 @@ def read_counter(gray, tpl_gray, ui):
 
 
 # ================================================================ the helper process
+CONTENT_AREA = (0.64, 0.14, 1.0, 0.49)    # 2.129.3: where Map Content's icons are (parts of the game's width / height)
+CONTENT_MIN = 0.85                        # the Ritual icon there: 0.94 - 1.0; anything else under 0.7
+TICK_MIN = 0.03                           # its green tick (all done): ~0.06 of the lower right quarter
+
+
+def content_state(bgr, tpl, scale):
+    """2.129.3 (feedback: the line said 1 of 3 while it was 3 of 3 - the counter at the bottom isn't always on screen):
+    the Ritual icon in Map Content (under the minimap) -> "done" (it has the green tick: every ritual done), "open",
+    or None (not there)."""
+    import cv2
+    t = cv2.resize(tpl, None, fx=scale, fy=scale, interpolation=cv2.INTER_AREA) if abs(scale - 1) > 0.01 else tpl
+    g = cv2.cvtColor(bgr, cv2.COLOR_BGR2GRAY)
+    if g.shape[0] < t.shape[0] or g.shape[1] < t.shape[1]:
+        return None
+    _mn, mx, _l, (x, y) = cv2.minMaxLoc(cv2.matchTemplate(g, t, cv2.TM_CCOEFF_NORMED))
+    if mx < CONTENT_MIN:
+        return None
+    side = int(round(46 * scale))
+    q = bgr[y + side // 2:y + side, x + side // 2:x + side].astype(int)
+    if not q.size:
+        return "open"
+    green = ((q[..., 1] > q[..., 2] + 40) & (q[..., 1] > q[..., 0] + 20)).mean()
+    return "done" if green >= TICK_MIN else "open"
+
+
 def main(argv):
     """StashOfExile2.exe --ritual <data folder>"""
     from .delirium_runner import _reopen_std
@@ -279,6 +304,7 @@ def main(argv):
         tpl = cv2.imread(str(tdir / "ritual_icon.png"), cv2.IMREAD_GRAYSCALE)
         if tpl is None:
             raise RuntimeError("ritual_icon.png is missing from the app")
+        ctpl = cv2.imread(str(tdir / "ritual_content.png"), cv2.IMREAD_GRAYSCALE)   # (None: no Map Content check)
         refs = references()
         try:
             with mss.mss() as _s:                        # (its libraries too)
@@ -295,6 +321,7 @@ def main(argv):
     say("state watching")
     last, pending, shown, state = None, None, None, "watching"
     rect_seen, best_log = None, 0.0
+    content, content_at, content_pending = None, 0.0, None
     with mss.mss() as sct:
         while True:
             while cmds:
@@ -334,6 +361,16 @@ def main(argv):
                 shot = np.asarray(sct.grab({"left": x, "top": y, "width": w, "height": h}))
                 gray = cv2.cvtColor(shot, cv2.COLOR_BGRA2GRAY)
                 kind, val = read_counter(gray, tpl, sh / BASE_H)
+                if ctpl is not None and time.time() - content_at > 2.0:     # 2.129.3: Map Content's Ritual icon
+                    content_at = time.time()
+                    a = CONTENT_AREA
+                    cshot = np.asarray(sct.grab({"left": ox + int(sw * a[0]), "top": oy + int(sh * a[1]),
+                                                 "width": int(sw * (a[2] - a[0])), "height": int(sh * (a[3] - a[1]))}))
+                    cs = content_state(cshot[:, :, :3], ctpl, sh / BASE_H)
+                    if cs == content_pending and cs != content:          # the same twice in a row
+                        content = cs
+                        say(f"content {cs or 'none'}")
+                    content_pending = cs
                 if kind != "ok" and time.time() - best_log > 60:        # once a minute: how close it got
                     best_log = time.time()
                     hit = find_icon_score(gray, tpl, sh / BASE_H)
