@@ -1,8 +1,8 @@
 """
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
-Free software under the GNU AGPL v3.0 (see LICENSE; up to 2.129.3: GNU GPL v3.0). Written by an AI (Claude, by Anthropic) under a human's direction.
+Free software under the GNU AGPL v3.0 (see LICENSE; up to 2.129.4: GNU GPL v3.0). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.129.4
+VERSION 2.130.0
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,6 +19,24 @@ VERSION 2.129.4
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.130.0
+       - License: GNU AGPL v3.0 (LICENSE, README, THIRD_PARTY_NOTICES, About); up to 2.129.4 GNU GPL v3.0.
+       - New league heads-up (app.LEAGUE_NOTICE): one message on the first start from December 11, 2026.
+       - Filter in the Ritual window (ritual_filter.py): reads only apply_item_filter_to_ritual from the game's
+         poe2_production_Config.ini (shown without the user name), Open folder / Copy line / Check again; credits
+         NeverSink and Ryonnen.
+       - Game Overlay place: Quick settings › Place (Bar bottom / top, Panel left / right); Options › Reset position.
+       - Gems (feedback): the price check key searches skill / support / spirit gems on the trade site (gem_level,
+         gem_sockets, quality, corrupted); lineage gems stay on the exchange. Remnant books: "Skill Level 20: X" /
+         "Support: X" lines priced in the background ("Fetching price…"), "Unique <kind>" (ring, belt, amulet, jewelry)
+         lines name the most valuable uniques of that kind (poe.ninja, names only).
+       - Remnant (feedback: the book's last two runes unpriced): an area learned by the old key is read together
+         with AREA (reading_area), so a long book is read to its foot.
+       - Favours (feedback: "FLASHING TO OFFER TRIBUTE WITH THE WINDOW OPEN"): the title hidden by a reward's tooltip
+         isn't a close while most cells last seen holding items still do (still_open); otherwise the reminder waits
+         until the window has been gone 4 s (REMIND). Six omens learned on the user's windows ship
+         (templates/favours_learned.json, item pictures only).
+       - alertcard.py (the calm alert card) is in, not wired yet.
   2.129.4
        Feedback ("ritual thing says 0/3 rituals done but I've done 2/3"; its log: the counter was seen at 0/3, then
        not for 9 minutes): the overlay's Ritual line sits over the game's counter, so the watcher couldn't see it
@@ -3355,7 +3373,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.129.4"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.130.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
