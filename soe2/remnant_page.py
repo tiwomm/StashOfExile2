@@ -121,7 +121,8 @@ class RemnantPage:
     def remnant_auto_sync(self):
         """Start / stop the watcher to match the settings (on + OCR works)."""
         c = self.remnant_cfg()
-        want = bool(c.get("on") and self.remnant_status() == "on")
+        from . import features as FEAT
+        want = bool(c.get("on") and self.remnant_status() == "on" and FEAT.on("overlay"))
         running = getattr(self, "rm_auto_gen", 0) and getattr(self, "rm_auto_alive", False)
         if want and not running:
             self.rm_auto_gen = getattr(self, "rm_auto_gen", 0) + 1

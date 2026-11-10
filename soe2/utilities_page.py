@@ -58,6 +58,9 @@ class UtilitiesPage:
                 return True
         except Exception:
             buglog.caught()
+        from . import features as FEAT
+        if not FEAT.on("overlay"):                     # 2.131.0: the Game Overlay is off - its keys do nothing
+            return False
         try:                                           # 2.2.0: the Regex key
             k = parse_key(SETTINGS.get("regex_key") or "")
             if k and k == (vk, ctrl, alt, shift):
@@ -118,6 +121,9 @@ class UtilitiesPage:
         copied, with its mod tiers); the copy goes to Price Checks, not Bulk Pricing."""
         from .overlay import parse_key, game_active, send_copy, POE_TITLE
         from .pricecheck_page import pc_key_is_copy
+        from . import features as FEAT
+        if not FEAT.on("price"):                           # 2.131.0: Price checking is off - the key is the game's
+            return False
         if not SETTINGS.get("pc_ctrl_c", True) or pc_key_is_copy():
             return False                                   # Ctrl+C: the game copies, the app only listens
         k = parse_key(SETTINGS.get("pc_key") or "")

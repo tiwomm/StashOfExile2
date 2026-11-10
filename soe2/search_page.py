@@ -89,7 +89,8 @@ class SearchPage:
         """Right-click in a text box: 'Look up ... in Game search' (the selected words, or the line under the mouse)."""
         def menu(e):
             from .config import SETTINGS
-            if not SETTINGS.get("labs"):
+            from . import features as FEAT
+            if not FEAT.on("search"):                        # 2.131.0: Game Search is a beta feature
                 return
             try:
                 txt = widget.get("sel.first", "sel.last")

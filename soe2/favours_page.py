@@ -36,7 +36,8 @@ def fv_log(line):
 class FavoursPage:
     def favours_on(self):
         c = self.ritual_cfg()
-        return bool(c.get("on") and c.setdefault("favours", True))
+        from . import features as FEAT
+        return bool(c.get("on") and c.setdefault("favours", True) and FEAT.on("overlay"))
 
     def favours_changed(self, on):
         self.ritual_cfg()["favours"] = bool(on)

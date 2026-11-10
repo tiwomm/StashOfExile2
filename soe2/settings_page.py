@@ -336,13 +336,12 @@ class SettingsPage:
         wrow.pack(fill="x", pady=(8, 0))                # they're about the app's windows, not prices
         self.build_fine_tuning(wrow, keys=self.FINE_WINDOW, defaults=False)
 
-        # 2.120.0 (UX pass 2: one word for it): Beta features (was Labs)
-        row = section("General", "Beta features", "Features still being tried out: Wealth, Game Search and Market "
-                                                  "Insights. They work, but may change a lot or have rough edges; "
-                                                  "while this is off they are hidden.")
-        self.labs_var = tk.BooleanVar(value=bool(SETTINGS.get("labs")))
-        ttk.Checkbutton(row, text="Show beta features (marked BETA)", variable=self.labs_var,
-                        command=self.on_labs).pack(side="left")
+        # 2.131.0: Features - each group on or off, and the Beta cluster (replaces the single Beta features switch)
+        row = section("General", "Features", "What shows in the app. Off: its pages leave the menu and its keys do "
+                                             "nothing; your data is kept.")
+        fbox = tk.Frame(row, bg=P2)
+        fbox.pack(side="left", fill="x", expand=True)
+        self.feat_vars = self.features_rows(fbox, P2, live=True)
 
         row = section("General", "Updates", f"You have {pretty_version()}"
                                             + (" - previews too." if SETTINGS.get("update_preview") else " - full "
@@ -401,7 +400,7 @@ class SettingsPage:
         from . import themes as _th
         row = section("Appearance", "Theme", "The look of every window. Point at one to see it; click it and the "
                                              "app changes at once, nothing restarts. Your own: put a .json in the "
-                                             "themes folder of your data folder (Settings › Advanced › Your data).")
+                                             "themes folder of your data folder (Settings › Advanced › Data folder).")
         self.set_anchors["theme"] = row.master
         self.look_vars = {"theme": tk.StringVar(value=THEMES.get(SETTINGS.get("theme"), (_th.DEFAULT,))[0])}
         # 2.118.0 (feedback): names beside a big live preview, like the overlay styles (themepick.py) - were cards
@@ -505,10 +504,14 @@ class SettingsPage:
         row = section("Advanced", "Recent messages", "The last 20 messages the app showed you (they go away "
                                                      "by themselves, so they're kept here). Hover one to keep it up.")
         self.build_toast_log(row)
-        row = section("Advanced", "Your data", "Settings, price-check lists, the Mod Book, Wealth and sessions are "
+        row = section("Advanced", "Data folder", "Settings, price-check lists, the Mod Book, Wealth and sessions are "
                                                "kept here, shared by every version of the app.")
         tk.Label(row, text=self.data_dir_shown(), bg=P2, fg=C["text"], font=(MONO, 9)).pack(side="left")
         ttk.Button(row, text="Open folder", command=lambda: self.open_path(DATA_DIR), style="Quiet.TButton").pack(side="left", padx=8)
+        ch = ttk.Button(row, text="Change…", command=self.data_dir_change, style="Quiet.TButton")   # 2.131.0: portable
+        ch.pack(side="left")
+        Tooltip(ch, "Keep your data somewhere else (a USB stick, the app's own folder for a portable copy). It's "
+                    "copied there; the old folder is kept.")
 
     @staticmethod
     def data_dir_shown():
@@ -954,13 +957,6 @@ class SettingsPage:
         self._say("Saved: " + ("updates install by themselves when the app starts." if SETTINGS["auto_update"] else
                                "the app looks for updates when it starts." if SETTINGS["auto_check_updates"] else
                                "updates only when you press Check for updates."), 8)
-
-    def on_labs(self):
-        on = bool(self.labs_var.get())
-        self.shell.set_labs(on)
-        if not on and self.w_counting:                 # 2.10.0: the Session tracker isn't a Labs feature any more
-            self.wealth_count_cancel()
-        self._say("Beta features are " + ("on (marked BETA)." if on else "hidden."), 6)
 
     def fill_hotkeys(self):
         from .overlay import key_label, parse_key

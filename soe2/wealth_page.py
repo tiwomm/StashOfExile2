@@ -422,7 +422,8 @@ class WealthPage:
     def wealth_takes(self, text):
         """Does this copy belong to the Wealth window? A copied stack (currency, fragments, essences ...) does while you
         are counting, or while the Wealth window is the one in front."""
-        if not SETTINGS.get("labs") or not parse_stack(text):        # Wealth is a Labs feature (2.0 beta 10)
+        from . import features as FEAT
+        if not FEAT.on("wealth") or not parse_stack(text):          # Wealth is a beta feature (2.131.0: its own switch)
             return False
         sh = getattr(self, "shell", None)
         return bool(self.w_counting or (sh is not None and sh.active == "wealth"))

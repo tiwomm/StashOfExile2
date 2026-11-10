@@ -11,7 +11,7 @@ INTRO = [
     "The bar on the left opens everything. Tools work while their window is open; Utilities (chat keys, the sticky "
     "note, the Session tracker and its alerts) keep working over the game.",
     "Your league is in Settings (bottom left). Things marked BETA are still being worked on: turn them on under "
-    "Settings › General › Beta features if you'd like to try them.",
+    "Settings › General › Features if you'd like to try them.",
 ]
 
 # What's being worked on (2.4.0: not shown in the app any more - kept for ROADMAP.md / the developer).

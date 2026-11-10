@@ -41,9 +41,75 @@ RESOURCE_DIR = getattr(sys, "_MEIPASS", APP_DIR)      # inside the .exe: where P
 
 # Data lives in one fixed folder, NOT next to the app, so moving or updating the app never loses it.
 if sys.platform == "win32":
-    DATA_DIR = os.path.join(os.environ.get("APPDATA") or os.path.expanduser("~"), "StashOfExile2")
+    DEFAULT_DATA_DIR = os.path.join(os.environ.get("APPDATA") or os.path.expanduser("~"), "StashOfExile2")
 else:
-    DATA_DIR = os.path.join(os.path.expanduser("~"), ".stashofexile2")
+    DEFAULT_DATA_DIR = os.path.join(os.path.expanduser("~"), ".stashofexile2")
+# 2.131.0 (request: a "portable" option - choose where the data lives): a one-line file naming the folder you picked,
+# next to the app (portable) or in the usual folder - read before anything else is
+POINTER = "data_location.txt"
+
+
+def chosen_data_dir():
+    for d in (APP_DIR, DEFAULT_DATA_DIR):
+        try:
+            with open(os.path.join(d, POINTER), encoding="utf-8") as f:
+                p = f.read().strip()
+            if p and os.path.isabs(p):
+                os.makedirs(p, exist_ok=True)
+                return p
+        except OSError:
+            continue
+    return None
+
+
+DATA_DIR = chosen_data_dir() or DEFAULT_DATA_DIR
+
+
+def move_data(new_dir):
+    """2.131.0: your data copied to new_dir, then the app uses it from the next start (the old folder is kept, so
+    nothing is lost if something goes wrong). -> (True, note) or (False, why)."""
+    import shutil
+    new_dir = os.path.abspath(new_dir)
+    if os.path.normcase(new_dir) == os.path.normcase(os.path.abspath(DATA_DIR)):
+        return False, "That's the folder in use."
+    try:
+        os.makedirs(new_dir, exist_ok=True)
+        shutil.copytree(DATA_DIR, new_dir, dirs_exist_ok=True,
+                        ignore=shutil.ignore_patterns(POINTER, "*.lock", "__pycache__"))
+    except OSError as e:
+        return False, f"Couldn't copy your data there ({e.__class__.__name__}) - nothing was changed."
+    reset = os.path.normcase(new_dir) == os.path.normcase(os.path.abspath(DEFAULT_DATA_DIR))
+    # a folder inside the app's own folder (portable): the pointer goes with the app; anywhere else it lives in the
+    # usual folder, so an update that replaces the app's folder can't lose it. The other pointer goes (one place).
+    app_dir = os.path.normcase(os.path.abspath(APP_DIR))
+    portable = os.path.normcase(new_dir).startswith(app_dir + os.sep) or os.path.normcase(new_dir) == app_dir
+    order = (APP_DIR, DEFAULT_DATA_DIR) if portable else (DEFAULT_DATA_DIR, APP_DIR)
+    wrote = None
+    for d in order:
+        if reset:
+            break
+        try:
+            os.makedirs(d, exist_ok=True)
+            with open(os.path.join(d, POINTER), "w", encoding="utf-8") as f:
+                f.write(new_dir)
+            wrote = d
+            break
+        except OSError:
+            continue
+    for d in (APP_DIR, DEFAULT_DATA_DIR):
+        if d == wrote:
+            continue
+        try:
+            os.remove(os.path.join(d, POINTER))
+        except FileNotFoundError:
+            pass
+        except OSError:
+            if d == APP_DIR:                       # (a pointer left next to the app would still win)
+                return False, "Couldn't change the folder next to the app - nothing was changed."
+    wrote = wrote or reset
+    if not wrote:
+        return False, "Couldn't save the new place - nothing was changed."
+    return True, "Copied. Restart the app to use the new folder (the old one is kept)."
 
 
 DATA_FILES = ["settings.json", "session.json", "modbook.json", "modbook.backup.json", "mod_rules.json", "community_rules.json",

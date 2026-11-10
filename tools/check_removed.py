@@ -25,6 +25,9 @@ DOCS = ("README.md", "TOS.md", "linux/README.md", "themes/README.md", "strats/RE
 
 # (version, what it was, words a person read, names in the code / settings keys[, pending])
 REMOVED = [
+    ("2.131.0", "the single Show beta features switch (Features has a Beta cluster); the quick start's sharing page "
+                "(the Feature Picker asks)", ("Show beta features (marked BETA)", "Share with the community?"),
+     ("on_labs", "labs_var", "set_labs", "SHARE_PAGE", "qs_share_row")),
     ("2.129.2", "Trade whispers' After the campaign option (on is on)", ("After the campaign",
      "Keep on after the campaign"), ("al_wafter", "ww_after_changed", "in_campaign")),
     ("2.11.0", "Recorder", ("Ritual Capture",), ()),

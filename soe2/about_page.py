@@ -30,7 +30,6 @@ _keep_discord()
 
 # (title, lines). Plain words: what it's for, then how to start.
 THEME_PAGE = "Pick your look"
-SHARE_PAGE = "Share with the community?"          # 2.125.8 (feedback): opt-in, asked on a fresh install
 QUICKSTART = [
     (THEME_PAGE, [
         "Choose how the app looks - click one and it changes right away. You can change it any time in "
@@ -60,13 +59,6 @@ QUICKSTART = [
         "it in game; F6 hides or shows the whole overlay.",
         "Overlay › Mechanic Helper can warn you when your Hiveblood is almost full (Breach) and when you finish a map with "
         "Delirium still on.",
-    ]),
-    (SHARE_PAGE, [
-        "Share anonymous data with the community? It's off until you say yes, and you get everyone else's data "
-        "either way.",
-        "Why say yes: your price checks make everyone's mod prices better, your ratings count as votes, and your best "
-        "map, boss and campaign times can go on the Leaderboards (under a community name you pick - never your "
-        "account or character). No ads, no selling, no tracking.",
     ]),
     ("Pick your league and say hi", [
         "Prices come from your league. The newest one is picked for you; change it here or any time in Settings.",
@@ -256,8 +248,6 @@ class AboutPage:
             self.whatsnew_follow()
         if title == THEME_PAGE:                                  # 2.61.0: a fresh install starts by picking a theme
             self.theme_cards(self.qs_body, "quickstart", cols=4, scale=0.78)
-        if title == SHARE_PAGE:
-            self.qs_share_row(self.qs_body, P2)
         if self.qs_i == n - 1:
             row = tk.Frame(self.qs_body, bg=P2)
             row.pack(fill="x", pady=(8, 0))
@@ -271,29 +261,6 @@ class AboutPage:
             d.bind("<Button-1>", lambda e: open_link(DISCORD_URL))
         self.qs_back.config(state="normal" if self.qs_i else "disabled")
         self.qs_next.config(text="Done" if self.qs_i == n - 1 else "Next")
-
-    def qs_share_row(self, body, P2):
-        """2.125.8: Share / No thanks right on the quick start (the same switch as Settings › Privacy & community);
-        Share asks for a community name next. What's shared? opens the full list."""
-        from . import communitymods as CM
-        row = tk.Frame(body, bg=P2)
-        row.pack(fill="x", pady=(8, 0))
-        asked, on = bool(SETTINGS.get("share_asked")), CM.sharing()
-        state = tk.Label(row, text=("✓ Sharing" if on else "✕ Not sharing") if asked else "", bg=P2,
-                         fg=C["green"] if on else C["muted"], font=("Segoe UI", 10, "bold"))
-
-        def pick(yes):
-            self.cm_set_sharing(yes, say=False)
-            state.config(text="✓ Sharing" if yes else "✕ Not sharing", fg=C["green"] if yes else C["muted"])
-            if yes:
-                self.root.after(200, self.cm_name_ask)
-        ttk.Button(row, text="Share", command=lambda: pick(True)).pack(side="left")      # (Next is the orange one)
-        ttk.Button(row, text="No thanks", command=lambda: pick(False)).pack(side="left", padx=(8, 0))
-        state.pack(side="left", padx=(12, 0))
-        link = tk.Label(body, text="What's shared?", bg=P2, fg=C["accent"], cursor="hand2",
-                        font=("Segoe UI", 9, "underline"))
-        link.pack(anchor="w", pady=(8, 0))
-        link.bind("<Button-1>", lambda _e: self.cm_ask(info=True))
 
     def quickstart_done(self):
         SETTINGS["quickstart_done"] = True

@@ -956,10 +956,6 @@ class Shell:
         self.save()
         self.paint_wallpaper()
 
-    # ---- Labs (2.0 beta 10): experimental modules only show when Labs is on in Settings
-    def labs_on(self):
-        return bool(self.S.get("labs"))
-
     def advanced_on(self):
         """2.74.0: Settings › Advanced › Show Under the hood (Under the hood, the Mod book) - off by default."""
         return bool(self.S.get("show_advanced"))
@@ -977,7 +973,8 @@ class Shell:
             return False
         if getattr(mod, "admin_only", False) and not self.admin_on():
             return False
-        return not getattr(mod, "labs", False) or self.labs_on()
+        from . import features as FEAT                      # 2.131.0: Settings › General › Features
+        return FEAT.module_on(getattr(mod, "key", ""))
 
     def listed(self, mod):
         """On the dock, the Toolkit menu and the desktop (hidden ones open from inside other windows; child tools
@@ -1091,13 +1088,12 @@ class Shell:
         self.refresh_taskbar()
         self.paint_children()
 
-    def set_labs(self, on):
-        self.S["labs"] = bool(on)
+    def features_changed(self):
+        """2.131.0: a feature was turned on or off - its pages leave (or come back to) the menu."""
         self.save()
-        if not on:
-            for k, m in self.modules.items():
-                if getattr(m, "labs", False) and self.windows[k].state_ != "closed":
-                    self.windows[k].close()
+        for k, m in self.modules.items():
+            if not self.visible(m) and self.windows[k].state_ != "closed":
+                self.windows[k].close()
         self.draw_dock()
         self.make_task_dots()
         if self.cfg.get("desktop_icons"):
@@ -1306,9 +1302,8 @@ class Shell:
         if getattr(self.modules[key], "admin_only", False) and not self.admin_on():
             self.app._say(f"{self.modules[key].title} is for community board admins.", 8)
             return
-        if not self.visible(self.modules[key]):            # a Labs one while Labs is off
-            self.app._say(f"{self.modules[key].title} is a beta feature: turn on Settings › General › Beta features to "
-                          "use it.", 8)
+        if not self.visible(self.modules[key]):            # 2.131.0: its feature is off
+            self.app._say(f"{self.modules[key].title} is off: turn it on in Settings › General › Features.", 8)
             return
         if PAGES:                                           # 2.62.0: one page at a time
             for k, w in self.windows.items():

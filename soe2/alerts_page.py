@@ -799,6 +799,9 @@ class AlertsPage:
 
     # ---- Ritual helper
     def ritual_start(self):
+        from . import features as FEAT
+        if not FEAT.on("overlay"):                     # 2.131.0: the Game Overlay is off (Features)
+            return
         from .utilities import RITUAL
         err = RITUAL.start()
         if not err and self.br_reader is None:
@@ -1145,6 +1148,9 @@ class AlertsPage:
     # ================================================================ Breach: the banner
     def breach_alert(self, text="Stored Hiveblood is almost at the maximum!", test=False, level=None, sub=None):
         self.alerts_init()
+        from . import features as FEAT
+        if not test and not FEAT.on("overlay"):           # 2.131.0: the Game Overlay is off (Features)
+            return
         level = level or breach_level(text)
         now = time.time()
         if not test:
