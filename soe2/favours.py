@@ -27,7 +27,9 @@ EDGE = 5                                   # px left off each side of a cell whe
 SIDE = 48                                  # cells are compared at this size
 MATCH_MIN = 0.55                           # a picture must score this ...
 MATCH_BY = 0.06                            # ... and beat the next-best item by this
-LEARN_FILE = "favour_icons.json"
+LEARN_FILE = "favour_icons_v2.json"           # (2.128.1: the cell's top part - v1 held whole cells)
+TOP = 0.64                                 # 2.128.1: only a cell's top part is read - the price tag sits at its
+#                                            foot and shows in screenshots and streams (the watcher sees it too)
 
 
 def _cv():
@@ -93,7 +95,7 @@ def occupied(img, grid):
         for c in range(COLS):
             x, y, w, h = cell_rect(grid, r, c)
             m = max(2, int(w * 0.09))
-            cut = img[y + m:y + h - m, x + m:x + w - m]
+            cut = img[y + m:y + int(h * TOP), x + m:x + w - m]
             if cut.size:
                 k = backing(cut)
                 if k:
@@ -122,9 +124,17 @@ def score(fa, fb):
 
 
 def cell_crop(img, grid, r, c):
+    """A cell's picture without its frame - its top part only (TOP: under it, a price tag may be showing)."""
     x, y, w, h = cell_rect(grid, r, c)
     e = max(1, int(round(EDGE * w / CELL)))
-    return img[y + e:y + h - e, x + e:x + w - e]
+    return img[y + e:y + int(h * TOP), x + e:x + w - e]
+
+
+def top_part(bgr):
+    """A whole cell's picture (official art laid on the backing) -> the same part cell_crop takes."""
+    h, w = bgr.shape[:2]
+    e = max(1, int(round(EDGE * w / CELL)))
+    return bgr[e:int(h * TOP), e:w - e]
 
 
 def on_backing(rgba, kind="blue", dim=0.0):
@@ -154,7 +164,7 @@ class Refs:
 
     def add_art(self, name, rgba):
         for dim in (0.0, 0.55):
-            self.add(name, on_backing(rgba, "blue", dim), "art")
+            self.add(name, top_part(on_backing(rgba, "blue", dim)), "art")
 
     def best(self, f):
         """-> (name, score, margin over the next item) or (None, best score, 0)."""

@@ -112,9 +112,9 @@ class FavoursPage:
                     misses = 0
                     grid = FV.grid_box(win)
                     occ = FV.occupied(img, grid)
-                    sig = tuple(sorted(occ.items())), cv2.resize(img[grid[1]:grid[1] + int(grid[2] * FV.ROWS),
-                                                                     grid[0]:grid[0] + int(grid[2] * FV.COLS)],
-                                                                 (48, 40)).tobytes()
+                    # (2.128.1: what's in the cells' top parts - the tags at their feet don't count as a change)
+                    sig = tuple(sorted(occ.items())), b"".join(
+                        cv2.resize(FV.cell_crop(img, grid, r, c), (8, 6)).tobytes() for r, c in sorted(occ))
                     self.fv_last = (time.time(), g, grid, img)     # (price checking a reward teaches its picture)
                     if sig == last_sig:
                         continue
@@ -155,7 +155,6 @@ class FavoursPage:
         the Expedition helper's); the dearest one in the warm color with a ★."""
         self.favours_hide()
         from .overlaywin import pal, skinned
-        from .remnant_page import no_capture
         P_ = pal()
         gx, gy, _gw, gh = g
         ui = max(0.7, gh / 1440.0)
@@ -193,7 +192,7 @@ class FavoursPage:
                 force_topmost(t)
             except Exception:
                 buglog.caught()
-            no_capture(t)
+            # (2.128.1, feedback: "show up on screenshots / screen share / streaming": not left out of captures)
             wins.append(t)
         self.fv_wins = wins or None
 
@@ -222,7 +221,7 @@ class FavoursPage:
         if not (0 <= r < FV.ROWS and 0 <= c < FV.COLS):
             return False
         x, y, w, h = FV.cell_rect(grid, r, c)
-        if FV.backing(img[y + 6:y + h - 6, x + 6:x + w - 6]) is None:
+        if FV.backing(img[y + 6:y + int(h * FV.TOP), x + 6:x + w - 6]) is None:
             return False
         if not FV.learn(name, FV.cell_crop(img, grid, r, c)):
             return False

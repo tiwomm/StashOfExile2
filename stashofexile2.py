@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU GPL v3.0 (see LICENSE). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.128.0
+VERSION 2.128.1
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,6 +19,14 @@ VERSION 2.128.0
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.128.1
+       Feedback ("I'd like the expedition helper + runeshapes to show up on screenshots / screen share / streaming
+       in the same way the overlay does"): the Remnant tags, the runeshape list, the Island rumors card and the
+       Favours tags are no longer left out of captures (no_capture). The watchers would now see them, so they paint
+       over their own windows before reading: remnant.OWN holds each one's place on screen (set when shown, cleared
+       when hidden) and mask_own fills those spots with the picture's middle color. Favours reads only each cell's
+       top part (favours.TOP 0.64 - its tag sits at the foot), for the official art too; pictures learned from now on
+       are that part (favour_icons_v2.json).
   2.128.0
        Favours prices (feedback: "show me the currency exchange price of the item ... the same way we do expedition
        price helper"): the Ritual helper's new option. favours.py finds the Favours window by the word FAVOURS on its
@@ -3258,7 +3266,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.128.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.128.1"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
