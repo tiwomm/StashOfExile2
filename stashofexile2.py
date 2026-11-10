@@ -26,6 +26,8 @@ VERSION HISTORY
        - goalbar_build: with the Bar placed at the top, the lines pack under it and the window grows down (_gb_below).
        - HUD_SPOTS bottom 0.0205 -> 0.0153 (the XP bar's top, 22 px up at 1440p).
        - favours.tribute_of: a lone O / "Tribute" with no number reads 0 - an old number never brings the reminder.
+       - trade.apply_opts (feedback: "sockets: 5 ... chose augmentable sockets instead of just gem sockets"): on a gem,
+         the item panel's Sockets is misc_filters.gem_sockets (rune_sockets dropped).
   2.130.0
        - License: GNU AGPL v3.0 (LICENSE, README, THIRD_PARTY_NOTICES, About); up to 2.129.4 GNU GPL v3.0.
        - New league heads-up (app.LEAGUE_NOTICE): one message on the first start from December 11, 2026.
