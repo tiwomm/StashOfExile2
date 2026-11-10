@@ -44,6 +44,16 @@ BETA_AREAS = ("Wealth", "Money Makers", "Game Search", "Market Insights", "Craft
               "Desecration Helper")
 
 NOTES = {
+    "2.129.1": {
+        "big": [],
+        "small": [
+            ("Ritual", "The Ritual watcher should start properly now, so leaving a map with rituals left reminds "
+             "you."),
+            ("Expedition", "The Remnant helper should show again (it looked for the book's title in the wrong "
+             "place)."),
+            ("Ritual", "Favours prices read gray, sealed rewards too, and the tribute banner goes after 4 s."),
+        ],
+    },
     "2.129.0": {
         "big": [
             ("🕯", "Favours prices you can trust", "Only items it's sure of get a price. Every omen of the Ritual "

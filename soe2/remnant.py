@@ -178,13 +178,20 @@ SETTLE_READS = 5                  # 2.79.0: reads right after the book appears, 
 AUTO_GONE = 2                     # looks without the book = it was closed: tags off (~0.7 s)
 PARCHMENT = 0.35                  # share of the area that must look like the book's light parchment before reading
 TITLE_MIN = 0.65                  # 2.129.0: the "Runeshape Combinations" title's match (the book 1.0, other screens <0.45)
+TITLE_AREA = (0.05, 0.04, 0.55, 0.22)   # 2.129.1: where the title is looked for (game heights from the top-left) - its
+#                                         own place: a learned reading area may start inside the title (the log)
 _TITLE = [None]
 
 
 def has_title(img, game_h):
     """2.129.0 (feedback: a map's sandy ground showed the runeshape list): the book's own title, "Runeshape
-    Combinations" (templates/remnant_title.png, cut from a 1440p game), is in the picture (PIL, the watched area).
+    Combinations" (templates/remnant_title.png, cut from a 1440p game), is in the picture (PIL, TITLE_AREA's grab).
     No OpenCV or no template: True (as before - the parchment alone decides)."""
+    return title_score(img, game_h) >= TITLE_MIN
+
+
+def title_score(img, game_h):
+    """How well the title matches anywhere in the picture (0 .. 1; 1.0 = no OpenCV / no template)."""
     try:
         import cv2
         import numpy as np
@@ -195,17 +202,16 @@ def has_title(img, game_h):
             _TITLE[0] = cv2.imread(str(d / "remnant_title.png"), cv2.IMREAD_GRAYSCALE)
         tpl = _TITLE[0]
         if tpl is None:
-            return True
-        g = cv2.cvtColor(np.asarray(img.convert("RGB")), cv2.COLOR_RGB2GRAY)
+            return 1.0
+        a = cv2.cvtColor(np.asarray(img.convert("RGB")), cv2.COLOR_RGB2GRAY)
         s = game_h / 1440.0
         t = cv2.resize(tpl, None, fx=s, fy=s, interpolation=cv2.INTER_AREA) if abs(s - 1) > 0.01 else tpl
-        a = g[:max(t.shape[0] + 1, int(g.shape[0] * 0.25))]           # (the title is at the area's top)
         if a.shape[0] < t.shape[0] or a.shape[1] < t.shape[1]:
-            return False
-        return float(cv2.minMaxLoc(cv2.matchTemplate(a, t, cv2.TM_CCOEFF_NORMED))[1]) >= TITLE_MIN
+            return 0.0
+        return float(cv2.minMaxLoc(cv2.matchTemplate(a, t, cv2.TM_CCOEFF_NORMED))[1])
     except Exception:
         buglog.caught()
-        return True
+        return 1.0
 
 
 def area_rect(area, rect):

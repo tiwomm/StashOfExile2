@@ -37,7 +37,8 @@ LEVELS = {
 }
 DOT = {"on": "#5ee08a", "off": "#6b7690", "warn": "#ffb347"}
 TRANSPARENT = "#010203"
-BANNER_SECS = {"almost": 8, "full": 10, "leave": 8, "ritual": 8, "tribute": 8}       # 2.12.1: then it goes by itself (like END DELIRIUM)
+# 2.12.1: then it goes by itself (like END DELIRIUM). 2.129.1 (feedback: the tribute one stayed too long): 4 s
+BANNER_SECS = {"almost": 8, "full": 10, "leave": 8, "ritual": 8, "tribute": 4}
 
 
 def _hwnd(win):

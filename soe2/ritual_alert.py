@@ -261,8 +261,14 @@ def main(argv):
         # 2.127.0 (it quit the moment it started, every time): say why, so the log shows it
         log(f"input from the app ended after {time.time() - t0:.1f} s ({why}; stdin {type(sys.stdin).__name__})")
         after_stdin_ends(pid, lambda: cmds.append("quit"), log)      # 2.40.0: a broken pipe isn't "the app is gone"
-    threading.Thread(target=read_stdin, daemon=True).start()
+    t0 = time.time()
+    log(f"launched; app {pid}")
+    # 2.129.1 (its log: "started" and "stopped" in the same second, at every start - or 159 s late): everything is
+    # loaded BEFORE the app's pipe is read. On Windows, a thread waiting on that pipe made each newly loaded library
+    # (OpenCV's, mss's) wait too - until the app sent something (its "quit" when it closed) - so the watcher sat
+    # stuck for the whole session. The Delirium helper always loaded first, and never stuck.
     try:
+        import ctypes  # noqa: F401
         import cv2
         import mss
         import numpy as np
@@ -273,11 +279,19 @@ def main(argv):
         tpl = cv2.imread(str(tdir / "ritual_icon.png"), cv2.IMREAD_GRAYSCALE)
         if tpl is None:
             raise RuntimeError("ritual_icon.png is missing from the app")
+        refs = references()
+        try:
+            with mss.mss() as _s:                        # (its libraries too)
+                _s.grab({"left": 0, "top": 0, "width": 2, "height": 2})
+        except Exception:
+            buglog.caught()
     except Exception as e:
+        threading.Thread(target=read_stdin, daemon=True).start()
         say("state error")
         say(f"error {type(e).__name__}: {e}")
         return 1
-    log(f"started: {len(references())} digit shapes, icon template {tpl.shape}; app {pid}")
+    threading.Thread(target=read_stdin, daemon=True).start()
+    log(f"started: {len(refs)} digit shapes, icon template {tpl.shape}; app {pid} (in {time.time() - t0:.1f} s)")
     say("state watching")
     last, pending, shown, state = None, None, None, "watching"
     rect_seen, best_log = None, 0.0
@@ -287,7 +301,7 @@ def main(argv):
                 c = cmds.pop(0)
                 if c == "quit":
                     say("state stopped")
-                    log("stopped (the app asked, or it ended)")
+                    log(f"stopped after {time.time() - t0:.0f} s (the app asked, or it ended)")
                     return 0
                 if c == "capture":
                     try:

@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU GPL v3.0 (see LICENSE). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.129.0
+VERSION 2.129.1
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,6 +19,20 @@ VERSION 2.129.0
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.129.1
+       Feedback ("Expedition helper isn't showing up at all anymore", "no ritual reminder", an omen not read, "offer
+       tribute ... stayed on-screen too long"):
+       - Ritual watcher: its log showed "started" and "stopped" in the same second at every start (once 159 s late).
+         It read the app's pipe in a thread before loading OpenCV / mss; on Windows a thread waiting on a pipe makes
+         each newly loaded library wait too, until the app writes (its "quit" when it closes) - so the watcher sat
+         stuck all session and the app saw it as running. Now everything loads first, then the pipe is read (as the
+         Delirium helper always did). Its log says when it launched and how long starting took.
+       - Remnant: a reading area learned by the old key can start inside the book's title, so the title check (2.129.0)
+         never passed - nothing showed. The title is now looked for in its own place (remnant.TITLE_AREA), and the
+         log says when parchment shows without the title (and the match).
+       - Favours: a gray, sealed reward (Omen of Sanctification) scored 0.51 with the next item at 0.23. Far ahead of
+         every other item (0.50 and 0.25 clear) counts too; wrong ones were never more than 0.15 ahead.
+       - The OFFER YOUR TRIBUTE banner shows 4 s (was 8).
   2.129.0
        Feedback batch:
        - Favours prices: wrong prices (a junk unique 34d, Sacred Bloom and omens 4.6d) - poe.ninja's official art
@@ -42,6 +56,10 @@ VERSION HISTORY
        - Ritual watcher (its log: told to quit the moment it started, every start): started again when it's on but
          not running (at most every 30 s), and who stopped it is in the app's log.
        - "dearest" is gone from the app (names.OLD: check_names finds it).
+       - Every omen of the Ritual tab ships (templates/favours_omens.png + .json: slot pictures in the tab's order),
+         so none has to be in your stash first; each cell is also compared cropped to its art (favours.art_box), which
+         lines up a stash slot and a Favours cell. On the user's six windows: 8 of 8 omens right, none wrong. Wombgifts
+         stay a trade search.
   2.128.1
        Feedback ("I'd like the expedition helper + runeshapes to show up on screenshots / screen share / streaming
        in the same way the overlay does"): the Remnant tags, the runeshape list, the Island rumors card and the
@@ -3289,7 +3307,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.129.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.129.1"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 

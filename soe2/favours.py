@@ -33,6 +33,9 @@ MATCH_MIN = {"learned": 0.72, "shipped": 0.72}  # 2.129.0 (feedback: a junk uniq
 MATCH_BY = 0.10                            # 4.6d): a picture must score this and beat the next-best item by this.
 MATCH_SURE, MATCH_BY_SURE = 0.80, 0.06      # (a very close match may beat the next by less: Greater Exaltation and
                                            # Refreshment are the same hand in gold / teal)
+CLEAR = (0.50, 0.25)                       # 2.129.1: or far ahead of every other item (a gray, sealed reward - the
+                                           # log: Sanctification 0.51, next 0.23; wrong ones were never 0.15 ahead)
+CLEAR_ITEMS = 10                           # (only among many items - with two, "far ahead" says nothing)
 #                                            Tried on the user's own windows with his Ritual tab's pictures (Scan
 #                                            stash): the right omen 0.74-0.88 (by 0.14-0.34), items it doesn't know up
 #                                            to 0.70 (by 0.06); official art reached 0.64 for the wrong item
@@ -256,7 +259,9 @@ class Refs:
         top, name, src = top3[0]
         nxt = top3[1][0] if len(top3) > 1 else -1.0
         by = MATCH_BY_SURE if top >= MATCH_SURE else MATCH_BY
-        if top >= MATCH_MIN.get(src, 0.72) and top - nxt >= by:
+        sure = top >= MATCH_MIN.get(src, 0.72) and top - nxt >= by
+        clear = top >= CLEAR[0] and top - nxt >= CLEAR[1] and len(self.items) >= CLEAR_ITEMS
+        if sure or clear:
             return name, top, top - nxt
         return None, top, top - nxt
 
