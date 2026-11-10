@@ -278,7 +278,7 @@ class PriceCheckPage:
         Tooltip(tip, "Here: the app comes to the front with the price. Overlay + Here: the price check overlay "
                      "opens over the game with the price, the mods "
                      "searched and the cheapest listings (drag and resize it, Esc closes it, its ⚙ has its "
-                     "settings), and the app shows the item too without taking the keyboard from the game. Every "
+                     "settings) - the app stays where it is and shows the item here when you come back to it. Every "
                      "check is kept in Recent here.")
         self.pc_where_note = tk.Label(row, text="", bg=C["panel"], fg=C["muted"], font=("Segoe UI", 9))
         self.pc_where_note.pack(side="left", padx=(8, 0))
@@ -638,18 +638,18 @@ class PriceCheckPage:
                 self.pcpop_show(self.records[rid])
             except Exception:
                 self.log_error("the price check card over the game")
-            # 2.123.3: Overlay + Here - the app shows it too, without taking the keyboard from the game (card stays up)
+            # 2.123.3: Overlay + Here - the app shows it too. 2.129.3 (feedback: "it's still prioritizing the app and
+            # bringing it to the front ... it should not bring to front and only use the overlay"): while the game is
+            # in front the app isn't touched at all - Price Checks opens on it the next time you come to the app
             try:
-                import sys as _sys
-                if _sys.platform == "win32":
-                    from .overlaywin import _fg_hwnd
-                    self._pc_game_hwnd = _fg_hwnd()
-                self.shell.open("pricecheck")
-                if self.root.state() == "iconic":
-                    self.root.deiconify()
                 from .overlay import game_active, POE_TITLE
                 if game_active((getattr(self, "overlay", None) and self.overlay.cfg.get("poe_title")) or POE_TITLE):
-                    self.root.after(80, self._pc_keep_game)
+                    self._pc_open_later = True
+                    if not getattr(self, "_pc_later_bound", False):
+                        self._pc_later_bound = True
+                        self.root.bind("<FocusIn>", self._pc_open_pending, add="+")
+                else:
+                    self.shell.open("pricecheck")
             except Exception:
                 self.log_error("opening Price Checks")
             return rid
@@ -663,21 +663,14 @@ class PriceCheckPage:
             self.log_error("opening Price Checks")
         return rid
 
-    def _pc_keep_game(self):
-        """Both: hand the keyboard back to the game if opening the page took it (Windows)."""
-        import sys
-        if sys.platform != "win32":
-            return
-        try:
-            from .overlaywin import _fg_hwnd
-            import ctypes
-            u = ctypes.windll.user32
-            hw = getattr(self, "_pc_game_hwnd", None)
-            if hw and _fg_hwnd() != hw:
-                u.SetForegroundWindow(hw)
-        except Exception:
-            from . import buglog
-            buglog.caught()
+    def _pc_open_pending(self, _e=None):
+        """You came back to the app after a price check shown over the game: Price Checks, with it."""
+        if getattr(self, "_pc_open_later", False):
+            self._pc_open_later = False
+            try:
+                self.shell.open("pricecheck")
+            except Exception:
+                self.log_error("opening Price Checks")
 
     def pc_clear(self):
         """2.93.1: clear the single searches - every item on Price Checks (Recent too). Bulk Pricing and Favorites

@@ -159,6 +159,11 @@ class AlertsPage:
         count = RITUAL.count if RITUAL.seen == "ok" and RITUAL.count else None
         if count is None and getattr(self, "br_area", None) == "map":
             count = getattr(self, "rt_map", None)
+        if getattr(self, "rt_done", False) and getattr(self, "br_area", None) == "map":
+            if count and count[0] < count[1]:
+                count = (count[1], count[1])
+            elif not count:
+                return "All rituals done ✔"
         if not count:
             return ""
         d, t = count
@@ -204,6 +209,7 @@ class AlertsPage:
         self.br_ticks, self._br_ticking, self.br_note = 0, False, ""
         self.br_area = None                        # 2.11.0: "map" / "hideout" / "town" / "other" - where you are
         self.rt_map = None                         # 2.14.0: the last Ritual count seen in this map (done, total)
+        self.rt_done = False                       # 2.129.3: Map Content's Ritual icon is ticked
         if self.log_wanted():
             self.root.after(1500, self.breach_start)
         if self.ritual_cfg().get("on"):
@@ -588,6 +594,7 @@ class AlertsPage:
         from .utilities import RITUAL
         RITUAL.stop()
         self.rt_map = None
+        self.rt_done = False
         self.favours_sync()
         if not self.log_wanted():
             self.br_reader = None
@@ -755,6 +762,12 @@ class AlertsPage:
         from .utilities import RITUAL
         if RITUAL.seen == "ok" and RITUAL.count and self.br_area in ("map", None):
             self.rt_map = RITUAL.count
+        # 2.129.3 (feedback: the line said 1 of 3, it was 3 of 3 - the counter isn't always on screen): Map
+        # Content's Ritual icon has its green tick - every ritual in this map is done
+        if getattr(RITUAL, "content", None) == "done" and self.br_area in ("map", None):
+            self.rt_done = True
+            if self.rt_map and self.rt_map[0] < self.rt_map[1]:
+                self.rt_map = (self.rt_map[1], self.rt_map[1])
         # 2.129.0 (feedback: "still isn't reminding me when I leave the map"): the Ritual helper is on but its
         # watcher isn't running (its log: it was told to stop the moment it started) - start it again, at most
         # every 30 s; the app's log says so each time
@@ -877,7 +890,8 @@ class AlertsPage:
             self.breach_alert(level="leave")
         rc, got = self.ritual_cfg(), self.rt_map            # 2.14.0: rituals left undone in the map you just left
         # only when you started them (2.15.0: 0 done = you chose to skip Ritual in this map)
-        if left and rc.get("on") and rc.get("leave_reminder", True) and got and 0 < got[0] < got[1]:
+        if (left and rc.get("on") and rc.get("leave_reminder", True) and got and 0 < got[0] < got[1]
+                and not getattr(self, "rt_done", False)):         # (2.129.3: Map Content says all done)
             self.root.after(9000 if cfg.get("on") and cfg.get("pending") else 0,
                             lambda g=got: self.breach_alert(level="ritual", sub=f"{g[0]} of {g[1]} done - go back "
                                                                                  f"through your portal"))
@@ -886,6 +900,12 @@ class AlertsPage:
             # keeps it, so a quick in-and-out still reminds you
             if where is None or where != getattr(self, "rt_where", None):
                 self.rt_map = None
+                self.rt_done = False
+                try:
+                    from .utilities import RITUAL
+                    RITUAL.content = None              # (the last map's tick isn't this one's)
+                except Exception:
+                    buglog.caught()
             self.rt_where = where
 
     # ================================================================ Breach: the banner

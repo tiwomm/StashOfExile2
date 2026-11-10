@@ -43,6 +43,12 @@ VERSION HISTORY
        - Feedback ("moved [the app] to another screen ... the wealth screen stayed on screen"): when the app lands on
          another monitor, each page window is shown again in its place and any copy Windows left behind is hidden
          (shell.monitor_check).
+       - Ritual (feedback: the line said 1 of 3 while it was 3 of 3 - the counter at the bottom isn't always on
+         screen): the watcher also looks at Map Content under the minimap every 2 s (ritual_alert.content_state,
+         templates/ritual_content.png: the Ritual icon 0.94 - 1.0, anything else under 0.7); its green tick means
+         every ritual is done - the line says so and leaving doesn't remind you.
+       - Price check key, Overlay + Here (feedback: "it's still prioritizing the app and bringing it to the front"):
+         while the game is in front the app isn't touched; Price Checks opens on the item when you come back to it.
   2.129.2
        Feedback ("whispers button doesn't work when I click it ... perhaps we need to just remove the 'After the
        campaign' option all together"): Trade whispers is on or off. Past the campaign, with After the campaign off,
