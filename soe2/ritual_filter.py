@@ -3,8 +3,13 @@ ctrl+f for ... to enable filter to work in the ritual window"): the game has a s
 apply_item_filter_to_ritual in poe2_production_Config.ini - that makes your item filter apply to the Ritual altar's
 Favours window. Found by Ryonnen (reddit) and shown by NeverSink. The app finds the file, says whether it's on, copies
 the line to search for and opens the folder; you change it yourself (the game rewrites the file when it closes, so it
-must be closed). Reads that one line only; never writes the game's files, and never opens anything else in that
-folder (the game keeps your login there too)."""
+must be closed). Reads that one line only, and never opens anything else in that folder (the game keeps your login
+there too).
+
+2.130.4 (feedback: a "Turn it on" button - "ONLY if we can safely and accurately adjust that line from =false to
+=true without messing with anything else"): turn_on() changes that one line and nothing else - every other byte of
+the file stays as it was (checked before the file is replaced), a copy is kept in the app's data folder first, and
+the new file replaces the old in one step. Only when you press the button, only while the game is closed."""
 import os
 import sys
 
@@ -71,3 +76,41 @@ def state(path=None):
     except OSError:
         return "nofile", path
     return ("on" if v else "off" if v is False else "missing"), path
+
+
+def turn_on(path, backup_dir):
+    """-> (True, note) or (False, why). Changes apply_item_filter_to_ritual=false to =true - that line only."""
+    import re
+    import shutil
+    try:
+        with open(path, "rb") as f:
+            raw = f.read()
+    except OSError:
+        return False, "The game's settings file isn't there - start the game once, close it, try again."
+    pat = re.compile(rb"(?im)^([ \t]*" + KEY.encode() + rb"[ \t]*=[ \t]*)(false)([ \t]*)(?=\r?$)")
+    hits = list(pat.finditer(raw))
+    if not hits:
+        st, _p = state(path)
+        if st == "on":
+            return True, "It's already on."
+        return False, "The line isn't in your file - start the game once, close it, try again."
+    if len(hits) > 1:
+        return False, "The line is in the file more than once - change it by hand (Open folder)."
+    m = hits[0]
+    new = raw[:m.start(2)] + b"true" + raw[m.end(2):]
+    a, b = raw.split(b"\n"), new.split(b"\n")              # every line but that one is byte for byte the same
+    diff = [i for i, (x, y) in enumerate(zip(a, b)) if x != y]
+    if len(a) != len(b) or len(diff) != 1 or KEY.encode() not in b[diff[0]].lower():
+        return False, "Couldn't change it safely - change it by hand (Open folder)."
+    try:
+        os.makedirs(backup_dir, exist_ok=True)
+        shutil.copy2(path, os.path.join(backup_dir, FILE + ".backup"))
+        tmp = path + ".soe2tmp"
+        with open(tmp, "wb") as f:
+            f.write(new)
+        os.replace(tmp, path)
+    except OSError as e:
+        return False, f"Couldn't save the file ({e.__class__.__name__}) - nothing was changed."
+    if state(path)[0] != "on":
+        return False, "It didn't take - change it by hand (Open folder)."
+    return True, "Done - it's on."

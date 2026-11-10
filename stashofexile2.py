@@ -25,7 +25,10 @@ VERSION HISTORY
        - Remnant gems (feedback: "trade site rate limited us on fetching prices"): GEM_BUDGET 3 searches per 5 min,
          prices kept 6 h on disk (remnant_gems.json), the book re-read after each.
        - RUNE_TIERS: C and D alphabetical (feedback).
-       - Filter in the Ritual window (feedback: "bad UI+UX"): a plain button with ✓ On / ✗ Off beside it.
+       - Filter in the Ritual window (feedback: "bad UI+UX"): a plain button with ✓ On / ✗ Off beside it. Turn it
+         on (feedback: "ONLY if we can safely and accurately adjust that line"): ritual_filter.turn_on changes that
+         one line (every other byte checked the same), copy in backups/ first, one-step replace; the dialog waits for
+         the game window to close and the file to be quiet 4 s, then says to start the game again.
   2.130.3
        - Game log (feedback: a player who installs games elsewhere got no map counts or helpers - Client.txt wasn't
          found): gamelog.find_log also looks where Windows' installed-programs list says Path of Exile 2 is
