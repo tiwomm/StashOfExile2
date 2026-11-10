@@ -50,6 +50,7 @@ NOTES = {
             ("Overlay", "Place › Top: the Ritual line sits under the Bar, so it stays on screen."),
             ("Overlay", "Place › Bottom: the Bar sits right on the XP bar (a little lower than before)."),
             ("Ritual", "The tribute reminder should no longer come after you've offered it (the plate's 0 is read as 0)."),
+            ("Price Checks", "A gem's Sockets option searches its gem sockets, not augmentable sockets."),
         ],
     },
     "2.130.0": {
