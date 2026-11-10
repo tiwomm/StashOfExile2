@@ -1,6 +1,8 @@
-"""Builds soe2/ritual_glyphs.json: reference shapes of the digits 0 - 4 for the Ritual counter reader.
+"""Builds soe2/ritual_glyphs.json: reference shapes of the digits 0 - 9 for the Ritual counter reader.
 
     py tools/build_ritual_glyphs.py [screenshot.png ...]
+    py tools/build_ritual_glyphs.py --add 5-9 [screenshot.png ...]   (2.130.0: keep what's there, add these digits'
+                                                                       font shapes and the screenshots' glyphs)
 
 Shapes come from common sans-serif fonts (the counter uses a plain sans) at many sizes, plus the real glyphs cut out
 of in-game screenshots given on the command line - full 2560x1440 screenshots or small cut-outs around the counter,
@@ -35,12 +37,13 @@ def glyph(img, thr=150):
     return m[ys.min():ys.max() + 1, xs.min():xs.max() + 1]
 
 
-def main(shots):
-    out = []
+def main(shots, digits=range(10), keep=False):
+    dest = os.path.join(os.path.dirname(R.__file__), "ritual_glyphs.json")
+    out = json.load(open(dest))["glyphs"] if keep else []
     for f in font_paths():
         for size in range(13, 42, 3):
             ft = ImageFont.truetype(f, size)
-            for d in range(5):
+            for d in digits:
                 im = Image.new("L", (size * 2, size * 2), 0)
                 ImageDraw.Draw(im).text((size // 3, size // 4), str(d), fill=235, font=ft)
                 g = glyph(im)
@@ -82,11 +85,15 @@ def main(shots):
             v, a = R.glyph_vector(mask[:, a0:a1 + 1])
             for _ in range(3):
                 out.append([digit, [round(x, 3) for x in v.flatten()], round(a, 3)])
-    dest = os.path.join(os.path.dirname(R.__file__), "ritual_glyphs.json")
     with open(dest, "w") as f:
         json.dump({"grid": list(R.GRID), "glyphs": out}, f, separators=(",", ":"))
     print(len(out), "shapes ->", dest)
 
 
 if __name__ == "__main__":
-    main(sys.argv[1:])
+    a = sys.argv[1:]
+    if a[:1] == ["--add"]:
+        lo, hi = (int(x) for x in a[1].split("-"))
+        main(a[2:], range(lo, hi + 1), keep=True)
+    else:
+        main(a)

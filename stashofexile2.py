@@ -36,6 +36,9 @@ VERSION HISTORY
          isn't a close while most cells last seen holding items still do (still_open); otherwise the reminder waits
          until the window has been gone 4 s (REMIND). Six omens learned on the user's windows ship
          (templates/favours_learned.json, item pictures only).
+       - Ritual counter (feedback: "ritual isn't accounting for anything above 4 rituals, you can get up to 7"; a
+         3/6 screenshot): digits 5 - 9 added to ritual_glyphs.json (fonts + the user's 3/6, build_ritual_glyphs.py
+         --add), totals 3 - 8 accepted (TOTAL_MAX).
        - alertcard.py (the calm alert card) is in, not wired yet.
   2.129.4
        Feedback ("ritual thing says 0/3 rituals done but I've done 2/3"; its log: the counter was seen at 0/3, then

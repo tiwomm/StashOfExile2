@@ -11,8 +11,8 @@ never slows the app, and talks to the app over its stdin / stdout:
                    or a message line.
 How the counter is read: find the icon by template matching (soe2/templates/ritual_icon.png, scaled to the game's
 height), take the black box right of it, keep the bright text pixels and cut them into glyphs at the empty columns;
-the middle one is "/", and each digit (0 - 4) is recognized from its shape (holes, width, which edges are filled).
-A reading counts only when it's seen twice in a row and makes sense (total 3 or 4, done <= total).
+the middle one is "/", and each digit (0 - 9) is recognized from its shape (holes, width, which edges are filled).
+A reading counts only when it's seen twice in a row and makes sense (total 3 - 8, done <= total).
 
 ToS (TOS.md): this only LOOKS at the screen (a capture, like a screenshot) and SHOWS something; it never presses,
 clicks, types or sends anything to the game, and never reads the game's memory or traffic."""
@@ -26,6 +26,7 @@ from . import buglog
 BASE_H = 1440                    # the templates and offsets are measured on a 2560x1440 game
 # where to look for the icon, from the bottom center of the game (1440p pixels): x from, x to, up from bottom (from, to)
 SEARCH = (240, 620, 170, 0)
+TOTAL_MAX = 8                     # 2.130.0: a map can hold more rituals than 4 (3/6 seen; "up to 7")
 TEXT_BOX = (50, 120, 6, 44)      # the counter's box, relative to the icon's top-left: x from, x to, y from, y to
 ICON_MIN = 0.62                  # template-match score that counts as "the icon is there"
 POLL = 0.5
@@ -71,7 +72,7 @@ def glyph_vector(g):
 
 
 def references():
-    """[(digit, grid, aspect)]: shapes of 0 - 4 from the game itself (ritual_glyphs.json, shipped) plus any the app
+    """[(digit, grid, aspect)]: shapes of 0 - 9 from the game itself (ritual_glyphs.json, shipped) plus any the app
     learned on this PC (data folder / ritual / learned.json)."""
     import json
     import numpy as np
@@ -93,7 +94,7 @@ def references():
 
 
 def classify_digit(g):
-    """A binary glyph (rows x cols, True = ink) -> 0..4, or None: the nearest reference shape."""
+    """A binary glyph (rows x cols, True = ink) -> 0..9, or None: the nearest reference shape."""
     import numpy as np
     if g.sum() < 6 or g.shape[0] < 6:
         return None
@@ -144,7 +145,7 @@ def read_text(gray):
         done, total = classify_digit(a), classify_digit(b)
         if done is None or total is None:
             continue
-        if total in (3, 4) and 0 <= done <= total:
+        if 3 <= total <= TOTAL_MAX and 0 <= done <= total:   # 2.130.0 (feedback: "you can get up to 7")
             return done, total
     return None
 
