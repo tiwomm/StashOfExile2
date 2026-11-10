@@ -29,8 +29,9 @@ def documents():
                 ctypes.windll.ole32.CoTaskMemFree(p)
                 if out:
                     return out
-        except Exception:
-            pass
+        except Exception:                                  # (the usual place below)
+            from . import buglog
+            buglog.caught()
     return os.path.join(os.path.expanduser("~"), "Documents")
 
 
