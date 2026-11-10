@@ -4,7 +4,7 @@
 
 > **Who we build for - read second.** Path of Exile players are utilitarian: they love data and information, problem solving and creative thinking. So every feature shows its numbers *and how they were worked out*, lets you sort, filter, compare and export them (CSV), keeps power-user depth (keys, versions, raw data) one click away instead of hiding it, explains in plain words, and leaves the decision to the player. Pretty is welcome; vague is not.
 
-**Current version: 2.129.4**
+**Current version: 2.130.0**
 
 Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds features, 2.10.1 only fixes. Each step below is one release; we work through them top to bottom.
 
@@ -260,11 +260,7 @@ Order (decided 2026-11-05): the page passes, then the Privacy & data hub, then t
 | 2.129.2 | Trade whispers is on or off (its After the campaign option is gone - its switch couldn't turn it on); Remnant prices fetched before a book opens (the first read waited 14 s). |
 | 2.129.3 | Favours: same-shape omens told apart by color, Sacred Bloom and idols ship, a copy in the window teaches a reward (idols), ★ Rite of Passage, tags cleared on a reroll; tribute read from the last look; Map Content's ticked Ritual icon = all done; Overlay + Here leaves the app alone; pages follow to another monitor. |
 | 2.129.4 | In a map with Ritual still to do, the bar is left out of captures so the watcher can read the counter under the Ritual line. |
-| Next full release | **AGPL-3.0** (branch v2.130.0, ready): the license moves from GPL-3.0 to AGPL-3.0 - anything made from the code stays open source, a version run as an online service too. Releases up to 2.129.0 stay GPL-3.0. |
-| Next full release | **AGPL-3.0** (branch v2.130.0, ready): the license moves from GPL-3.0 to AGPL-3.0 - anything made from the code stays open source, a version run as an online service too. Releases up to 2.129.2 stay GPL-3.0. |
-| Next full release | **AGPL-3.0** (branch v2.130.0, ready): the license moves from GPL-3.0 to AGPL-3.0 - anything made from the code stays open source, a version run as an online service too. Releases up to 2.129.3 stay GPL-3.0. |
-| Next full release | **Filter in the Ritual window** (branch v2.130.0): Helpers › Ritual links a short guide to the game's hidden apply_item_filter_to_ritual setting - on or off, Open folder, Copy line (NeverSink, Ryonnen). |
-| Next full release | **New league heads-up** (branch v2.130.0, ready): one message the first time the app opens on or after December 11, 2026 (until January 10, 2027) - some features may not work at first; API, item and data changes get fixed over time. |
+| 2.130.0 | AGPL-3.0 (up to 2.129.4 GPL-3.0); new league heads-up; Filter in the Ritual window guide (NeverSink, Ryonnen); Game Overlay Place + Reset position; gems priced (price check key, remnant books); remnant "Could be" uniques and long books read to the end; tribute reminder not while Favours is open; learned omens ship. |
 | Later | **Tribute counter under the Bar** (shelved, circle back soon): the game's tribute counter sits under the overlay's Bar in Ritual maps. Not by moving the Bar (no). |
 | 2.128.0+ | Favours prices for bigger rewards (uniques: their art by size, priced on poe.ninja's unique lists). |
 | 2.126.0+ | **UX pass round 2** (all 21 approved): paste to price, price spread, Rate ▾ on hover, card closes when the mouse leaves (hold Ctrl), Ctrl+K go to anything (Ctrl+F = this page's search), F1 keys sheet, get-started steps, Exchange Rates search/sort/pin/trend, rank on the Map Library row, one Money Makers filter bar, buttons off until a pick, one Bulk Pricing toolbar row, never color alone, Edit layout mode, hold Alt through Click-through, ↺ Defaults per section, search top left, tips on icon buttons. |

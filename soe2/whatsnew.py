@@ -44,6 +44,30 @@ BETA_AREAS = ("Wealth", "Money Makers", "Game Search", "Market Insights", "Craft
               "Desecration Helper")
 
 NOTES = {
+    "2.130.0": {
+        "big": [
+            ("💎", "Gems priced", "Your price check key on a skill, support or spirit gem searches the trade site with "
+             "its level, sockets, quality and corruption. Gems in a remnant's book get prices too.", None,
+             "Price Checks"),
+            ("📍", "Place the Game Overlay", "Quick settings › Place: the Bar at the bottom or top, the Panel left or "
+             "right. Overlay › Settings › Options › Reset position puts it back.", None, "Overlay"),
+            ("🕯", "Your loot filter in the Ritual window", "Overlay › Settings › Helpers › Ritual › Filter in the "
+             "Ritual window… shows how to turn on the game's hidden setting (thanks to NeverSink and Ryonnen).",
+             None, "Overlay"),
+        ],
+        "small": [
+            ("Ritual", "The tribute reminder should no longer show while Favours is still open (a reward's tooltip "
+             "over its title)."),
+            ("Ritual", "More Favours rewards are known from the start: omens learned on real windows ship with the "
+             "app."),
+            ("Expedition", "\"Unique Ring\", \"Belt\", \"Amulet\" or \"Jewellery\" in a remnant's book show the "  # game text
+             "best uniques it could be; gems say \"Fetching price…\" while they're looked up."),
+            ("Expedition", "A long remnant book's last lines should get their prices too."),
+            ("App", "The license is now AGPL-3.0: anything made from the code stays open source, online services "
+             "too. Versions up to 2.129.4 stay GPL-3.0."),
+            ("App", "When a new league starts, a one-time note says some features may need a few days to catch up."),
+        ],
+    },
     "2.129.4": {
         "big": [],
         "small": [

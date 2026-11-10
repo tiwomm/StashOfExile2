@@ -332,7 +332,7 @@ class RemnantPage:
         uniques of this kind (ring, belt, amulet ...) worth the most on poe.ninja right now - names only, best first."""
         from . import gamedata
         from .wealth import NINJA_ITEM_TYPES, WPRICES
-        kinds = self.POOL_KINDS.get(kind, (kind,))        # ("Unique Jewellery": rings and amulets)
+        kinds = self.POOL_KINDS.get(kind, (kind,))        # ("Unique Jewellery": rings and amulets)  # game text
         best = {}
         for typ in NINJA_ITEM_TYPES:
             for name, base, v, count, corrupted in (WPRICES.parts.get(typ) or {}).get("lines", []):
