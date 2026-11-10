@@ -586,7 +586,7 @@ class AlertsPage:
         P2 = C["panel2"]
         dlg = tk.Toplevel(self.root)
         dlg.title("Filter in the Ritual window")
-        dlg.configure(bg=P2, padx=18, pady=14)
+        dlg.configure(bg=P2, padx=16, pady=16)
         dlg.transient(self.dlg_parent())
         dlg.resizable(False, False)
         self.rf_dlg = dlg
@@ -595,12 +595,12 @@ class AlertsPage:
         tk.Label(top, text="Make your item filter hide junk in the Ritual altar's Favours window.", bg=P2,
                  fg=C["text"], font=("Segoe UI", 10), anchor="w").pack(side="left")
         tip = tk.Label(top, text="ⓘ", bg=P2, fg=C["muted"], font=("Segoe UI", 10), cursor="question_arrow")
-        tip.pack(side="left", padx=(6, 0))
+        tip.pack(side="left", padx=(8, 0))
         Tooltip(tip, f"A game setting with no switch in its menus: {RF.KEY} in {RF.FILE}. {RF.CREDIT}. The app only "
                      "reads that line - you change it yourself.")
         status = tk.Label(dlg, text="", bg=P2, fg=C["muted"], font=("Segoe UI", 10, "bold"), anchor="w",
                           justify="left", wraplength=460)
-        status.pack(fill="x", pady=(10, 2))
+        status.pack(fill="x", pady=(8, 2))
         where = tk.Label(dlg, text="", bg=P2, fg=C["muted"], font=("Segoe UI", 9), anchor="w", justify="left",
                          wraplength=460)
         where.pack(fill="x")
@@ -610,7 +610,7 @@ class AlertsPage:
                  "4.  Change false to true, then save.",
                  "5.  Start the game and open a Ritual altar's Favours window.")
         box = tk.Frame(dlg, bg=P2)
-        box.pack(fill="x", pady=(10, 4))
+        box.pack(fill="x", pady=(8, 4))
         for s_ in steps:
             tk.Label(box, text=s_, bg=P2, fg=C["text"], font=("Segoe UI", 10), anchor="w").pack(fill="x", pady=1)
         said = tk.Label(dlg, text="", bg=P2, fg=C["muted"], font=("Segoe UI", 9), anchor="w")
