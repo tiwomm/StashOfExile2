@@ -13,6 +13,7 @@ Remnant (2.37.0): the Expedition Remnant Price Checker (remnant.py / remnant_pag
 
 Delirium: the helper (utilities.DELIRIUM, delirium_runner.py) looks at your screen; its END DELIRIUM banner is its own.
 This panel only starts / stops it, sets its sound and tests it. Its splinter icon is gone (2.10.0)."""
+import os
 import sys
 import time
 import tkinter as tk
@@ -379,6 +380,14 @@ class AlertsPage:
         self.al_rows["breach"]["sound"].set(bool(self.breach_cfg().get("sound", True)))
         self.al_rows["ritual"]["on"].set(bool(self.ritual_cfg().get("on")))
         self.al_rows["ritual"]["sound"].set(bool(self.ritual_cfg().get("sound", True)))
+        # 2.130.0 (feedback): the game's hidden setting that applies your item filter to the Favours window
+        fl = tk.Label(self.al_rows["ritual"]["row"], text="Filter in the Ritual window…", bg=P2, fg=C["accent"],
+                      font=sm, cursor="hand2", anchor="w")
+        fl.pack(anchor="w")
+        fl.bind("<Button-1>", lambda _e: self.ritual_filter_open())
+        Tooltip(fl, "Make your item filter work in the Ritual altar's Favours window (a game setting with no switch "
+                    "in its menus) - the app shows where and what to change.")
+        self.al_rfilter_link = fl
         self.al_rows["remnant"]["on"].set(bool(self.remnant_cfg().get("on")))          # 2.37.0
         self.al_rows["desecrate"]["on"].set(bool(self.ws_cfg().get("on")))            # 2.81.0
         from . import campaign as _CP, focus as _F
@@ -562,6 +571,103 @@ class AlertsPage:
     def alerts_tribute_changed(self):
         self.ritual_cfg()["tribute_reminder"] = bool(self.al_rtrib.get())
         save_json("settings.json", SETTINGS)
+
+    def ritual_filter_open(self):
+        """2.130.0 Filter in the Ritual window: where the game's setting is, whether it's on, and how to turn it on
+        (one line to change; the app never writes the game's files)."""
+        from . import ritual_filter as RF
+        old = getattr(self, "rf_dlg", None)
+        if old is not None:
+            try:
+                if old.winfo_exists():
+                    old.destroy()
+            except tk.TclError:
+                pass
+        P2 = C["panel2"]
+        dlg = tk.Toplevel(self.root)
+        dlg.title("Filter in the Ritual window")
+        dlg.configure(bg=P2, padx=18, pady=14)
+        dlg.transient(self.dlg_parent())
+        dlg.resizable(False, False)
+        self.rf_dlg = dlg
+        top = tk.Frame(dlg, bg=P2)
+        top.pack(fill="x")
+        tk.Label(top, text="Make your item filter hide junk in the Ritual altar's Favours window.", bg=P2,
+                 fg=C["text"], font=("Segoe UI", 10), anchor="w").pack(side="left")
+        tip = tk.Label(top, text="ⓘ", bg=P2, fg=C["muted"], font=("Segoe UI", 10), cursor="question_arrow")
+        tip.pack(side="left", padx=(6, 0))
+        Tooltip(tip, f"A game setting with no switch in its menus: {RF.KEY} in {RF.FILE}. {RF.CREDIT}. The app only "
+                     "reads that line - you change it yourself.")
+        status = tk.Label(dlg, text="", bg=P2, fg=C["muted"], font=("Segoe UI", 10, "bold"), anchor="w",
+                          justify="left", wraplength=460)
+        status.pack(fill="x", pady=(10, 2))
+        where = tk.Label(dlg, text="", bg=P2, fg=C["muted"], font=("Segoe UI", 9), anchor="w", justify="left",
+                         wraplength=460)
+        where.pack(fill="x")
+        steps = ("1.  Close the game (it rewrites this file when it closes).",
+                 f"2.  Open folder (where your item filters are), then open {RF.FILE} in Notepad.",
+                 "3.  Press Ctrl+F and paste (Copy line puts it on your clipboard).",
+                 "4.  Change false to true, then save.",
+                 "5.  Start the game and open a Ritual altar's Favours window.")
+        box = tk.Frame(dlg, bg=P2)
+        box.pack(fill="x", pady=(10, 4))
+        for s_ in steps:
+            tk.Label(box, text=s_, bg=P2, fg=C["text"], font=("Segoe UI", 10), anchor="w").pack(fill="x", pady=1)
+        said = tk.Label(dlg, text="", bg=P2, fg=C["muted"], font=("Segoe UI", 9), anchor="w")
+        said.pack(fill="x", pady=(4, 0))
+
+        def check():
+            st, path = RF.state()
+            text, col = {"on": ("✓ On - your filter applies in the Favours window.", C.get("good", C["text"])),
+                         "off": ("✗ Off - follow the steps below.", C.get("warn", C["text"])),
+                         "missing": ("? The line isn't in your file - start the game once, close it, check again.",
+                                     C["muted"]),
+                         "nofile": ("? The file isn't there yet - start the game once, close it, check again.",
+                                    C["muted"])}[st]
+            status.config(text=text, fg=col)
+            where.config(text=RF.shown(path))          # (no Windows user name on screen)
+            return st, path
+
+        def open_folder():
+            _st, path = RF.state()
+            try:
+                if sys.platform == "win32":
+                    import subprocess
+                    if os.path.isfile(path):
+                        subprocess.Popen(["explorer", "/select,", path])
+                    else:
+                        os.startfile(os.path.dirname(path) if os.path.isdir(os.path.dirname(path))
+                                     else RF.documents())
+                    said.config(text="Opened the folder.")
+                else:
+                    said.config(text="Opening folders works on Windows.")
+            except Exception:
+                buglog.caught()
+                said.config(text="Couldn't open the folder - it's shown above.")
+
+        def copy_line():
+            try:
+                self.root.clipboard_clear()
+                self.root.clipboard_append(f"{RF.KEY}=false")
+                self.own_clip = f"{RF.KEY}=false"
+                said.config(text=f"Copied: {RF.KEY}=false - paste it into Ctrl+F.")
+            except tk.TclError:
+                said.config(text="Couldn't copy - type it: " + RF.KEY)
+        btns = tk.Frame(dlg, bg=P2)
+        btns.pack(fill="x", pady=(12, 0))
+        ttk.Button(btns, text="Open folder", style="Primary.TButton", command=open_folder).pack(side="left")
+        ttk.Button(btns, text="Copy line", command=copy_line).pack(side="left", padx=(8, 0))
+        ttk.Button(btns, text="Check again", command=check).pack(side="left", padx=(8, 0))
+        ttk.Button(btns, text="Close", command=dlg.destroy).pack(side="right")
+        dlg.bind("<Escape>", lambda _e: dlg.destroy())
+        check()
+        try:
+            from .style import center_over
+            center_over(dlg, self.dlg_parent())
+        except Exception:
+            buglog.caught()
+        dlg.rf_check, dlg.rf_open, dlg.rf_copy, dlg.rf_said, dlg.rf_status = check, open_folder, copy_line, said, status
+        return dlg
 
     def alerts_ritual_leave_changed(self):
         self.ritual_cfg()["leave_reminder"] = bool(self.al_rleave.get())
