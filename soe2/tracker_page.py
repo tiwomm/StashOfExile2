@@ -1223,9 +1223,8 @@ class TrackerPage:
             lab.config(text=texts.get(k, ""))
         self.play_refresh()                                   # 2.74.3: ⏸ / ▶ follows the timer
         if getattr(self, "tk_ov_clock", None) is not None:
-            from .shell import clock_text
-            try:
-                self.tk_ov_clock.config(text=clock_text())          # time, and the date under it
+            try:                                                    # time, and the date under it (2.131.0: + Latency)
+                self.tk_ov_clock.config(text=self.ov_clock_line())
             except tk.TclError:
                 pass
 

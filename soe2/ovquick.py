@@ -14,7 +14,7 @@ from .style import Tooltip
 # (label, key): the helpers switched on / off, then the tools' menus on the bar
 QUICK_HELPERS = (("Breach", "breach"), ("Delirium", "delirium"), ("Ritual", "ritual"), ("Expedition", "remnant"),
                  ("Campaign", "campaign"), ("League Plan", "focus"), ("Whispers", "whispers"))
-QUICK_BAR = (("Notes", "notes"), ("Calc", "calc"), ("Regex", "regex"), ("Rates", "rates"))
+QUICK_BAR = (("Notes", "notes"), ("Calc", "calc"), ("Regex", "regex"), ("Rates", "rates"), ("Latency", "latency"))
 # 2.124.0 (feedback: each toggle should say what it is on hover): the one-line tips (the helpers' come from
 # alerts_page.HELPER_BLURBS - the same line as on Helpers)
 QUICK_TIPS = {"Style": "How the overlay looks over the game",
@@ -28,7 +28,8 @@ QUICK_TIPS = {"Style": "How the overlay looks over the game",
               "notes": "Notes ▾ on the bar: your own notes in a window over the game",
               "calc": "Calc ▾ on the bar: a small calculator over the game",
               "regex": "Regex ▾ on the bar: your saved stash searches, one click to copy",
-              "rates": "Rates ▾ on the bar: today's currency exchange rates"}
+              "rates": "Rates ▾ on the bar: today's currency exchange rates",
+              "latency": "Latency on the bar, by the clock: the game's connect time to each area's server (hover it)"}
 
 
 class OverlayQuick:
@@ -73,6 +74,9 @@ class OverlayQuick:
             return self.calc_on_bar()
         if key == "rates":
             return bool(self.ovr_cfg()["on"])
+        if key == "latency":
+            from . import latency as _LAT
+            return _LAT.on()
         if key in [k for _l, k in QUICK_HELPERS]:
             return self.alert_states().get(key, "off") != "off"
         return bool(b.get(key, True))
@@ -86,6 +90,8 @@ class OverlayQuick:
                 self.log_error(f"switching {key} from Quick settings")
             return None
         b = self.bar_cfg()
+        if key == "latency":                                       # 2.131.0: Latency (only here)
+            return self.latency_set(on)
         if key == "rates":
             self.ovr_switch(on)
         elif key == "notes":
@@ -110,6 +116,18 @@ class OverlayQuick:
         v = (getattr(self, "tk_bar_vars", None) or {}).get(key)
         if v is not None and bool(v.get()) != on:
             v.set(on)
+        self.merged_build()
+
+    def latency_set(self, on):
+        """2.131.0: Latency on the bar on / off (the log is followed for the game's connect times)."""
+        from . import latency as _LAT
+        _LAT.cfg()["on"] = bool(on)
+        save_json("settings.json", SETTINGS)
+        if on and getattr(self, "br_reader", None) is None:
+            try:
+                self.breach_start()
+            except Exception:
+                buglog.caught()
         self.merged_build()
 
     # ---------------------------------------------------------------- the box

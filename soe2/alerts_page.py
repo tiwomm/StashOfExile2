@@ -20,6 +20,7 @@ import tkinter as tk
 from tkinter import ttk
 
 from . import buglog
+from . import latency as _LAT
 from .config import P, save_json, SETTINGS
 from .gamelog import area_kind as gl_area_kind, find_log, LogReader
 from .style import C, Tooltip
@@ -200,7 +201,8 @@ class AlertsPage:
         from . import whispers as _W
         return bool(self.breach_cfg().get("on") or self.ritual_cfg().get("on") or self.ws_cfg().get("on")
                     or self.remnant_cfg().get("on") or _W.cfg()["on"]
-                    or (hasattr(self, "fl_counting") and self.fl_counting()))     # 2.45.0: the Strat Tracker's runs
+                    or (hasattr(self, "fl_counting") and self.fl_counting())      # 2.45.0: the Strat Tracker's runs
+                    or _LAT.on())                                                  # 2.131.0: Latency
 
     def alerts_init(self):
         """At start-up (start_utilities): the Breach watcher runs whether or not the tracker window was opened."""
@@ -1028,6 +1030,9 @@ class AlertsPage:
             tail = self.br_reader.start()             # only what the game writes from now on
             self.br_note = ""
             last = next((d for k, _t, d in reversed(tail or []) if k == "area"), None)
+            for k, _t, d in (tail or [])[-200:]:
+                if k == "connect_ms":
+                    _LAT.add(d.get("ms"))                 # 2.131.0 Latency: the last areas' connect times
             if last is not None:                      # 2.104.1 (feedback: Island Rumors never showed): started in
                 try:                                  # your hideout, the helpers knew only after the next area
                     self.expedition_area(last.get("area"), gl_area_kind(
@@ -1073,6 +1078,8 @@ class AlertsPage:
                             self.breach_dismiss()
                         elif kind == "login":
                             self.br_relog = True             # 2.130.2: the character screen (any character)
+                        elif kind == "connect_ms":
+                            _LAT.add(data.get("ms"))         # 2.131.0: Latency
                         elif kind == "scene":
                             try:
                                 self.ws_scene(data.get("name"))      # 2.125.7: the Well by its name too

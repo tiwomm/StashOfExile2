@@ -18,6 +18,7 @@ import sys
 import tkinter as tk
 from tkinter import font as tkfont
 
+from . import latency as _LAT
 from .overlaywin import CanvasText, OverlayWindow, _P
 
 from .ovskins import NAMES as _ORN_NAMES, ORNATE, palette as _ornate_palette
@@ -325,9 +326,35 @@ class LightOverlay:
         return f.measure("⚙") + f.measure("🔓") + 2 * self._u(6)
 
     def _lt_clock(self, cv, P, x, y, anchor="e"):
-        t = self._lt_text(cv, P, x, y, "", 9, P["muted"], anchor=anchor)
+        t = self._lt_text(cv, P, x, y, "", 9, P["muted"], anchor=anchor, tags=("mg_clock",))
         self.tk_ov_clock = _LtClock(t)
-        return self._lt_fm(cv, P, 9).measure("00:00 PM")
+        self.ov_latency_tip(cv)
+        return self._lt_fm(cv, P, 9).measure(self.ov_clock_sample())
+
+    # ---- 2.131.0 Latency: on the bar beside the clock (Quick settings › On the bar › Latency)
+    def ov_clock_on(self, want, cfg):
+        return bool(want["timer"] and (cfg.get("clock", True) or _LAT.on()))
+
+    def ov_clock_sample(self):
+        """The widest the clock spot gets - for the room kept on the bar."""
+        parts = (["00:00 PM"] if self.tracker_cfg().get("clock", True) else []) + (["000 ms"] if _LAT.on() else [])
+        return " · ".join(parts) or "00:00 PM"
+
+    def ov_clock_line(self):
+        """The clock spot's text: the time (and its date line), with the latency after the time."""
+        from .shell import clock_text
+        clock = clock_text() if self.tracker_cfg().get("clock", True) else ""
+        if not _LAT.on():
+            return clock
+        if not clock:
+            return _LAT.text()
+        first, _nl, rest = clock.partition("\n")
+        return f"{first} · {_LAT.text()}" + (f"\n{rest}" if rest else "")
+
+    def ov_latency_tip(self, cv):
+        if _LAT.on():
+            from .style import TagTip
+            TagTip(cv, "mg_clock", _LAT.how_text)
 
     def _lt_menus(self, w, cv, P, x, y, anchor="e", right=None, step=0):
         """Notes ▾ / Calc ▾ / Regex ▾ / Vendor ▾ (MergedOverlay draws them). -> the far edge."""
@@ -465,7 +492,7 @@ class LightOverlay:
         fm = self._lt_fm(cv, P, 10)
         pad, sw = u(10), u(20)                              # (sw: a separator's slot)
         menus_w = self._lt_menus_w(cv, P) if self.bar_buttons_on() else 0
-        clock = want["timer"] and cfg.get("clock", True)
+        clock = self.ov_clock_on(want, cfg)
         widths = {"maps": fm.measure("Maps 000") + u(4), "avg": fm.measure("Avg 00:00") + u(4)}
         fixed = [k for k in ("maps", "avg") if ln.get(k)] if want["timer"] else []
 
@@ -582,8 +609,8 @@ class LightOverlay:
         y = u(4)
         rows_w = []
         gw = self._lt_glyphs_w(cv, P)
-        clock = want["timer"] and cfg.get("clock", True)
-        foot_w = gw + (self._lt_fm(cv, P, 9).measure("00:00 PM") + u(10) if clock else 0)
+        clock = self.ov_clock_on(want, cfg)
+        foot_w = gw + (self._lt_fm(cv, P, 9).measure(self.ov_clock_sample()) + u(10) if clock else 0)
         menus_w = self._lt_menus_w(cv, P) if self.bar_buttons_on() else 0
         rows_w += [foot_w + (menus_w + u(6) if menus_w and foot_w + menus_w < u(320) else 0), rl]
         W = max(rows_w) + 2 * pad
@@ -633,7 +660,7 @@ class LightOverlay:
             mw = self._lt_menus_w(cv, P)
             self._lt_menus(w, cv, P, x + mw, mid)
             x += mw + u(6)
-        if want["timer"] and cfg.get("clock", True):
+        if self.ov_clock_on(want, cfg):
             x = sep(x)
             x += self._lt_clock(cv, P, x, mid, anchor="w") + u(8)
         x = sep(x)
@@ -682,7 +709,7 @@ class LightOverlay:
         y += u(4)
         fy = y + u(8)
         x = self._lt_glyphs(w, cv, P, R, fy)
-        if want["timer"] and cfg.get("clock", True):
+        if self.ov_clock_on(want, cfg):
             x -= self._lt_clock(cv, P, x, fy) + u(10)
         if self.bar_buttons_on():
             fy += u(18)
@@ -704,7 +731,7 @@ class LightOverlay:
         hh = u(24)
         self._lt_text(cv, P, pad, hh // 2, "SESSION" if want["timer"] else "MECHANICS", 8, P["accent"], bold=True)
         x = self._lt_glyphs(w, cv, P, R, hh // 2)
-        if want["timer"] and cfg.get("clock", True):
+        if self.ov_clock_on(want, cfg):
             self._lt_clock(cv, P, x, hh // 2)
         cv.create_line(0, hh, PW, hh, fill=P["line"], tags=("mg",))
         y = hh + u(6)
@@ -782,7 +809,7 @@ class LightOverlay:
         y += u(6)
         fy = y + u(9)
         x = self._lt_glyphs(w, cv, P, R, fy)
-        if want["timer"] and cfg.get("clock", True):
+        if self.ov_clock_on(want, cfg):
             self._lt_clock(cv, P, x - u(4), fy)
         if self.bar_buttons_on():
             fy += u(18)
@@ -815,8 +842,8 @@ class LightOverlay:
             self.tk_ov_cv = cv
         gw = self._lt_glyphs_w(cv, P)
         mw = self._lt_menus_w(cv, P) if self.bar_buttons_on() else 0
-        clock = want["timer"] and cfg.get("clock", True)
-        cw = self._lt_fm(cv, P, 9).measure("00:00 PM") + u(8) if clock else 0
+        clock = self.ov_clock_on(want, cfg)
+        cw = self._lt_fm(cv, P, 9).measure(self.ov_clock_sample()) + u(8) if clock else 0
         row_w.append(pad + mw + cw + gw)
         W = max(row_w) + pad
         fy = y + u(6)
