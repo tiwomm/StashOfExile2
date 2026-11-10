@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU AGPL v3.0 (see LICENSE; up to 2.129.4: GNU GPL v3.0). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.130.0
+VERSION 2.130.1
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,6 +19,13 @@ VERSION 2.130.0
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.130.1
+       Feedback: "overlay at top caused the ritual portion of the bar style to be beyond the edge of the monitor";
+       "bottom alignment mode is a few px above the xp bar"; the tribute reminder came "after I already dumped my
+       tribute" (the plate said "0 Tribute"):
+       - goalbar_build: with the Bar placed at the top, the lines pack under it and the window grows down (_gb_below).
+       - HUD_SPOTS bottom 0.0205 -> 0.0153 (the XP bar's top, 22 px up at 1440p).
+       - favours.tribute_of: a lone O / "Tribute" with no number reads 0 - an old number never brings the reminder.
   2.130.0
        - License: GNU AGPL v3.0 (LICENSE, README, THIRD_PARTY_NOTICES, About); up to 2.129.4 GNU GPL v3.0.
        - New league heads-up (app.LEAGUE_NOTICE): one message on the first start from December 11, 2026.
@@ -3376,7 +3383,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.130.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.130.1"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
