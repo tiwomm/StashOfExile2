@@ -1,6 +1,6 @@
 """
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
-Free software under the GNU AGPL v3.0 (see LICENSE; up to 2.129.0: GNU GPL v3.0). Written by an AI (Claude, by Anthropic) under a human's direction.
+Free software under the GNU AGPL v3.0 (see LICENSE; up to 2.129.2: GNU GPL v3.0). Written by an AI (Claude, by Anthropic) under a human's direction.
 
 VERSION 2.129.4
   How versions are numbered (from 2.0.0 on):
