@@ -587,6 +587,12 @@ class PriceCheckPage:
     def pc_take(self, text):
         """An item for Price Checks: priced first in line, shown on the page (the app comes to the front if you
         want - Settings › Keybinds)."""
+        try:                                             # 2.128.0: a Favours reward - learn what it looks like
+            from . import gamedata as _gd
+            g = _gd.read_item(text) or {}
+            self.favours_learn(g.get("name") or g.get("base"))
+        except Exception:
+            buglog.caught()
         rid = self.add_item_text(text, src="pc")
         if rid is None:
             from .wealth import parse_currency_item

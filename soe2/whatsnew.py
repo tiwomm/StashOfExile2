@@ -44,6 +44,14 @@ BETA_AREAS = ("Wealth", "Money Makers", "Game Search", "Market Insights", "Craft
               "Desecration Helper")
 
 NOTES = {
+    "2.128.0": {
+        "big": [
+            ("🕯", "Favours prices", "At a Ritual altar, each omen and other one-cell reward in the Favours window "
+             "gets its poe.ninja price, like the Expedition helper. Price check one there and it learns its "
+             "picture.", None, "Overlay"),
+        ],
+        "small": [],
+    },
     "2.127.0": {
         "big": [
             ("💎", "Lineage gems priced", "Your price check key or Ctrl+Alt+C on a lineage support gem searches the "

@@ -302,6 +302,7 @@ class AlertsPage:
         self.al_leave = tk.BooleanVar(value=bool(self.breach_cfg().get("leave_reminder", True)))
         self.al_rleave = tk.BooleanVar(value=bool(self.ritual_cfg().get("leave_reminder", True)))
         self.al_rshow = tk.BooleanVar(value=bool(self.ritual_cfg().get("readout", True)))
+        self.al_rfav = tk.BooleanVar(value=bool(self.ritual_cfg().setdefault("favours", True)))
         self.al_rru = tk.BooleanVar(value=bool(self.remnant_cfg().get("rumours", True)))
         self.al_rtips = tk.BooleanVar(value=bool(self.remnant_cfg().get("tips", True)))
         from . import whispers as _W
@@ -314,7 +315,10 @@ class AlertsPage:
                          "A small list next to the prices: the runeshapes players rate best for loot (S and A tier).")],
             "ritual": [("On screen", self.al_rshow, lambda: self.ritual_readout_changed(self.al_rshow.get()),
                         "A line over the overlay's bar while you're in a map with Ritual: how many rituals are done and "
-                        "your tribute.")],
+                        "your tribute."),
+                       ("Favours prices", self.al_rfav, lambda: self.favours_changed(self.al_rfav.get()),
+                        "At a Ritual altar's Favours window: poe.ninja's price on each omen and other 1-cell reward. "
+                        "Price check one there (your price check key) and it learns its picture.")],
             "whispers": [("After the campaign", self.al_wafter, self.ww_after_changed,
                           "Off: it watches only while your character is in the campaign. On: always.")]}
         remind = {"breach": (self.al_leave, self.alerts_leave_changed),
@@ -576,6 +580,7 @@ class AlertsPage:
         err = RITUAL.start()
         if not err and self.br_reader is None:
             self.breach_start()                         # to see you leave a map
+        self.favours_sync()                             # 2.128.0: Favours prices
         self.root.after(1500, self.alerts_refresh)
         return err
 
@@ -583,6 +588,7 @@ class AlertsPage:
         from .utilities import RITUAL
         RITUAL.stop()
         self.rt_map = None
+        self.favours_sync()
         if not self.log_wanted():
             self.br_reader = None
         self.alerts_refresh()

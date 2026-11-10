@@ -96,6 +96,9 @@ CREDITS = (
     ("Sidekick (Sidekick-Poe)", "general ideas. None of its code is used.", "https://github.com/Sidekick-Poe/Sidekick"),
     ("hypr-exiled (gfsd3v)", "the idea for the Trade Whisper Watcher - ours is built from scratch, none of its code "
                              "is used.", "https://github.com/gfsd3v/hypr-exiled"),
+    ("poe2pricer (saxe78)", "the idea for Favours prices - finding the Ritual window by a piece of its own art and its "
+                            "rewards by their pictures. Ours is written from scratch; none of its code is used.",
+     "https://github.com/saxe78/poe2pricer"),
     ("Path of Building PoE2 (PathOfBuildingCommunity)", "the anoint recipes.", "https://github.com/PathOfBuildingCommunity/PathOfBuilding-PoE2"),
     ("Cinzel (Natanael Gama)", "a font of the ornate overlay styles. SIL Open Font License.",
      "https://github.com/NDISCOVER/Cinzel"),
