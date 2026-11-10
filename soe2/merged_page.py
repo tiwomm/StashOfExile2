@@ -25,7 +25,9 @@ HUD = ("xpbar",)                 # 2.65.0: fitted to the game's own bottom bar, 
 #   x0 / x1 >= 0: from the left edge, < 0: from the right edge; bottom: up from the bottom edge.
 # 2.79.1: as wide as the XP bar (measured at 1440p), over it. 2.118.0: one row (no switches above it) - 0.036 high
 # (was 0.056 for two rows); a bar you moved keeps its bottom edge where you put it (OLD_HUD_H)
-HUD_SPOTS = {"xpbar": [(0.531, -0.531, 0.0205, 0.036)]}
+# 2.130.1 (feedback: "bottom alignment mode is a few px above the xp bar, needs moved down"): measured on a 1440p
+# screenshot, the XP bar's top is 22 px (0.0153) up from the bottom - the Bar's bottom edge sits on it (was 0.0205)
+HUD_SPOTS = {"xpbar": [(0.531, -0.531, 0.0153, 0.036)]}
 OLD_HUD_H = 0.056
 
 
