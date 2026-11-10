@@ -32,7 +32,9 @@ PAGES = {
 }
 
 FEATURES = (
+    "Alerts show",              # 2.131.0 Overlay › Settings › Helpers: where and how big the alert card is
     "Beta features",            # Settings › General: shows the pages and helpers marked BETA
+    "Break reminders",          # 2.131.0 Overlay › Settings › Helpers: a kind nudge in long sessions
     "Campaign Helper",
     "Clear All",                # Bulk Pricing › Items strip: empties the list shown
     "Community data sharing",
