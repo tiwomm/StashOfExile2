@@ -27,6 +27,10 @@ VERSION HISTORY
          overall tint, so the same hand in teal (Refreshment) and purple (Whittling) scored 0.80 / 0.76. A close top
          two is settled when the colors match far better (HUE_BY 0.25: 0.54 vs 0.20).
        - Sacred Bloom ships as a Favours cell (templates/favours_cells.png + .json, shipped_cells).
+       - Idols ship as the currency exchange lists them (templates/favours_icons.png + .json, from the user's
+         screenshot): compared cropped to their art, Idol of the Pharisee scored 0.82 and every other cell under 0.64
+         (omens' exchange icons stayed under 0.6). "Far ahead" (2.129.1) is now measured against pictures of the same
+         kind, so an idol icon doesn't crowd out a sealed omen.
        - Any copy of a reward's text (Ctrl+C or the price check key) while the window is open teaches its look
          (favours_copy_learn): exchange items such as idols, and the uniques that get a ★.
        - ★ one-cell uniques (STARS: Rite of Passage, its picture from the game; star_refs, find_stars), no price.

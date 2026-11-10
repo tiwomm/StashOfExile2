@@ -29,7 +29,7 @@ CELL = 70
 COLS, ROWS = 12, 10
 EDGE = 5                                   # px left off each side of a cell when comparing (the cell's frame)
 SIDE = 48                                  # cells are compared at this size
-MATCH_MIN = {"learned": 0.72, "shipped": 0.72}  # 2.129.0 (feedback: a junk unique, Sacred Bloom and an omen all priced
+MATCH_MIN = {"learned": 0.72, "shipped": 0.72, "icon": 0.72}  # 2.129.0 (feedback: a junk unique, Sacred Bloom and an omen all priced
 MATCH_BY = 0.10                            # 4.6d): a picture must score this and beat the next-best item by this.
 MATCH_SURE, MATCH_BY_SURE = 0.80, 0.06      # (a very close match may beat the next by less: Greater Exaltation and
                                            # Refreshment are the same hand in gold / teal)
@@ -292,7 +292,13 @@ class Refs:
         nxt = top3[1][0] if len(top3) > 1 else -1.0
         by = MATCH_BY_SURE if top >= MATCH_SURE else MATCH_BY
         sure = top >= MATCH_MIN.get(src, 0.72) and top - nxt >= by
-        clear = top >= CLEAR[0] and top - nxt >= CLEAR[1] and len(self.items) >= CLEAR_ITEMS
+        if top >= CLEAR[0] and top - nxt < CLEAR[1]:      # ("far ahead" of the items whose pictures are of the
+            same = [s_ for s_, _n, k in self.ranked(f, len(self.items))[1:] if k == src]    # same kind: an idol's
+            nxt_same = same[0] if same else -1.0                                             # exchange icon isn't
+        else:                                                                                # one of an omen's)
+            nxt_same = nxt
+        kinds = sum(1 for lst in self.items.values() if any(s_ == src for _f, s_, _m in lst))
+        clear = top >= CLEAR[0] and top - nxt_same >= CLEAR[1] and kinds >= CLEAR_ITEMS
         if not (sure or clear) and len(top3) > 1 and top >= MATCH_MIN.get(src, 0.72):
             h1, h2 = hue_sim(top3[0][3], top3[0][4]), hue_sim(top3[1][3], top3[1][4])
             sure = h1 is not None and h2 is not None and h1 - h2 >= HUE_BY       # 2.129.3: same shape, other color
@@ -466,7 +472,18 @@ def build_refs(items):
         e = max(1, int(round(EDGE * w / CELL)))
         refs.add(name, bgr[e:int(h * TOP), e:w - e], "shipped", "top")
         refs.add(name, art_box(bgr[e:h - e, e:w - e]), "shipped", "box")
+    for name, bgr in shipped_icons().items():             # 2.129.3: idols, from the currency exchange's list
+        if known and name not in known:
+            continue
+        refs.add(name, art_box(bgr, corner=False), "icon", "box")
     return refs
+
+
+def shipped_icons():
+    """{name: 50 x 50 icon} - items as the game's currency exchange lists them (templates/favours_icons.png +
+    .json): the idols. Their art lines up with a Favours cell's once both are cropped to it (Idol of the Pharisee
+    0.82, every other cell under 0.64); omens' exchange icons didn't (under 0.6), so theirs come from the Ritual tab."""
+    return _strip("favours_icons")
 
 
 def shipped_cells():
