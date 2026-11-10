@@ -347,12 +347,51 @@ class RemnantPage:
         return [n for n, _v in sorted(best.items(), key=lambda t: -t[1])[:self.POOL_SHOWN]]
 
     # ---------------- 2.130.0 (feedback): gems in a remnant's book - priced on the trade site, one search each
-    GEM_FRESH = 1800                                  # a gem's price is kept this long (seconds)
+    GEM_FRESH = 6 * 3600                              # a gem's price is kept this long (2.130.4: was 30 min)
+    # 2.130.4 (feedback: "trade site rate limited us on fetching prices"): a book's gems may use at most GEM_BUDGET
+    # searches per 5 minutes - the rest of the trade site's allowance stays for your own price checks; prices are kept
+    # on disk (GEM_FILE), so the same gem in the next book costs nothing
+    GEM_BUDGET = 3
+    GEM_FILE = "remnant_gems.json"
+
+    def _gem_cache(self):
+        cache = self.__dict__.get("rm_gem_prices")
+        if cache is None:
+            from .config import load_json
+            cache = {}
+            try:
+                for k, (each, ts) in (load_json(self.GEM_FILE, {}) or {}).items():
+                    parts = k.split("|")
+                    if len(parts) == 4 and time.time() - ts < self.GEM_FRESH:
+                        cache[(parts[0], parts[1], int(parts[2]) if parts[2] else None, parts[3])] = (each, ts)
+            except Exception:
+                buglog.caught()
+            self.rm_gem_prices = cache
+        return cache
+
+    def _gem_save(self):
+        try:
+            save_json(self.GEM_FILE, {f"{lg}|{kind}|{lv if lv is not None else ''}|{nm}": list(v)
+                                      for (lg, kind, lv, nm), v in self._gem_cache().items()
+                                      if time.time() - v[1] < self.GEM_FRESH and v[0] is not None})
+        except Exception:
+            buglog.caught()
+
+    def _gem_turn(self):
+        """Waits until a gem search fits in GEM_BUDGET per 5 minutes."""
+        sent = self.__dict__.setdefault("rm_gem_sent", [])
+        while True:
+            now = time.time()
+            sent[:] = [t for t in sent if now - t < 300]
+            if len(sent) < self.GEM_BUDGET:
+                sent.append(now)
+                return
+            time.sleep(min(10.0, 300 - (now - sent[0]) + 0.5))
 
     def remnant_gem_value(self, kind, level, name, league):
         """-> (divines or None, still looking). The first time: (None, True) and a search starts in the background;
         its price comes with the next read (the book's tags are shown again)."""
-        cache = self.__dict__.setdefault("rm_gem_prices", {})
+        cache = self._gem_cache()
         key = (league, kind, level, name.casefold())
         hit = cache.get(key)
         if hit and time.time() - hit[1] < self.GEM_FRESH:
@@ -368,9 +407,10 @@ class RemnantPage:
         """One gem at a time (the trade site's limits): its base gem - the level the book says, the 2 sockets it
         comes with, no quality, not corrupted - and the middle of the cheapest listings."""
         from . import gear as G, trade as T
-        pend, cache = self.rm_gem_wait, self.rm_gem_prices
+        pend, cache = self.rm_gem_wait, self._gem_cache()
         while pend:
             league, kind, level, low = pend[0]
+            self._gem_turn()
             try:
                 name = G.gem_type(low)
                 item = {"rarity": "Gem", "search": G.gem_search(name, level, 2 if level else None, 0, False)}
@@ -383,7 +423,8 @@ class RemnantPage:
                 cache[pend[0]] = (None, time.time() - self.GEM_FRESH + 120)     # (try again in 2 minutes)
                 RM.log(f"  gem {low}: search failed ({ex.__class__.__name__})")
             pend.pop(0)
-        self.rm_force_read = True                     # (the open book is read again: its gems get their prices)
+            self._gem_save()
+            self.rm_force_read = True                 # (the open book is read again: each gem's price shows as it comes)
 
     # ---------------- the tags over the game
     # 2.38.0: one small, solid, click-through window per tag. (2.37.0 drew them on ONE window as big as the game, made

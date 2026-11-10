@@ -381,13 +381,18 @@ class AlertsPage:
         self.al_rows["ritual"]["on"].set(bool(self.ritual_cfg().get("on")))
         self.al_rows["ritual"]["sound"].set(bool(self.ritual_cfg().get("sound", True)))
         # 2.130.0 (feedback): the game's hidden setting that applies your item filter to the Favours window
-        fl = tk.Label(self.al_rows["ritual"]["row"], text="Filter in the Ritual window…", bg=P2, fg=C["accent"],
-                      font=sm, cursor="hand2", anchor="w")
-        fl.pack(anchor="w")
-        fl.bind("<Button-1>", lambda _e: self.ritual_filter_open())
+        # 2.130.4 (feedback: "the text for opening the filter in ritual window is a bad UI+UX design choice"): a
+        # plain button with the setting's state beside it (a mark and a word), not orange link text
+        frow = tk.Frame(self.al_rows["ritual"]["row"], bg=P2)
+        frow.pack(anchor="w", pady=(4, 0))
+        fl = ttk.Button(frow, text="Filter in the Ritual window…", command=self.ritual_filter_open)
+        fl.pack(side="left")
         Tooltip(fl, "Make your item filter work in the Ritual altar's Favours window (a game setting with no switch "
                     "in its menus) - the app shows where and what to change.")
-        self.al_rfilter_link = fl
+        fst = tk.Label(frow, text="", bg=P2, fg=C["muted"], font=sm, anchor="w")
+        fst.pack(side="left", padx=(8, 0))
+        self.al_rfilter_link, self.al_rfilter_state = fl, fst
+        self.ritual_filter_state()
         self.al_rows["remnant"]["on"].set(bool(self.remnant_cfg().get("on")))          # 2.37.0
         self.al_rows["desecrate"]["on"].set(bool(self.ws_cfg().get("on")))            # 2.81.0
         from . import campaign as _CP, focus as _F
@@ -572,6 +577,21 @@ class AlertsPage:
         self.ritual_cfg()["tribute_reminder"] = bool(self.al_rtrib.get())
         save_json("settings.json", SETTINGS)
 
+    def ritual_filter_state(self):
+        """The state beside the button: ✓ On / ✗ Off / ? Not found (read from the game's file - that line only)."""
+        from . import ritual_filter as RF
+        lbl = getattr(self, "al_rfilter_state", None)
+        if lbl is None:
+            return None
+        st, _path = RF.state()
+        text, col = {"on": ("✓ On", C.get("good", C["text"])), "off": ("✗ Off", C.get("warn", C["text"])),
+                     "missing": ("? Not set", C["muted"]), "nofile": ("? Not found", C["muted"])}[st]
+        try:
+            lbl.config(text=text, fg=col)
+        except tk.TclError:
+            pass
+        return st
+
     def ritual_filter_open(self):
         """2.130.0 Filter in the Ritual window: where the game's setting is, whether it's on, and how to turn it on
         (one line to change; the app never writes the game's files)."""
@@ -626,6 +646,7 @@ class AlertsPage:
                                     C["muted"])}[st]
             status.config(text=text, fg=col)
             where.config(text=RF.shown(path))          # (no Windows user name on screen)
+            self.ritual_filter_state()
             return st, path
 
         def open_folder():
