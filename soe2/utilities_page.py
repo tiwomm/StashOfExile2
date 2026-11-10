@@ -164,7 +164,7 @@ class UtilitiesPage:
 
     # ---------------- the Chat commands window
     def build_chat_window(self, body):
-        """Settings › Keys › Chat commands (2.116.0, P10: was its own tab). body: the section's frame. Only the rows
+        """Settings › Keybinds › Chat commands (2.116.0, P10: was its own tab). body: the section's frame. Only the rows
         in use show; + Add a command shows the next (no eight empty rows)."""
         P2 = C["panel2"]
         ov = self._ensure_overlay().cfg
@@ -245,7 +245,7 @@ class UtilitiesPage:
             pass
 
     def chat_key_set(self):
-        """2.61.1: a chat key was set in a box here - save, keep Settings › Keys in step, warn about clashes."""
+        """2.61.1: a chat key was set in a box here - save, keep Settings › Keybinds in step, warn about clashes."""
         self.ov_save()
         if hasattr(self, "hk_frame"):
             try:
@@ -289,7 +289,7 @@ class UtilitiesPage:
             self.root.after(20, self.chat_key_marks)
 
     def open_settings_tab(self, name):
-        name = {"Hotkeys": "Keys", "Chat commands": "Keys"}.get(name, name)     # 2.116.0: one Keys tab
+        name = {"Hotkeys": "Keybinds", "Chat commands": "Keybinds", "Keys": "Keybinds"}.get(name, name)  # 2.127.0: Keybinds
         self.shell.open("settings")
         try:
             self.set_nb.select(self.set_nb.titles.index(name))

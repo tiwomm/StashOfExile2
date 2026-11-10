@@ -831,6 +831,17 @@ def option_for(sid, text):
     return None
 
 
+def option_live(text, valid=None):
+    """2.127.0 (feedback: a Mageblood's search had no Legacies): the trade site's own id and option for a wording with
+    a choice ("Legacy of Gold"), found by the wording - for when the game data's id isn't on the trade site's list
+    (a new league can change it). -> (id, option) or None."""
+    want = norm(text)
+    for sid, opts in OPTS.items():
+        if want in opts and (not valid or sid in valid):
+            return sid, opts[want]
+    return None
+
+
 # ---- what the trade site calls each stat, so a listing's mod lines can be compared with what we searched for
 SIDTEXT = {}        # stat id -> normalized wording
 

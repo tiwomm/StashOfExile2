@@ -5,7 +5,7 @@ Part of StashOfExile2 (see the launcher's VERSION HISTORY)."""
 import os
 import time
 import tkinter as tk
-from tkinter import filedialog
+from tkinter import filedialog, messagebox
 from tkinter import ttk
 from . import buglog
 from .config import (
@@ -71,7 +71,7 @@ class SettingsPage:
         self.set_anchors["pc_single"] = self.settings_group("Price checking", f"SINGLE PRICE CHECKS ({pck.upper()})",
                                                             used=(PC, CARD))
         row = section("Price checking", "Where the price shows", "Hover an item in game and press your price check "
-                                                                  "key (set it on Keys). Here: the app comes to the "
+                                                                  "key (set it on Keybinds). Here: the app comes to the "
                                                                   "front. Overlay + Here: the price check overlay too, "
                                                                   "in the overlay's Style.")
         self.pc_set_vars = getattr(self, "pc_set_vars", None) or {}
@@ -275,7 +275,7 @@ class SettingsPage:
         self.set_nb.pack(fill="both", expand=True, padx=8, pady=(8, 0))
         pages = {}
         # (2.98.3: no Tools tab - its one switch is on Exchange rates; 2.116.0, P10: Hotkeys + Chat commands = Keys)
-        for name in ("General", "Appearance", "Keys", "Price checking", "Privacy & community", "Advanced", "About"):
+        for name in ("General", "Appearance", "Keybinds", "Price checking", "Privacy & community", "Advanced", "About"):
             sa = ScrollArea(self.set_nb, P1)
             wrap = tk.Frame(sa.inner, bg=P1, padx=8, pady=4)
             wrap.pack(fill="both", expand=True)
@@ -417,17 +417,20 @@ class SettingsPage:
         self.build_overlay_look(pages["Appearance"][1])
 
         # ======== Keys (2.116.0, P10: Hotkeys and Chat commands on one tab)
-        row = section("Keys", "Hotkeys", "Every key the app listens for. Click a box and press the key (with Ctrl / "
+        row = section("Keybinds", "Hotkeys", "Every key the app listens for. Click a box and press the key (with Ctrl / "
                                          "Alt / Shift, or a mouse button) - it saves at once. Esc keeps the old key, "
                                          "Backspace or right-click clears it. Two things on one key show in red.")
         self.hk_frame = row
         self.hk_vars = {}
         row2 = tk.Frame(row.master, bg=P2)
         row2.pack(fill="x", pady=(8, 0))
+        self.hk_defaults_btn = ttk.Button(row2, text="↺ Defaults", command=self.hotkeys_defaults)   # 2.127.0
+        self.hk_defaults_btn.pack(side="left", padx=8)
+        Tooltip(self.hk_defaults_btn, "Every keybind back to how the app comes (your chat command keys stay)")
         self.hk_msg = tk.Label(row2, text="", bg=P2, fg=C["muted"], anchor="w", justify="left")
         self.hk_msg.pack(side="left", padx=8)
         self.fill_hotkeys()
-        outer, chat = chrome_section(pages["Keys"][1], "Chat commands",
+        outer, chat = chrome_section(pages["Keybinds"][1], "Chat commands",
                                      "Keys that type a chat command into the game - only while it's the window in "
                                      "front. Close any AutoHotkey script that types the same ones.")
         outer.pack(fill="x", pady=(0, 8))
@@ -982,10 +985,10 @@ class SettingsPage:
             i += 1
 
     def hotkeys_open(self, kid=None):
-        """2.57.0: Settings › Keys, where every key is set - the row asked for is lit up for a moment."""
+        """2.57.0: Settings › Keybinds (2.127.0: was Keys), where every key is set - the row asked for is lit up for a moment."""
         self.shell.open("settings")
         try:
-            self.set_nb.select(self.set_nb.titles.index("Keys"))
+            self.set_nb.select(self.set_nb.titles.index("Keybinds"))
         except (ValueError, AttributeError, tk.TclError):
             pass
         row = getattr(self, "hk_rows", {}).get(kid)
@@ -997,6 +1000,21 @@ class SettingsPage:
                 row[1].focus_set()
             except tk.TclError:
                 pass
+
+    def hotkeys_defaults(self):
+        """2.127.0 (feedback: "in case anything goes wrong"): every keybind back to the app's own - after a yes. The
+        keys of your own chat commands stay (they have no default)."""
+        from .tracker_page import DEFAULT_HOTKEYS
+        if not messagebox.askyesno("Keybinds", "Set every keybind back to the default?\n\nYour chat commands keep "
+                                   "their keys.", parent=self.dlg_parent()):
+            return False
+        for kid, key in DEFAULT_HOTKEYS.items():
+            v = self.hk_vars.get(kid)
+            if v is not None:
+                v.set(key)
+        self.save_hotkeys()
+        self._say("Keybinds are back to the defaults.", 8)
+        return True
 
     def save_hotkeys(self):
         from .overlay import parse_key

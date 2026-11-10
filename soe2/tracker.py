@@ -200,6 +200,38 @@ class Session:
         return s
 
 
+# 2.127.0 (feedback: a session should survive the app updating, restarting or crashing): the running session is
+# written to session_live.json every LIVE_EVERY seconds, at each map and when the app closes. The next start picks it
+# up again (paused for the time the app wasn't running) if that was under KEEP_SECS ago; an older one is filed in
+# sessions.json as it was at its last save.
+LIVE_FILE = "session_live.json"
+LIVE_EVERY = 30
+KEEP_SECS = 2 * 3600
+
+
+def save_live(s, now=None):
+    if s is None or s.ended is not None:
+        return clear_live()
+    save_json(LIVE_FILE, {"saved": now or time.time(), "session": s.to_json()})
+
+
+def clear_live():
+    save_json(LIVE_FILE, {})
+
+
+def load_live():
+    """-> (session, when it was saved) of the session that was running, or (None, None)."""
+    d = load_json(LIVE_FILE, {}) or {}
+    try:
+        if d.get("session"):
+            s = Session.from_json(d["session"])
+            if s.ended is None:
+                return s, float(d.get("saved") or s.last_event or s.started)
+    except Exception:
+        buglog.caught()
+    return None, None
+
+
 class Sessions:
     """sessions.json: past sessions, newest last."""
 

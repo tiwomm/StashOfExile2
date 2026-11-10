@@ -15,6 +15,7 @@ from .gamelog import find_log, LogReader
 from .overlay import game_active, key_label, parse_key
 from .style import ScrollArea, C, SegBar
 from .chrome import section as chrome_section
+from . import tracker as TR
 from .tracker import fmt_time, Session, Sessions
 
 DEFAULTS = {"overlay": True, "locked": False, "x": 60, "y": 260, "w": 230, "h": 190, "opacity": 225,
@@ -25,6 +26,11 @@ DEFAULTS = {"overlay": True, "locked": False, "x": 60, "y": 260, "w": 230, "h": 
             "merged": True, "layout": "xpbar"}   # 2.39.0 clock; 2.55.0: one overlay window; 2.74.0: Bar
 DEFAULT_KEYS = {"key_pause": "Pause",            # 2.74.3: the keyboard's Pause key (was Ctrl+Alt+P; start / stop's
                 "key_overlay": "F6"}             # Ctrl+Alt+S is gone - Ctrl+Alt keys got in the way of game input)           # 2.59.0: F6 shows / hides the whole overlay       # 2.10.0: set once, change them in Options
+# 2.127.0: Settings › Keybinds › ↺ Defaults - every keybind as the app comes (key id as all_hotkeys gives it)
+DEFAULT_HOTKEYS = {"checks:pc_key": "Ctrl+D", "checks:pc_close_key": "Esc", "checks:poe2db_key": "Ctrl+Shift+D",
+                   "checks:regex_key": "", "tracker:key_pause": DEFAULT_KEYS["key_pause"],
+                   "tracker:key_overlay": DEFAULT_KEYS["key_overlay"], "tracker:key_camp_prev": "",
+                   "tracker:key_camp_next": "", "checks:ledger_key": "Ctrl+Alt+N", "overlay:hideout_key": "F1"}
 # 2.54.0: the Session timer times your play; money lives in one place, Money Makers › Strat Tracker.
 # Profit (Wealth at Stop minus at Start) is gone from here: its tiles, overlay line, options and Stop count.
 LINE_NAMES = [("session", "Session timer"), ("map", "Map timer"), ("maps", "Maps done"), ("avg", "Average map time"),
@@ -240,6 +246,7 @@ class TrackerPage:
         self.tracker_view()
         self.tracker_fill_history()
         self.root.after(1000, self.tracker_tick)
+        self.root.after(2000, self.tracker_restore_live)  # 2.127.0: the session from before a close / update / crash
         if cfg.get("autostart"):                         # 2.14.0: a session starts with the app (once Client.txt is read)
             self.root.after(4000, self.tracker_autostart)
         # (the numbers show while a session runs - beta 10; 2.70.1: each part has its switch in Options)
@@ -634,6 +641,8 @@ class TrackerPage:
         self.calc_ov_restyle()                               # 2.74.0: the calculator follows the one lock
         if getattr(self, "ovr_win", None) is not None:      # 2.96.1 (feedback: it stayed locked): the rates window too
             self.ovr_build()
+        if getattr(self, "rx_ov_win", None) is not None:    # 2.127.0: and Regex favorites
+            self.rx_ov_show()
 
     def _tk_keys_text(self):
         from .overlay import key_label
@@ -767,6 +776,10 @@ class TrackerPage:
                             changed = True
                 if changed:
                     self.tracker_fill_maps()
+                now = time.time()                             # 2.127.0: a crash keeps all but the last few seconds
+                if changed or now - getattr(self, "tk_live_at", 0) >= TR.LIVE_EVERY:
+                    self.tk_live_at = now
+                    TR.save_live(s, now)
             self.tracker_game_watch()
             self.focus_tick()                                 # 2.73.1: a League Focus poke due?
             self.tracker_draw()
@@ -853,6 +866,36 @@ class TrackerPage:
         g["seen"], g["restored"] = False, False
         self._say("The session is kept (paused). Resume it when you're back - or the game coming back does.", 8)
 
+    def tracker_restore_live(self, now=None):
+        """2.127.0 (feedback): the session that was running when the app last closed, updated or crashed. Under
+        TR.KEEP_SECS ago: it's the session again - paused for the time the app wasn't running, going on as soon as the
+        game is (or comes back). Older: filed in the history as it was at its last save."""
+        s, saved = TR.load_live()
+        if s is None or self.tk_session is not None:
+            return None
+        now = now or time.time()
+        if now - saved > TR.KEEP_SECS:
+            s.stop(min(saved, s.paused_at or saved))
+            s.note = (s.note + " (app closed)").strip()
+            self.tk_sessions.add(s)
+            TR.clear_live()
+            self.tracker_fill_history()
+            return "filed"
+        if s.paused_at is None:
+            s.pause(saved)                                 # the time the app wasn't running doesn't count
+        self.tk_session = s
+        self.tk_game = {"seen": False, "gone": None, "asked": False, "paused": True, "s": s, "since": now,
+                        "restored": True}                  # the game being there resumes it
+        self.tracker_open_log()
+        self.tk_start_btn.config(text="■ Stop", style="TButton")
+        self.tk_pause_btn.config(state="normal", text="Resume")
+        self.tracker_fill_maps()
+        self.tracker_draw()
+        self._say("Your session from before the app closed is back (paused until the game is in front).", 10)
+        if self.tk_overlay is None:
+            self.tracker_overlay_show()
+        return "restored"
+
     # ---------------- start / pause / stop
     def tracker_autostart(self):
         if self.tk_session is None or self.tk_session.ended is not None:
@@ -869,6 +912,7 @@ class TrackerPage:
         s = Session(now=now)
         s.fresh = True                                 # 2.69.3: started in this run of the app (not kept from the last)
         self.tk_session = s
+        TR.save_live(s, now)                           # 2.127.0: kept if the app closes, updates or crashes
         self.tracker_open_log()
         la = getattr(self, "tk_last_area", None)
         if la:                                     # where you are right now (from the end of the log)
@@ -935,6 +979,7 @@ class TrackerPage:
             return
         s.stop()
         self.tk_sessions.add(s)
+        TR.clear_live()
         self.tk_start_btn.config(text="▶ Start tracking", style="Primary.TButton")
         self.tk_pause_btn.config(state="disabled", text="Pause")
         msg = f"Session done: {fmt_time(s.elapsed())}, {s.map_count()} map{'s' if s.map_count() != 1 else ''}."

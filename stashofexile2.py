@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU GPL v3.0 (see LICENSE). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.126.0
+VERSION 2.127.0
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,6 +19,25 @@ VERSION 2.126.0
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.127.0
+       Feedback batch:
+       - Lineage support gems (Arbiter's Ignition ...) are priced: gear.lineage_item reads a "Rarity: Gem" copy whose
+         tags say Lineage and searches the trade site by its name (Price Checks and Bulk Pricing); poe.ninja's
+         LineageSupportGems rate goes in its notes. Other gems still aren't priced (not traded as items).
+       - Currency on your price check key: the card over the game (pcpop_rates) shows its going rate - 1 ≈ x div,
+         1 = n exalted · n chaos, what a Divine / Exalted / Chaos Orb buys of it, the stack's worth (RATES.common) -
+         with Open Exchange Rates. Card off: the toast says the same.
+       - The session timer survives a close, an update or a crash: the running session is saved to
+         session_live.json (at start, at each map, every 30 s, on close). The next start brings it back paused
+         (the time the app was down doesn't count; the game being there resumes it) if it was saved under 2 h ago,
+         else files it in the history as it was. on_close no longer ends it.
+       - Mageblood: a Legacy whose game-data id isn't on the trade site's list is found there by its wording
+         (mods.option_live) instead of being dropped from the search; a ticked mod left out says why on its line.
+       - Bulk Pricing's Item pane is always on screen (an empty state while nothing is picked); its ✕ and the Esc
+         that closed it are gone.
+       - Regex favorites over the game: the overlay's one lock locks it too, and it stays where you drag it (rx_ov).
+       - Settings › Keys is Settings › Keybinds, with ↺ Defaults (tracker_page.DEFAULT_HOTKEYS; chat command keys
+         stay). names.py: OLD "Settings › Keys", FEATURES "Keybinds".
   2.126.0
        UX pass 3 (code). Dead code out: 41 functions and methods nothing called (kept "for older callers" or left
        by earlier removals), unused constants and imports, an always-true branch and a taskbar loop that never ran.
@@ -3214,7 +3233,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.126.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.127.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
