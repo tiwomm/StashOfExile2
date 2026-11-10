@@ -4263,10 +4263,15 @@ class App(SettingsPage, GearBookPage, PriceCheckPage, PricePopup, FavoritesPage,
             if on and not shown:
                 pane.add(outer, weight=0)
                 pw = int(SETTINGS.get("panel_w", 430) or 430)
-                self.root.update_idletasks()
-                w = pane.winfo_width()
-                if w > 600:
-                    pane.sashpos(0, max(300, w - max(300, min(pw, w - 300))))
+
+                def place():                         # 2.128.0: once laid out (no forced layout pass here)
+                    try:
+                        w = pane.winfo_width()
+                        if w > 600:
+                            pane.sashpos(0, max(300, w - max(300, min(pw, w - 300))))
+                    except tk.TclError:
+                        pass
+                self.root.after_idle(place)
             elif not on and shown:
                 pane.forget(outer)
         except tk.TclError:
