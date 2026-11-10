@@ -431,7 +431,7 @@ class AlertsPage:
         from . import breaks as _BR
         bc = _BR.cfg()
         brow = tk.Frame(box, bg=P2)
-        brow.pack(fill="x", pady=(10, 0))
+        brow.pack(fill="x", pady=(8, 0))
         self.al_break = tk.BooleanVar(value=bool(bc["on"]))
         bcb = ttk.Checkbutton(brow, text="Break reminders", variable=self.al_break, style=CB,
                               command=lambda: self.break_set("on", bool(self.al_break.get())))
@@ -442,9 +442,9 @@ class AlertsPage:
         ecb.pack(side="left")
         ecb.bind("<<ComboboxSelected>>", lambda _e: self.break_set("every", int(ev.get().split()[0])))
         btest = ttk.Button(brow, text="Test", width=6, command=lambda: self.break_check(force=True))
-        btest.pack(side="left", padx=(6, 0))
+        btest.pack(side="left", padx=(8, 0))
         bi = tk.Label(brow, text="ⓘ", bg=P2, fg=C["muted"], font=sm, cursor="question_arrow")
-        bi.pack(side="left", padx=(6, 0))
+        bi.pack(side="left", padx=(8, 0))
         tk.Label(box, text="A kind nudge in long sessions (water, stretch, food, sleep), only in your hideout or a town.",
                  bg=P2, fg=C["muted"], font=sm, anchor="w").pack(fill="x")
         Tooltip(bcb, "One small card every so often while you play - never in a map. Off until you turn it on.")
