@@ -512,6 +512,21 @@ class SettingsPage:
         ch.pack(side="left")
         Tooltip(ch, "Keep your data somewhere else (a USB stick, the app's own folder for a portable copy). It's "
                     "copied there; the old folder is kept.")
+        # 2.131.0: Settings opens on the tab you left it on
+        try:
+            self.set_nb.select(self.set_nb.titles.index(SETTINGS.get("settings_tab") or "General"))
+        except (ValueError, tk.TclError):
+            pass
+        self.set_nb.bind("<<NotebookTabChanged>>", lambda e: self.settings_tab_saved(), add="+")
+
+    def settings_tab_saved(self):
+        try:
+            t = self.set_nb.titles[self.set_nb.cur]
+        except (TypeError, IndexError):
+            return
+        if SETTINGS.get("settings_tab") != t:
+            SETTINGS["settings_tab"] = t
+            save_json("settings.json", SETTINGS)
 
     @staticmethod
     def data_dir_shown():
