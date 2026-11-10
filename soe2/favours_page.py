@@ -14,6 +14,9 @@ from .pricefmt import fmt_short
 
 POLL = 0.5                     # seconds between looks while the game is in front
 GONE = 2                       # looks without the window = it closed: the tags go
+# 2.130.0 (feedback: "still telling me with favours window open to offer tribute"): a reward's tooltip over the
+# window's title hid it for a second - the reminder waits until the window has been gone this many looks (4 s)
+REMIND = 8
 GRAB = (0.62, 0.80)            # the part of the game that is looked at (from its top-left): the window is there
 
 
@@ -117,11 +120,14 @@ class FavoursPage:
                                 t = self.favours_tribute_read(*last, RM)
                                 if t is not None:
                                     counts["tribute"] = t
-                            if (counts.get("tribute") or 0) > 0:
-                                fv_log(f"closed with {counts['tribute']:,} tribute left: reminder")
-                                self.ui_q.put(("favours_tribute", counts["tribute"]))
-                            counts = {}
+                            owed = counts.get("tribute") or 0
+                            counts = {"owed": owed} if owed > 0 else {}
+                        elif misses == REMIND and counts.get("owed"):     # 2.130.0: still gone - really closed
+                            fv_log(f"closed with {counts['owed']:,} tribute left: reminder")
+                            self.ui_q.put(("favours_tribute", counts.pop("owed")))
                         continue
+                    if misses >= GONE and counts.pop("owed", None):     # 2.130.0: back before the reminder - only
+                        fv_log("window back (a tooltip hid it): no reminder")   # hidden for a moment
                     misses = 0
                     counts["last"] = (img, win)
                     if time.time() - counts.get("at", 0) > 1.5:          # the tribute, now and then
