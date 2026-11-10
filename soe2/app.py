@@ -2318,7 +2318,8 @@ class App(SettingsPage, GearBookPage, PriceCheckPage, PricePopup, FavoritesPage,
                 self.status_text, self.status_until = "Heard a copy, but it isn't an item (ignored)", time.time() + 6
             return
         from .wealth import parse_currency_item
-        if parse_stack(text) or parse_currency_item(text):       # currency & other stacks: offer the Wealth window
+        cur = parse_currency_item(text)                          # (a Wombgift: a trade search - feedback)
+        if parse_stack(text) or (cur and cur[2] != "Wombgifts"):  # currency & other stacks: offer the Wealth window
             return self.not_priceable_yet(text)                  # (2.129.0: and any exchange item: its going rate)
         if not self.ADVANCED.search(text):                       # plain Ctrl+C: no mod tiers/ranges, can't be priced well
             self.status_text = "Ignored a normal copy - use Ctrl+Alt+C so the mod details are included"

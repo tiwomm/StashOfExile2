@@ -266,7 +266,7 @@ class RitualHelper(DeliriumHelper):
                                    for f in traceback.extract_stack()[-7:-1][::-1])
                 buglog.record("debug", "Ritual watcher stopped", where)
         except Exception:
-            pass
+            buglog.caught()
         super().stop()
         self.count, self.seen = None, "none"
         return None

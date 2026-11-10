@@ -12,7 +12,10 @@ How it reads (pure functions here; the watcher and the tags are in favours_page.
      check key on a reward while the window is open keeps that one. Picture, outline and colors are compared, the
      stack number's corner left out (the game dims rewards you can't afford yet); the best one counts only when
      it's sure and clearly better than the next. 2.129.0: no official art (it was never sure), no uniques - only
-     Mageblood and Headhunter get a ★ (their pictures ship in templates/).
+     Mageblood and Headhunter get a ★ (their pictures ship in templates/). Each picture is compared two ways: the
+     cell's top part as it is, and cropped to the item's art (so a stash slot and a Favours cell, which draw it at
+     different sizes, line up). Every omen of the Ritual stash tab ships too (templates/favours_omens.png, slot
+     pictures in the tab's order - favours_omens.json names them), so none has to be in your stash first.
 Only looks at the screen: no keys, no clicks, nothing sent to the game. Nothing about you is saved: the pictures are
 of items, and the log (ritual/favours_log.txt) says which item was found where and how sure."""
 import base64
@@ -26,15 +29,19 @@ CELL = 70
 COLS, ROWS = 12, 10
 EDGE = 5                                   # px left off each side of a cell when comparing (the cell's frame)
 SIDE = 48                                  # cells are compared at this size
-MATCH_MIN = {"learned": 0.72}  # 2.129.0 (feedback: a junk unique, Sacred Bloom and an omen all priced
+MATCH_MIN = {"learned": 0.72, "shipped": 0.72}  # 2.129.0 (feedback: a junk unique, Sacred Bloom and an omen all priced
 MATCH_BY = 0.10                            # 4.6d): a picture must score this and beat the next-best item by this.
+MATCH_SURE, MATCH_BY_SURE = 0.80, 0.06      # (a very close match may beat the next by less: Greater Exaltation and
+                                           # Refreshment are the same hand in gold / teal)
 #                                            Tried on the user's own windows with his Ritual tab's pictures (Scan
 #                                            stash): the right omen 0.74-0.88 (by 0.14-0.34), items it doesn't know up
 #                                            to 0.70 (by 0.06); official art reached 0.64 for the wrong item
 PER_NAME = 6                               # pictures kept per item (a stash slot gives 3: its size varies a little)
 BELTS = {"Mageblood": "favours_mageblood.png", "Headhunter": "favours_headhunter.png"}   # 2.129.0: a ★, no price
 BELT_MIN = 0.70
-LEARN_FILE = "favour_icons_v2.json"           # (2.128.1: the cell's top part - v1 held whole cells)
+LEARN_FILE = "favour_icons_v2.json"
+BOX_FILE = "favour_boxes.json"             # 2.129.0: the same items cropped to their art (art_box)
+ART_DIFF = 40                              # a pixel this far from the cell's own backing color is the item's art           # (2.128.1: the cell's top part - v1 held whole cells)
 TOP = 0.64                                 # 2.128.1: only a cell's top part is read - the price tag sits at its
 #                                            foot and shows in screenshots and streams (the watcher sees it too)
 
@@ -160,6 +167,58 @@ def cell_crop(img, grid, r, c):
     return img[y + e:y + int(h * TOP), x + e:x + w - e]
 
 
+def art_box(bgr, corner=True):
+    """2.129.0: a cell's (or stash slot's) inside -> a square around the item's art: the pixels unlike the backing
+    (its color = the median of the edge), the stack number's corner left out. A stash slot draws an item bigger or
+    smaller than a Favours cell - cropped to the art, both line up."""
+    cv2, np = _cv()
+    h, w = bgr.shape[:2]
+    if h < 12 or w < 12:
+        return bgr
+    a = bgr.astype(np.float32)
+    ring = np.concatenate([a[:2].reshape(-1, 3), a[-2:].reshape(-1, 3), a[:, :2].reshape(-1, 3), a[:, -2:].reshape(-1, 3)])
+    d = np.sqrt(((a - np.median(ring, 0)) ** 2).sum(-1))
+    m = (d > ART_DIFF).astype(np.uint8)
+    if corner:
+        m[:int(h * 0.35), :int(w * 0.45)] = 0
+    m = cv2.morphologyEx(m, cv2.MORPH_OPEN, np.ones((3, 3), np.uint8))
+    ys, xs = np.nonzero(m)
+    if len(xs) < 30:
+        return bgr
+    x0, x1 = np.percentile(xs, [3, 97]).astype(int)
+    y0, y1 = np.percentile(ys, [3, 97]).astype(int)
+    s = max(10, int(x1 - x0), int(y1 - y0))
+    cx, cy = (x0 + x1) // 2, (y0 + y1) // 2
+    x0, y0 = max(0, cx - s // 2), max(0, cy - s // 2)
+    return bgr[y0:min(h, y0 + s), x0:min(w, x0 + s)]
+
+
+def cell_inside(img, grid, r, c):
+    """A whole cell without its frame (for art_box)."""
+    x, y, w, h = cell_rect(grid, r, c)
+    e = max(1, int(round(EDGE * w / CELL)))
+    return img[y + e:y + h - e, x + e:x + w - e]
+
+
+def cell_feats(img, grid, r, c):
+    """-> {"top": feats of the cell's top part, "box": feats of its art} (None if the cell is off the picture)."""
+    cv2, _np = _cv()
+    top = cell_crop(img, grid, r, c)
+    if not top.size:
+        return None
+    return {"top": feats(top), "box": feats(art_box(cell_inside(img, grid, r, c)))}
+
+
+def slot_sides(bgr):
+    """A stash slot's inside (a whole cell) -> [(mode, SIDE x SIDE picture)]: its top part at 3 sizes, and its art."""
+    cv2, _np = _cv()
+    out = [("top", cv2.resize(top_part(scaled(bgr, k)), (SIDE, SIDE), interpolation=cv2.INTER_AREA))
+           for k in (0.88, 1.0, 1.12)]
+    e = max(1, int(round(4 * bgr.shape[1] / CELL)))
+    out.append(("box", cv2.resize(art_box(bgr[e:-e, e:-e]), (SIDE, SIDE), interpolation=cv2.INTER_AREA)))
+    return out
+
+
 def top_part(bgr):
     """A whole cell's picture (official art laid on the backing) -> the same part cell_crop takes."""
     h, w = bgr.shape[:2]
@@ -173,15 +232,19 @@ class Refs:
     def __init__(self):
         self.items = {}
 
-    def add(self, name, bgr, src="art"):
-        self.items.setdefault(name, []).append((feats(bgr), src))
+    def add(self, name, bgr, src="art", mode="top"):
+        self.items.setdefault(name, []).append((feats(bgr), src, mode))
 
     def ranked(self, f, n=3):
-        """-> [(score, name, kind of picture)] best first."""
+        """f: cell_feats() (both ways) or feats() (the top part only) -> [(score, name, kind of picture)] best first:
+        each item's best picture, each compared the same way it was taken."""
+        both = f if isinstance(f, dict) else {"top": f}
         out = []
         for name, lst in self.items.items():
-            sc, src = max(((score(f, rf), s) for rf, s in lst), key=lambda x: x[0])
-            out.append((sc, name, src))
+            got = [(score(both[m], rf), s) for rf, s, m in lst if both.get(m) is not None]
+            if got:
+                sc, src = max(got, key=lambda x: x[0])
+                out.append((sc, name, src))
         out.sort(reverse=True)
         return out[:n]
 
@@ -192,7 +255,8 @@ class Refs:
             return None, 0.0, 0.0
         top, name, src = top3[0]
         nxt = top3[1][0] if len(top3) > 1 else -1.0
-        if top >= MATCH_MIN.get(src, 0.72) and top - nxt >= MATCH_BY:
+        by = MATCH_BY_SURE if top >= MATCH_SURE else MATCH_BY
+        if top >= MATCH_MIN.get(src, 0.72) and top - nxt >= by:
             return name, top, top - nxt
         return None, top, top - nxt
 
@@ -245,20 +309,21 @@ def read(img, refs, tpl):
     occ = occupied(img, grid)
     out = []
     for r, c in single_cells(occ):
-        cut = cell_crop(img, grid, r, c)
-        if not cut.size:
+        f = cell_feats(img, grid, r, c)
+        if f is None:
             continue
-        name, sc, _m = refs.best(feats(cut))
+        name, sc, _m = refs.best(f)
         out.append((r, c, name, sc, cell_rect(grid, r, c)))
     return win, out
 
 
 # ---- pictures learned on this PC (you price checked a reward while the window was open)
-def learned():
+def learned(file=LEARN_FILE):
+    """{name: [SIDE x SIDE pictures]} - LEARN_FILE: top parts, BOX_FILE: cropped to the art."""
     _cv2, np = _cv()
     from .config import load_json
     out = {}
-    for name, pics in (load_json(LEARN_FILE, {}) or {}).items():
+    for name, pics in (load_json(file, {}) or {}).items():
         for b in pics if isinstance(pics, list) else [pics]:
             try:
                 out.setdefault(name, []).append(np.frombuffer(base64.b64decode(b), np.uint8).reshape(SIDE, SIDE, 3))
@@ -273,24 +338,36 @@ def learn_many(pics):
     cv2, np = _cv()
     from .config import load_json, save_json
     d = load_json(LEARN_FILE, {}) or {}
+    bx = load_json(BOX_FILE, {}) or {}
     n = 0
     for name, bgr in (pics or {}).items():
         if bgr is None or not bgr.size or not name:
             continue
-        new = []
-        for k in (0.88, 1.0, 1.12):
-            small = cv2.resize(top_part(scaled(bgr, k)), (SIDE, SIDE), interpolation=cv2.INTER_AREA)
-            new.append(base64.b64encode(np.ascontiguousarray(small).tobytes()).decode())
+        sides = slot_sides(bgr)
+        new = [_b64(p) for m, p in sides if m == "top"]
         lst = [x for x in (d.get(name) or []) if isinstance(x, str) and x not in new]
         d[name] = (lst + new)[-PER_NAME:]
+        _keep(bx, name, [_b64(p) for m, p in sides if m == "box"])
         n += 1
     if n:
         save_json(LEARN_FILE, d)
+        save_json(BOX_FILE, bx)
     return n
 
 
-def learn(name, bgr):
-    """Remember what this reward looks like in the Favours window (at most 3 pictures per item)."""
+def _b64(small):
+    _cv2, np = _cv()
+    return base64.b64encode(np.ascontiguousarray(small).tobytes()).decode()
+
+
+def _keep(d, name, new, most=3):
+    lst = [x for x in (d.get(name) or []) if isinstance(x, str) and x not in new]
+    d[name] = (lst + new)[-most:]
+
+
+def learn(name, bgr, inside=None):
+    """Remember what this reward looks like in the Favours window: bgr = its cell's top part (cell_crop), inside = the
+    whole cell without its frame (cell_inside: kept cropped to its art too)."""
     cv2, np = _cv()
     from .config import load_json, save_json
     if bgr is None or not bgr.size or not name:
@@ -298,9 +375,12 @@ def learn(name, bgr):
     small = cv2.resize(bgr, (SIDE, SIDE), interpolation=cv2.INTER_AREA)
     d = load_json(LEARN_FILE, {}) or {}
     lst = [x for x in (d.get(name) or []) if isinstance(x, str)]
-    lst = (lst + [base64.b64encode(np.ascontiguousarray(small).tobytes()).decode()])[-PER_NAME:]
-    d[name] = lst
+    d[name] = (lst + [_b64(small)])[-PER_NAME:]
     save_json(LEARN_FILE, d)
+    if inside is not None and inside.size:
+        bx = load_json(BOX_FILE, {}) or {}
+        _keep(bx, name, [_b64(cv2.resize(art_box(inside), (SIDE, SIDE), interpolation=cv2.INTER_AREA))])
+        save_json(BOX_FILE, bx)
     return True
 
 
@@ -329,7 +409,41 @@ def build_refs(items):
             continue                                      # - Coat of Red - is never priced)
         for p in pics:
             refs.add(name, p, "learned")
+    for name, pics in learned(BOX_FILE).items():
+        if known and name not in known:
+            continue
+        for p in pics:
+            refs.add(name, p, "learned", "box")
+    for name, bgr in shipped_omens().items():             # every omen of the Ritual tab, from the app itself
+        if known and name not in known:
+            continue
+        for mode, p in slot_sides(bgr):
+            refs.add(name, p, "shipped", mode)
     return refs
+
+
+def _templates():
+    import sys
+    from pathlib import Path
+    base = getattr(sys, "_MEIPASS", None)
+    return Path(base) / "soe2" / "templates" if base else Path(__file__).resolve().parent / "templates"
+
+
+def shipped_omens():
+    """{name: 70 x 70 stash slot picture} - the Ritual tab's omens (templates/favours_omens.png, a strip in the order
+    favours_omens.json names them). Pictures of items only."""
+    cv2, _np = _cv()
+    import json
+    d = _templates()
+    try:
+        names = json.loads((d / "favours_omens.json").read_text(encoding="utf-8"))
+        strip = cv2.imread(str(d / "favours_omens.png"))
+    except (OSError, ValueError):
+        return {}
+    if strip is None or not names:
+        return {}
+    w = strip.shape[1] // len(names)
+    return {n: strip[:, i * w:(i + 1) * w] for i, n in enumerate(names)}
 
 
 def belt_refs():

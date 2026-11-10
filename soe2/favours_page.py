@@ -55,7 +55,8 @@ class FavoursPage:
 
     # ---------------------------------------------------------------- the pictures to compare with
     def favours_refs(self, fetch=False):
-        """Build them (a background thread): the pictures learned on this PC, for poe.ninja's exchange items."""
+        """Build them (a background thread): the Ritual tab's omens that ship with the app, and the pictures learned
+        on this PC - poe.ninja's exchange items only."""
         from .wealth import WPRICES
         items = FV.ninja_items(getattr(WPRICES, "parts", None))
         self.fv_refs = FV.build_refs(items)
@@ -134,10 +135,9 @@ class FavoursPage:
                     refs = getattr(self, "fv_refs", None) or FV.Refs()
                     rows, seen = [], []
                     for r, c in FV.single_cells(occ):
-                        cut = FV.cell_crop(img, grid, r, c)
-                        if not cut.size:
+                        f = FV.cell_feats(img, grid, r, c)
+                        if f is None:
                             continue
-                        f = FV.feats(cut)
                         name, sc, _m = refs.best(f)
                         if name:
                             rows.append({"r": r, "c": c, "name": name, "score": sc,
@@ -251,7 +251,7 @@ class FavoursPage:
         x, y, w, h = FV.cell_rect(grid, r, c)
         if FV.backing(img[y + 6:y + int(h * FV.TOP), x + 6:x + w - 6]) is None:
             return False
-        if not FV.learn(name, FV.cell_crop(img, grid, r, c)):
+        if not FV.learn(name, FV.cell_crop(img, grid, r, c), FV.cell_inside(img, grid, r, c)):
             return False
         fv_log(f"learned the picture of {name} (cell {r},{c})")
         threading.Thread(target=lambda: self.favours_refs(fetch=False), daemon=True).start()
