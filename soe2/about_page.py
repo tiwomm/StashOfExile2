@@ -99,6 +99,8 @@ CREDITS = (
     ("poe2pricer (saxe78)", "the idea for Favours prices - finding the Ritual window by a piece of its own art and its "
                             "rewards by their pictures. Ours is written from scratch; none of its code is used.",
      "https://github.com/saxe78/poe2pricer"),
+    ("gruvbox by Pavel Pertsev (morhetz)", "the colors of the Gruvbox Dark and Gruvbox Light themes (MIT)",
+     "https://github.com/morhetz/gruvbox"),
     ("NeverSink and Ryonnen (reddit)", "the game's hidden setting that applies your item filter to the Ritual window "
                                        "(Filter in the Ritual window).", "https://www.youtube.com/watch?v=6hiQtcQhB3k"),
     ("Path of Building PoE2 (PathOfBuildingCommunity)", "the anoint recipes.", "https://github.com/PathOfBuildingCommunity/PathOfBuilding-PoE2"),

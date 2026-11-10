@@ -417,7 +417,7 @@ def _translator(old):
 
     def tr(key, v):
         lo = v.lower()
-        if lo in KEEP:
+        if lo in KEEP and (lo == "#010203" or WALK.get("over", True)):
             return lo
         m = MEM.get(key)
         rc = m[1] if m and m[0] == lo else recipe_of(lo)    # the app changed it since the last swap: read it again
@@ -429,11 +429,30 @@ def _translator(old):
     return tr
 
 
+WALK = {}
+
+
 def walk(root, tr):
-    """Re-color everything on screen with tr(key, old) -> new."""
+    """Re-color everything on screen with tr(key, old) -> new. 2.130.2: the colors of the windows over the game
+    (KEEP) are kept only in those windows; in the app's own windows a color an overlay style shares
+    with a theme (Midnight Steel's text, say) follows the theme (it stayed light on a light theme)."""
     tkc = root.tk
     stack = ["."]
     n = 0
+    tops = {}
+
+    def over(w):
+        try:
+            top = str(tkc.call("winfo", "toplevel", w))
+        except Exception:
+            return True
+        if top not in tops:
+            try:
+                from .shell import DeskWindow
+                tops[top] = not (top == "." or isinstance(root.nametowidget(top), DeskWindow))
+            except Exception:
+                tops[top] = True
+        return tops[top]
     while stack:
         w = stack.pop()
         try:
@@ -444,6 +463,7 @@ def walk(root, tr):
         n += 1
         if w in ST.skip:
             continue
+        WALK["over"] = over(w)
         _retone_options(tkc, (w, "configure"), (w, "configure"), tr, (w, "o"))
         try:
             if cls == "Canvas":
@@ -476,6 +496,7 @@ def walk(root, tr):
                                     tkc.call(w, "entryconfigure", i, o, nv)
         except Exception:
             buglog.caught()
+    WALK.pop("over", None)
     alive = _alive_cache(tkc)
     for k in [k for k in MEM if k[0] not in alive and k[0] != "style"]:
         MEM.pop(k, None)
