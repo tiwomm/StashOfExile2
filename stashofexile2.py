@@ -47,6 +47,9 @@ VERSION HISTORY
          screen): the watcher also looks at Map Content under the minimap every 2 s (ritual_alert.content_state,
          templates/ritual_content.png: the Ritual icon 0.94 - 1.0, anything else under 0.7); its green tick means
          every ritual is done - the line says so and leaving doesn't remind you.
+       - Ritual (feedback: left a map at 2 of 3, no reminder): a reminder that comes while the game isn't the window
+         in front (a screenshot tool, another window) waits up to a minute for it; the log (Debug mode) says what the
+         leave check saw and when a reminder couldn't show.
        - Price check key, Overlay + Here (feedback: "it's still prioritizing the app and bringing it to the front"):
          while the game is in front the app isn't touched; Price Checks opens on the item when you come back to it.
   2.129.2

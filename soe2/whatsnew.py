@@ -53,6 +53,7 @@ NOTES = {
             ("Ritual", "The tribute reminder shows whenever you close Favours with tribute left, rerolls or not."),
             ("App", "Moving the app to another screen should no longer leave a page behind on the first one."),
             ("Ritual", "Map Content's ticked Ritual icon counts: all done is all done, even when the counter hides."),
+            ("Ritual", "A reminder that comes while another window is in front waits for the game."),
             ("Price Checks", "Overlay + Here no longer brings the app to the front while you play."),
         ],
     },
