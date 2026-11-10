@@ -46,9 +46,9 @@ BETA_AREAS = ("Wealth", "Money Makers", "Game Search", "Market Insights", "Craft
 NOTES = {
     "2.129.0": {
         "big": [
-            ("🕯", "Favours prices you can trust", "Only items it's sure of get a price: Scan stash teaches it each "
-             "omen's look (your Ritual tab), and so does price checking one in the window. No prices on uniques - a "
-             "★ on Mageblood and Headhunter.", None, "Overlay"),
+            ("🕯", "Favours prices you can trust", "Only items it's sure of get a price. Every omen of the Ritual "
+             "tab is known from the start; price checking any other reward in the window teaches it. No prices on "
+             "uniques - a ★ on Mageblood and Headhunter.", None, "Overlay"),
             ("⏰", "Tribute reminder", "Close the Favours window with no rerolls left and tribute to spend: a "
              "reminder to offer it to the King.", None, "Overlay"),
         ],

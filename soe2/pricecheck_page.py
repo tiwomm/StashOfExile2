@@ -618,6 +618,8 @@ class PriceCheckPage:
                 self.favours_learn(cur[0])               # never a unique)
         except Exception:
             buglog.caught()
+        if cur and cur[2] == "Wombgifts":                # (feedback: "use trade site for the 5 types of wombgifts")
+            cur = None
         if cur:                                          # 2.129.0 (feedback): omens, essences, lineage gems, every
             self.status_text, self.status_until = f"Pricing {cur[0]}...", time.time() + 10     # currency: their
             self.stack_price(cur[0], cur[1], loud=True)  # going rate on poe.ninja's exchange - never a trade search
