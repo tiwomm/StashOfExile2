@@ -50,69 +50,54 @@ NOTES = {
     "2.132.2": {
         "big": [],
         "small": [
-            ("Overlay", "Map profit counts each visit home: what you came back with, minus what you went back in "
-             "with - emptying your inventory between visits isn't a loss."),
-            ("Overlay", "BETA until they're fully tested: Top Up Reminders, Break reminders, Map profit and the Temple "
-             "Helper (Settings › General › Features). The Desecration Helper isn't BETA any more."),
-            ("Overlay", "Map profit is what a map gained - no arrows, and fewer of an item never counts as a loss."),
-            ("Overlay", "The bar keeps its size: what doesn't fit leaves it (Map profit first, then Avg, then Maps). "
-             "Your crystals are on the line above it, with Ritual's."),
-            ("Overlay", "Helpers › PLAY starts with the Desecration Helper, then Campaign."),
-            ("Overlay", "Top Up waits when something covers your items (the chat box): no restock card for them."),
-            ("Overlay", "The Ritual line shows once you've done a map's first ritual - not for a map you skip it in."),
+            ("Overlay", "Map profit no longer counts emptying your inventory between visits as a loss."),
+            ("Overlay", "Map profit only shows what you gained."),
+            ("Overlay", "Top Up, Break reminders, Map profit and Temple Helper are now BETA."),
+            ("Overlay", "Desecration Helper is out of BETA and first under Helpers › PLAY."),
+            ("Overlay", "Parts that don't fit on the bar now hide instead of overlapping."),
+            ("Overlay", "Temple crystals moved to the line above the bar."),
+            ("Overlay", "The Ritual line shows after your first ritual in a map."),
+            ("Overlay", "Top Up ignores items hidden behind the chat box."),
         ],
     },
     "2.132.1": {
         "big": [
-            ("◆", "Temple Helper", "Hover a Vaal Beacon in a map: your crystals (Energised Beacons 55/60) show on the "
-             "bar, and a red alert card says when they're full. Turn it on in Overlay ↳ Settings › Helpers.", None,
-             "Overlay"),
+            ("◆", "Temple Helper", "Shows your crystals in maps (hover a Vaal Beacon) and warns you when they're "
+             "full. Overlay ↳ Settings › Helpers.", None, "Overlay"),
         ],
         "small": [
-            ("Overlay", "Map profit counts a map once it's done - town trips and going back in through its portal "
-             "are the same map. It's done when you start another map, or 15 minutes after you left it."),
-            ("Overlay", "Map profit's Maps… window says what its search box is for."),
-            ("Overlay", "Quick settings › Helpers has Map profit and Temple."),
+            ("Overlay", "Map profit counts town trips and going back in as the same map."),
+            ("Overlay", "Map profit and Temple are in Quick settings."),
         ],
     },
     "2.132.0": {
         "big": [
-            ("▲", "Map profit", "What each map earned, counted from your inventory before and after it - Currency "
-             "Exchange items only, at Exchange Rates' prices. On the bar after each map (hover for how), and every "
-             "map in Maps…. Kept on your PC only. Turn it on in Overlay ↳ Settings › Helpers.", None, "Overlay"),
+            ("▲", "Map profit", "Tracks the currency you make each map, at Exchange Rates' prices. Hover the bar for "
+             "details, or open Maps… for every map. Stays on your PC. Overlay ↳ Settings › Helpers.", None, "Overlay"),
         ],
         "small": [
-            ("Overlay", "Alert cards for things to do now - Hiveblood, End Delirium, rituals, tribute - have red "
-             "words."),
-            ("Overlay", "The tribute on the Ritual line changes once the game's counter reads the same twice."),
-            ("Overlay", "Hide the overlay from screen captures is in Overlay ↳ Settings › Options, beside Lock "
-             "position."),
-            ("Expedition", "Gem prices in Expedition books are shared through the community board and kept a day. "
-             "When there's no new price, the last one (up to two weeks old) shows while a new one is looked up - the "
-             "highest level gems first."),
+            ("Overlay", "Urgent alert cards (Hiveblood, End Delirium, rituals, tribute) use red text."),
+            ("Overlay", "Steadier tribute count on the Ritual line."),
+            ("Overlay", "Hide the overlay from screen captures moved to Overlay ↳ Settings › Options."),
+            ("Expedition", "Gem prices are shared through the community board, so fewer trade searches."),
         ],
     },
     "2.131.6": {
         "big": [],
         "small": [
-            ("Overlay", "The Ritual line keeps your tribute when the game's counter goes from the screen - until it's "
-             "0 or you start a new map."),
-            ("Overlay", "End Delirium is an alert card too, like the other alerts - no flashing text."),
+            ("Overlay", "Your tribute stays on the Ritual line until it hits 0 or the map ends."),
+            ("Overlay", "End Delirium is now an alert card."),
         ],
     },
     "2.131.5": {
         "big": [
-            ("☠", "Your tribute on the Ritual line", "In a Ritual map the line over the game says how much tribute "
-             "you have - read from the game's own counter, which the bar covers.", None, "Overlay"),
+            ("☠", "Tribute on the Ritual line", "See your tribute in Ritual maps.", None, "Overlay"),
         ],
         "small": [
-            ("Overlay", "Offer your tribute and close the Favours window at once: the game's counter counting down "
-             "means no reminder."),
-            ("Overlay", "Top Up waits for a clear look: with the mouse over your inventory, the game's item box can "
-             "cover a stack."),
-            ("Overlay", "Top Up reminds you only when you're back from a map. The Well of Souls doesn't count as a "
-             "map."),
-            ("App", "Linux (Wayland): Settings opens without the dim layer behind it."),
+            ("Overlay", "No tribute reminder once you've offered it."),
+            ("Overlay", "Top Up waits until it can see your inventory clearly."),
+            ("Overlay", "Top Up only reminds you after a map. Well of Souls doesn't count."),
+            ("App", "Linux (Wayland): Settings no longer dims the screen."),
         ],
     },
     "2.131.4": {
@@ -2167,38 +2152,56 @@ NOTES = {
 NOTES["2.132.0"]["rollup"] = {
     "since": "2.125.8",
     "big": [
-        ("🧩", "Feature Picker", "Pick the features you use; the rest leave the menu. It also asks about sharing with "
-         "the community and where your data lives. Change it any time in Settings › General › Features.", None,
-         "Settings"),
-        ("📦", "Top Up Reminders", "Overlay ↳ Settings › Helpers: in your open inventory, hover an item and press Ctrl+C "
-         "to teach it, set how many to keep, or + Add more by name. Back from a map with something low: one card. "
-         "League Plan's Map supplies moved here.", None, "Overlay"),
-        ("🔔", "Alert cards", "Every helper alert - Breach, Ritual, tribute, End Delirium, Top Up, breaks - is one small "
-         "card; a few at once share it, most urgent on top. Things to do now have red words. No flashing.", None,
+        ("🧩", "Feature Picker", "Pick the features you use and hide the rest. Change it any time in Settings › "
+         "General › Features.", None, "Settings"),
+        ("📦", "Top Up Reminders", "Teach it your map supplies (hover, Ctrl+C) and set how many to keep. You get a "
+         "card after a map when you're low.", None, "Overlay"),
+        ("🔔", "Alert cards", "Helper alerts are now small cards that stack, most urgent on top.", None, "Overlay"),
+        ("☠", "Tribute on the Ritual line", "See your tribute in Ritual maps.", None, "Overlay"),
+        ("▶", "Start session on the bar", "Start a session straight from the overlay bar.", None, "Overlay"),
+        ("?", "Ask me about mods I haven't rated", "Optional: a price check can ask you to grade a mod you haven't "
+         "rated yet. Settings › Price checking.", None, "Price Checks"),
+        ("💎", "Gem price checks", "Price check skill, support and spirit gems.", None, "Price Checks"),
+        ("⇄", "Currency price checks", "Price check currency and omens for their exchange rate.", None, "Price Checks"),
+        ("🕯", "Favours prices", "Ritual Favours rewards show their poe.ninja price.", None, "Overlay"),
+        ("⏰", "Tribute reminder", "Reminds you if you close Favours with tribute left.", None, "Overlay"),
+        ("⏱", "Sessions survive a restart", "Your session comes back paused after an update or crash.", None,
          "Overlay"),
-        ("☠", "Your tribute on the Ritual line", "In a Ritual map the line over the game says how much tribute you "
-         "have, read from the game's own counter - and offering it means no reminder.", None, "Overlay"),
-        ("▶", "Start session on the bar", "No session yet? Click ▶ Start session on the Game Overlay's bar to time your "
-         "maps and count maps and deaths. Helpers work either way.", None, "Overlay"),
-        ("?", "Ask me about mods I haven't rated", "Off until you turn it on (Settings › Price checking). A price check "
-         "asks you to grade one mod you never rated, S to F as on Rate Mods - then prices again.", None,
-         "Price Checks"),
-    ] + [b for b in NOTES["2.131.0"]["rollup"]["big"]],
+        ("📍", "Move the overlay", "Bar at the top or bottom, Panel left or right. Quick settings › Place.", None,
+         "Overlay"),
+        ("🕯", "Loot filter in the Ritual window", "Turn your filter on for the Ritual window from Helpers › Ritual "
+         "(thanks to NeverSink and Ryonnen).", None, "Overlay"),
+        ("🎨", "Gruvbox themes", "Gruvbox Dark and Light in Settings › Appearance (gruvbox by morhetz).", None,
+         "Settings"),
+    ],
     "small": [
-        ("Overlay", "Break reminders (off to start): after 45–120 minutes of play, a short card in hideout or town."),
-        ("Overlay", "Hide the overlay from screen captures is in Overlay ↳ Settings › Options, beside Lock position."),
-        ("Overlay", "Quick settings › Helpers has Top Up, Breaks and Desecration (with its beta feature on)."),
-        ("Overlay", "\"Start a session with StashOfExile2\" (was Start the overlay) - what it always did."),
-        ("Overlay", "Campaign routes are Full, Speedrun and Rush (carry)."),
-        ("Settings", "Settings opens over your page, dimmed behind it; Esc, × or a click outside closes it."),
-        ("Settings", "Advanced › Data folder › Change… moves your data to another folder."),
-        ("Price Checks", "White and magic bases at item level 82 or more search 82+, and their ticked mods must all "
-         "match."),
-        ("Leaderboards", "League ▾ says how many players have times in each league."),
-        ("Community", "A community name is asked once, after What's new - a made-up one, never your account or "
-         "character names."),
-        ("App", "Linux (Wayland): Settings opens without the dim layer behind it."),
-    ] + [x for x in NOTES["2.131.0"]["rollup"]["small"] if "6 hours" not in x[1]],
+        ("Overlay", "Break reminders (off by default)."),
+        ("Overlay", "Top Up and Breaks are in Quick settings."),
+        ("Overlay", "Campaign routes: Full, Speedrun and Rush."),
+        ("Overlay", "Ritual line sits under the bar when the bar is at the top."),
+        ("Overlay", "Regex favorites can be locked in place."),
+        ("Overlay", "Trade whispers is just on or off."),
+        ("Settings", "Settings opens over your page. Esc or a click outside closes it."),
+        ("Settings", "Move your data folder in Advanced › Data folder."),
+        ("Settings", "Keys is now Keybinds, with a reset button."),
+        ("Price Checks", "Bases at item level 82+ search 82+."),
+        ("Price Checks", "Mageblood should search all its Legacies."),
+        ("Bulk Pricing", "Undo, Delete and Clear All sit together."),
+        ("Leaderboards", "League list shows how many players each league has."),
+        ("Community", "You're asked for a community name once. Make one up."),
+        ("Expedition", "Remnant prices should show faster and cover long books."),
+        ("Expedition", "\"Unique Ring\", \"Belt\", \"Amulet\" and \"Jewellery\" rewards show the best "  # game text
+         "uniques they could be."),
+        ("Expedition", "Runeshape list sorted A-Z per tier."),
+        ("Ritual", "Rituals-left reminder should be more reliable."),
+        ("Ritual", "Favours prices should tell look-alike rewards apart."),
+        ("App", "The game's log (Client.txt) should be found wherever the game is installed."),
+        ("App", "Switching themes or pages quickly shouldn't freeze the app."),
+        ("App", "License is now AGPL-3.0 (up to 2.129.4 stays GPL-3.0)."),
+        ("App", "A one-time note at a new league: some features need a few days of data."),
+        ("App", "Linux (Wayland): Settings no longer dims the screen."),
+        ("Desecration Helper", "Heart of the Well options show their range and roll."),
+    ],
 }
 
 
