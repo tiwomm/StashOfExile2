@@ -59,6 +59,42 @@ def state_set(have, most, t=None):
     return d
 
 
+# 2.132.4 (feedback: "Temple helper says Crystals ? without even having temple in the map ... the red/gold triangle map
+# content icon"): the Temple icon under Map Content (templates/temple_content.png, from a 1440p game) says the map has
+# a Temple; the crystals show only then. Measured: 0.999+ with it there, 0.72 at most without (every saved shot).
+CONTENT_AREA = (0.64, 0.14, 1.0, 0.49)      # where Map Content's icons are (as the Ritual watcher's)
+CONTENT_MIN = 0.85
+BASE_H = 1440
+_TPL = []
+
+
+def content_box(game):
+    gx, gy, gw, gh = game
+    a = CONTENT_AREA
+    return gx + int(gw * a[0]), gy + int(gh * a[1]), gx + int(gw * a[2]), gy + int(gh * a[3])
+
+
+def content_has(img, game_h):
+    """A picture of Map Content's area (PIL) and the game's height -> True if the Temple icon is there."""
+    import cv2
+    import numpy as np
+    if not _TPL:
+        import sys
+        from pathlib import Path
+        base = getattr(sys, "_MEIPASS", None)
+        d = Path(base) / "soe2" / "templates" if base else Path(__file__).resolve().parent / "templates"
+        _TPL.append(cv2.imread(str(d / "temple_content.png"), cv2.IMREAD_GRAYSCALE))
+    tpl = _TPL[0]
+    if tpl is None or img is None:
+        return False
+    g = cv2.cvtColor(np.asarray(img.convert("RGB")), cv2.COLOR_RGB2GRAY)
+    s = game_h / BASE_H
+    t = cv2.resize(tpl, None, fx=s, fy=s, interpolation=cv2.INTER_AREA) if abs(s - 1) > 0.01 else tpl
+    if g.shape[0] < t.shape[0] or g.shape[1] < t.shape[1]:
+        return False
+    return float(cv2.minMaxLoc(cv2.matchTemplate(g, t, cv2.TM_CCOEFF_NORMED))[1]) >= CONTENT_MIN
+
+
 def full(st):
     return bool(st) and st["have"] >= st["most"]
 
