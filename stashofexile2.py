@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU AGPL v3.0 (see LICENSE; up to 2.129.4: GNU GPL v3.0). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.132.0
+VERSION 2.132.1
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,6 +19,14 @@ VERSION 2.132.0
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.132.1
+       - Temple Helper (feedback: "show how many crystals I am currently at when running maps"; "a red text card too
+         when crystals are full"; the Vaal Beacon tooltip "Energised Beacons: 55/60"): temple.py (parse, the region
+         round the mouse, temple.json: only the two numbers) + temple_page.py - in a map, every 1.5 s, Windows OCR of
+         that region; "◆ Crystals 55/60" on the bar (the "temple" part); full: a vital alert card once (again after
+         they drop). Its row in Overlay ↳ Settings › Helpers (Test), a Quick settings chip; log_wanted counts it.
+       - Map profit: its search box says Search (feedback: "wtf is this textbox for?"); no maps: "Session: no maps
+         yet"; a Quick settings chip.
   2.132.0
        - Map profit (feedback: profit per map "using the same mechanism as top-up reminders", "only locally, never
          published or sent to the cloudflare database", "only currency exchange items", "per session/map/hour/day"):
@@ -3552,7 +3560,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.132.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.132.1"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 

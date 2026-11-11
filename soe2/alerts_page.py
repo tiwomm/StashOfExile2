@@ -128,7 +128,9 @@ HELPER_BLURBS = {"delirium": "An End Delirium card when a map ends with Delirium
                  "whispers": "A card when someone wants to buy your item",
                  "desecrate": "Each Well of Souls option's tier",
                  "topup": "Says what's running low when you open your inventory in a hideout or town",   # 2.131.1
-                 "breaks": "An alert card after a long stretch of play, in a hideout or town"}
+                 "breaks": "An alert card after a long stretch of play, in a hideout or town",
+                 "mapprofit": "What each map earned, from your inventory - on your PC only",          # 2.132.1
+                 "temple": "Your crystals on the bar, and a card when they're full"}
 
 
 class AlertsPage:
@@ -204,7 +206,9 @@ class AlertsPage:
         return bool(self.breach_cfg().get("on") or self.ritual_cfg().get("on") or self.ws_cfg().get("on")
                     or self.remnant_cfg().get("on") or _W.cfg()["on"]
                     or (hasattr(self, "fl_counting") and self.fl_counting())      # 2.45.0: the Strat Tracker's runs
-                    or bool(SETTINGS.get("topup", {}).get("on")))                 # 2.131.0: Top Up (hideout / town)
+                    or bool(SETTINGS.get("topup", {}).get("on"))                  # 2.131.0: Top Up (hideout / town)
+                    or bool(SETTINGS.get("map_profit", {}).get("on"))             # 2.132.0: Map profit (maps)
+                    or bool(SETTINGS.get("temple", {}).get("on")))                # 2.132.1: the Temple Helper (maps)
 
     def alerts_init(self):
         """At start-up (start_utilities): the Breach watcher runs whether or not the tracker window was opened."""
@@ -465,6 +469,7 @@ class AlertsPage:
         self.al_break_every = ecb
         self.topup_row(box, P2, CB)                         # 2.131.0: Top Up Reminders
         self.mp_row(box, P2, CB)                            # 2.132.0: Map profit
+        self.temple_row(box, P2, CB)                        # 2.132.1: Temple Helper
         self.alerts_refresh()
         return box
 
@@ -518,6 +523,11 @@ class AlertsPage:
         elif key == "topup":                                  # 2.131.1: Quick settings switch it too
             self.topup_set(bool(want))
             v = getattr(self, "al_topup", None)
+            if v is not None and bool(v.get()) != bool(want):
+                v.set(bool(want))
+        elif key in ("mapprofit", "temple"):                  # 2.132.1: Quick settings switch them too
+            (self.mp_set if key == "mapprofit" else self.temple_set)(bool(want))
+            v = getattr(self, "al_mp" if key == "mapprofit" else "al_temple", None)
             if v is not None and bool(v.get()) != bool(want):
                 v.set(bool(want))
         elif key == "breaks":
@@ -906,9 +916,11 @@ class AlertsPage:
         w = "off" if not _W.cfg()["on"] else ("on" if _W.active() and getattr(self, "br_reader", None) is not None
                                               else "warn" if getattr(self, "br_reader", None) is None else "off")
         from . import topup as _TU, breaks as _BR                                   # 2.131.1
+        from . import mapprofit as _MP, temple as _TM                               # 2.132.1
         return {"focus": "on" if _F.cfg()["on"] else "off", "campaign": "on" if _CP.cfg()["on"] else "off",
                 "whispers": w, "topup": "on" if _TU.cfg().get("on") else "off",
-                "breaks": "on" if _BR.cfg().get("on") else "off"}
+                "breaks": "on" if _BR.cfg().get("on") else "off",
+                "mapprofit": "on" if _MP.cfg().get("on") else "off", "temple": "on" if _TM.cfg().get("on") else "off"}
 
     def alerts_refresh(self):
         """Every 2 s (util_refresh) and after a change: dots, checkboxes and status lines."""

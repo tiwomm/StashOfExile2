@@ -48,6 +48,7 @@ class FeaturesPage:
                 buglog.caught()
         else:
             self.topup_start()                              # 2.131.0: Top Up (it stops itself when off)
+            self.temple_start()                             # 2.132.1: the Temple Helper (it stops itself too)
         if FEAT.on("overlay") and self.ritual_cfg().get("on"):
             try:
                 self.ritual_start()

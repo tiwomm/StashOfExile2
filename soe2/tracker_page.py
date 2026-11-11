@@ -1233,6 +1233,7 @@ class TrackerPage:
         texts["ritual"] = self.ritual_readout()               # 2.118.0: the Ritual line (count, tribute)
         try:
             texts["profit"] = self.mp_bar_text()              # 2.132.0: Map profit's part on the bar
+            texts["temple"] = self.temple_bar_text()          # 2.132.1: the Temple Helper's crystals
         except Exception:
             buglog.caught()
         from . import campaign as CP
