@@ -464,6 +464,7 @@ class AlertsPage:
         Tooltip(btest, "Shows the next reminder now.")
         self.al_break_every = ecb
         self.topup_row(box, P2, CB)                         # 2.131.0: Top Up Reminders
+        self.mp_row(box, P2, CB)                            # 2.132.0: Map profit
         self.alerts_refresh()
         return box
 
@@ -880,9 +881,9 @@ class AlertsPage:
         from . import features as FEAT
         if not test and not FEAT.on("overlay"):
             return
-        self.dl_win = alertcard.show(self.root, "End Delirium", "Map done - click the mirror to end it",
+        self.dl_win = alertcard.show(self.root, "End Delirium", "Map done - Delirium is still on",
                                      color="#c9b6ff", mark="!", secs=5 if test else 45, game=game_rect(),
-                                     tag="Delirium", rank=2, on_close=lambda: setattr(self, "dl_win", None))
+                                     tag="Delirium", rank=2, vital=True, on_close=lambda: setattr(self, "dl_win", None))
         #                                                     (the helper beeps itself, with its Sound setting)
 
     def alert_states(self):
@@ -1181,6 +1182,10 @@ class AlertsPage:
             self.root.after(9000 if cfg.get("on") and cfg.get("pending") else 0,
                             lambda g=got: self.breach_alert(level="ritual", sub=f"{g[0]} of {g[1]} done - go back "
                                                                                  f"through your portal"))
+        try:
+            self.mp_area(kind, before, where, left)          # 2.132.0: Map profit - a map's before / after
+        except Exception:
+            self.log_error("Map profit")
         if left:                                             # 2.131.0: Top Up may remind once a visit. 2.131.5
             self.topup_visit()                               # (feedback: "keeps showing up after not running maps"):
         #                                                      only a visit after a map
@@ -1240,7 +1245,7 @@ class AlertsPage:
         win = alertcard.show(self.root, title, small_txt, color=color, mark=mark,
                              secs=5 if test else BANNER_SECS.get(level, 8), game=game_rect(),
                              tag="Ritual" if level in ("ritual", "tribute") else "Breach",
-                             rank=0 if level in ("ritual", "tribute") else 1, on_close=lambda: self.br_win is win and self.breach_dismiss())
+                             rank=0 if level in ("ritual", "tribute") else 1, vital=True, on_close=lambda: self.br_win is win and self.breach_dismiss())
         self.br_win, self.br_level = win, level
         if (self.ritual_cfg() if level == "ritual" else self.breach_cfg()).get("sound", True):
             try:

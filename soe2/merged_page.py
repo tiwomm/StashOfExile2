@@ -1209,6 +1209,12 @@ class MergedOverlay:
             mw, aw = fm.measure("Maps: 000") + 8, fm.measure("Avg: 00:00") + 8
             fixed = [k for k, on in (("maps", ln.get("maps")), ("avg", ln.get("avg"))) if on]
             widths = {"maps": mw, "avg": aw}
+            try:                                              # 2.132.0: Map profit - the last map's, hover for how
+                if self.mp_on():
+                    fixed.append("profit")
+                    widths["profit"] = fm.measure("▼ −00.00 div") + 8
+            except Exception:
+                buglog.caught()
             map_on = bool(ln.get("map", True) or ln.get("where", True))
 
             def room(keys):
@@ -1224,7 +1230,12 @@ class MergedOverlay:
                 x = max(x, right - sum(widths[k] + SW for k in fixed))
             for k in fixed:
                 x = lead(x)
-                self._mg_text(cv, P, x + widths[k] // 2, mid, k, f, anchor="center")
+                t_ = self._mg_text(cv, P, x + widths[k] // 2, mid, k, f, anchor="center")
+                if k == "profit":
+                    try:
+                        self.mp_bar_bind(cv, t_.item)
+                    except Exception:
+                        buglog.caught()
                 x += widths[k]
                 drawn.append(k)
         elif self.bar_buttons_on():

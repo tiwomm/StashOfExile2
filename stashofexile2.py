@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU AGPL v3.0 (see LICENSE; up to 2.129.4: GNU GPL v3.0). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.131.6
+VERSION 2.132.0
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,6 +19,22 @@ VERSION 2.131.6
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.132.0
+       - Map profit (feedback: profit per map "using the same mechanism as top-up reminders", "only locally, never
+         published or sent to the cloudflare database", "only currency exchange items", "per session/map/hour/day"):
+         mapprofit.py (counting, map_profit.jsonl in the data folder - never uploaded) + mapprofit_page.py. Top Up's
+         clear inventory looks (topup_looking: Top Up or Map profit on) -> mp_seen at home; breach_area -> mp_area
+         (before = last home read, after = the first clear read back home; portal back = the same run). Cells are
+         named by Top Up's taught pictures, then Scan stash's (favours refs, art box); only WPRICES.named items count
+         (the exchange - no waystones, no gear). The bar's profit part (▲ / ▼, hover = how it was worked out, click =
+         Maps…); the Map profit window lists every map (search first, hover = breakdown, session / today totals).
+         Its row in Overlay ↳ Settings › Helpers. Off until turned on.
+       - Alert cards (feedback: "for each of the vital alert cards the text should be red"): show(vital=True) - Breach,
+         Ritual, tribute and End Delirium words are red. End Delirium says "Map done - Delirium is still on".
+       - Tribute counter (feedback: "keeps bugging out and showing all kinds of numbers"; "still getting occasional
+         reminders when I click through it all too fast"): a number counts once read the same twice in a row; the
+         window's close uses the last steady number from the past minute (HUD_KEEP); "counted down" needs two lower
+         reads.
   2.131.6
        - Ritual line (feedback: "the tribute amount should stay persistent ... until it goes to 0/map ends"): the
          game's counter leaving the screen keeps the last number; 0, or going right after counting down (offered),
@@ -3526,7 +3542,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.131.6"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.132.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 

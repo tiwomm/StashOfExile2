@@ -1221,6 +1221,10 @@ class TrackerPage:
             texts.update(map=f"Zone: {fmt_time(zt) if zt is not None else '-'}", where="", rank="", maps="", avg="")
         texts["focus"] = self.focus_line()[0]                 # 2.73.0: League Focus's line
         texts["ritual"] = self.ritual_readout()               # 2.118.0: the Ritual line (count, tribute)
+        try:
+            texts["profit"] = self.mp_bar_text()              # 2.132.0: Map profit's part on the bar
+        except Exception:
+            buglog.caught()
         from . import campaign as CP
         texts["campaign"] = "▸ " + CP.line_text() if CP.active() else ""          # 2.77.0: the campaign line
         for k, lab in self.tk_ov_lbls.items():

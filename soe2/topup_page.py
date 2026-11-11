@@ -37,15 +37,22 @@ class TopUpPage:
                 except Exception:
                     buglog.caught()
 
+    def topup_looking(self):
+        """2.132.0: the inventory looks run for Top Up Reminders or Map profit."""
+        try:
+            return self.topup_on() or self.mp_on()
+        except Exception:
+            return self.topup_on()
+
     def topup_start(self):
-        if getattr(self, "_tu_ticking", False) or not self.topup_on():
+        if getattr(self, "_tu_ticking", False) or not self.topup_looking():
             return
         self._tu_ticking = True
         self.root.after(EVERY_MS, self.topup_tick)
 
     # ---------------------------------------------------------------- looking
     def topup_tick(self):
-        if not self.topup_on():
+        if not self.topup_looking():
             self._tu_ticking = False
             return
         try:
@@ -131,7 +138,12 @@ class TopUpPage:
                 if good is not None and good.get("cells") is not None:
                     res["cells_use"] = good["cells"]
             self.topup_paint_seen()
-            if not res["covered"] and not getattr(self, "tu_open_reminded", False):
+            if not res["covered"]:
+                try:
+                    self.mp_seen(res)                        # 2.132.0: Map profit reads the same clear look
+                except Exception:
+                    self.log_error("Map profit")
+            if not res["covered"] and not getattr(self, "tu_open_reminded", False) and self.topup_on():
                 self.tu_open_reminded = True
                 self.topup_remind()
 
