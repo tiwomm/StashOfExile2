@@ -443,7 +443,8 @@ class MergedOverlay:
         # once every ritual there is done) screenshots and streams show it.
         try:
             from .utilities import RITUAL
-            if self.ritual_cfg().get("on") and getattr(RITUAL, "content", None) == "open" and RITUAL.running():
+            # 2.131.5: the whole Ritual map (done too) - the game's tribute counter under the bar is read as well
+            if self.ritual_cfg().get("on") and getattr(RITUAL, "content", None) in ("open", "done") and RITUAL.running():
                 return True
         except Exception:
             buglog.caught()

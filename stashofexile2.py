@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU AGPL v3.0 (see LICENSE; up to 2.129.4: GNU GPL v3.0). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.131.4
+VERSION 2.131.5
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,6 +19,18 @@ VERSION 2.131.4
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.131.5
+       - Ritual line (feedback: "add tribute count to the ritual counter overlay ... the overlay over xp bar blocks
+         it"): the game's own tribute counter (bottom middle; favours.hud_rect / hud_prep / hud_number, Windows OCR)
+         is read about once a second in a map by the Favours watcher -> RITUAL.tribute -> "6 of 6 rituals done ✔ ·
+         1,376 tribute" (and "All rituals done ✔ · ..."). The bar stays out of captures for the whole Ritual map
+         (content open or done), so the counter under it can be read.
+       - Tribute (feedback: "it doesn't turn gray when I click it and rapidly close the window"): when the window
+         closes with tribute owed, the counter decides - it counted down or went: offered, no reminder. The log says
+         which, and the counter's number when it reminds.
+       - Top Up (feedback: "if the game's text box blocks the currency item, it drops down to seen 0, ctrl + d
+         triggers changes"): a look with the mouse over the inventory panel, or within 8 s of a price check, is
+         "covered": Seen keeps the last clear look (cells_use) and the reminder waits for a clear one.
   2.131.4
        - Top Up (feedback: "F7 doesn't work ... it'll have to be ctrl+c"): F7's copy is sent by the app, so the key
          watcher (which skips injected keys) never saw a Ctrl+Alt+C and gate_ok turned it away. Top Up's copy is
@@ -3501,7 +3513,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.131.4"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.131.5"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 

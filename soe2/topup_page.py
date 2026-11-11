@@ -15,6 +15,7 @@ HIST_SECS = 20                      # 2.131.2: recent looks kept to find the tau
 REFINE_SAME = TU.SAME * 3       # (the glow changes it this much at most)
 TEACH_SECS = 3                      # the Top Up key counts as teaching within this of the last look
 CARD_COLOR = "#8ec5ff"
+PC_CARD_SECS = 8                    # 2.131.5: a price check's card may cover the inventory this long
 
 
 class TopUpPage:
@@ -116,8 +117,22 @@ class TopUpPage:
                 self.topup_refine(res)
             except Exception:
                 buglog.caught()
-            self.topup_paint_seen()
+            # 2.131.5 (feedback: "if the game's text box blocks the currency item, it drops down to seen 0"): a look
+            # with the mouse over the inventory (the game's item box may cover cells) or one of the app's own
+            # windows over it (a price card) doesn't count - Seen keeps the last clear look, and the reminder
+            # waits for one
+            res["covered"] = self._tu_covered(res)
             if not was:
+                self.tu_open_reminded = False
+            if not res["covered"]:
+                self.tu_good = res
+            else:
+                good = getattr(self, "tu_good", None)
+                if good is not None and good.get("cells") is not None:
+                    res["cells_use"] = good["cells"]
+            self.topup_paint_seen()
+            if not res["covered"] and not getattr(self, "tu_open_reminded", False):
+                self.tu_open_reminded = True
                 self.topup_remind()
 
     def _tu_hover(self, res):
@@ -134,6 +149,26 @@ class TopUpPage:
         cs = (r - l_) / TU.COLS
         rc = (int((p1[1] - t) // cs), int((p1[0] - l_) // cs))
         return rc if 0 <= rc[0] < TU.ROWS and 0 <= rc[1] < TU.COLS else None
+
+    def _tu_covered(self, res):
+        """2.131.5: True when this look may not show the inventory as it is - the mouse over the inventory panel
+        (the game's item box shows by it), or a price check just made (its card may be over the grid)."""
+        l_, t, r, b = res["rect"]
+        cs = (r - l_) / TU.COLS
+        gy = (res.get("game") or (0, t, 0, 0))[1]
+        try:
+            px, py = self.root.winfo_pointerxy()
+        except tk.TclError:
+            return True
+        if l_ - cs <= px <= r + cs and gy <= py <= b + cs:
+            return True
+        keys = getattr(self, "keys", None)                   # the price check key (Ctrl+D): its card shows over
+        try:                                                 # the game for a while
+            if keys is not None and keys.pc_recent(PC_CARD_SECS):
+                return True
+        except Exception:
+            buglog.caught()
+        return False
 
     def _tu_plain(self, rc, s0, looks):
         """A picture of cell rc without the hover glow, from these looks (the mouse elsewhere, the same item there),
@@ -171,7 +206,7 @@ class TopUpPage:
         last = getattr(self, "tu_last", None) or {}
         if not last.get("open"):
             return {}
-        return TU.totals(last.get("cells") or [], TU.learned())
+        return TU.totals(last.get("cells_use") or last.get("cells") or [], TU.learned())
 
     # ---------------------------------------------------------------- the reminder
     def topup_visit(self):
