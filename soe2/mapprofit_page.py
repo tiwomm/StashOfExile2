@@ -19,10 +19,14 @@ class MapProfitPage:
     # ---------------------------------------------------------------- on / off
     def mp_on(self):
         from . import features as FEAT
-        return bool(MP.cfg().get("on")) and FEAT.on("overlay")
+        return bool(MP.cfg().get("on")) and FEAT.on("overlay") and FEAT.on("mapprofit")      # (2.132.2: BETA)
 
     def mp_set(self, on):
         MP.cfg()["on"] = bool(on)
+        if on:
+            from . import features as FEAT                  # (its BETA feature comes on with it, as Features shows)
+            if not FEAT.on("mapprofit"):
+                FEAT.set_on("mapprofit", True)
         save_json("settings.json", SETTINGS)
         if on:
             self.topup_start()                              # (Top Up's inventory looks do the reading)
@@ -74,33 +78,66 @@ class MapProfitPage:
 
     # ---------------------------------------------------------------- reading (from Top Up's clear looks)
     def mp_seen(self, res):
-        """A clear look at the open inventory (topup_seen). In your hideout or a town: what it holds now - the next
-        map's "before", and the newest "after" of the map you came back from. 2.132.1 (feedback: "needs to account
-        for town trips/re-entering same map and only count when done"): that map is only counted when it's done -
-        you start another map, or DONE_SECS go by without going back into it."""
+        """A look at the open inventory (topup_seen) in your hideout or a town.
+
+        2.132.2 (feedback: "needs to account for inventory dumps if a player empties inventory and goes back into
+        the map"): a map is counted visit by visit. What you came back with is the most of each item seen while
+        you're home in your first looks (MP.ARRIVE_SECS from the first: stashing or selling only lowers it, and a
+        covered look only hides cells - so a covered look counts here too; taking more from your stash later doesn't
+        count); what you went back in with is the last clear look before the map. Each visit's loot = came back with
+        - went in with, so emptying your inventory between visits isn't a loss."""
         if not self.mp_on() or getattr(self, "br_area", None) not in ("hideout", "town"):
             return None
         from . import topup as TU
-        cells = res.get("cells_use") or res.get("cells") or []
-        counts, unknown = MP.identify(cells, TU.learned(), self.mp_refs())
+        counts, unknown = MP.identify(res.get("cells") or [], TU.learned(), self.mp_refs())
         counts = MP.exchange_only(counts, self.mp_price)
         snap = {"t": time.time(), "counts": counts, "unknown": unknown}
         pend = getattr(self, "mp_pending", None)
         if pend is not None:
-            pend["after"] = snap                            # (the newest read after it - kept until it's done)
+            t0 = pend.setdefault("visit_t0", snap["t"])
+            vis = pend.setdefault("visit", {})
+            if snap["t"] - t0 <= MP.ARRIVE_SECS:
+                for k, n in counts.items():
+                    vis[k] = max(vis.get(k, 0), n)
+            pend["unknown"] = max(pend.get("unknown", 0), unknown)
             self.mp_check_done()
             self.mp_paint()
-        self.mp_home = snap
+        if not res.get("covered"):
+            self.mp_home = snap                             # (what you'd go into the next map with)
         return snap
 
+    @staticmethod
+    def _mp_visit_in(run):
+        """Add the last visit home's loot (came back with - went in with) to the run's gain."""
+        vis = run.pop("visit", None)
+        run.pop("visit_t0", None)
+        if vis is None:
+            return
+        went = run.get("seg_before") or {}
+        g = run.setdefault("gain", {})
+        for k in set(vis) | set(went):
+            d = vis.get(k, 0) - went.get(k, 0)
+            if d:
+                g[k] = g.get(k, 0) + d
+
+    def _mp_entry(self, run):
+        base = run["before"]["counts"]
+        gain = dict(run.get("gain") or {})
+        vis = run.get("visit")
+        if vis is not None:                                 # (the visit you're on now, so far)
+            went = run.get("seg_before") or {}
+            for k in set(vis) | set(went):
+                gain[k] = gain.get(k, 0) + vis.get(k, 0) - went.get(k, 0)
+        after = {k: base.get(k, 0) + gain.get(k, 0) for k in set(base) | set(gain)}
+        return MP.entry(run["map"], run["secs"], base, after, self.mp_price,
+                        unknown=max(run["before"].get("unknown", 0), run.get("unknown", 0)))
+
     def mp_done(self):
-        """The map you came back from is done: its line goes in the log (if a read came after it)."""
+        """The map you came back from is done: its line goes in the log (if you looked at your inventory after it)."""
         pend, self.mp_pending = getattr(self, "mp_pending", None), None
-        if pend is None or pend.get("after") is None:
+        if pend is None or (pend.get("visit") is None and not pend.get("gain")):
             return None
-        after = pend["after"]
-        e = MP.entry(pend["map"], pend["secs"], pend["before"]["counts"], after["counts"], self.mp_price,
-                     unknown=max(pend["before"].get("unknown", 0), after.get("unknown", 0)))
+        e = self._mp_entry(pend)
         e["run"] = pend["run"]
         MP.log_add(e)
         self.mp_last = e
@@ -118,13 +155,13 @@ class MapProfitPage:
     def mp_so_far(self):
         """The map you're between visits of (a town trip): its profit so far, or None."""
         pend = getattr(self, "mp_pending", None)
-        if pend is None or pend.get("after") is None:
+        if pend is None or (pend.get("visit") is None and not pend.get("gain")):
             return None
-        return MP.entry(pend["map"], pend["secs"], pend["before"]["counts"], pend["after"]["counts"], self.mp_price)
+        return self._mp_entry(pend)
 
     def mp_area(self, kind, before, where, left):
-        """breach_area: into a map from home - its "before" is the last read at home; out of it - the reads at home
-        are its "after" until it's done. Back into the same map (your portal, a town trip): the same run."""
+        """breach_area: into a map from home - its "before" is the last clear look at home; out of it - each visit
+        home adds its loot until it's done. Back into the same map (its portal, a town trip): the same run."""
         if not self.mp_on():
             return
         now = time.time()
@@ -133,17 +170,22 @@ class MapProfitPage:
         if kind == "map" and before != "map":
             pend = getattr(self, "mp_pending", None)
             if pend is not None and pend.get("where") == where:
-                pend["start"] = now                         # (back through your portal: the same map goes on)
+                self._mp_visit_in(pend)                     # (back through its portal: the same map goes on, from
+                home = getattr(self, "mp_home", None)       # what you went back in with)
+                if home is not None and home["t"] >= pend.get("left", 0):
+                    pend["seg_before"] = dict(home["counts"])
+                pend["start"] = now
                 self.mp_run, self.mp_pending = pend, None
                 return
             self.mp_done()                                  # (another map: the last one is done)
             home = getattr(self, "mp_home", None)
             if home is not None and now - home["t"] < MP.BEFORE_SECS:
                 self._mp_n = getattr(self, "_mp_n", 0) + 1
-                self.mp_run = {"before": home, "start": now, "secs": 0, "where": where, "map": self.mp_map_name(where),
+                self.mp_run = {"before": home, "seg_before": dict(home["counts"]), "gain": {}, "start": now,
+                               "secs": 0, "where": where, "map": self.mp_map_name(where),
                                "run": f"{now:.3f}-{self._mp_n}"}
             else:
-                self.mp_run = None                          # (no read at home before it: this map isn't counted)
+                self.mp_run = None                          # (no look at home before it: this map isn't counted)
         elif left and run is not None:
             run["secs"] += now - run["start"]
             run["left"] = now
@@ -406,7 +448,7 @@ class MapProfitPage:
         row = tk.Frame(box, bg=bg)
         row.pack(fill="x", pady=(8, 0))
         self.al_mp = tk.BooleanVar(value=bool(MP.cfg()["on"]))
-        cb = ttk.Checkbutton(row, text="Map profit", variable=self.al_mp, style=CB,
+        cb = ttk.Checkbutton(row, text="Map profit (BETA)", variable=self.al_mp, style=CB,
                              command=lambda: self.mp_set(bool(self.al_mp.get())))
         cb.pack(side="left")
         mb = ttk.Button(row, text="Maps…", command=self.mp_list_open)

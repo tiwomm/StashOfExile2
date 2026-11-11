@@ -368,8 +368,9 @@ class AlertsPage:
                         "the King.")]}
         remind = {"breach": (self.al_leave, self.alerts_leave_changed),
                   "ritual": (self.al_rleave, self.alerts_ritual_leave_changed)}
-        for group, keys in (("IN MAPS", ("breach", "delirium", "ritual", "remnant")), ("PLAY", ("campaign", "focus")),
-                            ("TRADING & MORE", ("whispers", "desecrate"))):
+        # (2.132.2, feedback: "desecration needs moved up under 'play' settings to be above campaign")
+        for group, keys in (("IN MAPS", ("breach", "delirium", "ritual", "remnant")),
+                            ("PLAY", ("desecrate", "campaign", "focus")), ("TRADING", ("whispers",))):
             rule()
             tk.Label(tbl, text=group, bg=P2, fg=C["muted"], font=("Segoe UI", 9, "bold")).grid(
                 row=r_[0], column=0, columnspan=5, sticky="w", pady=(8, 2))

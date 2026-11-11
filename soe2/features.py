@@ -34,6 +34,8 @@ BETA = (
     {"key": "money", "name": "Money Makers", "what": "Community farming strats and the Craft Helper.",
      "modules": ("money",)},
     {"key": "desecrate", "name": "Desecration Helper", "what": "Tiers on the Well of Souls' options.", "modules": ()},
+    {"key": "mapprofit", "name": "Map profit", "what": "What each map earned, from your inventory - on your PC only.",
+     "modules": ()},                                    # 2.132.2 (feedback: "map profit needs beta flagged")
 )
 ALL = GROUPS + BETA
 # the Overlay page (the session timer) holds the overlay's settings and the planning pages: shown while either is on
