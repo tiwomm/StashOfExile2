@@ -8,8 +8,6 @@ from . import temple as TM
 from .config import SETTINGS, save_json
 from .style import C, Tooltip
 
-EVERY_MS = 1500                     # how often it looks (only in a map, the game in front)
-
 
 class TemplePage:
     """Mixed into App."""
@@ -36,59 +34,10 @@ class TemplePage:
             buglog.caught()
 
     def temple_start(self):
-        if getattr(self, "_tm_ticking", False) or not self.temple_on():
-            return
-        self._tm_ticking = True
-        self.root.after(EVERY_MS, self.temple_tick)
-
-    def temple_tick(self):
-        if not self.temple_on():
-            self._tm_ticking = False
-            return
-        try:
-            self.ritual_readout_sync()                      # (2.132.2: the crystals ride on the line above the bar)
-            self.temple_look()
-        except Exception:
-            self.log_error("the Temple Helper")
-        self.root.after(EVERY_MS, self.temple_tick)
+        self.hover_start()                                  # 2.132.3: one look round the mouse feeds every reader
 
     def temple_look(self, force=False):
-        """One look round the mouse (a background thread) for "Energised Beacons: n/m"."""
-        if getattr(self, "_tm_busy", False):
-            return None
-        if not force:
-            if getattr(self, "br_area", None) != "map":
-                return None
-            try:
-                from .overlaywin import foreground_ok
-                if not foreground_ok():
-                    return None
-            except Exception:
-                buglog.caught()
-        from .alerts_page import game_rect
-        g = game_rect()
-        if not g:
-            return None
-        try:
-            p = self.root.winfo_pointerxy()
-        except tk.TclError:
-            return None
-        box = TM.region(p, g)
-        self._tm_busy = True
-
-        def work():
-            from . import remnant as RM
-            return TM.parse(RM.ocr(RM.grab(box)))
-
-        def done(got):
-            self._tm_busy = False
-            self.temple_seen(got)
-        try:
-            self.run_bg(work, done)
-        except Exception:
-            self._tm_busy = False
-            raise
-        return True
+        return self.hover_look(force)
 
     def temple_seen(self, got):
         """A read (have, most) or None (no tooltip there)."""
