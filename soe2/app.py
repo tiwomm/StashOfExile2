@@ -4923,6 +4923,11 @@ class App(SettingsPage, GearBookPage, PriceCheckPage, PricePopup, FavoritesPage,
             y1 = max(y1, (cv.bbox(ox) or (0, 0, 0, y1))[3] + 2)
         # (2.97.1: no "RUNE / SOCKETED" line - runes have their own AUGMENTS section)
         cv.coords(hit, 4, y - 2, w - 4 - right, y1 - 2)
+        if rkey and self.pc_ask_mod(rec) is m:               # 2.131.2: Ask me about mods I haven't rated
+            try:
+                y1 = self._card_ask_strip(cv, rec, m, rkey, tx, y1, w)
+            except Exception:
+                buglog.caught()
         if self._card_has_vals(rec, m):
             self._card_val_boxes(cv, rec, m, y - 1, w, on and can)
         if can:                                              # 2.79.0: ★ = must match (a click: on / off)
@@ -4940,6 +4945,64 @@ class App(SettingsPage, GearBookPage, PriceCheckPage, PricePopup, FavoritesPage,
             self._card_thumbs(cv, rec, m, rkey, idx, w, y)
         self.card_rows[idx] = (m, on, rect)
         return y1
+
+    # ---------------- 2.131.2 (feedback: a tablet priced 124d sold near 225d - its unrated Expedition mod was left out;
+    # "include an opt-in for whether or not they want to be asked to rate mods"): Ask me about mods I haven't rated
+    def pc_ask_mod(self, rec):
+        """The one mod a price check asks about: on Price Checks, switch on, a mod you never rated that isn't a
+        must-match (★) - so a looser search may leave it out. None when there's nothing to ask."""
+        if not SETTINGS.get("ask_unrated") or rec.get("src") != "pc" or rec.get("ask_skip"):
+            return None
+        from .ratemods import key_for, current
+        for m in (rec.get("item") or {}).get("mods") or []:
+            if not (m.get("sid") or not rec.get("resolved")):
+                continue
+            k = key_for(rec, m)
+            if k and current([k]) is None and mod_impact(rec, m) != "high":
+                return m
+        return None
+
+    def _card_ask_strip(self, cv, rec, m, key, x, y, w):
+        """Under the mod: Not rated yet - does it matter? ▲ It matters / ▼ It doesn't / Not now. -> the next y."""
+        P = C["panel2"]
+        fr = tk.Frame(cv, bg=P, highlightthickness=1, highlightbackground=C["accent"], padx=8, pady=4)
+        left_out = mod_impact(rec, m) == "ignore"
+        top = tk.Frame(fr, bg=P)
+        top.pack(fill="x")
+        nb = tk.Label(top, text="Not now", bg=P, fg=C["muted"], font=("Segoe UI", 9, "underline"), cursor="hand2")
+        nb.pack(side="right", anchor="n", padx=(8, 0))
+        nb.bind("<Button-1>", lambda _e: self.pc_ask_answer(rec, m, key, None))
+        Tooltip(nb, "Not on this item. Turn the asks off in Settings › Price checking.")
+        tk.Label(top, text="? Not rated yet - " + ("left out of the search. " if left_out else "a looser search can "
+                 "leave it out. ") + "Does it matter for the price?", bg=P, fg=C["accent"], font=("Segoe UI", 9),
+                 anchor="w", justify="left", wraplength=max(120, w - x - 100)).pack(side="left", fill="x", expand=True)
+        row = tk.Frame(fr, bg=P)
+        row.pack(fill="x", pady=(4, 0))
+        for i_, (t_, g_) in enumerate((("▲ It matters", "A"), ("▼ It doesn't", "ignore"))):
+            tk.Button(row, text=t_, bg=C["panel"], fg=C["text"], activebackground=C["odd"],
+                      activeforeground=C["text"], relief="flat", bd=0, highlightthickness=1,
+                      highlightbackground=C["line"], font=("Segoe UI", 9), padx=8, pady=2, cursor="hand2",
+                      command=lambda g=g_: self.pc_ask_answer(rec, m, key, g)).pack(side="left",
+                                                                                   padx=(0 if i_ == 0 else 8, 0))
+        fr.update_idletasks()
+        h = fr.winfo_reqheight()
+        cv.create_window(x, y, window=fr, anchor="nw", width=max(160, w - x - 12))
+        self.card_ask = (rec.get("id"), fr)
+        return y + h + 6
+
+    def pc_ask_answer(self, rec, m, key, grade):
+        """▲ = A (High: must match), ▼ = F (ignore) - the same rating as Rate ▾, kept for every item like it; then
+        the item is priced again. None (Not now): no more asks on this item."""
+        if grade is None:
+            rec["ask_skip"] = True
+            if getattr(self, "shown_rec", None) is rec:
+                self.show_detail(rec)
+            return None
+        self.card_thumb(rec, m, key, grade)
+        self.status_text, self.status_until = ("Rated High - pricing again…" if grade == "A" else
+                                               "Rated F (doesn't matter) - pricing again…"), time.time() + 6
+        self.reprice([rec["id"]])
+        return grade
 
     # ---------------- 2.78.3 (feedback: "we don't have the option to check ilvl ... to enter mod values / ranges"):
     # on the card itself - the item level with its own check box, Min / Max beside each mod

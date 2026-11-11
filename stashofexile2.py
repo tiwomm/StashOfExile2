@@ -24,6 +24,13 @@ VERSION HISTORY
          path of exile account or character names"): privacy.NAME_RULE / NAME_TIP - one line (+ ⓘ) on every ask
          (the Leaderboards' card, the board's name window, Money Makers' join and rename). name_problem also turns
          down a name that contains your account / a character's name, or is a big part of one (4+ / 5+ letters).
+       - Ask me about mods I haven't rated (feedback: a tablet priced 124d sold near 225d - its unrated Expedition
+         mod was left out; "an opt-in for whether or not they want to be asked to rate mods"): SETTINGS ask_unrated,
+         off by default (Settings › Price checking › Mods you haven't rated; the Feature Picker asks once). On Price
+         Checks the card asks about one unrated, non-★ mod (pc_ask_mod): ▲ = A, ▼ = F (Rate ▾'s rating) and the
+         item is priced again; Not now = this item only.
+       - Overlay page (feedback: "clipped text/cropped buttons"): Start session / Stop without ▶ / ■ (a font without
+         the symbol drew it wider than measured); the Not tracking label keeps 16 characters of room, left-aligned.
        - Top Up (feedback: "asking me every single map, I only want it to ask when I am below a 70% threshold"):
          topup cfg "below" (0.3 by default) - low() reminds under Keep x (1 - below); Items… › Remind when "30% below"
          (0-70%) with how it's worked out beside it ("Keep 40: a card under 28").
