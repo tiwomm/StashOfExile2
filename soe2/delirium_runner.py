@@ -199,7 +199,7 @@ def main(argv):
     D.Tray = PipeTray
 
     # 2.131.6 (feedback: "end delirium is still showing up as big flashing text and not the new alert style"): run
-    # by the app, its banner never shows - "state alert" tells the app, which shows the calm alert card
+    # by the app, its banner never shows - "state alert" tells the app, which shows the alert card
     def _show(self):
         self.visible = True
 

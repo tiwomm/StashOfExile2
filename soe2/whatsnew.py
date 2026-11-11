@@ -52,7 +52,7 @@ NOTES = {
         "small": [
             ("Overlay", "The Ritual line keeps your tribute when the game's counter goes from the screen - until it's "
              "0 or you start a new map."),
-            ("Overlay", "End Delirium is a calm alert card too, like the other alerts - no flashing text."),
+            ("Overlay", "End Delirium is an alert card too, like the other alerts - no flashing text."),
         ],
     },
     "2.131.5": {
@@ -143,7 +143,7 @@ NOTES = {
             ("📦", "Top Up Reminders", "Overlay › Settings › Helpers: in your open inventory, hover an item and press "
              "Ctrl+C to teach it, then set how many to keep. When you're low, one card in hideout or "
              "town.", None, "Overlay"),
-            ("🔔", "Calm alerts", "Every helper alert is one small card: set Where and Size in Overlay › Settings › "
+            ("🔔", "Alert cards", "Every helper alert is one small card: set Where and Size in Overlay › Settings › "
              "Helpers, × to close, no flashing.", None, "Overlay"),
         ],
         "small": [

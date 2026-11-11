@@ -264,12 +264,12 @@ Order (decided 2026-11-05): the page passes, then the Privacy & data hub, then t
 | 2.130.1 | Bar at the top keeps its Ritual line on screen (under it); Bar at the bottom sits on the XP bar; tribute plate's 0 read as 0 (no late reminder); a gem's Sockets option = gem sockets. |
 | 2.130.2 | No Ritual reminder through character select; theme clicks queue (no freeze); Gruvbox Dark / Light (morhetz, MIT); light themes turn all text dark; short README. |
 | 2.130.3 | Client.txt found wherever the game is installed (Windows' installed-programs list, every Steam library); Desecration Helper reads Heart of the Well options. |
-| 2.131.6 | The Ritual line keeps your tribute until it's 0 or the map ends; End Delirium is the calm alert card. |
+| 2.131.6 | The Ritual line keeps your tribute until it's 0 or the map ends; End Delirium is an alert card. |
 | 2.131.5 | Ritual line shows your tribute (the game's counter); a quick offer is seen; Top Up ignores covered looks. |
 | 2.131.4 | Top Up teaches with the game's Ctrl+C (F7's copy was turned away); items that don't stack count 1 each. |
 | 2.131.3 | League Plan's Map supplies moved into Top Up Reminders (the list moves over once; Keep 0 until set). |
 | 2.131.2 | Community names: a made-up name asked for everywhere; names containing your account / characters turned down. |
-| 2.131.1 | Start session on the bar; picker says a name is asked next; sharing asked once; popups kept above the app; League ▾ player counts. |\n| 2.131.0 | Full release: Feature Picker, Settings over the app, calm alert cards, Break reminders, Top Up Reminders; My Own route removed; What's new gathers 2.126-2.130. |
+| 2.131.1 | Start session on the bar; picker says a name is asked next; sharing asked once; popups kept above the app; League ▾ player counts. |\n| 2.131.0 | Full release: Feature Picker, Settings over the app, alert cards, Break reminders, Top Up Reminders; My Own route removed; What's new gathers 2.126-2.130. |
 | 2.130.4 | Remnant: 10x read as IOX, Level 20 gems, gem budget + 6 h cache; runeshapes C/D alphabetical; Ritual filter button with its state + Turn it on (game closed, that line only). |
 | Later | **Tribute counter under the Bar** (shelved, circle back soon): the game's tribute counter sits under the overlay's Bar in Ritual maps. Not by moving the Bar (no). |
 | 2.128.0+ | Favours prices for bigger rewards (uniques: their art by size, priced on poe.ninja's unique lists). |
