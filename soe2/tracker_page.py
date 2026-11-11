@@ -134,11 +134,14 @@ class TrackerPage:
         # ---- top: start / pause, and where the log is
         tpo, top = chrome_section(body, "Session")                             # 2.69.0
         tpo.pack(fill="x", padx=8, pady=(8, 8))
-        self.tk_start_btn = ttk.Button(top, text="▶ Start session", style="Primary.TButton", command=self.tracker_toggle)
+        # 2.131.2 (feedback: "clipped text/cropped buttons"): no ▶ in a button's words - a PC without that symbol in the
+        # font draws it from another, wider one, and the button cut its words; the state label keeps its own room
+        self.tk_start_btn = ttk.Button(top, text="Start session", style="Primary.TButton", command=self.tracker_toggle)
         self.tk_start_btn.pack(side="left")
         self.tk_pause_btn = ttk.Button(top, text="Pause", command=self.tracker_pause_toggle, state="disabled")
         self.tk_pause_btn.pack(side="left", padx=8)
-        self.tk_state = tk.Label(top, text="Not tracking", bg=P2, fg=C["muted"], font=("Segoe UI", 12, "bold"))
+        self.tk_state = tk.Label(top, text="Not tracking", bg=P2, fg=C["muted"], font=("Segoe UI", 12, "bold"),
+                                 anchor="w", width=16)
         self.tk_state.pack(side="left", padx=12)
         # 2.70.1: the session timer's own switch (now in Settings › On the bar › Numbers)
         self.tk_timer_var = tk.BooleanVar(value=bool(cfg["lines"].get("session", True)))
@@ -934,7 +937,7 @@ class TrackerPage:
         self.tk_game = {"seen": False, "gone": None, "asked": False, "paused": True, "s": s, "since": now,
                         "restored": True}                  # the game being there resumes it
         self.tracker_open_log()
-        self.tk_start_btn.config(text="■ Stop", style="TButton")
+        self.tk_start_btn.config(text="Stop", style="TButton")
         self.tk_pause_btn.config(state="normal", text="Resume")
         self.tracker_fill_maps()
         self.tracker_draw()
@@ -967,7 +970,7 @@ class TrackerPage:
             sc = getattr(self, "tk_last_scene", None)
             if sc and sc[1] >= la[1]:
                 s.feed("scene", now, sc[2])
-        self.tk_start_btn.config(text="■ Stop", style="TButton")
+        self.tk_start_btn.config(text="Stop", style="TButton")
         self.tk_pause_btn.config(state="normal", text="Pause")
         self._tk_strip_close()
         self.tracker_fill_maps()
@@ -1027,7 +1030,7 @@ class TrackerPage:
         s.stop()
         self.tk_sessions.add(s)
         TR.clear_live()
-        self.tk_start_btn.config(text="▶ Start session", style="Primary.TButton")
+        self.tk_start_btn.config(text="Start session", style="Primary.TButton")
         self.tk_pause_btn.config(state="disabled", text="Pause")
         msg = f"Session done: {fmt_time(s.elapsed())}, {s.map_count()} map{'s' if s.map_count() != 1 else ''}."
         self._tk_strip(msg, [("OK", self._tk_strip_close)])

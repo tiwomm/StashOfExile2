@@ -173,6 +173,16 @@ class FeaturesPage:
             tk.Label(sh, text="To show your times on the Leaderboards, pick a community name (asked next).", bg=P2,
                      fg=C["muted"], font=("Segoe UI", 9), anchor="w", justify="left", wraplength=760).pack(
                 fill="x", padx=(24, 0))
+        ask_v = None
+        if not SETTINGS.get("ask_unrated_asked"):               # 2.131.2: the same switch as Settings, asked once
+            tk.Frame(inner, bg=C["line"], height=1).pack(fill="x", pady=(8, 8))
+            ar = tk.Frame(inner, bg=P2)
+            ar.pack(fill="x")
+            ask_v = tk.BooleanVar(value=bool(SETTINGS.get("ask_unrated")))
+            ttk.Checkbutton(ar, text="Ask me about mods I haven't rated", variable=ask_v,
+                            style="Card.TCheckbutton").pack(anchor="w")
+            tk.Label(ar, text="Your ratings tune your price checks. Change it later in Settings › Price checking.",
+                     bg=P2, fg=C["muted"], font=("Segoe UI", 9), anchor="w").pack(fill="x", padx=(24, 0))
         folder = {"new": None}
         if not SETTINGS.get("data_dir_asked"):                  # the first time only (later: Settings › Advanced)
             from .config import DATA_DIR
@@ -200,6 +210,8 @@ class FeaturesPage:
                 FEAT.set_on(k, True if all_on else v.get())
             SETTINGS["features_asked"] = "done"
             SETTINGS["data_dir_asked"] = True
+            if ask_v is not None:
+                self.ask_unrated_set(bool(ask_v.get()))
             save_json("settings.json", SETTINGS)
             if share_v is not None:
                 self.cm_set_sharing(bool(share_v.get()), say=False)
@@ -233,6 +245,21 @@ class FeaturesPage:
             buglog.caught()
         self.popup_over_app(w)
         return w
+
+    def ask_unrated_set(self, on):
+        """2.131.2: Ask me about mods I haven't rated - one switch (Settings › Price checking; the picker asks once)."""
+        SETTINGS["ask_unrated"] = bool(on)
+        SETTINGS["ask_unrated_asked"] = True
+        save_json("settings.json", SETTINGS)
+        v = getattr(self, "ask_unrated_var", None)
+        if v is not None and bool(v.get()) != bool(on):
+            v.set(bool(on))
+        rec = getattr(self, "shown_rec", None)
+        if rec is not None:
+            try:
+                self.show_detail(rec)
+            except Exception:
+                buglog.caught()
 
     def popup_over_app(self, w):
         """2.131.1 (feedback: the picker got lost behind the app): Windows itself keeps it above the app's window, and

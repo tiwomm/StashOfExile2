@@ -98,6 +98,16 @@ class SettingsPage:
                         command=lambda: (SETTINGS.__setitem__("pc_art", bool(v.get())),
                                          save_json("settings.json", SETTINGS))).pack(side="left", padx=(16, 0))
         # 2.125.5 (feedback): the overlay's close key lives on Keys only (it was shown here too)
+        # 2.131.2 (feedback: "an opt-in for whether or not they want to be asked to rate mods"): off until you say
+        row = section("Price checking", "Mods you haven't rated", "Your ratings tune every price check of items like "
+                                                                  "it. Off until you turn it on.")
+        self.ask_unrated_var = getattr(self, "ask_unrated_var", None) or tk.BooleanVar(
+            value=bool(SETTINGS.get("ask_unrated")))
+        ttk.Checkbutton(row, text="Ask me about mods I haven't rated", variable=self.ask_unrated_var,
+                        style="Card.TCheckbutton",
+                        command=lambda: self.ask_unrated_set(bool(self.ask_unrated_var.get()))).pack(side="left")
+        tk.Label(row, text="A price check asks about one such mod: ▲ it matters / ▼ it doesn't.", bg=P2,
+                 fg=C["muted"], font=("Segoe UI", 9)).pack(side="left", padx=(12, 0))
 
         self.set_anchors["pc_bulk"] = self.settings_group("Price checking", "BULK PRICING (CTRL+ALT+C)", used=(BP,))
         # 2.125.5 (feedback: "they don't really add anything/don't work"): no Skip cheap items - every item is searched

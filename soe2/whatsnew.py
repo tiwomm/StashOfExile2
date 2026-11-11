@@ -48,10 +48,16 @@ BETA_AREAS = ("Wealth", "Money Makers", "Game Search", "Market Insights", "Craft
 # on a pre-release already saw them and gets only this version's own lines (notes_between).
 NOTES = {
     "2.131.2": {
-        "big": [],
+        "big": [
+            ("?", "Ask me about mods I haven't rated", "Off until you turn it on (Settings › Price checking). A price "
+             "check asks about one mod you never rated: ▲ it matters / ▼ it doesn't - then prices again.", None,
+             "Price Checks"),
+        ],
         "small": [
             ("Overlay", "Top Up Reminders: Items… › Remind when - a card only once you're 30% below Keep (you pick "
              "0-70%), not every time you're under it."),
+            ("Overlay", "The Overlay page's Start session button and its Not tracking line shouldn't cut their words "
+             "any more."),
             ("Community", "Picking a community name asks for a made-up one - not your real name, and never your account "
              "or character names. Names that contain one of yours are turned down."),
         ],
