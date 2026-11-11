@@ -24,10 +24,12 @@ class TopUpPage:
     # ---------------------------------------------------------------- on / off
     def topup_on(self):
         from . import features as FEAT
-        return bool(TU.cfg().get("on")) and FEAT.on("overlay")
+        return bool(TU.cfg().get("on")) and FEAT.on("overlay") and FEAT.on("topup")      # (2.132.2: BETA)
 
     def topup_set(self, on):
         TU.cfg()["on"] = bool(on)
+        from . import features as FEAT
+        FEAT.beta_on("topup", bool(on))
         save_json("settings.json", SETTINGS)
         if on:
             self.topup_start()
@@ -382,7 +384,7 @@ class TopUpPage:
         row = tk.Frame(box, bg=bg)
         row.pack(fill="x", pady=(8, 0))
         self.al_topup = tk.BooleanVar(value=bool(TU.cfg()["on"]))
-        cb = ttk.Checkbutton(row, text="Top Up Reminders", variable=self.al_topup, style=CB,
+        cb = ttk.Checkbutton(row, text="Top Up Reminders (BETA)", variable=self.al_topup, style=CB,
                              command=lambda: self.topup_set(bool(self.al_topup.get())))
         cb.pack(side="left")
         ib = ttk.Button(row, text="Items…", command=self.topup_items)

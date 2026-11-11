@@ -35,6 +35,17 @@ VERSION HISTORY
          last clear look, no reminder).
        - Ritual line (feedback: "if a player doesn't interact with the first ritual, it should not enable ... only
          appear when you start the ritual mechanics"): ritual_readout says nothing at 0 of N (all done still shows).
+       - BETA (feedback: "temple helper should also be marked beta, anything else helper-wise until it's fully tested
+         and checklist approved should be marked beta. desecration helper can come out of beta"): features.BETA has
+         Top Up Reminders, Break reminders, Map profit, Temple Helper ("was": a helper already on keeps its feature
+         on); each helper's own switch turns its feature on (beta_on); Helpers say "(BETA)"; their Quick settings
+         chips only while on. The Desecration Helper isn't BETA (its key leaves features).
+       - The bar (feedback: "overlay text overlap ... cramming too much into the bar ... I don't really want to go any
+         bigger"): parts that don't fit leave it - Map profit's, then Avg, then Maps (mg_dropped); the Temple Helper's
+         crystals moved to the line above the bar with Ritual's (its tag RITUAL / TEMPLE / IN MAP).
+       - Map profit (feedback: "why is it marking as -div if I didn't actually lose anything ... the arrow up/down can
+         be removed. I just want a total of my profit per map"): a map's profit is what it gained - fewer of an item is
+         never a loss (it was used, stashed or covered); no ▲ / ▼.
   2.132.1
        - Temple Helper (feedback: "show how many crystals I am currently at when running maps"; "a red text card too
          when crystals are full"; the Vaal Beacon tooltip "Energised Beacons: 55/60"): temple.py (parse, the region

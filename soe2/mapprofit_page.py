@@ -23,10 +23,8 @@ class MapProfitPage:
 
     def mp_set(self, on):
         MP.cfg()["on"] = bool(on)
-        if on:
-            from . import features as FEAT                  # (its BETA feature comes on with it, as Features shows)
-            if not FEAT.on("mapprofit"):
-                FEAT.set_on("mapprofit", True)
+        from . import features as FEAT                      # (its BETA feature comes on with it, as Features shows)
+        FEAT.beta_on("mapprofit", bool(on))
         save_json("settings.json", SETTINGS)
         if on:
             self.topup_start()                              # (Top Up's inventory looks do the reading)
@@ -117,8 +115,9 @@ class MapProfitPage:
         g = run.setdefault("gain", {})
         for k in set(vis) | set(went):
             d = vis.get(k, 0) - went.get(k, 0)
-            if d:
-                g[k] = g.get(k, 0) + d
+            if d > 0:                                       # (2.132.2: what it gained - fewer is never a loss: it was
+                g[k] = g.get(k, 0) + d                      # used, stashed or not seen - "I didn't actually lose
+                #                                             anything")
 
     def _mp_entry(self, run):
         base = run["before"]["counts"]
@@ -127,7 +126,7 @@ class MapProfitPage:
         if vis is not None:                                 # (the visit you're on now, so far)
             went = run.get("seg_before") or {}
             for k in set(vis) | set(went):
-                gain[k] = gain.get(k, 0) + vis.get(k, 0) - went.get(k, 0)
+                gain[k] = gain.get(k, 0) + max(0, vis.get(k, 0) - went.get(k, 0))
         after = {k: base.get(k, 0) + gain.get(k, 0) for k in set(base) | set(gain)}
         return MP.entry(run["map"], run["secs"], base, after, self.mp_price,
                         unknown=max(run["before"].get("unknown", 0), run.get("unknown", 0)))
@@ -208,7 +207,9 @@ class MapProfitPage:
         return MP.totals(MP.log_read(time.time() - 2 * 86400), session_start=start)
 
     def mp_bar_text(self):
-        """The bar's part: the last map's profit, with its mark (▲ / ▼) - or "Profit –" before one is counted."""
+        """The bar's part: the last map's profit, "+3.8 div" - or "Profit –" before one is counted. (2.132.2,
+        feedback: "why is it marking as -div if I didn't actually lose anything ... the arrow up/down can be removed.
+        I just want a total of my profit per map": no arrows, and a map's profit is what it gained.)"""
         if not self.mp_on():
             return ""
         from .pricefmt import fmt_div
@@ -222,7 +223,7 @@ class MapProfitPage:
             e = self.mp_last = last[-1] if last else None
         if e is None:
             return "Profit –"
-        return ("▲ " if e["div"] >= 0 else "▼ ") + MP.signed(e["div"], fmt_div)
+        return MP.signed(e["div"], fmt_div)
 
     def mp_breakdown(self, e=None):
         """How the bar's number was worked out: [line, ...] (the hover)."""
@@ -244,7 +245,7 @@ class MapProfitPage:
         if so_far is not None and e is so_far:
             out.pop()
         for name, b, a, each in e.get("rows", [])[:8]:
-            out.append(f"{name}: {b} → {a}  ({MP.signed((a - b) * each, fmt_div)})")
+            out.append(f"{name}: +{a - b}  ({MP.signed((a - b) * each, fmt_div)})")
         if len(e.get("rows", [])) > 8:
             out.append(f"+{len(e['rows']) - 8} more - Maps… has them all")
         t = self.mp_totals()
@@ -394,7 +395,7 @@ class MapProfitPage:
             m, s = divmod(int(r["secs"]), 60)
             tv.insert("", "end", iid=iid, values=(
                 r["map"] or "a map", f"{m}:{s:02d}" if r["secs"] else "–",
-                ("▲ " if r["div"] >= 0 else "▼ ") + MP.signed(r["div"], fmt_div),
+                MP.signed(r["div"], fmt_div),
                 time.strftime("%a %d %b, %H:%M", time.localtime(r["t"]))))
         t = self.mp_totals()
         sd, sn = t["session"]

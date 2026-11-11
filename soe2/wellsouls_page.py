@@ -27,7 +27,7 @@ class WellSoulsPage:
 
     def ws_status(self):
         from . import features as FEAT
-        if not self.ws_cfg().get("on") or not FEAT.on("desecrate") or not FEAT.on("overlay"):    # 2.131.0
+        if not self.ws_cfg().get("on") or not FEAT.on("overlay"):    # 2.131.0
             return "off"
         if getattr(self, "ws_problem", None) is None:
             self.ws_problem = RM.ocr_available()
@@ -94,7 +94,7 @@ class WellSoulsPage:
         from tkinter import ttk
         self.ws_ask_close()
         try:
-            w, body, P = self._camp_card("Desecration Helper (BETA)", "◆", 460, top=0.14,
+            w, body, P = self._camp_card("Desecration Helper", "◆", 460, top=0.14,
                                          on_close=lambda: self.ws_answer(None))
         except Exception:
             self.log_error("the Desecration Helper question")
@@ -151,7 +151,7 @@ class WellSoulsPage:
             w.overrideredirect(True)
             w.attributes("-topmost", True)
             tk.Label(w, text=("◆  " + problem) if problem else
-                     "◆  Desecration Helper (BETA) on  -  each option at the Well shows its tier", fg=P["text"],
+                     "◆  Desecration Helper on  -  each option at the Well shows its tier", fg=P["text"],
                      bg=P["bg"], font=("Segoe UI", -max(11, int(14 * ui))), padx=8, pady=4,
                      highlightthickness=1, highlightbackground=P["line"]).pack()
             w.update_idletasks()
