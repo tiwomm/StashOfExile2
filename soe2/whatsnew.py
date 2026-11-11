@@ -59,7 +59,9 @@ NOTES = {
             ("Overlay", "The tribute on the Ritual line changes once the game's counter reads the same twice."),
             ("Overlay", "Hide the overlay from screen captures is in Overlay ↳ Settings › Options, beside Lock "
              "position."),
-            ("Overlay", "Gem prices in Expedition books are kept a day, so the same gem isn't searched again."),
+            ("Expedition", "Gem prices in Expedition books are shared through the community board and kept a day. "
+             "When there's no new price, the last one (up to two weeks old) shows while a new one is looked up - the "
+             "highest level gems first."),
         ],
     },
     "2.131.6": {
@@ -2129,6 +2131,46 @@ NOTES = {
         "Every tool opens in its own window. Chat commands, Notes and the Delirium alert are utilities that work "
         "over the game.",
     ],
+}
+
+# 2.132.0 (full release: "include a summary card of the changes since last full release"): someone coming from
+# 2.125.8 (the last full release) or a fresh install sees this one card - 2.126.0 to 2.132.0, as things work now (lines
+# a later version changed are given as they are now, never twice).
+NOTES["2.132.0"]["rollup"] = {
+    "since": "2.125.8",
+    "big": [
+        ("🧩", "Feature Picker", "Pick the features you use; the rest leave the menu. It also asks about sharing with "
+         "the community and where your data lives. Change it any time in Settings › General › Features.", None,
+         "Settings"),
+        ("📦", "Top Up Reminders", "Overlay ↳ Settings › Helpers: in your open inventory, hover an item and press Ctrl+C "
+         "to teach it, set how many to keep, or + Add more by name. Back from a map with something low: one card. "
+         "League Plan's Map supplies moved here.", None, "Overlay"),
+        ("🔔", "Alert cards", "Every helper alert - Breach, Ritual, tribute, End Delirium, Top Up, breaks - is one small "
+         "card; a few at once share it, most urgent on top. Things to do now have red words. No flashing.", None,
+         "Overlay"),
+        ("☠", "Your tribute on the Ritual line", "In a Ritual map the line over the game says how much tribute you "
+         "have, read from the game's own counter - and offering it means no reminder.", None, "Overlay"),
+        ("▶", "Start session on the bar", "No session yet? Click ▶ Start session on the Game Overlay's bar to time your "
+         "maps and count maps and deaths. Helpers work either way.", None, "Overlay"),
+        ("?", "Ask me about mods I haven't rated", "Off until you turn it on (Settings › Price checking). A price check "
+         "asks you to grade one mod you never rated, S to F as on Rate Mods - then prices again.", None,
+         "Price Checks"),
+    ] + [b for b in NOTES["2.131.0"]["rollup"]["big"]],
+    "small": [
+        ("Overlay", "Break reminders (off to start): after 45–120 minutes of play, a short card in hideout or town."),
+        ("Overlay", "Hide the overlay from screen captures is in Overlay ↳ Settings › Options, beside Lock position."),
+        ("Overlay", "Quick settings › Helpers has Top Up, Breaks and Desecration (with its beta feature on)."),
+        ("Overlay", "\"Start a session with StashOfExile2\" (was Start the overlay) - what it always did."),
+        ("Overlay", "Campaign routes are Full, Speedrun and Rush (carry)."),
+        ("Settings", "Settings opens over your page, dimmed behind it; Esc, × or a click outside closes it."),
+        ("Settings", "Advanced › Data folder › Change… moves your data to another folder."),
+        ("Price Checks", "White and magic bases at item level 82 or more search 82+, and their ticked mods must all "
+         "match."),
+        ("Leaderboards", "League ▾ says how many players have times in each league."),
+        ("Community", "A community name is asked once, after What's new - a made-up one, never your account or "
+         "character names."),
+        ("App", "Linux (Wayland): Settings opens without the dim layer behind it."),
+    ] + [x for x in NOTES["2.131.0"]["rollup"]["small"] if "6 hours" not in x[1]],
 }
 
 

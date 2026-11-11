@@ -246,6 +246,10 @@ const MIGRATIONS = [
   "DROP TABLE IF EXISTS rep",
   "ALTER TABLE users DROP COLUMN rep_hidden",
   "ALTER TABLE users DROP COLUMN cid_link",
+  // 2.132.0: gem prices pooled (runeshape / book gems) - the latest price players' searches found, per league
+  `CREATE TABLE IF NOT EXISTS gem_prices (league TEXT NOT NULL, kind TEXT NOT NULL, level INTEGER NOT NULL,
+    name TEXT NOT NULL, div REAL NOT NULL, n INTEGER NOT NULL DEFAULT 1, updated INTEGER NOT NULL,
+    PRIMARY KEY (league, kind, level, name))`,
 ];
 async function migrate(env) {
   if (migrated) return;
@@ -994,6 +998,7 @@ const BATCH_EVERY = 45 * 60;                 // one summary per install per 45 m
 const MAX_PAIRS = 600, MAX_VOTES = 400, W_CAP = 10;
 const SID = /^[a-z_]+\.[A-Za-z0-9_.]{1,80}$/, KEY = /^.{2,200}$/s, VOTE = ["high", "normal", "ignore"];
 const MAP_RANKS = ["S", "A", "B", "C", "D", "Avoid"];
+const GEM_NAME = /^[a-z0-9' ,:-]{2,60}$/, GEM_KINDS = ["skill", "support", "spirit", "gem"];     // 2.132.0
 const okPrice = (m) => typeof m === "number" && isFinite(m) && m > 0.0005 && m < 100000;
 const ZONE_TEXT = /^[\p{L}\p{N} ',.\-]{1,80}$/u;
 const UNMATCHED_TEXT = /^[\p{L}\p{N}_ #%+\-.,'():/]{3,100}$/u, BASE_TEXT = /^[\p{L}\p{N} ',.\-]{1,60}$/u;
@@ -1057,6 +1062,18 @@ async function modBatch(req, env) {
     stmts.push(env.DB.prepare(`INSERT INTO unmatched_mods (text, cid, base, updated) VALUES (?1, ?2, ?3, ?4)
       ON CONFLICT(text, cid) DO UPDATE SET base = ?3, updated = ?4`).bind(text, cid, base, t));
   }
+  // 2.132.0 (feedback: "people are gonna get rate limited hard"): gem prices from players' own searches - the
+  // newest one wins (a gem's price moves); a book's gems are then priced from here instead of the trade site
+  if (league) {
+    for (const g of (Array.isArray(body.gems) ? body.gems : []).slice(0, 200)) {
+      const name = String(g?.name ?? "").trim().toLowerCase(), kind = String(g?.kind ?? "");
+      const level = Math.floor(Number(g?.level) || 0);
+      if (!GEM_NAME.test(name) || !GEM_KINDS.includes(kind) || level < 0 || level > 40 || !okPrice(g?.div)) continue;
+      stmts.push(env.DB.prepare(`INSERT INTO gem_prices (league, kind, level, name, div, n, updated)
+        VALUES (?1, ?2, ?3, ?4, ?5, 1, ?6) ON CONFLICT(league, kind, level, name) DO UPDATE SET div = ?5, n = n + 1,
+        updated = ?6`).bind(league, kind, level, name, g.div, t));
+    }
+  }
   let votes = 0;
   for (const v of (Array.isArray(body.votes) ? body.votes : []).slice(0, MAX_VOTES)) {
     if (!KEY.test(String(v?.key ?? ""))) continue;
@@ -1068,6 +1085,14 @@ async function modBatch(req, env) {
   }
   await env.DB.batch(stmts);
   return json({ ok: true, prices: used, votes });
+}
+
+// 2.132.0: every gem price found in the last two weeks for a league (small: one row a gem and level)
+async function gemPrices(url, env) {
+  const league = String(url.searchParams.get("league") || "").slice(0, 60);
+  const rows = await env.DB.prepare(`SELECT kind, level, name, div, updated, n FROM gem_prices WHERE league = ?
+    AND updated > ?`).bind(league, now() - 14 * 86400).all();
+  return json({ league, gems: rows.results.map((r) => [r.kind, r.level, r.name, r.div, r.updated, r.n]) });
 }
 
 async function modStats(url, env) {
@@ -1209,6 +1234,7 @@ export default {
       if (path === "/official") return official(env);
       if (path === "/mods/batch" && req.method === "POST") return modBatch(req, env);
       if (path === "/mods/stats") return modStats(url, env);
+      if (path === "/gems") return gemPrices(url, env);
       if (path === "/mods/ratings") return modRatings(env);
       if (path === "/mods/unmatched") return unmatchedMods(env);
       if (path === "/maps/ratings") return mapRatings(env);

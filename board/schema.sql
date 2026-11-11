@@ -134,3 +134,10 @@ CREATE TABLE IF NOT EXISTS lb_reports (
   lb_id INTEGER NOT NULL, user_id TEXT NOT NULL, reason TEXT, created INTEGER NOT NULL,
   PRIMARY KEY (lb_id, user_id)
 );
+
+-- 2.132.0: gem prices pooled from players' own searches (runeshape / book gems) - the newest wins
+CREATE TABLE IF NOT EXISTS gem_prices (
+  league TEXT NOT NULL, kind TEXT NOT NULL, level INTEGER NOT NULL, name TEXT NOT NULL,
+  div REAL NOT NULL, n INTEGER NOT NULL DEFAULT 1, updated INTEGER NOT NULL,
+  PRIMARY KEY (league, kind, level, name)
+);
