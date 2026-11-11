@@ -28,6 +28,10 @@ VERSION HISTORY
          game's; suggestions in TU.SUGGEST) and a Keep; Seen says "teach it" until it's taught with Ctrl+C.
        - Top Up (feedback: "cryptic keys that do not stack"): item_name accepts Normal items, so a key can be
          taught; each cell holding one counts 1.
+       - Alerts (feedback: "people getting annoyed with 3 cards back to back"; the Grouped Alert Card mockup):
+         alertcard.Card - one card per app; an alert that comes while it's up joins it as a Row (show() returns the
+         Row, which reads like the window). "N alerts" + × Close all, a row each (mark, words, helper tag, ×), rank
+         order (Ritual 0, Breach 1, Top Up 3, Breaks 4), up to 4 rows then "+N more", one countdown (restarts on join).
   2.131.3
        - League Plan's Map supplies (request: "move into top up") are gone: Top Up Reminders count what the inventory
          really holds. focus.supplies_out hands the list over once (topup_take_supplies: each name joins Top Up's

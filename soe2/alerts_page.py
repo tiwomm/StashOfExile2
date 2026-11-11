@@ -1200,7 +1200,8 @@ class AlertsPage:
         from . import alertcard
         win = alertcard.show(self.root, title, small_txt, color=color, mark=mark,
                              secs=5 if test else BANNER_SECS.get(level, 8), game=game_rect(),
-                             on_close=lambda: self.br_win is win and self.breach_dismiss())
+                             tag="Ritual" if level in ("ritual", "tribute") else "Breach",
+                             rank=0 if level in ("ritual", "tribute") else 1, on_close=lambda: self.br_win is win and self.breach_dismiss())
         self.br_win, self.br_level = win, level
         if (self.ritual_cfg() if level == "ritual" else self.breach_cfg()).get("sound", True):
             try:
@@ -1243,7 +1244,7 @@ class AlertsPage:
         except Exception:
             buglog.caught()
         self.break_win = alertcard.show(self.root, line, BR.played_text(played), color="#7fd9a0", mark="♥", secs=10,
-                                        game=game_rect())
+                                        game=game_rect(), tag="Breaks", rank=4)
         return line
 
     def break_set(self, key, value):

@@ -48,7 +48,10 @@ BETA_AREAS = ("Wealth", "Money Makers", "Game Search", "Market Insights", "Craft
 # on a pre-release already saw them and gets only this version's own lines (notes_between).
 NOTES = {
     "2.131.4": {
-        "big": [],
+        "big": [
+            ("!", "Alerts share one card", "When a few come at once - tribute, Top Up, a break - they're rows on one "
+             "card, most urgent on top. × on a row closes that one; × at the top closes them all.", None, "Overlay"),
+        ],
         "small": [
             ("Overlay", "Top Up teaches with the game's own Ctrl+C now: open your inventory, hover an item, Ctrl+C. "
              "F7 did nothing (its copy was turned away)."),
