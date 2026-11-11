@@ -52,6 +52,7 @@ NOTES = {
         "small": [
             ("Overlay", "Settings page renamed Overlay Settings."),
             ("Overlay", "Ritual Identifier: now a Ritual helper option."),
+            ("Overlay", "Temple crystals: only in maps with a Temple."),
             ("Settings", "Keybinds: Overlays group renamed Overlay."),
         ],
     },

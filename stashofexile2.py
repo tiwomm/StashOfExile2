@@ -26,6 +26,8 @@ VERSION HISTORY
        - Ritual Identifier (feedback: "should be part of the Ritual Helper that can be toggled on/off"): a chip on the
          Ritual helper's row (ritual_alert.identify, on with it); its own row, Quick settings chip and BETA feature
          are gone (migrations: ritual_id cleared).
+       - Temple Helper (feedback: "says Crystals ? without even having temple in the map"): the crystals show once
+         Map Content has the Temple icon (templates/temple_content.png; 0.999+ there, 0.72 at most without).
   2.132.3
        - Ritual Identifier (BETA; feedback: "build ritual identifier"): hover a Ritual Altar in a map, its tooltip's
          type ("Tainted Ritual Altar", or its danger line) -> an alert card: type, loot, danger (ritualid.py). One

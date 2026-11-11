@@ -170,7 +170,7 @@ class AlertsPage:
 
     def _temple_part(self):
         try:
-            if self.temple_on() and getattr(self, "br_area", None) == "map":
+            if self.temple_on() and getattr(self, "br_area", None) == "map" and getattr(self, "tm_in_map", False):
                 from . import temple as TM
                 return TM.bar_text(TM.state())
         except Exception:
@@ -1241,6 +1241,7 @@ class AlertsPage:
             if where is None or where != getattr(self, "rt_where", None):
                 self.rt_map = None
                 self.rt_done = False
+                self.tm_in_map = False                 # 2.132.4: the Temple icon is looked for again
                 try:
                     from .utilities import RITUAL
                     RITUAL.content = None              # (the last map's tick isn't this one's)
