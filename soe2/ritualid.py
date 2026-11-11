@@ -4,9 +4,9 @@ the type ("Tainted Ritual Altar") - and an alert card says what that type gives 
 Read the same way as the Temple Helper (a part of the screen round the mouse, in maps only; one look feeds both).
 Nothing is kept. ToS: it only looks at the screen and shows something.
 
-What each type does: the danger lines are the game's own text (poe2db.tw, Ritual runes); Tainted's loot (rare belts,
-charms, flasks) and Queen's (10 more omens in the first Favours, a Corrupted Idol from the Queen - 0.5.2 patch notes)
-from the community guides."""
+What each type does: the dangers follow the game's own danger lines (in our words); Tainted's loot (rare belts, charms,
+flasks) and Queen's (10 more omens in the first Favours, a Corrupted Idol from the Queen - 0.5.2 patch notes) from
+community guides."""
 import re
 
 DEFAULTS = {"on": False}
