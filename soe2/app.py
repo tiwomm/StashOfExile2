@@ -4963,7 +4963,8 @@ class App(SettingsPage, GearBookPage, PriceCheckPage, PricePopup, FavoritesPage,
         return None
 
     def _card_ask_strip(self, cv, rec, m, key, x, y, w):
-        """Under the mod: Not rated yet - does it matter? ▲ It matters / ▼ It doesn't / Not now. -> the next y."""
+        """Under the mod: Not rated yet - how much does it matter? S A B C D F (Rate Mods' grades) / Not now.
+        -> the next y. 2.131.3 (feedback: "the rate up and down goes against the Rate Mods page ... tier system")."""
         P = C["panel2"]
         fr = tk.Frame(cv, bg=P, highlightthickness=1, highlightbackground=C["accent"], padx=8, pady=4)
         left_out = mod_impact(rec, m) == "ignore"
@@ -4974,16 +4975,21 @@ class App(SettingsPage, GearBookPage, PriceCheckPage, PricePopup, FavoritesPage,
         nb.bind("<Button-1>", lambda _e: self.pc_ask_answer(rec, m, key, None))
         Tooltip(nb, "Not on this item. Turn the asks off in Settings › Price checking.")
         tk.Label(top, text="? Not rated yet - " + ("left out of the search. " if left_out else "a looser search can "
-                 "leave it out. ") + "Does it matter for the price?", bg=P, fg=C["accent"], font=("Segoe UI", 9),
+                 "leave it out. ") + "How much does it matter for the price?", bg=P, fg=C["accent"],
+                 font=("Segoe UI", 9),
                  anchor="w", justify="left", wraplength=max(120, w - x - 100)).pack(side="left", fill="x", expand=True)
         row = tk.Frame(fr, bg=P)
         row.pack(fill="x", pady=(4, 0))
-        for i_, (t_, g_) in enumerate((("▲ It matters", "A"), ("▼ It doesn't", "ignore"))):
-            tk.Button(row, text=t_, bg=C["panel"], fg=C["text"], activebackground=C["odd"],
-                      activeforeground=C["text"], relief="flat", bd=0, highlightthickness=1,
-                      highlightbackground=C["line"], font=("Segoe UI", 9), padx=8, pady=2, cursor="hand2",
-                      command=lambda g=g_: self.pc_ask_answer(rec, m, key, g)).pack(side="left",
-                                                                                   padx=(0 if i_ == 0 else 8, 0))
+        tips = {"S": "S - the price hangs on it", "A": "A - high", "B": "B - adds a little", "C": "C", "D": "D",
+                "F": "F - ignore (buyers don't pay for it)"}
+        for i_, g_ in enumerate(("S", "A", "B", "C", "D", "F")):
+            b_ = tk.Button(row, text=g_, bg=C["panel"], fg=C["text"], activebackground=C["odd"],
+                           activeforeground=C["text"], relief="flat", bd=0, highlightthickness=1,
+                           highlightbackground=C["line"], font=("Segoe UI", 9, "bold"), width=2, pady=2,
+                           cursor="hand2",
+                           command=lambda g=("ignore" if g_ == "F" else g_): self.pc_ask_answer(rec, m, key, g))
+            b_.pack(side="left", padx=(0 if i_ == 0 else 4, 0))
+            Tooltip(b_, tips[g_] + " - for every item like it (Rate Mods' grades)")
         fr.update_idletasks()
         h = fr.winfo_reqheight()
         cv.create_window(x, y, window=fr, anchor="nw", width=max(160, w - x - 12))
@@ -4991,16 +4997,16 @@ class App(SettingsPage, GearBookPage, PriceCheckPage, PricePopup, FavoritesPage,
         return y + h + 6
 
     def pc_ask_answer(self, rec, m, key, grade):
-        """▲ = A (High: must match), ▼ = F (ignore) - the same rating as Rate ▾, kept for every item like it; then
-        the item is priced again. None (Not now): no more asks on this item."""
+        """S..D or "ignore" (F) - Rate Mods' grade, the same rating as Rate ▾, kept for every item like it; then the
+        item is priced again. None (Not now): no more asks on this item."""
         if grade is None:
             rec["ask_skip"] = True
             if getattr(self, "shown_rec", None) is rec:
                 self.show_detail(rec)
             return None
         self.card_thumb(rec, m, key, grade)
-        self.status_text, self.status_until = ("Rated High - pricing again…" if grade == "A" else
-                                               "Rated F (doesn't matter) - pricing again…"), time.time() + 6
+        self.status_text, self.status_until = ("Rated F (doesn't matter) - pricing again…" if grade == "ignore" else
+                                               f"Rated {grade} - pricing again…"), time.time() + 6
         self.reprice([rec["id"]])
         return grade
 

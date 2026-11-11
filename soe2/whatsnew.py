@@ -53,12 +53,14 @@ NOTES = {
              "what your inventory really holds. Your list moved over: set each one's Keep in Items… and teach it once "
              "with F7.", None, "Overlay"),
         ],
-        "small": [],
+        "small": [
+            ("Price Checks", "Ask me about mods I haven't rated grades a mod S to F, the same as Rate Mods."),
+        ],
     },
     "2.131.2": {
         "big": [
             ("?", "Ask me about mods I haven't rated", "Off until you turn it on (Settings › Price checking). A price "
-             "check asks about one mod you never rated: ▲ it matters / ▼ it doesn't - then prices again.", None,
+             "check asks you to grade one mod you never rated, S to F as on Rate Mods - then prices again.", None,
              "Price Checks"),
         ],
         "small": [
