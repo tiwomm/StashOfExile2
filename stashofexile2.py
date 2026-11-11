@@ -24,6 +24,8 @@ VERSION HISTORY
          really holds. focus.supplies_out hands the list over once (topup_take_supplies: each name joins Top Up's
          items with Keep 0; Seen says "teach it" until it's taught); the Map supplies tab, its pokes, its switch and
          the game log's omen-used-up line went with it (check_removed).
+       - Ask me about mods I haven't rated (feedback: "the rate up and down goes against the Rate Mods page ... tier
+         system"): the strip's buttons are S A B C D F, Rate Mods' grades (F = ignore).
   2.131.2
        - Community names (feedback: "encourage users to not use personally identifiable names, and to never use their
          path of exile account or character names"): privacy.NAME_RULE / NAME_TIP - one line (+ ⓘ) on every ask
@@ -32,8 +34,8 @@ VERSION HISTORY
        - Ask me about mods I haven't rated (feedback: a tablet priced 124d sold near 225d - its unrated Expedition
          mod was left out; "an opt-in for whether or not they want to be asked to rate mods"): SETTINGS ask_unrated,
          off by default (Settings › Price checking › Mods you haven't rated; the Feature Picker asks once). On Price
-         Checks the card asks about one unrated, non-★ mod (pc_ask_mod): ▲ = A, ▼ = F (Rate ▾'s rating) and the
-         item is priced again; Not now = this item only.
+         Checks the card asks about one unrated, non-★ mod (pc_ask_mod): S A B C D F (Rate Mods' grades, 2.131.3)
+         and the item is priced again; Not now = this item only.
        - Overlay page (feedback: "clipped text/cropped buttons"): Start session / Stop without ▶ / ■ (a font without
          the symbol drew it wider than measured); the Not tracking label keeps 16 characters of room, left-aligned.
        - Tribute (feedback: "I click the offer tribute button and quickly exit the favour window ... it needs to be
