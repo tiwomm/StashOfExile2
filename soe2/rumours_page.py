@@ -1,4 +1,4 @@
-"""2.83.0: Island Rumors in the app (part of the Expedition helper, Remnant's row in Overlay ↳ Settings) and the
+"""2.83.0: Island Rumors in the app (part of the Expedition helper, Remnant's row in Overlay ↳ Overlay Settings) and the
 Remnant watcher's places: it watches only where remnants can be (feedback: "it keeps popping up in random areas").
   * Island Rumors: only in your hideout (Client.txt; feedback: "watch only in hideout"). A look at a small copy of
     the screen for the Uncharted Waters card's parchment; only then its part is read. Each rumor gets a tag: the

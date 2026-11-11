@@ -1,7 +1,7 @@
 """P4 (2.108.0, feedback: "a mini settings page over the game when we right click the cog wheel"): right-click the
 overlay's ⚙ = Quick settings, a small box over the game, above the cog and on the game's monitor. (2.119.0: either
-click - All settings… in it opens the full Overlay ↳ Settings in the app.) Style (2.110.0 - the Overlay ON | OFF switch is gone from here), Sound,
-Lock position, Click-through (2.120.1; Hide the overlay from screen captures is in Overlay ↳ Settings › Options), Helpers (2.118.0: each helper on / off - the bar has no switches for them any
+click - All settings… in it opens the full Overlay ↳ Overlay Settings in the app.) Style (2.110.0 - the Overlay ON | OFF switch is gone from here), Sound,
+Lock position, Click-through (2.120.1; Hide the overlay from screen captures is in Overlay ↳ Overlay Settings › Options), Helpers (2.118.0: each helper on / off - the bar has no switches for them any
 more) and On the bar (the tools' menus). Esc, ✕, a click elsewhere or the cog again closes it.
 GGG ToS: a window over the game; nothing is sent to the game."""
 import tkinter as tk
@@ -15,10 +15,8 @@ from .style import Tooltip
 QUICK_HELPERS = (("Breach", "breach"), ("Delirium", "delirium"), ("Ritual", "ritual"), ("Expedition", "remnant"),
                  ("Campaign", "campaign"), ("League Plan", "focus"), ("Whispers", "whispers"),
                  ("Top Up", "topup"), ("Breaks", "breaks"), ("Map profit", "mapprofit"), ("Temple", "temple"),
-                 ("Ritual Identifier", "ritualid"),
-                 ("Desecration", "desecrate"))   # 2.131.1: every helper (2.132.1: Map profit, Temple; 2.132.3: Ritual Identifier)
-BETA_HELPERS = {"topup": "topup", "breaks": "breaks", "mapprofit": "mapprofit", "temple": "temple",
-                "ritualid": "ritualid"}   # 2.132.2      # (a chip only while its beta feature is on - Features)
+                 ("Desecration", "desecrate"))   # 2.131.1: every helper (2.132.1: Map profit, Temple)
+BETA_HELPERS = {"topup": "topup", "breaks": "breaks", "mapprofit": "mapprofit", "temple": "temple"}   # 2.132.2      # (a chip only while its beta feature is on - Features)
 QUICK_BAR = (("Notes", "notes"), ("Calc", "calc"), ("Regex", "regex"), ("Rates", "rates"))
 # 2.124.0 (feedback: each toggle should say what it is on hover): the one-line tips (the helpers' come from
 # alerts_page.HELPER_BLURBS - the same line as on Helpers)
@@ -39,9 +37,9 @@ QUICK_TIPS = {"Style": "How the overlay looks over the game",
 class OverlayQuick:
     """Mixed into App."""
 
-    # ---------------------------------------------------------------- the one Sound (shared with Overlay ↳ Settings)
+    # ---------------------------------------------------------------- the one Sound (shared with Overlay ↳ Overlay Settings)
     def helpers_sound_set(self, on):
-        """Every helper's alert sound on or off (the Sound switch here and on Overlay ↳ Settings › Helpers)."""
+        """Every helper's alert sound on or off (the Sound switch here and on Overlay ↳ Overlay Settings › Helpers)."""
         on = bool(on)
         SETTINGS["helpers_sound"] = on
         try:

@@ -145,6 +145,11 @@ def _leftovers_2126(S):
         S.pop(k, None)
 
 
+def _ritual_id_21324(S):
+    """2.132.4: the Ritual Identifier is a Ritual helper option (ritual_alert.identify) - its own switch is gone."""
+    S.pop("ritual_id", None)
+
+
 STEPS = (
     ("modbook_import", "1.x", "app", _modbook_import, "modbook_imported"),
     ("rules_scoped", "2.6.0", "app", _rules_scoped, "rules_scoped_26"),
@@ -160,6 +165,7 @@ STEPS = (
     ("leftovers_2126", "2.126.0", "settings", _leftovers_2126, None),
     ("favours_art_2129", "2.129.0", "settings", _favours_art_2129, None),
     ("whispers_after_21292", "2.129.2", "settings", _whispers_after_21292, None),
+    ("ritual_id_21324", "2.132.4", "settings", _ritual_id_21324, None),
 )
 
 

@@ -25,6 +25,8 @@ DOCS = ("README.md", "TOS.md", "linux/README.md", "themes/README.md", "strats/RE
 
 # (version, what it was, words a person read, names in the code / settings keys[, pending])
 REMOVED = [
+    ("2.132.4", "the Ritual Identifier as a helper of its own (its Helpers row, Quick settings chip, BETA feature) - "
+                "it's a Ritual helper option now", ("Ritual Identifier (BETA)",), ("ritid_row", "ritid_set", "al_ritid")),
     ("2.131.2", "League Plan's Map supplies (refill every N maps / minutes, its pokes) - Top Up Reminders count the "
                 "inventory instead; its list moves there once",
      ("Map supply pokes", "ADD A SUPPLY", "REFILL YOUR MAP SUPPLIES", "Refill every"),

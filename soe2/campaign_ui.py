@@ -114,7 +114,7 @@ class CampaignUI:
             self._camp_later = set()                               # a new town: "Remind me in town" asks again
             self.camp_ask_show()                                   # in town: the rewards to answer
         if out == "maps" and CP.cfg()["off_at_maps"]:
-            self._say("Maps! The campaign line hides in maps and comes back in campaign zones (Overlay › Settings › "
+            self._say("Maps! The campaign line hides in maps and comes back in campaign zones (Overlay › Overlay Settings › "
                       "Campaign).", 6)
         if out or CP.line_text() != before:
             self.camp_refresh()
@@ -952,7 +952,7 @@ class CampaignUI:
 
     # ================================================================ R: its settings (Overlay › Options)
     def camp_options(self, po, into=None):
-        """Its options (route, splits ...). 2.82.0: into = the Campaign card on Overlay ↳ Settings."""
+        """Its options (route, splits ...). 2.82.0: into = the Campaign card on Overlay ↳ Overlay Settings."""
         from .chrome import section as chrome_section
         from .style import C, SegBar
         c = CP.cfg()

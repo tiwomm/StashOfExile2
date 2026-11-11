@@ -19,7 +19,7 @@ TRIGGERS = (("town", "in town or my hideout"), ("phase", "when I reach this phas
             ("never", "never - just keep it on the plan"))
 TONES = ("Gentle", "Firm", "Drill sergeant")
 DEFAULTS = {
-    "on": True,                     # the whole feature (Overlay ↳ Settings › Helpers); 2.118.0: on for a new install
+    "on": True,                     # the whole feature (Overlay ↳ Overlay Settings › Helpers); 2.118.0: on for a new install
     "line": True,                   # the focus line on the overlay (I)
     "phase": "start",
     "now": None,                    # the goal shown on the focus line (None: the first open one of this phase)

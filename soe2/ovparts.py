@@ -121,7 +121,7 @@ class OverlayParts:
             buglog.caught()
 
     def maprank_skip(self, name, how):
-        if how == "optout":                                  # 2.98.5: no more rank cards (Overlay › Settings brings them back)
+        if how == "optout":                                  # 2.98.5: no more rank cards (Overlay › Overlay Settings brings them back)
             self.tracker_cfg()["rank_ask"] = False
             self.tracker_save()
             v = getattr(self, "ml_rank_ask", None)

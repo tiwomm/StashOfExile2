@@ -104,7 +104,7 @@ class WellSoulsPage:
                             "for that item type)?", bg=bg, fg=P["text"], font=(P["font"], self.ov_font(10)),
                  justify="left", anchor="w", wraplength=self.ov_px(420)).pack(fill="x")
         tk.Label(body, text="Beta: it reads your screen while you're here, and it's still being tuned. Change it any "
-                            "time: Overlay ↳ Settings › Helpers.", bg=bg, fg=P["muted"], font=(P["font"], self.ov_font(9)),
+                            "time: Overlay ↳ Overlay Settings › Helpers.", bg=bg, fg=P["muted"], font=(P["font"], self.ov_font(9)),
                  justify="left", anchor="w", wraplength=self.ov_px(420)).pack(fill="x", pady=(4, 0))
         row = tk.Frame(body, bg=bg)
         row.pack(fill="x", pady=(8, 0))

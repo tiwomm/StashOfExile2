@@ -1,6 +1,6 @@
 """2.91.0: Exchange rates over the game - a small window in the overlay's own look (both looks) with today's
 most-used rates: how many of each per Divine Orb (cheap ones) or how many divines each is worth (dear ones). Off until
-you turn it on (Overlay ↳ Settings › Features); drag it where you like (the overlay's lock locks it too). The numbers
+you turn it on (Overlay ↳ Overlay Settings › Features); drag it where you like (the overlay's lock locks it too). The numbers
 are the Exchange rates table the app already keeps (poe.ninja, once an hour) - nothing extra is fetched.
 GGG ToS: a window on top that only shows numbers; nothing is sent to the game."""
 import tkinter as tk
