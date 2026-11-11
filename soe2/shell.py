@@ -8,6 +8,7 @@ own content into the window they are given.
   Window   - title bar (drag), minimize to the taskbar, maximize, close (hides it; utilities keep running), resize corner
 
 Window positions, sizes and which ones are open are saved in settings.json ("shell")."""
+import os
 import sys
 import time
 import tkinter as tk
@@ -749,8 +750,8 @@ class Shell:
     def dim_show(self, lift=True):
         """Cover the page you're on (the main area) with a dim layer; a click on it closes what's over it.
         2.131.5 (issue #234, Linux / Hyprland: "Settings opens as a black page"): no window alpha under XWayland, so
-        the layer came out solid black over Settings - on Linux there's no layer (Settings has its own ✕)."""
-        if sys.platform.startswith("linux"):
+        the layer came out solid black over Settings - on a Wayland desktop there's no layer (Settings has its ✕)."""
+        if sys.platform.startswith("linux") and os.environ.get("WAYLAND_DISPLAY"):
             return None
         d = getattr(self, "dim", None)
         if d is None:
