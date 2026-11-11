@@ -87,11 +87,16 @@ def is_hideout(area_id, name=""):
     return "hideout" in (area_id or "").lower() or str(name or "").strip().lower().endswith("hideout")
 
 
+NOT_MAPS = ("Abyss_Hub",)        # The Well of Souls: a level-65+ area that isn't a run
+
+
 def area_kind(area_id, seed, level=0):
     """'map' (anything the tracker counts as a run), 'hideout', 'town' or 'other'."""
     a = area_id or ""
     if is_hideout(a):
         return "hideout"
+    if a in NOT_MAPS:                                    # 2.131.5 (feedback: "showed up after well of souls (not a
+        return "other"                                   # map, just an area)")
     if seed == 1:
         return "town"
     if id_name(a) or a.startswith("Map"):

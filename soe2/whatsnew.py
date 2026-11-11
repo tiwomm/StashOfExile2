@@ -57,6 +57,9 @@ NOTES = {
              "means no reminder."),
             ("Overlay", "Top Up waits for a clear look: with the mouse over your inventory, the game's item box can "
              "cover a stack."),
+            ("Overlay", "Top Up reminds you only when you're back from a map. The Well of Souls doesn't count as a "
+             "map."),
+            ("App", "Linux: Settings opens without the dim layer behind it."),
         ],
     },
     "2.131.4": {
