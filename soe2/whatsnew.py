@@ -47,11 +47,19 @@ BETA_AREAS = ("Wealth", "Money Makers", "Game Search", "Market Insights", "Craft
 # repeats. Someone coming from rollup["since"] or older (or a fresh install) sees it instead of each version; someone
 # on a pre-release already saw them and gets only this version's own lines (notes_between).
 NOTES = {
+    "2.131.4": {
+        "big": [],
+        "small": [
+            ("Overlay", "Top Up teaches with the game's own Ctrl+C now: open your inventory, hover an item, Ctrl+C. "
+             "F7 did nothing (its copy was turned away)."),
+            ("Overlay", "Top Up counts items that don't stack, like keys: each one in your inventory counts 1."),
+        ],
+    },
     "2.131.3": {
         "big": [
             ("📦", "Map supplies are in Top Up Reminders", "League Plan's Map supplies tab is gone - Top Up counts "
              "what your inventory really holds. Your list moved over: set each one's Keep in Items… and teach it once "
-             "with F7.", None, "Overlay"),
+             "with Ctrl+C.", None, "Overlay"),
         ],
         "small": [
             ("Price Checks", "Ask me about mods I haven't rated grades a mod S to F, the same as Rate Mods."),
@@ -82,7 +90,7 @@ NOTES = {
              "your maps and count maps and deaths. Helpers work either way.", None, "Overlay"),
         ],
         "small": [
-            ("Overlay", "Top Up Reminders teach with their own key, F7 (Settings › Keybinds). Your price check key "
+            ("Overlay", "Top Up Reminders teach with their own key (Settings › Keybinds). Your price check key "
              "just prices the item again."),
             ("Overlay", "Top Up should count items taught with the mouse on them (the game's hover glow). Taught one "
              "that shows 0? Teach it again, then move the mouse off it."),
@@ -102,7 +110,7 @@ NOTES = {
              " about sharing with the community and where your data lives. Change it any time in Settings › "
              "General › Features.", None, "Settings"),
             ("📦", "Top Up Reminders", "Overlay › Settings › Helpers: in your open inventory, hover an item and press "
-             "F7 to teach it, then set how many to keep. When you're low, one card in hideout or "
+             "Ctrl+C to teach it, then set how many to keep. When you're low, one card in hideout or "
              "town.", None, "Overlay"),
             ("🔔", "Calm alerts", "Every helper alert is one small card: set Where and Size in Overlay › Settings › "
              "Helpers, × to close, no flashing.", None, "Overlay"),
