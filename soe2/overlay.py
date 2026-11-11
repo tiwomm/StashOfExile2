@@ -129,7 +129,11 @@ def game_open(title=POE_TITLE):
 
 # ---------------------------------------------------------------- typing a chat command
 def _send_keys(events):
-    """events: [(vk or None, char or None, up)] -> one SendInput call per event (Windows)."""
+    """events: [(vk or None, char or None, up)] -> one SendInput call per event (Windows; Linux: xdotool, #235)."""
+    if sys.platform.startswith("linux"):
+        from .linkeys import send_keys
+        send_keys(events)
+        return
     import ctypes
     from ctypes import wintypes
     ULONG_PTR = ctypes.c_size_t
@@ -156,6 +160,9 @@ def _send_keys(events):
 def send_copy(sender=None):
     """One-key copy (2.0 beta 15): press the game's own Ctrl+Alt+C once for you - one key press, one item copied (the
     same thing other price-check tools do). Nothing is clicked, moved or sent to the game's servers."""
+    if sender is None and sys.platform.startswith("linux"):     # (linux branch, #235: xdotool - the game hears it)
+        from .linkeys import send_copy as _lin_copy
+        return _lin_copy()
     send = sender or _send_keys
     send([(0x10, None, True),                                                       # Shift up (it changes the copy)
           (0x11, None, False), (0x12, None, False), (0x43, None, False), (0x43, None, True),

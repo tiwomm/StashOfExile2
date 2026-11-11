@@ -2,6 +2,7 @@
 
 Part of StashOfExile2. Split out of the single-file app in 1.37 (see the launcher's VERSION HISTORY)."""
 
+import os
 import sys
 import threading
 import time
@@ -163,6 +164,8 @@ class KeyWatch:
         # alive; rehook() puts a fresh one in.
         self.last_phys = self.last_inj = 0.0
         self._hook = None
+        self.keys_source = lambda: []   # (linux branch, #235) the app's keybinds, for Hyprland's pass-through binds
+        self.sent_copy = 0.0            # (linux branch) when the app itself sent Ctrl+Alt+C (price check / Top Up key)
 
     def note_esc(self, down, up, now=None):
         """2.25.0: Esc went down / up. Two fresh presses within DOUBLE_TAP = a double tap (esc_double); a held key's
@@ -193,6 +196,38 @@ class KeyWatch:
     def start(self):
         if sys.platform == "win32":
             threading.Thread(target=self._run, daemon=True).start()
+        elif sys.platform.startswith("linux"):
+            from .linsys import hypr_socket
+            if hypr_socket() or os.environ.get("SOE2_LINUX_KEYS"):     # (linux branch, #235: Hyprland only)
+                from .linkeys import LinuxKeys
+                self._linux = LinuxKeys(self.on_line, self.keys_source)
+                self._linux.start()
+
+    def on_line(self, line, now=None):
+        """(linux branch, #235 - Tylo's fix) One key from Hyprland's pass-through bind ("ctrl+d"): handled like the
+        Windows hook's key - the same times, the same listener. The game gets the key as well (non-consuming)."""
+        from .linkeys import line_key
+        k = line_key(line)
+        if not k:
+            return False
+        now = time.time() if now is None else now
+        vk, ctrl, alt, shift = k
+        self.active, self.last_phys = True, now
+        if vk == 0x43 and ctrl and alt:
+            if now - self.sent_copy < 1.5:             # the app's own Ctrl+Alt+C (a price check): not Bulk Pricing
+                return False
+            self.combo_time = now
+        elif vk == 0x43 and ctrl and not shift:
+            self.copy_time = now
+        if vk == 0x1B:
+            self.note_esc(True, False, now)
+            self.note_esc(False, True, now)
+        if self.listener:
+            try:
+                return bool(self.listener(vk, ctrl, alt, shift))
+            except Exception:
+                buglog.caught()
+        return False
 
     def hook_stale(self, secs=3.0):
         """2.88.2: a copy just came from the game, yet the hook saw no key at all for `secs` - Windows dropped it."""

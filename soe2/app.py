@@ -295,6 +295,7 @@ class App(SettingsPage, GearBookPage, PriceCheckPage, PricePopup, FavoritesPage,
         self._rates_busy = False
         root.after(1500, self.rates_tick)
         root.protocol("WM_DELETE_WINDOW", self.on_close)
+        self.keys.keys_source = self.keys_for_binds   # (linux branch, #235: Hyprland binds for your keybinds)
         self.keys.start()
         self.root.after(5 * 60 * 1000, self.keys_refresh)   # 2.88.2: a fresh key watcher every 5 minutes
         self.start_utilities()                       # 2.0: chat commands & notes listen to the same keyboard watcher
@@ -2270,19 +2271,52 @@ class App(SettingsPage, GearBookPage, PriceCheckPage, PricePopup, FavoritesPage,
                     text = self.root.clipboard_get()
                 except tk.TclError:
                     text = ""
-                if text and text != self.last_clip and self._clip_ignored(text):
+                again = self.clip_again(text)            # (linux branch, #235) the same item, its key just pressed
+                if text and (text != self.last_clip or again) and self._clip_ignored(text):
                     self.last_clip = text
-                elif text and text != self.last_clip:
+                elif text and (text != self.last_clip or again):
                     self.last_clip = text
                     self.last_heard = time.time()
-                    if self.wealth_takes(text):
+                    # (linux branch, #235 - Tylo's fix): the same order as on Windows, so a copy made with the price
+                    # check key goes to Price Checks, not Bulk Pricing
+                    if self.topup_wants(text) and self.topup_take(text):
+                        pass
+                    elif self.wealth_takes(text):
                         self.wealth_clip(text)
-                    else:
+                    elif self.pc_wants(text):
+                        self.pc_take(text)
+                    elif self.gate_ok(text):
                         self.accept_clip(text)
         except Exception:
             self.log_error("reading the clipboard")
         finally:
             self.root.after(150, self.poll_clipboard, gen)
+
+    def keys_for_binds(self):
+        """(linux branch, #235) Every keybind's text (Settings › Keybinds) - Hyprland gets a pass-through bind each."""
+        try:
+            return [k for _w, k, _g, _id in self.all_hotkeys() if k]
+        except Exception:
+            buglog.caught()
+            return []
+
+    def clip_again(self, text, now=None):
+        """(linux branch, #235) Off Windows only a CHANGED clipboard is seen - the same item copied again with the price
+        check (or Top Up) key leaves the text as it was. Once that key's copy had time to land (0.4 s) and nothing
+        new came, the unchanged text counts once more."""
+        keys = getattr(self, "keys", None)
+        if not keys or not text:
+            return False
+        now = time.time() if now is None else now
+        t = max(getattr(keys, "pc_time", 0.0), getattr(keys, "tu_time", 0.0))
+        if text != self.last_clip:                       # (a new copy came: that key press is answered)
+            if now - t < 1.5:
+                self._clip_again_t = t
+            return False
+        if not (0.4 <= now - t < 1.5) or t <= getattr(self, "_clip_again_t", 0.0):
+            return False
+        self._clip_again_t = t
+        return True
 
     def ignore_clip(self, text, secs=3.0):
         """The app itself is about to put this on the clipboard: don't treat it as your copy (called from any thread)."""

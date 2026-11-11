@@ -23,13 +23,12 @@ StashOfExile2's releases are Windows-only. Since 2.10.0 the code has a start on 
 | Desk windows, the What's new card and the Toolkit menu inside the app's window (InDesk: they move, hide and change workspace with the app; `SOE2_REAL_WINDOWS=1` turns it off) | `soe2/shell.py` | tested by a player in daily use on Hyprland (as their own patch, 2.20 - 2.101.0) |
 | Screen text (OCR) for the Expedition Remnant Price Checker, Island Rumours and Well of Souls: Tesseract instead of Windows' OCR, the picture from `grim` on Wayland (`mss` on X11). Needs `tesseract` + English data and `grim` installed | `soe2/remnant.py` (`ocr_linux`, `grab_wayland`) | written, tested here on drawn game-style pictures only - not in the game yet |
 | Screen pictures for the Delirium and Ritual watchers and Wealth › Scan stash: `grim` on Wayland, `mss` on X11; Delirium / Ritual find the game window through Hyprland | `soe2/screengrab.py`, `soe2/delirium_alert.py` | written, tested here with a stand-in `grim` only - not in the game yet |
+| Hotkeys (#235, found and tested by @Tylocost on Hyprland 0.56 / Proton): every key in Settings › Keybinds gets a Hyprland pass-through bind (`hyprctl eval 'hl.bind(...)'`, else `hyprctl keyword bindnd`; described `SoE2 <key>`, only missing ones added, checked every 20 s - your config isn't edited) that writes the key to `$XDG_RUNTIME_DIR/stashofexile2.sock`; the app handles it like the Windows hook. The price check key's Ctrl+Alt+C and the chat keys go out through `xdotool` (XTest - the game hears it; `wtype` doesn't reach it). A copy made with the price check key goes to Price Checks; the same item again counts. Needs `socat` and `xdotool`. The key still reaches the game (non-consuming), so pick keys the game doesn't use; mouse-button hotkeys aren't supported | `soe2/linkeys.py`, `soe2/winsys.py`, `soe2/app.py`, `soe2/overlay.py` | Ctrl+D / Ctrl+Y price check tested by a player in game; chat keys not yet |
 
 ## Still Windows-only
 
-- Global hotkeys and Ctrl+Alt+C detection (`winsys.KeyWatch`, a Windows keyboard hook). Plan: a Hyprland `bindn` pass-through bind that writes to a local socket the app listens on, plus `wl-paste --watch` for the clipboard.
-- Chat command keys (`SendInput`). Plan: `wtype`.
+- Hotkeys outside Hyprland (other Wayland compositors, plain X11): no key watcher yet.
 - `winsound` beeps (fall back to the Tk bell).
-- The Remnant key (Ctrl+Alt+R) needs the Windows key hook - on Linux use the Remnant's Auto mode.
 - Leaving our own tags out of screen pictures (`WDA_EXCLUDEFROMCAPTURE`) is Windows-only: on Linux an OCR read can also see the app's tags if they sit inside the read area.
 
 ## Known issues

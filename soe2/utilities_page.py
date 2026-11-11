@@ -137,7 +137,7 @@ class UtilitiesPage:
         if not game_active((getattr(self, "overlay", None) and self.overlay.cfg.get("poe_title")) or POE_TITLE):
             return False                                   # outside the game the key does its usual job
         def go():
-            self.keys.pc_time = time.time()
+            self.keys.pc_time = self.keys.sent_copy = time.time()
             send_copy()
         threading.Thread(target=go, daemon=True).start()
         return True
@@ -155,7 +155,7 @@ class UtilitiesPage:
             return False
 
         def go():
-            self.keys.tu_time = time.time()
+            self.keys.tu_time = self.keys.sent_copy = time.time()
             send_copy()
         threading.Thread(target=go, daemon=True).start()
         return True

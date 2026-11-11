@@ -397,7 +397,7 @@ def tsv_lines(tsv, scale=1.0):
 
 
 def ocr_linux(img):
-    """PIL image -> [(line text, (x0, y0, x1, y1))] with Tesseract. Tesseract reads dark text on light best: grey,
+    """PIL image -> [(line text, (x0, y0, x1, y1))] with Tesseract. Tesseract reads dark text on light best: gray,
     flipped when the picture is mostly dark (the reward book, option boxes; the Rumours card is light already),
     made up to 2x bigger (game text is small)."""
     why = ocr_linux_available()
