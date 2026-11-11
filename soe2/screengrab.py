@@ -78,7 +78,7 @@ class Screen:
         self._grim = use_grim()
         try:
             import mss
-            self._mss = mss.MSS() if hasattr(mss, "MSS") else mss.mss()
+            self._mss = mss.mss() if hasattr(mss, "mss") else mss.MSS()
         except Exception:
             if not self._grim:
                 raise
@@ -120,5 +120,5 @@ def screen():
     """Drop-in for mss.mss() (see the module text). Not on Wayland: the plain mss object, as before."""
     if not use_grim():
         import mss
-        return mss.MSS() if hasattr(mss, "MSS") else mss.mss()
+        return mss.mss() if hasattr(mss, "mss") else mss.MSS()
     return Screen()
