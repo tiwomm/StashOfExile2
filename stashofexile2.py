@@ -32,6 +32,10 @@ VERSION HISTORY
          alertcard.Card - one card per app; an alert that comes while it's up joins it as a Row (show() returns the
          Row, which reads like the window). "N alerts" + × Close all, a row each (mark, words, helper tag, ×), rank
          order (Ritual 0, Breach 1, Top Up 3, Breaks 4), up to 4 rows then "+N more", one countdown (restarts on join).
+       - Tribute (feedback: "still asking me to offer tribute after I already dumped tribute"; favours_log: closed with
+         10,261 left, open again 9 s later at 0): the Favours window seen with its button gray sends favours_offered -
+         a tribute reminder up is taken back, a late try (game not in front) is dropped. The log says the button's
+         state at close.
   2.131.3
        - League Plan's Map supplies (request: "move into top up") are gone: Top Up Reminders count what the inventory
          really holds. focus.supplies_out hands the list over once (topup_take_supplies: each name joins Top Up's

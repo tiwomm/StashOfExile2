@@ -1172,6 +1172,8 @@ class AlertsPage:
             return
         level = level or breach_level(text)
         now = time.time()
+        if level == "tribute" and not test and getattr(self, "fv_offered_at", 0) > getattr(self, "fv_owed_at", 0):
+            return                                           # 2.131.4: offered since (the Favours window said so)
         if not test:
             if level not in ("leave", "ritual", "tribute") and now - self.br_last.get(level, 0) < REPEAT_SECS:
                 return
