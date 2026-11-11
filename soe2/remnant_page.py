@@ -355,6 +355,11 @@ class RemnantPage:
     # on disk (GEM_FILE), so the same gem in the next book costs nothing
     GEM_BUDGET = 3
     GEM_FILE = "remnant_gems.json"
+    # 2.132.0 (feedback: "we need another system on top of that in case there's very few people who are running
+    # expedition"): a gem's price comes from, in turn - your own search (a day), the board's pooled one (a day), then
+    # either one up to GEM_KEEP old (shown at once, searched again when the trade site has room). Searches go highest
+    # level first (the gems worth the most); prices you find go up with your hourly community batch (if you share).
+    GEM_KEEP = 14 * 86400
 
     def _gem_cache(self):
         cache = self.__dict__.get("rm_gem_prices")
@@ -364,7 +369,7 @@ class RemnantPage:
             try:
                 for k, (each, ts) in (load_json(self.GEM_FILE, {}) or {}).items():
                     parts = k.split("|")
-                    if len(parts) == 4 and time.time() - ts < self.GEM_FRESH:
+                    if len(parts) == 4 and time.time() - ts < self.GEM_KEEP:
                         cache[(parts[0], parts[1], int(parts[2]) if parts[2] else None, parts[3])] = (each, ts)
             except Exception:
                 buglog.caught()
@@ -375,7 +380,7 @@ class RemnantPage:
         try:
             save_json(self.GEM_FILE, {f"{lg}|{kind}|{lv if lv is not None else ''}|{nm}": list(v)
                                       for (lg, kind, lv, nm), v in self._gem_cache().items()
-                                      if time.time() - v[1] < self.GEM_FRESH and v[0] is not None})
+                                      if time.time() - v[1] < self.GEM_KEEP and v[0] is not None})
         except Exception:
             buglog.caught()
 
@@ -396,13 +401,26 @@ class RemnantPage:
         cache = self._gem_cache()
         key = (league, kind, level, name.casefold())
         hit = cache.get(key)
-        if hit and time.time() - hit[1] < self.GEM_FRESH:
+        now = time.time()
+        fresh = hit is not None and now - hit[1] < self.GEM_FRESH
+        if fresh and hit[0] is not None:
             return hit[0], False
+        from . import communitymods as CM
+        pooled = CM.community_gem(league, kind, level, name)           # (div, when) or None
+        if pooled and now - pooled[1] < self.GEM_FRESH:
+            return pooled[0], False
+        if fresh:                                                       # (searched today: none listed)
+            return None, False
+        old = max([x for x in (hit if hit and hit[0] is not None else None, pooled) if x], key=lambda x: x[1],
+                  default=None)
         pend = self.__dict__.setdefault("rm_gem_wait", [])
         if key not in pend:
             pend.append(key)
+            pend[1:] = sorted(pend[1:], key=lambda k: -(k[2] or 0))  # (the highest level first: worth the most)
             if len(pend) == 1:
                 threading.Thread(target=self._remnant_gem_fetch, daemon=True).start()
+        if old is not None:
+            return old[0], False                    # (a few days old - shown now, searched again when there's room)
         return None, True
 
     def _remnant_gem_fetch(self):

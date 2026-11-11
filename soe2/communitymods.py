@@ -181,11 +181,12 @@ def push(market, rules, call=None):
     from . import campaign as CP                          # 2.77.0: campaign zones the guide pack didn't know
     zones = CP.to_pool()
     unmatched = unmatched_unsent(st)                      # 2.121.1
-    if not prices and not votes and not maps and not zones and not unmatched:
+    gems, gems_ts = gems_unsent(league, st)               # 2.132.0: gem prices your searches found
+    if not prices and not votes and not maps and not zones and not unmatched and not gems:
         return True, 0
     ok, d = (call or B.call)("POST", "/mods/batch", body={"cid": cid(), "league": league, "prices": prices,
                                                          "bases": bases, "votes": votes, "maps": maps[:400],
-                                                         "zones": zones, "unmatched": unmatched})
+                                                         "zones": zones, "unmatched": unmatched, "gems": gems})
     if not ok:
         return False, d
     CP.pooled(zones)
@@ -194,9 +195,51 @@ def push(market, rules, call=None):
     st["votes"] = {k: v for k, v in dict(rules).items() if v in ("high", "normal", "ignore")}
     st["maps"] = dict(mine_maps)
     st["unmatched"] = (list(st.get("unmatched") or []) + [u["text"] for u in unmatched])[-2000:]
+    if gems:
+        st["gems_ts"] = gems_ts
     st.setdefault("helped", {})[league] = int(st.get("helped", {}).get(league, 0)) + int(d.get("prices", 0))
     save_json(SENT, st)
     return True, int(d.get("prices", 0))
+
+
+def gems_unsent(league, st=None):
+    """2.132.0: gem prices found by your own searches since the last batch (remnant_gems.json) -> ([{kind, level,
+    name, div}], newest time). Only market prices - nothing about you."""
+    from .config import load_json
+    st = sent_state() if st is None else st
+    since = float(st.get("gems_ts", 0) or 0)
+    out, newest = [], since
+    for k, v in (load_json("remnant_gems.json", {}) or {}).items():
+        parts = k.split("|")
+        try:
+            each, ts = v[0], float(v[1])
+        except (TypeError, ValueError, IndexError):
+            continue
+        if len(parts) != 4 or parts[0] != league or each is None or ts <= since:
+            continue
+        out.append({"kind": parts[1], "level": int(parts[2]) if parts[2] else 0, "name": parts[3], "div": float(each)})
+        newest = max(newest, ts)
+    return out[:200], newest
+
+
+def community_gem(league, kind, level, name):
+    """2.132.0: the board's pooled price for a gem -> (divines, when found) or None."""
+    memo = _GEMS.get("memo")
+    if memo is None or time.time() - memo[0] > 30:                 # (a book is read often: the file once a while)
+        d = cached()
+        table = {}
+        for row in d.get("gems") or []:
+            try:
+                table[(row[0], int(row[1]), str(row[2]))] = (float(row[3]), float(row[4]))
+            except (TypeError, ValueError, IndexError):
+                continue
+        memo = _GEMS["memo"] = (time.time(), d.get("league"), table)
+    if memo[1] != league:
+        return None
+    return memo[2].get((kind, int(level or 0), str(name).casefold()))
+
+
+_GEMS = {}
 
 
 def upload_wait(now=None):
@@ -224,9 +267,11 @@ def pull(call=None):
         return False, s
     ok2, r = (call or B.call)("GET", "/mods/ratings")
     ok3, mp = (call or B.call)("GET", "/maps/ratings")
+    ok4, gm = (call or B.call)("GET", "/gems", {"league": league})      # 2.132.0: pooled gem prices
     d = {"league": league, "stats": s.get("stats", []), "players": s.get("players", 0),
          "ratings": r.get("ratings", []) if ok2 else cached().get("ratings", []),
-         "maps": mp.get("maps", []) if ok3 else cached().get("maps", []), "ts": time.time()}
+         "maps": mp.get("maps", []) if ok3 else cached().get("maps", []),
+         "gems": gm.get("gems", []) if ok4 else cached().get("gems", []), "ts": time.time()}
     save_json(FILE, d)
     return True, d
 

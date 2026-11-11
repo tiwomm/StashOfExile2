@@ -38,7 +38,13 @@ VERSION HISTORY
        - Hide the overlay from screen captures (feedback: "needs relocated to where it makes sense, and changed to
          just say 'Hide the overlay from screen captures'"): back in Overlay ↳ Settings › Options (tk_hidecap), and on
          means always (overlay_hide_capture); off: only a Ritual map's own rule.
-       - Runeshape gems (feedback: "people are gonna get rate limited hard"): a gem's price is kept a day (GEM_FRESH).
+       - Runeshape gems (feedback: "people are gonna get rate limited hard"; "players were already supposed to be shared
+         through the board, but we need another system on top of that"): your searches' prices go up with the
+         community batch ("gems": league, kind, level, name, price) and the board pools them (gem_prices, GET /gems,
+         newest wins, two weeks); a book's gem is priced from your own (a day), then the board's (a day), then either
+         up to GEM_KEEP (two weeks) old - shown at once, searched again when the budget has room; searches go highest
+         level first.
+       - Full release: NOTES["2.132.0"]["rollup"] - the card since 2.125.8 (the last full release), as things work now.
   2.131.6
        - Ritual line (feedback: "the tribute amount should stay persistent ... until it goes to 0/map ends"): the
          game's counter leaving the screen keeps the last number; 0, or going right after counting down (offered),
