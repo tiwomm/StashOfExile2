@@ -47,6 +47,13 @@ BETA_AREAS = ("Wealth", "Money Makers", "Game Search", "Market Insights", "Craft
 # repeats. Someone coming from rollup["since"] or older (or a fresh install) sees it instead of each version; someone
 # on a pre-release already saw them and gets only this version's own lines (notes_between).
 NOTES = {
+    "2.131.6": {
+        "big": [],
+        "small": [
+            ("Overlay", "The Ritual line keeps your tribute when the game's counter goes from the screen - until it's "
+             "0 or you start a new map."),
+        ],
+    },
     "2.131.5": {
         "big": [
             ("☠", "Your tribute on the Ritual line", "In a Ritual map the line over the game says how much tribute "

@@ -107,6 +107,7 @@ class FavoursPage:
         belts = FV.belt_refs()
         stars = FV.star_refs()                                  # 2.129.3: Rite of Passage ...
         hud = {"at": 0.0, "reads": [], "sent": "-", "num_at": 0.0, "n": None}
+        from .utilities import RITUAL
 
         def hud_look(g):
             """2.131.5: the game's tribute counter (bottom middle) about once a second in a map -> the Ritual line,
@@ -118,9 +119,19 @@ class FavoursPage:
             hud["reads"] = (hud["reads"] + [(hud["at"], n)])[-12:]
             if n is not None:
                 hud["num_at"], hud["n"] = hud["at"], n
-            two = [x for _t, x in hud["reads"][-2:]]
-            show = n if n is not None else (None if len(two) == 2 and two == [None, None] else hud["sent"])
-            if show != hud["sent"]:
+            # 2.131.6 (feedback: "the tribute amount should stay persistent ... until it goes to 0/map ends"): the
+            # counter going from the screen keeps the last number - only 0, or going right after counting down
+            # (offered), takes it off; a new map clears it (alerts_page.breach_area)
+            nums = [x for _t, x in hud["reads"] if x is not None][-2:]
+            if n == 0:
+                show = None
+            elif n is not None:
+                show = n
+            elif len(nums) == 2 and nums[1] < nums[0] and hud["reads"][-2][1] is not None:
+                show = None                                    # (it counted down and went: offered)
+            else:
+                show = getattr(RITUAL, "tribute", None)
+            if show != getattr(RITUAL, "tribute", None):
                 hud["sent"] = show
                 self.ui_q.put(("ritual_tribute", show))
 

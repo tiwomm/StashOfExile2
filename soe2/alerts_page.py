@@ -1163,6 +1163,8 @@ class AlertsPage:
                 try:
                     from .utilities import RITUAL
                     RITUAL.content = None              # (the last map's tick isn't this one's)
+                    if getattr(RITUAL, "tribute", None) is not None:      # 2.131.6: a new map - its own tribute
+                        RITUAL.tribute = None
                 except Exception:
                     buglog.caught()
             self.rt_where = where
