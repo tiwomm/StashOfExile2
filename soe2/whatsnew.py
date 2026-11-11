@@ -47,6 +47,21 @@ BETA_AREAS = ("Wealth", "Money Makers", "Game Search", "Market Insights", "Craft
 # repeats. Someone coming from rollup["since"] or older (or a fresh install) sees it instead of each version; someone
 # on a pre-release already saw them and gets only this version's own lines (notes_between).
 NOTES = {
+    "2.131.1": {
+        "big": [
+            ("▶", "Start session on the bar", "No session yet? Click ▶ Start session on the Game Overlay's bar to time "
+             "your maps and count maps and deaths. Helpers work either way.", None, "Overlay"),
+        ],
+        "small": [
+            ("Leaderboards", "League ▾ says how many players have times in each league, and a board explains when "
+             "players ran different maps."),
+            ("Settings", "The Feature Picker says a community name is asked next, for the Leaderboards."),
+            ("App", "Sharing should be asked only once now (it could also come as a second popup)."),
+            ("App", "The Feature Picker comes after What's new, and it and the name card stay above the app."),
+            ("Overlay", "\"Start the overlay with StashOfExile2\" is now \"Start a session with StashOfExile2\" - what "
+             "it always did."),
+        ],
+    },
     "2.131.0": {
         "big": [
             ("🧩", "Feature Picker", "Pick the features you use; the rest leave the menu. It also asks"

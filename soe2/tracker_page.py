@@ -133,7 +133,7 @@ class TrackerPage:
         # ---- top: start / pause, and where the log is
         tpo, top = chrome_section(body, "Session")                             # 2.69.0
         tpo.pack(fill="x", padx=8, pady=(8, 8))
-        self.tk_start_btn = ttk.Button(top, text="▶ Start tracking", style="Primary.TButton", command=self.tracker_toggle)
+        self.tk_start_btn = ttk.Button(top, text="▶ Start session", style="Primary.TButton", command=self.tracker_toggle)
         self.tk_start_btn.pack(side="left")
         self.tk_pause_btn = ttk.Button(top, text="Pause", command=self.tracker_pause_toggle, state="disabled")
         self.tk_pause_btn.pack(side="left", padx=8)
@@ -215,7 +215,7 @@ class TrackerPage:
         tv.pack(fill="both", expand=True)
         self.tk_maps = tv
         from .chrome import EmptyState                    # 2.120.0: one empty look everywhere (P4, 2.108.0: it said
-        self.tk_maps_empty = EmptyState(pm, "🗺", "No maps yet this session\nPress Start tracking, then run maps - "
+        self.tk_maps_empty = EmptyState(pm, "🗺", "No maps yet this session\nPress Start session, then run maps - "
                                                  "each one shows here with its time.")   # nothing)
         self.tk_maps_empty.place(relx=0.5, rely=0.45, anchor="center")
         self.list_register("tracker", tv)
@@ -499,7 +499,7 @@ class TrackerPage:
         switches(box, (("Lock position", self.tk_lock, lambda: self.overlay_lock(bool(self.tk_lock.get()))),
                        ("Click-through (clicks go to the game)", self.tk_ct,
                         lambda: self.ov_click_through_set(bool(self.tk_ct.get()))),
-                       ("Start the overlay with StashOfExile2", self.tk_auto, self.tracker_options_changed)), 2)
+                       ("Start a session with StashOfExile2", self.tk_auto, self.tracker_options_changed)), 2)
         from .style import Tooltip
         Tooltip(self.tk_ov_switches["Lock position"], "The overlay stays where it is (the 🔒 on the bar too).")
         Tooltip(self.tk_ov_switches["Click-through (clicks go to the game)"],
@@ -1026,7 +1026,7 @@ class TrackerPage:
         s.stop()
         self.tk_sessions.add(s)
         TR.clear_live()
-        self.tk_start_btn.config(text="▶ Start tracking", style="Primary.TButton")
+        self.tk_start_btn.config(text="▶ Start session", style="Primary.TButton")
         self.tk_pause_btn.config(state="disabled", text="Pause")
         msg = f"Session done: {fmt_time(s.elapsed())}, {s.map_count()} map{'s' if s.map_count() != 1 else ''}."
         self._tk_strip(msg, [("OK", self._tk_strip_close)])

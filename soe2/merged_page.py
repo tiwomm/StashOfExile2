@@ -739,7 +739,7 @@ class MergedOverlay:
         """2.74.0: Notes ▾ and Calc ▾ side by side (each only when it's on the bar); 2.92.2: Regex ▾ and Vendor ▾
         too. -> the far edge. 2.124.0 (feedback: Vendor ▾ ran off the Panel): left-anchored with right / step, a menu
         that would pass `right` goes on a new line step px lower (self._mg_menu_rows: how many lines)."""
-        order = self.bar_buttons()
+        order = (["start"] if self.start_on_bar() else []) + self.bar_buttons()
         if anchor == "e":
             order.reverse()                               # drawn right to left
         x0, first, self._mg_menu_rows = x, True, 1
@@ -747,6 +747,8 @@ class MergedOverlay:
             tag = "mg_notes" if what == "notes" else "mg_" + what
             if what == "notes":
                 nx = self._mg_notes_button(w, cv, P, x, y, anchor=anchor)
+            elif what == "start":
+                nx = self._mg_start_button(cv, P, x, y, anchor=anchor)
             else:
                 nx = self._mg_menu_button(cv, P, x, y, what, anchor=anchor)
             bb = cv.bbox(tag)
@@ -758,6 +760,34 @@ class MergedOverlay:
             first = False
             x = nx if anchor == "e" else ((bb[2] if bb else x) + 12)
         return x
+
+    START_TEXT = "Start session"
+
+    def start_on_bar(self):
+        """2.131.1 (feedback: "the overlay on startup has no option to start session tracking"): while no session
+        runs, ▶ Start session sits first on the bar; the timer takes its place once one starts."""
+        s = getattr(self, "tk_session", None)
+        return not getattr(self, "mg_timer", False) and (s is None or s.ended is not None)
+
+    def _mg_start_button(self, cv, P, x, y, anchor="w"):
+        """▶ Start session: the ▶ (the timer's own button) and its words, one click target. -> the next x."""
+        f = (P["font"], self._hf(9), "bold")
+        if anchor == "e":
+            it = cv.create_text(x, y, text=self.START_TEXT, anchor="e", fill=P.get("accent", P["text"]), font=f,
+                                tags=("mg", "mg_start"))
+            bb = cv.bbox(it)
+            d = self._hf(9) + 6
+            self._mg_play(cv, P, (bb[0] if bb else x) - 6 - d, y, anchor="w", size=9)
+        else:
+            d = self._mg_play(cv, P, x, y, anchor="w", size=9)
+            it = cv.create_text(x + d + 6, y, text=self.START_TEXT, anchor="w", fill=P.get("accent", P["text"]),
+                                font=f, tags=("mg", "mg_start"))
+        cv.addtag_withtag("mg_start", "mg_play")
+        cv.tag_bind("mg_start", "<Button-1>", lambda e: self.tracker_play_click())
+        cv.tag_bind("mg_start", "<Enter>", lambda e: cv.configure(cursor="hand2"))
+        cv.tag_bind("mg_start", "<Leave>", lambda e: cv.configure(cursor=""))
+        bb = cv.bbox("mg_start")
+        return (bb[0] if bb else x) - 12
 
     def _mg_menu_button(self, cv, P, x, y, what, anchor="e"):
         """Calc ▾, Regex ▾ or Vendor ▾: a click opens / closes its small window."""

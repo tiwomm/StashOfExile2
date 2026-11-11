@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU AGPL v3.0 (see LICENSE; up to 2.129.4: GNU GPL v3.0). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.131.0
+VERSION 2.131.1
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,6 +19,22 @@ VERSION 2.131.0
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.131.1
+       - The bar (feedback: "the overlay on startup has no option to start session tracking"): while no session
+         runs, ▶ Start session sits first on the bar (merged_page.start_on_bar / _mg_start_button, every look); the
+         timer takes its place. One name: the Overlay page's button and its empty state say Start session too, and
+         Options' autostart switch is "Start a session with StashOfExile2" (it always started a session).
+       - Feature Picker (feedback: say why a name is asked): a line under the sharing tick - the Leaderboards need a
+         community name, asked next. Sharing from before with no name: the name is asked after Save.
+       - Sharing asked twice (bug): cm_start's older popup opened at 15 s when the quick start was closed, or over
+         What's new; the Feature Picker asks it now (the popup only after Never ask again).
+       - Lost windows (feedback: the picker opened under What's new and vanished): it waits until What's new / the
+         quick start is closed and comes right after; the picker, the name card and the sharing popup are owned by
+         the app's window (Windows keeps them above it) and follow Always on top.
+       - Quick start page 5: ▶ Start session and Overlay › Settings › Helpers (Ctrl+Alt+S and "Mechanic Helper" are
+         gone).
+       - Leaderboards (feedback: only my times): the keys answer has league_players (counts only); League ▾ says
+         "Runes of Aldur · 1 player"; a league whose players ran different boards says so.
   2.131.0
        - Full release after the 2.126-2.130 pre-releases: whatsnew NOTES["2.131.0"]["rollup"] merges their notes
          with no repeats; notes_between shows it to anyone coming from 2.125.8 or older (pre-release users get only
@@ -3430,7 +3446,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.131.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.131.1"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 

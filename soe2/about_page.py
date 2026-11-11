@@ -55,10 +55,10 @@ QUICKSTART = [
         "worth right now.",
     ]),
     ("While you map", [
-        "Overlay: time, maps and deaths per session, with a small timer over the game. Ctrl+Alt+S starts and stops "
-        "it in game; F6 hides or shows the whole overlay.",
-        "Overlay › Mechanic Helper can warn you when your Hiveblood is almost full (Breach) and when you finish a map with "
-        "Delirium still on.",
+        "Game Overlay: a bar over the game. Click ▶ Start session on it to time your maps and count maps and deaths; "
+        "F6 hides or shows the whole overlay.",
+        "Overlay › Settings › Helpers can warn you when your Hiveblood is almost full (Breach), when you leave a map "
+        "with Delirium or rituals left, and more. They work with or without a session.",
     ]),
     ("Pick your league and say hi", [
         "Prices come from your league. The newest one is picked for you; change it here or any time in Settings.",
