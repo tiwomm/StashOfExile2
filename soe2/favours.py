@@ -320,6 +320,26 @@ def rerolls_left(img, win):
     return bool(red > 0.12)
 
 
+def tribute_offered(img, win):
+    """2.131.2 (feedback: "I click the offer tribute button and quickly exit the favour window ... it needs to be
+    fool-proof"): OFFER TRIBUTE TO THE KING turns gray the moment it's clicked (the number then counts down) and is
+    gray with nothing to offer; red while there's tribute to offer. -> True (gray: nothing owed), False (red),
+    None (can't tell). Measured on 1440p shots: gray has no color at all, red ~19% clearly red pixels."""
+    _cv2, np = _cv()
+    x, y, s, _sc = win
+    cut = img[int(y + 972 * s):int(y + 1008 * s), int(x - 82 * s):int(x + 274 * s)]
+    if not cut.size:
+        return None
+    a = cut.astype(np.int16)
+    red = ((a[..., 2] > a[..., 1] + 30) & (a[..., 2] > a[..., 0] + 30)).mean()
+    sat = (a.max(2) - a.min(2)).mean()
+    if red >= 0.08:
+        return False
+    if red < 0.02 and sat < 8:
+        return True
+    return None
+
+
 def tribute_box(img, win):
     """The "4,749 TRIBUTE" line (BGR), for reading the number."""
     x, y, s, _sc = win

@@ -10,7 +10,8 @@ from .config import SETTINGS, save_json
 from .style import C, Tooltip
 
 EVERY_MS = 1500                     # how often it looks for the inventory
-REFINE_SECS = 120                   # 2.131.1: learn a taught cell again, without the hover glow, within this
+MOVING = "moving"
+HIST_SECS = 20                      # 2.131.2: recent looks kept to find the taught cell without the hover glow
 REFINE_SAME = TU.SAME * 3       # (the glow changes it this much at most)
 TEACH_SECS = 3                      # the Top Up key counts as teaching within this of the last look
 CARD_COLOR = "#8ec5ff"
@@ -69,6 +70,10 @@ class TopUpPage:
             return None
         self._tu_busy = True
         prev = getattr(self, "tu_last", None)
+        try:
+            p0 = self.root.winfo_pointerxy()               # (2.131.2: where the mouse was as the look began)
+        except tk.TclError:
+            p0 = None
 
         def work():
             from .remnant import grab
@@ -86,6 +91,8 @@ class TopUpPage:
 
         def done(res):
             self._tu_busy = False
+            if res is not None:
+                res["p0"] = p0
             self.topup_seen(res)
 
         try:
@@ -102,6 +109,9 @@ class TopUpPage:
         res["t"] = time.time()
         self.tu_last = res
         if res.get("open"):
+            res["hover"] = self._tu_hover(res)
+            hist = [h for h in getattr(self, "tu_hist", []) if res["t"] - h["t"] <= HIST_SECS]
+            self.tu_hist = (hist + [res])[-8:]
             try:
                 self.topup_refine(res)
             except Exception:
@@ -110,29 +120,46 @@ class TopUpPage:
             if not was:
                 self.topup_remind()
 
-    def topup_refine(self, res):
-        """2.131.1 (feedback: "it didn't detect the quantities in my inventory" - 0 of an item you hold): teaching
-        happens with the mouse on the item, so the picture it learned had the game's hover glow. The next look with
-        the mouse elsewhere learns the same cell again, plain - the picture every later look sees."""
-        pend = getattr(self, "tu_pending", None) or {}
-        if not pend:
-            return False
+    def _tu_hover(self, res):
+        """The inventory cell under the mouse in this look, None (off the grid), or MOVING when the mouse moved
+        while it looked (its picture may hold a glow anywhere - not used to learn from)."""
+        try:
+            p1 = self.root.winfo_pointerxy()
+        except tk.TclError:
+            return MOVING
+        p0 = res.get("p0", p1)
+        if p0 is None or abs(p0[0] - p1[0]) > 2 or abs(p0[1] - p1[1]) > 2:
+            return MOVING
         l_, t, r, _b = res["rect"]
         cs = (r - l_) / TU.COLS
-        try:
-            mx, my = self.root.winfo_pointerxy()
-            hov = (int((my - t) // cs), int((mx - l_) // cs))
-        except tk.TclError:
-            return False
-        cells, done = TU.split(res["img"]), False
-        for name, (rc, s0, t0) in list(pend.items()):
-            if time.time() - t0 > REFINE_SECS:
-                pend.pop(name, None)
+        rc = (int((p1[1] - t) // cs), int((p1[0] - l_) // cs))
+        return rc if 0 <= rc[0] < TU.ROWS and 0 <= rc[1] < TU.COLS else None
+
+    def _tu_plain(self, rc, s0, looks):
+        """A picture of cell rc without the hover glow, from these looks (the mouse elsewhere, the same item there),
+        newest first; or None."""
+        for look in reversed(looks):
+            if not look.get("open") or look.get("hover") in (rc, MOVING) or look.get("img") is None:
                 continue
-            if rc == hov:
-                continue                                   # (still on it: the glow is still there)
-            cell = cells.get(rc)
-            pend.pop(name, None)
+            cell = TU.split(look["img"]).get(rc)
+            if cell is not None and not TU.empty(cell) and TU.dist(TU.sig(cell), s0) <= REFINE_SAME:
+                return cell
+        return None
+
+    def topup_refine(self, res):
+        """2.131.1 (feedback: "it didn't detect the quantities in my inventory" - 0 of an item you hold): teaching
+        happens with the mouse on the item, so the picture it learned had the game's hover glow. 2.131.2 (feedback:
+        still 0): a look from just before (the mouse elsewhere) is used at once; else the next look with the mouse
+        off it, however much later - it's remembered in topup.json, closing the inventory or the app included."""
+        pend = TU.pending()
+        if not pend:
+            return False
+        done = False
+        for name, (rc, s0) in pend.items():
+            if res.get("hover") in (rc, MOVING):
+                continue                                   # (still on it, or moving: the glow may be there)
+            cell = TU.split(res["img"]).get(rc)
+            TU.pending_set(name)
             if cell is None or TU.empty(cell) or TU.dist(TU.sig(cell), s0) > REFINE_SAME:
                 continue                                   # (moved or gone: keep what it learned)
             done = TU.learn(name, cell) or done
@@ -193,7 +220,13 @@ class TopUpPage:
         cell = TU.split(last["img"])[(row, c)]
         if not TU.learn(name, cell):
             return False
-        self.__dict__.setdefault("tu_pending", {})[name] = ((row, c), TU.sig(cell), time.time())   # (topup_refine)
+        s0 = TU.sig(cell)
+        plain = self._tu_plain((row, c), s0, [h for h in getattr(self, "tu_hist", [])
+                                              if time.time() - h.get("t", 0) <= HIST_SECS])
+        if plain is not None:
+            TU.learn(name, plain)                          # (2.131.2: from a look just before - no glow)
+        else:
+            TU.pending_set(name, (row, c), s0)             # (the next look with the mouse off it - topup_refine)
         if count:
             try:
                 TU.learn_digits(cell, count)
@@ -204,8 +237,9 @@ class TopUpPage:
             items.append({"name": name, "keep": TU.full_stack(text) or 1})
         save_json("settings.json", SETTINGS)
         self.tu_last = dict(last, thumb=None)          # (read it again with this item known)
-        self.status_text, self.status_until = f"Top Up: learned {name} - set how many to keep in Items…", \
-            time.time() + 6
+        self.status_text, self.status_until = (f"Top Up: learned {name} - set how many to keep in Items…" +
+                                               ("" if plain is not None else " (move the mouse off it for a moment)")), \
+            time.time() + 8
         self.topup_paint_list()
         return True
 
