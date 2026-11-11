@@ -193,7 +193,7 @@ class TopUpPage:
         from . import alertcard
         from .alerts_page import game_rect
         self.tu_win = alertcard.show(self.root, "Top up before your next map", sub, color=CARD_COLOR, mark="▼",
-                                     secs=10, game=game_rect())
+                                     secs=10, game=game_rect(), tag="Top Up", rank=3)
         buglog.debug("Top Up", f"reminded: {len(lows)} low")
         return lows
 
