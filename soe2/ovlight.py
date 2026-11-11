@@ -332,14 +332,15 @@ class LightOverlay:
     def _lt_menus(self, w, cv, P, x, y, anchor="e", right=None, step=0):
         """Notes ▾ / Calc ▾ / Regex ▾ / Vendor ▾ (MergedOverlay draws them). -> the far edge."""
         x = self._mg_bar_buttons(w, cv, P, x, y, anchor=anchor, right=right, step=step)
-        self._lt_halo_tags(cv, P, ("mg_notes", "mg_calc", "mg_regex", "mg_rates", "mg_vendor"))
+        self._lt_halo_tags(cv, P, ("mg_start", "mg_notes", "mg_calc", "mg_regex", "mg_rates", "mg_vendor"))
         return x
 
     def _lt_menus_w(self, cv, P):
         f = self._lt_fm(cv, P, 9)
         names = {"notes": "Notes  ▾", "calc": "Calc  ▾", "regex": "Regex  ▾", "rates": "Rates  ▾",
                  "vendor": "Vendor  ▾"}
-        return sum(f.measure(names[k]) + 12 for k in self.bar_buttons()) + self._u(6)
+        start = (self._lt_fm(cv, P, 9, True).measure(self.START_TEXT) + self._hf(9) + 24) if self.start_on_bar() else 0
+        return start + sum(f.measure(names[k]) + 12 for k in self.bar_buttons()) + self._u(6)
 
     def _lt_time(self, cv, P, x, y, size, num=True):
         """The session time (bold). -> the width kept for it. 2.119.0 (UX pass, feedback: long map names were cut):

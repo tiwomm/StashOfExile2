@@ -793,6 +793,7 @@ class App(SettingsPage, GearBookPage, PriceCheckPage, PricePopup, FavoritesPage,
         if w is not None:
             w.destroy()
             self._whatsnew = None
+        self.root.after(400, self.features_maybe)              # 2.131.1: the Feature Picker next, one at a time
 
     def _league_chip(self):
         self.league_chip.config(text="⚑ " + (self.league_var.get() or "pick a league"))
@@ -1408,10 +1409,14 @@ class App(SettingsPage, GearBookPage, PriceCheckPage, PricePopup, FavoritesPage,
         if not BRD.configured():
             self.root.after(CM.EVERY * 1000, self.cm_start)       # the board may get switched on later
             return
+        from . import features as FEAT
         if not self.cm_asked():
-            if not self._qs_open():                       # (2.125.8: the quick start asks it on a fresh install)
+            # 2.131.1 (bug): the Feature Picker asks about sharing - this older popup asked it a second time when the
+            # quick start was already closed, or over What's new for people updating. Only once the picker is gone
+            # for good (Never ask again) does it still ask, as before.
+            if FEAT.asked() == "never" and not self._qs_open():
                 self.cm_ask()
-        elif self.cm_sharing():
+        elif self.cm_sharing() and FEAT.asked() in ("done", "never"):
             self.cm_name_ask()                            # 2.125.8: sharing, but no name yet - asked once
         self.root.after(60000, self.cm_tick)
 
@@ -1499,6 +1504,8 @@ class App(SettingsPage, GearBookPage, PriceCheckPage, PricePopup, FavoritesPage,
             w.update_idletasks()
             hx, hy, hw, hh = self.root.winfo_rootx(), self.root.winfo_rooty(), self.root.winfo_width(), self.root.winfo_height()
             w.geometry(f"+{hx + max(0, (hw - w.winfo_reqwidth()) // 2)}+{hy + max(0, (hh - w.winfo_reqheight()) // 3)}")
+            if qs is None:
+                self.popup_over_app(w)                    # 2.131.1: never lost behind the app
             w.lift()
             ent.focus_set()
         except tk.TclError:
@@ -1599,6 +1606,7 @@ class App(SettingsPage, GearBookPage, PriceCheckPage, PricePopup, FavoritesPage,
             w.update_idletasks()
             hx, hy, hw, hh = self.root.winfo_rootx(), self.root.winfo_rooty(), self.root.winfo_width(), self.root.winfo_height()
             w.geometry(f"+{hx + max(0, (hw - w.winfo_reqwidth()) // 2)}+{hy + max(0, (hh - w.winfo_reqheight()) // 3)}")
+            self.popup_over_app(w)                        # 2.131.1: never lost behind the app
             w.lift()
         except tk.TclError:
             pass

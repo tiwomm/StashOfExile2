@@ -115,6 +115,10 @@ class FeaturesPage:
         """At start-up: the picker, unless answered (or Never ask again) - after the welcome / What's new card."""
         if FEAT.asked() in ("done", "never"):
             return None
+        from .config import APP_VERSION
+        if SETTINGS.get("seen_version") != APP_VERSION:          # 2.131.1 (feedback: it opened under What's new and
+            self.root.after(1500, self.features_maybe)         # got lost): What's new / the quick start first -
+            return None                                        # closing it brings the picker (close_whatsnew)
         wn = getattr(self, "_whatsnew", None)
         try:
             if wn is not None and wn.winfo_exists():
@@ -165,6 +169,10 @@ class FeaturesPage:
             tk.Label(sh, text="Off until you turn it on. Price summaries and your ratings - never your name, "
                               "characters or wealth. You get everyone's data either way.", bg=P2, fg=C["muted"],
                      font=("Segoe UI", 9), anchor="w", justify="left", wraplength=760).pack(fill="x", padx=(24, 0))
+            # 2.131.1 (feedback: say why a name is asked next): the Leaderboards need a community name
+            tk.Label(sh, text="To show your times on the Leaderboards, pick a community name (asked next).", bg=P2,
+                     fg=C["muted"], font=("Segoe UI", 9), anchor="w", justify="left", wraplength=760).pack(
+                fill="x", padx=(24, 0))
         folder = {"new": None}
         if not SETTINGS.get("data_dir_asked"):                  # the first time only (later: Settings › Advanced)
             from .config import DATA_DIR
@@ -197,6 +205,8 @@ class FeaturesPage:
                 self.cm_set_sharing(bool(share_v.get()), say=False)
                 if share_v.get():
                     self.root.after(200, self.cm_name_ask)      # (a community name for the Leaderboards)
+            elif self.cm_sharing():                             # 2.131.1: sharing from before, still no name
+                self.root.after(200, self.cm_name_ask)          # (asked once; it checks for itself)
             self.features_apply()
             note = None
             if folder["new"]:
@@ -221,8 +231,21 @@ class FeaturesPage:
             center_over(w, self.root)
         except Exception:
             buglog.caught()
-        w.lift()
+        self.popup_over_app(w)
         return w
+
+    def popup_over_app(self, w):
+        """2.131.1 (feedback: the picker got lost behind the app): Windows itself keeps it above the app's window, and
+        it's on top when the app is (Settings › Always on top) - like the app's own pages."""
+        try:
+            from .shell import DeskWindow
+            w.shell = self.shell
+            DeskWindow.own_by_app(w)
+            DeskWindow.follow_on_top(w)
+            w.lift()
+            w.focus_force()
+        except Exception:
+            buglog.caught()
 
     def features_close(self, w, answered=False):
         try:
