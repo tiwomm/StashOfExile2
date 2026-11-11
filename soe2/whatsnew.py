@@ -43,7 +43,87 @@ MAX_BIG = 3
 BETA_AREAS = ("Wealth", "Money Makers", "Game Search", "Market Insights", "Craft Helper", "Stash tab", "Scan stash",
               "Desecration Helper")
 
+# 2.131.0 (a full release after the 2.126-2.130 pre-releases): "rollup" holds those versions' notes, merged with no
+# repeats. Someone coming from rollup["since"] or older (or a fresh install) sees it instead of each version; someone
+# on a pre-release already saw them and gets only this version's own lines (notes_between).
 NOTES = {
+    "2.131.0": {
+        "big": [
+            ("🧩", "Feature Picker", "Pick the features you use; the rest leave the menu. It also asks"
+             " about sharing with the community and where your data lives. Change it any time in Settings › "
+             "General › Features.", None, "Settings"),
+            ("📦", "Top Up Reminders", "Overlay › Settings › Helpers: in your open inventory, hover an item and press "
+             "your price check key to teach it, then set how many to keep. When you're low, one card in hideout or "
+             "town.", None, "Overlay"),
+            ("🔔", "Calm alerts", "Every helper alert is one small card: set Where and Size in Overlay › Settings › "
+             "Helpers, × to close, no flashing.", None, "Overlay"),
+        ],
+        "small": [
+            ("Overlay", "Break reminders (off to start): after 45–120 minutes of play, a short card in hideout or "
+             "town. Overlay › Settings › Helpers."),
+            ("Settings", "Settings opens over your page, dimmed behind it. Esc, × or a click outside closes it, and "
+             "it opens on the tab you used last."),
+            ("Settings", "Advanced › Data folder › Change… moves your data to another folder."),
+            ("Overlay", "Campaign routes are Full, Speedrun and Rush (carry); runs on My Own use Full."),
+        ],
+        "rollup": {
+            "since": "2.125.8",
+            "big": [
+                ("💎", "Gems priced", "Your price check key on a skill, support or spirit gem searches the trade site "
+                 "with its level, sockets, quality and corruption. Lineage gems use the exchange's going rate.", None,
+                 "Price Checks"),
+                ("⇄", "Currency's going rate", "Your price check key on a currency or omen shows what one is worth in "
+                 "exalted and chaos, and what a Divine Orb buys of it.", None, "Price Checks"),
+                ("🕯", "Favours prices", "At a Ritual altar, rewards in the Favours window get their poe.ninja price - "
+                 "only ones it's sure of. Price check any other reward there to teach it. No prices on uniques; a ★ "
+                 "on Mageblood, Headhunter and Rite of Passage.", None, "Overlay"),
+                ("⏰", "Tribute reminder", "Close Favours with tribute left: a reminder to offer it to the King.", None,
+                 "Overlay"),
+                ("⏱", "Sessions survive a restart", "If the app closes, updates or crashes, your session comes back "
+                 "paused and goes on when the game does.", None, "Overlay"),
+                ("📍", "Place the Game Overlay", "Quick settings › Place: the Bar at the bottom or top, the Panel left "
+                 "or right. Overlay › Settings › Options › Reset position puts it back.", None, "Overlay"),
+                ("🕯", "Your loot filter in the Ritual window", "Overlay › Settings › Helpers › Ritual › Filter in the "
+                 "Ritual window… shows On or Off; Turn it on changes the game's setting for you while the game is "
+                 "closed (thanks to NeverSink and Ryonnen).", None, "Overlay"),
+                ("🎨", "Gruvbox themes", "Gruvbox Dark and Gruvbox Light in Settings › Appearance (gruvbox by "
+                 "morhetz).", None, "Settings"),
+            ],
+            "small": [
+                ("Expedition", "Gems in a remnant's book get prices, a few at a time and kept for 6 hours, so your own "
+                 "price checks keep working."),
+                ("Expedition", "Remnant prices should show sooner and to a long book's last line, and show in "
+                 "screenshots and streams."),
+                ("Expedition", "\"Unique Ring\", \"Belt\", \"Amulet\" or \"Jewellery\" show the best uniques it could "  # game text
+                 "be; \"10x Divine Orb\" should get its price."),
+                ("Expedition", "The runeshape list shows only for a remnant's book, A-Z within each tier; Warding Runes "
+                 "get their tag; a cheap reward says \"<1ex\"."),
+                ("Ritual", "The Ritual line should count maps with 5 or more rituals and Map Content's ticked icon, so "
+                 "leaving a map with rituals left reminds you."),
+                ("Ritual", "Favours prices should tell look-alike omens apart, know idols and Sacred Bloom, read gray "
+                 "sealed rewards and price every copy."),
+                ("Ritual", "The tribute reminder shouldn't show while Favours is open or after you've offered it."),
+                ("Ritual", "Character select shouldn't bring the rituals-not-done reminder; a reminder waits while "
+                 "another window is in front."),
+                ("Overlay", "Place › Top keeps the Ritual line under the Bar; Bottom sits right on the XP bar."),
+                ("Overlay", "Regex favorites can be locked with the overlay's lock, and stay where you put them."),
+                ("Overlay", "Trade whispers is simply on or off."),
+                ("Price Checks", "Mageblood should search all its Legacies; Overlay + Here no longer brings the app to "
+                 "the front."),
+                ("Bulk Pricing", "The Item pane stays on screen; Undo, Delete and Clear All sit together in the Items "
+                 "strip."),
+                ("Settings", "Keys is now Keybinds, with ↺ Defaults to put every key back."),
+                ("App", "The game's log (Client.txt) should be found wherever the game is installed."),
+                ("App", "Clicking themes or pages quickly shouldn't freeze the app; light themes turn all text dark."),
+                ("App", "Moving the app to another screen shouldn't leave a page behind."),
+                ("App", "The license is now AGPL-3.0: anything made from the code stays open source. Up to 2.129.4 "
+                 "stays GPL-3.0."),
+                ("App", "When a new league starts, a one-time note says some features may need a few days to catch "
+                 "up."),
+                ("Desecration Helper", "A Heart of the Well's options show their range and roll."),
+            ],
+        },
+    },
     "2.130.4": {
         "big": [],
         "small": [
@@ -1962,7 +2042,22 @@ def notes_between(seen, current):
             continue
         if vtuple(v) > vtuple(seen):
             out.append((v, lines))
-    return out
+    return _rolled(out, seen)
+
+
+def _rolled(out, seen):
+    """A version with a "rollup" stands in for the versions it covers when `seen` is that old (or None)."""
+    res, skip = [], None
+    for v, entry in out:
+        if skip and vtuple(skip[0]) < vtuple(v) < vtuple(skip[1]):
+            continue
+        r = entry.get("rollup") if isinstance(entry, dict) else None
+        if r and (seen is None or vtuple(seen) <= vtuple(r["since"])):
+            entry = {"big": list(entry.get("big", [])) + list(r.get("big", [])),
+                     "small": list(entry.get("small", [])) + list(r.get("small", []))}
+            skip = (r["since"], v)
+        res.append((v, entry))
+    return res
 
 
 def split_notes(notes, beta=True):

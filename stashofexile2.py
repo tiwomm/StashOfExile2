@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU AGPL v3.0 (see LICENSE; up to 2.129.4: GNU GPL v3.0). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.130.4
+VERSION 2.131.0
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,6 +19,22 @@ VERSION 2.130.4
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.131.0
+       - Full release after the 2.126-2.130 pre-releases: whatsnew NOTES["2.131.0"]["rollup"] merges their notes
+         with no repeats; notes_between shows it to anyone coming from 2.125.8 or older (pre-release users get only
+         2.131.0's own lines).
+       - Feature Picker (features.py / features_page.py): one popup for features, sharing and the data folder, shown
+         once after updating; Settings › General › Features keeps the same switches. The Beta switch and the quick
+         start sharing page are gone (check_removed).
+       - Settings as a window over the app (shell OVER): inset on a dim layer; Esc, × or a click on the dim closes it;
+         it reopens on its last tab.
+       - Alerts: every helper alert is the calm card (alertcard) - Where / Size / Test in Overlay › Settings › Helpers.
+       - Break reminders: off by default; after 45-120 min of play, a card in hideout / town.
+       - Top Up Reminders (topup.py / topup_page.py): teach an item with the price check key while the inventory is
+         open (banner template), counts read from the stack digits (shipped digit templates, learned from Stack Size,
+         Windows OCR fallback); one card per hideout / town visit when an item is under its Keep. Screen only, no
+         game files or servers (TOS.md item 2).
+       - Campaign: the My Own route is gone; saved runs on it move to Full (campaign.cfg migration).
   2.130.4
        - Remnant (feedback: "expedition doesn't read 10x divine orb" - its log: 'IOX Divine Orb'): _fix_qty reads a
          count's I / l / | as 1 and O as 0; LEVEL_LINE "Level 20: X" (Skill hidden) is a skill gem; fix_case.
@@ -3414,7 +3430,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.130.4"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.131.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
