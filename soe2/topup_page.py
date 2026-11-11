@@ -331,6 +331,56 @@ class TopUpPage:
                       "sent anywhere.")
 
     # ---------------------------------------------------------------- the Items list
+    def topup_add_open(self):
+        """+ Add more: a row to add an item by its name (the game's name; it counts once you teach it)."""
+        box = getattr(self, "tu_add", None)
+        if box is None:
+            return None
+        for ch in box.winfo_children():
+            ch.destroy()
+        P2 = C["panel2"]
+        tk.Label(box, text="Item", bg=P2, fg=C["text"]).pack(side="left")
+        have = {it["name"] for it in TU.cfg()["items"]}
+        self.tu_add_var = tk.StringVar()
+        cb = ttk.Combobox(box, textvariable=self.tu_add_var, width=26,
+                          values=[n for n in TU.SUGGEST if n not in have])
+        cb.pack(side="left", padx=8)
+        cb.focus_set()
+        tk.Label(box, text="Keep", bg=P2, fg=C["text"]).pack(side="left")
+        self.tu_add_keep = tk.StringVar(value="10")
+        ttk.Spinbox(box, from_=0, to=9999, textvariable=self.tu_add_keep, width=5).pack(side="left", padx=(8, 8))
+        ok = ttk.Button(box, text="Add", state="disabled", command=lambda: self.topup_add(self.tu_add_var.get(),
+                                                                                       self.tu_add_keep.get()))
+        ok.pack(side="left")
+        self.tu_add_var.trace_add("write", lambda *_a: ok.config(state="normal" if self.tu_add_var.get().strip()
+                                                                 else "disabled"))
+        cb.bind("<Return>", lambda _e: self.topup_add(self.tu_add_var.get(), self.tu_add_keep.get()))
+        return box
+
+    def topup_add(self, name, keep):
+        """Add one item by name -> True (already there: its Keep changes). Seen says "teach it" until taught."""
+        name = str(name or "").strip()
+        if not name:
+            return False
+        try:
+            k = max(0, int(str(keep).strip() or 0))
+        except ValueError:
+            k = 0
+        items = TU.cfg()["items"]
+        old = next((it for it in items if it["name"].lower() == name.lower()), None)
+        if old is not None:
+            old["keep"] = k
+        else:
+            items.append({"name": name, "keep": k})
+        save_json("settings.json", SETTINGS)
+        try:
+            self.tu_add_var.set("")
+        except (AttributeError, tk.TclError):
+            pass
+        self.topup_paint_list()
+        self.topup_below_paint()
+        return True
+
     def topup_below_set(self, text):
         for b in TU.BELOW_STEPS:
             if TU.below_text(b) == text:
@@ -400,9 +450,17 @@ class TopUpPage:
         self.topup_below_paint()
         self.tu_list = tk.Frame(inner, bg=P2)
         self.tu_list.pack(fill="both", expand=True)
+        # 2.131.4 (feedback: "go back to the Items... button and add new items to the list on top of what they
+        # have"): + Add more - a name now (taught later with Ctrl+C), or teach it in game
+        self.tu_add = tk.Frame(inner, bg=P2)
+        self.tu_add.pack(fill="x", pady=(8, 0))
         foot = tk.Frame(inner, bg=P2)
         foot.pack(fill="x", pady=(8, 0))
         ttk.Button(foot, text="Done", style="Primary.TButton", command=w.destroy).pack(side="right")
+        ab = ttk.Button(foot, text="+ Add more", command=self.topup_add_open)
+        ab.pack(side="left")
+        Tooltip(ab, "Add an item by its name, or in game: open your inventory, hover it and press "
+                    f"{self.topup_key_text()}.")
         self.topup_paint_list()
         try:
             from .style import center_over
@@ -425,8 +483,8 @@ class TopUpPage:
         self.tu_keep_vars, self.tu_seen_labels, self.tu_icons = {}, {}, []
         if not items:
             tk.Label(box, text="No items yet. In game: open your inventory, hover an item and press "
-                               f"{self.topup_key_text()}.", bg=P2, fg=C["text"], wraplength=420, justify="left", anchor="w").pack(fill="x")
-            ttk.Button(box, text="Got it", command=lambda: self.tu_items_win.destroy()).pack(anchor="w", pady=(8, 0))
+                               f"{self.topup_key_text()} - or + Add more below.", bg=P2, fg=C["text"], wraplength=420,
+                     justify="left", anchor="w").pack(fill="x")
             return
         head = tk.Frame(box, bg=P2)
         head.pack(fill="x")

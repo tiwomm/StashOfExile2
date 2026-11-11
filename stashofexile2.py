@@ -24,6 +24,8 @@ VERSION HISTORY
          watcher (which skips injected keys) never saw a Ctrl+Alt+C and gate_ok turned it away. Top Up's copy is
          now taken first in poll_clipboard (topup_wants / topup_take): the Top Up key is the game's own Ctrl+C by
          default (F7 moves to it once); Ctrl+C anywhere but over the open inventory goes on as before.
+       - Top Up (feedback: "go back to the Items... button and add new items"): Items… › + Add more - a name (the
+         game's; suggestions in TU.SUGGEST) and a Keep; Seen says "teach it" until it's taught with Ctrl+C.
        - Top Up (feedback: "cryptic keys that do not stack"): item_name accepts Normal items, so a key can be
          taught; each cell holding one counts 1.
   2.131.3

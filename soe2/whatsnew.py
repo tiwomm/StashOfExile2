@@ -53,6 +53,8 @@ NOTES = {
             ("Overlay", "Top Up teaches with the game's own Ctrl+C now: open your inventory, hover an item, Ctrl+C. "
              "F7 did nothing (its copy was turned away)."),
             ("Overlay", "Top Up counts items that don't stack, like keys: each one in your inventory counts 1."),
+            ("Overlay", "Top Up › Items… › + Add more adds an item by its name (it counts once you teach it with "
+             "Ctrl+C)."),
         ],
     },
     "2.131.3": {

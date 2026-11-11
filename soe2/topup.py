@@ -35,6 +35,10 @@ DEFAULTS = {"on": False, "items": [], "below": 0.3}   # items: [{"name", "keep"}
 # 2.131.2 (feedback: "it's asking me every single map, I only want it to ask when I am below a 70% threshold ... same
 # way we handle the % variances on price checks"): a reminder only once you hold less than Keep minus this share
 BELOW_STEPS = (0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7)
+# 2.131.4: + Add more's suggestions (the game's names; any other can be typed)
+SUGGEST = ("Scroll of Wisdom", "Exalted Orb", "Regal Orb", "Chaos Orb", "Orb of Alchemy", "Orb of Augmentation",
+           "Orb of Transmutation", "Vaal Orb", "Divine Orb", "Omen of Amelioration", "Cryptic Key",
+           "Simulacrum Splinter", "Greater Exalted Orb", "Greater Regal Orb")
 
 
 def below_text(b):
