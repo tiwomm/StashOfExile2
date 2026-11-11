@@ -96,7 +96,7 @@ class ExchangePage:
         except Exception:
             buglog.caught()
         try:
-            CXN.item_name("divine")                            # (loads cxnames.json)
+            CXN.item_name("")                                  # (loads cxnames.json - "divine" is a hub: it didn't)
             out += sorted(v for k, v in CXN._NAMES.items() if k != "_loaded" and isinstance(v, str))
         except Exception:
             buglog.caught()
