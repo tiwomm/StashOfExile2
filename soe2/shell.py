@@ -747,7 +747,11 @@ class Shell:
     # ---- the windows are real windows (2.0 beta 13): keep them on the desktop area when the app moves / resizes
     # ---- 2.131.0: the dim layer under Settings
     def dim_show(self, lift=True):
-        """Cover the page you're on (the main area) with a dim layer; a click on it closes what's over it."""
+        """Cover the page you're on (the main area) with a dim layer; a click on it closes what's over it.
+        2.131.5 (issue #234, Linux / Hyprland: "Settings opens as a black page"): no window alpha under XWayland, so
+        the layer came out solid black over Settings - on Linux there's no layer (Settings has its own ✕)."""
+        if sys.platform.startswith("linux"):
+            return None
         d = getattr(self, "dim", None)
         if d is None:
             d = self.dim = tk.Toplevel(self.root, bg="#000000")

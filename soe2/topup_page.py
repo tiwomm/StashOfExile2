@@ -210,7 +210,8 @@ class TopUpPage:
 
     # ---------------------------------------------------------------- the reminder
     def topup_visit(self):
-        """A new area (alerts_page.breach_area): the next inventory look may remind again."""
+        """Back from a map in a hideout or town (alerts_page.breach_area; 2.131.5: not any new area): the next
+        inventory look may remind again."""
         self.tu_visit = getattr(self, "tu_visit", 0) + 1
 
     def topup_remind(self, force=False):

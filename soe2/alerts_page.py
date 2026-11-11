@@ -1149,7 +1149,9 @@ class AlertsPage:
             self.root.after(9000 if cfg.get("on") and cfg.get("pending") else 0,
                             lambda g=got: self.breach_alert(level="ritual", sub=f"{g[0]} of {g[1]} done - go back "
                                                                                  f"through your portal"))
-        self.topup_visit()                                   # 2.131.0: Top Up may remind once a visit
+        if left:                                             # 2.131.0: Top Up may remind once a visit. 2.131.5
+            self.topup_visit()                               # (feedback: "keeps showing up after not running maps"):
+        #                                                      only a visit after a map
         if kind in ("hideout", "town") and before != kind:
             self.break_check()                               # 2.131.0: break reminders - in hideout / town only
         if kind == "map" and before != "map":
