@@ -96,11 +96,11 @@ class GamePlanPage:
         right.grid(row=0, column=1, sticky="nsew", padx=(8, 0))
         self._gp_goals(left)
         # P5 (2.108.0): the right side is tabs - one part at a time
-        tabs = ("Stockpile", "Map supplies", "Farm plan", "Pokes")
+        tabs = ("Stockpile", "Farm plan", "Pokes")        # (2.131.2: Map supplies moved to Top Up Reminders)
         self.gp_tabs = SegBar(right, list(tabs), command=self.gp_tab, size=10, pad=(12, 4), bg=P1)
         self.gp_tabs.pack(anchor="w", pady=(0, 8))
         self.gp_tab_frames = {}
-        for name, fn in zip(tabs, ((self._gp_stock,), (self._gp_supplies,), (self._gp_farms,),
+        for name, fn in zip(tabs, ((self._gp_stock,), (self._gp_farms,),
                                    (self._gp_pokes, self._gp_lock))):
             fr = tk.Frame(right, bg=P1)
             for build in fn:
@@ -132,8 +132,6 @@ class GamePlanPage:
         bits = [f"{open_} goal{'s' if open_ != 1 else ''} open"]
         if f["stockpile"]:
             bits.append(f"{len(f['stockpile'])} to stockpile")
-        if f["supplies"]:
-            bits.append(f"{len(f['supplies'])} map suppl{'ies' if len(f['supplies']) != 1 else 'y'}")
         if f["farms"]:
             bits.append(f"{len(f['farms'])} farm{'s' if len(f['farms']) != 1 else ''}")
         bits.append(("pokes on" if int(f["pokes"].get("per_hour") or 0) else "pokes off") if f["on"] else "not on the overlay")
@@ -476,107 +474,6 @@ class GamePlanPage:
             Tooltip(x, "Remove")
         box.columnconfigure(4, weight=1)
 
-    # ---------------- 2.73.3: map supplies
-    def _gp_supplies(self, parent):
-        P2 = C["panel2"]
-        o, box = chrome_section(parent, "Map supplies", "What you use up in maps and when to refill it - every N "
-                                                         "maps, N minutes in maps, or when the game's log says it "
-                                                         "was used up (Omen of Amelioration). "
-                                                         "The poke comes between maps, in town or your hideout.",
-                                wrap=True)
-        o.pack(fill="x", pady=(0, 12))
-        self.gp_sup_on = tk.BooleanVar(value=bool(F.cfg()["pokes"].get("supplies", True)))
-        ttk.Checkbutton(box, text="Map supply pokes", variable=self.gp_sup_on, style="Card.TCheckbutton",
-                        command=self.gp_sup_switch).pack(anchor="w", pady=(0, 8))
-        self.gp_sup_box = tk.Frame(box, bg=P2)
-        self.gp_sup_box.pack(fill="x")
-        form = self._gp_add_area(box, "ADD A SUPPLY")
-        self.gp_u_name, self.gp_u_every = tk.StringVar(), tk.StringVar(value="10")
-        self.gp_u_rule = tk.StringVar(value=F.SUPPLY_RULES[0][1])
-        self._gp_label(form, 0, "Supply")
-        nb = ttk.Combobox(form, textvariable=self.gp_u_name, values=F.SUPPLY_PRESETS)
-        nb.grid(row=0, column=1, sticky="ew", pady=2)
-        nb.bind("<<ComboboxSelected>>", lambda e: self.gp_supply_preset())
-        self._gp_label(form, 1, "Refill every")
-        r1 = tk.Frame(form, bg=P2)
-        r1.grid(row=1, column=1, sticky="ew", pady=2)
-        ttk.Spinbox(r1, from_=1, to=500, textvariable=self.gp_u_every, width=4).pack(side="left")
-        ttk.Combobox(r1, textvariable=self.gp_u_rule, values=[n for _k, n in F.SUPPLY_RULES], state="readonly",
-                     width=15).pack(side="left", padx=(4, 0))
-        ttk.Button(r1, text="+ Add", command=self.gp_add_supply).pack(side="right")
-
-    def gp_supply_preset(self):
-        """2.98.5: Omen of Amelioration is used up when you die - its rule is "when it's used up"."""
-        if self.gp_u_name.get().strip().lower() in (n.lower() for n in F.USED_UP):
-            self.gp_u_rule.set(dict(F.SUPPLY_RULES)["used"])
-
-    def gp_sup_switch(self):
-        F.cfg()["pokes"]["supplies"] = bool(self.gp_sup_on.get())
-        F.save()
-
-    @staticmethod
-    def _gp_rule_key(label):
-        return next((k for k, n in F.SUPPLY_RULES if n == label), "maps")
-
-    def gp_add_supply(self):
-        name = self.gp_u_name.get().strip()
-        if not name:
-            return None
-        row = F.add_supply(name, self._gp_rule_key(self.gp_u_rule.get()), int(_num(self.gp_u_every.get()) or 10))
-        self.gp_u_name.set("")
-        self.gp_fill()
-        return row
-
-    def gp_set_supply(self, sid, rule_label=None, every=None):
-        n = _num(every) if every is not None else None
-        F.set_supply(sid, self._gp_rule_key(rule_label) if rule_label else None, int(n) if n else None)
-        self._gp_sup_rows()
-
-    def _gp_sup_rows(self):
-        P2 = C["panel2"]
-        box = self.gp_sup_box
-        for w in box.winfo_children():
-            w.destroy()
-        rows = F.cfg()["supplies"]
-        self.gp_sup_cells = {}
-        if not rows:
-            self._gp_empty(box, "Nothing yet - e.g. Scroll of Wisdom every 10 maps.")
-            return
-        self._gp_table_head(box, ("Supply", "Refill every", "Since refill"))
-        for i, r in enumerate(rows, 2):
-            used, every = F.supply_used(r)
-            tk.Label(box, text=r["name"], bg=P2, fg=C["text"], font=("Segoe UI", 10), anchor="w").grid(
-                row=i, column=0, sticky="w", padx=(0, 12), pady=1)
-            ef = tk.Frame(box, bg=P2)
-            ef.grid(row=i, column=1, sticky="w", padx=(0, 12), pady=1)
-            ev = tk.StringVar(value=str(r["every"]))
-            e = ttk.Entry(ef, textvariable=ev, width=4)
-            if r["rule"] != "used":                          # 2.98.5: no count for "when it's used up"
-                e.pack(side="left")
-            e.bind("<Return>", lambda _e, sid=r["id"], ev=ev: self.gp_set_supply(sid, every=ev.get()))
-            e.bind("<FocusOut>", lambda _e, sid=r["id"], ev=ev: self.gp_set_supply(sid, every=ev.get()))
-            rv = tk.StringVar(value=dict(F.SUPPLY_RULES)[r["rule"]])
-            cb = ttk.Combobox(ef, textvariable=rv, values=[n for _k, n in F.SUPPLY_RULES], state="readonly", width=15)
-            cb.pack(side="left", padx=(4 if r["rule"] != "used" else 0, 0))
-            cb.bind("<<ComboboxSelected>>", lambda _e, sid=r["id"], rv=rv: self.gp_set_supply(sid, rv.get()))
-            up = used >= every
-            txt = (("used up  · refill" if up else "waiting") if r["rule"] == "used"
-                   else f"{used} / {every}" + ("  · refill" if up else ""))
-            lab = tk.Label(box, text=txt, bg=P2,
-                           fg=C["orange"] if up else C["text"], font=("Segoe UI", 9, "bold" if up else "normal"),
-                           anchor="w")
-            lab.grid(row=i, column=2, sticky="w", padx=(0, 12), pady=1)
-            self.gp_sup_cells[r["id"]] = lab
-            ok = tk.Label(box, text="↻", bg=P2, fg=C["muted"], cursor="hand2")
-            ok.grid(row=i, column=3, sticky="e")
-            ok.bind("<Button-1>", lambda _e, rr=r: (F.refilled(rr), F.save(), self._gp_sup_rows()))
-            Tooltip(ok, "Refilled - count again from now")
-            x = tk.Label(box, text="✕", bg=P2, fg=C["muted"], cursor="hand2")
-            x.grid(row=i, column=4, sticky="e", padx=(8, 0))
-            x.bind("<Button-1>", lambda _e, sid=r["id"]: (F.remove_supply(sid), self._gp_sup_rows()))
-            Tooltip(x, "Remove")
-        box.columnconfigure(3, weight=1)
-
     # ---------------- C: farm plan
     def _gp_farms(self, parent):
         P2 = C["panel2"]
@@ -760,7 +657,6 @@ class GamePlanPage:
             return
         self._gp_goal_rows()
         self._gp_stock_rows()
-        self._gp_sup_rows()
         self._gp_farm_rows()
         f = F.cfg()
         if hasattr(self, "gp_phase"):
@@ -768,8 +664,6 @@ class GamePlanPage:
         self.gp_on.set(bool(f["on"]))
         if hasattr(self, "gp_summary"):
             self.gp_summary.config(text=self.gp_summary_text())
-        if hasattr(self, "gp_sup_on"):
-            self.gp_sup_on.set(bool(f["pokes"].get("supplies", True)))
 
 
 class FocusPokes:

@@ -47,6 +47,14 @@ BETA_AREAS = ("Wealth", "Money Makers", "Game Search", "Market Insights", "Craft
 # repeats. Someone coming from rollup["since"] or older (or a fresh install) sees it instead of each version; someone
 # on a pre-release already saw them and gets only this version's own lines (notes_between).
 NOTES = {
+    "2.131.3": {
+        "big": [
+            ("📦", "Map supplies are in Top Up Reminders", "League Plan's Map supplies tab is gone - Top Up counts "
+             "what your inventory really holds. Your list moved over: set each one's Keep in Items… and teach it once "
+             "with F7.", None, "Overlay"),
+        ],
+        "small": [],
+    },
     "2.131.2": {
         "big": [
             ("?", "Ask me about mods I haven't rated", "Off until you turn it on (Settings › Price checking). A price "
