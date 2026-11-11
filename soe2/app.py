@@ -1462,9 +1462,16 @@ class App(SettingsPage, GearBookPage, PriceCheckPage, PricePopup, FavoritesPage,
         tk.Label(box, text="Pick a community name?", bg=P2, fg=C["text"], font=("Segoe UI", 12, "bold"),
                  anchor="w").pack(fill="x")
         tk.Label(box, text="You share with the community. With a name, your best map, boss and campaign times show "
-                           "on the Leaderboards next to everyone else's - and you can post strats on Money Makers. "
-                           "Other players see the name; never your account or character. 2-24 letters or numbers.",
-                 bg=P2, fg=C["text"], justify="left", wraplength=460, anchor="w").pack(fill="x", pady=(8, 8))
+                           "on the Leaderboards next to everyone else's - and you can post strats on Money Makers.",
+                 bg=P2, fg=C["text"], justify="left", wraplength=460, anchor="w").pack(fill="x", pady=(8, 4))
+        from .privacy import NAME_RULE, NAME_TIP
+        rr = tk.Frame(box, bg=P2)
+        rr.pack(fill="x", pady=(0, 8))
+        tk.Label(rr, text="⚠ " + NAME_RULE, bg=P2, fg=C["accent"], justify="left", wraplength=440,
+                 anchor="w").pack(side="left", fill="x", expand=True)
+        ti = tk.Label(rr, text="ⓘ", bg=P2, fg=C["muted"], cursor="question_arrow")
+        ti.pack(side="left", anchor="n", padx=(4, 0))
+        Tooltip(ti, NAME_TIP + " 2-24 letters or numbers.")
         var = tk.StringVar()
         ent = ttk.Entry(box, textvariable=var, width=28)
         ent.pack(anchor="w")
