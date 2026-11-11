@@ -338,6 +338,30 @@ def learn(name, cell):
     return True
 
 
+def pending():
+    """2.131.2: taught cells still to learn again without the hover glow -> {name: ((row, col), sig)}. Kept in
+    topup.json, so closing the inventory (or the app) right after teaching doesn't lose it."""
+    out = {}
+    for name, v in ((load_json(LEARN_FILE, {}) or {}).get("pending") or {}).items():
+        try:
+            out[name] = ((int(v[0]), int(v[1])), sig_from(v[2]))
+        except (TypeError, ValueError, IndexError):
+            pass
+    return out
+
+
+def pending_set(name, rc=None, s=None):
+    """Remember (rc + sig) or drop (rc None) one taught cell to learn again."""
+    d = load_json(LEARN_FILE, {}) or {}
+    p = d.setdefault("pending", {})
+    if rc is None:
+        if p.pop(name, None) is None:
+            return
+    else:
+        p[name] = [int(rc[0]), int(rc[1]), sig_b64(s)]
+    save_json(LEARN_FILE, d)
+
+
 def forget(name):
     d = load_json(LEARN_FILE, {}) or {}
     for k in ("items", "icons"):

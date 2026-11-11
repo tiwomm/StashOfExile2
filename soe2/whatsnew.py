@@ -54,6 +54,10 @@ NOTES = {
              "Price Checks"),
         ],
         "small": [
+            ("Ritual", "The tribute reminder shouldn't come after you've clicked Offer Tribute to the King, even if "
+             "you close Favours while the number still counts down (the button turns gray)."),
+            ("Overlay", "Top Up should count items you taught and then closed the inventory on: it learns them "
+             "again the next time the inventory is open with the mouse off them."),
             ("Overlay", "Top Up Reminders: Items… › Remind when - a card only once you're 30% below Keep (you pick "
              "0-70%), not every time you're under it."),
             ("Overlay", "The Overlay page's Start session button and its Not tracking line shouldn't cut their words "

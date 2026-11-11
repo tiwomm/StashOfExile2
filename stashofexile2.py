@@ -31,6 +31,14 @@ VERSION HISTORY
          item is priced again; Not now = this item only.
        - Overlay page (feedback: "clipped text/cropped buttons"): Start session / Stop without ▶ / ■ (a font without
          the symbol drew it wider than measured); the Not tracking label keeps 16 characters of room, left-aligned.
+       - Tribute (feedback: "I click the offer tribute button and quickly exit the favour window ... it needs to be
+         fool-proof"): favours.tribute_offered - OFFER TRIBUTE TO THE KING is gray (no color at all) once clicked or
+         with nothing to offer, red (~19% clearly red) with tribute to offer; any look with it gray means nothing is
+         owed, so closing while the number counts down brings no reminder.
+       - Top Up (feedback: still 0 for an item held): the teach takes a look from the last 20 s with the mouse
+         elsewhere (and still) for its picture; else the cell is kept in topup.json ("pending") until the next open
+         inventory with the mouse off it - closing the inventory or the app in between included. A look while the
+         mouse moved is never learned from.
        - Top Up (feedback: "asking me every single map, I only want it to ask when I am below a 70% threshold"):
          topup cfg "below" (0.3 by default) - low() reminds under Keep x (1 - below); Items… › Remind when "30% below"
          (0-70%) with how it's worked out beside it ("Keep 40: a card under 28").

@@ -138,7 +138,11 @@ class FavoursPage:
                                 t = self.favours_tribute_read(*last, RM)
                                 if t is not None:
                                     counts["tribute"] = t
-                            owed = counts.get("tribute") or 0
+                                if FV.tribute_offered(*last):
+                                    counts["offered"] = True
+                            owed = 0 if counts.get("offered") else (counts.get("tribute") or 0)
+                            if counts.get("offered") and (counts.get("tribute") or 0) > 0:
+                                fv_log("closed while the tribute counted down - the button was gray: no reminder")
                             counts = {"owed": owed} if owed > 0 else {}
                         elif misses == REMIND and counts.get("owed"):     # 2.130.0: still gone - really closed
                             fv_log(f"closed with {counts['owed']:,} tribute left: reminder")
@@ -148,6 +152,8 @@ class FavoursPage:
                         fv_log("window back (a tooltip hid it): no reminder")   # hidden for a moment
                     misses = 0
                     counts["last"] = (img, win)
+                    if FV.tribute_offered(img, win):          # 2.131.2: the button went gray - offered (or none)
+                        counts["offered"] = True
                     if time.time() - counts.get("at", 0) > 1.5:          # the tribute, now and then
                         counts["at"] = time.time()
                         t = self.favours_tribute_read(img, win, RM)
