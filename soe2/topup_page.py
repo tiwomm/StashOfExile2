@@ -240,6 +240,33 @@ class TopUpPage:
                       "sent anywhere.")
 
     # ---------------------------------------------------------------- the Items list
+    def topup_below_set(self, text):
+        for b in TU.BELOW_STEPS:
+            if TU.below_text(b) == text:
+                TU.cfg()["below"] = b
+                save_json("settings.json", SETTINGS)
+        self.topup_below_paint()
+        self.topup_paint_list()
+
+    def topup_below_paint(self):
+        """The line beside Remind when: how the number is worked out, with your first item."""
+        lbl = getattr(self, "tu_below_note", None)
+        if lbl is None:
+            return
+        items = TU.cfg()["items"]
+        b = TU.cfg().get("below", 0.3)
+        if items and int(items[0].get("keep") or 0) > 0:
+            k = int(items[0]["keep"])
+            at = TU.remind_at(k, b)
+            n = int(at) if at == int(at) else int(at) + 1
+            txt = f"your Keep - e.g. Keep {k}: a card under {n}" if b else "your Keep - a card as soon as you're under it"
+        else:
+            txt = "your Keep"
+        try:
+            lbl.config(text=txt)
+        except tk.TclError:
+            pass
+
     def topup_items(self):
         old = getattr(self, "tu_items_win", None)
         try:
@@ -264,10 +291,22 @@ class TopUpPage:
         tk.Label(top, text="Your items", bg=P2, fg=C["text"], font=("Segoe UI", 12, "bold")).pack(side="left")
         tip = tk.Label(top, text="ⓘ", bg=P2, fg=C["muted"], cursor="question_arrow")
         tip.pack(side="left", padx=8)
-        Tooltip(tip, "In hideout or town, opening your inventory with fewer than Keep shows one card. Seen: what your "
-                     "inventory held the last time it was open (every stack added up).")
+        Tooltip(tip, "In hideout or town, opening your inventory with less than Keep (minus Remind when) shows one "
+                     "card. Seen: what your inventory held the last time it was open (every stack added up).")
         tk.Label(inner, text="Keep at least this many of each in your inventory.", bg=P2, fg=C["muted"],
                  anchor="w").pack(fill="x", pady=(2, 8))
+        # 2.131.2: Remind when - "30% below" Keep, like the price checks' "10% below"
+        rw = tk.Frame(inner, bg=P2)
+        rw.pack(fill="x", pady=(0, 8))
+        tk.Label(rw, text="Remind when", bg=P2, fg=C["text"]).pack(side="left")
+        self.tu_below_var = tk.StringVar(value=TU.below_text(TU.cfg().get("below", 0.3)))
+        bcb = ttk.Combobox(rw, textvariable=self.tu_below_var, state="readonly", width=12,
+                           values=[TU.below_text(b) for b in TU.BELOW_STEPS])
+        bcb.pack(side="left", padx=8)
+        bcb.bind("<<ComboboxSelected>>", lambda _e: self.topup_below_set(self.tu_below_var.get()))
+        self.tu_below_note = tk.Label(rw, text="", bg=P2, fg=C["muted"], font=("Segoe UI", 9))
+        self.tu_below_note.pack(side="left")
+        self.topup_below_paint()
         self.tu_list = tk.Frame(inner, bg=P2)
         self.tu_list.pack(fill="both", expand=True)
         foot = tk.Frame(inner, bg=P2)
@@ -353,6 +392,7 @@ class TopUpPage:
             if it.get("name") == name:
                 it["keep"] = n
         save_json("settings.json", SETTINGS)
+        self.topup_below_paint()
 
     def topup_forget(self, name):
         TU.cfg()["items"] = [it for it in TU.cfg()["items"] if it.get("name") != name]

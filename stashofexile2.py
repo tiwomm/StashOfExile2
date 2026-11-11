@@ -24,6 +24,9 @@ VERSION HISTORY
          path of exile account or character names"): privacy.NAME_RULE / NAME_TIP - one line (+ ⓘ) on every ask
          (the Leaderboards' card, the board's name window, Money Makers' join and rename). name_problem also turns
          down a name that contains your account / a character's name, or is a big part of one (4+ / 5+ letters).
+       - Top Up (feedback: "asking me every single map, I only want it to ask when I am below a 70% threshold"):
+         topup cfg "below" (0.3 by default) - low() reminds under Keep x (1 - below); Items… › Remind when "30% below"
+         (0-70%) with how it's worked out beside it ("Keep 40: a card under 28").
   2.131.1
        - The bar (feedback: "the overlay on startup has no option to start session tracking"): while no session
          runs, ▶ Start session sits first on the bar (merged_page.start_on_bar / _mg_start_button, every look); the

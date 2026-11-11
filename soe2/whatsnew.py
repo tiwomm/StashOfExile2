@@ -50,6 +50,8 @@ NOTES = {
     "2.131.2": {
         "big": [],
         "small": [
+            ("Overlay", "Top Up Reminders: Items… › Remind when - a card only once you're 30% below Keep (you pick "
+             "0-70%), not every time you're under it."),
             ("Community", "Picking a community name asks for a made-up one - not your real name, and never your account "
              "or character names. Names that contain one of yours are turned down."),
         ],
