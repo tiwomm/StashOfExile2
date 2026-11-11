@@ -500,12 +500,18 @@ class TrackerPage:
         # Click-through - side by side here and in Quick settings (2.120.0 had them as one Mouse choice; before that
         # Click-through sat in Settings › Appearance). Each works on its own, as 2.74.3 asked.
         self.tk_ct = tk.BooleanVar(value=self.click_through_on())
+        self.tk_hidecap = tk.BooleanVar(value=bool(cfg.get("hide_capture", False)))
         switches(box, (("Lock position", self.tk_lock, lambda: self.overlay_lock(bool(self.tk_lock.get()))),
                        ("Click-through (clicks go to the game)", self.tk_ct,
                         lambda: self.ov_click_through_set(bool(self.tk_ct.get()))),
-                       ("Start a session with StashOfExile2", self.tk_auto, self.tracker_options_changed)), 2)
+                       ("Start a session with StashOfExile2", self.tk_auto, self.tracker_options_changed),
+                       ("Hide the overlay from screen captures", self.tk_hidecap,
+                        lambda: self.ov_hidecap_set(bool(self.tk_hidecap.get())))), 2)
         from .style import Tooltip
         Tooltip(self.tk_ov_switches["Lock position"], "The overlay stays where it is (the 🔒 on the bar too).")
+        Tooltip(self.tk_ov_switches["Hide the overlay from screen captures"],
+                "Screenshots, recordings and streams won't show the overlay. Off: they show it - except in a Ritual "
+                "map, where it's left out by itself while the game's counters under it are read.")
         Tooltip(self.tk_ov_switches["Click-through (clicks go to the game)"],
                 "Your clicks go through the bar to the game - its buttons can't be clicked then (the Pause key still "
                 "works). Notes and the calculator always take clicks.")
@@ -533,9 +539,13 @@ class TrackerPage:
         return o
 
     def ov_hidecap_set(self, on):
-        """2.85.2: the bar in / out of screen captures (2.120.0: Settings › Advanced › Over the game)."""
+        """2.85.2: the bar in / out of screen captures (2.132.0: Overlay ↳ Settings › Options, and it means always)."""
         self.tracker_cfg()["hide_capture"] = bool(on)
-        v = getattr(self, "adv_hidecap_var", None)
+        try:
+            self.overlay_click_through()
+        except Exception:
+            buglog.caught()
+        v = getattr(self, "tk_hidecap", None)
         if v is not None and bool(v.get()) != bool(on):
             v.set(bool(on))
         self.tracker_save()

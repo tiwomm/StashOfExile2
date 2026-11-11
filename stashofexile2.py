@@ -35,6 +35,10 @@ VERSION HISTORY
          reminders when I click through it all too fast"): a number counts once read the same twice in a row; the
          window's close uses the last steady number from the past minute (HUD_KEEP); "counted down" needs two lower
          reads.
+       - Hide the overlay from screen captures (feedback: "needs relocated to where it makes sense, and changed to
+         just say 'Hide the overlay from screen captures'"): back in Overlay ↳ Settings › Options (tk_hidecap), and on
+         means always (overlay_hide_capture); off: only a Ritual map's own rule.
+       - Runeshape gems (feedback: "people are gonna get rate limited hard"): a gem's price is kept a day (GEM_FRESH).
   2.131.6
        - Ritual line (feedback: "the tribute amount should stay persistent ... until it goes to 0/map ends"): the
          game's counter leaving the screen keeps the last number; 0, or going right after counting down (offered),

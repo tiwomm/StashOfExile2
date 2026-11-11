@@ -450,7 +450,7 @@ class SettingsPage:
         # ======== Advanced
         # 2.59.0: settings that had no place in the app (only in settings.json)
         # 2.120.0 (UX pass 2: settings most players never need, in one place): the game's window title (was General ›
-        # Game) and Hide from screen captures (was Overlay ↳ Settings › Options and Quick settings)
+        # Game) (2.132.0: Hide the overlay from screen captures went back to Overlay ↳ Settings › Options)
         row = section("Advanced", "Over the game", "The overlay and the in-game keys work only while the window with "
                                                    "this title is in front. Change it only if your game's window has "
                                                    "another name.")
@@ -465,13 +465,8 @@ class SettingsPage:
         te.grid(row=0, column=1, sticky="w")
         te.bind("<FocusOut>", lambda e: self.ov_save())
         te.bind("<Return>", lambda e: (self.ov_save(), self.root.focus_set()))
-        self.overlay_hide_capture()                                  # (2.89.1: its one-time reset)
-        self.adv_hidecap_var = tk.BooleanVar(value=bool(self.tracker_cfg().get("hide_capture", False)))
-        hc = ttk.Checkbutton(g, text="Hide the overlay from screen captures while the Ritual or Delirium watcher runs",
-                             variable=self.adv_hidecap_var, style="Card.TCheckbutton",
-                             command=lambda: self.ov_hidecap_set(bool(self.adv_hidecap_var.get())))
-        hc.grid(row=1, column=0, columnspan=2, sticky="w", pady=(8, 0))
-        Tooltip(hc, "Only needed if the bar covers a counter they read. While it's on, screenshots won't show the bar.")
+        # (2.132.0, feedback: "needs relocated to where it makes sense": Hide the overlay from screen captures is
+        # in Overlay ↳ Settings › Options now, beside Lock position and Click-through)
         # 2.74.0: Under the hood (with the Mod book inside it) is hidden unless you want it - both keep working
         row = section("Advanced", "Under the Hood", "How the price checker reads an item (its base, which bases it "
                                                     "is compared with, which trade-site search each mod becomes), and "

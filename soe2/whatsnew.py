@@ -57,6 +57,9 @@ NOTES = {
             ("Overlay", "Alert cards for things to do now - Hiveblood, End Delirium, rituals, tribute - have red "
              "words."),
             ("Overlay", "The tribute on the Ritual line changes once the game's counter reads the same twice."),
+            ("Overlay", "Hide the overlay from screen captures is in Overlay ↳ Settings › Options, beside Lock "
+             "position."),
+            ("Overlay", "Gem prices in Expedition books are kept a day, so the same gem isn't searched again."),
         ],
     },
     "2.131.6": {
