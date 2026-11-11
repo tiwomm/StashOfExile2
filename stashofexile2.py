@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU AGPL v3.0 (see LICENSE; up to 2.129.4: GNU GPL v3.0). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.131.5
+VERSION 2.131.6
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,6 +19,10 @@ VERSION 2.131.5
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.131.6
+       - Ritual line (feedback: "the tribute amount should stay persistent ... until it goes to 0/map ends"): the
+         game's counter leaving the screen keeps the last number; 0, or going right after counting down (offered),
+         takes it off; a new map clears it (breach_area), then it's read again.
   2.131.5
        - Ritual line (feedback: "add tribute count to the ritual counter overlay ... the overlay over xp bar blocks
          it"): the game's own tribute counter (bottom middle; favours.hud_rect / hud_prep / hud_number, Windows OCR)
@@ -3516,7 +3520,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.131.5"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.131.6"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
