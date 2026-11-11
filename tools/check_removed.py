@@ -25,6 +25,11 @@ DOCS = ("README.md", "TOS.md", "linux/README.md", "themes/README.md", "strats/RE
 
 # (version, what it was, words a person read, names in the code / settings keys[, pending])
 REMOVED = [
+    ("2.131.2", "League Plan's Map supplies (refill every N maps / minutes, its pokes) - Top Up Reminders count the "
+                "inventory instead; its list moves there once",
+     ("Map supply pokes", "ADD A SUPPLY", "REFILL YOUR MAP SUPPLIES", "Refill every"),
+     ("add_supply", "remove_supply", "set_supply", "supplies_due", "supply_used", "SUPPLY_RULES", "SUPPLY_PRESETS",
+      "USED_UP", "_gp_supplies", "_gp_sup_rows", "gp_sup_on", "gp_add_supply", "OMEN_USED")),
     ("2.131.0", "the campaign's 4th route (your last run's zone order) - Full, Speedrun and Rush (carry) stay",
      ("My Own",), ()),
     ("2.131.0", "the single Show beta features switch (Features has a Beta cluster); the quick start's sharing page "

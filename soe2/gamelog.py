@@ -37,10 +37,6 @@ FOCUS = re.compile(r"\[WINDOW\] (Lost|Gained) focus", re.I)
 LEVELUP = re.compile(r"^: (.+?) \(([^)]+)\) is now level (\d+)")     # 2.73.1: League Focus (new characters)
 # 2.9.0, seen in a real PoE 2 log (Oct 2026), twice within 2 s:
 #   2026/10/27 04:50:56 ... [INFO Client 27512] : <brequelwarning>{Stored Hiveblood is almost at the maximum!}
-# 2.98.5: a game message that an omen was used up. confirmed - ": Omen of  Amelioration in your inventory
-# has been consumed" (two spaces; a death line follows). Only the game's own messages (": ..."), never chat.
-OMEN = re.compile(r"\b(Omen\s+of\s+(?:the\s+)?[A-Z][\w']*(?:\s+[A-Z][\w']*)*)")
-OMEN_USED = re.compile(r"\b(consum|used up|activat|trigger)", re.I)
 BREACH_WARN = re.compile(r"^: <brequelwarning>\{([^}]*)\}")
 #   ... : <brequelwarning>{Cannot store any more Hiveblood! Go to the Genesis Tree to consume it.}   (2.10.0)
 #   ... [WARN Client 27512] "BrequelTreeBreachstonesSlot" is missing from ...   (logged while the Brequel tree is open)
@@ -215,10 +211,6 @@ def parse(line):
         return "breach", ts, {"text": b.group(1).strip()}
     if BREQUEL_TREE.search(text):
         return "brequel_tree", ts, {}
-    if text.startswith(": ") and "Omen of" in text:     # 2.98.5: an omen was used up (map supplies)
-        o = OMEN.search(text)
-        if o and OMEN_USED.search(text):
-            return "omen", ts, {"name": " ".join(o.group(1).split())}
     if text.startswith("@From "):                       # 2.98.1: a whisper TO you (Trade Whisper Watcher)
         from .whispers import parse_from
         w = parse_from(text)

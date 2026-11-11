@@ -222,6 +222,7 @@ class AlertsPage:
         if self.remnant_cfg().get("on"):                 # 2.37.0: the Remnant Auto watcher
             self.root.after(3000, self.remnant_auto_sync)
         self.root.after(3500, self.topup_start)          # 2.131.0: Top Up Reminders (only when on)
+        self.root.after(3000, self.topup_take_supplies)  # 2.131.2: League Plan's Map supplies move here (once)
 
     # ================================================================ the panel (Session tracker, main page)
     def build_alerts_panel(self, parent):

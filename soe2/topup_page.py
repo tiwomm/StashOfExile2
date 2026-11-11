@@ -243,6 +243,32 @@ class TopUpPage:
         self.topup_paint_list()
         return True
 
+    def topup_take_supplies(self):
+        """2.131.2 (request: move League Plan's map supplies into Top Up): the supplies you listed there join your
+        Top Up items (Keep 0 until you set it; teach each once with the Top Up key). Once; League Plan's list goes.
+        -> the names added."""
+        try:
+            from . import focus as F
+            names = F.supplies_out()
+        except Exception:
+            buglog.caught()
+            return []
+        items = TU.cfg()["items"]
+        have = {str(it.get("name") or "").lower() for it in items}
+        added = []
+        for n in names:
+            if n.lower() not in have:
+                items.append({"name": n, "keep": 0})
+                have.add(n.lower())
+                added.append(n)
+        if names:
+            save_json("settings.json", SETTINGS)
+            self.status_text, self.status_until = (f"League Plan's map supplies are in Top Up Reminders now "
+                                                   f"({len(names)}) - Overlay › Settings › Helpers › Items…"), \
+                time.time() + 12
+            self.topup_paint_list()
+        return added
+
     def topup_key_text(self):
         from .overlay import key_label
         k = SETTINGS.get("topup_key") or ""
@@ -401,6 +427,8 @@ class TopUpPage:
             self.tu_keep_vars[name] = v
             seen = tk.Label(r, text=_seen(tot, name), bg=P2, fg=C["text"], width=8, anchor="w")
             seen.pack(side="left")
+            if name not in TU.learned():
+                Tooltip(seen, f"Not taught yet: open your inventory, hover it and press {self.topup_key_text()}.")
             self.tu_seen_labels[name] = seen
             x = ttk.Button(r, text="✕", width=3, command=lambda n=name: self.topup_forget(n))
             x.pack(side="left")
@@ -436,6 +464,8 @@ class TopUpPage:
 
 
 def _seen(tot, name):
+    if name not in TU.learned():
+        return "teach it"                               # (2.131.2: from League Plan - never taught yet)
     if name not in tot:
         return "-"
     n, sure = tot[name]

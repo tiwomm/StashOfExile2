@@ -806,7 +806,7 @@ class TrackerPage:
                     if kind == "party":
                         self.tk_others = getattr(self, "tk_others", set()) | {data["who"].lower()}
                         continue
-                    if kind in ("area", "level", "omen"):      # 2.73.1: League Focus watches these too (2.98.5: omens)
+                    if kind in ("area", "level"):              # 2.73.1: League Focus watches these too
                         self.focus_log(kind, data)
                         self.maprank_log(kind, data)          # 2.76.0: ask for a rank after a map
                     self.campaign_log(kind, ts, data)         # 2.77.0: the Campaign Helper
