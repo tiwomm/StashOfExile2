@@ -23,6 +23,10 @@ VERSION HISTORY
        - Ritual line (feedback: "the tribute amount should stay persistent ... until it goes to 0/map ends"): the
          game's counter leaving the screen keeps the last number; 0, or going right after counting down (offered),
          takes it off; a new map clears it (breach_area), then it's read again.
+       - Delirium (feedback: "end delirium is still showing up as big flashing text and not the new alert style"):
+         run by the app, the helper's Alert.show / hide only keep `visible` (delirium_runner) - its "state alert"
+         reaches the app (DELIRIUM.on_state -> ev_delirium_state), which shows the calm card "End Delirium" (rank 2,
+         tag Delirium) and takes it back on the next state. Test with the helper off: a sample card.
   2.131.5
        - Ritual line (feedback: "add tribute count to the ritual counter overlay ... the overlay over xp bar blocks
          it"): the game's own tribute counter (bottom middle; favours.hud_rect / hud_prep / hud_number, Windows OCR)

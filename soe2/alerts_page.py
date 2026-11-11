@@ -11,7 +11,7 @@ no box; clicks go through it. It goes after a few seconds, or as soon as you ope
 
 Remnant (2.37.0): the Expedition Remnant Price Checker (remnant.py / remnant_page.py) - a screen watcher.
 
-Delirium: the helper (utilities.DELIRIUM, delirium_runner.py) looks at your screen; its END DELIRIUM banner is its own.
+Delirium: the helper (utilities.DELIRIUM, delirium_runner.py) looks at your screen; 2.131.6: its "state alert" brings the calm card.
 This panel only starts / stops it, sets its sound and tests it. Its splinter icon is gone (2.10.0)."""
 import os
 import sys
@@ -119,7 +119,7 @@ def breach_level(text):
 
 # 2.119.0 (UX pass): what each helper does, in one line - under its name on Helpers, and (2.124.0) the tip on its
 # Quick settings chip
-HELPER_BLURBS = {"delirium": "END DELIRIUM when a map ends with Delirium still on",
+HELPER_BLURBS = {"delirium": "An End Delirium card when a map ends with Delirium still on",
                  "breach": "Warns when your stored Hiveblood is almost full",
                  "ritual": "Counts rituals done; reminds you if you leave early",
                  "remnant": "Prices each reward in a remnant's book",
@@ -211,6 +211,11 @@ class AlertsPage:
         if getattr(self, "_alerts_ready", False):
             return
         self._alerts_ready = True
+        try:
+            from .utilities import DELIRIUM                 # 2.131.6: END DELIRIUM is the calm alert card too
+            DELIRIUM.on_state = lambda s: self.ui_q.put(("delirium_state", s))
+        except Exception:
+            buglog.caught()
         self.br_reader, self.br_last, self.br_win, self.br_level = None, {}, None, None
         self.br_ticks, self._br_ticking, self.br_note = 0, False, ""
         self.br_area = None                        # 2.11.0: "map" / "hideout" / "town" / "other" - where you are
@@ -312,7 +317,7 @@ class AlertsPage:
 
         self.al_chips = {}
         what = {
-            "delirium": "END DELIRIUM when you finish a map with Delirium still on (reads your screen)",
+            "delirium": "An End Delirium card when you finish a map with Delirium still on (reads your screen)",
             "breach": "a banner when your stored Hiveblood is almost full, and when it's full (reads Client.txt)",
             "ritual": "reads the Ritual counter (0/3 ...) from your screen; reminds you if you leave a map after "
                       "starting its rituals but not finishing them",
@@ -848,10 +853,37 @@ class AlertsPage:
 
 
     def alerts_test_delirium(self):
-        err = self.dl_do_test()
+        from .utilities import DELIRIUM
+        err = None
+        if DELIRIUM.running() == "mine" and DELIRIUM.send("test"):
+            pass                                            # (its "state alert" brings the card)
+        elif DELIRIUM.running() == "other":
+            err = self.dl_do_test()
+        else:                                               # 2.131.6: not running - a sample card here
+            self.ev_delirium_state("alert", test=True)
         r = self.al_rows["delirium"]
-        r["note"] = err or "The END DELIRIUM banner shows for 5 seconds."
+        r["note"] = err or "The End Delirium card shows for 5 seconds."
         self.alerts_refresh()
+
+    def ev_delirium_state(self, state, test=False):
+        """2.131.6 (feedback: "end delirium is still showing up as big flashing text"): the Delirium helper says the
+        map is done while Delirium runs ("alert") - the calm alert card; any other state takes it back."""
+        from . import alertcard
+        w = getattr(self, "dl_win", None)
+        if state != "alert":
+            if w is not None and not test:
+                w.destroy()
+                self.dl_win = None
+            return
+        if w is not None and w.winfo_exists():
+            return
+        from . import features as FEAT
+        if not test and not FEAT.on("overlay"):
+            return
+        self.dl_win = alertcard.show(self.root, "End Delirium", "Map done - click the mirror to end it",
+                                     color="#c9b6ff", mark="!", secs=5 if test else 45, game=game_rect(),
+                                     tag="Delirium", rank=2, on_close=lambda: setattr(self, "dl_win", None))
+        #                                                     (the helper beeps itself, with its Sound setting)
 
     def alert_states(self):
         """{"delirium": "on" | "off" | "warn", "breach": ...}: the panel's dots and the timer's bar.
