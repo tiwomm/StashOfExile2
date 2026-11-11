@@ -1,7 +1,7 @@
 """2.131.0 Break reminders (feedback: "reminders after x amount of playtime to eat, drink water, go to the bathroom,
 take breaks ... sometimes people will play 20+ hours ... forget to sleep ... shower ... go outside for fresh air"):
 off until you turn it on. Every 45 / 60 / 90 / 120 minutes of play, the next time you reach your hideout or a town
-(never mid-map), one calm card with the next line of a rotation - kind, short, never nagging. More lines join the
+(never mid-map), one alert card with the next line of a rotation - kind, short, never nagging. More lines join the
 rotation the longer you've played. Play time is the Session timer's (or this app run's); nothing about you is saved or
 sent anywhere."""
 import time

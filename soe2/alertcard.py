@@ -1,4 +1,4 @@
-"""2.130.0 Helper alerts as one calm card (feedback: "a more elegant solution than just giant bold flashing letters,
+"""2.130.0 Helper alerts as one alert card (feedback: "a more elegant solution than just giant bold flashing letters,
 that's gonna piss some people off"): a small card over the game in the overlay's Style - a colored edge, a mark (! or
 ✓) and a word, a line of detail, × to close it early and a thin line counting down its time. No flashing: it fades in
 once. Where it shows (Center, Above the bar, Top center, Top right) and its size (Small, Medium, Large) are settings

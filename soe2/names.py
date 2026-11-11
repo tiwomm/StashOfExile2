@@ -32,6 +32,7 @@ PAGES = {
 }
 
 FEATURES = (
+    "Alert card",               # 2.131.0 every helper's alert over the game (alertcard.py); 2.131.6: was "calm alert card"
     "Alerts show",              # 2.131.0 Overlay › Settings › Helpers: where and how big the alert card is
     "Data folder",              # 2.131.0 where your settings and lists live (Feature Picker; Settings › Advanced)
     "Feature Picker",
@@ -77,6 +78,8 @@ OLD = {
     "Bulk pricing": "Bulk Pricing",
     "Bulk Price Checker": "Bulk Pricing",
     # features
+    "Calm alerts": "Alert card",          # 2.131.6 (feedback: "stop calling it calm alert card ... that sounds dumb")
+    "calm alert card": "Alert card",
     "Labs": "Features",
     "Beta features": "Features",
     "Craft helper": "Craft Helper",

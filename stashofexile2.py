@@ -25,8 +25,10 @@ VERSION HISTORY
          takes it off; a new map clears it (breach_area), then it's read again.
        - Delirium (feedback: "end delirium is still showing up as big flashing text and not the new alert style"):
          run by the app, the helper's Alert.show / hide only keep `visible` (delirium_runner) - its "state alert"
-         reaches the app (DELIRIUM.on_state -> ev_delirium_state), which shows the calm card "End Delirium" (rank 2,
+         reaches the app (DELIRIUM.on_state -> ev_delirium_state), which shows the alert card "End Delirium" (rank 2,
          tag Delirium) and takes it back on the next state. Test with the helper off: a sample card.
+       - Names (feedback: "stop calling it calm alert card, just call it alert card"): "Alert card" in names.py
+         (OLD: "Calm alerts", "calm alert card"); What's new 2.131.0's title says Alert cards.
   2.131.5
        - Ritual line (feedback: "add tribute count to the ritual counter overlay ... the overlay over xp bar blocks
          it"): the game's own tribute counter (bottom middle; favours.hud_rect / hud_prep / hud_number, Windows OCR)
@@ -122,7 +124,7 @@ VERSION HISTORY
          start sharing page are gone (check_removed).
        - Settings as a window over the app (shell OVER): inset on a dim layer; Esc, × or a click on the dim closes it;
          it reopens on its last tab.
-       - Alerts: every helper alert is the calm card (alertcard) - Where / Size / Test in Overlay › Settings › Helpers.
+       - Alerts: every helper alert is the alert card (alertcard) - Where / Size / Test in Overlay › Settings › Helpers.
        - Break reminders: off by default; after 45-120 min of play, a card in hideout / town.
        - Top Up Reminders (topup.py / topup_page.py): teach an item with the price check key while the inventory is
          open (banner template), counts read from the stack digits (shipped digit templates, learned from Stack Size,
@@ -187,7 +189,7 @@ VERSION HISTORY
        - Ritual counter (feedback: "ritual isn't accounting for anything above 4 rituals, you can get up to 7"; a
          3/6 screenshot): digits 5 - 9 added to ritual_glyphs.json (fonts + the user's 3/6, build_ritual_glyphs.py
          --add), totals 3 - 8 accepted (TOTAL_MAX).
-       - alertcard.py (the calm alert card) is in, not wired yet.
+       - alertcard.py (the alert card) is in, not wired yet.
   2.129.4
        Feedback ("ritual thing says 0/3 rituals done but I've done 2/3"; its log: the counter was seen at 0/3, then
        not for 9 minutes): the overlay's Ritual line sits over the game's counter, so the watcher couldn't see it

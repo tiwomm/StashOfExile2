@@ -6,12 +6,12 @@ Breach: the game writes its Hiveblood warnings to its own log, Client.txt (seen 
     : <brequelwarning>{Cannot store any more Hiveblood! Go to the Genesis Tree to consume it.}
 Both are easy to miss in the middle of a Breach. This follows Client.txt (only new lines, about once a second - the
 same way the Session tracker does) and shows a banner over the game: an "almost full" one, and a stronger "full"
-one. Nothing is read from the game itself and no keys are sent. A banner looks like the Delirium alert's END DELIRIUM (2.12.1): big flashing text over the game,
+one. Nothing is read from the game itself and no keys are sent. 2.131.0: every alert is the alert card (alertcard.py) - before, a banner was big flashing text over the game,
 no box; clicks go through it. It goes after a few seconds, or as soon as you open the Genesis Tree.
 
 Remnant (2.37.0): the Expedition Remnant Price Checker (remnant.py / remnant_page.py) - a screen watcher.
 
-Delirium: the helper (utilities.DELIRIUM, delirium_runner.py) looks at your screen; 2.131.6: its "state alert" brings the calm card.
+Delirium: the helper (utilities.DELIRIUM, delirium_runner.py) looks at your screen; 2.131.6: its "state alert" brings the alert card.
 This panel only starts / stops it, sets its sound and tests it. Its splinter icon is gone (2.10.0)."""
 import os
 import sys
@@ -27,7 +27,7 @@ from .style import C, Tooltip
 REPEAT_SECS = 45          # the game repeats a warning (twice in 2 s, then every ~15 s when full): one banner per level
 RETRY_TICKS = 15          # Client.txt not found: look again every this many seconds
 LEVELS = {
-    # 2.131.0 (feedback: "a more elegant solution than just giant bold flashing letters"): the calm alert card's title,
+    # 2.131.0 (feedback: "a more elegant solution than just giant bold flashing letters"): the alert card's title,
     # its detail line, its mark and its color (alertcard.py)
     "almost": ("Hiveblood almost full", "Spend it at the Genesis Tree", "!", "#d86bd0"),
     "full": ("Hiveblood is full", "Go to the Genesis Tree to consume it", "!", "#ff5a5a"),
@@ -128,7 +128,7 @@ HELPER_BLURBS = {"delirium": "An End Delirium card when a map ends with Delirium
                  "whispers": "A card when someone wants to buy your item",
                  "desecrate": "Each Well of Souls option's tier",
                  "topup": "Says what's running low when you open your inventory in a hideout or town",   # 2.131.1
-                 "breaks": "A calm card after a long stretch of play, in a hideout or town"}
+                 "breaks": "An alert card after a long stretch of play, in a hideout or town"}
 
 
 class AlertsPage:
@@ -212,7 +212,7 @@ class AlertsPage:
             return
         self._alerts_ready = True
         try:
-            from .utilities import DELIRIUM                 # 2.131.6: END DELIRIUM is the calm alert card too
+            from .utilities import DELIRIUM                 # 2.131.6: END DELIRIUM is an alert card too
             DELIRIUM.on_state = lambda s: self.ui_q.put(("delirium_state", s))
         except Exception:
             buglog.caught()
@@ -867,7 +867,7 @@ class AlertsPage:
 
     def ev_delirium_state(self, state, test=False):
         """2.131.6 (feedback: "end delirium is still showing up as big flashing text"): the Delirium helper says the
-        map is done while Delirium runs ("alert") - the calm alert card; any other state takes it back."""
+        map is done while Delirium runs ("alert") - the alert card; any other state takes it back."""
         from . import alertcard
         w = getattr(self, "dl_win", None)
         if state != "alert":

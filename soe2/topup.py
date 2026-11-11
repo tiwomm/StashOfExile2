@@ -1,7 +1,7 @@
 """2.131.0 Top Up Reminders (plan: "tells you what's running low in your inventory - reads only while your inventory is
 open"): you teach it an item by hovering it in your inventory and pressing your price check key (its name comes from
 the game's own item text); you set how many to keep. When you open your inventory in your hideout or a town and you
-have fewer, one calm card says so ("Exalted Orb 7 / 20").
+have fewer, one alert card says so ("Exalted Orb 7 / 20").
 
 How it reads (pixels of your screen, like any capture tool):
 - the inventory is open when its "Inventory" title is at the top right (templates/topup_banner.png, cut from a 1440p
