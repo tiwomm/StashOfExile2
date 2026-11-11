@@ -33,6 +33,8 @@ VERSION HISTORY
        - Top Up (feedback: "chat window blocks currency for the top up and prompts me to restock everything"):
          _tu_hidden - an item you had is gone but its cells hold something it can't name: covered (Seen keeps the
          last clear look, no reminder).
+       - Ritual line (feedback: "if a player doesn't interact with the first ritual, it should not enable ... only
+         appear when you start the ritual mechanics"): ritual_readout says nothing at 0 of N (all done still shows).
   2.132.1
        - Temple Helper (feedback: "show how many crystals I am currently at when running maps"; "a red text card too
          when crystals are full"; the Vaal Beacon tooltip "Energised Beacons: 55/60"): temple.py (parse, the region
