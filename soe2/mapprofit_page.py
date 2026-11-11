@@ -75,7 +75,9 @@ class MapProfitPage:
     # ---------------------------------------------------------------- reading (from Top Up's clear looks)
     def mp_seen(self, res):
         """A clear look at the open inventory (topup_seen). In your hideout or a town: what it holds now - the next
-        map's "before", or the "after" of the map you just came back from."""
+        map's "before", and the newest "after" of the map you came back from. 2.132.1 (feedback: "needs to account
+        for town trips/re-entering same map and only count when done"): that map is only counted when it's done -
+        you start another map, or DONE_SECS go by without going back into it."""
         if not self.mp_on() or getattr(self, "br_area", None) not in ("hideout", "town"):
             return None
         from . import topup as TU
@@ -85,23 +87,48 @@ class MapProfitPage:
         snap = {"t": time.time(), "counts": counts, "unknown": unknown}
         pend = getattr(self, "mp_pending", None)
         if pend is not None:
-            self.mp_pending = None
-            e = MP.entry(pend["map"], pend["secs"], pend["before"]["counts"], counts, self.mp_price,
-                         unknown=max(pend["before"].get("unknown", 0), unknown))
-            e["run"] = pend["run"]
-            MP.log_add(e)
-            self.mp_last = e
-            buglog.debug("Map profit", f"a map: {len(e['rows'])} items changed")      # (no names, no amounts)
+            pend["after"] = snap                            # (the newest read after it - kept until it's done)
+            self.mp_check_done()
             self.mp_paint()
         self.mp_home = snap
         return snap
 
+    def mp_done(self):
+        """The map you came back from is done: its line goes in the log (if a read came after it)."""
+        pend, self.mp_pending = getattr(self, "mp_pending", None), None
+        if pend is None or pend.get("after") is None:
+            return None
+        after = pend["after"]
+        e = MP.entry(pend["map"], pend["secs"], pend["before"]["counts"], after["counts"], self.mp_price,
+                     unknown=max(pend["before"].get("unknown", 0), after.get("unknown", 0)))
+        e["run"] = pend["run"]
+        MP.log_add(e)
+        self.mp_last = e
+        buglog.debug("Map profit", f"a map: {len(e['rows'])} items changed")      # (no names, no amounts)
+        self.mp_paint()
+        return e
+
+    def mp_check_done(self, now=None):
+        """Not back into it for DONE_SECS: it's done."""
+        pend = getattr(self, "mp_pending", None)
+        if pend is not None and (now or time.time()) - pend.get("left", 0) >= MP.DONE_SECS:
+            return self.mp_done()
+        return None
+
+    def mp_so_far(self):
+        """The map you're between visits of (a town trip): its profit so far, or None."""
+        pend = getattr(self, "mp_pending", None)
+        if pend is None or pend.get("after") is None:
+            return None
+        return MP.entry(pend["map"], pend["secs"], pend["before"]["counts"], pend["after"]["counts"], self.mp_price)
+
     def mp_area(self, kind, before, where, left):
-        """breach_area: into a map from home - its "before" is the last read at home; out of it - the next clear
-        read is its "after". Back into the same map (your portal): the same run."""
+        """breach_area: into a map from home - its "before" is the last read at home; out of it - the reads at home
+        are its "after" until it's done. Back into the same map (your portal, a town trip): the same run."""
         if not self.mp_on():
             return
         now = time.time()
+        self.mp_check_done(now)
         run = getattr(self, "mp_run", None)
         if kind == "map" and before != "map":
             pend = getattr(self, "mp_pending", None)
@@ -109,7 +136,7 @@ class MapProfitPage:
                 pend["start"] = now                         # (back through your portal: the same map goes on)
                 self.mp_run, self.mp_pending = pend, None
                 return
-            self.mp_pending = None
+            self.mp_done()                                  # (another map: the last one is done)
             home = getattr(self, "mp_home", None)
             if home is not None and now - home["t"] < MP.BEFORE_SECS:
                 self._mp_n = getattr(self, "_mp_n", 0) + 1
@@ -119,6 +146,7 @@ class MapProfitPage:
                 self.mp_run = None                          # (no read at home before it: this map isn't counted)
         elif left and run is not None:
             run["secs"] += now - run["start"]
+            run["left"] = now
             self.mp_pending, self.mp_run = run, None
 
     @staticmethod
@@ -142,6 +170,10 @@ class MapProfitPage:
         if not self.mp_on():
             return ""
         from .pricefmt import fmt_div
+        try:
+            self.mp_check_done()                            # (the bar redraws each second: a map can be done now)
+        except Exception:
+            buglog.caught()
         e = getattr(self, "mp_last", None)
         if e is None:
             last = MP.log_read(time.time() - 12 * 3600)
@@ -153,13 +185,22 @@ class MapProfitPage:
     def mp_breakdown(self, e=None):
         """How the bar's number was worked out: [line, ...] (the hover)."""
         from .pricefmt import fmt_div
+        so_far = None if e is not None else self.mp_so_far()
         e = e or getattr(self, "mp_last", None)
-        if e is None:
+        if e is None and so_far is None:
             return ["No map counted yet.",
                     "Open your inventory in your hideout before a map and again after it."]
+        out = []
+        if so_far is not None:                              # 2.132.1: a town trip - it counts when you're done
+            out.append(f"This map so far: {MP.signed(so_far['div'], fmt_div)}" +
+                       (f"  ·  {so_far['map']}" if so_far.get("map") else "") + "  (counted when you start another)")
+            if e is None:
+                e = so_far
         mins = e.get("secs", 0) // 60
-        out = [f"Last map: {MP.signed(e['div'], fmt_div)}" + (f"  ·  {e['map']}" if e.get("map") else "")
-               + (f"  ·  {mins} min" if mins else "")]
+        out.append(f"Last map: {MP.signed(e['div'], fmt_div)}" + (f"  ·  {e['map']}" if e.get("map") else "")
+                   + (f"  ·  {mins} min" if mins else ""))
+        if so_far is not None and e is so_far:
+            out.pop()
         for name, b, a, each in e.get("rows", [])[:8]:
             out.append(f"{name}: {b} → {a}  ({MP.signed((a - b) * each, fmt_div)})")
         if len(e.get("rows", [])) > 8:

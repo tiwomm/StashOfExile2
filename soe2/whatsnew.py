@@ -54,6 +54,8 @@ NOTES = {
              "Overlay"),
         ],
         "small": [
+            ("Overlay", "Map profit counts a map once it's done - town trips and going back in through its portal "
+             "are the same map. It's done when you start another map, or 15 minutes after you left it."),
             ("Overlay", "Map profit's Maps… window says what its search box is for."),
             ("Overlay", "Quick settings › Helpers has Map profit and Temple."),
         ],

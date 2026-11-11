@@ -27,6 +27,11 @@ VERSION HISTORY
          they drop). Its row in Overlay ↳ Settings › Helpers (Test), a Quick settings chip; log_wanted counts it.
        - Map profit: its search box says Search (feedback: "wtf is this textbox for?"); no maps: "Session: no maps
          yet"; a Quick settings chip.
+       - Map profit (feedback: "needs to account for town trips/re-entering same map and only count when done"): the
+         reads at home after a map are its "after" (pending["after"], the newest wins) until it's done - you start
+         another map (mp_done) or DONE_SECS (15 min) pass without going back in (mp_check_done, also on the bar's
+         redraw); back through its portal after a town trip: the same run, its first "before". The hover says "This
+         map so far" meanwhile.
   2.132.0
        - Map profit (feedback: profit per map "using the same mechanism as top-up reminders", "only locally, never
          published or sent to the cloudflare database", "only currency exchange items", "per session/map/hour/day"):
