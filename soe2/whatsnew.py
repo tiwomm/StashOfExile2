@@ -59,6 +59,8 @@ NOTES = {
             ("Overlay", "Top Up › Items… › + Add more adds an item by its name (it counts once you teach it with "
              "Ctrl+C)."),
             ("Overlay", "The tribute reminder goes away when the Favours window shows your tribute offered."),
+            ("Price Checks", "White and magic bases at item level 82 or more search 82+ (82 and up roll the same)."),
+            ("Price Checks", "A white or magic base's ticked mods must all match."),
         ],
     },
     "2.131.3": {

@@ -17,8 +17,8 @@ def default_opts(item):
     if gear:
         out.update(ilvl=None, quality=None, sockets=s.get("sockets_min"),
                    base="same" if s.get("type") else "class")
-        if s.get("ilvl_max"):                            # 2.79.0: white / blue bases - what their search uses
-            out.update(ilvl={"min": s["ilvl_min"], "max": s["ilvl_max"]},
+        if s.get("ilvl_max") or s.get("base_exact"):     # 2.79.0: white / blue bases - what their search uses
+            out.update(ilvl={k: v for k, v in (("min", s.get("ilvl_min")), ("max", s.get("ilvl_max"))) if v} or None,
                        quality={"min": s["quality_min"]} if s.get("quality_min") else None,
                        sockets={"min": s["sockets_min"]} if s.get("sockets_min") else None,
                        corrupted="no", fractured="no", sanctified="no")

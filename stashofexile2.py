@@ -36,6 +36,10 @@ VERSION HISTORY
          10,261 left, open again 9 s later at 0): the Favours window seen with its button gray sends favours_offered -
          a tribute reminder up is taken back, a late try (game not in front) is dropped. The log says the button's
          state at close.
+       - White / magic bases (feedback: "any ilvl above 82 doesn't matter ... always search at ilvl 82 min"):
+         gear.ILVL_TOP - ilvl 82+ searches {"min": 82} (no max; base_ladder has one step, search["base_exact"]).
+         Their ☑ mods (feedback: "Count but not ... a count of 2"): base_ladder steps passed k=0, so the count group
+         said min 0 - now k = every ☑ mod.
   2.131.3
        - League Plan's Map supplies (request: "move into top up") are gone: Top Up Reminders count what the inventory
          really holds. focus.supplies_out hands the list over once (topup_take_supplies: each name joins Top Up's
