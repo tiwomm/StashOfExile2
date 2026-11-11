@@ -47,6 +47,16 @@ BETA_AREAS = ("Wealth", "Money Makers", "Game Search", "Market Insights", "Craft
 # repeats. Someone coming from rollup["since"] or older (or a fresh install) sees it instead of each version; someone
 # on a pre-release already saw them and gets only this version's own lines (notes_between).
 NOTES = {
+    "2.132.2": {
+        "big": [],
+        "small": [
+            ("Overlay", "Map profit counts each visit home: what you came back with, minus what you went back in "
+             "with - emptying your inventory between visits isn't a loss."),
+            ("Overlay", "Map profit is a BETA feature (Settings › General › Features), like the Desecration Helper."),
+            ("Overlay", "Helpers › PLAY starts with the Desecration Helper, then Campaign."),
+            ("Overlay", "Top Up waits when something covers your items (the chat box): no restock card for them."),
+        ],
+    },
     "2.132.1": {
         "big": [
             ("◆", "Temple Helper", "Hover a Vaal Beacon in a map: your crystals (Energised Beacons 55/60) show on the "

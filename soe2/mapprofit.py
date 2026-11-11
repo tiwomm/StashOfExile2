@@ -21,6 +21,7 @@ LOG_FILE = "map_profit.jsonl"
 DEFAULTS = {"on": False}
 KEEP_DAYS = 90                      # the log keeps this many days (older lines are dropped when it's tidied)
 BEFORE_SECS = 3 * 3600              # a "before" older than this isn't this map's (you left the game in between)
+ARRIVE_SECS = 8                     # 2.132.2: back home, what you came back with = the most seen in this long
 DONE_SECS = 15 * 60                 # 2.132.1: out of a map this long (not back through its portal): it's done
 
 
