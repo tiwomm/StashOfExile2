@@ -922,7 +922,12 @@ async function lbList(url, env, me) {
     const cls = await env.DB.prepare(`SELECT DISTINCT l.cls FROM lb l JOIN users u ON u.id = l.user_id WHERE l.cat = ?1 AND l.cls <> ''`)
       .bind(cat).all();
     const leagues = await env.DB.prepare("SELECT DISTINCT league FROM lb WHERE cat = ?").bind(cat).all();
-    return json({ keys: rows.results, classes: cls.results.map((r) => r.cls), leagues: leagues.results.map((r) => r.league) });
+    // 2.131.0 (feedback: other players seemed missing - they were in another league): players per league, so
+    // League ▾ can say where the times are (counts only)
+    const lp = await env.DB.prepare(`SELECT l.league, COUNT(DISTINCT l.user_id) AS n FROM lb l JOIN users u ON u.id = l.user_id
+      WHERE l.cat = ? AND l.hidden = 0 AND u.banned = 0 GROUP BY l.league`).bind(cat).all();
+    return json({ keys: rows.results, classes: cls.results.map((r) => r.cls), leagues: leagues.results.map((r) => r.league),
+      league_players: Object.fromEntries(lp.results.map((r) => [r.league, r.n])) });
   }
   where.push(`l.key = ?${args.length + 1}`);
   args.push(p.get("key"));
