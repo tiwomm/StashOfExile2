@@ -57,7 +57,7 @@ class MapLibraryPage:
         tk.Label(bar, text="Rank", bg=P1, fg=C["muted"]).pack(side="right", padx=(12, 8))
         from .style import flowify
         flowify(bar)
-        # 2.120.0 (UX pass 2: each setting where it's used): the rank cards' switch (was Overlay ↳ Settings › Options)
+        # 2.120.0 (UX pass 2: each setting where it's used): the rank cards' switch (was Overlay ↳ Overlay Settings › Options)
         arow = tk.Frame(page, bg=P1)
         arow.pack(fill="x", pady=(0, 8))
         self.ml_rank_ask = tk.BooleanVar(value=self.rank_ask_on())

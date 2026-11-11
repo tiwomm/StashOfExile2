@@ -47,6 +47,14 @@ BETA_AREAS = ("Wealth", "Money Makers", "Game Search", "Market Insights", "Craft
 # repeats. Someone coming from rollup["since"] or older (or a fresh install) sees it instead of each version; someone
 # on a pre-release already saw them and gets only this version's own lines (notes_between).
 NOTES = {
+    "2.132.4": {
+        "big": [],
+        "small": [
+            ("Overlay", "Settings page renamed Overlay Settings."),
+            ("Overlay", "Ritual Identifier: now a Ritual helper option."),
+            ("Settings", "Keybinds: Overlays group renamed Overlay."),
+        ],
+    },
     "2.132.3": {
         "big": [
             ("☠", "Ritual Identifier", "Hover a Ritual Altar: type, loot, danger.", None, "Overlay"),

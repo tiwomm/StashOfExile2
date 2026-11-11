@@ -9,7 +9,6 @@ flasks) and Queen's (10 more omens in the first Favours, a Corrupted Idol from t
 community guides."""
 import re
 
-DEFAULTS = {"on": False}
 # key: (name, what it gives - "" for nothing extra, danger)
 TYPES = {
     "tainted": ("Tainted", "Rare belts, charms, flasks ↑", "Boils explode when touched"),
@@ -31,14 +30,6 @@ DANGERS = {"QUEENINTHEMISTS": "queens", "WAVESOFBLOOD": "contaminated", "TORNADO
            "PLAGUEBRINGINGTOADS": "croaking"}
 ALTAR = re.compile(r"RITUALAL(?:TAR|T|TI)?")
 SUFFIX = 4                          # a cut-off name ("NTED Ritual Altar") still counts if its last letters are this many
-
-
-def cfg():
-    from .config import SETTINGS
-    c = SETTINGS.setdefault("ritual_id", {})
-    for k, v in DEFAULTS.items():
-        c.setdefault(k, v)
-    return c
 
 
 def letters(text):

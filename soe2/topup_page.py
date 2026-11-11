@@ -1,5 +1,5 @@
 """2.131.0 Top Up Reminders - the watcher, teaching an item, the reminder card and the Items list (topup.py reads the
-pictures). Overlay ↳ Settings › Helpers has its switch. Off until you turn it on; looks only while the game is in front."""
+pictures). Overlay ↳ Overlay Settings › Helpers has its switch. Off until you turn it on; looks only while the game is in front."""
 import time
 import tkinter as tk
 from tkinter import ttk
@@ -337,7 +337,7 @@ class TopUpPage:
         if names:
             save_json("settings.json", SETTINGS)
             self.status_text, self.status_until = (f"League Plan's map supplies are in Top Up Reminders now "
-                                                   f"({len(names)}) - Overlay › Settings › Helpers › Items…"), \
+                                                   f"({len(names)}) - Overlay › Overlay Settings › Helpers › Items…"), \
                 time.time() + 12
             self.topup_paint_list()
         return added
@@ -378,7 +378,7 @@ class TopUpPage:
         k = SETTINGS.get("topup_key") or "Ctrl+C"
         return key_label(k)
 
-    # ---------------------------------------------------------------- Overlay ↳ Settings › Helpers: its row
+    # ---------------------------------------------------------------- Overlay ↳ Overlay Settings › Helpers: its row
     def topup_row(self, box, bg, CB):
         sm = ("Segoe UI", 9)
         row = tk.Frame(box, bg=bg)

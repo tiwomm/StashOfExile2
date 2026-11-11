@@ -255,7 +255,7 @@ class MergedOverlay:
         return {"bar": True, "timer": bool(getattr(self, "mg_timer", False)), "helpers": False,
                 "notes": self.merged_embeds_notes() and bool(oc.get("notes_enabled")) and bool(oc.get("notes_visible"))}
 
-    # 2.73.0: what sits on the overlay's bar - each menu has an "on the bar" switch (Overlay ↳ Settings › On the bar).
+    # 2.73.0: what sits on the overlay's bar - each menu has an "on the bar" switch (Overlay ↳ Overlay Settings › On the bar).
     # 2.118.0: menus only - the helpers' switches are gone (their old keys are left as they were, unread).
     def bar_cfg(self):
         b = self.tracker_cfg().setdefault("bar", {})
@@ -427,14 +427,14 @@ class MergedOverlay:
         return w
 
     def click_through_on(self):
-        """Settings › Appearance › Overlay settings › Click-through: clicks go through the overlay's bar to the game.
+        """Settings › Appearance › Overlay › Click-through: clicks go through the overlay's bar to the game.
         2.74.3 (feedback: "an isolated toggle that isn't tied to being locked"): its own switch, off by default."""
         return bool(self.tracker_cfg().get("click_through", False))
 
     def overlay_hide_capture(self):
         """2.85.2 (feedback: "Ritual alerts aren't working, maybe because the overlay is in the position of where the
         ritual (x/3) counter is"): the bar is left out of screen captures, so the Ritual / Delirium watchers see the
-        game's counters under it. Its own switch (Overlay ↳ Settings › Behavior), on by default; off = screenshots
+        game's counters under it. Its own switch (Overlay ↳ Overlay Settings › Behavior), on by default; off = screenshots
         and streams show the bar."""
         cfg = self.tracker_cfg()
         # 2.129.4 (feedback: the line said 0 of 3 after 2 were done - the overlay's Ritual line covers the game's
@@ -632,7 +632,7 @@ class MergedOverlay:
                               ("⚙", None, "mg_cog")):         # 2.119.0: ⚙ = Quick settings (either click)
             cv.create_text(x, y, text=txt, anchor="e", fill=P["muted"], font=("Segoe UI Symbol", 10, "bold"),
                            tags=("mg", tag))
-            if tag == "mg_cog":                          # (its All settings… opens Overlay ↳ Settings in the app)
+            if tag == "mg_cog":                          # (its All settings… opens Overlay ↳ Overlay Settings in the app)
                 for b in ("<Button-1>", "<Button-3>"):
                     cv.tag_bind(tag, b, lambda e: self.ov_quick_toggle(e))
             else:
@@ -682,7 +682,7 @@ class MergedOverlay:
 
 
     def overlay_settings_go(self):
-        """2.89.1 (feedback): the app comes forward on Overlay ↳ Settings."""
+        """2.89.1 (feedback): the app comes forward on Overlay ↳ Overlay Settings."""
         try:
             self.ovh_open("Settings")
             self.root.deiconify()

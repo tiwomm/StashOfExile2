@@ -402,7 +402,7 @@ class SettingsPage:
                           values=["12-hour (3:45 PM)", "24-hour (15:45)"])
         cb.pack(side="left")
         cb.bind("<<ComboboxSelected>>", lambda e: self.on_clock())
-        # (2.120.0: the clock on the overlay's bar is switched in Overlay ↳ Settings › On the bar, with the other
+        # (2.120.0: the clock on the overlay's bar is switched in Overlay ↳ Overlay Settings › On the bar, with the other
         # parts; this is the one place for how every clock reads)
 
 
@@ -450,7 +450,7 @@ class SettingsPage:
         # ======== Advanced
         # 2.59.0: settings that had no place in the app (only in settings.json)
         # 2.120.0 (UX pass 2: settings most players never need, in one place): the game's window title (was General ›
-        # Game) (2.132.0: Hide the overlay from screen captures went back to Overlay ↳ Settings › Options)
+        # Game) (2.132.0: Hide the overlay from screen captures went back to Overlay ↳ Overlay Settings › Options)
         row = section("Advanced", "Over the game", "The overlay and the in-game keys work only while the window with "
                                                    "this title is in front. Change it only if your game's window has "
                                                    "another name.")
@@ -466,7 +466,7 @@ class SettingsPage:
         te.bind("<FocusOut>", lambda e: self.ov_save())
         te.bind("<Return>", lambda e: (self.ov_save(), self.root.focus_set()))
         # (2.132.0, feedback: "needs relocated to where it makes sense": Hide the overlay from screen captures is
-        # in Overlay ↳ Settings › Options now, beside Lock position and Click-through)
+        # in Overlay ↳ Overlay Settings › Options now, beside Lock position and Click-through)
         # 2.74.0: Under the hood (with the Mod book inside it) is hidden unless you want it - both keep working
         row = section("Advanced", "Under the Hood", "How the price checker reads an item (its base, which bases it "
                                                     "is compared with, which trade-site search each mod becomes), and "
@@ -818,7 +818,7 @@ class SettingsPage:
         # 2.66.0: no Style list - everything over the game is drawn in the app's theme (Settings › Appearance ›
         # Theme). The Layout says the shape.
         # 2.74.0: one area - Layout, Opacity and Click-through (were the Overlay layout and Opacity sections)
-        row = section("Appearance", "Overlay settings", "The overlay over the game (timer, Mechanic Helper, League Plan): "
+        row = section("Appearance", "Overlay", "The overlay over the game (timer, Mechanic Helper, League Plan): "
                                                         "pick a style, its shape and its colors. Notes, the calculator and the remnant "
                                                         "price tags use your theme's colors.")
         from .merged_page import LAYOUTS
@@ -876,7 +876,7 @@ class SettingsPage:
         self.ov_op_pct = {"all": pct}
         hint(7, "100% = fully solid. Lower = see-through, text and all (24% is the lowest). Over a busy spot, "
                 "95-100% reads best.")
-        # (2.120.0: Click-through is part of Overlay ↳ Settings › Options › Mouse on the overlay)
+        # (2.120.0: Click-through is part of Overlay ↳ Overlay Settings › Options › Mouse on the overlay)
         row = section("Appearance", "Motion", "Tooltips, notices and windows over the game fade in for a moment. "
                                               "Reduce motion makes them appear at once. Until you choose, it "
                                               "follows Windows' own \"Show animations\" setting.")
@@ -886,7 +886,7 @@ class SettingsPage:
                         command=self.on_reduce_motion).pack(side="left")
 
     def on_ov_look(self, style=None, colors=None):
-        """2.101.0: Settings › Appearance › Overlay settings › Style - saved and shown at once."""
+        """2.101.0: Settings › Appearance › Overlay › Style - saved and shown at once."""
         self.ov_look_set(style=style, colors=colors)
         self._ov_look_paint()
 

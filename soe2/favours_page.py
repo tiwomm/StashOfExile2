@@ -1,6 +1,6 @@
 """2.128.0 Favours prices in the app (the Ritual helper's option): the watcher thread, the price tags over the game,
 and learning a reward's picture when you price check it. The reading itself is in favours.py.
-Switch: Overlay › Settings › Helpers › Ritual › Favours prices (on with the Ritual helper)."""
+Switch: Overlay › Overlay Settings › Helpers › Ritual › Favours prices (on with the Ritual helper)."""
 import os
 import threading
 import time

@@ -4,7 +4,7 @@
 
 > **Who we build for - read second.** Path of Exile players are utilitarian: they love data and information, problem solving and creative thinking. So every feature shows its numbers *and how they were worked out*, lets you sort, filter, compare and export them (CSV), keeps power-user depth (keys, versions, raw data) one click away instead of hiding it, explains in plain words, and leaves the decision to the player. Pretty is welcome; vague is not.
 
-**Current version: 2.132.3**
+**Current version: 2.132.4**
 
 Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds features, 2.10.1 only fixes. Each step below is one release; we work through them top to bottom.
 
@@ -266,6 +266,7 @@ Order (decided 2026-11-05): the page passes, then the Privacy & data hub, then t
 | 2.130.3 | Client.txt found wherever the game is installed (Windows' installed-programs list, every Steam library); Desecration Helper reads Heart of the Well options. |
 | 2.132.2 | Map profit: emptying your inventory between visits isn't a loss; BETA. Top Up ignores the chat box. |
 | 2.132.3 | Ritual Identifier (BETA). What's new in keywords. |
+| 2.132.4 | Overlay Settings name; Ritual Identifier is a Ritual helper option. |
 | 2.132.1 | Temple Helper: your crystals on the bar, a card when they're full. |
 | 2.132.0 | Map profit: what each map earned from your inventory, on your PC only; vital alert cards in red. |
 | 2.131.6 | The Ritual line keeps your tribute until it's 0 or the map ends; End Delirium is an alert card. |

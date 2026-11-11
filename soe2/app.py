@@ -214,7 +214,7 @@ class App(SettingsPage, GearBookPage, PriceCheckPage, PricePopup, FavoritesPage,
         _ow.OV_PAL[0] = self.ov_palette                   # 2.109.0: everything over the game in the overlay's style
         self._fresh_install = not SETTINGS.get("seen_version")   # 2.90.0: a new install starts with a clean bar
         if self._fresh_install:                          # 2.118.0: every helper starts on (each can go off in
-            SETTINGS.setdefault("util_delirium_autostart", True)      # Overlay ↳ Settings › Helpers)
+            SETTINGS.setdefault("util_delirium_autostart", True)      # Overlay ↳ Overlay Settings › Helpers)
         root.title(APP_TITLE)
         if sys.platform == "win32":      # own taskbar entry with our icon (not python's)
             try:

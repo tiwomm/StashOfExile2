@@ -112,7 +112,7 @@ class TrackerPage:
         "Appearance" is Settings › Appearance."""
         if tab == "Appearance":
             return self.appearance_open()
-        if tab in ("Mechanic Helper", "Notes", "Options", "Settings"):     # 2.82.0: Overlay ↳ Settings
+        if tab in ("Mechanic Helper", "Notes", "Options", "Settings"):     # 2.82.0: Overlay ↳ Overlay Settings
             self.shell.open("ovset")
             part = self.ovh_pages.get(tab)
             sa = getattr(self, "tk_opt_area", None)
@@ -203,8 +203,8 @@ class TrackerPage:
                               command=lambda v: self.tracker_view(),
                               size=9, pad=(12, 4))
         self.tk_view.pack(side="left")
-        # 2.82.0 (feedback: Options "shouldn't be nested beside the map stats"): Overlay ↳ Settings, its own page
-        self.tk_settings_btn = ttk.Button(vrow, text="⚙  Overlay settings",     # (2.120.0: one orange per page)
+        # 2.82.0 (feedback: Options "shouldn't be nested beside the map stats"): Overlay ↳ Overlay Settings, its own page
+        self.tk_settings_btn = ttk.Button(vrow, text="⚙  Overlay Settings",     # (2.120.0: one orange per page)
                                           command=lambda: self.shell.open("ovset"))
         self.tk_settings_btn.pack(side="right")
         self.tk_pages = {}
@@ -243,7 +243,7 @@ class TrackerPage:
         self.undo_button(prow, "tracker").pack(side="right", padx=8, pady=(4, 0))
         self.tk_pages["Past sessions"] = ph
         self.tk_pages["Map stats"] = self._tracker_stats_page(body)
-        # (2.82.0: the options are on their own page, Overlay ↳ Settings - build_ov_settings)
+        # (2.82.0: the options are on their own page, Overlay ↳ Overlay Settings - build_ov_settings)
         tk.Label(body, text="Reads only Path of Exile 2's own log file (Client.txt) on your PC: never the game's memory, "
                             "never its servers, never sends keys or clicks.", bg=P1, fg=C["steel"], font=("Segoe UI", 9),
                  anchor="w").pack(side="bottom", fill="x", padx=12, pady=(0, 8))
@@ -411,7 +411,7 @@ class TrackerPage:
                                          r["level"] or "-", r["deaths"]), tags=tags)
 
     def _tracker_options(self, po):
-        """2.82.0 (feedback: options "a more predominant feature ... reorganizing ... grouping"): Overlay ↳ Settings,
+        """2.82.0 (feedback: options "a more predominant feature ... reorganizing ... grouping"): Overlay ↳ Overlay Settings,
         in cards - On the bar, Features, Campaign, Behavior, then the Mechanic Helper (build_ov_settings)."""
         cfg, P2 = self.tracker_cfg(), C["panel2"]
         cards = tk.Frame(po, bg=C["panel"])
@@ -539,7 +539,7 @@ class TrackerPage:
         return o
 
     def ov_hidecap_set(self, on):
-        """2.85.2: the bar in / out of screen captures (2.132.0: Overlay ↳ Settings › Options, and it means always)."""
+        """2.85.2: the bar in / out of screen captures (2.132.0: Overlay ↳ Overlay Settings › Options, and it means always)."""
         self.tracker_cfg()["hide_capture"] = bool(on)
         try:
             self.overlay_click_through()
@@ -562,7 +562,7 @@ class TrackerPage:
                 v.set(bool(on))
 
     def build_ov_settings(self, body):
-        """2.82.0: Overlay ↳ Settings - cards (On the bar, Features, Campaign, Behavior) and the Mechanic Helper."""
+        """2.82.0: Overlay ↳ Overlay Settings - cards (On the bar, Features, Campaign, Behavior) and the Mechanic Helper."""
         P1 = C["panel"]
         po = ScrollArea(body, bg=P1)
         po.pack(fill="both", expand=True, padx=8, pady=8)
@@ -1308,13 +1308,13 @@ class TrackerPage:
                 ("Open poe2db's modifier list in your browser", SETTINGS.get("poe2db_key", ""), "Tools",
                  "checks:poe2db_key"),                        # (2.98.3: its own group - not Bulk Pricing)
                 ("Copy your stash search (in game)", SETTINGS.get("regex_key", ""), "Regex", "checks:regex_key"),
-                ("Session timer: pause / resume (or ⏸ / ▶ on the overlay)", tc.get("key_pause", ""), "Overlays",
+                ("Session timer: pause / resume (or ⏸ / ▶ on the overlay)", tc.get("key_pause", ""), "Overlay",
                  "tracker:key_pause"),
-                ("Show / hide the overlay", tc.get("key_overlay", ""), "Overlays", "tracker:key_overlay"),
-                ("Campaign: a step back (◀)", tc.get("key_camp_prev", ""), "Overlays", "tracker:key_camp_prev"),
-                ("Campaign: a step on (▶)", tc.get("key_camp_next", ""), "Overlays", "tracker:key_camp_next"),
+                ("Show / hide the overlay", tc.get("key_overlay", ""), "Overlay", "tracker:key_overlay"),
+                ("Campaign: a step back (◀)", tc.get("key_camp_prev", ""), "Overlay", "tracker:key_camp_prev"),
+                ("Campaign: a step on (▶)", tc.get("key_camp_next", ""), "Overlay", "tracker:key_camp_next"),
                 ("Top Up: teach the item under the mouse (in game, inventory open)", SETTINGS.get("topup_key", ""),
-                 "Overlays", "checks:topup_key"),             # 2.131.1 (feedback: the price check key left its card up)
+                 "Overlay", "checks:topup_key"),             # 2.131.1 (feedback: the price check key left its card up)
                 ("Strat Tracker: a run is done (setups counted by key)", SETTINGS.get("ledger_key") or "Ctrl+Alt+N",
                  "Money Makers", "checks:ledger_key"),
                 ("Go to hideout", oc.get("hideout_key", ""), "Chat commands", "overlay:hideout_key")]
