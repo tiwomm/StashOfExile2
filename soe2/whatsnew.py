@@ -58,6 +58,7 @@ NOTES = {
             ("Overlay", "Top Up counts items that don't stack, like keys: each one in your inventory counts 1."),
             ("Overlay", "Top Up › Items… › + Add more adds an item by its name (it counts once you teach it with "
              "Ctrl+C)."),
+            ("Overlay", "The tribute reminder goes away when the Favours window shows your tribute offered."),
         ],
     },
     "2.131.3": {

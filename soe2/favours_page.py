@@ -138,14 +138,16 @@ class FavoursPage:
                                 t = self.favours_tribute_read(*last, RM)
                                 if t is not None:
                                     counts["tribute"] = t
-                                if FV.tribute_offered(*last):
+                                btn = FV.tribute_offered(*last)
+                                if btn:
                                     counts["offered"] = True
+                                counts["btn"] = {True: "gray", False: "red"}.get(btn, "unsure")
                             owed = 0 if counts.get("offered") else (counts.get("tribute") or 0)
                             if counts.get("offered") and (counts.get("tribute") or 0) > 0:
                                 fv_log("closed while the tribute counted down - the button was gray: no reminder")
-                            counts = {"owed": owed} if owed > 0 else {}
+                            counts = {"owed": owed, "btn": counts.get("btn", "unseen")} if owed > 0 else {}
                         elif misses == REMIND and counts.get("owed"):     # 2.130.0: still gone - really closed
-                            fv_log(f"closed with {counts['owed']:,} tribute left: reminder")
+                            fv_log(f"closed with {counts['owed']:,} tribute left (button {counts.pop('btn', '?')}): reminder")
                             self.ui_q.put(("favours_tribute", counts.pop("owed")))
                         continue
                     if misses >= GONE and counts.pop("owed", None):     # 2.130.0: back before the reminder - only
@@ -154,6 +156,9 @@ class FavoursPage:
                     counts["last"] = (img, win)
                     if FV.tribute_offered(img, win):          # 2.131.2: the button went gray - offered (or none)
                         counts["offered"] = True
+                        if not counts.get("said_offered"):    # 2.131.4 (feedback: "still asking me to offer tribute
+                            counts["said_offered"] = True     # after I already dumped tribute"): open again with
+                            self.ui_q.put(("favours_offered",))   # nothing owed - a reminder up takes itself back
                     if time.time() - counts.get("at", 0) > 1.5:          # the tribute, now and then
                         counts["at"] = time.time()
                         t = self.favours_tribute_read(img, win, RM)
@@ -314,7 +319,16 @@ class FavoursPage:
         """2.129.0 (feedback): the Favours window closed with tribute still to spend (2.129.3: rerolls or not)."""
         if not self.ritual_cfg().get("tribute_reminder", True):
             return
+        self.fv_owed_at = time.time()
         self.breach_alert(level="tribute", sub=f"{tribute:,} tribute left - offer it to the King")
+
+    def ev_favours_offered(self):
+        """2.131.4: the Favours window shows nothing owed (its button is gray) - the tribute reminder, if it's up or
+        waiting for the game to be in front, is taken back."""
+        self.fv_offered_at = time.time()
+        if getattr(self, "br_level", None) == "tribute" and getattr(self, "br_win", None) is not None:
+            fv_log("open again with nothing owed: the reminder is taken back")
+            self.breach_dismiss()
 
     def favours_hide(self):
         wins, self.fv_wins = getattr(self, "fv_wins", None), None
