@@ -168,6 +168,11 @@ class AlertsPage:
         done_map = getattr(self, "rt_done", False) and getattr(self, "br_area", None) == "map"
         if done_map and count and count[0] < count[1]:
             count = (count[1], count[1])
+        if count and count[0] < 1 and not done_map:
+            # 2.132.2 (feedback: "if a player doesn't interact with the first ritual, it should not enable ... it
+            # should only appear when you start the ritual mechanics, same way the alerts only tell you to go back
+            # ... if you do (1/#)"): no line until the first ritual is done
+            return ""
         if count:
             d, t = count
             txt = f"{d} of {t} rituals done" + (" ✔" if d >= t else "")

@@ -55,6 +55,7 @@ NOTES = {
             ("Overlay", "Map profit is a BETA feature (Settings › General › Features), like the Desecration Helper."),
             ("Overlay", "Helpers › PLAY starts with the Desecration Helper, then Campaign."),
             ("Overlay", "Top Up waits when something covers your items (the chat box): no restock card for them."),
+            ("Overlay", "The Ritual line shows once you've done a map's first ritual - not for a map you skip it in."),
         ],
     },
     "2.132.1": {
