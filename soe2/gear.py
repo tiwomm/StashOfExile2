@@ -534,11 +534,15 @@ def parse_gear(text):
         search.update(type=g["base"], category=None)        # its own market (and anything without totals to compare on)
     if g["rarity"] in ("Normal", "Magic"):              # 2.79.0 (feedback): white and blue bases - the exact item
         white = g["rarity"] == "Normal"                 # level, Normal / Magic, not corrupted, fractured or
+        lv = g.get("ilvl")                              # sanctified; its quality and sockets (at least) when it has
+        top = bool(lv and lv >= ILVL_TOP)               # them. 2.131.4: 82 and up all roll the same - 82+
         search.update(type=g["base"], category=None, rarity="normal" if white else "magic", corrupted=False,
-                      fractured=False, sanctified=False, ilvl_min=g.get("ilvl"), ilvl_max=g.get("ilvl"),
-                      quality_min=q or None, sockets_min=g.get("sockets") or None)   # sanctified; its quality and
-        notes.append(("white" if white else "magic") + " base: " + ", ".join(    # sockets (at least) when it has them
-            x for x in (f"item level {g['ilvl']}" if g.get("ilvl") else "", f"{q}%+ quality" if q else "",
+                      fractured=False, sanctified=False, ilvl_min=ILVL_TOP if top else lv,
+                      ilvl_max=None if top else lv, base_exact=True,
+                      quality_min=q or None, sockets_min=g.get("sockets") or None)
+        notes.append(("white" if white else "magic") + " base: " + ", ".join(
+            x for x in (f"item level {ILVL_TOP}+ (82 and up roll the same)" if top else
+                        f"item level {lv}" if lv else "", f"{q}%+ quality" if q else "",
                         f"{g['sockets']}+ sockets" if g.get("sockets") else "",
                         "not corrupted, fractured or sanctified") if x))
     need = EXCEPTIONAL_SOCKETS.get(cls)
@@ -561,19 +565,24 @@ def parse_gear(text):
             "ilvl": g.get("ilvl"), "group_id": g.get("group"), "search": search, "notes": notes}
 
 
+ILVL_TOP = 82            # 2.131.4 (feedback: "any ilvl above 82 doesn't matter ... always search at ilvl 82 min")
+
 def base_ladder(item):
     """2.99.0: a white / blue base's searches, exact first, each a little wider: [(label, item with that search)].
     [] for anything else. Exact item level + quality -> item level or higher -> 21%+ quality (still exceptional) ->
     any quality."""
     s = item.get("search") or {}
-    if item.get("rarity") not in ("Normal", "Magic") or not s.get("ilvl_max"):
+    if item.get("rarity") not in ("Normal", "Magic") or not (s.get("ilvl_max") or s.get("base_exact")):
         return []
     lv, q = s.get("ilvl_min"), s.get("quality_min")
 
     def var(**kw):
         return dict(item, search=dict(s, **kw))
-    out = [(f"item level {lv}" + (f", {q}%+ quality" if q else ""), item),
-           (f"item level {lv}+" + (f", {q}%+ quality" if q else ""), var(ilvl_max=None))]
+    if s.get("ilvl_max"):
+        out = [(f"item level {lv}" + (f", {q}%+ quality" if q else ""), item),
+               (f"item level {lv}+" + (f", {q}%+ quality" if q else ""), var(ilvl_max=None))]
+    else:                                                   # 2.131.4: 82+ (or no item level) is already the widest
+        out = [((f"item level {lv}+" if lv else "the base") + (f", {q}%+ quality" if q else ""), item)]
     if q and q > 21:
         out.append((f"item level {lv}+, 21%+ quality (exceptional)", var(ilvl_max=None, quality_min=21)))
     if q:

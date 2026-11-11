@@ -660,7 +660,9 @@ class Engine(TabReaderJobs, WealthJobs, StratCostJobs, threading.Thread):
             steps = steps[:1]
         base_steps = gear.base_ladder(item)                    # 2.99.0 (feedback: an Exceptional Druidic Crown -
         if base_steps:                                         # ilvl 81, 29% quality - found nothing): white / blue
-            steps = [(name, must, opt, 0, values, it_) for name, it_ in base_steps]    # bases widen step by step
+            steps = [(name, must, opt, len(opt), values, it_) for name, it_ in base_steps]   # bases widen step by step
+            # (2.131.4, feedback: "setting the search to Count but not making that search require a count of 2 makes
+            # the count not function": each ☑ mod must match - it was "at least 0 of them")
         for step_ in steps:
             name, must_s, opt_s, k, vals = step_[:5]
             it_ = step_[5] if len(step_) > 5 else item
