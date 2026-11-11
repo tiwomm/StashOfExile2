@@ -182,7 +182,7 @@ class FavoursPage:
                             counts = {"owed": owed, "btn": counts.get("btn", "unseen"), "closed_at": time.time(),
                                       "hud": hud_was} if owed > 0 else {}
                         elif misses == REMIND and counts.get("owed"):     # 2.130.0: still gone - really closed
-                            # 2.131.5 (feedback: "it doesn't turn grey when I click it and rapidly close the
+                            # 2.131.5 (feedback: "it doesn't turn gray when I click it and rapidly close the
                             # window"): the game's counter says - it counted down or went: offered, no reminder
                             why = hud_says_offered(counts.get("closed_at", 0), counts.get("hud"))
                             if why:
