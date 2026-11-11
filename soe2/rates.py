@@ -8,7 +8,8 @@ import re
 import requests
 import threading
 import time
-from .config import APP_VERSION, load_json, P, save_json
+from . import buglog
+from .config import load_json, P, save_json
 from .util import _num
 
 
@@ -151,7 +152,7 @@ class Rates:
                     f.write(f"{time.strftime('%Y-%m-%d %H:%M:%S')}  no exchange rate for '{cur}' (poe.ninja ids: "
                             f"{', '.join(sorted(self.table)[:40])}...)\n")
             except Exception:
-                pass
+                buglog.caught()
 
     def status_text(self):
         a = self.age()
@@ -170,8 +171,23 @@ class Rates:
                 out.append((cur, div / r))
         return out
 
+    def common(self, each, own=None):
+        """2.127.0: a thing worth `each` divines in the currencies people trade in -> (["0.6 exalted", ...],
+        ["1 Divine Orb buys 250", ...]); `own` (its rate id) is left out - an Exalted Orb isn't 1 exalted."""
+        from .util import _num
+        worth, buys = [], []
+        for cid, cname in (("divine", "Divine Orb"), ("exalted", "Exalted Orb"), ("chaos", "Chaos Orb")):
+            r = 1.0 if cid == "divine" else self.value(cid)
+            if not r or not each or cid == own:
+                continue
+            if cid != "divine":                     # (the price itself is already in divines)
+                worth.append(f"{_num(each / r)} {cid}")
+            if r / each >= 1:
+                buys.append(f"1 {cname} buys {_num(r / each)}")
+        return worth, buys
+
     def list_options(self, div):
-        """Plain-text help for 'is 8.5 div worth 8 or 9?': the neighbouring whole numbers, and a divine + chaos split."""
+        """Plain-text help for 'is 8.5 div worth 8 or 9?': the neighboring whole numbers, and a divine + chaos split."""
         if div is None or div < 2:
             return ""
         lo, hi = math.floor(div), math.ceil(div)

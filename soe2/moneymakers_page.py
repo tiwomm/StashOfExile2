@@ -1,16 +1,16 @@
 """The Money Makers window (2.28.0): community strats in one standard layout (left: the list, right: the strat) and a
 simple run tracker of its own. Data and the layout check live in moneymakers.py."""
 import json
-import threading
 import time
 import tkinter as tk
 import webbrowser
 from tkinter import filedialog, ttk
 
+from . import buglog
 from . import board as B
-from . import rep as R
 from . import moneymakers as MM
 from .config import SETTINGS, save_json
+from .style import over_app
 from .style import C, MONO, SegBar, Tooltip, place_near
 from .chrome import SectionBar, Viewport, section as chrome_section
 
@@ -33,7 +33,7 @@ class MoneyMakersPage:
     def build_money_window(self, body):
         P1 = C["panel"]
         self.mm_strats, self.mm_sel, self.mm_sort = [], None, ("profit", True)     # 2.71.0: best first
-        self.mm_page = SegBar(body, ["Strats", "Lucrative Strats", "Tablet Craft Helper", "Strat Tracker"],
+        self.mm_page = SegBar(body, ["Strats", "Lucrative Strats", "Craft Helper", "Strat Tracker"],
                               command=lambda v: self.mm_show_page(), size=10, pad=(16, 4))
         self.mm_page.pack(anchor="w", padx=8, pady=(8, 0))
         if getattr(self, "shell", None) is not None:          # 2.64.0: its tabs are listed in the sidebar
@@ -42,7 +42,7 @@ class MoneyMakersPage:
         self.mm_strat_page, self.mm_run_page = self.mm_pages["Strats"], self.mm_pages["Strat Tracker"]
         self.mm_build_strats(self.mm_strat_page)
         self.mm_build_oneliners(self.mm_pages["Lucrative Strats"])
-        self.mm_build_tablets(self.mm_pages["Tablet Craft Helper"])
+        self.mm_build_tablets(self.mm_pages["Craft Helper"])
         self.build_ledger(self.mm_run_page)                  # 2.45.0: Strat Tracker (was Run tracker: ledger_page.py)
         self.mm_strat_page.pack(fill="both", expand=True)
         self.mm_reload()
@@ -55,7 +55,7 @@ class MoneyMakersPage:
         self.mm_pages[cur].pack(fill="both", expand=True)
         if cur == "Strat Tracker":
             self.fl_refresh()
-        elif cur == "Tablet Craft Helper":
+        elif cur == "Craft Helper":
             self.mm_tab_fill()
         elif cur == "Lucrative Strats":
             self.mm_one_fill()
@@ -123,9 +123,11 @@ class MoneyMakersPage:
         self.mm_bsort_lab = tk.Label(fbar, text="Board", bg=P1, fg=C["muted"])
         self.mm_bsort_box = ttk.Combobox(fbar, textvariable=self.mm_bsort, values=("Top", "New"), state="readonly", width=5)
         self.mm_bsort_box.bind("<<ComboboxSelected>>", lambda e: (self.mm_board_fetch(), self.root.after(20, self.root.focus_set)))
-        for text, cmd in (("⬇ Download Format", self.mm_download_format), ("Import file…", self.mm_import),
-                          ("+ Add my own", self.mm_add)):
-            ttk.Button(fbar, text=text, command=cmd, style="Quiet.TButton").pack(side="right", padx=(8, 0))
+        # P6 (2.108.0): + Add my own, and a ⋯ menu for Import file… / Download Format
+        more = ttk.Button(fbar, text="⋯", width=3, command=lambda: self.mm_more_menu(more))
+        more.pack(side="right", padx=(8, 0))
+        Tooltip(more, "Import file… · Download Format")
+        ttk.Button(fbar, text="+ Add my own", command=self.mm_add).pack(side="right", padx=(8, 0))
         from .style import flowify, flow_add
         flowify(fbar)                                        # 2.98.0: wraps in a narrow window
         flow_add(fbar, self.mm_bsort_lab, (12, 8), shown=False)
@@ -155,10 +157,7 @@ class MoneyMakersPage:
         cols = (("name", "Strat", 170, "w"), ("type", "Type", 110, "w"),
                 ("thoughts_per_click", "🧠 Thoughts/click", 104, "center"), ("clicks_per_hour", "🖱 Clicks/h", 80, "center"),
                 ("profit", "Est. profit/h", 92, "center"), ("score", "▲", 44, "center"), ("origin", "By", 90, "w"))
-        self.mm_tree = ttk.Treeview(self.mm_listf, columns=[c[0] for c in cols], show="tree headings", selectmode="browse")
-        self.mm_tree.column("#0", width=24, minwidth=24, stretch=False, anchor="center")   # 2.95.0: the contributor icon
-        self.mm_rep_names = {}
-        self.rep_tree_hover(self.mm_tree, lambda iid: self.mm_rep_names.get(iid))
+        self.mm_tree = ttk.Treeview(self.mm_listf, columns=[c[0] for c in cols], show="headings", selectmode="browse")
         for cid, title, w, anchor in cols:
             self.mm_tree.heading(cid, text=title, command=lambda c=cid: self.mm_sort_by(c))
             self.mm_tree.column(cid, width=w, minwidth=56, anchor=anchor, stretch=cid == "name")
@@ -574,10 +573,7 @@ class MoneyMakersPage:
             post = s.get("_post") or {}
             tags = (s["origin"],) + (("hidden",) if post.get("hidden") else ())
             by = post.get("author", {}).get("name") or (s.get("author") if s["origin"] != "mine" else "me")
-            img = R.icon(self.root, post.get("author", {}).get("rep")) if post else None      # 2.95.0
-            if img is not None:
-                self.mm_rep_names[s["id"] + "|" + s["origin"]] = post["author"].get("name")
-            tv.insert("", "end", iid=s["id"] + "|" + s["origin"], tags=tags, **({"image": img} if img is not None else {}),
+            tv.insert("", "end", iid=s["id"] + "|" + s["origin"], tags=tags,
                       values=(("✔ " if post.get("voted") else "") + s["name"],
                               s.get("type", "") if self.mm_cat.get() else MM.type_text(s),
                               MM.thinking_word(s.get("thoughts_per_click")), s.get("clicks_per_hour", ""),
@@ -641,7 +637,6 @@ class MoneyMakersPage:
         t.insert("end", MM.type_text(s).upper() + "\n", "kicker")
         t.insert("end", s["name"] + "\n", "title")
         t.insert("end", "by ", "meta")
-        self.rep_text_mark(t, post.get("author", {}) if post else {}, "meta")         # 2.95.0: ◆ the contributor icon
         t.insert("end", f"{post.get('author', {}).get('name') or s.get('author', '?')} · game {s.get('patch', '?')} · "
                         f"updated {s.get('updated', '?')} · {ORIGIN.get(s['origin'], '')}"
                         + (f" · ▲ {post.get('score', 0)}" if post else "")
@@ -761,7 +756,7 @@ class MoneyMakersPage:
                            command=lambda: self.mm_item_copy(rx, "all the tablets"))
             self.mm_all_tabs_btn = b
             t.window_create("end", window=b)
-            t.insert("end", "  stash or vendor: Ctrl+F, Ctrl+V · Trade: the ★ mods, cheapest first\n", "meta")
+            t.insert("end", "  stash or vendor: Ctrl+V in the search · Trade: the ★ mods, cheapest first\n", "meta")
 
     def mm_item_copy(self, rx, what):
         if not rx:
@@ -769,7 +764,7 @@ class MoneyMakersPage:
         self.root.clipboard_clear()
         self.root.clipboard_append(rx)
         self.own_clip = rx
-        self._say(f"Copied the search for {what}. In game: Ctrl+F, Ctrl+V.", 6)
+        self._say(f"Copied the search for {what}. In game: Ctrl+V in the stash search.", 6)
         return rx
 
     def mm_item_trade(self, it):
@@ -830,6 +825,7 @@ class MoneyMakersPage:
         except Exception:
             return None
         w = tk.Toplevel(self.root)
+        over_app(w, self.dlg_parent())               # 2.114.3: over the app, on its monitor
         w.title("Atlas")
         w.configure(bg=C["bg"])
         sw, sh = int(self.root.winfo_screenwidth() * 0.9), int(self.root.winfo_screenheight() * 0.85)
@@ -899,9 +895,7 @@ class MoneyMakersPage:
 
     # ---------------- the board (network work off the main thread; mm_sync = do it now, for tests)
     def _mm_bg(self, work, done):
-        if getattr(self, "mm_sync", False):
-            return done(work())
-        threading.Thread(target=lambda: (lambda r: self.root.after(0, lambda: done(r)))(work()), daemon=True).start()
+        self.run_bg(work, done)                     # (2.117.0: done runs on the window's thread via the queue)
 
     def mm_refresh(self):
         self.mm_check_live(force=True)
@@ -954,10 +948,11 @@ class MoneyMakersPage:
     def mm_join(self, why="use the Community board", name=None):
         from tkinter import simpledialog
         if name is None:
-            name = simpledialog.askstring("Your community name", f"To {why}, pick a community name. Other players "
-                                          "see it; it can change once every 7 days (2-24 letters or numbers). No "
-                                          "password - this PC keeps a key. Not your account or character name.\n\n"
-                                          "More: Settings › Privacy & community.", parent=self.root)
+            from .privacy import NAME_RULE                    # 2.131.1: a made-up name, never yours in game
+            name = simpledialog.askstring("Your community name", f"To {why}, pick a community name.\n\n{NAME_RULE}\n\n"
+                                          "It can change once every 7 days (2-24 letters or numbers). No password - "
+                                          "this PC keeps a key. More: Settings › Privacy & community.",
+                                          parent=self.root)
         if not name:
             return False
         ok, d = B.join(name.strip())
@@ -1088,8 +1083,9 @@ class MoneyMakersPage:
 
     def mm_rename(self, name=None):
         from tkinter import simpledialog
-        name = name or simpledialog.askstring("Community board", "Your new name (it can change again in 7 days):",
-                                              parent=self.root)
+        from .privacy import NAME_RULE                        # 2.131.1
+        name = name or simpledialog.askstring("Community board", f"Your new name (it can change again in 7 days).\n\n"
+                                              f"{NAME_RULE}", parent=self.root)
         if name:
             ok, d = B.rename(name.strip())
             self.app_toast("Done." if ok else d, "Community") if not ok else self._say("Name changed.", 4)
@@ -1106,10 +1102,10 @@ class MoneyMakersPage:
             if ok:
                 self._say("You're an admin on the board now (right-click a post for the admin tools).", 8)
                 self.mm_board_fetch()
-                try:                                         # 2.88.0: admin tools (the Listing order lab) show
+                try:                                         # 2.88.0: admin-only tools show (none since 2.114.0)
                     self.shell.set_advanced(self.shell.advanced_on())
                 except Exception:
-                    pass
+                    buglog.caught()
             else:
                 self.app_toast(d, "Community")
             return ok
@@ -1205,10 +1201,7 @@ class MoneyMakersPage:
         if force:
             self.mm_live_lbl.config(text="Checking GitHub…", fg=C["muted"])
 
-        def work():
-            res = MM.fetch_live(force=force)
-            self.root.after(0, lambda: self.mm_live_done(res, force))
-        threading.Thread(target=work, daemon=True).start()
+        self.run_bg(lambda: MM.fetch_live(force=force), lambda res: self.mm_live_done(res, force))
 
     def mm_live_done(self, res, force):
         self._mm_checking = False
@@ -1230,7 +1223,7 @@ class MoneyMakersPage:
             self.root.clipboard_clear()
             self.root.clipboard_append(s["regex"])
             self.own_clip = s["regex"]
-            self._say("Copied the strat's stash search. In game: Ctrl+F, Ctrl+V.", 6)
+            self._say("Copied the strat's stash search. In game: Ctrl+V in the stash search.", 6)
 
     def mm_export(self):
         s = self.mm_current()
@@ -1262,6 +1255,13 @@ class MoneyMakersPage:
                 f.write(MM.to_csv(s))
         self._say(f"Saved {path}", 6)
         return path
+
+    def mm_more_menu(self, btn):
+        m = tk.Menu(self.root, tearoff=0, bg=C["panel2"], fg=C["text"], activebackground="#2c4a84")
+        m.add_command(label="Import file…", command=self.mm_import)
+        m.add_command(label="⬇ Download Format", command=self.mm_download_format)
+        m.tk_popup(btn.winfo_rootx(), btn.winfo_rooty() + btn.winfo_height())
+        return m
 
     def mm_download_format(self, path=None):
         """The blank standard layout as a CSV file (2.46.0; opens in Excel / Google Sheets, the "note" column says
@@ -1333,6 +1333,7 @@ class MoneyMakersPage:
         from .style import ScrollArea
         P1 = C["panel"]
         win = tk.Toplevel(self.root, bg=P1)
+        over_app(win, self.dlg_parent())               # 2.114.3: over the app, on its monitor
         win.title("Suggest an edit" if suggest else "Your strat")
         win.transient(self.root)
         self.mm_form_win = win
@@ -1684,56 +1685,83 @@ class MoneyMakersPage:
         if why is not None:
             self._mm_bg(lambda: B.report(post["id"], why), lambda r: self.mm_board_result(r, "Reported - thanks."))
 
-    # ---------------- Tablet Craft Helper quick reference
+    # ---------------- Craft Helper (2.123.0: tablets and jewels; was Tablet Craft Helper - crafthelper.py)
     def mm_build_tablets(self, page):
+        from . import crafthelper as CH
         P1, P2 = C["panel"], C["panel2"]
+        self.mm_ch_kind = "tablet"
+        bar = tk.Frame(page, bg=P1, padx=8, pady=8)
+        bar.pack(fill="x")
+        self.mm_tab_q = tk.StringVar()                       # (every list page: its search first, top left)
+        tk.Label(bar, text="🔍", bg=P1, fg=C["muted"], font=("Segoe UI Symbol", 10)).pack(side="left", padx=(0, 4))
+        q = ttk.Entry(bar, textvariable=self.mm_tab_q, width=24)
+        q.pack(side="left")
+        Tooltip(q, "Search the mods")
+        self.mm_tab_q.trace_add("write", lambda *_a: self.mm_tab_fill())
+        self.mm_ch_seg = SegBar(bar, [k["label"] for k in CH.KINDS.values()], size=9, pad=(12, 4),
+                                command=lambda v: self.mm_ch_pick(v))
+        self.mm_ch_seg.pack(side="left", padx=(12, 0))
+        tk.Label(bar, text="Type", bg=P1, fg=C["muted"]).pack(side="left", padx=(12, 8))
+        self.mm_tab_type = tk.StringVar(value="All")
+        self.mm_tab_type_cb = cb = ttk.Combobox(bar, textvariable=self.mm_tab_type, values=CH.KINDS["tablet"]["types"],
+                                                state="readonly", width=11)
+        cb.pack(side="left")
+        cb.bind("<<ComboboxSelected>>", lambda e: (self.mm_tab_fill(), self.root.after(20, self.root.focus_set)))
+        self.mm_tab_only = tk.BooleanVar(value=True)
+        ttk.Checkbutton(bar, text="Only S and A", variable=self.mm_tab_only, command=self.mm_tab_fill).pack(
+            side="left", padx=(12, 0))
         pane = ttk.PanedWindow(page, orient="horizontal")
-        pane.pack(fill="both", expand=True, padx=8, pady=8)
-        lfo, left = chrome_section(pane, "How to craft a tablet")              # 2.69.0
-        pane.add(lfo, weight=2)
-        for i, (when, what) in enumerate(MM.TABLET_FLOW, 1):
-            row = tk.Frame(left, bg=P2)
-            row.pack(fill="x", pady=(8, 0))
-            tk.Label(row, text=str(i), bg=C["accent"], fg="#10141c", font=("Segoe UI", 10, "bold"), width=2).pack(
-                side="left", anchor="n")
-            col = tk.Frame(row, bg=P2)
-            col.pack(side="left", fill="x", expand=True, padx=(8, 0))
-            tk.Label(col, text=when, bg=P2, fg=C["text"], font=("Segoe UI", 10, "bold"), anchor="w").pack(fill="x")
-            lab = tk.Label(col, text=what, bg=P2, fg=C["muted"], font=("Segoe UI", 9), anchor="w", justify="left")
-            lab.pack(fill="x")
-            lab.bind("<Configure>", lambda e, w=lab: w.config(wraplength=max(150, e.width - 4)))
+        pane.pack(fill="both", expand=True, padx=8, pady=(0, 8))
+        self.mm_ch_lfo, left = chrome_section(pane, "How to craft a tablet")
+        pane.add(self.mm_ch_lfo, weight=2)
+        self.mm_ch_steps = tk.Frame(left, bg=P2)
+        self.mm_ch_steps.pack(fill="x")
         tk.Frame(left, bg=C["line"], height=1).pack(fill="x", pady=12)
-        tk.Label(left, text="CHECK YOUR TABLET", bg=P2, fg=C["steel"], font=("Segoe UI", 9, "bold"),
-                 anchor="w").pack(fill="x")
-        tk.Label(left, text="Hover a tablet in game, press Ctrl+C, then:", bg=P2, fg=C["muted"],
-                 font=("Segoe UI", 9), anchor="w").pack(fill="x", pady=(2, 8))
-        ttk.Button(left, text="Check my tablet", style="Primary.TButton", command=self.mm_tab_check).pack(anchor="w")
-        self.mm_tab_advice = tk.Label(left, text="", bg=P2, fg=C["text"], font=("Segoe UI", 10, "bold"), anchor="w",
-                                      justify="left")
-        self.mm_tab_advice.pack(fill="x", pady=(8, 0))
+        self.mm_ch_check_lbl = tk.Label(left, text="", bg=P2, fg=C["steel"], font=("Segoe UI", 9, "bold"), anchor="w")
+        self.mm_ch_check_lbl.pack(fill="x")
+        self.mm_ch_hint = tk.Label(left, text="", bg=P2, fg=C["muted"], font=("Segoe UI", 9), anchor="w")
+        self.mm_ch_hint.pack(fill="x", pady=(2, 8))
+        self.mm_ch_btn = ttk.Button(left, text="Check my tablet", style="Primary.TButton", command=self.mm_tab_check)
+        self.mm_ch_btn.pack(anchor="w")
+        # 2.123.4 (Craft Helper phase 2): the verdict - one word with a mark, the next step, the mods, why
+        self.mm_ch_vbox = vb = tk.Frame(left, bg=C["panel"], highlightthickness=1, highlightbackground=C["line"],
+                                        padx=8, pady=8)
+        self.mm_ch_vword = tk.Label(vb, text="", bg=C["panel"], fg=C["text"], font=("Segoe UI", 12, "bold"), anchor="w")
+        self.mm_ch_vword.pack(fill="x")
+        self.mm_tab_advice = tk.Label(vb, text="", bg=C["panel"], fg=C["text"], font=("Segoe UI", 10, "bold"),
+                                      anchor="w", justify="left")
+        self.mm_tab_advice.pack(fill="x", pady=(4, 0))
+        self.mm_ch_vwhy = tk.Label(vb, text="", bg=C["panel"], fg=C["muted"], font=("Segoe UI", 9), anchor="w",
+                                   justify="left")
+        self.mm_ch_vwhy.pack(fill="x", pady=(4, 0))
+        self.mm_ch_vwhy.bind("<Configure>", lambda e: self.mm_ch_vwhy.config(wraplength=max(150, e.width - 4)))
+        self.mm_ch_price_btn = ttk.Button(vb, text="Price it", command=self.mm_ch_price)
+        self.mm_ch_price_btn.pack(anchor="w", pady=(8, 0))
+        Tooltip(self.mm_ch_price_btn, "Run your price check on this item (one trade-site search) and open Price Checks")
+        self.mm_ch_text = ""
         self.mm_tab_advice.bind("<Configure>", lambda e: self.mm_tab_advice.config(wraplength=max(150, e.width - 4)))
 
         right = tk.Frame(pane, bg=P1)
         pane.add(right, weight=3)
-        bar = tk.Frame(right, bg=P1)
-        bar.pack(fill="x", pady=(0, 8))
-        tk.Label(bar, text="Tablet", bg=P1, fg=C["muted"]).pack(side="left", padx=(0, 8))
-        self.mm_tab_type = tk.StringVar(value="All")
-        cb = ttk.Combobox(bar, textvariable=self.mm_tab_type, values=MM.TABLET_TYPES, state="readonly", width=11)
-        cb.pack(side="left")
-        cb.bind("<<ComboboxSelected>>", lambda e: (self.mm_tab_fill(), self.root.after(20, self.root.focus_set)))
-        self.mm_tab_only = tk.BooleanVar(value=True)
-        ttk.Checkbutton(bar, text="Only valuable", variable=self.mm_tab_only, command=self.mm_tab_fill).pack(
-            side="left", padx=(12, 0))
-        ttk.Button(bar, text="Copy regex (valuable)", command=self.mm_tab_copy_all).pack(side="right")
-        tk.Label(right, text="Valuable = ★ in your Mod book, or listings with it cost at least your Valuable mod "
-                             "price. Prices are what the app learned from your price checks. Double-click a mod to "
-                             "check its price on the trade site.", bg=P1, fg=C["muted"], font=("Segoe UI", 9),
-                 anchor="w", justify="left", wraplength=560).pack(fill="x", pady=(0, 8))
-        box = tk.Frame(right, bg=P1)
-        box.pack(fill="both", expand=True)
-        cols = (("star", "★", 30, "center"), ("mod", "Mod", 300, "w"), ("where", "Tablet", 90, "w"),
-                ("side", "Prefix / suffix", 90, "center"), ("price", "Learned price", 100, "center"))
+        intro = tk.Frame(right, bg=P1)
+        intro.pack(fill="x", pady=(0, 8))
+        tk.Label(intro, text="Each mod's rating, S (best) to F (ignored), and where it came from.  ⓘ", bg=P1,
+                 fg=C["muted"], font=("Segoe UI", 9), anchor="w").pack(side="left")
+        Tooltip(intro.winfo_children()[0],
+                "From: you (your Mod Book rating) > players (3+ votes on the community board) > market (items with "
+                "the mod sell clearly above that kind's middle price, across 12+ listings; this league). No prices "
+                "are shown here - they change too fast. To know what an item is worth, press your price check key "
+                "on it. Right-click a mod to rate it; double-click to search the trade site for it.")
+        # 2.125.6 (feedback: "pairs that sell together is crammed at the bottom"): the mods and the pairs share the
+        # height on a divider you drag (remembered)
+        from .style import VSplitter
+        vp = self.mm_ch_vpane = VSplitter(right, height=360, lo=120, keep=110, bg=P1,
+                                          on_set=lambda _h: self.mm_ch_split_save())
+        vp.pack(fill="both", expand=True)
+        box, low = vp.top, vp.bottom
+        self.root.after(300, self.mm_ch_split_put)
+        cols = (("tier", "Rating", 56, "center"), ("mod", "Mod", 360, "w"), ("where", "Type", 90, "w"),
+                ("side", "Prefix / suffix", 90, "center"), ("from", "From", 130, "w"))
         self.mm_tab_tree = ttk.Treeview(box, columns=[c[0] for c in cols], show="headings", selectmode="extended")
         for cid, title, w, anchor in cols:
             self.mm_tab_tree.heading(cid, text=title)
@@ -1747,91 +1775,251 @@ class MoneyMakersPage:
         self.mm_tab_tree.bind("<Double-1>", lambda e: self.mm_tab_trade())
         self.mm_tab_tree.bind("<Button-3>", self.mm_tab_menu)
         self.mm_tab_rows = {}
+        # 2.125.5 (Craft Helper phase 3): learned mod pairs - two mods that sell well together
+        ph = tk.Frame(low, bg=P1)
+        ph.pack(fill="x", pady=(8, 4))
+        tk.Label(ph, text="PAIRS THAT SELL TOGETHER", bg=P1, fg=C["steel"], font=("Segoe UI", 9, "bold")).pack(side="left")
+        pi = tk.Label(ph, text="  Learned from your price checks.  ⓘ", bg=P1, fg=C["muted"], font=("Segoe UI", 9))
+        pi.pack(side="left")
+        Tooltip(pi, "Two mods whose listings ask clearly more together than the better mod alone (at least "
+                    f"{CH.PAIR_MIN_N} listings with both, {CH.PAIR_GAIN:g}x or more), from the listings your own "
+                    "price checks fetched this league. The letter comes from how far above that kind's middle price "
+                    "they ask - no prices are shown. Hover a pair for how it was worked out. A checked item with a "
+                    "pair rated S or A counts both mods as good.")
+        pbox = tk.Frame(low, bg=P1)
+        pbox.pack(fill="both", expand=True)
+        pcols = (("tier", "Rating", 56, "center"), ("mods", "Mods", 450, "w"), ("from", "From", 170, "w"))
+        self.mm_ch_ptree = pt = ttk.Treeview(pbox, columns=[c[0] for c in pcols], show="headings", height=5,
+                                             selectmode="browse")
+        for cid, title, w, anchor in pcols:
+            pt.heading(cid, text=title)
+            pt.column(cid, width=w, minwidth=w if cid == "from" else 30, anchor=anchor, stretch=cid == "mods")
+        pt.tag_configure("good", foreground="#ffd9a8")
+        pt.tag_configure("plain", foreground=C["muted"])
+        psb = ttk.Scrollbar(pbox, orient="vertical", command=pt.yview)
+        pt.configure(yscrollcommand=psb.set)
+        psb.pack(side="right", fill="y")
+        pt.pack(side="left", fill="both", expand=True)
+        self.mm_ch_ptip = Tooltip(pt, "")
+        self.mm_ch_prow = None
+        pt.bind("<Motion>", self.mm_ch_pair_hover, add="+")
+        self.mm_ch_pempty = tk.Frame(low, bg=P1)
+        self.mm_ch_pempty_lbl = tk.Label(self.mm_ch_pempty, text="", bg=P1, fg=C["muted"], font=("Segoe UI", 9),
+                                         anchor="w", justify="left")
+        self.mm_ch_pempty_lbl.pack(side="left")
+        ttk.Button(self.mm_ch_pempty, text="Open Price Checks", style="Quiet.TButton",
+                   command=lambda: self.shell.open("pricecheck")).pack(side="left", padx=(8, 0))
+        self.mm_ch_pairs = {}
+        # 2.125.5: the data pack (kinds, steps, market numbers) - shipped, and kept up to date from GitHub
+        pk = tk.Frame(left, bg=C["panel2"])
+        pk.pack(fill="x", side="bottom", pady=(12, 0))
+        self.mm_ch_pack_lbl = tk.Label(pk, text=CH.pack_line(), bg=C["panel2"], fg=C["muted"], font=("Segoe UI", 9),
+                                       anchor="w")
+        self.mm_ch_pack_lbl.pack(side="left")
+        Tooltip(self.mm_ch_pack_lbl, "The Craft Helper's data (types, steps, how the market picks a letter) for the "
+                                     "game patch shown. It updates from GitHub on its own - one small public "
+                                     "download, nothing about you is sent.")
+        cb_ = ttk.Button(pk, text="Check for a newer one", style="Quiet.TButton",
+                         command=lambda: self.mm_ch_pack_check(True))
+        cb_.pack(side="right")
+        self.mm_ch_paint()
+        self.root.after(1500, lambda: self.mm_ch_pack_check(False))
 
-    def mm_tab_data(self):
-        """Every tablet mod -> (mod, valuable?, why, learned (median div, listings, base) or None, stat id)."""
+    def mm_ch_split_put(self):
+        """2.125.6: the mods / pairs divider where you left it (a share of the height)."""
+        vp = getattr(self, "mm_ch_vpane", None)
+        try:
+            h = vp.winfo_height()
+            if h < 100:
+                return self.root.after(500, self.mm_ch_split_put)
+            share = float(SETTINGS.get("ch_split", 0.62))
+            vp.sashpos(0, int(h * min(0.9, max(0.2, share))))
+        except (tk.TclError, AttributeError, ValueError):
+            pass
+        return None
+
+    def mm_ch_split_save(self):
+        vp = getattr(self, "mm_ch_vpane", None)
+        try:
+            h = vp.winfo_height()
+            if h >= 100:
+                SETTINGS["ch_split"] = round(vp.sashpos(0) / h, 3)
+                save_json("settings.json", SETTINGS)
+        except (tk.TclError, AttributeError):
+            pass
+
+    def mm_ch_pack_check(self, force):
+        """2.125.5: a newer Craft Helper data pack on GitHub? (at most twice a day unless asked)"""
+        from . import crafthelper as CH
+        if getattr(self, "_mm_ch_checking", False):
+            return
+        self._mm_ch_checking = True
+        if force:
+            self.mm_ch_pack_lbl.config(text="Checking GitHub…")
+        self.run_bg(lambda: CH.fetch_live(force=force), lambda res: self.mm_ch_pack_done(res, force))
+
+    def mm_ch_pack_done(self, res, force):
+        from . import crafthelper as CH
+        self._mm_ch_checking = False
+        what, info = res
+        if what != "skip":
+            save_json("settings.json", SETTINGS)
+        try:
+            if what == "new":
+                self.mm_ch_pack_lbl.config(text=f"Updated - {info}")
+                self.mm_ch_pick(CH.KINDS[self.mm_ch_kind]["label"])
+            elif what == "error" and force:
+                self.mm_ch_pack_lbl.config(text=info)
+            else:
+                self.mm_ch_pack_lbl.config(text=CH.pack_line() + ("  (up to date)" if force else ""))
+        except tk.TclError:
+            pass
+
+    def mm_ch_pair_hover(self, e):
+        pt = self.mm_ch_ptree
+        row = pt.identify_row(e.y)
+        if row == self.mm_ch_prow:
+            return
+        self.mm_ch_prow = row
+        self.mm_ch_ptip._leave()
+        pr = self.mm_ch_pairs.get(row)
+        if pr:
+            from . import crafthelper as CH
+            self.mm_ch_ptip.text = CH.pair_how(pr)
+            self.mm_ch_ptip._enter()
+
+    def mm_ch_pairs_fill(self, kind, ttype, q):
+        from . import crafthelper as CH
+        pt = self.mm_ch_ptree
+        pt.delete(*pt.get_children())
+        self.mm_ch_pairs = {}
+        names = CH.sid_names(kind)
+        for i, pr in enumerate(CH.pairs(kind)):
+            if ttype not in ("All", "") and pr["base"] not in (ttype, kind):
+                continue
+            txt = CH.pair_text(kind, pr, names)
+            if q and q not in txt.lower():
+                continue
+            iid = f"p{i}"
+            pt.insert("", "end", iid=iid, tags=("good" if pr["letter"] in CH.GOOD else "plain",),
+                      values=(pr["letter"], txt[:1].upper() + txt[1:], f"price checks · {pr['n']} listings"))
+            self.mm_ch_pairs[iid] = pr
+        if self.mm_ch_pairs:
+            self.mm_ch_pempty.pack_forget()
+        else:
+            one = CH.KINDS[kind]["one"]
+            self.mm_ch_pempty_lbl.config(
+                text=("No pairs match the search." if q else
+                      f"No pairs yet: they're learned from the {one}s your price checks look up "
+                      f"({CH.PAIR_MIN_N}+ listings with both mods)."))
+            self.mm_ch_pempty.pack(fill="x", pady=(4, 0), after=pt.master)
+
+    def mm_ch_pick(self, label):
+        from . import crafthelper as CH
+        self.mm_ch_kind = next(k for k, v in CH.KINDS.items() if v["label"] == label)
+        self.mm_tab_type.set("All")
+        self.mm_tab_type_cb.config(values=CH.KINDS[self.mm_ch_kind]["types"])
+        self.mm_tab_advice.config(text="")
+        self.mm_ch_vbox.pack_forget()
+        self.mm_ch_paint()
+        self.mm_tab_fill()
+
+    def mm_ch_paint(self):
+        """The left side for the kind shown: its craft steps and its Check button."""
+        from . import crafthelper as CH
+        K, P2 = CH.KINDS[self.mm_ch_kind], C["panel2"]
+        self.mm_ch_lfo.section_bar.set_title(f"How to craft a {K['one']}")
+        for w in self.mm_ch_steps.winfo_children():
+            w.destroy()
+        for i, (when, what) in enumerate(K["flow"], 1):
+            row = tk.Frame(self.mm_ch_steps, bg=P2)
+            row.pack(fill="x", pady=(8, 0))
+            tk.Label(row, text=str(i), bg=C["accent"], fg="#10141c", font=("Segoe UI", 10, "bold"), width=2).pack(
+                side="left", anchor="n")
+            col = tk.Frame(row, bg=P2)
+            col.pack(side="left", fill="x", expand=True, padx=(8, 0))
+            tk.Label(col, text=when, bg=P2, fg=C["text"], font=("Segoe UI", 10, "bold"), anchor="w").pack(fill="x")
+            lab = tk.Label(col, text=what, bg=P2, fg=C["muted"], font=("Segoe UI", 9), anchor="w", justify="left")
+            lab.pack(fill="x")
+            lab.bind("<Configure>", lambda e, w=lab: w.config(wraplength=max(150, e.width - 4)))
+        self.mm_ch_check_lbl.config(text=f"CHECK YOUR {K['one'].upper()}")
+        self.mm_ch_hint.config(text=f"Hover a {K['one']} in game, press Ctrl+C, then:")
+        self.mm_ch_btn.config(text=f"Check my {K['one']}")
+        if self.mm_ch_seg.get() != K["label"]:
+            self.mm_ch_seg.pick(K["label"], notify=False)
+
+    def mm_tab_data(self, kind=None, ttype="All"):
+        """Every mod of the kind -> (mod, good (S / A)?, (letter, source, count), stat id)."""
         from . import regex as R
-        from .market import MARKET
+        from . import crafthelper as CH
+        kind = kind or getattr(self, "mm_ch_kind", "tablet")
         R.load()
-        try:
-            stats = MARKET.cached_stats()
-        except Exception:
-            stats = {}
-        by_sid = {}
-        for (base, sid), st in stats.items():
-            if "Tablet" in str(base) and st.get("n", 0) >= 3 and st.get("med") is not None:
-                if sid not in by_sid or st["med"] > by_sid[sid][0]:
-                    by_sid[sid] = (st["med"], st["n"], base)
-        try:
-            good = float(SETTINGS.get("good_div", 0.5) or 0.5)
-        except (TypeError, ValueError):
-            good = 0.5
+        pooled = CH._pooled()
         out = []
-        for m in R.mods("tablet"):
-            imp, why = self.rx_worth(m, "tablet")
+        for m in R.mods(kind):
             sid = MM.stat_id(m["line"])
-            learned = by_sid.get(sid) if sid else None
-            valuable = imp == "high" or bool(learned and learned[0] >= good)
-            if imp == "ignore":
-                valuable = False
-            out.append((m, valuable, why if imp == "high" else "learned price" if valuable else "", learned, sid))
-        out.sort(key=lambda r: (not r[1], -(r[3][0] if r[3] else -1), r[0]["text"]))
+            r = CH.rating(kind, m, ttype, pooled)
+            out.append((m, r[0] in CH.GOOD, r, sid))
+        out.sort(key=lambda r: (CH._rank(r[2][0]), r[0]["text"]))
         return out
 
     def mm_tab_fill(self):
+        from . import crafthelper as CH
         tv = self.mm_tab_tree
         tv.delete(*tv.get_children())
-        kind, only = self.mm_tab_type.get(), self.mm_tab_only.get()
+        kind, ttype, only = self.mm_ch_kind, self.mm_tab_type.get(), self.mm_tab_only.get()
+        q = self.mm_tab_q.get().strip().lower()
         self.mm_tab_rows = {}
-        for m, valuable, why, learned, sid in self.mm_tab_data():
-            if kind != "All" and kind not in m["tags"] and "Any" not in m["tags"]:
+        for m, good, r, sid in self.mm_tab_data(kind, ttype):
+            if ttype != "All" and ttype not in m["tags"] and "Any" not in m["tags"]:
                 continue
-            if only and not valuable:
+            if only and not good:
+                continue
+            if q and q not in m["text"].lower():
                 continue
             txt = m["text"]
             where = ", ".join(t for t in m["tags"] if t != "Any") or "Any"
-            price = f"{learned[0]:.2g} div ({learned[1]})" if learned else "-"
-            tv.insert("", "end", iid=m["id"], tags=("good" if valuable else "plain",),
-                      values=("★" if valuable else "", txt[:1].upper() + txt[1:], where, m.get("side", ""), price))
-            self.mm_tab_rows[m["id"]] = (m, valuable, why, learned, sid)
-        if not self.mm_tab_rows and only:
-            tv.insert("", "end", iid="_none", values=("", "No valuable tablet mods yet: rate some ★ in Regex "
-                                                          "(right-click) or the Mod book, or price some tablets.",
-                                                      "", "", ""), tags=("plain",))
-
-    def mm_tab_regex(self, ids):
-        from . import regex as R
-        s, _notes = R.build("tablet", [(i, None) for i in ids], [], False, {})
-        return s
-
-    def mm_tab_copy(self, ids, what):
-        s = self.mm_tab_regex(ids) if ids else ""
-        if not s:
-            self._say("No mods to search for.", 5)
-            return None
-        self.root.clipboard_clear()
-        self.root.clipboard_append(s)
-        self.own_clip = s
-        self._say(f"Copied the stash search for {what}. In game: Ctrl+F, Ctrl+V.", 6)
-        return s
-
-    def mm_tab_copy_all(self):
-        ids = [i for i, r in self.mm_tab_rows.items() if r[1]]
-        return self.mm_tab_copy(ids, f"{len(ids)} valuable tablet mods")
+            tv.insert("", "end", iid=m["id"], tags=("good" if good else "plain",),
+                      values=(r[0], txt[:1].upper() + txt[1:], where, m.get("side", ""), CH.source_text(r[1], r[2])))
+            self.mm_tab_rows[m["id"]] = (m, good, r, sid)
+        try:
+            self.mm_ch_pairs_fill(kind, ttype, q)
+        except Exception:
+            self.log_error("the Craft Helper's pairs")
+        if not self.mm_tab_rows:
+            msg = (f"No {CH.KINDS[kind]['one']} mods rated S or A yet: right-click a mod to rate it, or turn off Only "
+                   "S and A." if only and not q else "No mods match the search.")
+            tv.insert("", "end", iid="_none", values=("", msg, "", "", ""), tags=("plain",))
 
     def mm_tab_trade(self, mid=None):
+        """Double-click: the trade site's search for items with this mod - you start it, in your browser."""
         sel = [mid] if mid else [i for i in self.mm_tab_tree.selection() if i in self.mm_tab_rows]
         if not sel:
             return None
-        m, _v, _w, learned, sid = self.mm_tab_rows[sel[0]]
+        m, _g, _r, sid = self.mm_tab_rows[sel[0]]
         if not sid:
             self._say("The trade site's name for this mod isn't known yet (it loads with the first price check).", 8)
             return None
-        url = MM.trade_link(SETTINGS.get("league"), sid, learned[2] if learned else None)
+        url = MM.trade_link(SETTINGS.get("league"), sid, None)
         webbrowser.open(url)
         return url
 
+    def mm_tab_rate(self, ids, tier):
+        """Rate mods from here: the same rating as the Mod Book (yours wins over players and the market)."""
+        from . import ratemods as RM
+        from .mods import norm, rule_key, TIER_F
+        keys = sorted({rule_key(self.mm_ch_kind, norm(l)) for i in ids for l in
+                       (self.mm_tab_rows[i][0].get("lines") or [self.mm_tab_rows[i][0]["line"]])})
+        RM.apply(keys, None if tier is None else "ignore" if tier == TIER_F else tier)
+        try:
+            self.refresh_rules()
+        except Exception:
+            buglog.caught()
+        self.mm_tab_fill()
+        return keys
+
     def mm_tab_menu(self, e):
+        from .mods import SHOWN_TIERS
         row = self.mm_tab_tree.identify_row(e.y)
         if row not in self.mm_tab_rows:
             return
@@ -1839,28 +2027,68 @@ class MoneyMakersPage:
             self.mm_tab_tree.selection_set(row)
         sel = [i for i in self.mm_tab_tree.selection() if i in self.mm_tab_rows]
         m = tk.Menu(self.root, tearoff=0, bg=C["panel2"], fg=C["text"], activebackground="#2c4a84")
-        m.add_command(label="Check price on the trade site", command=lambda: self.mm_tab_trade(row))
-        m.add_command(label=f"Copy regex ({len(sel)} mod{'s' if len(sel) > 1 else ''})",
-                      command=lambda: self.mm_tab_copy(sel, f"{len(sel)} mod{'s' if len(sel) > 1 else ''}"))
+        for t in SHOWN_TIERS:
+            m.add_command(label=f"Rate {t}" + ("  (ignore)" if t == "F" else ""), command=lambda t_=t: self.mm_tab_rate(sel, t_))
+        m.add_command(label="Clear my rating", command=lambda: self.mm_tab_rate(sel, None))
+        m.add_separator()
+        m.add_command(label="Search the trade site for it", command=lambda: self.mm_tab_trade(row))
         m.tk_popup(e.x_root, e.y_root)
 
     def mm_tab_check(self, text=None):
-        """Read the copied tablet and say what to do next (the crafting flow on the left)."""
+        """Read the copied tablet / jewel and say what to do next (the steps on the left). Good = rated S or A."""
         from . import regex as R
+        from . import crafthelper as CH
         from .clipboard import read_clipboard_text
         if text is None:
             text = read_clipboard_text() or ""
-        if "Tablet" not in text or not text.lstrip().startswith("Item Class:"):
-            self.mm_tab_advice.config(text="The clipboard has no tablet: hover one in game, press Ctrl+C, then try "
-                                           "again.", fg=C["red"])
+        kind = self.mm_ch_kind
+        for k, K in CH.KINDS.items():                      # (a jewel copied while Tablets shows: switch to Jewels)
+            if f"Item Class: {K['item_class']}" in text or (k == "jewel" and "Item Class: Jewels" in text):
+                if k != kind:
+                    self.mm_ch_pick(K["label"])
+                kind = k
+                break
+        else:
+            one = CH.KINDS[kind]["one"]
+            self.mm_ch_vbox.pack(fill="x", pady=(8, 0))
+            self.mm_ch_vword.config(text="✕ No " + one + " copied", fg=C["red"])
+            self.mm_tab_advice.config(text=f"The clipboard has no {one}: hover one in game, press Ctrl+C, then try "
+                                           "again.", fg=C["text"])
+            self.mm_ch_vwhy.config(text="")
+            self.mm_ch_price_btn.pack_forget()
+            self.mm_ch_text = ""
             return None
         R.load()
-        found = R.matching_mods("tablet", text)
-        worth = {m["id"]: v for m, v, _w, _l, _s in self.mm_tab_data()}
-        good = [i for i in found if worth.get(i)]
-        rarity = MM.tablet_rarity(text)
-        advice = MM.tablet_advice(rarity, len(found), len(good))
-        names = {m["id"]: m["text"] for m in R.mods("tablet")}
-        lines = [advice, ""] + [("★ " if i in good else "· ") + names.get(i, i) for i in found]
+        names = {m["id"]: m["text"] for m in R.mods(kind)}
+        found = CH.item_mods(kind, text)                # (whole lines - the stash-search tokens over-matched)
+        rated = {m["id"]: r for m, _g, r, _s in self.mm_tab_data(kind)}
+        letters = [rated.get(i, ("-",))[0] for i in found]
+        # 2.125.5: a learned pair rated better than its mods lifts both to the pair's letter
+        by = R.by_id(kind)
+        sid_of = {i: CH._sid(by[i]["line"]) for i in found if i in by}
+        pl = CH.item_pairs(kind, found)
+        for pr in pl:
+            for n_, i in enumerate(found):
+                if sid_of.get(i) in (pr["a"], pr["b"]) and CH._rank(pr["letter"]) < CH._rank(letters[n_]):
+                    letters[n_] = pr["letter"]
+        pnames = CH.sid_names(kind)
+        v = CH.verdict(kind, text, letters,
+                       pair_lines=[f"{CH.pair_text(kind, pr, pnames)} sell as a pair (rated {pr['letter']})"
+                                   for pr in pl[:2]])
+        advice = v["next"]
+        lines = [advice, ""] + [f"{l}  " + names.get(i, i) for l, i in zip(letters, found)]
+        self.mm_ch_vbox.pack(fill="x", pady=(8, 0))
+        self.mm_ch_vword.config(text=f"{v['mark']} {v['word']}", fg=C[v["tone"]])
         self.mm_tab_advice.config(text="\n".join(lines), fg=C["text"])
+        self.mm_ch_vwhy.config(text=v["why"])
+        self.mm_ch_text, self.mm_ch_verdict = text, v["key"]
+        self.mm_ch_price_btn.pack(anchor="w", pady=(8, 0))
         return advice
+
+    def mm_ch_price(self):
+        """Price it: your own price check on the item just checked (the helper never searches by itself)."""
+        if not self.mm_ch_text:
+            return None
+        rid = self.pc_take(self.mm_ch_text)
+        self.shell.open("pricecheck")
+        return rid

@@ -3,7 +3,9 @@ Mixed into App. Data and matching are in gamesearch.py."""
 import tkinter as tk
 from tkinter import ttk
 
+from . import buglog
 from . import gamesearch
+from .config import SETTINGS, save_json
 from .style import C, FONT_TITLE, SegBar
 from .chrome import SectionBar, Viewport
 
@@ -19,7 +21,7 @@ class SearchPage:
         d = gamesearch.load()
         head = tk.Frame(top, bg=P1)
         head.pack(fill="x")
-        tk.Label(head, text="Game search", bg=P1, fg=C["text"], font=(FONT_TITLE, 16, "bold")).pack(side="left")
+        tk.Label(head, text="Game Search", bg=P1, fg=C["text"], font=(FONT_TITLE, 16, "bold")).pack(side="left")
         tk.Label(head, text=f"game data {d['version']} · {len(d['rows']):,} entries", bg=P1, fg=C["muted"],
                  font=("Consolas", 9)).pack(side="left", padx=8, pady=(8, 0))
         row = tk.Frame(top, bg=P1)
@@ -30,8 +32,6 @@ class SearchPage:
                                  highlightcolor=C["accent"], font=("Segoe UI", 12))
         self.gs_entry.pack(side="left", fill="x", expand=True, ipady=8)
         ttk.Button(row, text="Clear", command=self.gs_clear).pack(side="left", padx=(8, 0))
-        tk.Label(top, text='Every word must match.  -word leaves things out.  "exact phrase" for phrases.', bg=P1,
-                 fg=C["muted"], font=("Segoe UI", 9), anchor="w").pack(fill="x", pady=(8, 0))
         self.gs_chips = tk.Frame(top, bg=P1, height=30)
         self.gs_chips.pack(fill="x", pady=(8, 0))
         self.gs_chips.bind("<Configure>", lambda e: self._gs_flow())
@@ -53,7 +53,7 @@ class SearchPage:
         t.tag_configure("link", foreground="#6ea8ff", underline=True)
         t.tag_configure("txt", lmargin1=0, lmargin2=0, spacing1=2)
         t.tag_configure("kw", foreground=C["steel"], font=("Segoe UI", 9, "italic"))
-        t.tag_configure("mark", background="#6a5418", foreground="#ffffff")
+        t.tag_configure("mark", background=C["accent"], foreground=C["bg"])
         t.tag_configure("sep", font=("Segoe UI", 9))
         t.tag_configure("more", foreground=C["accent"], font=("Segoe UI", 10, "bold"), underline=True)
         t.tag_configure("empty", foreground=C["muted"], font=("Segoe UI", 10), justify="center")
@@ -65,8 +65,17 @@ class SearchPage:
         t.tag_bind("more", "<Button-1>", lambda e: self.gs_more())
         t.tag_bind("more", "<Enter>", lambda e: t.config(cursor="hand2"))
         t.tag_bind("more", "<Leave>", lambda e: t.config(cursor="arrow"))
+        t.tag_configure("h2", font=(FONT_TITLE, 12, "bold"), foreground=C["accent"], spacing1=10, spacing3=4)
+        t.tag_configure("try", font=("Consolas", 10, "bold"), foreground=C["text"], background=C["panel"])
+        t.tag_configure("why", foreground=C["muted"])
+        t.tag_configure("clear", foreground=C["accent"], font=("Segoe UI", 9), underline=True)
+        for tg in ("try", "clear"):
+            t.tag_bind(tg, "<Enter>", lambda e: t.config(cursor="hand2"))
+            t.tag_bind(tg, "<Leave>", lambda e: t.config(cursor="arrow"))
+        t.tag_bind("clear", "<Button-1>", lambda e: self.gs_recent_clear())
         t.config(state="disabled")
         self.gs_text = t
+        self.gs_save_job = None
         # 2.66.0: Anoints is its own page, listed under Game search in the sidebar (Game search ↳ Anoints)
         self.gs_tabs = SegBar(top, ["Search", "Anoints"], command=lambda v: self.gs_tab_changed())
         self.gs_tabs.pack(anchor="w")
@@ -80,7 +89,8 @@ class SearchPage:
         """Right-click in a text box: 'Look up ... in Game search' (the selected words, or the line under the mouse)."""
         def menu(e):
             from .config import SETTINGS
-            if not SETTINGS.get("labs"):
+            from . import features as FEAT
+            if not FEAT.on("search"):                        # 2.131.0: Game Search is a beta feature
                 return
             try:
                 txt = widget.get("sel.first", "sel.last")
@@ -93,7 +103,7 @@ class SearchPage:
             if not txt:
                 return
             m = tk.Menu(widget, tearoff=0, bg=C["panel2"], fg=C["text"], activebackground="#2c4a84")
-            m.add_command(label=f"Look up “{txt[:40]}” in Game search", command=lambda: self.gs_lookup(txt))
+            m.add_command(label=f"Look up “{txt[:40]}” in Game Search", command=lambda: self.gs_lookup(txt))
             m.tk_popup(e.x_root, e.y_root)
         widget.bind("<Button-3>", menu, add="+")
 
@@ -107,6 +117,56 @@ class SearchPage:
         self.gs_job = None
         self.gs_shown = PAGE
         self.gs_render()
+        if getattr(self, "gs_save_job", None):
+            self.root.after_cancel(self.gs_save_job)
+        self.gs_save_job = self.root.after(2000, self.gs_recent_add)
+
+    # ---- P7 (2.108.0): Try examples and your recent searches on the empty page
+    TRY = (("spirit", "every word must match"), ("cold -support", "-word leaves things out"),
+           ('"cast speed"', "quotes for a phrase"), ("omen", "or pick a category above to see all of it"))
+
+    def gs_recent(self):
+        r = SETTINGS.get("gs_recent")
+        return [x for x in r if isinstance(x, str)][:8] if isinstance(r, list) else []
+
+    def gs_recent_add(self, q=None):
+        self.gs_save_job = None
+        q = " ".join((q if q is not None else self.gs_q.get()).split())
+        if len(q) < 2:
+            return
+        r = [x for x in self.gs_recent() if x.lower() != q.lower()]
+        if r and (q.lower().startswith(r[0].lower()) or r[0].lower().startswith(q.lower())):
+            r = r[1:]                                      # (the same search, typed on)
+        SETTINGS["gs_recent"] = [q] + r[:7]
+        save_json("settings.json", SETTINGS)
+
+    def gs_recent_clear(self):
+        SETTINGS["gs_recent"] = []
+        save_json("settings.json", SETTINGS)
+        self.gs_render()
+
+    def gs_try(self, q):
+        self.gs_q.set(q)
+        self._gs_go()
+
+    def _gs_empty_page(self):
+        t = self.gs_text
+        t.insert("end", "Try\n", "h2")
+        for i, (q, why) in enumerate(self.TRY):
+            tg = f"try{i}"
+            t.insert("end", f" {q} ", ("try", tg))
+            t.insert("end", f"   {why}\n", ("why",))
+            t.tag_bind(tg, "<Button-1>", lambda e, q=q: self.gs_try(q))
+        rec = self.gs_recent()
+        if rec:
+            t.insert("end", "Your recent searches   ", "h2")
+            t.insert("end", "Clear", ("clear",))
+            t.insert("end", "\n")
+            for i, q in enumerate(rec):
+                tg = f"rec{i}"
+                t.insert("end", f" {q} ", ("try", tg))
+                t.insert("end", "\n")
+                t.tag_bind(tg, "<Button-1>", lambda e, q=q: self.gs_try(q))
 
     def gs_clear(self):
         self.gs_q.set("")
@@ -177,8 +237,8 @@ class SearchPage:
         if d.get("error"):
             t.insert("end", "\n" + d["error"], "empty")
         elif not has and not self.gs_active:
-            self.gs_summary.config(text=f"{len(d['rows']):,} entries ready. Type a word to search all of them at once, "
-                                        "or pick a category to see everything in it.")
+            self.gs_summary.config(text="")
+            self._gs_empty_page()
         else:
             if has:
                 self.gs_summary.config(text=f"{len(lst):,} result{'s' if len(lst) != 1 else ''}"
@@ -314,7 +374,7 @@ class SearchPage:
             try:
                 WPRICES.ensure_types(lg, ("Delirium",))
             except Exception:
-                pass
+                buglog.caught()
             self.ui_q.put(("search_prices",))
         threading.Thread(target=work, daemon=True).start()
 

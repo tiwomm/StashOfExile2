@@ -4,8 +4,8 @@ the desecration window, compare them against tier database and show the tier ...
 How it works:
   * Client.txt says you entered The Well of Souls (area Abyss_Hub) -> the helper is on while you're there (no
     always-on watcher; feedback). A small notice over the game says so.
-  * While there, a light look at where the window opens (screen centre, or the space left of the inventory): its
-    title plate is the warm parchment colour. Only then is the option box read (Windows' own text reader).
+  * While there, a light look at where the window opens (screen center, or the space left of the inventory): its
+    title plate is the warm parchment color. Only then is the option box read (Windows' own text reader).
   * Each option -> its wording with the numbers taken out -> tierdata.json (built by tools/build_tierdata.py from
     the game data, RePoE): every tier of that mod per item type, with its value ranges. The item type comes from
     the options themselves (Movement Speed only rolls on boots ...) and from the item's picture in the slot (matched
@@ -23,13 +23,19 @@ from .config import APP_DIR, RESOURCE_DIR, P
 
 FILE = "tierdata.json"
 AREAS = ("Abyss_Hub",)                    # The Well of Souls (the hub with the Well; the pinnacle arena shares the name)
+WELL_NAMES = ("the well of souls", "well of souls")     # 2.125.7: the scene's name, as the Session tracker shows it
+
+
+def is_well_name(name):
+    """The game's scene name is The Well of Souls (2.125.7: a new area id still wakes the helper)."""
+    return str(name or "").strip().lower() in WELL_NAMES
 LORDS = ("kurgal_mod", "amanamu_mod", "ulaman_mod")
 FP = 16                                   # item-art fingerprint size (FP x FP gray + mask)
 
-# Where the window is, in game heights (measured at 2560x1440, the same at any 16:9 size): the option box's centre is
-# the screen's centre, or the centre of the space left of the open inventory (INV wide).
+# Where the window is, in game heights (measured at 2560x1440, the same at any 16:9 size): the option box's center is
+# the screen's center, or the center of the space left of the open inventory (INV wide).
 INV = 0.613
-TITLE = (-0.095, 0.188, 0.095, 0.222)     # the title plate, around the centre x (x0, y0, x1, y1)
+TITLE = (-0.095, 0.188, 0.095, 0.222)     # the title plate, around the center x (x0, y0, x1, y1)
 BOX = (-0.24, 0.452, 0.24, 0.682)         # the three options
 SLOT = (-0.055, 0.236, 0.055, 0.441)      # the item's picture
 ROWS = 3
@@ -105,7 +111,10 @@ def tiers_for(tpl, tags):
     """[(entry, tier, of)] for this template on an item with these tags. Entries: {g, k, l, r, s, a}."""
     out = []
     by_group = {}
+    heart = HEART_TAG in tags                         # 2.130.3: a Heart of the Well rolls only its own mods
     for e in data()["mods"].get(tpl) or []:
+        if heart and not e.get("h"):
+            continue
         if weight(e["s"], tags) > 0:
             by_group.setdefault(e["g"], []).append(e)
     for g, es in by_group.items():
@@ -122,11 +131,30 @@ def fits(e, vals):
     return all(lo - 0.05 <= v[0] <= hi + 0.05 for v, (lo, hi) in zip(vals, rs))
 
 
+HEART_TAG = "heart_unique_jewel_prefix"
+
+
+def heart_base():
+    return next((b for b in data()["bases"] if HEART_TAG in b["t"]), None)
+
+
+def heart_fits(texts):
+    """2.130.3: every option is one of the Heart of the Well's own mods, at a value it can roll."""
+    hb = heart_base()
+    if hb is None or not any(texts):
+        return False
+    rs = [rate(t, [hb]) for t in texts if t]
+    return all(r and r.get("tier") is not None for r in rs)
+
+
 def classes_for(tpls):
-    """Item classes (and their bases' tag sets) on which every one of these options can roll."""
+    """Item classes (and their bases' tag sets) on which every one of these options can roll (2.130.3: not the Heart
+    of the Well - heart_fits decides that one)."""
     out = {}
     for b in data()["bases"]:
         tags = set(b["t"])
+        if HEART_TAG in tags:
+            continue
         if all(any(weight(e["s"], tags) > 0 for e in data()["mods"].get(t) or []) for t in tpls if t):
             out.setdefault(b["c"], []).append(b)
     return out
@@ -177,7 +205,7 @@ def rate(text, bases):
     if vals and lo_r is not None and hi_r != lo_r:
         roll = max(0.0, min(1.0, (vals[0][0] - lo_r) / (hi_r - lo_r)))
     return {"tpl": tpl, "tier": tier, "tier_hi": hi, "of": max(r[2] for r in res), "abyss": bool(e.get("a")),
-            "range": (lo_r, hi_r), "roll": roll}
+            "heart": bool(e.get("h")), "range": (lo_r, hi_r), "roll": roll}
 
 
 # ================================================================ the item's picture
@@ -268,14 +296,14 @@ def match_art(img, candidates):
 
 # ================================================================ the window on screen
 def centre_xs(rect):
-    """Where the window's centre can be (pixels, game-relative): the screen's centre (inventory closed) and the
-    centre of the space left of the inventory."""
+    """Where the window's center can be (pixels, game-relative): the screen's center (inventory closed) and the
+    center of the space left of the inventory."""
     w, h = rect[2] - rect[0], rect[3] - rect[1]
     return [w / 2, (w - INV * h) / 2]
 
 
 def part(rect, cx, box):
-    """A part of the window (in game heights around the centre x) -> screen pixels (l, t, r, b)."""
+    """A part of the window (in game heights around the center x) -> screen pixels (l, t, r, b)."""
     h = rect[3] - rect[1]
     return (int(rect[0] + cx + box[0] * h), int(rect[1] + box[1] * h), int(rect[0] + cx + box[2] * h),
             int(rect[1] + box[3] * h))
@@ -308,5 +336,6 @@ def label(r):
     if r.get("abyss"):
         lo, hi = r["range"]
         fmt = (lambda v: f"{v:g}")
-        return f"Abyss  {fmt(lo)}–{fmt(hi)}" + (f"  ·  {round(r['roll'] * 100)}%" if r.get("roll") is not None else "")
+        what = "Heart" if r.get("heart") else "Abyss"            # 2.130.3: a Heart of the Well's own mod
+        return f"{what}  {fmt(lo)}–{fmt(hi)}" + (f"  ·  {round(r['roll'] * 100)}%" if r.get("roll") is not None else "")
     return f"T{r['tier']}" if r["tier"] == r["tier_hi"] else f"T{r['tier']}–{r['tier_hi']}"   # 2.81.1: no "of N"

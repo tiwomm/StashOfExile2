@@ -3,8 +3,11 @@
 Part of StashOfExile2. Split out of the single-file app in 1.37 (see the launcher's VERSION HISTORY)."""
 
 import sys
+import re
 import tkinter as tk
 from tkinter import ttk
+
+from . import buglog
 
 
 # ------------------------------------------------------------------ look and feel
@@ -28,7 +31,7 @@ SPACE = (4, 8, 12, 16, 24)            # padding / gaps; 0-2 are allowed too, for
 XS, S_, M, L, XL = SPACE
 SMALL, BODY, HEAD, TITLE = 9, 10, 12, 16     # the four text sizes: notes / chips, normal, section heads, window titles
 DISPLAY = (18, 20, 22, 28)            # not text: icon glyphs and the big numbers (timer, totals)
-ROLE = {                              # colour roles -> which C colour plays them
+ROLE = {                              # color roles -> which C color plays them
     "surface": "bg", "surface_raised": "panel", "surface_high": "panel2", "border": "line",
     "text": "text", "text_muted": "muted", "primary": "accent", "money": "good",
     "success": "green", "danger": "red", "info": "blue", "selected": "sel",
@@ -108,43 +111,74 @@ class Plate(tk.Canvas):
 _SWITCH = {}
 
 
-def _switch_img(root, on, hover=False, disabled=False, w=34, h=18, gap=8):
-    """One picture of the switch: a rounded track (accent when on), a round knob (right when on). Drawn 4x and scaled
-    down, so it's smooth. Pillow; without it a plain Tk drawing."""
-    # 2.62.0: straight from the running theme's palette (C) - these go into a picture, not through Tk's colors
-    track = C["accent"] if on else C["line"]
-    if hover and not disabled:
-        track = mix(C["accent"], "#ffffff", 0.25) if on else C["gold_dim"]
-    knob = "#ffffff" if on else C["steel"]
+_MONO = {}
+
+
+def _mono_font(size):
+    """A bold monospace font for ON / OFF (Consolas on Windows, DejaVu Sans Mono on Linux), else Pillow's own."""
+    if size in _MONO:
+        return _MONO[size]
+    from PIL import ImageFont
+    f = None
+    for name in ("consolab.ttf", "consola.ttf", "DejaVuSansMono-Bold.ttf", "LiberationMono-Bold.ttf",
+                 "/usr/share/fonts/truetype/dejavu/DejaVuSansMono-Bold.ttf"):
+        try:
+            f = ImageFont.truetype(name, size)
+            break
+        except Exception:
+            continue
+    if f is None:
+        try:
+            f = ImageFont.load_default(size=size)
+        except Exception:
+            f = ImageFont.load_default()
+    _MONO[size] = f
+    return f
+
+
+def _switch_img(root, on, hover=False, disabled=False, w=68, h=24, gap=8):
+    """P2.5 (2.107.0, picked: B - segmented): one picture of the switch - a 68 x 24 box split in two, ON | OFF; the
+    chosen half is lit (ON: the accent; OFF: a raised face). Straight edges, drawn 1:1 so they stay crisp; the
+    words in a monospace font. Pillow; without it a plain Tk drawing."""
+    acc, sunk = C["accent"], C.get("odd") or C["panel2"]
+    edge = mix(C["line"], C["text"], 0.18) if not hover or disabled else acc
+    off_face = mix(sunk, C["text"], 0.28)
+    on_text = text_on(acc)
+    words = (("ON", acc if on else sunk, on_text if on else C["muted"]),
+             ("OFF", sunk if on else off_face, C["muted"] if on else C["text"]))
     alpha = 110 if disabled else 255
     try:
         from PIL import Image, ImageDraw, ImageTk
-        k = 4
-        im = Image.new("RGBA", ((w + gap) * k, h * k), (0, 0, 0, 0))
-        d = ImageDraw.Draw(im)
 
         def rgba(c):
             c = c.lstrip("#")
             return tuple(int(c[i:i + 2], 16) for i in (0, 2, 4)) + (alpha,)
-        d.rounded_rectangle((0, 0, w * k - 1, h * k - 1), radius=h * k // 2, fill=rgba(track))
-        r = (h - 6) * k // 2
-        cx = (w - h // 2) * k if on else (h // 2) * k
-        cy = h * k // 2
-        d.ellipse((cx - r, cy - r, cx + r, cy + r), fill=rgba(knob))
-        im = im.resize((w + gap, h), Image.LANCZOS)
+        im = Image.new("RGBA", (w + gap, h), (0, 0, 0, 0))
+        d = ImageDraw.Draw(im)
+        half = w // 2
+        f = _mono_font(10)
+        for i, (word, bg, fg) in enumerate(words):
+            x0 = i * half
+            d.rectangle((x0, 0, x0 + half - (0 if i else 1), h - 1), fill=rgba(bg))
+            try:
+                l, t_, r, b = d.textbbox((0, 0), word, font=f)
+                tw, th = r - l, b - t_
+                d.text((x0 + (half - tw) // 2 - l, (h - th) // 2 - t_), word, font=f, fill=rgba(fg))
+            except Exception:
+                d.text((x0 + 6, 6), word, fill=rgba(fg))
+        d.rectangle((0, 0, w - 1, h - 1), outline=rgba(edge))
         return ImageTk.PhotoImage(im, master=root)
     except Exception:
         img = tk.PhotoImage(master=root, width=w + gap, height=h)
-        img.put(track, to=(h // 2, 2, w - h // 2, h - 2))
-        x0 = w - h + 3 if on else 3
-        img.put(knob, to=(x0, 3, x0 + h - 6, h - 3))
+        img.put(words[0][1], to=(0, 0, w // 2, h))
+        img.put(words[1][1], to=(w // 2, 0, w, h))
         return img
 
 
 def switches(root, s):
     """2.49.0 (feedback: "anywhere there's a checkbox... a modern slider in its place"): every ttk.Checkbutton
     (TCheckbutton and its Bar. / Mod. styles) shows a switch instead of a tick box. Same widgets, same variables."""
-    name = "Switch.indicator.%s" % (C["accent"] + C["line"] + C["gold_dim"] + C["steel"]).replace("#", "")
+    name = "Switch2.indicator.%s" % (C["accent"] + C["line"] + C["text"] + C["panel2"]).replace("#", "")
     if (id(root), name) in _SWITCH:           # 2.62.0: this look's switch exists - keep ITS pictures (making new
         imgs = None                           # ones here freed the old ones: switches went blank after a swap back)
     else:
@@ -182,7 +216,7 @@ def _fills_x(w):
         if mgr == "place":
             return bool(w.place_info().get("relwidth"))
     except Exception:
-        pass
+        buglog.caught()
     return False
 
 
@@ -206,7 +240,7 @@ def _rewrap(e):
         try:
             w.configure(wraplength=new)
         except Exception:
-            pass
+            buglog.caught()
 
 
 def center_over(win, parent):
@@ -226,6 +260,19 @@ def center_over(win, parent):
     return x, y
 
 
+def over_app(win, parent):
+    """2.114.3 (feedback: the Scan stash check window came up on the wrong screen - "it should always appear over the
+    app"): center a window over `parent` (the app window in front) on its monitor once its content is built."""
+    def go():
+        try:
+            if win.winfo_exists():
+                center_over(win, parent)
+        except tk.TclError:
+            pass
+    win.after_idle(go)
+    return win
+
+
 def _place_dialog(w, parent=None):
     """tkinter.simpledialog's own placement kept dialogs inside the MAIN monitor (it clamps to winfo_vroot*, which
     on Windows is the main monitor) - so on two screens they opened on the other one. Over the app instead."""
@@ -236,16 +283,56 @@ def _place_dialog(w, parent=None):
     w.wm_deiconify()
 
 
+LOOP_LIMIT = 150                  # one widget resized this many times within a second = stuck in a layout loop
+_LW = {"t": 0.0, "n": {}, "told": False, "size": {}}
+
+
+def _layout_watch(e):
+    """2.117.1: a widget resized LOOP_LIMIT times within a second is stuck laying itself out again and again (two
+    parts that each resize when the other does - how a theme's font sizes can freeze the app). The first one is
+    written to the app's log once a run: the widget's place in the window and its kind - no text from it."""
+    if _LW["told"]:
+        return
+    try:
+        import time as _t
+        now = _t.monotonic()
+        if now - _LW["t"] > 1.0:
+            _LW["t"], _LW["n"] = now, {}
+        k = str(e.widget)
+        size = (e.width, e.height)                   # 2.124.1: a size change only - dragging a window moves it on
+        if _LW["size"].get(k) == size:               # every mouse step, and that isn't a loop
+            return
+        _LW["size"][k] = size
+        n = _LW["n"][k] = _LW["n"].get(k, 0) + 1
+        if n < LOOP_LIMIT:
+            return
+        _LW["told"] = True
+        kinds, w = [], e.widget
+        while isinstance(w, tk.Misc) and len(kinds) < 8:
+            try:
+                kinds.append(w.winfo_class())
+            except tk.TclError:
+                break
+            w = w.master
+        buglog.record("freeze", "layout loop: a part of a window keeps resizing",
+                      detail=f"{k}\n  kinds: {' < '.join(kinds)}\n  size now: {e.width}x{e.height}\n"
+                             f"  theme: {getattr(getattr(_themes.ST, 'theme', None), 'id', '?')}")
+    except Exception:
+        buglog.caught()
+
+
 def responsive(root):
     """Once, at start: every wrapped Label / ttk Label in the app re-wraps to its width (see _rewrap); 2.98.3: the
-    simple question dialogs (askstring / askinteger) open over the app, on its monitor."""
+    simple question dialogs (askstring / askinteger) open over the app, on its monitor. 2.117.1: a layout loop is
+    logged (_layout_watch)."""
     for cls in ("Label", "TLabel"):
         root.bind_class(cls, "<Configure>", _rewrap, add="+")
+    root.bind_all("<Configure>", _layout_watch, add="+")
     try:
         import tkinter.simpledialog as _sd
         _sd._place_window = _place_dialog
     except Exception:
-        pass
+        buglog.caught()
 
 
 def fit(widget, fn, min_delta=12, delay=150):
@@ -264,86 +351,26 @@ def fit(widget, fn, min_delta=12, delay=150):
             try:
                 widget.after_cancel(st["after"])
             except Exception:
-                pass
+                buglog.caught()
 
         def go():
             st["after"] = None
             try:
                 fn()
             except Exception:
-                pass
+                buglog.caught()
         st["after"] = widget.after(delay, go)
     widget.bind("<Configure>", cfg, add="+")
     return st
 
 
-class Flow(tk.Frame):
-    """2.98.0: a toolbar that wraps. Children go left to right (flow.add(w, gap=8)); when the row runs out of room
-    the next one starts a new line, so nothing is cut off in a narrow window. right=True keeps a child at the end of
-    the first line while there's room (it wraps like the rest when there isn't)."""
-
-    def __init__(self, parent, gap=8, vgap=6, **kw):
-        kw.setdefault("bg", parent.cget("bg") if "bg" in parent.keys() else C["panel"])
-        super().__init__(parent, **kw)
-        self.gap, self.vgap, self.items, self._w = gap, vgap, [], 0
-        self.bind("<Configure>", self._cfg, add="+")
-
-    def add(self, w, gap=None, right=False):
-        self.items.append((w, self.gap if gap is None else gap, right))
-        w.bind("<Configure>", lambda e: self.after_idle(self.relayout), add="+")
-        self.after_idle(self.relayout)
-        return w
-
-    def _cfg(self, e):
-        if e.width != self._w:
-            self._w = e.width
-            self.relayout()
-
-    def relayout(self):
-        try:
-            W = self.winfo_width()
-        except tk.TclError:
-            return
-        if W <= 1:
-            W = sum(w.winfo_reqwidth() + g for w, g, _r in self.items) or 1
-        x = y = line_h = 0
-        rights = [(w, g) for w, g, r in self.items if r]
-        lefts = [(w, g) for w, g, r in self.items if not r]
-        rw = sum(w.winfo_reqwidth() + g for w, g in rights)
-        first = True
-        for w, g in lefts:
-            ww, wh = w.winfo_reqwidth(), w.winfo_reqheight()
-            limit = W - (rw if first else 0)
-            if x and x + ww > limit:
-                x, y, line_h, first = 0, y + line_h + self.vgap, 0, False
-            w.place(x=x, y=y)
-            x += ww + g
-            line_h = max(line_h, wh)
-        if rights:
-            if first and x + rw - rights[-1][1] <= W:
-                rx = W - rw + rights[-1][1]
-                for w, g in rights:
-                    w.place(x=rx, y=0)
-                    rx += w.winfo_reqwidth() + g
-                    line_h = max(line_h, w.winfo_reqheight())
-            else:
-                for w, g in rights:
-                    ww = w.winfo_reqwidth()
-                    if x and x + ww > W:
-                        x, y, line_h = 0, y + line_h + self.vgap, 0
-                    w.place(x=x, y=y)
-                    x += ww + g
-                    line_h = max(line_h, w.winfo_reqheight())
-        h = y + line_h
-        if int(self.cget("height") or 0) != h:
-            self.configure(height=max(1, h))
-
-
 def _pads(v):
-    try:
-        parts = [int(float(x)) for x in str(v).split()]
-    except ValueError:
-        return 0, 0
+    """pack's padx -> (left, right). 2.103.2: Tk hands a pair back as a tuple, (12, 0) - it was read as no padding,
+    so every row made with flowify lost its gaps (Clear filters touched Order added)."""
+    if isinstance(v, (tuple, list)):
+        parts = [int(float(str(x))) for x in v]
+    else:
+        parts = [int(float(x)) for x in re.findall(r"-?\d+(?:\.\d+)?", str(v))]
     return (parts[0], parts[-1]) if parts else (0, 0)
 
 
@@ -460,6 +487,73 @@ def flow_show(row, w, on):
         lay()
 
 
+def _combo_on_top():
+    """2.112.0: every dropdown's list opens above "always on top" windows (Quick settings over the game was one):
+    without it the list opened behind the box and the click picked an item blind. Wraps ttk.Combobox once."""
+    if getattr(ttk.Combobox, "_soe2_top", False):
+        return
+    orig = ttk.Combobox.__init__
+
+    oconf = ttk.Combobox.configure
+
+    def configure(self, cnf=None, **kw):
+        if isinstance(cnf, dict) and "postcommand" in cnf:
+            cnf = dict(cnf)
+            kw["postcommand"] = cnf.pop("postcommand")
+        if "postcommand" in kw:                       # the page's own list refresh runs after ours
+            self._soe2_user = kw.pop("postcommand")
+            kw["postcommand"] = self._soe2_post
+        return oconf(self, cnf, **kw)
+
+    def _post(self):
+        try:
+            pd = self.tk.call("ttk::combobox::PopdownWindow", self)
+            self.tk.call("wm", "attributes", pd, "-topmost", 1)
+        except tk.TclError:
+            pass
+        user = getattr(self, "_soe2_user", None)
+        if callable(user):
+            user()
+        elif user:
+            self.tk.eval(user)
+
+    def __init__(self, master=None, **kw):
+        user = kw.pop("postcommand", None)
+        orig(self, master, **kw)
+        self._soe2_post = self.register(lambda: _post(self))
+        self._soe2_user = user
+        oconf(self, postcommand=self._soe2_post)
+    ttk.Combobox.__init__ = __init__
+    ttk.Combobox.configure = configure
+    ttk.Combobox.config = configure
+    ttk.Combobox._soe2_top = True
+
+
+_combo_on_top()
+
+
+def _check_on_card():
+    """2.112.1: a switch on a card (panel2) takes the card's color - plain ttk.Checkbuttons there showed the page's
+    darker color as a box behind their text (Settings › General › Updates was one). Wraps ttk.Checkbutton once."""
+    if getattr(ttk.Checkbutton, "_soe2_card", False):
+        return
+    orig = ttk.Checkbutton.__init__
+
+    def __init__(self, master=None, **kw):
+        if "style" not in kw and master is not None:
+            try:
+                if str(master.cget("bg")).lower() == str(C["panel2"]).lower():
+                    kw["style"] = "Card.TCheckbutton"
+            except (tk.TclError, AttributeError):
+                pass
+        orig(self, master, **kw)
+    ttk.Checkbutton.__init__ = __init__
+    ttk.Checkbutton._soe2_card = True
+
+
+_check_on_card()
+
+
 def setup_style(root):
     """The ttk styles, from the running theme pack (2.60.0). Called at start and again after a live theme swap."""
     from . import themes as TH
@@ -570,6 +664,18 @@ def _setup_style(root, TH):
     s.map("Quiet.TButton", background=[("pressed", C["odd"]), ("active", C["panel2"])],
           bordercolor=[("active", C["line"])], lightcolor=[("active", C["panel2"])], darkcolor=[("active", C["panel2"])],
           foreground=[("active", C["text"]), ("disabled", C["muted"])])
+    # 2.126.0: small flat buttons for a header strip (Bulk Pricing's Items strip: Undo, Delete, Clear All) - they fit
+    # inside the strip; the delete ones have red words (and a word or icon, never the color alone)
+    for name, fg in (("Strip.TButton", C["steel"]), ("StripDanger.TButton", C["red"])):
+        s.layout(name, [("Button.border", {"sticky": "nswe", "border": "1", "children": [("Button.focus", {
+            "sticky": "nswe", "children": [("Button.padding", {"sticky": "nswe", "children": [
+                ("Button.label", {"sticky": "nswe"})]})]})]})])
+        s.configure(name, background=C["panel"], foreground=fg, relief="solid", borderwidth=1, bordercolor=C["line"],
+                    lightcolor=C["panel"], darkcolor=C["panel"], focuscolor=C["accent"], focusthickness=1,
+                    padding=(8, 1), font=("Segoe UI", 9), anchor="center", width=0)   # (as wide as its words)
+        s.map(name, background=[("pressed", C["odd"]), ("active", C["panel2"])],
+              bordercolor=[("active", C["steel"])], lightcolor=[("active", C["panel2"])], darkcolor=[("active", C["panel2"])],
+              foreground=[("disabled", C["muted"]), ("active", C["text"] if fg == C["steel"] else fg)])
     s.configure("TEntry", padding=4, **field)
     s.map("TEntry", bordercolor=[("focus", C["accent"])])
     for o in ("Vertical", "Horizontal"):
@@ -603,7 +709,7 @@ def monitor_rect(root, x, y, full=False):
                 r = mi.rcMonitor if full else mi.rcWork     # 2.50.0: full = the whole screen (the game is
                 return r.left, r.top, r.right, r.bottom         # full screen: windows over it may sit on the taskbar)
         except Exception:
-            pass
+            buglog.caught()
     return 0, 0, root.winfo_screenwidth(), root.winfo_screenheight()
 
 
@@ -632,7 +738,7 @@ class Toast:
             try:
                 self.win.destroy()
             except Exception:
-                pass
+                buglog.caught()
             self.win = None
 
     def show(self, title, lines, color, secs):
@@ -644,7 +750,7 @@ class Toast:
         try:
             w.attributes("-alpha", 0.97)
         except Exception:
-            pass
+            buglog.caught()
         outer = tk.Frame(w, bg=color, padx=2, pady=2)
         outer.pack()
         card = tk.Frame(outer, bg=C["panel"], padx=16, pady=8)
@@ -662,7 +768,7 @@ class Toast:
                 st = ctypes.windll.user32.GetWindowLongW(hwnd, -20)
                 ctypes.windll.user32.SetWindowLongW(hwnd, -20, st | 0x08000000 | 0x00000080)
             except Exception:
-                pass
+                buglog.caught()
         w.deiconify()
         w.bind("<Button-1>", lambda e: self.hide())
         self.win = w
@@ -675,9 +781,12 @@ class Tooltip:
 
     def __init__(self, widget, text, delay=450):
         self.w, self.text, self.delay, self.win, self.job = widget, text, delay, None, None
+        widget._tip = self                                  # (tools/check_ux.py: this button has a tip)
         widget.bind("<Enter>", self._enter, add="+")
         widget.bind("<Leave>", self._leave, add="+")
         widget.bind("<ButtonPress>", self._leave, add="+")
+        widget.bind("<Unmap>", self._leave, add="+")       # P4 (2.108.0): a tip stayed up when its page was left
+        widget.bind("<Destroy>", self._leave, add="+")
 
     def _enter(self, _e=None):
         self._cancel()
@@ -715,6 +824,22 @@ class Tooltip:
         place_near(self.w.winfo_toplevel(), self.win, x, y)
         from .motion import fade_in
         fade_in(self.win, 1.0)
+        self.w.after(400, self._watch)
+
+    def _watch(self):
+        """P4: gone as soon as its widget isn't on screen (a page change doesn't send a Leave)."""
+        if self.win is None:
+            return
+        try:
+            gone = not self.w.winfo_viewable()
+        except tk.TclError:
+            gone = True
+        if gone:
+            return self.hide()
+        try:
+            self.w.after(400, self._watch)
+        except tk.TclError:
+            self.hide()
 
     def _colors(self):
         """(bg, fg, edge): the app's colors - or, on a window over the game, the overlay's (its theme and look)."""
@@ -724,7 +849,7 @@ class Tooltip:
                 P = pal()
                 return P["bg"], P["text"], P.get("edge") or P.get("leather") or C["line"]
         except Exception:
-            pass
+            buglog.caught()
         return C["panel2"], C["text"], C["line"]
 
     def hide(self):
@@ -734,6 +859,172 @@ class Tooltip:
             except tk.TclError:
                 pass
             self.win = None
+
+
+class Splitter(tk.Frame):
+    """2.123.4 (feedback: the divider was "janky and slow ... no visible indicator"): a left side you can widen or
+    narrow by dragging a grip you can see (a line with dots that lights up under the mouse). While dragging only a
+    thin guide line moves; the sides are laid out once, when you let go. Splitter(parent, width, lo, keep, on_set);
+    .left and .right are the two sides; sashpos(0[, x]) reads or sets the left width."""
+
+    GRIP = 9
+
+    def __init__(self, parent, width=420, lo=330, keep=300, on_set=None, bg=None, **kw):
+        super().__init__(parent, bg=bg or C["bg"], **kw)
+        self.lo, self.keep, self.on_set, self._want = lo, keep, on_set, int(width)
+        self.left = tk.Frame(self, bg=C["panel2"], width=self._want)
+        self.left.pack_propagate(False)
+        self.left.pack(side="left", fill="y")
+        self.grip = tk.Frame(self, bg=C["panel"], width=self.GRIP, cursor="sb_h_double_arrow")
+        self.grip.pack_propagate(False)
+        self.grip.pack(side="left", fill="y")
+        self._bar = tk.Frame(self.grip, bg=C["gold_dim"], width=1)
+        self._bar.place(relx=0.5, rely=0, relheight=1, anchor="n")
+        self._dots = tk.Label(self.grip, text="⋮\n⋮", bg=C["panel"], fg=C["muted"], font=("Segoe UI", 9),
+                              cursor="sb_h_double_arrow", bd=0, padx=0, pady=0)
+        self._dots.place(relx=0.5, rely=0.5, anchor="center")
+        self.right = tk.Frame(self, bg=C["panel"])
+        self.right.pack(side="left", fill="both", expand=True)
+        self._guide = tk.Frame(self, bg=C["orange"], width=2)
+        self._x0 = None
+        for w in (self.grip, self._dots, self._bar):
+            w.bind("<Enter>", lambda e: self._lit(True), add="+")
+            w.bind("<Leave>", lambda e: self._lit(self._x0 is not None), add="+")
+            w.bind("<ButtonPress-1>", self._press, add="+")
+            w.bind("<B1-Motion>", self._drag, add="+")
+            w.bind("<ButtonRelease-1>", self._release, add="+")
+        Tooltip(self.grip, "Drag to make the item side wider or narrower")
+        Tooltip(self._dots, "Drag to make the item side wider or narrower")
+        self.bind("<Configure>", lambda e: self._clamp_now(), add="+")
+
+    def _lit(self, on):
+        try:
+            self._bar.config(bg=C["orange"] if on else C["gold_dim"])
+            self._dots.config(fg=C["orange"] if on else C["muted"])
+        except tk.TclError:
+            pass
+
+    def clamp(self, x):
+        pw = self.winfo_width()
+        hi = pw - self.keep - self.GRIP if pw > self.lo + self.keep + self.GRIP else max(self.lo, x)
+        return int(max(self.lo, min(x, hi)))
+
+    def _clamp_now(self):
+        x = self.clamp(self._want)
+        if x != int(self.left.cget("width")):
+            self.left.config(width=x)
+
+    def _press(self, e):
+        self._x0 = self.winfo_rootx()
+        self._lit(True)
+        self._guide.place(x=self._want + self.GRIP // 2, y=0, relheight=1)
+        self._guide.lift()
+
+    def _drag(self, e):
+        if self._x0 is None:
+            return
+        x = self.clamp(e.x_root - self._x0)
+        self._guide.place_configure(x=x + self.GRIP // 2)
+
+    def _release(self, e):
+        if self._x0 is None:
+            return
+        x = self.clamp(e.x_root - self._x0)
+        self._x0 = None
+        self._guide.place_forget()
+        self._lit(False)
+        self.sashpos(0, x)
+        if self.on_set:
+            self.on_set(self._want)
+
+    def sashpos(self, _i=0, x=None):
+        if x is None:
+            return int(self.left.cget("width"))
+        self._want = self.clamp(int(x))
+        self.left.config(width=self._want)
+        return self._want
+
+
+class VSplitter(tk.Frame):
+    """2.125.6 (feedback: the Craft Helper's pairs were "crammed at the bottom"): Splitter's grip turned on its side -
+    a top part you make taller or shorter by dragging a grip you can see (a line with dots that lights up under the
+    mouse); a thin guide moves while you drag, the parts are laid out once you let go. .top and .bottom are the two
+    parts; sashpos(0[, y]) reads or sets the top's height; on_set(height) when you let go."""
+
+    GRIP = 9
+
+    def __init__(self, parent, height=360, lo=120, keep=110, on_set=None, bg=None, **kw):
+        super().__init__(parent, bg=bg or C["panel"], **kw)
+        self.lo, self.keep, self.on_set, self._want = lo, keep, on_set, int(height)
+        self.top = tk.Frame(self, bg=bg or C["panel"], height=self._want)
+        self.top.pack_propagate(False)
+        self.top.pack(side="top", fill="x")
+        self.grip = tk.Frame(self, bg=bg or C["panel"], height=self.GRIP, cursor="sb_v_double_arrow")
+        self.grip.pack_propagate(False)
+        self.grip.pack(side="top", fill="x")
+        self._bar = tk.Frame(self.grip, bg=C["gold_dim"], height=1)
+        self._bar.place(relx=0, rely=0.5, relwidth=1, anchor="w")
+        self._dots = tk.Label(self.grip, text="⋯⋯", bg=bg or C["panel"], fg=C["muted"], font=("Segoe UI", 9),
+                              cursor="sb_v_double_arrow", bd=0, padx=4, pady=0)
+        self._dots.place(relx=0.5, rely=0.5, anchor="center")
+        self.bottom = tk.Frame(self, bg=bg or C["panel"])
+        self.bottom.pack(side="top", fill="both", expand=True)
+        self._guide = tk.Frame(self, bg=C["orange"], height=2)
+        self._y0 = None
+        for w in (self.grip, self._dots, self._bar):
+            w.bind("<Enter>", lambda e: self._lit(True), add="+")
+            w.bind("<Leave>", lambda e: self._lit(self._y0 is not None), add="+")
+            w.bind("<ButtonPress-1>", self._press, add="+")
+            w.bind("<B1-Motion>", self._drag, add="+")
+            w.bind("<ButtonRelease-1>", self._release, add="+")
+        Tooltip(self._dots, "Drag to make the top part taller or shorter")
+        self.bind("<Configure>", lambda e: self._clamp_now(), add="+")
+
+    def _lit(self, on):
+        try:
+            self._bar.config(bg=C["orange"] if on else C["gold_dim"])
+            self._dots.config(fg=C["orange"] if on else C["muted"])
+        except tk.TclError:
+            pass
+
+    def clamp(self, y):
+        ph = self.winfo_height()
+        hi = ph - self.keep - self.GRIP if ph > self.lo + self.keep + self.GRIP else max(self.lo, y)
+        return int(max(self.lo, min(y, hi)))
+
+    def _clamp_now(self):
+        y = self.clamp(self._want)
+        if y != int(self.top.cget("height")):
+            self.top.config(height=y)
+
+    def _press(self, e):
+        self._y0 = self.winfo_rooty()
+        self._lit(True)
+        self._guide.place(x=0, y=self._want + self.GRIP // 2, relwidth=1)
+        self._guide.lift()
+
+    def _drag(self, e):
+        if self._y0 is None:
+            return
+        self._guide.place_configure(y=self.clamp(e.y_root - self._y0) + self.GRIP // 2)
+
+    def _release(self, e):
+        if self._y0 is None:
+            return
+        y = self.clamp(e.y_root - self._y0)
+        self._y0 = None
+        self._guide.place_forget()
+        self._lit(False)
+        self.sashpos(0, y)
+        if self.on_set:
+            self.on_set(self._want)
+
+    def sashpos(self, _i=0, y=None):
+        if y is None:
+            return int(self.top.cget("height"))
+        self._want = self.clamp(int(y))
+        self.top.config(height=self._want)
+        return self._want
 
 
 class SegBar(tk.Frame):
@@ -763,7 +1054,7 @@ class SegBar(tk.Frame):
             lab.config(padx=0)
             lab.pack_configure(padx=(self.pad[0], 4))
             tag = tk.Label(top, text=badge, bg="#3a2a10", fg="#ffcf40", font=("Segoe UI", SMALL - 2, "bold"), padx=4,
-                           pady=0, cursor="hand2", highlightthickness=1, highlightbackground="#7a6428")
+                           pady=0, cursor="hand2", highlightthickness=1, highlightbackground=C["accent"])
             tag.pack(side="left", padx=(0, self.pad[0]))
             tag.bind("<Enter>", lambda e, o=opt: self.paint(hover=o))
         line = tk.Frame(f, height=2)
@@ -846,6 +1137,29 @@ class SegBook(tk.Frame):
         return self.titles[i]
 
 
+class SbGuard:
+    """2.112.2: a scroll bar that shows only when needed can loop forever: shown -> the page is narrower -> its
+    wrapped text is taller / shorter -> hidden -> wider -> shown ... Tk's idle queue never empties and the app stops
+    responding (it hung Windows on a theme change: its scroll bar and text measure differently). Count the flips:
+    after 3 within a second the bar stays shown until the page settles (2 s quiet)."""
+
+    def __init__(self):
+        self.flips = []
+        self.hold = 0.0
+
+    def may_hide(self):
+        import time as _t
+        return _t.time() >= self.hold
+
+    def flipped(self):
+        import time as _t
+        now = _t.time()
+        self.flips = [t for t in self.flips if now - t < 1.0] + [now]
+        if len(self.flips) > 3:
+            self.hold = now + 2.0
+            self.flips = []
+
+
 class ScrollArea(tk.Frame):
     """A frame whose content scrolls up and down (scroll bar + mouse wheel) when it is taller than the window
     (2.0 beta 14: Settings). Put the content in .inner; it is always as wide as the area.
@@ -863,15 +1177,20 @@ class ScrollArea(tk.Frame):
         self.canvas.bind("<Configure>", lambda e: self.canvas.itemconfigure(self._win, width=e.width))
         self.inner.bind("<Configure>", lambda e: self.canvas.configure(scrollregion=(0, 0, e.width, e.height)))
         self._hooked = None
+        self._guard = SbGuard()
         self.bind("<Map>", lambda e: self._hook(), add="+")
         self.after_idle(self._hook)
 
     def _sb_set(self, a, b):
-        """Show the scroll bar only when there is something to scroll."""
+        """Show the scroll bar only when there is something to scroll (never flipping back and forth - SbGuard)."""
+        shown = self.sb.winfo_ismapped()
         if float(a) <= 0.0 and float(b) >= 1.0:
-            self.sb.pack_forget()
-        elif not self.sb.winfo_ismapped():
+            if shown and self._guard.may_hide():
+                self.sb.pack_forget()
+                self._guard.flipped()
+        elif not shown:
             self.sb.pack(side="right", fill="y", before=self.canvas)
+            self._guard.flipped()
         self.sb.set(a, b)
 
     def _hook(self):
@@ -957,11 +1276,12 @@ class KeyCapture(tk.Label):
 
     TIMEOUT_MS = 15000
 
-    def __init__(self, parent, variable, width=12, on_change=None, **kw):
+    def __init__(self, parent, variable, width=12, on_change=None, allow_esc=False, **kw):
         super().__init__(parent, width=width, anchor="w", padx=8, cursor="hand2", takefocus=1,
                          bg=C["odd"], fg=C["text"], font=("Consolas", 9), highlightthickness=1,
                          highlightbackground=C["line"], highlightcolor=C["accent"], **kw)
         self.var, self.on_change, self.waiting, self._alt = variable, on_change, False, False
+        self.allow_esc = allow_esc          # 2.121.1: a close key may be Esc itself (a click elsewhere gives up)
         self.var.trace_add("write", lambda *a: self.show())
         self.bind("<Button-1>", lambda e: self.start())
         self.bind("<Button-3>", lambda e: self.set(""))
@@ -1024,7 +1344,9 @@ class KeyCapture(tk.Label):
         """A key (or mouse button) from the app's keyboard / mouse watcher, while this box waits (Windows)."""
         if not self.waiting:
             return
-        if vk == 0x1B:
+        if vk == 0x1B and self.allow_esc and not (ctrl or alt or shift):
+            self.set("Esc")
+        elif vk == 0x1B:
             self.stop()
         elif vk in (0x08, 0x2E) and not (ctrl or alt or shift):
             self.set("")
@@ -1055,7 +1377,10 @@ class KeyCapture(tk.Label):
         if e.keysym in _MODS:
             return "break"
         if e.keysym == "Escape":
-            self.stop()
+            if self.allow_esc and not (e.state & 0x5):
+                self.set("Esc")
+            else:
+                self.stop()
             return "break"
         if e.keysym in ("BackSpace", "Delete") and not (e.state & 0x5):
             self.set("")
@@ -1071,8 +1396,8 @@ class KeyCapture(tk.Label):
 
 
 # ---------------------------------------------------------------- the app's look (2.0.0: Settings > Appearance)
-# A theme recolours the whole app in one place: every colour handed to Tk passes through theme_color(), which moves the
-# app's steel-blue / navy tones to the theme's hue (lightness kept, so contrast stays the same). Colours that mean
+# A theme recolours the whole app in one place: every color handed to Tk passes through theme_color(), which moves the
+# app's steel-blue / navy tones to the theme's hue (lightness kept, so contrast stays the same). Colors that mean
 # something (item rarities, green / red, gold for money, the accent) are left alone. Applied at start-up.
 import re as _re
 
@@ -1080,15 +1405,6 @@ import re as _re
 from . import themes as _themes
 
 THEMES = {t.id: (t.name, None, 1.0) for t in _themes.ordered()}     # id: (label, -, -) - the old shape, kept
-ACCENTS = {         # name: (label, colour) - optional: overrides the pack's own accent
-    "orange": ("Orange", "#ffa63d"),
-    "gold": ("Gold", "#f2c94c"),
-    "teal": ("Teal", "#3fd0c0"),
-    "rose": ("Rose", "#ff7a9c"),
-    "ice": ("Ice blue", "#7cc7ff"),
-    "lime": ("Lime", "#a8e05f"),
-}
-THEME_ACCENT = "theme"                 # SETTINGS accent: "theme" = the pack's own (default from 2.60.0)
 _STYLE_LOG = {"quiet": False, "calls": {}}     # ttk style calls made outside setup_style - replayed after a swap
 _THEME = {"keep": set()}               # (old name, kept for code that adds to it)
 
@@ -1098,19 +1414,14 @@ def theme_color(c):
     return _themes.tone(c)
 
 
-def _accent(accent):
-    if not accent or accent == THEME_ACCENT:
-        return None
-    return ACCENTS.get(accent, (None, None))[1]
-
-
-def apply_look(theme=None, accent=THEME_ACCENT, scale=100, root=None):
-    """Call once at start-up, before any window is built. relook() swaps it later, live."""
+def apply_look(theme=None, root=None):
+    """Call once at start-up, before any window is built. relook() swaps it later, live. (2.119.0: a theme keeps its
+    own accent and the text size is fixed - Settings › Appearance had both.)"""
     import tkinter.ttk as _ttk
     if not _themes.ST.base:
         _themes.init(C, _BASE)
-    _themes.set_theme(_themes.packs()[_themes.pick_id(theme)], _accent(accent))
-    if not getattr(tk.Misc, "_soe2_themed", False):          # every colour given to Tk goes through theme_color
+    _themes.set_theme(_themes.packs()[_themes.pick_id(theme)], None)
+    if not getattr(tk.Misc, "_soe2_themed", False):          # every color given to Tk goes through theme_color
         orig = tk.Misc._options
 
         def _options(self, cnf, kw=None):
@@ -1146,24 +1457,20 @@ def apply_look(theme=None, accent=THEME_ACCENT, scale=100, root=None):
             return sm(self, style, query_opt, **kw)
         _ttk.Style.configure, _ttk.Style.map = _sc, _sm
         tk.Misc._soe2_themed = True
-    if root is not None and scale and scale != 100 and not getattr(root, "_soe2_scaled", False):
-        root._soe2_scaled = True                               # text size: Tk draws point sizes bigger / smaller
-        try:
-            base = float(root.tk.call("tk", "scaling"))
-            root.tk.call("tk", "scaling", base * scale / 100)
-        except Exception:
-            pass
     return _themes.ST.theme
 
 
-def relook(root, theme, accent=THEME_ACCENT):
+def relook(root, theme):
     """2.60.0: swap the theme while the app runs - every window, list, canvas and menu is re-colored in place."""
     import time as _t
     t0 = _t.time()
     old = _themes.snapshot()
-    _themes.set_theme(_themes.packs()[_themes.pick_id(theme)], _accent(accent))
+    _themes.set_theme(_themes.packs()[_themes.pick_id(theme)], None)
     tr = _themes._translator(old)
+    from .hangwatch import step                 # 2.114.3: where a theme change was, if the app closes on one
+    step(f"theme change to {theme}: windows")
     n = _themes.walk(root, tr)
+    step(f"theme change to {theme}: styles")
     setup_style(root)
     s = ttk.Style(root)
     _STYLE_LOG["quiet"] = True
@@ -1174,8 +1481,10 @@ def relook(root, theme, accent=THEME_ACCENT):
             try:
                 (s.configure if how == "configure" else s.map)(style, **kw)
             except Exception:
-                pass
+                buglog.caught()
     finally:
         _STYLE_LOG["quiet"] = False
+    step(f"theme change to {theme}: self-painted parts")
     _themes.notify()
+    step(f"theme change to {theme}: done")
     return n, _t.time() - t0

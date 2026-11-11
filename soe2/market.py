@@ -7,7 +7,8 @@ import sqlite3
 import statistics
 import threading
 import time
-from .config import MODBOOK, P, SETTINGS
+from . import buglog
+from .config import P, SETTINGS
 from .rates import RATES
 from .mods import HIGH_LIFT, impact_of, LEARNED, MIN_WITH, MIN_WITHOUT, rebuild_community, search_sid, sid_for_line, SIDTEXT, TEXT2SID, vfilter
 
@@ -27,7 +28,7 @@ def own_marker_prices():
         from .wealth import WEALTH
         out += [(t["amount"], t["currency"]) for t in WEALTH.tabs if t.get("amount")]
     except Exception:
-        pass
+        buglog.caught()
     return list(dict.fromkeys(out))
 
 
@@ -284,7 +285,7 @@ class Market:
                 if self.last_error:
                     f.write(f"\nlast recording problem: {self.last_error}\n")
         except Exception:
-            pass
+            buglog.caught()
 
     def counts(self):
         """(searches recorded, listings stored) for the current league."""
@@ -311,7 +312,7 @@ class Market:
         return True
 
     def lower_bound(self, base, vals, hours=24):
-        """Earlier searches (>= 2 listings) whose every filter this item also meets -> the dearest 'cheapest listing'."""
+        """Earlier searches (>= 2 listings) whose every filter this item also meets -> the highest 'cheapest listing'."""
         if not self.db:
             return None
         try:
@@ -328,7 +329,7 @@ class Market:
             return None
 
     def combos(self, limit=500):
-        """[(base, filters, seen, best floor, (ts, n, floor, est))] - the combinations with the dearest 'cheapest listing'."""
+        """[(base, filters, seen, best floor, (ts, n, floor, est))] - the combinations with the highest 'cheapest listing'."""
         if not self.db:
             return []
         try:
@@ -366,7 +367,7 @@ class Market:
         return sorted(out, key=lambda r: -r[5])[:limit]
 
     def top_listings(self, limit=2000, detail=False):
-        """[(base, seen, price in divines, [stat ids])] of this league's stored listings, dearest first (2.1.0).
+        """[(base, seen, price in divines, [stat ids])] of this league's stored listings, most expensive first (2.1.0).
         detail (2.4.0): dicts with name, the listing's mod lines, its own price and the search it came from too."""
         if not self.db:
             return []
@@ -405,6 +406,27 @@ class Market:
             return []
 
     # ---------------- learning: which mods matter
+    def listing_rows(self, league=None, limit=30000):
+        """2.125.5: the stored listings of a league -> [(base, price in divines, set of stat ids)], newest first."""
+        if not self.db:
+            return []
+        league = self.cur() if league is None else league
+        try:
+            with self.lock:
+                rows = self.db.execute("SELECT base, price_div, sids FROM listings WHERE league=? ORDER BY seen DESC "
+                                       "LIMIT ?", (league, int(limit))).fetchall()
+        except Exception:
+            return []
+        out = []
+        for base, price, sids in rows:
+            if price is None:
+                continue
+            try:
+                out.append((base, float(price), set(json.loads(sids))))
+            except (TypeError, ValueError):
+                continue
+        return out
+
     def stats(self, league=None):
         """{(base, sid): {n, med, lift, tier}}.  lift = median ask of listings WITH the mod / median ask of listings
         WITHOUT it (same base), so a mod that merely appears on everything scores about 1.  A mod counts as 'high' when
@@ -506,7 +528,7 @@ class Market:
                 if sid not in decided and sid not in new:   # your own data for this league decides first
                     new[sid] = info
         except Exception:
-            pass
+            buglog.caught()
         LEARNED.clear()                                    # in place: other modules hold this dict
         LEARNED.update(new)
         rebuild_community(self)
@@ -583,7 +605,7 @@ class Market:
                 self.db.execute("INSERT INTO preds VALUES (?,?,?,?,?,?)", (time.time(), self.cur(), base, pred, actual, n_comp))
                 self.db.commit()
         except Exception:
-            pass
+            buglog.caught()
 
     def accuracy(self, base=None, tol=0.25, limit=300):
         """-> (checked guesses, how many landed within tol of the real search, median guess/real ratio)."""
@@ -634,8 +656,6 @@ class Market:
             return False
 
     # ---- 2.51.0: Manual feed - you tell the Mod book what an item is worth (an expensive tablet you saw sell, ...)
-    FEED_MAX = 10
-
     def feed(self, item, div, copies=1, price_txt="", note=""):
         """An item and its price -> one listing at that price, kept with the ones the Mod book learns from (the same
         way a sale is), and a row in 'fed' so you can see and undo it. 2.54.1: one item = one price - no
@@ -720,10 +740,10 @@ class Market:
                 try:
                     self.db.execute("DELETE FROM sales WHERE sig=?", (sig,))
                 except Exception:
-                    pass
+                    buglog.caught()
                 self.db.commit()
         except Exception:
-            pass
+            buglog.caught()
 
     def sales(self):
         """[(base, name, sold_div, ts)] of this league's sales, newest first."""
@@ -750,7 +770,7 @@ class Market:
                                  est, listed_div))
                 self.db.commit()
         except Exception:
-            pass
+            buglog.caught()
 
     def my_listed(self, base, filt, max_mods):
         """Prices (divines) you yourself listed for items carrying these mods at least at these rolls, this league."""
@@ -799,7 +819,4 @@ class Market:
 
 MARKET = Market()
 
-
-if not SETTINGS.get("modbook_imported") and MODBOOK:
-    MARKET.import_old_modbook(MODBOOK, float(SETTINGS.get("good_div", 0.5)))
-    SETTINGS["modbook_imported"] = True
+# (the 1.x mod book import runs once from soe2/migrations.py - 2.117.0)

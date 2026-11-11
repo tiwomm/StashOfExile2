@@ -2,7 +2,7 @@
 
   py tools/check_contrast.py      prints the lowest pairs, exit 1 if any text pair is under 4.5 : 1
 
-Pairs = the text colours the app puts on its surfaces (style.C), the bevelled button / heading faces and the title
+Pairs = the text colors the app puts on its surfaces (style.C), the bevelled button / heading faces and the title
 bars - all from the pack itself."""
 import os
 import sys
@@ -64,8 +64,8 @@ def run():
     from soe2 import themes as TH
     worst, fails = [], []
     for theme in S.THEMES:
-        for accent in ["theme"] + list(S.ACCENTS):
-            S.apply_look(theme, accent)
+        for accent in ["theme"]:                     # (2.119.0: a theme's own accent only)
+            S.apply_look(theme)
             for name, fg, bg in pairs():
                 with TH.raw():
                     pass
@@ -73,7 +73,7 @@ def run():
                 worst.append((r, theme, accent, name, fg, bg))
                 if r < AA:
                     fails.append((r, theme, accent, name, fg, bg))
-    S.apply_look(TH.DEFAULT, "theme")
+    S.apply_look(TH.DEFAULT)
     return sorted(worst)[:8], sorted(fails)
 
 

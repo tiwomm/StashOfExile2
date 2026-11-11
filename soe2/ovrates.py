@@ -5,6 +5,7 @@ are the Exchange rates table the app already keeps (poe.ninja, once an hour) - n
 GGG ToS: a window on top that only shows numbers; nothing is sent to the game."""
 import tkinter as tk
 
+from . import buglog
 from .config import SETTINGS, save_json
 
 # what most players watch, in this order (poe.ninja ids); the ones the table has are shown
@@ -13,7 +14,24 @@ COMMON = ("exalted", "chaos", "annul", "vaal", "regal", "gcp", "alch", "greater-
 NAMES = {"exalted": "Exalted Orb", "chaos": "Chaos Orb", "annul": "Orb of Annulment", "vaal": "Vaal Orb",
          "regal": "Regal Orb", "gcp": "Gemcutter's Prism", "alch": "Orb of Alchemy", "greater-exalted-orb":
          "Greater Exalted Orb", "perfect-exalted-orb": "Perfect Exalted Orb", "hinekoras-lock": "Hinekora's Lock",
-         "mirror": "Mirror of Kalandra"}
+         "mirror": "Mirror of Kalandra", "divine": "Divine Orb", "chance": "Orb of Chance",
+         "transmute": "Orb of Transmutation", "aug": "Orb of Augmentation", "artificers": "Artificer's Orb",
+         "jewellers": "Jeweller's Orb", "bauble": "Glassblower's Bauble", "wisdom": "Scroll of Wisdom"}
+
+
+def cur_name(cid, names=None):
+    """2.114.0 (P9: the Rates table showed poe.ninja's ids - "hinekoras-lock", "gcp"): a currency's name. names: the
+    names poe.ninja sent with its prices, when there are any."""
+    return (names or {}).get(cid) or NAMES.get(cid) or str(cid).replace("-", " ").title()
+
+
+def fmt_worth(v):
+    """2.114.0: a worth in divines as a plain number ("0.000048", never "4.762e-05")."""
+    if v >= 0.001:
+        return f"{v:.4g}"
+    import math
+    places = min(10, 1 - int(math.floor(math.log10(v))))       # two significant digits
+    return f"{v:.{places}f}"
 REFRESH_MS = 60 * 1000
 MAX_ROWS = 8
 
@@ -42,20 +60,47 @@ class OverlayRates:
     def ovr_cfg(self):
         c = SETTINGS.setdefault("rates_ov", {})
         c.setdefault("on", False)                 # off until you turn it on
+        c.setdefault("shown", bool(c["on"]))      # 2.104.1: Rates ▾ on the bar opens / closes it
         c.setdefault("x", None)
         c.setdefault("y", None)
         return c
 
     def ovr_switch(self, on):
-        self.ovr_cfg()["on"] = bool(on)
+        """2.104.1 (feedback: it didn't work like Notes / Calc / Regex): the switch puts Rates ▾ on the bar; the
+        button opens / closes the window."""
+        c = self.ovr_cfg()
+        c["on"] = bool(on)
+        if not on:
+            c["shown"] = False
         save_json("settings.json", SETTINGS)
-        if on and self.ov_enabled():
+        if not on:
+            self.ovr_close()
+        self._ovr_bar()
+
+    def ovr_shown(self):
+        return getattr(self, "ovr_win", None) is not None
+
+    def ovr_toggle(self, show=None):
+        show = (not self.ovr_shown()) if show is None else bool(show)
+        c = self.ovr_cfg()
+        c["shown"] = bool(show and c["on"])
+        save_json("settings.json", SETTINGS)
+        if c["shown"] and self.ov_enabled():
             self.ovr_build()
         else:
             self.ovr_close()
+        self._ovr_bar()
+        return c["shown"]
+
+    def _ovr_bar(self):
+        if getattr(self, "mg_win", None) is not None:
+            try:
+                self.merged_build()                      # (Rates ▾ / ▴ on the bar)
+            except Exception:
+                buglog.caught()
 
     def ovr_restore(self):
-        if self.ovr_cfg()["on"] and self.ov_enabled():            # 2.92.2: not while the overlay is disabled
+        if self.ovr_cfg()["on"] and self.ovr_cfg()["shown"] and self.ov_enabled():   # 2.92.2: not while disabled
             try:
                 self.ovr_build()
             except Exception:
@@ -67,7 +112,7 @@ class OverlayRates:
             try:
                 self.root.after_cancel(job)
             except Exception:
-                pass
+                buglog.caught()
         w, self.ovr_win = getattr(self, "ovr_win", None), None
         if w is not None:
             try:
@@ -84,12 +129,9 @@ class OverlayRates:
         return r[0] + int(r[2] * 0.80), r[1] + int(r[3] * 0.18)
 
     def ovr_palette(self):
-        """The overlay's own look: the Game bar's colours over the game bar layout, the Panel's card colours otherwise."""
-        from . import hudart, themes as TH
-        from .overlaywin import _seed, pal
-        P = hudart.palette(pal()) if self.merged_layout() == "xpbar" else hudart.card_palette(pal())
-        _seed(TH, P)
-        return P
+        """The overlay's own look: the Bar's colors over the Bar layout, the Panel's card colors otherwise."""
+        from .overlaywin import pal
+        return pal()                                     # 2.109.0: the overlay's chosen style
 
     def ovr_build(self):
         from .overlaywin import OverlayWindow
@@ -101,8 +143,8 @@ class OverlayRates:
             self.ovr_cfg().update(x=int(x), y=int(y))
             save_json("settings.json", SETTINGS)
         x, y = self._ovr_spot()
-        w = OverlayWindow(self.root, "Exchange rates", "⇄", (x, y, None, None), palette=P, locked=locked,
-                          on_lock=self.overlay_lock, on_close=lambda: self.ovr_switch(False), on_moved=moved,
+        w = OverlayWindow(self.root, "Exchange Rates", "⇄", (x, y, None, None), palette=P, locked=locked,
+                          on_lock=self.overlay_lock, on_close=lambda: self.ovr_toggle(False), on_moved=moved,
                           follow_game=True, resizable=False, no_activate=True)
         w.withdraw()
         body = tk.Frame(w.body, bg=P["bg"], padx=8, pady=8)

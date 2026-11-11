@@ -30,11 +30,49 @@ def ranges(text):
     return out
 
 
+HEART_TAGS = ("heart_unique_jewel_prefix", "heart_unique_jewel_suffix")
+HEART_BASE = {"n": "Heart of the Well", "c": "Jewel", "t": list(HEART_TAGS), "a": "JewelDiamond"}
+
+
+def heart_mods(mods, table):
+    """2.130.3 (feedback: the Desecration Helper showed nothing on a Heart of the Well): the unique Diamond's own
+    desecrated mods (generation type "unique", tags heart_unique_jewel_prefix / _suffix). One range each - shown as
+    Heart with where the roll sits in it."""
+    n = 0
+    for mid, m in mods.items():
+        spawn = [[w["tag"], w["weight"]] for w in m.get("spawn_weights") or []]
+        side = next((t for t, w in spawn if t in HEART_TAGS and w > 0), None)
+        if not side or not m.get("text"):
+            continue
+        entry = {"g": mid, "k": "p" if side.endswith("prefix") else "s", "l": m.get("required_level", 1),
+                 "r": ranges(m["text"]), "s": spawn, "a": 1, "h": 1, "id": mid}
+        lst = table.setdefault(template(m["text"]), [])
+        if not any(e.get("id") == mid for e in lst):
+            lst.append(entry)
+            n += 1
+    return n
+
+
+def add_heart(src, out="tierdata.json"):
+    """py tools/build_tierdata.py --heart [repoe2/data]: add the Heart of the Well's mods to the tierdata.json there
+    is (nothing else in it changes)."""
+    mods = json.load(open(os.path.join(src, "mods.json"), encoding="utf-8"))
+    data = json.load(open(out, encoding="utf-8"))
+    n = heart_mods(mods, data["mods"])
+    data["bases"] = [b for b in data["bases"] if b["n"] != HEART_BASE["n"]] + [dict(HEART_BASE)]
+    if HEART_BASE["a"] not in data.get("arts", {}):
+        data["bases"][-1]["a"] = None
+    with open(out, "w", encoding="utf-8") as f:
+        json.dump(data, f, separators=(",", ":"), sort_keys=True)
+    print(f"{n} Heart of the Well mods added -> {out}")
+
+
 def main(src, out="tierdata.json"):
     from PIL import Image
     mods = json.load(open(os.path.join(src, "mods.json"), encoding="utf-8"))
     bases = json.load(open(os.path.join(src, "base_items.json"), encoding="utf-8"))
     table = {}
+    heart_mods(mods, table)
     for mid, m in mods.items():
         if m.get("domain") not in ("item", "desecrated") or m.get("generation_type") not in ("prefix", "suffix"):
             continue
@@ -68,6 +106,7 @@ def main(src, out="tierdata.json"):
                     break
         blist.append({"n": b["name"], "c": b["item_class"], "t": sorted(set(b.get("tags") or [])),
                       "a": aid if aid in arts else None})
+    blist.append(dict(HEART_BASE, a=HEART_BASE["a"] if HEART_BASE["a"] in arts else None))
     data = {"version": 1, "source": {"name": "RePoE", "url": "https://github.com/repoe-fork/poe2"},
             "mods": table, "bases": blist, "arts": arts}
     with open(out, "w", encoding="utf-8") as f:
@@ -77,4 +116,8 @@ def main(src, out="tierdata.json"):
 
 
 if __name__ == "__main__":
-    main(sys.argv[1] if len(sys.argv) > 1 else "repoe2/data")
+    a = sys.argv[1:]
+    if a[:1] == ["--heart"]:
+        add_heart(a[1] if len(a) > 1 else "repoe2/data")
+    else:
+        main(a[0] if a else "repoe2/data")

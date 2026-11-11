@@ -88,9 +88,6 @@ existing database by themselves (the Worker adds them on first use).
 | `POST /posts/{id}/suggest` `{data, note}` | 2.85.0: suggest an edit to someone else's post |
 | `GET /posts/{id}/revisions` | 2.85.0: History (everyone: live and earlier versions; the author and reviewers: waiting ones too) |
 | `GET /me/inbox` | 2.85.0: suggestions waiting on your posts, and what became of yours |
-| `GET /people/<name>` | 2.95.0: a contributor card - rep, what it came from, member month (just the name if they hide it) |
-| `POST /me/rep` | 2.95.0: `{hidden}` show / hide your icon and card; `{link: "<install id>" or null}` count this install's ratings toward your rep, or stop |
-| `POST /admin/rep` | 2.95.0 (admins): `{name, pts}` thank someone with rep (1-50, e.g. a fixed bug report) |
 | `POST /revisions/{id}` `{action: accept\|decline\|rollback\|withdraw, why}` | 2.85.0: the author answers a suggestion or rolls back; the writer withdraws |
 | `GET /review` · `POST /revisions/{id}/review` `{vote: approve\|reject}` · `POST /posts/{id}/review` `{vote: hide\|keep}` | 2.85.0: reviewers |
 | `GET /posts?kind=strat\|one&sort=top\|new&category&type&tag&q&limit&offset` | the board |
@@ -105,6 +102,7 @@ existing database by themselves (the Worker adds them on first use).
 | `POST /mods/batch` `{cid, league, prices, bases, votes}` | 2.31.0: an install's hourly summary (per base / mod: count + median) and its Mod book rule changes. One per 45 min. 2.77.0: `zones` - campaign zones the app's guide pack didn't know (`{act, zone, after, level}`). |
 | `POST /images` `{data}` | 2.78.0: an atlas screenshot (base64 JPEG, 320 KB at most; joined users, 20 a day) -> `{id}`. A strat names it `"atlas_image": "b:<id>"`. |
 | `GET /images/<id>` | 2.78.0: that JPEG (cached for good). |
+| `GET /mods/unmatched` | 2.121.1: mod lines installs couldn't match (`POST /mods/batch` `unmatched`: `{text, base}`, numbers as #), pooled when 2 or more installs sent one in the last 90 days: `{text, n, base, last}` - copied weekly by the Unmatched mods workflow. |
 | `GET /campaign/zones` | 2.77.0: those zones, pooled (seen by 2 or more installs): `{act, zone, n, level, after}` - read by `tools/build_guide.py`. |
 | `GET /mods/stats?league=` · `GET /mods/ratings` | the pooled prices (median, lift, summaries) and how players rate each mod |
 | `GET /maps/ratings` | 2.32.0: how players rank each map (`maps` in the batch = a player's map ranks) |

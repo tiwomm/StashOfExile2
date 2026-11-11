@@ -8,7 +8,7 @@ import zipfile
 
 from .config import APP_VERSION, P
 
-LOGS = ("error_log.txt", "verify_log.txt", "currency_log.txt", "unpriced_items.txt")
+LOGS = ("app_log.txt", "error_log.txt", "verify_log.txt", "currency_log.txt", "unpriced_items.txt")
 
 
 def make_report(path, records, limit=60):

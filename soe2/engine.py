@@ -4,11 +4,11 @@ Part of StashOfExile2. Split out of the single-file app in 1.37 (see the launche
 
 import os
 import queue
-import random
 import re
 import statistics
 import threading
 import time
+from . import buglog
 from .config import BASE, load_json, P, save_json, SETTINGS
 from .util import mmss
 from .net import call, STATUS
@@ -18,7 +18,7 @@ from . import gear, waystone
 from .gear import only_source
 from .trade import (cheapest_real,
     _flt, build_sidtext, estimate, fetch_rich, listing_rules, mod_impact, search_ids, unconvertible,
-    uses_filter, verify_listings,
+    uses_filter, verify_listings, collapse_sellers, more_ids, MIN_SELLERS,
 )
 from .market import MARKET, Market
 from .pricefmt import confidence, fmt_div, fmt_price
@@ -33,7 +33,7 @@ def spread_of(stages, league):
     (1 chaos among 2-divine listings) was enough, so many jewels and tablets came out as "check by hand".
     Now each search is measured on its own, after leaving out listings far below the rest (under a fifth of their
     median) or far above them (over five times it: a jewel with better extra mods, or a "make me an offer" price).
-    -> (largest ratio, cheapest kept (amount, currency), dearest kept) or (None, None, None)."""
+    -> (largest ratio, cheapest kept (amount, currency), most expensive kept) or (None, None, None)."""
     worst = (None, None, None)
     for st in stages:
         vals = []
@@ -62,6 +62,22 @@ class Superseded(Exception):
 
 class Preempted(Exception):
     """(2.87.0) A Bulk Pricing item steps aside for a Price Checks item; it goes back in line."""
+
+def _game_data_id(text):
+    """2.121.0: a mod the trade site's list didn't match -> the trade-site id the game data gives its wording, or None.
+    (Gear already reads mods this way; tablets, jewels and waystones only used the trade site's list.)"""
+    try:
+        from . import gamedata
+        stat, _neg = gamedata.stat_for(text)
+        if not stat:
+            return None
+        tr = stat.get("trade") or {}
+        ids = tr.get("explicit") or next(iter(tr.values()), [])
+        return ids[0] if ids else None
+    except Exception:
+        buglog.caught()
+        return None
+
 
 class Engine(TabReaderJobs, WealthJobs, StratCostJobs, threading.Thread):
     """One background thread does all network work. Lower priority number = sooner."""
@@ -176,7 +192,25 @@ class Engine(TabReaderJobs, WealthJobs, StratCostJobs, threading.Thread):
         except Exception as e:
             self.ui_q.put(("error", "init", f"Couldn't download the trade site's mod list ({e}). Check your internet.", None))
         self._load_static()
+        self._load_items()
         self.ui_q.put(("ready",))
+
+    def _load_items(self):
+        """2.121.0 (items pass): the trade site's list of every base type and unique, once a day like the mod list -
+        bases and unique names newer than the game data (gamedata.set_trade_items). Never stops the app."""
+        from . import gamedata as _gd
+        try:
+            cache = P(_gd.TRADE_ITEMS_FILE)
+            if os.path.exists(cache) and time.time() - os.path.getmtime(cache) < 86400:
+                data = load_json(_gd.TRADE_ITEMS_FILE, {})
+            else:
+                STATUS("Downloading the trade site's item list (once a day)...")
+                data = call("GET", BASE + "/data/items")
+                save_json(_gd.TRADE_ITEMS_FILE, data)
+            _gd.set_trade_items(data)
+        except Exception:
+            buglog.caught()
+            _gd.load_trade_items()
 
     def _load_static(self):
         """2.16.0: the trade site's list of currencies (ids for every currency a stash tab can be priced in), once a
@@ -192,7 +226,7 @@ class Engine(TabReaderJobs, WealthJobs, StratCostJobs, threading.Thread):
             set_trade_currencies(data)
             self.ui_q.put(("currencies_loaded",))          # 2.40.0: Stash tab's box can show the saved currency
         except Exception:
-            pass
+            buglog.caught()
 
     def _load_stats(self):
         cache = P("stats_cache.json")
@@ -256,12 +290,16 @@ class Engine(TabReaderJobs, WealthJobs, StratCostJobs, threading.Thread):
                         with open(P("unmatched_mods.txt"), "a", encoding="utf-8") as f:
                             f.write(f"{m['text']}\t| {item.get('name')} ({item.get('base')})\n")
                     except Exception:
-                        pass
+                        buglog.caught()
                 m["key"] = f"{item['base']}|{m['sid']}" if m.get("sid") else None
             rec["resolved"] = True
             return
         for m in item["mods"]:
             m["sid"], m["group"], flipped, info = find_stat(m["text"], m["flags"], self.table, ranged=m["lo"] is not None)
+            if not m["sid"]:                     # 2.121.0 (unmatched_mods.txt: "#% chance to Daze on Hit" on a jewel):
+                gid = _game_data_id(m["text"])   # the game data's wordings know it - their trade-site id
+                if gid:
+                    m["sid"], m["group"], flipped, info = gid, gid.split(".", 1)[0], False, "matched by the game data"
             m["guess"], m["note"] = (None, info) if m["sid"] else (info, None)
             m["key"] = f"{item['base']}|{m['sid']}" if m["sid"] else None
             m["novalue"] = bool(m["sid"] and info and info.startswith("singular wording"))   # no number to filter on
@@ -275,7 +313,7 @@ class Engine(TabReaderJobs, WealthJobs, StratCostJobs, threading.Thread):
                     with open(P("unmatched_mods.txt"), "a", encoding="utf-8") as f:
                         f.write(f"{m['text']}\t| closest on trade site: {m['guess']}\n")
                 except Exception:
-                    pass
+                    buglog.caught()
         rec["resolved"] = True
 
     # ---- 2.87.0 (feedback: "single price checks should take priority over bulk pricing ... if you change them and
@@ -339,18 +377,7 @@ class Engine(TabReaderJobs, WealthJobs, StratCostJobs, threading.Thread):
         """Priced, and no listing at all (not skipped, by hand, under the floor or an error)."""
         return (rec.get("state") == "done" and not rec.get("prices") and rec.get("est") is None
                 and not (rec.get("total") or 0) and not rec.get("manual") and not rec.get("skip")
-                and not rec.get("floor"))
-
-    def _floor(self, rec, searchable):
-        from .ratemods import floor_check
-
-        def median_n(base, sid):
-            st = MARKET.cached_stats().get((base, sid))
-            return (st["med"], st["n"]) if st else (None, 0)
-        try:
-            return floor_check(rec, searchable, median_n)
-        except Exception:
-            return None
+                and not rec.get("floor"))                  # ("floor": a record from before 2.125.5's removal)
 
     def _price_rec(self, rec, tell):
         item, league = rec["item"], SETTINGS["league"]
@@ -386,15 +413,8 @@ class Engine(TabReaderJobs, WealthJobs, StratCostJobs, threading.Thread):
                        label="only low-impact mods - not worth a search" if low else "no searchable mods")
             tell()
             return
-        fl = self._floor(rec, searchable)                      # 2.96.0: Bulk Pricing floor
-        if fl:
-            what, why = fl
-            rec.update(state="done", total=0, prices=[], est=None, qid=None, partial=False, thin=False, nomatch=False,
-                       stages=[], priced_at=time.time(), skip=what == "skip", manual=what == "hand",
-                       manual_why=why if what == "hand" else "", floor=True,
-                       label=("under your floor - not searched" if what == "skip" else "check by hand") + f" ({why})")
-            tell()
-            return
+        # 2.125.5 (feedback: Skip cheap items "doesn't really add anything/don't work"): 2.96.0's Bulk Pricing floor
+        # is gone - every item with a searchable mod is searched
         rec["skip"] = False
         _status, _age, hours = listing_rules()
         extra, uses_note = uses_filter(self.table, item["class"] == "Tablet", item.get("uses"))
@@ -461,26 +481,8 @@ class Engine(TabReaderJobs, WealthJobs, StratCostJobs, threading.Thread):
         mem = MARKET.lower_bound(item["base"], vals, SETTINGS.get("memory_hours", 24) or 24)
         filt_all = Market.filters_of([m for g in plan[0][1] for m in g["mods"]])
         n_item_mods = len(item["mods"])
-        if SETTINGS.get("model_shortcut") and MARKET.model_trusted(item["base"]) and random.random() >= 0.1:
-            comp = MARKET.comparables(item["base"], filt_all, n_item_mods, days=2)     # 1 in 10 is still searched for real
-            g_ = Market.guess(comp)
-            if g_ is not None and len(comp) >= 5:
-                n_, hits_, _r = MARKET.accuracy(item["base"], 0.20, 100)
-                return dict(label=f"FROM MODEL: {len(comp)} similar stored listings from the last 2 days. The model has been "
-                                  f"right {hits_} of its last {n_} checks - no search needed",
-                            total=0, prices=[], est=g_, qid=None, partial=False, thin=False, nomatch=False, stages=[],
-                            wide=False, manual=False, conf="High", conf_why=[f"model proven: {hits_} of {n_} guesses within 20%"],
-                            memory="", model="")
-        if SETTINGS.get("memory_shortcut"):                  # 5+ identical searches lately, all agreeing within 10 percent
-            obs = MARKET.exact(item["base"], Market.filters_of([m for g in plan[0][1] for m in g["mods"]]),
-                               SETTINGS.get("memory_hours", 24) or 24)
-            ests = [o[3] for o in obs if o[1] >= 3]
-            if len(ests) >= 5 and max(ests) / max(min(ests), 1e-9) <= 1.1:
-                est = statistics.median(ests)
-                return dict(label=f"FROM MEMORY: {len(ests)} identical searches in the last {SETTINGS.get('memory_hours', 24)} h "
-                                  f"all agree ({fmt_div(min(ests))} to {fmt_div(max(ests))}) - no search needed",
-                            total=0, prices=[], est=est, qid=None, partial=False, thin=False, nomatch=False, stages=[],
-                            wide=False, manual=False, conf="High", conf_why=["identical searches agree"], memory="")
+        # 2.125.6 (feedback): no shortcuts - every item is searched (1.21's "from memory" and 1.23's "from model"
+        # skipped a search; both were off unless turned on in Settings, which few understood)
         stages, verify_tot = [], {"bad": 0, "unverifiable": False}
         for name, gs in plan:
             self._turn(rec)
@@ -625,8 +627,14 @@ class Engine(TabReaderJobs, WealthJobs, StratCostJobs, threading.Thread):
             m.pop("search_ids", None)                       # (worked out fresh each time - ticks change)
             if valid and not str(m["sid"]).startswith(("equip:", "map:")):  # 1.42: only ids the trade site's own list has
                 m["search_ids"] = [i for i in (m.get("ids") or [m["sid"]]) if i in valid]
+                if not m["search_ids"] and m.get("option") is not None:    # 2.127.0: a Legacy whose game-data id
+                    from .mods import option_live                          # isn't the trade site's - its own, by
+                    hit = option_live(m["text"], valid)                    # the wording
+                    if hit:
+                        m["search_ids"], m["option"] = [hit[0]], hit[1]
                 if not m["search_ids"]:
                     unknown += 1
+                    m["note"] = "not on the trade site's list of mods - left out of the search"
                     continue
             src = only_source(rec, m)
             if src:                                          # 2.93.0: this mod as fractured / desecrated only
@@ -636,7 +644,9 @@ class Engine(TabReaderJobs, WealthJobs, StratCostJobs, threading.Thread):
             (must if imp == "high" else opt).append(m)
         blank = dict(total=0, prices=[], est=None, qid=None, partial=False, thin=False, nomatch=False, stages=[],
                      wide=False, manual=False, conf="-", conf_why=[], memory="", skip=False)
-        if not must and not opt and item["rarity"] not in ("Unique", "Normal"):
+        if not must and not opt and item["rarity"] not in ("Unique", "Normal", "Currency", "Gem") and not (
+                item["rarity"] == "Magic" and (item.get("search") or {}).get("ilvl_min")):   # 2.114.0: a magic base
+
             return dict(blank, label="nothing ticked to search on" + (f" · {unknown} mods not on the trade site" if unknown else ""))
         values = {id(m): vfilter(m) for m in must + opt}
         check = [m for m in must if m.get("group") not in ("total", "pseudo") and m.get("option") is None]
@@ -650,7 +660,9 @@ class Engine(TabReaderJobs, WealthJobs, StratCostJobs, threading.Thread):
             steps = steps[:1]
         base_steps = gear.base_ladder(item)                    # 2.99.0 (feedback: an Exceptional Druidic Crown -
         if base_steps:                                         # ilvl 81, 29% quality - found nothing): white / blue
-            steps = [(name, must, opt, 0, values, it_) for name, it_ in base_steps]    # bases widen step by step
+            steps = [(name, must, opt, len(opt), values, it_) for name, it_ in base_steps]   # bases widen step by step
+            # (2.131.4, feedback: "setting the search to Count but not making that search require a count of 2 makes
+            # the count not function": each ☑ mod must match - it was "at least 0 of them")
         for step_ in steps:
             name, must_s, opt_s, k, vals = step_[:5]
             it_ = step_[5] if len(step_) > 5 else item
@@ -730,7 +742,7 @@ class Engine(TabReaderJobs, WealthJobs, StratCostJobs, threading.Thread):
 
     def _valid_ids(self):
         """Every stat id on the trade site's downloaded list (empty if it couldn't be downloaded: then don't filter)."""
-        if getattr(self, "_valid_for", None) is not self.table:
+        if getattr(self, "_valid", None) is None or getattr(self, "_valid_for", None) is not self.table:   # (2.108.0: no list yet)
             ids = set()
             for groups in (self.table or {}).values():
                 ids.update(groups.values())
@@ -779,6 +791,9 @@ class Engine(TabReaderJobs, WealthJobs, StratCostJobs, threading.Thread):
         """One search -> fetch -> check the listings really carry the mods -> remember it."""
         mods = [m for g in gs for m in g["mods"]]
         rich = fetch_rich(qid, ids, hours) if total > 0 else []
+        rich = collapse_sellers(rich)                 # 2.113.0 (core): one row per seller, their cheapest
+        if len(rich) < MIN_SELLERS and total > len(ids) and more_ids(qid):
+            rich = collapse_sellers(rich + fetch_rich(qid, more_ids(qid), hours))   # too few sellers: the next 10
         kept, info = verify_listings(rich, mods)
         if not info["unverifiable"]:
             verify_tot["bad"] += info["bad"]

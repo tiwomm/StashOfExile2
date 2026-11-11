@@ -11,7 +11,7 @@ INTRO = [
     "The bar on the left opens everything. Tools work while their window is open; Utilities (chat keys, the sticky "
     "note, the Session tracker and its alerts) keep working over the game.",
     "Your league is in Settings (bottom left). Things marked BETA are still being worked on: turn them on under "
-    "Settings > General > Labs if you'd like to try them.",
+    "Settings › General › Features if you'd like to try them.",
 ]
 
 # What's being worked on (2.4.0: not shown in the app any more - kept for ROADMAP.md / the developer).
@@ -20,7 +20,1014 @@ NEXT = [
 ]
 
 # What's new, per version: only what helps you use the app - what you can do now and where to find it.
+#
+# 2.111.0: a version is either a plain list (old ones: all shown as small lines) or
+#   {"big": [(icon, title, one line, (link text, target) or None, area)], "small": [(area, line)]}
+# target: a page key (shell.open) or "settings:<tab>". The card shows big ones as hero rows, the small ones fold
+# under "▸ N smaller changes".
+#
+# BIG OR SMALL - the standard. A change is BIG when a player would notice it without being told, or needs to know
+# it to keep playing the same way:
+#   * a new tool, page, window, style or helper
+#   * something they use works or sits differently (keys, flow, moved, removed)
+#   * anything about their data or privacy (always big)
+#   * a fix for a problem many players hit or reported
+# Everything else is SMALL: wording, looks, order, spacing, small fixes, speed.
+# FIXES ARE NEVER CLAIMED (2.113.2, feedback): a note can't know a fix worked on every PC - say what changed and that
+# it should help ("X was doing Y; this should stop it", "should catch", "shouldn't ... any more"), never "Fixed X".
+# At most MAX_BIG big per card (skipped updates together, newest first); the rest go small.
+MAX_BIG = 3
+# 2.125.6 (feedback: "any updates to beta functions should only show in the What's new card if a person has labs/beta
+# enabled"): notes in these areas show only with Settings › General › Beta features on. Name a note's area after the
+# beta feature it's about (a Labs page, or a part of a page marked BETA).
+BETA_AREAS = ("Wealth", "Money Makers", "Game Search", "Market Insights", "Craft Helper", "Stash tab", "Scan stash",
+              "Desecration Helper")
+
+# 2.131.0 (a full release after the 2.126-2.130 pre-releases): "rollup" holds those versions' notes, merged with no
+# repeats. Someone coming from rollup["since"] or older (or a fresh install) sees it instead of each version; someone
+# on a pre-release already saw them and gets only this version's own lines (notes_between).
 NOTES = {
+    "2.132.1": {
+        "big": [
+            ("◆", "Temple Helper", "Hover a Vaal Beacon in a map: your crystals (Energised Beacons 55/60) show on the "
+             "bar, and a red alert card says when they're full. Turn it on in Overlay ↳ Settings › Helpers.", None,
+             "Overlay"),
+        ],
+        "small": [
+            ("Overlay", "Map profit counts a map once it's done - town trips and going back in through its portal "
+             "are the same map. It's done when you start another map, or 15 minutes after you left it."),
+            ("Overlay", "Map profit's Maps… window says what its search box is for."),
+            ("Overlay", "Quick settings › Helpers has Map profit and Temple."),
+        ],
+    },
+    "2.132.0": {
+        "big": [
+            ("▲", "Map profit", "What each map earned, counted from your inventory before and after it - Currency "
+             "Exchange items only, at Exchange Rates' prices. On the bar after each map (hover for how), and every "
+             "map in Maps…. Kept on your PC only. Turn it on in Overlay ↳ Settings › Helpers.", None, "Overlay"),
+        ],
+        "small": [
+            ("Overlay", "Alert cards for things to do now - Hiveblood, End Delirium, rituals, tribute - have red "
+             "words."),
+            ("Overlay", "The tribute on the Ritual line changes once the game's counter reads the same twice."),
+            ("Overlay", "Hide the overlay from screen captures is in Overlay ↳ Settings › Options, beside Lock "
+             "position."),
+            ("Expedition", "Gem prices in Expedition books are shared through the community board and kept a day. "
+             "When there's no new price, the last one (up to two weeks old) shows while a new one is looked up - the "
+             "highest level gems first."),
+        ],
+    },
+    "2.131.6": {
+        "big": [],
+        "small": [
+            ("Overlay", "The Ritual line keeps your tribute when the game's counter goes from the screen - until it's "
+             "0 or you start a new map."),
+            ("Overlay", "End Delirium is an alert card too, like the other alerts - no flashing text."),
+        ],
+    },
+    "2.131.5": {
+        "big": [
+            ("☠", "Your tribute on the Ritual line", "In a Ritual map the line over the game says how much tribute "
+             "you have - read from the game's own counter, which the bar covers.", None, "Overlay"),
+        ],
+        "small": [
+            ("Overlay", "Offer your tribute and close the Favours window at once: the game's counter counting down "
+             "means no reminder."),
+            ("Overlay", "Top Up waits for a clear look: with the mouse over your inventory, the game's item box can "
+             "cover a stack."),
+            ("Overlay", "Top Up reminds you only when you're back from a map. The Well of Souls doesn't count as a "
+             "map."),
+            ("App", "Linux (Wayland): Settings opens without the dim layer behind it."),
+        ],
+    },
+    "2.131.4": {
+        "big": [
+            ("!", "Alerts share one card", "When a few come at once - tribute, Top Up, a break - they're rows on one "
+             "card, most urgent on top. × on a row closes that one; × at the top closes them all.", None, "Overlay"),
+        ],
+        "small": [
+            ("Overlay", "Top Up teaches with the game's own Ctrl+C now: open your inventory, hover an item, Ctrl+C. "
+             "F7 did nothing (its copy was turned away)."),
+            ("Overlay", "Top Up counts items that don't stack, like keys: each one in your inventory counts 1."),
+            ("Overlay", "Top Up › Items… › + Add more adds an item by its name (it counts once you teach it with "
+             "Ctrl+C)."),
+            ("Overlay", "The tribute reminder goes away when the Favours window shows your tribute offered."),
+            ("Price Checks", "White and magic bases at item level 82 or more search 82+ (82 and up roll the same)."),
+            ("Price Checks", "A white or magic base's ticked mods must all match."),
+        ],
+    },
+    "2.131.3": {
+        "big": [
+            ("📦", "Map supplies are in Top Up Reminders", "League Plan's Map supplies tab is gone - Top Up counts "
+             "what your inventory really holds. Your list moved over: set each one's Keep in Items… and teach it once "
+             "with Ctrl+C.", None, "Overlay"),
+        ],
+        "small": [
+            ("Price Checks", "Ask me about mods I haven't rated grades a mod S to F, the same as Rate Mods."),
+        ],
+    },
+    "2.131.2": {
+        "big": [
+            ("?", "Ask me about mods I haven't rated", "Off until you turn it on (Settings › Price checking). A price "
+             "check asks you to grade one mod you never rated, S to F as on Rate Mods - then prices again.", None,
+             "Price Checks"),
+        ],
+        "small": [
+            ("Ritual", "The tribute reminder shouldn't come after you've clicked Offer Tribute to the King, even if "
+             "you close Favours while the number still counts down (the button turns gray)."),
+            ("Overlay", "Top Up should count items you taught and then closed the inventory on: it learns them "
+             "again the next time the inventory is open with the mouse off them."),
+            ("Overlay", "Top Up Reminders: Items… › Remind when - a card only once you're 30% below Keep (you pick "
+             "0-70%), not every time you're under it."),
+            ("Overlay", "The Overlay page's Start session button and its Not tracking line shouldn't cut their words "
+             "any more."),
+            ("Community", "Picking a community name asks for a made-up one - not your real name, and never your account "
+             "or character names. Names that contain one of yours are turned down."),
+        ],
+    },
+    "2.131.1": {
+        "big": [
+            ("▶", "Start session on the bar", "No session yet? Click ▶ Start session on the Game Overlay's bar to time "
+             "your maps and count maps and deaths. Helpers work either way.", None, "Overlay"),
+        ],
+        "small": [
+            ("Overlay", "Top Up Reminders teach with their own key (Settings › Keybinds). Your price check key "
+             "just prices the item again."),
+            ("Overlay", "Top Up should count items taught with the mouse on them (the game's hover glow). Taught one "
+             "that shows 0? Teach it again, then move the mouse off it."),
+            ("Overlay", "Quick settings › Helpers has Top Up, Breaks and Desecration (with its beta feature on)."),
+            ("Leaderboards", "League ▾ says how many players have times in each league, and a board explains when "
+             "players ran different maps."),
+            ("Settings", "The Feature Picker says a community name is asked next, for the Leaderboards."),
+            ("App", "Sharing should be asked only once now (it could also come as a second popup)."),
+            ("App", "The Feature Picker comes after What's new, and it and the name card stay above the app."),
+            ("Overlay", "\"Start the overlay with StashOfExile2\" is now \"Start a session with StashOfExile2\" - what "
+             "it always did."),
+        ],
+    },
+    "2.131.0": {
+        "big": [
+            ("🧩", "Feature Picker", "Pick the features you use; the rest leave the menu. It also asks"
+             " about sharing with the community and where your data lives. Change it any time in Settings › "
+             "General › Features.", None, "Settings"),
+            ("📦", "Top Up Reminders", "Overlay › Settings › Helpers: in your open inventory, hover an item and press "
+             "Ctrl+C to teach it, then set how many to keep. When you're low, one card in hideout or "
+             "town.", None, "Overlay"),
+            ("🔔", "Alert cards", "Every helper alert is one small card: set Where and Size in Overlay › Settings › "
+             "Helpers, × to close, no flashing.", None, "Overlay"),
+        ],
+        "small": [
+            ("Overlay", "Break reminders (off to start): after 45–120 minutes of play, a short card in hideout or "
+             "town. Overlay › Settings › Helpers."),
+            ("Settings", "Settings opens over your page, dimmed behind it. Esc, × or a click outside closes it, and "
+             "it opens on the tab you used last."),
+            ("Settings", "Advanced › Data folder › Change… moves your data to another folder."),
+            ("Overlay", "Campaign routes are Full, Speedrun and Rush (carry); runs on My Own use Full."),
+        ],
+        "rollup": {
+            "since": "2.125.8",
+            "big": [
+                ("💎", "Gems priced", "Your price check key on a skill, support or spirit gem searches the trade site "
+                 "with its level, sockets, quality and corruption. Lineage gems use the exchange's going rate.", None,
+                 "Price Checks"),
+                ("⇄", "Currency's going rate", "Your price check key on a currency or omen shows what one is worth in "
+                 "exalted and chaos, and what a Divine Orb buys of it.", None, "Price Checks"),
+                ("🕯", "Favours prices", "At a Ritual altar, rewards in the Favours window get their poe.ninja price - "
+                 "only ones it's sure of. Price check any other reward there to teach it. No prices on uniques; a ★ "
+                 "on Mageblood, Headhunter and Rite of Passage.", None, "Overlay"),
+                ("⏰", "Tribute reminder", "Close Favours with tribute left: a reminder to offer it to the King.", None,
+                 "Overlay"),
+                ("⏱", "Sessions survive a restart", "If the app closes, updates or crashes, your session comes back "
+                 "paused and goes on when the game does.", None, "Overlay"),
+                ("📍", "Place the Game Overlay", "Quick settings › Place: the Bar at the bottom or top, the Panel left "
+                 "or right. Overlay › Settings › Options › Reset position puts it back.", None, "Overlay"),
+                ("🕯", "Your loot filter in the Ritual window", "Overlay › Settings › Helpers › Ritual › Filter in the "
+                 "Ritual window… shows On or Off; Turn it on changes the game's setting for you while the game is "
+                 "closed (thanks to NeverSink and Ryonnen).", None, "Overlay"),
+                ("🎨", "Gruvbox themes", "Gruvbox Dark and Gruvbox Light in Settings › Appearance (gruvbox by "
+                 "morhetz).", None, "Settings"),
+            ],
+            "small": [
+                ("Expedition", "Gems in a remnant's book get prices, a few at a time and kept for 6 hours, so your own "
+                 "price checks keep working."),
+                ("Expedition", "Remnant prices should show sooner and to a long book's last line, and show in "
+                 "screenshots and streams."),
+                ("Expedition", "\"Unique Ring\", \"Belt\", \"Amulet\" or \"Jewellery\" show the best uniques it could "  # game text
+                 "be; \"10x Divine Orb\" should get its price."),
+                ("Expedition", "The runeshape list shows only for a remnant's book, A-Z within each tier; Warding Runes "
+                 "get their tag; a cheap reward says \"<1ex\"."),
+                ("Ritual", "The Ritual line should count maps with 5 or more rituals and Map Content's ticked icon, so "
+                 "leaving a map with rituals left reminds you."),
+                ("Ritual", "Favours prices should tell look-alike omens apart, know idols and Sacred Bloom, read gray "
+                 "sealed rewards and price every copy."),
+                ("Ritual", "The tribute reminder shouldn't show while Favours is open or after you've offered it."),
+                ("Ritual", "Character select shouldn't bring the rituals-not-done reminder; a reminder waits while "
+                 "another window is in front."),
+                ("Overlay", "Place › Top keeps the Ritual line under the Bar; Bottom sits right on the XP bar."),
+                ("Overlay", "Regex favorites can be locked with the overlay's lock, and stay where you put them."),
+                ("Overlay", "Trade whispers is simply on or off."),
+                ("Price Checks", "Mageblood should search all its Legacies; Overlay + Here no longer brings the app to "
+                 "the front."),
+                ("Bulk Pricing", "The Item pane stays on screen; Undo, Delete and Clear All sit together in the Items "
+                 "strip."),
+                ("Settings", "Keys is now Keybinds, with ↺ Defaults to put every key back."),
+                ("App", "The game's log (Client.txt) should be found wherever the game is installed."),
+                ("App", "Clicking themes or pages quickly shouldn't freeze the app; light themes turn all text dark."),
+                ("App", "Moving the app to another screen shouldn't leave a page behind."),
+                ("App", "The license is now AGPL-3.0: anything made from the code stays open source. Up to 2.129.4 "
+                 "stays GPL-3.0."),
+                ("App", "When a new league starts, a one-time note says some features may need a few days to catch "
+                 "up."),
+                ("Desecration Helper", "A Heart of the Well's options show their range and roll."),
+            ],
+        },
+    },
+    "2.130.4": {
+        "big": [],
+        "small": [
+            ("Expedition", "\"10x Divine Orb\" and gem lines with the word Skill hidden should get their prices."),
+            ("Expedition", "Gem prices are kept for 6 hours and fetched a few at a time, so your own price checks keep "
+             "working (the trade site has limits)."),
+            ("Expedition", "Runeshapes: tiers C and D are in alphabetical order."),
+            ("Ritual", "Favours: a reward that's a copy of one already priced in the window should get its price too."),
+            ("Ritual", "Filter in the Ritual window is a button now, with On or Off beside it. Its Turn it on button "
+             "changes the game's setting for you while the game is closed (only that one line)."),
+        ],
+    },
+    "2.130.3": {
+        "big": [],
+        "small": [
+            ("App", "The game's log (Client.txt) should now be found wherever the game is installed: in any Steam "
+             "library, or where Windows says it's installed. Map counts and helpers depend on it."),
+            ("Desecration Helper", "A Heart of the Well's options show their range and roll (\"Heart 6–12 · 83%\")."),
+        ],
+    },
+    "2.130.2": {
+        "big": [
+            ("🎨", "Gruvbox themes", "Gruvbox Dark and Gruvbox Light in Settings › Appearance: the warm, retro editor colors "
+             "(gruvbox by morhetz).", None, "Settings"),
+        ],
+        "small": [
+            ("Ritual", "Going through character select (died, switched character) should no longer bring the "
+             "rituals-not-done reminder."),
+            ("App", "Clicking themes quickly should no longer freeze the app: only your last pick is applied."),
+            ("App", "Switching to a light theme turns all text dark (one line on Price Checks stayed light)."),
+            ("App", "The README is short now: one line per feature."),
+        ],
+    },
+    "2.130.1": {
+        "big": [],
+        "small": [
+            ("Overlay", "Place › Top: the Ritual line sits under the Bar, so it stays on screen."),
+            ("Overlay", "Place › Bottom: the Bar sits right on the XP bar (a little lower than before)."),
+            ("Ritual", "The tribute reminder should no longer come after you've offered it (the plate's 0 is read as 0)."),
+            ("Price Checks", "A gem's Sockets option searches its gem sockets, not augmentable sockets."),
+        ],
+    },
+    "2.130.0": {
+        "big": [
+            ("💎", "Gems priced", "Your price check key on a skill, support or spirit gem searches the trade site with "
+             "its level, sockets, quality and corruption. Gems in a remnant's book get prices too.", None,
+             "Price Checks"),
+            ("📍", "Place the Game Overlay", "Quick settings › Place: the Bar at the bottom or top, the Panel left or "
+             "right. Overlay › Settings › Options › Reset position puts it back.", None, "Overlay"),
+            ("🕯", "Your loot filter in the Ritual window", "Overlay › Settings › Helpers › Ritual › Filter in the "
+             "Ritual window… shows how to turn on the game's hidden setting (thanks to NeverSink and Ryonnen).",
+             None, "Overlay"),
+        ],
+        "small": [
+            ("Ritual", "The tribute reminder should no longer show while Favours is still open (a reward's tooltip "
+             "over its title)."),
+            ("Ritual", "The Ritual line should count maps with more than 4 rituals (3 of 6 and up)."),
+            ("Ritual", "More Favours rewards are known from the start: omens learned on real windows ship with the "
+             "app."),
+            ("Expedition", "\"Unique Ring\", \"Belt\", \"Amulet\" or \"Jewellery\" in a remnant's book show the "  # game text
+             "best uniques it could be; gems say \"Fetching price…\" while they're looked up."),
+            ("Expedition", "A long remnant book's last lines should get their prices too."),
+            ("App", "The license is now AGPL-3.0: anything made from the code stays open source, online services "
+             "too. Versions up to 2.129.4 stay GPL-3.0."),
+            ("App", "When a new league starts, a one-time note says some features may need a few days to catch up."),
+        ],
+    },
+    "2.129.4": {
+        "big": [],
+        "small": [
+            ("Ritual", "The Ritual line should keep count: in a map with rituals left, the bar is hidden from "
+             "screenshots so the watcher can read the game's counter under it."),
+        ],
+    },
+    "2.129.3": {
+        "big": [],
+        "small": [
+            ("Ritual", "Favours prices should tell look-alike omens apart by their colors, and know Sacred Bloom."),
+            ("Ritual", "Favours prices know idols, and a copy (Ctrl+C) of any reward in the window teaches its look."),
+            ("Ritual", "Rite of Passage gets a ★ in the Favours window, like Mageblood and Headhunter."),
+            ("Ritual", "The tribute reminder shows whenever you close Favours with tribute left, rerolls or not."),
+            ("App", "Moving the app to another screen should no longer leave a page behind on the first one."),
+            ("Ritual", "Map Content's ticked Ritual icon counts: all done is all done, even when the counter hides."),
+            ("Ritual", "A reminder that comes while another window is in front waits for the game."),
+            ("Price Checks", "Overlay + Here no longer brings the app to the front while you play."),
+        ],
+    },
+    "2.129.2": {
+        "big": [],
+        "small": [
+            ("Overlay", "Trade whispers is simply on or off - its switch should turn it on again (After the "
+             "campaign is gone)."),
+            ("Expedition", "Remnant prices should show at once: they're fetched before you open a book."),
+        ],
+    },
+    "2.129.1": {
+        "big": [],
+        "small": [
+            ("Ritual", "The Ritual watcher should start properly now, so leaving a map with rituals left reminds "
+             "you."),
+            ("Expedition", "The Remnant helper should show again (it looked for the book's title in the wrong "
+             "place)."),
+            ("Ritual", "Favours prices read gray, sealed rewards too, and the tribute banner goes after 4 s."),
+        ],
+    },
+    "2.129.0": {
+        "big": [
+            ("🕯", "Favours prices you can trust", "Only items it's sure of get a price. Every omen of the Ritual "
+             "tab is known from the start; price checking any other reward in the window teaches it. No prices on "
+             "uniques - a ★ on Mageblood and Headhunter.", None, "Overlay"),
+            ("⏰", "Tribute reminder", "Close the Favours window with no rerolls left and tribute to spend: a "
+             "reminder to offer it to the King.", None, "Overlay"),
+        ],
+        "small": [
+            ("Price Checks", "Omens, lineage gems and every currency are priced on the currency exchange's going "
+             "rate, never a trade search."),
+            ("Expedition", "The runeshape list shows only for a remnant's book (not on sandy ground), Warding Runes "
+             "get their tag, and a cheap reward says \"<1ex\"."),
+            ("Ritual", "The Ritual helper should keep watching, so leaving a map with rituals left reminds you."),
+        ],
+    },
+    "2.128.1": {
+        "big": [],
+        "small": [
+            ("Expedition", "Remnant prices, the runeshape list and Island rumors now show in screenshots, screen "
+             "share and streams, like the overlay."),
+            ("Ritual", "Favours prices show in screenshots and streams too."),
+        ],
+    },
+    "2.128.0": {
+        "big": [
+            ("🕯", "Favours prices", "At a Ritual altar, each omen and other one-cell reward in the Favours window "
+             "gets its poe.ninja price, like the Expedition helper. Price check one there and it learns its "
+             "picture.", None, "Overlay"),
+        ],
+        "small": [
+            ("Price Checks", "Switching pages after a theme change should no longer freeze the app."),
+        ],
+    },
+    "2.127.0": {
+        "big": [
+            ("💎", "Lineage gems priced", "Your price check key or Ctrl+Alt+C on a lineage support gem searches the "
+             "trade site for it, with poe.ninja's going rate alongside.", None, "Price Checks"),
+            ("⇄", "Currency's going rate", "Your price check key on a currency shows what one is worth in exalted and "
+             "chaos, and what a Divine Orb buys of it.", None, "Price Checks"),
+            ("⏱", "Sessions survive a restart", "If the app closes, updates or crashes, your session comes back "
+             "paused and goes on when the game does.", None, "Overlay"),
+        ],
+        "small": [
+            ("Bulk Pricing", "The Item pane stays on screen, even with nothing picked."),
+            ("Price Checks", "Mageblood should search all its Legacies, even when the trade site lists them "
+             "differently."),
+            ("Overlay", "Regex favorites can be locked with the overlay's lock, and stay where you put them."),
+            ("Settings", "Keys is now Keybinds, with ↺ Defaults to put every key back."),
+            ("Ritual", "The Ritual helper should keep watching (it stopped as soon as it started), so leaving a map "
+             "with rituals left reminds you again."),
+            ("Expedition", "The Remnant helper keeps a log of each book it reads, to find why prices can be late."),
+        ],
+    },
+    "2.126.0": {
+        "big": [],
+        "small": [
+            ("Bulk Pricing", "Undo, Delete and a new Clear All button sit together in the Items strip, smaller "
+             "so they fit it. Clear All was under ⋯."),
+            ("Expedition", "Remnant prices should show sooner when the game is paused or the screen is still: the "
+             "helper keeps reading the book until it finds them."),
+            ("App", "A tidy-up behind the scenes: unused code and two leftover settings are gone."),
+        ],
+    },
+    "2.125.8": {
+        "big": [],
+        "small": [
+            ("Leaderboards", "A board should show all its times now (it could stop half-way); one with only your time "
+             "says why."),
+            ("Community", "Sharing with the community? You're asked once for a community name, so your times can "
+             "show on the Leaderboards."),
+        ],
+    },
+    "2.125.7": {
+        "big": [],
+        "small": [
+            ("Desecration Helper", "It should wake at The Well of Souls more reliably, and says why if it can't read "
+             "your screen."),
+            ("Craft Helper", "A magic tablet with 2 bad mods says Reforge or Alchemy."),
+        ],
+    },
+    "2.125.6": {
+        "big": [],
+        "small": [
+            ("What's new", "Notes about beta features show only when Beta features is on."),
+            ("Settings", "Price checking: Prices in is part of Search Options; the Mod Book and Shortcuts rows are gone."),
+            ("Overlay", "The price check overlay's ⚙ says In the app instead of Here."),
+            ("Craft Helper", "Drag the divider to give the pairs more room."),
+            ("Craft Helper", "A tablet with 2 bad mods: reforge it, or Orb of Alchemy."),
+        ],
+    },
+    "2.125.5": {
+        "big": [
+            ("🧩", "Pairs that sell together", "The Craft Helper learns which two mods sell well together from your "
+             "price checks.", None, "Money Makers"),
+            ("⚖", "What's socketed", "The price check card shows your sockets and what's in them.", None, "Price Checks"),
+        ],
+        "small": [
+            ("Everywhere", "Updates should install the newest version - no second update right after."),
+            ("Overlay", "Cards over the game use your overlay style's colors and change with it."),
+            ("Money Makers", "The Craft Helper's data updates from GitHub for new game patches."),
+            ("Settings", "Price checking is shorter: no Valuable mods or Skip cheap items; Here | Overlay + Here."),
+        ],
+    },
+    "2.125.4": {
+        "big": [],
+        "small": [
+            ("Overlay", "The route card should feel quicker."),
+            ("Overlay", "The route card keeps the size you give it."),
+            ("Overlay", "Route card: the act list sits on the right; Routes ▾ is easier to read."),
+        ],
+    },
+    "2.125.3": {
+        "big": [
+            ("🗺", "Routes and Options on the route card", "Change the Campaign route and its switches right there.",
+             None, "Overlay"),
+        ],
+        "small": [
+            ("Bulk Pricing", "Every column shows again; Columns ▾ turns any of them off."),
+            ("Overlay", "The route card scrolls and fits your screen."),
+            ("Overlay", "The route card should stay up while its act list is open."),
+            ("Overlay", "Routes are now Full, Speedrun, Rush (carry) and My Own."),
+            ("Overlay", "Reload Overlay (⟳) in Quick settings builds the overlay again."),
+        ],
+    },
+    "2.125.2": {
+        "big": [],
+        "small": [
+            ("Everywhere", "Updates should install even while Windows is still checking the new file."),
+        ],
+    },
+    "2.125.1": {
+        "big": [],
+        "small": [
+            ("Overlay", "Quick settings takes the overlay's style."),
+            ("Settings", "Appearance: the style preview shouldn't freeze or flicker any more."),
+            ("Everywhere", "The start-up screen opens in the middle of the app's monitor."),
+        ],
+    },
+    "2.125.0": {
+        "big": [
+            ("🤝", "Rush (carry) route",
+             "Carrying a friend? The Campaign Helper tells you what to clear, when to bring them in and what they pick up.",
+             None, "Overlay"),
+        ],
+        "small": [
+            ("Overlay", "Settings › Campaign › Route says what each route does."),
+        ],
+    },
+    "2.124.1": {
+        "big": [
+            ("🪨", "Classic Panel in the Bar's look",
+             "Stone, pewter frame and the Bar's colors - the Panel and the lines over it match the Bar.", None, "Overlay"),
+        ],
+        "small": [
+            ("Overlay", "Quick settings: Layout, Panel | Bar."),
+            ("Overlay", "The Panel's menus stay inside its frame."),
+            ("Overlay", "The map's name is shortened before its time gets smaller on the Bar."),
+            ("Overlay", "The campaign line wraps to three lines; the Zone time starts when you enter a zone."),
+            ("Everywhere", "After an update the app should open on the monitor you left it on."),
+            ("Settings", "Appearance: the style preview no longer flickers."),
+        ],
+    },
+    "2.124.0": {
+        "big": [
+            ("🧭", "Campaign lines are part of the overlay",
+             "Campaign, Ritual and NOW sit on top of the overlay, and the overlay grows up, not down.", None, "Overlay"),
+            ("⏱", "Zone timer in the campaign",
+             "In campaign zones: the act line, your session and the zone's time - no rank, Maps or Avg.", None, "Overlay"),
+            ("🏆", "Campaign zones leaderboard",
+             "Your best time in each zone, by name - sent only with Community data sharing on.", None, "Leaderboards"),
+        ],
+        "small": [
+            ("Overlay", "The campaign line wraps on a narrow bar instead of cutting off."),
+            ("Overlay", "The route card no longer resizes or redraws itself when you switch tabs or tick a line."),
+            ("Overlay", "Many ◀ ▶ clicks and an act change shouldn't hide the overlay any more."),
+            ("Overlay", "Vendor search keeps its size when you copy a search."),
+            ("Settings", "Appearance: Layout first (Panel | Bar); the style preview shows the layout you picked."),
+            ("Overlay", "\"Game bar\" is now called Bar."),
+            ("Overlay", "Quick settings: each switch says what it does when you hover it."),
+            ("Overlay", "The Death Recap card is gone."),
+        ],
+    },
+    "2.123.6": {
+        "big": [],
+        "small": [
+            ("Everywhere", "The app should open on the monitor you left it on, after an update too."),
+        ],
+    },
+    "2.123.5": {
+        "big": [],
+        "small": [
+            ("Everywhere", "US spelling throughout: color, behavior, gray, center and the rest."),
+            ("Expedition", "Island Rumors waits for the Uncharted Waters card's own words, so a lit tan floor "
+             "shouldn't bring it up any more."),
+        ],
+    },
+    "2.123.4": {
+        "big": [
+            ("⚒", "Craft Helper: what to do with it", "Check my tablet or jewel now says Worth pricing, Craft on, "
+             "Reforge or Vendor, with the next step and why. Price it runs your own price check on it.",
+             ("Open Craft Helper", "money"), "Money Makers"),
+        ],
+        "small": [
+            ("Price Checks", "The divider beside the item has a grip you can see, and dragging it should feel smooth now."),
+        ],
+    },
+    "2.123.3": {
+        "big": [
+            ("⚖", "Here | Overlay + Here", "Your price check key shows the price in the app, or in a card over the "
+             "game and the app. The item's side of Price Checks has a divider you can drag; it remembers.",
+             ("Open Price Checks", "pricecheck"), "Price Checks"),
+        ],
+        "small": [],
+    },
+    "2.123.2": {
+        "big": [
+            ("⚖", "Here | Overlay | Both", "Your price check key can show the price in the app, in a card over the "
+             "game, or both at once (the app shows it without taking the keyboard from the game).",
+             ("Open Price Checks", "pricecheck"), "Price Checks"),
+        ],
+        "small": [
+            ("Price Checks", "Search again, Clear, Add to favorites and Trade Site are under the item again."),
+            ("Rate Mods", "The \"rated\" count counts mods, not clicks, and the button you just pressed no longer "
+                          "stays lit on the next mod - only your own rating is."),
+        ],
+    },
+    "2.123.1": {
+        "big": [
+            ("⏱", "Fewer rate-limit penalties", "The trade site also limits by a rule it doesn't report. The app now "
+             "searches at most 12 times per 5 minutes, learns a lower limit when that rule hits, and goes slower for "
+             "30 minutes after any penalty - this should keep you clear of them.", None, "Bulk Pricing"),
+        ],
+        "small": [
+            ("Bulk Pricing", "Skip cheap items now skips an item whose mods the Mod Book's prices show are cheap, even "
+                             "when the app's built-in rules mark one High. Only your own High (S / A) or the players' "
+                             "votes keep it from being skipped."),
+            ("Price Checks", "The Trade site rate limits window doesn't flicker any more."),
+            ("Settings", "Search Min is a choice like other price checkers': 0% (exact), 5%, 10% ... 30% below your "
+                         "roll. \"Warn when prices vary\" says it plainly: the highest listing costs this many times "
+                         "the lowest."),
+        ],
+    },
+    "2.123.0": {
+        "big": [
+            ("⚖", "Price Checks: the answer first", "One strip across the top says the price, how sure it is (a mark and "
+             "a word) and how it was worked out, with Search again beside it. Recent checks are chips; the filters "
+             "have more room; Here | Overlay picks where your price check key shows it.", ("Open Price Checks",
+                                                                                           "pricecheck"), "Price Checks"),
+            ("⚙", "Price checking settings in three groups", "All price checks, Single Price Checks (Ctrl+D) and Bulk "
+             "Pricing (Ctrl+Alt+C) - each says which pages it changes. Your account is in Settings › General. Each "
+             "page's ⚙ opens its own group.", ("Open Price checking", "settings:Price checking"), "Settings"),
+            ("⚒", "Craft Helper: tablets and jewels, rated S-F", "Money Makers › Craft Helper rates every tablet and "
+             "jewel mod S to F and says where that came from - you, other players or the market. No prices: press "
+             "your price check key on an item to know what it's worth. Check my tablet / jewel says what to do next.",
+             ("Open Money Makers", "money"), "Money Makers"),
+        ],
+        "small": [
+            ("Money Makers", "The Craft Helper's Copy regex buttons are gone: the game's stash search holds 250 "
+                             "characters, too few for every mod worth keeping. Regex still makes your own searches."),
+            ("Bulk Pricing", "The bottom bar says \"Tablets, jewels, waystones & gear\" - it prices gear too."),
+            ("Bulk Pricing", "One toolbar row: search first, the filters, Columns ▾ (Item, Type, Status, Price and "
+                             "Listings always show), Re-price all, Pause and ⋯ (Export CSV, Order added, Clear list)."),
+            ("Bulk Pricing", "Manual Add | Stash tab, Delete and Undo sit in the Items strip. The Item pane opens when "
+                             "you pick an item; ✕ or Esc closes it."),
+            ("Bulk Pricing", "The pricing rules read in plain words at the top, with Change…"),
+        ],
+    },
+    "2.122.0": {
+        "big": [
+            ("⚖", "Where your price check key shows the price", "\"Show over the game\" is now a row across the top of "
+             "Price Checks that says what it does: when you press Ctrl+D on an item in game, show the price On this "
+             "page or In a card over the game.", ("Open Price Checks", "pricecheck"), "Price Checks"),
+        ],
+        "small": [
+            ("Settings", "Leave and delete my data deletes your name, strats and leaderboard times. What you shared "
+                         "anonymously (mod prices, ratings, map ranks, unmatched mods) stays in the pool for everyone."),
+        ],
+    },
+    "2.121.1": {
+        "big": [
+            ("⌨", "Esc closes the price check card", "While the card over the game is open, Esc closes it (the game's "
+             "menu doesn't open). Change the key, or where the price shows, with the card's new ⚙.",
+             ("Open Keys", "settings:Keys"), "Price Checks"),
+            ("🛡", "Community data sharing: mods the app couldn't read", "If you share, the wording of mods your price "
+             "checks couldn't match now goes along (numbers as #, the base type - never the item's name), so they can "
+             "be fixed. Nothing new to turn on.", ("What's shared", "settings:Privacy & community"), "Settings"),
+        ],
+        "small": [],
+    },
+    "2.121.0": {
+        "big": [
+            ("🔍", "New items are known the day the trade site knows them", "The app now downloads the trade "
+             "site's own list of every base type and unique once a day, like the mod list. A new base or unique "
+             "should no longer come back as unknown.", None, "Price Checks"),
+        ],
+        "small": [
+            ("Price Checks", "A unique the trade site doesn't list yet is searched as any unique on its base, with a "
+                             "note - instead of \"unknown item name\"."),
+            ("Price Checks", "A kind of item the app doesn't know yet is searched by its type when the trade site "
+                             "lists it."),
+            ("Price Checks", "\"#% chance to Daze on Hit\" on jewels (and other mods the trade site's list words "
+                             "differently) should be matched now; a corruption's \"{ Enhancement }\" line is never "
+                             "read as a mod."),
+        ],
+    },
+    "2.120.1": {
+        "big": [
+            ("🖱", "Lock position and Click-through", "The overlay's Mouse choice is two switches again, with the names "
+             "other overlays use - in Overlay ↳ Settings › Options and Quick settings.", ("Open Settings", "ovset"),
+             "Overlay"),
+        ],
+        "small": [
+            ("Price Checks", "Unticking Base type (Any Belts, Any Rings ...) still searched the item's own base. It "
+                             "searches the whole kind now, for every kind of gear - this should match what the card "
+                             "says."),
+            ("Price Checks", "A corrupted item has a Corrupted listings only switch under Properties, on Price "
+                             "Checks and the card over the game."),
+            ("Price Checks", "A crafted \"... Modifier magnitudes\" line isn't searched any more: what it adds is "
+                             "already in the other mods' numbers."),
+        ],
+    },
+    "2.120.0": {
+        "big": [
+            ("⭐", "Rate Mods has its own page", "Price Checks ↳ Rate Mods: pick an item kind on the left, rate one mod "
+             "at a time on the right (keys S-F, ← →). It was a window that drew badly.", ("Open Rate Mods", "ratemods"),
+             "Price Checks"),
+            ("⚙", "Settings that read faster", "Price checking is in groups, and your price check key is one choice: "
+             "over the game, in the app, or nowhere. Each section says one line; ⓘ has the rest.",
+             ("Open Price checking", "settings:Price checking"), "Settings"),
+            ("🖱", "One choice for the mouse on the overlay", "Drag to move, Locked, or Clicks pass through - in "
+             "Overlay ↳ Settings and Quick settings. Hide from captures is in Settings › Advanced.", ("Open Settings",
+                                                                                                 "ovset"), "Overlay"),
+        ],
+        "small": [
+            ("App", "The status bar says Trade site: ready, or how long to wait. Point at it for the numbers."),
+            ("App", "Empty pages show what goes there and what to do next."),
+            ("App", "Page names in Title Case, one way to write BETA; Labs is called Beta features."),
+            ("Map Library", "Ask me to rank maps is on the Map Library page now."),
+            ("Settings", "The game's window title moved to Settings › Advanced. The clock has one setting, in "
+                         "Appearance."),
+            ("Price Checks", "An unidentified unique was searched by its base's name, and the trade site said "
+                             "\"unknown item name\". It's searched as the unique on that base now - this should "
+                             "stop it."),
+        ],
+    },
+    "2.119.0": {
+        "big": [
+            ("⚙", "Fewer settings to think about", "Pace, Accent color, Text size and two switches nobody needed are "
+             "gone. The overlay always hides when the game isn't in front; the start-up screen always shows.",
+             ("Open Settings", "settings:General"), "Settings"),
+            ("✦", "Helpers say what they do", "Each helper in Overlay ↳ Settings has one line under its name. If the "
+             "game's log isn't found, one note at the top says so, with Find it.", ("Open Helpers", "ovset"),
+             "Overlay"),
+            ("🧭", "Expedition prices by itself", "No Auto switch and no Ctrl+Alt+R key: the prices show when a "
+             "remnant's reward book opens. If you had Auto off, it's on again.", None, "Overlay"),
+        ],
+        "small": [
+            ("Overlay", "The bar's timer takes only its own width, so map names have more room. Paused, the time "
+                        "dims."),
+            ("Overlay", "⚙ on the bar opens Quick settings with either click; All settings… is in it."),
+            ("Overlay", "One name: League Plan (was Game Plan, League Focus and Focus)."),
+            ("Notes", "Text size is on the note now: A− / A+ beside its tabs, or Ctrl + mouse wheel."),
+            ("Privacy", "What's shared, and why? and Help rate mods no longer mention rep (gone since 2.118.0)."),
+        ],
+    },
+    "2.118.0": {
+        "big": [
+            ("✦", "A cleaner overlay bar", "No more helper switches on it - one tidy row in every style. Every helper "
+             "is on; turn one off in Overlay ↳ Settings › Helpers, or right-click ⚙ for Quick settings.",
+             ("Open Helpers", "ovset"), "Overlay"),
+            ("🎨", "See a theme before you pick it", "Settings › Appearance › Theme: point at a name for a big live "
+             "preview of the app in it. The overlay styles' previews are now drawn by the real bar.",
+             ("Open Appearance", "settings:Appearance"), "Settings"),
+            ("🕯", "Your Ritual count over the bar", "In a map with Ritual, a line over the bar shows how many rituals "
+             "are done. Turn it off with On screen on the Ritual row in Helpers.", None, "Overlay"),
+        ],
+        "small": [
+            ("Community", "Rep and the contributor icon are gone, with Thank someone with rep. The board deleted "
+                          "everyone's rep, and the link between your install's ratings and your name."),
+            ("Overlay", "Overlay ↳ Settings › Options: Feature tips is gone with the switches it explained."),
+            ("Mod book", "With Focus or Campaign's line over the bar, the Gear rules list could stop working - this "
+                         "should stop it."),
+        ],
+    },
+    "2.117.1": {
+        "big": [
+            ("🎨", "Ashen Rite shouldn't freeze the app any more", "Switching to it could leave the app not responding "
+             "on some PCs. The step that got stuck now waits its turn, and the theme uses a font with normal line "
+             "heights (Georgia) - this should stop it.", ("Open Appearance", "settings:Appearance"), "Settings"),
+        ],
+        "small": [
+            ("App", "If a part of a window keeps resizing itself, the app's log says which one, so Report a bug can "
+                    "show it."),
+        ],
+    },
+    "2.117.0": {
+        "big": [],
+        "small": [
+            ("App", "Small problems the app works around are written in its log too (where in the code only), so "
+                    "Report a bug can show what led up to a bigger one."),
+        ],
+    },
+    "2.116.0": {
+        "big": [
+            ("⌨", "Keys and chat commands on one tab", "Settings › Keys has every hotkey and your chat commands with "
+             "their keys - set in one place.", ("Open Keys", "settings:Keys"), "Settings"),
+            ("🎨", "Pick an overlay style by seeing it", "Settings › Appearance lists the styles beside a live preview "
+             "of the bar - hover one to see it, click to use it.", ("Open Appearance", "settings:Appearance"),
+             "Settings"),
+            ("🛠", "Developer options", "Settings › Advanced › Developer options (off until you turn it on): a debug "
+             "mode for the app's log, and the mods the trade site didn't know beside its closest wording.", None,
+             "Settings"),
+        ],
+        "small": [
+            ("Settings", "Always on top and Minimize to the system tray start off on new installs."),
+            ("Settings", "Messages stay for and the tray setting moved to General › Window; your price check key's "
+                         "switches to Price checking."),
+            ("Settings", "Advanced › Problems shows what the app's log holds this week, with a way to open it."),
+            ("Settings", "The data folder is shown without your Windows user name."),
+            ("App", "Shorter notes on Privacy & community, About and Updates."),
+        ],
+    },
+    "2.115.0": {
+        "big": [
+            ("🐞", "One log for everything that goes wrong", "Errors, crashes, freezes, slow spots and refused trade-site "
+             "requests now all go into one log on your PC (where in the app's code - nothing about you). Report a bug "
+             "can send it, and you see every word first; after a crash the app offers to.", None, "App"),
+        ],
+        "small": [
+            ("App", "Problems that slipped through before - in a background job or a button - are written down too."),
+        ],
+    },
+    "2.114.3": {
+        "big": [],
+        "small": [
+            ("App", "If the app ever closes by itself, the next start writes crash_report.txt in the data folder - "
+                    "where in the app's code it was, nothing about you - so the bug can be found. Share it with a bug "
+                    "report if you like."),
+            ("Wealth", "Scan stash: after the last tab the app should come to the front with the numbers to check, "
+                       "over the app on its own screen (the check window was opening behind the game or on the other "
+                       "screen)."),
+            ("App", "A few more windows (Favorites, Ledger, Map library, Money Makers, Report a bug) open over the app "
+                    "on its screen."),
+            ("Wealth", "Scan stash reads the Currency tab's wildcard slots too: what's in each is told by its picture (a "
+                       "second stack of Divine Orbs there counts now). One it doesn't know shows as \"? (wildcard slot)\" - "
+                       "double-click to name it once and it's known after."),
+            ("Wealth", "Everything poe.ninja has no price for (like the Ancient liquids) is now asked of the trade site's "
+                       "exchange - all of it, not just the first 30 - and the total is worked out again when that's "
+                       "done. Items still without a price say why, and the total says how many it leaves out."),
+        ],
+    },
+    "2.114.2": {
+        "big": [],
+        "small": [
+            ("Wealth", "Scan stash (beta) reads your Expedition, Ritual, Essence and Fragments tabs too. Stacks over 9,999 show as \"12.2K\" in game, "
+                       "so they're read as 12,200 - check the number before you save."),
+        ],
+    },
+    "2.114.1": {
+        "big": [],
+        "small": [
+            ("Price checks", "Wombgifts are searched on the trade site by their type, like the site's own search, so "
+                             "your price check key should give a price for them now."),
+            ("Price checks", "The card over the game has the item's properties too (base type, item level, quality, "
+                             "sockets with Min / Max), so white and magic bases should price the same as in the app."),
+        ],
+    },
+    "2.114.0": {
+        "big": [
+            ("📖", "One rating in the Mod book", "Every mod has one rating now, S to F, like Gear rules: S / A are always "
+             "searched, B-D count a little, F is ignored. The separate High / Normal / Ignore column is gone; a tier you "
+             "already gave decides it.", None, "Mod book"),
+        ],
+        "small": [
+            ("Mod book", "Rate mods: the \"Which items do you know best?\" box is grouped and should fit over the app now."),
+            ("Mod book", "Export / Import rules moved under More."),
+            ("Price checks", "Your price check key on a single currency item that isn't a stack should now "
+                             "give its going rate in a message, from poe.ninja or the trade site's bulk exchange."),
+            ("Price checks", "Under the hood: Paste item and Price it (no separate Check button)."),
+            ("Rates", "Exchange rates show currency names and plain numbers."),
+            ("Overlay", "Opening Notes shows the note over the game. The calculator starts blank."),
+            ("App", "The Listing order lab (an admin tool) is gone."),
+        ],
+    },
+    "2.113.2": {
+        "big": [],
+        "small": [
+            ("Expedition", "Island rumors: the card's handwriting is matched by letter shape too, so a rumor Windows "
+                           "misreads (\"Wodviw' to c(riwkv..\" for Nothin' to drink) should still be recognized."),
+        ],
+    },
+    "2.113.1": {
+        "big": [],
+        "small": [
+            ("Price checks", "\"Show over the game\" is on the Price Checks page now (top right), and in Settings › "
+                             "Price checking - one switch, both places."),
+            ("Expedition", "Island rumors should catch the middle rumor too (read at twice the size, and found even when "
+                           "it's split over two lines)."),
+        ],
+    },
+    "2.113.0": {
+        "big": [
+            ("⚖", "Price checks over the game", "Turn on \"Show over the game\" (top right of Price Checks): your price check key "
+             "opens the price, the mods (with Min / Max) and the cheapest listings right over the game.",
+             ("Turn it on", "pricecheck"), "Price checks"),
+            ("👥", "Each seller counts once", "Prices come from different sellers - one seller listing five copies "
+             "can't set the price any more. Their listing says how many times they listed it.", None, "Price checks"),
+        ],
+        "small": [
+            ("Price checks", "A mod's Min never drops below its own tier, so your item isn't priced against weaker "
+                             "ones."),
+            ("Expedition", "Island rumors should catch every rumor on the card, in a smaller panel like the Runeshape tips."),
+        ],
+    },
+    "2.112.5": {
+        "big": [],
+        "small": [
+            ("Hotfix", "Dragging the Campaign line shouldn't open the route card any more - a plain click still does."),
+        ],
+    },
+    "2.112.4": {
+        "big": [],
+        "small": [
+            ("Looks", "Clicking quickly through the theme cards changes the theme once, to the last one you clicked."),
+            ("Looks", "Theme changes no longer rebuild the overlay over the game (only Classic takes the theme's "
+                      "colors)."),
+            ("Overlay", "The Flanks style is now called Split."),
+            ("Overlay", "Unlocked, the Campaign / Focus line can be dragged anywhere (by its ⠿ grip); that undocks it "
+                        "from the bar - Dock the lines to the bar puts it back."),
+        ],
+    },
+    "2.112.3": {
+        "big": [],
+        "small": [
+            ("Overlay", "Quick settings: the Style list should stay open until you pick a style."),
+            ("Updates", "The update question shows what's new as plain lines."),
+            ("Fixes", "A theme change that takes over 1.5 s notes where the time went in slow_report.txt (your data "
+                      "folder, code locations only, never sent) - share it to help speed it up."),
+        ],
+    },
+    "2.112.2": {
+        "big": [
+            ("✔", "Theme changes should no longer freeze", "Changing the app theme was hanging or closing the app on "
+             "Windows; this should stop it.", ("Pick a theme", "settings:Appearance"), "Fixes"),
+        ],
+        "small": [],
+    },
+    "2.112.1": {
+        "big": [],
+        "small": [
+            ("Fixes", "If the app ever stops responding, it notes where in hang_report.txt (your data folder) - code "
+                      "locations only, nothing personal, never sent. Share it to help fix a freeze."),
+            ("Looks", "No dark boxes behind switch text on Settings cards."),
+        ],
+    },
+    "2.112.0": {
+        "big": [
+            ("☰", "Helpers, tidied up", "One row per helper with On bar and Remind columns, grouped by where you use "
+             "them.", ("Open them", "ovset"), "Overlay"),
+        ],
+        "small": [
+            ("Overlay", "Quick settings: the Style list should stay open until you pick one."),
+        ],
+    },
+    "2.111.0": {
+        "big": [
+            ("✦", "Four more overlay styles", "Totem, Hellfire, Psionic and Guildhall - nine ornate looks in all.",
+             ("Pick one", "settings:Appearance"), "Overlay"),
+        ],
+        "small": [
+            ("What's new", "This card shows the big changes first; the small ones fold under one line."),
+            ("Looks", "The What's new card and About follow your app theme."),
+            ("Updates", "The update note's buttons should no longer squeeze one into a blank box."),
+            ("Overlay", "The Colors picker is gone from Overlay settings - each style keeps its own colors."),
+        ],
+    },
+    "2.110.0": {
+        "big": [
+            ("✦", "Five new overlay styles", "Herald, Gilded, Warbanner, Verdant and Gloom - the bar, the panel and "
+             "every window over the game.", ("Pick one", "settings:Appearance"), "Overlay"),
+        ],
+        "small": [
+            ("Overlay", "The switches go Campaign, Focus, Breach, Delirium, Ritual, Expedition."),
+            ("Overlay", "Right-click the cog to pick a style."),
+            ("Overlay", "\"Avg:\" lost its period."),
+        ],
+    },
+    "2.109.0": {
+        "big": [
+            ("▣", "Everything over the game matches", "Notes, Calc, Regex favorites, Rates and every card follow "
+             "your overlay's Style.", ("Overlay settings", "settings:Appearance"), "Overlay"),
+            ("✱", "Regex: one card of options", "Every setting is a row of buttons in one card, like Money Makers.",
+             ("Open Regex", "regex"), "Regex"),
+        ],
+        "small": [
+            ("Regex", "Copied a search? Just Ctrl+V into the stash search in game."),
+            ("Regex", "★ first, Only ★ and Select valuable are gone."),
+        ],
+    },
+    "2.108.0": [
+        "Right-click the overlay's cog: Quick settings over the game - overlay, sound, lock, what's on the bar. "
+        "Left-click still opens the full settings.",
+        "Expedition: the island rumors show in one panel beside the card.",
+        "Game Plan: goals by phase in tabs, and Stockpile / Map supplies / Farm plan / Pokes in tabs.",
+        "Leaderboards: a tidier toolbar, and a hint when a board is empty.",
+        "Map library: rank buttons S A B C D ✖ sit together in the toolbar.",
+        "Price Checks: Recent sits under the item card, so the page has more room.",
+        "Overlay bar: no stray \"-\" after Map: and Avg.: before your first map.",
+        "Bulk Pricing: ticking boxes on the item card no longer searches each time or redraws the card - press "
+        "Search again when you're ready.",
+        "Money Makers: Import file and Download Format are in the ⋯ menu next to + Add my own.",
+        "Regex: item kinds are tabs, options are click-to-toggle chips, and the Regex key line sits under your search.",
+        "Game search: click a Try example, or one of your recent searches.",
+    ],
+    "2.107.0": [
+        "New look for controls: every switch is a clear ON | OFF box, and buttons are flat in every theme.",
+        "Price Checks: your recent checks are a list on the left (was a dropdown).",
+        "Overlay: one ON | OFF switch for the overlay, and one Sound switch for every helper's alert.",
+        "\"Open on trade site\" is now \"Trade Site\".",
+    ],
+    "2.106.0": [
+        "Wealth: synced stash tabs are gone - count your currency (Ctrl+C) or Scan stash (beta). Old tab data is "
+        "cleared once; what you counted stays.",
+        "Wealth: Items show where each stack came from (Counted, Scanned, Added by hand) - filter by it.",
+        "Wealth › Snapshots: what happened each time, the change since the one before, and the picked one beside "
+        "the list.",
+        "Wealth: the chart's line uses its height, so ups and downs show.",
+        "Favorites: ticking a stat on a trade-link favorite turns its group on - ticked mods are searched.",
+        "Favorites: trade-link favorites use your Seller setting (Instant Buyout) unless you pick one on the card.",
+        "Open on trade site: always opens what the card shows now - changed filters are searched first.",
+    ],
+    "2.105.0": [
+        "Price Checks and Favorites: Base type, tier, item level, Corrupted / Mirrored / Desecrated, Seller and "
+        "\"only\" boxes change in place - the card no longer redraws on each click.",
+        "Overlay: Rates ▾ on the bar when Exchange rates is on - click it to open or close the rates.",
+        "Overlay: the bar reads Map: and Avg.:.",
+        "Leaderboards: pick a league by name, and how many rows to show (Top 5 to Top 100).",
+        "Island Rumors: two problems fixed (starting the app in your hideout; a card read while opening). "
+        "Not confirmed in game yet - tell us if tags still don't show.",
+        "Price Checks: an exact search now needs every mod you ticked (a fractured or desecrated mod could count "
+        "twice, so listings missing one of your mods showed up).",
+        "Amulets: catalyst quality (\"Quality (Caster Modifiers)\") and the anoint (\"Allocates ...\") are read "
+        "and can be searched.",
+        "Searches: up to 15 per 5 minutes on the Balanced pace (was 8), still well under the trade site's limit.",
+        "Market Insights: Gear and Tablets get a second box - the slot (Helmets, Rings ...) or tablet kind.",
+        "Market Insights: the item shows like a trade-site card; \"Open on trade site\" and \"Remove\".",
+        "Exchange rates: Convert moved to Exchange Helper; rates always refresh hourly (no switch).",
+        "Bulk Pricing: no more Mark listed / sold / removed - every item shows.",
+    ],
+    "2.104.0": [
+        "Favorites: an empty list says how to add one; the link box says what goes in it.",
+        "Favorites: a wider item card; Search and Open on trade site sit under it, like Price Checks.",
+        "Favorites: a check that found nothing says why, with Search again / Search with fewer mods.",
+        "Favorites: Undo shows only when there's something to undo; a failed price shows \"-\".",
+        "Market Insights: All and Gear tabs - priced gear shows here now.",
+        "Market Insights: no Refresh button (it fills in by itself); the item's buttons sit under its card.",
+        "Waystones: the tier row says just \"Waystone tier:\" - the boxes hold the numbers.",
+    ],
+    "2.103.4": [
+        "Charm slots (\"Has 1 Charm Slot\") get a Min box and search as a number.",
+        "Waystones: a tier you type is kept when you press Search (no Enter needed).",
+        "Favorites: the list on the left changes in place instead of being built again.",
+        "Bulk Pricing: a tick on the item panel changes only that row first.",
+    ],
+    "2.103.3": [
+        "Price Checks: a tick or a star changes only that mod's row - the card is no longer built again.",
+        "Waystones: a tier range (or an unticked tier) now searches every waystone in that range.",
+        "Favorites: same - a tick changes only its row, and the listings stay put.",
+        "Favorites: Add trade link asks what to call the bookmark.",
+        "Price Checks and Favorites show the \"Staying under the trade site's limits\" line, like Bulk Pricing.",
+    ],
+    "2.103.2": [
+        "Price Checks: ticking a mod no longer redraws the listings.",
+        "Waystones: a Waystone tier row (a range searches only from 2.103.3).",
+        "Buttons in toolbars have their spacing back.",
+    ],
+    "2.103.1": [
+        "Bulk Pricing: the filters, Export CSV and Clear list are back where they were.",
+        "Waystones: type a Min / Max on any mod on the card to search on it.",
+    ],
     "2.103.0": [
         "Price Checks: when nothing matched, it says why and offers Search again or Search with fewer mods.",
         "Bulk Pricing: Filters ▾ opens the list filters; Export CSV and Clear list are under ⋯; the Status column "
@@ -34,7 +1041,7 @@ NOTES = {
     "2.101.0": [
         "New overlay styles: Settings › Appearance › Overlay settings › Style - Hairline, Slate, Flanks and Micro "
         "are light, plain looks (no box for Hairline and Flanks); Classic is the stone-and-bronze look you know.",
-        "Each comes as a Game bar or a Panel (Layout), in ten colour sets or your app theme's (Colours).",
+        "Each comes as a Game bar or a Panel (Layout), in ten color sets or your app theme's (Colors).",
     ],
     "2.100.0": [
         "List rows light up under the mouse, and clickable icons brighten.",
@@ -189,7 +1196,7 @@ NOTES = {
         "The overlay bar spells out each switch (Breach, Delirium, Ritual, Expedition ...).",
     ],
     "2.89.1": [
-        "Screenshots show the overlay again. (Overlay ↳ Settings › Behaviour can hide it, if it covers a counter the "
+        "Screenshots show the overlay again. (Overlay ↳ Settings › Behavior can hide it, if it covers a counter the "
         "Ritual or Delirium watcher reads.)",
         "A ⚙ next to the overlay's lock opens its settings.",
         "The bar's switch says Campaign; the Campaign settings no longer print two options on top of each other.",
@@ -242,7 +1249,7 @@ NOTES = {
     ],
     "2.85.2": [
         "Ritual alerts work under the overlay bar again: the bar is left out of screen captures, so the watcher sees "
-        "the Ritual counter beneath it. Switch: Overlay ↳ Settings › Behaviour (off = screenshots and streams show the "
+        "the Ritual counter beneath it. Switch: Overlay ↳ Settings › Behavior (off = screenshots and streams show the "
         "bar).",
         "The Focus / campaign line docks flush on the overlay bar, with matching ends.",
     ],
@@ -271,14 +1278,14 @@ NOTES = {
         "The game's plain Ctrl+C no longer opens Price Checks.",
     ],
     "2.83.0": [
-        "New: Island Rumours. Open the world map in your hideout and each rumour on the Uncharted Waters card shows "
+        "New: Island Rumors. Open the world map in your hideout and each rumor on the Uncharted Waters card shows "
         "the island it leads to and your Map library rank for it. Rank the islands in the Map library.",
         "The Remnant price tags no longer pop up in hideouts, towns, the campaign or maps without an Expedition (the "
         "app looks for the Expedition mark under Map Content); on Grand Expedition islands they're always watching.",
     ],
     "2.82.0": [
         "Overlay ↳ Settings: every overlay option on its own page, grouped - On the bar, Features, Campaign, "
-        "Behaviour and the Mechanic Helper. Open it from the sidebar or the Overlay settings button.",
+        "Behavior and the Mechanic Helper. Open it from the sidebar or the Overlay settings button.",
     ],
     "2.81.2": [
         "Desecration Helper: two-line options like Accuracy + Light Radius get their tier too.",
@@ -310,7 +1317,7 @@ NOTES = {
         "Mageblood and similar uniques price correctly: two of the same Legacy (2 Quicksilver, 2 Diamond) are searched "
         "as one stat with Min 2, like the trade site does.",
         "The campaign line sits docked on top of the overlay bar and moves with it (switch: Overlay › Options › "
-        "Campaign). The bar is as wide as the XP bar, bottom centre, and refits when your resolution changes.",
+        "Campaign). The bar is as wide as the XP bar, bottom center, and refits when your resolution changes.",
         "Updates are looked for every hour.",
     ],
     "2.79.0": [
@@ -373,7 +1380,7 @@ NOTES = {
     "2.74.4": [
         "Price checks: tick the mods right on the item card - ticked mods are searched on. Min / Max "
         "and key mods are under Fine-tune the search.",
-        "A unique's flavour text is never taken for a mod any more.",
+        "A unique's flavor text is never taken for a mod any more.",
     ],
     "2.74.3": [
         "The session timer has a ⏸ / ▶ button on the overlay, and the Pause key on your keyboard pauses and resumes "
@@ -389,7 +1396,7 @@ NOTES = {
         "Price checks: the Item card shows the item as it reads in game - its mods and their values right on the "
         "card, with tier tags, no scrolling for them.",
         "Uniques are read properly: their mods count (they were left out), Mageblood's Legacies are searched by "
-        "name (Legacy of Gold, Quicksilver ...), and flavour text is never taken for a mod.",
+        "name (Legacy of Gold, Quicksilver ...), and flavor text is never taken for a mod.",
     ],
     "2.74.0": [
         "Under the hood and the Mod book are advanced tools now, hidden unless you want them: Settings › Advanced › "
@@ -847,7 +1854,7 @@ NOTES = {
     ],
     "2.26.2": [
         "Regex: switching between tablets, waystones, jewels, gear ... no longer freezes the app.",
-        "Fixed: maximised when you closed it -> maximised when you open it (for real this time).",
+        "Fixed: maximized when you closed it -> maximized when you open it (for real this time).",
         "Price checks shows the time left right from the start, not only after a few items are done.",
         "Price checks: the column is called \"Valuable mods\", and a line under the list explains the stars.",
     ],
@@ -864,7 +1871,7 @@ NOTES = {
         "Settings > Advanced: the Lag finder (was \"Slowness recorder\").",
     ],
     "2.25.4": [
-        "Fixed: maximised when you closed it -> maximised again when you open it.",
+        "Fixed: maximized when you closed it -> maximized again when you open it.",
         "Settings > Advanced > Slowness recorder: if the app feels slow, press Start and use it for a few minutes - "
         "it writes down what was busy whenever the window got stuck.",
     ],
@@ -891,7 +1898,7 @@ NOTES = {
         "heading to sort.",
     ],
     "2.23.1": [
-        "The app opens where you left it - same place, same size, maximised if it was.",
+        "The app opens where you left it - same place, same size, maximized if it was.",
     ],
     "2.23.0": [
         "The sticky note has tabs: + adds one, double-click renames, right-click deletes.",
@@ -957,7 +1964,7 @@ NOTES = {
     "2.13.0": [
         "Breach alerts look like the Delirium alert again: big flashing text over the game, no box. They go by "
         "themselves after a few seconds.",
-        "Top value is now called Market Insights; \"Dearest listings seen\" is \"Most expensive listings seen\".",
+        "Top value is now called Market Insights.",
     ],
     "2.12.0": [
         "Lists have striped rows, like a spreadsheet. Ctrl+C copies the selected rows; right-click a list to copy, "
@@ -1043,7 +2050,7 @@ NOTES = {
         "differently in the last few hours, from Grinding Gear Games' own trade history. There's also a check for a "
         "flip you see in game.",
         "Top value remembers what you've priced even after you clear Price checks, and shows the mods and price of "
-        "the dearest listings seen.",
+        "the most expensive listings seen.",
         "Session tracker > Options explains how profit per hour works, and tells you when Wealth needs setting up "
         "first.",
     ],
@@ -1072,7 +2079,7 @@ NOTES = {
         "Session tracker > Map stats: every map you've run, how many times, your best and average time, and a "
         "leaderboard of your fastest runs for each map.",
         "Top value (Labs): the most valuable tablets, waystones and jewels you've priced, the mods worth the most, and "
-        "the dearest listings your price checks came across.",
+        "the most expensive listings your price checks came across.",
         "The clock is 12-hour or 24-hour (Settings > Appearance); it starts out the way your Windows clock is set.",
     ],
     "2.0.0": [
@@ -1139,6 +2146,46 @@ NOTES = {
     ],
 }
 
+# 2.132.0 (full release: "include a summary card of the changes since last full release"): someone coming from
+# 2.125.8 (the last full release) or a fresh install sees this one card - 2.126.0 to 2.132.0, as things work now (lines
+# a later version changed are given as they are now, never twice).
+NOTES["2.132.0"]["rollup"] = {
+    "since": "2.125.8",
+    "big": [
+        ("🧩", "Feature Picker", "Pick the features you use; the rest leave the menu. It also asks about sharing with "
+         "the community and where your data lives. Change it any time in Settings › General › Features.", None,
+         "Settings"),
+        ("📦", "Top Up Reminders", "Overlay ↳ Settings › Helpers: in your open inventory, hover an item and press Ctrl+C "
+         "to teach it, set how many to keep, or + Add more by name. Back from a map with something low: one card. "
+         "League Plan's Map supplies moved here.", None, "Overlay"),
+        ("🔔", "Alert cards", "Every helper alert - Breach, Ritual, tribute, End Delirium, Top Up, breaks - is one small "
+         "card; a few at once share it, most urgent on top. Things to do now have red words. No flashing.", None,
+         "Overlay"),
+        ("☠", "Your tribute on the Ritual line", "In a Ritual map the line over the game says how much tribute you "
+         "have, read from the game's own counter - and offering it means no reminder.", None, "Overlay"),
+        ("▶", "Start session on the bar", "No session yet? Click ▶ Start session on the Game Overlay's bar to time your "
+         "maps and count maps and deaths. Helpers work either way.", None, "Overlay"),
+        ("?", "Ask me about mods I haven't rated", "Off until you turn it on (Settings › Price checking). A price check "
+         "asks you to grade one mod you never rated, S to F as on Rate Mods - then prices again.", None,
+         "Price Checks"),
+    ] + [b for b in NOTES["2.131.0"]["rollup"]["big"]],
+    "small": [
+        ("Overlay", "Break reminders (off to start): after 45–120 minutes of play, a short card in hideout or town."),
+        ("Overlay", "Hide the overlay from screen captures is in Overlay ↳ Settings › Options, beside Lock position."),
+        ("Overlay", "Quick settings › Helpers has Top Up, Breaks and Desecration (with its beta feature on)."),
+        ("Overlay", "\"Start a session with StashOfExile2\" (was Start the overlay) - what it always did."),
+        ("Overlay", "Campaign routes are Full, Speedrun and Rush (carry)."),
+        ("Settings", "Settings opens over your page, dimmed behind it; Esc, × or a click outside closes it."),
+        ("Settings", "Advanced › Data folder › Change… moves your data to another folder."),
+        ("Price Checks", "White and magic bases at item level 82 or more search 82+, and their ticked mods must all "
+         "match."),
+        ("Leaderboards", "League ▾ says how many players have times in each league."),
+        ("Community", "A community name is asked once, after What's new - a made-up one, never your account or "
+         "character names."),
+        ("App", "Linux (Wayland): Settings opens without the dim layer behind it."),
+    ] + [x for x in NOTES["2.131.0"]["rollup"]["small"] if "6 hours" not in x[1]],
+}
+
 
 def notes_between(seen, current):
     """[(version, [lines])] newer than `seen` up to `current`, newest first (seen None = just the current one)."""
@@ -1153,4 +2200,46 @@ def notes_between(seen, current):
             continue
         if vtuple(v) > vtuple(seen):
             out.append((v, lines))
-    return out
+    return _rolled(out, seen)
+
+
+def _rolled(out, seen):
+    """A version with a "rollup" stands in for the versions it covers when `seen` is that old (or None)."""
+    res, skip = [], None
+    for v, entry in out:
+        if skip and vtuple(skip[0]) < vtuple(v) < vtuple(skip[1]):
+            continue
+        r = entry.get("rollup") if isinstance(entry, dict) else None
+        if r and (seen is None or vtuple(seen) <= vtuple(r["since"])):
+            entry = {"big": list(entry.get("big", [])) + list(r.get("big", [])),
+                     "small": list(entry.get("small", [])) + list(r.get("small", []))}
+            skip = (r["since"], v)
+        res.append((v, entry))
+    return res
+
+
+def split_notes(notes, beta=True):
+    """[(version, entry)] newest first -> (big hero rows, small lines) for the card (see the standard above).
+    beta=False (Beta features off): notes about a beta feature (BETA_AREAS) are left out."""
+    big, small = [], []
+    for _v, entry in notes:
+        if isinstance(entry, dict):
+            for icon, title, text, go, area in entry.get("big", []):
+                if not beta and area in BETA_AREAS:
+                    continue
+                if len(big) < MAX_BIG:
+                    big.append((icon, title, text, go))
+                else:
+                    small.append((area, f"{title}: {text}"))
+            small += [tuple(x) for x in entry.get("small", []) if beta or x[0] not in BETA_AREAS]
+        else:
+            small += [("", line) for line in entry]
+    return big, small
+
+
+def plain_lines(entry):
+    """A version's notes as plain lines (About › Version), big ones first."""
+    if not isinstance(entry, dict):
+        return list(entry)
+    return [f"{title} - {text}" for _i, title, text, _go, _a in entry.get("big", [])] + \
+        [f"{a}: {t}" if a else t for a, t in entry.get("small", [])]

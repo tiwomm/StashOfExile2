@@ -24,6 +24,7 @@ PROPS = {
 }
 _PROP = re.compile(r"^([A-Za-z ]+):\s*([+-]?\d+(?:\.\d+)?)%?")
 _TIER = re.compile(r"Waystone \(Tier (\d+)\)")
+_NUM = re.compile(r"([+-]?\d+(?:\.\d+)?)")
 
 
 def is_waystone_text(text):
@@ -92,6 +93,11 @@ def parse_waystone(text):
                    "sid": None, "ids": [], "group": "explicit", "guess": None, "key": None, "novalue": True,
                    "covered": "the waystone's mods don't set its price: not searched",
                    "note": "the waystone's mods don't set its price: not searched"}
+            num = _NUM.search(clean)                    # 2.103.1 (feedback): a range can be typed for any mod - the
+            if num:                                     # number is kept; the search uses it only when you type one
+                mod.update(value=float(num.group(1)), typed_only=True)
+                if mod["value"].is_integer():
+                    mod["value"] = int(mod["value"])
             mod["roll"] = roll_pct(mod)
             mods.append(mod)
     corrupted = any(l == "Corrupted" for l in lines)
@@ -128,7 +134,7 @@ def plan(must, opt):
         if m.get("uval") is not None:                      # values you typed on the item win
             return vfilter(m)
         v = m["value"]
-        if v is None:
+        if v is None or m.get("typed_only"):                 # 2.103.1: a mod's own number - only when you type one
             return None
         return {"min": int(v * share) if share < 1 else v} if v > 0 else {"min": v}
     allm = must + opt

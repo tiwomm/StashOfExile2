@@ -83,6 +83,13 @@ CREATE TABLE IF NOT EXISTS campaign_zones (
   PRIMARY KEY (act, zone, cid)
 );
 
+-- 2.121.1: mod lines an install's price checks couldn't match (POST /mods/batch "unmatched": wording with numbers as #,
+-- and the base type - nothing else); GET /mods/unmatched pools those seen by 2 or more installs
+CREATE TABLE IF NOT EXISTS unmatched_mods (
+  text TEXT NOT NULL, cid TEXT NOT NULL, base TEXT NOT NULL DEFAULT '', updated INTEGER NOT NULL,
+  PRIMARY KEY (text, cid)
+);
+
 -- 2.78.0: atlas screenshots for strats (POST /images, GET /images/<id>) - small JPEGs, a strat names one "b:<id>"
 CREATE TABLE IF NOT EXISTS images (
   id INTEGER PRIMARY KEY AUTOINCREMENT, author_id TEXT NOT NULL, data BLOB NOT NULL, created INTEGER NOT NULL
@@ -113,7 +120,7 @@ CREATE TABLE IF NOT EXISTS limits (   -- per-day counters (edits, suggestions, r
 -- 2.86.0: global leaderboards (the Worker also creates these itself on first use)
 CREATE TABLE IF NOT EXISTS lb (
   id INTEGER PRIMARY KEY AUTOINCREMENT, user_id TEXT NOT NULL,
-  cat TEXT NOT NULL,                  -- campaign, map, boss, trial
+  cat TEXT NOT NULL,                  -- campaign, zone (2.124.0), map, boss, trial
   key TEXT NOT NULL,                  -- the act / map / fight
   league TEXT NOT NULL, cls TEXT NOT NULL DEFAULT '',
   secs REAL NOT NULL,                 -- the best time (self-reported, from the game's log)
@@ -128,8 +135,9 @@ CREATE TABLE IF NOT EXISTS lb_reports (
   PRIMARY KEY (lb_id, user_id)
 );
 
--- 2.95.0: rep (karma-style) - one row per thing that earned or cost it; an account's rep is the sum (never below 0)
-CREATE TABLE IF NOT EXISTS rep (
-  user_id TEXT NOT NULL, kind TEXT NOT NULL, ref TEXT NOT NULL, pts INTEGER NOT NULL, created INTEGER NOT NULL,
-  PRIMARY KEY (user_id, kind, ref)
+-- 2.132.0: gem prices pooled from players' own searches (runeshape / book gems) - the newest wins
+CREATE TABLE IF NOT EXISTS gem_prices (
+  league TEXT NOT NULL, kind TEXT NOT NULL, level INTEGER NOT NULL, name TEXT NOT NULL,
+  div REAL NOT NULL, n INTEGER NOT NULL DEFAULT 1, updated INTEGER NOT NULL,
+  PRIMARY KEY (league, kind, level, name)
 );

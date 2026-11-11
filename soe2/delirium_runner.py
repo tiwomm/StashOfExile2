@@ -14,6 +14,7 @@ import os
 import sys
 import threading
 from pathlib import Path
+from . import buglog
 
 
 def _reopen_std():
@@ -47,7 +48,7 @@ def _reopen_std():
         if sys.stderr is None:
             sys.stderr = sys.stdout
     except Exception:
-        pass
+        buglog.caught()
 
 
 def parent_pid(argv):
@@ -73,10 +74,10 @@ def parent_alive(pid):
             k = ctypes.windll.kernel32
             k.OpenMutexW.restype = ctypes.c_void_p
             h = k.OpenMutexW(0x00100000, False, APP_MARK.format(pid=int(pid)))      # SYNCHRONIZE
-            if not h:
-                return False
-            k.CloseHandle(ctypes.c_void_p(h))
-            return True
+            if h:
+                k.CloseHandle(ctypes.c_void_p(h))
+                return True
+            return process_alive(pid)            # 2.127.0: no mark seen - is the app's process there all the same?
         except Exception:
             return True
     try:
@@ -86,11 +87,32 @@ def parent_alive(pid):
         return False
 
 
+def process_alive(pid):
+    """2.127.0 (the Ritual watcher quit the moment it started, every time since 2.12x): Windows - is that process id
+    on the list of running processes? (Only the list of ids is read; no process is opened.)"""
+    try:
+        import ctypes
+        n = 4096
+        while True:
+            arr = (ctypes.c_ulong * n)()
+            got = ctypes.c_ulong(0)
+            if not ctypes.windll.kernel32.K32EnumProcesses(ctypes.byref(arr), ctypes.sizeof(arr), ctypes.byref(got)):
+                return True
+            count = got.value // ctypes.sizeof(ctypes.c_ulong)
+            if count < n:
+                return int(pid) in set(arr[:count])
+            n *= 2
+    except Exception:
+        return True
+
+
 def after_stdin_ends(pid, quit_fn, log=None):
     """The app's pipe ended. Normally that means the app is gone: quit. 2.40.0: if the app is still running (the
     pipe was never really connected), keep working and quit only when the app goes away."""
     import time
     if not pid or not parent_alive(pid):
+        if log:
+            log(f"the app's pipe closed and the app ({pid}) isn't running - quitting")
         quit_fn()
         return
     if log:
@@ -120,7 +142,7 @@ def main(argv):
                 sys.stdout.write(str(line).rstrip("\n") + "\n")
                 sys.stdout.flush()
             except Exception:
-                pass
+                buglog.caught()
 
     import builtins
     builtins_print = builtins.print
@@ -138,7 +160,7 @@ def main(argv):
         if data.get("game_window_title"):
             D.CONFIG["game_window_title"] = str(data["game_window_title"])
     except Exception:
-        pass
+        buglog.caught()
     # its messages (print) go to the app as message lines
     def relay(*a, **k):
         text = " ".join(str(x) for x in a)
@@ -163,7 +185,7 @@ def main(argv):
                     if cmd:
                         self.commands.append(cmd)
             except Exception:
-                pass
+                buglog.caught()
             after_stdin_ends(self.pid, lambda: self.commands.append("quit"))     # the app is gone: so are we
 
         def set(self, state):
@@ -175,6 +197,15 @@ def main(argv):
             say("state stopped")
 
     D.Tray = PipeTray
+
+    # 2.131.6 (feedback: "end delirium is still showing up as big flashing text and not the new alert style"): run
+    # by the app, its banner never shows - "state alert" tells the app, which shows the alert card
+    def _show(self):
+        self.visible = True
+
+    def _hide(self):
+        self.visible = False
+    D.Alert.show, D.Alert.hide = _show, _hide
     test = "--test-alert" in argv
     try:
         D.run(test_alert=test)

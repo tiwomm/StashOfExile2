@@ -11,8 +11,8 @@ never slows the app, and talks to the app over its stdin / stdout:
                    or a message line.
 How the counter is read: find the icon by template matching (soe2/templates/ritual_icon.png, scaled to the game's
 height), take the black box right of it, keep the bright text pixels and cut them into glyphs at the empty columns;
-the middle one is "/", and each digit (0 - 4) is recognized from its shape (holes, width, which edges are filled).
-A reading counts only when it's seen twice in a row and makes sense (total 3 or 4, done <= total).
+the middle one is "/", and each digit (0 - 9) is recognized from its shape (holes, width, which edges are filled).
+A reading counts only when it's seen twice in a row and makes sense (total 3 - 8, done <= total).
 
 ToS (TOS.md): this only LOOKS at the screen (a capture, like a screenshot) and SHOWS something; it never presses,
 clicks, types or sends anything to the game, and never reads the game's memory or traffic."""
@@ -21,10 +21,12 @@ import sys
 import threading
 import time
 from pathlib import Path
+from . import buglog
 
 BASE_H = 1440                    # the templates and offsets are measured on a 2560x1440 game
-# where to look for the icon, from the bottom centre of the game (1440p pixels): x from, x to, up from bottom (from, to)
+# where to look for the icon, from the bottom center of the game (1440p pixels): x from, x to, up from bottom (from, to)
 SEARCH = (240, 620, 170, 0)
+TOTAL_MAX = 8                     # 2.130.0: a map can hold more rituals than 4 (3/6 seen; "up to 7")
 TEXT_BOX = (50, 120, 6, 44)      # the counter's box, relative to the icon's top-left: x from, x to, y from, y to
 ICON_MIN = 0.62                  # template-match score that counts as "the icon is there"
 POLL = 0.5
@@ -70,7 +72,7 @@ def glyph_vector(g):
 
 
 def references():
-    """[(digit, grid, aspect)]: shapes of 0 - 4 from the game itself (ritual_glyphs.json, shipped) plus any the app
+    """[(digit, grid, aspect)]: shapes of 0 - 9 from the game itself (ritual_glyphs.json, shipped) plus any the app
     learned on this PC (data folder / ritual / learned.json)."""
     import json
     import numpy as np
@@ -80,17 +82,19 @@ def references():
         here = Path(base) / "soe2" if base else Path(__file__).resolve().parent
         for p in (here / "ritual_glyphs.json", Path(os.environ.get("SOE2_RITUAL_LEARNED", "")) if
                   os.environ.get("SOE2_RITUAL_LEARNED") else None):
+            if p is None:                                  # (2.128.0: no learned shapes - nothing to read)
+                continue
             try:
                 for d, grid, asp in json.loads(Path(p).read_text())["glyphs"]:
                     refs.append((int(d), np.array(grid, float).reshape(GRID), float(asp)))
             except Exception:
-                pass
+                buglog.caught()
         _REFS["list"] = refs
     return _REFS["list"]
 
 
 def classify_digit(g):
-    """A binary glyph (rows x cols, True = ink) -> 0..4, or None: the nearest reference shape."""
+    """A binary glyph (rows x cols, True = ink) -> 0..9, or None: the nearest reference shape."""
     import numpy as np
     if g.sum() < 6 or g.shape[0] < 6:
         return None
@@ -141,7 +145,7 @@ def read_text(gray):
         done, total = classify_digit(a), classify_digit(b)
         if done is None or total is None:
             continue
-        if total in (3, 4) and 0 <= done <= total:
+        if 3 <= total <= TOTAL_MAX and 0 <= done <= total:   # 2.130.0 (feedback: "you can get up to 7")
             return done, total
     return None
 
@@ -210,6 +214,31 @@ def read_counter(gray, tpl_gray, ui):
 
 
 # ================================================================ the helper process
+CONTENT_AREA = (0.64, 0.14, 1.0, 0.49)    # 2.129.3: where Map Content's icons are (parts of the game's width / height)
+CONTENT_MIN = 0.85                        # the Ritual icon there: 0.94 - 1.0; anything else under 0.7
+TICK_MIN = 0.03                           # its green tick (all done): ~0.06 of the lower right quarter
+
+
+def content_state(bgr, tpl, scale):
+    """2.129.3 (feedback: the line said 1 of 3 while it was 3 of 3 - the counter at the bottom isn't always on screen):
+    the Ritual icon in Map Content (under the minimap) -> "done" (it has the green tick: every ritual done), "open",
+    or None (not there)."""
+    import cv2
+    t = cv2.resize(tpl, None, fx=scale, fy=scale, interpolation=cv2.INTER_AREA) if abs(scale - 1) > 0.01 else tpl
+    g = cv2.cvtColor(bgr, cv2.COLOR_BGR2GRAY)
+    if g.shape[0] < t.shape[0] or g.shape[1] < t.shape[1]:
+        return None
+    _mn, mx, _l, (x, y) = cv2.minMaxLoc(cv2.matchTemplate(g, t, cv2.TM_CCOEFF_NORMED))
+    if mx < CONTENT_MIN:
+        return None
+    side = int(round(46 * scale))
+    q = bgr[y + side // 2:y + side, x + side // 2:x + side].astype(int)
+    if not q.size:
+        return "open"
+    green = ((q[..., 1] > q[..., 2] + 40) & (q[..., 1] > q[..., 0] + 20)).mean()
+    return "done" if green >= TICK_MIN else "open"
+
+
 def main(argv):
     """StashOfExile2.exe --ritual <data folder>"""
     from .delirium_runner import _reopen_std
@@ -242,20 +271,30 @@ def main(argv):
                 sys.stdout.write(str(line).rstrip("\n") + "\n")
                 sys.stdout.flush()
             except Exception:
-                pass
+                buglog.caught()
 
     cmds = []
 
     def read_stdin():
+        t0, why = time.time(), "end of input"
         try:
             for line in sys.stdin:
                 if line.strip():
                     cmds.append(line.strip())
-        except Exception:
-            pass
+        except Exception as e:
+            why = f"{e.__class__.__name__}: {e}"
+            buglog.caught()
+        # 2.127.0 (it quit the moment it started, every time): say why, so the log shows it
+        log(f"input from the app ended after {time.time() - t0:.1f} s ({why}; stdin {type(sys.stdin).__name__})")
         after_stdin_ends(pid, lambda: cmds.append("quit"), log)      # 2.40.0: a broken pipe isn't "the app is gone"
-    threading.Thread(target=read_stdin, daemon=True).start()
+    t0 = time.time()
+    log(f"launched; app {pid}")
+    # 2.129.1 (its log: "started" and "stopped" in the same second, at every start - or 159 s late): everything is
+    # loaded BEFORE the app's pipe is read. On Windows, a thread waiting on that pipe made each newly loaded library
+    # (OpenCV's, mss's) wait too - until the app sent something (its "quit" when it closed) - so the watcher sat
+    # stuck for the whole session. The Delirium helper always loaded first, and never stuck.
     try:
+        import ctypes  # noqa: F401
         import cv2
         import numpy as np
         from .screengrab import screen
@@ -266,21 +305,31 @@ def main(argv):
         tpl = cv2.imread(str(tdir / "ritual_icon.png"), cv2.IMREAD_GRAYSCALE)
         if tpl is None:
             raise RuntimeError("ritual_icon.png is missing from the app")
+        ctpl = cv2.imread(str(tdir / "ritual_content.png"), cv2.IMREAD_GRAYSCALE)   # (None: no Map Content check)
+        refs = references()
+        try:
+            with screen() as _s:                         # (its libraries too)
+                _s.grab({"left": 0, "top": 0, "width": 2, "height": 2})
+        except Exception:
+            buglog.caught()
     except Exception as e:
-        say(f"state error")
+        threading.Thread(target=read_stdin, daemon=True).start()
+        say("state error")
         say(f"error {type(e).__name__}: {e}")
         return 1
-    log(f"started: {len(references())} digit shapes, icon template {tpl.shape}")
+    threading.Thread(target=read_stdin, daemon=True).start()
+    log(f"started: {len(refs)} digit shapes, icon template {tpl.shape}; app {pid} (in {time.time() - t0:.1f} s)")
     say("state watching")
     last, pending, shown, state = None, None, None, "watching"
     rect_seen, best_log = None, 0.0
+    content, content_at, content_pending = None, 0.0, None
     with screen() as sct:                         # mss; Wayland: grim (2.103.0 linux branch)
         while True:
             while cmds:
                 c = cmds.pop(0)
                 if c == "quit":
                     say("state stopped")
-                    log("stopped (the app asked, or it ended)")
+                    log(f"stopped after {time.time() - t0:.0f} s (the app asked, or it ended)")
                     return 0
                 if c == "capture":
                     try:
@@ -313,6 +362,16 @@ def main(argv):
                 shot = np.asarray(sct.grab({"left": x, "top": y, "width": w, "height": h}))
                 gray = cv2.cvtColor(shot, cv2.COLOR_BGRA2GRAY)
                 kind, val = read_counter(gray, tpl, sh / BASE_H)
+                if ctpl is not None and time.time() - content_at > 2.0:     # 2.129.3: Map Content's Ritual icon
+                    content_at = time.time()
+                    a = CONTENT_AREA
+                    cshot = np.asarray(sct.grab({"left": ox + int(sw * a[0]), "top": oy + int(sh * a[1]),
+                                                 "width": int(sw * (a[2] - a[0])), "height": int(sh * (a[3] - a[1]))}))
+                    cs = content_state(cshot[:, :, :3], ctpl, sh / BASE_H)
+                    if cs == content_pending and cs != content:          # the same twice in a row
+                        content = cs
+                        say(f"content {cs or 'none'}")
+                    content_pending = cs
                 if kind != "ok" and time.time() - best_log > 60:        # once a minute: how close it got
                     best_log = time.time()
                     hit = find_icon_score(gray, tpl, sh / BASE_H)

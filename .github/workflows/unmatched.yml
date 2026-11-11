@@ -1,0 +1,27 @@
+# 2.121.1: the mod lines players' price checks couldn't match, pooled by the community board (wording with numbers as
+# # and the base type only - seen by 2 or more installs). Copied once a week (and by hand) as a workflow artifact, so
+# the matcher can be fixed. Nothing is committed and no secret is needed.
+name: Unmatched mods
+on:
+  schedule:
+    - cron: "41 7 * * 1"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  copy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09  # v5
+      - name: Download the pooled list
+        run: |
+          url="$(tr -d '[:space:]' < board/url.txt)"
+          [ -n "$url" ] || { echo "No board address in board/url.txt - skipping."; exit 0; }
+          curl -fsS --max-time 60 "$url/mods/unmatched" -o unmatched_mods.json || { echo "Board not reachable - skipping."; exit 0; }
+          python3 -c "import json; d = json.load(open('unmatched_mods.json')).get('unmatched', []); print(len(d), 'lines'); [print(f\"{r['n']}\t{r['text']}\t{r.get('base') or ''}\") for r in d]"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4.6.2
+        with:
+          name: unmatched-mods
+          path: unmatched_mods.json
+          retention-days: 90
+          if-no-files-found: ignore

@@ -5,6 +5,7 @@ Part of StashOfExile2. Split out of the single-file app in 1.37 (see the launche
 import difflib
 import math
 import re
+from . import buglog
 from .config import load_json, P, save_json, SETTINGS
 
 
@@ -118,7 +119,7 @@ _LINE_CACHE = {"n": -1, "map": {}}
 
 
 def sid_for_line(key):
-    """A listing's mod line (normalised) -> trade stat id (2.0). Exact wording first; then the other ways the game and
+    """A listing's mod line (normalized) -> trade stat id (2.0). Exact wording first; then the other ways the game and
     the trade site write the same stat: 'reduced' for a negative 'increased', '3 additional times' for
     'an additional time', '# additional rare chest' for '# additional rare chests'."""
     sid = TEXT2SID.get(key)
@@ -154,7 +155,7 @@ def sid_for_line(key):
             if ids:
                 return ids[0]
     except Exception:
-        pass
+        buglog.caught()
     return None
 
 
@@ -308,7 +309,13 @@ def min_for(mod):
         return None
     if abs(v) <= 3:
         return v
-    return math.floor(v * SETTINGS["range_factor"]) if v > 0 else math.ceil(v * SETTINGS["range_factor"])
+    if v < 0:
+        return math.ceil(v * SETTINGS["range_factor"])
+    t = math.floor(v * SETTINGS["range_factor"])
+    lo = mod.get("lo")                              # 2.113.0: never under the item's own tier (its roll range from
+    if isinstance(lo, (int, float)) and lo <= v:    # Ctrl+Alt+C) - 90% of a low roll searched the tier below too,
+        t = max(t, math.floor(lo))                  # so the item was priced against weaker ones
+    return t
 
 
 def vfilter(mod):
@@ -317,12 +324,12 @@ def vfilter(mod):
     2.79.1: a stat with a choice carries its option in the id (search_sid), no value."""
     if mod.get("option") is not None:
         return None
-    if mod.get("novalue"):
-        return None
     uv = mod.get("uval")
-    if uv is not None:
+    if uv is not None and (mod.get("typed_only") or not mod.get("novalue")):     # 2.103.1: a range you typed
         out = {k: v for k, v in uv.items() if k in ("min", "max") and v is not None}
         return out or None
+    if mod.get("novalue"):
+        return None
     t = min_for(mod)
     if t is None:
         return None
@@ -360,7 +367,7 @@ DEFAULT_IMPACT = [(re.compile(rx), imp) for rx, imp in (
 )]
 
 
-RULES = load_json("mod_rules.json", {})        # your own changes: normalised mod text -> impact
+RULES = load_json("mod_rules.json", {})        # your own changes: normalized mod text -> impact
 
 # 2.6.0: waystone and relic rules have their own names ("relic:#% increased movement speed"), so a relic mod never
 # picks up a jewel rule that happens to use the same words. Tablet and jewel rules keep the plain wording.
@@ -404,6 +411,25 @@ def tier_key(k):
     return t if t in TIER_ORDER else default_tier(k)
 
 
+def migrate_tier_only():
+    """2.114.0 (P8: "make Tier the only rating"): before, a mod had a tier AND High / Normal / Ignore, and they could
+    disagree (High with tier C). Now the tier decides: S / A = High, B / C / D = Normal. An Ignore (F) stays and its
+    old tier goes. -> True when anything changed."""
+    changed = False
+    for k, t in list(TIERS.items()):
+        if t not in TIER_ORDER:
+            continue
+        if RULES.get(k) == "ignore":
+            TIERS.pop(k)
+            changed = True
+            continue
+        want = "high" if t in ("S", "A") else "normal"
+        if impact_key(k) != want:
+            RULES[k] = want
+            changed = True
+    return changed
+
+
 def tier_rank(t):
     """S = 0 ... D = 4; no tier (ignored) = 9."""
     return TIER_ORDER.index(t) if t in TIER_ORDER else 9
@@ -435,7 +461,7 @@ def _load_default_rules():
     return out
 
 
-DEFAULT_RULES = _load_default_rules()        # normalised mod text -> impact
+DEFAULT_RULES = _load_default_rules()        # normalized mod text -> impact
 
 
 def default_impact(k):
@@ -454,7 +480,7 @@ HIGH_LIFT, MIN_WITH, MIN_WITHOUT = 2.0, 8, 8
 
 
 def learned_info(k):
-    """What the data says about a mod (normalised text) -> {"tier", "lift", "n", "from"} or None."""
+    """What the data says about a mod (normalized text) -> {"tier", "lift", "n", "from"} or None."""
     sid = TEXT2SID.get(k)
     if not sid or not LEARNED:
         return None
@@ -465,7 +491,7 @@ def learned_info(k):
 
 
 # ---- shared rules (Export rules / Import rules). Imported votes live in their own file so they never touch YOUR rules.
-COMMUNITY = load_json("community_rules.json", {})     # normalised mod text -> {"text", "from": [sharer ids]}
+COMMUNITY = load_json("community_rules.json", {})     # normalized mod text -> {"text", "from": [sharer ids]}
 
 
 COMMUNITY_ACTIVE, COMMUNITY_DISAGREE = set(), set()
@@ -485,7 +511,7 @@ def rebuild_community(market=None):
         BOARD_RATED.update(rated_high())
         cand |= set(BOARD_RATED)
     except Exception:
-        pass
+        buglog.caught()
     bad = set()
     try:
         if market is not None:
@@ -498,7 +524,7 @@ def rebuild_community(market=None):
                 if sts and all(st["decided"] and st["tier"] != "high" for st in sts):
                     bad.add(k)                       # your own data has enough listings and says it is NOT valuable
     except Exception:
-        pass
+        buglog.caught()
     COMMUNITY_DISAGREE.clear()
     COMMUNITY_DISAGREE.update(bad)
     COMMUNITY_ACTIVE.clear()
@@ -563,11 +589,11 @@ def _clean_tab_line(line):
     return [t]
 
 
-TAB_KINDS = {}      # normalised mod text -> {"Prefix", "Suffix"} as listed in tabs.txt
+TAB_KINDS = {}      # normalized mod text -> {"Prefix", "Suffix"} as listed in tabs.txt
 
 
 def load_tabs():
-    """tabs.txt -> {normalised mod text: [display text, {tablet types it can roll on}]}"""
+    """tabs.txt -> {normalized mod text: [display text, {tablet types it can roll on}]}"""
     out, cur, kind = {}, None, None
     try:
         with open(P("tabs.txt"), encoding="utf-8-sig") as f:
@@ -651,11 +677,11 @@ def clean_jewel_line(line):
     return out
 
 
-JEWEL_KINDS = {}      # normalised mod text -> {"Prefix", "Suffix"}
+JEWEL_KINDS = {}      # normalized mod text -> {"Prefix", "Suffix"}
 
 
 def load_jewels():
-    """jewels.txt -> {normalised mod text: [display text, {jewel types it can roll on}]}.  Desecrated pools are skipped
+    """jewels.txt -> {normalized mod text: [display text, {jewel types it can roll on}]}.  Desecrated pools are skipped
     (those mods are always searched as 'Any')."""
     out, cur, kind, skip = {}, None, None, False
     try:
@@ -739,12 +765,12 @@ def current_key(k):
     return next(iter(d))
 
 
-MIGRATED_RULES = migrate_rule_keys(RULES, lambda: save_json("mod_rules.json", RULES))
+migrate_rule_keys(RULES, lambda: save_json("mod_rules.json", RULES))
 migrate_rule_keys(DEFAULT_RULES)
 
 
 def mod_cat(k, base=None):
-    """'tablet' or 'jewel' for a normalised mod text (base = the item's base type, used when the lists don't know the mod)."""
+    """'tablet' or 'jewel' for a normalized mod text (base = the item's base type, used when the lists don't know the mod)."""
     if k in JEWELS:
         return "jewel"
     if k in TABS:
@@ -797,14 +823,27 @@ def option_for(sid, text):
             if sid in [i for ids in st["trade"].values() for i in ids]:
                 for mt in st.get("matchers") or []:
                     if mt.get("value") is not None and norm(mt.get("string", "")) == want:
-                        return int(mt["value"])
+                        if "#" in mt.get("string", ""):
+                            continue                # 2.103.4 (feedback): "Has # Charm Slot" = 1 is the one-slot
+                        return int(mt["value"])     # wording of a number, not a choice - it takes a Min
     except Exception:
-        pass
+        buglog.caught()
+    return None
+
+
+def option_live(text, valid=None):
+    """2.127.0 (feedback: a Mageblood's search had no Legacies): the trade site's own id and option for a wording with
+    a choice ("Legacy of Gold"), found by the wording - for when the game data's id isn't on the trade site's list
+    (a new league can change it). -> (id, option) or None."""
+    want = norm(text)
+    for sid, opts in OPTS.items():
+        if want in opts and (not valid or sid in valid):
+            return sid, opts[want]
     return None
 
 
 # ---- what the trade site calls each stat, so a listing's mod lines can be compared with what we searched for
-SIDTEXT = {}        # stat id -> normalised wording
+SIDTEXT = {}        # stat id -> normalized wording
 
 
-TEXT2SID = {}       # normalised wording -> stat id (explicit if there is one)
+TEXT2SID = {}       # normalized wording -> stat id (explicit if there is one)

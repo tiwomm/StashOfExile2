@@ -1,28 +1,22 @@
 """2.96.0: Help rate mods - your ratings tune your own price checks at once, and (with Community data sharing on) they
-are your vote in the community's ratings, which earn rep when they match.
+are your vote in the community's ratings. (2.119.0: no rep - it was removed in 2.118.0.)
 
   * ▲ / ▼ beside each mod on Price Checks: "did this mod matter for the price?" ▲ = High, ▼ = Ignore, again = clear.
     Gear has its own rules per item class ("gear:helmet:# to maximum life"), so a helmet's ▲ doesn't touch rings.
   * Rate mods: one mod at a time, S / A / B / C / D or F (ignore), from one rule set (Tablets, Jewels, Waystones, Relics,
     or a gear class you've price checked). S / A count as High, B / C / D as Normal (the tier says what's left out first).
   * The ask: once, after you've priced enough items; Not now asks again once, at random 3-7 days later; No thanks
-    never asks again. Rate mods is always in the Mod book.
-  * Bulk Pricing floor: an item whose every searched mod sells for under your floor (1 div by default, per rule set)
-    in the Mod book's own data - none rated High - isn't searched; with thin data it's marked "check by hand".
+    never asks again. Rate Mods is always there (2.120.0: its own page, Price Checks ↳ Rate Mods).
+  (2.96.0's Bulk Pricing floor, "Skip cheap items", was removed in 2.125.5.)
 GGG ToS: your own settings and the app's own data; nothing touches the game, nothing extra is fetched."""
 import random
 import time
 
 from .config import SETTINGS, save_json
-from .mods import (IMPACTS, RULES, TIER_ORDER, TIERS, auto_impact, impact_key, norm, rule_key)
+from .mods import (RULES, TIER_ORDER, TIERS, auto_impact, impact_key, norm, rule_key)
 
-GRADES = TIER_ORDER + ("ignore",)
 ASK_AFTER = 25                      # items priced before the first ask
 SNOOZE_DAYS = (3, 7)
-FLOOR_DEFAULT = 1.0                 # divines
-SURE_N = 5                          # listings behind a mod's median before the floor is sure
-MIN_N = 3
-FLOOR_SETS = ("tablet", "jewel", "relic")
 
 
 def set_of(rec):
@@ -141,44 +135,3 @@ def answer(what, rng=random):
         a.update(state="never", at=0)
     save_json("settings.json", SETTINGS)
     return a["state"]
-
-
-# ---------------------------------------------------------------- Bulk Pricing floor
-def floor_cfg():
-    c = SETTINGS.setdefault("floor", {})
-    c.setdefault("on", True)
-    for s in FLOOR_SETS:
-        c.setdefault(s, FLOOR_DEFAULT)
-    return c
-
-
-def floor_check(rec, searchable, median_n):
-    """searchable: [(mod, impact)]; median_n(base, sid) -> (median div, listings) or (None, 0).
-    -> ("skip", why) when the Mod book is sure the item is under the floor, ("hand", why) when its data says so but is
-    thin, else None (search it)."""
-    c = floor_cfg()
-    s = set_of(rec)
-    if not c.get("on") or s not in FLOOR_SETS or not searchable or rec.get("src") in ("pc", "fav"):
-        return None
-    floor = float(c.get(s) or FLOOR_DEFAULT)
-    if floor <= 0:
-        return None
-    base = (rec.get("item") or {}).get("base")
-    thin, top = False, 0.0
-    for m, imp in searchable:
-        k = rule_key(s, norm(m["text"]))
-        if imp == "high" or TIERS.get(k) in ("S", "A"):
-            return None                                # a mod you rate High: always searched
-        med, n = median_n(base, m["sid"])
-        if med is None or n < MIN_N:
-            return None                                # nothing known about it: search
-        if med >= floor:
-            return None
-        thin = thin or n < SURE_N
-        top = max(top, med)
-    why = f"every mod sells for under {floor:g} div (the most: {top:.2f} div) in the Mod book"
-    return ("hand", why + ", from few listings") if thin else ("skip", why)
-
-
-def valid_grade(g):
-    return g in GRADES or g in ("up", "down", None, "clear") or g in IMPACTS

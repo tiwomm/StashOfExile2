@@ -15,6 +15,8 @@ import json
 import threading
 import time
 import tkinter as tk
+
+from .style import over_app, Tooltip
 from tkinter import ttk
 
 from . import board as B
@@ -66,7 +68,7 @@ class BoardModPage:
     def ev_bm_me(self, res):
         ok, d = res
         if ok and hasattr(self, "cy_paint"):
-            self.cy_paint()                                      # 2.95.0: your rep, fresh
+            self.cy_paint()                                      # (your name, admin / reviewer, fresh)
         if ok and (d.get("user") or {}).get("name_reset"):
             self.board_name_prompt(force=True, reset=True)
 
@@ -79,6 +81,7 @@ class BoardModPage:
         save_json("settings.json", SETTINGS)
         P2 = C["panel2"]
         win = tk.Toplevel(self.root, bg=P2, padx=16, pady=16)
+        over_app(win, self.dlg_parent())               # 2.114.3: over the app, on its monitor
         win.title("Your community name")
         win.transient(self.root)
         self.bn_win = win
@@ -88,9 +91,16 @@ class BoardModPage:
                             "was reset. Pick a new one - you can do it now." if reset else
                             "Other players see it on Money Makers strats, upvotes and edits. It's yours alone, and it "
                             "can change once every 7 days. No account or password - this PC keeps a key. Slurs and "
-                            "hate words aren't allowed. Don't use your account or character name - keep the board "
-                            "apart from who you are in game."),
-                 bg=P2, fg=C["muted"], wraplength=380, justify="left", anchor="w").pack(fill="x", pady=(4, 8))
+                            "hate words aren't allowed."),
+                 bg=P2, fg=C["muted"], wraplength=380, justify="left", anchor="w").pack(fill="x", pady=(4, 4))
+        from .privacy import NAME_RULE, NAME_TIP                  # 2.131.1: a made-up name, never yours in game
+        rr = tk.Frame(win, bg=P2)
+        rr.pack(fill="x", pady=(0, 8))
+        tk.Label(rr, text="⚠ " + NAME_RULE, bg=P2, fg=C["accent"], wraplength=360, justify="left",
+                 anchor="w").pack(side="left", fill="x", expand=True)
+        ti = tk.Label(rr, text="ⓘ", bg=P2, fg=C["muted"], cursor="question_arrow")
+        ti.pack(side="left", anchor="n", padx=(4, 0))
+        Tooltip(ti, NAME_TIP)
         var = tk.StringVar()
         ent = ttk.Entry(win, textvariable=var, width=30)
         ent.pack(fill="x")
@@ -131,9 +141,7 @@ class BoardModPage:
 
     def _bm_bg(self, work, done):
         """Network off the window thread (mm_sync = do it now, for tests)."""
-        if getattr(self, "mm_sync", False):
-            return done(work())
-        threading.Thread(target=lambda: (lambda r: self.root.after(0, lambda: done(r)))(work()), daemon=True).start()
+        self.run_bg(work, done)
 
     def bm_next_rename(self):
         nxt = (B.signed_in() or {}).get("next_rename") or 0
@@ -149,6 +157,7 @@ class BoardModPage:
                 pass
         P1 = C["panel"]
         win = tk.Toplevel(self.root, bg=P1)
+        over_app(win, self.dlg_parent())               # 2.114.3: over the app, on its monitor
         win.title(title)
         win.transient(self.root)
         win.geometry("980x620")

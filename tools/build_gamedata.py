@@ -2,8 +2,8 @@
 
     py tools/build_gamedata.py <Exiled-Exchange-2 checkout> [gamedata.json]
 
-Source: Exiled Exchange 2 (https://github.com/Kvan7/Exiled-Exchange-2, MIT licence, see THIRD_PARTY_NOTICES.txt):
-renderer/public/data/en/items.ndjson (base types, their category, tags and base defences) and stats.ndjson (every
+Source: Exiled Exchange 2 (https://github.com/Kvan7/Exiled-Exchange-2, MIT license, see THIRD_PARTY_NOTICES.txt):
+renderer/public/data/en/items.ndjson (base types, their category, tags and base defenses) and stats.ndjson (every
 modifier's wording, which way is better, and its trade-site stat ids). The pseudo-total rules below are transcribed
 from its renderer/src/web/price-check/filters/pseudo/index.ts.
 
@@ -57,7 +57,7 @@ CLASSES = {
 }
 DEFENCE_NAMES = {"ar": "Armour", "ev": "Evasion", "es": "Energy Shield", "ar_ev": "Armour / Evasion",
                  "ar_es": "Armour / Energy Shield", "ev_es": "Evasion / Energy Shield",
-                 "ar_ev_es": "Armour / Evasion / Energy Shield", "none": "no defences"}
+                 "ar_ev_es": "Armour / Evasion / Energy Shield", "none": "no defenses"}
 # name prefixes that are versions of the same base (same mod pool): grouped together
 SAME_BASE_PREFIXES = ("Runeforged ", "Runemastered ", "Refined ")
 # for these classes every base family is its own group (implicits / mod pools differ per base)

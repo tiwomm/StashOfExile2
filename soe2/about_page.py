@@ -6,6 +6,7 @@ import tkinter as tk
 import webbrowser
 from tkinter import ttk
 
+from . import buglog
 from .config import APP_VERSION, pretty_version, save_json, SETTINGS
 from .style import C, FONT_TITLE
 from .updates import REPO
@@ -13,6 +14,19 @@ from .updates import REPO
 GITHUB_URL = f"https://github.com/{REPO}"
 DISCORD_URL = "https://discord.gg/Ta8EVnxx4T"
 DISCORD = "#5865F2"
+DISCORD_HOVER = "#4752c4"
+
+
+def _keep_discord():
+    """2.116.0 (P10: the Join the Discord button came out gray in some themes): Discord's own colors stay."""
+    try:
+        from . import themes as _th
+        _th.KEEP.update({DISCORD.lower(), DISCORD_HOVER})
+    except Exception:
+        buglog.caught()
+
+
+_keep_discord()
 
 # (title, lines). Plain words: what it's for, then how to start.
 THEME_PAGE = "Pick your look"
@@ -37,14 +51,14 @@ QUICKSTART = [
     ]),
     ("Find your way around", [
         "The bar on the left opens every tool. Each one is its own window: move it, resize it, keep several open.",
-        "Mod book: rate the mods you care about. Regex: build stash searches. Exchange rates: what currency is "
+        "Mod Book: rate the mods you care about. Regex: build stash searches. Exchange Rates: what currency is "
         "worth right now.",
     ]),
     ("While you map", [
-        "Overlay: time, maps and deaths per session, with a small timer over the game. Ctrl+Alt+S starts and stops "
-        "it in game; F6 hides or shows the whole overlay.",
-        "Overlay › Mechanic Helper can warn you when your Hiveblood is almost full (Breach) and when you finish a map with "
-        "Delirium still on.",
+        "Game Overlay: a bar over the game. Click ▶ Start session on it to time your maps and count maps and deaths; "
+        "F6 hides or shows the whole overlay.",
+        "Overlay › Settings › Helpers can warn you when your Hiveblood is almost full (Breach), when you leave a map "
+        "with Delirium or rituals left, and more. They work with or without a session.",
     ]),
     ("Pick your league and say hi", [
         "Prices come from your league. The newest one is picked for you; change it here or any time in Settings.",
@@ -58,22 +72,44 @@ def open_link(url):
     try:
         webbrowser.open(url)
     except Exception:
-        pass
+        buglog.caught()
 
 
 # 2.98.3: who we thank, and their GitHub pages (README › Credits says the same)
 CREDITS = (
-    ("RePoE (repoe-fork)", "the game data behind the mod lists, Regex, Game search and tiers - exported from Path of "
+    ("RePoE (repoe-fork)", "the game data behind the mod lists, Regex, Game Search and tiers - exported from Path of "
                            "Exile 2's own files.", "https://github.com/repoe-fork/repoe-fork"),
-    ("poe.ninja (rasmuskl)", "the economy data: Exchange rates, the rates window over the game, Remnant prices and "
+    ("poe.ninja (rasmuskl)", "the economy data: Exchange Rates, the rates window over the game, Remnant prices and "
                              "currency values.", "https://github.com/rasmuskl"),
     ("Exiled Exchange 2 (Kvan7)", "general ideas, and the base types, mod wordings, trade-site stat ids and "
-                                  "pseudo-total rules in gamedata.json, from its data files under its MIT license. "
-                                  "Nothing else of it is used.", "https://github.com/Kvan7/Exiled-Exchange-2"),
-    ("Sidekick", "general ideas. None of its code is used.", "https://github.com/Sidekick-Poe/Sidekick"),
+                                  "pseudo-total rules in gamedata.json, from its data files under its MIT license; "
+                                  "and (2.113.0) the ideas of counting each seller once and keeping a mod's Min "
+                                  "within its tier - written our own way.", "https://github.com/Kvan7/Exiled-Exchange-2"),
+    ("Sidekick (Sidekick-Poe)", "general ideas. None of its code is used.", "https://github.com/Sidekick-Poe/Sidekick"),
     ("hypr-exiled (gfsd3v)", "the idea for the Trade Whisper Watcher - ours is built from scratch, none of its code "
                              "is used.", "https://github.com/gfsd3v/hypr-exiled"),
-    ("Path of Building PoE2", "the anoint recipes.", "https://github.com/PathOfBuildingCommunity/PathOfBuilding-PoE2"),
+    ("poe2pricer (saxe78)", "the idea for Favours prices - finding the Ritual window by a piece of its own art and its "
+                            "rewards by their pictures. Ours is written from scratch; none of its code is used.",
+     "https://github.com/saxe78/poe2pricer"),
+    ("gruvbox by Pavel Pertsev (morhetz)", "the colors of the Gruvbox Dark and Gruvbox Light themes (MIT)",
+     "https://github.com/morhetz/gruvbox"),
+    ("NeverSink and Ryonnen (reddit)", "the game's hidden setting that applies your item filter to the Ritual window "
+                                       "(Filter in the Ritual window).", "https://www.youtube.com/watch?v=6hiQtcQhB3k"),
+    ("Path of Building PoE2 (PathOfBuildingCommunity)", "the anoint recipes.", "https://github.com/PathOfBuildingCommunity/PathOfBuilding-PoE2"),
+    ("Cinzel (Natanael Gama)", "a font of the ornate overlay styles. SIL Open Font License.",
+     "https://github.com/NDISCOVER/Cinzel"),
+    ("EB Garamond (Georg Duffner, Octavio Pardo)", "a font of the ornate overlay styles. SIL Open Font License.",
+     "https://github.com/octaviopardo/EBGaramond12"),
+    ("Cormorant (Christian Thalmann)", "the fonts of the Gloom overlay style. SIL Open Font License.",
+     "https://github.com/CatharsisFonts/Cormorant"),
+    ("Marcellus SC (Brian J. Bonislawsky, Astigmatic)", "the font of the Warbanner overlay style. SIL Open Font "
+                                                        "License.", "https://github.com/google/fonts/tree/main/ofl/marcellussc"),
+    ("Marcellus (Brian J. Bonislawsky, Astigmatic)", "the Psionic overlay style's text. SIL Open Font License.",
+     "https://github.com/google/fonts/tree/main/ofl/marcellus"),
+    ("Metamorphous (Sorkin Type)", "the font of the Hellfire overlay style. SIL Open Font License.",
+     "https://github.com/google/fonts/tree/main/ofl/metamorphous"),
+    ("IM FELL English SC (Igino Marini)", "the font of the Guildhall overlay style. SIL Open Font License.",
+     "https://github.com/google/fonts/tree/main/ofl/imfellenglishsc"),
 )
 
 
@@ -82,24 +118,24 @@ class AboutPage:
 
     # ================================================================ Settings > About
     def build_about(self, wrap):
-        from .whatsnew import notes_between
+        from .whatsnew import notes_between, plain_lines
         P1, P2 = C["panel"], C["panel2"]
-        head = tk.Frame(wrap, bg="#1a2a4c", padx=16, pady=16, highlightthickness=1, highlightbackground=C["line"])
+        head = tk.Frame(wrap, bg=C["panel2"], padx=16, pady=16, highlightthickness=1, highlightbackground=C["line"])
         head.pack(fill="x", pady=(0, 8))
-        tk.Label(head, text="StashOfExile2", bg="#1a2a4c", fg="#ffffff", font=(FONT_TITLE, 18, "bold"),
+        tk.Label(head, text="StashOfExile2", bg=C["panel2"], fg=C["text"], font=(FONT_TITLE, 18, "bold"),
                  anchor="w").pack(fill="x")
         from .config import TAGLINE
-        tk.Label(head, text=TAGLINE, bg="#1a2a4c", fg="#ffd9a8", font=(FONT_TITLE, 12, "italic"),
+        tk.Label(head, text=TAGLINE, bg=C["panel2"], fg=C["accent"], font=(FONT_TITLE, 12, "italic"),
                  anchor="w").pack(fill="x")                                               # 2.73.2
         tk.Label(head, text=f"Version {pretty_version()}  ·  a toolkit for Path of Exile 2  ·  free and open source "
-                            "(GPL-3.0)", bg="#1a2a4c", fg="#9fb6dd", anchor="w").pack(fill="x")
-        btns = tk.Frame(head, bg="#1a2a4c")
+                            "(AGPL-3.0)", bg=C["panel2"], fg=C["muted"], anchor="w").pack(fill="x")
+        btns = tk.Frame(head, bg=C["panel2"])
         btns.pack(fill="x", pady=(8, 0))
         self.about_discord = tk.Label(btns, text="  💬  Join the Discord  ", bg=DISCORD, fg="#ffffff", cursor="hand2",
                                       font=("Segoe UI", 12, "bold"), padx=8, pady=8)
         self.about_discord.pack(side="left")
         self.about_discord.bind("<Button-1>", lambda e: open_link(DISCORD_URL))
-        self.about_discord.bind("<Enter>", lambda e: self.about_discord.config(bg="#4752c4"))
+        self.about_discord.bind("<Enter>", lambda e: self.about_discord.config(bg=DISCORD_HOVER))
         self.about_discord.bind("<Leave>", lambda e: self.about_discord.config(bg=DISCORD))
         ttk.Button(btns, text="GitHub page", command=lambda: open_link(GITHUB_URL), style="Quiet.TButton").pack(side="left", padx=(8, 0))
         ttk.Button(btns, text="Quick start guide", command=lambda: self.show_quickstart(force=True)).pack(side="left",
@@ -112,11 +148,11 @@ class AboutPage:
         box.pack(fill="x", pady=(0, 8))
         tk.Label(box, text=f"What's new in {pretty_version()}", bg=P2, fg=C["accent"], font=("Segoe UI", 12, "bold"),
                  anchor="w").pack(fill="x")
-        notes = dict(notes_between(None, APP_VERSION)).get(APP_VERSION) or ["(nothing listed)"]
+        notes = plain_lines(dict(notes_between(None, APP_VERSION)).get(APP_VERSION) or ["(nothing listed)"])
         for line in notes:
             tk.Label(box, text="•  " + line, bg=P2, fg=C["text"], anchor="w", justify="left", wraplength=600,
                      font=("Segoe UI", 9)).pack(fill="x", pady=(4, 0))
-        more = tk.Label(box, text="Every version's notes", bg=P2, fg="#6ea8ff", cursor="hand2",
+        more = tk.Label(box, text="Every version's notes", bg=P2, fg=C["accent"], cursor="hand2",
                         font=("Segoe UI", 9, "underline"), anchor="w")
         more.pack(fill="x", pady=(8, 0))
         more.bind("<Button-1>", lambda e: self.show_whatsnew(True))
@@ -127,7 +163,7 @@ class AboutPage:
                  anchor="w").pack(fill="x")
         for line in (
                 "Written with AI (Claude), and open about it. Anyone may use it, change it and share it under the "
-                "GPL-3.0 license.",
+                "AGPL-3.0 license - and anything made from it stays open source too.",
                 "It only reads your clipboard, the game's log file (Client.txt) and your screen - never the game's "
                 "memory - and it respects the trade site's limits. One key press = one action.",
                 "Prices come from the official trade site and poe.ninja. Not affiliated with or endorsed by Grinding "
@@ -168,11 +204,11 @@ class AboutPage:
         self.whatsnew_follow()
         inner = tk.Frame(card, bg=P1)
         inner.pack(fill="both", expand=True)
-        head = tk.Frame(inner, bg="#1a2a4c", padx=16, pady=12)
+        head = tk.Frame(inner, bg=C["panel2"], padx=16, pady=12)
         head.pack(fill="x")
-        self.qs_title = tk.Label(head, text="", bg="#1a2a4c", fg="#ffffff", font=(FONT_TITLE, 16, "bold"), anchor="w")
+        self.qs_title = tk.Label(head, text="", bg=C["panel2"], fg=C["text"], font=(FONT_TITLE, 16, "bold"), anchor="w")
         self.qs_title.pack(fill="x")
-        self.qs_step = tk.Label(head, text="", bg="#1a2a4c", fg="#9fb6dd", anchor="w")
+        self.qs_step = tk.Label(head, text="", bg=C["panel2"], fg=C["muted"], anchor="w")
         self.qs_step.pack(fill="x")
         foot = tk.Frame(inner, bg=P1, padx=16, pady=8)
         foot.pack(fill="x", side="bottom")
@@ -195,7 +231,8 @@ class AboutPage:
         self.qs_i = max(0, min(n - 1, self.qs_i + step))
         title, lines = QUICKSTART[self.qs_i]
         self.qs_title.config(text=title)
-        self.qs_step.config(text=f"Quick start  ·  {self.qs_i + 1} of {n}  ·  version {pretty_version()}")
+        dots = " ".join("●" if i == self.qs_i else "○" for i in range(n))     # 2.116.0 (P10): where you are, at a glance
+        self.qs_step.config(text=f"Quick start  ·  {dots}  ·  {self.qs_i + 1} of {n}")
         P2 = C["panel2"]
         for w in self.qs_body.winfo_children():
             w.destroy()

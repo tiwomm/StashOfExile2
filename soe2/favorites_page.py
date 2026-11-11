@@ -14,15 +14,17 @@ import webbrowser
 from tkinter import simpledialog, ttk
 from urllib.parse import quote
 
+from . import buglog
 from . import favorites as FV
 from .config import SETTINGS
+from .style import over_app
 from .style import C
 
 KEY = "favorites"
 GROUP_PRE = "grp:"
 FILTER_NAMES = {"type_filters": "Type", "equipment_filters": "Equipment", "req_filters": "Requirements",
                 "misc_filters": "Miscellaneous", "trade_filters": "Trade", "map_filters": "Waystone",
-                "socket_filters": "Sockets", "weapon_filters": "Weapon", "armour_filters": "Armour"}
+                "socket_filters": "Sockets", "weapon_filters": "Weapon", "armour_filters": "Armor"}
 GROUP_TYPES = {"and": "All of these", "not": "None of these", "if": "If present", "count": "At least {n} of these",
                "weight": "Weighted sum ≥ {n}", "weight2": "Weighted sum ≥ {n}"}
 
@@ -53,31 +55,33 @@ class FavoritesPage:
         bar = tk.Frame(body, bg=P1, padx=8, pady=8)
         bar.pack(fill="x")
         self.fav_link_var = tk.StringVar()
+        tk.Label(bar, text="Trade link", bg=P1, fg=C["muted"], font=("Segoe UI", 9)).pack(side="left", padx=(4, 8))
         ent = ttk.Entry(bar, textvariable=self.fav_link_var)
         ent.pack(side="left", fill="x", expand=True)
+        self._fav_hint(ent)                               # P2 (2.104.0): a hint in the empty box
         ent.bind("<Return>", lambda e: self.fav_add_link())
         self.fav_link_entry = ent
         ttk.Button(bar, text="Add trade link", style="Primary.TButton", command=self.fav_add_link).pack(
             side="left", padx=(8, 0))
         ttk.Button(bar, text="New group", command=self.fav_new_group).pack(side="left", padx=(8, 0))
-        self.undo_button(bar, KEY).pack(side="left", padx=(8, 0))
-        self.fav_msg = tk.Label(body, text="Paste a trade-site link above, or press ☆ Add to favorites on Price Checks. "
-                                           "Right-click a favorite for everything you can do; drag to reorder.",
+        self.undo_button(bar, KEY, side="left", padx=(8, 0))     # P2: only while there's something to undo
+        self.fav_msg = tk.Label(body, text="Right-click a favorite for everything you can do; drag to reorder.",
                                 bg=P1, fg=C["muted"], anchor="w", justify="left", padx=12)
         self.fav_msg.pack(fill="x")
         wrap = tk.Frame(body, bg=P2)
+        self.limit_banner(body, wrap)                     # 2.103.3 (feedback): the "Staying under the limits" line
         wrap.pack(fill="both", expand=True, pady=(8, 0))
         # ---- your favorites
-        lf = tk.Frame(wrap, bg=P1, width=340)
+        lf = tk.Frame(wrap, bg=P1, width=300)             # P2: narrower list, wider card
         lf.pack(side="left", fill="y")
         lf.pack_propagate(False)
         tv = ttk.Treeview(lf, columns=("price", "when"), show="tree headings", selectmode="extended")
         tv.heading("#0", text="Name")
-        tv.heading("price", text="Last price")
+        tv.heading("price", text="Price")
         tv.heading("when", text="Checked")
-        tv.column("#0", width=190, stretch=True)
-        tv.column("price", width=80, anchor="e", stretch=False)
-        tv.column("when", width=62, anchor="e", stretch=False)
+        tv.column("#0", width=110, minwidth=80, stretch=True)
+        tv.column("price", width=72, anchor="e", stretch=False)
+        tv.column("when", width=78, anchor="e", stretch=False)
         sb = ttk.Scrollbar(lf, orient="vertical", command=tv.yview)
         tv.configure(yscrollcommand=sb.set)
         sb.pack(side="right", fill="y")
@@ -98,10 +102,12 @@ class FavoritesPage:
         tv.bind("<ButtonRelease-1>", self.fav_drag_end, add="+")
         tv.bind("<<TreeviewOpen>>", lambda e: self.fav_group_open(True))
         tv.bind("<<TreeviewClose>>", lambda e: self.fav_group_open(False))
-        self.fav_empty = tk.Label(lf, text="No favorites yet.\n\nPaste a trade link above,\nor ☆ Add to favorites\n"
-                                           "on Price Checks.", bg=P1, fg=C["muted"], justify="center")
+        from .chrome import EmptyState                    # 2.120.0: one empty look everywhere
+        self.fav_empty = EmptyState(wrap, "★", "No favorites yet\nPress ☆ Add to favorites on a price check, or paste "
+                                              "a trade-site link above.",
+                                    button=("Open Price Checks", lambda: self.shell.open("pricecheck")))
         # ---- the card
-        mid = tk.Frame(wrap, bg=P2, width=380)
+        mid = tk.Frame(wrap, bg=P2, width=480)
         mid.pack(side="left", fill="y")
         mid.pack_propagate(False)
         lcanvas, left = self._pc_scroller(mid, padx=12)
@@ -112,14 +118,15 @@ class FavoritesPage:
         head.pack(fill="x")
         count = tk.Label(head, text="", bg=P1, fg=C["text"], font=("Segoe UI", 10, "bold"))
         count.pack(side="left")
-        ob = ttk.Button(head, text="Open on trade site", command=self.fav_open_trade, state="disabled")
-        ob.pack(side="right")
+        ob = ttk.Button(head, text="Trade Site", command=self.fav_open_trade, state="disabled")
         rcanvas, lst = self._pc_scroller(right, padx=12, bg_key="panel")
         self.favv = PCView(left, lcanvas, lst, rcanvas, count, ob)
         self.favv.rid = None
         self.favv.redraw = lambda: self.fav_show()
-        self.favv.recard = lambda: self.fav_show()
-        self.pcv_fit(self.favv, wrap, mid)                  # 2.97.0: scale to fit
+        self.favv.recard = lambda: self.fav_show(card_only=True)
+        self.favv.search_btn = None
+        self.favv.head_open = ob                            # P2: the card's own button replaces it while shown
+        self.pcv_fit(self.favv, wrap, mid, lo=460, share=0.42)   # 2.97.0: scale to fit; P2: a wider card
         self.fav_fill()
         self.fav_show()
 
@@ -130,6 +137,18 @@ class FavoritesPage:
             return
         st = self.favs()
         keep = list(select) if select is not None else list(tv.selection())
+        want = [("", f["id"]) for f in st.in_group("")] + [x for g in st.groups for x in
+                [("", GROUP_PRE + g["id"])] + [(GROUP_PRE + g["id"], f["id"]) for f in st.in_group(g["id"])]]
+        have = [x for c in tv.get_children("") for x in [("", c)] + [(c, i) for i in tv.get_children(c)]]
+        if want == have:
+            self._fav_empty_show(st)
+            self._fav_fill_same(st)                   # 2.103.4 (feedback: Favorites still flickered): same rows -
+            if select is not None:                    # their words change in place, nothing is built again
+                keep = [i for i in keep if tv.exists(i)]
+                if keep and list(tv.selection()) != keep:
+                    tv.selection_set(keep)
+                    tv.see(keep[0])
+            return
         tv.delete(*tv.get_children())
         for f in st.in_group(""):
             self._fav_row("", f)
@@ -143,10 +162,45 @@ class FavoritesPage:
         if keep:
             tv.selection_set(keep)
             tv.see(keep[0])
+        self._fav_empty_show(st)
+
+    def _fav_empty_show(self, st):
         if st.items or st.groups:
             self.fav_empty.place_forget()
         else:
-            self.fav_empty.place(relx=0.5, rely=0.35, anchor="center")
+            self.fav_empty.place(relx=0.5, rely=0.3, anchor="center")
+
+    def _fav_hint(self, ent):
+        """P2: "Paste a trade-site search link here" in gray while the box is empty and not being typed in."""
+        hint = "Paste a trade-site search link here"
+        lab = tk.Label(ent, text=hint, bg=C["odd"], fg=C["muted"],
+                       font=("Segoe UI", 9), anchor="w", cursor="xterm")
+
+        def show(_e=None):
+            if not self.fav_link_var.get() and self.root.focus_get() is not ent:
+                lab.place(x=6, rely=0.5, anchor="w")
+            else:
+                lab.place_forget()
+        lab.bind("<Button-1>", lambda e: (lab.place_forget(), ent.focus_set()))
+        ent.bind("<FocusIn>", show, add="+")
+        ent.bind("<FocusOut>", show, add="+")
+        self.fav_link_var.trace_add("write", lambda *a: show())
+        self.root.after(50, show)
+
+    def _fav_fill_same(self, st):
+        tv = self.fav_tv
+        for f in st.items:
+            last = f.get("last") or {}
+            text = ("🔗 " if f.get("kind") == "link" else "◆ ") + f["name"]
+            vals = (last.get("price") or "", _ago(last.get("ts")))
+            if tv.item(f["id"], "text") != text or tuple(str(x) for x in tv.item(f["id"], "values")) != vals:
+                tv.item(f["id"], text=text, values=vals)
+        for g in st.groups:
+            text = f"{g['name']}  ({len(st.in_group(g['id']))})"
+            if tv.item(GROUP_PRE + g["id"], "text") != text:
+                tv.item(GROUP_PRE + g["id"], text=text)
+            if bool(tv.item(GROUP_PRE + g["id"], "open")) != bool(g.get("open", True)):
+                tv.item(GROUP_PRE + g["id"], open=g.get("open", True))
 
     def _fav_row(self, parent, f):
         last = f.get("last") or {}
@@ -176,7 +230,7 @@ class FavoritesPage:
         acts = []
         if one:
             acts += [("Search now", self.fav_search, True, "Enter"),
-                     ("Open on trade site", self.fav_open_trade, True),
+                     ("Trade Site", self.fav_open_trade, True),
                      ("Copy trade link", self.fav_copy_link, True), None,
                      ("Rename…", self.fav_rename, True, "F2"),
                      ("Edit…", self.fav_edit, True),
@@ -214,7 +268,7 @@ class FavoritesPage:
                                                     ("Rename", lambda: (self.shell.open(KEY), self.fav_pick(f["id"]),
                                                                         self.fav_rename()))))
         except Exception:
-            pass
+            buglog.caught()
 
     def pc_fav_state(self, rec):
         b = getattr(self, "pc_fav_btn", None)
@@ -253,10 +307,14 @@ class FavoritesPage:
     def ev_fav_link_read(self, url, info, err, group):
         if err:
             return self.fav_say(err, C["red"])
-        f = self.favs().add_link(url, info, group=group or "")
+        name = simpledialog.askstring("Name this bookmark", "Name:", initialvalue=FV.link_name(info["query"]),
+                                      parent=self.root)     # 2.103.3 (feedback): a name when it's added
+        if name is None:
+            return self.fav_say("Not added.")
+        f = self.favs().add_link(url, info, name=name.strip() or None, group=group or "")
         self.fav_link_var.set("")
         self.fav_changed([f["id"]])
-        self.fav_say(f"Added \"{f['name']}\". Rename it with F2 or right-click.", C["green"])
+        self.fav_say(f"Added \"{f['name']}\".", C["green"])
         self.fav_pick(f["id"])
 
     def fav_new_group(self):
@@ -302,10 +360,11 @@ class FavoritesPage:
                 self.fav_changed([c["id"]])
 
     def fav_group_choice(self, title, current=""):
-        """A small window: pick a group (or none, or a new one) -> group id, "" or None (cancelled)."""
+        """A small window: pick a group (or none, or a new one) -> group id, "" or None (canceled)."""
         st = self.favs()
         names = ["(no group)"] + [g["name"] for g in st.groups] + ["New group…"]
         dlg = tk.Toplevel(self.root)
+        over_app(dlg, self.dlg_parent())               # 2.114.3: over the app, on its monitor
         dlg.title(title)
         dlg.configure(bg=C["panel2"], padx=16, pady=12)
         dlg.transient(self.root)
@@ -454,6 +513,7 @@ class FavoritesPage:
         st = self.favs()
         f = st.get(ids[0])
         dlg = tk.Toplevel(self.root)
+        over_app(dlg, self.dlg_parent())               # 2.114.3: over the app, on its monitor
         dlg.title("Edit favorite")
         P2 = C["panel2"]
         dlg.configure(bg=P2, padx=16, pady=12)
@@ -566,17 +626,39 @@ class FavoritesPage:
         self.dirty = True
         return self.records[rid]
 
-    def fav_show(self, first=False):
-        """Draw the selected favorite (first: it was just picked - search it if it hasn't been this session)."""
+    def fav_show(self, first=False, card_only=False):
+        """Draw the selected favorite (first: it was just picked - search it if it hasn't been this session).
+        2.103.3 (feedback: every action flickered): the card is built out of sight and swapped in at once, and
+        card_only keeps the listings as they are."""
         v = getattr(self, "favv", None)
         if v is None:
             return
         f = self.favs().get(self.fav_sel) if self.fav_sel else None
-        for w in v.left.winfo_children():
-            w.destroy()
+        keep = card_only and f is not None and f.get("kind") == "item" and v.rid is not None
+        real, old = v.left, list(v.left.winfo_children())
+        top = v.lcanvas.yview()[0] if keep else 0
+        holder = tk.Frame(real, bg=C["panel2"])
+        v.left = holder
+        try:
+            self._fav_show_into(v, f, first, keep)
+        finally:
+            v.left = real
+            for w in old:
+                w.destroy()
+            holder.pack(fill="both", expand=True)
+            v.lcanvas.update_idletasks()
+            v.lcanvas.yview_moveto(top)
+
+    def _fav_show_into(self, v, f, first, keep):
+        rid0 = v.rid
         v.rid = None
+        v.search_btn = None
+        v.open_btn = v.head_open                            # (the old card's button is gone with the old card)
         if f is None:
             n = len(self._fav_ids()) if hasattr(self, "fav_tv") else 0
+            if not (self.favs().items or self.favs().groups):
+                v.open_btn.config(state="disabled")             # P2: the empty list says what to do
+                return self.pcv_entries(v, None, 0, 0, "")
             tk.Label(v.left, text=f"{n} favorites selected" if n > 1 else "Pick a favorite on the left.",
                      bg=C["panel2"], fg=C["muted"], font=("Segoe UI", 10), anchor="nw", justify="left").pack(
                 fill="x", pady=12)
@@ -585,9 +667,10 @@ class FavoritesPage:
         if f.get("kind") == "item":
             rec = self.fav_rec(f)
             v.rid = rec["id"]
-            self.pcv_card(v, rec)
+            _card, v.search_btn = self.pcv_card(v, rec)
             self._fav_note(v, f)
-            self.pcv_list(v, rec)
+            if not (keep and rid0 == rec["id"]):
+                self.pcv_list(v, rec)
             if first and not rec.get("fav_searched"):
                 rec["fav_searched"] = True
                 self.reprice([rec["id"]])
@@ -612,10 +695,11 @@ class FavoritesPage:
     def _fav_note(self, v, f):
         if f.get("note"):
             tk.Label(v.left, text=f["note"], bg=C["panel2"], fg=C["muted"], font=("Segoe UI", 9, "italic"),
-                     anchor="w", justify="left", wraplength=330).pack(fill="x", pady=(8, 0))
+                     anchor="w", justify="left", wraplength=440).pack(fill="x", pady=(8, 0))
 
-    def fav_rec_changed(self, rec):
-        """Price Checks' card machinery changed an item favorite (a filter, a search): keep it, redraw it."""
+    def fav_rec_changed(self, rec, redraw=True, card_only=False):
+        """Price Checks' card machinery changed an item favorite (a filter, a search): keep it, redraw it.
+        2.103.3: redraw=False - a tick painted in place; card_only - the listings stay."""
         f = self.favs().get(rec.get("fav"))
         if f is not None:
             f["item"], f["opts"] = FV.pack_item(rec["item"]), copy.deepcopy(rec.get("opts") or {})
@@ -624,15 +708,15 @@ class FavoritesPage:
                 self.fav_store_last(f, rec)
             self._fav_save_soon()
         v = getattr(self, "favv", None)
-        if v is not None and v.rid == rec["id"]:
-            self.fav_show()
+        if redraw and v is not None and v.rid == rec["id"]:
+            self.fav_show(card_only=card_only)
 
     def fav_store_last(self, f, rec):
         from .pricefmt import fmt_div, fmt_price
         if rec.get("state") != "done":
             return
         price = fmt_div(rec["est"]) if rec.get("est") is not None else fmt_price(rec["prices"][0]) \
-            if rec.get("prices") else ("none" if not rec.get("total") else "")
+            if rec.get("prices") else ("-" if not rec.get("total") else "")    # P2: "-" (was "none")
         f["last"] = {"price": price, "total": rec.get("total") or 0, "ts": time.time()}
 
     def _fav_save_soon(self):
@@ -664,9 +748,21 @@ class FavoritesPage:
             else:
                 self.fav_search_link(f)
 
+    @staticmethod
+    def fav_status(f):
+        """2.105.1 (feedback: a link favorite searched "Any"): Seller follows your Seller setting (Settings) unless
+        you picked one on this card - a trade link's own status (the site's default) doesn't count."""
+        from .trade import STATUS_CHOICES
+        q = f.setdefault("query", {})
+        st = q.setdefault("status", {"option": "securable"})
+        if not f.get("status_own"):
+            st["option"] = dict(STATUS_CHOICES).get(SETTINGS.get("status"), "securable")
+        return st
+
     def fav_search_link(self, f):
         if f["id"] in self.fav_busy:
             return
+        self.fav_status(f)
         self.fav_busy.add(f["id"])
         league = SETTINGS.get("league") or f.get("league") or "Standard"
         body = {"query": FV.clean_query(f.get("query")), "sort": f.get("sort") or {"price": "asc"}}
@@ -677,11 +773,11 @@ class FavoritesPage:
             try:
                 from .config import BASE
                 from .net import call
-                from .trade import fetch_rich
+                from .trade import collapse_sellers, fetch_rich
                 res = call("POST", f"{BASE}/search/poe2/{quote(league)}", json=body)
                 ids = (res.get("result") or [])[:10]
-                if ids:
-                    fetch_rich(res.get("id"), ids)                  # (keeps each listing for the cards)
+                if ids:                                             # (keeps each listing for the cards; 2.113.0:
+                    ids = [r["id"] for r in collapse_sellers(fetch_rich(res.get("id"), ids))] or ids   # one per seller)
                 from .trade import RAW_LISTINGS
                 first = next((((RAW_LISTINGS.get(i) or {}).get("listing") or {}).get("price") for i in ids
                               if (((RAW_LISTINGS.get(i) or {}).get("listing") or {}).get("price"))), None)
@@ -709,10 +805,14 @@ class FavoritesPage:
             rec = self.fav_rec(f, make=False)
             qid = rec.get("qid") if rec else None
             return f"https://www.pathofexile.com/trade2/search/poe2/{quote(SETTINGS['league'])}/{qid}" if qid else None
-        res = self.fav_res.get(f["id"]) or {}
-        if res.get("qid"):
-            return f"https://www.pathofexile.com/trade2/search/poe2/{quote(res.get('league') or '')}/{res['qid']}"
-        return f.get("url")
+        # 2.105.1 (feedback: it opened without the mods ticked on the card): the search as the card has it now -
+        # the trade site takes it in the link (?q=), so nothing is searched from here
+        import json
+        self.fav_status(f)
+        league = SETTINGS.get("league") or f.get("league") or "Standard"
+        body = {"query": FV.clean_query(f.get("query")), "sort": f.get("sort") or {"price": "asc"}}
+        return (f"https://www.pathofexile.com/trade2/search/poe2/{quote(league)}?q="
+                + quote(json.dumps(body, separators=(",", ":"))))
 
     def _fav_one(self):
         ids = self._fav_ids()
@@ -720,11 +820,15 @@ class FavoritesPage:
 
     def fav_open_trade(self):
         f = self._fav_one()
+        if f and f.get("kind") == "item":                   # 2.105.1: changes on the card are searched first
+            rec = self.fav_rec(f, make=False)
+            if rec is not None and (rec.get("changed") or rec.get("qid")):
+                return self.open_rec_trade(rec)
         url = self._fav_url(f) if f else None
         if url:
             webbrowser.open(url)
         elif f:
-            self.fav_say("Search it first (Enter) - then it opens on the trade site.")
+            self.fav_say("Search it first (Enter) - then it opens on the trade site.")    # (an item not searched yet)
 
     def fav_copy_link(self):
         f = self._fav_one()
@@ -781,12 +885,15 @@ class FavoritesPage:
             e.bind("<Return>", lambda _e: (keep(), self.fav_search(), "break")[-1])
             return e
 
-        def switch(row, holder, text, fg=C["text"]):
+        def switch(row, holder, text, fg=C["text"], group=None):
             var = tk.BooleanVar(value=not holder.get("disabled"))
 
             def flip():
                 if var.get():
                     holder.pop("disabled", None)
+                    if group is not None and group[0].get("disabled"):    # 2.105.1 (feedback: ticked legacies
+                        group[0].pop("disabled", None)                     # weren't searched - their group was
+                        group[1].set(True)                                 # off): a ticked stat turns it on
                 else:
                     holder["disabled"] = True
                 changed()
@@ -794,6 +901,7 @@ class FavoritesPage:
                                 fg=fg, activeforeground=fg, text=text, anchor="w", justify="left", wraplength=210,
                                 font=("Segoe UI", 9), highlightthickness=0, bd=0)
             cb.pack(side="left", fill="x", expand=True)
+            cb.var = var
             return cb
         # ---- what it searches for
         item_rows = [(k, q.get(k)) for k in ("name", "type", "term") if q.get(k)]
@@ -817,7 +925,7 @@ class FavoritesPage:
             section(f"STATS  ·  {title.upper()}")
             row = tk.Frame(card, bg=bg)
             row.pack(fill="x")
-            switch(row, g, "this whole group", C["muted"])
+            gcb = switch(row, g, "this whole group", C["muted"])
             if g.get("type") in ("count", "weight", "weight2"):
                 g.setdefault("value", {})
                 tk.Label(row, text="min", bg=bg, fg=C["muted"], font=("Segoe UI", 9)).pack(side="left")
@@ -831,7 +939,7 @@ class FavoritesPage:
                 kind = sid.split(".")[0] if "." in sid else ""
                 if kind and kind not in ("explicit",):
                     text = f"{text}  ({kind})"
-                switch(row, flt, text)
+                switch(row, flt, text, group=(g, gcb.var))
                 flt.setdefault("value", {})
                 if isinstance(flt["value"], dict) and "option" not in flt["value"]:
                     vbox(row, flt["value"], "max").pack(side="right", padx=(2, 0))
@@ -865,15 +973,18 @@ class FavoritesPage:
                             side="right", padx=(0, 4))
         # ---- seller
         section("SELLER")
-        st = q.setdefault("status", {"option": "securable"})
+        st = self.fav_status(f)
         names = [n for n, _v in STATUS_CHOICES]
-        var = tk.StringVar(value=next((n for n, val in STATUS_CHOICES if val == st.get("option")), names[-1]))
+        var = tk.StringVar(value=next((n for n, val in STATUS_CHOICES if val == st.get("option")), names[0]))
         cb = ttk.Combobox(card, textvariable=var, values=names, state="readonly")
         cb.pack(fill="x")
         cb.bind("<<ComboboxSelected>>", lambda e: (st.__setitem__("option", dict(STATUS_CHOICES)[var.get()]),
-                                                   changed()))
+                                                   f.__setitem__("status_own", True), changed()))
         btns = tk.Frame(v.left, bg=P2)
         btns.pack(fill="x", pady=(8, 0))
         ttk.Button(btns, text="Search", style="Primary.TButton", command=self.fav_search).pack(
             side="left", fill="x", expand=True)
+        ob = ttk.Button(btns, text="Trade Site", command=self.fav_open_trade)   # P2: under the card
+        ob.pack(side="left", padx=(8, 0))
+        v.open_btn = ob
         v.lcanvas.yview_moveto(0)

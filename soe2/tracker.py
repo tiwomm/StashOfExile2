@@ -7,6 +7,7 @@ Map counting: a map is an endgame area (its id starts with "Map") with its own s
 hideout logs the same area with the same seed, so it is not counted again; a new map has a new seed."""
 import time
 
+from . import buglog
 from .config import load_json, save_json
 from .gamelog import area_kind
 
@@ -143,7 +144,7 @@ class Session:
                     from .maplib import learn
                     learn(self.where.get("area"), data["name"], self.maps[self.where["map"]].get("level"))
                 except Exception:
-                    pass
+                    buglog.caught()
             return True
         if kind == "gold":
             self.gold += data["amount"]
@@ -197,6 +198,38 @@ class Session:
         s.league, s.char = None, ""             # 2.86.0: a session saved before the leaderboards: league unknown
         s.__dict__.update({k: v for k, v in d.items() if k in s.__dict__})
         return s
+
+
+# 2.127.0 (feedback: a session should survive the app updating, restarting or crashing): the running session is
+# written to session_live.json every LIVE_EVERY seconds, at each map and when the app closes. The next start picks it
+# up again (paused for the time the app wasn't running) if that was under KEEP_SECS ago; an older one is filed in
+# sessions.json as it was at its last save.
+LIVE_FILE = "session_live.json"
+LIVE_EVERY = 30
+KEEP_SECS = 2 * 3600
+
+
+def save_live(s, now=None):
+    if s is None or s.ended is not None:
+        return clear_live()
+    save_json(LIVE_FILE, {"saved": now or time.time(), "session": s.to_json()})
+
+
+def clear_live():
+    save_json(LIVE_FILE, {})
+
+
+def load_live():
+    """-> (session, when it was saved) of the session that was running, or (None, None)."""
+    d = load_json(LIVE_FILE, {}) or {}
+    try:
+        if d.get("session"):
+            s = Session.from_json(d["session"])
+            if s.ended is None:
+                return s, float(d.get("saved") or s.last_event or s.started)
+    except Exception:
+        buglog.caught()
+    return None, None
 
 
 class Sessions:
@@ -262,15 +295,3 @@ def map_stats(sessions, current=None, now=None, min_secs=MIN_RUN_SECS):
                  last=max(r["when"] for r in d["list"]),
                  levels=sorted({r["level"] for r in d["list"] if r["level"]}))
     return out
-
-
-def value_at(items, prices, overrides, wealth_key, value_fn=None):
-    """What a list of Wealth items is worth at today's prices (used for both ends of a session, so a price change
-    in between doesn't count as profit)."""
-    total = 0.0
-    for it in items:
-        ov = overrides.get(wealth_key(it))
-        each = float(ov) if ov is not None else (value_fn or prices.value)(it)[0]
-        if each is not None:
-            total += each * (it.get("qty") or 1)
-    return total

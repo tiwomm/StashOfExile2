@@ -11,39 +11,52 @@ from . import leaderboard as LB
 from .config import SETTINGS, save_json
 from .style import C, SegBar
 
+ALL_LEAGUES = "All leagues"
+TOPS = (5, 10, 20, 30, 50, 100)             # 2.104.1 (feedback): how many rows a board shows
+
 
 class LeaderboardPage:
     def build_leaderboards(self, body):
         P1 = C["panel"]
+        # P5 (2.108.0): two rows - the board and sharing on top, the filters under it
         top = tk.Frame(body, bg=P1, padx=8, pady=8)
         top.pack(fill="x")
-        self.lb_cat = SegBar(top, [n for _k, n in LB.CATS], command=lambda v: self.lb_refresh(), size=9, pad=(12, 4))
+        top2 = tk.Frame(body, bg=P1, padx=8)
+        top2.pack(fill="x", pady=(0, 4))
+        self.lb_cat = SegBar(top, [n for _k, n in LB.CATS], command=lambda v: self.lb_refresh(), size=10, pad=(12, 4))
         self.lb_cat.pack(side="left")
-        self.lb_who = SegBar(top, ["Mine", "Everyone"], value="Everyone", command=lambda v: self.lb_refresh(), size=9,
+        from .community_page import chip_text                  # 2.94.0: your community name, as on Money Makers
+        self.lb_acct = ttk.Button(top, text=chip_text() + " ▾", command=self.community_open)
+        self.lb_acct.pack(side="right")
+        self.lb_share_var = tk.BooleanVar(value=bool(SETTINGS.get("lb_share", True)))
+        ttk.Checkbutton(top, text="Share my times", variable=self.lb_share_var, command=self.lb_share_switch,
+                        style="Card.TCheckbutton").pack(side="right", padx=(0, 12))
+        self.lb_who = SegBar(top2, ["Mine", "Everyone"], value="Everyone", command=lambda v: self.lb_refresh(), size=9,
                              pad=(12, 4))
-        self.lb_who.pack(side="left", padx=(12, 0))
-        tk.Label(top, text="League", bg=P1, fg=C["muted"]).pack(side="left", padx=(12, 4))
-        self.lb_league = tk.StringVar(value="This league")
-        cb = ttk.Combobox(top, textvariable=self.lb_league, values=("This league", "All leagues"), state="readonly",
-                          width=12)
+        self.lb_who.pack(side="left")
+        tk.Label(top2, text="League", bg=P1, fg=C["muted"]).pack(side="left", padx=(16, 4))
+        self.lb_league = tk.StringVar(value=SETTINGS.get("league") or ALL_LEAGUES)   # 2.104.1: the league's name
+        cb = ttk.Combobox(top2, textvariable=self.lb_league, values=self.lb_league_names(), state="readonly",
+                          width=28)
         cb.pack(side="left")
         cb.bind("<<ComboboxSelected>>", lambda e: self.lb_refresh())
-        tk.Label(top, text="Class", bg=P1, fg=C["muted"]).pack(side="left", padx=(12, 4))
+        self.lb_league_box = cb
+        tk.Label(top2, text="Class", bg=P1, fg=C["muted"]).pack(side="left", padx=(12, 4))
         self.lb_cls = tk.StringVar(value="All")
-        self.lb_cls_box = ttk.Combobox(top, textvariable=self.lb_cls, values=("All",), state="readonly", width=16)
+        self.lb_cls_box = ttk.Combobox(top2, textvariable=self.lb_cls, values=("All",), state="readonly", width=16)
         self.lb_cls_box.pack(side="left")
         self.lb_cls_box.bind("<<ComboboxSelected>>", lambda e: self.lb_refresh())
         from .style import Tooltip
         Tooltip(self.lb_cls_box, "Your class comes from the game's log: it names it at every level-up "
                                  "(\"ExampleWitch (Invoker) is now level 24\"). Everyone's: the classes players shared.")
-        ttk.Button(top, text="↻ Refresh", style="Quiet.TButton", command=lambda: self.lb_refresh(send=True)).pack(
+        tk.Label(top2, text="Show", bg=P1, fg=C["muted"]).pack(side="left", padx=(12, 4))
+        top_n = SETTINGS.get("lb_top", 10)
+        self.lb_top = tk.StringVar(value=f"Top {top_n if top_n in TOPS else 10}")
+        tb = ttk.Combobox(top2, textvariable=self.lb_top, values=[f"Top {n}" for n in TOPS], state="readonly", width=8)
+        tb.pack(side="left")
+        tb.bind("<<ComboboxSelected>>", lambda e: self.lb_top_pick())
+        ttk.Button(top2, text="↻ Refresh", style="Quiet.TButton", command=lambda: self.lb_refresh(send=True)).pack(
             side="right")
-        from .community_page import chip_text                  # 2.94.0: your community name, as on Money Makers
-        self.lb_acct = ttk.Button(top, text=chip_text() + " ▾", command=self.community_open)
-        self.lb_acct.pack(side="right", padx=(0, 8))
-        self.lb_share_var = tk.BooleanVar(value=bool(SETTINGS.get("lb_share", True)))
-        ttk.Checkbutton(top, text="Share my times", variable=self.lb_share_var, command=self.lb_share_switch).pack(
-            side="right", padx=(0, 12))
         self.lb_msg = tk.Label(body, text="", bg=P1, fg=C["muted"], anchor="w", justify="left", padx=12)
         self.lb_msg.pack(fill="x")
         split = tk.Frame(body, bg=P1)
@@ -61,6 +74,11 @@ class LeaderboardPage:
             kv.column(c, width=w, anchor="e", stretch=False)
         kv.pack(fill="both", expand=True)
         kv.bind("<<TreeviewSelect>>", lambda e: self.lb_board_fill())
+        from .chrome import EmptyState                    # 2.120.0: one empty look everywhere
+        self.lb_keys_empty = EmptyState(left, "🏆", wrap=200,
+                                        text="No times on this board yet\nRun maps with the overlay's timer on, or "
+                                             "play the campaign with the Campaign Helper.",
+                                        button=("Open the Overlay", lambda: self.shell.open("tracker")))
         self.lb_keys_tv = kv
         right = tk.Frame(split, bg=P1)
         right.pack(side="left", fill="both", expand=True, padx=(8, 0))
@@ -69,10 +87,7 @@ class LeaderboardPage:
         cols = (("rank", "#", 40, "e"), ("name", "Player", 150, "w"), ("time", "Time", 80, "e"), ("cls", "Class", 120, "w"),
                 ("lvl", "Level", 60, "e"), ("deaths", "Deaths", 66, "e"), ("league", "League", 120, "w"),
                 ("when", "When", 100, "w"))
-        bv = ttk.Treeview(right, columns=[c[0] for c in cols], show="tree headings", selectmode="browse")
-        bv.column("#0", width=24, minwidth=24, stretch=False, anchor="center")            # 2.95.0: the contributor icon
-        self.lb_rep_names = {}
-        self.rep_tree_hover(bv, lambda iid: self.lb_rep_names.get(iid))
+        bv = ttk.Treeview(right, columns=[c[0] for c in cols], show="headings", selectmode="browse")
         for cid, title, w, a in cols:
             bv.heading(cid, text=title)
             bv.column(cid, width=w, anchor=a, stretch=cid in ("name", "cls"))
@@ -80,6 +95,7 @@ class LeaderboardPage:
         bv.tag_configure("me", foreground=C["green"])
         bv.tag_configure("hidden", foreground=C["muted"])
         bv.pack(fill="both", expand=True, pady=(4, 0))
+        self.lb_board_empty = tk.Label(right, text="Pick a board on the left.", bg=self._lb_field(), fg=C["muted"])
         bv.menu_actions = self.lb_menu_actions
         self.list_register("leaderboards", bv, multi=False)
         self.list_register("leaderboards", kv, multi=False)
@@ -92,6 +108,13 @@ class LeaderboardPage:
             fill="x", pady=(8, 0))
         self.lb_rows = {}                                     # (filled when the page is opened: on_show)
 
+    @staticmethod
+    def _lb_field():
+        try:
+            return ttk.Style().lookup("Treeview", "fieldbackground") or C["bg"]
+        except tk.TclError:
+            return C["bg"]
+
     # ---------------------------------------------------------------- data
     def lb_cat_key(self):
         return next(k for k, n in LB.CATS if n == self.lb_cat.get())
@@ -99,8 +122,37 @@ class LeaderboardPage:
     def lb_mine(self):
         return LB.mine(self.tk_sessions.items if hasattr(self, "tk_sessions") else [], getattr(self, "tk_session", None))
 
+    def lb_league_names(self, more=()):
+        """The current league first, then the others your times or the board name, then All leagues. 2.131.0
+        (feedback: other players' times seemed missing - they were in another league): each says how many players
+        have times there ("Runes of Aldur · 1 player")."""
+        cur = SETTINGS.get("league") or ""
+        mine = [e.get("league") for e in (getattr(self, "lb_my", None) or [])]
+        names = [n for n in dict.fromkeys([cur] + mine + list(more)) if n and n != ALL_LEAGUES]
+        return [self.lb_league_label(n) for n in names] + [ALL_LEAGUES]
+
+    def lb_league_label(self, name):
+        n = (getattr(self, "lb_lg_n", None) or {}).get(name)
+        return f"{name} · {n} player{'s' if n != 1 else ''}" if n else name
+
+    def lb_top_n(self):
+        try:
+            n = int(str(self.lb_top.get()).split()[-1])
+        except (ValueError, IndexError, AttributeError):
+            n = 10
+        return n if n in TOPS else 10
+
+    def lb_top_pick(self):
+        SETTINGS["lb_top"] = self.lb_top_n()
+        save_json("settings.json", SETTINGS)
+        self.lb_board_fill()
+
     def lb_filters(self):
-        league = SETTINGS.get("league") or "" if self.lb_league.get() == "This league" else ""
+        v = self.lb_league.get().split(" · ")[0]           # (2.131.0: the label's player count)
+        if v == "This league":                        # (before 2.104.1)
+            v = SETTINGS.get("league") or ALL_LEAGUES
+            self.lb_league.set(v)
+        league = "" if v == ALL_LEAGUES else v
         cls = "" if self.lb_cls.get() in ("All", "") else self.lb_cls.get()
         return league, cls
 
@@ -173,6 +225,7 @@ class LeaderboardPage:
         mine = self.lb_mine()
         self.lb_my = mine
         self.lb_my_keys = {k: (b, n) for k, b, n in LB.keys_of(mine, cat, league or None, cls or None)}
+        self.lb_league_box.config(values=self.lb_league_names())
         classes = sorted({e["cls"] for e in mine if e.get("cls")})
         if self.lb_who.get() == "Mine":
             self._lb_keys_fill(None, classes)
@@ -184,14 +237,27 @@ class LeaderboardPage:
             self.lb_msg.config(text="Everyone's times show once Community data sharing is on (Settings) - yours are "
                                     "added then too.", fg=C["muted"])
         self.lb_msg.config(text="Loading…", fg=C["muted"]) if LB.sharing_on() else None
+        self._lb_kgen = kgen = getattr(self, "_lb_kgen", 0) + 1     # (2.125.8: only the newest answer is drawn)
 
         def done(res):
+            if kgen != getattr(self, "_lb_kgen", 0):
+                return None
             ok, d = res
             if not ok:
                 self.lb_msg.config(text=d, fg=C["red"])
                 return self._lb_keys_fill(None, classes)
             n = len(d.get("keys") or [])
-            self.lb_msg.config(text=f"{n} board{'s' if n != 1 else ''}. Pick one on the left.", fg=C["muted"])
+            most = max([k.get("players") or 0 for k in d.get("keys") or []] or [0])
+            self.lb_lg_n = {k: v for k, v in (d.get("league_players") or {}).items() if isinstance(v, int)}
+            here = self.lb_lg_n.get(league) if league else max(self.lb_lg_n.values() or [0])
+            why = ""
+            if n and most <= 1:                    # 2.131.0: say why each board has one player (not a fault)
+                why = (f" {here} players have times here, but on different boards so far." if (here or 0) > 1
+                       else " Only your times so far - other players' show once they share theirs.")
+            self.lb_msg.config(text=f"{n} board{'s' if n != 1 else ''}. Pick one on the left." + why, fg=C["muted"])
+            self.lb_league_box.config(values=self.lb_league_names(d.get("leagues") or ()))
+            if league:
+                self.lb_league.set(self.lb_league_label(league))
             self._lb_keys_fill(d, sorted(set(classes) | set(d.get("classes") or [])))
         self._lb_bg(lambda: B.lb_keys(cat, league, cls), done)
 
@@ -213,7 +279,17 @@ class LeaderboardPage:
         if not keys:
             self.lb_msg.config(text="No times yet. Run maps with the overlay's session timer on, or play the campaign "
                                     "with the Campaign Helper - your times show here." if self.lb_who.get() == "Mine"
-                               else "No times on this board yet.", fg=C["muted"])
+                               else "", fg=C["muted"])
+        if keys:
+            self.lb_keys_empty.place_forget()
+        else:
+            # 2.124.1 (feedback: "no zone times being tracked?"): say when this board gets times
+            self.lb_keys_empty.set_text(
+                "No times on this board yet\nA zone is timed from entering it to leaving it, while a character is "
+                "still in the campaign (not visits after it, and at least 10 s)." if self.lb_cat_key() == "zone" else
+                "No times on this board yet\nRun maps with the overlay's timer on, or play the campaign with the "
+                "Campaign Helper.")
+            self.lb_keys_empty.place(relx=0.5, rely=0.45, anchor="center")
         sel = keep[0] if keep and kv.exists(keep[0]) else (keys[0] if keys else None)
         if sel:
             kv.selection_set(sel)
@@ -227,14 +303,16 @@ class LeaderboardPage:
         sel = self.lb_keys_tv.selection()
         if not sel:
             self.lb_title.config(text="")
+            self.lb_board_empty.place(in_=bv, relx=0.5, rely=0.45, anchor="center")
             return
+        self.lb_board_empty.place_forget()
         key, cat = sel[0], self.lb_cat_key()
         league, cls = self.lb_filters()
         self.lb_title.config(text=f"🏆 {key}" + (f" · {cls}" if cls else "") + (f" · {league}" if league else " · all leagues"))
         if self.lb_who.get() == "Mine":
             rows = sorted((e for e in self.lb_my if e["cat"] == cat and e["key"] == key
                            and (not league or e["league"] == league) and (not cls or e.get("cls") == cls)),
-                          key=lambda e: e["secs"])[:100]
+                          key=lambda e: e["secs"])[:self.lb_top_n()]
             for i, e in enumerate(rows):
                 bv.insert("", "end", iid=f"m{i}", values=(i + 1, e.get("char") or "me", LB.fmt(e["secs"]),
                                                           e.get("cls") or "", e.get("level") or "", e.get("deaths", 0),
@@ -242,23 +320,36 @@ class LeaderboardPage:
                           tags=("gold",) if i == 0 else ())
             return
 
+        # 2.125.8 (feedback: "I still don't see anyone else's ... map times"; app_log: "Item b1767 already exists"):
+        # two looks at one board raced - the slower answer added its rows again and stopped half-way. Only the newest
+        # answer is drawn, into a cleared list.
+        self._lb_gen = gen = getattr(self, "_lb_gen", 0) + 1
+
         def done(res):
+            if gen != getattr(self, "_lb_gen", 0):
+                return None                               # (an older look - a newer one is on its way)
             ok, d = res
             if not ok:
                 return self.lb_msg.config(text=d, fg=C["red"])
-            for i, r in enumerate(d.get("rows") or []):
+            bv.delete(*bv.get_children())
+            self.lb_rows = {}
+            rows = d.get("rows") or []
+            others = sum(1 for r in rows if not r.get("mine"))
+            if rows and not others:                       # (say why it's only you - not a fault)
+                self.lb_msg.config(text="Only your time on this board so far. Other players' times show here once "
+                                        "they share theirs (Community data sharing).", fg=C["muted"])
+            for i, r in enumerate(rows):
                 iid = f"b{r['id']}"
+                if bv.exists(iid):
+                    continue
                 self.lb_rows[iid] = r
                 tags = ("hidden",) if r.get("hidden") else ("me",) if r.get("mine") else ("gold",) if i == 0 else ()
-                from . import rep as R
-                img = R.icon(self.root, r.get("rep"))                             # 2.95.0: the contributor icon
-                if img is not None:
-                    self.lb_rep_names[iid] = r["name"]
-                bv.insert("", "end", iid=iid, **({"image": img} if img is not None else {}), values=(i + 1, r["name"] + (" (you)" if r.get("mine") else ""),
+                bv.insert("", "end", iid=iid, values=(i + 1, r["name"] + (" (you)" if r.get("mine") else ""),
                                                       LB.fmt(r["secs"]), r.get("cls") or "", r.get("level") or "",
                                                       r.get("deaths", 0), r.get("league", ""),
                                                       time.strftime("%b %d", time.localtime(r["at"]))), tags=tags)
-        self._lb_bg(lambda: B.lb_board(cat, key, league, cls), done)
+        top = self.lb_top_n()
+        self._lb_bg(lambda: B.lb_board(cat, key, league, cls, limit=top), done)
 
     # ---------------------------------------------------------------- reports / reviewers
     def lb_menu_actions(self, sel):
@@ -287,6 +378,3 @@ class LeaderboardPage:
     def lb_review(self, r, vote):
         self._lb_bg(lambda: B.lb_review(r["id"], vote), lambda res: (
             self._say(("Done." if res[0] else res[1]), 6), self.lb_board_fill()))
-
-    def lb_open(self):
-        self.shell.open("leaderboards")

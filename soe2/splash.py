@@ -8,6 +8,7 @@ import io
 import sys
 import time
 import tkinter as tk
+from . import buglog
 
 BG, PANEL, LINE, TEXT, MUTED = "#090e17", "#0e1522", "#2b3d5f", "#dbe4f2", "#7d8da8"
 W, H = 440, 300
@@ -58,6 +59,8 @@ class Splash:
             g = SETTINGS.get("main_window") or {}
             cx, cy = int(g["x"]) + int(g["w"]) // 2, int(g["y"]) + int(g["h"]) // 2
             l, t, r, b = monitor_rect(root, cx, cy)
+            if g.get("zoomed"):                  # 2.125.1 (feedback: not centered): maximized - the monitor's middle
+                cx, cy = (l + r) // 2, (t + b) // 2  # (x / y / w / h are its normal size, somewhere else on it)
             cx, cy = max(l + W // 2, min(cx, r - W // 2)), max(t + H // 2, min(cy, b - H // 2))
         except Exception:
             cx, cy = root.winfo_screenwidth() // 2, root.winfo_screenheight() // 2
@@ -88,7 +91,7 @@ class Splash:
                 st = ctypes.windll.user32.GetWindowLongW(hwnd, -20)
                 ctypes.windll.user32.SetWindowLongW(hwnd, -20, st | 0x08000000 | 0x00000080)
             except Exception:
-                pass
+                buglog.caught()
         self._animate()
         self.pump()
 
@@ -131,7 +134,7 @@ class Splash:
         try:
             self.step("Ready", i=len(STEPS) - 1)
         except Exception:
-            pass
+            buglog.caught()
         self.closed = True
 
         def fade_out(a=1.0):

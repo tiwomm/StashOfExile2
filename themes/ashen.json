@@ -32,12 +32,10 @@
  },
  "fonts": {
   "head": [
-   "Sylfaen",
    "Georgia",
    "DejaVu Serif"
   ],
   "num": [
-   "Sylfaen",
    "Georgia",
    "DejaVu Serif"
   ]

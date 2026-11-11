@@ -12,6 +12,7 @@ import sys
 import threading
 import time
 
+from . import buglog
 from .config import APP_DIR, DATA_DIR
 
 FROZEN = bool(getattr(sys, "frozen", False))
@@ -30,12 +31,12 @@ def app_mark():
         k.CreateMutexW.restype = ctypes.c_void_p
         _APP_MARK[0] = k.CreateMutexW(None, False, APP_MARK.format(pid=os.getpid()))
     except Exception:
-        pass
+        buglog.caught()
 
 
 MUTEX = "PoE2DeliriumAlert_single_instance"             # the name the alert uses to allow only one copy
 NEEDS = ("cv2", "mss", "numpy", "PIL")
-STATES = {"watching": "Watching", "active": "Delirium active in this map", "alert": "ALERT showing: END DELIRIUM",
+STATES = {"watching": "Watching", "active": "Delirium active in this map", "alert": "Showing: End Delirium",
           "nogame": "Waiting for the game window", "error": "Screen capture problem", "move": "Moving the splinter",
           "stopped": "Stopped", "starting": "Starting…"}
 
@@ -59,7 +60,7 @@ def kill_tree(p):
         try:
             p.kill()
         except Exception:
-            pass
+            buglog.caught()
 
 
 class DeliriumHelper:
@@ -103,12 +104,18 @@ class DeliriumHelper:
                 if not line:
                     continue
                 if line.startswith("state "):
-                    self.state = line[6:].strip()
+                    was, self.state = self.state, line[6:].strip()
+                    hook = getattr(self, "on_state", None)        # 2.131.6: the app's alert card (its own thread
+                    if hook is not None and self.state != was:   # hands it to the app's)
+                        try:
+                            hook(self.state)
+                        except Exception:
+                            buglog.caught()
                 else:
                     self.lines.append(line)
                     del self.lines[:-30]
         except Exception:
-            pass
+            buglog.caught()
         if self.proc is proc:
             self.state = "stopped"
 
@@ -168,9 +175,6 @@ class DeliriumHelper:
             return "The standalone PoE2DeliriumAlert.exe is running: use Test alert on its tray icon."
         return self.start(test=True)
 
-    def last_message(self):
-        return "\n".join(self.lines[-3:])
-
     # ---- its settings (data folder/delirium/settings.json, the file the alert itself reads)
     def _settings_path(self):
         return os.path.join(DATA_DIR, "delirium", "settings.json")
@@ -191,7 +195,7 @@ class DeliriumHelper:
             with open(p, "w", encoding="utf-8") as f:
                 json.dump(data, f, indent=2)
         except Exception:
-            pass
+            buglog.caught()
 
     def get_sound(self):
         return bool(self._read().get("beep", True))
@@ -200,14 +204,6 @@ class DeliriumHelper:
         """Sound once per map. Applies straight away when it is running."""
         self._write("beep", bool(on))
         self.send("sound_on" if on else "sound_off")
-
-    def get_indicator(self):
-        return bool(self._read().get("indicator", True))
-
-    def set_indicator(self, on):
-        """The small splinter on screen (shows the state while you play)."""
-        self._write("indicator", bool(on))
-        self.send("indicator_on" if on else "indicator_off")
 
     def set_title(self, title):
         self._write("game_window_title", title or "Path of Exile 2")
@@ -219,13 +215,12 @@ DELIRIUM = DeliriumHelper()
 class RitualHelper(DeliriumHelper):
     """2.14.0: the Ritual watcher (ritual_alert.py) - the same kind of helper process, started with --ritual.
     It reports "count 2/3" / "count none" / "count unread" and "captured <file>"."""
-    FLAG = "--ritual"
-
     def __init__(self):
         super().__init__()
         self.count = None               # (done, total) while a Ritual counter is on screen
         self.seen = "none"              # "ok" / "none" / "unread"
         self.captured = None
+        self.content = None             # 2.129.3: Map Content's Ritual icon - "done" (ticked) / "open" / None
 
     def locate(self):
         cmd, where = super().locate()
@@ -251,13 +246,16 @@ class RitualHelper(DeliriumHelper):
                         self.count, self.seen = (int(a), int(b)), "ok"
                     else:
                         self.count, self.seen = None, v
+                elif line.startswith("content "):
+                    v = line[8:].strip()
+                    self.content = v if v in ("done", "open") else None
                 elif line.startswith("captured "):
                     self.captured = line[9:].strip()
                 else:
                     self.lines.append(line)
                     del self.lines[:-30]
         except Exception:
-            pass
+            buglog.caught()
         if self.proc is proc:
             self.state = "stopped"
 
@@ -268,8 +266,19 @@ class RitualHelper(DeliriumHelper):
         return err.replace("Delirium alert", "Ritual watcher") if err else None
 
     def stop(self):
+        # 2.129.0 (its log: told to quit the moment it started, at every start): who asked goes in the app's log -
+        # code places only
+        try:
+            import traceback
+            from . import buglog
+            if self.running():
+                where = " < ".join(f"{os.path.basename(f.filename)}:{f.name}:{f.lineno}"
+                                   for f in traceback.extract_stack()[-7:-1][::-1])
+                buglog.record("debug", "Ritual watcher stopped", where)
+        except Exception:
+            buglog.caught()
         super().stop()
-        self.count, self.seen = None, "none"
+        self.count, self.seen, self.content = None, "none", None
         return None
 
     def capture(self):

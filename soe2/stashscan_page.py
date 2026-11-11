@@ -9,6 +9,7 @@ import threading
 import tkinter as tk
 from tkinter import simpledialog, ttk
 
+from . import buglog
 from . import stashread as SR
 from .config import SETTINGS
 from .stashlayouts import ORDER, TABS
@@ -21,6 +22,9 @@ def _cls(name):
     if name in ("Simulacrum", "Raven's Reflection", "Breachstone", "Kulemak's Invitation"):
         return "Map Fragments"
     return "Stackable Currency"
+
+
+WILD_NAME = "? (wildcard slot)"
 
 
 class StashScanPage:
@@ -64,10 +68,31 @@ class StashScanPage:
     def stash_scan_finish(self):
         ss = self.ss
         self.stash_scan_cancel()
-        if ss and (ss["got"] or ss["unread"]):
+        if ss is not None:                          # 2.114.3: wildcard slots matched against every tab read
+            left = []
+            icons = {**SR.learned_icons(), **(ss.get("icons") or {})}
+            for tab, wild in (ss.get("wild") or {}).items():
+                got, unk = SR.match_wild(wild, icons, keep=True)
+                ss["got"].setdefault(tab, []).extend(got)
+                left += [(tab, n, ic) for n, ic in unk]
+            ss["wild_left"] = left                  # (named in the check window - then remembered)
+            ss.pop("icons", None)                   # (the tabs' pictures are dropped now)
+            ss.pop("wild", None)
+        if ss is None:
+            return
+        # 2.114.3 (feedback: "led me through all the prompts but then did nothing"): the check window opened behind
+        # the game. The app comes to the front with it, and it's put on top once, focused, centered on the app.
+        try:
+            self.root.deiconify()
+            self.shell.open("wealth")
+            self.root.lift()
+        except Exception:
+            buglog.caught()
+        if ss["got"] or ss["unread"]:
             self.stash_scan_review(ss)
-        elif ss is not None:
-            self._w_tell("Scan stash: nothing was read.", "ok")
+        else:
+            self.app_toast("Scan stash: nothing was read - no numbers were found on the tabs you opened.",
+                           "Scan stash", kind="warning")
 
     # ---------------------------------------------------------------- reading
     def stash_scan_read(self):
@@ -92,6 +117,14 @@ class StashScanPage:
         threading.Thread(target=work, daemon=True).start()
 
     def ev_stash_scan_done(self, tab, res):
+        if res.get("ok") and res.get("pics"):        # 2.129.0 (feedback: "we have the omen pictures from the stash
+            try:                                     # scan"): each slot's picture teaches Favours prices that item
+                from . import favours as FV
+                n = FV.learn_many(res["pics"])
+                if n:
+                    threading.Thread(target=lambda: self.favours_refs(fetch=False), daemon=True).start()
+            except Exception:
+                self.log_error("Favours pictures from the stash scan")
         ss = self.ss
         if not ss or ORDER[ss["i"]] != tab:
             return
@@ -101,6 +134,8 @@ class StashScanPage:
             return self.stash_scan_card()
         ss["got"][tab] = list(res["items"])
         ss["unread"][tab] = list(res["unread"])
+        ss.setdefault("icons", {}).update(res.get("icons") or {})        # 2.114.3: wildcards - in memory only
+        ss.setdefault("wild", {})[tab] = list(res.get("wild") or [])
         n = len(res["items"])
         miss = f" · {len(res['unread'])} couldn't be read" if res["unread"] else ""
         ss["note"], ss["kind"] = f"{TABS[tab]['label']}: read {n} stack{'s' if n != 1 else ''}{miss}.", "ok"
@@ -175,7 +210,7 @@ class StashScanPage:
             no_activate(w)                           # clickable, but the game keeps the keyboard (and its stash)
             force_topmost(w)
         except Exception:
-            pass
+            buglog.caught()
         from .remnant_page import no_capture
         no_capture(w)                                # never in the picture it takes
         self.ss_win = w
@@ -186,7 +221,7 @@ class StashScanPage:
         unread = [(tab, n) for tab in ORDER for n in ss["unread"].get(tab, [])]
         par = self.dlg_parent()
         dlg = tk.Toplevel(par)
-        dlg.title("Scan stash (beta) - check the numbers")
+        dlg.title("Scan stash (BETA) - check the numbers")
         dlg.configure(bg=C["panel2"], padx=16, pady=12)
         dlg.transient(par)
         tk.Label(dlg, text="Check what was read. Double-click a number to fix it; Delete drops a row. Save sets these "
@@ -208,6 +243,17 @@ class StashScanPage:
         for tab, n in unread:
             tv.insert("", "end", values=(n, "?", TABS[tab]["label"]), tags=("unread",))
         tv.tag_configure("unread", foreground=C.get("red", "#e06c6c"))
+        wild_rows = {}
+        for tab, n, ic in ss.get("wild_left") or []:     # 2.114.3: "? (wildcard)" - double-click to name it
+            iid = tv.insert("", "end", values=(WILD_NAME, f"{n:,}" if n else "?", TABS[tab]["label"]), tags=("unread",))
+            wild_rows[iid] = ic
+        if wild_rows:
+            u = len(wild_rows)
+            tk.Label(dlg, text=f"{u} wildcard slot{'s' if u != 1 else ''} held something that looks like nothing on the "
+                               "tabs read: double-click to type its name (Ctrl+C on it in game shows it) - the app "
+                               "remembers what it looks like for next time. Or leave it out.",
+                     bg=C["panel2"], fg=C["muted"], justify="left", anchor="w", wraplength=520).pack(fill="x",
+                                                                                                   pady=(8, 0))
         if unread:
             tk.Label(dlg, text=f"{len(unread)} slot{'s' if len(unread) != 1 else ''} had something but the number "
                                "couldn't be read (?): double-click to type it, or leave it out.",
@@ -219,6 +265,15 @@ class StashScanPage:
             if not iid:
                 return
             name, q, tabl = tv.item(iid, "values")
+            if iid in wild_rows and name == WILD_NAME:
+                nm = simpledialog.askstring("Wildcard slot", "What is it? (its name, as Ctrl+C shows it)", parent=dlg)
+                if not nm or not nm.strip():
+                    return
+                name = nm.strip()
+                tv.item(iid, values=(name, q, tabl))
+                if str(q).replace(",", "").isdigit():
+                    tv.item(iid, tags=())
+                    return
             cur = int(str(q).replace(",", "")) if str(q).replace(",", "").isdigit() else None
             n = simpledialog.askinteger("Count", f"How many {name}?", parent=dlg, initialvalue=cur, minvalue=0)
             if n is not None:
@@ -233,6 +288,10 @@ class StashScanPage:
             for iid in tv.get_children():
                 name, q, _t = tv.item(iid, "values")
                 q = str(q).replace(",", "")
+                if name == WILD_NAME:
+                    continue                             # (never named: left out)
+                if iid in wild_rows:
+                    SR.learn_icon(name, wild_rows[iid])  # next time it's known by its picture
                 if q.isdigit() and int(q) > 0:
                     got.append((name, int(q)))
             dlg.destroy()
@@ -245,14 +304,25 @@ class StashScanPage:
         ttk.Button(btns, text="Discard", command=dlg.destroy).pack(side="right", padx=(0, 8))
         dlg.bind("<Escape>", lambda _e: dlg.destroy())
         self.ss_review = dlg
+        try:
+            from .style import center_over               # (over the app, on its monitor - feedback: it came up on
+            center_over(dlg, self.dlg_parent())          # the other screen)
+            from .ratemods_page import on_top
+            on_top(dlg)                                      # (in front, focused, once)
+        except Exception:
+            buglog.caught()
 
     def stash_scan_save(self, got):
         from .wealth import WEALTH
+        total = {}                                   # 2.114.2: one item in two tabs (Breach Splinter in Breach and
+        for name, q in got:                          # in Fragments) - the two counts add up, not the last one
+            total[name] = total.get(name, 0) + q
+        got = list(total.items())
         for name, q in got:
-            WEALTH.set_holding(name, q, _cls(name))
+            WEALTH.set_holding(name, q, _cls(name), src="scanned")
         if got:
             self._w_tell(f"Scan stash: saved {len(got)} stack count{'s' if len(got) != 1 else ''}.", "ok")
             lg = SETTINGS.get("league")
             if lg:
-                threading.Thread(target=self._w_prices_then_snapshot, args=(lg,), daemon=True).start()
+                threading.Thread(target=self._w_prices_then_snapshot, args=(lg, "scanned"), daemon=True).start()
         self.refresh_wealth(force=True)

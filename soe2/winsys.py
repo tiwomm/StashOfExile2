@@ -5,6 +5,7 @@ Part of StashOfExile2. Split out of the single-file app in 1.37 (see the launche
 import sys
 import threading
 import time
+from . import buglog
 from .config import APP_TITLE
 
 
@@ -149,6 +150,7 @@ class KeyWatch:
         self.combo_time, self.active, self.err = 0.0, False, None
         self.copy_time = 0.0        # 2.80.0: YOUR plain Ctrl+C (no Alt) - Price Checks when that is its key
         self.pc_time = 0.0          # 2.83.1: the price check key (Ctrl+D) was pressed in game
+        self.tu_time = 0.0          # 2.131.1: the Top Up key (F7) was pressed in game
         self.esc_since = 0.0        # 2.24.0: when Esc went down (0 = it's up)
         self.esc_last = 0.0         # 2.25.0: the last fresh Esc press, and when two came quickly (a double tap)
         self.esc_double = 0.0
@@ -186,7 +188,7 @@ class KeyWatch:
                 import ctypes
                 ctypes.windll.user32.PostThreadMessageW(self._tid, 0x8001 if on else 0x8002, 0, 0)
             except Exception:
-                pass
+                buglog.caught()
 
     def start(self):
         if sys.platform == "win32":
@@ -203,7 +205,7 @@ class KeyWatch:
                 import ctypes
                 ctypes.windll.user32.PostThreadMessageW(self._tid, 0x8003, 0, 0)
             except Exception:
-                pass
+                buglog.caught()
 
     def combo_recent(self, secs=1.5):
         return time.time() - self.combo_time < secs
@@ -213,6 +215,9 @@ class KeyWatch:
 
     def pc_recent(self, secs=1.5):
         return time.time() - self.pc_time < secs
+
+    def tu_recent(self, secs=2.0):
+        return time.time() - getattr(self, "tu_time", 0.0) < secs
 
     def _run(self):
         try:
@@ -264,7 +269,7 @@ class KeyWatch:
                                     self._swallowed.add(vk)
                                     return 1                            # the key did something: the game doesn't get it
                 except Exception:
-                    pass
+                    buglog.caught()
                 return user32.CallNextHookEx(None, n, w, l)
             self._proc = HOOKPROC(proc)                             # keep a reference or Python frees it
             hook = user32.SetWindowsHookExW(13, self._proc, kernel32.GetModuleHandleW(None), 0)
@@ -292,7 +297,7 @@ class KeyWatch:
                                 self._swallowed.add(vk)
                                 return 1
                 except Exception:
-                    pass
+                    buglog.caught()
                 return user32.CallNextHookEx(None, n, w, l)
             self._mproc = HOOKPROC(mproc)
             self._tid = kernel32.GetCurrentThreadId()
@@ -354,7 +359,7 @@ class Tray:
             try:
                 self.icon.stop()
             except Exception:
-                pass
+                buglog.caught()
             self.icon = None
 
     def notify(self, text):
@@ -362,4 +367,4 @@ class Tray:
             if self.icon:
                 self.icon.notify(text, "StashOfExile2")
         except Exception:
-            pass
+            buglog.caught()

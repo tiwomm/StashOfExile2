@@ -5,14 +5,14 @@ Why: at league start you list items in a public stash tab and buyers whisper you
 spots a whisper TO you that's a trade request, and shows a short card: the item, the price, where it sits in your tab,
 and who's asking.
 
-On by default during the campaign (a character that hasn't reached maps); Keep on after the campaign is an option.
+On or off - nothing else (2.129.2, feedback: its "after the campaign" option left the switch unable to turn it on).
 Privacy: nothing is saved or sent - the buyer's name is shown on the card and forgotten when it closes.
 GGG ToS: only reads Client.txt; never types, never invites, never sends anything to the game."""
 import re
 
 from .config import SETTINGS, save_json
 
-DEFAULTS = {"on": True, "after": False, "sound": True, "secs": 20}
+DEFAULTS = {"on": True, "sound": True, "secs": 20}
 
 # The trade site's whisper (PoE 2, as copied from "Whisper"), sent to you and logged as:
 #   @From <GUILD> Name: Hi, I would like to buy your Havoc Visage Ancestral Tiara listed for 90 divine in Rise of the
@@ -55,21 +55,9 @@ def parse_trade(msg):
             "left": int(d["left"]) if d.get("left") else None, "top": int(d["top"]) if d.get("top") else None}
 
 
-def in_campaign():
-    """The character you're playing hasn't reached maps (the Campaign Helper's own record)."""
-    try:
-        from . import campaign as CP
-        run = CP.char()
-        if run.get("done"):
-            return False
-        return CP.char_level() < CP.MAPS_LEVEL
-    except Exception:
-        return True
-
-
 def active():
     c = cfg()
-    return bool(c["on"]) and (bool(c["after"]) or in_campaign())
+    return bool(c["on"])
 
 
 def where(d):

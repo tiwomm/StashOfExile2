@@ -6,10 +6,10 @@ sent to the game: it only reads the offers.
 How a price is read: the offers that sell the item for Divine Orbs (then, if too few, for Exalted Orbs), cheapest
 first; each offer's price per item is what it asks / how many it gives. The median of the cheapest five (an offer
 far from the rest - a price-fixer - is left out first, like the price checker does) is the price, in divines."""
-import json
 import statistics
 import time
 
+from . import buglog
 from .config import BASE, load_json, save_json
 from .net import call
 
@@ -150,5 +150,5 @@ def catalog(static=None):
                 if names:
                     out.append((typ, names))
     except Exception:
-        pass
+        buglog.caught()
     return out

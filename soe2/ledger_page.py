@@ -8,11 +8,13 @@ import time
 import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 
+from . import buglog
 from . import ledger as L
 from . import moneymakers as MM
 from .config import SETTINGS, save_json
 from .pricefmt import fmt_short
 from .chrome import section as chrome_section
+from .style import over_app
 from .style import C, MONO, ScrollArea, SegBar, Tooltip
 from .trade import listing_rules
 
@@ -718,10 +720,6 @@ class LedgerPage:
         self.fl_refresh()
         return s
 
-    def fl_list_menu(self, e):
-        """(kept for older callers)"""
-        return self.fl_setup_menu(e)
-
     def fl_setup_menu(self, e):
         m = tk.Menu(self.root, tearoff=0, bg=C["panel2"], fg=C["text"], activebackground="#2c4a84",
                     activeforeground="#ffffff")
@@ -1006,7 +1004,7 @@ class LedgerPage:
         try:
             self.shell.open("money")
         except Exception:
-            pass
+            buglog.caught()
         try:
             self.mm_page.pick("Strats", notify=False)
             self.mm_show_page()
@@ -1152,6 +1150,7 @@ class LedgerPage:
         if not cols:
             return None
         win = tk.Toplevel(self.root)
+        over_app(win, self.dlg_parent())               # 2.114.3: over the app, on its monitor
         win.title("Strat Tracker - compare")
         win.configure(bg=C["panel"])
         win.transient(self.root)
@@ -1307,7 +1306,7 @@ class LedgerPage:
     def fl_prompt(self, p=None, in_app=False):
         """The box: runs since the last log, the loot (Ctrl+Alt+C each drop, or paste), its worth from poe.ninja item
         by item, cost from the setup, profit. Parchment over the game, like the Session timer."""
-        from .overlaywin import OverlayWindow, pal, parchment
+        from .overlaywin import OverlayWindow, pal
         d = self.fl_data()
         p = p or d.get("pending")
         s = L.setup(d, p.get("setup")) if p else None

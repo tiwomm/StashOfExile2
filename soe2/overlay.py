@@ -17,6 +17,7 @@ import sys
 import threading
 import time
 import tkinter as tk
+from . import buglog
 
 POE_TITLE = "Path of Exile 2"
 
@@ -235,7 +236,7 @@ def read_ahk_config(path=None):
             try:
                 out[name] = conv(v)
             except Exception:
-                pass
+                buglog.caught()
     if "notes_text" in out:
         out["notes_text"] = out["notes_text"].replace("`n", "\n")        # AutoHotkey writes new lines as `n
     cmds = []
@@ -368,24 +369,17 @@ class Overlay:
 
     def note_palette(self):
         """2.67.0: the note in the overlay's own look (the Panel's: dark leather, a metal frame, antique gold)."""
-        from .overlaywin import pal, _seed
-        from . import hudart, themes as TH
-        P = hudart.card_palette(pal())
-        _seed(TH, P)
-        return P
+        from .overlaywin import pal
+        return pal()                                     # 2.109.0: the overlay's chosen style
 
     def note_colours(self):
         """(background, text) of the note's page."""
         P = self.note_palette()
         return P["field"], P["text"]
 
-    def _colour(self, key, default):
-        v = str(self.cfg.get(key) or default).lstrip("#")
-        return "#" + v if re.fullmatch(r"[0-9A-Fa-f]{6}", v) else "#" + default
-
     def _build_notes(self):
         """The sticky note: the shared over-the-game window (overlaywin.py) with your colors inside it."""
-        from .overlaywin import OverlayWindow, pal
+        from .overlaywin import OverlayWindow
         c = self.cfg
         bg, fg = self.note_colours()
 
@@ -400,7 +394,7 @@ class Overlay:
                           on_moved=moved, follow_game=True, palette=P)
         w.withdraw()                           # show_notes() shows it
         host = w.body
-        if w.parch:                            # 2.67.0: the page inside the overlay's metal frame (drawn to its size)
+        if w.parch and P.get("poe"):           # 2.67.0: the page inside the overlay's metal frame (2.109.0: Classic only)
             from . import hudart
             cv = w.canvas_body()
             host = tk.Frame(cv, bg=bg)
@@ -409,7 +403,7 @@ class Overlay:
 
             def fit(e):
                 cv.itemconfigure(win_id, width=max(40, e.width - 2 * pad), height=max(30, e.height - 2 * pad))
-                art = hudart.card(cv, max(40, e.width), max(40, e.height), None, [], 0)
+                art = hudart.panel(cv, max(40, e.width), max(40, e.height))     # 2.124.1: the Bar's look
                 cv.delete("noteart")
                 if art is not None:
                     cv.create_image(0, 0, image=art, anchor="nw", tags=("noteart",))
@@ -429,6 +423,7 @@ class Overlay:
         text.insert("1.0", tabs[i]["text"])
         text.edit_modified(False)
         text.bind("<<Modified>>", self._text_changed)
+        text.bind("<Control-MouseWheel>", lambda e: (self.note_font_step(1 if e.delta > 0 else -1), "break")[1])
         self.notes, self.notes_text = w, text
         self._paint_tabs()
 
@@ -462,6 +457,17 @@ class Overlay:
             w_.destroy()
         bg, fg = self.note_colours()
         cur = self.note_index()
+        # 2.119.0 (UX pass): the note's text size is set on the note itself (was Settings › Appearance › Notes) -
+        # packed first, so a narrow note keeps them
+        for txt, d in (("A+", 1), ("A−", -1)):
+            b = tk.Label(bar, text=txt, bg=bg, fg=fg, padx=4, cursor="hand2", font=("Segoe UI", 9, "bold"))
+            b.pack(side="right", pady=(0, 2))
+            b.bind("<Button-1>", lambda e, d=d: self.note_font_step(d))
+            try:
+                from .style import Tooltip
+                Tooltip(b, "Bigger text" if d > 0 else "Smaller text")
+            except Exception:
+                buglog.caught()
         for i, t in enumerate(self.note_tabs()):
             on = i == cur
             lab = tk.Label(bar, text=t["name"][:18], bg=fg if on else bg, fg=bg if on else fg, padx=8, pady=1,
@@ -476,6 +482,21 @@ class Overlay:
         add = tk.Label(bar, text="+", bg=bg, fg=fg, padx=8, cursor="hand2", font=("Segoe UI", 9, "bold"))
         add.pack(side="left", pady=(0, 2))
         add.bind("<Button-1>", lambda e: self.add_tab())
+
+    def note_font_step(self, d):
+        """2.119.0: A− / A+ on the note (and Ctrl + mouse wheel in it) - its text size, 8 to 24, kept."""
+        c = self.cfg
+        n = max(8, min(24, int(c.get("notes_font", 11)) + d))
+        if n == int(c.get("notes_font", 11)):
+            return n
+        c["notes_font"] = n
+        self.save_settings()
+        try:
+            if self.notes_text is not None and self.notes_text.winfo_exists():
+                self.notes_text.config(font=(self.note_palette()["font"], n))
+        except (AttributeError, tk.TclError):
+            pass
+        return n
 
     # ---- 2.72.2: a sticky note's right-click menu
     def tab_menu(self, i, x=None, y=None):
@@ -686,7 +707,7 @@ class Overlay:
                 self.cfg.update(notes_x=w.winfo_x(), notes_y=w.winfo_y(), notes_w=w.winfo_width(), notes_h=w.winfo_height())
             self._keep_text()
         except Exception:
-            pass
+            buglog.caught()
 
     def restyle(self, store=True):
         """Colors / opacity / font / size changed in the Notes window: rebuild the note (where it is, unless the new
@@ -709,7 +730,6 @@ class Overlay:
         try:
             from . import overlaywin
             overlaywin.GAME_TITLE[0] = self.cfg.get("poe_title") or POE_TITLE
-            overlaywin.GAME_ONLY[0] = bool(self.S.get("overlay_game_only", True))
             while self.pending:
                 action = self.pending.pop(0)
                 if action[0] == "notes":
@@ -724,7 +744,7 @@ class Overlay:
                         self.hide_notes(remember=False)              # back when the game is
                     self._game_was_open = now_open
         except Exception:
-            pass
+            buglog.caught()
         self.root.after(500, self._tick)
 
     def set_chat(self, on):
@@ -751,5 +771,5 @@ class Overlay:
             try:
                 self._store_geometry()
             except Exception:
-                pass
+                buglog.caught()
         self.save_settings()

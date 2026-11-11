@@ -17,8 +17,9 @@ import tkinter as tk
 import tkinter.font as tkfont
 from tkinter import ttk
 
+from . import buglog
 from .config import APP_UA, P, SETTINGS
-from .style import C
+from .style import C, Splitter
 from .trade import ago, RAW_LISTINGS, strip_markup
 
 PC_MAX = 20                  # items kept in Recent
@@ -143,9 +144,38 @@ def mod_rows(item):
     return out
 
 
+_ICONS = None
+
+
+def icons():
+    """2.105.0: base -> the trade site's picture of it (learned from listings; Market Insights' cards use it)."""
+    global _ICONS
+    if _ICONS is None:
+        from .config import load_json
+        try:
+            _ICONS = dict(load_json("icons.json", {}) or {})
+        except Exception:
+            _ICONS = {}
+    return _ICONS
+
+
+def icon_learn(base, url):
+    if not base or not str(url or "").startswith("https://"):
+        return
+    ic = icons()
+    if ic.get(base) != url:
+        ic[base] = url
+        try:
+            from .config import save_json
+            save_json("icons.json", ic)
+        except Exception:
+            buglog.caught()
+
+
 def listing_facts(e):
     """One trade-site entry -> what its card shows."""
     it, lst = (e or {}).get("item") or {}, (e or {}).get("listing") or {}
+    icon_learn(_clean(it.get("baseType") or it.get("typeLine")), it.get("icon"))
     price = lst.get("price") or {}
     ts = None
     try:
@@ -160,7 +190,8 @@ def listing_facts(e):
                                                  for x in it.get("pseudoMods") or []],
             "note": _clean(it.get("note")) if it.get("note") else "",
             "price": (price.get("amount"), price.get("currency")) if price.get("amount") is not None else None,
-            "seller": ((lst.get("account") or {}).get("name") or ""), "ts": ts, "id": (e or {}).get("id")}
+            "seller": ((lst.get("account") or {}).get("name") or ""), "ts": ts, "id": (e or {}).get("id"),
+            "times": int((e or {}).get("_times") or 1)}           # 2.113.0: the seller listed it this many times
 
 
 
@@ -193,51 +224,256 @@ class PriceCheckPage:
         self.pc_rid = None
         self._pc_art_cache, self._pc_art_wait = {}, set()
         P2 = C["panel2"]
-        wrap = tk.Frame(body, bg=P2)
+        self._pc_where_row(body)                     # 2.122.0: what your price check key does - first, full width
+        self._pc_recent_row(body)                    # 2.123.0 (p6): Recent as chips (was a table under the card)
+        self._pc_verdict_row(body)                   # 2.123.0 (p4): the price, how sure, why - once, across the top
+        # 2.123.3 (feedback: "too wide ... allow a person to resize its horizontal width"): the item and the listings
+        # share a divider you drag; its place is remembered (pc_card_w)
+        cw = max(330, int(SETTINGS.get("pc_card_w", 420) or 420))
+        # 2.123.4 (feedback: "janky and slow ... no visible indicator"): a grip you can see; only a guide line moves
+        # while you drag, and the item is drawn again once, when you let go
+        wrap = Splitter(body, width=cw, lo=330, keep=300, on_set=self._pc_pane_saved, bg=C["bg"])
+        self.limit_banner(body, wrap)                # 2.103.3: the "Staying under the limits" line
         wrap.pack(fill="both", expand=True)
-        # ---- left: the item card (scrolls)
-        left = tk.Frame(wrap, bg=P2, width=380)
-        left.pack(side="left", fill="y")
-        left.pack_propagate(False)
-        top = tk.Frame(left, bg=P2, padx=12, pady=8)
+        self.pc_pane = wrap
+        left = wrap.left
+        top = tk.Frame(left, bg=P2, padx=12, pady=4)
         top.pack(fill="x")
-        tk.Label(top, text="Recent", bg=P2, fg=C["muted"], font=("Segoe UI", 9)).pack(side="left")
-        self.pc_hist_var = tk.StringVar()
+        self.pc_hist_var = tk.StringVar()                    # (the old dropdown: kept for its callers, never shown)
         self.pc_hist_cb = ttk.Combobox(top, textvariable=self.pc_hist_var, state="readonly")
-        self.pc_hist_cb.pack(side="left", fill="x", expand=True, padx=(8, 0))
         self.pc_hist_cb.bind("<<ComboboxSelected>>", lambda e: self.pc_pick_hist())
         self.pc_lcanvas, self.pc_left = self._pc_scroller(left, padx=12)
         # ---- right: the listings
-        right = tk.Frame(wrap, bg=C["panel"])
-        right.pack(side="left", fill="both", expand=True)
+        right = wrap.right
         head = tk.Frame(right, bg=C["panel"], padx=12, pady=8)
         head.pack(fill="x")
         self.pc_count_lbl = tk.Label(head, text="", bg=C["panel"], fg=C["text"], font=("Segoe UI", 10, "bold"))
         self.pc_count_lbl.pack(side="left")
-        # 2.97.3 (feedback): Add to favorites / Open on trade site sit under Search and Clear (pcv_card makes them
-        # with each card); these two stand in, unshown, while there's no item
-        self.pc_open_btn0 = self.pc_open_btn = ttk.Button(head, text="Open on trade site", command=self.pc_open_trade,
-                                                          state="disabled")
-        self.pc_fav_btn0 = self.pc_fav_btn = ttk.Button(head, text="☆ Add to favorites", command=self.pc_add_fav,
-                                                        state="disabled")
         self.pc_rcanvas, self.pc_list = self._pc_scroller(right, padx=12, bg_key="panel")
         self.pcv = PCView(self.pc_left, self.pc_lcanvas, self.pc_list, self.pc_rcanvas, self.pc_count_lbl,
                           self.pc_open_btn)
         self.pcv.redraw = lambda: self.pc_draw_list(self.records.get(self.pc_rid))
         self.pcv.recard = lambda: self.pc_show(self.records.get(self.pc_rid))
-        self.pcv_fit(self.pcv, wrap, left)
+        self.pcv_fit(self.pcv, wrap, None)               # (2.123.3: no fixed share - the divider decides)
         self.pc_refresh_hist()
         recs = self.pc_recs()
         self.pc_show(recs[0] if recs else None)
 
-    def pcv_fit(self, v, page, side):
+    # 2.122.0 (feedback: "Show over the game" was unclear and "randomly thrown in the top right"): one row across the
+    # top of the page says what your price check key does and lets you pick where the price shows - the same setting
+    # as Settings › Price checking › Where the price shows and the card's ⚙.
+    PC_WHERE = ("Here", "Overlay + Here")      # 2.123.3 (feedback): the card always comes with the app (was Overlay / Both)
+
+    def _pc_where_row(self, body):
+        from .style import SegBar, Tooltip
+        row = tk.Frame(body, bg=C["panel"], padx=12, pady=8)
+        row.pack(fill="x")
+        self.pc_where_lbl = tk.Label(row, text="", bg=C["panel"], fg=C["text"], font=("Segoe UI", 10))
+        self.pc_where_lbl.pack(side="left", padx=(0, 8))
+        self.pc_where = SegBar(row, list(self.PC_WHERE), value=self.PC_WHERE[0], size=9, pad=(12, 4),
+                               command=self._pc_where_pick)
+        self.pc_where.pack(side="left")
+        tip = tk.Label(row, text="ⓘ", bg=C["panel"], fg=C["muted"], font=("Segoe UI", 10), cursor="question_arrow")
+        tip.pack(side="left", padx=(8, 0))
+        Tooltip(tip, "Here: the app comes to the front with the price. Overlay + Here: the price check overlay "
+                     "opens over the game with the price, the mods "
+                     "searched and the cheapest listings (drag and resize it, Esc closes it, its ⚙ has its "
+                     "settings) - the app stays where it is and shows the item here when you come back to it. Every "
+                     "check is kept in Recent here.")
+        self.pc_where_note = tk.Label(row, text="", bg=C["panel"], fg=C["muted"], font=("Segoe UI", 9))
+        self.pc_where_note.pack(side="left", padx=(8, 0))
+        gear = tk.Label(row, text="⚙", bg=C["panel"], fg=C["accent"], cursor="hand2", font=("Segoe UI Symbol", 10))
+        gear.pack(side="right")                          # 2.123.0 (p3): this page's settings, one click away
+        gear.bind("<Button-1>", lambda e: self.settings_open("Price checking", "pc_single"))
+        Tooltip(gear, "Price check settings")
+        self._pc_key_text = self.pc_where_paint          # (Settings › Keybinds calls it when a key changes)
+        self.pc_where_paint()
+
+    def pc_where_paint(self):
+        """The row follows the setting, wherever it was changed."""
+        try:
+            self.pc_where_lbl.config(text=f"When you press {pc_key_label()} on an item in game, show the price")
+            k = self.pc_show_get()
+            self.pc_where.pick("Overlay + Here" if k in ("over", "both") else "Here", notify=False)
+            self.pc_where_note.config(text={"off": "· the key is off - pick one to turn it on"}.get(k, ""))
+        except (AttributeError, tk.TclError):
+            pass
+
+    def _pc_where_pick(self, label):
+        if label == "Overlay + Here":
+            self.pc_show_set("both")
+        else:
+            self.pc_show_set("front")                        # (2.125.5: "behind the game" is gone)
+
+    # ---------------------------------------------------------------- 2.123.0: Recent chips and the verdict strip
+    def _pc_recent_row(self, body):
+        """p6 (feedback: the Recent table took a quarter of the card's side): the last checks as chips."""
+        row = tk.Frame(body, bg=C["panel"], padx=12, pady=2)
+        row.pack(fill="x")
+        tk.Label(row, text="Recent", bg=C["panel"], fg=C["muted"], font=("Segoe UI", 9)).pack(side="left", padx=(0, 8))
+        self.pc_recent = tk.Frame(row, bg=C["panel"])
+        self.pc_recent.pack(side="left", fill="x", expand=True)
+        self.pc_recent_all = tk.Label(row, text="All ▾", bg=C["panel"], fg=C["accent"], cursor="hand2",
+                                      font=("Segoe UI", 9))
+        self.pc_recent_all.pack(side="right")
+        self.pc_recent_menu = tk.Menu(self.pc_recent_all, tearoff=0, bg=C["panel2"], fg=C["text"],
+                                      activebackground=C["accent"])
+        self.pc_recent_all.bind("<Button-1>", lambda e: self.pc_recent_menu.index("end") is not None and
+                                self.pc_recent_menu.tk_popup(e.x_root, e.y_root))
+        self.pc_recent.bind("<Configure>", self._pc_recent_resized, add="+")
+
+    PC_CHIPS = 8
+
+    def _pc_why_resized(self, e):
+        w = max(200, e.width - 8)
+        if abs(int(self.pc_v_why.cget("wraplength") or 0) - w) >= 8:
+            self.pc_v_why.config(wraplength=w)
+
+    def _pc_recent_resized(self, e):
+        """2.128.0 (feedback: the app froze after a theme change): repaint the chips only when the row's width really
+        changed, and not from inside the idle loop - each repaint changes what the row asks for, which could set off
+        another resize, again and again, inside update_idletasks."""
+        if abs(e.width - getattr(self, "_pc_recent_w", -99)) < 8:
+            return
+        self._pc_recent_w = e.width
+        job = getattr(self, "_pc_recent_job", None)
+        if job:
+            try:
+                self.root.after_cancel(job)
+            except Exception:
+                buglog.caught()
+        self._pc_recent_job = self.root.after(60, self._pc_recent_go)
+
+    def _pc_recent_go(self):
+        self._pc_recent_job = None
+        self.pc_recent_paint()
+
+    def pc_recent_paint(self):
+        from .pricefmt import fmt_div
+        box = getattr(self, "pc_recent", None)
+        if box is None:
+            return
+        for w in box.winfo_children():
+            w.destroy()
+        recs = self.pc_recs()
+        self.pc_chips = {}
+        if not recs:
+            tk.Label(box, text=f"Your last {PC_MAX} checks show here.", bg=C["panel"], fg=C["muted"],
+                     font=("Segoe UI", 9)).pack(side="left")
+        room = max(200, box.winfo_width() or 900)
+        used = 0
+        for r in recs[:self.PC_CHIPS]:
+            it = r.get("item") or {}
+            price = fmt_div(r["est"]) if r.get("est") is not None and not r.get("skip") else \
+                ("…" if r.get("state") in ("queued", "pricing") else "no price")
+            on = r["id"] == self.pc_rid
+            t = f"{(it.get('name') or it.get('base') or 'item')[:22]} · {price}"
+            b = tk.Label(box, text=t, bg=C["panel2"], fg=C["text"] if on else C["muted"], font=("Segoe UI", 9),
+                         padx=8, pady=2, cursor="hand2", highlightthickness=1,
+                         highlightbackground=C["accent"] if on else C["line"])
+            used += b.winfo_reqwidth() + 6
+            if used > room and self.pc_chips:
+                b.destroy()
+                break
+            b.pack(side="left", padx=(0, 8))
+            b.bind("<Button-1>", lambda e, rid=r["id"]: self.records.get(rid) and self.pc_show(self.records[rid]))
+            self.pc_chips[r["id"]] = b
+        m = self.pc_recent_menu
+        m.delete(0, "end")
+        for r in recs:
+            m.add_command(label=self.pc_label(r), command=lambda rid=r["id"]: self.records.get(rid) and
+                          self.pc_show(self.records[rid]))
+        self.pc_recent_all.config(fg=C["accent"] if recs else C["muted"])
+
+    def _pc_verdict_row(self, body):
+        """p4 (feedback: "Couldn't price" in the card and "Couldn't search" again on the right): the answer, how sure,
+        how it was worked out and the next steps - one strip across the top. The only orange button: Search again."""
+        f = self.pc_verdict = tk.Frame(body, bg=C["panel2"], padx=12, pady=8, highlightthickness=1,
+                                       highlightbackground=C["line"])
+        left = tk.Frame(f, bg=C["panel2"])
+        left.pack(side="left", fill="x", expand=True)
+        self.pc_v_big = tk.Label(left, text="", bg=C["panel2"], fg=C["text"], font=("Segoe UI", 16, "bold"), anchor="w")
+        self.pc_v_big.pack(side="left")
+        self.pc_v_how = tk.Label(left, text="", bg=C["panel2"], fg=C["text"], font=("Segoe UI", 10), anchor="w")
+        self.pc_v_how.pack(side="left", padx=(12, 0))
+        self.pc_v_why = tk.Label(left, text="", bg=C["panel2"], fg=C["muted"], font=("Segoe UI", 9), anchor="w",
+                                 justify="left")
+        self.pc_v_why.pack(side="left", padx=(12, 0), fill="x", expand=True)
+        self.pc_v_why.bind("<Configure>", self._pc_why_resized)     # (2.128.0: only a real change re-wraps)
+        # 2.123.2 (hotfix, feedback: the buttons belong under the item): Search again, fewer mods, Clear, favorites and
+        # Trade Site are made with each card, under it (pcv_card). These stand in, unshown, while there's no item.
+        hold = tk.Frame(f, bg=C["panel2"])
+        self.pc_open_btn0 = self.pc_open_btn = ttk.Button(hold, text="Trade Site", command=self.pc_open_trade,
+                                                          state="disabled")
+        self.pc_fav_btn0 = self.pc_fav_btn = ttk.Button(hold, text="☆ Add to favorites", command=self.pc_add_fav,
+                                                        state="disabled")
+        self.pc_search_btn = ttk.Button(hold, text="Search again", style="Primary.TButton")
+        self.pc_fewer_btn = ttk.Button(hold, text="Search with fewer mods")
+
+    def pc_verdict_paint(self, rec):
+        """The strip says it with a mark and a word, never by color alone."""
+        f = getattr(self, "pc_verdict", None)
+        if f is None:
+            return
+        if rec is None:
+            f.pack_forget()
+            return
+        if not f.winfo_manager():
+            f.pack(fill="x", padx=12, pady=(4, 8), after=self.pc_recent.master)
+        from .pricefmt import fmt_div
+        st, fewer = rec.get("state"), False
+        entries, total, n = self.pc_entries(rec) if st == "done" else ([], 0, 0)
+        on = len(self.pc_ticked(rec))
+        if st == "done" and rec.get("est") is not None and not rec.get("nomatch"):
+            conf = str(rec.get("conf") or "").lower()
+            mark, word, col = {"high": ("✓", "a solid price", C["good"]), "medium": ("~", "a fair guess", C["orange"]),
+                               "low": ("!", "thin data - check by hand", C["orange"])}.get(conf, ("~", "a guess", C["orange"]))
+            big = ("≥ " if rec.get("partial") else "≈ ") + fmt_div(rec["est"])
+            how = f"{mark} {word}"
+            total = rec.get("total") if rec.get("total") is not None else total
+            why = (f"from the {min(n, 5)} cheapest of {total:,} listing{'s' if total != 1 else ''}" if n else
+                   f"from {total:,} listing{'s' if total != 1 else ''}")
+            self.pc_v_big.config(text=big, fg=C["good"])
+            self.pc_v_how.config(text=how, fg=col)
+        elif st == "done":
+            self.pc_v_big.config(text="✕ No match" if not rec.get("manual") else "! Check by hand", fg=C["red"])
+            self.pc_v_how.config(text="No listings matched these filters" if not rec.get("manual") else "", fg=C["text"])
+            why = (f"{on} mod filter{'s are' if on != 1 else ' is'} on. " if on else "") + \
+                "Untick the rarest mod or lower a Min, then search again."
+            fewer = on > 1
+        elif st == "error":
+            reason = rec.get("label") or "The trade site didn't answer."
+            low = reason.lower()
+            tip = ("Too many filters for one search: untick a few mods." if "complex" in low else
+                   "Pick a league in Settings." if "league" in low else "Wait a moment and try again.")
+            self.pc_v_big.config(text="✕ Couldn't search", fg=C["red"])
+            self.pc_v_how.config(text="", fg=C["text"])
+            why = f"{reason}. {tip}" if not reason.endswith(".") else f"{reason} {tip}"
+            fewer = "complex" in low and on > 1
+        else:
+            self.pc_v_big.config(text="… Searching the trade site" if st == "pricing" else "… Waiting in line",
+                                 fg=C["muted"])
+            self.pc_v_how.config(text="", fg=C["text"])
+            why = ""
+        self.pc_v_why.config(text=why)
+        try:                                             # (the card's buttons - made with each card, 2.123.2)
+            self.pc_search_btn.config(text="Search  •  filters changed" if rec.get("changed") else "Search again")
+            if fewer:
+                if not self.pc_fewer_btn.winfo_manager():
+                    self.pc_fewer_btn.pack(side="left", padx=(8, 0), after=self.pc_search_btn)
+            else:
+                self.pc_fewer_btn.pack_forget()
+        except tk.TclError:
+            pass
+
+    def pcv_fit(self, v, page, side, lo=380, share=0.32, hi=620):
         """2.97.0 (feedback: scale to fit, nothing cut off): the card's side takes about a third of the page (wider
         windows: fewer wrapped lines, so no scrollbar), and the card and the listings are drawn again for the width
         they have when the window changes size."""
         state = {"page": 0, "card": 0, "list": 0, "after_card": None, "after_list": None}
 
         def side_w(pw):
-            return max(380, min(620, int(pw * 0.32)))
+            return max(lo, min(hi, int(pw * share)))
 
         def page_cfg(e):
             if abs(e.width - state["page"]) < 8:
@@ -254,7 +490,7 @@ class PriceCheckPage:
                 try:
                     self.root.after_cancel(state[slot])
                 except Exception:
-                    pass
+                    buglog.caught()
 
             def go():
                 state[slot] = None
@@ -279,9 +515,19 @@ class PriceCheckPage:
                 state["list"] = e.width
                 if not first and v.cards:
                     later("list")
-        page.bind("<Configure>", page_cfg, add="+")
+        if side is not None:
+            page.bind("<Configure>", page_cfg, add="+")
         v.lcanvas.bind("<Configure>", card_cfg, add="+")
         v.rcanvas.bind("<Configure>", list_cfg, add="+")
+
+    def _pc_pane_saved(self, w=None):
+        """The divider was let go (Splitter keeps it between 330 px and all but 300 px of the page): remember it."""
+        try:
+            SETTINGS["pc_card_w"] = int(self.pc_pane.sashpos(0) if w is None else w)
+            from .config import save_json
+            save_json("settings.json", SETTINGS)
+        except (tk.TclError, AttributeError, ValueError):
+            pass
 
     def pcv_wrap(self, v):
         """The card's text width: what its side has (2.97.0; was a fixed 330)."""
@@ -302,15 +548,21 @@ class PriceCheckPage:
         inner = tk.Frame(cv, bg=bg, padx=padx, pady=4)
         win = cv.create_window((0, 0), window=inner, anchor="nw")
 
+        from .style import SbGuard
+        guard = SbGuard()
+
         def fit(_e=None):
-            """2.97.0 (feedback: no scrollbar when it fits): the bar shows only when there's more to see."""
+            """2.97.0 (feedback: no scrollbar when it fits): the bar shows only when there's more to see (2.112.2:
+            never flipping back and forth - SbGuard)."""
             try:
                 cv.configure(scrollregion=cv.bbox("all"))
                 need = inner.winfo_reqheight() > cv.winfo_height() + 1
                 if need and not sb.winfo_ismapped():
                     sb.pack(side="right", fill="y", before=cv)
-                elif not need and sb.winfo_ismapped():
+                    guard.flipped()
+                elif not need and sb.winfo_ismapped() and guard.may_hide():
                     sb.pack_forget()
+                    guard.flipped()
                     cv.yview_moveto(0)
             except tk.TclError:
                 pass
@@ -329,21 +581,52 @@ class PriceCheckPage:
         return cv, inner
 
     # ---------------------------------------------------------------- items in
+    def pc_pop_var(self):
+        """The one switch for the card over the game (Price Checks' header and Settings › Keybinds share it)."""
+        v = getattr(self, "_pc_pop_var", None)
+        if v is None:
+            v = self._pc_pop_var = tk.BooleanVar(value=bool(SETTINGS.get("pc_popup", False)))
+        return v
+
+    def pc_pop_set(self):
+        from .config import save_json
+        SETTINGS["pc_popup"] = bool(self.pc_pop_var().get())
+        save_json("settings.json", SETTINGS)
+        if not SETTINGS["pc_popup"]:
+            self.pcpop_close()
+        self.pc_where_paint()
+
     def pc_wants(self, text):
-        """An item copied with your price check key (Ctrl+D; Settings › Hotkeys), with its switch on. Set to Ctrl+C,
+        """An item copied with your price check key (Ctrl+D; Settings › Keybinds), with its switch on. Set to Ctrl+C,
         the game's own plain copy counts as before."""
         keys = getattr(self, "keys", None)
-        if not SETTINGS.get("pc_ctrl_c", True) or keys is None or not getattr(keys, "active", False):
+        from . import features as FEAT
+        if not SETTINGS.get("pc_ctrl_c", True) or keys is None or not getattr(keys, "active", False) \
+                or not FEAT.on("price"):                         # 2.131.0: Price checking off (Features)
             return False
         if not text.lstrip().startswith("Item Class:"):
             return False
+        if getattr(keys, "tu_recent", None) and keys.tu_recent():
+            return False                                         # (2.131.1: the Top Up key's copy - not priced)
         if pc_key_is_copy():
             return keys.copy_recent() and not keys.combo_recent()
         return keys.pc_recent()
 
     def pc_take(self, text):
         """An item for Price Checks: priced first in line, shown on the page (the app comes to the front if you
-        want - Settings › Hotkeys)."""
+        want - Settings › Keybinds)."""
+        from .wealth import parse_currency_item
+        cur = parse_currency_item(text)
+        try:                                             # 2.128.0: a Favours reward - learn what it looks like
+            self.favours_copy_learn(text)                # (2.129.3: exchange items, and ★ uniques - never priced)
+        except Exception:
+            buglog.caught()
+        if cur and cur[2] == "Wombgifts":                # (feedback: "use trade site for the 5 types of wombgifts")
+            cur = None
+        if cur:                                          # 2.129.0 (feedback): omens, essences, lineage gems, every
+            self.status_text, self.status_until = f"Pricing {cur[0]}...", time.time() + 10     # currency: their
+            self.stack_price(cur[0], cur[1], loud=True)  # going rate on poe.ninja's exchange - never a trade search
+            return None
         rid = self.add_item_text(text, src="pc")
         if rid is None:
             self.status_text, self.status_until = "Copied, but that item can't be price checked yet", time.time() + 6
@@ -353,6 +636,27 @@ class PriceCheckPage:
             self.records.pop(r["id"], None)
         self.pc_refresh_hist()
         self.pc_show(self.records[rid])
+        from .pcpop import pop_on
+        if pop_on():                                     # 2.113.0: a card over the game; the app stays where it is
+            try:
+                self.pcpop_show(self.records[rid])
+            except Exception:
+                self.log_error("the price check card over the game")
+            # 2.123.3: Overlay + Here - the app shows it too. 2.129.3 (feedback: "it's still prioritizing the app and
+            # bringing it to the front ... it should not bring to front and only use the overlay"): while the game is
+            # in front the app isn't touched at all - Price Checks opens on it the next time you come to the app
+            try:
+                from .overlay import game_active, POE_TITLE
+                if game_active((getattr(self, "overlay", None) and self.overlay.cfg.get("poe_title")) or POE_TITLE):
+                    self._pc_open_later = True
+                    if not getattr(self, "_pc_later_bound", False):
+                        self._pc_later_bound = True
+                        self.root.bind("<FocusIn>", self._pc_open_pending, add="+")
+                else:
+                    self.shell.open("pricecheck")
+            except Exception:
+                self.log_error("opening Price Checks")
+            return rid
         try:
             self.shell.open("pricecheck")
             if SETTINGS.get("pc_front", True):
@@ -362,6 +666,15 @@ class PriceCheckPage:
         except Exception:
             self.log_error("opening Price Checks")
         return rid
+
+    def _pc_open_pending(self, _e=None):
+        """You came back to the app after a price check shown over the game: Price Checks, with it."""
+        if getattr(self, "_pc_open_later", False):
+            self._pc_open_later = False
+            try:
+                self.shell.open("pricecheck")
+            except Exception:
+                self.log_error("opening Price Checks")
 
     def pc_clear(self):
         """2.93.1: clear the single searches - every item on Price Checks (Recent too). Bulk Pricing and Favorites
@@ -387,11 +700,33 @@ class PriceCheckPage:
     def pc_refresh_hist(self):
         if not hasattr(self, "pc_hist_cb"):
             return
+        self.pc_recent_paint()
         recs = self.pc_recs()
         self._pc_hist_ids = [r["id"] for r in recs]
         self.pc_hist_cb.config(values=[self.pc_label(r) for r in recs])
         cur = self.records.get(self.pc_rid)
         self.pc_hist_var.set(self.pc_label(cur) if cur else (f"{pc_key_label()} on an item in game" if not recs else ""))
+        tv = getattr(self, "pc_hist_tv", None)
+        if tv is not None:
+            from .pricefmt import fmt_div
+            self._pc_hist_quiet = True
+            try:
+                tv.delete(*tv.get_children())
+                for r in recs:
+                    it = r.get("item") or {}
+                    price = fmt_div(r["est"]) if r.get("est") is not None and not r.get("skip") else \
+                        ("…" if r.get("state") in ("queued", "pricing") else "-")
+                    tv.insert("", "end", iid=str(r["id"]), values=(it.get("name") or it.get("base") or "item", price,
+                                                                   time.strftime("%H:%M", time.localtime(r.get("time", 0)))))
+                if cur is not None and tv.exists(str(cur["id"])):
+                    tv.selection_set(str(cur["id"]))
+                    tv.see(str(cur["id"]))
+            finally:
+                self._pc_hist_quiet = False
+            if recs:
+                self.pc_hist_empty.place_forget()
+            else:
+                self.pc_hist_empty.place(relx=0.5, rely=0.5, anchor="center")
 
     def pc_pick_hist(self):
         i = self.pc_hist_cb.current()
@@ -400,15 +735,34 @@ class PriceCheckPage:
             self.pc_show(self.records[ids[i]])
 
     # ---------------------------------------------------------------- showing it
-    def pc_show(self, rec):
+    def pc_show(self, rec, card_only=False):
+        if rec is not None and getattr(self, "pp_win", None) is not None:
+            self.pcpop_refresh(rec)                      # 2.113.0: the card over the game follows
         if not hasattr(self, "pc_left"):
             return
-        for w in self.pc_left.winfo_children():
+        self._pc_card_only = card_only and rec is not None and rec["id"] == getattr(self, "pc_rid", None)
+        old = list(self.pc_left.winfo_children())
+        if rec is not None and old:                      # 2.103.1 (feedback: a tick made the card flicker): the new
+            return self._pc_show_swap(rec, old)          # card is built beside the old one, then swapped in
+        for w in old:
             w.destroy()
+        self._pc_show_into(rec)
+
+    def _pc_show_swap(self, rec, old):
+        holder = tk.Frame(self.pc_left, bg=C["panel2"])
+        self.pcv.left = holder
+        try:
+            self._pc_show_into(rec, swap=(holder, old))
+        finally:
+            self.pcv.left = self.pc_left
+
+    def _pc_show_into(self, rec, swap=None):
         self.pc_rid = rec["id"] if rec else None
-        self.pc_open_btn, self.pc_fav_btn = self.pc_open_btn0, self.pc_fav_btn0     # (until a card makes its own)
+        self.pc_open_btn, self.pc_fav_btn = self.pc_open_btn0, self.pc_fav_btn0     # (the verdict strip's)
         self.pcv.open_btn = self.pc_open_btn
         self.pc_refresh_hist()
+        if rec is None:
+            self.pc_verdict_paint(None)
         P2 = C["panel2"]
         if rec is None:
             tk.Label(self.pc_left, text=f"Hover an item in game and press {pc_key_label()}.\nIt shows here with the trade "
@@ -416,38 +770,71 @@ class PriceCheckPage:
                      bg=P2, fg=C["muted"], font=("Segoe UI", 10), justify="left", anchor="nw").pack(fill="x", pady=12)
             self.pc_draw_list(None)
             return
-        self.pc_card, self.pc_search_btn = self.pcv_card(self.pcv, rec)
+        self.pc_card, _btn = self.pcv_card(self.pcv, rec, swap=swap)
+        self.pc_verdict_paint(rec)                       # (2.123.2: after the card - its buttons are made with it)
+        if getattr(self, "_pc_card_only", False):        # 2.103.2: a tick / a typed value - the listings stay as they
+            self._pc_card_only = False                   # are (redrawing them was the flicker)
+            self.pc_fav_state(rec)
+            return
         self.pc_draw_list(rec)
 
-    def pcv_card(self, v, rec):
-        """The item card with every filter and the Search button, into a view's left side."""
+    def pcv_card(self, v, rec, swap=None):
+        """The item card with every filter and the Search button, into a view's left side. swap = (new holder, old
+        widgets): built into the holder, then the old ones go and the holder shows - in one go (no flicker)."""
         P2, wrap = C["panel2"], self.pcv_wrap(v)
         same = getattr(v, "shown_rid", None) == rec["id"]        # 2.88.2: a tick on the same card keeps the scroll
         top = v.lcanvas.yview()[0] if same else 0
         v.shown_rid = rec["id"]
-        self._detail_card(v.left, rec, rec["item"], wrap)
+        self._card_no_price = v is getattr(self, "pcv", None)     # 2.123.0 (p4): the strip says the price
+        try:
+            self._detail_card(v.left, rec, rec["item"], wrap)
+        finally:
+            self._card_no_price = False
+        v.card_rows, v.card_paint, v.card_vals = self.card_rows, self.card_paint, self.card_vals   # 2.103.3: per view
         card = self.detail_card
-        btns = tk.Frame(v.left, bg=P2)
-        btns.pack(fill="x", pady=(8, 0))
-        btn = ttk.Button(btns, text="Search  •  filters changed" if rec.get("changed") else "Search",
-                         style="Primary.TButton", command=lambda: self.reprice([rec["id"]]))
-        btn.pack(side="left", fill="x", expand=True)
-        if v is getattr(self, "pcv", None):                 # 2.93.1 (feedback): Clear - empties Price Checks
-            ttk.Button(btns, text="Clear", command=self.pc_clear).pack(side="left", padx=(8, 0))
-            more = tk.Frame(v.left, bg=P2)                  # 2.97.3 (feedback): under Search and Clear
+        btn = None
+        if v is getattr(self, "pcv", None):                 # 2.123.2 (hotfix): under the card again
+            from .style import Tooltip
+            btns = tk.Frame(v.left, bg=P2)
+            btns.pack(fill="x", pady=(8, 0))
+            btn = ttk.Button(btns, text="Search  •  filters changed" if rec.get("changed") else "Search again",
+                             style="Primary.TButton", command=lambda: self.reprice([rec["id"]]))
+            btn.pack(side="left", fill="x", expand=True)
+            self.pc_search_btn = btn
+            self.pc_fewer_btn = ttk.Button(btns, text="Search with fewer mods", command=lambda: self.pc_fewer(rec))
+            Tooltip(self.pc_fewer_btn, "Unticks the last ticked mod and searches again.")
+            ttk.Button(btns, text="Clear", command=self.pc_clear).pack(side="right", padx=(8, 0))
+            more = tk.Frame(v.left, bg=P2)
             more.pack(fill="x", pady=(8, 0))
             self.pc_fav_btn = ttk.Button(more, text="☆ Add to favorites", command=self.pc_add_fav, state="disabled")
             self.pc_fav_btn.pack(side="left", fill="x", expand=True)
-            self.pc_open_btn = ttk.Button(more, text="Open on trade site", command=self.pc_open_trade,
-                                          state="disabled")
+            self.pc_open_btn = ttk.Button(more, text="Trade Site", command=self.pc_open_trade,
+                                          state="normal" if rec.get("qid") else "disabled")
             self.pc_open_btn.pack(side="left", fill="x", expand=True, padx=(8, 0))
             v.open_btn = self.pc_open_btn
-        note = self._detail_note(rec)
-        if note:
+        else:
+            btns = tk.Frame(v.left, bg=P2)
+            btns.pack(fill="x", pady=(8, 0))
+            btn = ttk.Button(btns, text="Search  •  filters changed" if rec.get("changed") else "Search",
+                             style="Primary.TButton", command=lambda: self.reprice([rec["id"]]))
+            btn.pack(side="left", fill="x", expand=True)
+            if v is getattr(self, "favv", None):            # P2 (2.104.0): Open on trade site under the card
+                ob = ttk.Button(btns, text="Trade Site", command=self.fav_open_trade,
+                                state="normal" if rec.get("qid") else "disabled")
+                ob.pack(side="left", padx=(8, 0))
+                v.open_btn = ob
+        note = self._detail_note(rec) if v is not getattr(self, "pcv", None) or rec.get("state") == "done" else None
+        if note and not (v is getattr(self, "pcv", None) and rec.get("nomatch")):
             tk.Label(v.left, text=note[0], bg=P2, fg=note[1], font=("Segoe UI", 9), anchor="w", justify="left",
                      wraplength=wrap).pack(fill="x", pady=(8, 0))
-        v.lcanvas.update_idletasks()
-        v.lcanvas.yview_moveto(top)
+        if swap:
+            holder, old = swap
+            for w in old:
+                w.destroy()
+            holder.pack(fill="both", expand=True)
+        # 2.128.0 (feedback: froze here after a theme change - "not responding", stuck in update_idletasks): the
+        # scroll goes back once the card is laid out, without forcing every pending resize of the app right now
+        self.root.after_idle(lambda: v.lcanvas.winfo_exists() and v.lcanvas.yview_moveto(top))
         return card, btn
 
     def pc_entries(self, rec):
@@ -470,9 +857,10 @@ class PriceCheckPage:
             return self.pcv_entries(v, None, 0, 0, "")
         st = rec["state"]
         if st != "done":
-            self.pcv_entries(v, None, 0, 0, "Searching the trade site…" if st == "pricing" else
+            self.pcv_entries(v, None, 0, 0, "" if v is getattr(self, "pcv", None) else   # (the strip says it)
+                             "Searching the trade site…" if st == "pricing" else
                              ("Couldn't search" if st == "error" else "Waiting in line…"))
-            if st == "error" and v is getattr(self, "pcv", None):
+            if st == "error" and v is getattr(self, "favv", None):     # (Price Checks: the verdict strip says it)
                 why = rec.get("label") or "The trade site didn't answer."
                 low = why.lower()
                 tip = ("Too many filters for one search: untick a few mods." if "complex" in low else
@@ -482,17 +870,18 @@ class PriceCheckPage:
             return
         entries, total, n = self.pc_entries(rec)
         self.pcv_entries(v, entries, total, n)
-        if not total and not n and v is getattr(self, "pcv", None):
-            on = len(self.pc_ticked(rec))
+        if not total and not n and v is getattr(self, "favv", None):
+            on = len(self.pc_ticked(rec))                    # P2: Favorites says why too
             self.pc_why_box(v, rec, "No listings matched these filters",
                             (f"{on} mod filter{'s are' if on != 1 else ' is'} on. " if on else "")
                             + "Untick the rarest mod or lower a Min, then press Search.", fewer=on > 1)
 
     def pc_ticked(self, rec):
         """P1 (2.103.0): the card's ticked mods, top to bottom (the card on screen)."""
-        if getattr(self, "pc_rid", None) != rec.get("id"):
+        v = self._card_view(rec)                            # P2: Price Checks or Favorites, whichever shows it
+        if v is None:
             return []
-        rows = getattr(self, "card_rows", {}) or {}
+        rows = v.card_rows or {}
         return [m for _i, (m, on, _r) in sorted(rows.items()) if on and m.get("sid")]
 
     def pc_why_box(self, v, rec, title, text, fewer=False):
@@ -589,7 +978,7 @@ class PriceCheckPage:
                 return tid
 
             def pair(label, value, aug):
-                """"Energy Shield: 211" - the label grey, the value white (blue when raised)."""
+                """"Energy Shield: 211" - the label gray, the value white (blue when raised)."""
                 nonlocal y
                 if not value:
                     return line(label, C["muted"])
@@ -644,8 +1033,8 @@ class PriceCheckPage:
                                font=(_th.head_font(), 11, "bold"), anchor="n", width=side - 20, tags=("pcprice",))
             else:
                 cv.create_text(px, py + 18, text="no price", fill=C["muted"], font=font, anchor="n")
-            cv.create_text(px, py + 60, text=f["seller"], fill=C["text"], font=("Segoe UI", 9, "bold"),
-                           width=side - 16, anchor="n")
+            cv.create_text(px, py + 60, text=f["seller"] + (f"\nlisted {f['times']} times" if f.get("times", 1) > 1 else ""),
+                           fill=C["text"], font=("Segoe UI", 9, "bold"), width=side - 16, anchor="n", justify="center")
             if f["ts"]:
                 cv.create_text(px, py + 78, text="listed " + ago(f["ts"]), fill=C["muted"], font=("Segoe UI", 8),
                                anchor="n")
@@ -663,9 +1052,7 @@ class PriceCheckPage:
         return cv
 
     def pc_open_trade(self):
-        rec = self.records.get(self.pc_rid)
-        if rec and rec.get("qid"):
-            self.open_qid(rec["qid"])
+        self.open_rec_trade(self.records.get(self.pc_rid))     # 2.105.1: changes are searched first
 
     # ---------------------------------------------------------------- pictures (the trade site's image server)
     def _pc_art_path(self, url):
@@ -708,7 +1095,7 @@ class PriceCheckPage:
                     fh.write(r.content)
                 os.replace(tmp, path)
         except Exception:
-            pass
+            buglog.caught()
         finally:
             self._pc_art_done = getattr(self, "_pc_art_done", set()) | {url}
 
@@ -726,5 +1113,11 @@ class PriceCheckPage:
         for v in (getattr(self, "pcv", None), getattr(self, "favv", None)):      # 2.84.0: each view with cards
             if v is not None and v.redraw and any(getattr(c, "_art_url", None) in done for c in v.cards):
                 v.redraw()
+        card = next(iter(getattr(self, "ins_card", None) and self.ins_card.winfo_children() or []), None)
+        if card is not None and getattr(card, "_art_url", None) in done and getattr(self, "ins_pick", None):
+            try:                                          # 2.105.0: Market Insights' card gets its picture too
+                self.ins_show(self.ins_pick[0])
+            except Exception:
+                buglog.caught()
         if self._pc_art_wait:
             self.root.after(500, self._pc_art_poll)

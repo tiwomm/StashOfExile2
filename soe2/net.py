@@ -8,7 +8,8 @@ import requests
 import threading
 import time
 from datetime import datetime
-from .config import APP_VERSION, HEADERS, load_json, P, save_json, SETTINGS
+from . import buglog
+from .config import APP_VERSION, HEADERS, load_json, save_json, SETTINGS
 
 
 # ------------------------------------------------------------------ networking + rate limiting
@@ -17,15 +18,20 @@ from .config import APP_VERSION, HEADERS, load_json, P, save_json, SETTINGS
 #   X-Rate-Limit-Ip-State: 12:300:0      (hits so far : seconds : seconds still restricted)
 # The limiter keeps a list of recent hits per kind of request (search / fetch / other) and waits
 # BEFORE a request would go over any limit, so we never trigger the 5-10 minute penalties.
-PACES = {
+PACE = {
     # margin: fraction of every limit we keep unused; gap: minimum seconds between two searches
     # cap300: most searches (and most fetches) we allow ourselves per 5 minutes - real 429s came at 10-15 even though
     #         the site reports 30, so this is deliberately lower. Every penalty lowers it by 1 (never below 3).
-    # learn_cap: only learn mods in the background while usage is below this (None = never learn)
-    "Fast":     {"margin": 0.05, "gap": 1.5,  "cap300": 10, "learn_cap": 0.60},
-    "Balanced": {"margin": 0.15, "gap": 4.0,  "cap300": 8,  "learn_cap": 0.40},
-    "Gentle":   {"margin": 0.25, "gap": 10.0, "cap300": 6,  "learn_cap": None},
+    #         2.105.0: 15 - half the site's 30 (the trade site in your browser counts against the same limit).
+    # learn_cap: only learn mods in the background while usage is below this
+    # 2.119.0 (UX pass): one fixed pace (was Fast / Balanced / Gentle in Settings) - this is the old Balanced
+    # 2.123.1 (feedback: penalties at 9-15 searches per 5 min): the site also has a rule it doesn't report (a 429
+    #   with Retry-After 600 and no X-Rate-Limit headers, at 15, then 14 and 9 per 5 min after a first penalty).
+    #   cap300 12 by default; after such a 429 the app learns a lower cap (what it had sent, minus 3) for a day, and
+    #   for 30 minutes after any penalty it allows at most 5 per 5 minutes.
+    "margin": 0.15, "gap": 4.0, "cap300": 12, "learn_cap": 0.40,
 }
+COOLDOWN_CAP300 = 5                 # most searches / fetches per 5 minutes while cooling down after a penalty
 
 
 DEFAULT_RULES = {   # used until the first response tells us the real numbers (values from the live site)
@@ -36,7 +42,7 @@ DEFAULT_RULES = {   # used until the first response tells us the real numbers (v
 }
 
 
-COOLDOWN_AFTER_PENALTY = 900   # after a 429, stay extra careful for 15 minutes
+COOLDOWN_AFTER_PENALTY = 1800  # after a 429, stay extra careful for 30 minutes (2.123.1: was 15)
 
 
 def per_text(p):
@@ -53,11 +59,12 @@ def fmt_stamp(ts):
 
 
 def rl_log(text):
+    """2.115.0: rate limits go to the one log (buglog, "net"), like every other problem."""
     try:
-        with open(P("rate_limit_log.txt"), "a", encoding="utf-8") as f:
-            f.write(text + "\n")
+        from . import buglog
+        buglog.record("net", "rate limit", detail=text)
     except Exception:
-        pass
+        buglog.caught()
 
 
 class Limiter:
@@ -71,6 +78,7 @@ class Limiter:
         self.wait_until, self.wait_reason = 0.0, ""
         self.penalties = 0
         self.extra_margin = 0.0                      # grows with every penalty and never shrinks during a session
+        self.hidden_cap = {}                         # 2.123.1: cls -> most per 5 min, learned from an unreported 429
         self.seen_rules = {}
         self.recent = collections.deque(maxlen=40)   # last requests with what the server said - dumped on a 429
         self.saved_at = 0.0
@@ -91,11 +99,13 @@ class Limiter:
             self.last_penalty = float(d.get("last_penalty", 0))
             self.penalties = int(d.get("penalties", 0)) if now - self.last_penalty < 86400 else 0
             self.extra_margin = float(d.get("extra_margin", 0)) if now - self.last_penalty < 86400 else 0.0
+            self.hidden_cap = {k: int(v) for k, v in (d.get("hidden_cap") or {}).items()} \
+                if now - self.last_penalty < 86400 else {}
             for cls in self.hits:
                 if self.hits[cls]:
                     self.last[cls] = max(self.hits[cls])
         except Exception:
-            pass
+            buglog.caught()
 
     def _save(self, force=False):
         now = time.time()
@@ -105,7 +115,8 @@ class Limiter:
         with self.lock:
             data = {"hits": {k: [t for t in v if now - t < 21600] for k, v in self.hits.items()},
                     "blocked_until": self.blocked_until, "cooldown_until": self.cooldown_until,
-                    "penalties": self.penalties, "extra_margin": self.extra_margin, "last_penalty": self.last_penalty}
+                    "penalties": self.penalties, "extra_margin": self.extra_margin, "last_penalty": self.last_penalty,
+                    "hidden_cap": dict(self.hidden_cap)}
         save_json("rate_state.json", data)
 
     @staticmethod
@@ -113,21 +124,25 @@ class Limiter:
         return ("search" if "/search/" in url else "fetch" if "/fetch/" in url else
                 "exchange" if "/exchange/" in url else "other")
 
-    def _pace(self):
-        pc = dict(PACES.get(SETTINGS.get("pace"), PACES["Balanced"]))
+    def _pace(self, cls=None):
+        pc = dict(PACE)
         pc["margin"] += self.extra_margin
         if time.time() < self.cooldown_until:           # recently penalised: slower and with a bigger safety margin
             pc["margin"] += 0.15
             pc["gap"] *= 2
         pc["margin"] = min(0.6, pc["margin"])
         pc["cap300"] = max(3, pc["cap300"] - self.penalties)
+        if cls in self.hidden_cap:
+            pc["cap300"] = min(pc["cap300"], self.hidden_cap[cls])
+        if time.time() < self.cooldown_until:
+            pc["cap300"] = min(pc["cap300"], COOLDOWN_CAP300)
         return pc
 
     def _window(self, cls, period, now):
         return sorted(t for t in self.hits[cls] if now - t < period)
 
     def _need_wait(self, cls, now):
-        pc = self._pace()
+        pc = self._pace(cls)
         gap = pc["gap"] if cls == "search" else 1.0
         wait, why = self.last[cls] + gap - now, "pacing"
         for mx, period, _pen in self.rules[cls]:
@@ -199,7 +214,7 @@ class Limiter:
                         self.hits[cls].extend([stamp] * (cur - own))
                     prev = per
         except Exception:
-            pass
+            buglog.caught()
 
     def log_429(self, cls, url, headers, retry_after, body=""):
         """Write down everything needed to see why we were limited: what we thought we'd used vs what the server said."""
@@ -207,7 +222,7 @@ class Limiter:
             with self.lock:
                 now = time.time()
                 lines = [f"=== {time.strftime('%Y-%m-%d %H:%M:%S')}  429 on {cls}  ({url.split('/api/')[-1][:60]})  Retry-After {retry_after}s  [v{APP_VERSION}]",
-                         f"    pace {SETTINGS.get('pace')}, extra margin {self.extra_margin:.2f}, penalties so far {self.penalties}",
+                         f"    extra margin {self.extra_margin:.2f}, penalties so far {self.penalties}",
                          f"    app running for {int(time.time() - self.started)}s, sent {self.sent_total} requests since it started; "
                          f"in the last 300s: search {len(self._window('search', 300, time.time()))}, fetch {len(self._window('fetch', 300, time.time()))}, other {len(self._window('other', 300, time.time()))}",
                          "    our own count per rule (hits/max per seconds): " +
@@ -221,10 +236,15 @@ class Limiter:
                     lines.append(f"    {now - t:6.1f}s ago  {c:6} {st}")
             rl_log("\n".join(lines))
         except Exception:
-            pass
+            buglog.caught()
 
-    def penalized(self, retry_after):
+    def penalized(self, retry_after, cls=None, hidden=False):
+        """hidden (2.123.1): the 429 came with no X-Rate-Limit state - a rule the site doesn't report. Learn a cap
+        under what we had sent in the last 5 minutes."""
         with self.lock:
+            if hidden and cls in ("search", "fetch"):
+                sent = len(self._window(cls, 300, time.time()))
+                self.hidden_cap[cls] = max(3, min(self.hidden_cap.get(cls, 99), sent - 3))
             self.extra_margin = min(0.4, self.extra_margin + 0.10)
             now = time.time()
             self.blocked_until = max(self.blocked_until, now + retry_after + 1)
@@ -243,16 +263,19 @@ class Limiter:
         return max((h / mx for h, mx, _ in self.usage(cls)), default=0)
 
     def learn_ok(self):
-        cap = PACES.get(SETTINGS.get("pace"), PACES["Balanced"])["learn_cap"]
+        cap = PACE["learn_cap"]
         return bool(SETTINGS["learn"] and cap is not None and time.time() >= self.cooldown_until
                     and self.usage_ratio("search") < cap)
 
     def state(self):
         now = time.time()
         with self.lock:
+            cool = max(0, self.cooldown_until - now)
+            careful = (f"at most {COOLDOWN_CAP300} searches per 5 min for {int(cool // 60) + 1} min" if cool else "")
+            if self.hidden_cap and not careful:
+                careful = f"at most {min(self.hidden_cap.values())} per 5 min today"
             return {"blocked": max(0, self.blocked_until - now), "wait": max(0, self.wait_until - now),
-                    "why": self.wait_reason, "cooldown": max(0, self.cooldown_until - now),
-                    "penalties": self.penalties}
+                    "why": self.wait_reason, "cooldown": cool, "penalties": self.penalties, "careful": careful}
 
 
 LIMITER = Limiter()
@@ -276,24 +299,34 @@ def call(method, url, **kw):
             url = requests.compat.urljoin(url, r.headers["Location"])
             r = requests.request(method, url, headers=HEADERS, timeout=25, allow_redirects=False, **kw)
         LIMITER.update(cls, r.headers)
+        try:                                            # 2.116.0: Debug mode - every request, its answer and time
+            from . import buglog
+            buglog.STATS["requests"] += 1
+            ms = int(r.elapsed.total_seconds() * 1000) if getattr(r, "elapsed", None) else 0
+            if ms > 3000:
+                buglog.STATS["slow_requests"] += 1
+            if buglog.debug_on():
+                buglog.debug(f"{method} {cls}", f"{r.status_code} in {ms} ms  {requests.compat.urlparse(url).path}")
+        except Exception:
+            buglog.caught()
         if r.status_code == 429:
             try:
                 retry = int(r.headers.get("Retry-After", "60"))
             except ValueError:
                 retry = 60
             LIMITER.log_429(cls, url, r.headers, retry, r.text)
-            LIMITER.penalized(retry)
-            STATUS(f"The trade site rate-limited {cls} requests (wait {retry}s) - pausing; details in rate_limit_log.txt")
+            LIMITER.penalized(retry, cls, hidden=not any(k.lower().endswith("-state") for k in r.headers))
+            STATUS(f"The trade site rate-limited {cls} requests (wait {retry}s) - pausing")
             continue
         if r.status_code >= 400:
             note = f"{r.status_code} for {method} {url}  | server said: {r.text[:200].strip()!r}"
             try:
-                with open(P("http_error_log.txt"), "a", encoding="utf-8") as f:
-                    keep = {k: v for k, v in r.headers.items()          # 2.89.2: only the rate-limit ones - never
-                            if k.lower().startswith("x-rate-limit") or k.lower() == "retry-after"}   # cookies
-                    f.write(time.strftime("%Y-%m-%d %H:%M:%S ") + note + f"  | headers: {keep}\n")
+                from . import buglog                                     # 2.115.0: the one log
+                keep = {k: v for k, v in r.headers.items()          # 2.89.2: only the rate-limit ones - never
+                        if k.lower().startswith("x-rate-limit") or k.lower() == "retry-after"}   # cookies
+                buglog.record("net", f"HTTP {r.status_code}", detail=note + f"  | headers: {keep}")
             except Exception:
-                pass
+                buglog.caught()
             raise RuntimeError(note)
         return r.json()
     raise RuntimeError("Still rate limited - try again later.")

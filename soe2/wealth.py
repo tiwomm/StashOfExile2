@@ -8,7 +8,7 @@ import re
 import requests
 import threading
 import time
-from .config import APP_VERSION, BASE, load_json, save_json, SETTINGS
+from .config import BASE, load_json, save_json, SETTINGS
 from .net import call
 from .rates import Rates
 from .mods import JEWEL_KINDS, norm, strip_markup, TAB_KINDS
@@ -325,7 +325,8 @@ def wealth_item(entry, tab):
 
 
 COUNTED_TAB = "counted"               # the "tab" of everything counted by hand
-COUNTED_LABEL = "Counted by hand"
+COUNTED_LABEL = "Counted"
+SRC_LABEL = {"counted": "Counted", "scanned": "Scanned", "hand": "Added by hand"}   # 2.105.1: where a stack came from
 CLASS_CAT = {"stackable currency": "currency", "map fragments": "fragment", "omen": "currency", "socketable": "currency",
              "delirium instill": "currency", "essence": "currency", "splinter": "fragment", "catalyst": "currency",
              "divination card": "card", "uncut gem": "gem"}
@@ -334,7 +335,8 @@ CLASS_CAT = {"stackable currency": "currency", "map fragments": "fragment", "ome
 def holding_item(name, h):
     """A counted stack as a Wealth item (same shape as one read from a tab)."""
     cls = (h.get("cls") or "").lower()
-    return {"lid": "held:" + name, "tab": COUNTED_TAB, "stash": COUNTED_LABEL, "name": "", "type": name, "base": name,
+    return {"lid": "held:" + name, "tab": COUNTED_TAB, "stash": SRC_LABEL.get(h.get("src"), COUNTED_LABEL), "name": "",
+            "type": name, "base": name,
             "frame": 5, "qty": int(h.get("qty") or 0), "ilvl": None, "corrupted": False,
             "cat": CLASS_CAT.get(cls, "currency" if not cls else cls.split()[0]), "level": None, "mods": [], "text": None,
             "held": True}
@@ -361,6 +363,30 @@ def parse_stack(text):
     if not name or not qty:
         return None
     return name, qty, cls
+
+
+def is_lineage(lines):
+    """A gem copy's lines -> True when its tags line says Lineage ("Support, Lineage, Spell, Fire")."""
+    return any("Lineage" in [t.strip() for t in l.split(",")] for l in lines[3:8] if "," in l or l == "Lineage")
+
+
+def parse_currency_item(text):
+    """2.114.0 (feedback: a Signet Wombgift copied with the price check key did nothing): any "Rarity: Currency" item
+    -> (name, quantity, item class), a stack or a single one (no Stack Size line = 1). None for anything else."""
+    hit = parse_stack(text)
+    if hit:
+        return hit
+    lines = [l.strip() for l in (text or "").replace("\r", "").split("\n")]
+    cls = next((l.split(":", 1)[1].strip() for l in lines if l.startswith("Item Class:")), "")
+    if "Rarity: Gem" in lines and is_lineage(lines):           # 2.129.0 (feedback): lineage gems are traded on the
+        i = lines.index("Rarity: Gem")                         # currency exchange - poe.ninja prices them
+        name = next((x for x in lines[i + 1:] if x and not x.startswith("--")), None)
+        return (name, 1, cls) if name else None
+    if "Rarity: Currency" not in lines:
+        return None
+    i = lines.index("Rarity: Currency")
+    name = next((x for x in lines[i + 1:] if x and not x.startswith("--")), None)
+    return (name, 1, cls) if name else None
 
 
 def wealth_display_name(it):
@@ -444,7 +470,13 @@ class WealthStore:
         self.results = d.get("results", {})        # tab id -> {total, fetched, warnings, error, qid, ts}
         self.last_sync = d.get("last_sync", 0)
         self.rare_prices = d.get("rare_prices", {})  # 2.0: listing id -> {est, sig, ts, label, conf, qid, league}
-        self.holdings = d.get("holdings", {})      # 2.0 beta 7: counted by hand: name -> {qty, cls, ts}
+        self.holdings = d.get("holdings", {})      # 2.0 beta 7: counted by hand: name -> {qty, cls, ts, src}
+        # 2.105.1 (feedback: synced stash tabs are gone - "clean start"): what tabs read is dropped once - the tabs,
+        # their items, results and rare prices, and the history they were part of. Counted currency stays.
+        if self.tabs or self.items or self.results or self.rare_prices:
+            self.tabs, self.items, self.results, self.rare_prices, self.snapshots = [], {}, {}, {}, []
+            self.last_sync = 0
+            self.save()
 
     def save(self):
         with self.lock:
@@ -465,21 +497,23 @@ class WealthStore:
             return out + [holding_item(n, h) for n, h in sorted(self.holdings.items())]
 
     # ---- counted by hand (2.0 beta 7): currency and other stacks you copy (Ctrl+C) or type in
-    def set_holding(self, name, qty, cls=""):
+    def set_holding(self, name, qty, cls="", src=None):
+        """src (2.105.1): counted (Ctrl+C) / scanned (Scan stash) / hand (typed in) - the Items list's From."""
         name = name.strip()
         with self.lock:
             if qty is None or qty <= 0:
                 self.holdings.pop(name, None)
             else:
                 old = self.holdings.get(name) or {}
-                self.holdings[name] = {"qty": int(qty), "cls": cls or old.get("cls", ""), "ts": time.time()}
+                self.holdings[name] = {"qty": int(qty), "cls": cls or old.get("cls", ""), "ts": time.time(),
+                                       "src": src or old.get("src") or "counted"}
         self.save()
 
     def holding(self, name):
         h = self.holdings.get(name.strip())
         return h["qty"] if h else 0
 
-    def snapshot(self, league, prices, why=""):
+    def snapshot(self, league, prices, why="", replace=False):
         rows, total, priced = wealth_rows(self.all_items(), prices, self.overrides)
         if not rows:
             return None
@@ -493,7 +527,8 @@ class WealthStore:
         snap = {"ts": time.time(), "league": league, "total": total, "by_tab": by_tab, "by_cat": by_cat,
                 "n": len(rows), "priced": priced, "why": why}     # why (2.3.0): counted / synced / prices / ...
         with self.lock:
-            if self.snapshots and snap["ts"] - self.snapshots[-1]["ts"] < 300 and self.snapshots[-1].get("league") == league:
+            if self.snapshots and self.snapshots[-1].get("league") == league and (
+                    replace or snap["ts"] - self.snapshots[-1]["ts"] < 300):
                 self.snapshots[-1] = snap           # a price update right after a sync: replace, don't add a twin
             else:
                 self.snapshots.append(snap)
@@ -502,6 +537,7 @@ class WealthStore:
 
 
 PRICES_VERSION = 2
+BULK_TRIED = set()          # 2.114.3: names the bulk exchange was asked about this run (no answer = too few offers)
 
 
 def slug(name):
@@ -717,8 +753,10 @@ class WealthPrices:
                 return hit[0], bulk.text(hit)
         return None, None
 
-    def bulk_missing(self, items, limit=30):
-        """2.72.1: the stackables poe.ninja has no price for that the bulk exchange knows -> [(name, exchange id)]."""
+    def bulk_missing(self, items, limit=None):
+        """2.72.1: the stackables poe.ninja has no price for that the bulk exchange knows -> [(name, exchange id)].
+        2.114.3 (feedback: scanned items weren't in the total): every one, not the first 30 - a scan of eight tabs
+        has a hundred or more."""
         from . import bulk
         out, seen = [], set()
         for it in items:
@@ -730,9 +768,19 @@ class WealthPrices:
                     seen.add(xid)
                     out.append((n, xid))
                     break
-            if len(out) >= limit:
+            if limit and len(out) >= limit:
                 break
         return out
+
+    def why_unpriced(self, it):
+        """2.114.3: why a stackable has no price - asked the bulk exchange yet or not."""
+        from . import bulk
+        names = [x for x in (it.get("type"), it.get("base")) if x]
+        if not any(bulk.exchange_id(n) for n in names):
+            return "not on poe.ninja or the trade site's exchange"
+        if any(n in BULK_TRIED for n in names):
+            return "too few offers on poe.ninja or the trade site's exchange"
+        return "not on poe.ninja - asking the trade site's exchange…"
 
 
 def rare_sig(it):

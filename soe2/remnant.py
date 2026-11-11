@@ -1,16 +1,13 @@
 """Expedition Remnant Price Checker (2.37.0): prices the reward list a remnant shows you, right next to each line.
 
-How: with a remnant's list open, press its key (Session tracker > Alerts, default Ctrl+Alt+R). The app takes ONE picture
-of the game window, reads the text in it with Windows' own OCR (Windows.Media.Ocr - part of Windows, nothing to
-install; on Linux the Tesseract OCR program, see ocr_linux), finds the lines that are items (an item name, often with an amount like "Orb of Alchemy x3"), and puts a
-price tag next to each from poe.ninja (the same prices as Wealth), the best one marked ★. One action per key press:
-nothing is sent to the game; the tags go away after a while or with the key again.
-
-Auto (on by default - like the original, but without drawing a box): the app looks at the spot where the reward book
-opens (AREA, scaled to the game window like the Delirium / Ritual watchers) about every 0.7 s while the game is in
-front. Only when that spot looks like the book's parchment, and changed, is its text read; the tags come and go by
-themselves as the book opens and closes. If a key press finds the list somewhere else (another UI scale), that spot is
-learned instead. The game's log (Client.txt) says nothing when a remnant is opened, so the screen is the only way.
+How (2.119.0: always - the Auto switch and the Ctrl+Alt+R key are gone): the app looks at the spot where the reward
+book opens (AREA, scaled to the game window like the Delirium / Ritual watchers) about every 0.7 s while the game is in
+front. Only when that spot looks like the book's parchment, and changed, is its text read with Windows' own OCR
+(Windows.Media.Ocr - part of Windows, nothing to install;
+on Linux the Tesseract OCR program, see ocr_linux); the lines that are items (a name, often with an amount like
+"Orb of Alchemy x3") get a price tag from poe.ninja (the same prices as Wealth), the best one marked ★. The tags come
+and go by themselves as the book opens and closes. Nothing is sent to the game. The game's log (Client.txt) says
+nothing when a remnant is opened, so the screen is the only way.
 
 Credit: the idea comes from PoE Ancients Price Helper by Pedro Quitério
 (https://github.com/pedro-quiterio/PoeAncientsPriceHelper). That project isn't open source, so none of its code, text
@@ -24,10 +21,11 @@ import re
 import shutil
 import subprocess
 import sys
+import time
+from . import buglog
 
-CREDIT_NAME = "PoE Ancients Price Helper by Pedro Quitério"
+CREDIT_NAME = "PoE Ancients Price Helper (Pedro Quitério)"
 CREDIT_URL = "https://github.com/pedro-quiterio/PoeAncientsPriceHelper"
-DEFAULT_KEY = "Ctrl+Alt+R"
 SHOW_SECS = 12                    # 2.56.2 (feedback: "on screen too long"): was 30
 MATCH = 0.84                      # how close an OCR'd line must be to an item name (difflib ratio)
 LAST_WORD = 0.75                  # ... and its last word to the name's last word (2.40.0)
@@ -46,7 +44,7 @@ JUNK = re.compile(r"[^\w' ()\-:,.]+")
 # S and A are the guides' picks. B-D are grouped from those notes and each rune's effect: B = some upside (more
 # kills, XP), C = only makes monsters tougher, D = hazards / dangerous. Bond: reports differ, so it's marked.
 RUNE_TIPS_UPDATED = "Nov 2026"
-RUNE_TIERS = [
+RUNE_TIERS = [   # (2.130.4, feedback: C and D in alphabetical order - S-B stay in the players' order)
     ("S", "Opulent", "rarer monsters - more loot"),
     ("S", "Power", "stronger runic mods (harder)"),
     ("S", "Oath", "monsters summon allies"),
@@ -57,29 +55,29 @@ RUNE_TIERS = [
     ("B", "Rebirth", "monsters may rebirth - more kills"),
     ("B", "Wisdom", "more experience"),
     ("B", "Ward", "monsters get runic ward"),
-    ("C", "Life", "shared life - poor loot reported"),
-    ("C", "Protective", "Verisium shields - awkward"),
-    ("C", "Stone", "armoured, hard to stun"),
-    ("C", "Rage", "monsters enrage"),
-    ("C", "Momentum", "faster monsters"),
     ("C", "Adaptive", "adaptation"),
     ("C", "Arcane", "energy shield, nova"),
-    ("C", "Vision", "reflects curses / shock / chill"),
-    ("C", "Fire", "extra fire damage"),
-    ("C", "Cold", "extra cold damage"),
-    ("C", "Lightning", "extra lightning damage"),
-    ("C", "Electrocuting", "electrocute, shocked ground"),
-    ("C", "Volcanic", "ignite, burning ground"),
-    ("C", "Tempest", "shock / chill on all damage"),
-    ("C", "Prismatic", "always shock, random element"),
-    ("C", "Cyclonic", "exposure, armour break, wither"),
     ("C", "Celestial", "elemental explosions on death"),
+    ("C", "Cold", "extra cold damage"),
+    ("C", "Cyclonic", "exposure, armor break, wither"),
+    ("C", "Electrocuting", "electrocute, shocked ground"),
+    ("C", "Fire", "extra fire damage"),
+    ("C", "Life", "shared life - poor loot reported"),
+    ("C", "Lightning", "extra lightning damage"),
+    ("C", "Momentum", "faster monsters"),
+    ("C", "Prismatic", "always shock, random element"),
+    ("C", "Protective", "Verisium shields - awkward"),
+    ("C", "Rage", "monsters enrage"),
+    ("C", "Stone", "armored, hard to stun"),
+    ("C", "Tempest", "shock / chill on all damage"),
+    ("C", "Vision", "reflects curses / shock / chill"),
+    ("C", "Volcanic", "ignite, burning ground"),
     ("D", "Bloodletting", "life leech, corrupted blood"),
-    ("D", "Toxic", "poison, toxic volatiles"),
     ("D", "Earth", "earthen spires (hazard)"),
     ("D", "Moon", "moon beams (hazard)"),
     ("D", "Sky", "elemental tornados (hazard)"),
     ("D", "Tidal", "tidal waves (hazard)"),
+    ("D", "Toxic", "poison, toxic volatiles"),
 ]
 TIER_LOOK = {"S": ("#2a2108", "#ffd25a"), "A": ("#16213a", "#9fc2ff"), "B": ("#13241a", "#7fd9a0"),
              "C": ("#1c1c24", "#b4bccb"), "D": ("#2a1012", "#ff8a80")}
@@ -90,9 +88,23 @@ class OcrUnavailable(Exception):
 
 
 # ================================================================ reading lines (pure: tested offline)
+ONE_X = re.compile(r"^[lI|i!]\s?[x×х](?=\s)")     # 2.129.0 (its log: 3 of 5 lines unread): OCR reads "1x" as "lx"
+# 2.130.4 (feedback: "doesn't read 10x divine orb" - its log: 'IOX Divine Orb'): a count whose digits OCR read as
+# letters (I/l/| for 1, O/o for 0), at the start of a line before x
+QTY_LETTERS = re.compile(r"^([0-9IlOo|]{2,4})\s?[xX×х](?=\s)")
+
+
+def _fix_qty(t):
+    m = QTY_LETTERS.match(t)
+    if not m or not re.search(r"[0-9Il|]", m.group(1)[0]):
+        return t
+    digits = m.group(1).translate(str.maketrans("IlOo|", "11001"))
+    return digits + "x" + t[m.end():]
+
+
 def split_qty(text):
     """'Orb of Alchemy x3' / '3x Orb of Alchemy' / 'Orb of Alchemy' -> ('Orb of Alchemy', 3 / 1)."""
-    t = " ".join(str(text).split())
+    t = _fix_qty(ONE_X.sub("1x", " ".join(str(text).split())))
     m = QTY.search(t)
     qty = 1
     if m:
@@ -141,15 +153,65 @@ def same_ending(a, b):
 
 def explicit_qty(text):
     """The line has an amount ("6x ...", "... x3") - remnant reward lines always do."""
-    return bool(QTY.search(" ".join(str(text).split())))
+    return bool(QTY.search(_fix_qty(ONE_X.sub("1x", " ".join(str(text).split())))))
 
 
-def price_lines(lines, names, value_of):
+GEM_LINE = re.compile(r"^(Skill|Support|Spirit)(?:\s+Level\s+(\d+))?\s*:\s*(.{3,})$", re.I)
+# 2.130.4 (its log: 'Level 20: POWered by Verisium' - the word Skill hidden under the runeshapes): a level with no kind
+LEVEL_LINE = re.compile(r"^Level\s+(\d+)\s*:\s*(.{3,})$", re.I)
+
+
+def gem_line(text):
+    """2.130.0 (feedback: gems in a remnant's book showed nothing): "Skill Level 20: Repulsion" / "Support: Concussive
+    Runes" -> ("skill" | "support" | "spirit", level or None, gem name), or None."""
+    t = " ".join(str(text).split())
+    m = GEM_LINE.match(t)
+    if not m:
+        lv = LEVEL_LINE.match(t)
+        return ("skill", int(lv.group(1)), fix_case(lv.group(2).strip())) if lv else None
+    return m.group(1).lower(), (int(m.group(2)) if m.group(2) else None), fix_case(m.group(3).strip())
+
+
+def fix_case(name):
+    """'POWered by Verisium' -> 'Powered by Verisium': OCR's odd capitals on a word (the trade site needs the name)."""
+    small = {"of", "the", "by", "and", "in", "on", "to", "a"}
+    out = []
+    for n, w in enumerate(name.split()):
+        if sum(c.isupper() for c in w) > 1 and not w.isupper() or (w.isupper() and len(w) > 3):
+            w = w.lower() if (n and w.lower() in small) else w.capitalize()
+        out.append(w)
+    return " ".join(out)
+
+
+UNIQUE_LINE = re.compile(r"^Unique\s+([A-Za-z][A-Za-z ]{2,30})$")
+
+
+def unique_line(text):
+    """2.130.0 (feedback: "Unique Ring" showed nothing): "Unique Ring" -> "ring" (the kind of item), or None."""
+    m = UNIQUE_LINE.match(" ".join(str(text).split()))
+    return m.group(1).strip().lower() if m else None
+
+
+def price_lines(lines, names, value_of, gem_value=None, unique_pool=None):
     """[(text, box)] from OCR -> [{"text", "name", "qty", "each", "total", "box"}] for the lines that are items
     (value_of(name) -> divines each, or None when poe.ninja has no price). A reward line poe.ninja doesn't know at
-    all is kept too, with "unknown": True and no price."""
+    all is kept too, with "unknown": True and no price. 2.130.0: a gem line ("Skill Level 20: Repulsion") is priced
+    on the trade site - gem_value(kind, level, name) -> (divines or None, still looking)."""
     out = []
     for text, box in lines:
+        ul = unique_line(text) if unique_pool else None
+        if ul:                                        # 2.130.0: a random unique of a kind - which ones it could be
+            pool = unique_pool(ul)
+            out.append({"text": text, "name": text, "qty": 1, "each": None, "total": None, "box": box,
+                        "could_be": pool, "unknown": not pool})
+            continue
+        gl = gem_line(text) if gem_value else None
+        if gl:
+            each, pending = gem_value(*gl)
+            out.append({"text": text, "name": gl[2] + (f" (level {gl[1]})" if gl[1] else ""), "qty": 1,
+                        "each": each, "total": each, "box": box, "gem": True, "pending": pending,
+                        "unknown": each is None and not pending})
+            continue
         base, qty = split_qty(text)
         name = names.match(base)
         if not name:
@@ -175,9 +237,54 @@ def price_lines(lines, names, value_of):
 # aspect ratio (16:9, 21:9 ...), the same way the Delirium and Ritual watchers find their spot.
 AREA = (0.02, 0.10, 0.53, 0.66)   # x0, y0, x1, y1 in game heights
 AUTO_POLL = 0.35                  # seconds between looks (only while the game is in front; 2.56.2: was 0.7)
+RETRY_SECS = 1.0                  # 2.126.0: the book open, no tags yet, the picture still: read again this often
 SETTLE_READS = 5                  # 2.79.0: reads right after the book appears, while it settles (~1.75 s)
 AUTO_GONE = 2                     # looks without the book = it was closed: tags off (~0.7 s)
 PARCHMENT = 0.35                  # share of the area that must look like the book's light parchment before reading
+TITLE_MIN = 0.65                  # 2.129.0: the "Runeshape Combinations" title's match (the book 1.0, other screens <0.45)
+TITLE_AREA = (0.05, 0.04, 0.55, 0.22)   # 2.129.1: where the title is looked for (game heights from the top-left) - its
+#                                         own place: a learned reading area may start inside the title (the log)
+_TITLE = [None]
+
+
+def has_title(img, game_h):
+    """2.129.0 (feedback: a map's sandy ground showed the runeshape list): the book's own title, "Runeshape
+    Combinations" (templates/remnant_title.png, cut from a 1440p game), is in the picture (PIL, TITLE_AREA's grab).
+    No OpenCV or no template: True (as before - the parchment alone decides)."""
+    return title_score(img, game_h) >= TITLE_MIN
+
+
+def title_score(img, game_h):
+    """How well the title matches anywhere in the picture (0 .. 1; 1.0 = no OpenCV / no template)."""
+    try:
+        import cv2
+        import numpy as np
+        if _TITLE[0] is None:
+            from pathlib import Path
+            base = getattr(sys, "_MEIPASS", None)
+            d = Path(base) / "soe2" / "templates" if base else Path(__file__).resolve().parent / "templates"
+            _TITLE[0] = cv2.imread(str(d / "remnant_title.png"), cv2.IMREAD_GRAYSCALE)
+        tpl = _TITLE[0]
+        if tpl is None:
+            return 1.0
+        a = cv2.cvtColor(np.asarray(img.convert("RGB")), cv2.COLOR_RGB2GRAY)
+        s = game_h / 1440.0
+        t = cv2.resize(tpl, None, fx=s, fy=s, interpolation=cv2.INTER_AREA) if abs(s - 1) > 0.01 else tpl
+        if a.shape[0] < t.shape[0] or a.shape[1] < t.shape[1]:
+            return 0.0
+        return float(cv2.minMaxLoc(cv2.matchTemplate(a, t, cv2.TM_CCOEFF_NORMED))[1])
+    except Exception:
+        buglog.caught()
+        return 1.0
+
+
+def reading_area(learned):
+    """2.130.0 (feedback: "no price on greater charging rune or greater ward rune" - the book's last two lines): an
+    area learned by the old key (before 2.119.0) can be shorter than a long book - the area read is now the learned
+    one and AREA together, so every line of the book is read."""
+    if not learned or len(learned) != 4:
+        return AREA
+    return (min(learned[0], AREA[0]), min(learned[1], AREA[1]), max(learned[2], AREA[2]), max(learned[3], AREA[3]))
 
 
 def area_rect(area, rect):
@@ -185,26 +292,6 @@ def area_rect(area, rect):
     l_, t, r, b = rect
     h = b - t
     return (int(l_ + area[0] * h), int(t + area[1] * h), min(r, int(l_ + area[2] * h)), min(b, int(t + area[3] * h)))
-
-
-def learn_area(rows, rect):
-    """A key press found reward lines outside the usual spot (UI scale, another layout) -> an area that covers them,
-    in game heights (a little bigger than what was seen, since a list can be longer)."""
-    if not rows:
-        return None
-    h = rect[3] - rect[1]
-    x0 = min(r["box"][0] for r in rows) / h
-    y0 = min(r["box"][1] for r in rows) / h
-    x1 = max(r["box"][2] for r in rows) / h
-    y1 = max(r["box"][3] for r in rows) / h
-    return (round(max(0.0, x0 - 0.05), 4), round(max(0.0, y0 - 0.06), 4), round(x1 + 0.05, 4), round(y1 + 0.2, 4))
-
-
-def inside(rows, area, rect):
-    """Every line a key press found is within the area (then nothing needs learning)."""
-    ar = area_rect(area, (0, 0, rect[2] - rect[0], rect[3] - rect[1]))
-    return all(ar[0] <= r["box"][0] and r["box"][2] <= ar[2] and ar[1] <= r["box"][1] and r["box"][3] <= ar[3]
-               for r in rows)
 
 
 def shift(lines, dx, dy):
@@ -353,7 +440,56 @@ def ocr_available():
         return f"Windows' text reader didn't start ({e.__class__.__name__})"
 
 
+_ENGINE = [None]
+
+# 2.128.1 (feedback: the tags should show in screenshots, screen share and streams, like the overlay): the tags and
+# the runeshape list are no longer left out of captures, so the watchers would see them - they paint over where
+# their own windows are before reading. OWN[key] = [(left, top, right, bottom) on screen] (set by the app's thread).
+OWN = {}
+
+
+def mask_own(img, origin, keys=("remnant",)):
+    """A PIL picture of the screen whose top-left is `origin` -> the same with the helper's own windows painted over
+    in the picture's middle color (so they read as nothing: no text, the parchment's share about the same)."""
+    rects = [r for k in keys for r in list(OWN.get(k) or ())]
+    if not rects:
+        return img
+    from PIL import ImageDraw, ImageStat
+    img = img.copy()
+    col = tuple(int(v) for v in ImageStat.Stat(img.convert("RGB")).median)
+    d = ImageDraw.Draw(img)
+    ox, oy = origin
+    for l_, t, r, b in rects:
+        if r > ox and b > oy and l_ < ox + img.width and t < oy + img.height:
+            d.rectangle((l_ - ox - 2, t - oy - 2, r - ox + 2, b - oy + 2), fill=col)
+    return img
+
+
+def log(line):
+    """2.127.0 (feedback: tags 10 s late, twice): the watcher's own log - when a book shows, each read (how long,
+    how many lines and priced rewards) and when the tags go up - in remnant/remnant_log.txt in the data folder.
+    Only what's on the reward list; nothing about you."""
+    try:
+        from .config import P
+        d = P("remnant")
+        os.makedirs(d, exist_ok=True)
+        f = os.path.join(d, "remnant_log.txt")
+        if os.path.exists(f) and os.path.getsize(f) > 300_000:
+            os.replace(f, os.path.join(d, "remnant_log.old.txt"))
+        with open(f, "a", encoding="utf-8") as fh:
+            fh.write(f"{time.strftime('%Y-%m-%d %H:%M:%S')}  {line}\n")
+    except Exception:
+        buglog.caught()
+
+
 def _engine():
+    if _ENGINE[0] is not None:                  # 2.127.0: made once (it was made for every read)
+        return _ENGINE[0]
+    _ENGINE[0] = _engine_new()
+    return _ENGINE[0]
+
+
+def _engine_new():
     from winrt.windows.media.ocr import OcrEngine
     try:
         from winrt.windows.globalization import Language
@@ -361,7 +497,7 @@ def _engine():
         if eng is not None:
             return eng
     except Exception:
-        pass
+        buglog.caught()
     return OcrEngine.try_create_from_user_profile_languages()
 
 

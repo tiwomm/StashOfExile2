@@ -9,7 +9,8 @@ lock button. Callers put their content in .body and get told when the window was
 import sys
 import tkinter as tk
 
-from .style import C
+from . import buglog
+from .style import C, Tooltip
 from .shell import GradientBar, UTIL_TITLE, TITLE_ON, BORDER_OFF
 
 BAR_H = 22
@@ -83,7 +84,7 @@ _THEME_PAL = {}
 
 def theme_palette():
     """2.66.0: the windows over the game take the app's theme (one look everywhere - no separate overlay styles).
-    Built from the running theme pack: its surfaces, text, accent and border colors, its heading font; the Game bar
+    Built from the running theme pack: its surfaces, text, accent and border colors, its heading font; the Bar
     artwork uses the same colors (metal from the border and accent, the gem in the accent)."""
     from . import themes as TH
     t = TH.ST.theme
@@ -119,8 +120,18 @@ def _seed(TH, P):
             TH.ST.cache[v.lower()] = v.lower()
 
 
+OV_PAL = [None]                  # 2.109.0: App.ov_palette - the overlay's own Style / Colors / Layout
+
+
 def pal():
-    """The colors, font and shape of the windows over the game, for their content (2.66.0: the app's theme)."""
+    """The colors, font and shape of everything over the game (2.109.0: the overlay's chosen style - the bar, Notes,
+    Calc, Regex favorites, Rates and every card match it; the app theme only when nothing is set)."""
+    f = OV_PAL[0]
+    if f is not None:
+        try:
+            return f()
+        except Exception:
+            buglog.caught()
     return theme_palette()
 
 
@@ -148,8 +159,8 @@ _TEX = {}
 
 
 def texture(root, w, h, seed=7, calm=False):
-    """2.47.0: a grungy parchment (feedback: "too clean") - made here, no image file: the base color, fibres and
-    grain, a few stains and darker, burnt edges. A Tk PhotoImage (None without Pillow)."""
+    """2.47.0: a grungy parchment (feedback: "too clean") - made here, no image file: the base color, fibers and
+    grain, a few stains and darker, burned edges. A Tk PhotoImage (None without Pillow)."""
     key = (w // 16 * 16 + 16, h // 16 * 16 + 16, seed, calm)
     if key in _TEX:
         return _TEX[key]
@@ -168,17 +179,17 @@ def texture(root, w, h, seed=7, calm=False):
             r, g, b = px[x, y]
             px[x, y] = (r + n, g + n, b + n - 2)
     d = ImageDraw.Draw(img, "RGBA")
-    # 2.51.0 calm: where text sits (feedback: "barely legible") - lighter grain, faint stains and fibres
+    # 2.51.0 calm: where text sits (feedback: "barely legible") - lighter grain, faint stains and fibers
     for _ in range(max(6, W * H // 6000)):                 # stains
         cx, cy, rr = rnd.randint(0, W), rnd.randint(0, H), rnd.randint(8, 40)
         d.ellipse((cx - rr, cy - rr * 0.7, cx + rr, cy + rr * 0.7),
                   fill=(120, 86, 40, rnd.randint(4, 10) if calm else rnd.randint(10, 28)))
-    for _ in range(W * H // 900):                          # fibres
+    for _ in range(W * H // 900):                          # fibers
         x0, y0 = rnd.randint(0, W), rnd.randint(0, H)
         d.line((x0, y0, x0 + rnd.randint(-14, 14), y0 + rnd.randint(-3, 3)),
                fill=(110, 80, 40, rnd.randint(6, 14) if calm else rnd.randint(14, 34)))
     img = img.filter(ImageFilter.GaussianBlur(0.6))
-    edge = Image.new("L", (W, H), 0)                       # burnt, darker edges
+    edge = Image.new("L", (W, H), 0)                       # burned, darker edges
     de = ImageDraw.Draw(edge)
     for i in range(max(0, min(14, W // 2 - 1, H // 2 - 1))):
         de.rectangle((i, i, W - 1 - i, H - 1 - i), outline=int(150 * (1 - i / 14) ** 2))
@@ -210,7 +221,7 @@ class CanvasText:
     def __init__(self, canvas, item, bg=None, halo=None):
         self.canvas, self.item, self._bg = canvas, item, bg
         self.halos = []
-        if halo:                                  # 2.51.0: a soft outline in the page colour round every letter,
+        if halo:                                  # 2.51.0: a soft outline in the page color round every letter,
             x, y = canvas.coords(item)            # so ink stays readable on the texture and over the game behind it
             for dx, dy in ((-1, 0), (1, 0), (0, -1), (0, 1)):     # 2.53.0: no diagonals - softer
                 h = canvas.create_text(x + dx, y + dy, text=canvas.itemcget(item, "text"), fill=halo,
@@ -254,7 +265,7 @@ class CanvasText:
             return False
 
 # ---- over-the-game windows only show while the game is in front (2.0 beta 15)
-GAME_ONLY = [True]                # Settings > Window: "only while Path of Exile 2 is in front"
+GAME_ONLY = [True]                # always (2.119.0: its Settings › Window switch is gone; kept for the tests)
 GAME_TITLE = ["Path of Exile 2"]  # the Chat commands window's game title
 _LIVE = []                        # windows that follow the game
 _JOB = [None]
@@ -265,6 +276,30 @@ LAST_OK = [False]                 # 2.88.3: the last answer of foreground_ok
 def _fg_hwnd():
     import ctypes
     return ctypes.windll.user32.GetForegroundWindow()
+
+
+def _child_hwnds(w):
+    """The window handles of the small windows a window opened (a list's dropdown, a tooltip) - Tk's own children
+    of it that are windows of their own."""
+    out, todo = set(), [str(w)]
+    try:
+        import ctypes
+        u = ctypes.windll.user32 if sys.platform == "win32" else None
+        while todo and len(out) < 64:
+            path = todo.pop()
+            for c in w.tk.splitlist(w.tk.call("winfo", "children", path)):
+                todo.append(c)
+                try:
+                    if str(w.tk.call("winfo", "toplevel", c)) == str(c) and w.tk.call("winfo", "ismapped", c):
+                        hid = int(str(w.tk.call("winfo", "id", c)), 0)
+                        out.add(hid)
+                        if u is not None:
+                            out.add(u.GetParent(hid) or hid)
+                except tk.TclError:                  # (closed meanwhile)
+                    continue
+    except Exception:
+        buglog.caught()
+    return out
 
 
 def foreground_ok():
@@ -291,6 +326,12 @@ def foreground_ok():
             if _alive(w) and (u.GetParent(w.winfo_id()) or w.winfo_id()) == fg:
                 LAST_OK[0] = True
                 return True
+        # 2.125.3 (feedback: the route card "disappears to the background until I click on it again and again"): a
+        # list's dropdown or a tooltip opened from one of these windows is in front now - that counts as the window
+        for w in _LIVE:
+            if _alive(w) and fg in _child_hwnds(w):
+                LAST_OK[0] = True
+                return True
         LAST_OK[0] = False
         return False
     except Exception:
@@ -302,10 +343,18 @@ def _tick(root):
     _LIVE[:] = [w for w in _LIVE if _alive(w)]
     if not _LIVE:
         return
-    ok = foreground_ok()
-    for w in _LIVE:
-        w.sync(ok)
-    _JOB[0] = root.after(TICK_MS, _tick, root)
+    try:
+        ok = foreground_ok()
+        for w in list(_LIVE):
+            try:
+                w.sync(ok)
+            except Exception:                      # 2.124.0 (feedback: the overlay vanished for good after a burst
+                buglog.caught()                    # of clicks on the route card): one window's error no longer
+    finally:                                       # stops the watch for all of them
+        try:
+            _JOB[0] = root.after(TICK_MS, _tick, root)
+        except tk.TclError:
+            pass
 
 
 def _alive(w):
@@ -315,12 +364,20 @@ def _alive(w):
         return False
 
 
-def resync():
-    """Settings changed: apply now."""
-    ok = foreground_ok()
-    for w in list(_LIVE):
-        if _alive(w):
-            w.sync(ok)
+def skin_inner(host, P, parch, edge, body_bg):
+    """The frame inside a window over the game: the skin's second (inner) line, the hud's gold rules. -> the inner
+    frame. 2.118.0: shared with OverlayFrame, so a preview has the very same frame."""
+    outer = host
+    if parch and P.get("frame2"):                         # carved: the second, inner bronze line
+        outer = tk.Frame(host, bg=P["frame2"])
+        outer.pack(fill="both", expand=True, padx=edge, pady=edge)
+        edge = 1
+    inner = tk.Frame(outer, bg=body_bg)
+    inner.pack(fill="both", expand=True, padx=edge, pady=edge)
+    if parch and P.get("rules"):                          # hud: a gold hairline above and below
+        tk.Frame(inner, height=1, bg=P["line"]).pack(fill="x", side="top")
+        tk.Frame(inner, height=1, bg=P["line"]).pack(fill="x", side="bottom")
+    return inner
 
 
 class OverlayWindow(tk.Toplevel):
@@ -329,19 +386,21 @@ class OverlayWindow(tk.Toplevel):
         try:
             self.attributes("-alpha", max(0.15, min(1.0, int(opacity) / 255)))
         except Exception:
-            pass
+            buglog.caught()
 
     def __init__(self, root, title, icon, geo, *, opacity=230, locked=False, body_bg=BODY_BG, min_size=(140, 60),
                  on_close=None, on_lock=None, on_moved=None, drag_body=False, app_colours=False, lockable=True,
-                 follow_game=False, no_activate=False, resizable=True, titlebar=True, resize_axes="xy", palette=None):
+                 follow_game=False, no_activate=False, resizable=True, titlebar=True, resize_axes="xy", palette=None,
+                 extra=None):
         """geo = (x, y, w, h); w / h None = as big as the content. app_colours: the blue title bar of the app's own
         windows (for small pop-ups of the app) instead of the utility colors (things shown over the game).
         follow_game: only visible while the game (or the window itself) is in front; show() / hide() say whether you want it.
         no_activate: clicking it never takes the keyboard away from the game (for windows you don't type in).
         resizable=False: always the size of its content (2.38.0: the Helpers bar).
-        titlebar=False (2.55.0): no title bar - the Minimal look and the Strip layout draw their own lock and ×."""
+        titlebar=False (2.55.0): no title bar - the Minimal look and the Strip layout draw their own lock and ×.
+        extra (2.121.1): more title bar buttons, [(icon, command, tooltip)], left of × (the price check card's ⚙)."""
         parch = (skinned() or palette is not None) and not app_colours   # 2.43.0 / 2.47.0: a PoE2-style skin
-        P = palette or pal()                              # 2.65.0: a layout may bring its own (the Game bar)
+        P = palette or pal()                              # 2.65.0: a layout may bring its own (the Bar)
         if parch:
             body_bg = P["bg"]
         super().__init__(root, bg=P["leather"] if parch else BORDER_OFF, highlightthickness=1,
@@ -352,7 +411,7 @@ class OverlayWindow(tk.Toplevel):
             self.attributes("-topmost", True)
             self.attributes("-alpha", max(0.15, min(1.0, int(opacity) / 255)))
         except Exception:
-            pass
+            buglog.caught()
         x, y, w, h = geo
         if w is None or h is None:
             self.geometry(f"+{int(x)}+{int(y)}")
@@ -363,17 +422,7 @@ class OverlayWindow(tk.Toplevel):
         edge = 0 if self.locked else EDGE
         if parch:                                         # the binding / frame shows round the page, locked or not
             edge = max(P["border"], 0 if self.locked else 1)
-        outer = self
-        if parch and P.get("frame2"):                     # carved: the second, inner bronze line
-            outer = tk.Frame(self, bg=P["frame2"])
-            outer.pack(fill="both", expand=True, padx=edge, pady=edge)
-            edge = 1
-        inner = tk.Frame(outer, bg=body_bg)
-        inner.pack(fill="both", expand=True, padx=edge, pady=edge)
-        self.inner = inner
-        if parch and P.get("rules"):                      # hud: a gold hairline above and below
-            tk.Frame(inner, height=1, bg=P["line"]).pack(fill="x", side="top")
-            tk.Frame(inner, height=1, bg=P["line"]).pack(fill="x", side="bottom")
+        inner = self.inner = skin_inner(self, P, parch, edge, body_bg)
         title_fg, btn_bg, btn_line, accent = (("#ffffff", "#22345a", "#5b77ad", C["accent"]) if app_colours else
                                               (P["head"], P["band"], P["band"], P["line"]) if parch else
                                               ("#ffe2b8", "#3a3020", "#6a5a3a", "#8a6a3a"))
@@ -398,7 +447,7 @@ class OverlayWindow(tk.Toplevel):
             from tkinter import font as tkfont
             self._tfont = (P["font"], P["title_size"], "bold")
             need = tkfont.Font(root=root, family=P["font"], size=P["title_size"], weight="bold").measure(title) \
-                + 24 + 22 * (2 if lockable else 1)
+                + 24 + 22 * ((2 if lockable else 1) + len(extra or ()))
             self.bar = tk.Canvas(inner, height=BAR_H + (6 if P.get("plate") else 0), width=need, bg=P["band"],
                                  highlightthickness=0)
         else:
@@ -409,6 +458,10 @@ class OverlayWindow(tk.Toplevel):
         buttons = [("×", self._close, btn_bg if parch else "#7a2a20")]
         if lockable:
             buttons.append(("🔒" if self.locked else "🔓", self._toggle_lock, btn_bg))
+        tips = {0: "Close", 1: "Lock / unlock"} if lockable else {0: "Close"}
+        for txt, cmd, tip in extra or ():
+            tips[len(buttons)] = tip
+            buttons.append((txt, cmd, btn_bg))
         if parch:
             if P.get("texture"):
                 paint_texture(self.bar, seed=3)
@@ -420,18 +473,22 @@ class OverlayWindow(tk.Toplevel):
                 it = self.bar.create_text(0, BAR_H // 2, text=txt, fill=P["muted"], font=("Segoe UI Symbol", 10, "bold"),
                                           anchor="e", tags=(tag,))
                 self.bar.tag_bind(tag, "<Button-1>", lambda e, c=cmd: c())
-                self.bar.tag_bind(tag, "<Enter>", lambda e: self.bar.configure(cursor="hand2"))
-                self.bar.tag_bind(tag, "<Leave>", lambda e: self.bar.configure(cursor="" if self.locked else "fleur"))
+                self.bar.tag_bind(tag, "<Enter>", lambda e, t=tips.get(i, ""): (self.bar.configure(cursor="hand2"),
+                                                                                  self._bar_tip(t)))
+                self.bar.tag_bind(tag, "<Leave>", lambda e: (self.bar.configure(cursor="" if self.locked else "fleur"),
+                                                            self._bar_tip("")))
                 self._btns.append(it)
             self.bar.bind("<Configure>", self._paint_title, add="+")
             self._paint_title()
         else:
             self.bar.create_text(8, BAR_H // 2, text=f"{icon}  {title}", anchor="w", fill=title_fg,
                                  font=("Segoe UI", 9, "bold"))
-            for txt, cmd, bg in buttons:
+            for i, (txt, cmd, bg) in enumerate(buttons):
                 b = tk.Label(self.bar, text=txt, bg=bg, fg=title_fg, font=("Segoe UI", 9, "bold"),
                              width=2, highlightthickness=1, highlightbackground=btn_line, cursor="hand2")
                 b.bind("<Button-1>", lambda e, c=cmd: c())
+                if tips.get(i):
+                    Tooltip(b, tips[i])
                 self._btns.append(self.bar.create_window(0, BAR_H // 2, window=b, anchor="e"))
         self.bar.bind("<Configure>", self._place_btns, add="+")
         if not (parch and P.get("plate")):
@@ -501,9 +558,16 @@ class OverlayWindow(tk.Toplevel):
             if fg and u.GetForegroundWindow() != fg:
                 u.SetForegroundWindow(fg)                     # hand the keyboard straight back
         except Exception:
-            pass
+            buglog.caught()
 
     # ---- title bar buttons
+    def _bar_tip(self, text):
+        """2.121.1: what a title bar button does, shown in the bar while the mouse is on it (icons need words)."""
+        try:
+            self.bar.itemconfigure(self.bar_note_item, text=text or getattr(self, "_note_kept", ""))
+        except (tk.TclError, AttributeError):
+            pass
+
     def _place_btns(self, _e=None):
         if self.bar is None:
             return
@@ -526,6 +590,23 @@ class OverlayWindow(tk.Toplevel):
         w = max(c.winfo_width(), int(c.cget("width")))
         mid = self._bar_mid()
         c.delete("title")
+        if P.get("skin"):                                 # 2.110.0: an ornate style (ovskins.py)
+            h = mid * 2
+            grad = P.get("band_grad") or ()
+            if grad:                                      # a lacquered / enamelled band: horizontal strips
+                n = len(grad)
+                for i, col in enumerate(grad):
+                    c.create_rectangle(0, h * i / n, w, h * (i + 1) / n + 1, fill=col, outline="", tags="title")
+                c.create_line(0, 1, w, 1, fill=P["frame2"] or P["line"], tags="title")
+            c.create_line(0, h - 1, w, h - 1, fill=P["frame2"] or P["line"], tags="title")
+            c.create_text(w // 2, mid, text=self._title, fill=P["head"], font=self._tfont, tags="title")
+            if P.get("corners"):
+                corner_marks(c, w, None, P["corners"], top=True)
+            for it in list(self._btns) + [getattr(self, "bar_note_item", None)]:
+                if it is not None:
+                    c.tag_raise(it)
+            self._place_btns()
+            return
         if P.get("plate"):
             from tkinter import font as tkfont
             tw = tkfont.Font(root=c, family=P["font"], size=P["title_size"], weight="bold").measure(self._title)
@@ -560,7 +641,8 @@ class OverlayWindow(tk.Toplevel):
         except tk.TclError:
             return False
         fits = not text or right - need >= title_end + 12
-        self.bar.itemconfigure(self.bar_note_item, text=text if fits else "")
+        self._note_kept = text if fits else ""
+        self.bar.itemconfigure(self.bar_note_item, text=self._note_kept)
         return fits
 
     def canvas_body(self):
@@ -657,3 +739,37 @@ class OverlayWindow(tk.Toplevel):
     def _resized(self, _e=None):
         self._size.clear()
         self.report()
+
+
+class OverlayFrame(tk.Frame):
+    """2.118.0: a title-less, locked OverlayWindow as a plain Frame - the same frame, inner line, rules, skin texture
+    and corner marks (skin_inner, canvas_body) - so Settings can draw the real overlay bar into it as a preview.
+    Nothing in it moves, locks or closes."""
+    bar = None
+    has_bar = False
+    locked = True
+    click_through = False
+
+    def __init__(self, parent, P):
+        super().__init__(parent, bg=P["leather"], highlightthickness=1, highlightbackground=P["edge"])
+        self.P, self.parch = P, True
+        self.inner = skin_inner(self, P, True, P["border"], P["bg"])
+        self.body = tk.Frame(self.inner, bg=P["bg"])
+        self.body.pack(fill="both", expand=True)
+
+    canvas_body = OverlayWindow.canvas_body
+
+    def draggable(self, widget):
+        return None
+
+    def _toggle_lock(self):
+        return None
+
+    def bar_note(self, text):
+        return False
+
+    def show(self):
+        return None
+
+    def hide(self):
+        return None

@@ -218,10 +218,6 @@ def set_reviewer(on=True):
     return _keep_user(call("POST", "/auth/reviewer", body={"on": bool(on)}))
 
 
-def admin_reviewer(user_id, on):
-    return call("POST", f"/users/{user_id}/reviewer", body={"on": bool(on)})
-
-
 # ---------------------------------------------------------------- 2.86.0: global leaderboards
 def lb_send(entries):
     """Your best times (leaderboard.payload). -> (True, {"kept", "refused"}); the board takes one batch per 10 min."""
@@ -286,32 +282,6 @@ def import_key(path):
         save_json(SESSION, old if isinstance(old, dict) else {})         # the board doesn't know that key: keep yours
         return False, d if isinstance(d, str) else "The board doesn't know that key."
     return True, session().get("user") or {}
-
-
-def person(name):
-    """2.95.0: someone's contributor card -> (ok, {name, rep, from, since} or {name, hidden})."""
-    from urllib.parse import quote
-    return call("GET", "/people/" + quote(str(name), safe=""))
-
-
-def set_rep(hidden=None, link=None, unlink=False):
-    """2.95.0: show / hide your contributor icon; count this install's ratings toward your rep (link = its id) or stop."""
-    body = {}
-    if hidden is not None:
-        body["hidden"] = bool(hidden)
-    if unlink:
-        body["link"] = None
-    elif link:
-        body["link"] = link
-    res = call("POST", "/me/rep", body=body)
-    if res[0]:
-        me()                                                   # (keeps the saved user's rep fields fresh)
-    return res
-
-
-def admin_rep(name, pts):
-    """2.95.0: an admin thanks someone with rep (a bug report that got fixed)."""
-    return call("POST", "/admin/rep", body={"name": name, "pts": int(pts)})
 
 
 def delete_me():

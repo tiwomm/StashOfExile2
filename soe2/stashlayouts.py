@@ -12,10 +12,6 @@ To add a tab (ROADMAP: Ritual, Expedition, Essence, Fragment, Socketables):
   4. Add the tab to TABS and ORDER. Sub-pages (Breach: Catalysts | Wombgifts) are their own entry; say in "page"
      which button must be lit.
 Pending tabs and what each needs:
-  ritual      - every Ritual omen (none owned yet to sample)
-  expedition  - artifacts, logbooks, coinage
-  essence     - every Essence tier (Lesser / normal / Greater / Perfect + the corrupted ones)
-  fragment    - map fragments, splinters, keys
   socketables - runes, soul cores, talismans (may be several pages)"""
 
 PANEL = 847            # the panel's inside at 1440p (it's square)
@@ -44,7 +40,9 @@ CURRENCY += _row(128, (749,), ("Artificer's Orb",))
 CURRENCY += _row(245, (569, 659, 749), ("Arcanist's Etcher", "Armourer's Scrap", "Blacksmith's Whetstone"))
 CURRENCY += _row(335, (659, 749), ("Glassblower's Bauble", "Gemcutter's Prism"))
 CURRENCY += _row(452, (749,), ("Scroll of Wisdom",))
-# not read: the 4 shards (y 569; worth little), the crafting hole (370, 321) and the 2 x 7 wildcard rows (y 668, 749)
+# not read: the 4 shards (y 569; worth little) and the crafting hole (370, 321)
+# 2.114.3: the 2 x 7 wildcard slots - anything can go there; stashread tells what by its picture
+CURRENCY_WILD = [(x, y, S, S) for y in (668, 749) for x in (146, 227, 308, 389, 470, 551, 632)]
 
 ABYSS = []
 ABYSS += _row(82, (391,), ("Kulemak's Invitation",))
@@ -83,16 +81,91 @@ _CAT = ("Flesh", "Neural", "Adaptive", "Uul-Netol's", "Xoph's", "Tul's", "Esh's"
         "Sibilant", "Skittering", "Necrotic")
 BREACH = []
 BREACH += _row(140, (348, 438), ("Breach Splinter", "Breachstone"))
-BREACH += [("Breachlord's Sac", (358, 231, 136, 136))]
+BREACH += [("Breachlord Sac", (358, 231, 136, 136))]     # (2.114.2: the game's name - was "Breachlord's Sac")
 for _y, _p in ((416, ""), (623, "Refined ")):
     BREACH += _row(_y, (168, 258, 348, 438, 528, 618), [f"{_p}{c} Catalyst" for c in _CAT[:6]])
     BREACH += _row(_y + 90, (123, 213, 303, 393, 483, 573, 663), [f"{_p}{c} Catalyst" for c in _CAT[6:]])
 # Wombgifts page: not read (user's call)
 
+# 2.114.2 (the user's Expedition tab, every slot named): Aldur's Saga's slot (74, 255) is left out - it's out of
+# the game for now. The two big slots: Shattered Triskelion and The Triskelion Reforged.
+_ALLOY = ("Runic", "Adaptive", "Protective", "Expansive", "Swift", "Cyclonic", "Prismatic", "Mystic", "Sovereign",
+          "Celestial", "Transcendent")
+EXPEDITION = []
+EXPEDITION += _row(74, (165, 345, 435, 525, 615),
+                   ("Expedition Logbook", "Medved's Saga", "Vorana's Saga", "Uhtred's Saga", "Olroth's Saga"))
+EXPEDITION += [("Shattered Triskelion", (274, 202, 140, 140)), ("The Triskelion Reforged", (435, 202, 140, 140))]
+EXPEDITION += _row(371, (255, 345, 525), ("Verisium", "Exceptional Verisium", "Liquid Verisium"))
+EXPEDITION += _row(461, (255, 345, 435, 525), ("Medved's Crest of the Circle", "Vorana's Crest of the Scythe",
+                                               "Uhtred's Crest of the Chalice", "Olroth's Crest of the Sun"))
+EXPEDITION += _row(560, (120, 210, 300, 390, 480, 570, 660), [a + " Alloy" for a in _ALLOY[:7]])
+EXPEDITION += _row(650, (165, 255, 345, 435, 525, 615), [a + " Alloy" for a in _ALLOY[7:]]
+                   + ["The Runebinder's Alloy", "The Runefather's Alloy"])
+EXPEDITION += _row(749, (255, 345, 435, 525), ("Blazing Flux", "Chilling Flux", "Crackling Flux", "Void Flux"))
+
+# 2.114.2 (the user's Ritual tab, every slot named): the two empty slots (250, 173) and (165, 372) held items that
+# are out of the game - left out. Head of the King's slot is double wide.
+_O = "Omen of "
+RITUAL = []
+RITUAL += [("An Audience with the King", (251, 40, 70, 70)), ("Head of the King", (350, 40, 140, 70)),
+           ("Call of the Shadows", (520, 40, 70, 70))]
+RITUAL += _row(174, (445, 526), (_O + "Gambling", _O + "Bartering"))
+RITUAL += _row(291, (125, 206, 287, 404, 485, 566),
+               [_O + n for n in ("Sinistral Exaltation", "Dextral Exaltation", "Greater Exaltation",
+                                 "Sinistral Erasure", "Dextral Erasure", "Whittling")])
+RITUAL += _row(372, (246, 404, 485, 566, 647),
+               [_O + n for n in ("Catalysing Exaltation", "Chaotic Rarity", "Chaotic Quantity", "Chaotic Monsters",
+                                 "Chaotic Effectiveness")])
+RITUAL += _row(489, (147, 228, 345, 426, 543, 624),
+               [_O + n for n in ("Sinistral Annulment", "Dextral Annulment", "Chance", "the Ancients", "the Blessed",
+                                 "Sanctification")])
+RITUAL += _row(606, (147, 228), (_O + "Dextral Crystallisation", _O + "Sinistral Crystallisation"))
+RITUAL += _row(741, (125, 206, 287, 404, 485, 566, 647),
+               [_O + n for n in ("Resurgence", "Amelioration", "Refreshment", "the Hunt", "Answered Prayers",
+                                 "Secret Compartments", "Reinforcements")])
+
+# 2.114.2 (the user's Essence tab, every slot named): smaller slots (63 x 63); each line is Lesser, normal, Greater,
+# Perfect. The big slot and the four small ones in the middle aren't read (nothing named there).
+E = 63
+_ESS_L = ("the Body", "the Mind", "Enhancement", "Flames", "Insulation", "Ice", "Thawing", "Electricity", "Grounding",
+          "Ruin")
+_ESS_R = ("Command", "Abrasion", "Sorcery", "Haste", "Alacrity", "Seeking", "Battle", "the Infinite", "Opulence")
+_ESS_MID = (("Essence of Hysteria", "Essence of Horror"), ("Essence of Delirium", "Essence of Insanity"),
+            ("Essence of the Abyss", "Essence of the Breach"))
+
+
+def _ess(n):
+    return [f"{t}Essence of {n}" for t in ("Lesser ", "", "Greater ", "Perfect ")]
+
+
+ESSENCE = []
+for _i, _y in enumerate((26, 107, 188, 269, 350, 431, 512, 593, 674, 755)):
+    ESSENCE += [(n, (x, _y, E, E)) for x, n in zip((43, 115, 187, 264), _ess(_ESS_L[_i]))]
+    if _i >= 7:
+        ESSENCE += [(n, (x, _y + 1, E - 1, E - 1)) for x, n in zip((358, 430), _ESS_MID[_i - 7])]
+    if _i < len(_ESS_R):
+        ESSENCE += [(n, (x, _y, E, E)) for x, n in zip((524, 596, 668, 744), _ess(_ESS_R[_i]))]
+
+# 2.114.2 (the user's Fragments tab › Fragments page, every slot named). Many of these also have a slot in their
+# own tab (Breach, Delirium, Abyss, Expedition, Ritual): a scan adds up what each tab holds.
+FRAGMENTS = []
+FRAGMENTS += _row(148, (306, 387, 468), ("Ancient Crisis Fragment", "Weathered Crisis Fragment", "Faded Crisis Fragment"))
+FRAGMENTS += _row(265, (91, 181, 387), ("Breach Splinter", "Breachstone", "Origin Spark"))
+FRAGMENTS += [("Shattered Triskelion", (602, 193, 140, 140)), ("Breachlord Sac", (101, 355, 140, 140)),
+              ("Origin Cradle", (351, 356, 140, 140)), ("The Triskelion Reforged", (602, 355, 140, 140))]
+FRAGMENTS += [("An Audience with the King", (54, 560, 70, 70)), ("Head of the King", (144, 560, 140, 70))]
+FRAGMENTS += _row(560, (305, 422, 512, 602, 719), ("Call of the Shadows", "Simulacrum Splinter", "Simulacrum",
+                                                  "Raven's Reflection", "Kulemak's Invitation"))
+FRAGMENTS += _row(695, (306, 387, 468), ("Deadly Fate", "Cowardly Fate", "Victorious Fate"))
+
 TABS = {
-    "currency": {"label": "Currency", "slots": CURRENCY},
+    "currency": {"label": "Currency", "slots": CURRENCY, "wild": CURRENCY_WILD},
     "abyss": {"label": "Abyss", "slots": ABYSS},
     "delirium": {"label": "Delirium", "slots": DELIRIUM},
     "breach": {"label": "Breach", "page": "Catalysts", "slots": BREACH},
+    "expedition": {"label": "Expedition", "slots": EXPEDITION},
+    "ritual": {"label": "Ritual", "slots": RITUAL},
+    "essence": {"label": "Essence", "slots": ESSENCE},
+    "fragments": {"label": "Fragments", "page": "Fragments", "slots": FRAGMENTS},
 }
-ORDER = ("currency", "abyss", "delirium", "breach")
+ORDER = ("currency", "abyss", "delirium", "breach", "expedition", "ritual", "essence", "fragments")

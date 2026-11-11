@@ -22,6 +22,7 @@ import math
 import os
 import random
 import re
+from . import buglog
 
 DEFAULT = "emberforge"            # the default look (2.60.0)
 IDENTITY = "midnight"             # the look the app shipped with until 2.59.0 - no remapping at all
@@ -290,7 +291,7 @@ def from_base(b):
     if ST.theme is not None and ST.theme.light:
         if l_ > 0.55:                         # light / bright text (white, gold, amber ...) on a light pack -> a dark
             return from_hls(h, max(0.1, min(0.36, 0.08 + (1 - l_) * 0.6)), min(s, 0.75))   # shade of the same hue
-        if l_ < 0.22:                         # dark leftovers (near-black browns / greys) -> the pack's surfaces
+        if l_ < 0.22:                         # dark leftovers (near-black browns / grays) -> the pack's surfaces
             la, ahex, key = min(ST.anchors, key=lambda a: abs(a[0] - l_))
             th, tl, ts = hls(ST.C[key])
             return from_hls(th, max(0.03, min(0.97, tl + (l_ - la) * ST.flip)), ts)
@@ -366,7 +367,7 @@ def notify():
         try:
             cb(ST.theme)
         except Exception:
-            pass
+            buglog.caught()
     ST.subs[:] = keep
 
 
@@ -416,7 +417,7 @@ def _translator(old):
 
     def tr(key, v):
         lo = v.lower()
-        if lo in KEEP:
+        if lo in KEEP and (lo == "#010203" or WALK.get("over", True)):
             return lo
         m = MEM.get(key)
         rc = m[1] if m and m[0] == lo else recipe_of(lo)    # the app changed it since the last swap: read it again
@@ -428,11 +429,30 @@ def _translator(old):
     return tr
 
 
+WALK = {}
+
+
 def walk(root, tr):
-    """Re-color everything on screen with tr(key, old) -> new."""
+    """Re-color everything on screen with tr(key, old) -> new. 2.130.2: the colors of the windows over the game
+    (KEEP) are kept only in those windows; in the app's own windows a color an overlay style shares
+    with a theme (Midnight Steel's text, say) follows the theme (it stayed light on a light theme)."""
     tkc = root.tk
     stack = ["."]
     n = 0
+    tops = {}
+
+    def over(w):
+        try:
+            top = str(tkc.call("winfo", "toplevel", w))
+        except Exception:
+            return True
+        if top not in tops:
+            try:
+                from .shell import DeskWindow
+                tops[top] = not (top == "." or isinstance(root.nametowidget(top), DeskWindow))
+            except Exception:
+                tops[top] = True
+        return tops[top]
     while stack:
         w = stack.pop()
         try:
@@ -443,6 +463,7 @@ def walk(root, tr):
         n += 1
         if w in ST.skip:
             continue
+        WALK["over"] = over(w)
         _retone_options(tkc, (w, "configure"), (w, "configure"), tr, (w, "o"))
         try:
             if cls == "Canvas":
@@ -474,7 +495,8 @@ def walk(root, tr):
                                 if nv != v.lower():
                                     tkc.call(w, "entryconfigure", i, o, nv)
         except Exception:
-            pass
+            buglog.caught()
+    WALK.pop("over", None)
     alive = _alive_cache(tkc)
     for k in [k for k in MEM if k[0] not in alive and k[0] != "style"]:
         MEM.pop(k, None)
@@ -516,7 +538,7 @@ def _retone_options(tkc, get, put, tr, key):
         try:
             tkc.call(*put, *new)
         except Exception:
-            pass
+            buglog.caught()
 
 
 # ------------------------------------------------------------------ chrome drawing (canvas)
@@ -586,21 +608,28 @@ def texture(cv, t, kind, x0, y0, x1, y1, base, glow=None, tag="tex"):
 def _paint_bar(cv, kind="title", tag="grad"):
     """A title bar from the running pack: gradient, texture, top / bottom lines. No icons - every pack keeps the
     app's own icons (2.60.0)."""
-    t = ST.theme
     cv.delete(tag)
     w, h = max(cv.winfo_width(), 2), max(cv.winfo_height(), 2)
+    col = bar_into(cv, ST.theme, kind, 0, 0, w, h, tag)
+    cv.tag_lower(tag)
+    return col
+
+
+def bar_into(cv, t, kind, x0, y0, x1, y1, tag="grad"):
+    """A pack's bar (title / title_off / section) drawn into a part of a canvas -> its text color. 2.118.0: shared
+    by the title bars and the theme picker's preview (any pack, not only the running one)."""
+    w, h = max(x1 - x0, 2), max(y1 - y0, 2)
     spec = t.part("bars", kind) or t.part("bars", "title")
     stops = t.grad(spec["fill"])
     for y in range(h):
-        cv.create_line(0, y, w, y, fill=grad_at(stops, y / max(1, h - 1)), tags=tag)
+        cv.create_line(x0, y0 + y, x0 + w, y0 + y, fill=grad_at(stops, y / max(1, h - 1)), tags=tag)
     tex = spec.get("texture", "none")
     if tex and tex != "none":
-        texture(cv, t, tex, 0, 0, w, h, grad_at(stops, .5),
+        texture(cv, t, tex, x0, y0, x0 + w, y0 + h, grad_at(stops, .5),
                 glow=t.c(spec["texture_color"]) if spec.get("texture_color") else None, tag=tag)
     for key, y in (("top", 0), ("top2", 2), ("bottom", h - 1), ("bottom2", h - 3)):
         if spec.get(key):
-            cv.create_line(0, y, w, y, fill=t.c(spec[key]), tags=tag)
-    cv.tag_lower(tag)
+            cv.create_line(x0, y0 + y, x0 + w, y0 + y, fill=t.c(spec[key]), tags=tag)
     return t.c(spec.get("text", "#ffffff"))
 
 
@@ -627,15 +656,27 @@ def bar_text(kind="title"):
     return t.c(spec.get("text", "#ffffff"))
 
 
-def head_font():
-    """The pack's heading family (first one installed)."""
+_FAMILIES = {}
+_HEAD = {}
+
+
+def head_font(t=None, kind="head"):
+    """The pack's heading family (first one installed). 2.112.2: the PC's font list is read ONCE and the answer
+    kept per theme - every title bar asked Windows for the whole list on every redraw (about 100 bars), which
+    froze a theme change for minutes (worse once the overlay styles' own fonts were loaded). 2.118.0: any pack
+    (t) and its "num" fonts too - for the theme picker's preview."""
     import tkinter.font as tkfont
-    fams = (ST.theme.part("fonts", "head") if ST.theme else None) or ["Segoe UI"]
-    try:
-        have = {f.lower(): f for f in tkfont.families()}
-    except Exception:
-        return fams[0]
-    return next((have[f.lower()] for f in fams if f.lower() in have), "Segoe UI")
+    t = t or ST.theme
+    fams = tuple((t.part("fonts", kind) or t.part("fonts", "head") if t else None) or ["Segoe UI"])
+    if fams in _HEAD:
+        return _HEAD[fams]
+    if not _FAMILIES:
+        try:
+            _FAMILIES.update({f.lower(): f for f in tkfont.families()})
+        except Exception:
+            return fams[0]
+    _HEAD[fams] = next((_FAMILIES[f.lower()] for f in fams if f.lower() in _FAMILIES), "Segoe UI")
+    return _HEAD[fams]
 
 
 def round_rect(cv, x0, y0, x1, y1, r, **kw):
@@ -843,9 +884,39 @@ def bevel_image(root, key, w, h, stops, border, inner=None, radius=0, top_line=N
     return img
 
 
+def flat_spec(t, name):
+    """P2.5 (2.107.0, feedback: "the buttons feel very amateur"): one flat look in every theme - 2 px corners, no
+    gradient or bevel; the theme still gives the colors. Normal: a raised face; primary: the accent; danger: an
+    outline in the theme's danger color; heading: list column heads."""
+    c = t.c
+    if name == "primary":
+        a = ST.C.get("accent") or c("accent")
+        hv = mix(a, "#000000", .12) if t.data.get("light") else mix(a, "#ffffff", .15)   # (light themes: darker)
+        return {"fill": [[0, a], [1, a]], "hover": [[0, hv], [1, hv]],
+                "pressed": [[0, mix(a, "#000000", .2)], [1, mix(a, "#000000", .2)]], "border": a,
+                "hover_border": mix(a, "#ffffff", .35), "inner": None, "radius": 2, "text": None, "text_hover": None}
+    if name == "danger":
+        b, bg = c("bad"), c("surface")
+        return {"fill": [[0, bg], [1, bg]], "hover": [[0, mix(bg, b, .08)], [1, mix(bg, b, .08)]],
+                "pressed": [[0, mix(bg, b, .16)], [1, mix(bg, b, .16)]], "border": b, "hover_border": b, "inner": None,
+                "radius": 2, "text": b, "text_hover": c("text_strong")}
+    if name == "heading":
+        f = c("surface_raised")
+        return {"fill": [[0, f], [1, f]], "hover": [[0, c("surface_high")], [1, c("surface_high")]],
+                "pressed": [[0, c("surface_sunken")], [1, c("surface_sunken")]], "border": c("border"),
+                "hover_border": c("border"), "inner": None, "radius": 0, "text": c("text_muted"),
+                "text_hover": c("text")}
+    f = c("surface_high")
+    return {"fill": [[0, f], [1, f]], "hover": [[0, mix(f, c("accent"), .14)], [1, mix(f, c("accent"), .14)]],
+            "pressed": [[0, c("surface_sunken")], [1, c("surface_sunken")]], "border": c("border_light"),
+            "hover_border": c("accent"), "inner": None, "radius": 2, "text": c("text"), "text_hover": c("text_strong")}
+
+
 def button_spec(t, name):
     """A button face spec from the pack; primary / danger are made from the accent / danger color when a pack
-    doesn't draw them itself."""
+    doesn't draw them itself. P2.5 (2.107.0): flat in every theme unless a pack says "buttons": {"flat": false}."""
+    if name in ("normal", "primary", "danger", "heading") and (t.part("buttons", "flat") is not False):
+        return flat_spec(t, name)
     spec = t.part("buttons", name)
     if spec:
         return spec

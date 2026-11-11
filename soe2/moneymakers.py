@@ -92,7 +92,6 @@ THINKING = {1: ("Autopilot", "the same every map, no decisions"),
             3: ("Moderate", "some planning, a few mechanics at once"),
             4: ("Hard", "constant decisions, crafting or trading know-how"),
             5: ("Big brain", "deep mechanics, market timing, risky calls")}
-THOUGHTS = {k: f"{w} - {d}" for k, (w, d) in THINKING.items()}
 CLICKS = {"Chill": "slow pace, few pickups - easy on the hands",
           "Steady": "normal mapping: loot, a few stashes",
           "Busy": "lots of looting, opening and selling",
@@ -618,10 +617,6 @@ def runs():
     return [r for r in d if isinstance(r, dict) and "start" in r and "end" in r] if isinstance(d, list) else []
 
 
-def save_runs(items):
-    save_json(RUNS, items[-2000:])
-
-
 def stats(items, strat=None):
     """-> {"runs", "avg_secs", "per_hour", "profit", "profit_known", "profit_per_hour"} for one strat (or all)."""
     rs = [r for r in items if strat is None or r.get("strat") == strat]
@@ -634,14 +629,11 @@ def stats(items, strat=None):
             "profit_per_hour": profit * 3600 / psecs if psecs else None}
 
 
-# ---------------------------------------------------------------- Tablet Craft Helper quick reference
-TABLET_TYPES = ("All", "Breach", "Delirium", "Ritual", "Expedition", "Abyss", "Overseer", "Temple")
-# The crafting flow, as the guide gives it (shown on the Tablet Craft Helper tab, and used by tablet_advice).
-TABLET_FLOW = (("White tablet", "Orb of Transmutation, then Orb of Augmentation: 2 mods."),
-               ("2 bad mods", "Orb of Alchemy."),
-               ("2 good mods", "Regal Orb, then Exalted Orb."),
-               ("4 junk mods", "Don't sell it - keep it to reforge."),
-               ("Good mods", "Price it (Ctrl+Alt+C, or the trade link next to the mod) and list it."))
+# ---------------------------------------------------------------- Craft Helper (tablets: the advice)
+# 2.123.0: the types and steps live in crafthelper.KINDS (one table per kind: tablets, jewels)
+from .crafthelper import KINDS as _CRAFT     # noqa: E402
+TABLET_TYPES = _CRAFT["tablet"]["types"]
+TABLET_FLOW = _CRAFT["tablet"]["flow"]
 
 
 def tablet_rarity(text):
@@ -660,9 +652,9 @@ def tablet_advice(rarity, n_mods, n_good):
         if n_good >= 2:
             return "Both mods are good: Regal Orb, then Exalted Orb."
         if n_good == 1:
-            return ("One good mod: your call - Regal + Exalt if that mod is worth a lot (see its price below), "
-                    "otherwise treat it as 2 bad mods: Orb of Alchemy.")
-        return "Both mods are bad: Orb of Alchemy."
+            return ("One good mod: your call - Regal + Exalt if that mod is rated S (see its rating below), "
+                    "otherwise treat it as 2 bad mods: reforge it, or Orb of Alchemy.")
+        return "Both mods are bad: reforge it, or Orb of Alchemy."
     if rarity == "Rare":
         if n_good == 0 and n_mods >= 4:
             return "4 junk mods: don't sell it - keep it to reforge."
@@ -670,7 +662,7 @@ def tablet_advice(rarity, n_mods, n_good):
             return "No good mods yet: Exalted Orb for another, or keep it to reforge."
         if n_mods < 4:
             return f"{n_good} good mod{'s' if n_good > 1 else ''}: Exalted Orb to fill it, then price it."
-        return f"{n_good} good mod{'s' if n_good > 1 else ''}: price it (Ctrl+Alt+C) and list it."
+        return f"{n_good} good mod{'s' if n_good > 1 else ''}: worth pricing - press your price check key on it."
     return "Copy a tablet in game (Ctrl+C), then press Check my tablet."
 
 

@@ -17,14 +17,19 @@ import os
 import re
 import time
 
-from .config import APP_UA, APP_DIR, RESOURCE_DIR, P, SETTINGS, load_json, save_json
+from .config import APP_UA, APP_DIR, RESOURCE_DIR, P, SETTINGS, save_json
 
 FILE = "campaign.json"
 SCHEMA = 1
 REPO = "tiwomm/StashOfExile2"
 LIVE_URL = f"https://raw.githubusercontent.com/{REPO}/main/{FILE}"
 GAP = 15 * 60                     # a longer gap between two log lines isn't counted in a split (away, or closed)
-ROUTES = (("full", "Full rewards"), ("speed", "Speedrun"), ("mine", "My own"))
+ROUTES = (("full", "Full"), ("speed", "Speedrun"), ("rush", "Rush (carry)"))   # (2.125.3 names; 2.131.0: no 4th)
+# 2.125.0 (feedback: "a rush/carry helper ... in the perspective of the person giving the carry"): each route in one line
+ROUTE_LINES = {"full": "Every passive point, spirit and resistance, with the side zones that give them.",
+               "speed": "The main story. Skips side zones and most extras; keeps the rewards worth the time.",
+               "rush": "You're carrying someone: what to clear, when to bring them in, what they pick up and who they "
+                       "talk to."}
 KIND_NAMES = {"points": "passive points", "spirit": "spirit", "res_cold": "cold res", "res_fire": "fire res",
               "res_lightning": "lightning res", "life": "life", "mana": "mana", "other": "other"}
 SHORT_GIVES = {"points": "+{n} points", "spirit": "+{n} spirit", "res_cold": "+{n}% cold", "res_fire": "+{n}% fire",
@@ -34,7 +39,7 @@ DEFAULTS = {
     "line": True,                 # its line on the goal bar (2.97.0: always - on means it shows)
     "vendor": True,               # Vendor search, in town
     "route": "full",              # the default guide (2.89.0: each character's run keeps its own, run["route"])
-    "ask_route": True,            # 2.89.0: a new campaign asks Speedrun or Full rewards
+    "ask_route": True,            # 2.89.0: a new campaign asks which route
     "optional": False,            # show optional zones
     "tips": True,
     "warn": True,                 # leaving an act with a reward missed or not ticked: ask
@@ -42,7 +47,6 @@ DEFAULTS = {
     "off_at_maps": True,          # turn itself off once you reach maps
     "chars": {},                  # character -> its run (see char())
     "best": {},                   # league -> {act key: seconds}
-    "mine": {},                   # act key -> [zone] (My own route: your last finished act)
     "learned": {},                # act key -> [{zone, after, level}] zones the guide didn't know
     "notes": {},                  # zone (norm) -> your note
     "optional_zones": [],         # zones you marked optional
@@ -55,7 +59,15 @@ CAMP_ID = re.compile(r"^(G|P)(\d+)(?:_|$)")
 def cfg():
     c = SETTINGS.setdefault("campaign", {})
     for k, v in DEFAULTS.items():
-        c.setdefault(k, copy.deepcopy(v))
+        if k not in c:                                   # 2.125.4: copied only when missing (it ran on every call)
+            c[k] = copy.deepcopy(v)
+    if "mine" in c:                                      # 2.131.0: the 4th route is gone - a run on it is on Full
+        c.pop("mine", None)
+        if c.get("route") not in dict(ROUTES):
+            c["route"] = "full"
+        for run in (c.get("chars") or {}).values():
+            if isinstance(run, dict) and run.get("route") not in (None, *dict(ROUTES)):
+                run["route"] = "full"
     return c
 
 
@@ -179,8 +191,8 @@ def char(name=None):
     c = cfg()
     name = current_char() if name is None else name
     run = c["chars"].setdefault(name or "", {})
-    if not run:                                           # 2.86.0: a new run - its league (for the leaderboards)
-        run["league"] = SETTINGS.get("league") or ""
+    if not run.get("league"):                             # 2.86.0: a new run - its league (for the leaderboards)
+        run["league"] = SETTINGS.get("league") or ""      # (2.124.1: and an older run that had none)
     for k, v in (("act", None), ("zone", None), ("here", None), ("seen", {}), ("levels", {}), ("rewards", {}),
                  ("ask", []), ("secs", {}), ("last_ts", None), ("afk", False), ("done", False), ("zone_level", 0),
                  ("pending", None), ("unknown", None), ("visit", False)):
@@ -233,7 +245,8 @@ def speed_reward(r):
 def steps(act_key, run=None, route=None, optional=None):
     """The route for an act -> [{zone, do, side, optional, tip, learned, state}] (state: done / here / passed / todo).
     2.89.0: Speedrun leaves out steps the pack marks "speed": {"skip": true} (and side zones), and shows a step's
-    "speed": {"do": ...} instead of its usual "do"."""
+    "speed": {"do": ...} instead of its usual "do". 2.125.0: Rush (carry) the same with "rush" (side zones with a
+    rush line stay)."""
     c = cfg()
     run = run or char()
     route = route or route_of(run)
@@ -251,16 +264,18 @@ def steps(act_key, run=None, route=None, optional=None):
     for s in rows:
         if norm(s["zone"]) in marked:
             s["optional"] = True
-    if route == "mine" and c["mine"].get(act_key):
-        order = [norm(z) for z in c["mine"][act_key]]
-        pos = {z: i for i, z in enumerate(order)}
-        rows = [s for _k, s in sorted(((pos.get(norm(s["zone"]), len(order) + j), s) for j, s in enumerate(rows)),
-                                      key=lambda t: t[0])]
     if route == "speed":
         rows = [s for s in rows if not s.get("side") and not (s.get("speed") or {}).get("skip")]
         for s in rows:
             if (s.get("speed") or {}).get("do"):
                 s["do"] = s["speed"]["do"]
+    if route == "rush":                                       # 2.125.0: the carrier's guide ("rush" in the pack); a
+        def rush(s):                                          # step without one follows Speedrun
+            return s.get("rush") or s.get("speed") or {}
+        rows = [s for s in rows if not rush(s).get("skip") and (not s.get("side") or (s.get("rush") or {}).get("do"))]
+        for s in rows:
+            if rush(s).get("do"):
+                s["do"] = rush(s)["do"]
     if not optional:
         rows = [s for s in rows if not s.get("optional") or norm(s["zone"]) in _seen(run, act_key)]
     seen = _seen(run, act_key)
@@ -320,13 +335,6 @@ def start_here(act_key, i, run=None):
 
 
 # ---------------------------------------------------------------- rewards
-def reward_state(r, run=None):
-    """'got' / 'skip' / 'remind' / 'missed' / 'ask' / 'open'."""
-    run = run or char()
-    have = run["rewards"].get(r["id"])
-    if have:
-        return have
-    return "open"
 
 
 def set_reward(rid, state, run=None):
@@ -361,7 +369,7 @@ def asks(run=None):
 
 
 def _close_act(run, key, now):
-    """Leaving an act for a later one: its split, My own route, and the rewards to ask about."""
+    """Leaving an act for a later one: its split and the rewards to ask about."""
     c = cfg()
     secs = run["secs"].get(key)
     if secs:
@@ -369,10 +377,8 @@ def _close_act(run, key, now):
         b = c["best"].setdefault(league, {})
         if key not in b or secs < b[key]:
             b[key] = round(secs)
-    if run["seen"].get(key):
-        c["mine"][key] = list(run["seen"][key])
     seen = set(_seen(run, key))
-    speed = route_of(run) == "speed"
+    speed = route_of(run) in ("speed", "rush")
     for r in rewards(key):
         st = run["rewards"].get(r["id"])
         if st in ("got", "skip"):
@@ -419,6 +425,8 @@ def log_event(kind, ts, data, area_kind=None):
         if ak is None:
             run["visit"] = False                                  # 2.97.0: left the campaign zones
             _tick(run, ts)
+            _zone_done(run)                                       # (2.124.0: a hideout ends the zone's time)
+            run["away"] = True
             run["last_ts"] = ts                                   # (a hideout: time there isn't the act's)
             return out
         run["pending"] = {"id": aid, "level": int(data.get("level") or 0), "act": ak}
@@ -436,6 +444,33 @@ def _tick(run, ts):
     dt = ts - last
     if 0 < dt < GAP:
         run["secs"][run["act"]] = run["secs"].get(run["act"], 0) + dt
+        if run.get("zone") and not run.get("away"):          # 2.124.0: the zone's own time too
+            run["zone_secs"] = run.get("zone_secs", 0) + dt
+
+
+def _zone_done(run):
+    """2.124.0: leaving a campaign zone - its time is kept, the best per zone (for the Campaign zones leaderboard)."""
+    z, secs = run.get("zone"), run.get("zone_secs") or 0
+    if z and secs > 0 and not run.get("away"):
+        b = run.setdefault("zone_best", {})
+        if z not in b or secs < b[z]:
+            b[z] = round(secs, 1)
+    run["zone_secs"] = 0
+
+
+def zone_time(run=None, now=None):
+    """The time since you came into the campaign zone you're in -> secs, or None (a hideout, or not known since the
+    app started - 2.124.1: it showed 0:00 then). The leaderboard's time is zone_secs (AFK left out, campaign runs
+    only)."""
+    import time as _t
+    run = run or char()
+    if not active(run) or not run.get("zone") or run.get("away"):
+        return None
+    t0 = run.get("zone_t0")
+    if not t0:
+        return None
+    dt = (now or _t.time()) - t0
+    return dt if 0 <= dt < 3 * 3600 else None
 
 
 def _enter(run, name, area_id, level, ts, id_act=None):
@@ -445,6 +480,9 @@ def _enter(run, name, area_id, level, ts, id_act=None):
     key = key or id_act or act_of_id(area_id)
     if key is None:
         return None
+    _zone_done(run)                                           # 2.124.0: the zone you left, timed; this one starts
+    run["away"] = False
+    run["zone_t0"] = ts                                       # 2.124.1: when you came in (the overlay's Zone time)
     if run.get("done"):                                       # 2.97.0: back in a campaign zone after maps - the line
         run["visit"] = True                                   # (and Vendor ▾) show here; the finished run is kept
         run["act"], run["zone"], run["here"], run["zone_level"] = key, name, None, int(level or 0)
@@ -518,7 +556,7 @@ def line_text(run=None):
     d = line(run)
     if not d:
         return ""
-    t = d["do"] or "On you go"
+    t = (d["do"] or "On you go").rstrip(" .")             # 2.124.1: no "Burrow., then" (feedback screenshot)
     if d["gives"]:
         t += f" ({d['gives']})"
     if d["next"]:

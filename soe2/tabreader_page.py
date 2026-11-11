@@ -3,6 +3,7 @@ Ctrl+Alt+C keeps working in both modes: the choice only shows or hides the tab r
 import tkinter as tk
 from tkinter import ttk
 
+from . import buglog
 from .config import save_json, SETTINGS
 from .style import C, SegBar, Tooltip
 from .tabreader import PCTAB
@@ -29,14 +30,13 @@ class TabReaderPage:
             cfg["mode"] = MODES[0]
         mrow = tk.Frame(tb, bg=P1, padx=8, pady=4)            # 2.74.5: lighter
         mrow.pack(fill="x", before=tb.winfo_children()[0])
-        tk.Label(mrow, text="Add items from", bg=P1, fg=C["muted"]).pack(side="left", padx=(0, 8))
+        self.pc_mrow = mrow                              # 2.123.0 (p11): the one toolbar row - search, filters, actions
         # 2.31.0: Stash tab is BETA - a good idea that doesn't work well in practice yet (2.38.0: the tag sits inside
-        # its button - next to the bar it read as a label for the hint text)
-        self.pc_mode = SegBar(mrow, MODES, value=cfg["mode"], command=lambda v: self.pctab_mode(),
-                              size=9, pad=(12, 4), badges={"Stash tab": "BETA"})
-        self.pc_mode.pack(side="left")
-        self.pc_mode_hint = tk.Label(mrow, text="", bg=P1, fg=C["muted"], font=("Segoe UI", 9))
-        self.pc_mode_hint.pack(side="left", padx=8)
+        # its button). 2.123.0 (p7): in the Items strip (build_checks places it), not a row of its own; the hint is
+        # the empty list's text
+        self.pc_mode = SegBar(tb.master, MODES, value=cfg["mode"], command=lambda v: self.pctab_mode(),
+                              size=9, pad=(8, 2), badges={"Stash tab": "BETA"})
+        self.pc_mode_hint = tk.Label(mrow, text="", bg=P1, fg=C["muted"], font=("Segoe UI", 9))   # (not shown)
         # ---- 2.42.0: your stash tabs, one list each (shown in Stash tab mode)
         self.pc_tabsrow = tk.Frame(tb, bg=P1, padx=8, pady=0)
         self.pctab_tabs()                                # (moves an older single tab into the list)
@@ -126,7 +126,7 @@ class TabReaderPage:
             self.cat_refresh()
             self.clear_btn_state()
         except Exception:
-            pass
+            buglog.caught()
 
     def pctab_tabs(self):
         """[{id, name, amount, currency, currency_name}] - your stash tabs. An older single tab becomes "Tab 1"."""
@@ -257,19 +257,14 @@ class TabReaderPage:
     def pctab_wealth_link(self):
         """Show "Count it in Wealth" once a tab was read and Wealth doesn't have it yet."""
         from .wealth import WEALTH
-        cfg = SETTINGS.get("pctab") or {}
-        have = any(t["amount"] == cfg.get("amount") and t["currency"] == cfg.get("currency") for t in WEALTH.tabs)
-        if cfg.get("amount") and cfg.get("read_ok") and not have:
-            if not self.pc_to_wealth.winfo_ismapped():
-                self.pc_to_wealth.pack(side="right", padx=(0, 8))
-        else:
-            self.pc_to_wealth.pack_forget()
+        _ = WEALTH                                    # 2.105.1: Wealth has no stash tabs any more - never shown
+        self.pc_to_wealth.pack_forget()
 
     def pctab_to_wealth(self):
         cfg = SETTINGS.get("pctab") or {}
         if not hasattr(self, "_wealth_add"):
             return
-        if cfg.get("amount") and self._wealth_add(cfg["amount"], cfg.get("currency") or "divine", "Price checks tab"):
+        if cfg.get("amount") and self._wealth_add(cfg["amount"], cfg.get("currency") or "divine", "Price Checks tab"):
             self.pc_msg.config(text="Added to Wealth. Sync there to count it (it's read the same way).", fg=C["green"])
         self.pctab_wealth_link()
 
@@ -411,7 +406,7 @@ class TabReaderPage:
         try:
             self.root.after(50, self.pctab_bar)        # 2.42.0: the tab's count on its button
         except Exception:
-            pass
+            buglog.caught()
         self._pctab_finished(stopped)
 
     def _pctab_finished(self, stopped=False):
@@ -421,7 +416,7 @@ class TabReaderPage:
         from .tabreader import write_log
         PCTAB["log"].append(f"result: added {st.get('added', 0)}, already {st.get('already', 0)}, can't read "
                             f"{st.get('unreadable', 0)}, errors {st.get('failed', 0)}"
-                            + (f"; stopped" if stopped else "") + (f"; error: {PCTAB['error']}" if PCTAB["error"] else ""))
+                            + ("; stopped" if stopped else "") + (f"; error: {PCTAB['error']}" if PCTAB["error"] else ""))
         write_log(PCTAB["log"])
         if PCTAB["error"]:
             return self.pc_msg.config(text=PCTAB["error"], fg=C["red"])

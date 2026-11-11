@@ -8,6 +8,7 @@ import statistics
 import threading
 import time
 from datetime import datetime
+from . import buglog
 from .config import AGE_OPTIONS, APP_VERSION, BASE, P, SETTINGS, STATUS_OPTIONS
 from .net import call
 from .rates import RATES
@@ -99,7 +100,7 @@ def mod_impact(rec, mod):
             return RULES[k]
     if mod.get("auto") in IMPACTS:          # 2.72.0: gear - filler and low-tier affixes left out
         return mod["auto"]
-    if mod.get("kind") == "Total":          # gear totals (defences, DPS, pseudo totals) are must-haves
+    if mod.get("kind") == "Total":          # gear totals (defenses, DPS, pseudo totals) are must-haves
         return "high"
     if (rec.get("item") or {}).get("gear"):
         return "normal"                     # 2.0: tablet / jewel rules are worded like gear mods but aren't about gear
@@ -137,7 +138,8 @@ CURRENCY_CHOICES = [("Exalted Orb Equivalent", None), ("Divine Orbs", "divine"),
 
 
 # 2.79.0: every filter the item panel offers - opts key, the trade site's group and name
-NUM_OPTS = (("ilvl", "type_filters", "ilvl"), ("quality", "type_filters", "quality"),
+NUM_OPTS = (("tier", "map_filters", "map_tier"),        # 2.103.2: a waystone's tier (feedback)
+            ("ilvl", "type_filters", "ilvl"), ("quality", "type_filters", "quality"),
             ("sockets", "equipment_filters", "rune_sockets"), ("req_lvl", "req_filters", "lvl"),
             ("req_str", "req_filters", "str"), ("req_dex", "req_filters", "dex"), ("req_int", "req_filters", "int"))
 MISC_OPTS = (("fractured", "fractured_item", False), ("desecrated", "desecrated", False),
@@ -178,7 +180,18 @@ def apply_opts(query, item=None, opts=None):
     if o.get("corrupted") in ("any", "yes", "no"):
         put("misc_filters", "corrupted", None if o["corrupted"] == "any" else
             {"option": "true" if o["corrupted"] == "yes" else "false"})
+    wt = re.match(r"Waystone \(Tier (\d+)\)$", str(query.get("type") or ""))
+    if wt and "tier" in o:                     # 2.103.3 (feedback): the base name holds the tier, so a range other
+        t, tv = int(wt.group(1)), o["tier"]    # than its own searches every waystone (the trade site's way)
+        if not (isinstance(tv, dict) and tv.get("min") == t and tv.get("max") == t):
+            query.pop("type", None)
+            put("type_filters", "category", {"option": "map.waystone"})
+    gem = bool((item or {}).get("rarity") == "Gem" or ((item or {}).get("search") or {}).get("gem")
+               or "gem_level" in (flt.get("misc_filters") or {}).get("filters", {}))
     for key, group, name in NUM_OPTS:          # 2.79.0: a number (at least) or {"min", "max"}
+        if key == "sockets" and gem:           # 2.130.1 (feedback: "sockets: 5 ... chose augmentable sockets"): a
+            group, name = "misc_filters", "gem_sockets"     # gem's sockets are the trade site's Gem Sockets
+            put("equipment_filters", "rune_sockets", None)
         if key in o:
             v = o[key]
             if isinstance(v, dict):
@@ -197,9 +210,16 @@ def apply_opts(query, item=None, opts=None):
         if o["base"] == "same" and item.get("base"):
             query["type"] = item["base"]
             put("type_filters", "category", None)
-        elif o["base"] == "class" and s.get("category"):
-            query.pop("type", None)
-            put("type_filters", "category", {"option": s["category"]})
+        elif o["base"] == "class":
+            # 2.120.1 (feedback: unticking Base type said "Any Belts" but the link still searched Heavy Belt): an item
+            # searched on its own base has no category in its plan - take its class's from the game data
+            cat = s.get("category")
+            if not cat and item.get("gclass"):
+                from . import gamedata
+                cat = (gamedata.classes().get(item["gclass"]) or {}).get("trade")
+            if cat:
+                query.pop("type", None)
+                put("type_filters", "category", {"option": cat})
     return query
 
 
@@ -238,6 +258,7 @@ def search_ids(league, base, filters, count_min, corrupted=None):
     if hit is None:
         res = call("POST", f"{BASE}/search/poe2/{league}", json={"query": query, "sort": {"price": "asc"}})
         hit = (res.get("total", 0), res.get("result", [])[:10], res.get("id"))
+        MORE_IDS[res.get("id")] = list(res.get("result", [])[10:20])   # 2.113.0: for more sellers (collapse)
         _search_cache[key] = (time.time(), hit)
     return hit
 
@@ -276,7 +297,7 @@ def keep_raw(e):
 
 def fetch_rich(qid, ids, max_hours=None):
     """One fetch call for up to 10 listings -> [{id, price, ts, mods}] cheapest first.
-    mods = [(normalised text, [numbers])] straight from the listing, or None if the listing didn't say.
+    mods = [(normalized text, [numbers])] straight from the listing, or None if the listing didn't say.
     Listings older than max_hours are dropped (the search already filters, this is the double-check)."""
     key = ("rich", qid, tuple(ids), max_hours, own_account().lower())
     out = _cached(_fetch_cache, key)
@@ -315,8 +336,39 @@ def fetch_rich(qid, ids, max_hours=None):
                             "name": " ".join(x for x in (strip_markup(str(it.get("name") or "")),
                                                          str(it.get("typeLine") or it.get("baseType") or "")) if x),
                             "text": [strip_markup(l) for l in lines], "qid": qid,
+                            "seller": str((lst.get("account") or {}).get("name") or "").strip().lower(),   # 2.113.0
                             "hsids": hsids})                     # 2.18.0: the stat id the site gave, per line
         _fetch_cache[key] = (time.time(), out)
+    return out
+
+
+MORE_IDS = {}                 # 2.113.0: search id -> its listings 11-20 (fetched only when too few sellers)
+MIN_SELLERS = 5
+
+
+def more_ids(qid):
+    return MORE_IDS.get(qid) or []
+
+
+def collapse_sellers(rich):
+    """2.113.0 (core, every search): one row per seller - their cheapest listing (rich is cheapest first), with how
+    many times they listed it (r["times"]). Five copies from one seller no longer make up "the 5 cheapest".
+    A listing without a seller name stays on its own. The trade site's entry remembers the count for the cards."""
+    out, by = [], {}
+    for r in rich:
+        who = r.get("seller") or ""
+        n = int(r.get("times") or 1)                  # (already put together once: its count carries over)
+        if who and who in by:
+            by[who]["times"] += n
+            continue
+        r = dict(r, times=n)
+        if who:
+            by[who] = r
+        out.append(r)
+    for r in out:
+        e = RAW_LISTINGS.get(r.get("id"))
+        if e is not None:
+            e["_times"] = r["times"]
     return out
 
 
@@ -383,7 +435,7 @@ def verify_listings(rich, mods):
                     for r in rich[:2]:
                         f.write(f"a listing says: {r['mods']}\n")
             except Exception:
-                pass
+                buglog.caught()
         return list(rich), info
     return [r for r, v in zip(rich, verdict) if v != "bad"], info
 

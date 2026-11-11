@@ -1,9 +1,9 @@
-"""The gear price checker (1.41, Phase 3): turns any copied piece of gear (rings, amulets, belts, armour, weapons,
+"""The gear price checker (1.41, Phase 3): turns any copied piece of gear (rings, amulets, belts, armor, weapons,
 quivers, foci, charms, flasks ...) into a price-check record, and builds its trade-site searches.
 
 How a piece of gear is searched (the rules agreed in the roadmap doc):
-  - Armour pieces (gloves, boots, helmets, body armours, shields, bucklers, foci): searched by item category plus the
-    item's TOTAL Armour / Evasion / Energy Shield, worked out as if at 20% quality (or at its own quality if that is
+  - Armor pieces (gloves, boots, helmets, body armors, shields, bucklers, foci): searched by item category plus the
+    item's TOTAL Armor / Evasion / Energy Shield, worked out as if at 20% quality (or at its own quality if that is
     higher, i.e. exceptional). The mods that feed those totals (+# to maximum Energy Shield, % increased ES ...)
     are left out: they are already counted in the total.
   - Attack weapons: category plus physical / elemental DPS (same idea; the local damage and attack-speed mods that
@@ -14,7 +14,7 @@ How a piece of gear is searched (the rules agreed in the roadmap doc):
     resistance ...) when two or more mods feed it, so items with the same total but a different split also count.
   - Uniques: by name (their mods are fixed; tick one to search on its roll).
   - Uncorrupted items are compared with uncorrupted listings, corrupted with corrupted. Exceptional socket counts
-    (2 on gloves / boots / helmets, 3 on body armours) are required in the search.
+    (2 on gloves / boots / helmets, 3 on body armors) are required in the search.
 
 Priorities, per item (the side panel, same as tablets): ★ = must have (never dropped), ☑ = counts (may be dropped one
 or two at a time when too few listings are found), unticked = ignored. Totals start as ★.
@@ -25,7 +25,7 @@ import json
 import re
 import time
 
-from . import gamedata
+from . import buglog, gamedata
 from .config import BASE
 from .mods import merge_dups, norm, option_for, read_numbers, search_sid, roll_pct, strip_markup
 from .net import call
@@ -56,6 +56,25 @@ AFFIX_KINDS = ("Prefix", "Suffix", "Explicit")
 SKILL = re.compile(r"^Grants Skill:\s*(?:Level\s+\d+\s+)?(.+?)\s*$", re.I)
 
 
+_LOOSE = {"n": -1, "map": {}}
+
+
+def _loosen(k):
+    return re.sub(r"\s+", " ", re.sub(r"\+|\bto\b|\bincreased\b", " ", k)).strip()
+
+
+def _loose_id(k):
+    """A trade id whose wording matches once "+", "to" and "increased" are left out - only when exactly one does."""
+    from .trade import TEXT2SID
+    if _LOOSE["n"] != len(TEXT2SID):
+        m = {}
+        for key, sid in TEXT2SID.items():
+            m.setdefault(_loosen(key), set()).add(sid)
+        _LOOSE.update(n=len(TEXT2SID), map=m)
+    hits = _LOOSE["map"].get(_loosen(k)) or set()
+    return next(iter(hits)) if len(hits) == 1 else None
+
+
 def live_ids(text):
     """2.79.0: a mod the game data doesn't know -> its id on the trade site's own stat list (the daily download),
     trying the wording as it is, then a granted skill without its level. -> [id] or []."""
@@ -75,6 +94,9 @@ def live_ids(text):
         k = norm(t)
         if k in TEXT2SID:
             return [TEXT2SID[k]]
+    hit = _loose_id(norm(text))                       # 2.103.2 (feedback: "Monsters have +21% Critical Damage Bonus"
+    if hit:                                          # wasn't found): the wording without "+" / "to" / "increased"
+        return [hit]
     for n in names:                                  # 2.79.1: any granted-skill wording ending in the skill's name
         tail = norm(n)
         for k, v in TEXT2SID.items():
@@ -109,8 +131,6 @@ FILLER = {"#% increased Light Radius", "# to # Physical Thorns damage", "# to # 
           "#% increased Knockback Distance", "Recover #% of maximum Life on Kill", "Recover #% of maximum Mana on Kill"}
 LOW_TIER = 6                 # 2.72.0: an affix of tier 6 or lower (T6, T7 ...) rarely adds to a rare's price
 GOOD_ROLL = 0.75             # 2.72.0: a unique's mod rolled in the top quarter of its range is searched on
-CRAFT_ILVL = 75              # 2.72.0: a normal / magic base this high is a crafting base: searched at its item level
-MAX_ILVL = 82                # (no mod needs more than this - a higher item level is worth the same)
 
 
 def is_gear(g):
@@ -123,7 +143,7 @@ def is_gear(g):
 
 
 def _q20(value, quality):
-    """A defence / damage value as it would be at 20% quality (or at the item's own quality if that is higher)."""
+    """A defense / damage value as it would be at 20% quality (or at the item's own quality if that is higher)."""
     q = quality or 0
     return value / (1 + q / 100) * (1 + max(20, q) / 100)
 
@@ -244,10 +264,85 @@ def _merge_same_stat(mods, refs_of):
         del refs_of[i]
 
 
+# 2.114.0 (feedback: "the 5 types of wombgifts ... they do exist" on the trade site): currency-like items that the
+# bulk exchange doesn't trade but the trade site lists as items - searched by their type alone, like the site's own
+# search for one ({"type": "Ornate Wombgift"}).
+TYPE_ONLY_CLASSES = ("Wombgifts",)
+
+
+def type_only_item(g):
+    """A read_item() result of a TYPE_ONLY_CLASSES item -> a price-check item searched by its type, or None.
+    2.121.0 (items pass): also any kind of item the app doesn't know at all (a new item class) whose name is on the
+    trade site's own item list - searched by its type rather than "can't be price checked"."""
+    if not g or not g.get("name"):
+        return None
+    known_type = (not g.get("class") and g.get("rarity") in ("Currency", "Normal")
+                  and g["name"] in gamedata.TRADE_ITEMS["bases"])
+    if not known_type and (g.get("rarity") != "Currency" or g.get("class_text") not in TYPE_ONLY_CLASSES):
+        return None
+    search = {"category": None, "type": g["name"], "name": None, "rarity": None, "corrupted": False,
+              "sockets_min": None}
+    return {"class": g["class_text"], "gear": True, "gclass": None, "rarity": "Currency", "name": g["name"],
+            "base": g["name"], "mods": [], "uses": None, "corrupted": False, "quality": 0, "sockets": 0,
+            "ilvl": g.get("ilvl"), "group_id": None, "search": search,
+            "notes": ["searched by its type on the trade site" + (" (a kind of item the app doesn't know yet)"
+                                                                  if known_type else "")]}
+
+
+GEM_CLASSES = ("Skill Gems", "Support Gems", "Spirit Gems", "Meta Gems")
+
+
+def gem_type(name):
+    """A gem's name as the trade site spells it ("Fragments Of The Past" read off a book -> "Fragments of the Past"),
+    from its own item list when it's loaded; else as given."""
+    n = (name or "").strip()
+    bases = gamedata.TRADE_ITEMS.get("bases") or set()
+    if n in bases or not bases:
+        return n
+    low = n.casefold()
+    return next((b for b in bases if b.casefold() == low), n)
+
+
+def gem_search(name, level=None, sockets=None, quality=0, corrupted=False):
+    """2.130.0: the trade search plan for a gem - its name, at least its level, its sockets (the 2 a gem comes with:
+    exactly 2; more: at least that many), its quality (none: no quality; some: at least that much)."""
+    return {"category": None, "type": gem_type(name), "name": None, "rarity": None, "corrupted": bool(corrupted),
+            "sockets_min": None, "gem": {"level": level, "sockets": sockets, "quality": quality or 0}}
+
+
+def gem_item(g, text):
+    """2.130.0 (feedback: "the price checker is currently unable to price skill/spirit gems"): a copied skill,
+    support or spirit gem -> a price-check item searched as the trade site's gem filters do (level, sockets,
+    quality, corrupted), or None."""
+    if not g or g.get("rarity") != "Gem" or g.get("class_text") not in GEM_CLASSES or not g.get("name"):
+        return None
+    from .wealth import parse_currency_item
+    if parse_currency_item(text):                            # (a lineage gem: poe.ninja's exchange prices it)
+        return None
+    lv = re.search(r"^Level:\s*(\d+)", text or "", re.M)
+    sk = re.search(r"^Sockets:\s*(.+)$", text or "", re.M)
+    level = int(lv.group(1)) if lv else None
+    sockets = len(sk.group(1).split()) if sk else 0
+    q = int(g.get("quality") or 0)
+    s = gem_search(g["name"], level, sockets, q, g.get("corrupted"))
+    bits = [f"level {level}+" if level else None, f"{sockets} sockets" if sockets <= 2 else f"{sockets}+ sockets",
+            f"{q}%+ quality" if q else "no quality", "corrupted" if g.get("corrupted") else "not corrupted"]
+    return {"class": g["class_text"], "gear": True, "gclass": None, "rarity": "Gem", "name": g["name"],
+            "base": g["name"], "mods": [], "uses": None, "corrupted": bool(g.get("corrupted")), "quality": q,
+            "sockets": sockets, "ilvl": None, "group_id": None, "search": s,
+            "notes": ["searched as a gem: " + ", ".join(b for b in bits if b)]}
+
+
 def parse_gear(text):
     """A copied piece of gear -> a price-check item (same shape as a tablet / jewel item, plus "gear": True and the
     search plan), or None if it isn't gear."""
     g = gamedata.read_item(text)
+    gi = gem_item(g, text)                                   # 2.130.0: skill / support / spirit gems
+    if gi:
+        return gi
+    t = type_only_item(g)
+    if t:
+        return t
     if not is_gear(g):
         return None
     cls = g["class"]
@@ -321,7 +416,12 @@ def parse_gear(text):
                 m["covered"] = ("uniques are searched by name" + (f" - this roll is {r:.0%} of its range" if r is not None
                                                                    else "") + " (tick it to search on its roll too)")
         elif kind in AFFIX_KINDS and stat and g["rarity"] in ("Magic", "Rare"):     # 2.72.0: what buyers pay for
-            if stat["ref"] in FILLER:
+            if "modifier magnitudes" in stat["ref"].lower():
+                # 2.120.1 (feedback): "#% increased Explicit Resistance Modifier magnitudes" (a crafted line) - what
+                # it adds is already in the mods' own numbers, which are searched; asking for it too only hid listings
+                m["auto"] = "ignore"
+                m["note"] = "its effect is already in the other mods' numbers - not searched (tick it to search on it)"
+            elif stat["ref"] in FILLER:
                 m["auto"] = "ignore"
                 m["note"] = "rarely adds to a rare's price - not searched (tick it to search on it)"
             elif str(gm.get("tier") or "").isdigit() and int(gm["tier"]) >= LOW_TIER:
@@ -412,6 +512,19 @@ def parse_gear(text):
               "corrupted": bool(g.get("corrupted")), "sockets_min": None}
     if unique:
         search.update(name=g["name"], type=g["base"], rarity="unique", category=None)
+        known = gamedata.trade_knows_unique(g["name"])
+        if known is False and g["name"] and g["name"] != g["base"] and "unidentified" not in g.get("flags", []):
+            # 2.121.0 (items pass): a unique the trade site doesn't list (yet) - its name would be refused
+            # ("unknown item name"); any unique on its base instead
+            search["name"] = None
+            notes.append(f"{g['name']} isn't on the trade site's list yet: any unique on this base")
+        elif "unidentified" in g.get("flags", []) or not g["name"] or g["name"] == g["base"]:
+            # 2.120.0 (feedback: "unknown item name"): unidentified, a unique shows only its base - that's not a
+            # unique's name. The one unique on that base by name; with several (or none known), any unique on it.
+            on = gamedata.uniques_on(g["base"])
+            search["name"] = on[0] if len(on) == 1 else None
+            notes.append("unidentified: " + (f"searched as {on[0]} (the only unique on this base)" if len(on) == 1
+                                             else "any unique on this base" + (f" ({', '.join(on)})" if on else "")))
         rolls = [m["roll"] for m in mods if m["roll"] is not None and m["kind"] in AFFIX_KINDS]
         if rolls:                                           # 2.72.0: how well its rolls came out, on the whole
             avg = sum(rolls) / len(rolls)
@@ -421,11 +534,15 @@ def parse_gear(text):
         search.update(type=g["base"], category=None)        # its own market (and anything without totals to compare on)
     if g["rarity"] in ("Normal", "Magic"):              # 2.79.0 (feedback): white and blue bases - the exact item
         white = g["rarity"] == "Normal"                 # level, Normal / Magic, not corrupted, fractured or
+        lv = g.get("ilvl")                              # sanctified; its quality and sockets (at least) when it has
+        top = bool(lv and lv >= ILVL_TOP)               # them. 2.131.4: 82 and up all roll the same - 82+
         search.update(type=g["base"], category=None, rarity="normal" if white else "magic", corrupted=False,
-                      fractured=False, sanctified=False, ilvl_min=g.get("ilvl"), ilvl_max=g.get("ilvl"),
-                      quality_min=q or None, sockets_min=g.get("sockets") or None)   # sanctified; its quality and
-        notes.append(("white" if white else "magic") + " base: " + ", ".join(    # sockets (at least) when it has them
-            x for x in (f"item level {g['ilvl']}" if g.get("ilvl") else "", f"{q}%+ quality" if q else "",
+                      fractured=False, sanctified=False, ilvl_min=ILVL_TOP if top else lv,
+                      ilvl_max=None if top else lv, base_exact=True,
+                      quality_min=q or None, sockets_min=g.get("sockets") or None)
+        notes.append(("white" if white else "magic") + " base: " + ", ".join(
+            x for x in (f"item level {ILVL_TOP}+ (82 and up roll the same)" if top else
+                        f"item level {lv}" if lv else "", f"{q}%+ quality" if q else "",
                         f"{g['sockets']}+ sockets" if g.get("sockets") else "",
                         "not corrupted, fractured or sanctified") if x))
     need = EXCEPTIONAL_SOCKETS.get(cls)
@@ -444,22 +561,28 @@ def parse_gear(text):
     return {"class": cinfo.get("name") or g.get("class_text") or "Gear", "gear": True, "gclass": cls,
             "rarity": g["rarity"], "name": g["name"] or g["base"], "base": g["base"], "mods": totals + mods,
             "uses": None, "corrupted": bool(g.get("corrupted")), "quality": q, "sockets": g.get("sockets", 0),
+            "socket_types": g.get("socket_types") or "",              # 2.125.5: S augment, J jewel (the card says)
             "ilvl": g.get("ilvl"), "group_id": g.get("group"), "search": search, "notes": notes}
 
+
+ILVL_TOP = 82            # 2.131.4 (feedback: "any ilvl above 82 doesn't matter ... always search at ilvl 82 min")
 
 def base_ladder(item):
     """2.99.0: a white / blue base's searches, exact first, each a little wider: [(label, item with that search)].
     [] for anything else. Exact item level + quality -> item level or higher -> 21%+ quality (still exceptional) ->
     any quality."""
     s = item.get("search") or {}
-    if item.get("rarity") not in ("Normal", "Magic") or not s.get("ilvl_max"):
+    if item.get("rarity") not in ("Normal", "Magic") or not (s.get("ilvl_max") or s.get("base_exact")):
         return []
     lv, q = s.get("ilvl_min"), s.get("quality_min")
 
     def var(**kw):
         return dict(item, search=dict(s, **kw))
-    out = [(f"item level {lv}" + (f", {q}%+ quality" if q else ""), item),
-           (f"item level {lv}+" + (f", {q}%+ quality" if q else ""), var(ilvl_max=None))]
+    if s.get("ilvl_max"):
+        out = [(f"item level {lv}" + (f", {q}%+ quality" if q else ""), item),
+               (f"item level {lv}+" + (f", {q}%+ quality" if q else ""), var(ilvl_max=None))]
+    else:                                                   # 2.131.4: 82+ (or no item level) is already the widest
+        out = [((f"item level {lv}+" if lv else "the base") + (f", {q}%+ quality" if q else ""), item)]
     if q and q > 21:
         out.append((f"item level {lv}+, 21%+ quality (exceptional)", var(ilvl_max=None, quality_min=21)))
     if q:
@@ -504,8 +627,10 @@ def build_query(item, must, optional, count_min, values, plain=False):
     eq, mp = {}, {}
     if item.get("waystone") and item.get("tier") is not None:
         mp["map_tier"] = {"min": item["tier"], "max": item["tier"]}     # 2.10.0: same tier only
-    and_f = []
-    for m in must:
+    if optional and count_min >= len(optional):         # 2.105.0 (feedback: an amulet's exact search found listings
+        must, optional = list(must) + list(optional), []   # without its +186 Mana): every mod must match, like ★ mods -
+    and_f = []                                          # a count over each mod's several ids (fractured, desecrated
+    for m in must:                                      # ...) let one mod count two or three times
         v = values.get(id(m))
         if m["sid"].startswith("equip:"):
             if v:
@@ -518,13 +643,13 @@ def build_query(item, must, optional, count_min, values, plain=False):
         ids = _ids(m, plain)
         if len(ids) > 1:                                     # same wording under several ids: any one of them
             query["stats"].append({"type": "count", "value": {"min": 1}, "filters": [_stat_filter({"sid": i}, v) for i in ids]})
-        else:
-            and_f.append(_stat_filter(m, v))
+        else:                                                # (2.105.0: its own id - "fractured only" too)
+            and_f.append(dict(_stat_filter(m, v), id=ids[0]))
     and_f = merge_dups(and_f)                                # 2.79.1: two Legacy of Quicksilver -> one, Min 2
     if and_f or not query["stats"]:
         query["stats"].insert(0, {"type": "and", "filters": and_f})
-    if optional:
-        opt = merge_dups([_stat_filter({"sid": i}, values.get(id(m))) for m in optional for i in _ids(m, plain)])
+    if optional:                                      # "all but N": one id per mod, so each counts once
+        opt = merge_dups([_stat_filter({"sid": _ids(m, plain)[0]}, values.get(id(m))) for m in optional])
         query["stats"].append({"type": "count", "value": {"min": count_min}, "filters": opt})
     if s.get("sockets_min") and not plain:
         eq["rune_sockets"] = {"min": s["sockets_min"]}
@@ -532,7 +657,10 @@ def build_query(item, must, optional, count_min, values, plain=False):
         filters["equipment_filters"] = {"filters": eq}
     if mp:
         filters["map_filters"] = {"filters": mp}
-    filters["misc_filters"] = {"filters": {"corrupted": {"option": "true" if s.get("corrupted") else "false"}}}
+    if item.get("rarity") != "Currency":                      # (2.114.0: a Wombgift: its type only)
+        filters["misc_filters"] = {"filters": {"corrupted": {"option": "true" if s.get("corrupted") else "false"}}}
+    else:
+        filters["misc_filters"] = {"filters": {}}
     for k, name in (("fractured", "fractured_item"), ("sanctified", "sanctified")):     # 2.79.0: white / blue bases
         if s.get(k) is False:
             filters["misc_filters"]["filters"][name] = {"option": "false"}
@@ -541,6 +669,16 @@ def build_query(item, must, optional, count_min, values, plain=False):
             k: v for k, v in (("min", s["ilvl_min"]), ("max", s.get("ilvl_max"))) if v}
     if s.get("quality_min"):                                  # 2.79.0: white bases
         filters.setdefault("type_filters", {"filters": {}})["filters"]["quality"] = {"min": s["quality_min"]}
+    gem = s.get("gem")
+    if gem:                                                   # 2.130.0: a gem (as the trade site's own gem filters)
+        mf = filters.setdefault("misc_filters", {"filters": {}})["filters"]
+        if gem.get("level"):
+            mf["gem_level"] = {"min": gem["level"]}
+        n = gem.get("sockets")
+        if n:
+            mf["gem_sockets"] = {"min": n, "max": n} if n <= 2 else {"min": n}
+        q = gem.get("quality") or 0
+        filters.setdefault("type_filters", {"filters": {}})["filters"]["quality"] = {"min": q} if q else {"max": 0}
     if api_age:
         filters["trade_filters"] = {"filters": {"indexed": {"option": api_age}}}
     query["filters"] = filters
@@ -554,6 +692,8 @@ def run_search(league, query):
     if hit is None:
         res = call("POST", f"{BASE}/search/poe2/{league}", json={"query": query, "sort": {"price": "asc"}})
         hit = (res.get("total", 0), res.get("result", [])[:10], res.get("id"))
+        from .trade import MORE_IDS                   # 2.113.0: listings 11-20, for more sellers (collapse)
+        MORE_IDS[res.get("id")] = list(res.get("result", [])[10:20])
         _search_cache[key] = (time.time(), hit)
     return hit
 

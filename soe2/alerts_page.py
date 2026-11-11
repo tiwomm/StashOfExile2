@@ -6,36 +6,41 @@ Breach: the game writes its Hiveblood warnings to its own log, Client.txt (seen 
     : <brequelwarning>{Cannot store any more Hiveblood! Go to the Genesis Tree to consume it.}
 Both are easy to miss in the middle of a Breach. This follows Client.txt (only new lines, about once a second - the
 same way the Session tracker does) and shows a banner over the game: an "almost full" one, and a stronger "full"
-one. Nothing is read from the game itself and no keys are sent. A banner looks like the Delirium alert's END DELIRIUM (2.12.1): big flashing text over the game,
+one. Nothing is read from the game itself and no keys are sent. 2.131.0: every alert is the alert card (alertcard.py) - before, a banner was big flashing text over the game,
 no box; clicks go through it. It goes after a few seconds, or as soon as you open the Genesis Tree.
 
-Remnant (2.37.0): the Expedition Remnant Price Checker (remnant.py / remnant_page.py) - a key, not a watcher.
+Remnant (2.37.0): the Expedition Remnant Price Checker (remnant.py / remnant_page.py) - a screen watcher.
 
-Delirium: the helper (utilities.DELIRIUM, delirium_runner.py) looks at your screen; its END DELIRIUM banner is its own.
+Delirium: the helper (utilities.DELIRIUM, delirium_runner.py) looks at your screen; 2.131.6: its "state alert" brings the alert card.
 This panel only starts / stops it, sets its sound and tests it. Its splinter icon is gone (2.10.0)."""
+import os
 import sys
 import time
 import tkinter as tk
 from tkinter import ttk
 
-from .config import save_json, SETTINGS
+from . import buglog
+from .config import P, save_json, SETTINGS
 from .gamelog import area_kind as gl_area_kind, find_log, LogReader
 from .style import C, Tooltip
 
 REPEAT_SECS = 45          # the game repeats a warning (twice in 2 s, then every ~15 s when full): one banner per level
 RETRY_TICKS = 15          # Client.txt not found: look again every this many seconds
 LEVELS = {
-    "almost": ("HIVEBLOOD ALMOST FULL", "Spend it at the Genesis Tree  ·  click to close", "#2a0d10", "#ff3df0"),
-    "full": ("CANNOT STORE ANY MORE HIVEBLOOD!", "Go to the Genesis Tree to consume it  ·  click to close", "#3a0606",
-             "#ff2a2a"),
+    # 2.131.0 (feedback: "a more elegant solution than just giant bold flashing letters"): the alert card's title,
+    # its detail line, its mark and its color (alertcard.py)
+    "almost": ("Hiveblood almost full", "Spend it at the Genesis Tree", "!", "#d86bd0"),
+    "full": ("Hiveblood is full", "Go to the Genesis Tree to consume it", "!", "#ff5a5a"),
     # 2.11.0: you left a map after the game warned and haven't opened the Genesis Tree since
-    "ritual": ("RITUALS NOT DONE", "Go back through your portal", "#2a0606", "#ff4a4a"),      # 2.14.0
-    "leave": ("SPEND YOUR HIVEBLOOD", "It was almost full when you left the map: visit the Genesis Tree  ·  click to "
-                                      "close", "#2a1a06", "#ffb347"),
+    "ritual": ("Rituals not done", "Go back through your portal", "!", "#ff6a5a"),      # 2.14.0
+    "tribute": ("Offer your tribute", "Tribute left - offer it to the King", "!", "#ffb347"),   # 2.129.0
+    "leave": ("Spend your Hiveblood", "It was almost full when you left the map: visit the Genesis Tree", "!",
+              "#ffb347"),
 }
 DOT = {"on": "#5ee08a", "off": "#6b7690", "warn": "#ffb347"}
 TRANSPARENT = "#010203"
-BANNER_SECS = {"almost": 8, "full": 10, "leave": 8, "ritual": 8}       # 2.12.1: then it goes by itself (like END DELIRIUM)
+# 2.12.1: then it goes by itself (like END DELIRIUM). 2.129.1 (feedback: the tribute one stayed too long): 4 s
+BANNER_SECS = {"almost": 8, "full": 10, "leave": 8, "ritual": 8, "tribute": 4}
 
 
 def _hwnd(win):
@@ -58,7 +63,7 @@ def click_through(win):
         h = _hwnd(win)
         u.SetWindowLongW(h, -20, u.GetWindowLongW(h, -20) | 0x80000 | 0x20 | 0x80 | 0x08000000)
     except Exception:
-        pass
+        buglog.caught()
 
 
 def force_topmost(win):
@@ -71,7 +76,7 @@ def force_topmost(win):
                                    ctypes.c_int, ctypes.c_uint]
         u.SetWindowPos(_hwnd(win), ctypes.c_void_p(-1), 0, 0, 0, 0, 0x1 | 0x2 | 0x10)
     except Exception:
-        pass
+        buglog.caught()
 
 
 def game_rect(title="Path of Exile 2"):
@@ -112,13 +117,29 @@ def breach_level(text):
     return "full" if "cannot store" in t or "any more" in t else "almost"
 
 
+# 2.119.0 (UX pass): what each helper does, in one line - under its name on Helpers, and (2.124.0) the tip on its
+# Quick settings chip
+HELPER_BLURBS = {"delirium": "An End Delirium card when a map ends with Delirium still on",
+                 "breach": "Warns when your stored Hiveblood is almost full",
+                 "ritual": "Counts rituals done; reminds you if you leave early",
+                 "remnant": "Prices each reward in a remnant's book",
+                 "focus": "Your current goal on the bar, a nudge in town",
+                 "campaign": "Where you are in the campaign and what's next",
+                 "whispers": "A card when someone wants to buy your item",
+                 "desecrate": "Each Well of Souls option's tier",
+                 "topup": "Says what's running low when you open your inventory in a hideout or town",   # 2.131.1
+                 "breaks": "An alert card after a long stretch of play, in a hideout or town",
+                 "mapprofit": "What each map earned, from your inventory - on your PC only",          # 2.132.1
+                 "temple": "Your crystals on the bar, and a card when they're full"}
+
+
 class AlertsPage:
     """Mixed into App."""
 
     # ================================================================ settings
     def breach_cfg(self):
         c = SETTINGS.setdefault("breach_alert", {})
-        c.setdefault("on", False)
+        c.setdefault("on", True)     # 2.118.0: on by default (a new install; yours is kept)
         c.setdefault("sound", True)
         c.setdefault("leave_reminder", True)       # 2.11.0
         c.setdefault("pending", None)              # 2.11.0: "almost" / "full" since the last warning, until the tree
@@ -127,130 +148,287 @@ class AlertsPage:
     def ritual_cfg(self):
         """2.14.0: the Ritual watcher (ritual_alert.py, its own helper process)."""
         c = SETTINGS.setdefault("ritual_alert", {})
-        c.setdefault("on", False)
+        c.setdefault("on", True)     # 2.118.0: on by default (a new install; yours is kept)
         c.setdefault("sound", True)
         c.setdefault("leave_reminder", True)
+        c.setdefault("readout", True)               # 2.118.0: the Ritual line above the overlay's bar (On screen)
         return c
+
+    def ritual_readout(self):
+        """2.118.0 (feedback: show the Ritual count and your tribute on screen, with a switch): the text of the Ritual
+        line over the game - "2 of 4 rituals done · 1,240 tribute" - while a map's Ritual counter has been seen, or
+        "" (no line). The count used to ride on the bar's Ritual switch, which is gone."""
+        c = self.ritual_cfg()
+        if not (c.get("on") and c.get("readout", True)):
+            return ""
+        from .utilities import RITUAL
+        count = RITUAL.count if RITUAL.seen == "ok" and RITUAL.count else None
+        if count is None and getattr(self, "br_area", None) == "map":
+            count = getattr(self, "rt_map", None)
+        done_map = getattr(self, "rt_done", False) and getattr(self, "br_area", None) == "map"
+        if done_map and count and count[0] < count[1]:
+            count = (count[1], count[1])
+        if count:
+            d, t = count
+            txt = f"{d} of {t} rituals done" + (" ✔" if d >= t else "")
+        elif done_map:
+            txt = "All rituals done ✔"
+        else:
+            return ""
+        tribute = getattr(RITUAL, "tribute", None)                 # 2.131.5: from the game's counter
+        if tribute is not None:
+            txt += f"  ·  {int(tribute):,} tribute"
+        return txt
+
+    def ritual_readout_sync(self):
+        """The line comes and goes with the count; while it shows, its text follows."""
+        try:
+            txt = self.ritual_readout()
+            shown = "ritual" in (getattr(self, "goal_rows", None) or []) and getattr(self, "gb_cv", None) is not None
+            if bool(txt) != shown:
+                if getattr(self, "mg_win", None) is not None:
+                    self.goalbar_build()
+            elif txt:
+                lab = (getattr(self, "tk_ov_lbls", None) or {}).get("ritual")
+                if lab is not None and lab.cget("text") != txt:
+                    lab.config(text=txt)
+        except Exception:
+            buglog.caught()
+
+    def ritual_readout_changed(self, on):
+        self.ritual_cfg()["readout"] = bool(on)
+        save_json("settings.json", SETTINGS)
+        self.ritual_readout_sync()
 
     def log_wanted(self):
         """Client.txt is followed while Breach or Ritual needs it (Ritual: to know when you leave a map)."""
         from . import whispers as _W
         return bool(self.breach_cfg().get("on") or self.ritual_cfg().get("on") or self.ws_cfg().get("on")
                     or self.remnant_cfg().get("on") or _W.cfg()["on"]
-                    or (hasattr(self, "fl_counting") and self.fl_counting()))     # 2.45.0: the Strat Tracker's runs
+                    or (hasattr(self, "fl_counting") and self.fl_counting())      # 2.45.0: the Strat Tracker's runs
+                    or bool(SETTINGS.get("topup", {}).get("on"))                  # 2.131.0: Top Up (hideout / town)
+                    or bool(SETTINGS.get("map_profit", {}).get("on"))             # 2.132.0: Map profit (maps)
+                    or bool(SETTINGS.get("temple", {}).get("on")))                # 2.132.1: the Temple Helper (maps)
 
     def alerts_init(self):
         """At start-up (start_utilities): the Breach watcher runs whether or not the tracker window was opened."""
         if getattr(self, "_alerts_ready", False):
             return
         self._alerts_ready = True
+        try:
+            from .utilities import DELIRIUM                 # 2.131.6: END DELIRIUM is an alert card too
+            DELIRIUM.on_state = lambda s: self.ui_q.put(("delirium_state", s))
+        except Exception:
+            buglog.caught()
         self.br_reader, self.br_last, self.br_win, self.br_level = None, {}, None, None
         self.br_ticks, self._br_ticking, self.br_note = 0, False, ""
         self.br_area = None                        # 2.11.0: "map" / "hideout" / "town" / "other" - where you are
         self.rt_map = None                         # 2.14.0: the last Ritual count seen in this map (done, total)
+        self.rt_done = False                       # 2.129.3: Map Content's Ritual icon is ticked
         if self.log_wanted():
             self.root.after(1500, self.breach_start)
         if self.ritual_cfg().get("on"):
             self.root.after(2500, self.ritual_start)
         if self.remnant_cfg().get("on"):                 # 2.37.0: the Remnant Auto watcher
             self.root.after(3000, self.remnant_auto_sync)
+        self.root.after(3500, self.topup_start)          # 2.131.0: Top Up Reminders (only when on)
+        self.root.after(3000, self.topup_take_supplies)  # 2.131.2: League Plan's Map supplies move here (once)
 
     # ================================================================ the panel (Session tracker, main page)
     def build_alerts_panel(self, parent):
+        """2.112.0 (rework): one row per helper, the same columns for all - on / off, the name with what it's doing
+        now, its own options (chips), Remind, and Test / Open (2.118.0: no On bar - the bar has no helper switches). Grouped: In maps, Play, Trading & more. One
+        Sound switch for every helper sits at the top."""
         self.alerts_init()
         P2 = C["panel2"]
         box = tk.Frame(parent, bg=P2, padx=12, pady=8, highlightthickness=1, highlightbackground=C["line"])
-        # 2.96.1: no "Mechanic Helper bar" switch - each helper has its own "Switch on the bar" on its row
-        self.al_bar = tk.BooleanVar(value=True)
-        CB = "Card.TCheckbutton"                        # (2.96.1: the card's own background - no black boxes)
+        CB = "Card.TCheckbutton"
         self.al_rows = {}
-        for key, name, what, test in (
-                ("delirium", "Delirium", "END DELIRIUM when you finish a map with Delirium still on (reads your screen)",
-                 self.alerts_test_delirium),
-                ("breach", "Breach", "a banner when your stored Hiveblood is almost full, and when it's full "
-                                     "(reads Client.txt)", lambda: self.breach_alert(test=True)),
-                ("ritual", "Ritual", "reads the Ritual counter (0/3 ...) from your screen; reminds you if you leave a "
-                                     "map after starting its rituals but not finishing them", self.alerts_test_ritual),
-                ("remnant", "Expedition", "Expedition Remnant Price Checker: each reward in a remnant's book gets its "
-                                          "poe.ninja price, by itself (Auto) or with its key", self.alerts_test_remnant),
-                # 2.90.0: League Focus and the Campaign Helper sit with the others (one place for every helper)
-                ("focus", "Focus", "League Focus: your current league goal on the bar, and a short poke in town now "
-                                   "and then (Overlay ↳ Game Plan)", lambda: self.ov_intro_setup("focus")),
-                ("campaign", "Campaign", "Campaign Helper: where you are in the campaign, what's next and what it's "
-                                         "worth (reads Client.txt)", lambda: self.camp_route_show()),
-                # 2.98.1: Trade Whisper Watcher - at league start your items sell by whisper; don't miss one
-                ("whispers", "Trade whispers", "Trade Whisper Watcher: a card over the game when someone whispers to buy "
-                                               "an item you listed - easy to miss in chat while you run the campaign "
-                                               "(reads Client.txt; nothing is saved)", lambda: self.ww_show_test()),
-                ("desecrate", "Desecration (Beta)", "Desecration Helper (Beta): at The Well of Souls each revealed "
-                                                    "option shows its tier (T1 = best for that item type) - on only "
-                                                    "while you're there (reads Client.txt, then your screen)",
-                 self.alerts_test_desecrate)):
-            row = tk.Frame(box, bg=P2)
-            row.pack(fill="x", pady=(8, 0))
-            dot = tk.Label(row, text="●", bg=P2, fg=DOT["off"], font=("Segoe UI", 10))
-            dot.pack(side="left")
-            on = tk.BooleanVar(value=False)
-            nb = ttk.Checkbutton(row, text=name, variable=on, width=18 if key == "desecrate" else 12, style=CB,
-                                 command=lambda k=key: self.alerts_toggle(k))
-            nb.pack(side="left", padx=(4, 0))
-            Tooltip(nb, what)                       # 2.37.0: what it does - the line under a row shows only while on
-            snd = tk.BooleanVar(value=True)
-            if key not in ("remnant", "desecrate", "focus", "campaign"):   # 2.39.0: no sound for these
-                ttk.Checkbutton(row, text="Sound", variable=snd, style=CB,
-                                command=lambda k=key: self.alerts_sound(k)).pack(side="left")
-            ttk.Button(row, text="Open" if key in ("focus", "campaign") else "Test", command=test, width=6).pack(side="right")
-            if key == "breach":                    # 2.11.0
-                self.al_leave = tk.BooleanVar(value=bool(self.breach_cfg().get("leave_reminder", True)))
-                ttk.Checkbutton(row, text="Remind me when I leave the map", variable=self.al_leave, style=CB,
-                                command=self.alerts_leave_changed).pack(side="left", padx=(4, 0))
-            if key == "remnant":                   # 2.37.0: Auto - the list is found and priced by itself
-                self.al_rauto = tk.BooleanVar(value=bool(self.remnant_cfg().get("auto")))
-                ab = ttk.Checkbutton(row, text="Auto (no key needed)", variable=self.al_rauto, style=CB,
-                                     command=lambda: self.remnant_auto_changed(self.al_rauto.get()))
-                ab.pack(side="left", padx=(4, 0))
-                self.al_rru = tk.BooleanVar(value=bool(self.remnant_cfg().get("rumours", True)))   # 2.83.0
-                rb_ = ttk.Checkbutton(row, text="Island rumours (in your hideout)", variable=self.al_rru, style=CB,
-                                      command=lambda: self.ru_changed(self.al_rru.get()))
-                rb_.pack(side="left", padx=(4, 0))
-                Tooltip(rb_, "On the world map's Uncharted Waters card, each rumour gets the island it leads to and "
-                             "your Map library rank for it. Only in your hideout.")
-                self.al_rtips = tk.BooleanVar(value=bool(self.remnant_cfg().get("tips", True)))      # 2.40.0
-                tb_ = ttk.Checkbutton(row, text="Runeshape tips", variable=self.al_rtips, style=CB,
-                                      command=lambda: self.remnant_tips_changed(self.al_rtips.get()))
-                tb_.pack(side="left", padx=(4, 0))
-                Tooltip(tb_, "A small list next to the prices: the runeshapes players rate best for loot (S and A "
-                             "tier). It shows and goes with the prices.")
-                Tooltip(ab, "Prices show by themselves when a remnant's reward book opens: the app watches the spot "
-                            "where it opens (scaled to your resolution, like the Delirium watcher) - no box to draw. "
-                            "Off: only the key prices it.")
-            if key == "whispers":                  # 2.98.1: on during the campaign; this keeps it on after
-                from . import whispers as _W
-                self.al_wafter = tk.BooleanVar(value=bool(_W.cfg()["after"]))
-                wa = ttk.Checkbutton(row, text="Keep on after the campaign", variable=self.al_wafter, style=CB,
-                                     command=self.ww_after_changed)
-                wa.pack(side="left", padx=(4, 0))
-                Tooltip(wa, "Off: it watches only while your character is in the campaign (league start, before maps "
-                            "and the Currency Exchange). On: always.")
-            if key == "ritual":                    # 2.14.0
-                self.al_rleave = tk.BooleanVar(value=bool(self.ritual_cfg().get("leave_reminder", True)))
-                ttk.Checkbutton(row, text="Remind me when I leave the map", variable=self.al_rleave, style=CB,
-                                command=self.alerts_ritual_leave_changed).pack(side="left", padx=(4, 0))
-            # (2.97.0: no "Its line above the bar" - Focus / Campaign on = its line shows; both on = one bar, two rows)
-            bv = (getattr(self, "tk_bar_vars", None) or {}).get(key)
-            if bv is not None:                     # 2.96.1: its switch on the bar, here (was a list in On the bar)
-                sb_ = ttk.Checkbutton(row, text="Switch on the bar", variable=bv, style=CB, command=self.tracker_bar_switch)
-                sb_.pack(side="left", padx=(4, 0))
-                if hasattr(self, "tk_ov_switches"):
-                    self.tk_ov_switches["bar:" + name.split(" (")[0]] = sb_
-            st = tk.Label(box, text=what, bg=P2, fg=C["muted"], anchor="w", justify="left", font=("Segoe UI", 9))
-            st.pack(fill="x", padx=(24, 8))                   # 2.11.0: its own line, so it never gets cut off
-            st.bind("<Configure>", lambda e, l=st: l.config(wraplength=max(200, e.width - 10)))
-            self.al_rows[key] = {"dot": dot, "on": on, "sound": snd, "status": st, "what": what, "note": "", "row": row}
+        sm = ("Segoe UI", 9)
+        top = tk.Frame(box, bg=P2)
+        top.pack(fill="x")
+        # (2.119.0: "They only watch and show..." is the section's own intro - it was said twice)
+        self.al_sound_all = tk.BooleanVar(value=bool(SETTINGS.get("helpers_sound", True)))
+        ttk.Checkbutton(top, text="Sound", variable=self.al_sound_all, style=CB,
+                        command=self.alerts_sound_all).pack(side="right")
+        # 2.131.0: where the alert card shows and how big - one place for every helper's alert
+        from . import alertcard as _AC
+        acf = _AC.cfg()
+        tk.Label(top, text="Alerts show:", bg=P2, fg=C["text"], font=sm).pack(side="left")
+        wv = tk.StringVar(value=_AC.WHERE[acf["where"]])
+        wcb = ttk.Combobox(top, textvariable=wv, values=list(_AC.WHERE.values()), state="readonly", width=14)
+        wcb.pack(side="left", padx=(8, 0))
+        wcb.bind("<<ComboboxSelected>>", lambda _e: self.alert_card_set(
+            "where", next(k for k, v in _AC.WHERE.items() if v == wv.get())))
+        sv = tk.StringVar(value=_AC.SIZES[acf["size"]][0])
+        scb = ttk.Combobox(top, textvariable=sv, values=[v[0] for v in _AC.SIZES.values()], state="readonly", width=8)
+        scb.pack(side="left", padx=(8, 0))
+        scb.bind("<<ComboboxSelected>>", lambda _e: self.alert_card_set(
+            "size", next(k for k, v in _AC.SIZES.items() if v[0] == sv.get())))
+        tb = ttk.Button(top, text="Test", command=self.alert_card_test, width=6)
+        tb.pack(side="left", padx=(8, 0))
+        Tooltip(wcb, "Where every helper's alert card shows over the game.")
+        Tooltip(scb, "How big the alert card is.")
+        Tooltip(tb, "Shows a sample alert card over the game.")
+        self.al_card_where, self.al_card_size = wcb, scb
+        # 2.119.0 (UX pass): Client.txt not found - one banner here (it was the same red line on every helper)
+        ban = tk.Frame(box, bg=C["warn_bg"], padx=8, pady=8, highlightthickness=1, highlightbackground=C["red"])
+        tk.Label(ban, text="The game's log (Client.txt) wasn't found. Breach, Ritual, Campaign, Trade whispers and "
+                           "more need it.", bg=C["warn_bg"], fg=C["text"], font=sm, anchor="w", justify="left",
+                 wraplength=520).pack(side="left", fill="x", expand=True)
+        ttk.Button(ban, text="Find it…", command=self.tracker_pick_log).pack(side="right", padx=(8, 0))
+        self.al_log_banner, self.al_log_after = ban, top
+        tbl = tk.Frame(box, bg=P2)
+        tbl.pack(fill="x", pady=(8, 0))
+        self.al_table = tbl
+        tbl.grid_columnconfigure(1, minsize=300)
+        tbl.grid_columnconfigure(2, weight=1)
+        for c, t in ((1, "Helper"), (2, "Options"), (3, "Remind")):
+            tk.Label(tbl, text=t, bg=P2, fg=C["muted"], font=sm).grid(row=0, column=c, sticky="w" if c < 3 else "",
+                                                                       padx=(0, 12), pady=(0, 4))
+        r_ = [1]
+
+        def rule():
+            tk.Frame(tbl, bg=C["line"], height=1).grid(row=r_[0], column=0, columnspan=5, sticky="ew")
+            r_[0] += 1
+
+        def chip(parent, text, var, cmd, tip=None):
+            """An option of a helper: a small button, filled when on (as Money Makers' filters)."""
+            b = tk.Label(parent, text=text, font=sm, padx=8, pady=2, cursor="hand2", highlightthickness=1)
+
+            def paint(dim=None):
+                """Filled when on; while its helper is off, an outline only (it still switches)."""
+                if dim is not None:
+                    b.dim = dim
+                on, dim = bool(var.get()), getattr(b, "dim", False)
+                if on and not dim:
+                    b.config(bg=C["accent"], fg=C["bg"], highlightbackground=C["accent"])
+                else:
+                    b.config(bg=P2, fg=C["muted"] if dim else (C["accent"] if on else C["text"]),
+                             highlightbackground=C["accent"] if on else C["line"])
+
+            def flip(_e=None):
+                var.set(not var.get())
+                paint()
+                cmd()
+            b.bind("<Button-1>", flip)
+            b.paint = paint
+            b.var = var
+            paint()
+            if tip:
+                Tooltip(b, tip)
+            return b
+
+        self.al_chips = {}
+        what = {
+            "delirium": "An End Delirium card when you finish a map with Delirium still on (reads your screen)",
+            "breach": "a banner when your stored Hiveblood is almost full, and when it's full (reads Client.txt)",
+            "ritual": "reads the Ritual counter (0/3 ...) from your screen; reminds you if you leave a map after "
+                      "starting its rituals but not finishing them",
+            "remnant": "Expedition Remnant Price Checker: each reward in a remnant's book gets its poe.ninja price, by "
+                       "itself, beside the runeshapes players rate best for loot",
+            "focus": "League Plan: your current goal on the bar, and a short poke in town now and then "
+                     "(Overlay ↳ League Plan)",
+            "campaign": "Campaign Helper: where you are in the campaign, what's next and what it's worth (reads "
+                        "Client.txt)",
+            "whispers": "Trade Whisper Watcher: a card over the game when someone whispers to buy an item you listed - "
+                        "easy to miss in a busy chat (reads Client.txt; nothing is saved)",
+            "desecrate": "Desecration Helper (BETA): at The Well of Souls each revealed option shows its tier (T1 = best "
+                         "for that item type) - on only while you're there (reads Client.txt, then your screen)"}
+        tests = {"delirium": self.alerts_test_delirium, "breach": lambda: self.breach_alert(test=True),
+                 "ritual": self.alerts_test_ritual, "remnant": self.alerts_test_remnant,
+                 "focus": lambda: self.ov_intro_setup("focus"), "campaign": lambda: self.camp_route_show(),
+                 "whispers": lambda: self.ww_show_test(), "desecrate": self.alerts_test_desecrate}
+        names = {"delirium": "Delirium", "breach": "Breach", "ritual": "Ritual", "remnant": "Expedition",
+                 "focus": "League Plan", "campaign": "Campaign", "whispers": "Trade whispers",
+                 "desecrate": "Desecration (BETA)"}
+        # 2.119.0 (UX pass): what each one does, in one gray line under its name (it was only a tooltip)
+        blurb = HELPER_BLURBS
+        self.al_leave = tk.BooleanVar(value=bool(self.breach_cfg().get("leave_reminder", True)))
+        self.al_rleave = tk.BooleanVar(value=bool(self.ritual_cfg().get("leave_reminder", True)))
+        self.al_rshow = tk.BooleanVar(value=bool(self.ritual_cfg().get("readout", True)))
+        self.al_rfav = tk.BooleanVar(value=bool(self.ritual_cfg().setdefault("favours", True)))
+        self.al_rtrib = tk.BooleanVar(value=bool(self.ritual_cfg().setdefault("tribute_reminder", True)))
+        self.al_rru = tk.BooleanVar(value=bool(self.remnant_cfg().get("rumours", True)))
+        self.al_rtips = tk.BooleanVar(value=bool(self.remnant_cfg().get("tips", True)))
+        opts = {
+            "remnant": [("Island rumors", self.al_rru, lambda: self.ru_changed(self.al_rru.get()),
+                         "On the world map's Uncharted Waters card, each rumor gets the island it leads to and your "
+                         "Map Library rank for it. Only in your hideout."),
+                        ("Runeshape tips", self.al_rtips, lambda: self.remnant_tips_changed(self.al_rtips.get()),
+                         "A small list next to the prices: the runeshapes players rate best for loot (S and A tier).")],
+            "ritual": [("On screen", self.al_rshow, lambda: self.ritual_readout_changed(self.al_rshow.get()),
+                        "A line over the overlay's bar while you're in a map with Ritual: how many rituals are done and "
+                        "your tribute."),
+                       ("Favours prices", self.al_rfav, lambda: self.favours_changed(self.al_rfav.get()),
+                        "At a Ritual altar's Favours window: poe.ninja's price on each omen and other 1-cell reward. "
+                        "Price check one there (your price check key) and it learns its picture."),
+                       ("Tribute reminder", self.al_rtrib, self.alerts_tribute_changed,
+                        "Close the Favours window with tribute left: a reminder to offer it to "
+                        "the King.")]}
+        remind = {"breach": (self.al_leave, self.alerts_leave_changed),
+                  "ritual": (self.al_rleave, self.alerts_ritual_leave_changed)}
+        for group, keys in (("IN MAPS", ("breach", "delirium", "ritual", "remnant")), ("PLAY", ("campaign", "focus")),
+                            ("TRADING & MORE", ("whispers", "desecrate"))):
+            rule()
+            tk.Label(tbl, text=group, bg=P2, fg=C["muted"], font=("Segoe UI", 9, "bold")).grid(
+                row=r_[0], column=0, columnspan=5, sticky="w", pady=(8, 2))
+            r_[0] += 1
+            for key in keys:
+                rule()
+                r = r_[0]
+                on = tk.BooleanVar(value=False)
+                sw = ttk.Checkbutton(tbl, variable=on, style=CB, command=lambda k=key: self.alerts_toggle(k))
+                sw.grid(row=r, column=0, sticky="w", padx=(0, 12), pady=4)
+                cell = tk.Frame(tbl, bg=P2)
+                cell.grid(row=r, column=1, sticky="w", padx=(0, 12), pady=4)
+                nl = tk.Label(cell, text=names[key], bg=P2, fg=C["text"], font=("Segoe UI", 10, "bold"), anchor="w")
+                nl.pack(anchor="w")
+                Tooltip(nl, what[key])
+                tk.Label(cell, text=blurb[key], bg=P2, fg=C["muted"], font=sm, anchor="w", justify="left",
+                         wraplength=320).pack(anchor="w")
+                st = tk.Label(cell, text="", bg=P2, fg=C["muted"], font=sm, anchor="w", justify="left",
+                              wraplength=320)
+                st.pack(anchor="w")                 # (what it's doing now - hidden while it's off)
+                dot = tk.Label(cell, text="●", bg=P2, fg=DOT["off"])          # (kept for alerts_refresh; not shown)
+                oc = tk.Frame(tbl, bg=P2)
+                oc.grid(row=r, column=2, sticky="w", padx=(0, 12))
+                mine = []
+                for text, var, cmd, tip in opts.get(key, ()):
+                    c = chip(oc, text, var, cmd, tip)
+                    c.pack(side="left", padx=(0, 8), pady=2)
+                    self.al_chips[text] = c
+                    mine.append(c)
+                if key in remind:
+                    rv, rcmd = remind[key]
+                    rs = ttk.Checkbutton(tbl, variable=rv, style=CB, command=rcmd)
+                    rs.grid(row=r, column=3, padx=(0, 12))
+                    Tooltip(rs, "Remind me when I leave the map with it unfinished")
+                else:
+                    tk.Label(tbl, text="-", bg=P2, fg=C["muted"]).grid(row=r, column=3, padx=(0, 12))
+                ttk.Button(tbl, text="Open" if key in ("focus", "campaign") else "Test", command=tests[key],
+                           width=6).grid(row=r, column=4, sticky="e")
+                r_[0] += 1
+                snd = tk.BooleanVar(value=True)
+                self.al_rows[key] = {"dot": dot, "on": on, "sound": snd, "status": st, "what": what[key], "note": "",
+                                     "row": cell, "switch": sw, "grid": True, "chips": mine}
         self.al_rows["breach"]["on"].set(bool(self.breach_cfg().get("on")))
         self.al_rows["breach"]["sound"].set(bool(self.breach_cfg().get("sound", True)))
         self.al_rows["ritual"]["on"].set(bool(self.ritual_cfg().get("on")))
         self.al_rows["ritual"]["sound"].set(bool(self.ritual_cfg().get("sound", True)))
+        # 2.130.0 (feedback): the game's hidden setting that applies your item filter to the Favours window
+        # 2.130.4 (feedback: "the text for opening the filter in ritual window is a bad UI+UX design choice"): a
+        # plain button with the setting's state beside it (a mark and a word), not orange link text
+        frow = tk.Frame(self.al_rows["ritual"]["row"], bg=P2)
+        frow.pack(anchor="w", pady=(4, 0))
+        fl = ttk.Button(frow, text="Filter in the Ritual window…", command=self.ritual_filter_open)
+        fl.pack(side="left")
+        Tooltip(fl, "Make your item filter work in the Ritual altar's Favours window (a game setting with no switch "
+                    "in its menus) - the app shows where and what to change.")
+        fst = tk.Label(frow, text="", bg=P2, fg=C["muted"], font=sm, anchor="w")
+        fst.pack(side="left", padx=(8, 0))
+        self.al_rfilter_link, self.al_rfilter_state = fl, fst
+        self.ritual_filter_state()
         self.al_rows["remnant"]["on"].set(bool(self.remnant_cfg().get("on")))          # 2.37.0
         self.al_rows["desecrate"]["on"].set(bool(self.ws_cfg().get("on")))            # 2.81.0
         from . import campaign as _CP, focus as _F
@@ -263,7 +441,35 @@ class AlertsPage:
             from .utilities import DELIRIUM
             self.al_rows["delirium"]["sound"].set(bool(DELIRIUM.get_sound()))
         except Exception:
-            pass
+            buglog.caught()
+        # 2.131.0: break reminders - off until turned on
+        from . import breaks as _BR
+        bc = _BR.cfg()
+        brow = tk.Frame(box, bg=P2)
+        brow.pack(fill="x", pady=(8, 0))
+        self.al_break = tk.BooleanVar(value=bool(bc["on"]))
+        bcb = ttk.Checkbutton(brow, text="Break reminders", variable=self.al_break, style=CB,
+                              command=lambda: self.break_set("on", bool(self.al_break.get())))
+        bcb.pack(side="left")
+        tk.Label(brow, text="every", bg=P2, fg=C["text"], font=sm).pack(side="left", padx=(8, 4))
+        ev = tk.StringVar(value=f"{bc['every']} min")
+        ecb = ttk.Combobox(brow, textvariable=ev, values=[f"{m} min" for m in _BR.EVERY], state="readonly", width=8)
+        ecb.pack(side="left")
+        ecb.bind("<<ComboboxSelected>>", lambda _e: self.break_set("every", int(ev.get().split()[0])))
+        btest = ttk.Button(brow, text="Test", width=6, command=lambda: self.break_check(force=True))
+        btest.pack(side="left", padx=(8, 0))
+        bi = tk.Label(brow, text="ⓘ", bg=P2, fg=C["muted"], font=sm, cursor="question_arrow")
+        bi.pack(side="left", padx=(8, 0))
+        tk.Label(box, text="A kind nudge in long sessions (water, stretch, food, sleep), only in your hideout or a town.",
+                 bg=P2, fg=C["muted"], font=sm, anchor="w").pack(fill="x")
+        Tooltip(bcb, "One small card every so often while you play - never in a map. Off until you turn it on.")
+        Tooltip(bi, "The lines rotate; more join the longer you play (a meal at 2 h, fresh air at 4 h, a shower at "
+                    "8 h, sleep at 12 h or late at night). Play time is the Session timer's. Nothing is saved or sent.")
+        Tooltip(btest, "Shows the next reminder now.")
+        self.al_break_every = ecb
+        self.topup_row(box, P2, CB)                         # 2.131.0: Top Up Reminders
+        self.mp_row(box, P2, CB)                            # 2.132.0: Map profit
+        self.temple_row(box, P2, CB)                        # 2.132.1: Temple Helper
         self.alerts_refresh()
         return box
 
@@ -310,10 +516,25 @@ class AlertsPage:
             r["note"] = err or ""
         elif key == "focus":                                  # 2.90.0
             self.focus_set_on(bool(want))
-            self._helper_needs_overlay(want, "League Focus")
+            self._helper_needs_overlay(want, "League Plan")
         elif key == "campaign":
             self.camp_set_on(bool(want))
             self._helper_needs_overlay(want, "The Campaign Helper")
+        elif key == "topup":                                  # 2.131.1: Quick settings switch it too
+            self.topup_set(bool(want))
+            v = getattr(self, "al_topup", None)
+            if v is not None and bool(v.get()) != bool(want):
+                v.set(bool(want))
+        elif key in ("mapprofit", "temple"):                  # 2.132.1: Quick settings switch them too
+            (self.mp_set if key == "mapprofit" else self.temple_set)(bool(want))
+            v = getattr(self, "al_mp" if key == "mapprofit" else "al_temple", None)
+            if v is not None and bool(v.get()) != bool(want):
+                v.set(bool(want))
+        elif key == "breaks":
+            self.break_set("on", bool(want))
+            v = getattr(self, "al_break", None)
+            if v is not None and bool(v.get()) != bool(want):
+                v.set(bool(want))
         elif key == "whispers":                               # 2.98.1
             from . import whispers as _W
             _W.cfg()["on"] = bool(want)
@@ -344,12 +565,6 @@ class AlertsPage:
             self.log_error("the overlay")
 
     # ================================================================ 2.98.1: Trade Whisper Watcher
-    def ww_after_changed(self):
-        from . import whispers as W
-        W.cfg()["after"] = bool(self.al_wafter.get())
-        W.save()
-        self.alerts_refresh()
-
     def ww_whisper(self, data):
         """A whisper to you (from the log). A trade request while the watcher is active -> the card."""
         from . import whispers as W
@@ -410,9 +625,13 @@ class AlertsPage:
                 import winsound
                 winsound.MessageBeep(winsound.MB_ICONASTERISK)
             except Exception:
-                pass
+                buglog.caught()
         self.alerts_refresh()
         return w
+
+    def alerts_sound_all(self):
+        """P2.5: the one Sound switch - every helper's alert sound on or off."""
+        self.helpers_sound_set(bool(self.al_sound_all.get()))     # (P4: shared with Quick settings)
 
     def alerts_sound(self, key):
         r = self.al_rows[key]
@@ -433,6 +652,167 @@ class AlertsPage:
         self.breach_cfg()["leave_reminder"] = bool(self.al_leave.get())
         save_json("settings.json", SETTINGS)
 
+    def alerts_tribute_changed(self):
+        self.ritual_cfg()["tribute_reminder"] = bool(self.al_rtrib.get())
+        save_json("settings.json", SETTINGS)
+
+    def ritual_filter_state(self):
+        """The state beside the button: ✓ On / ✗ Off / ? Not found (read from the game's file - that line only)."""
+        from . import ritual_filter as RF
+        lbl = getattr(self, "al_rfilter_state", None)
+        if lbl is None:
+            return None
+        st, _path = RF.state()
+        text, col = {"on": ("✓ On", C.get("good", C["text"])), "off": ("✗ Off", C.get("warn", C["text"])),
+                     "missing": ("? Not set", C["muted"]), "nofile": ("? Not found", C["muted"])}[st]
+        try:
+            lbl.config(text=text, fg=col)
+        except tk.TclError:
+            pass
+        return st
+
+    def ritual_filter_open(self):
+        """2.130.0 Filter in the Ritual window: where the game's setting is, whether it's on, and how to turn it on
+        (one line to change). 2.130.4: Turn it on changes it for you while the game is closed."""
+        from . import ritual_filter as RF
+        old = getattr(self, "rf_dlg", None)
+        if old is not None:
+            try:
+                if old.winfo_exists():
+                    old.destroy()
+            except tk.TclError:
+                pass
+        P2 = C["panel2"]
+        dlg = tk.Toplevel(self.root)
+        dlg.title("Filter in the Ritual window")
+        dlg.configure(bg=P2, padx=16, pady=16)
+        dlg.transient(self.dlg_parent())
+        dlg.resizable(False, False)
+        self.rf_dlg = dlg
+        top = tk.Frame(dlg, bg=P2)
+        top.pack(fill="x")
+        tk.Label(top, text="Make your item filter hide junk in the Ritual altar's Favours window.", bg=P2,
+                 fg=C["text"], font=("Segoe UI", 10), anchor="w").pack(side="left")
+        tip = tk.Label(top, text="ⓘ", bg=P2, fg=C["muted"], font=("Segoe UI", 10), cursor="question_arrow")
+        tip.pack(side="left", padx=(8, 0))
+        Tooltip(tip, f"A game setting with no switch in its menus: {RF.KEY} in {RF.FILE}. {RF.CREDIT}. The app reads "
+                     "that line; Turn it on changes it (only that line, only while the game is closed), or follow the "
+                     "steps to change it yourself.")
+        status = tk.Label(dlg, text="", bg=P2, fg=C["muted"], font=("Segoe UI", 10, "bold"), anchor="w",
+                          justify="left", wraplength=460)
+        status.pack(fill="x", pady=(8, 2))
+        where = tk.Label(dlg, text="", bg=P2, fg=C["muted"], font=("Segoe UI", 9), anchor="w", justify="left",
+                         wraplength=460)
+        where.pack(fill="x")
+        steps = ("1.  Close the game (it rewrites this file when it closes).",
+                 f"2.  Open folder (where your item filters are), then open {RF.FILE} in Notepad.",
+                 "3.  Use Edit › Find in Notepad and paste (Copy line puts it on your clipboard).",
+                 "4.  Change false to true, then save.",
+                 "5.  Start the game and open a Ritual altar's Favours window.")
+        box = tk.Frame(dlg, bg=P2)
+        box.pack(fill="x", pady=(8, 4))
+        for s_ in steps:
+            tk.Label(box, text=s_, bg=P2, fg=C["text"], font=("Segoe UI", 10), anchor="w").pack(fill="x", pady=1)
+        said = tk.Label(dlg, text="", bg=P2, fg=C["muted"], font=("Segoe UI", 9), anchor="w")
+        said.pack(fill="x", pady=(4, 0))
+
+        def check():
+            st, path = RF.state()
+            text, col = {"on": ("✓ On - your filter applies in the Favours window.", C.get("good", C["text"])),
+                         "off": ("✗ Off - follow the steps below.", C.get("warn", C["text"])),
+                         "missing": ("? The line isn't in your file - start the game once, close it, check again.",
+                                     C["muted"]),
+                         "nofile": ("? The file isn't there yet - start the game once, close it, check again.",
+                                    C["muted"])}[st]
+            status.config(text=text, fg=col)
+            where.config(text=RF.shown(path))          # (no Windows user name on screen)
+            self.ritual_filter_state()
+            try:                                       # (grayed out unless it's off - nothing to turn on)
+                if wait.get("job") is None:
+                    on_btn.state(["!disabled"] if st == "off" else ["disabled"])
+            except (NameError, tk.TclError):
+                pass
+            return st, path
+
+        def open_folder():
+            _st, path = RF.state()
+            try:
+                if sys.platform == "win32":
+                    import subprocess
+                    if os.path.isfile(path):
+                        subprocess.Popen(["explorer", "/select,", path])
+                    else:
+                        os.startfile(os.path.dirname(path) if os.path.isdir(os.path.dirname(path))
+                                     else RF.documents())
+                    said.config(text="Opened the folder.")
+                else:
+                    said.config(text="Opening folders works on Windows.")
+            except Exception:
+                buglog.caught()
+                said.config(text="Couldn't open the folder - it's shown above.")
+
+        def copy_line():
+            try:
+                self.root.clipboard_clear()
+                self.root.clipboard_append(f"{RF.KEY}=false")
+                self.own_clip = f"{RF.KEY}=false"
+                said.config(text=f"Copied: {RF.KEY}=false - paste it into Notepad's Find.")
+            except tk.TclError:
+                said.config(text="Couldn't copy - type it: " + RF.KEY)
+        wait = {"job": None, "gone": None, "mt": None}
+
+        def file_mtime(path):
+            try:
+                return os.path.getmtime(path)
+            except OSError:
+                return None
+
+        def turn_on():
+            """2.130.4 (feedback): the game must be fully closed (it saves this file as it closes) - then the one
+            line is changed, and you're told when to start the game again."""
+            if not dlg.winfo_exists():
+                return
+            _st, path = RF.state()
+            if game_rect() is not None:
+                wait["gone"], wait["mt"] = None, None
+                said.config(text="Close the game fully (not just to the character screen) - waiting for it…",
+                            fg=C.get("warn", C["text"]))
+                on_btn.state(["disabled"])
+                wait["job"] = dlg.after(1000, turn_on)
+                return
+            now, mt = time.time(), file_mtime(path)
+            if wait["gone"] is None or mt != wait["mt"]:          # just closed (or still saving): wait 4 s quiet
+                wait["gone"], wait["mt"] = now, mt
+            if now - wait["gone"] < 4:
+                said.config(text="The game is closing - one moment…", fg=C["muted"])
+                wait["job"] = dlg.after(1000, turn_on)
+                return
+            ok, note = RF.turn_on(path, P("backups"))
+            wait["job"] = None
+            said.config(text=(note + " You can start the game again.") if ok else note,
+                        fg=C.get("good", C["text"]) if ok else C.get("warn", C["text"]))
+            check()
+        btns = tk.Frame(dlg, bg=P2)
+        btns.pack(fill="x", pady=(12, 0))
+        on_btn = ttk.Button(btns, text="Turn it on", style="Primary.TButton", command=turn_on)
+        on_btn.pack(side="left")
+        Tooltip(on_btn, "Changes that one line from false to true - nothing else in the file. The game must be closed; "
+                        "a copy of the file is kept in the app's data folder first.")
+        ttk.Button(btns, text="Open folder", command=open_folder).pack(side="left", padx=(8, 0))
+        ttk.Button(btns, text="Copy line", command=copy_line).pack(side="left", padx=(8, 0))
+        ttk.Button(btns, text="Check again", command=check).pack(side="left", padx=(8, 0))
+        ttk.Button(btns, text="Close", command=dlg.destroy).pack(side="right")
+        dlg.bind("<Escape>", lambda _e: dlg.destroy())
+        check()
+        try:
+            from .style import center_over
+            center_over(dlg, self.dlg_parent())
+        except Exception:
+            buglog.caught()
+        dlg.rf_check, dlg.rf_open, dlg.rf_copy, dlg.rf_said, dlg.rf_status = check, open_folder, copy_line, said, status
+        dlg.rf_on, dlg.rf_on_btn = turn_on, on_btn
+        return dlg
+
     def alerts_ritual_leave_changed(self):
         self.ritual_cfg()["leave_reminder"] = bool(self.al_rleave.get())
         save_json("settings.json", SETTINGS)
@@ -452,10 +832,14 @@ class AlertsPage:
 
     # ---- Ritual helper
     def ritual_start(self):
+        from . import features as FEAT
+        if not FEAT.on("overlay"):                     # 2.131.0: the Game Overlay is off (Features)
+            return
         from .utilities import RITUAL
         err = RITUAL.start()
         if not err and self.br_reader is None:
             self.breach_start()                         # to see you leave a map
+        self.favours_sync()                             # 2.128.0: Favours prices
         self.root.after(1500, self.alerts_refresh)
         return err
 
@@ -463,6 +847,8 @@ class AlertsPage:
         from .utilities import RITUAL
         RITUAL.stop()
         self.rt_map = None
+        self.rt_done = False
+        self.favours_sync()
         if not self.log_wanted():
             self.br_reader = None
         self.alerts_refresh()
@@ -476,18 +862,39 @@ class AlertsPage:
             return "warn"
         return "on"
 
-    def alerts_bar_changed(self):
-        self.tracker_cfg()["alerts_bar"] = bool(self.al_bar.get())
-        if getattr(self, "tk_switches_var", None) is not None:      # 2.70.1: the same switch in On the overlay
-            self.tk_switches_var.set(bool(self.al_bar.get()))
-        self.tracker_save()
-        self.tracker_helpers_sync()                                # 2.49.0: on its own, timer or not
 
     def alerts_test_delirium(self):
-        err = self.dl_do_test()
+        from .utilities import DELIRIUM
+        err = None
+        if DELIRIUM.running() == "mine" and DELIRIUM.send("test"):
+            pass                                            # (its "state alert" brings the card)
+        elif DELIRIUM.running() == "other":
+            err = self.dl_do_test()
+        else:                                               # 2.131.6: not running - a sample card here
+            self.ev_delirium_state("alert", test=True)
         r = self.al_rows["delirium"]
-        r["note"] = err or "The END DELIRIUM banner shows for 5 seconds."
+        r["note"] = err or "The End Delirium card shows for 5 seconds."
         self.alerts_refresh()
+
+    def ev_delirium_state(self, state, test=False):
+        """2.131.6 (feedback: "end delirium is still showing up as big flashing text"): the Delirium helper says the
+        map is done while Delirium runs ("alert") - the alert card; any other state takes it back."""
+        from . import alertcard
+        w = getattr(self, "dl_win", None)
+        if state != "alert":
+            if w is not None and not test:
+                w.destroy()
+                self.dl_win = None
+            return
+        if w is not None and w.winfo_exists():
+            return
+        from . import features as FEAT
+        if not test and not FEAT.on("overlay"):
+            return
+        self.dl_win = alertcard.show(self.root, "End Delirium", "Map done - Delirium is still on",
+                                     color="#c9b6ff", mark="!", secs=5 if test else 45, game=game_rect(),
+                                     tag="Delirium", rank=2, vital=True, on_close=lambda: setattr(self, "dl_win", None))
+        #                                                     (the helper beeps itself, with its Sound setting)
 
     def alert_states(self):
         """{"delirium": "on" | "off" | "warn", "breach": ...}: the panel's dots and the timer's bar.
@@ -508,8 +915,12 @@ class AlertsPage:
         from . import whispers as _W
         w = "off" if not _W.cfg()["on"] else ("on" if _W.active() and getattr(self, "br_reader", None) is not None
                                               else "warn" if getattr(self, "br_reader", None) is None else "off")
+        from . import topup as _TU, breaks as _BR                                   # 2.131.1
+        from . import mapprofit as _MP, temple as _TM                               # 2.132.1
         return {"focus": "on" if _F.cfg()["on"] else "off", "campaign": "on" if _CP.cfg()["on"] else "off",
-                "whispers": w}
+                "whispers": w, "topup": "on" if _TU.cfg().get("on") else "off",
+                "breaks": "on" if _BR.cfg().get("on") else "off",
+                "mapprofit": "on" if _MP.cfg().get("on") else "off", "temple": "on" if _TM.cfg().get("on") else "off"}
 
     def alerts_refresh(self):
         """Every 2 s (util_refresh) and after a change: dots, checkboxes and status lines."""
@@ -554,7 +965,7 @@ class AlertsPage:
         from . import campaign as _CP, focus as _F                                # 2.90.0
         rows["focus"]["on"].set(bool(_F.cfg()["on"]))
         rows["campaign"]["on"].set(bool(_CP.cfg()["on"]))
-        ftxt = ("On - " + (self.focus_line()[0] or "pick a goal in Overlay ↳ Game Plan")) if _F.cfg()["on"] else rows["focus"]["what"]
+        ftxt = ("On - " + (self.focus_line()[0] or "pick a goal in Overlay ↳ League Plan")) if _F.cfg()["on"] else rows["focus"]["what"]
         ctxt = ("On - " + (_CP.line_text() or "waits for a campaign zone in the game's log")) if _CP.cfg()["on"] else rows["campaign"]["what"]
         from . import whispers as _W                                              # 2.98.1
         rows["whispers"]["on"].set(bool(_W.cfg()["on"]))
@@ -562,25 +973,51 @@ class AlertsPage:
             vtxt = rows["whispers"]["what"]
         elif getattr(self, "br_reader", None) is None:
             vtxt = self.br_note or "On - looking for Client.txt…"
-        elif not _W.active():
-            vtxt = "On - resting: your character is past the campaign (tick Keep on after the campaign to watch now)"
         else:
             last = getattr(self, "ww_last", None)
             vtxt = "On - watching your whispers" + (f" (last trade whisper {last})" if last else "")
         for k, txt in (("delirium", dtxt), ("breach", btxt), ("ritual", rtxt), ("remnant", mtxt), ("desecrate", wtxt),
                        ("focus", ftxt), ("campaign", ctxt), ("whispers", vtxt)):
             st = states[k]
-            lbl = rows[k]["status"]                 # 2.37.0: a helper that's off (and has nothing to say) takes one line
-            show = st != "off" or txt != rows[k]["what"]
+            lbl = rows[k]["status"]
+            if rows[k].get("grid"):                 # 2.112.0: one short line under the name
+                if st == "off" and txt == rows[k]["what"]:
+                    txt = ""                        # 2.119.0: off - the switch says so; the gray line says what it does
+                elif txt.startswith("On - "):
+                    txt = txt[5:6].upper() + txt[6:]
+                try:
+                    if txt and not lbl.winfo_manager():
+                        lbl.pack(anchor="w")
+                    elif not txt and lbl.winfo_manager():
+                        lbl.pack_forget()
+                except tk.TclError:
+                    pass
+            else:
+                show = st != "off" or txt != rows[k]["what"]
+                try:
+                    if show and not lbl.winfo_manager():
+                        lbl.pack(fill="x", padx=(24, 8), after=rows[k]["row"])
+                    elif not show and lbl.winfo_manager():
+                        lbl.pack_forget()
+                except tk.TclError:
+                    pass
+            rows[k]["dot"].config(fg=DOT[st])
+            for c in rows[k].get("chips", ()):
+                try:
+                    c.paint(dim=st == "off")
+                except tk.TclError:
+                    pass
+            rows[k]["status"].config(text=txt, fg=C["red"] if st == "warn" else C["green"] if st == "on" else C["muted"])
+        ban = getattr(self, "al_log_banner", None)            # 2.119.0: Client.txt not found - one banner
+        if ban is not None:
+            want = getattr(self, "br_reader", None) is None and bool(self.br_note)
             try:
-                if show and not lbl.winfo_manager():
-                    lbl.pack(fill="x", padx=(24, 8), after=rows[k]["row"])
-                elif not show and lbl.winfo_manager():
-                    lbl.pack_forget()
+                if want and not ban.winfo_manager():
+                    ban.pack(fill="x", pady=(8, 0), after=self.al_log_after)
+                elif not want and ban.winfo_manager():
+                    ban.pack_forget()
             except tk.TclError:
                 pass
-            rows[k]["dot"].config(fg=DOT[st])
-            rows[k]["status"].config(text=txt, fg=C["red"] if st == "warn" else C["green"] if st == "on" else C["muted"])
 
     def ritual_text(self, row):
         from .utilities import RITUAL
@@ -609,17 +1046,37 @@ class AlertsPage:
         from .utilities import RITUAL
         if RITUAL.seen == "ok" and RITUAL.count and self.br_area in ("map", None):
             self.rt_map = RITUAL.count
+        # 2.129.3 (feedback: the line said 1 of 3, it was 3 of 3 - the counter isn't always on screen): Map
+        # Content's Ritual icon has its green tick - every ritual in this map is done
+        if getattr(RITUAL, "content", None) == "done" and self.br_area in ("map", None):
+            self.rt_done = True
+            if self.rt_map and self.rt_map[0] < self.rt_map[1]:
+                self.rt_map = (self.rt_map[1], self.rt_map[1])
+        try:                                                 # 2.129.4: a Ritual map - the bar out of captures while
+            self.overlay_capture_sync()                      # its rituals are left (the watcher sees the counter)
+        except Exception:
+            buglog.caught()
+        # 2.129.0 (feedback: "still isn't reminding me when I leave the map"): the Ritual helper is on but its
+        # watcher isn't running (its log: it was told to stop the moment it started) - start it again, at most
+        # every 30 s; the app's log says so each time
+        if self.ritual_cfg().get("on") and not RITUAL.running() and RITUAL.state != "error":
+            now = time.time()
+            if now - getattr(self, "_rt_restart_at", 0) > 30:
+                self._rt_restart_at = now
+                buglog.record("debug", "Ritual watcher wasn't running - started again")
+                RITUAL.start()
+        self.ritual_readout_sync()
 
     def alerts_overlay_redraw(self):
         try:
             self.tracker_helpers_paint()                           # 2.49.0: the bar stands on its own
         except Exception:
-            pass
+            buglog.caught()
         if getattr(self, "tk_overlay", None) is not None:
             try:
                 self.tracker_overlay_draw(self.tracker_numbers())
             except Exception:
-                pass
+                buglog.caught()
 
     # ================================================================ Breach: following Client.txt
     def breach_start(self):
@@ -629,12 +1086,24 @@ class AlertsPage:
         path = find_log(tc().get("log_path") if tc else None)
         if not path:
             self.br_reader = None
-            self.br_note = ("On - but Client.txt wasn't found. Right-click the log line at the top of the Session "
-                            "tracker to pick it.")
+            self.br_note = "On - waiting for Client.txt (see the note above)"     # 2.119.0: the banner says why
         else:
             self.br_reader = LogReader(path)
-            self.br_reader.start()                    # only what the game writes from now on
+            tail = self.br_reader.start()             # only what the game writes from now on
             self.br_note = ""
+            last = next((d for k, _t, d in reversed(tail or []) if k == "area"), None)
+            if last is not None:                      # 2.104.1 (feedback: Island Rumors never showed): started in
+                try:                                  # your hideout, the helpers knew only after the next area
+                    self.expedition_area(last.get("area"), gl_area_kind(
+                        last.get("area"), last.get("seed"), last.get("level", 0)))
+                    # 2.125.7 (feedback: turned on while at the Well, nothing showed): the Desecration Helper too
+                    self.ws_area(last.get("area"))
+                    i = next((n for n, (k, _t, _d) in enumerate(tail) if _d is last), None)
+                    scene = next((d for k, _t, d in (tail[i:] if i is not None else []) if k == "scene"), None)
+                    if scene is not None:
+                        self.ws_scene(scene.get("name"))
+                except Exception:
+                    self.log_error("the area helpers")
         if not self._br_ticking:
             self._br_ticking = True
             self.root.after(1000, self.breach_tick)
@@ -661,18 +1130,23 @@ class AlertsPage:
                                 self.breach_cfg().get("on"):
                             self.breach_set_pending(breach_level(data["text"]))
                             self.breach_alert(text=data["text"])
-                        elif kind == "death":
-                            self.recap_death(data.get("who"))
                         elif kind == "whisper":
                             self.ww_whisper(data)                  # 2.98.1: Trade Whisper Watcher
                         elif kind == "brequel_tree":
                             self.breach_set_pending(None)          # spent (the tree was opened)
                             self.breach_dismiss()
+                        elif kind == "login":
+                            self.br_relog = True             # 2.130.2: the character screen (any character)
+                        elif kind == "scene":
+                            try:
+                                self.ws_scene(data.get("name"))      # 2.125.7: the Well by its name too
+                            except Exception:
+                                self.log_error("the Desecration Helper")
                         elif kind == "area":
                             try:
                                 self.ws_area(data.get("area"))        # 2.81.0: the Desecration Helper
                                 self.expedition_area(data.get("area"), gl_area_kind(      # 2.83.0: Remnant's places,
-                                    data.get("area"), data.get("seed"), data.get("level", 0)))  # Island Rumours
+                                    data.get("area"), data.get("seed"), data.get("level", 0)))  # Island Rumors
                             except Exception:
                                 self.log_error("the area helpers")
                             self.breach_area(gl_area_kind(data.get("area"), data.get("seed"), data.get("level", 0)),
@@ -696,77 +1170,95 @@ class AlertsPage:
         """2.11.0: leaving a map (to your hideout or a town) with Hiveblood still waiting -> one reminder per exit,
         every exit, until the Genesis Tree has been opened."""
         before, self.br_area = self.br_area, kind
+        if before != kind:
+            buglog.debug("area", f"{before} -> {kind}")     # 2.129.3: kinds only (map, hideout, town), no names
         try:
             self.fl_area(kind, where, before)                # 2.45.0: the Strat Tracker counts its runs
         except Exception:
             self.log_error("Strat Tracker run counting")
         cfg = self.breach_cfg()
         left = before == "map" and kind in ("hideout", "town")
+        relog, self.br_relog = getattr(self, "br_relog", False), False
+        if left and relog:          # 2.130.2 (feedback): out through the character screen (died, switched character,
+            buglog.debug("leave check", "skipped: came back through the character screen")   # logged out) - the
+            left = False            # map is still there to go back to; no reminder for leaving it
         if left and cfg.get("on") and cfg.get("pending") and cfg.get("leave_reminder", True):
             self.breach_alert(level="leave")
         rc, got = self.ritual_cfg(), self.rt_map            # 2.14.0: rituals left undone in the map you just left
+        if left and rc.get("on"):                           # 2.129.3 (feedback: 2 of 3 and no reminder): the log says
+            buglog.debug("Ritual leave check", f"count {got}, all done {getattr(self, 'rt_done', False)}, "   # why
+                                               f"reminder {'on' if rc.get('leave_reminder', True) else 'off'}")
         # only when you started them (2.15.0: 0 done = you chose to skip Ritual in this map)
-        if left and rc.get("on") and rc.get("leave_reminder", True) and got and 0 < got[0] < got[1]:
+        if (left and rc.get("on") and rc.get("leave_reminder", True) and got and 0 < got[0] < got[1]
+                and not getattr(self, "rt_done", False)):         # (2.129.3: Map Content says all done)
             self.root.after(9000 if cfg.get("on") and cfg.get("pending") else 0,
                             lambda g=got: self.breach_alert(level="ritual", sub=f"{g[0]} of {g[1]} done - go back "
                                                                                  f"through your portal"))
+        try:
+            self.mp_area(kind, before, where, left)          # 2.132.0: Map profit - a map's before / after
+        except Exception:
+            self.log_error("Map profit")
+        if left:                                             # 2.131.0: Top Up may remind once a visit. 2.131.5
+            self.topup_visit()                               # (feedback: "keeps showing up after not running maps"):
+        #                                                      only a visit after a map
+        if kind in ("hideout", "town") and before != kind:
+            self.break_check()                               # 2.131.0: break reminders - in hideout / town only
         if kind == "map" and before != "map":
             # a new map: its own count. 2.40.0: back into the SAME map (same area and seed - through your portal)
             # keeps it, so a quick in-and-out still reminds you
             if where is None or where != getattr(self, "rt_where", None):
                 self.rt_map = None
+                self.rt_done = False
+                try:
+                    from .utilities import RITUAL
+                    RITUAL.content = None              # (the last map's tick isn't this one's)
+                    if getattr(RITUAL, "tribute", None) is not None:      # 2.131.6: a new map - its own tribute
+                        RITUAL.tribute = None
+                except Exception:
+                    buglog.caught()
             self.rt_where = where
 
     # ================================================================ Breach: the banner
     def breach_alert(self, text="Stored Hiveblood is almost at the maximum!", test=False, level=None, sub=None):
         self.alerts_init()
+        from . import features as FEAT
+        if not test and not FEAT.on("overlay"):           # 2.131.0: the Game Overlay is off (Features)
+            return
         level = level or breach_level(text)
         now = time.time()
+        if level == "tribute" and not test and getattr(self, "fv_offered_at", 0) > getattr(self, "fv_owed_at", 0):
+            return                                           # 2.131.4: offered since (the Favours window said so)
         if not test:
-            if level not in ("leave", "ritual") and now - self.br_last.get(level, 0) < REPEAT_SECS:
+            if level not in ("leave", "ritual", "tribute") and now - self.br_last.get(level, 0) < REPEAT_SECS:
                 return
             try:
                 from .overlaywin import foreground_ok        # only over the game (Settings: "only while it's in front")
                 if not foreground_ok():
+                    # 2.129.3 (feedback: left a map at 2 of 3, no reminder): a reminder waits (up to a minute) for
+                    # the game to be in front again - a screenshot tool or another window had it
+                    tries = getattr(self, "_alert_wait", {}).get(level, 0)
+                    if level in ("leave", "ritual", "tribute") and tries < 60:
+                        self.__dict__.setdefault("_alert_wait", {})[level] = tries + 1
+                        self.root.after(1000, lambda: self.breach_alert(text, level=level, sub=sub))
+                    else:
+                        getattr(self, "_alert_wait", {}).pop(level, None)
+                        buglog.debug("alert not shown", f"{level}: the game wasn't the window in front")
                     return
+                getattr(self, "_alert_wait", {}).pop(level, None)
             except Exception:
-                pass
+                buglog.caught()
         self.br_last[level] = now
         if level == "full":
             self.br_last["almost"] = now                     # "almost" right after "full" adds nothing
         self.breach_dismiss()
-        big_txt, small_txt, _bg, fg = LEVELS[level]
+        title, small_txt, mark, color = LEVELS[level]
         small_txt = sub or small_txt
-        win = tk.Toplevel(self.root)                   # 2.12.1: the Delirium alert's look - big flashing text straight
-        win.overrideredirect(True)                     # over the game, no box, clicks go through to the game
-        win.attributes("-topmost", True)
-        win.configure(bg=TRANSPARENT)
-        try:
-            win.attributes("-transparentcolor", TRANSPARENT)
-        except tk.TclError:
-            pass
-        ox, oy, sw, sh = game_rect() or (0, 0, self.root.winfo_screenwidth(), self.root.winfo_screenheight())
-        ui = max(0.5, sh / 1440.0)
-        big = tk.Label(win, text=big_txt, fg=fg, bg=TRANSPARENT, font=("Segoe UI Black", -int(80 * ui), "bold"))
-        big.pack(fill="x")
-        small = tk.Label(win, text=small_txt.split("  ·  ")[0], fg="#ffffff", bg=TRANSPARENT,
-                         font=("Segoe UI Black", -int(30 * ui), "bold"))
-        small.pack(fill="x")
-        size = int(80 * ui)
-        win.update_idletasks()
-        while big.winfo_reqwidth() > sw * 0.94 and size > 24:      # always fits the game window, whatever the font
-            size -= 4
-            big.config(font=("Segoe UI Black", -size, "bold"))
-            win.update_idletasks()
-        w = max(big.winfo_reqwidth(), small.winfo_reqwidth()) + 40
-        h = big.winfo_reqheight() + small.winfo_reqheight() + 10
-        win.geometry(f"{w}x{h}+{ox + (sw - w) // 2}+{oy + int(sh * 0.22)}")
-        win.update_idletasks()
-        click_through(win)
-        force_topmost(win)
-        win.big, win.small = big, small
+        from . import alertcard
+        win = alertcard.show(self.root, title, small_txt, color=color, mark=mark,
+                             secs=5 if test else BANNER_SECS.get(level, 8), game=game_rect(),
+                             tag="Ritual" if level in ("ritual", "tribute") else "Breach",
+                             rank=0 if level in ("ritual", "tribute") else 1, vital=True, on_close=lambda: self.br_win is win and self.breach_dismiss())
         self.br_win, self.br_level = win, level
-        self._breach_flash(big, fg, True)
         if (self.ritual_cfg() if level == "ritual" else self.breach_cfg()).get("sound", True):
             try:
                 import winsound
@@ -775,17 +1267,58 @@ class AlertsPage:
                 self.root.bell()
         self.alerts_refresh()
         self.alerts_overlay_redraw()
-        secs = 5 if test else BANNER_SECS.get(level, 8)
-        self.root.after(secs * 1000, lambda: self.br_win is win and self.breach_dismiss())
 
-    def _breach_flash(self, lbl, fg, on):
-        if self.br_win is None:
-            return
+    # ---------------------------------------------------------------- 2.131.0 break reminders
+    def break_played(self):
+        """Seconds played: the Session timer's when it runs, otherwise since this app run's first area."""
+        s = getattr(self, "tk_session", None)
+        if s is not None and not getattr(s, "ended", False):
+            try:
+                return float(s.elapsed())
+            except Exception:
+                buglog.caught()
+        start = self.__dict__.setdefault("_play_start", time.time())
+        return time.time() - start
+
+    def break_check(self, force=False):
+        from . import breaks as BR
+        c = BR.cfg()
+        if not c.get("on") and not force:
+            return None
+        played = self.break_played()
+        st = self.__dict__.setdefault("_break", {"last": 0.0, "n": 0})
+        if not force and not BR.due(played, st["last"], c["every"]):
+            return None
+        line, st["n"] = BR.next_line(played / 3600.0, st["n"])
+        st["last"] = played
+        from . import alertcard
         try:
-            lbl.config(fg=fg if on else "#ffffff")
-        except tk.TclError:
-            return
-        self.root.after(350, lambda: self._breach_flash(lbl, fg, not on))
+            from .overlaywin import foreground_ok
+            if not force and not foreground_ok():
+                st["last"] = played - c["every"] * 60     # (not in front: the next hideout / town visit)
+                return None
+        except Exception:
+            buglog.caught()
+        self.break_win = alertcard.show(self.root, line, BR.played_text(played), color="#7fd9a0", mark="♥", secs=10,
+                                        game=game_rect(), tag="Breaks", rank=4)
+        return line
+
+    def break_set(self, key, value):
+        from . import breaks as BR
+        BR.cfg()[key] = value
+        save_json("settings.json", SETTINGS)
+        if key == "on" and value:
+            self.__dict__["_break"] = {"last": self.break_played(), "n": 0}     # (counted from now)
+
+    def alert_card_test(self):
+        """Settings: a sample card where and how big alerts will show."""
+        self.breach_alert(test=True, level="ritual", sub="A sample - this is where alerts show")
+
+    def alert_card_set(self, key, value):
+        from . import alertcard
+        alertcard.cfg()[key] = value
+        save_json("settings.json", SETTINGS)
+        self.alert_card_test()
 
     def breach_dismiss(self):
         w, self.br_win = getattr(self, "br_win", None), None

@@ -9,7 +9,9 @@ import threading
 
 
 # ------------------------------------------------------------------ paths / settings
+from . import buglog
 from . import __version__ as APP_VERSION      # set in soe2/__init__.py; the launcher's file name must match
+from .names import PAGES                       # 2.126.0: one name per feature
 
 
 def pretty_version(v=None):
@@ -39,9 +41,75 @@ RESOURCE_DIR = getattr(sys, "_MEIPASS", APP_DIR)      # inside the .exe: where P
 
 # Data lives in one fixed folder, NOT next to the app, so moving or updating the app never loses it.
 if sys.platform == "win32":
-    DATA_DIR = os.path.join(os.environ.get("APPDATA") or os.path.expanduser("~"), "StashOfExile2")
+    DEFAULT_DATA_DIR = os.path.join(os.environ.get("APPDATA") or os.path.expanduser("~"), "StashOfExile2")
 else:
-    DATA_DIR = os.path.join(os.path.expanduser("~"), ".stashofexile2")
+    DEFAULT_DATA_DIR = os.path.join(os.path.expanduser("~"), ".stashofexile2")
+# 2.131.0 (request: a "portable" option - choose where the data lives): a one-line file naming the folder you picked,
+# next to the app (portable) or in the usual folder - read before anything else is
+POINTER = "data_location.txt"
+
+
+def chosen_data_dir():
+    for d in (APP_DIR, DEFAULT_DATA_DIR):
+        try:
+            with open(os.path.join(d, POINTER), encoding="utf-8") as f:
+                p = f.read().strip()
+            if p and os.path.isabs(p):
+                os.makedirs(p, exist_ok=True)
+                return p
+        except OSError:
+            continue
+    return None
+
+
+DATA_DIR = chosen_data_dir() or DEFAULT_DATA_DIR
+
+
+def move_data(new_dir):
+    """2.131.0: your data copied to new_dir, then the app uses it from the next start (the old folder is kept, so
+    nothing is lost if something goes wrong). -> (True, note) or (False, why)."""
+    import shutil
+    new_dir = os.path.abspath(new_dir)
+    if os.path.normcase(new_dir) == os.path.normcase(os.path.abspath(DATA_DIR)):
+        return False, "That's the folder in use."
+    try:
+        os.makedirs(new_dir, exist_ok=True)
+        shutil.copytree(DATA_DIR, new_dir, dirs_exist_ok=True,
+                        ignore=shutil.ignore_patterns(POINTER, "*.lock", "__pycache__"))
+    except OSError as e:
+        return False, f"Couldn't copy your data there ({e.__class__.__name__}) - nothing was changed."
+    reset = os.path.normcase(new_dir) == os.path.normcase(os.path.abspath(DEFAULT_DATA_DIR))
+    # a folder inside the app's own folder (portable): the pointer goes with the app; anywhere else it lives in the
+    # usual folder, so an update that replaces the app's folder can't lose it. The other pointer goes (one place).
+    app_dir = os.path.normcase(os.path.abspath(APP_DIR))
+    portable = os.path.normcase(new_dir).startswith(app_dir + os.sep) or os.path.normcase(new_dir) == app_dir
+    order = (APP_DIR, DEFAULT_DATA_DIR) if portable else (DEFAULT_DATA_DIR, APP_DIR)
+    wrote = None
+    for d in order:
+        if reset:
+            break
+        try:
+            os.makedirs(d, exist_ok=True)
+            with open(os.path.join(d, POINTER), "w", encoding="utf-8") as f:
+                f.write(new_dir)
+            wrote = d
+            break
+        except OSError:
+            continue
+    for d in (APP_DIR, DEFAULT_DATA_DIR):
+        if d == wrote:
+            continue
+        try:
+            os.remove(os.path.join(d, POINTER))
+        except FileNotFoundError:
+            pass
+        except OSError:
+            if d == APP_DIR:                       # (a pointer left next to the app would still win)
+                return False, "Couldn't change the folder next to the app - nothing was changed."
+    wrote = wrote or reset
+    if not wrote:
+        return False, "Couldn't save the new place - nothing was changed."
+    return True, "Copied. Restart the app to use the new folder (the old one is kept)."
 
 
 DATA_FILES = ["settings.json", "session.json", "modbook.json", "modbook.backup.json", "mod_rules.json", "community_rules.json",
@@ -72,7 +140,7 @@ def import_old_data():
                     MIGRATED.append(name)
                     break
             except Exception:
-                pass
+                buglog.caught()
 
 
 import_old_data()
@@ -106,7 +174,7 @@ def refresh_bundled_data():
             if existed:                                  # a file new in this version isn't an "update" (1.44)
                 DATA_UPDATED.append(name)
         except Exception:
-            pass
+            buglog.caught()
     save_json("data_versions.json", seen)
 
 
@@ -128,30 +196,31 @@ DEFAULTS = {
     "toast_secs": 6,
     "range_factor": 0.9,   # search for rolls >= 90% of yours
     "min_results": 3,
-    "tray": True,          # minimize to the system tray (needs pystray + pillow)
-    "spread_warn": 20,     # warn when the cheapest and dearest listing are this many times apart (0 = off)
+    "tray": False,         # minimize to the system tray (needs pystray + pillow) - 2.116.0: off for new installs
+    "spread_warn": 20,     # warn when the highest listing costs this many times the lowest (0 = off)
     "pc_ctrl_c": True,     # 2.80.0: your price check key on an item in game opens it on Price Checks
     "pc_key": "Ctrl+D",    # 2.83.1 (feedback): the price check key (was the game's plain Ctrl+C)
     "pc_front": True,      # ...and brings the app to the front
+    "pc_popup": False,     # 2.113.0: ...or shows it in a card over the game instead (pcpop.py)
+    "pc_both": False,      # 2.123.2: ...and the app shows it too (Here | Overlay | Both)
+    "pc_close_key": "Esc",  # 2.121.1: closes that card (only while it's open and the game is in front)
     "pc_art": True,        # ...with the items' pictures from the trade site's image server
-    "hotkey_only": True,   # only accept items copied while YOU press Ctrl+Alt+C (ignores other tools' copies)
-    "memory_shortcut": False,   # True: skip searching when 5+ identical searches in the last memory_hours agree (see 1.21)
     "memory_hours": 24,
-    "model_shortcut": False,    # True: the model may set a price itself, but only after 100 checked guesses at 99 percent (1.23)
     "market_league": "",        # the league market.db's current data belongs to (1.23)
     "rates_auto": True,    # check the exchange rates once an hour (poe.ninja) so prices in other currencies can be converted
-    "pace": "Balanced",    # Fast / Balanced / Gentle - how carefully we stay under the trade site's limits
     "stale_days": 3,       # re-check a learned mod after this many days
     "status": "Instant Buyout",   # which listings count: the trade site's own "listing status" choices
     "age": "2 days",              # ignore listings older than this (stale / banned-account / outdated prices)
-    "view": "Not yet listed",     # which items the list shows
+    "view": "All",                # which items the list shows (2.105.0: always All - listing marks are gone)
     "auto_copy": True,            # copy the item's name to the clipboard when you click it
     "listen": True,               # watch the clipboard for copied items (always on)
-    "col_widths": {},             # remembered column widths of the item list
+    "col_widths": {},             # remembered column widths of the item list (not Item's: it fills the rest)
+    "bulk_cols_off": [],          # 2.125.3: Bulk Pricing columns turned off in Columns ▾ (all show by default)
     "panel_w": 430,               # remembered width of the side panel
     "uses": "10",                 # tablets: only compare with tablets that have at least this many uses left
     "wealth_account": "",         # Wealth page: your account name as the trade site shows it, e.g. Name#1234 (1.33)
-    "on_top": True,               # keep the window in front of other windows, and undo minimizes you didn't ask for (1.35)
+    "on_top": False,              # keep the window in front of other windows, and undo minimizes you didn't ask for (1.35)
+                                  # (2.116.0, feedback: off for new installs - a saved setting is kept)
     "auto_check_updates": False,  # 2.0 beta 7: look for a new version on GitHub when the app starts (tells you, asks first)
     "auto_update": False,         # 2.0 beta 7: ...and install it straight away, without asking
 }
@@ -188,7 +257,7 @@ SAVE_ERRORS = []                          # 2.4.0: (file, problem) - saving no l
 
 def save_json(name, data):
     """-> True when the file was written. A failure (file in use, folder not writable...) is noted in SAVE_ERRORS and
-    error_log.txt instead of passing silently."""
+    the app's log (buglog) instead of passing silently."""
     try:
         tmp = P(name) + ".tmp"
         text = json.dumps(data)           # 2.25.1: dumps (one go, the fast C encoder) - json.dump streams through
@@ -200,12 +269,10 @@ def save_json(name, data):
         SAVE_ERRORS.append((name, str(e)[:200]))
         del SAVE_ERRORS[:-20]
         try:
-            import time as _t
-            with open(P("error_log.txt"), "a", encoding="utf-8") as f:
-                from .privacy import scrub                    # 2.89.2: the error names the path (your user name)
-                f.write(f"{_t.strftime('%Y-%m-%d %H:%M:%S')} could not save {name}: {scrub(str(e))}\n")
+            from . import buglog                              # 2.115.0: the one log (paths and names cleaned)
+            buglog.record("error", f"saving {name}", detail=str(e))
         except Exception:
-            pass
+            buglog.caught()
         return False
 
 
@@ -215,17 +282,15 @@ SETTINGS = {**DEFAULTS, **load_json("settings.json", {})}
 
 if SETTINGS["status"] not in dict(STATUS_OPTIONS):
     SETTINGS["status"] = DEFAULTS["status"]
-if not SETTINGS.get("status_ib_2792"):              # 2.79.2 (feedback): the default seller is Instant Buyout
-    SETTINGS["status"] = "Instant Buyout"
-    SETTINGS["status_ib_2792"] = True
+from . import migrations as _migrations          # 2.117.0: one-time changes, one list (soe2/migrations.py)
+_migrations.run(SETTINGS, "settings", lambda: save_json("settings.json", SETTINGS))
 
 
 if SETTINGS["age"] not in [a[0] for a in AGE_OPTIONS]:
     SETTINGS["age"] = DEFAULTS["age"]
 
 
-if SETTINGS["view"] not in VIEWS:
-    SETTINGS["view"] = DEFAULTS["view"]
+SETTINGS["view"] = "All"          # 2.105.0: the Show box is gone - every item shows
 
 
 if SETTINGS["uses"] not in USES_OPTIONS:
@@ -255,7 +320,7 @@ def load_modbook():
         try:
             os.replace(path, P("modbook.broken.json"))
         except Exception:
-            pass
+            buglog.caught()
         return {}, "modbook.json couldn't be read - kept as modbook.broken.json and started a fresh one."
     old = 0
     for e in data.values():
@@ -292,10 +357,10 @@ def backup_modbook():
             import shutil
             shutil.copyfile(P("modbook.json"), P("modbook.backup.json"))
     except Exception:
-        pass
+        buglog.caught()
 
 
 backup_modbook()
 
-PAGE_CHECKS = "Bulk Pricing"        # the list page (1.40: was "Items"; 2.80.0: was "Price checks")
-PAGE_PC = "Price Checks"            # 2.80.0: one item at a time, with the trade site's listings
+PAGE_CHECKS = PAGES["checks"]       # the list page (1.40: was "Items"; 2.80.0: was "Price checks")
+PAGE_PC = PAGES["pricecheck"]       # 2.80.0: one item at a time, with the trade site's listings

@@ -12,12 +12,13 @@ Every box you type in (Entry, Spinbox, Combobox, Text):
   - right-click: Undo, Cut, Copy, Paste, Delete, Select all.
 A widget that already has its own right-click menu keeps it. Plain Tk class bindings - Windows and Linux alike.
 
-Also the poe2db key (Ctrl+Shift+D by default, Settings > Hotkeys): opens poe2db's modifier list in your browser. It's a
+Also the poe2db key (Ctrl+Shift+D by default, Settings > Keybinds): opens poe2db's modifier list in your browser. It's a
 link only - nothing is read from or copied off that site."""
 import tkinter as tk
 from tkinter import ttk
 import webbrowser
 
+from . import buglog
 from .style import C
 
 POE2DB_URL = "https://poe2db.tw/us/Modifiers"
@@ -57,7 +58,7 @@ def restripe(tree):
         try:
             tree._stripe_job = None
         except Exception:
-            pass
+            buglog.caught()
 
 
 def schedule_restripe(tree):

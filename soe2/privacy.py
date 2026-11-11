@@ -86,14 +86,30 @@ def public_league(league):
     return "Private league" if is_private_league(league) else (league or "")
 
 
+# 2.131.1 (feedback: "encourage users to not use personally identifiable names, and to never use their path of exile
+# account or character names"): the one line every community-name ask shows, and its ⓘ
+NAME_RULE = ("Pick a made-up name - not your real name, and never your Path of Exile account or character names. "
+             "Other players see it.")
+NAME_TIP = ("A made-up name keeps the board from pointing at you, or at your characters in game. The app turns down "
+            "names it knows are yours (your account, and characters from the game's log) or that contain one - the "
+            "rest is up to you.")
+
+
 def name_problem(name):
-    """A community name that is your account or one of your characters -> why not (it would tie the board to you
-    in game); else None."""
+    """A community name that is your account or one of your characters - or contains one, or is a big part of one
+    (2.131.1) -> why not (it would tie the board to you in game); else None."""
     n = str(name or "").strip().lower()
     if not n:
         return None
     for k, kind in known_names().items():
-        if k.lower() == n or k.split("#")[0].lower() == n:
-            return ("That's your " + ("account" if kind == "<account>" else "character") + " name - pick a different "
-                    "one, so nobody can find you in game from the board.")
+        for full in {k.lower(), k.split("#")[0].lower()}:
+            if not full:
+                continue
+            what = "account" if kind == "<account>" else "character"
+            if full == n:
+                return (f"That's your {what} name - pick a made-up one, so nobody can find you in game from the "
+                        "board.")
+            if (len(full) >= 4 and full in n) or (len(n) >= 5 and n in full):
+                return (f"That's too close to your {what} name - pick a made-up one, so nobody can find you in game "
+                        "from the board.")
     return None
