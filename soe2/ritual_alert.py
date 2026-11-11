@@ -296,6 +296,10 @@ def main(argv):
     try:
         import ctypes  # noqa: F401
         import cv2
+        try:
+            import mss  # noqa: F401  (loaded before the pipe is read, as on main; Wayland may not have it - grim then)
+        except ImportError:
+            mss = None  # noqa: F841
         import numpy as np
         from .screengrab import screen
         from . import delirium_alert as D

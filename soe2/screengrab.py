@@ -107,7 +107,8 @@ class Screen:
             try:
                 self._mss.close()
             except Exception:
-                pass
+                from . import buglog
+                buglog.caught()
 
     def __enter__(self):
         return self
