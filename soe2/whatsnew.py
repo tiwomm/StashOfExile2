@@ -47,6 +47,18 @@ BETA_AREAS = ("Wealth", "Money Makers", "Game Search", "Market Insights", "Craft
 # repeats. Someone coming from rollup["since"] or older (or a fresh install) sees it instead of each version; someone
 # on a pre-release already saw them and gets only this version's own lines (notes_between).
 NOTES = {
+    "2.132.0": {
+        "big": [
+            ("▲", "Map profit", "What each map earned, counted from your inventory before and after it - Currency "
+             "Exchange items only, at Exchange Rates' prices. On the bar after each map (hover for how), and every "
+             "map in Maps…. Kept on your PC only. Turn it on in Overlay ↳ Settings › Helpers.", None, "Overlay"),
+        ],
+        "small": [
+            ("Overlay", "Alert cards for things to do now - Hiveblood, End Delirium, rituals, tribute - have red "
+             "words."),
+            ("Overlay", "The tribute on the Ritual line changes once the game's counter reads the same twice."),
+        ],
+    },
     "2.131.6": {
         "big": [],
         "small": [

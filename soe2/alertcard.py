@@ -75,8 +75,9 @@ class Row:
     """2.131.4 one alert in the card -> what show() gives back. Reads like the card's window (winfo_x, attributes...)
     so a caller can keep it as "the alert"; destroy() takes this one away quietly, card_close() as its × does."""
 
-    def __init__(self, card, title, sub, color, mark, secs, tag, rank, on_close):
+    def __init__(self, card, title, sub, color, mark, secs, tag, rank, on_close, vital=False):
         self.card, self.color, self.mark, self.secs, self.tag, self.rank = card, color, mark, secs, tag, rank
+        self.vital = vital
         self.on_close = on_close
         self.card_title, self.card_x = _Text(self, title), _Text(self, "×")
         self.card_sub = _Text(self, sub) if sub else None
@@ -196,6 +197,11 @@ class Card:
         ui = max(0.6, game[3] / 1440.0) * k
         BG, TXT, MUT = P.get("bg", "#15111c"), P.get("big") or P.get("text", "#ece6f5"), P.get("muted", "#b3a9c6")
         LINE = P.get("rim") or P.get("line", "#3a3048")
+        try:                                                # 2.132.0 (feedback: "for each of the vital alert cards
+            from .style import C as _C                      # the text should be red"): a vital alert's words
+            RED = P.get("bad") or _C.get("red") or "#ff6b5e"
+        except Exception:
+            RED = "#ff6b5e"
         hfont, font = P.get("hfont") or "Segoe UI", P.get("font") or "Segoe UI"
         win = self.win
         for ch in win.winfo_children():
@@ -240,7 +246,7 @@ class Card:
                          highlightthickness=1, highlightbackground=LINE).pack(side="right", anchor="n")
             txt = tk.Frame(row, bg=BG)
             txt.pack(side="left", fill="x", expand=True)
-            tk.Label(txt, text=r.card_title.text, bg=BG, fg=TXT, anchor="w", justify="left",
+            tk.Label(txt, text=r.card_title.text, bg=BG, fg=RED if r.vital else TXT, anchor="w", justify="left",
                      font=(hfont, -int((16 if many else 19) * ui), "bold")).pack(fill="x")
             if r.card_sub is not None:
                 tk.Label(txt, text=r.card_sub.text, bg=BG, fg=MUT, anchor="w", justify="left",
@@ -276,13 +282,14 @@ def card(root):
     return c
 
 
-def show(root, title, sub="", color="#ffb347", mark="!", secs=8, game=None, on_close=None, tag="", rank=5):
+def show(root, title, sub="", color="#ffb347", mark="!", secs=8, game=None, on_close=None, tag="", rank=5, vital=False):
     """An alert -> its Row (reads like the card's window). Joins the card when one is up. game: (x, y, w, h) of the
     game (None: the screen). tag: the helper's name, shown on its row when there are more than one. rank: lower is
-    more urgent (it goes higher)."""
+    more urgent (it goes higher). vital: something to do before it's too late (Hiveblood, End Delirium, rituals,
+    tribute) - its words are red."""
     if game is None:
         game = (0, 0, root.winfo_screenwidth(), root.winfo_screenheight())
     cd = card(root)
-    row = Row(cd, title, sub, color, mark, secs, tag, rank, on_close)
+    row = Row(cd, title, sub, color, mark, secs, tag, rank, on_close, vital)
     cd.add(row, game)
     return row

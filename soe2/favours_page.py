@@ -18,6 +18,8 @@ GONE = 2                       # looks without the window = it closed: the tags 
 # window's title hid it for a second - the reminder waits until the window has been gone this many looks (4 s)
 REMIND = 8
 HUD_EVERY = 1.0                 # 2.131.5: seconds between looks at the game's tribute counter (in a map)
+HUD_KEEP = 60                   # 2.132.0 (feedback: "still getting occasional reminders when I click through it all
+#                                 too fast"): the counter's last steady number is what the window closed with
 GRAB = (0.62, 0.80)            # the part of the game that is looked at (from its top-left): the window is there
 
 
@@ -116,8 +118,12 @@ class FavoursPage:
                 return
             hud["at"] = time.time()
             n = self.favours_hud_read(sct, g, RM, np)
+            prev = hud["reads"][-1][1] if hud["reads"] else None
             hud["reads"] = (hud["reads"] + [(hud["at"], n)])[-12:]
-            if n is not None:
+            # 2.132.0 (feedback: "the tribute counter keeps bugging out and showing all kinds of numbers"): a number
+            # counts once it's read the same twice in a row (a misread is seldom the same twice)
+            steady = n is not None and n == prev
+            if steady:
                 hud["num_at"], hud["n"] = hud["at"], n
             # 2.131.6 (feedback: "the tribute amount should stay persistent ... until it goes to 0/map ends"): the
             # counter going from the screen keeps the last number - only 0, or going right after counting down
@@ -125,9 +131,9 @@ class FavoursPage:
             nums = [x for _t, x in hud["reads"] if x is not None][-2:]
             if n == 0:
                 show = None
-            elif n is not None:
+            elif steady:
                 show = n
-            elif len(nums) == 2 and nums[1] < nums[0] and hud["reads"][-2][1] is not None:
+            elif n is None and len(nums) == 2 and nums[1] < nums[0] and hud["reads"][-2][1] is not None:
                 show = None                                    # (it counted down and went: offered)
             else:
                 show = getattr(RITUAL, "tribute", None)
@@ -140,7 +146,7 @@ class FavoursPage:
             if was is None:
                 return None
             since = [x for t, x in hud["reads"] if t >= at]
-            if any(x is not None and x < was for x in since):
+            if sum(1 for x in since if x is not None and x < was) >= 2:      # (2.132.0: twice - not one misread)
                 return "it counted down"
             if len(since) >= 2 and since[-1] is None and since[-2] is None:
                 return "it went"
@@ -189,7 +195,7 @@ class FavoursPage:
                             owed = 0 if counts.get("offered") else (counts.get("tribute") or 0)
                             if counts.get("offered") and (counts.get("tribute") or 0) > 0:
                                 fv_log("closed while the tribute counted down - the button was gray: no reminder")
-                            hud_was = hud["n"] if time.time() - hud["num_at"] < 5 else None
+                            hud_was = hud["n"] if time.time() - hud["num_at"] < HUD_KEEP else None
                             counts = {"owed": owed, "btn": counts.get("btn", "unseen"), "closed_at": time.time(),
                                       "hud": hud_was} if owed > 0 else {}
                         elif misses == REMIND and counts.get("owed"):     # 2.130.0: still gone - really closed
