@@ -13,7 +13,9 @@ from .style import Tooltip
 
 # (label, key): the helpers switched on / off, then the tools' menus on the bar
 QUICK_HELPERS = (("Breach", "breach"), ("Delirium", "delirium"), ("Ritual", "ritual"), ("Expedition", "remnant"),
-                 ("Campaign", "campaign"), ("League Plan", "focus"), ("Whispers", "whispers"))
+                 ("Campaign", "campaign"), ("League Plan", "focus"), ("Whispers", "whispers"),
+                 ("Top Up", "topup"), ("Breaks", "breaks"), ("Desecration", "desecrate"))   # 2.131.1: every helper
+BETA_HELPERS = {"desecrate": "desecrate"}      # (a chip only while its beta feature is on - Features)
 QUICK_BAR = (("Notes", "notes"), ("Calc", "calc"), ("Regex", "regex"), ("Rates", "rates"))
 # 2.124.0 (feedback: each toggle should say what it is on hover): the one-line tips (the helpers' come from
 # alerts_page.HELPER_BLURBS - the same line as on Helpers)
@@ -221,6 +223,8 @@ class OverlayQuick:
                 fill="x", pady=(8, 4))
             grid = tk.Frame(body, bg=P1)
             grid.pack(fill="x")
+            from . import features as _FEAT
+            items = [(lb, k) for lb, k in items if k not in BETA_HELPERS or _FEAT.on(BETA_HELPERS[k])]
             for i, (label, key) in enumerate(items):
                 b = tk.Label(grid, text=label, font=(F, 9), padx=8, pady=4, cursor="hand2",
                              highlightthickness=1)

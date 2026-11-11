@@ -126,7 +126,9 @@ HELPER_BLURBS = {"delirium": "END DELIRIUM when a map ends with Delirium still o
                  "focus": "Your current goal on the bar, a nudge in town",
                  "campaign": "Where you are in the campaign and what's next",
                  "whispers": "A card when someone wants to buy your item",
-                 "desecrate": "Each Well of Souls option's tier"}
+                 "desecrate": "Each Well of Souls option's tier",
+                 "topup": "Says what's running low when you open your inventory in a hideout or town",   # 2.131.1
+                 "breaks": "A calm card after a long stretch of play, in a hideout or town"}
 
 
 class AlertsPage:
@@ -505,6 +507,16 @@ class AlertsPage:
         elif key == "campaign":
             self.camp_set_on(bool(want))
             self._helper_needs_overlay(want, "The Campaign Helper")
+        elif key == "topup":                                  # 2.131.1: Quick settings switch it too
+            self.topup_set(bool(want))
+            v = getattr(self, "al_topup", None)
+            if v is not None and bool(v.get()) != bool(want):
+                v.set(bool(want))
+        elif key == "breaks":
+            self.break_set("on", bool(want))
+            v = getattr(self, "al_break", None)
+            if v is not None and bool(v.get()) != bool(want):
+                v.set(bool(want))
         elif key == "whispers":                               # 2.98.1
             from . import whispers as _W
             _W.cfg()["on"] = bool(want)
@@ -858,8 +870,10 @@ class AlertsPage:
         from . import whispers as _W
         w = "off" if not _W.cfg()["on"] else ("on" if _W.active() and getattr(self, "br_reader", None) is not None
                                               else "warn" if getattr(self, "br_reader", None) is None else "off")
+        from . import topup as _TU, breaks as _BR                                   # 2.131.1
         return {"focus": "on" if _F.cfg()["on"] else "off", "campaign": "on" if _CP.cfg()["on"] else "off",
-                "whispers": w}
+                "whispers": w, "topup": "on" if _TU.cfg().get("on") else "off",
+                "breaks": "on" if _BR.cfg().get("on") else "off"}
 
     def alerts_refresh(self):
         """Every 2 s (util_refresh) and after a change: dots, checkboxes and status lines."""

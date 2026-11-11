@@ -30,7 +30,8 @@ DEFAULT_KEYS = {"key_pause": "Pause",            # 2.74.3: the keyboard's Pause 
 DEFAULT_HOTKEYS = {"checks:pc_key": "Ctrl+D", "checks:pc_close_key": "Esc", "checks:poe2db_key": "Ctrl+Shift+D",
                    "checks:regex_key": "", "tracker:key_pause": DEFAULT_KEYS["key_pause"],
                    "tracker:key_overlay": DEFAULT_KEYS["key_overlay"], "tracker:key_camp_prev": "",
-                   "tracker:key_camp_next": "", "checks:ledger_key": "Ctrl+Alt+N", "overlay:hideout_key": "F1"}
+                   "tracker:key_camp_next": "", "checks:ledger_key": "Ctrl+Alt+N", "overlay:hideout_key": "F1",
+                   "checks:topup_key": "F7"}
 # 2.54.0: the Session timer times your play; money lives in one place, Money Makers › Strat Tracker.
 # Profit (Wealth at Stop minus at Start) is gone from here: its tiles, overlay line, options and Stop count.
 LINE_NAMES = [("session", "Session timer"), ("map", "Map timer"), ("maps", "Maps done"), ("avg", "Average map time"),
@@ -1295,6 +1296,8 @@ class TrackerPage:
                 ("Show / hide the overlay", tc.get("key_overlay", ""), "Overlays", "tracker:key_overlay"),
                 ("Campaign: a step back (◀)", tc.get("key_camp_prev", ""), "Overlays", "tracker:key_camp_prev"),
                 ("Campaign: a step on (▶)", tc.get("key_camp_next", ""), "Overlays", "tracker:key_camp_next"),
+                ("Top Up: teach the item under the mouse (in game, inventory open)", SETTINGS.get("topup_key", ""),
+                 "Overlays", "checks:topup_key"),             # 2.131.1 (feedback: the price check key left its card up)
                 ("Strat Tracker: a run is done (setups counted by key)", SETTINGS.get("ledger_key") or "Ctrl+Alt+N",
                  "Money Makers", "checks:ledger_key"),
                 ("Go to hideout", oc.get("hideout_key", ""), "Chat commands", "overlay:hideout_key")]

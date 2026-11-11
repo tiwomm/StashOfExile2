@@ -268,6 +268,7 @@ class App(SettingsPage, GearBookPage, PriceCheckPage, PricePopup, FavoritesPage,
         from . import listkit                        # 2.12.0: keys, right-click menus and striped rows everywhere
         listkit.install(self)
         SETTINGS.setdefault("poe2db_key", "Ctrl+Shift+D")
+        SETTINGS.setdefault("topup_key", "F7")           # 2.131.1: Top Up teaches with its own key
         SETTINGS.setdefault("copy_marker", True)            # 2.19.0: a mark where you pressed Ctrl+Alt+C
         SETTINGS.setdefault("copy_marker_secs", 10)         # 2.24.0: how long it stays
         SETTINGS.setdefault("copy_marker_hold", False)      # 2.24.0: or until Esc is tapped twice (2.25.0)
@@ -2352,11 +2353,15 @@ class App(SettingsPage, GearBookPage, PriceCheckPage, PricePopup, FavoritesPage,
                 return self.fl_take_clip(text)
             if self.fl_ed_open() and self.fl_ed_take(text):
                 return None
-            try:                                                  # 2.131.0: a copy while your inventory is open
-                if self.topup_copy_learn(text):                   # teaches Top Up that item
-                    return None
-            except Exception:
-                buglog.caught()
+            keys = getattr(self, "keys", None)                    # 2.131.1: only the Top Up key teaches Top Up
+            if keys is not None and getattr(keys, "tu_recent", None) and keys.tu_recent():
+                try:
+                    if not self.topup_copy_learn(text):
+                        self.status_text, self.status_until = ("Top Up: open your inventory and hover the item, "
+                                                               "then press the key again"), time.time() + 6
+                except Exception:
+                    buglog.caught()
+                return None                                       # (never priced, never Bulk Pricing)
             try:                                                  # 2.129.3: a copy while the Favours window is
                 if self.favours_copy_learn(text) and not self.ADVANCED.search(text):     # open teaches that
                     self.status_text, self.status_until = "Favours prices: learned its look", time.time() + 5

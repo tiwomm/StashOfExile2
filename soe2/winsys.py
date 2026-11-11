@@ -150,6 +150,7 @@ class KeyWatch:
         self.combo_time, self.active, self.err = 0.0, False, None
         self.copy_time = 0.0        # 2.80.0: YOUR plain Ctrl+C (no Alt) - Price Checks when that is its key
         self.pc_time = 0.0          # 2.83.1: the price check key (Ctrl+D) was pressed in game
+        self.tu_time = 0.0          # 2.131.1: the Top Up key (F7) was pressed in game
         self.esc_since = 0.0        # 2.24.0: when Esc went down (0 = it's up)
         self.esc_last = 0.0         # 2.25.0: the last fresh Esc press, and when two came quickly (a double tap)
         self.esc_double = 0.0
@@ -214,6 +215,9 @@ class KeyWatch:
 
     def pc_recent(self, secs=1.5):
         return time.time() - self.pc_time < secs
+
+    def tu_recent(self, secs=2.0):
+        return time.time() - getattr(self, "tu_time", 0.0) < secs
 
     def _run(self):
         try:
