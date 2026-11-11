@@ -37,7 +37,7 @@ class LeaderboardPage:
         tk.Label(top2, text="League", bg=P1, fg=C["muted"]).pack(side="left", padx=(16, 4))
         self.lb_league = tk.StringVar(value=SETTINGS.get("league") or ALL_LEAGUES)   # 2.104.1: the league's name
         cb = ttk.Combobox(top2, textvariable=self.lb_league, values=self.lb_league_names(), state="readonly",
-                          width=22)
+                          width=28)
         cb.pack(side="left")
         cb.bind("<<ComboboxSelected>>", lambda e: self.lb_refresh())
         self.lb_league_box = cb
@@ -123,11 +123,17 @@ class LeaderboardPage:
         return LB.mine(self.tk_sessions.items if hasattr(self, "tk_sessions") else [], getattr(self, "tk_session", None))
 
     def lb_league_names(self, more=()):
-        """The current league first, then the others your times or the board name, then All leagues."""
+        """The current league first, then the others your times or the board name, then All leagues. 2.131.0
+        (feedback: other players' times seemed missing - they were in another league): each says how many players
+        have times there ("Runes of Aldur · 1 player")."""
         cur = SETTINGS.get("league") or ""
         mine = [e.get("league") for e in (getattr(self, "lb_my", None) or [])]
         names = [n for n in dict.fromkeys([cur] + mine + list(more)) if n and n != ALL_LEAGUES]
-        return names + [ALL_LEAGUES]
+        return [self.lb_league_label(n) for n in names] + [ALL_LEAGUES]
+
+    def lb_league_label(self, name):
+        n = (getattr(self, "lb_lg_n", None) or {}).get(name)
+        return f"{name} · {n} player{'s' if n != 1 else ''}" if n else name
 
     def lb_top_n(self):
         try:
@@ -142,7 +148,7 @@ class LeaderboardPage:
         self.lb_board_fill()
 
     def lb_filters(self):
-        v = self.lb_league.get()
+        v = self.lb_league.get().split(" · ")[0]           # (2.131.0: the label's player count)
         if v == "This league":                        # (before 2.104.1)
             v = SETTINGS.get("league") or ALL_LEAGUES
             self.lb_league.set(v)
@@ -242,10 +248,16 @@ class LeaderboardPage:
                 return self._lb_keys_fill(None, classes)
             n = len(d.get("keys") or [])
             most = max([k.get("players") or 0 for k in d.get("keys") or []] or [0])
-            self.lb_msg.config(text=f"{n} board{'s' if n != 1 else ''}. Pick one on the left." +
-                               (" Only your times so far - other players' show once they share theirs."
-                                if n and most <= 1 else ""), fg=C["muted"])
+            self.lb_lg_n = {k: v for k, v in (d.get("league_players") or {}).items() if isinstance(v, int)}
+            here = self.lb_lg_n.get(league) if league else max(self.lb_lg_n.values() or [0])
+            why = ""
+            if n and most <= 1:                    # 2.131.0: say why each board has one player (not a fault)
+                why = (f" {here} players have times here, but on different boards so far." if (here or 0) > 1
+                       else " Only your times so far - other players' show once they share theirs.")
+            self.lb_msg.config(text=f"{n} board{'s' if n != 1 else ''}. Pick one on the left." + why, fg=C["muted"])
             self.lb_league_box.config(values=self.lb_league_names(d.get("leagues") or ()))
+            if league:
+                self.lb_league.set(self.lb_league_label(league))
             self._lb_keys_fill(d, sorted(set(classes) | set(d.get("classes") or [])))
         self._lb_bg(lambda: B.lb_keys(cat, league, cls), done)
 
