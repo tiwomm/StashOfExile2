@@ -4,7 +4,7 @@
 
 > **Who we build for - read second.** Path of Exile players are utilitarian: they love data and information, problem solving and creative thinking. So every feature shows its numbers *and how they were worked out*, lets you sort, filter, compare and export them (CSV), keeps power-user depth (keys, versions, raw data) one click away instead of hiding it, explains in plain words, and leaves the decision to the player. Pretty is welcome; vague is not.
 
-**Current version: 2.131.1**
+**Current version: 2.131.2**
 
 Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds features, 2.10.1 only fixes. Each step below is one release; we work through them top to bottom.
 
@@ -264,6 +264,7 @@ Order (decided 2026-11-05): the page passes, then the Privacy & data hub, then t
 | 2.130.1 | Bar at the top keeps its Ritual line on screen (under it); Bar at the bottom sits on the XP bar; tribute plate's 0 read as 0 (no late reminder); a gem's Sockets option = gem sockets. |
 | 2.130.2 | No Ritual reminder through character select; theme clicks queue (no freeze); Gruvbox Dark / Light (morhetz, MIT); light themes turn all text dark; short README. |
 | 2.130.3 | Client.txt found wherever the game is installed (Windows' installed-programs list, every Steam library); Desecration Helper reads Heart of the Well options. |
+| 2.131.2 | Community names: a made-up name asked for everywhere; names containing your account / characters turned down. |
 | 2.131.1 | Start session on the bar; picker says a name is asked next; sharing asked once; popups kept above the app; League ▾ player counts. |\n| 2.131.0 | Full release: Feature Picker, Settings over the app, calm alert cards, Break reminders, Top Up Reminders; My Own route removed; What's new gathers 2.126-2.130. |
 | 2.130.4 | Remnant: 10x read as IOX, Level 20 gems, gem budget + 6 h cache; runeshapes C/D alphabetical; Ritual filter button with its state + Turn it on (game closed, that line only). |
 | Later | **Tribute counter under the Bar** (shelved, circle back soon): the game's tribute counter sits under the overlay's Bar in Ritual maps. Not by moving the Bar (no). |

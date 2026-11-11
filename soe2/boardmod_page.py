@@ -16,7 +16,7 @@ import threading
 import time
 import tkinter as tk
 
-from .style import over_app
+from .style import over_app, Tooltip
 from tkinter import ttk
 
 from . import board as B
@@ -91,9 +91,16 @@ class BoardModPage:
                             "was reset. Pick a new one - you can do it now." if reset else
                             "Other players see it on Money Makers strats, upvotes and edits. It's yours alone, and it "
                             "can change once every 7 days. No account or password - this PC keeps a key. Slurs and "
-                            "hate words aren't allowed. Don't use your account or character name - keep the board "
-                            "apart from who you are in game."),
-                 bg=P2, fg=C["muted"], wraplength=380, justify="left", anchor="w").pack(fill="x", pady=(4, 8))
+                            "hate words aren't allowed."),
+                 bg=P2, fg=C["muted"], wraplength=380, justify="left", anchor="w").pack(fill="x", pady=(4, 4))
+        from .privacy import NAME_RULE, NAME_TIP                  # 2.131.1: a made-up name, never yours in game
+        rr = tk.Frame(win, bg=P2)
+        rr.pack(fill="x", pady=(0, 8))
+        tk.Label(rr, text="⚠ " + NAME_RULE, bg=P2, fg=C["accent"], wraplength=360, justify="left",
+                 anchor="w").pack(side="left", fill="x", expand=True)
+        ti = tk.Label(rr, text="ⓘ", bg=P2, fg=C["muted"], cursor="question_arrow")
+        ti.pack(side="left", anchor="n", padx=(4, 0))
+        Tooltip(ti, NAME_TIP)
         var = tk.StringVar()
         ent = ttk.Entry(win, textvariable=var, width=30)
         ent.pack(fill="x")

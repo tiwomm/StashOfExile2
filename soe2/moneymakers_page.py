@@ -948,10 +948,11 @@ class MoneyMakersPage:
     def mm_join(self, why="use the Community board", name=None):
         from tkinter import simpledialog
         if name is None:
-            name = simpledialog.askstring("Your community name", f"To {why}, pick a community name. Other players "
-                                          "see it; it can change once every 7 days (2-24 letters or numbers). No "
-                                          "password - this PC keeps a key. Not your account or character name.\n\n"
-                                          "More: Settings › Privacy & community.", parent=self.root)
+            from .privacy import NAME_RULE                    # 2.131.1: a made-up name, never yours in game
+            name = simpledialog.askstring("Your community name", f"To {why}, pick a community name.\n\n{NAME_RULE}\n\n"
+                                          "It can change once every 7 days (2-24 letters or numbers). No password - "
+                                          "this PC keeps a key. More: Settings › Privacy & community.",
+                                          parent=self.root)
         if not name:
             return False
         ok, d = B.join(name.strip())
@@ -1082,8 +1083,9 @@ class MoneyMakersPage:
 
     def mm_rename(self, name=None):
         from tkinter import simpledialog
-        name = name or simpledialog.askstring("Community board", "Your new name (it can change again in 7 days):",
-                                              parent=self.root)
+        from .privacy import NAME_RULE                        # 2.131.1
+        name = name or simpledialog.askstring("Community board", f"Your new name (it can change again in 7 days).\n\n"
+                                              f"{NAME_RULE}", parent=self.root)
         if name:
             ok, d = B.rename(name.strip())
             self.app_toast("Done." if ok else d, "Community") if not ok else self._say("Name changed.", 4)

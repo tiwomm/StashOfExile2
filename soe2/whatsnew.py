@@ -47,6 +47,13 @@ BETA_AREAS = ("Wealth", "Money Makers", "Game Search", "Market Insights", "Craft
 # repeats. Someone coming from rollup["since"] or older (or a fresh install) sees it instead of each version; someone
 # on a pre-release already saw them and gets only this version's own lines (notes_between).
 NOTES = {
+    "2.131.2": {
+        "big": [],
+        "small": [
+            ("Community", "Picking a community name asks for a made-up one - not your real name, and never your account "
+             "or character names. Names that contain one of yours are turned down."),
+        ],
+    },
     "2.131.1": {
         "big": [
             ("▶", "Start session on the bar", "No session yet? Click ▶ Start session on the Game Overlay's bar to time "
