@@ -53,6 +53,11 @@ NOTES = {
              "your maps and count maps and deaths. Helpers work either way.", None, "Overlay"),
         ],
         "small": [
+            ("Overlay", "Top Up Reminders teach with their own key, F7 (Settings › Keybinds). Your price check key "
+             "just prices the item again."),
+            ("Overlay", "Top Up should count items taught with the mouse on them (the game's hover glow). Taught one "
+             "that shows 0? Teach it again, then move the mouse off it."),
+            ("Overlay", "Quick settings › Helpers has Top Up, Breaks and Desecration (with its beta feature on)."),
             ("Leaderboards", "League ▾ says how many players have times in each league, and a board explains when "
              "players ran different maps."),
             ("Settings", "The Feature Picker says a community name is asked next, for the Leaderboards."),
@@ -68,7 +73,7 @@ NOTES = {
              " about sharing with the community and where your data lives. Change it any time in Settings › "
              "General › Features.", None, "Settings"),
             ("📦", "Top Up Reminders", "Overlay › Settings › Helpers: in your open inventory, hover an item and press "
-             "your price check key to teach it, then set how many to keep. When you're low, one card in hideout or "
+             "F7 to teach it, then set how many to keep. When you're low, one card in hideout or "
              "town.", None, "Overlay"),
             ("🔔", "Calm alerts", "Every helper alert is one small card: set Where and Size in Overlay › Settings › "
              "Helpers, × to close, no flashing.", None, "Overlay"),

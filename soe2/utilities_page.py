@@ -70,6 +70,11 @@ class UtilitiesPage:
                     return True
         except Exception:
             buglog.caught()
+        try:                                           # 2.131.1: the Top Up key - copies the item to teach it
+            if self.topup_hotkey(vk, ctrl, alt, shift):
+                return True
+        except Exception:
+            buglog.caught()
         try:                                           # 2.12.0: the poe2db key - in game or in the app only
             k = parse_key(SETTINGS.get("poe2db_key") or "")
             if k and k == (vk, ctrl, alt, shift):
@@ -133,6 +138,24 @@ class UtilitiesPage:
             return False                                   # outside the game the key does its usual job
         def go():
             self.keys.pc_time = time.time()
+            send_copy()
+        threading.Thread(target=go, daemon=True).start()
+        return True
+
+    def topup_hotkey(self, vk, ctrl, alt, shift):
+        """2.131.1 (feedback: "using price check key on top up items causes the item's card to stay stuck on screen,
+        we need a different key"): Top Up's own key (F7) in game -> the game's copy once; the copy only teaches Top
+        Up (never priced, never Bulk Pricing)."""
+        from .overlay import parse_key, game_active, send_copy, POE_TITLE
+        from . import topup as TU
+        k = parse_key(SETTINGS.get("topup_key") or "")
+        if not k or k != (vk, ctrl, alt, shift) or not TU.cfg().get("on"):
+            return False
+        if not game_active((getattr(self, "overlay", None) and self.overlay.cfg.get("poe_title")) or POE_TITLE):
+            return False
+
+        def go():
+            self.keys.tu_time = time.time()
             send_copy()
         threading.Thread(target=go, daemon=True).start()
         return True

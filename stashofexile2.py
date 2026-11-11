@@ -33,6 +33,10 @@ VERSION HISTORY
          the app's window (Windows keeps them above it) and follow Always on top.
        - Quick start page 5: ▶ Start session and Overlay › Settings › Helpers (Ctrl+Alt+S and "Mechanic Helper" are
          gone).
+       - Top Up (feedback: the price check key left its card up): its own key, F7 (Settings › Keybinds; topup_key),
+         copies the item and only teaches; the price check key just prices. Hover glow (feedback: "it didn't detect
+         the quantities" - 0 held): topup_refine learns the taught cell again once the mouse is off it.
+       - Quick settings › Helpers: Top Up, Breaks and Desecration (its beta feature on) chips.
        - Leaderboards (feedback: only my times): the keys answer has league_players (counts only); League ▾ says
          "Runes of Aldur · 1 player"; a league whose players ran different boards says so.
   2.131.0

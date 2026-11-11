@@ -10,7 +10,9 @@ from .config import SETTINGS, save_json
 from .style import C, Tooltip
 
 EVERY_MS = 1500                     # how often it looks for the inventory
-TEACH_SECS = 3                      # your price check key counts as teaching within this of the last look
+REFINE_SECS = 120                   # 2.131.1: learn a taught cell again, without the hover glow, within this
+REFINE_SAME = TU.SAME * 3       # (the glow changes it this much at most)
+TEACH_SECS = 3                      # the Top Up key counts as teaching within this of the last look
 CARD_COLOR = "#8ec5ff"
 
 
@@ -100,9 +102,43 @@ class TopUpPage:
         res["t"] = time.time()
         self.tu_last = res
         if res.get("open"):
+            try:
+                self.topup_refine(res)
+            except Exception:
+                buglog.caught()
             self.topup_paint_seen()
             if not was:
                 self.topup_remind()
+
+    def topup_refine(self, res):
+        """2.131.1 (feedback: "it didn't detect the quantities in my inventory" - 0 of an item you hold): teaching
+        happens with the mouse on the item, so the picture it learned had the game's hover glow. The next look with
+        the mouse elsewhere learns the same cell again, plain - the picture every later look sees."""
+        pend = getattr(self, "tu_pending", None) or {}
+        if not pend:
+            return False
+        l_, t, r, _b = res["rect"]
+        cs = (r - l_) / TU.COLS
+        try:
+            mx, my = self.root.winfo_pointerxy()
+            hov = (int((my - t) // cs), int((mx - l_) // cs))
+        except tk.TclError:
+            return False
+        cells, done = TU.split(res["img"]), False
+        for name, (rc, s0, t0) in list(pend.items()):
+            if time.time() - t0 > REFINE_SECS:
+                pend.pop(name, None)
+                continue
+            if rc == hov:
+                continue                                   # (still on it: the glow is still there)
+            cell = cells.get(rc)
+            pend.pop(name, None)
+            if cell is None or TU.empty(cell) or TU.dist(TU.sig(cell), s0) > REFINE_SAME:
+                continue                                   # (moved or gone: keep what it learned)
+            done = TU.learn(name, cell) or done
+        if done:
+            buglog.debug("Top Up", "learned again without the hover glow")
+        return done
 
     def topup_totals(self):
         last = getattr(self, "tu_last", None) or {}
@@ -134,9 +170,9 @@ class TopUpPage:
         buglog.debug("Top Up", f"reminded: {len(lows)} low")
         return lows
 
-    # ---------------------------------------------------------------- teaching (your price check key)
+    # ---------------------------------------------------------------- teaching (the Top Up key, F7)
     def topup_copy_learn(self, text):
-        """Your price check key (or Ctrl+C) on an item while your inventory was just seen: learn its picture under
+        """The Top Up key (2.131.1: its own, F7) on an item while your inventory was just seen: learn its picture under
         the mouse, add it to your list (keep = a full stack). -> True if learned."""
         last = getattr(self, "tu_last", None) or {}
         if not TU.cfg().get("on") or not last.get("open") or time.time() - last.get("t", 0) > TEACH_SECS:
@@ -157,6 +193,7 @@ class TopUpPage:
         cell = TU.split(last["img"])[(row, c)]
         if not TU.learn(name, cell):
             return False
+        self.__dict__.setdefault("tu_pending", {})[name] = ((row, c), TU.sig(cell), time.time())   # (topup_refine)
         if count:
             try:
                 TU.learn_digits(cell, count)
@@ -171,6 +208,11 @@ class TopUpPage:
             time.time() + 6
         self.topup_paint_list()
         return True
+
+    def topup_key_text(self):
+        from .overlay import key_label
+        k = SETTINGS.get("topup_key") or ""
+        return key_label(k) if k else "the Top Up key (set it in Settings › Keybinds)"
 
     # ---------------------------------------------------------------- Overlay ↳ Settings › Helpers: its row
     def topup_row(self, box, bg, CB):
@@ -192,7 +234,8 @@ class TopUpPage:
         Tooltip(cb, "Looks only while your inventory is open and the game is in front. Off until you turn it on.")
         Tooltip(ib, "Your items and how many of each to keep.")
         Tooltip(tb, "Shows the reminder now, with what it last saw.")
-        Tooltip(info, "Teach an item: open your inventory, hover it and press your price check key - its name comes "
+        Tooltip(info, f"Teach an item: open your inventory, hover it and press {self.topup_key_text()} (Top Up's key; "
+                      "Settings › Keybinds) - its name comes "
                       "from the game. It counts every stack of it in your inventory (the number on each). Nothing is "
                       "sent anywhere.")
 
@@ -251,8 +294,8 @@ class TopUpPage:
         items = TU.cfg()["items"]
         self.tu_keep_vars, self.tu_seen_labels, self.tu_icons = {}, {}, []
         if not items:
-            tk.Label(box, text="No items yet. In game: open your inventory, hover an item and press your price check "
-                               "key.", bg=P2, fg=C["text"], wraplength=420, justify="left", anchor="w").pack(fill="x")
+            tk.Label(box, text="No items yet. In game: open your inventory, hover an item and press "
+                               f"{self.topup_key_text()}.", bg=P2, fg=C["text"], wraplength=420, justify="left", anchor="w").pack(fill="x")
             ttk.Button(box, text="Got it", command=lambda: self.tu_items_win.destroy()).pack(anchor="w", pady=(8, 0))
             return
         head = tk.Frame(box, bg=P2)
