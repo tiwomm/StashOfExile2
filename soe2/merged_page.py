@@ -1206,6 +1206,9 @@ class MergedOverlay:
                 if self.mp_on():
                     fixed.append("profit")
                     widths["profit"] = fm.measure("▼ −00.00 div") + 8
+                if self.temple_on():                          # 2.132.1: the Temple Helper's crystals
+                    fixed.append("temple")
+                    widths["temple"] = fm.measure("◆ Crystals 000/000 FULL") + 8
             except Exception:
                 buglog.caught()
             map_on = bool(ln.get("map", True) or ln.get("where", True))

@@ -246,9 +246,12 @@ class MapProfitPage:
         bar = tk.Frame(box, bg=P2)
         bar.pack(fill="x", pady=(8, 8))
         self.mp_q = tk.StringVar()
-        ent = ttk.Entry(bar, textvariable=self.mp_q, width=24)        # (UX: the search box first, top left)
+        # (UX: the search box first, top left - 2.132.1, feedback: "wtf is this textbox for?": it says so, as the
+        # other list pages do)
+        tk.Label(bar, text="Search", bg=P2, fg=C["muted"]).pack(side="left", padx=(0, 8))
+        ent = ttk.Entry(bar, textvariable=self.mp_q, width=24)
         ent.pack(side="left")
-        Tooltip(ent, "Search by map or item name.")
+        Tooltip(ent, "Find a map, or every map an item dropped in (Divine Orb, Omen of ...).")
         self.mp_q.trace_add("write", lambda *_a: self.mp_list_refresh())
         self.mp_sum = tk.Label(bar, text="", bg=P2, fg=C["text"], font=("Segoe UI", 9))
         self.mp_sum.pack(side="right")
@@ -313,10 +316,11 @@ class MapProfitPage:
         t = self.mp_totals()
         sd, sn = t["session"]
         dd, dn = t["day"]
-        self.mp_sum.config(text=f"Session: {sn} map{'s' if sn != 1 else ''} · {MP.signed(sd, fmt_div)}"
-                                + (f" · {MP.signed(t['per_map'], fmt_div)} / map" if t["per_map"] is not None else "")
-                                + (f" · {MP.signed(t['per_hour'], fmt_div)} / hour" if t["per_hour"] is not None else "")
-                                + f"   Today: {MP.signed(dd, fmt_div)}")
+        self.mp_sum.config(text=(f"Session: {sn} map{'s' if sn != 1 else ''} · {MP.signed(sd, fmt_div)}"
+                                 + (f" · {MP.signed(t['per_map'], fmt_div)} / map" if t["per_map"] is not None else "")
+                                 + (f" · {MP.signed(t['per_hour'], fmt_div)} / hour" if t["per_hour"] is not None
+                                    else "") if sn else "Session: no maps yet")
+                                + (f"   Today: {MP.signed(dd, fmt_div)}" if dn else ""))
         for ch in self.mp_empty.winfo_children():
             ch.destroy()
         if runs:

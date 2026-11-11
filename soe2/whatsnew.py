@@ -47,6 +47,17 @@ BETA_AREAS = ("Wealth", "Money Makers", "Game Search", "Market Insights", "Craft
 # repeats. Someone coming from rollup["since"] or older (or a fresh install) sees it instead of each version; someone
 # on a pre-release already saw them and gets only this version's own lines (notes_between).
 NOTES = {
+    "2.132.1": {
+        "big": [
+            ("◆", "Temple Helper", "Hover a Vaal Beacon in a map: your crystals (Energised Beacons 55/60) show on the "
+             "bar, and a red alert card says when they're full. Turn it on in Overlay ↳ Settings › Helpers.", None,
+             "Overlay"),
+        ],
+        "small": [
+            ("Overlay", "Map profit's Maps… window says what its search box is for."),
+            ("Overlay", "Quick settings › Helpers has Map profit and Temple."),
+        ],
+    },
     "2.132.0": {
         "big": [
             ("▲", "Map profit", "What each map earned, counted from your inventory before and after it - Currency "
