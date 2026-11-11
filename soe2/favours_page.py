@@ -17,6 +17,7 @@ GONE = 2                       # looks without the window = it closed: the tags 
 # 2.130.0 (feedback: "still telling me with favours window open to offer tribute"): a reward's tooltip over the
 # window's title hid it for a second - the reminder waits until the window has been gone this many looks (4 s)
 REMIND = 8
+HUD_EVERY = 1.0                 # 2.131.5: seconds between looks at the game's tribute counter (in a map)
 GRAB = (0.62, 0.80)            # the part of the game that is looked at (from its top-left): the window is there
 
 
@@ -105,6 +106,34 @@ class FavoursPage:
         from . import remnant as RM                             # (its OCR reads the tribute)
         belts = FV.belt_refs()
         stars = FV.star_refs()                                  # 2.129.3: Rite of Passage ...
+        hud = {"at": 0.0, "reads": [], "sent": "-", "num_at": 0.0, "n": None}
+
+        def hud_look(g):
+            """2.131.5: the game's tribute counter (bottom middle) about once a second in a map -> the Ritual line,
+            and the reads the reminder checks after the window closes."""
+            if time.time() - hud["at"] < HUD_EVERY or getattr(self, "br_area", None) not in ("map", None):
+                return
+            hud["at"] = time.time()
+            n = self.favours_hud_read(sct, g, RM, np)
+            hud["reads"] = (hud["reads"] + [(hud["at"], n)])[-12:]
+            if n is not None:
+                hud["num_at"], hud["n"] = hud["at"], n
+            two = [x for _t, x in hud["reads"][-2:]]
+            show = n if n is not None else (None if len(two) == 2 and two == [None, None] else hud["sent"])
+            if show != hud["sent"]:
+                hud["sent"] = show
+                self.ui_q.put(("ritual_tribute", show))
+
+        def hud_says_offered(at, was):
+            """After the window closed (at) with `was` on the counter: it counted down, or went -> True."""
+            if was is None:
+                return None
+            since = [x for t, x in hud["reads"] if t >= at]
+            if any(x is not None and x < was for x in since):
+                return "it counted down"
+            if len(since) >= 2 and since[-1] is None and since[-2] is None:
+                return "it went"
+            return None
         with mss.mss() as sct:
             while gen == getattr(self, "fv_gen", 0):
                 time.sleep(POLL)
@@ -114,6 +143,10 @@ class FavoursPage:
                     g = game_rect()
                     if not g:
                         continue
+                    try:
+                        hud_look(g)
+                    except Exception:
+                        buglog.caught()
                     gx, gy, gw, gh = g
                     w, h = int(gw * GRAB[0]), int(gh * GRAB[1])
                     shot = sct.grab({"left": gx, "top": gy, "width": w, "height": h})
@@ -145,9 +178,21 @@ class FavoursPage:
                             owed = 0 if counts.get("offered") else (counts.get("tribute") or 0)
                             if counts.get("offered") and (counts.get("tribute") or 0) > 0:
                                 fv_log("closed while the tribute counted down - the button was gray: no reminder")
-                            counts = {"owed": owed, "btn": counts.get("btn", "unseen")} if owed > 0 else {}
+                            hud_was = hud["n"] if time.time() - hud["num_at"] < 5 else None
+                            counts = {"owed": owed, "btn": counts.get("btn", "unseen"), "closed_at": time.time(),
+                                      "hud": hud_was} if owed > 0 else {}
                         elif misses == REMIND and counts.get("owed"):     # 2.130.0: still gone - really closed
-                            fv_log(f"closed with {counts['owed']:,} tribute left (button {counts.pop('btn', '?')}): reminder")
+                            # 2.131.5 (feedback: "it doesn't turn grey when I click it and rapidly close the
+                            # window"): the game's counter says - it counted down or went: offered, no reminder
+                            why = hud_says_offered(counts.get("closed_at", 0), counts.get("hud"))
+                            if why:
+                                fv_log(f"closed with {counts['owed']:,} tribute left, but the counter at the bottom "
+                                       f"{why}: offered - no reminder")
+                                counts = {}
+                                continue
+                            fv_log(f"closed with {counts['owed']:,} tribute left (button {counts.pop('btn', '?')}, "
+                                   f"counter {counts.get('hud') if counts.get('hud') is not None else 'not seen'}): "
+                                   "reminder")
                             self.ui_q.put(("favours_tribute", counts.pop("owed")))
                         continue
                     if misses >= GONE and counts.pop("owed", None):     # 2.130.0: back before the reminder - only
@@ -243,6 +288,21 @@ class FavoursPage:
                 except Exception as e:
                     fv_log(f"read failed: {e.__class__.__name__}: {e}")
         self.fv_alive = False if gen == getattr(self, "fv_gen", 0) else self.fv_alive
+
+    @staticmethod
+    def favours_hud_read(sct, g, RM, np):
+        """2.131.5: the game's tribute counter (bottom middle) -> its number, or None (not there / not read)."""
+        try:
+            shot = np.asarray(sct.grab(FV.hud_rect(g)))[:, :, :3]
+            return FV.hud_number(RM.ocr(FV.hud_prep(shot)))
+        except Exception:                                  # (no OCR: the line shows no tribute)
+            return None
+
+    def ev_ritual_tribute(self, n):
+        """2.131.5: the tribute the game's counter shows (None: not on screen) - on the Ritual line."""
+        from .utilities import RITUAL
+        RITUAL.tribute = n
+        self.ritual_readout_sync()
 
     @staticmethod
     def favours_tribute_read(img, win, RM):

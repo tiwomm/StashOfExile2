@@ -47,6 +47,18 @@ BETA_AREAS = ("Wealth", "Money Makers", "Game Search", "Market Insights", "Craft
 # repeats. Someone coming from rollup["since"] or older (or a fresh install) sees it instead of each version; someone
 # on a pre-release already saw them and gets only this version's own lines (notes_between).
 NOTES = {
+    "2.131.5": {
+        "big": [
+            ("☠", "Your tribute on the Ritual line", "In a Ritual map the line over the game says how much tribute "
+             "you have - read from the game's own counter, which the bar covers.", None, "Overlay"),
+        ],
+        "small": [
+            ("Overlay", "Offer your tribute and close the Favours window at once: the game's counter counting down "
+             "means no reminder."),
+            ("Overlay", "Top Up waits for a clear look: with the mouse over your inventory, the game's item box can "
+             "cover a stack."),
+        ],
+    },
     "2.131.4": {
         "big": [
             ("!", "Alerts share one card", "When a few come at once - tribute, Top Up, a break - they're rows on one "

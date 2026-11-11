@@ -163,16 +163,17 @@ class AlertsPage:
         count = RITUAL.count if RITUAL.seen == "ok" and RITUAL.count else None
         if count is None and getattr(self, "br_area", None) == "map":
             count = getattr(self, "rt_map", None)
-        if getattr(self, "rt_done", False) and getattr(self, "br_area", None) == "map":
-            if count and count[0] < count[1]:
-                count = (count[1], count[1])
-            elif not count:
-                return "All rituals done ✔"
-        if not count:
+        done_map = getattr(self, "rt_done", False) and getattr(self, "br_area", None) == "map"
+        if done_map and count and count[0] < count[1]:
+            count = (count[1], count[1])
+        if count:
+            d, t = count
+            txt = f"{d} of {t} rituals done" + (" ✔" if d >= t else "")
+        elif done_map:
+            txt = "All rituals done ✔"
+        else:
             return ""
-        d, t = count
-        txt = f"{d} of {t} rituals done" + (" ✔" if d >= t else "")
-        tribute = getattr(RITUAL, "tribute", None)
+        tribute = getattr(RITUAL, "tribute", None)                 # 2.131.5: from the game's counter
         if tribute is not None:
             txt += f"  ·  {int(tribute):,} tribute"
         return txt

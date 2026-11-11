@@ -366,6 +366,45 @@ def tribute_of(lines):
     return 0 if said else None
 
 
+
+# 2.131.5 (feedback: "add tribute count to the ritual counter overlay ... the overlay over xp bar blocks it"): the
+# game's own tribute counter, bottom middle over the XP bar (a gold arch with the number). It counts down when the
+# tribute is offered, then goes - which also tells an offer made with the window closed at once.
+HUD_BOX = (0.05, 0.950, 0.982)    # half its width (parts of the game's height), its top and bottom (parts of the height)
+
+
+def hud_rect(g):
+    """The game's rect (x, y, w, h) -> the counter's box as an mss region."""
+    gx, gy, gw, gh = g
+    half = int(HUD_BOX[0] * gh)
+    return {"left": int(gx + gw / 2 - half), "top": int(gy + HUD_BOX[1] * gh), "width": 2 * half,
+            "height": max(8, int((HUD_BOX[2] - HUD_BOX[1]) * gh))}
+
+
+def hud_prep(bgr):
+    """The box (BGR) -> a PIL picture for OCR: the white number in black on white, 3x as big."""
+    _cv2, np = _cv()
+    from PIL import Image
+    a = bgr.astype(np.int16)
+    white = (a.min(2) > 165) & ((a.max(2) - a.min(2)) < 45)
+    out = np.where(white, 0, 255).astype(np.uint8)
+    im = Image.fromarray(out)
+    return im.resize((im.width * 3, im.height * 3))
+
+
+def hud_number(lines):
+    """OCR lines of the counter -> its number (1376), or None. Commas or dots between thousands; a lone O is 0."""
+    import re
+    txt = " ".join(str(t) for t, _b in (lines or []))
+    txt = re.sub(r"(?<=[\d,.])[Oo]|[Oo](?=[\d,.])", "0", txt)
+    txt = re.sub(r"(?<=[\d,.])[lI|]|[lI|](?=[\d,.])", "1", txt)
+    best = None
+    for m in re.finditer(r"\d{1,3}(?:[,.\s]\d{3})+|\d+", txt):
+        d = re.sub(r"\D", "", m.group(0))
+        if 1 <= len(d) <= 7 and (best is None or len(d) > len(best)):
+            best = d
+    return int(best) if best else None
+
 TWIN = 0.86                       # 2.130.4: an unknown cell this like a known one in the same window is the same item
 
 
