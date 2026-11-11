@@ -52,6 +52,7 @@ NOTES = {
         "small": [
             ("Overlay", "The Ritual line keeps your tribute when the game's counter goes from the screen - until it's "
              "0 or you start a new map."),
+            ("Overlay", "End Delirium is a calm alert card too, like the other alerts - no flashing text."),
         ],
     },
     "2.131.5": {

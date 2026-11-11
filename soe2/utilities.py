@@ -36,7 +36,7 @@ def app_mark():
 
 MUTEX = "PoE2DeliriumAlert_single_instance"             # the name the alert uses to allow only one copy
 NEEDS = ("cv2", "mss", "numpy", "PIL")
-STATES = {"watching": "Watching", "active": "Delirium active in this map", "alert": "ALERT showing: END DELIRIUM",
+STATES = {"watching": "Watching", "active": "Delirium active in this map", "alert": "Showing: End Delirium",
           "nogame": "Waiting for the game window", "error": "Screen capture problem", "move": "Moving the splinter",
           "stopped": "Stopped", "starting": "Starting…"}
 
@@ -104,7 +104,13 @@ class DeliriumHelper:
                 if not line:
                     continue
                 if line.startswith("state "):
-                    self.state = line[6:].strip()
+                    was, self.state = self.state, line[6:].strip()
+                    hook = getattr(self, "on_state", None)        # 2.131.6: the app's alert card (its own thread
+                    if hook is not None and self.state != was:   # hands it to the app's)
+                        try:
+                            hook(self.state)
+                        except Exception:
+                            buglog.caught()
                 else:
                     self.lines.append(line)
                     del self.lines[:-30]

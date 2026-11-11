@@ -197,6 +197,15 @@ def main(argv):
             say("state stopped")
 
     D.Tray = PipeTray
+
+    # 2.131.6 (feedback: "end delirium is still showing up as big flashing text and not the new alert style"): run
+    # by the app, its banner never shows - "state alert" tells the app, which shows the calm alert card
+    def _show(self):
+        self.visible = True
+
+    def _hide(self):
+        self.visible = False
+    D.Alert.show, D.Alert.hide = _show, _hide
     test = "--test-alert" in argv
     try:
         D.run(test_alert=test)
