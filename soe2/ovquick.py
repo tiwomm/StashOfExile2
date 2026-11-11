@@ -1,7 +1,7 @@
 """P4 (2.108.0, feedback: "a mini settings page over the game when we right click the cog wheel"): right-click the
 overlay's ⚙ = Quick settings, a small box over the game, above the cog and on the game's monitor. (2.119.0: either
 click - All settings… in it opens the full Overlay ↳ Settings in the app.) Style (2.110.0 - the Overlay ON | OFF switch is gone from here), Sound,
-Lock position, Click-through (2.120.1; Hide from screen captures is in Settings › Advanced), Helpers (2.118.0: each helper on / off - the bar has no switches for them any
+Lock position, Click-through (2.120.1; Hide the overlay from screen captures is in Overlay ↳ Settings › Options), Helpers (2.118.0: each helper on / off - the bar has no switches for them any
 more) and On the bar (the tools' menus). Esc, ✕, a click elsewhere or the cog again closes it.
 GGG ToS: a window over the game; nothing is sent to the game."""
 import tkinter as tk

@@ -348,7 +348,8 @@ class RemnantPage:
         return [n for n, _v in sorted(best.items(), key=lambda t: -t[1])[:self.POOL_SHOWN]]
 
     # ---------------- 2.130.0 (feedback): gems in a remnant's book - priced on the trade site, one search each
-    GEM_FRESH = 6 * 3600                              # a gem's price is kept this long (2.130.4: was 30 min)
+    GEM_FRESH = 24 * 3600                             # a gem's price is kept this long (2.130.4: was 30 min; 2.132.0
+    #                                                   (feedback: "people are gonna get rate limited hard"): a day)
     # 2.130.4 (feedback: "trade site rate limited us on fetching prices"): a book's gems may use at most GEM_BUDGET
     # searches per 5 minutes - the rest of the trade site's allowance stays for your own price checks; prices are kept
     # on disk (GEM_FILE), so the same gem in the next book costs nothing

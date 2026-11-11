@@ -453,15 +453,8 @@ class MergedOverlay:
             # Delirium watchers ran all the time for anyone who had them on, so the bar was never in a screenshot.
             # Turn it on again only if a watcher can't read a counter the bar covers.
             cfg["hide_capture"], cfg["hidecap_2891"] = False, True
-        if not cfg.get("hide_capture", False):
-            return False
-        # 2.88.3 (feedback): only while the Ritual or
-        # Delirium watcher is running - they're the ones that need to see under the bar. Otherwise screenshots show it.
-        from .utilities import DELIRIUM, RITUAL
-        try:
-            return bool(RITUAL.running() or DELIRIUM.running())
-        except Exception:
-            return True
+        # 2.132.0 (feedback: "changed to just say 'Hide the overlay from screen captures'"): on = always left out
+        return bool(cfg.get("hide_capture", False))
 
     def overlay_click_through(self):
         """The overlay's bar windows (not Notes or the calculator - you type in those)."""
