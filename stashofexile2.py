@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU AGPL v3.0 (see LICENSE; up to 2.129.4: GNU GPL v3.0). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.132.2
+VERSION 2.132.3
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,6 +19,12 @@ VERSION 2.132.2
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.132.3
+       - Ritual Identifier (BETA; feedback: "build ritual identifier"): hover a Ritual Altar in a map, its tooltip's
+         type ("Tainted Ritual Altar", or its danger line) -> an alert card: type, loot, danger (ritualid.py). One
+         look round the mouse (hover_page.py) now feeds it and the Temple Helper.
+       - What's new in keywords (feedback: "caveman mode this"): 2.131.5-2.132.2 and the 2.132.0 summary rewritten.
+       - Check a flip lists every exchange item (cxnames loaded with a non-hub id).
   2.132.2
        - Map profit (feedback: "needs to account for inventory dumps if a player empties inventory and goes back into
          the map ... find a good idea for it"): counted visit by visit - each visit home adds what you came back with
@@ -3592,7 +3598,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.132.2"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.132.3"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
