@@ -268,7 +268,12 @@ class App(SettingsPage, GearBookPage, PriceCheckPage, PricePopup, FavoritesPage,
         from . import listkit                        # 2.12.0: keys, right-click menus and striped rows everywhere
         listkit.install(self)
         SETTINGS.setdefault("poe2db_key", "Ctrl+Shift+D")
-        SETTINGS.setdefault("topup_key", "F7")           # 2.131.1: Top Up teaches with its own key
+        # 2.131.1: Top Up teaches with its own key; 2.131.4 (feedback: "F7 doesn't work ... it'll have to be ctrl+c"):
+        # the game's own Ctrl+C by default (F7, the old default, moves to it once)
+        if not SETTINGS.get("topup_key_2131") and SETTINGS.get("topup_key") in (None, "F7"):
+            SETTINGS["topup_key"] = "Ctrl+C"
+        SETTINGS["topup_key_2131"] = True
+        SETTINGS.setdefault("topup_key", "Ctrl+C")
         SETTINGS.setdefault("copy_marker", True)            # 2.19.0: a mark where you pressed Ctrl+Alt+C
         SETTINGS.setdefault("copy_marker_secs", 10)         # 2.24.0: how long it stays
         SETTINGS.setdefault("copy_marker_hold", False)      # 2.24.0: or until Esc is tapped twice (2.25.0)
@@ -2251,7 +2256,9 @@ class App(SettingsPage, GearBookPage, PriceCheckPage, PricePopup, FavoritesPage,
                             self.last_clip = text
                         elif text:
                             self.last_clip = text
-                            if self.wealth_takes(text):        # 2.0 beta 7: a copied stack, counted on Wealth
+                            if self.topup_wants(text) and self.topup_take(text):    # 2.131.4: Top Up's copy first
+                                pass
+                            elif self.wealth_takes(text):        # 2.0 beta 7: a copied stack, counted on Wealth
                                 self.wealth_clip(text)
                             elif self.pc_wants(text):            # 2.80.0: your price check key on an item -> Price Checks
                                 self.last_heard = time.time()
@@ -2360,15 +2367,6 @@ class App(SettingsPage, GearBookPage, PriceCheckPage, PricePopup, FavoritesPage,
                 return self.fl_take_clip(text)
             if self.fl_ed_open() and self.fl_ed_take(text):
                 return None
-            keys = getattr(self, "keys", None)                    # 2.131.1: only the Top Up key teaches Top Up
-            if keys is not None and getattr(keys, "tu_recent", None) and keys.tu_recent():
-                try:
-                    if not self.topup_copy_learn(text):
-                        self.status_text, self.status_until = ("Top Up: open your inventory and hover the item, "
-                                                               "then press the key again"), time.time() + 6
-                except Exception:
-                    buglog.caught()
-                return None                                       # (never priced, never Bulk Pricing)
             try:                                                  # 2.129.3: a copy while the Favours window is
                 if self.favours_copy_learn(text) and not self.ADVANCED.search(text):     # open teaches that
                     self.status_text, self.status_until = "Favours prices: learned its look", time.time() + 5

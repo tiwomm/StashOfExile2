@@ -149,8 +149,8 @@ class UtilitiesPage:
         from .overlay import parse_key, game_active, send_copy, POE_TITLE
         from . import topup as TU
         k = parse_key(SETTINGS.get("topup_key") or "")
-        if not k or k != (vk, ctrl, alt, shift) or not TU.cfg().get("on"):
-            return False
+        if not k or k != (vk, ctrl, alt, shift) or not TU.cfg().get("on") or self.topup_key_is_copy():
+            return False                                   # (Ctrl+C: the game copies by itself - nothing to send)
         if not game_active((getattr(self, "overlay", None) and self.overlay.cfg.get("poe_title")) or POE_TITLE):
             return False
 

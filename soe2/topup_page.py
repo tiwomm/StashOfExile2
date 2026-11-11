@@ -197,9 +197,9 @@ class TopUpPage:
         buglog.debug("Top Up", f"reminded: {len(lows)} low")
         return lows
 
-    # ---------------------------------------------------------------- teaching (the Top Up key, F7)
+    # ---------------------------------------------------------------- teaching (the Top Up key, Ctrl+C)
     def topup_copy_learn(self, text):
-        """The Top Up key (2.131.1: its own, F7) on an item while your inventory was just seen: learn its picture under
+        """The Top Up key (2.131.4: the game's Ctrl+C by default) on an item while your inventory was just seen: learn its picture under
         the mouse, add it to your list (keep = a full stack). -> True if learned."""
         last = getattr(self, "tu_last", None) or {}
         if not TU.cfg().get("on") or not last.get("open") or time.time() - last.get("t", 0) > TEACH_SECS:
@@ -269,10 +269,41 @@ class TopUpPage:
             self.topup_paint_list()
         return added
 
+    def topup_wants(self, text):
+        """2.131.4 (feedback: F7 did nothing - its copy was turned away as "not your Ctrl+Alt+C"): a copy for Top Up -
+        Top Up on, an item, and your Top Up key just pressed (Ctrl+C, the game's own copy, by default)."""
+        if not TU.cfg().get("on") or not str(text).lstrip().startswith("Item Class:"):
+            return False
+        keys = getattr(self, "keys", None)
+        if keys is None:
+            return False
+        if self.topup_key_is_copy():
+            return bool(keys.copy_recent() and not keys.combo_recent() and not keys.pc_recent())
+        return bool(getattr(keys, "tu_recent", None) and keys.tu_recent())
+
+    def topup_key_is_copy(self):
+        k = str(SETTINGS.get("topup_key") or "").replace(" ", "").lower()
+        return k in ("ctrl+c", "")
+
+    def topup_take(self, text):
+        """The copy teaches Top Up -> True (taken). Ctrl+C on anything else (not over your open inventory) -> False:
+        the copy goes on as usual. Your own key and nothing learned: says why, and it's taken."""
+        try:
+            if self.topup_copy_learn(text):
+                return True
+        except Exception:
+            buglog.caught()
+            return False
+        if self.topup_key_is_copy():
+            return False
+        self.status_text, self.status_until = ("Top Up: open your inventory and hover the item, then press the key "
+                                               "again"), time.time() + 6
+        return True
+
     def topup_key_text(self):
         from .overlay import key_label
-        k = SETTINGS.get("topup_key") or ""
-        return key_label(k) if k else "the Top Up key (set it in Settings › Keybinds)"
+        k = SETTINGS.get("topup_key") or "Ctrl+C"
+        return key_label(k)
 
     # ---------------------------------------------------------------- Overlay ↳ Settings › Helpers: its row
     def topup_row(self, box, bg, CB):

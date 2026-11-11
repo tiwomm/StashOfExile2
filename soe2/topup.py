@@ -423,7 +423,9 @@ def full_stack(text):
 
 
 def item_name(text):
-    """The game's item text -> (name, stack count or None) for a stackable item, else None."""
+    """The game's item text -> (name, stack count or None) for a stackable item - or (2.131.4, feedback: "things
+    like cryptic keys that do not stack") a normal one: each cell holding it counts 1. Else None (magic / rare /
+    unique gear)."""
     lines = [ln.strip() for ln in str(text or "").splitlines()]
     i = next((k for k, ln in enumerate(lines) if ln.startswith("Rarity:")), None)
     if i is None or i + 1 >= len(lines):
@@ -431,7 +433,7 @@ def item_name(text):
     m = STACK.search(str(text))
     n = int(re.sub(r"[^\d]", "", m.group(1))) if m else None
     rarity = lines[i][7:].strip()
-    if rarity != "Currency" and m is None:            # (a currency or a stack - not gear)
+    if rarity not in ("Currency", "Normal") and m is None:     # (a currency, a stack or a plain item - not gear)
         return None
     return lines[i + 1], n
 
