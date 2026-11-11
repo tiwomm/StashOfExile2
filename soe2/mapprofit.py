@@ -71,17 +71,19 @@ def exchange_only(counts, price):
 
 # ---------------------------------------------------------------- one map
 def rows(before, after, price):
-    """-> [(name, before, after, divines each, worth)] for what changed, most worth first (a loss counts too)."""
+    """-> [(name, before, after, divines each, worth)] for what a map gained, most worth first. 2.132.2 (feedback:
+    "why is it marking as -div if I didn't actually lose anything"): fewer of an item is never counted - it was used,
+    stashed or covered, not lost to the map."""
     out = []
     for name in set(before) | set(after):
         b, a = before.get(name, 0), after.get(name, 0)
-        if a == b:
+        if a <= b:
             continue
         each = price(name)
         if each is None:
             continue
         out.append((name, b, a, each, (a - b) * each))
-    out.sort(key=lambda r: -abs(r[4]))
+    out.sort(key=lambda r: -r[4])
     return out
 
 

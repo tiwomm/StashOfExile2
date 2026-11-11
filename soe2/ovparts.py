@@ -299,9 +299,10 @@ class OverlayParts:
         if "ritual" in rows:                                  # 2.118.0: the Ritual line
             mid = mids[rows.index("ritual")]
             fm = tkfont.Font(root=cv, family=P["font"], size=self._hf(10))
-            cv.create_text(lft, mid, text="▸ RITUAL", anchor="w", fill=P["head"],
+            tag = "▸ " + self.ritual_line_label()             # 2.132.2: RITUAL / TEMPLE / IN MAP
+            cv.create_text(lft, mid, text=tag, anchor="w", fill=P["head"],
                            font=(P["hfont"], self._hf(9), "bold"), tags=("mg", "rit"))
-            rt = self._mg_text(cv, P, lft + fm.measure("▸ RITUAL ") + 8, mid, "ritual", f)
+            rt = self._mg_text(cv, P, lft + fm.measure("▸ IN MAP ") + 8, mid, "ritual", f)
             cv.addtag_withtag("rit", rt.item)
             rt.config(text=self.ritual_readout())
             if light:

@@ -157,7 +157,27 @@ class AlertsPage:
     def ritual_readout(self):
         """2.118.0 (feedback: show the Ritual count and your tribute on screen, with a switch): the text of the Ritual
         line over the game - "2 of 4 rituals done · 1,240 tribute" - while a map's Ritual counter has been seen, or
-        "" (no line). The count used to ride on the bar's Ritual switch, which is gone."""
+        "" (no line). The count used to ride on the bar's Ritual switch, which is gone.
+        2.132.2 (feedback: "overlay text overlap ... we're cramming too much into the bar"): the line holds the map's
+        mechanics - Ritual's part, and the Temple Helper's crystals (not on the bar any more)."""
+        parts = [p for p in (self._ritual_part(), self._temple_part()) if p]
+        return "  ·  ".join(parts)
+
+    def ritual_line_label(self):
+        """The line's tag: RITUAL, TEMPLE, or IN MAP when it holds both."""
+        r, t = bool(self._ritual_part()), bool(self._temple_part())
+        return "IN MAP" if r and t else "TEMPLE" if t else "RITUAL"
+
+    def _temple_part(self):
+        try:
+            if self.temple_on() and getattr(self, "br_area", None) == "map":
+                from . import temple as TM
+                return TM.bar_text(TM.state())
+        except Exception:
+            buglog.caught()
+        return ""
+
+    def _ritual_part(self):
         c = self.ritual_cfg()
         if not (c.get("on") and c.get("readout", True)):
             return ""
@@ -338,7 +358,7 @@ class AlertsPage:
                         "Client.txt)",
             "whispers": "Trade Whisper Watcher: a card over the game when someone whispers to buy an item you listed - "
                         "easy to miss in a busy chat (reads Client.txt; nothing is saved)",
-            "desecrate": "Desecration Helper (BETA): at The Well of Souls each revealed option shows its tier (T1 = best "
+            "desecrate": "Desecration Helper: at The Well of Souls each revealed option shows its tier (T1 = best "
                          "for that item type) - on only while you're there (reads Client.txt, then your screen)"}
         tests = {"delirium": self.alerts_test_delirium, "breach": lambda: self.breach_alert(test=True),
                  "ritual": self.alerts_test_ritual, "remnant": self.alerts_test_remnant,
@@ -346,7 +366,7 @@ class AlertsPage:
                  "whispers": lambda: self.ww_show_test(), "desecrate": self.alerts_test_desecrate}
         names = {"delirium": "Delirium", "breach": "Breach", "ritual": "Ritual", "remnant": "Expedition",
                  "focus": "League Plan", "campaign": "Campaign", "whispers": "Trade whispers",
-                 "desecrate": "Desecration (BETA)"}
+                 "desecrate": "Desecration"}
         # 2.119.0 (UX pass): what each one does, in one gray line under its name (it was only a tooltip)
         blurb = HELPER_BLURBS
         self.al_leave = tk.BooleanVar(value=bool(self.breach_cfg().get("leave_reminder", True)))
@@ -454,7 +474,7 @@ class AlertsPage:
         brow = tk.Frame(box, bg=P2)
         brow.pack(fill="x", pady=(8, 0))
         self.al_break = tk.BooleanVar(value=bool(bc["on"]))
-        bcb = ttk.Checkbutton(brow, text="Break reminders", variable=self.al_break, style=CB,
+        bcb = ttk.Checkbutton(brow, text="Break reminders (BETA)", variable=self.al_break, style=CB,
                               command=lambda: self.break_set("on", bool(self.al_break.get())))
         bcb.pack(side="left")
         tk.Label(brow, text="every", bg=P2, fg=C["text"], font=sm).pack(side="left", padx=(8, 4))
@@ -1289,7 +1309,8 @@ class AlertsPage:
     def break_check(self, force=False):
         from . import breaks as BR
         c = BR.cfg()
-        if not c.get("on") and not force:
+        from . import features as FEAT
+        if not force and (not c.get("on") or not FEAT.on("breaks")):      # (2.132.2: BETA)
             return None
         played = self.break_played()
         st = self.__dict__.setdefault("_break", {"last": 0.0, "n": 0})
@@ -1312,6 +1333,9 @@ class AlertsPage:
     def break_set(self, key, value):
         from . import breaks as BR
         BR.cfg()[key] = value
+        if key == "on":
+            from . import features as FEAT
+            FEAT.beta_on("breaks", bool(value))
         save_json("settings.json", SETTINGS)
         if key == "on" and value:
             self.__dict__["_break"] = {"last": self.break_played(), "n": 0}     # (counted from now)

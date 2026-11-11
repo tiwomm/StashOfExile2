@@ -1,5 +1,5 @@
-"""2.132.1 Temple Helper - the watcher (a look round the mouse in maps, for the Vaal Beacon's tooltip), the bar's
-crystals part and the alert card when they're full; its row in Overlay ↳ Settings › Helpers (temple.py reads)."""
+"""2.132.1 Temple Helper - the watcher (a look round the mouse in maps, for the Vaal Beacon's tooltip), the crystals
+on the line above the bar (2.132.2, with Ritual's - the bar had no room) and the alert card when they're full; its row in Overlay ↳ Settings › Helpers (temple.py reads)."""
 import tkinter as tk
 from tkinter import ttk
 
@@ -16,10 +16,12 @@ class TemplePage:
 
     def temple_on(self):
         from . import features as FEAT
-        return bool(TM.cfg().get("on")) and FEAT.on("overlay")
+        return bool(TM.cfg().get("on")) and FEAT.on("overlay") and FEAT.on("temple")     # (2.132.2: BETA)
 
     def temple_set(self, on):
         TM.cfg()["on"] = bool(on)
+        from . import features as FEAT
+        FEAT.beta_on("temple", bool(on))
         save_json("settings.json", SETTINGS)
         if on:
             self.temple_start()
@@ -44,6 +46,7 @@ class TemplePage:
             self._tm_ticking = False
             return
         try:
+            self.ritual_readout_sync()                      # (2.132.2: the crystals ride on the line above the bar)
             self.temple_look()
         except Exception:
             self.log_error("the Temple Helper")
@@ -96,7 +99,7 @@ class TemplePage:
         if not old or (old["have"], old["most"]) != got:
             buglog.debug("Temple", f"crystals {got[0]}/{got[1]}")
             try:
-                self.tracker_overlay_draw(self.tracker_numbers())
+                self.ritual_readout_sync()
             except Exception:
                 buglog.caught()
         if TM.full(st) and not (old and TM.full(old) and getattr(self, "tm_told", False)):
@@ -116,16 +119,13 @@ class TemplePage:
                                      game=game_rect(), tag="Temple", rank=1, vital=True)
         return self.tm_win
 
-    def temple_bar_text(self):
-        return TM.bar_text(TM.state()) if self.temple_on() else ""
-
     # ---------------------------------------------------------------- Overlay ↳ Settings › Helpers: its row
     def temple_row(self, box, bg, CB):
         sm = ("Segoe UI", 9)
         row = tk.Frame(box, bg=bg)
         row.pack(fill="x", pady=(8, 0))
         self.al_temple = tk.BooleanVar(value=bool(TM.cfg()["on"]))
-        cb = ttk.Checkbutton(row, text="Temple Helper", variable=self.al_temple, style=CB,
+        cb = ttk.Checkbutton(row, text="Temple Helper (BETA)", variable=self.al_temple, style=CB,
                              command=lambda: self.temple_set(bool(self.al_temple.get())))
         cb.pack(side="left")
         tb = ttk.Button(row, text="Test", width=6, command=lambda: self.temple_alert(test=True))

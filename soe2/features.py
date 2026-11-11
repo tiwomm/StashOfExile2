@@ -33,9 +33,16 @@ BETA = (
     {"key": "search", "name": "Game Search", "what": "Search the game's items and mods.", "modules": ("search",)},
     {"key": "money", "name": "Money Makers", "what": "Community farming strats and the Craft Helper.",
      "modules": ("money",)},
-    {"key": "desecrate", "name": "Desecration Helper", "what": "Tiers on the Well of Souls' options.", "modules": ()},
+    # 2.132.2 (feedback: "anything else helper-wise until it's fully tested and checklist approved should be marked
+    # beta. desecration helper can come out of beta"): the newer helpers are BETA; the Desecration Helper isn't
+    {"key": "topup", "name": "Top Up Reminders", "what": "What's running low in your inventory, back from a map.",
+     "modules": (), "was": ("topup", "on")},
+    {"key": "breaks", "name": "Break reminders", "what": "A kind nudge in long sessions, in your hideout or a town.",
+     "modules": (), "was": ("breaks", "on")},
     {"key": "mapprofit", "name": "Map profit", "what": "What each map earned, from your inventory - on your PC only.",
-     "modules": ()},                                    # 2.132.2 (feedback: "map profit needs beta flagged")
+     "modules": (), "was": ("map_profit", "on")},
+    {"key": "temple", "name": "Temple Helper", "what": "Your crystals on the bar, and a card when they're full.",
+     "modules": (), "was": ("temple", "on")},
 )
 ALL = GROUPS + BETA
 # the Overlay page (the session timer) holds the overlay's settings and the planning pages: shown while either is on
@@ -49,12 +56,20 @@ def cfg():
         c.setdefault(g["key"], True)
     beta = bool(SETTINGS.get("labs"))
     for g in BETA:
-        c.setdefault(g["key"], beta)
+        was = g.get("was")                     # (2.132.2: a helper you already use stays on as it becomes BETA)
+        c.setdefault(g["key"], beta or bool(was and (SETTINGS.get(was[0]) or {}).get(was[1])))
+    c.pop("desecrate", None)                   # (2.132.2: the Desecration Helper isn't BETA any more)
     return c
 
 
 def on(key):
     return bool(cfg().get(key, True))
+
+
+def beta_on(key, value=True):
+    """2.132.2: turning a BETA helper on turns its feature on too (as Features shows it)."""
+    if value and not on(key):
+        set_on(key, True)
 
 
 def group_of(module_key):
