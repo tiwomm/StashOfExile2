@@ -1,5 +1,5 @@
 """2.132.0 Map profit - the watcher's side (mapprofit.py has the counting and the log), the bar's profit part with
-its breakdown one hover away, the Map profit window (every map, searchable) and its row in Overlay ↳ Settings ›
+its breakdown one hover away, the Map profit window (every map, searchable) and its row in Overlay ↳ Overlay Settings ›
 Helpers. Off until you turn it on. Everything stays on your PC (map_profit.jsonl) - never sent anywhere."""
 import time
 import tkinter as tk
@@ -443,7 +443,7 @@ class MapProfitPage:
         w.geometry(f"+{e.x_root + 16}+{e.y_root + 12}")
         return None
 
-    # ---------------------------------------------------------------- Overlay ↳ Settings › Helpers: its row
+    # ---------------------------------------------------------------- Overlay ↳ Overlay Settings › Helpers: its row
     def mp_row(self, box, bg, CB):
         sm = ("Segoe UI", 9)
         row = tk.Frame(box, bg=bg)

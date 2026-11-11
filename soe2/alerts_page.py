@@ -130,8 +130,7 @@ HELPER_BLURBS = {"delirium": "An End Delirium card when a map ends with Delirium
                  "topup": "Says what's running low when you open your inventory in a hideout or town",   # 2.131.1
                  "breaks": "An alert card after a long stretch of play, in a hideout or town",
                  "mapprofit": "What each map earned, from your inventory - on your PC only",          # 2.132.1
-                 "temple": "Your crystals on the bar, and a card when they're full",
-                 "ritualid": "Hover a Ritual Altar: its type, loot and danger"}
+                 "temple": "Your crystals on the bar, and a card when they're full"}
 
 
 class AlertsPage:
@@ -171,7 +170,7 @@ class AlertsPage:
 
     def _temple_part(self):
         try:
-            if self.temple_on() and getattr(self, "br_area", None) == "map":
+            if self.temple_on() and getattr(self, "br_area", None) == "map" and getattr(self, "tm_in_map", False):
                 from . import temple as TM
                 return TM.bar_text(TM.state())
         except Exception:
@@ -234,8 +233,7 @@ class AlertsPage:
                     or (hasattr(self, "fl_counting") and self.fl_counting())      # 2.45.0: the Strat Tracker's runs
                     or bool(SETTINGS.get("topup", {}).get("on"))                  # 2.131.0: Top Up (hideout / town)
                     or bool(SETTINGS.get("map_profit", {}).get("on"))             # 2.132.0: Map profit (maps)
-                    or bool(SETTINGS.get("temple", {}).get("on"))                 # 2.132.1: the Temple Helper (maps)
-                    or bool(SETTINGS.get("ritual_id", {}).get("on")))             # 2.132.3: the Ritual Identifier
+                    or bool(SETTINGS.get("temple", {}).get("on")))                # 2.132.1: the Temple Helper (maps)
 
     def alerts_init(self):
         """At start-up (start_utilities): the Breach watcher runs whether or not the tracker window was opened."""
@@ -377,6 +375,7 @@ class AlertsPage:
         self.al_rshow = tk.BooleanVar(value=bool(self.ritual_cfg().get("readout", True)))
         self.al_rfav = tk.BooleanVar(value=bool(self.ritual_cfg().setdefault("favours", True)))
         self.al_rtrib = tk.BooleanVar(value=bool(self.ritual_cfg().setdefault("tribute_reminder", True)))
+        self.al_rid = tk.BooleanVar(value=bool(self.ritual_cfg().setdefault("identify", True)))
         self.al_rru = tk.BooleanVar(value=bool(self.remnant_cfg().get("rumours", True)))
         self.al_rtips = tk.BooleanVar(value=bool(self.remnant_cfg().get("tips", True)))
         opts = {
@@ -393,7 +392,10 @@ class AlertsPage:
                         "Price check one there (your price check key) and it learns its picture."),
                        ("Tribute reminder", self.al_rtrib, self.alerts_tribute_changed,
                         "Close the Favours window with tribute left: a reminder to offer it to "
-                        "the King.")]}
+                        "the King."),
+                       # 2.132.4 (feedback: "Ritual Identifier should be part of the Ritual Helper")
+                       ("Ritual Identifier", self.al_rid, lambda: self.ritid_changed(self.al_rid.get()),
+                        "Hover a Ritual Altar in a map: its type, loot and danger.")]}
         remind = {"breach": (self.al_leave, self.alerts_leave_changed),
                   "ritual": (self.al_rleave, self.alerts_ritual_leave_changed)}
         # (2.132.2, feedback: "desecration needs moved up under 'play' settings to be above campaign")
@@ -499,7 +501,6 @@ class AlertsPage:
         self.topup_row(box, P2, CB)                         # 2.131.0: Top Up Reminders
         self.mp_row(box, P2, CB)                            # 2.132.0: Map profit
         self.temple_row(box, P2, CB)                        # 2.132.1: Temple Helper
-        self.ritid_row(box, P2, CB)                         # 2.132.3: Ritual Identifier
         self.alerts_refresh()
         return box
 
@@ -533,6 +534,7 @@ class AlertsPage:
             self.ritual_cfg()["on"] = want
             save_json("settings.json", SETTINGS)
             err = self.ritual_start() if want else self.ritual_stop()
+            self.hover_start()                                # 2.132.4: its Ritual Identifier (stops itself when off)
             r["note"] = err or ""
             if err and want:
                 r["on"].set(False)
@@ -555,9 +557,9 @@ class AlertsPage:
             v = getattr(self, "al_topup", None)
             if v is not None and bool(v.get()) != bool(want):
                 v.set(bool(want))
-        elif key in ("mapprofit", "temple", "ritualid"):      # 2.132.1: Quick settings switch them too
-            {"mapprofit": self.mp_set, "temple": self.temple_set, "ritualid": self.ritid_set}[key](bool(want))
-            v = getattr(self, {"mapprofit": "al_mp", "temple": "al_temple", "ritualid": "al_ritid"}[key], None)
+        elif key in ("mapprofit", "temple"):                  # 2.132.1: Quick settings switch them too
+            (self.mp_set if key == "mapprofit" else self.temple_set)(bool(want))
+            v = getattr(self, "al_mp" if key == "mapprofit" else "al_temple", None)
             if v is not None and bool(v.get()) != bool(want):
                 v.set(bool(want))
         elif key == "breaks":
@@ -947,12 +949,10 @@ class AlertsPage:
                                               else "warn" if getattr(self, "br_reader", None) is None else "off")
         from . import topup as _TU, breaks as _BR                                   # 2.131.1
         from . import mapprofit as _MP, temple as _TM                               # 2.132.1
-        from . import ritualid as _RID                                              # 2.132.3
         return {"focus": "on" if _F.cfg()["on"] else "off", "campaign": "on" if _CP.cfg()["on"] else "off",
                 "whispers": w, "topup": "on" if _TU.cfg().get("on") else "off",
                 "breaks": "on" if _BR.cfg().get("on") else "off",
-                "mapprofit": "on" if _MP.cfg().get("on") else "off", "temple": "on" if _TM.cfg().get("on") else "off",
-                "ritualid": "on" if _RID.cfg().get("on") else "off"}
+                "mapprofit": "on" if _MP.cfg().get("on") else "off", "temple": "on" if _TM.cfg().get("on") else "off"}
 
     def alerts_refresh(self):
         """Every 2 s (util_refresh) and after a change: dots, checkboxes and status lines."""
@@ -1241,6 +1241,7 @@ class AlertsPage:
             if where is None or where != getattr(self, "rt_where", None):
                 self.rt_map = None
                 self.rt_done = False
+                self.tm_in_map = False                 # 2.132.4: the Temple icon is looked for again
                 try:
                     from .utilities import RITUAL
                     RITUAL.content = None              # (the last map's tick isn't this one's)

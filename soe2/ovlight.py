@@ -6,7 +6,7 @@ changes size - each as a Bar (resting on the XP bar) and a Panel (a card you pla
   slate     a flat box with thin dividers; a switch that's on is underlined (a bar on its left in the Panel)
   flanks    (shown as Split) no box: the numbers beside the life orb, the switches beside the mana orb - the middle stays clear
   micro     the smallest: the times, the rank and the switches as lettered squares (Ritual shows its count, 2/3)
-"Classic" is the stone-and-bronze look of before (hudart.py). Settings › Appearance › Overlay settings: Style, then
+"Classic" is the stone-and-bronze look of before (hudart.py). Settings › Appearance › Overlay: Style, then
 Colors ("Exile Gold" is the Bar's own colors; the others are the theme packs'; "Follow the app theme").
 The same parts as Classic: the timer and its ⏸ / ▶, the map's time, where you are, its rank (click to rank), Maps,
 Avg, the clock, the switches, Notes ▾ / Calc ▾ / Regex ▾ / Vendor ▾, the lock and ⚙ - each with its switch in
@@ -246,7 +246,7 @@ class LightOverlay:
         return P
 
     def ov_look_set(self, style=None, colors=None):
-        """Settings › Appearance › Overlay settings: Style / Colors picked - the overlay is built again."""
+        """Settings › Appearance › Overlay: Style / Colors picked - the overlay is built again."""
         cfg = self.tracker_cfg()
         if style in STYLES and style != cfg.get("look"):
             cfg["look"] = style
@@ -310,7 +310,7 @@ class LightOverlay:
                                 font=("Segoe UI Symbol", self._hf(9)), tags=("mg", tag))
             CanvasText(cv, it, P["bg"], halo=P.get("halo"))
             if tag == "mg_cog":                          # 2.119.0: either click = Quick settings over the game
-                for b in ("<Button-1>", "<Button-3>"):   # (its All settings… opens Overlay ↳ Settings in the app)
+                for b in ("<Button-1>", "<Button-3>"):   # (its All settings… opens Overlay ↳ Overlay Settings in the app)
                     cv.tag_bind(tag, b, lambda e: self.ov_quick_toggle(e))
             else:
                 cv.tag_bind(tag, "<Button-1>", lambda e, c=cmd: c())

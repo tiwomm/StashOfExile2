@@ -1,5 +1,5 @@
 """Expedition Remnant Price Checker in the app (2.37.0): the "Remnant" helper next to Delirium, Breach and Ritual -
-its row in Overlay › Settings › Helpers, its cell in the timer's Helpers bar, and the price tags over the game.
+its row in Overlay › Overlay Settings › Helpers, its cell in the timer's Helpers bar, and the price tags over the game.
 The reading and matching are in remnant.py. Idea: PoE Ancients Price Helper by Pedro Quitério (no code from it)."""
 import sys
 import threading
@@ -115,7 +115,7 @@ class RemnantPage:
                 except tk.TclError:
                     pass
                 self.rm_win.remove(w)
-        self._say("Runeshape tips are off. Overlay › Settings › Helpers › Expedition › Runeshape tips turns them back on.", 8)
+        self._say("Runeshape tips are off. Overlay › Overlay Settings › Helpers › Expedition › Runeshape tips turns them back on.", 8)
 
     # ---------------- Auto: a light watcher on the learned area
     def remnant_auto_sync(self):

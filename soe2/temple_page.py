@@ -1,5 +1,5 @@
 """2.132.1 Temple Helper - the watcher (a look round the mouse in maps, for the Vaal Beacon's tooltip), the crystals
-on the line above the bar (2.132.2, with Ritual's - the bar had no room) and the alert card when they're full; its row in Overlay ↳ Settings › Helpers (temple.py reads)."""
+on the line above the bar (2.132.2, with Ritual's - the bar had no room) and the alert card when they're full; its row in Overlay ↳ Overlay Settings › Helpers (temple.py reads)."""
 import tkinter as tk
 from tkinter import ttk
 
@@ -68,7 +68,7 @@ class TemplePage:
                                      game=game_rect(), tag="Temple", rank=1, vital=True)
         return self.tm_win
 
-    # ---------------------------------------------------------------- Overlay ↳ Settings › Helpers: its row
+    # ---------------------------------------------------------------- Overlay ↳ Overlay Settings › Helpers: its row
     def temple_row(self, box, bg, CB):
         sm = ("Segoe UI", 9)
         row = tk.Frame(box, bg=bg)

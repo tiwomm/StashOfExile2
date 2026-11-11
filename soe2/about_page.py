@@ -57,7 +57,7 @@ QUICKSTART = [
     ("While you map", [
         "Game Overlay: a bar over the game. Click ▶ Start session on it to time your maps and count maps and deaths; "
         "F6 hides or shows the whole overlay.",
-        "Overlay › Settings › Helpers can warn you when your Hiveblood is almost full (Breach), when you leave a map "
+        "Overlay › Overlay Settings › Helpers can warn you when your Hiveblood is almost full (Breach), when you leave a map "
         "with Delirium or rituals left, and more. They work with or without a session.",
     ]),
     ("Pick your league and say hi", [

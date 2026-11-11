@@ -43,8 +43,6 @@ BETA = (
      "modules": (), "was": ("map_profit", "on")},
     {"key": "temple", "name": "Temple Helper", "what": "Your crystals on the bar, and a card when they're full.",
      "modules": (), "was": ("temple", "on")},
-    {"key": "ritualid", "name": "Ritual Identifier", "what": "Hover a Ritual Altar: its type, loot and danger.",
-     "modules": (), "was": ("ritual_id", "on")},
 )
 ALL = GROUPS + BETA
 # the Overlay page (the session timer) holds the overlay's settings and the planning pages: shown while either is on

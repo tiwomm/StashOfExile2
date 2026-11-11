@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU AGPL v3.0 (see LICENSE; up to 2.129.4: GNU GPL v3.0). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.132.3
+VERSION 2.132.4
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,6 +19,15 @@ VERSION 2.132.3
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.132.4
+       - Overlay ↳ Settings is Overlay ↳ Overlay Settings (feedback); the button on the Overlay page says so too.
+         Settings › Appearance's "Overlay settings" section is "Overlay" (one name each). Keybinds' "Overlays" group
+         is "Overlay".
+       - Ritual Identifier (feedback: "should be part of the Ritual Helper that can be toggled on/off"): a chip on the
+         Ritual helper's row (ritual_alert.identify, on with it); its own row, Quick settings chip and BETA feature
+         are gone (migrations: ritual_id cleared).
+       - Temple Helper (feedback: "says Crystals ? without even having temple in the map"): the crystals show once
+         Map Content has the Temple icon (templates/temple_content.png; 0.999+ there, 0.72 at most without).
   2.132.3
        - Ritual Identifier (BETA; feedback: "build ritual identifier"): hover a Ritual Altar in a map, its tooltip's
          type ("Tainted Ritual Altar", or its danger line) -> an alert card: type, loot, danger (ritualid.py). One
@@ -57,7 +66,7 @@ VERSION HISTORY
          when crystals are full"; the Vaal Beacon tooltip "Energised Beacons: 55/60"): temple.py (parse, the region
          round the mouse, temple.json: only the two numbers) + temple_page.py - in a map, every 1.5 s, Windows OCR of
          that region; "◆ Crystals 55/60" on the bar (the "temple" part); full: a vital alert card once (again after
-         they drop). Its row in Overlay ↳ Settings › Helpers (Test), a Quick settings chip; log_wanted counts it.
+         they drop). Its row in Overlay ↳ Overlay Settings › Helpers (Test), a Quick settings chip; log_wanted counts it.
        - Map profit: its search box says Search (feedback: "wtf is this textbox for?"); no maps: "Session: no maps
          yet"; a Quick settings chip.
        - Map profit (feedback: "needs to account for town trips/re-entering same map and only count when done"): the
@@ -74,7 +83,7 @@ VERSION HISTORY
          named by Top Up's taught pictures, then Scan stash's (favours refs, art box); only WPRICES.named items count
          (the exchange - no waystones, no gear). The bar's profit part (▲ / ▼, hover = how it was worked out, click =
          Maps…); the Map profit window lists every map (search first, hover = breakdown, session / today totals).
-         Its row in Overlay ↳ Settings › Helpers. Off until turned on.
+         Its row in Overlay ↳ Overlay Settings › Helpers. Off until turned on.
        - Alert cards (feedback: "for each of the vital alert cards the text should be red"): show(vital=True) - Breach,
          Ritual, tribute and End Delirium words are red. End Delirium says "Map done - Delirium is still on".
        - Tribute counter (feedback: "keeps bugging out and showing all kinds of numbers"; "still getting occasional
@@ -82,7 +91,7 @@ VERSION HISTORY
          window's close uses the last steady number from the past minute (HUD_KEEP); "counted down" needs two lower
          reads.
        - Hide the overlay from screen captures (feedback: "needs relocated to where it makes sense, and changed to
-         just say 'Hide the overlay from screen captures'"): back in Overlay ↳ Settings › Options (tk_hidecap), and on
+         just say 'Hide the overlay from screen captures'"): back in Overlay ↳ Overlay Settings › Options (tk_hidecap), and on
          means always (overlay_hide_capture); off: only a Ritual map's own rule.
        - Runeshape gems (feedback: "people are gonna get rate limited hard"; "players were already supposed to be shared
          through the board, but we need another system on top of that"): your searches' prices go up with the
@@ -179,7 +188,7 @@ VERSION HISTORY
        - Lost windows (feedback: the picker opened under What's new and vanished): it waits until What's new / the
          quick start is closed and comes right after; the picker, the name card and the sharing popup are owned by
          the app's window (Windows keeps them above it) and follow Always on top.
-       - Quick start page 5: ▶ Start session and Overlay › Settings › Helpers (Ctrl+Alt+S and "Mechanic Helper" are
+       - Quick start page 5: ▶ Start session and Overlay › Overlay Settings › Helpers (Ctrl+Alt+S and "Mechanic Helper" are
          gone).
        - Top Up (feedback: the price check key left its card up): its own key, F7 (Settings › Keybinds; topup_key),
          copies the item and only teaches; the price check key just prices. Hover glow (feedback: "it didn't detect
@@ -196,7 +205,7 @@ VERSION HISTORY
          start sharing page are gone (check_removed).
        - Settings as a window over the app (shell OVER): inset on a dim layer; Esc, × or a click on the dim closes it;
          it reopens on its last tab.
-       - Alerts: every helper alert is the alert card (alertcard) - Where / Size / Test in Overlay › Settings › Helpers.
+       - Alerts: every helper alert is the alert card (alertcard) - Where / Size / Test in Overlay › Overlay Settings › Helpers.
        - Break reminders: off by default; after 45-120 min of play, a card in hideout / town.
        - Top Up Reminders (topup.py / topup_page.py): teach an item with the price check key while the inventory is
          open (banner template), counts read from the stack digits (shipped digit templates, learned from Stack Size,
@@ -542,7 +551,7 @@ VERSION HISTORY
        clear, when to bring the other player in for a kill, what they pick up, which waypoints they tag and who they
        talk to (campaign.json revision 3). Skips as Speedrun; side zones with a rush line stay (Freythorn's spirit).
        The order and essentials follow poe2wiki.net's Guide:Acts quick guide (credited in the pack and the README).
-       Overlay ↳ Settings › Campaign › Route says what each route does in one line, and picking one applies to a
+       Overlay ↳ Overlay Settings › Campaign › Route says what each route does in one line, and picking one applies to a
        character past the campaign too (a carrier's). A Rush run isn't nagged about rewards it skips.
   2.124.1
        Feedback round on 2.124.0. Classic: the Panel is drawn in the Bar's look (stone, pewter frame, corner
@@ -709,7 +718,7 @@ VERSION HISTORY
        "{ Enhancement }" read as a mod on a Solar Amulet - any { ... } line (full-width braces too) is a header now.
   2.120.1
        Feedback: the overlay's "Mouse" choice (Drag to move / Locked / Clicks pass through) was confusing. Back to the
-       two names other overlays use, side by side in Overlay ↳ Settings › Options and Quick settings: Lock position
+       two names other overlays use, side by side in Overlay ↳ Overlay Settings › Options and Quick settings: Lock position
        and Click-through (clicks go to the game). Each works on its own again, as 2.74.3 asked (2.120.0's unlock also
        turned click-through off). ov_click_through_set; OV_MOUSE / ov_mouse_* gone.
        Feedback (a corrupted rare Heavy Belt): unticking Base type said "Any Belts" but the search still asked for a
@@ -738,7 +747,7 @@ VERSION HISTORY
        stays a switch; Price Checks' own Show over the game follows it.
        Every section's note is one line: its first sentence, the rest in an ⓘ you point at (chrome.section,
        split_note); Settings search still finds every word.
-       The overlay: the mouse on it is one choice in Overlay ↳ Settings › Options and Quick settings - Drag to move /
+       The overlay: the mouse on it is one choice in Overlay ↳ Overlay Settings › Options and Quick settings - Drag to move /
        Locked / Clicks pass through to the game (OV_MOUSE, ov_mouse_set; was Lock in Options and Quick settings and
        Click-through in Settings › Appearance; the 🔒 still locks and unlocks). Hide from screen captures and the
        game's window title moved to Settings › Advanced › Over the game; Ask me to rank maps to the Map Library page.
@@ -759,9 +768,9 @@ VERSION HISTORY
        The time now takes only its own width in every style: not tracking shows --:--, paused dims it (the ▶ beside it
        already says so) - _Time.dim, ovlight._lt_time. On the light styles the map's rank rides in the map's text
        (_MapPart, as on Classic); its own slot stood empty whenever a map had no rank. The ⚙ opens Quick settings on
-       either click (its All settings… opens Overlay ↳ Settings in the app) - a left-click used to pull you out of
+       either click (its All settings… opens Overlay ↳ Overlay Settings in the app) - a left-click used to pull you out of
        the game into the app.
-       Helpers (Overlay ↳ Settings): each says what it does in one gray line under its name (it was only a tooltip);
+       Helpers (Overlay ↳ Overlay Settings): each says what it does in one gray line under its name (it was only a tooltip);
        its live status shows under that only while it's on. Client.txt not found is one banner over the list with
        Find it… (it was the same red line on Breach, Ritual, Trade whispers ... and pointed at a right-click on the
        Session tracker that's long gone); the duplicate "They only watch and show" line is gone.
@@ -783,7 +792,7 @@ VERSION HISTORY
        game's height, a Classic bar you'd moved keeps its bottom edge - OLD_HUD_H, hud_one_row), with the numbers, the
        menus (Notes / Calc / Regex / Rates / Vendor ▾), the clock, the lock and ⚙. Every helper starts on for a new
        install (Breach, Ritual, Expedition, Focus, Delirium; Campaign, whispers and Desecration were already) - an
-       existing install keeps what it has - and goes off in Overlay ↳ Settings › Helpers (no On bar column) or Quick
+       existing install keeps what it has - and goes off in Overlay ↳ Overlay Settings › Helpers (no On bar column) or Quick
        settings (right-click ⚙: Helpers switch the helper itself, On the bar the menus). Gone with the switches: the
        "which switches?" question when the overlay is enabled, their hover tips and first-time cards (ovhelp.py) and
        Options › Feature tips. The Classic bar's dividers are slimmer (20 -> 14) so the area's name fits beside the
@@ -1027,7 +1036,7 @@ VERSION HISTORY
        Switches on a card take the card's color (style.py wraps ttk.Checkbutton): plain ones showed a dark box
        behind their text (Settings › General › Updates).
   2.112.0
-       Overlay ↳ Settings › Helpers reworked (feedback: hard to read): one table, one row per helper - on / off,
+       Overlay ↳ Overlay Settings › Helpers reworked (feedback: hard to read): one table, one row per helper - on / off,
        the name with one short line of what it's doing now (full text on hover), its own options as chips (filled
        when on, outlined while the helper is off), On bar and Remind columns (a dash where it doesn't apply), Test /
        Open. Grouped In maps / Play / Trading & more. Sound for every helper sits at the top right. Gone: the six
@@ -1073,8 +1082,8 @@ VERSION HISTORY
        Polish 7 - P4 + P5 + P6 + P7: the overlay and its children, Money Makers, Regex, Game search.
        - Right-click the overlay's cog = Quick settings, a small box over the game (soe2/ovquick.py): Overlay, Sound,
          Lock overlay, Hide from screen captures, and Overlays - chips for what sits on the bar - plus All settings….
-         Left-click still opens Overlay ↳ Settings. Esc, ✕, a click elsewhere or the cog again closes it.
-       - Overlay ↳ Settings › Helpers: each helper's options sit on their own line under it and wrap.
+         Left-click still opens Overlay ↳ Overlay Settings. Esc, ✕, a click elsewhere or the cog again closes it.
+       - Overlay ↳ Overlay Settings › Helpers: each helper's options sit on their own line under it and wrap.
        - A tooltip can't stay stuck on screen when its widget goes away (style.Tooltip watches it).
        - Overlay: "No maps yet this session" text over the empty maps list.
        - Expedition: the Island rumors show in one panel beside the card (was one bar per rumor).
@@ -1099,7 +1108,7 @@ VERSION HISTORY
          A pack can keep its own with "buttons": {"flat": false}.
        - Price Checks in 3 columns: Recent is a list on the left (item, price, time) - was a dropdown.
        - Overlay: one ON | OFF switch (was Overlay Enabled | Overlay Disabled); no "In game: Pause / resume" line;
-         Overlay ↳ Settings › Helpers: one Sound switch for every helper's alert (each row had its own).
+         Overlay ↳ Overlay Settings › Helpers: one Sound switch for every helper's alert (each row had its own).
        - "Open on trade site" reads "Trade Site" everywhere.
   2.106.0
        Polish 7 - P3: Wealth (findings + mockup, then built). Synced stash tabs are gone (feedback: "clean start"):
@@ -1305,7 +1314,7 @@ VERSION HISTORY
          (gamelog "omen" event: ": Omen of  Amelioration in your inventory has been consumed", two spaces;
          the game's own messages only, never chat); the poke comes once you're back in town or
          your hideout from that map - not every N maps. Omen of Amelioration uses it (a saved row moves over once).
-       - The first "Rank this map" card has Opt out: no more rank cards (Overlay > Settings > Ask me to rank maps
+       - The first "Rank this map" card has Opt out: no more rank cards (Overlay > Overlay Settings > Ask me to rank maps
          brings them back).
        - Map library > Share > Upload my ranks to the community: sends your ranks now instead of with the hourly
          sync. Opt-in (Community data sharing), and only when something changed; at most once per 45 minutes, the
@@ -1346,7 +1355,7 @@ VERSION HISTORY
        Roadmap: stash tab reads in stash order (from the listing-order findings), at the end.
   2.98.1
        Trade Whisper Watcher (feedback: at league start items sell by whisper before the trade system opens up -
-       easy to miss one in chat): Overlay > Settings > Helpers > Trade whispers. A whisper TO you that asks to buy
+       easy to miss one in chat): Overlay > Overlay Settings > Helpers > Trade whispers. A whisper TO you that asks to buy
        ("Hi, I would like to buy your ..." - the trade site's whisper, or the bulk form) shows a card at the top of
        the game: the item, the price, its tab and spot, who's asking; up to 3 stack, each closes after 20 s or with
        x; Sound. On by default during the campaign (a character before maps); Keep on after the campaign. Nothing
@@ -1364,7 +1373,7 @@ VERSION HISTORY
          Bulk Pricing (Add items from, the filters and actions, the buttons under the list), Regex (the key row, the
          filter and ★ rows), Money Makers (Tag / tier / Sort and the buttons), Game Plan (stockpile quantity),
          Overlay (the Session row). style.fit(widget, fn) redraws anything drawn to a width (debounced).
-       - Overlay > Settings switch grids drop to fewer columns when narrow (no "Rege", "Feature ti").
+       - Overlay > Overlay Settings switch grids drop to fewer columns when narrow (no "Rege", "Feature ti").
        - The status bar: in a narrow window the trade-limit meters step aside so the message keeps its room.
        - Market Insights, Under the hood, Wealth: their one-line notes wrap; the Bulk Pricing empty-list hint wraps.
        Part 2 (2.98.1): a pixel scale for the drawn layouts, then the text size setting and sharp text on
@@ -1415,7 +1424,7 @@ VERSION HISTORY
          there's more to see (Favorites too). Fractured only / Desecrated only ticks the mod too (an unticked mod
          wasn't searched at all).
   2.96.1
-       Overlay ↳ Settings regrouped (feedback: doubles, cut-off text, black boxes behind the helpers' switches):
+       Overlay ↳ Overlay Settings regrouped (feedback: doubles, cut-off text, black boxes behind the helpers' switches):
        - On the bar: one switch per item - Session timer, Map timer, Maps done, Average map time, Map rank: S-D, Map
          name, Clock; Notes ▾, Calc ▾, Regex ▾, Exchange rates (each one switch: the feature and its place on the bar -
          the Features card and the Menus list are gone).
@@ -1519,7 +1528,7 @@ VERSION HISTORY
        Exchange rates over the game (ovrates.py): a small window in the overlay's own look (the Game bar's colors
        with that layout, the Panel's otherwise; rebuilt when the layout changes) listing the most-used rates - "210 :
        1 div" for cheap ones, "N div each" for dear ones - from the rates table the app already keeps (no extra
-       requests). Off until turned on (Overlay ↳ Settings › Features › Exchange rates window); movable (kept, and the
+       requests). Off until turned on (Overlay ↳ Overlay Settings › Features › Exchange rates window); movable (kept, and the
        overlay's lock locks it); refreshed every minute; only while the game is in front.
        Arbitrage › Check a flip you see in game: the item is picked from every Currency Exchange item (the rates
        table, most traded first, then cxnames.json); typing narrows the list (flip_names / flip_filter).
@@ -1533,7 +1542,7 @@ VERSION HISTORY
        A switch per helper: bar_cfg holds breach / delirium / ritual / remnant / focus / campaign (merged_page.CHIPS);
        the bar fits itself to the ones on. Asked once which you want (ov_chips_ask, tracker cfg chips_asked); a new
        install (no seen_version) starts with none ticked.
-       Overlay ↳ Settings regrouped: On the bar = Numbers, Switches (one per helper), Menus, Lines above the bar (Focus
+       Overlay ↳ Overlay Settings regrouped: On the bar = Numbers, Switches (one per helper), Menus, Lines above the bar (Focus
        line, Campaign line, Dock the lines to the bar); Features = Notes, Calculator, rank maps; Campaign = its options;
        Helpers (was Mechanic Helper) = every helper's on / off, League Focus and the Campaign Helper included.
        The Campaign line / Dock switches act on the box you clicked (a rebuilt page left a stale copy, so the click did
@@ -1581,7 +1590,7 @@ VERSION HISTORY
        anyone who has it on. "Hide the bar from screen captures" is now off by default and turned off once for
        everyone (tracker cfg hidecap_2891); turn it on only if the bar covers a counter a watcher reads.
        The Campaign switch on the bar says "Campaign", not "Camp" (merged_page.SHORT).
-       A ⚙ beside the overlay's lock opens Overlay ↳ Settings and brings the app forward (overlay_settings_go).
+       A ⚙ beside the overlay's lock opens Overlay ↳ Overlay Settings and brings the app forward (overlay_settings_go).
        Campaign options: 2.89.0's "Ask Speedrun or Full rewards..." switch was gridded into the same cell as "Dock it
        to the overlay bar" - the two labels overlapped. The Ask switch comes first, Dock after the rest.
   2.89.0
@@ -1682,7 +1691,7 @@ VERSION HISTORY
        (x/3) counter is"): the overlay's bar (and the goal bar) sit over the XP bar, right where the watcher looks
        (ritual_alert.SEARCH), and the screen capture saw the bar instead of the counter. The bar windows are now left
        out of screen captures (remnant_page.capture_affinity, WDA_EXCLUDEFROMCAPTURE, Windows 10 2004+), so the Ritual
-       and Delirium watchers see the game under them. Switch: Overlay ↳ Settings › Behavior "Hide the bar from
+       and Delirium watchers see the game under them. Switch: Overlay ↳ Overlay Settings › Behavior "Hide the bar from
        screen captures" (tracker cfg hide_capture, on by default; off = screenshots / streams show the bar).
        Docked goal / Focus line (feedback: "a fine gap between the two ... a slight width issue"): it sits right on
        the bar (no 6 px gap), uses the bar's end-cap width (hudart.plate cap=, so the frames line up) and is rebuilt
@@ -1746,7 +1755,7 @@ VERSION HISTORY
        Expedition mark (its swirl or its crystal under MAP CONTENT, right edge) has been seen - a cheap look every 2 seconds until
        it is (feedback: "check a fixed area on the screen for the indicator of expedition being present").
   2.82.0
-       Overlay ↳ Settings (feedback: the Options "shouldn't be nested beside the map stats ... reorganizing ...
+       Overlay ↳ Overlay Settings (feedback: the Options "shouldn't be nested beside the map stats ... reorganizing ...
        grouping of the toggle-able options"): the overlay's options are their own page under Overlay (in the
        sidebar, the title bar's Settings button and an "Overlay settings" button on the Overlay page), in cards:
        On the bar (the numbers; the switches and menus on it), Features (Notes, Calculator, League Focus, Focus
@@ -3598,7 +3607,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.132.3"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.132.4"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 

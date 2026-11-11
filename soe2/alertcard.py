@@ -2,7 +2,7 @@
 that's gonna piss some people off"): a small card over the game in the overlay's Style - a colored edge, a mark (! or
 ✓) and a word, a line of detail, × to close it early and a thin line counting down its time. No flashing: it fades in
 once. Where it shows (Center, Above the bar, Top center, Top right) and its size (Small, Medium, Large) are settings
-(Game Overlay › Settings › Helpers › Alerts). Every helper's alert and the break reminders use it.
+(Game Overlay › Overlay Settings › Helpers › Alerts). Every helper's alert and the break reminders use it.
 2.131.4: alerts that come together share one card - a row each, most urgent on top, one countdown."""
 import tkinter as tk
 

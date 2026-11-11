@@ -421,12 +421,12 @@ class UtilitiesPage:
         return True if (sys.platform != "win32" or (keys is not None and keys.active)) else "warn"
 
     def notes_open(self):
-        """2.114.0 (P9: opening Notes landed on Overlay › Settings with no word about the note): the note itself, over
-        the game, and where it lives. Switched off: Overlay › Settings, saying which switch."""
+        """2.114.0 (P9: opening Notes landed on Overlay › Overlay Settings with no word about the note): the note itself, over
+        the game, and where it lives. Switched off: Overlay › Overlay Settings, saying which switch."""
         ov = getattr(self, "overlay", None)
         if ov is None or not ov.cfg.get("notes_enabled"):
             self.ovh_open("Settings")
-            self._say("Notes is switched off: Overlay › Settings › On the bar › Notes.", 10)
+            self._say("Notes is switched off: Overlay › Overlay Settings › On the bar › Notes.", 10)
             return False
         ov.show_notes()
         self._say("Notes is on the overlay bar (Notes ▾) and shows while the game is in front. Double-click a tab to "

@@ -26,22 +26,22 @@ PAGES = {
     "maps": "Map Library",
     "leaderboards": "Leaderboards",
     "plan": "League Plan",
-    "ovset": "Settings",
+    "ovset": "Overlay Settings",       # 2.132.4 (feedback): was Settings, under Overlay
     "notes": "Notes",
     "settings": "Settings",
 }
 
 FEATURES = (
     "Alert card",               # 2.131.0 every helper's alert over the game (alertcard.py); 2.131.6: was "calm alert card"
-    "Ritual Identifier",        # 2.132.3 hover a Ritual Altar: its type, loot and danger (alert card)
+    "Ritual Identifier",        # 2.132.3 hover a Ritual Altar: its type, loot and danger (2.132.4: a Ritual helper option)
     "Temple Helper",            # 2.132.1 your crystals (Energised Beacons) on the bar; a card when full
-    "Map profit",               # 2.132.0 what each map earned, from your inventory (Overlay ↳ Settings › Helpers)
-    "Alerts show",              # 2.131.0 Overlay › Settings › Helpers: where and how big the alert card is
+    "Map profit",               # 2.132.0 what each map earned, from your inventory (Overlay ↳ Overlay Settings › Helpers)
+    "Alerts show",              # 2.131.0 Overlay › Overlay Settings › Helpers: where and how big the alert card is
     "Data folder",              # 2.131.0 where your settings and lists live (Feature Picker; Settings › Advanced)
     "Feature Picker",
-    "Top Up Reminders",         # 2.131.0 what's running low in your inventory (Overlay ↳ Settings › Helpers)           # 2.131.0 the popup asked once: which features you use
+    "Top Up Reminders",         # 2.131.0 what's running low in your inventory (Overlay ↳ Overlay Settings › Helpers)           # 2.131.0 the popup asked once: which features you use
     "Features",                 # 2.131.0 Settings › General: one switch per feature group, plus the BETA ones
-    "Break reminders",          # 2.131.0 Overlay › Settings › Helpers: a kind nudge in long sessions
+    "Break reminders",          # 2.131.0 Overlay › Overlay Settings › Helpers: a kind nudge in long sessions
     "Campaign Helper",
     "Clear All",                # Bulk Pricing › Items strip: empties the list shown
     "Community data sharing",
@@ -55,7 +55,7 @@ FEATURES = (
     "Filter in the Ritual window",   # the Ritual helper: the game's hidden setting that applies your filter there
     "Mechanic Helper",
     "Quick settings",           # the overlay's ⚙
-    "Reset position",           # Game Overlay › Settings › Options: the overlay back in its own place
+    "Reset position",           # Game Overlay › Overlay Settings › Options: the overlay back in its own place
     "Scan stash",
     "Search Options",           # Settings › Price checking
     "Session timer",
@@ -64,6 +64,9 @@ FEATURES = (
 )
 
 OLD = {
+    # 2.132.4 (feedback): the overlay's settings page has its own name
+    "Overlay ↳ Settings": "Overlay ↳ Overlay Settings",
+    "Overlay › Settings": "Overlay › Overlay Settings",
     # page names before Title Case (2.120.0) and before their renames
     "Price checks": "Price Checks",
     "Mod book": "Mod Book",
@@ -120,4 +123,4 @@ def key_of(name):
     if name in WAS_PAGE:
         return WAS_PAGE[name]
     name = OLD.get(name, name)
-    return next((k for k, v in PAGES.items() if v == name and k != "ovset"), None)
+    return next((k for k, v in PAGES.items() if v == name), None)
