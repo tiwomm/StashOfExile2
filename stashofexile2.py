@@ -33,7 +33,7 @@ VERSION HISTORY
          "covered": Seen keeps the last clear look (cells_use) and the reminder waits for a clear one.
        - Top Up (feedback: "keeps showing up after not running maps ... after well of souls"): topup_visit only when
          you're back from a map (breach_area's `left`); maplib.NOT_MAPS - The Well of Souls (Abyss_Hub) is "other".
-       - Linux (issue #234, Settings a black page on Hyprland): Shell.dim_show makes no layer on Linux.
+       - Linux (issue #234, Settings a black page on Hyprland): Shell.dim_show makes no layer on Linux under Wayland.
   2.131.4
        - Top Up (feedback: "F7 doesn't work ... it'll have to be ctrl+c"): F7's copy is sent by the app, so the key
          watcher (which skips injected keys) never saw a Ctrl+Alt+C and gate_ok turned it away. Top Up's copy is
