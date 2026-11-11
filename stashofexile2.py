@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU AGPL v3.0 (see LICENSE; up to 2.129.4: GNU GPL v3.0). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.132.1
+VERSION 2.132.2
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,6 +19,33 @@ VERSION 2.132.1
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.132.2
+       - Map profit (feedback: "needs to account for inventory dumps if a player empties inventory and goes back into
+         the map ... find a good idea for it"): counted visit by visit - each visit home adds what you came back with
+         (the most of each item in the first ARRIVE_SECS of looks there, covered looks too: stashing / selling only
+         lowers it, a later restock isn't counted) minus what you went in with (the last clear look before the map,
+         seg_before). Emptying your inventory between visits isn't a loss.
+       - Map profit is a BETA feature (feedback: "needs beta flagged"): features.BETA "mapprofit" (mp_on needs it;
+         turning Map profit on turns it on), "Map profit (BETA)" in Helpers, its Quick settings chip only while on
+         (BETA_HELPERS) - as the Desecration Helper.
+       - Helpers (feedback: "desecration needs moved up under 'play' settings to be above campaign"): PLAY is
+         Desecration, Campaign, League Plan; the last group is TRADING (Trade whispers).
+       - Top Up (feedback: "chat window blocks currency for the top up and prompts me to restock everything"):
+         _tu_hidden - an item you had is gone but its cells hold something it can't name: covered (Seen keeps the
+         last clear look, no reminder).
+       - Ritual line (feedback: "if a player doesn't interact with the first ritual, it should not enable ... only
+         appear when you start the ritual mechanics"): ritual_readout says nothing at 0 of N (all done still shows).
+       - BETA (feedback: "temple helper should also be marked beta, anything else helper-wise until it's fully tested
+         and checklist approved should be marked beta. desecration helper can come out of beta"): features.BETA has
+         Top Up Reminders, Break reminders, Map profit, Temple Helper ("was": a helper already on keeps its feature
+         on); each helper's own switch turns its feature on (beta_on); Helpers say "(BETA)"; their Quick settings
+         chips only while on. The Desecration Helper isn't BETA (its key leaves features).
+       - The bar (feedback: "overlay text overlap ... cramming too much into the bar ... I don't really want to go any
+         bigger"): parts that don't fit leave it - Map profit's, then Avg, then Maps (mg_dropped); the Temple Helper's
+         crystals moved to the line above the bar with Ritual's (its tag RITUAL / TEMPLE / IN MAP).
+       - Map profit (feedback: "why is it marking as -div if I didn't actually lose anything ... the arrow up/down can
+         be removed. I just want a total of my profit per map"): a map's profit is what it gained - fewer of an item is
+         never a loss (it was used, stashed or covered); no ▲ / ▼.
   2.132.1
        - Temple Helper (feedback: "show how many crystals I am currently at when running maps"; "a red text card too
          when crystals are full"; the Vaal Beacon tooltip "Energised Beacons: 55/60"): temple.py (parse, the region
@@ -3565,7 +3592,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.132.1"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.132.2"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 

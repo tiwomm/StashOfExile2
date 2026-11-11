@@ -21,6 +21,7 @@ LOG_FILE = "map_profit.jsonl"
 DEFAULTS = {"on": False}
 KEEP_DAYS = 90                      # the log keeps this many days (older lines are dropped when it's tidied)
 BEFORE_SECS = 3 * 3600              # a "before" older than this isn't this map's (you left the game in between)
+ARRIVE_SECS = 8                     # 2.132.2: back home, what you came back with = the most seen in this long
 DONE_SECS = 15 * 60                 # 2.132.1: out of a map this long (not back through its portal): it's done
 
 
@@ -70,17 +71,19 @@ def exchange_only(counts, price):
 
 # ---------------------------------------------------------------- one map
 def rows(before, after, price):
-    """-> [(name, before, after, divines each, worth)] for what changed, most worth first (a loss counts too)."""
+    """-> [(name, before, after, divines each, worth)] for what a map gained, most worth first. 2.132.2 (feedback:
+    "why is it marking as -div if I didn't actually lose anything"): fewer of an item is never counted - it was used,
+    stashed or covered, not lost to the map."""
     out = []
     for name in set(before) | set(after):
         b, a = before.get(name, 0), after.get(name, 0)
-        if a == b:
+        if a <= b:
             continue
         each = price(name)
         if each is None:
             continue
         out.append((name, b, a, each, (a - b) * each))
-    out.sort(key=lambda r: -abs(r[4]))
+    out.sort(key=lambda r: -r[4])
     return out
 
 

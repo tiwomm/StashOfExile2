@@ -16,7 +16,7 @@ QUICK_HELPERS = (("Breach", "breach"), ("Delirium", "delirium"), ("Ritual", "rit
                  ("Campaign", "campaign"), ("League Plan", "focus"), ("Whispers", "whispers"),
                  ("Top Up", "topup"), ("Breaks", "breaks"), ("Map profit", "mapprofit"), ("Temple", "temple"),
                  ("Desecration", "desecrate"))   # 2.131.1: every helper (2.132.1: Map profit, Temple)
-BETA_HELPERS = {"desecrate": "desecrate"}      # (a chip only while its beta feature is on - Features)
+BETA_HELPERS = {"topup": "topup", "breaks": "breaks", "mapprofit": "mapprofit", "temple": "temple"}   # 2.132.2      # (a chip only while its beta feature is on - Features)
 QUICK_BAR = (("Notes", "notes"), ("Calc", "calc"), ("Regex", "regex"), ("Rates", "rates"))
 # 2.124.0 (feedback: each toggle should say what it is on hover): the one-line tips (the helpers' come from
 # alerts_page.HELPER_BLURBS - the same line as on Helpers)

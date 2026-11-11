@@ -24,10 +24,12 @@ class TopUpPage:
     # ---------------------------------------------------------------- on / off
     def topup_on(self):
         from . import features as FEAT
-        return bool(TU.cfg().get("on")) and FEAT.on("overlay")
+        return bool(TU.cfg().get("on")) and FEAT.on("overlay") and FEAT.on("topup")      # (2.132.2: BETA)
 
     def topup_set(self, on):
         TU.cfg()["on"] = bool(on)
+        from . import features as FEAT
+        FEAT.beta_on("topup", bool(on))
         save_json("settings.json", SETTINGS)
         if on:
             self.topup_start()
@@ -128,7 +130,7 @@ class TopUpPage:
             # with the mouse over the inventory (the game's item box may cover cells) or one of the app's own
             # windows over it (a price card) doesn't count - Seen keeps the last clear look, and the reminder
             # waits for one
-            res["covered"] = self._tu_covered(res)
+            res["covered"] = self._tu_covered(res) or self._tu_hidden(res)
             if not was:
                 self.tu_open_reminded = False
             if not res["covered"]:
@@ -138,11 +140,10 @@ class TopUpPage:
                 if good is not None and good.get("cells") is not None:
                     res["cells_use"] = good["cells"]
             self.topup_paint_seen()
-            if not res["covered"]:
-                try:
-                    self.mp_seen(res)                        # 2.132.0: Map profit reads the same clear look
-                except Exception:
-                    self.log_error("Map profit")
+            try:
+                self.mp_seen(res)                            # 2.132.0: Map profit reads the same look (2.132.2: a
+            except Exception:                                # covered one too - see mp_seen)
+                self.log_error("Map profit")
             if not res["covered"] and not getattr(self, "tu_open_reminded", False) and self.topup_on():
                 self.tu_open_reminded = True
                 self.topup_remind()
@@ -180,6 +181,30 @@ class TopUpPage:
                 return True
         except Exception:
             buglog.caught()
+        return False
+
+    def _tu_hidden(self, res):
+        """2.132.2 (feedback: "chat window blocks currency for the top up and prompts me to restock everything"):
+        an item you had is gone, but the cells it was in still hold something this look can't name - something is
+        over them (the chat box, another window). Not a clear look."""
+        good = getattr(self, "tu_good", None)
+        if not good or not good.get("cells") or not res.get("cells"):
+            return False
+        refs = TU.learned()
+        if not refs:
+            return False
+        was = {}
+        for c in good["cells"]:
+            name = TU.which(c["sig"], refs)
+            if name is not None:
+                was.setdefault(name, []).append(c["cell"])
+        now = {c["cell"]: c for c in res["cells"]}
+        have = {TU.which(c["sig"], refs) for c in res["cells"]}
+        for name, cells in was.items():
+            if name in have:
+                continue
+            if any(rc in now and TU.which(now[rc]["sig"], refs) is None for rc in cells):
+                return True
         return False
 
     def _tu_plain(self, rc, s0, looks):
@@ -359,7 +384,7 @@ class TopUpPage:
         row = tk.Frame(box, bg=bg)
         row.pack(fill="x", pady=(8, 0))
         self.al_topup = tk.BooleanVar(value=bool(TU.cfg()["on"]))
-        cb = ttk.Checkbutton(row, text="Top Up Reminders", variable=self.al_topup, style=CB,
+        cb = ttk.Checkbutton(row, text="Top Up Reminders (BETA)", variable=self.al_topup, style=CB,
                              command=lambda: self.topup_set(bool(self.al_topup.get())))
         cb.pack(side="left")
         ib = ttk.Button(row, text="Items…", command=self.topup_items)

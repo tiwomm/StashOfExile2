@@ -1205,19 +1205,27 @@ class MergedOverlay:
             try:                                              # 2.132.0: Map profit - the last map's, hover for how
                 if self.mp_on():
                     fixed.append("profit")
-                    widths["profit"] = fm.measure("▼ −00.00 div") + 8
-                if self.temple_on():                          # 2.132.1: the Temple Helper's crystals
-                    fixed.append("temple")
-                    widths["temple"] = fm.measure("◆ Crystals 000/000 FULL") + 8
+                    widths["profit"] = fm.measure("▼ −00.0 chaos") + 8
             except Exception:
                 buglog.caught()
             map_on = bool(ln.get("map", True) or ln.get("where", True))
 
             def room(keys):
                 return right - x - sum(widths[k] + SW for k in keys) - (SW if drawn and map_on else 0)
+            # 2.132.2 (feedback: "overlay text overlap ... we're cramming too much into the bar without factoring for
+            # resizing things (I don't really want to go any bigger)"): the bar stays its size - parts that don't fit
+            # leave it, the newest first (Map profit's, then Avg, then Maps); the Temple Helper's crystals are on the
+            # line above the bar, with Ritual's
+            min_map = self._hf(60) if map_on else 0
+            for k in ("profit", "avg", "maps"):
+                if room(fixed) >= min_map:
+                    break
+                if k in fixed:
+                    fixed.remove(k)
+            self.mg_dropped = [k for k in ("maps", "avg", "profit") if k in widths and k not in fixed]
             if map_on:                                        # (the map's rank rides in this part too: ★ A)
                 x = lead(x)
-                map_w = max(self._hf(60), room(fixed))
+                map_w = max(min_map, room(fixed))
                 self._hud_map_part(cv, P, x, x + map_w, mid, f, show_map=ln.get("map", True),
                                    show_where=ln.get("where", True), show_rank=bool(ln.get("rank", True)))
                 x += map_w
