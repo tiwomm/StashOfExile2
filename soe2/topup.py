@@ -31,7 +31,21 @@ DIGIT_MIN = 0.62
 DIGIT_BAND = (0.0, 0.0, 0.62, 0.36)   # x0, y0, x1, y1 of a cell where its count's digits are
 LEARN_FILE = "topup.json"
 PICS = 4                                # pictures kept per item
-DEFAULTS = {"on": False, "items": []}   # items: [{"name", "keep"}] - their pictures are in topup.json
+DEFAULTS = {"on": False, "items": [], "below": 0.3}   # items: [{"name", "keep"}] - their pictures are in topup.json
+# 2.131.2 (feedback: "it's asking me every single map, I only want it to ask when I am below a 70% threshold ... same
+# way we handle the % variances on price checks"): a reminder only once you hold less than Keep minus this share
+BELOW_STEPS = (0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7)
+
+
+def below_text(b):
+    p = int(round(float(b) * 100))
+    return "0% (at Keep)" if p == 0 else f"{p}% below"
+
+
+def remind_at(keep, below=None):
+    """Keep 40, 30% below -> remind under 28 (always at least 1 below Keep's rounding: never at 0 needed)."""
+    b = cfg().get("below", DEFAULTS["below"]) if below is None else below
+    return max(0.0, float(keep) * (1 - float(b)))
 
 
 def cfg():
@@ -356,13 +370,14 @@ def totals(cells, refs):
     return {k: (v[0], v[1]) for k, v in out.items()}
 
 
-def low(tot, items):
-    """Totals and your list ([{"name", "keep"}]) -> [(name, have, keep)] under their keep (sure counts only)."""
+def low(tot, items, below=None):
+    """Totals and your list ([{"name", "keep"}]) -> [(name, have, keep)] under their keep less `below` (2.131.2: the
+    Remind when setting, 30% below by default; sure counts only)."""
     out = []
     for it in items:
         name, keep = it.get("name"), int(it.get("keep") or 0)
         have, sure = tot.get(name, (0, True))
-        if keep > 0 and sure and have < keep:
+        if keep > 0 and sure and have < remind_at(keep, below):
             out.append((name, have, keep))
     return out
 
