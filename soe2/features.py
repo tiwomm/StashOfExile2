@@ -43,6 +43,8 @@ BETA = (
      "modules": ("mapprofit",), "was": ("map_profit", "on")},
     {"key": "temple", "name": "Temple Helper", "what": "Clear a Vaal Beacon to track your Crystals.",
      "modules": (), "was": ("temple", "on")},
+    {"key": "music", "name": "Music Controls", "what": "Previous, play / pause and next for any music player.",
+     "modules": (), "was": ("music", "on")},                    # 2.134.0
 )
 ALL = GROUPS + BETA
 # the Overlay page (the session timer) holds the overlay's settings and the planning pages: shown while either is on

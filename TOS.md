@@ -31,6 +31,8 @@ API's limits.
    The app never connects to the game's servers (7.5) and never changes the game client or its files (7.2).
 6. **Overlays are just windows on top.** Click-through where they sit over the game, they never change what the game
    draws or does, and they're left out of screen captures where Windows allows it.
+   Music Controls (2.134.0): a click on the app's own window hands Windows one app command (play / pause, next,
+   previous - what a keyboard's media key does). No key is pressed or sent; the game never gets it.
 7. **When in doubt, leave it out** - or make it a manual, one-press action, and ask before shipping it.
 
 ## How it's enforced

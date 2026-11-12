@@ -699,6 +699,7 @@ class TrackerPage:
         if self.overlay.notes is not None:                  # a dropped-down note (Strip, Minimal)
             self.overlay.restyle()
         self.calc_ov_restyle()                               # 2.74.0: the calculator follows the one lock
+        self.music_restyle()                                 # 2.134.0: and Music Controls
         if getattr(self, "ovr_win", None) is not None:      # 2.96.1 (feedback: it stayed locked): the rates window too
             self.ovr_build()
         if getattr(self, "rx_ov_win", None) is not None:    # 2.127.0: and Regex favorites
