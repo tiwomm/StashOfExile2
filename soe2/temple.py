@@ -95,12 +95,21 @@ def content_has(img, game_h):
     return float(cv2.minMaxLoc(cv2.matchTemplate(g, t, cv2.TM_CCOEFF_NORMED))[1]) >= CONTENT_MIN
 
 
+RUN = 6                 # 2.135.0: crystals one temple run uses (the console takes 6, you get 6 room cards)
+
+
+def runs(st):
+    return (st["have"] // RUN) if st else 0
+
+
 def full(st):
     return bool(st) and st["have"] >= st["most"]
 
 
 def bar_text(st):
-    """Its part of the Helpers line (2.132.6: no ◆): "Crystals 55/60", or "Crystals ?" before the first read."""
+    """Its part of the Helpers line (2.132.6: no ◆): "Crystals 55/60 (9 runs)" (2.135.0: how many runs that is - 6
+    crystals each), or "Crystals ?" before the first read."""
     if not st:
         return "Crystals ?"
-    return f"Crystals {st['have']}/{st['most']}"
+    n = runs(st)
+    return f"Crystals {st['have']}/{st['most']} ({n} run{'' if n == 1 else 's'})"
