@@ -1538,10 +1538,17 @@ class MoneyMakersPage:
         self.mm_one_q = tk.StringVar()
         self.mm_one_q.trace_add("write", lambda *_a: self.root.after_idle(self.mm_one_fill))
         ttk.Entry(bar, textvariable=self.mm_one_q, width=26).pack(side="left")
+        # 2.132.6 (feedback: "multiple copies of the same thing ... sorting for Official | Community | Mine")
+        self.mm_one_view = SegBar(bar, list(VIEWS), command=lambda v: self.mm_one_fill(), size=10, pad=(12, 4))
+        self.mm_one_view.pack(side="left", padx=(12, 0))
+        self.mm_one_btns = {}
         for text, cmd, style in (("+ Add a one-liner", self.mm_one_add, "Primary.TButton"),
                                  ("📤 Post", self.mm_one_post, "TButton"), ("▲ Upvote", self.mm_one_vote, "TButton"),
-                                 ("Copy text", self.mm_one_copy, "TButton")):
-            ttk.Button(bar, text=text, command=cmd, style=style).pack(side="right", padx=(8, 0))
+                                 ("🏷 Tags…", self.mm_one_tags, "TButton"), ("Copy text", self.mm_one_copy, "TButton")):
+            b = ttk.Button(bar, text=text, command=cmd, style=style)
+            b.pack(side="right", padx=(8, 0))
+            self.mm_one_btns[text] = b
+        Tooltip(self.mm_one_btns["🏷 Tags…"], "Pick a one-liner of yours (Mine) to set its type and tags.")
         tk.Label(page, text="Quick money makers in one line - no guide needed. Official ones come with the app, "
                             "Community ones from other players; 📤 Post shares yours.", bg=P1, fg=C["muted"],
                  font=("Segoe UI", 9), anchor="w").pack(fill="x", padx=12, pady=(0, 8))
@@ -1560,6 +1567,7 @@ class MoneyMakersPage:
         sb.pack(side="right", fill="y")
         self.mm_one_tree.pack(side="left", fill="both", expand=True)
         self.mm_one_tree.bind("<Button-3>", self.mm_one_menu)
+        self.mm_one_tree.bind("<<TreeviewSelect>>", lambda e: self.mm_one_greys())
         self.mm_one_tree.bind("<Double-1>", lambda e: self.mm_one_copy())
         self.mm_one_tree.bind("<Delete>", lambda e: self.mm_one_delete())
         self.mm_one_empty = tk.Label(box, text="", bg=P1, fg=C["muted"], font=("Segoe UI", 10))
@@ -1570,12 +1578,106 @@ class MoneyMakersPage:
                     if o.get("id") not in have]
         return MM.oneliners() + promoted + list(getattr(self, "mm_board_ones", []))
 
+    def mm_one_view_items(self, view=None):
+        """2.132.6: one view at a time, each copy once. Official: the app's own and promoted posts. Community: other
+        posts. Mine: yours (the one on this PC first, then what you posted)."""
+        view = view or self.mm_one_view.get()
+        items = self.mm_one_items()
+        post = lambda o: o.get("_post") or {}                                   # noqa: E731
+        if view == "Official":
+            pool = [o for o in items if o["origin"] == "board" and post(o).get("promoted")] + \
+                   [o for o in items if o["origin"] == "community"]
+        elif view == "Community":
+            pool = [o for o in items if o["origin"] == "board" and not post(o).get("promoted")]
+        else:
+            pool = [o for o in items if o["origin"] == "mine"] + \
+                   [o for o in items if o["origin"] == "board" and post(o).get("mine")]
+        seen, out = set(), []
+        for o in pool:
+            k = " ".join(str(o.get("text", "")).lower().split())
+            if k and k not in seen:
+                seen.add(k)
+                out.append(o)
+        return out
+
+    def mm_one_greys(self):
+        o = self.mm_one_current()
+        mine, post = bool(o and o["origin"] == "mine"), (o or {}).get("_post")
+        for text, ok in (("📤 Post", mine), ("▲ Upvote", bool(post)), ("🏷 Tags…", mine), ("Copy text", bool(o))):
+            b = getattr(self, "mm_one_btns", {}).get(text)
+            if b is not None:
+                b.state(["!disabled"] if ok else ["disabled"])
+
+    def mm_one_tags(self):
+        """2.132.6: set a one-liner's type and tags (the strats' lists)."""
+        o = self.mm_one_current()
+        if not o or o["origin"] != "mine":
+            self._say("Pick one of your own one-liners (Mine) to tag it.", 5)
+            return None
+        w = tk.Toplevel(self.root)
+        w.title("Type & tags")
+        w.configure(bg=C["panel"])
+        w.transient(self.root)
+        P1 = C["panel"]
+        tk.Label(w, text=o["text"][:90], bg=P1, fg=C["text"], wraplength=420, justify="left",
+                 font=("Segoe UI", 10, "bold")).pack(anchor="w", padx=12, pady=(12, 6))
+        row = tk.Frame(w, bg=P1)
+        row.pack(fill="x", padx=12)
+        cat = tk.StringVar(value=o.get("category", ""))
+        typ = tk.StringVar(value=o.get("type", ""))
+        tk.Label(row, text="Type", bg=P1, fg=C["muted"]).pack(side="left")
+        cb1 = ttk.Combobox(row, textvariable=cat, values=("",) + MM.CATEGORIES, state="readonly", width=12)
+        cb1.pack(side="left", padx=(8, 4))
+        cb2 = ttk.Combobox(row, textvariable=typ, state="readonly", width=20)
+        cb2.pack(side="left")
+
+        def types(*_a):
+            vals = ("",) + MM.TAXONOMY.get(cat.get(), ())
+            cb2.config(values=vals)
+            if typ.get() not in vals:
+                typ.set("")
+        cat.trace_add("write", types)
+        types()
+        have = set(o.get("tags") or [])
+        picks = {}
+        groups = MM.tag_groups()
+        box = tk.Frame(w, bg=P1)
+        box.pack(fill="both", padx=12, pady=8)
+        for col, (g, tags) in enumerate(groups.items()):
+            f = tk.Frame(box, bg=P1)
+            f.grid(row=0, column=col, sticky="nw", padx=(0, 14))
+            tk.Label(f, text=g.upper(), bg=P1, fg=C["muted"], font=("Segoe UI", 8, "bold")).pack(anchor="w")
+            for t in tags:
+                v = tk.BooleanVar(value=t in have)
+                picks[t] = v
+                ttk.Checkbutton(f, text=t, variable=v).pack(anchor="w")
+
+        def save():
+            mine = MM.mine_one()
+            for x in mine:
+                if x["id"] == o["id"]:
+                    for k, val in (("category", cat.get()), ("type", typ.get() if cat.get() else "")):
+                        if val:
+                            x[k] = val
+                        else:
+                            x.pop(k, None)
+                    x["tags"] = [t for t, v in picks.items() if v.get()]
+            MM.save_mine_one(mine)
+            w.destroy()
+            self.mm_one_fill()
+        btns = tk.Frame(w, bg=P1)
+        btns.pack(fill="x", padx=12, pady=(0, 12))
+        ttk.Button(btns, text="Save", style="Primary.TButton", command=save).pack(side="right")
+        ttk.Button(btns, text="Cancel", command=w.destroy).pack(side="right", padx=(0, 8))
+        self.mm_tags_win = w
+        return w
+
     def mm_one_fill(self):
         tv = self.mm_one_tree
         tv.delete(*tv.get_children())
         q = self.mm_one_q.get().strip().lower()
         self.mm_ones = {}
-        for o in self.mm_one_items():
+        for o in self.mm_one_view_items():
             if q and q not in o.get("text", "").lower() + " " + " ".join(o.get("tags") or []).lower():
                 continue
             iid = o["id"] + "|" + o["origin"]
@@ -1583,9 +1685,11 @@ class MoneyMakersPage:
             self.mm_ones[iid] = o
             tv.insert("", "end", iid=iid, tags=(o["origin"],) + (("hidden",) if post.get("hidden") else ()),
                       values=(("✔ " if post.get("voted") else "") + o["text"],
-                              MM.type_text(o) if o.get("category") else ", ".join(o.get("tags") or []),
+                              " · ".join(x for x in (MM.type_text(o) if o.get("category") else "",
+                                                     ", ".join(o.get("tags") or [])) if x),
                               post.get("score", "") if post else "",
                               post.get("author", {}).get("name") or o.get("author", ""), ORIGIN.get(o["origin"], "")))
+        self.mm_one_greys()
         if self.mm_ones:
             self.mm_one_empty.place_forget()
         else:
@@ -1607,6 +1711,8 @@ class MoneyMakersPage:
              "updated": time.strftime("%Y-%m-%d")}
         mine = [x for x in MM.mine_one() if x["id"] != o["id"]] + [o]
         MM.save_mine_one(mine)
+        if self.mm_one_view.get() != "Mine":
+            self.mm_one_view.pick("Mine", notify=False)
         self.mm_one_fill()
         return o
 
@@ -1659,6 +1765,7 @@ class MoneyMakersPage:
         if post:
             m.add_command(label="▲ Remove my upvote" if post.get("voted") else "▲ Upvote", command=self.mm_one_vote)
         if o and o["origin"] == "mine":
+            m.add_command(label="🏷 Type & tags…", command=self.mm_one_tags)
             m.add_command(label="📤 Post to Community", command=self.mm_one_post)
         if (o and o["origin"] == "mine") or post.get("mine"):
             m.add_separator()
