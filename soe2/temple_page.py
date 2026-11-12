@@ -80,6 +80,9 @@ class TemplePage:
         """Every area change: in the temple -> the notepad shows (when it's on); anywhere else -> it goes."""
         here = str(area_id or "") in TM.TEMPLE_AREAS
         self.tm_in_temple = here
+        if str(area_id or "") == TM.RUN_AREA:                # 2.137.0: a run spends crystals - the number is old now
+            TM.mark_old()
+            self.temple_pad_refresh()
         if here and self.temple_pad_on():
             self.temple_pad_show()
         elif not here:
@@ -123,6 +126,8 @@ class TemplePage:
 
     def temple_pad_line(self):
         st = TM.state()
+        if st and st.get("old"):
+            return TM.bar_text(st) + " - hover a Vaal Beacon to update"
         return TM.bar_text(st) if st else "Crystals ? - hover a Vaal Beacon in a map"
 
     def temple_pad_show(self):
@@ -148,7 +153,8 @@ class TemplePage:
         body = tk.Frame(w.body, bg=P["bg"], padx=8, pady=8)
         body.pack(fill="both", expand=True)
         self.tm_pad_head = tk.Label(body, text=self.temple_pad_line(), bg=P["bg"], fg=P["head"],
-                                    font=(P["font"], self.ov_font(10), "bold"), anchor="w")
+                                    font=(P["font"], self.ov_font(10), "bold"), anchor="w", justify="left",
+                                    wraplength=max(180, int(c.get("pad_w") or 300) - 24))
         self.tm_pad_head.pack(fill="x")
         tk.Label(body, text="Placed rooms stay until destabilized.", bg=P["bg"], fg=P["muted"],
                  font=(P["font"], self.ov_font(9)), anchor="w").pack(fill="x", pady=(0, 4))
