@@ -1159,6 +1159,13 @@ class Shell:
             return False
         if getattr(mod, "admin_only", False) and not self.admin_on():
             return False
+        shown = getattr(mod, "shown", None)                 # 2.132.6: a page that comes with its switch (Map Profit)
+        if callable(shown):
+            try:
+                if not shown():
+                    return False
+            except Exception:
+                return False
         from . import features as FEAT                      # 2.131.0: Settings › General › Features
         return FEAT.module_on(getattr(mod, "key", ""))
 

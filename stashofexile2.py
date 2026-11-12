@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU AGPL v3.0 (see LICENSE; up to 2.129.4: GNU GPL v3.0). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.132.5
+VERSION 2.132.6
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,6 +19,29 @@ VERSION 2.132.5
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.132.6
+       - Regex keys (plan, mockup approved): up to 6 keys, each with 1-4 Regex favorites; in game a press types the
+         next one in the open stash's search (overlay.type_search: Ctrl+V; your clipboard put back).
+         ⌨ Key… on Favorites; each key in Settings › Keybinds › Regex. The old single key that copied became Regex
+         key 1 (migrations).
+       - Shared searches (feedback: "publish their regex to the database, as well as favorites from the trade site"):
+         Regex › ★ Favorites and Price Checks › Favorites have Official | Community | Mine, Post, Upvote, Tags…,
+         Add to Mine (share_page.py; board kinds "regex" and "trade" - a trade search keeps only its filters, the
+         account filter is dropped on the board).
+       - Lucrative Strats (feedback: "multiple copies of the same thing"): Official | Community | Mine, each copy
+         once; Type & tags on yours.
+       - Ritual Identifier / Temple Helper (feedback: "I need it to just read as I'm potentially running past it";
+         "it currently only tracks the first crystal encounter and then stops"): the whole game is read each second
+         (hover_page.SCREEN); a failed picture (the mouse on another monitor made a negative box) left the look busy
+         for good - now caught. Each map's altars get their cards again.
+       - The Helpers line says HELPERS (was RITUAL / TEMPLE / IN MAP); no ◆ before Crystals.
+       - Temple is a row under Helpers › IN MAPS, after Expedition.
+       - The map's name is never on the overlay (feedback; still known for the rank and the logs); Avg and Maps
+         leave a full overlay before Map profit. "On the bar" says "On the overlay".
+       - Map Profit is a page, Overlay ↳ Map Profit (while it's on): All Time / Daily / Hourly, bars, Delete, Clear
+         all (Undo). Items a covered look sees after the last clear one count toward what you went in with (an omen
+         moved from your stash isn't profit). Items it can't recognize: a hint, and the Top Up key teaches them
+         (with Top Up off too). The app's own log showed every map since had 30-50 unknown cells.
   2.132.5
        - Shorter text (feedback: "nobody needs to know that ... unnecessary unprofessional filler"): the helpers' lines
          and tooltips (one line each now - HELPER_BLURBS is the tooltip too), statuses, the Ritual filter, Favours,
@@ -2610,7 +2633,7 @@ VERSION HISTORY
        same SETTINGS hotkey_only, shown the other way round, off by default).
   2.30.0
        Money Makers: a Community board instead of GitHub issues for sharing. Server = board/ (Cloudflare Worker +
-       D1, deployed by .github/workflows/board.yml with repo secrets - board/README.md has the setup). No login
+       D1, deployed by .github/workflows/board.yml). No login
        (Discord OAuth was dropped: its app rules were too much): the first post / vote / report asks for a display
        name, POST /auth/join returns a key (board_session.json); JOINS_PER_DAY (5) new accounts per hashed IP per
        day stop vote stuffing. Posts (strats + one-liners) are live at once, checked against the same layout
@@ -3612,7 +3635,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.132.5"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.132.6"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 

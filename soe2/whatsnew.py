@@ -47,6 +47,23 @@ BETA_AREAS = ("Wealth", "Money Makers", "Game Search", "Market Insights", "Craft
 # repeats. Someone coming from rollup["since"] or older (or a fresh install) sees it instead of each version; someone
 # on a pre-release already saw them and gets only this version's own lines (notes_between).
 NOTES = {
+    "2.132.6": {
+        "big": [
+            ("⌨", "Regex keys", "Type 1-4 favorites in the stash search, one per press.", None, "Regex"),
+            ("📤", "Share searches", "Post Regex and trade favorites. Official | Community | Mine.", None, "Regex"),
+        ],
+        "small": [
+            ("Overlay", "Map Profit: own page under Overlay. All Time, Daily, Hourly, bars, delete."),
+            ("Overlay", "Ritual Identifier, Temple: read anywhere on screen, no hover."),
+            ("Overlay", "Helpers line: says HELPERS."),
+            ("Overlay", "Map name: off the overlay, Map profit stays."),
+            ("Overlay", "Temple: under Helpers › IN MAPS."),
+            ("Overlay", "Map profit: items brought from your stash aren't profit."),
+            ("Overlay", "Map profit: teach unknown items with Ctrl+C."),
+            ("Money Makers", "Lucrative Strats: Official | Community | Mine, no duplicates."),
+            ("Money Makers", "Lucrative Strats: tags on your one-liners."),
+        ],
+    },
     "2.132.5": {
         "big": [],
         "small": [

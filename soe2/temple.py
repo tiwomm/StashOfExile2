@@ -100,8 +100,7 @@ def full(st):
 
 
 def bar_text(st):
-    """The line above the bar's part (2.132.2): "◆ Crystals 55/60" - or "◆ Crystals ? - hover a Vaal Beacon"
-    before the first read."""
+    """Its part of the Helpers line (2.132.6: no ◆): "Crystals 55/60", or "Crystals ?" before the first read."""
     if not st:
-        return "◆ Crystals ? - hover a Vaal Beacon"
-    return f"◆ Crystals {st['have']}/{st['most']}"
+        return "Crystals ?"
+    return f"Crystals {st['have']}/{st['most']}"

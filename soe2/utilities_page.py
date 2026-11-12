@@ -61,12 +61,12 @@ class UtilitiesPage:
         from . import features as FEAT
         if not FEAT.on("overlay"):                     # 2.131.0: the Game Overlay is off - its keys do nothing
             return False
-        try:                                           # 2.2.0: the Regex key
-            k = parse_key(SETTINGS.get("regex_key") or "")
-            if k and k == (vk, ctrl, alt, shift):
+        try:                                           # 2.132.6: Regex keys (were one Regex key that copied)
+            i = self.rx_key_hit(vk, ctrl, alt, shift)
+            if i is not None:
                 from .overlay import game_active, POE_TITLE
                 if game_active((getattr(self, "overlay", None) and self.overlay.cfg.get("poe_title")) or POE_TITLE):
-                    self.ui_q.put(("regexcopy",))
+                    self.ui_q.put(("regexkey", i))
                     return True
         except Exception:
             buglog.caught()
@@ -92,8 +92,8 @@ class UtilitiesPage:
             buglog.caught()
         return self.overlay.on_key(vk, ctrl, alt, shift)
 
-    def ev_regexcopy(self):
-        self.rx_hotkey_copy()
+    def ev_regexkey(self, i):
+        self.rx_key_press(i)
 
     def ev_keycap(self, vk, ctrl, alt, shift):
         box = CAPTURING[0]
@@ -426,7 +426,7 @@ class UtilitiesPage:
         ov = getattr(self, "overlay", None)
         if ov is None or not ov.cfg.get("notes_enabled"):
             self.ovh_open("Settings")
-            self._say("Notes is switched off: Overlay › Overlay Settings › On the bar › Notes.", 10)
+            self._say("Notes is switched off: Overlay › Overlay Settings › On the overlay › Notes.", 10)
             return False
         ov.show_notes()
         self._say("Notes is on the overlay bar (Notes ▾) and shows while the game is in front. Double-click a tab to "

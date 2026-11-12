@@ -119,6 +119,7 @@ def breach_level(text):
 
 # 2.119.0 (UX pass): what each helper does, in one line - under its name on Helpers, and (2.124.0) the tip on its
 # Quick settings chip
+HELPERS_LABEL = "HELPERS"           # 2.132.6 (feedback: "Instead of saying Ritual: or Temple: it should say Helpers:")
 HELPER_BLURBS = {"delirium": "Reminder popup to end Delirium.",
                  "breach": "Reminder popup for when Hiveblood is full or almost full.",
                  "ritual": "Counts Rituals & Tribute; reminds if you leave map without completing.",
@@ -130,7 +131,7 @@ HELPER_BLURBS = {"delirium": "Reminder popup to end Delirium.",
                  "topup": "Says what's running low when you open your inventory in a hideout or town",   # 2.131.1
                  "breaks": "An alert card after a long stretch of play, in a hideout or town",
                  "mapprofit": "What each map earned, from your inventory - on your PC only",          # 2.132.1
-                 "temple": "Your crystals on the bar, and a card when they're full"}
+                 "temple": "Clear a Vaal Beacon to track your Crystals."}
 
 
 class AlertsPage:
@@ -164,9 +165,8 @@ class AlertsPage:
         return "  ·  ".join(parts)
 
     def ritual_line_label(self):
-        """The line's tag: RITUAL, TEMPLE, or IN MAP when it holds both."""
-        r, t = bool(self._ritual_part()), bool(self._temple_part())
-        return "IN MAP" if r and t else "TEMPLE" if t else "RITUAL"
+        """The line's tag: HELPERS (2.132.6 - was RITUAL / TEMPLE / IN MAP)."""
+        return HELPERS_LABEL
 
     def _temple_part(self):
         try:
@@ -346,14 +346,16 @@ class AlertsPage:
             return b
 
         self.al_chips = {}
-        what = {k: HELPER_BLURBS[k] for k in ("delirium", "breach", "ritual", "remnant", "focus", "campaign", "whispers", "desecrate")}   # 2.132.5: one line each (its tooltip too)
+        what = {k: HELPER_BLURBS[k] for k in ("delirium", "breach", "ritual", "remnant", "temple", "focus", "campaign",
+                                               "whispers", "desecrate")}   # 2.132.5: one line each (its tooltip too)
         tests = {"delirium": self.alerts_test_delirium, "breach": lambda: self.breach_alert(test=True),
                  "ritual": self.alerts_test_ritual, "remnant": self.alerts_test_remnant,
                  "focus": lambda: self.ov_intro_setup("focus"), "campaign": lambda: self.camp_route_show(),
-                 "whispers": lambda: self.ww_show_test(), "desecrate": self.alerts_test_desecrate}
+                 "whispers": lambda: self.ww_show_test(), "desecrate": self.alerts_test_desecrate,
+                 "temple": lambda: self.temple_alert(test=True)}
         names = {"delirium": "Delirium", "breach": "Breach", "ritual": "Ritual", "remnant": "Expedition",
                  "focus": "League Plan", "campaign": "Campaign", "whispers": "Trade whispers",
-                 "desecrate": "Desecration"}
+                 "desecrate": "Desecration", "temple": "Temple (BETA)"}
         # 2.119.0 (UX pass): what each one does, in one gray line under its name (it was only a tooltip)
         blurb = HELPER_BLURBS
         self.al_leave = tk.BooleanVar(value=bool(self.breach_cfg().get("leave_reminder", True)))
@@ -371,8 +373,7 @@ class AlertsPage:
                         ("Runeshape tips", self.al_rtips, lambda: self.remnant_tips_changed(self.al_rtips.get()),
                          "A small list next to the prices: the runeshapes players rate best for loot (S and A tier).")],
             "ritual": [("On screen", self.al_rshow, lambda: self.ritual_readout_changed(self.al_rshow.get()),
-                        "A line over the overlay's bar while you're in a map with Ritual: how many rituals are done and "
-                        "your tribute."),
+                        "On the overlay in Ritual maps: rituals done and your tribute."),
                        ("Favours prices", self.al_rfav, lambda: self.favours_changed(self.al_rfav.get()),
                         "Prices rewards in the Ritual Favours window."),
                        ("Tribute reminder", self.al_rtrib, self.alerts_tribute_changed,
@@ -380,11 +381,12 @@ class AlertsPage:
                         "the King."),
                        # 2.132.4 (feedback: "Ritual Identifier should be part of the Ritual Helper")
                        ("Ritual Identifier", self.al_rid, lambda: self.ritid_changed(self.al_rid.get()),
-                        "Hover a Ritual Altar in a map: its type, loot and danger.")]}
+                        "A Ritual Altar's type, loot and danger, read off the screen in maps.")]}
         remind = {"breach": (self.al_leave, self.alerts_leave_changed),
                   "ritual": (self.al_rleave, self.alerts_ritual_leave_changed)}
         # (2.132.2, feedback: "desecration needs moved up under 'play' settings to be above campaign")
-        for group, keys in (("IN MAPS", ("breach", "delirium", "ritual", "remnant")),
+        # (2.132.6, feedback: "Temple in the settings should be listed under Helpers, below Expedition")
+        for group, keys in (("IN MAPS", ("breach", "delirium", "ritual", "remnant", "temple")),
                             ("PLAY", ("desecrate", "campaign", "focus")), ("TRADING", ("whispers",))):
             rule()
             tk.Label(tbl, text=group, bg=P2, fg=C["muted"], font=("Segoe UI", 9, "bold")).grid(
@@ -445,6 +447,8 @@ class AlertsPage:
         self.al_rfilter_link, self.al_rfilter_state = fl, fst
         self.ritual_filter_state()
         self.al_rows["remnant"]["on"].set(bool(self.remnant_cfg().get("on")))          # 2.37.0
+        self.al_rows["temple"]["on"].set(bool(self.temple_on()))                       # 2.132.6
+        self.al_temple = self.al_rows["temple"]["on"]
         self.al_rows["desecrate"]["on"].set(bool(self.ws_cfg().get("on")))            # 2.81.0
         from . import campaign as _CP, focus as _F
         self.al_rows["focus"]["on"].set(bool(_F.cfg()["on"]))                          # 2.90.0
@@ -483,7 +487,6 @@ class AlertsPage:
         self.al_break_every = ecb
         self.topup_row(box, P2, CB)                         # 2.131.0: Top Up Reminders
         self.mp_row(box, P2, CB)                            # 2.132.0: Map profit
-        self.temple_row(box, P2, CB)                        # 2.132.1: Temple Helper
         self.alerts_refresh()
         return box
 
@@ -988,8 +991,13 @@ class AlertsPage:
         else:
             last = getattr(self, "ww_last", None)
             vtxt = "On - watching your whispers" + (f" (last trade whisper {last})" if last else "")
+        from . import temple as _TMs                                                    # 2.132.6: Temple's row
+        rows["temple"]["on"].set(bool(self.temple_on()))
+        _st = _TMs.state()
+        ttxt = (("On - " + _TMs.bar_text(_st)) if _st else "On - Watching for Vaal Beacons.") if self.temple_on() \
+            else rows["temple"]["what"]
         for k, txt in (("delirium", dtxt), ("breach", btxt), ("ritual", rtxt), ("remnant", mtxt), ("desecrate", wtxt),
-                       ("focus", ftxt), ("campaign", ctxt), ("whispers", vtxt)):
+                       ("focus", ftxt), ("campaign", ctxt), ("whispers", vtxt), ("temple", ttxt)):
             st = states[k]
             lbl = rows[k]["status"]
             if rows[k].get("grid"):                 # 2.112.0: one short line under the name
@@ -1222,6 +1230,7 @@ class AlertsPage:
                 self.rt_map = None
                 self.rt_done = False
                 self.tm_in_map = False                 # 2.132.4: the Temple icon is looked for again
+                self.rid_told = None                   # 2.132.6: a new map's altars get their cards again
                 try:
                     from .utilities import RITUAL
                     RITUAL.content = None              # (the last map's tick isn't this one's)

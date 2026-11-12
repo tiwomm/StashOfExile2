@@ -138,6 +138,58 @@ def log_tidy(now=None):
         buglog.caught()
 
 
+def log_write(entries):
+    """Rewrite the log with these lines (2.132.6: deleting maps)."""
+    try:
+        tmp = P(LOG_FILE) + ".tmp"
+        with open(tmp, "w", encoding="utf-8") as f:
+            f.writelines(json.dumps(e) + "\n" for e in entries)
+        os.replace(tmp, P(LOG_FILE))
+        return True
+    except OSError:
+        buglog.caught()
+        return False
+
+
+def log_delete(run_ids):
+    """Drop every line of these maps (their run ids). -> the dropped lines (for Undo)."""
+    ids = set(run_ids)
+    keep, gone = [], []
+    for e in log_read():
+        (gone if (e.get("run") or str(e.get("t"))) in ids else keep).append(e)
+    if gone:
+        log_write(keep)
+    return gone
+
+
+def log_restore(lines):
+    """Undo a delete: the lines back, in time order."""
+    log_write(sorted(log_read() + list(lines), key=lambda e: e.get("t", 0)))
+
+
+def buckets(runs, kind, now=None):
+    """2.132.6 (feedback: "a log by date ... with graphs and bars ... All Time, Daily, Hourly"): maps -> [(label,
+    start time, maps, div, secs)], oldest first. kind: "day" (each day with maps) or "hour" (the last 48 hours, each
+    hour)."""
+    now = now or time.time()
+    out = {}
+    for r in runs:
+        lt = time.localtime(r["t"])
+        if kind == "hour":
+            if r["t"] < now - 48 * 3600:
+                continue
+            start = time.mktime((lt.tm_year, lt.tm_mon, lt.tm_mday, lt.tm_hour, 0, 0, 0, 0, -1))
+            label = time.strftime("%a %H:00", lt)
+        else:
+            start = time.mktime((lt.tm_year, lt.tm_mon, lt.tm_mday, 0, 0, 0, 0, 0, -1))
+            label = time.strftime("%a %d %b", lt)
+        b = out.setdefault(start, [label, start, 0, 0.0, 0])
+        b[2] += 1
+        b[3] += r["div"]
+        b[4] += r["secs"]
+    return [tuple(b) for _s, b in sorted(out.items())]
+
+
 def day_start(now=None):
     lt = time.localtime(now or time.time())
     return time.mktime((lt.tm_year, lt.tm_mon, lt.tm_mday, 0, 0, 0, 0, 0, -1))

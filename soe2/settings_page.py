@@ -1050,10 +1050,10 @@ class SettingsPage:
 
     def hotkeys_defaults(self):
         """2.127.0 (feedback: "in case anything goes wrong"): every keybind back to the app's own - after a yes. The
-        keys of your own chat commands stay (they have no default)."""
+        keys of your own chat commands and Regex keys stay (they have no default)."""
         from .tracker_page import DEFAULT_HOTKEYS
-        if not messagebox.askyesno("Keybinds", "Set every keybind back to the default?\n\nYour chat commands keep "
-                                   "their keys.", parent=self.dlg_parent()):
+        if not messagebox.askyesno("Keybinds", "Set every keybind back to the default?\n\nYour chat commands and "
+                                   "Regex keys keep their keys.", parent=self.dlg_parent()):
             return False
         for kid, key in DEFAULT_HOTKEYS.items():
             v = self.hk_vars.get(kid)
@@ -1072,6 +1072,13 @@ class SettingsPage:
                 bad.append(txt)
                 continue
             where, key = kid.split(":")
+            if where == "rxkey":                                   # 2.132.6: Regex keys
+                ks = SETTINGS.setdefault("regex_keys", [])
+                if int(key) < len(ks):
+                    ks[int(key)]["key"] = txt
+                elif txt:
+                    ks.append({"key": txt, "favs": []})
+                continue
             if where == "cmd":                                     # 2.57.0: chat command keys are set here too
                 cmds = self.overlay.cfg.get("commands", []) or []
                 n = int(key)
@@ -1083,8 +1090,6 @@ class SettingsPage:
                 continue
             if where == "checks":
                 SETTINGS[key] = txt
-                if key == "regex_key" and hasattr(self, "rx_key_var") and self.rx_key_var.get() != txt:
-                    self.rx_key_var.set(txt)
             elif where == "overlay":
                 self.overlay.cfg[key] = txt
                 if hasattr(self, "ov_vars") and key in self.ov_vars:

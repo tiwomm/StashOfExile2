@@ -11,7 +11,7 @@ layout still reads. One-liners for **Lucrative Strats** go in
 **and** is fetched from `main` by the app (at most every 12 h), so a merged strat reaches everyone without a new release.
 
 **Sharing:** players post straight from the app to the **Community** board (no login - just a name), upvote and
-report there - see `board/README.md`. Admins **promote** the best posts and they join the Official list. Strats in
+report there. Admins **promote** the best posts and they join the Official list. Strats in
 this folder are the hand-curated part of the Official list: copy `_template.json` (or fill in the app's
 **Download Format** `.txt`) and send a PR. Files starting with `_` are ignored.
 
