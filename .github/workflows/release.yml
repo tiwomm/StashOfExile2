@@ -70,6 +70,34 @@ jobs:
           python tools/release_notes.py "$V" > notes.md
           cat notes.md
 
+      # 2.132.8 (feedback: "virustotal link and checksums"): SHA-256 of each download (SHA256SUMS.txt + the notes),
+      # and the exe sent to VirusTotal so the notes can link its scan. No VT_API_KEY secret = no scan link, the rest
+      # still happens.
+      - name: Checksums and VirusTotal scan
+        if: steps.ver.outputs.skip == 'false'
+        shell: bash
+        env:
+          VT_API_KEY: ${{ secrets.VT_API_KEY }}
+        run: |
+          V="${{ steps.ver.outputs.version }}"
+          cp dist/StashOfExile2.exe StashOfExile2.exe
+          sha256sum StashOfExile2.exe "StashOfExile2_build_kit_$V.zip" > SHA256SUMS.txt
+          cat SHA256SUMS.txt
+          EXE=$(sha256sum StashOfExile2.exe | cut -d' ' -f1)
+          ZIP=$(sha256sum "StashOfExile2_build_kit_$V.zip" | cut -d' ' -f1)
+          VT=""
+          if [ -n "$VT_API_KEY" ]; then
+            URL=$(curl -s --fail -H "x-apikey: $VT_API_KEY" https://www.virustotal.com/api/v3/files/upload_url \
+                  | python -c "import json,sys;print(json.load(sys.stdin)['data'])") || URL=""
+            if [ -n "$URL" ] && curl -s --fail -H "x-apikey: $VT_API_KEY" -F "file=@StashOfExile2.exe" "$URL" >/dev/null; then
+              VT="https://www.virustotal.com/gui/file/$EXE"
+            else
+              echo "::warning::VirusTotal upload failed - no scan link this time"
+            fi
+          fi
+          python tools/release_notes.py "$V" --sha "$EXE" "$ZIP" --vt "$VT" > notes.md
+          cat notes.md
+
       - uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65  # v2
         if: steps.ver.outputs.skip == 'false'
         with:
@@ -82,3 +110,4 @@ jobs:
           files: |
             dist/StashOfExile2.exe
             StashOfExile2_build_kit_*.zip
+            SHA256SUMS.txt
