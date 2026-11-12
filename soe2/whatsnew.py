@@ -48,13 +48,60 @@ BETA_AREAS = ("Wealth", "Money Makers", "Game Search", "Market Insights", "Craft
 # on a pre-release already saw them and gets only this version's own lines (notes_between).
 NOTES = {
     "2.135.0": {
-        "big": [],
+        # (feedback: "push it as full release with bugfixes as the what's new card")
+        "big": [
+            ("🪟", "Page windows stay with the app", "Moving the app shouldn't leave a page behind any more.", None,
+             "App"),
+        ],
         "small": [
+            ("App", "Theme swap with the overlay open: shouldn't freeze any more."),
             ("Wealth", "Scan stash: the main button, out of BETA. Count currency: More ▾."),
             ("Wealth", "Scan stash card: drag it anywhere, it stays there."),
-            ("App", "Page windows put back in place when the app moves."),
             ("Overlay", "Temple Helper: crystals in runs, 6 a run."),
         ],
+        # a full release: someone coming from 2.132.0 (the last one) sees these too - merged, no repeats
+        "rollup": {
+            "since": "2.132.0",
+            "big": [
+                ("♪", "Music Controls (BETA)", "⏮ ⏯ ⏭ for any music player, in a small window you drag anywhere, "
+                 "in your overlay style. Switch: Overlay Settings › Helpers.", None, "Overlay"),
+                ("⌨", "Regex keys", "A key for 1-4 Regex favorites: press = copied. Set in Favorites › ⌨ Key…", None,
+                 "Regex"),
+                ("📤", "Share searches", "Post Regex and trade favorites. Official | Community | Mine.", None, "Regex"),
+                ("☠", "Ritual Identifier", "Hover a Ritual Altar: type, loot, danger.", None, "Overlay"),
+                ("◆", "Temple Helper", "Crystal count in maps, alert when full.", None, "Overlay"),
+            ],
+            "small": [
+                ("Community", "Data sharing: every price-checked item, gear too. Opt-in, anonymous."),
+                ("About", "Community count: installs sharing data, active this week."),
+                ("App", "Releases: SHA-256 checksums and a VirusTotal scan link, on the release page."),
+                ("App", "Update question: What's new only."),
+                ("Overlay", "Map Profit: own page under Overlay. All Time, Daily, Hourly, bars, delete."),
+                ("Overlay", "Ritual Identifier, Temple: read anywhere on screen, no hover."),
+                ("Overlay", "Helpers line: says HELPERS."),
+                ("Overlay", "Map name: off the overlay, Map profit stays."),
+                ("Overlay", "Temple: under Helpers › IN MAPS."),
+                ("Overlay", "Map profit: items brought from your stash aren't profit."),
+                ("Overlay", "Map profit: teach unknown items with Ctrl+C."),
+                ("Money Makers", "Lucrative Strats: Official | Community | Mine, no duplicates."),
+                ("Money Makers", "Lucrative Strats: tags on your one-liners."),
+                ("App", "Helper descriptions and tooltips: shorter."),
+                ("Overlay", "Settings page renamed Overlay Settings."),
+                ("Overlay", "Ritual Identifier: now a Ritual helper option."),
+                ("Overlay", "Temple crystals: only in maps with a Temple."),
+                ("Settings", "Keybinds: Overlays group renamed Overlay."),
+                ("Overlay", "Check a flip: lists every exchange item."),
+                ("Overlay", "Top Up Reminders, Break reminders, Map profit, Temple Helper: marked BETA."),
+                ("Overlay", "Desecration Helper: out of BETA, first under PLAY."),
+                ("Overlay", "Map profit: gains only, inventory dumps don't count as loss."),
+                ("Overlay", "Bar: parts that don't fit hide, no overlap."),
+                ("Overlay", "Temple crystals: moved above the bar."),
+                ("Overlay", "Ritual line: shows after first ritual."),
+                ("Overlay", "Top Up: ignores items behind chat box."),
+                ("Overlay", "Map profit: town trips and re-entering count as one map."),
+                ("Overlay", "Quick settings: Map profit and Temple added."),
+            ],
+        },
     },
     "2.134.1": {
         "big": [],
