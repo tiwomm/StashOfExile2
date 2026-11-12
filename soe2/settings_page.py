@@ -877,13 +877,7 @@ class SettingsPage:
         hint(7, "100% = fully solid. Lower = see-through, text and all (24% is the lowest). Over a busy spot, "
                 "95-100% reads best.")
         # (2.120.0: Click-through is part of Overlay ↳ Overlay Settings › Options › Mouse on the overlay)
-        row = section("Appearance", "Motion", "Tooltips, notices and windows over the game fade in for a moment. "
-                                              "Reduce motion makes them appear at once. Until you choose, it "
-                                              "follows Windows' own \"Show animations\" setting.")
-        from .motion import reduced
-        self.reduce_motion_var = tk.BooleanVar(value=reduced())
-        ttk.Checkbutton(row, text="Reduce motion", variable=self.reduce_motion_var, style="Card.TCheckbutton",
-                        command=self.on_reduce_motion).pack(side="left")
+        # (2.135.1: no Motion section - nothing fades any more, so Reduce motion is gone)
 
     def on_ov_look(self, style=None, colors=None):
         """2.101.0: Settings › Appearance › Overlay › Style - saved and shown at once."""
@@ -898,13 +892,6 @@ class SettingsPage:
                 pk.set(self.ov_look(), redraw=True)          # (2.118.0: Colors change the preview too)
             except tk.TclError:
                 pass
-
-    def on_reduce_motion(self):
-        """2.100.0: Settings › Appearance › Reduce motion (saved; from then on your choice beats Windows')."""
-        SETTINGS["reduce_motion"] = bool(self.reduce_motion_var.get())
-        save_json("settings.json", SETTINGS)
-        self._say("Saved: " + ("windows appear at once." if SETTINGS["reduce_motion"] else
-                               "tooltips, notices and windows over the game fade in."), 6)
 
     @staticmethod
     def marker_colour():
