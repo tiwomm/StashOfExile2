@@ -311,6 +311,9 @@ class MergedOverlay:
         """The overlay's parts that show (Options › On the overlay) - in a campaign zone without the map's rank, its
         name, Maps and Avg."""
         ln = dict(self.tracker_cfg()["lines"])
+        # 2.132.6 (feedback: "remove the map name from the bar ... that information just needs registered
+        # internally"): the map's name is never on the overlay (it's still known - the rank, Map Library, the logs)
+        ln["where"] = False
         if self.ov_camp_mode():
             ln.update(rank=False, where=False, maps=False, avg=False)
         return ln
@@ -1205,7 +1208,7 @@ class MergedOverlay:
             try:                                              # 2.132.0: Map profit - the last map's, hover for how
                 if self.mp_on():
                     fixed.append("profit")
-                    widths["profit"] = fm.measure("▼ −00.0 chaos") + 8
+                    widths["profit"] = fm.measure("+00.0 div") + 8
             except Exception:
                 buglog.caught()
             map_on = bool(ln.get("map", True) or ln.get("where", True))
@@ -1217,12 +1220,14 @@ class MergedOverlay:
             # leave it, the newest first (Map profit's, then Avg, then Maps); the Temple Helper's crystals are on the
             # line above the bar, with Ritual's
             min_map = self._hf(60) if map_on else 0
-            for k in ("profit", "avg", "maps"):
+            # 2.132.6 (feedback: "instead of removing map profit ... remove the map name"): Avg leaves first, then
+            # Maps; Map profit last
+            for k in ("avg", "maps", "profit"):
                 if room(fixed) >= min_map:
                     break
                 if k in fixed:
                     fixed.remove(k)
-            self.mg_dropped = [k for k in ("maps", "avg", "profit") if k in widths and k not in fixed]
+            self.mg_dropped = [k for k in ("avg", "maps", "profit") if k in widths and k not in fixed]
             if map_on:                                        # (the map's rank rides in this part too: ★ A)
                 x = lead(x)
                 map_w = max(min_map, room(fixed))

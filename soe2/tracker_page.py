@@ -35,8 +35,8 @@ DEFAULT_HOTKEYS = {"checks:pc_key": "Ctrl+D", "checks:pc_close_key": "Esc", "che
 # 2.54.0: the Session timer times your play; money lives in one place, Money Makers › Strat Tracker.
 # Profit (Wealth at Stop minus at Start) is gone from here: its tiles, overlay line, options and Stop count.
 LINE_NAMES = [("session", "Session timer"), ("map", "Map timer"), ("maps", "Maps done"), ("avg", "Average map time"),
-              ("rank", "Map rank: S-D"),                                         # 2.76.0: its own part
-              ("where", "Map name")]                                             # (2.96.1: plainer names)
+              ("rank", "Map rank: S-D")]                                         # 2.76.0: its own part
+# (2.132.6: "Map name" is gone - the map's name is never on the overlay)
 
 
 class _BarTitle:
@@ -459,7 +459,7 @@ class TrackerPage:
             tk.Label(parent, text=text, bg=P2, fg=C["muted"], font=("Segoe UI", 9), anchor="w").pack(
                 fill="x", pady=(top, 2))
         # ---- 2.96.1 (feedback: one switch per item, no doubles): On the bar | Options; then Helpers and Campaign
-        bar = card(0, 0, "On the bar", "One switch per item: on = it's on the bar (and works); off = it's gone.")
+        bar = card(0, 0, "On the overlay", "One switch per item: on = it's on the overlay; off = it's gone.")
         self.tk_line_vars = {}
         nums = []
         for k, label in LINE_NAMES:
@@ -508,7 +508,7 @@ class TrackerPage:
                        ("Hide the overlay from screen captures", self.tk_hidecap,
                         lambda: self.ov_hidecap_set(bool(self.tk_hidecap.get())))), 2)
         from .style import Tooltip
-        Tooltip(self.tk_ov_switches["Lock position"], "The overlay stays where it is (the 🔒 on the bar too).")
+        Tooltip(self.tk_ov_switches["Lock position"], "The overlay stays where it is (the 🔒 on the overlay too).")
         Tooltip(self.tk_ov_switches["Hide the overlay from screen captures"],
                 "Screenshots, recordings and streams won't show the overlay. Off: they show it - except in a Ritual "
                 "map, where it's left out by itself while the game's counters under it are read.")
@@ -531,10 +531,10 @@ class TrackerPage:
         self.tk_ov_switches = getattr(self, "tk_ov_switches", {})
         self.tk_cvendor_var = self.tk_bar_vars["vendor"]          # 2.92.2: the same switch as Vendor ▾ on the bar
         vv = self.tk_cvendor_var
-        cb = ttk.Checkbutton(camp, text="Vendor ▾ - on the bar the whole campaign", variable=vv,
+        cb = ttk.Checkbutton(camp, text="Vendor ▾ - on the overlay the whole campaign", variable=vv,
                              style="Card.TCheckbutton", command=lambda: self.camp_vendor_switch(vv))
         cb.pack(anchor="w")
-        self.tk_ov_switches["Vendor ▾ - on the bar the whole campaign"] = cb
+        self.tk_ov_switches["Vendor ▾ - on the overlay the whole campaign"] = cb
         self.camp_options(parent, into=camp)
         return o
 

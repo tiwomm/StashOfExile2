@@ -8,9 +8,12 @@ from tkinter import ttk
 from . import buglog
 from . import mapprofit as MP
 from .config import SETTINGS, save_json
-from .style import C, Tooltip
+from .style import C, SegBar, Tooltip
 
 REFS_SECS = 600                     # Scan stash's pictures are built again at most this often
+
+
+VIEWS = ("All Time", "Daily", "Hourly")    # 2.132.6 the page's views
 
 
 class MapProfitPage:
@@ -41,7 +44,8 @@ class MapProfitPage:
             except Exception:
                 buglog.caught()
         try:
-            self.merged_build()                             # (the bar's profit part comes / goes)
+            self.merged_build()                             # (the overlay's profit part comes / goes)
+            self.shell.features_changed()                   # (2.132.6: its page under Overlay comes / goes)
         except Exception:
             buglog.caught()
 
@@ -102,7 +106,28 @@ class MapProfitPage:
             self.mp_paint()
         if not res.get("covered"):
             self.mp_home = snap                             # (what you'd go into the next map with)
+            self.mp_home_cov = {}
+        else:
+            # 2.132.6 (feedback: "counted omen of answered prayers as profit that I had in my inventory that I brought
+            # from my own stash"): moving an item in from the stash puts the mouse over the inventory - a covered
+            # look. What a covered look sees after the last clear one counts toward what you went in with.
+            cov = getattr(self, "mp_home_cov", None)
+            if cov is None:
+                cov = self.mp_home_cov = {}
+            for k, n in counts.items():
+                cov[k] = max(cov.get(k, 0), n)
         return snap
+
+    def mp_home_base(self):
+        """What you went into the map with: the last clear look, plus anything a later covered look saw more of."""
+        home = getattr(self, "mp_home", None)
+        cov = getattr(self, "mp_home_cov", None) or {}
+        if home is None and not cov:
+            return None
+        counts = dict((home or {}).get("counts") or {})
+        for k, n in cov.items():
+            counts[k] = max(counts.get(k, 0), n)
+        return dict(home or {"t": time.time(), "unknown": 0}, counts=counts)
 
     @staticmethod
     def _mp_visit_in(run):
@@ -170,14 +195,14 @@ class MapProfitPage:
             pend = getattr(self, "mp_pending", None)
             if pend is not None and pend.get("where") == where:
                 self._mp_visit_in(pend)                     # (back through its portal: the same map goes on, from
-                home = getattr(self, "mp_home", None)       # what you went back in with)
+                home = self.mp_home_base()                  # what you went back in with)
                 if home is not None and home["t"] >= pend.get("left", 0):
                     pend["seg_before"] = dict(home["counts"])
                 pend["start"] = now
                 self.mp_run, self.mp_pending = pend, None
                 return
             self.mp_done()                                  # (another map: the last one is done)
-            home = getattr(self, "mp_home", None)
+            home = self.mp_home_base()
             if home is not None and now - home["t"] < MP.BEFORE_SECS:
                 self._mp_n = getattr(self, "_mp_n", 0) + 1
                 self.mp_run = {"before": home, "seg_before": dict(home["counts"]), "gain": {}, "start": now,
@@ -305,67 +330,112 @@ class MapProfitPage:
         cv.tag_bind("mg_profit", "<Leave>", self.mp_hover_hide)
         cv.tag_bind("mg_profit", "<Button-1>", lambda _e: (self.mp_hover_hide(), self.mp_list_open()))
 
-    # ---------------------------------------------------------------- the Map profit window
+    # ---------------------------------------------------------------- 2.132.6 Overlay ↳ Map Profit (a page, was a window)
     def mp_list_open(self):
-        old = getattr(self, "mp_win", None)
-        if old is not None and old.winfo_exists():
-            old.lift()
-            return old
-        P2 = C["panel2"]
-        w = self.mp_win = tk.Toplevel(self.root, bg=P2)
-        w.title("Map Profit")
-        w.geometry("760x480")
-        box = tk.Frame(w, bg=P2, padx=16, pady=16)
-        box.pack(fill="both", expand=True)
-        head = tk.Frame(box, bg=P2)
-        head.pack(fill="x")
-        tk.Label(head, text="Maps", bg=P2, fg=C["text"], font=("Segoe UI", 12, "bold")).pack(side="left")
-        tk.Label(head, text="What each map earned, counted from your inventory", bg=P2, fg=C["muted"],
-                 font=("Segoe UI", 9)).pack(side="left", padx=(8, 0))
-        ii = tk.Label(head, text="ⓘ", bg=P2, fg=C["muted"], cursor="question_arrow")
-        ii.pack(side="left", padx=(8, 0))
-        Tooltip(ii, "Open your inventory before a map to get a baseline.")
-        bar = tk.Frame(box, bg=P2)
-        bar.pack(fill="x", pady=(8, 8))
+        """The Map Profit page (feedback: "Map Profit should be a child under Overlay if you have map profit enabled,
+        rather than a new window")."""
+        self.shell.open("mapprofit")
+        return getattr(self, "mp_tv", None)
+
+    def build_map_profit(self, body):
+        P1, P2 = C["panel"], C["panel2"]
+        bar = tk.Frame(body, bg=P1, padx=8, pady=8)
+        bar.pack(fill="x")
         self.mp_q = tk.StringVar()
-        # (UX: the search box first, top left - 2.132.1, feedback: "wtf is this textbox for?": it says so, as the
-        # other list pages do)
-        tk.Label(bar, text="Search", bg=P2, fg=C["muted"]).pack(side="left", padx=(0, 8))
-        ent = ttk.Entry(bar, textvariable=self.mp_q, width=24)
+        tk.Label(bar, text="🔍", bg=P1, fg=C["muted"], font=("Segoe UI Symbol", 10)).pack(side="left", padx=(0, 4))
+        ent = ttk.Entry(bar, textvariable=self.mp_q, width=22)
         ent.pack(side="left")
         Tooltip(ent, "Find a map, or every map an item dropped in (Divine Orb, Omen of ...).")
         self.mp_q.trace_add("write", lambda *_a: self.mp_list_refresh())
-        self.mp_sum = tk.Label(bar, text="", bg=P2, fg=C["text"], font=("Segoe UI", 9))
-        self.mp_sum.pack(side="right")
-        cols = ("map", "time", "profit", "when")
-        tv = self.mp_tv = ttk.Treeview(box, columns=cols, show="headings", height=12)
-        for c, title, wd, anc in (("map", "Map", 260, "w"), ("time", "Time", 70, "e"), ("profit", "Profit", 120, "e"),
-                                  ("when", "When", 150, "w")):
-            tv.heading(c, text=title)
-            tv.column(c, width=wd, anchor=anc)
+        self.mp_view = SegBar(bar, list(VIEWS), command=lambda v: self.mp_list_refresh(), size=10, pad=(12, 4))
+        self.mp_view.pack(side="left", padx=(12, 0))
+        self.mp_clear_btn = ttk.Button(bar, text="Clear all…", command=self.mp_clear_all)
+        self.mp_clear_btn.pack(side="right")
+        Tooltip(self.mp_clear_btn, "Delete every map (Undo puts them back)")
+        self.mp_del_btn = ttk.Button(bar, text="Delete", command=self.mp_delete_sel)
+        self.mp_del_btn.pack(side="right", padx=(0, 8))
+        Tooltip(self.mp_del_btn, "Delete the picked rows (Undo puts them back)")
+        self.undo_button(bar, "mapprofit", side="right", padx=(0, 8))
+        self.mp_sum = tk.Label(body, text="", bg=P1, fg=C["text"], font=("Segoe UI", 10, "bold"), anchor="w", padx=12)
+        self.mp_sum.pack(fill="x")
+        # 2.132.6 (feedback: "Map profit didn't count my most recently completed map"): items it doesn't know yet
+        # can't be counted - say so, and how to teach them
+        self.mp_hint = tk.Label(body, text="", bg=P1, fg=C["warn"] if "warn" in C else C["muted"], anchor="w", padx=12,
+                                justify="left")
+        self.mp_chart = tk.Canvas(body, bg=P2, height=150, highlightthickness=0)
+        self.mp_chart.pack(fill="x", padx=8, pady=(8, 8))
+        self.mp_chart.bind("<Configure>", lambda e: self.mp_chart_draw())
+        self.mp_chart.bind("<Leave>", lambda e: self.mp_hover_hide())
+        box = tk.Frame(body, bg=P1)
+        box.pack(fill="both", expand=True, padx=8, pady=(0, 8))
+        tv = self.mp_tv = ttk.Treeview(box, columns=("a", "b", "c", "d", "e"), show="headings", selectmode="extended")
+        sb = ttk.Scrollbar(box, orient="vertical", command=tv.yview)
+        tv.configure(yscrollcommand=sb.set)
+        sb.pack(side="right", fill="y")
         tv.pack(fill="both", expand=True)
         tv.bind("<Motion>", self._mp_row_hover)
         tv.bind("<Leave>", lambda _e: self.mp_hover_hide())
-        self.mp_empty = tk.Frame(box, bg=P2)
-        foot = tk.Label(box, text="On your PC only - never uploaded or shared.", bg=P2, fg=C["muted"],
-                        font=("Segoe UI", 9), anchor="w")
-        foot.pack(fill="x", pady=(8, 0))
-        w.protocol("WM_DELETE_WINDOW", lambda: (self.mp_hover_hide(), w.destroy(), setattr(self, "mp_win", None)))
+        tv.bind("<<TreeviewSelect>>", lambda _e: self.mp_greys())
+        tv.bind("<Delete>", lambda _e: self.mp_delete_sel())
+        self.mp_empty = tk.Frame(box, bg=P1)
+        tk.Label(body, text="On your PC only - never uploaded or shared.", bg=P1, fg=C["muted"], font=("Segoe UI", 9),
+                 anchor="w", padx=12).pack(fill="x", pady=(0, 8))
+        self.mp_list_refresh()
+
+    def mp_greys(self):
+        for b, ok in ((getattr(self, "mp_del_btn", None), bool(self.mp_tv.selection())),
+                      (getattr(self, "mp_clear_btn", None), bool(getattr(self, "mp_rows", None)))):
+            if b is not None:
+                b.state(["!disabled"] if ok else ["disabled"])
+
+    def _mp_runs_of(self, iids):
+        out = set()
+        for i in iids:
+            r = (getattr(self, "mp_rows", None) or {}).get(i)
+            if r is None:
+                continue
+            for run in r.get("runs") or [r]:
+                out.add(run["id"])
+        return out
+
+    def mp_delete_sel(self):
+        ids = self._mp_runs_of(self.mp_tv.selection())
+        if not ids:
+            return None
+        gone = MP.log_delete(ids)
+        n = len(ids)
+        self.push_undo("mapprofit", f"{n} map{'s' if n != 1 else ''}", lambda: (MP.log_restore(gone),
+                                                                          self.mp_after_change()))
+        self.mp_after_change()
+        self._say(f"Deleted {n} map{'s' if n != 1 else ''}. Undo puts them back.", 6)
+        return gone
+
+    def mp_clear_all(self, ask=True):
+        from tkinter import messagebox
+        runs = self.mp_runs()
+        if not runs or (ask and not messagebox.askyesno("Clear all", f"Delete all {len(runs)} maps?\n(Undo puts them "
+                                                                   "back.)", parent=self.root)):
+            return None
+        gone = MP.log_delete({r["id"] for r in runs})
+        self.push_undo("mapprofit", f"{len(runs)} maps", lambda: (MP.log_restore(gone), self.mp_after_change()))
+        self.mp_after_change()
+        return gone
+
+    def mp_after_change(self):
+        self.mp_last = None
+        self.mp_list_refresh()
         try:
-            self.popup_over_app(w)
+            self.tracker_overlay_tick() if hasattr(self, "tracker_overlay_tick") else None
         except Exception:
             buglog.caught()
-        self.mp_list_refresh()
-        ent.focus_set()
-        return w
 
     def mp_runs(self, q=""):
         """The log as maps (a map you went back into through your portal is one), newest first."""
         runs = {}
         for e in MP.log_read(time.time() - MP.KEEP_DAYS * 86400):
-            r = runs.setdefault(e.get("run") or str(e.get("t")), {"map": e.get("map", ""), "t": e["t"], "secs": 0,
-                                                                   "div": 0.0, "rows": {}, "unknown": 0,
-                                                                   "n": len(runs)})
+            rid = e.get("run") or str(e.get("t"))
+            r = runs.setdefault(rid, {"id": rid, "map": e.get("map", ""), "t": e["t"], "secs": 0, "div": 0.0,
+                                      "rows": {}, "unknown": 0, "n": len(runs)})
             r["t"] = max(r["t"], e["t"])
             r["secs"] += e.get("secs", 0)
             r["div"] += e.get("div", 0)
@@ -384,44 +454,111 @@ class MapProfitPage:
         if tv is None or not tv.winfo_exists():
             return
         from .pricefmt import fmt_div
+        view = self.mp_view.get() if getattr(self, "mp_view", None) is not None else "All Time"
         runs = self.mp_runs(self.mp_q.get() if getattr(self, "mp_q", None) else "")
         tv.delete(*tv.get_children())
         self.mp_rows = {}
-        for i, r in enumerate(runs):
-            iid = f"r{i}"
-            self.mp_rows[iid] = r
-            m, s = divmod(int(r["secs"]), 60)
-            tv.insert("", "end", iid=iid, values=(
-                r["map"] or "a map", f"{m}:{s:02d}" if r["secs"] else "–",
-                MP.signed(r["div"], fmt_div),
-                time.strftime("%a %d %b, %H:%M", time.localtime(r["t"]))))
+        if view == "All Time":
+            cols = (("Map", 260, "w"), ("Time", 70, "e"), ("Profit", 110, "e"), ("When", 160, "w"), ("", 10, "w"))
+        else:
+            cols = (("Day" if view == "Daily" else "Hour", 160, "w"), ("Maps", 60, "e"), ("Profit", 110, "e"),
+                    ("Per map", 100, "e"), ("Per hour", 100, "e"))
+        for c, (title, wd, anc) in zip(("a", "b", "c", "d", "e"), cols):
+            tv.heading(c, text=title)
+            tv.column(c, width=wd, anchor=anc, stretch=c == "a")
+        if view == "All Time":
+            for i, r in enumerate(runs):
+                iid = f"r{i}"
+                self.mp_rows[iid] = r
+                m, s = divmod(int(r["secs"]), 60)
+                tv.insert("", "end", iid=iid, values=(r["map"] or "a map", f"{m}:{s:02d}" if r["secs"] else "–",
+                                                      MP.signed(r["div"], fmt_div),
+                                                      time.strftime("%a %d %b, %H:%M", time.localtime(r["t"])), ""))
+            self.mp_buckets = MP.buckets(runs, "day")
+        else:
+            kind = "day" if view == "Daily" else "hour"
+            self.mp_buckets = MP.buckets(runs, kind)
+            for i, (label, start, n, div, secs) in enumerate(reversed(self.mp_buckets)):
+                iid = f"b{i}"
+                end = start + (86400 if kind == "day" else 3600)
+                self.mp_rows[iid] = {"runs": [r for r in runs if start <= r["t"] < end], "label": label, "div": div}
+                tv.insert("", "end", iid=iid, values=(label, n, MP.signed(div, fmt_div), MP.signed(div / n, fmt_div),
+                                                      MP.signed(div * 3600 / secs, fmt_div) if secs >= 60 else "–"))
+        total = sum(r["div"] for r in runs)
+        secs = sum(r["secs"] for r in runs)
         t = self.mp_totals()
         sd, sn = t["session"]
-        dd, dn = t["day"]
-        self.mp_sum.config(text=(f"Session: {sn} map{'s' if sn != 1 else ''} · {MP.signed(sd, fmt_div)}"
-                                 + (f" · {MP.signed(t['per_map'], fmt_div)} / map" if t["per_map"] is not None else "")
-                                 + (f" · {MP.signed(t['per_hour'], fmt_div)} / hour" if t["per_hour"] is not None
-                                    else "") if sn else "Session: no maps yet")
-                                + (f"   Today: {MP.signed(dd, fmt_div)}" if dn else ""))
+        self.mp_sum.config(text=(f"{len(runs)} map{'s' if len(runs) != 1 else ''} · {MP.signed(total, fmt_div)}"
+                                 + (f" · {MP.signed(total / len(runs), fmt_div)} / map" if runs else "")
+                                 + (f" · {MP.signed(total * 3600 / secs, fmt_div)} / hour" if secs >= 60 else "")
+                                 + (f"     Session: {MP.signed(sd, fmt_div)} ({sn})" if sn else "")) if runs else "")
+        last = runs[0] if runs else None
+        if last and last["unknown"] >= 5 and not last["rows"]:
+            self.mp_hint.config(text=f"⚠ Last map: {last['unknown']} items not recognized, so nothing was counted. "
+                                     f"Teach them: hover each in your inventory and press {self.topup_key_text()}.")
+            if not self.mp_hint.winfo_manager():
+                self.mp_hint.pack(fill="x", after=self.mp_sum)
+        elif self.mp_hint.winfo_manager():
+            self.mp_hint.pack_forget()
+        self.mp_chart_draw()
         for ch in self.mp_empty.winfo_children():
             ch.destroy()
+        self.mp_greys()
         if runs:
-            self.mp_empty.pack_forget()
+            self.mp_empty.place_forget()
             return
-        P2 = C["panel2"]                                    # (UX: empty - what it is + one button)
-        self.mp_empty.pack(fill="x", before=tv, pady=(0, 8))
-        tk.Label(self.mp_empty, text="No maps counted yet. Open your inventory in your hideout before a map and "
-                                     "again after it.", bg=P2, fg=C["text"], anchor="w").pack(side="left")
+        P1 = C["panel"]                                     # (UX: empty - what it is + one button)
+        self.mp_empty.place(relx=0.5, rely=0.35, anchor="center")
+        tk.Label(self.mp_empty, text="No maps yet. Open your inventory before a map to get a baseline.", bg=P1,
+                 fg=C["muted"]).pack()
         if not self.mp_on():
             ttk.Button(self.mp_empty, text="Turn on Map profit", style="Primary.TButton",
                        command=lambda: (self.mp_set(True), self.mp_sync_switch(), self.mp_list_refresh())
-                       ).pack(side="right")
+                       ).pack(pady=(8, 0))
+
+    def mp_chart_draw(self):
+        """Bars: profit per day (All Time, Daily) or per hour (Hourly). Hover a bar for its numbers."""
+        cv = getattr(self, "mp_chart", None)
+        if cv is None or not cv.winfo_exists():
+            return
+        from .pricefmt import fmt_div
+        cv.delete("all")
+        bs = list(getattr(self, "mp_buckets", []) or [])
+        w, h = max(200, cv.winfo_width()), max(100, cv.winfo_height())
+        if getattr(self, "mp_view", None) is not None and self.mp_view.get() == "Daily":
+            bs = bs[-30:]
+        if not bs:
+            cv.create_text(w // 2, h // 2, text="No profit to chart yet", fill=C["muted"], font=("Segoe UI", 9))
+            return
+        top = max(max(b[3] for b in bs), 1e-9)
+        pad, base = 12, h - 22
+        bw = max(4, min(40, (w - 2 * pad) // len(bs) - 4))
+        for i, (label, _start, n, div, _secs) in enumerate(bs):
+            x0 = pad + i * (bw + 4)
+            y0 = base - int((base - 18) * max(div, 0) / top)
+            item = cv.create_rectangle(x0, y0, x0 + bw, base, fill=C["good"], outline="")
+            cv.tag_bind(item, "<Enter>", lambda e, t=f"{label}: {MP.signed(div, fmt_div)} from {n} map"
+                        f"{'s' if n != 1 else ''}": self.mp_chart_tip(e, t))
+            cv.tag_bind(item, "<Leave>", lambda e: self.mp_hover_hide())
+        cv.create_line(pad, base, w - pad, base, fill=C["line"])
+        cv.create_text(pad, h - 10, text=bs[0][0], anchor="w", fill=C["muted"], font=("Segoe UI", 8))
+        cv.create_text(w - pad, h - 10, text=bs[-1][0], anchor="e", fill=C["muted"], font=("Segoe UI", 8))
+        cv.create_text(pad, 8, text=f"best {MP.signed(top, fmt_div)}", anchor="w", fill=C["muted"],
+                       font=("Segoe UI", 9))
+
+    def mp_chart_tip(self, e, text):
+        self.mp_hover_hide()
+        w = self.mp_tip = tk.Toplevel(self.root, bg=C["panel"])
+        w.overrideredirect(True)
+        tk.Label(w, text=text, bg=C["panel"], fg=C["text"], font=("Segoe UI", 9), padx=8, pady=4,
+                 highlightthickness=1, highlightbackground=C["line"]).pack()
+        w.geometry(f"+{e.x_root + 14}+{e.y_root + 10}")
 
     def _mp_row_hover(self, e):
         tv = self.mp_tv
         iid = tv.identify_row(e.y)
         r = (getattr(self, "mp_rows", None) or {}).get(iid)
-        if r is None:
+        if r is None or "runs" in r:
             return self.mp_hover_hide()
         if getattr(self, "_mp_hover_iid", None) == iid and getattr(self, "mp_tip", None) is not None:
             return None
@@ -450,7 +587,7 @@ class MapProfitPage:
         cb = ttk.Checkbutton(row, text="Map profit (BETA)", variable=self.al_mp, style=CB,
                              command=lambda: self.mp_set(bool(self.al_mp.get())))
         cb.pack(side="left")
-        mb = ttk.Button(row, text="Maps…", command=self.mp_list_open)
+        mb = ttk.Button(row, text="Maps…", command=self.mp_list_open)          # (2.132.6: opens Overlay ↳ Map Profit)
         mb.pack(side="left", padx=(8, 0))
         info = tk.Label(row, text="ⓘ", bg=bg, fg=C["muted"], font=sm, cursor="question_arrow")
         info.pack(side="left", padx=(8, 0))

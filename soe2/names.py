@@ -26,6 +26,7 @@ PAGES = {
     "maps": "Map Library",
     "leaderboards": "Leaderboards",
     "plan": "League Plan",
+    "mapprofit": "Map Profit",         # 2.132.6 Overlay ↳ Map Profit
     "ovset": "Overlay Settings",       # 2.132.4 (feedback): was Settings, under Overlay
     "notes": "Notes",
     "settings": "Settings",

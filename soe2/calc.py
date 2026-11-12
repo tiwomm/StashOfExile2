@@ -98,7 +98,7 @@ class CalcOverlay:
         """Show / hide it (show None: flip). -> shown."""
         show = (not self.calc_ov_shown()) if show is None else bool(show)
         if show and not self.calc_cfg()["on"]:
-            self._say("The calculator is switched off: Overlay › Overlay Settings › On the bar › Calc.", 8)
+            self._say("The calculator is switched off: Overlay › Overlay Settings › On the overlay › Calc.", 8)
             return False
         if show:
             if not self.calc_ov_shown():

@@ -275,7 +275,8 @@ class TopUpPage:
         """The Top Up key (2.131.4: the game's Ctrl+C by default) on an item while your inventory was just seen: learn its picture under
         the mouse, add it to your list (keep = a full stack). -> True if learned."""
         last = getattr(self, "tu_last", None) or {}
-        if not TU.cfg().get("on") or not last.get("open") or time.time() - last.get("t", 0) > TEACH_SECS:
+        topup = bool(TU.cfg().get("on"))
+        if not (topup or self.mp_on()) or not last.get("open") or time.time() - last.get("t", 0) > TEACH_SECS:
             return False
         got = TU.item_name(text)
         if not got:
@@ -306,9 +307,13 @@ class TopUpPage:
             except Exception:
                 buglog.caught()
         items = TU.cfg()["items"]
-        if not any(it.get("name") == name for it in items):
+        if topup and not any(it.get("name") == name for it in items):
             items.append({"name": name, "keep": TU.full_stack(text) or 1})
         save_json("settings.json", SETTINGS)
+        if not topup:                                      # (2.132.6: taught for Map profit only - not a Top Up item)
+            self.tu_last = dict(last, thumb=None)
+            self.status_text, self.status_until = f"Map profit: learned {name}.", time.time() + 6
+            return True
         self.tu_last = dict(last, thumb=None)          # (read it again with this item known)
         self.status_text, self.status_until = (f"Top Up: learned {name} - set how many to keep in Items…" +
                                                ("" if plain is not None else " (move the mouse off it for a moment)")), \
@@ -345,7 +350,8 @@ class TopUpPage:
     def topup_wants(self, text):
         """2.131.4 (feedback: F7 did nothing - its copy was turned away as "not your Ctrl+Alt+C"): a copy for Top Up -
         Top Up on, an item, and your Top Up key just pressed (Ctrl+C, the game's own copy, by default)."""
-        if not TU.cfg().get("on") or not str(text).lstrip().startswith("Item Class:"):
+        teach = TU.cfg().get("on") or self.mp_on()            # (2.132.6: Map profit learns its items this way too)
+        if not teach or not str(text).lstrip().startswith("Item Class:"):
             return False
         keys = getattr(self, "keys", None)
         if keys is None:

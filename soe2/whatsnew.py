@@ -53,6 +53,13 @@ NOTES = {
             ("📤", "Share searches", "Post Regex and trade favorites. Official | Community | Mine.", None, "Regex"),
         ],
         "small": [
+            ("Overlay", "Map Profit: own page under Overlay. All Time, Daily, Hourly, bars, delete."),
+            ("Overlay", "Ritual Identifier, Temple: read anywhere on screen, no hover."),
+            ("Overlay", "Helpers line: says HELPERS."),
+            ("Overlay", "Map name: off the overlay, Map profit stays."),
+            ("Overlay", "Temple: under Helpers › IN MAPS."),
+            ("Overlay", "Map profit: items brought from your stash aren't profit."),
+            ("Overlay", "Map profit: teach unknown items with Ctrl+C."),
             ("Money Makers", "Lucrative Strats: Official | Community | Mine, no duplicates."),
             ("Money Makers", "Lucrative Strats: tags on your one-liners."),
         ],
