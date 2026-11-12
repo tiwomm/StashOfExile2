@@ -4,7 +4,7 @@
 
 > **Who we build for - read second.** Path of Exile players are utilitarian: they love data and information, problem solving and creative thinking. So every feature shows its numbers *and how they were worked out*, lets you sort, filter, compare and export them (CSV), keeps power-user depth (keys, versions, raw data) one click away instead of hiding it, explains in plain words, and leaves the decision to the player. Pretty is welcome; vague is not.
 
-**Current version: 2.136.1**
+**Current version: 2.136.2**
 
 Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds features, 2.10.1 only fixes. Each step below is one release; we work through them top to bottom.
 
@@ -270,6 +270,7 @@ Order (decided 2026-11-05): the page passes, then the Privacy & data hub, then t
 | 2.132.5 | Shorter helper and tooltip text. |
 | 2.136.0 | Temple Notepad: a note over the game, only inside the temple. |
 | 2.136.1 | Temple Notepad in Vaal Ruins too; crystals read from the Temple Console (under the bar); marked old once a run starts. |
+| 2.136.2 | Vaal Ruins is a town: Map profit counts temple runs (inventory before and after), the Session tracker stops counting Vaal Ruins as a map. |
 | 2.135.1 | No fades (Reduce motion always on); Regex: Genesis Tree, warping rune and Alloy mods. |
 | 2.135.0 | Page windows stay with the app; Scan stash out of BETA, Count currency in More; Temple crystals in runs. |
 | 2.134.1 | Update question: What's new only, checksums stay on the release page. |
@@ -394,6 +395,19 @@ From a research pass on PoE1 / PoE2 tools, forum and Reddit wishes. Order to be 
 | New | **Suggest a feature** (decided 2026-11-12): next to Report a bug, the same form for an idea. When an idea ships, What's new and the README credit the person, only by a name they choose to give (nothing sent or shown unless they opt in). |
 | Future | **Atlas progress tracker** (only if the log shows enough to track it), **leveling gems from a PoB code**, **debloat pass**. |
 | Future | **Buff watch** (a player's ask, 2026-11-09): one buff you pick (Guard, an aura) read from the game's buff bar and shown big near your health bar (BETA, off by default; pixels only, no memory, no keys). GGG's stance on mirroring UI is a gray area (Hinekora, AGPL-3.0, says so) - check before building. |
+
+### Strat & profit overhaul (asked 2026-11-12)
+
+One run record for the whole app (area, time, loadout, content, loot, profit) that Session, Map profit, Strat Tracker and Leaderboards all read - so each page shows the same runs its own way. May move features between pages; a UX/UI pass comes with it.
+
+| Area | Plan |
+|------|------|
+| Link | **Map profit ↔ Strat Tracker:** each run's profit counts toward the strat you're running (per run, per hour, best and worst run). |
+| UX | **Create a strat - one panel, no wall of switches:** activity (Atlas map, pinnacle boss, temple ...), map type, solo / party, atlas masters (pick per master, up to their limit), content tags (search, or type a new one), loadout (waystone + tablets), and the rarity it adds up to (waystone + tablets + character), each number one hover from how it was worked out. |
+| New | **Pinnacle content:** ready-made strats per pinnacle boss - fragments in, drops out, profit per kill. Lives in the Strat Tracker as an activity (decided 2026-11-12); profit per kill comes from Map profit. |
+| New | **Content mix bar** in the Session tracker: the share of your runs per content (Abyss, Breach, Delirium, Ritual ...), with a mark and a word per part, not color alone. How runs get their content: Map Content's icons (already read for Temple and Ritual) first; tablets in the map device as a later idea. |
+| Expand | **Run history:** one row per run with its content tags, time, rarity and profit; pin the drops you care about to the top. |
+| Credit | Ideas (not code, words or design) from Juice Tools (juicetools.app, by Mort). Its terms keep its code, design and text its own, so ours is built and worded from scratch; credited in the README for the ideas. |
 
 ## 🤔 Maybe later (ideas to weigh when the plan above is done)
 

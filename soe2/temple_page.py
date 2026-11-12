@@ -1,5 +1,6 @@
 """2.132.1 Temple Helper - the watcher (a look round the mouse in maps, for the Vaal Beacon's tooltip), the crystals
 on the line above the bar (2.132.2, with Ritual's - the bar had no room) and the alert card when they're full; its row in Overlay ↳ Overlay Settings › Helpers (temple.py reads)."""
+import time
 import tkinter as tk
 
 from . import buglog
@@ -124,15 +125,23 @@ class TemplePage:
             try:
                 img = RM.grab(box)
                 img = img.resize((img.width * 3, img.height * 3))      # small digits read better bigger
-                return TM.parse_console(RM.ocr(img), most)
-            except Exception:
+                lines = RM.ocr(img)
+                return TM.parse_console(lines, most), lines
+            except Exception as e:
                 buglog.caught()
-                return None
+                return None, e.__class__.__name__
 
-        def done(got):
+        def done(res):
             self._tm_con_busy = False
+            got, seen = res or (None, None)
             if got:
                 self.temple_seen(got)
+                return
+            # 2.136.2: why nothing was read, at most once a minute (the box holds only the count: no names)
+            if seen and time.time() - getattr(self, "_tm_con_said", 0.0) > 60:
+                self._tm_con_said = time.time()
+                txt = seen if isinstance(seen, str) else " | ".join(str(t) for t, _b in seen)[:60]
+                buglog.debug("Temple", f"console count not read: {txt}")
         try:
             self.run_bg(work, done)
         except Exception:
@@ -176,10 +185,8 @@ class TemplePage:
             pass
 
     def temple_pad_line(self):
-        st = TM.state()
-        if st and st.get("old"):
-            return TM.bar_text(st) + " - hover a Vaal Beacon to update"
-        return TM.bar_text(st) if st else "Crystals ? - hover a Vaal Beacon in a map"
+        """2.136.2 (feedback: "it shouldn't say that, it should just be reading my crystals"): the count only."""
+        return TM.bar_text(TM.state())
 
     def temple_pad_show(self):
         if self.temple_pad_shown():
