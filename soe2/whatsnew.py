@@ -47,6 +47,12 @@ BETA_AREAS = ("Wealth", "Money Makers", "Game Search", "Market Insights", "Craft
 # repeats. Someone coming from rollup["since"] or older (or a fresh install) sees it instead of each version; someone
 # on a pre-release already saw them and gets only this version's own lines (notes_between).
 NOTES = {
+    "2.134.1": {
+        "big": [],
+        "small": [
+            ("App", "Update question: What's new only. Checksums stay on the release page."),
+        ],
+    },
     "2.134.0": {
         "big": [
             ("♪", "Music Controls (BETA)", "⏮ ⏯ ⏭ for any music player, in a small window you drag anywhere, in your "

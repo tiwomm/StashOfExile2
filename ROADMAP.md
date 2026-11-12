@@ -4,7 +4,7 @@
 
 > **Who we build for - read second.** Path of Exile players are utilitarian: they love data and information, problem solving and creative thinking. So every feature shows its numbers *and how they were worked out*, lets you sort, filter, compare and export them (CSV), keeps power-user depth (keys, versions, raw data) one click away instead of hiding it, explains in plain words, and leaves the decision to the player. Pretty is welcome; vague is not.
 
-**Current version: 2.134.0**
+**Current version: 2.134.1**
 
 Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds features, 2.10.1 only fixes. Each step below is one release; we work through them top to bottom.
 
@@ -268,6 +268,7 @@ Order (decided 2026-11-05): the page passes, then the Privacy & data hub, then t
 | 2.132.3 | Ritual Identifier (BETA). What's new in keywords. |
 | 2.132.4 | Overlay Settings name; Ritual Identifier is a Ritual helper option. |
 | 2.132.5 | Shorter helper and tooltip text. |
+| 2.134.1 | Update question: What's new only, checksums stay on the release page. |
 | 2.134.0 | Music Controls (BETA): ⏮ ⏯ ⏭ in a small window over the game. |
 | 2.133.1 | Theme swap with the overlay open: no forced redraw. |
 | 2.133.0 | Community data: every price-checked item pooled, gear too. |
@@ -319,6 +320,10 @@ Most-used first; pages that share data go together so their doubles can be merge
 | P8 | ✅ 2.114.0 - Under the hood: Mod book, Rate mods - and remove the Listing order lab (an admin tool, done its job). |
 | P9 | ✅ 2.114.0 - Exchange rates, Notes, Calculator |
 | P10 | ✅ 2.116.0 - Settings (every tab), Privacy & community, About, the welcome / what's new card, first start - plus Settings › Advanced › Developer options (off and hidden until switched on): a Debug mode for Windows and Linux builds (more detail in the error log, a debug line in the status bar, nothing personal logged); an Unmatched mods page - every mod the app couldn't find on the trade list (unmatched_mods.txt) beside the closest trade wording, so each mismatch points at its fix. |
+
+### Next UI/UX pass - notes (collected as they come)
+
+- Map profit on the overlay bar (feedback 2026-11-12: "the profit tracker on the overlay needs some visual improvements"): "+9.8 exalted" sits tight against Avg with no separator and the word "exalted" is long for the bar.
 
 ### Page standard (every pass checks the same things, in this order)
 

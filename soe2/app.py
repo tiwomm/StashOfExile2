@@ -115,9 +115,21 @@ MISC_ROWS = (("corrupted", "Corrupted"), ("fractured", "Fractured"), ("desecrate
 def plain_notes(md):
     """2.112.3: the release notes as plain lines for the update question - GitHub's markdown (## headings, **bold**,
     the download / not-affiliated footer) showed as raw symbols in the Windows dialog."""
-    out = []
+    out, skip = [], False
     for line in md.replace("\r", "").split("\n"):
         t = line.strip()
+        # 2.134.1 (feedback: "I don't think we need that in the update available screen"): the release page's
+        # "Check your download" block (SHA-256s, VirusTotal link) is for the GitHub page - the app checks the
+        # checksum itself, and a link in this dialog can't be clicked
+        if t.startswith("**Check your download"):
+            skip = "head"
+            continue
+        if skip and t.startswith(("- ", "* ")):
+            skip = "items"
+            continue
+        if skip == "head" and not t:
+            continue
+        skip = False
         if not t or t.startswith(("**Download:**", "This product isn't affiliated")):
             continue
         if t.startswith("#"):
