@@ -71,6 +71,9 @@ class WealthPage:
                              activeforeground="#ffffff", relief="flat", padx=8, pady=4, cursor="hand2")
         mm = tk.Menu(more, tearoff=0, bg=C["panel2"], fg=C["text"], activebackground="#2c4a84")
         mm.add_command(label="Update prices from poe.ninja", command=self.wealth_update_prices)
+        # 2.135.0 (feedback: "the Count Currency button needs replaced with the Stash Scan ... move into the menu as a
+        # backup"): Scan stash is the main button; Count currency (Ctrl+C on each stack) is here
+        mm.add_command(label="Count currency (Ctrl+C each stack)…", command=self.wealth_count_toggle)
         mm.add_command(label="Add currency by hand…", command=self.wealth_manual_add)
         mm.add_separator()
         mm.add_command(label="Export history (CSV)…", command=self.wealth_export_history)    # 2.2.0
@@ -82,14 +85,13 @@ class WealthPage:
         self.w_price_btn = _MenuItem(mm, 0)
         # P3 (2.105.1): no synced stash tabs - no Sync, Stop or Re-check rares; Count currency is the main button
         self.w_stop_btn = ttk.Button(abar, text="Stop", command=self.wealth_stop, state="disabled")   # (never shown)
-        self.w_scan_btn = ttk.Button(abar, text="Scan stash (BETA)…", command=self.stash_scan_start)    # 2.102.0
+        self.w_scan_btn = ttk.Button(abar, text="Scan stash…", command=self.stash_scan_start,    # 2.102.0
+                                     style="Primary.TButton")                                    # (2.135.0: the main one)
         self.w_scan_btn.pack(side="right", padx=(0, 8))
-        self.w_count_btn = ttk.Button(abar, text="Count currency…", command=self.wealth_count_toggle,
-                                      style="Primary.TButton")
-        self.w_count_btn.pack(side="right", padx=(0, 8))
-        Tooltip(self.w_scan_btn, "BETA - may not work. Reads your Currency, Abyss, Delirium, Breach, Expedition, Ritual, Essence and Fragments tabs from "
-                                  "the screen instead of Ctrl+C on every stack. You check the numbers before they're "
-                                  "saved. Only looks: no keys, no clicks; the picture is never saved.")
+        self.w_count_btn = ttk.Button(abar, text="Count currency…", command=self.wealth_count_toggle)   # (2.135.0: in
+        Tooltip(self.w_scan_btn, "Reads your Currency, Abyss, Delirium, Breach, Expedition, Ritual, Essence and "   # More ▾)
+                                  "Fragments tabs from the screen. You check the numbers before they're saved. Only "
+                                  "looks: no keys, no clicks; the picture is never saved.")
         self.w_sync_btn = ttk.Button(abar, text="⟳ Sync stash tabs", command=self.wealth_sync)   # (never shown)
         self.w_msg = tk.Label(tab, text="", anchor="w", justify="left", bg=P1, fg=C["muted"], padx=12,
                               font=("Segoe UI", 10, "bold"))
@@ -245,8 +247,8 @@ class WealthPage:
         self.w_count.pack(side="left", fill="x", expand=True)
         self.w_count.bind("<Configure>", lambda e: self.w_count.config(wraplength=max(200, e.width - 6)))
         self.w_empty = tk.Label(itf, bg=P1, fg=C["muted"], font=("Segoe UI", 10), justify="center",
-                                text="Nothing counted yet.\nPress Count currency and copy your stacks in game (Ctrl+C),\n"
-                                     "or Scan stash (BETA).")
+                                text="Nothing counted yet.\nPress Scan stash to read your stash tabs\n"
+                                     "(or More ▾ › Count currency and Ctrl+C each stack).")
 
         # ---- Stash tabs: your priced tabs - the list, each one's last sync, adding one (always shown here)
         self.w_setup = tk.Frame(tab, bg=P1)                 # P3 (2.105.1): built, never shown (the old tab parts)
@@ -293,8 +295,7 @@ class WealthPage:
                                         "Each tab needs its own price. Never a Merchant's Tab: those sell instantly, "
                                         "even when you're offline.\n"
                                         "3.  Type that price here (or paste the trade link) and press Add tab.\n"
-                                        "Currency doesn't need a tab: Count currency, then copy each stack in game "
-                                        "with Ctrl+C.",
+                                        "Currency doesn't need a tab: Scan stash reads it.",
                                bg=P2, fg=C["text"], justify="left", anchor="w", font=("Segoe UI", 9), wraplength=760)
         self.w_help.pack(fill="x", pady=(0, 8))
         add = tk.Frame(af, bg=P2)
@@ -383,11 +384,12 @@ class WealthPage:
 
     WEALTH_GUIDE = [
         ("What Wealth is", "Tracks and logs your overall net worth, converts all currency items to Divine values."),
-        ("Count currency", "Press Count currency, then hover each stack in game and press Ctrl+C: the stack and its "
-                           "size are added. Stacks of the same currency add up. Double-click a quantity to change it; "
+        ("Scan stash", "Reads your Currency, Abyss, Delirium, Breach, Expedition, Ritual, Essence and Fragments tabs from "
+                       "the screen. You check the numbers before they're saved. Only looks: no keys, no clicks; the "
+                       "picture is never kept."),
+        ("Count currency", "The backup (More ▾): press it, then hover each stack in game and press Ctrl+C - the stack "
+                           "and its size are added; the same currency adds up. Double-click a quantity to change it; "
                            "select rows (Ctrl+A for all) and press Delete to remove them."),
-        ("Scan stash (BETA)", "Reads your Currency, Abyss, Delirium, Breach, Expedition, Ritual, Essence and Fragments tabs from the screen. You check the "
-                              "numbers before they're saved. Only looks: no keys, no clicks; the picture is never kept."),
         ("Prices", "Currency, fragments and other stackables come from poe.ninja. Double-click a price to set your own."),
         ("Total and Where it is", "Total is everything added up; the chart shows it over time (Daily = the change "
                                   "per day). Where it is splits it by kind (currency, fragments ...)."),
@@ -481,7 +483,7 @@ class WealthPage:
         if self.w_counting:
             return self.wealth_count_finish()
         self.w_counting, self.w_session = True, []
-        self.w_count_btn.config(text="Finish counting", style="Primary.TButton")
+        self.w_count_btn.config(text="Finish counting")
         self.wealth_show_page("Overview")
         self.wealth_count_strip()
         self.wealth_steps_refresh()
@@ -510,7 +512,7 @@ class WealthPage:
 
     def wealth_count_cancel(self):
         self.w_counting, self.w_session = False, []
-        self.w_count_btn.config(text="Count currency…", style="Primary.TButton")
+        self.w_count_btn.config(text="Count currency…")
         self.wealth_steps_refresh()
         self._w_strip_close()
 
@@ -626,7 +628,7 @@ class WealthPage:
             return self._w_tell("The list is already empty.", "note")
         if not messagebox.askyesno("Clear Wealth items",
                                    f"Clear all {n:,} items from the list?\n\nYour history (the chart and snapshots) "
-                                   "stays. Count currency or Scan stash to fill it again.\n\n"
+                                   "stays. Scan stash (or More ▾ › Count currency) fills it again.\n\n"
                                    "You can undo this with Ctrl+Z or the Undo button.", parent=self.dlg_parent()):
             return
         with WEALTH.lock:
@@ -898,18 +900,22 @@ class WealthPage:
             b = ttk.Button(f, text=label, command=fn, style="Primary.TButton" if main else "TButton")
             b.pack(side="right", padx=(8, 0))
             self.w_step_btns[(col + 1, label)] = b
-        card(0, "Count currency", "Press Count, then in game hover each stack and press Ctrl+C. The same currency adds "
-                                  "up.", "Finish counting" if self.w_counting else "Start counting",
-             self.wealth_count_toggle, True)
-        card(1, "Scan stash (BETA)", "Reads your Currency, Abyss, Delirium, Breach, Expedition, Ritual, Essence and Fragments tabs from the screen. You check "
-                                     "the numbers before they're saved.", "Scan stash…", self.stash_scan_start, False)
-        try:                                     # 2.120.0 (UX pass 2: one orange button a page): the card's Start
-            self.w_count_btn.config(style="TButton")   # counting is the one while the setup cards show
+        card(0, "Scan stash", "Reads your Currency, Abyss, Delirium, Breach, Expedition, Ritual, Essence and Fragments "
+                              "tabs from the screen. You check the numbers before they're saved.", "Scan stash…",
+             self.stash_scan_start, True)
+        card(1, "Count currency", "The backup: press Count, then in game hover each stack and press Ctrl+C.",
+             "Finish counting" if self.w_counting else "Start counting", self.wealth_count_toggle, False)
+        try:                                     # 2.120.0 (UX pass 2: one orange button a page): the card's Scan
+            self.w_scan_btn.config(style="TButton")    # stash is the one while the setup cards show
         except (AttributeError, tk.TclError):
             pass
 
     def _wealth_status(self, top):
         """After the first count: one line - when you last counted, items that need a price; each one clickable."""
+        try:                                     # 2.135.0: no setup cards - Scan stash is the page's orange button
+            self.w_scan_btn.config(style="Primary.TButton")
+        except (AttributeError, tk.TclError):
+            pass
         if not WEALTH.holdings:
             return
         P1 = C["panel"]

@@ -59,7 +59,7 @@ class TemplePage:
         self.tm_told = True
         from . import alertcard
         from .alerts_page import game_rect
-        self.tm_win = alertcard.show(self.root, "Crystals full", f"Energised Beacons {st['have']}/{st['most']} - open "
-                                     "the Vaal Ruins", color="#d9a441", mark="◆", secs=5 if test else 10,
+        self.tm_win = alertcard.show(self.root, "Crystals full", f"Energised Beacons {st['have']}/{st['most']} "
+                                     f"({TM.runs(st)} runs). Placed rooms stay until destabilized.", color="#d9a441", mark="◆", secs=5 if test else 10,
                                      game=game_rect(), tag="Temple", rank=1, vital=True)
         return self.tm_win
