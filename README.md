@@ -24,6 +24,7 @@ A Windows toolkit that runs next to **Path of Exile 2**: price checks, bulk pric
 - **Trade whispers** - a card for each buy whisper.
 - **Campaign Helper** - where you are, what's next, missed rewards.
 - **Island Rumors** - which island each rumor leads to.
+- **Music Controls** (BETA) - ⏮ ⏯ ⏭ for any music player, in a small window you place.
 
 **Planning**
 - **League Plan** - goals by phase, stockpile and farm plan.

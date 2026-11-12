@@ -370,6 +370,7 @@ class MergedOverlay:
             self.ovr_build()
         try:                                                # 2.109.0: Calc and Regex favorites too
             self.calc_ov_restyle()
+            self.music_restyle()                            # 2.134.0
             if self.rx_ov_shown():
                 self.rx_ov_show()
         except Exception:
@@ -708,8 +709,10 @@ class MergedOverlay:
             self.merged_build()
             self.calc_ov_restore()
             self.ovr_restore()
+            self.music_sync()
             return None
         self.calc_ov_close(remember=False)
+        self.music_close()
         self.ovr_close()
         self.rx_ov_close()
         self.camp_vendor_close()
