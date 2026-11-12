@@ -25,6 +25,11 @@ VERSION HISTORY
          65 so it looked like a map) -> "town". Map profit reads your inventory there before and after a temple run
          (Atziri's Temple, IncursionTemple, stays a map); Vaal currency is priced like any exchange item. The Session
          tracker no longer counts a visit to Vaal Ruins as a map run.
+       - Crystals (feedback: "my crystal count hasn't gone down" - its log: an OSError in the console read): Windows'
+         text reader now reads one picture at a time (remnant._OCR_LOCK - the Beacon and console readers shared one
+         engine on two threads) and a failed read is tried once more with a new engine; an unread count logs what was
+         seen, at most once a minute (the box holds only the count).
+       - Temple Notepad (feedback: "it shouldn't say that"): its line is the count only, no "hover a Vaal Beacon".
   2.136.1
        - Temple Notepad (feedback: "should open in Vaal Ruins as well as inside Atziri's Temple"): also in the endgame
          Vaal Ruins (IncursionHubEndgame) and Atziri's area (IncursionTemplePresent); the campaign's IncursionHub isn't.

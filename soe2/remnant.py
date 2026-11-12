@@ -18,6 +18,7 @@ import difflib
 import os
 import re
 import sys
+import threading
 import time
 from . import buglog
 
@@ -401,10 +402,29 @@ def _engine_new():
     return OcrEngine.try_create_from_user_profile_languages()
 
 
+_OCR_LOCK = threading.Lock()
+_OCR_ERRS = set()
+
+
 def ocr(img):
-    """PIL image -> [(line text, (x0, y0, x1, y1) in the image's pixels)] with Windows.Media.Ocr."""
+    """PIL image -> [(line text, (x0, y0, x1, y1) in the image's pixels)] with Windows.Media.Ocr.
+    2.136.2 (feedback: the crystal count never changed - its log: an OSError in the Temple Console read): one read at
+    a time (two readers on two threads shared one engine), and a failed read is tried once more with a fresh engine."""
     if sys.platform != "win32":
         raise OcrUnavailable(ocr_available())
+    with _OCR_LOCK:
+        try:
+            return _ocr(img)
+        except OSError as e:
+            code = getattr(e, "winerror", None) or getattr(e, "errno", None)
+            if code not in _OCR_ERRS:                    # the error's number only (no text: it could hold anything)
+                _OCR_ERRS.add(code)
+                buglog.debug("OCR", f"read failed (error {code}) - trying again with a new reader")
+            _ENGINE[0] = None
+            return _ocr(img)
+
+
+def _ocr(img):
     try:
         import asyncio
         from winrt.windows.graphics.imaging import BitmapAlphaMode, BitmapPixelFormat, SoftwareBitmap
