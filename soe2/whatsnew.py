@@ -47,6 +47,19 @@ BETA_AREAS = ("Wealth", "Money Makers", "Game Search", "Market Insights", "Craft
 # repeats. Someone coming from rollup["since"] or older (or a fresh install) sees it instead of each version; someone
 # on a pre-release already saw them and gets only this version's own lines (notes_between).
 NOTES = {
+    "2.134.0": {
+        "big": [
+            ("♪", "Music Controls (BETA)", "⏮ ⏯ ⏭ for any music player, in a small window you drag anywhere, in your "
+             "overlay style. Switch: Overlay Settings › Helpers.", None, "Overlay"),
+        ],
+        "small": [],
+    },
+    "2.133.1": {
+        "big": [],
+        "small": [
+            ("App", "Theme swap with the overlay open: windows settle on their own, no forced redraw."),
+        ],
+    },
     "2.133.0": {
         "big": [],
         "small": [

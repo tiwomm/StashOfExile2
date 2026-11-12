@@ -131,7 +131,8 @@ HELPER_BLURBS = {"delirium": "Reminder popup to end Delirium.",
                  "topup": "Says what's running low when you open your inventory in a hideout or town",   # 2.131.1
                  "breaks": "An alert card after a long stretch of play, in a hideout or town",
                  "mapprofit": "What each map earned, from your inventory - on your PC only",          # 2.132.1
-                 "temple": "Clear a Vaal Beacon to track your Crystals."}
+                 "temple": "Clear a Vaal Beacon to track your Crystals.",
+                 "music": "Previous, play / pause and next for any music player, in a small window."}   # 2.134.0
 
 
 class AlertsPage:
@@ -347,15 +348,16 @@ class AlertsPage:
 
         self.al_chips = {}
         what = {k: HELPER_BLURBS[k] for k in ("delirium", "breach", "ritual", "remnant", "temple", "focus", "campaign",
-                                               "whispers", "desecrate")}   # 2.132.5: one line each (its tooltip too)
+                                               "whispers", "desecrate", "music")}   # 2.132.5: one line each (its tooltip too)
         tests = {"delirium": self.alerts_test_delirium, "breach": lambda: self.breach_alert(test=True),
                  "ritual": self.alerts_test_ritual, "remnant": self.alerts_test_remnant,
                  "focus": lambda: self.ov_intro_setup("focus"), "campaign": lambda: self.camp_route_show(),
                  "whispers": lambda: self.ww_show_test(), "desecrate": self.alerts_test_desecrate,
-                 "temple": lambda: self.temple_alert(test=True)}
+                 "temple": lambda: self.temple_alert(test=True), "music": lambda: self.music_set(True)}
         names = {"delirium": "Delirium", "breach": "Breach", "ritual": "Ritual", "remnant": "Expedition",
                  "focus": "League Plan", "campaign": "Campaign", "whispers": "Trade whispers",
-                 "desecrate": "Desecration", "temple": "Temple (BETA)"}
+                 "desecrate": "Desecration", "temple": "Temple (BETA)",
+                 "music": "Music (BETA)"}
         # 2.119.0 (UX pass): what each one does, in one gray line under its name (it was only a tooltip)
         blurb = HELPER_BLURBS
         self.al_leave = tk.BooleanVar(value=bool(self.breach_cfg().get("leave_reminder", True)))
@@ -387,7 +389,7 @@ class AlertsPage:
         # (2.132.2, feedback: "desecration needs moved up under 'play' settings to be above campaign")
         # (2.132.6, feedback: "Temple in the settings should be listed under Helpers, below Expedition")
         for group, keys in (("IN MAPS", ("breach", "delirium", "ritual", "remnant", "temple")),
-                            ("PLAY", ("desecrate", "campaign", "focus")), ("TRADING", ("whispers",))):
+                            ("PLAY", ("desecrate", "campaign", "focus", "music")), ("TRADING", ("whispers",))):
             rule()
             tk.Label(tbl, text=group, bg=P2, fg=C["muted"], font=("Segoe UI", 9, "bold")).grid(
                 row=r_[0], column=0, columnspan=5, sticky="w", pady=(8, 2))
@@ -424,7 +426,7 @@ class AlertsPage:
                     Tooltip(rs, "Remind me when I leave the map with it unfinished")
                 else:
                     tk.Label(tbl, text="-", bg=P2, fg=C["muted"]).grid(row=r, column=3, padx=(0, 12))
-                ttk.Button(tbl, text="Open" if key in ("focus", "campaign") else "Test", command=tests[key],
+                ttk.Button(tbl, text="Open" if key in ("focus", "campaign", "music") else "Test", command=tests[key],
                            width=6).grid(row=r, column=4, sticky="e")
                 r_[0] += 1
                 snd = tk.BooleanVar(value=True)
@@ -449,6 +451,8 @@ class AlertsPage:
         self.al_rows["remnant"]["on"].set(bool(self.remnant_cfg().get("on")))          # 2.37.0
         self.al_rows["temple"]["on"].set(bool(self.temple_on()))                       # 2.132.6
         self.al_temple = self.al_rows["temple"]["on"]
+        self.al_rows["music"]["on"].set(bool(self.music_wanted()))                     # 2.134.0
+        self.al_music = self.al_rows["music"]["on"]
         self.al_rows["desecrate"]["on"].set(bool(self.ws_cfg().get("on")))            # 2.81.0
         from . import campaign as _CP, focus as _F
         self.al_rows["focus"]["on"].set(bool(_F.cfg()["on"]))                          # 2.90.0
@@ -548,6 +552,8 @@ class AlertsPage:
             v = getattr(self, "al_mp" if key == "mapprofit" else "al_temple", None)
             if v is not None and bool(v.get()) != bool(want):
                 v.set(bool(want))
+        elif key == "music":                                  # 2.134.0
+            self.music_set(bool(want))
         elif key == "breaks":
             self.break_set("on", bool(want))
             v = getattr(self, "al_break", None)
@@ -935,7 +941,8 @@ class AlertsPage:
         return {"focus": "on" if _F.cfg()["on"] else "off", "campaign": "on" if _CP.cfg()["on"] else "off",
                 "whispers": w, "topup": "on" if _TU.cfg().get("on") else "off",
                 "breaks": "on" if _BR.cfg().get("on") else "off",
-                "mapprofit": "on" if _MP.cfg().get("on") else "off", "temple": "on" if _TM.cfg().get("on") else "off"}
+                "mapprofit": "on" if _MP.cfg().get("on") else "off", "temple": "on" if _TM.cfg().get("on") else "off",
+                "music": "on" if self.music_wanted() else "off"}
 
     def alerts_refresh(self):
         """Every 2 s (util_refresh) and after a change: dots, checkboxes and status lines."""
@@ -996,8 +1003,12 @@ class AlertsPage:
         _st = _TMs.state()
         ttxt = (("On - " + _TMs.bar_text(_st)) if _st else "On - Watching for Vaal Beacons.") if self.temple_on() \
             else rows["temple"]["what"]
+        self.music_sync()                                                               # 2.134.0
+        rows["music"]["on"].set(bool(self.music_wanted()))
+        utxt = (("On - drag it where you want it." if self.music_on() else "On - shows while the overlay is on.")
+                if self.music_wanted() else rows["music"]["what"])
         for k, txt in (("delirium", dtxt), ("breach", btxt), ("ritual", rtxt), ("remnant", mtxt), ("desecrate", wtxt),
-                       ("focus", ftxt), ("campaign", ctxt), ("whispers", vtxt), ("temple", ttxt)):
+                       ("focus", ftxt), ("campaign", ctxt), ("whispers", vtxt), ("temple", ttxt), ("music", utxt)):
             st = states[k]
             lbl = rows[k]["status"]
             if rows[k].get("grid"):                 # 2.112.0: one short line under the name

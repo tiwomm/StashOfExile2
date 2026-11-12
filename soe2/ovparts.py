@@ -168,7 +168,7 @@ class OverlayParts:
     def goalbar_wanted(self):
         return bool(self.goalbar_rows())
 
-    def goalbar_destroy(self, keep_place=True):
+    def goalbar_destroy(self, keep_place=True, flush=True):
         """The lines come off the overlay's window; keep_place: the window shrinks back down to its bar (the bar
         itself never moves)."""
         cv, self.gb_cv = getattr(self, "gb_cv", None), None
@@ -176,7 +176,7 @@ class OverlayParts:
         if cv is None:
             return
         main = getattr(self, "mg_win", None)
-        geo = self._gb_geo(main) if keep_place and main is not None else None
+        geo = self._gb_geo(main, flush) if keep_place and main is not None else None
         try:
             cv.destroy()
         except tk.TclError:
@@ -185,11 +185,19 @@ class OverlayParts:
             self._gb_place(main, geo, -h, getattr(self, "_gb_below", False))
 
     @staticmethod
-    def _gb_geo(main):
-        """(w, h, x, y) of the window before the lines go on or come off."""
+    def _gb_geo(main, flush=True):
+        """(w, h, x, y) of the window before the lines go on or come off. flush=False (2.133.1): called once idle,
+        the sizes are already worked out - no forced layout flush."""
         try:
-            main.update_idletasks()
-            g = (main.winfo_width(), main.winfo_height(), main.winfo_x(), main.winfo_y())
+            if flush:
+                main.update_idletasks()
+            x, y = main.winfo_x(), main.winfo_y()
+            if not flush:                                # (where the window was put - winfo_x can lag behind it)
+                import re
+                m = re.match(r"\d+x\d+([+-]-?\d+)([+-]-?\d+)$", main.geometry())
+                if m:
+                    x, y = int(m.group(1).lstrip("+")), int(m.group(2).lstrip("+"))
+            g = (main.winfo_width(), main.winfo_height(), x, y)
             return g if g[0] > 1 else (main.winfo_reqwidth(), main.winfo_reqheight(), g[2], g[3])
         except tk.TclError:
             return None
@@ -206,13 +214,13 @@ class OverlayParts:
         except tk.TclError:
             pass
 
-    def goalbar_build(self):
+    def goalbar_build(self, settled=False):
         """2.124.0 (feedback: "instead of an isolated separate bar, can we just have it combine"): the Campaign,
         Ritual and NOW lines are drawn at the top of the overlay's own window, as wide as it, and the window grows
         upward by their height - the bar itself never moves. (Was its own small window, docked or dragged.)
         -> the lines' canvas or None."""
         import tkinter.font as tkfont
-        self.goalbar_destroy()
+        self.goalbar_destroy(flush=not settled)
         main = getattr(self, "mg_win", None)
         if main is None or not self.goalbar_wanted():
             self.goal_rows = []
@@ -226,7 +234,8 @@ class OverlayParts:
             P = pal()
         try:
             mcv = next(c for c in main.body.winfo_children() if isinstance(c, tk.Canvas))
-            main.update_idletasks()
+            if not settled:                              # (2.133.1: settled = run once idle, sizes known)
+                main.update_idletasks()
             W = int(mcv.cget("width")) or mcv.winfo_reqwidth()
             mh = int(mcv.cget("height")) or mcv.winfo_reqheight()
         except (StopIteration, tk.TclError, ValueError, AttributeError):
@@ -258,7 +267,7 @@ class OverlayParts:
         if light and P.get("boxless"):
             from .ovlight import KEY
             bg = KEY
-        geo = self._gb_geo(main)
+        geo = self._gb_geo(main, not settled)
         cv = tk.Canvas(main.body, bg=bg, highlightthickness=0, width=W, height=H)
         # 2.130.1 (feedback: "overlay at top caused the ritual portion of the bar style to be beyond the edge of the
         # monitor"): with the Bar placed at the top, the lines go under it, and the window grows down

@@ -6,6 +6,12 @@
 
 A Windows toolkit that runs next to **Path of Exile 2**: price checks, bulk pricing, an overlay with helpers, and planning tools. Written by Claude (an AI by Anthropic), directed and tested by a human player. Open source.
 
+![The app: Bulk Pricing with three tablets priced](docs/screenshots/app.png)
+
+![The overlay: the Bar, Notes, a price check card and Music Controls](docs/screenshots/overlay.png)
+
+*Screenshots: sample items and made-up listings.*
+
 ## What it does
 
 **Pricing**
@@ -24,6 +30,7 @@ A Windows toolkit that runs next to **Path of Exile 2**: price checks, bulk pric
 - **Trade whispers** - a card for each buy whisper.
 - **Campaign Helper** - where you are, what's next, missed rewards.
 - **Island Rumors** - which island each rumor leads to.
+- **Music Controls** (BETA) - ⏮ ⏯ ⏭ for any music player, in a small window you place.
 
 **Planning**
 - **League Plan** - goals by phase, stockpile and farm plan.
