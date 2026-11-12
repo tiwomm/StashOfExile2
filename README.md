@@ -38,6 +38,8 @@ A Windows toolkit that runs next to **Path of Exile 2**: price checks, bulk pric
 
 Download `StashOfExile2.exe` from [Releases](../../releases) and run it. It updates itself; your settings stay in `%APPDATA%\StashOfExile2`.
 
+Each release lists the SHA-256 of every download and a VirusTotal scan of the exe.
+
 From source (Python 3.12): `py -m pip install requests pystray pillow mss numpy opencv-python-headless` then `py stashofexile2.py`. Linux: see [linux/](linux/README.md).
 
 ## Privacy

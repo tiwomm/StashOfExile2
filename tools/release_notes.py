@@ -21,6 +21,8 @@ def vt(s):
 
 
 v = sys.argv[1]
+SHA = sys.argv[sys.argv.index("--sha") + 1:sys.argv.index("--sha") + 3] if "--sha" in sys.argv else []
+VT = sys.argv[sys.argv.index("--vt") + 1] if "--vt" in sys.argv and sys.argv.index("--vt") + 1 < len(sys.argv) else ""
 src = open(os.path.join(os.path.dirname(__file__), "..", "soe2", "whatsnew.py"), encoding="utf-8").read()
 notes = {}
 for node in ast.parse(src).body:                     # read NOTES without importing the app (no tkinter needed)
@@ -44,5 +46,13 @@ for i, ver in enumerate(versions):
     for line in e:
         print(f"- {line}")
     print()
+if SHA:                                             # 2.132.8: checksums and the VirusTotal scan
+    print("**Check your download**\n")
+    print(f"- StashOfExile2.exe SHA-256: `{SHA[0]}`")
+    if len(SHA) > 1:
+        print(f"- Build kit zip SHA-256: `{SHA[1]}`")
+    if VT:
+        print(f"- VirusTotal scan: {VT}")
+    print("- Check: `certutil -hashfile StashOfExile2.exe SHA256` (Windows). Same text = same file.\n")
 print("**Download:** StashOfExile2.exe (Windows). The app keeps your data in %APPDATA%\\StashOfExile2, so updating "
       "never touches it.\n\nThis product isn't affiliated with or endorsed by Grinding Gear Games in any way.")
