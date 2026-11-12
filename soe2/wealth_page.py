@@ -382,8 +382,7 @@ class WealthPage:
             self.wealth_side()
 
     WEALTH_GUIDE = [
-        ("What Wealth is", "An estimate of what you own, in divines, and how that changes over time. It is worked out "
-                           "on your PC from the stacks you count, scan or type in. Nothing is uploaded."),
+        ("What Wealth is", "Tracks and logs your overall net worth, converts all currency items to Divine values."),
         ("Count currency", "Press Count currency, then hover each stack in game and press Ctrl+C: the stack and its "
                            "size are added. Stacks of the same currency add up. Double-click a quantity to change it; "
                            "select rows (Ctrl+A for all) and press Delete to remove them."),

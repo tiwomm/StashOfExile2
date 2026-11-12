@@ -398,10 +398,7 @@ class TopUpPage:
         Tooltip(cb, "Looks only while your inventory is open and the game is in front. Off until you turn it on.")
         Tooltip(ib, "Your items and how many of each to keep.")
         Tooltip(tb, "Shows the reminder now, with what it last saw.")
-        Tooltip(info, f"Teach an item: open your inventory, hover it and press {self.topup_key_text()} (Top Up's key; "
-                      "Settings › Keybinds) - its name comes "
-                      "from the game. It counts every stack of it in your inventory (the number on each). Nothing is "
-                      "sent anywhere.")
+        Tooltip(info, f"Hover an item in your inventory and press {self.topup_key_text()} to track it.")
 
     # ---------------------------------------------------------------- the Items list
     def topup_add_open(self):
