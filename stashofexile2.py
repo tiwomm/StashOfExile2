@@ -24,6 +24,8 @@ VERSION HISTORY
          waystones and the fallback searches now go to market.db's pool table and up with the hourly summary as
          "pool:<base>" rows (Community data sharing only, same summary: listings + middle price per mod). Kept apart:
          the Mod book, Insights and learned Highs never read them; the board leaves them out of /mods/stats.
+       - About (feedback: "An active user count would be nice"): "Community: N installs share data · M active this week"
+         from the hourly sync (/mods/stats "active" = contributors with a batch in the last 7 days). Sharing installs only.
   2.132.8
        - Releases (feedback: "virustotal link and checksums"): SHA256SUMS.txt with each release, the SHA-256 in the
          notes, and the exe sent to VirusTotal (repo secret VT_API_KEY) for a scan link. tools/release_notes.py --sha / --vt.
