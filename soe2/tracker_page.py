@@ -28,7 +28,7 @@ DEFAULT_KEYS = {"key_pause": "Pause",            # 2.74.3: the keyboard's Pause 
                 "key_overlay": "F6"}             # Ctrl+Alt+S is gone - Ctrl+Alt keys got in the way of game input)           # 2.59.0: F6 shows / hides the whole overlay       # 2.10.0: set once, change them in Options
 # 2.127.0: Settings › Keybinds › ↺ Defaults - every keybind as the app comes (key id as all_hotkeys gives it)
 DEFAULT_HOTKEYS = {"checks:pc_key": "Ctrl+D", "checks:pc_close_key": "Esc", "checks:poe2db_key": "Ctrl+Shift+D",
-                   "checks:regex_key": "", "tracker:key_pause": DEFAULT_KEYS["key_pause"],
+                   "tracker:key_pause": DEFAULT_KEYS["key_pause"],
                    "tracker:key_overlay": DEFAULT_KEYS["key_overlay"], "tracker:key_camp_prev": "",
                    "tracker:key_camp_next": "", "checks:ledger_key": "Ctrl+Alt+N", "overlay:hideout_key": "F1",
                    "checks:topup_key": "Ctrl+C"}

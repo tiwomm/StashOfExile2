@@ -21,7 +21,7 @@ VERSION 2.132.6
 VERSION HISTORY
   2.132.6
        - Regex keys (plan, mockup approved): up to 6 keys, each with 1-4 Regex favorites; in game a press types the
-         next one in the open stash's search (overlay.type_search: Ctrl+F, Ctrl+A, Ctrl+V; your clipboard put back).
+         next one in the open stash's search (overlay.type_search: Ctrl+V; your clipboard put back).
          ⌨ Key… on Favorites; each key in Settings › Keybinds › Regex. The old single key that copied became Regex
          key 1 (migrations).
        - Shared searches (feedback: "publish their regex to the database, as well as favorites from the trade site"):
