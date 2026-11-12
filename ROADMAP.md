@@ -390,6 +390,7 @@ From a research pass on PoE1 / PoE2 tools, forum and Reddit wishes. Order to be 
 | UX | **Privacy & data hub** (planned #2) also gathers Under the Hood's info and every manual data job - Rate mods, map ranks and the like - in a "Manual data submissions" section ("when you're bored"). |
 | Test | **Ultrawide pass:** the overlay, cards and Price Checks at 5120x1440 and 3840x1080. |
 | Data | **Campaign guide pack:** update the first week of December. |
+| New | **Suggest a feature** (decided 2026-11-12): next to Report a bug, the same form for an idea. When an idea ships, What's new and the README credit the person, only by a name they choose to give (nothing sent or shown unless they opt in). |
 | Future | **Atlas progress tracker** (only if the log shows enough to track it), **leveling gems from a PoB code**, **debloat pass**. |
 | Future | **Buff watch** (a player's ask, 2026-11-09): one buff you pick (Guard, an aura) read from the game's buff bar and shown big near your health bar (BETA, off by default; pixels only, no memory, no keys). GGG's stance on mirroring UI is a gray area (Hinekora, AGPL-3.0, says so) - check before building. |
 
