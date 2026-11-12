@@ -322,7 +322,7 @@ Most-used first; pages that share data go together so their doubles can be merge
 
 ### Next UI/UX pass - notes (collected as they come)
 
-- Map profit on the overlay bar (feedback 2026-11-12: "the profit tracker on the overlay needs some visual improvements"): "+9.8 exalted" sits tight against Avg with no separator, the word "exalted" is long for the bar, and gain vs. loss is shown by color only.
+- Map profit on the overlay bar (feedback 2026-11-12: "the profit tracker on the overlay needs some visual improvements"): "+9.8 exalted" sits tight against Avg with no separator and the word "exalted" is long for the bar.
 
 ### Page standard (every pass checks the same things, in this order)
 
