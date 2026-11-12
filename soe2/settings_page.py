@@ -1072,6 +1072,13 @@ class SettingsPage:
                 bad.append(txt)
                 continue
             where, key = kid.split(":")
+            if where == "rxkey":                                   # 2.132.6: Regex keys
+                ks = SETTINGS.setdefault("regex_keys", [])
+                if int(key) < len(ks):
+                    ks[int(key)]["key"] = txt
+                elif txt:
+                    ks.append({"key": txt, "favs": []})
+                continue
             if where == "cmd":                                     # 2.57.0: chat command keys are set here too
                 cmds = self.overlay.cfg.get("commands", []) or []
                 n = int(key)
@@ -1083,8 +1090,6 @@ class SettingsPage:
                 continue
             if where == "checks":
                 SETTINGS[key] = txt
-                if key == "regex_key" and hasattr(self, "rx_key_var") and self.rx_key_var.get() != txt:
-                    self.rx_key_var.set(txt)
             elif where == "overlay":
                 self.overlay.cfg[key] = txt
                 if hasattr(self, "ov_vars") and key in self.ov_vars:

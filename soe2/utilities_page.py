@@ -61,12 +61,12 @@ class UtilitiesPage:
         from . import features as FEAT
         if not FEAT.on("overlay"):                     # 2.131.0: the Game Overlay is off - its keys do nothing
             return False
-        try:                                           # 2.2.0: the Regex key
-            k = parse_key(SETTINGS.get("regex_key") or "")
-            if k and k == (vk, ctrl, alt, shift):
+        try:                                           # 2.132.6: Regex keys (were one Regex key that copied)
+            i = self.rx_key_hit(vk, ctrl, alt, shift)
+            if i is not None:
                 from .overlay import game_active, POE_TITLE
                 if game_active((getattr(self, "overlay", None) and self.overlay.cfg.get("poe_title")) or POE_TITLE):
-                    self.ui_q.put(("regexcopy",))
+                    self.ui_q.put(("regexkey", i))
                     return True
         except Exception:
             buglog.caught()
@@ -92,8 +92,8 @@ class UtilitiesPage:
             buglog.caught()
         return self.overlay.on_key(vk, ctrl, alt, shift)
 
-    def ev_regexcopy(self):
-        self.rx_hotkey_copy()
+    def ev_regexkey(self, i):
+        self.rx_key_press(i)
 
     def ev_keycap(self, vk, ctrl, alt, shift):
         box = CAPTURING[0]

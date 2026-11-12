@@ -33,6 +33,7 @@ PAGES = {
 
 FEATURES = (
     "Alert card",               # 2.131.0 every helper's alert over the game (alertcard.py); 2.131.6: was "calm alert card"
+    "Regex keys",               # 2.132.6 a key types 1-4 Regex favorites in the stash search, one per press
     "Ritual Identifier",        # 2.132.3 hover a Ritual Altar: its type, loot and danger (2.132.4: a Ritual helper option)
     "Temple Helper",            # 2.132.1 your crystals (Energised Beacons) on the bar; a card when full
     "Map profit",               # 2.132.0 what each map earned, from your inventory (Overlay ↳ Overlay Settings › Helpers)

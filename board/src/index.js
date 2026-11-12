@@ -143,6 +143,52 @@ export function validateOne(o) {
   return out;
 }
 
+// 2.132.6: shared Regex favorites and trade-site Favorites (feedback: "allow people to publish their regex to the
+// database, as well as favorites from the trade site section")
+export const KINDS = ["strat", "one", "regex", "trade"];
+export const REGEX_FOR = ["tablet", "waystone", "relic", "jewel", "gear"];
+const REGEX_ORDER = ["id", "name", "for", "search", "state", "author", "updated", "tags"];
+const TRADE_ORDER = ["id", "name", "item", "query", "sort", "author", "updated", "tags"];
+const tagsOk = (o, out) => { for (const x of o.tags ?? []) if (!RULES.tags.includes(x)) out.push(`tags: "${x}" is not in the tag list`); };
+const unknownOk = (o, order, out) => {
+  const unknown = Object.keys(o).filter((k) => !order.includes(k));
+  if (unknown.length) out.push("unknown field(s): " + unknown.sort().join(", "));
+};
+
+export function validateRegex(o) {
+  if (!o || typeof o !== "object" || Array.isArray(o)) return ["must be an object"];
+  const out = ["name", "for", "search"].filter((k) => !o[k]).map((k) => `missing "${k}"`);
+  if (String(o.name ?? "").length > 60) out.push("name: 60 characters at most");
+  if (o.for && !REGEX_FOR.includes(o.for)) out.push("for: not a kind of item");
+  if (String(o.search ?? "").length > 250) out.push("search: 250 characters at most (the game's limit)");
+  if (o.state !== undefined && (typeof o.state !== "object" || JSON.stringify(o.state).length > 4000)) out.push("state: too big");
+  tagsOk(o, out);
+  unknownOk(o, REGEX_ORDER, out);
+  return out;
+}
+
+// a trade search keeps only its filters - never an account (the seller filter is dropped)
+export function cleanTradeQuery(q) {
+  if (!q || typeof q !== "object" || Array.isArray(q)) return null;
+  const c = JSON.parse(JSON.stringify(q));
+  delete c.status;
+  const tf = c?.filters?.trade_filters?.filters;
+  if (tf) { delete tf.account; delete tf.seller; }
+  return c;
+}
+
+export function validateTrade(o) {
+  if (!o || typeof o !== "object" || Array.isArray(o)) return ["must be an object"];
+  const out = ["name", "query"].filter((k) => !o[k]).map((k) => `missing "${k}"`);
+  if (String(o.name ?? "").length > 60) out.push("name: 60 characters at most");
+  if (String(o.item ?? "").length > 80) out.push("item: 80 characters at most");
+  if (o.query !== undefined && (typeof o.query !== "object" || JSON.stringify(o.query).length > 6000)) out.push("query: too big");
+  if (o.sort !== undefined && (typeof o.sort !== "object" || JSON.stringify(o.sort).length > 200)) out.push("sort: too big");
+  tagsOk(o, out);
+  unknownOk(o, TRADE_ORDER, out);
+  return out;
+}
+
 const tidy = (o, order) => Object.fromEntries(order.filter((k) => o[k] !== undefined && o[k] !== null && o[k] !== "" &&
   !(Array.isArray(o[k]) && !o[k].length)).map((k) => [k, o[k]]));
 
@@ -453,7 +499,7 @@ async function adminReviewer(req, env, me, userId) {
 // ------------------------------------------------------------------ posts
 async function listPosts(url, env, me) {
   const p = url.searchParams;
-  const kind = p.get("kind") === "one" ? "one" : "strat";
+  const kind = KINDS.includes(p.get("kind")) ? p.get("kind") : "strat";
   const where = ["p.kind = ?2"], args = [me?.id ?? null, kind];
   if (!(me?.admin && p.get("hidden") === "1")) where.push("p.hidden = 0");
   if (me?.admin && p.get("reported") === "1") where.push("p.reports > 0");
@@ -486,11 +532,22 @@ function prepare(kind, data, user, id) {
   }
   base.author = user.name;
   base.id = `board-${id ?? "new"}`;
+  if (kind === "regex") {
+    if (!base.updated) base.updated = new Date().toISOString().slice(0, 10);
+    const probs = validateRegex(base);
+    return probs.length ? { probs } : { data: tidy(base, REGEX_ORDER) };
+  }
+  if (kind === "trade") {
+    if (!base.updated) base.updated = new Date().toISOString().slice(0, 10);
+    base.query = cleanTradeQuery(base.query);
+    const probs = validateTrade(base);
+    return probs.length ? { probs } : { data: tidy(base, TRADE_ORDER) };
+  }
   const probs = validateOne(base);
   return probs.length ? { probs } : { data: tidy(base, RULES.one_order) };
 }
 
-const searchText = (d) => [d.name, d.summary, d.text, d.type, d.category, ...(d.tags ?? []), ...(d.steps ?? [])]
+const searchText = (d) => [d.name, d.summary, d.text, d.type, d.category, d.item, d.for, ...(d.tags ?? []), ...(d.steps ?? [])]
   .filter(Boolean).join(" ").toLowerCase();
 
 // a screenshot a post names must be the poster's own upload, or the one the post already had (2.85.0)
@@ -503,7 +560,7 @@ async function imageOk(env, data, me, keep = null) {
 
 async function createPost(req, env, me) {
   const body = await readBody(req);
-  const kind = body.kind === "one" ? "one" : "strat";
+  const kind = KINDS.includes(body.kind) ? body.kind : "strat";
   const today = await env.DB.prepare("SELECT COUNT(*) AS n FROM posts WHERE author_id = ? AND created > ?").bind(me.id, now() - DAY).first();
   if (today.n >= Number(env.POSTS_PER_DAY || 10) && !me.admin) return fail(429, "That's enough posts for today - try again tomorrow.");
   const r = prepare(kind, body.data ?? {}, me, null);
@@ -870,8 +927,9 @@ async function ban(req, env, me, userId) {
 async function official(env) {
   const rows = await env.DB.prepare(`SELECT p.*, u.name AS author_name, 0 AS voted FROM posts p JOIN users u ON u.id = p.author_id
     WHERE p.promoted = 1 AND p.hidden = 0 ORDER BY p.score DESC`).all();
-  const out = { strats: [], oneliners: [] };
-  for (const r of rows.results) (r.kind === "one" ? out.oneliners : out.strats).push(JSON.parse(r.data));
+  const out = { strats: [], oneliners: [], regex: [], trade: [] };
+  const into = { one: out.oneliners, regex: out.regex, trade: out.trade };
+  for (const r of rows.results) (into[r.kind] ?? out.strats).push(JSON.parse(r.data));
   return json(out);
 }
 
