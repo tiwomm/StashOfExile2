@@ -47,6 +47,15 @@ BETA_AREAS = ("Wealth", "Money Makers", "Game Search", "Market Insights", "Craft
 # repeats. Someone coming from rollup["since"] or older (or a fresh install) sees it instead of each version; someone
 # on a pre-release already saw them and gets only this version's own lines (notes_between).
 NOTES = {
+    "2.135.0": {
+        "big": [],
+        "small": [
+            ("Wealth", "Scan stash: the main button, out of BETA. Count currency: More ▾."),
+            ("Wealth", "Scan stash card: drag it anywhere, it stays there."),
+            ("App", "Page windows put back in place when the app moves."),
+            ("Overlay", "Temple Helper: crystals in runs, 6 a run."),
+        ],
+    },
     "2.134.1": {
         "big": [],
         "small": [

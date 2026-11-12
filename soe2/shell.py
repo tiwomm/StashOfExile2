@@ -125,6 +125,29 @@ class GradientBar(tk.Canvas):
         self.tag_lower("grad")
 
 
+def win_rect(widget, outer=False):
+    """2.135.0: a widget's real place on screen from Windows (left, top, right, bottom), or None elsewhere / on error.
+    outer: the top-level window's frame (a page window), else the widget's own window (the main area)."""
+    if sys.platform != "win32":
+        return None
+    try:
+        import ctypes
+        from ctypes import wintypes
+        u = ctypes.windll.user32
+        u.GetParent.restype = ctypes.c_void_p
+        u.GetParent.argtypes = [ctypes.c_void_p]
+        u.GetWindowRect.argtypes = [ctypes.c_void_p, ctypes.POINTER(wintypes.RECT)]
+        h = widget.winfo_id()
+        if outer:
+            h = u.GetParent(h) or h
+        r = wintypes.RECT()
+        if not u.GetWindowRect(h, ctypes.byref(r)):
+            return None
+        return r.left, r.top, r.right, r.bottom
+    except Exception:
+        return None
+
+
 class DeskWindow(tk.Toplevel):
     """One window on the desktop. body is where the module draws.
 
@@ -803,10 +826,28 @@ class Shell:
                 self.windows[k].close()
 
     def desk_origin(self):
+        """Where the app's main area starts on screen. 2.135.0 (feedback: moved the app while a price check ran and the
+        Price Checks window stayed where it was): on Windows asked of Windows itself - Tk's own numbers can lag behind
+        a move (Windows runs its own loop while you drag), so a page placed then landed where the app used to be."""
+        r = win_rect(self.desk)
+        if r:
+            return r[0], r[1]
         try:
             return self.desk.winfo_rootx(), self.desk.winfo_rooty()
         except tk.TclError:
             return 0, 0
+
+    def misplaced(self, w, rect=None):
+        """2.135.0: an open window that isn't where the app put it (it was placed while the app moved, or Windows left
+        it behind) -> True. rect: its real (left, top, right, bottom) - asked of Windows when not given."""
+        g = getattr(w, "_g", None)                   # (where it was last placed - a page, maxed or not)
+        if not g:
+            return False
+        rect = rect if rect is not None else win_rect(w, outer=True)
+        if not rect:
+            return False
+        ox, oy = self.desk_origin()
+        return abs(rect[0] - (ox + int(g[0]))) > 3 or abs(rect[1] - (oy + int(g[1]))) > 3
 
     def _follow_soon(self, _e=None):
         if getattr(self, "_follow_job", None) is None:
@@ -960,6 +1001,9 @@ class Shell:
                 w.own_by_app()
                 w.follow_on_top()
                 w.lift()
+            elif self.misplaced(w):                          # 2.135.0: shown, but not where the app put it
+                buglog.debug("page window", f"{w.key} put back in place")
+                w.reposition()
 
     def restack(self):
         """Put the open windows back above the app's window, in their stacking order (2.7.1: also after Always on top
@@ -1404,6 +1448,10 @@ class Shell:
                 mod.on_show()
             except Exception:
                 buglog.caught()
+        try:                                      # 2.135.0: opened while the app moved - a look once it's still
+            self.root.after(600, self.heal)
+        except tk.TclError:
+            pass
         if key == "wealth" and hasattr(self.app, "wealth_first_open"):      # 2.3.0: the setup guide, once
             self.app.root.after(400, self.app.wealth_first_open)
         self.close_menu()

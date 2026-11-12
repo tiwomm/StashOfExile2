@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU AGPL v3.0 (see LICENSE; up to 2.129.4: GNU GPL v3.0). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.134.1
+VERSION 2.135.0
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,6 +19,17 @@ VERSION 2.134.1
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.135.0
+       - Page windows (feedback: moved the app while a price check ran and the Price Checks window stayed where it
+         was - "address that issue globally"): the main area's place comes from Windows (shell.win_rect; Tk's numbers
+         lag a move while Windows runs its drag loop), and every 2 s (heal) and 0.6 s after a page opens, an open
+         window that isn't where the app put it is put back (shell.misplaced).
+       - Wealth (feedback: "the Count Currency button needs replaced with the Stash Scan ... it's no longer beta, it
+         works ... move into the menu as a backup"): Scan stash is the main (orange) button, out of BETA; Count
+         currency is in More ▾. The scan's card is dragged by anything but its buttons and keeps its spot
+         (SETTINGS["stash_scan_pos"]).
+       - Temple Helper: the crystals say how many runs they are (6 a run) - "Crystals 55/60 (9 runs)"; the full card
+         says placed rooms stay until destabilized.
   2.134.1
        - Update question (feedback: "why give a virustotal link if a person can't click it? I don't think we need that
          in the update available screen"): plain_notes leaves out the release page's "Check your download" block (the
@@ -3665,7 +3676,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.134.1"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.135.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 

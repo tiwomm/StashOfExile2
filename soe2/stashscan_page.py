@@ -11,7 +11,7 @@ from tkinter import simpledialog, ttk
 
 from . import buglog
 from . import stashread as SR
-from .config import SETTINGS
+from .config import SETTINGS, save_json
 from .stashlayouts import ORDER, TABS
 from .style import C
 
@@ -165,8 +165,7 @@ class StashScanPage:
         head = tk.Frame(box, bg=BG)
         head.pack(fill="x")
         tk.Label(head, text="Scan stash", bg=BG, fg=TXT, font=("Segoe UI", 12, "bold")).pack(side="left")
-        tk.Label(head, text=" BETA · may not work ", bg=C.get("accent", "#e8812c"), fg="#101010",
-                 font=("Segoe UI", 9, "bold")).pack(side="left", padx=(8, 0))
+        # (2.135.0: out of BETA - feedback "it's no longer beta, it works")
         x = tk.Label(head, text="✕", bg=BG, fg=MUT, cursor="hand2", font=("Segoe UI", 10))
         x.pack(side="right")
         x.bind("<Button-1>", lambda _e: self.stash_scan_cancel())
@@ -202,7 +201,13 @@ class StashScanPage:
             gx, gy, gw, gh = 0, 0, self.root.winfo_screenwidth(), self.root.winfo_screenheight()
         px = gx + min(int(gh * 0.66), max(0, gw - w.winfo_reqwidth() - 20))    # right of the stash panel
         py = gy + int(gh * 0.16)
+        spot = SETTINGS.get("stash_scan_pos") or {}            # 2.135.0 (feedback): where you dragged it last time
+        if isinstance(spot.get("x"), int) and isinstance(spot.get("y"), int):
+            sw, sh = self.root.winfo_screenwidth(), self.root.winfo_screenheight()
+            px = max(gx - sw, min(spot["x"], gx + max(gw, sw) - 40))
+            py = max(gy - sh, min(spot["y"], gy + max(gh, sh) - 40))
         w.geometry(f"+{int(px)}+{int(py)}")
+        self._ss_drag_bind(w, box)
         w.deiconify()
         try:
             from .alerts_page import force_topmost
@@ -215,13 +220,48 @@ class StashScanPage:
         no_capture(w)                                # never in the picture it takes
         self.ss_win = w
 
+    def _ss_drag_bind(self, w, box):
+        """2.135.0 (feedback: "The window that pops up telling you which tabs to navigate to needs to be move-able
+        and then remember its position"): drag it by anything but its buttons; where you drop it is kept."""
+        st = {}
+
+        def press(e):
+            st.update(x=e.x_root - w.winfo_x(), y=e.y_root - w.winfo_y())
+
+        def move(e):
+            if st:
+                w.geometry(f"+{e.x_root - st['x']}+{e.y_root - st['y']}")
+
+        def drop(_e):
+            if not st:
+                return
+            st.clear()
+            SETTINGS["stash_scan_pos"] = {"x": int(w.winfo_x()), "y": int(w.winfo_y())}
+            save_json("settings.json", SETTINGS)
+
+        def walk(wd):
+            if isinstance(wd, (ttk.Button, tk.Button)) or str(wd.cget("cursor") if "cursor" in wd.keys() else "") == "hand2":
+                return
+            wd.bind("<ButtonPress-1>", press, add="+")
+            wd.bind("<B1-Motion>", move, add="+")
+            wd.bind("<ButtonRelease-1>", drop, add="+")
+            try:
+                if "cursor" in wd.keys():
+                    wd.config(cursor="fleur")
+            except tk.TclError:
+                pass
+            for c in wd.winfo_children():
+                walk(c)
+        walk(box)
+        self.ss_drag = (press, move, drop)               # (tests drive these)
+
     # ---------------------------------------------------------------- check before saving
     def stash_scan_review(self, ss):
         rows = [(tab, n, q) for tab in ORDER for n, q in ss["got"].get(tab, [])]
         unread = [(tab, n) for tab in ORDER for n in ss["unread"].get(tab, [])]
         par = self.dlg_parent()
         dlg = tk.Toplevel(par)
-        dlg.title("Scan stash (BETA) - check the numbers")
+        dlg.title("Scan stash - check the numbers")
         dlg.configure(bg=C["panel2"], padx=16, pady=12)
         dlg.transient(par)
         tk.Label(dlg, text="Check what was read. Double-click a number to fix it; Delete drops a row. Save sets these "
