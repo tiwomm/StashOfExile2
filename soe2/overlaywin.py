@@ -547,11 +547,19 @@ class OverlayWindow(tk.Toplevel):
             fade_in(self)
         if sys.platform != "win32":
             return
+        self._win_style(fg)
+
+    def _win_style(self, fg, tries=0):
+        """No-activate style + the keyboard back to the game. 2.133.1: no update_idletasks (a theme change that keeps
+        a page laying itself out never let it return); a window without its frame yet is tried again in 50 ms."""
         try:
             import ctypes
             u = ctypes.windll.user32
-            self.update_idletasks()
-            hwnd = u.GetParent(self.winfo_id()) or self.winfo_id()
+            hwnd = u.GetParent(self.winfo_id())
+            if not hwnd and tries < 20:
+                self.after(50, lambda: self.winfo_exists() and self._win_style(fg, tries + 1))
+                return
+            hwnd = hwnd or self.winfo_id()
             if self.no_activate and not self._noact_done:
                 u.SetWindowLongW(hwnd, -20, u.GetWindowLongW(hwnd, -20) | 0x08000000)    # WS_EX_NOACTIVATE
                 self._noact_done = True
