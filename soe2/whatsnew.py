@@ -52,6 +52,8 @@ NOTES = {
         "small": [
             ("Map profit", "Temple runs count: Vaal Ruins is your town, Atziri's Temple the map."),
             ("Session", "Vaal Ruins isn't counted as a map any more."),
+            ("Crystals", "The Temple Console's count should read now."),
+            ("Temple Notepad", "Shows just your crystals, no hint text."),
         ],
     },
     "2.136.1": {
