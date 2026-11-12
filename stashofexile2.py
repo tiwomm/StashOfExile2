@@ -23,6 +23,12 @@ VERSION HISTORY
        - Motion (feedback: "reduce motion ... should have that enabled by default and remove the toggle for it from
          Settings > Appearance"): tooltips, toasts and windows over the game appear at once for everyone. The fade
          (motion.fade_in), Settings › Appearance › Motion and its switch are gone; migrations drop "reduce_motion".
+       - Regex (feedback: "regex needs the breach tree mods added to it, genesis tree prefix/suffix and otherworldly,
+         also all of the alloy/thruds might+similar items mods"): gear gets the mods that never roll on their own -
+         the Genesis Tree's 32 Otherworldly ring / amulet / belt mods, the warping runes' (Thrud's Might, Vorana's
+         Carnage, Katla's Gloom, Kolr's Hunt, Medved's Tending, Uhtred's Sidereus) and the Verisium Alloys'. Each has
+         its slot and its source word in the Where column (searchable). tools/build_regexdata.py special_gear_tags;
+         regexdata.json rebuilt from RePoE (gear 327 -> 445 mods).
   2.135.0
        - Page windows (feedback: moved the app while a price check ran and the Price Checks window stayed where it
          was - "address that issue globally"): the main area's place comes from Windows (shell.win_rect; Tk's numbers

@@ -50,6 +50,7 @@ NOTES = {
     "2.135.1": {
         "big": [],
         "small": [
+            ("Regex", "Gear: Genesis Tree (Otherworldly), warping rune (Thrud's Might ...) and Alloy mods. Search their name."),
             ("Settings", "No fades: windows and tooltips appear at once. Reduce motion switch removed."),
         ],
     },

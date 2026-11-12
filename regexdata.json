@@ -1,6 +1,6 @@
 {
 "version": 1,
-"generated": "2026-10-31",
+"generated": "2026-11-12",
 "source": {
 "name": "RePoE (repoe-fork/poe2)",
 "url": "https://github.com/repoe-fork/poe2"
@@ -7615,15 +7615,18 @@
 "+# to maximum mana"
 ],
 "tags": [
-"Armour"
+"Armour",
+"Body Armour",
+"Medved's Tending"
 ],
 "min": 6.0,
-"max": 42.0,
+"max": 52.0,
 "names": [
 "Ancestral",
 "Chieftain's",
 "Colossal",
 "Imposing",
+"Medved's",
 "Regal",
 "Venerable"
 ],
@@ -7631,6 +7634,27 @@
 "token": "o maximum m",
 "line": "+# to maximum mana",
 "text": "#% increased armour / +# to maximum mana"
+},
+{
+"id": "LocalIncreasedArmourAndSpiritNoLife",
+"side": "prefix",
+"lines": [
+"#% increased armour",
+"+# to spirit"
+],
+"tags": [
+"Body Armour",
+"Medved's Tending"
+],
+"min": 6.0,
+"max": 52.0,
+"names": [
+"Medved's"
+],
+"also": [],
+"token": "o sp",
+"line": "+# to spirit",
+"text": "#% increased armour / +# to spirit"
 },
 {
 "id": "LocalArmourAndStunThreshold",
@@ -7744,13 +7768,16 @@
 "+# to maximum mana"
 ],
 "tags": [
-"Armour"
+"Armour",
+"Body Armour",
+"Medved's Tending"
 ],
 "min": 6.0,
-"max": 42.0,
+"max": 52.0,
 "names": [
 "Coelacanth's",
 "Dolphin's",
+"Medved's",
 "Orca's",
 "Shark's",
 "Swordfish's",
@@ -7760,6 +7787,27 @@
 "token": "r and en",
 "line": "#% increased armour and energy shield",
 "text": "#% increased armour and energy shield / +# to maximum mana"
+},
+{
+"id": "LocalIncreasedArmourAndEnergyShieldAndSpiritNoLife",
+"side": "prefix",
+"lines": [
+"#% increased armour and energy shield",
+"+# to spirit"
+],
+"tags": [
+"Body Armour",
+"Medved's Tending"
+],
+"min": 6.0,
+"max": 52.0,
+"names": [
+"Medved's"
+],
+"also": [],
+"token": "r and en",
+"line": "#% increased armour and energy shield",
+"text": "#% increased armour and energy shield / +# to spirit"
 },
 {
 "id": "LocalArmourAndEnergyShieldAndStunThreshold",
@@ -7873,14 +7921,17 @@
 "+# to maximum mana"
 ],
 "tags": [
-"Armour"
+"Armour",
+"Body Armour",
+"Medved's Tending"
 ],
 "min": 6.0,
-"max": 42.0,
+"max": 52.0,
 "names": [
 "Bull's",
 "Cerberus'",
 "Chimeral's",
+"Medved's",
 "Minotaur's",
 "Rhex's",
 "Rhoa's"
@@ -7889,6 +7940,27 @@
 "token": "asion$",
 "line": "#% increased armour and evasion",
 "text": "#% increased armour and evasion / +# to maximum mana"
+},
+{
+"id": "LocalIncreasedArmourAndEvasionAndSpiritNoLife",
+"side": "prefix",
+"lines": [
+"#% increased armour and evasion",
+"+# to spirit"
+],
+"tags": [
+"Body Armour",
+"Medved's Tending"
+],
+"min": 6.0,
+"max": 52.0,
+"names": [
+"Medved's"
+],
+"also": [],
+"token": "asion$",
+"line": "#% increased armour and evasion",
+"text": "#% increased armour and evasion / +# to spirit"
 },
 {
 "id": "LocalArmourAndEvasionAndStunThreshold",
@@ -8096,7 +8168,7 @@
 "Snowy"
 ],
 "also": [],
-"token": "d cold",
+"token": "d cold damage$",
 "line": "#% increased cold damage",
 "text": "#% increased cold damage"
 },
@@ -8116,9 +8188,29 @@
 "Kurgal's"
 ],
 "also": [],
-"token": "d cold",
+"token": "d cold damage$",
 "line": "#% increased cold damage",
 "text": "#% increased cold damage / #% increased freeze buildup"
+},
+{
+"id": "ColdDamageIfColdInfusionCollectedLast8Seconds",
+"side": "prefix",
+"lines": [
+"#% increased cold damage if you've collected a cold infusion in the last # seconds"
+],
+"tags": [
+"Belt",
+"Otherworldly"
+],
+"min": 41.0,
+"max": 59.0,
+"names": [
+"Glacial"
+],
+"also": [],
+"token": "old i",
+"line": "#% increased cold damage if you've collected a cold infusion in the last # seconds",
+"text": "#% increased cold damage if you've collected a cold infusion in the last # seconds"
 },
 {
 "id": "CurseEffectiveness",
@@ -8154,7 +8246,7 @@
 "Amanamu's"
 ],
 "also": [],
-"token": "rok",
+"token": "h fu",
 "line": "#% increased damage against enemies with fully broken armour",
 "text": "#% increased damage against enemies with fully broken armour"
 },
@@ -8202,6 +8294,26 @@
 "text": "#% increased damage with bow skills"
 },
 {
+"id": "WarcryDamage",
+"side": "prefix",
+"lines": [
+"#% increased damage with warcries"
+],
+"tags": [
+"Helmet",
+"Vorana's Carnage"
+],
+"min": 20.0,
+"max": 75.0,
+"names": [
+"Vorana's"
+],
+"also": [],
+"token": "h wa",
+"line": "#% increased damage with warcries",
+"text": "#% increased damage with warcries"
+},
+{
 "id": "GlobalDeflectionRating",
 "side": "prefix",
 "lines": [
@@ -8219,6 +8331,66 @@
 "token": "sed de",
 "line": "#% increased deflection rating",
 "text": "#% increased deflection rating"
+},
+{
+"id": "ArchonEffect",
+"side": "prefix",
+"lines": [
+"#% increased effect of archon buffs on you"
+],
+"tags": [
+"Belt",
+"Otherworldly"
+],
+"min": 20.0,
+"max": 39.0,
+"names": [
+"Unshackling"
+],
+"also": [],
+"token": "f archo",
+"line": "#% increased effect of archon buffs on you",
+"text": "#% increased effect of archon buffs on you"
+},
+{
+"id": "ArmourBreakEffect",
+"side": "prefix",
+"lines": [
+"#% increased effect of fully broken armour"
+],
+"tags": [
+"Helmet",
+"Vorana's Carnage"
+],
+"min": 15.0,
+"max": 60.0,
+"names": [
+"Vorana's"
+],
+"also": [],
+"token": "f ful",
+"line": "#% increased effect of fully broken armour",
+"text": "#% increased effect of fully broken armour"
+},
+{
+"id": "MarkEffect",
+"side": "prefix",
+"lines": [
+"#% increased effect of your mark skills"
+],
+"tags": [
+"Gloves",
+"Kolr's Hunt"
+],
+"min": 15.0,
+"max": 39.0,
+"names": [
+"Kolr's"
+],
+"also": [],
+"token": "of y",
+"line": "#% increased effect of your mark skills",
+"text": "#% increased effect of your mark skills"
 },
 {
 "id": "CasterElementalDamagePercent",
@@ -8350,15 +8522,18 @@
 "+# to maximum mana"
 ],
 "tags": [
-"Armour"
+"Armour",
+"Body Armour",
+"Medved's Tending"
 ],
 "min": 6.0,
-"max": 42.0,
+"max": 52.0,
 "names": [
 "Angel's",
 "Celestial",
 "Heavenly",
 "Imbued",
+"Medved's",
 "Sacred",
 "Serene"
 ],
@@ -8366,6 +8541,27 @@
 "token": "ed energy shield$",
 "line": "#% increased energy shield",
 "text": "#% increased energy shield / +# to maximum mana"
+},
+{
+"id": "LocalIncreasedEnergyShieldAndSpiritNoLife",
+"side": "prefix",
+"lines": [
+"#% increased energy shield",
+"+# to spirit"
+],
+"tags": [
+"Body Armour",
+"Medved's Tending"
+],
+"min": 6.0,
+"max": 52.0,
+"names": [
+"Medved's"
+],
+"also": [],
+"token": "ed energy shield$",
+"line": "#% increased energy shield",
+"text": "#% increased energy shield / +# to spirit"
 },
 {
 "id": "LocalEnergyShieldAndStunThreshold",
@@ -8498,15 +8694,18 @@
 "+# to maximum mana"
 ],
 "tags": [
-"Armour"
+"Armour",
+"Body Armour",
+"Medved's Tending"
 ],
 "min": 6.0,
-"max": 42.0,
+"max": 52.0,
 "names": [
 "Eagle's",
 "Falcon's",
 "Hawk's",
 "Kingfisher's",
+"Medved's",
 "Owl's",
 "Vulture's"
 ],
@@ -8514,6 +8713,27 @@
 "token": "d evasion a",
 "line": "#% increased evasion and energy shield",
 "text": "#% increased evasion and energy shield / +# to maximum mana"
+},
+{
+"id": "LocalIncreasedEvasionAndEnergyShieldAndSpiritNoLife",
+"side": "prefix",
+"lines": [
+"#% increased evasion and energy shield",
+"+# to spirit"
+],
+"tags": [
+"Body Armour",
+"Medved's Tending"
+],
+"min": 6.0,
+"max": 52.0,
+"names": [
+"Medved's"
+],
+"also": [],
+"token": "d evasion a",
+"line": "#% increased evasion and energy shield",
+"text": "#% increased evasion and energy shield / +# to spirit"
 },
 {
 "id": "LocalEvasionAndEnergyShieldAndStunThreshold",
@@ -8627,13 +8847,16 @@
 "+# to maximum mana"
 ],
 "tags": [
-"Armour"
+"Armour",
+"Body Armour",
+"Medved's Tending"
 ],
 "min": 6.0,
-"max": 42.0,
+"max": 52.0,
 "names": [
 "Drifter's",
 "Explorer's",
+"Medved's",
 "Nomad's",
 "Traveller's",
 "Wanderer's",
@@ -8643,6 +8866,27 @@
 "token": "d evasion rating$",
 "line": "#% increased evasion rating",
 "text": "#% increased evasion rating / +# to maximum mana"
+},
+{
+"id": "LocalIncreasedEvasionAndSpiritNoLife",
+"side": "prefix",
+"lines": [
+"#% increased evasion rating",
+"+# to spirit"
+],
+"tags": [
+"Body Armour",
+"Medved's Tending"
+],
+"min": 6.0,
+"max": 52.0,
+"names": [
+"Medved's"
+],
+"also": [],
+"token": "d evasion rating$",
+"line": "#% increased evasion rating",
+"text": "#% increased evasion rating / +# to spirit"
 },
 {
 "id": "LocalEvasionAndStunThreshold",
@@ -8689,6 +8933,66 @@
 "text": "#% increased evasion rating from equipped body armour"
 },
 {
+"id": "DestructionInfluenceCriticalModifierEffect",
+"side": "prefix",
+"lines": [
+"#% increased explicit critical modifier magnitudes"
+],
+"tags": [
+"Thrud's Might",
+"Weapon"
+],
+"min": 20.0,
+"max": 30.0,
+"names": [
+"Thrud's"
+],
+"also": [],
+"token": "it cr",
+"line": "#% increased explicit critical modifier magnitudes",
+"text": "#% increased explicit critical modifier magnitudes"
+},
+{
+"id": "ArmourEnchantmentHeistResistanceModifierEffect",
+"side": "prefix",
+"lines": [
+"#% increased explicit resistance modifier magnitudes"
+],
+"tags": [
+"Alloy",
+"Any"
+],
+"min": 20.0,
+"max": 30.0,
+"names": [
+"Verisium"
+],
+"also": [],
+"token": "cit r",
+"line": "#% increased explicit resistance modifier magnitudes",
+"text": "#% increased explicit resistance modifier magnitudes"
+},
+{
+"id": "DestructionInfluenceSpeedModifierEffect",
+"side": "prefix",
+"lines": [
+"#% increased explicit speed modifier magnitudes"
+],
+"tags": [
+"Thrud's Might",
+"Weapon"
+],
+"min": 25.0,
+"max": 30.0,
+"names": [
+"Thrud's"
+],
+"also": [],
+"token": "it s",
+"line": "#% increased explicit speed modifier magnitudes",
+"text": "#% increased explicit speed modifier magnitudes"
+},
+{
 "id": "FireDamageWeaponPrefix",
 "side": "prefix",
 "lines": [
@@ -8712,7 +9016,7 @@
 "Volcanic"
 ],
 "also": [],
-"token": "sed fi",
+"token": "d fire damage$",
 "line": "#% increased fire damage",
 "text": "#% increased fire damage"
 },
@@ -8732,9 +9036,29 @@
 "Amanamu's"
 ],
 "also": [],
-"token": "sed fi",
+"token": "d fire damage$",
 "line": "#% increased fire damage",
 "text": "#% increased fire damage / #% increased ignite magnitude"
+},
+{
+"id": "FireDamageIfFireInfusionCollectedLast8Seconds",
+"side": "prefix",
+"lines": [
+"#% increased fire damage if you've collected a fire infusion in the last # seconds"
+],
+"tags": [
+"Belt",
+"Otherworldly"
+],
+"min": 41.0,
+"max": 59.0,
+"names": [
+"Erupting"
+],
+"also": [],
+"token": "re i",
+"line": "#% increased fire damage if you've collected a fire infusion in the last # seconds",
+"text": "#% increased fire damage if you've collected a fire infusion in the last # seconds"
 },
 {
 "id": "BeltFlaskLifeRecoveryRate",
@@ -8823,6 +9147,26 @@
 "text": "#% increased global armour, evasion and energy shield"
 },
 {
+"id": "GloryGeneration",
+"side": "prefix",
+"lines": [
+"#% increased glory generation"
+],
+"tags": [
+"Helmet",
+"Vorana's Carnage"
+],
+"min": 20.0,
+"max": 85.0,
+"names": [
+"Vorana's"
+],
+"also": [],
+"token": "y ge",
+"line": "#% increased glory generation",
+"text": "#% increased glory generation"
+},
+{
 "id": "GrenadeDamageLongFuse",
 "side": "prefix",
 "lines": [
@@ -8841,6 +9185,26 @@
 "token": "de d",
 "line": "#% increased grenade damage",
 "text": "#% increased grenade damage / #% increased grenade duration"
+},
+{
+"id": "IgniteEffect",
+"side": "prefix",
+"lines": [
+"#% increased ignite magnitude"
+],
+"tags": [
+"Gloves",
+"Katla's Gloom"
+],
+"min": 20.0,
+"max": 50.0,
+"names": [
+"Katla's"
+],
+"also": [],
+"token": "sed ig",
+"line": "#% increased ignite magnitude",
+"text": "#% increased ignite magnitude"
 },
 {
 "id": "LifeRegenerationRateDuringFlaskEffect",
@@ -8885,7 +9249,7 @@
 "Striking"
 ],
 "also": [],
-"token": "d lightn",
+"token": "d lightning damage$",
 "line": "#% increased lightning damage",
 "text": "#% increased lightning damage"
 },
@@ -8905,9 +9269,49 @@
 "Ulaman's"
 ],
 "also": [],
-"token": "d lightn",
+"token": "d lightning damage$",
 "line": "#% increased lightning damage",
 "text": "#% increased lightning damage / #% increased magnitude of shock you inflict"
+},
+{
+"id": "LightningDamageIfLightningInfusionCollectedLast8Seconds",
+"side": "prefix",
+"lines": [
+"#% increased lightning damage if you've collected a lightning infusion in the last # seconds"
+],
+"tags": [
+"Belt",
+"Otherworldly"
+],
+"min": 41.0,
+"max": 59.0,
+"names": [
+"Energising"
+],
+"also": [],
+"token": "g i",
+"line": "#% increased lightning damage if you've collected a lightning infusion in the last # seconds",
+"text": "#% increased lightning damage if you've collected a lightning infusion in the last # seconds"
+},
+{
+"id": "AilmentEffect",
+"side": "prefix",
+"lines": [
+"#% increased magnitude of ailments you inflict"
+],
+"tags": [
+"Gloves",
+"Katla's Gloom"
+],
+"min": 20.0,
+"max": 32.0,
+"names": [
+"Katla's"
+],
+"also": [],
+"token": "e of a",
+"line": "#% increased magnitude of ailments you inflict",
+"text": "#% increased magnitude of ailments you inflict"
 },
 {
 "id": "BleedDotMultiplier",
@@ -8916,11 +9320,14 @@
 "#% increased magnitude of bleeding you inflict"
 ],
 "tags": [
+"Gloves",
+"Katla's Gloom",
 "Weapon"
 ],
-"min": 27.0,
-"max": 38.0,
+"min": 20.0,
+"max": 42.0,
 "names": [
+"Katla's",
 "Ulaman's"
 ],
 "also": [],
@@ -8943,7 +9350,7 @@
 "Ulaman's"
 ],
 "also": [],
-"token": "amagi",
+"token": "g ailments y",
 "line": "#% increased magnitude of damaging ailments you inflict",
 "text": "#% increased magnitude of damaging ailments you inflict"
 },
@@ -8967,6 +9374,26 @@
 "text": "#% increased magnitude of ignite if you've consumed an endurance charge recently"
 },
 {
+"id": "PoisonEffect",
+"side": "prefix",
+"lines": [
+"#% increased magnitude of poison you inflict"
+],
+"tags": [
+"Gloves",
+"Katla's Gloom"
+],
+"min": 20.0,
+"max": 42.0,
+"names": [
+"Katla's"
+],
+"also": [],
+"token": "f poi",
+"line": "#% increased magnitude of poison you inflict",
+"text": "#% increased magnitude of poison you inflict"
+},
+{
 "id": "ShockMagnitudeIfConsumedFrenzyChargeRecently",
 "side": "prefix",
 "lines": [
@@ -8984,6 +9411,26 @@
 "token": "k i",
 "line": "#% increased magnitude of shock if you've consumed a frenzy charge recently",
 "text": "#% increased magnitude of shock if you've consumed a frenzy charge recently"
+},
+{
+"id": "ManaCostEfficiency",
+"side": "prefix",
+"lines": [
+"#% increased mana cost efficiency"
+],
+"tags": [
+"Alloy",
+"Any"
+],
+"min": 18.0,
+"max": 29.0,
+"names": [
+"Verisium"
+],
+"also": [],
+"token": "a cost efficiency$",
+"line": "#% increased mana cost efficiency",
+"text": "#% increased mana cost efficiency"
 },
 {
 "id": "GlobalEnergyShieldPercent",
@@ -9006,7 +9453,7 @@
 "Unassailable"
 ],
 "also": [],
-"token": "d maximum e",
+"token": "d maximum energy s",
 "line": "#% increased maximum energy shield",
 "text": "#% increased maximum energy shield"
 },
@@ -9017,13 +9464,16 @@
 "#% increased maximum life"
 ],
 "tags": [
-"Amulet"
+"Amulet",
+"Body Armour",
+"Medved's Tending"
 ],
-"min": 3.0,
-"max": 8.0,
+"min": 1.0,
+"max": 20.0,
 "names": [
 "Confident",
 "Hopeful",
+"Medved's",
 "Optimistic"
 ],
 "also": [],
@@ -9039,12 +9489,15 @@
 "#% increased maximum mana"
 ],
 "tags": [
-"Amulet"
+"Amulet",
+"Body Armour",
+"Medved's Tending"
 ],
-"min": 3.0,
-"max": 8.0,
+"min": 1.0,
+"max": 20.0,
 "names": [
 "Cognizant",
+"Medved's",
 "Mnemonic",
 "Perceptive"
 ],
@@ -9052,6 +9505,26 @@
 "token": "d maximum m",
 "line": "#% increased maximum mana",
 "text": "#% increased maximum mana"
+},
+{
+"id": "GlobalRunicWardPercent",
+"side": "prefix",
+"lines": [
+"#% increased maximum runic ward"
+],
+"tags": [
+"Alloy",
+"Any"
+],
+"min": 6.0,
+"max": 10.0,
+"names": [
+"Verisium"
+],
+"also": [],
+"token": "d maximum r",
+"line": "#% increased maximum runic ward",
+"text": "#% increased maximum runic ward"
 },
 {
 "id": "MeleeDamageIfProjectileAttackHitRecently",
@@ -9073,6 +9546,26 @@
 "text": "#% increased melee damage if you've dealt a projectile attack hit in the past eight seconds"
 },
 {
+"id": "MinionDamagePerDifferentCommandSkillUsedLast15Seconds",
+"side": "prefix",
+"lines": [
+"#% increased minion damage per different command skill used in the past # seconds"
+],
+"tags": [
+"Belt",
+"Otherworldly"
+],
+"min": 7.0,
+"max": 12.0,
+"names": [
+"Instructor's"
+],
+"also": [],
+"token": "r d",
+"line": "#% increased minion damage per different command skill used in the past # seconds",
+"text": "#% increased minion damage per different command skill used in the past # seconds"
+},
+{
 "id": "MovementVelocity",
 "side": "prefix",
 "lines": [
@@ -9092,9 +9585,50 @@
 "Stallion's"
 ],
 "also": [],
-"token": "vem",
+"token": "vement speed$",
 "line": "#% increased movement speed",
 "text": "#% increased movement speed"
+},
+{
+"id": "MovementVelocitySlowPotencyHybrid",
+"side": "prefix",
+"lines": [
+"#% increased movement speed",
+"#% reduced slowing potency of debuffs on you"
+],
+"tags": [
+"Boots",
+"Uhtred's Sidereus"
+],
+"min": 24.0,
+"max": 32.0,
+"names": [
+"Uhtred's"
+],
+"also": [],
+"token": "vement speed$",
+"line": "#% increased movement speed",
+"text": "#% increased movement speed / #% reduced slowing potency of debuffs on you"
+},
+{
+"id": "MovementVelocityWhileSprinting",
+"side": "prefix",
+"lines": [
+"#% increased movement speed while sprinting"
+],
+"tags": [
+"Boots",
+"Uhtred's Sidereus"
+],
+"min": 10.0,
+"max": 23.0,
+"names": [
+"Uhtred's"
+],
+"also": [],
+"token": "rinti",
+"line": "#% increased movement speed while sprinting",
+"text": "#% increased movement speed while sprinting"
 },
 {
 "id": "LocalPhysicalDamagePercent",
@@ -9171,12 +9705,34 @@
 "text": "#% increased physical damage / +# to accuracy rating"
 },
 {
+"id": "ProjectileDamage",
+"side": "prefix",
+"lines": [
+"#% increased projectile damage"
+],
+"tags": [
+"Gloves",
+"Kolr's Hunt"
+],
+"min": 11.0,
+"max": 40.0,
+"names": [
+"Kolr's"
+],
+"also": [],
+"token": "ile d",
+"line": "#% increased projectile damage",
+"text": "#% increased projectile damage"
+},
+{
 "id": "ProjectileSpeed",
 "side": "prefix",
 "lines": [
 "#% increased projectile speed"
 ],
 "tags": [
+"Gloves",
+"Kolr's Hunt",
 "Quiver"
 ],
 "min": 10.0,
@@ -9184,14 +9740,35 @@
 "names": [
 "Brisk",
 "Darting",
+"Kolr's",
 "Nimble",
 "Quick",
 "Rapid"
 ],
 "also": [],
-"token": "d pro",
+"token": "le speed$",
 "line": "#% increased projectile speed",
 "text": "#% increased projectile speed"
+},
+{
+"id": "RageCostEfficiency",
+"side": "prefix",
+"lines": [
+"#% increased rage cost efficiency"
+],
+"tags": [
+"Helmet",
+"Vorana's Carnage"
+],
+"min": 20.0,
+"max": 60.0,
+"names": [
+"Vorana's"
+],
+"also": [],
+"token": "d rag",
+"line": "#% increased rage cost efficiency",
+"text": "#% increased rage cost efficiency"
 },
 {
 "id": "ItemFoundRarityIncreasePrefix",
@@ -9215,6 +9792,46 @@
 "token": "fou",
 "line": "#% increased rarity of items found",
 "text": "#% increased rarity of items found"
+},
+{
+"id": "LocalRunicWardIncreasePercent",
+"side": "prefix",
+"lines": [
+"#% increased runic ward"
+],
+"tags": [
+"Alloy",
+"Any"
+],
+"min": 24.0,
+"max": 40.0,
+"names": [
+"Verisium"
+],
+"also": [],
+"token": "d runic ward$",
+"line": "#% increased runic ward",
+"text": "#% increased runic ward"
+},
+{
+"id": "WardRegenerationRate",
+"side": "prefix",
+"lines": [
+"#% increased runic ward regeneration rate"
+],
+"tags": [
+"Alloy",
+"Any"
+],
+"min": 15.0,
+"max": 20.0,
+"names": [
+"Verisium"
+],
+"also": [],
+"token": "rd r",
+"line": "#% increased runic ward regeneration rate",
+"text": "#% increased runic ward regeneration rate"
 },
 {
 "id": "WeaponSpellDamage",
@@ -9402,9 +10019,11 @@
 "#% increased spirit"
 ],
 "tags": [
+"Body Armour",
+"Medved's Tending",
 "Weapon"
 ],
-"min": 20.0,
+"min": 1.0,
 "max": 65.0,
 "names": [
 "Baron's",
@@ -9413,6 +10032,7 @@
 "King's",
 "Lord's",
 "Marquess'",
+"Medved's",
 "Prince's",
 "Viscount's"
 ],
@@ -9446,6 +10066,26 @@
 "token": "d spirit$",
 "line": "#% increased spirit",
 "text": "#% increased spirit / +# to maximum mana"
+},
+{
+"id": "WarcryPower",
+"side": "prefix",
+"lines": [
+"#% increased total power counted by warcries"
+],
+"tags": [
+"Helmet",
+"Vorana's Carnage"
+],
+"min": 20.0,
+"max": 55.0,
+"names": [
+"Vorana's"
+],
+"also": [],
+"token": "tota",
+"line": "#% increased total power counted by warcries",
+"text": "#% increased total power counted by warcries"
 },
 {
 "id": "TrapDamageOnWeapon",
@@ -9500,6 +10140,86 @@
 "text": "#% increased trap damage / +# to maximum mana"
 },
 {
+"id": "DamageRemovedFromSpectres",
+"side": "prefix",
+"lines": [
+"#% of damage from hits is taken from your spectres' life before you"
+],
+"tags": [
+"Belt",
+"Otherworldly"
+],
+"min": 5.0,
+"max": 5.0,
+"names": [
+"Underling's"
+],
+"also": [],
+"token": "es'",
+"line": "#% of damage from hits is taken from your spectres' life before you",
+"text": "#% of damage from hits is taken from your spectres' life before you"
+},
+{
+"id": "DamageRemovedFromManaBeforeLife",
+"side": "prefix",
+"lines": [
+"#% of damage is taken from mana before life"
+],
+"tags": [
+"Otherworldly",
+"Ring"
+],
+"min": 8.0,
+"max": 12.0,
+"names": [
+"Burdensome"
+],
+"also": [],
+"token": "a b",
+"line": "#% of damage is taken from mana before life",
+"text": "#% of damage is taken from mana before life"
+},
+{
+"id": "MinionGainPuppetMasterOnCommand",
+"side": "prefix",
+"lines": [
+"#% surpassing chance to gain a puppet master stack whenever you use a command skill"
+],
+"tags": [
+"Alloy",
+"Any"
+],
+"min": 30.0,
+"max": 50.0,
+"names": [
+"Verisium"
+],
+"also": [],
+"token": "nev",
+"line": "#% surpassing chance to gain a puppet master stack whenever you use a command skill",
+"text": "#% surpassing chance to gain a puppet master stack whenever you use a command skill"
+},
+{
+"id": "DodgeRollDistance",
+"side": "prefix",
+"lines": [
+"+# metres to dodge roll distance"
+],
+"tags": [
+"Boots",
+"Uhtred's Sidereus"
+],
+"min": 0.3,
+"max": 0.5,
+"names": [
+"Uhtred's"
+],
+"also": [],
+"token": "metr",
+"line": "+# metres to dodge roll distance",
+"text": "+# metres to dodge roll distance"
+},
+{
 "id": "IncreasedAccuracy",
 "side": "prefix",
 "lines": [
@@ -9530,6 +10250,27 @@
 "token": "acy",
 "line": "+# to accuracy rating",
 "text": "+# to accuracy rating"
+},
+{
+"id": "AccuracyAttackSpeedHybrid",
+"side": "prefix",
+"lines": [
+"+# to accuracy rating",
+"#% increased attack speed"
+],
+"tags": [
+"Alloy",
+"Any"
+],
+"min": 327.0,
+"max": 427.0,
+"names": [
+"Verisium"
+],
+"also": [],
+"token": "acy",
+"line": "+# to accuracy rating",
+"text": "+# to accuracy rating / #% increased attack speed"
 },
 {
 "id": "PhysicalDamageReductionRating",
@@ -9741,6 +10482,27 @@
 "text": "+# to maximum life"
 },
 {
+"id": "BaseLifeAndMana",
+"side": "prefix",
+"lines": [
+"+# to maximum life",
+"+# to maximum mana"
+],
+"tags": [
+"Body Armour",
+"Medved's Tending"
+],
+"min": 19.0,
+"max": 189.0,
+"names": [
+"Medved's"
+],
+"also": [],
+"token": "o maximum lif",
+"line": "+# to maximum life",
+"text": "+# to maximum life / +# to maximum mana"
+},
+{
 "id": "IncreasedMana",
 "side": "prefix",
 "lines": [
@@ -9780,6 +10542,48 @@
 "text": "+# to maximum mana"
 },
 {
+"id": "ManaSpellLevelHybrid",
+"side": "prefix",
+"lines": [
+"+# to maximum mana",
+"+# to level of all spell skills"
+],
+"tags": [
+"Alloy",
+"Any"
+],
+"min": 142.0,
+"max": 188.0,
+"names": [
+"Verisium"
+],
+"also": [],
+"token": "o maximum m",
+"line": "+# to maximum mana",
+"text": "+# to maximum mana / +# to level of all spell skills"
+},
+{
+"id": "ManaNearbyAllyAttackSpeedHybrid",
+"side": "prefix",
+"lines": [
+"+# to maximum mana",
+"allies in your presence have #% increased attack speed"
+],
+"tags": [
+"Alloy",
+"Any"
+],
+"min": 110.0,
+"max": 114.0,
+"names": [
+"Verisium"
+],
+"also": [],
+"token": "o maximum m",
+"line": "+# to maximum mana",
+"text": "+# to maximum mana / allies in your presence have #% increased attack speed"
+},
+{
 "id": "MaximumElementalInfusion",
 "side": "prefix",
 "lines": [
@@ -9794,7 +10598,7 @@
 "Kurgal's"
 ],
 "also": [],
-"token": "sions",
+"token": "ions$",
 "line": "+# to maximum number of elemental infusions",
 "text": "+# to maximum number of elemental infusions"
 },
@@ -9816,6 +10620,46 @@
 "token": "ball",
 "line": "+# to maximum number of summoned ballista totems",
 "text": "+# to maximum number of summoned ballista totems"
+},
+{
+"id": "MaximumRage",
+"side": "prefix",
+"lines": [
+"+# to maximum rage"
+],
+"tags": [
+"Helmet",
+"Vorana's Carnage"
+],
+"min": 4.0,
+"max": 12.0,
+"names": [
+"Vorana's"
+],
+"also": [],
+"token": "m ra",
+"line": "+# to maximum rage",
+"text": "+# to maximum rage"
+},
+{
+"id": "GlobalMaximumRunicWard",
+"side": "prefix",
+"lines": [
+"+# to maximum runic ward"
+],
+"tags": [
+"Alloy",
+"Any"
+],
+"min": 37.0,
+"max": 49.0,
+"names": [
+"Verisium"
+],
+"also": [],
+"token": "o maximum ru",
+"line": "+# to maximum runic ward",
+"text": "+# to maximum runic ward"
 },
 {
 "id": "BaseSpirit",
@@ -10309,6 +11153,46 @@
 "text": "companions deal #% increased damage / #% increased damage while your companion is in your presence"
 },
 {
+"id": "ElementalPenetration",
+"side": "prefix",
+"lines": [
+"damage penetrates #% elemental resistances"
+],
+"tags": [
+"Alloy",
+"Any"
+],
+"min": 9.0,
+"max": 15.0,
+"names": [
+"of the Stars"
+],
+"also": [],
+"token": "ates",
+"line": "damage penetrates #% elemental resistances",
+"text": "damage penetrates #% elemental resistances"
+},
+{
+"id": "FasterAilmentDamage",
+"side": "prefix",
+"lines": [
+"damaging ailments deal damage #% faster"
+],
+"tags": [
+"Gloves",
+"Katla's Gloom"
+],
+"min": 8.0,
+"max": 20.0,
+"names": [
+"Katla's"
+],
+"also": [],
+"token": "ts d",
+"line": "damaging ailments deal damage #% faster",
+"text": "damaging ailments deal damage #% faster"
+},
+{
 "id": "ExertedAttackDamage",
 "side": "prefix",
 "lines": [
@@ -10342,8 +11226,9 @@
 "Amanamu's"
 ],
 "also": [],
-"token": "ra ch",
+"token": "^gain \\d+% of damage as extra chaos damage$",
 "line": "gain #% of damage as extra chaos damage",
+"rx": true,
 "text": "gain #% of damage as extra chaos damage"
 },
 {
@@ -10366,9 +11251,30 @@
 "Ruthless"
 ],
 "also": [],
-"token": "ra co",
+"token": "^gain \\d+% of damage as extra cold damage$",
 "line": "gain #% of damage as extra cold damage",
+"rx": true,
 "text": "gain #% of damage as extra cold damage"
+},
+{
+"id": "SpellDamageGainedAsCold",
+"side": "prefix",
+"lines": [
+"gain #% of damage as extra cold damage with spells"
+],
+"tags": [
+"Otherworldly",
+"Ring"
+],
+"min": 8.0,
+"max": 12.0,
+"names": [
+"Tempest Rider's"
+],
+"also": [],
+"token": "ld damage w",
+"line": "gain #% of damage as extra cold damage with spells",
+"text": "gain #% of damage as extra cold damage with spells"
 },
 {
 "id": "DamageGainedAsFire",
@@ -10390,9 +11296,49 @@
 "Zealot's"
 ],
 "also": [],
-"token": "ra f",
+"token": "a fire damage$",
 "line": "gain #% of damage as extra fire damage",
 "text": "gain #% of damage as extra fire damage"
+},
+{
+"id": "DamageGainedAsFireWhileMissingRunicWard",
+"side": "prefix",
+"lines": [
+"gain #% of damage as extra fire damage while you are missing runic ward"
+],
+"tags": [
+"Alloy",
+"Any"
+],
+"min": 21.0,
+"max": 52.0,
+"names": [
+"Verisium"
+],
+"also": [],
+"token": "u a",
+"line": "gain #% of damage as extra fire damage while you are missing runic ward",
+"text": "gain #% of damage as extra fire damage while you are missing runic ward"
+},
+{
+"id": "SpellDamageGainedAsFire",
+"side": "prefix",
+"lines": [
+"gain #% of damage as extra fire damage with spells"
+],
+"tags": [
+"Otherworldly",
+"Ring"
+],
+"min": 8.0,
+"max": 12.0,
+"names": [
+"Fire Breather's"
+],
+"also": [],
+"token": "e damage wi",
+"line": "gain #% of damage as extra fire damage with spells",
+"text": "gain #% of damage as extra fire damage with spells"
 },
 {
 "id": "DamageGainedAsLightning",
@@ -10414,9 +11360,29 @@
 "Vorpal"
 ],
 "also": [],
-"token": "ra l",
+"token": "a lightning damage$",
 "line": "gain #% of damage as extra lightning damage",
 "text": "gain #% of damage as extra lightning damage"
+},
+{
+"id": "SpellDamageGainedAsLightning",
+"side": "prefix",
+"lines": [
+"gain #% of damage as extra lightning damage with spells"
+],
+"tags": [
+"Otherworldly",
+"Ring"
+],
+"min": 8.0,
+"max": 12.0,
+"names": [
+"Storm Chaser's"
+],
+"also": [],
+"token": "g damage w",
+"line": "gain #% of damage as extra lightning damage with spells",
+"text": "gain #% of damage as extra lightning damage with spells"
 },
 {
 "id": "DamageasExtraPhysical",
@@ -10457,6 +11423,26 @@
 "text": "gain #% of maximum mana as armour"
 },
 {
+"id": "ColdDamageAsPortionOfDamage",
+"side": "prefix",
+"lines": [
+"gain #% of physical damage as extra cold damage"
+],
+"tags": [
+"Amulet",
+"Otherworldly"
+],
+"min": 10.0,
+"max": 20.0,
+"names": [
+"Tul's"
+],
+"also": [],
+"token": "cal damage as e",
+"line": "gain #% of physical damage as extra cold damage",
+"text": "gain #% of physical damage as extra cold damage"
+},
+{
 "id": "GrenadeCooldownUse",
 "side": "prefix",
 "lines": [
@@ -10490,9 +11476,30 @@
 "Ulaman's"
 ],
 "also": [],
-"token": "ows",
+"token": "ws$",
 "line": "increases and reductions to projectile speed also apply to damage with bows",
 "text": "increases and reductions to projectile speed also apply to damage with bows"
+},
+{
+"id": "AnaemiaOnHit",
+"side": "prefix",
+"lines": [
+"inflict anaemia on hit",
+"anaemia allows +# corrupted blood debuffs to be inflicted on enemies"
+],
+"tags": [
+"Amulet",
+"Otherworldly"
+],
+"min": 2.0,
+"max": 3.0,
+"names": [
+"Uul-Netol's"
+],
+"also": [],
+"token": "nae",
+"line": "anaemia allows +# corrupted blood debuffs to be inflicted on enemies",
+"text": "inflict anaemia on hit / anaemia allows +# corrupted blood debuffs to be inflicted on enemies"
 },
 {
 "id": "InvocationSpellDamage",
@@ -10591,6 +11598,26 @@
 "text": "melee attack skills have +# to maximum number of summoned totems"
 },
 {
+"id": "MinionArmourBreak",
+"side": "prefix",
+"lines": [
+"minions break armour equal to #% of physical damage dealt"
+],
+"tags": [
+"Otherworldly",
+"Ring"
+],
+"min": 2.0,
+"max": 4.0,
+"names": [
+"Scratching"
+],
+"also": [],
+"token": "s br",
+"line": "minions break armour equal to #% of physical damage dealt",
+"text": "minions break armour equal to #% of physical damage dealt"
+},
+{
 "id": "MinionAndSpellDamageHybrid",
 "side": "prefix",
 "lines": [
@@ -10632,18 +11659,41 @@
 "text": "minions deal #% increased damage if you've hit recently"
 },
 {
+"id": "MinionDamagingAilments",
+"side": "prefix",
+"lines": [
+"minions have #% increased magnitude of damaging ailments"
+],
+"tags": [
+"Otherworldly",
+"Ring"
+],
+"min": 35.0,
+"max": 45.0,
+"names": [
+"Contaminating"
+],
+"also": [],
+"token": "lments$",
+"line": "minions have #% increased magnitude of damaging ailments",
+"text": "minions have #% increased magnitude of damaging ailments"
+},
+{
 "id": "OfferingEffect",
 "side": "prefix",
 "lines": [
 "offering skills have #% increased buff effect"
 ],
 "tags": [
-"Focus"
+"Focus",
+"Otherworldly",
+"Ring"
 ],
 "min": 12.0,
-"max": 20.0,
+"max": 30.0,
 "names": [
-"Amanamu's"
+"Amanamu's",
+"Dedicated"
 ],
 "also": [],
 "token": "g sk",
@@ -10712,6 +11762,26 @@
 "text": "projectiles have #% chance to chain an additional time from terrain"
 },
 {
+"id": "RecoverRunicWardOnCharmUse",
+"side": "prefix",
+"lines": [
+"recover # runic ward when a charm is used"
+],
+"tags": [
+"Alloy",
+"Any"
+],
+"min": 32.0,
+"max": 45.0,
+"names": [
+"Verisium"
+],
+"also": [],
+"token": "rm i",
+"line": "recover # runic ward when a charm is used",
+"text": "recover # runic ward when a charm is used"
+},
+{
 "id": "RemnantEffect",
 "side": "prefix",
 "lines": [
@@ -10727,7 +11797,7 @@
 "Amanamu's"
 ],
 "also": [],
-"token": "u c",
+"token": "te h",
 "line": "remnants you create have #% increased effect",
 "text": "remnants you create have #% increased effect"
 },
@@ -10746,8 +11816,9 @@
 "Kurgal's"
 ],
 "also": [],
-"token": "d area of effect$",
+"token": "^spell skills have \\d+% increased area of effect$",
 "line": "spell skills have #% increased area of effect",
+"rx": true,
 "text": "spell skills have #% increased area of effect"
 },
 {
@@ -10771,6 +11842,26 @@
 "text": "spell skills have +# to maximum number of summoned totems"
 },
 {
+"id": "SpellDamageGainedAsChaos",
+"side": "prefix",
+"lines": [
+"spells gain #% of damage as extra chaos damage"
+],
+"tags": [
+"Otherworldly",
+"Ring"
+],
+"min": 8.0,
+"max": 12.0,
+"names": [
+"Soul Stealer's"
+],
+"also": [],
+"token": "ls g",
+"line": "spells gain #% of damage as extra chaos damage",
+"text": "spells gain #% of damage as extra chaos damage"
+},
+{
 "id": "WarcriesExertAnAdditionalAttack",
 "side": "prefix",
 "lines": [
@@ -10787,9 +11878,29 @@
 "also": [
 "warcries empower an additional attack"
 ],
-"token": "rcri",
+"token": "es e",
 "line": "warcries empower # additional attacks",
 "text": "warcries empower # additional attacks"
+},
+{
+"id": "MinionsGiganticRevivedRecently",
+"side": "prefix",
+"lines": [
+"your minions are gigantic if they have revived recently"
+],
+"tags": [
+"Belt",
+"Otherworldly"
+],
+"min": null,
+"max": null,
+"names": [
+"Monstrous"
+],
+"also": [],
+"token": "gig",
+"line": "your minions are gigantic if they have revived recently",
+"text": "your minions are gigantic if they have revived recently"
 },
 {
 "id": "LifeRegeneration",
@@ -10840,7 +11951,7 @@
 "of Kurgal"
 ],
 "also": [],
-"token": "u b",
+"token": "na g",
 "line": "# mana gained when you block",
 "text": "# mana gained when you block"
 },
@@ -10883,6 +11994,26 @@
 "text": "#% chance for mace slam skills you use yourself to cause an additional aftershock"
 },
 {
+"id": "ChanceToRefund40PercentGlory~2",
+"side": "suffix",
+"lines": [
+"#% chance for skills to retain #% of glory on use"
+],
+"tags": [
+"Alloy",
+"Any"
+],
+"min": 60.0,
+"max": 75.0,
+"names": [
+"of the Stars"
+],
+"also": [],
+"token": "ret",
+"line": "#% chance for skills to retain #% of glory on use",
+"text": "#% chance for skills to retain #% of glory on use"
+},
+{
 "id": "SpellChanceToFireTwoAdditionalProjectiles",
 "side": "suffix",
 "lines": [
@@ -10909,17 +12040,41 @@
 "#% chance to build an additional combo on hit"
 ],
 "tags": [
+"Helmet",
+"Vorana's Carnage",
 "Weapon"
 ],
-"min": 25.0,
-"max": 40.0,
+"min": 20.0,
+"max": 60.0,
 "names": [
-"of Amanamu"
+"of Amanamu",
+"of the Berserker"
 ],
 "also": [],
 "token": "o o",
 "line": "#% chance to build an additional combo on hit",
 "text": "#% chance to build an additional combo on hit"
+},
+{
+"id": "LocalAdditionalChainChance",
+"side": "suffix",
+"lines": [
+"#% chance to chain an additional time"
+],
+"tags": [
+"Alloy",
+"Any"
+],
+"min": 25.0,
+"max": 35.0,
+"names": [
+"of the Stars"
+],
+"also": [],
+"token": "^\\d+% chance to chain an additional time$",
+"line": "#% chance to chain an additional time",
+"rx": true,
+"text": "#% chance to chain an additional time"
 },
 {
 "id": "DazeBuildup",
@@ -10960,27 +12115,50 @@
 "text": "#% chance to gain arcane surge when you deal a critical hit"
 },
 {
+"id": "ChanceToGainNaturesArchon",
+"side": "suffix",
+"lines": [
+"#% chance to gain nature's archon when your plants overgrow"
+],
+"tags": [
+"Alloy",
+"Any"
+],
+"min": 25.0,
+"max": 50.0,
+"names": [
+"of the Stars"
+],
+"also": [],
+"token": "rgr",
+"line": "#% chance to gain nature's archon when your plants overgrow",
+"text": "#% chance to gain nature's archon when your plants overgrow"
+},
+{
 "id": "ChanceToPierce",
 "side": "suffix",
 "lines": [
 "#% chance to pierce an enemy"
 ],
 "tags": [
+"Gloves",
+"Kolr's Hunt",
 "Quiver",
 "Weapon"
 ],
 "min": 12.0,
-"max": 60.0,
+"max": 100.0,
 "names": [
 "of Amanamu",
 "of Drilling",
 "of Penetrating",
 "of Piercing",
 "of Puncturing",
-"of Skewering"
+"of Skewering",
+"of the Hunt"
 ],
 "also": [],
-"token": "emy$",
+"token": "o pi",
 "line": "#% chance to pierce an enemy",
 "text": "#% chance to pierce an enemy"
 },
@@ -11030,12 +12208,15 @@
 "#% faster curse activation"
 ],
 "tags": [
-"Focus"
+"Focus",
+"Gloves",
+"Katla's Gloom"
 ],
 "min": 10.0,
-"max": 20.0,
+"max": 30.0,
 "names": [
-"of Amanamu"
+"of Amanamu",
+"of Decay"
 ],
 "also": [],
 "token": "e ac",
@@ -11049,12 +12230,15 @@
 "#% increased amount of life leeched"
 ],
 "tags": [
+"Gloves",
+"Katla's Gloom",
 "Ring"
 ],
 "min": 12.0,
-"max": 20.0,
+"max": 40.0,
 "names": [
-"of Amanamu"
+"of Amanamu",
+"of Decay"
 ],
 "also": [],
 "token": "fe l",
@@ -11087,17 +12271,43 @@
 "#% increased archon buff duration"
 ],
 "tags": [
+"Alloy",
+"Any",
+"Belt",
+"Otherworldly",
 "Weapon"
 ],
 "min": 25.0,
-"max": 35.0,
+"max": 50.0,
 "names": [
-"of Amanamu"
+"of Amanamu",
+"of Exertion",
+"of the Stars"
 ],
 "also": [],
-"token": "hon b",
+"token": "sed arc",
 "line": "#% increased archon buff duration",
 "text": "#% increased archon buff duration"
+},
+{
+"id": "IncreasedAttackAreaOfEffect~2",
+"side": "suffix",
+"lines": [
+"#% increased area of effect for attacks"
+],
+"tags": [
+"Alloy",
+"Any"
+],
+"min": 10.0,
+"max": 15.0,
+"names": [
+"of the Stars"
+],
+"also": [],
+"token": "ct f",
+"line": "#% increased area of effect for attacks",
+"text": "#% increased area of effect for attacks"
 },
 {
 "id": "CurseAreaOfEffect",
@@ -11119,12 +12329,34 @@
 "text": "#% increased area of effect of curses"
 },
 {
+"id": "ArmourBreakDuration",
+"side": "suffix",
+"lines": [
+"#% increased armour break duration"
+],
+"tags": [
+"Helmet",
+"Vorana's Carnage"
+],
+"min": 50.0,
+"max": 150.0,
+"names": [
+"of the Berserker"
+],
+"also": [],
+"token": "ur b",
+"line": "#% increased armour break duration",
+"text": "#% increased armour break duration"
+},
+{
 "id": "IncreasedAttackSpeed",
 "side": "suffix",
 "lines": [
 "#% increased attack speed"
 ],
 "tags": [
+"Alloy",
+"Any",
 "Gloves",
 "Quiver",
 "Weapon"
@@ -11139,7 +12371,8 @@
 "of Infamy",
 "of Mastery",
 "of Renown",
-"of Skill"
+"of Skill",
+"of the Stars"
 ],
 "also": [],
 "token": "^\\d+% increased attack speed$",
@@ -11163,7 +12396,7 @@
 "of Ulaman"
 ],
 "also": [],
-"token": "k speed w",
+"token": "d while y",
 "line": "#% increased attack speed while your companion is in your presence",
 "text": "#% increased attack speed / #% increased attack speed while your companion is in your presence"
 },
@@ -11188,13 +12421,35 @@
 "text": "#% increased attack speed / companions have #% increased attack speed"
 },
 {
+"id": "AttackSpeedWhileMissingRunicWard",
+"side": "suffix",
+"lines": [
+"#% increased attack speed while missing runic ward"
+],
+"tags": [
+"Alloy",
+"Any"
+],
+"min": 10.0,
+"max": 15.0,
+"names": [
+"of the Stars"
+],
+"also": [],
+"token": "le mi",
+"line": "#% increased attack speed while missing runic ward",
+"text": "#% increased attack speed while missing runic ward"
+},
+{
 "id": "IncreasedCastSpeed",
 "side": "suffix",
 "lines": [
 "#% increased cast speed"
 ],
 "tags": [
+"Alloy",
 "Amulet",
+"Any",
 "Focus",
 "Ring",
 "Weapon"
@@ -11208,13 +12463,35 @@
 "of Nimbleness",
 "of Prestidigitation",
 "of Sortilege",
-"of Talent"
+"of Talent",
+"of the Stars"
 ],
 "also": [],
 "token": "^\\d+% increased cast speed$",
 "line": "#% increased cast speed",
 "rx": true,
 "text": "#% increased cast speed"
+},
+{
+"id": "CastSpeedDamageAsExtraColdHybrid",
+"side": "suffix",
+"lines": [
+"#% increased cast speed",
+"gain #% of elemental damage as extra cold damage"
+],
+"tags": [
+"Alloy",
+"Any"
+],
+"min": 26.0,
+"max": 47.0,
+"names": [
+"of the Stars"
+],
+"also": [],
+"token": "tal damage a",
+"line": "gain #% of elemental damage as extra cold damage",
+"text": "#% increased cast speed / gain #% of elemental damage as extra cold damage"
 },
 {
 "id": "CastSpeedPerDifferentSpellCastRecently",
@@ -11231,7 +12508,7 @@
 "of Kurgal"
 ],
 "also": [],
-"token": "dif",
+"token": "on-",
 "line": "#% increased cast speed for each different non-instant spell you've cast recently",
 "text": "#% increased cast speed for each different non-instant spell you've cast recently"
 },
@@ -11385,11 +12662,14 @@
 ],
 "tags": [
 "Amulet",
-"Ring"
+"Boots",
+"Ring",
+"Uhtred's Sidereus"
 ],
 "min": 8.0,
-"max": 12.0,
+"max": 30.0,
 "names": [
+"of Chronomancy",
 "of Kurgal"
 ],
 "also": [],
@@ -11477,7 +12757,9 @@
 ],
 "tags": [
 "Amulet",
-"Helmet"
+"Gloves",
+"Helmet",
+"Kolr's Hunt"
 ],
 "min": 10.0,
 "max": 38.0,
@@ -11487,7 +12769,8 @@
 "of Havoc",
 "of Menace",
 "of Ruin",
-"of Unmaking"
+"of Unmaking",
+"of the Hunt"
 ],
 "also": [],
 "token": "^\\d+% increased critical hit chance$",
@@ -11510,7 +12793,7 @@
 "of Kurgal"
 ],
 "also": [],
-"token": "ies$",
+"token": "marke",
 "line": "#% increased critical hit chance against marked enemies",
 "text": "#% increased critical hit chance against marked enemies"
 },
@@ -11559,7 +12842,7 @@
 "of Unmaking"
 ],
 "also": [],
-"token": "ells$",
+"token": "r spells",
 "line": "#% increased critical hit chance for spells",
 "text": "#% increased critical hit chance for spells"
 },
@@ -11613,6 +12896,69 @@
 "text": "#% increased critical spell damage bonus"
 },
 {
+"id": "BaseCurseDuration",
+"side": "suffix",
+"lines": [
+"#% increased curse duration"
+],
+"tags": [
+"Gloves",
+"Katla's Gloom"
+],
+"min": 50.0,
+"max": 99.0,
+"names": [
+"of Decay"
+],
+"also": [],
+"token": "se d",
+"line": "#% increased curse duration",
+"text": "#% increased curse duration"
+},
+{
+"id": "CurseEffectiveness~2",
+"side": "suffix",
+"lines": [
+"#% increased curse magnitudes"
+],
+"tags": [
+"Gloves",
+"Katla's Gloom"
+],
+"min": 15.0,
+"max": 29.0,
+"names": [
+"of Decay"
+],
+"also": [],
+"token": "se m",
+"line": "#% increased curse magnitudes",
+"text": "#% increased curse magnitudes"
+},
+{
+"id": "DamagingAilmentDuration",
+"side": "suffix",
+"lines": [
+"#% increased duration of damaging ailments on enemies"
+],
+"tags": [
+"Alloy",
+"Any",
+"Gloves",
+"Katla's Gloom"
+],
+"min": 10.0,
+"max": 30.0,
+"names": [
+"of Decay",
+"of the Stars"
+],
+"also": [],
+"token": "sed du",
+"line": "#% increased duration of damaging ailments on enemies",
+"text": "#% increased duration of damaging ailments on enemies"
+},
+{
 "id": "ArcaneSurgeEffect",
 "side": "suffix",
 "lines": [
@@ -11630,6 +12976,46 @@
 "token": "rge o",
 "line": "#% increased effect of arcane surge on you",
 "text": "#% increased effect of arcane surge on you"
+},
+{
+"id": "LocalSocketItemsEffect",
+"side": "suffix",
+"lines": [
+"#% increased effect of socketed augment items"
+],
+"tags": [
+"Alloy",
+"Any"
+],
+"min": 20.0,
+"max": 30.0,
+"names": [
+"of the Stars"
+],
+"also": [],
+"token": "ugm",
+"line": "#% increased effect of socketed augment items",
+"text": "#% increased effect of socketed augment items"
+},
+{
+"id": "MarkEffect~2",
+"side": "suffix",
+"lines": [
+"#% increased effect of your mark skills"
+],
+"tags": [
+"Alloy",
+"Any"
+],
+"min": 40.0,
+"max": 50.0,
+"names": [
+"of the Stars"
+],
+"also": [],
+"token": "of y",
+"line": "#% increased effect of your mark skills",
+"text": "#% increased effect of your mark skills"
 },
 {
 "id": "EnergyShieldRegeneration",
@@ -11673,19 +13059,167 @@
 "text": "#% increased energy shield recharge rate if you've blocked recently"
 },
 {
+"id": "DestructionInfluenceChaosModifierEffect",
+"side": "suffix",
+"lines": [
+"#% increased explicit chaos modifier magnitudes"
+],
+"tags": [
+"Thrud's Might",
+"Weapon"
+],
+"min": 15.0,
+"max": 20.0,
+"names": [
+"of Destruction"
+],
+"also": [],
+"token": "os m",
+"line": "#% increased explicit chaos modifier magnitudes",
+"text": "#% increased explicit chaos modifier magnitudes"
+},
+{
+"id": "DestructionInfluenceColdModifierEffect",
+"side": "suffix",
+"lines": [
+"#% increased explicit cold modifier magnitudes"
+],
+"tags": [
+"Thrud's Might",
+"Weapon"
+],
+"min": 15.0,
+"max": 20.0,
+"names": [
+"of Destruction"
+],
+"also": [],
+"token": "ld m",
+"line": "#% increased explicit cold modifier magnitudes",
+"text": "#% increased explicit cold modifier magnitudes"
+},
+{
+"id": "DestructionInfluenceElementalModifierEffect",
+"side": "suffix",
+"lines": [
+"#% increased explicit elemental damage modifier magnitudes"
+],
+"tags": [
+"Thrud's Might",
+"Weapon"
+],
+"min": 15.0,
+"max": 20.0,
+"names": [
+"of Destruction"
+],
+"also": [],
+"token": "it e",
+"line": "#% increased explicit elemental damage modifier magnitudes",
+"text": "#% increased explicit elemental damage modifier magnitudes"
+},
+{
+"id": "DestructionInfluenceFireModifierEffect",
+"side": "suffix",
+"lines": [
+"#% increased explicit fire modifier magnitudes"
+],
+"tags": [
+"Thrud's Might",
+"Weapon"
+],
+"min": 15.0,
+"max": 20.0,
+"names": [
+"of Destruction"
+],
+"also": [],
+"token": "t fi",
+"line": "#% increased explicit fire modifier magnitudes",
+"text": "#% increased explicit fire modifier magnitudes"
+},
+{
+"id": "DestructionInfluenceLightningModifierEffect",
+"side": "suffix",
+"lines": [
+"#% increased explicit lightning modifier magnitudes"
+],
+"tags": [
+"Thrud's Might",
+"Weapon"
+],
+"min": 15.0,
+"max": 20.0,
+"names": [
+"of Destruction"
+],
+"also": [],
+"token": "it l",
+"line": "#% increased explicit lightning modifier magnitudes",
+"text": "#% increased explicit lightning modifier magnitudes"
+},
+{
+"id": "DestructionInfluenceManaModifierEffect",
+"side": "suffix",
+"lines": [
+"#% increased explicit mana modifier magnitudes"
+],
+"tags": [
+"Thrud's Might",
+"Weapon"
+],
+"min": 25.0,
+"max": 30.0,
+"names": [
+"of Destruction"
+],
+"also": [],
+"token": "na m",
+"line": "#% increased explicit mana modifier magnitudes",
+"text": "#% increased explicit mana modifier magnitudes"
+},
+{
+"id": "DestructionInfluencePhysicalModifierEffect",
+"side": "suffix",
+"lines": [
+"#% increased explicit physical modifier magnitudes"
+],
+"tags": [
+"Thrud's Might",
+"Weapon"
+],
+"min": 10.0,
+"max": 15.0,
+"names": [
+"of Destruction"
+],
+"also": [],
+"token": "it p",
+"line": "#% increased explicit physical modifier magnitudes",
+"text": "#% increased explicit physical modifier magnitudes"
+},
+{
 "id": "ElementalExposureEffect",
 "side": "suffix",
 "lines": [
 "#% increased exposure effect"
 ],
 "tags": [
+"Alloy",
 "Amulet",
+"Any",
+"Gloves",
+"Katla's Gloom",
+"Otherworldly",
 "Ring"
 ],
 "min": 10.0,
-"max": 15.0,
+"max": 50.0,
 "names": [
-"of Kurgal"
+"of Decay",
+"of Drenching",
+"of Kurgal",
+"of the Stars"
 ],
 "also": [],
 "token": "xpo",
@@ -11711,7 +13245,7 @@
 "of Scorching"
 ],
 "also": [],
-"token": "mab",
+"token": "ty m",
 "line": "#% increased flammability magnitude",
 "text": "#% increased flammability magnitude"
 },
@@ -11763,7 +13297,7 @@
 "text": "#% increased freeze buildup"
 },
 {
-"id": "GloryGeneration",
+"id": "GloryGeneration~2",
 "side": "suffix",
 "lines": [
 "#% increased glory generation"
@@ -11887,26 +13421,69 @@
 "text": "#% increased light radius / +# to accuracy rating"
 },
 {
-"id": "AilmentEffect",
+"id": "AilmentEffect~2",
 "side": "suffix",
 "lines": [
 "#% increased magnitude of ailments you inflict"
 ],
 "tags": [
+"Alloy",
+"Any",
 "Gloves"
 ],
 "min": 10.0,
-"max": 20.0,
+"max": 30.0,
 "names": [
-"of Ulaman"
+"of Ulaman",
+"of the Stars"
 ],
 "also": [],
-"token": "f ai",
+"token": "e of a",
 "line": "#% increased magnitude of ailments you inflict",
 "text": "#% increased magnitude of ailments you inflict"
 },
 {
-"id": "ManaCostEfficiency",
+"id": "SpellElementalAilmentMagnitude",
+"side": "suffix",
+"lines": [
+"#% increased magnitude of elemental ailments you inflict with spells"
+],
+"tags": [
+"Belt",
+"Otherworldly"
+],
+"min": 30.0,
+"max": 40.0,
+"names": [
+"of Imbuing"
+],
+"also": [],
+"token": "l ai",
+"line": "#% increased magnitude of elemental ailments you inflict with spells",
+"text": "#% increased magnitude of elemental ailments you inflict with spells"
+},
+{
+"id": "SpellImpaleEffect",
+"side": "suffix",
+"lines": [
+"#% increased magnitude of impales inflicted with spells"
+],
+"tags": [
+"Otherworldly",
+"Ring"
+],
+"min": 20.0,
+"max": 30.0,
+"names": [
+"of Lancing"
+],
+"also": [],
+"token": "mpale",
+"line": "#% increased magnitude of impales inflicted with spells",
+"text": "#% increased magnitude of impales inflicted with spells"
+},
+{
+"id": "ManaCostEfficiency~2",
 "side": "suffix",
 "lines": [
 "#% increased mana cost efficiency"
@@ -11971,7 +13548,7 @@
 "of Nirvana"
 ],
 "also": [],
-"token": "n rate$",
+"token": "a regeneration rate$",
 "line": "#% increased mana regeneration rate",
 "text": "#% increased mana regeneration rate"
 },
@@ -11993,6 +13570,26 @@
 "token": "statio",
 "line": "#% increased mana regeneration rate while stationary",
 "text": "#% increased mana regeneration rate while stationary"
+},
+{
+"id": "MinionDuration",
+"side": "suffix",
+"lines": [
+"#% increased minion duration"
+],
+"tags": [
+"Belt",
+"Otherworldly"
+],
+"min": 35.0,
+"max": 49.0,
+"names": [
+"of Binding"
+],
+"also": [],
+"token": "ion du",
+"line": "#% increased minion duration",
+"text": "#% increased minion duration"
 },
 {
 "id": "ParryDuration",
@@ -12039,6 +13636,8 @@
 "#% increased presence area of effect"
 ],
 "tags": [
+"Alloy",
+"Any",
 "Helmet",
 "Weapon"
 ],
@@ -12049,7 +13648,8 @@
 "of Direction",
 "of Guidance",
 "of Influence",
-"of Outreach"
+"of Outreach",
+"of the Stars"
 ],
 "also": [],
 "token": "d pre",
@@ -12139,23 +13739,50 @@
 "text": "#% increased reservation efficiency of herald skills"
 },
 {
+"id": "MinionReservationEfficiency",
+"side": "suffix",
+"lines": [
+"#% increased reservation efficiency of minion skills"
+],
+"tags": [
+"Belt",
+"Otherworldly"
+],
+"min": 7.0,
+"max": 10.0,
+"names": [
+"of Coherence"
+],
+"also": [],
+"token": "y of m",
+"line": "#% increased reservation efficiency of minion skills",
+"text": "#% increased reservation efficiency of minion skills"
+},
+{
 "id": "SkillEffectDuration",
 "side": "suffix",
 "lines": [
 "#% increased skill effect duration"
 ],
 "tags": [
+"Alloy",
 "Amulet",
-"Ring"
+"Any",
+"Boots",
+"Ring",
+"Uhtred's Sidereus"
 ],
 "min": 8.0,
-"max": 12.0,
+"max": 40.0,
 "names": [
-"of Amanamu"
+"of Amanamu",
+"of Chronomancy",
+"of the Stars"
 ],
 "also": [],
-"token": "l ef",
+"token": "^\\d+% increased skill effect duration$",
 "line": "#% increased skill effect duration",
+"rx": true,
 "text": "#% increased skill effect duration"
 },
 {
@@ -12196,6 +13823,27 @@
 "token": "d if",
 "line": "#% increased skill speed if you've consumed a frenzy charge recently",
 "text": "#% increased skill speed if you've consumed a frenzy charge recently"
+},
+{
+"id": "SpiritPresenceAreaOfEffectHybrid",
+"side": "suffix",
+"lines": [
+"#% increased spirit",
+"#% increased presence area of effect"
+],
+"tags": [
+"Alloy",
+"Any"
+],
+"min": 8.0,
+"max": 12.0,
+"names": [
+"of the Stars"
+],
+"also": [],
+"token": "d spirit$",
+"line": "#% increased spirit",
+"text": "#% increased spirit / #% increased presence area of effect"
 },
 {
 "id": "SpiritReservationEfficiency",
@@ -12249,12 +13897,15 @@
 "#% increased totem placement speed"
 ],
 "tags": [
+"Alloy",
+"Any",
 "Weapon"
 ],
 "min": 17.0,
-"max": 31.0,
+"max": 49.0,
 "names": [
-"of Ulaman"
+"of Ulaman",
+"of the Stars"
 ],
 "also": [],
 "token": "cem",
@@ -12268,20 +13919,63 @@
 "#% increased warcry cooldown recovery rate"
 ],
 "tags": [
+"Helmet",
+"Vorana's Carnage",
 "Weapon"
 ],
 "min": 17.0,
-"max": 31.0,
+"max": 50.0,
 "names": [
-"of Kurgal"
+"of Kurgal",
+"of the Berserker"
 ],
 "also": [],
-"token": "rcry",
+"token": "y co",
 "line": "#% increased warcry cooldown recovery rate",
 "text": "#% increased warcry cooldown recovery rate"
 },
 {
-"id": "DamageRemovedFromManaBeforeLife",
+"id": "WarcrySpeed",
+"side": "suffix",
+"lines": [
+"#% increased warcry speed"
+],
+"tags": [
+"Helmet",
+"Vorana's Carnage"
+],
+"min": 23.0,
+"max": 50.0,
+"names": [
+"of the Berserker"
+],
+"also": [],
+"token": "y sp",
+"line": "#% increased warcry speed",
+"text": "#% increased warcry speed"
+},
+{
+"id": "WitheredEffect",
+"side": "suffix",
+"lines": [
+"#% increased withered magnitude"
+],
+"tags": [
+"Gloves",
+"Katla's Gloom"
+],
+"min": 15.0,
+"max": 35.0,
+"names": [
+"of Decay"
+],
+"also": [],
+"token": "sed wi",
+"line": "#% increased withered magnitude",
+"text": "#% increased withered magnitude"
+},
+{
+"id": "DamageRemovedFromManaBeforeLife~2",
 "side": "suffix",
 "lines": [
 "#% of damage is taken from mana before life"
@@ -12296,7 +13990,7 @@
 "of Kurgal"
 ],
 "also": [],
-"token": "bef",
+"token": "a b",
 "line": "#% of damage is taken from mana before life",
 "text": "#% of damage is taken from mana before life"
 },
@@ -12531,6 +14225,26 @@
 "text": "#% reduced chill duration on you"
 },
 {
+"id": "AilmentDurationOnYou",
+"side": "suffix",
+"lines": [
+"#% reduced duration of ailments on you"
+],
+"tags": [
+"Body Armour",
+"Medved's Tending"
+],
+"min": 5.0,
+"max": 50.0,
+"names": [
+"of the Soul"
+],
+"also": [],
+"token": "n of a",
+"line": "#% reduced duration of ailments on you",
+"text": "#% reduced duration of ailments on you"
+},
+{
 "id": "ReducedBleedDuration",
 "side": "suffix",
 "lines": [
@@ -12694,7 +14408,7 @@
 "of the Impedance"
 ],
 "also": [],
-"token": "k du",
+"token": "ock d",
 "line": "#% reduced shock duration on you",
 "text": "#% reduced shock duration on you"
 },
@@ -12705,15 +14419,18 @@
 "#% reduced slowing potency of debuffs on you"
 ],
 "tags": [
+"Alloy",
+"Any",
 "Boots"
 ],
 "min": 12.0,
-"max": 20.0,
+"max": 30.0,
 "names": [
-"of Amanamu"
+"of Amanamu",
+"of the Stars"
 ],
 "also": [],
-"token": "fs on you$",
+"token": "ebuffs on you$",
 "line": "#% reduced slowing potency of debuffs on you",
 "text": "#% reduced slowing potency of debuffs on you"
 },
@@ -12737,26 +14454,69 @@
 "text": "#% reduced slowing potency of debuffs on you if you've used a charm recently"
 },
 {
+"id": "MinionGainPuppetMasterOnCommand~2",
+"side": "suffix",
+"lines": [
+"#% surpassing chance to gain a puppet master stack whenever you use a command skill"
+],
+"tags": [
+"Otherworldly",
+"Ring"
+],
+"min": 40.0,
+"max": 50.0,
+"names": [
+"of the Cabal"
+],
+"also": [],
+"token": "nev",
+"line": "#% surpassing chance to gain a puppet master stack whenever you use a command skill",
+"text": "#% surpassing chance to gain a puppet master stack whenever you use a command skill"
+},
+{
+"id": "ArchonUndeathOnOfferingUse",
+"side": "suffix",
+"lines": [
+"#% to gain archon of undeath when you create an offering"
+],
+"tags": [
+"Belt",
+"Otherworldly"
+],
+"min": 35.0,
+"max": 50.0,
+"names": [
+"of Unending"
+],
+"also": [],
+"token": "ndea",
+"line": "#% to gain archon of undeath when you create an offering",
+"text": "#% to gain archon of undeath when you create an offering"
+},
+{
 "id": "MaximumPuppeteerStacks",
 "side": "suffix",
 "lines": [
 "+# maximum stacks of puppet master"
 ],
 "tags": [
+"Alloy",
+"Any",
 "Weapon"
 ],
 "min": 3.0,
-"max": 4.0,
+"max": 5.0,
 "names": [
-"of Kurgal"
+"of Kurgal",
+"of the Stars"
 ],
 "also": [],
-"token": "pet",
+"token": "m st",
 "line": "+# maximum stacks of puppet master",
 "text": "+# maximum stacks of puppet master"
 },
 {
-"id": "DodgeRollDistance",
+"id": "DodgeRollDistance~2",
 "side": "suffix",
 "lines": [
 "+# metres to dodge roll distance"
@@ -12798,9 +14558,30 @@
 "of the Universe"
 ],
 "also": [],
-"token": "utes",
+"token": "utes$",
 "line": "+# to all attributes",
 "text": "+# to all attributes"
+},
+{
+"id": "AttributeIncreasedLocalPhysicalDamageHybrid",
+"side": "suffix",
+"lines": [
+"+# to all attributes",
+"#% increased physical damage"
+],
+"tags": [
+"Alloy",
+"Any"
+],
+"min": 7.0,
+"max": 10.0,
+"names": [
+"of the Stars"
+],
+"also": [],
+"token": "utes$",
+"line": "+# to all attributes",
+"text": "+# to all attributes / #% increased physical damage"
 },
 {
 "id": "Dexterity",
@@ -12852,7 +14633,7 @@
 "of Kurgal"
 ],
 "also": [],
-"token": "ty a",
+"token": "rity a",
 "line": "+# to dexterity and intelligence",
 "text": "+# to dexterity and intelligence"
 },
@@ -12929,7 +14710,7 @@
 "of Snow"
 ],
 "also": [],
-"token": "ll co",
+"token": "l col",
 "line": "+# to level of all cold spell skills",
 "text": "+# to level of all cold spell skills"
 },
@@ -12978,6 +14759,26 @@
 "token": "all l",
 "line": "+# to level of all lightning spell skills",
 "text": "+# to level of all lightning spell skills"
+},
+{
+"id": "MarkSkillGemLevels",
+"side": "suffix",
+"lines": [
+"+# to level of all mark skills"
+],
+"tags": [
+"Gloves",
+"Kolr's Hunt"
+],
+"min": 1.0,
+"max": 4.0,
+"names": [
+"of the Hunt"
+],
+"also": [],
+"token": "ll mar",
+"line": "+# to level of all mark skills",
+"text": "+# to level of all mark skills"
 },
 {
 "id": "GlobalIncreaseMeleeSkillGemLevel",
@@ -13061,6 +14862,8 @@
 ],
 "tags": [
 "Amulet",
+"Gloves",
+"Kolr's Hunt",
 "Quiver",
 "Weapon"
 ],
@@ -13069,6 +14872,7 @@
 "names": [
 "of the Archer",
 "of the Fletcher",
+"of the Hunt",
 "of the Marksman",
 "of the Sharpshooter",
 "of the Sniper"
@@ -13144,6 +14948,109 @@
 "token": "gems$",
 "line": "+# to level of all trap skill gems",
 "text": "+# to level of all trap skill gems"
+},
+{
+"id": "ElementalSkillLimit",
+"side": "suffix",
+"lines": [
+"+# to limit for elemental skills"
+],
+"tags": [
+"Alloy",
+"Any"
+],
+"min": 1.0,
+"max": 1.0,
+"names": [
+"of the Stars"
+],
+"also": [],
+"token": "r el",
+"line": "+# to limit for elemental skills",
+"text": "+# to limit for elemental skills"
+},
+{
+"id": "MaximumElementalInfusion~2",
+"side": "suffix",
+"lines": [
+"+# to maximum number of elemental infusions"
+],
+"tags": [
+"Alloy",
+"Any",
+"Otherworldly",
+"Ring"
+],
+"min": 1.0,
+"max": 1.0,
+"names": [
+"of Amplification",
+"of the Stars"
+],
+"also": [],
+"token": "ions$",
+"line": "+# to maximum number of elemental infusions",
+"text": "+# to maximum number of elemental infusions"
+},
+{
+"id": "AdditionalBallistaTotem~2",
+"side": "suffix",
+"lines": [
+"+# to maximum number of summoned ballista totems"
+],
+"tags": [
+"Alloy",
+"Any"
+],
+"min": 2.0,
+"max": 2.0,
+"names": [
+"of the Stars"
+],
+"also": [],
+"token": "ball",
+"line": "+# to maximum number of summoned ballista totems",
+"text": "+# to maximum number of summoned ballista totems"
+},
+{
+"id": "GlobalMaximumRunicWard~2",
+"side": "suffix",
+"lines": [
+"+# to maximum runic ward"
+],
+"tags": [
+"Alloy",
+"Any"
+],
+"min": 51.0,
+"max": 74.0,
+"names": [
+"of the Stars"
+],
+"also": [],
+"token": "o maximum ru",
+"line": "+# to maximum runic ward",
+"text": "+# to maximum runic ward"
+},
+{
+"id": "BaseSpirit~2",
+"side": "suffix",
+"lines": [
+"+# to spirit"
+],
+"tags": [
+"Alloy",
+"Any"
+],
+"min": 10.0,
+"max": 15.0,
+"names": [
+"of the Stars"
+],
+"also": [],
+"token": "o sp",
+"line": "+# to spirit",
+"text": "+# to spirit"
 },
 {
 "id": "Strength",
@@ -13253,6 +15160,26 @@
 "text": "+# to stun threshold"
 },
 {
+"id": "LocalMeleeWeaponRange",
+"side": "suffix",
+"lines": [
+"+# to weapon range"
+],
+"tags": [
+"Alloy",
+"Any"
+],
+"min": 8.0,
+"max": 10.0,
+"names": [
+"of the Stars"
+],
+"also": [],
+"token": "nge$",
+"line": "+# to weapon range",
+"text": "+# to weapon range"
+},
+{
 "id": "ArmourPercentAppliesToChaosDamage",
 "side": "suffix",
 "lines": [
@@ -13315,9 +15242,30 @@
 "of Surplus"
 ],
 "also": [],
-"token": "urpa",
+"token": "rrow$",
 "line": "+#% surpassing chance to fire an additional arrow",
 "text": "+#% surpassing chance to fire an additional arrow"
+},
+{
+"id": "AdditionalProjectileChance",
+"side": "suffix",
+"lines": [
+"+#% surpassing chance to fire an additional projectile"
+],
+"tags": [
+"Gloves",
+"Kolr's Hunt"
+],
+"min": 23.0,
+"max": 66.0,
+"names": [
+"of the Hunt"
+],
+"also": [],
+"token": "^\\+\\d+% surpassing chance to fire an additional projectile$",
+"line": "+#% surpassing chance to fire an additional projectile",
+"rx": true,
+"text": "+#% surpassing chance to fire an additional projectile"
 },
 {
 "id": "AllResistances",
@@ -13380,7 +15328,7 @@
 "of Amanamu"
 ],
 "also": [],
-"token": "um r",
+"token": "um re",
 "line": "+#% to all maximum resistances",
 "text": "+#% to all maximum resistances"
 },
@@ -13440,12 +15388,15 @@
 "Amulet",
 "Armour",
 "Belt",
+"Body Armour",
+"Medved's Tending",
 "Ring"
 ],
-"min": 13.0,
-"max": 17.0,
+"min": 3.0,
+"max": 31.0,
 "names": [
-"of Kurgal"
+"of Kurgal",
+"of the Soul"
 ],
 "also": [],
 "token": "d and",
@@ -13563,12 +15514,15 @@
 "Amulet",
 "Armour",
 "Belt",
+"Body Armour",
+"Medved's Tending",
 "Ring"
 ],
-"min": 13.0,
-"max": 17.0,
+"min": 3.0,
+"max": 31.0,
 "names": [
-"of Amanamu"
+"of Amanamu",
+"of the Soul"
 ],
 "also": [],
 "token": "e and",
@@ -13605,6 +15559,26 @@
 "text": "+#% to fire resistance"
 },
 {
+"id": "FireSpellBaseCriticalChance",
+"side": "suffix",
+"lines": [
+"+#% to fire spell critical hit chance"
+],
+"tags": [
+"Amulet",
+"Otherworldly"
+],
+"min": 4.0,
+"max": 5.0,
+"names": [
+"of Xoph"
+],
+"also": [],
+"token": "ell c",
+"line": "+#% to fire spell critical hit chance",
+"text": "+#% to fire spell critical hit chance"
+},
+{
 "id": "LightningAndChaosDamageResistance",
 "side": "suffix",
 "lines": [
@@ -13614,12 +15588,15 @@
 "Amulet",
 "Armour",
 "Belt",
+"Body Armour",
+"Medved's Tending",
 "Ring"
 ],
-"min": 13.0,
-"max": 17.0,
+"min": 3.0,
+"max": 31.0,
 "names": [
-"of Ulaman"
+"of Ulaman",
+"of the Soul"
 ],
 "also": [],
 "token": "g and",
@@ -14037,7 +16014,7 @@
 "of Amanamu"
 ],
 "also": [],
-"token": "ur e",
+"token": "^break armour e",
 "line": "break armour equal to #% of physical damage dealt",
 "text": "break armour equal to #% of physical damage dealt"
 },
@@ -14102,6 +16079,26 @@
 "token": "nnot",
 "line": "corrupted blood cannot be inflicted on you",
 "text": "corrupted blood cannot be inflicted on you"
+},
+{
+"id": "DebuffTimePassed",
+"side": "suffix",
+"lines": [
+"debuffs on you expire #% faster"
+],
+"tags": [
+"Boots",
+"Uhtred's Sidereus"
+],
+"min": 50.0,
+"max": 89.0,
+"names": [
+"of Chronomancy"
+],
+"also": [],
+"token": "^deb",
+"line": "debuffs on you expire #% faster",
+"text": "debuffs on you expire #% faster"
 },
 {
 "id": "HinderedEnemiesTakeIncreasedChaosDamage",
@@ -14200,6 +16197,26 @@
 "token": "ipm",
 "line": "equipment and skill gems have #% reduced attribute requirements",
 "text": "equipment and skill gems have #% reduced attribute requirements"
+},
+{
+"id": "AllFlaskChargeGeneration",
+"side": "suffix",
+"lines": [
+"flasks gain # charges per second"
+],
+"tags": [
+"Alloy",
+"Any"
+],
+"min": 0.75,
+"max": 1.0,
+"names": [
+"of the Stars"
+],
+"also": [],
+"token": "^flas",
+"line": "flasks gain # charges per second",
+"text": "flasks gain # charges per second"
 },
 {
 "id": "LifeGainPerTarget",
@@ -14301,6 +16318,26 @@
 "text": "gain # rage on melee hit"
 },
 {
+"id": "GainRageWhenHit",
+"side": "suffix",
+"lines": [
+"gain # rage when hit by an enemy"
+],
+"tags": [
+"Helmet",
+"Vorana's Carnage"
+],
+"min": 4.0,
+"max": 10.0,
+"names": [
+"of the Berserker"
+],
+"also": [],
+"token": "it b",
+"line": "gain # rage when hit by an enemy",
+"text": "gain # rage when hit by an enemy"
+},
+{
 "id": "EvasionAppliesToDeflection",
 "side": "suffix",
 "lines": [
@@ -14366,6 +16403,26 @@
 "text": "grenades have #% chance to activate a second time"
 },
 {
+"id": "ReducedCriticalStrikeDamageTaken",
+"side": "suffix",
+"lines": [
+"hits against you have #% reduced critical damage bonus"
+],
+"tags": [
+"Body Armour",
+"Medved's Tending"
+],
+"min": 10.0,
+"max": 99.0,
+"names": [
+"of the Soul"
+],
+"also": [],
+"token": "t you h",
+"line": "hits against you have #% reduced critical damage bonus",
+"text": "hits against you have #% reduced critical damage bonus"
+},
+{
 "id": "ChanceToTakeCriticalStrikeUpdated",
 "side": "suffix",
 "lines": [
@@ -14381,9 +16438,49 @@
 "of Ulaman"
 ],
 "also": [],
-"token": "t y",
+"token": "ts h",
 "line": "hits have #% reduced critical hit chance against you",
 "text": "hits have #% reduced critical hit chance against you"
+},
+{
+"id": "RageLossDelay",
+"side": "suffix",
+"lines": [
+"inherent rage loss starts # seconds later"
+],
+"tags": [
+"Helmet",
+"Vorana's Carnage"
+],
+"min": 1.0,
+"max": 5.0,
+"names": [
+"of the Berserker"
+],
+"also": [],
+"token": "inh",
+"line": "inherent rage loss starts # seconds later",
+"text": "inherent rage loss starts # seconds later"
+},
+{
+"id": "InvocationMaximumEnergy",
+"side": "suffix",
+"lines": [
+"invocated skills have #% increased maximum energy"
+],
+"tags": [
+"Otherworldly",
+"Ring"
+],
+"min": 25.0,
+"max": 35.0,
+"names": [
+"of Vastness"
+],
+"also": [],
+"token": "ted sk",
+"line": "invocated skills have #% increased maximum energy",
+"text": "invocated skills have #% increased maximum energy"
 },
 {
 "id": "LifeLeechPermyriad",
@@ -14407,6 +16504,48 @@
 "token": "k damage as l",
 "line": "leech #% of physical attack damage as life",
 "text": "leech #% of physical attack damage as life"
+},
+{
+"id": "LeechAndLeechSpeed",
+"side": "suffix",
+"lines": [
+"leech #% of physical attack damage as life",
+"leech life #% faster"
+],
+"tags": [
+"Gloves",
+"Katla's Gloom"
+],
+"min": 8.0,
+"max": 12.0,
+"names": [
+"of Decay"
+],
+"also": [],
+"token": "k damage as l",
+"line": "leech #% of physical attack damage as life",
+"text": "leech #% of physical attack damage as life / leech life #% faster"
+},
+{
+"id": "LeechAndLeechSpeed~2",
+"side": "suffix",
+"lines": [
+"leech #% of physical attack damage as life",
+"leech life #% slower"
+],
+"tags": [
+"Gloves",
+"Katla's Gloom"
+],
+"min": 8.0,
+"max": 12.0,
+"names": [
+"of Decay"
+],
+"also": [],
+"token": "k damage as l",
+"line": "leech #% of physical attack damage as life",
+"text": "leech #% of physical attack damage as life / leech life #% slower"
 },
 {
 "id": "ManaLeechPermyriad",
@@ -14476,6 +16615,26 @@
 "text": "leeches #% of physical damage as mana"
 },
 {
+"id": "LightningDamageCanIgnite",
+"side": "suffix",
+"lines": [
+"lightning damage from hits also contributes to flammability and ignite magnitudes"
+],
+"tags": [
+"Alloy",
+"Any"
+],
+"min": null,
+"max": null,
+"names": [
+"of the Stars"
+],
+"also": [],
+"token": "ontr",
+"line": "lightning damage from hits also contributes to flammability and ignite magnitudes",
+"text": "lightning damage from hits also contributes to flammability and ignite magnitudes"
+},
+{
 "id": "AdditionalAmmo",
 "side": "suffix",
 "lines": [
@@ -14514,17 +16673,61 @@
 "text": "loads an additional bolt"
 },
 {
+"id": "MarkDuration",
+"side": "suffix",
+"lines": [
+"mark skills have #% increased skill effect duration"
+],
+"tags": [
+"Gloves",
+"Kolr's Hunt"
+],
+"min": 50.0,
+"max": 100.0,
+"names": [
+"of the Hunt"
+],
+"also": [],
+"token": "^mark skills have \\d+% increased skill effect duration$",
+"line": "mark skills have #% increased skill effect duration",
+"rx": true,
+"text": "mark skills have #% increased skill effect duration"
+},
+{
+"id": "MarkUseSpeed",
+"side": "suffix",
+"lines": [
+"mark skills have #% increased use speed"
+],
+"tags": [
+"Gloves",
+"Kolr's Hunt"
+],
+"min": 13.0,
+"max": 39.0,
+"names": [
+"of the Hunt"
+],
+"also": [],
+"token": "d us",
+"line": "mark skills have #% increased use speed",
+"text": "mark skills have #% increased use speed"
+},
+{
 "id": "MinionCooldownRecoveryRate",
 "side": "suffix",
 "lines": [
 "minions have #% increased cooldown recovery rate"
 ],
 "tags": [
-"Amulet"
+"Amulet",
+"Otherworldly",
+"Ring"
 ],
 "min": 12.0,
-"max": 20.0,
+"max": 29.0,
 "names": [
+"of Invigoration",
 "of Kurgal"
 ],
 "also": [],
@@ -14532,6 +16735,26 @@
 "line": "minions have #% increased cooldown recovery rate",
 "rx": true,
 "text": "minions have #% increased cooldown recovery rate"
+},
+{
+"id": "MinionDamagingAilments~2",
+"side": "suffix",
+"lines": [
+"minions have #% increased magnitude of damaging ailments"
+],
+"tags": [
+"Alloy",
+"Any"
+],
+"min": 40.0,
+"max": 49.0,
+"names": [
+"of the Stars"
+],
+"also": [],
+"token": "lments$",
+"line": "minions have #% increased magnitude of damaging ailments",
+"text": "minions have #% increased magnitude of damaging ailments"
 },
 {
 "id": "MinionLife",
@@ -14557,6 +16780,67 @@
 "line": "minions have #% increased maximum life",
 "rx": true,
 "text": "minions have #% increased maximum life"
+},
+{
+"id": "MinionCommandSkillSpeed",
+"side": "suffix",
+"lines": [
+"minions have #% increased skill speed with command skills"
+],
+"tags": [
+"Otherworldly",
+"Ring"
+],
+"min": 20.0,
+"max": 30.0,
+"names": [
+"of Punctuality"
+],
+"also": [],
+"token": "h co",
+"line": "minions have #% increased skill speed with command skills",
+"text": "minions have #% increased skill speed with command skills"
+},
+{
+"id": "MinionAdditionalProjectileChance",
+"side": "suffix",
+"lines": [
+"minions have +#% surpassing chance to fire an additional projectile"
+],
+"tags": [
+"Belt",
+"Otherworldly"
+],
+"min": 50.0,
+"max": 100.0,
+"names": [
+"of Scattering"
+],
+"also": [],
+"token": "^minions have \\+\\d+% surpassing chance to fire an additional projectile$",
+"line": "minions have +#% surpassing chance to fire an additional projectile",
+"rx": true,
+"text": "minions have +#% surpassing chance to fire an additional projectile"
+},
+{
+"id": "MinionMeleeSplash",
+"side": "suffix",
+"lines": [
+"minions' strikes have melee splash"
+],
+"tags": [
+"Belt",
+"Otherworldly"
+],
+"min": null,
+"max": null,
+"names": [
+"of Ravaging"
+],
+"also": [],
+"token": "ns'",
+"line": "minions' strikes have melee splash",
+"text": "minions' strikes have melee splash"
 },
 {
 "id": "DeflectDamageTaken",
@@ -14596,6 +16880,46 @@
 "token": "ks h",
 "line": "projectile attacks have a #% chance to fire two additional projectiles while moving",
 "text": "projectile attacks have a #% chance to fire two additional projectiles while moving"
+},
+{
+"id": "ForkingProjectiles",
+"side": "suffix",
+"lines": [
+"projectiles have #% chance for an additional projectile when forking"
+],
+"tags": [
+"Gloves",
+"Kolr's Hunt"
+],
+"min": 25.0,
+"max": 100.0,
+"names": [
+"of the Hunt"
+],
+"also": [],
+"token": "or an",
+"line": "projectiles have #% chance for an additional projectile when forking",
+"text": "projectiles have #% chance for an additional projectile when forking"
+},
+{
+"id": "ChainFromTerrain~2",
+"side": "suffix",
+"lines": [
+"projectiles have #% chance to chain an additional time from terrain"
+],
+"tags": [
+"Gloves",
+"Kolr's Hunt"
+],
+"min": 10.0,
+"max": 32.0,
+"names": [
+"of the Hunt"
+],
+"also": [],
+"token": "terr",
+"line": "projectiles have #% chance to chain an additional time from terrain",
+"text": "projectiles have #% chance to chain an additional time from terrain"
 },
 {
 "id": "ProjectileCriticalDamageCloseRange",
@@ -14639,6 +16963,26 @@
 "text": "projectiles have #% increased critical hit chance against enemies further than #m"
 },
 {
+"id": "WardOnBlock",
+"side": "suffix",
+"lines": [
+"recover # runic ward when you block"
+],
+"tags": [
+"Alloy",
+"Any"
+],
+"min": 10.0,
+"max": 15.0,
+"names": [
+"of the Stars"
+],
+"also": [],
+"token": "rd when y",
+"line": "recover # runic ward when you block",
+"text": "recover # runic ward when you block"
+},
+{
 "id": "RecoverPercentMaxLifeOnKill",
 "side": "suffix",
 "lines": [
@@ -14673,9 +17017,29 @@
 "of Ulaman"
 ],
 "also": [],
-"token": "fe w",
+"token": "e when you e",
 "line": "recover #% of maximum life when you expend at least # combo",
 "text": "recover #% of maximum life when you expend at least # combo"
+},
+{
+"id": "RecoverLifeOnWarcry",
+"side": "suffix",
+"lines": [
+"recover #% of maximum life when you use a warcry"
+],
+"tags": [
+"Helmet",
+"Vorana's Carnage"
+],
+"min": 2.0,
+"max": 5.0,
+"names": [
+"of the Berserker"
+],
+"also": [],
+"token": "cry$",
+"line": "recover #% of maximum life when you use a warcry",
+"text": "recover #% of maximum life when you use a warcry"
 },
 {
 "id": "ManaGainedOnKillPercentage",
@@ -14712,7 +17076,7 @@
 "of Kurgal"
 ],
 "also": [],
-"token": "a w",
+"token": "na w",
 "line": "recover #% of maximum mana when you expend at least # combo",
 "text": "recover #% of maximum mana when you expend at least # combo"
 },
@@ -14723,18 +17087,61 @@
 "remnants can be collected from #% further away"
 ],
 "tags": [
+"Alloy",
 "Amulet",
+"Any",
 "Ring"
 ],
 "min": 20.0,
-"max": 30.0,
+"max": 50.0,
 "names": [
-"of Amanamu"
+"of Amanamu",
+"of the Stars"
 ],
 "also": [],
 "token": "awa",
 "line": "remnants can be collected from #% further away",
 "text": "remnants can be collected from #% further away"
+},
+{
+"id": "SealGainFrequency",
+"side": "suffix",
+"lines": [
+"sealed skills have #% increased seal gain frequency"
+],
+"tags": [
+"Belt",
+"Otherworldly"
+],
+"min": 21.0,
+"max": 35.0,
+"names": [
+"of Expectation"
+],
+"also": [],
+"token": "freq",
+"line": "sealed skills have #% increased seal gain frequency",
+"text": "sealed skills have #% increased seal gain frequency"
+},
+{
+"id": "AdditionalMaximumSeals",
+"side": "suffix",
+"lines": [
+"sealed skills have +# to maximum seals"
+],
+"tags": [
+"Amulet",
+"Otherworldly"
+],
+"min": 1.0,
+"max": 1.0,
+"names": [
+"of Esh"
+],
+"also": [],
+"token": "eals",
+"line": "sealed skills have +# to maximum seals",
+"text": "sealed skills have +# to maximum seals"
 },
 {
 "id": "StunningHitsWithShieldSkillsFullyBreakArmour",
@@ -14751,9 +17158,49 @@
 "of Amanamu"
 ],
 "also": [],
-"token": "hey",
+"token": "get",
 "line": "shield skills fully break armour when they heavy stun targets",
 "text": "shield skills fully break armour when they heavy stun targets"
+},
+{
+"id": "ChargeChanceToNotConsume",
+"side": "suffix",
+"lines": [
+"skills have #% chance to not remove charges but still count as consuming them"
+],
+"tags": [
+"Boots",
+"Uhtred's Sidereus"
+],
+"min": 7.0,
+"max": 15.0,
+"names": [
+"of Chronomancy"
+],
+"also": [],
+"token": "hem$",
+"line": "skills have #% chance to not remove charges but still count as consuming them",
+"text": "skills have #% chance to not remove charges but still count as consuming them"
+},
+{
+"id": "ChanceToNotConsumeInfusionIfLostArchonPast6Seconds",
+"side": "suffix",
+"lines": [
+"skills have #% chance to not remove elemental infusions but still count as consuming them if you've lost an archon buff in the past # seconds"
+],
+"tags": [
+"Belt",
+"Otherworldly"
+],
+"min": 40.0,
+"max": 50.0,
+"names": [
+"of Reverberation"
+],
+"also": [],
+"token": "ve e",
+"line": "skills have #% chance to not remove elemental infusions but still count as consuming them if you've lost an archon buff in the past # seconds",
+"text": "skills have #% chance to not remove elemental infusions but still count as consuming them if you've lost an archon buff in the past # seconds"
 },
 {
 "id": "AdditionalFissureChance",
@@ -14781,17 +17228,84 @@
 "spell skills have #% increased area of effect"
 ],
 "tags": [
+"Alloy",
+"Any",
 "Weapon"
 ],
 "min": 8.0,
 "max": 16.0,
 "names": [
-"of Amanamu"
+"of Amanamu",
+"of the Stars"
 ],
 "also": [],
-"token": "d area of effect$",
+"token": "^spell skills have \\d+% increased area of effect$",
 "line": "spell skills have #% increased area of effect",
+"rx": true,
 "text": "spell skills have #% increased area of effect"
+},
+{
+"id": "BellHitLimit",
+"side": "suffix",
+"lines": [
+"tempest bells are destroyed after an additional # hits"
+],
+"tags": [
+"Alloy",
+"Any"
+],
+"min": 4.0,
+"max": 5.0,
+"names": [
+"of the Stars"
+],
+"also": [],
+"token": "oye",
+"line": "tempest bells are destroyed after an additional # hits",
+"text": "tempest bells are destroyed after an additional # hits"
+},
+{
+"id": "TemporaryMinionLimit",
+"side": "suffix",
+"lines": [
+"temporary minion skills have +# to limit of minions summoned"
+],
+"tags": [
+"Alloy",
+"Any",
+"Otherworldly",
+"Ring"
+],
+"min": 1.0,
+"max": 2.0,
+"names": [
+"of Multitudes",
+"of the Stars"
+],
+"also": [],
+"token": "mpor",
+"line": "temporary minion skills have +# to limit of minions summoned",
+"text": "temporary minion skills have +# to limit of minions summoned"
+},
+{
+"id": "WarcryAreaOfEffect",
+"side": "suffix",
+"lines": [
+"warcry skills have #% increased area of effect"
+],
+"tags": [
+"Helmet",
+"Vorana's Carnage"
+],
+"min": 15.0,
+"max": 50.0,
+"names": [
+"of the Berserker"
+],
+"also": [],
+"token": "y sk",
+"line": "warcry skills have #% increased area of effect",
+"text": "warcry skills have #% increased area of effect"
 },
 {
 "id": "HeavyStunDecayRate",

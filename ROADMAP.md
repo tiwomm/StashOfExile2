@@ -268,7 +268,7 @@ Order (decided 2026-11-05): the page passes, then the Privacy & data hub, then t
 | 2.132.3 | Ritual Identifier (BETA). What's new in keywords. |
 | 2.132.4 | Overlay Settings name; Ritual Identifier is a Ritual helper option. |
 | 2.132.5 | Shorter helper and tooltip text. |
-| 2.135.1 | No fades: Reduce motion is always on, its switch is gone. |
+| 2.135.1 | No fades (Reduce motion always on); Regex: Genesis Tree, warping rune and Alloy mods. |
 | 2.135.0 | Page windows stay with the app; Scan stash out of BETA, Count currency in More; Temple crystals in runs. |
 | 2.134.1 | Update question: What's new only, checksums stay on the release page. |
 | 2.134.0 | Music Controls (BETA): ⏮ ⏯ ⏭ in a small window over the game. |
