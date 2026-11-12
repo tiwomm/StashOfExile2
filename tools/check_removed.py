@@ -25,6 +25,9 @@ DOCS = ("README.md", "TOS.md", "linux/README.md", "themes/README.md", "strats/RE
 
 # (version, what it was, words a person read, names in the code / settings keys[, pending])
 REMOVED = [
+    ("2.135.1", "Reduce motion (Settings › Appearance › Motion) and the short fades it switched off - nothing fades now",
+     ("Reduce motion makes them appear at once",), ("fade_in", "reduce_motion_var", "on_reduce_motion",
+                                                     "windows_animations", "FADE_STEPS")),
     ("2.132.7", "the Regex key window (1-4 favorites per key, typed into the stash search one per press)",
      ("each press types the next one", "+ Add a favorite", "No favorites on this key yet"),
      ("rx_keys_dialog", "rx_keys_win", "rx_keys_state", "MAX_PER_KEY", "type_search", "_rx_key_pos")),

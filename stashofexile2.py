@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU AGPL v3.0 (see LICENSE; up to 2.129.4: GNU GPL v3.0). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.135.0
+VERSION 2.135.1
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,6 +19,16 @@ VERSION 2.135.0
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.135.1
+       - Motion (feedback: "reduce motion ... should have that enabled by default and remove the toggle for it from
+         Settings > Appearance"): tooltips, toasts and windows over the game appear at once for everyone. The fade
+         (motion.fade_in), Settings › Appearance › Motion and its switch are gone; migrations drop "reduce_motion".
+       - Regex (feedback: "regex needs the breach tree mods added to it, genesis tree prefix/suffix and otherworldly,
+         also all of the alloy/thruds might+similar items mods"): gear gets the mods that never roll on their own -
+         the Genesis Tree's 32 Otherworldly ring / amulet / belt mods, the warping runes' (Thrud's Might, Vorana's
+         Carnage, Katla's Gloom, Kolr's Hunt, Medved's Tending, Uhtred's Sidereus) and the Verisium Alloys'. Each has
+         its slot and its source word in the Where column (searchable). tools/build_regexdata.py special_gear_tags;
+         regexdata.json rebuilt from RePoE (gear 327 -> 445 mods).
   2.135.0
        - Page windows (feedback: moved the app while a price check ran and the Price Checks window stayed where it
          was - "address that issue globally"): the main area's place comes from Windows (shell.win_rect; Tk's numbers
@@ -3676,7 +3686,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.135.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.135.1"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 

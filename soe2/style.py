@@ -822,8 +822,6 @@ class Tooltip:
         tk.Label(self.win, text=self.text, bg=bg, fg=fg, font=("Segoe UI", SMALL), justify="left",
                  wraplength=420, padx=8, pady=4, highlightthickness=1, highlightbackground=edge).pack()
         place_near(self.w.winfo_toplevel(), self.win, x, y)
-        from .motion import fade_in
-        fade_in(self.win, 1.0)
         self.w.after(400, self._watch)
 
     def _watch(self):
