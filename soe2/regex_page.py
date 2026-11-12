@@ -6,6 +6,7 @@ import time
 import tkinter as tk
 from tkinter import simpledialog, ttk
 
+from . import buglog
 from . import regex as R
 from .clipboard import read_clipboard_text
 from .config import load_json, save_json, SETTINGS
@@ -13,7 +14,7 @@ from .style import C, MONO, SegBar, Tooltip, flowify
 from .chrome import section as chrome_section
 from .share_page import VIEWS as SHARE_VIEWS
 
-MAX_KEYS, MAX_PER_KEY = 6, 4             # 2.132.6 Regex keys
+MAX_KEYS = 4                             # 2.132.7 Regex keys: one favorite each, pressed = copied
 KIND_NAMES = {"tablet": "Tablets", "waystone": "Waystones", "relic": "Relics", "jewel": "Jewels",
               "gear": "Gear items"}                         # 2.22.0: jewels and gear
 STATE_FILE, PRESETS_FILE = "regex_state.json", "regex_presets.json"
@@ -95,11 +96,11 @@ class RegexPage:
         self.rx_test_out.pack(side="left", fill="x", expand=True, padx=(16, 0))
         self.rx_test_out.bind("<Configure>", lambda e: self.rx_test_out.config(wraplength=max(200, e.width - 8)))
         self.rx_pick_btn = ttk.Button(info, text="Select its mods", command=self.rx_tick_item)
-        # 2.132.6: Regex keys live on Favorites (⌨ Key…) - a key types a favorite in the stash search
+        # 2.132.6: Regex keys live on Favorites (⌨ Key…) - 2.132.7: a key copies its favorite
         hk = tk.Frame(res, bg=P2)
         hk.pack(fill="x", pady=(8, 0))
         sm = ("Segoe UI", 9)
-        tk.Label(hk, text="Regex keys: save it to Favorites, then", bg=P2, fg=C["muted"], font=sm).pack(side="left")
+        tk.Label(hk, text="A key that copies it: save it to Favorites, then", bg=P2, fg=C["muted"], font=sm).pack(side="left")
         go = tk.Label(hk, text="⌨ Key…", bg=P2, fg=C["accent"], font=sm, cursor="hand2")
         go.pack(side="left", padx=(4, 0))
         go.bind("<Button-1>", lambda e: self.rx_page.pick("★ Favorites"))
@@ -693,11 +694,17 @@ class RegexPage:
     def _rx_key_text(self):
         """(Settings › Keybinds changed a key: the Key column follows.)"""
         self.rx_fill_favorites()
+
     def rx_keys(self):
+        """2.132.7 (feedback: "All I wanted was the ability to add keybinds to 1-4 favorite regex buttons that when
+        pressed would copy its regex to clipboard"): up to 4 Regex keys, one favorite each -> [{"key", "fav"}]."""
         out = []
         for k in SETTINGS.get("regex_keys") or []:
-            if isinstance(k, dict):
-                out.append({"key": str(k.get("key") or ""), "favs": [str(x) for x in k.get("favs") or []][:MAX_PER_KEY]})
+            if not isinstance(k, dict):
+                continue
+            fav = k.get("fav") or next(iter(k.get("favs") or []), "")      # (2.132.6 kept a list per key)
+            if fav:
+                out.append({"key": str(k.get("key") or ""), "fav": str(fav)})
         SETTINGS["regex_keys"] = out[:MAX_KEYS]
         return SETTINGS["regex_keys"]
 
@@ -713,140 +720,60 @@ class RegexPage:
             return (parts[2], self.rx_fav_search(f)) if f else (parts[2], "")
         return self.rx_search_for(ref)
 
-    def rx_key_press(self, i, now=None):
-        """Regex key i was pressed in game: the next of its favorites goes into the stash search."""
+    def rx_key_press(self, i):
+        """Regex key i was pressed in game: its favorite goes on the clipboard (Ctrl+V in the stash search)."""
         keys = self.rx_keys()
-        if i >= len(keys) or not keys[i]["favs"]:
+        if i >= len(keys):
             return None
-        pos = getattr(self, "_rx_key_pos", {})
-        n = pos.get(i, -1) + 1
-        favs = keys[i]["favs"]
-        n %= len(favs)
-        pos[i] = n
-        self._rx_key_pos = pos
-        name, s = self.rx_ref_search(favs[n])
+        name, s = self.rx_ref_search(keys[i]["fav"])
         if not s:
-            self.toast.show("Nothing to search", [f"\"{name}\" is empty."], C["red"], 4)
+            self.toast.show("Nothing to copy", [f"\"{name}\" is empty."], C["red"], 4)
             return None
-        from .overlay import type_search
+        from .clipboard import write_clipboard_text
         self.ignore_clip(s)
         self.own_clip = s
-        type_search(s)
-        self.toast.show("Stash search", [f"{name}" + (f"  ({n + 1}/{len(favs)})" if len(favs) > 1 else "")],
-                        C["accent"], 3)
+        write_clipboard_text(s)
+        self.toast.show("Copied", [f"{name} - Ctrl+V in the stash search"], C["accent"], 3)
         return name, s
 
     def rx_key_hit(self, vk, ctrl, alt, shift):
         """From the key watcher: is this a Regex key? -> its index or None."""
         from .overlay import parse_key
         for i, k in enumerate(self.rx_keys()):
-            if k["key"] and parse_key(k["key"]) == (vk, ctrl, alt, shift) and k["favs"]:
+            if k["key"] and parse_key(k["key"]) == (vk, ctrl, alt, shift):
                 return i
         return None
 
-    def rx_keys_dialog(self, ref=None):
-        """⌨ Key…: which Regex key, its favorites in order (up to 4), and its key (set in Settings › Keybinds)."""
-        w = tk.Toplevel(self.root)
-        w.title("Regex key")
-        w.configure(bg=C["panel"])
-        w.transient(self.root)
-        P1 = C["panel"]
-        keys = [dict(k, favs=list(k["favs"])) for k in self.rx_keys()]
-        if not keys:
-            keys.append({"key": "", "favs": []})
-        slot = next((i for i, k in enumerate(keys) if ref and ref in k["favs"]), 0)
-        if ref and not any(ref in k["favs"] for k in keys) and len(keys[slot]["favs"]) >= MAX_PER_KEY:
-            keys.append({"key": "", "favs": []})
-            slot = len(keys) - 1
-        if ref and ref not in keys[slot]["favs"]:
-            keys[slot]["favs"].append(ref)
-        st = {"slot": slot}
-        top = tk.Frame(w, bg=P1)
-        top.pack(fill="x", padx=12, pady=(12, 4))
-        tk.Label(top, text="Key", bg=P1, fg=C["muted"]).pack(side="left")
-        names = lambda: [f"Regex key {i + 1}" + (f" ({k['key']})" if k["key"] else "") for i, k in enumerate(keys)] + \
-            (["+ New key"] if len(keys) < MAX_KEYS else [])                 # noqa: E731
-        pick = ttk.Combobox(top, state="readonly", width=22, values=names())
-        pick.pack(side="left", padx=8)
-        ch = ttk.Button(top, text="Change key…", command=lambda: (save(close=False), w.destroy(),
-                                                                 self.hotkeys_open(f"rxkey:{st['slot']}")))
-        ch.pack(side="left")
-        Tooltip(ch, "Set it in Settings › Keybinds")
-        lst = tk.Frame(w, bg=P1)
-        lst.pack(fill="x", padx=12, pady=4)
-
-        def draw():
-            for c in lst.winfo_children():
-                c.destroy()
-            favs = keys[st["slot"]]["favs"]
-            for n, r in enumerate(favs):
-                row = tk.Frame(lst, bg=P1)
-                row.pack(fill="x", pady=1)
-                tk.Label(row, text=f"{n + 1}", bg=P1, fg=C["muted"], width=2).pack(side="left")
-                tk.Label(row, text=self.rx_ref_label(r), bg=P1, fg=C["text"], anchor="w").pack(side="left", fill="x",
-                                                                                               expand=True)
-                for t, d in (("↑", -1), ("↓", 1)):
-                    b = ttk.Button(row, text=t, width=3, command=lambda n=n, d=d: move(n, d))
-                    b.pack(side="left")
-                    Tooltip(b, "Move up" if d < 0 else "Move down")
-                x = ttk.Button(row, text="✕", width=3, command=lambda n=n: (favs.pop(n), draw()))
-                x.pack(side="left", padx=(4, 0))
-                Tooltip(x, "Take it off this key")
-            if not favs:
-                tk.Label(lst, text="No favorites on this key yet.", bg=P1, fg=C["muted"]).pack(anchor="w")
-            pick.config(values=names())
-            pick.current(st["slot"])
-            add.config(state="disabled" if len(favs) >= MAX_PER_KEY else "readonly")
-
-        def move(n, d):
-            favs = keys[st["slot"]]["favs"]
-            m = n + d
-            if 0 <= m < len(favs):
-                favs[n], favs[m] = favs[m], favs[n]
-                draw()
-
-        def picked(_e=None):
-            i = pick.current()
-            if i >= len(keys):
-                keys.append({"key": "", "favs": []})
-            st["slot"] = min(i, len(keys) - 1)
-            draw()
-        pick.bind("<<ComboboxSelected>>", picked)
-        arow = tk.Frame(w, bg=P1)
-        arow.pack(fill="x", padx=12, pady=(4, 8))
-        tk.Label(arow, text="+ Add a favorite", bg=P1, fg=C["muted"]).pack(side="left")
-        refs = [f"preset:{f['kind']}:{f['name']}" for f in self.rx_favs]
-        add = ttk.Combobox(arow, state="readonly", width=30, values=[self.rx_ref_label(r) for r in refs])
-        add.pack(side="left", padx=8)
-
-        def added(_e=None):
-            i = add.current()
-            favs = keys[st["slot"]]["favs"]
-            if 0 <= i < len(refs) and refs[i] not in favs and len(favs) < MAX_PER_KEY:
-                favs.append(refs[i])
-            add.set("")
-            draw()
-        add.bind("<<ComboboxSelected>>", added)
-        tk.Label(w, text="In game, each press types the next one in the stash search.", bg=P1, fg=C["muted"],
-                 font=("Segoe UI", 9)).pack(anchor="w", padx=12)
-
-        def save(close=True):
-            SETTINGS["regex_keys"] = [k for k in keys if k["favs"] or k["key"]][:MAX_KEYS]
+    def rx_key_assign(self, ref):
+        """⌨ Key…: this favorite gets a Regex key (its own, or the next free of 4); Settings › Keybinds opens on its
+        row, waiting for the key."""
+        keys = self.rx_keys()
+        i = next((n for n, k in enumerate(keys) if k["fav"] == ref), None)
+        if i is None:
+            if len(keys) < MAX_KEYS:
+                keys.append({"key": "", "fav": ref})
+                i = len(keys) - 1
+            else:                                              # a slot with no key is free
+                i = next((n for n, k in enumerate(keys) if not k["key"]), None)
+                if i is None:
+                    self._say(f"All {MAX_KEYS} Regex keys are used. Clear one in Settings › Keybinds (right-click its "
+                              "key).", 8)
+                    return None
+                keys[i] = {"key": "", "fav": ref}
             save_json("settings.json", SETTINGS)
-            self._rx_key_pos = {}
-            self.rx_fill_favorites()
-            if hasattr(self, "fill_hotkeys"):
+        if hasattr(self, "fill_hotkeys"):
+            try:
                 self.fill_hotkeys()
-            if close:
-                w.destroy()
-        btns = tk.Frame(w, bg=P1)
-        btns.pack(fill="x", padx=12, pady=(8, 12))
-        ttk.Button(btns, text="Save", style="Primary.TButton", command=save).pack(side="right")
-        ttk.Button(btns, text="Cancel", command=w.destroy).pack(side="right", padx=(0, 8))
-        draw()
-        self.rx_keys_win = w
-        self.rx_keys_state = (keys, st, save)
-        return w
+            except Exception:
+                buglog.caught()
+        self.hotkeys_open(f"rxkey:{i}")
+        row = getattr(self, "hk_rows", {}).get(f"rxkey:{i}")
+        if row and hasattr(row[1], "start"):
+            try:
+                row[1].start()
+            except tk.TclError:
+                pass
+        return i
 
     def rx_load_favorites(self):
         """[{name, kind, state, added}] from regex_favorites.json (or its backup); the first time, the old saved
@@ -979,13 +906,9 @@ class RegexPage:
         self.rx_fill_favorites()
 
     def rx_key_of(self, f):
-        """-> "F6 1/2" if this favorite is on a Regex key."""
+        """-> "F8" if this favorite has a Regex key."""
         ref = f"preset:{f['kind']}:{f['name']}"
-        for k in SETTINGS.get("regex_keys") or []:
-            favs = k.get("favs") or []
-            if ref in favs and k.get("key"):
-                return f"{k['key']} {favs.index(ref) + 1}/{len(favs)}" if len(favs) > 1 else k["key"]
-        return ""
+        return next((k["key"] for k in self.rx_keys() if k["fav"] == ref and k["key"]), "")
 
     def rx_fill_favorites(self):
         tv = getattr(self, "rx_fav_tv", None)
@@ -1137,7 +1060,7 @@ class RegexPage:
         f = (self._rx_fav_sel() or [None])[0]
         if not f or not self._rx_one_mine():
             return self._say("Pick one of yours (Mine) first.", 5)
-        return self.rx_keys_dialog(f"preset:{f['kind']}:{f['name']}")
+        return self.rx_key_assign(f"preset:{f['kind']}:{f['name']}")
 
     def rx_fav_rename(self):
         f = (self._rx_fav_sel() or [None])[0]
@@ -1149,8 +1072,9 @@ class RegexPage:
         old = f"preset:{f['kind']}:{f['name']}"
         f["name"] = self._rx_unique(f["kind"], name.strip())
         new = f"preset:{f['kind']}:{f['name']}"
-        for k in SETTINGS.get("regex_keys") or []:                 # (its Regex key follows it)
-            k["favs"] = [new if x == old else x for x in k.get("favs") or []]
+        for k in self.rx_keys():                                   # (its Regex key follows it)
+            if k["fav"] == old:
+                k["fav"] = new
         save_json("settings.json", SETTINGS)
         self.rx_fav_changed()
 

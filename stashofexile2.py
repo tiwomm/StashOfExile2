@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU AGPL v3.0 (see LICENSE; up to 2.129.4: GNU GPL v3.0). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.132.6
+VERSION 2.132.7
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,6 +19,10 @@ VERSION 2.132.6
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.132.7
+       - Regex keys simplified (feedback: "All I wanted was the ability to add keybinds to 1-4 favorite regex buttons
+         that when pressed would copy its regex to clipboard"): up to 4, one favorite each; a press copies it. Favorites
+         ⌨ Key… opens Settings › Keybinds on its row, waiting for the key. The Regex key window and type_search are gone.
   2.132.6
        - Regex keys (plan, mockup approved): up to 6 keys, each with 1-4 Regex favorites; in game a press types the
          next one in the open stash's search (overlay.type_search: Ctrl+V; your clipboard put back).
@@ -3635,7 +3639,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.132.6"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.132.7"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
