@@ -29,6 +29,32 @@ GEAR_TAGS = {"ring": "Ring", "amulet": "Amulet", "belt": "Belt", "gloves": "Glov
              **{t: "Armour" for t in ("armour", "str_armour", "dex_armour", "int_armour", "str_dex_armour",
                                       "str_int_armour", "dex_int_armour", "str_dex_int_armour")}}
 MULTI = {"jewel": (("misc", "desecrated"), JEWEL_TAGS), "gear": (("item", "desecrated"), GEAR_TAGS)}
+# 2.135.1 (feedback: "regex needs the breach tree mods added to it, genesis tree prefix/suffix and otherworldly, also
+# all of the alloy/thruds might+similar items mods"): gear mods that never roll on their own, so their spawn weights
+# don't say where they go. Each gets its slot(s) and a source word (shown in the list's Where column, and searchable):
+#   - Genesis Tree (Breach): "GenesisTree..." - Otherworldly rings / amulets / belts; the slot is the one of the three
+#     its weights don't name with 0
+#   - Runes of Aldur's warping runes ("Can roll Destruction modifiers" ...): the mods their item tag lets roll
+#   - Verisium Alloys (Expedition): "Alloy..." - "augments a Rare item with a new guaranteed modifier", any gear
+GENESIS_SLOTS = {"ring": "Ring", "amulet": "Amulet", "belt": "Belt"}
+RUNE_TAGS = {"destruction": ("Weapon", "Thrud's Might"), "berserking": ("Helmet", "Vorana's Carnage"),
+             "decay": ("Gloves", "Katla's Gloom"), "marksman": ("Gloves", "Kolr's Hunt"),
+             "soul": ("Body Armour", "Medved's Tending"), "chronomancy": ("Boots", "Uhtred's Sidereus")}
+
+
+def special_gear_tags(mid, m):
+    """-> the tags (slots + source) of a Genesis Tree, warping-rune or Alloy mod, or None for any other mod."""
+    weights = m.get("spawn_weights") or []
+    if mid.startswith("GenesisTree") and not mid.endswith("Crafted") and m.get("domain") == "desecrated":
+        zero = {w["tag"] for w in weights if not w["weight"]}
+        return sorted(v for k, v in GENESIS_SLOTS.items() if k not in zero) + ["Otherworldly"]
+    if m.get("domain") == "item":
+        for w in weights:
+            if w["weight"] and w["tag"] in RUNE_TAGS:
+                return list(RUNE_TAGS[w["tag"]])
+        if mid.startswith("Alloy"):
+            return ["Any", "Alloy"]
+    return None
 GEAR_CLASSES = ("Ring", "Amulet", "Belt", "Gloves", "Boots", "Helmet", "Body Armour", "Shield", "Buckler", "Focus",
                 "Quiver", "One Hand Mace", "Two Hand Mace", "Warstaff", "Spear", "Bow", "Crossbow", "Talisman",
                 "One Hand Sword", "Two Hand Sword", "Dagger", "One Hand Axe", "Two Hand Axe", "Flail", "Staff", "Wand",
@@ -164,7 +190,10 @@ def main(src, out, bases_path=None):
             if m.get("domain") not in doms or m.get("generation_type") not in ("prefix", "suffix") or not m.get("text"):
                 continue
             tags = [w["tag"] for w in m.get("spawn_weights", []) if w["weight"] > 0]
-            if keep is not None:
+            special = special_gear_tags(mid, m) if kind == "gear" else None
+            if special:
+                tags = special
+            elif keep is not None:
                 tags = sorted({keep[t] for t in tags if t in keep})
             if not tags:
                 continue
@@ -204,7 +233,7 @@ def main(src, out, bases_path=None):
                 e["token"] = "^" + re.sub(r"([\\^$.|?*+()\[\]{}])", r"\\\1", main_line).replace("#", r"\d+") + "$"
                 e["line"], e["rx"] = main_line, True
             e["text"] = " / ".join(e["lines"])
-            e["tags"] = sorted(TAG_NAMES.get(t, t) for t in e["tags"])
+            e["tags"] = sorted({TAG_NAMES.get(t, t) for t in e["tags"]})
             e["names"] = sorted(e["names"])
         entries.sort(key=lambda e: (e["side"], e["text"]))
         seen_ids = {}                                       # 2.22.0: one RePoE type can have two texts: unique ids
