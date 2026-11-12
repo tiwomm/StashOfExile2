@@ -371,6 +371,7 @@ class MergedOverlay:
         try:                                                # 2.109.0: Calc and Regex favorites too
             self.calc_ov_restyle()
             self.music_restyle()                            # 2.134.0
+            self.temple_pad_restyle()                       # 2.136.0
             if self.rx_ov_shown():
                 self.rx_ov_show()
         except Exception:

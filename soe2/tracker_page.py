@@ -700,6 +700,7 @@ class TrackerPage:
             self.overlay.restyle()
         self.calc_ov_restyle()                               # 2.74.0: the calculator follows the one lock
         self.music_restyle()                                 # 2.134.0: and Music Controls
+        self.temple_pad_restyle()                            # 2.136.0: and the Temple Notepad
         if getattr(self, "ovr_win", None) is not None:      # 2.96.1 (feedback: it stayed locked): the rates window too
             self.ovr_build()
         if getattr(self, "rx_ov_win", None) is not None:    # 2.127.0: and Regex favorites

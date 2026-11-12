@@ -368,7 +368,11 @@ class AlertsPage:
         self.al_rid = tk.BooleanVar(value=bool(self.ritual_cfg().setdefault("identify", True)))
         self.al_rru = tk.BooleanVar(value=bool(self.remnant_cfg().get("rumours", True)))
         self.al_rtips = tk.BooleanVar(value=bool(self.remnant_cfg().get("tips", True)))
+        from .temple import cfg as _TMc
+        self.al_tpad = tk.BooleanVar(value=bool(_TMc().get("notepad", True)))
         opts = {
+            "temple": [("Temple Notepad", self.al_tpad, lambda: self.temple_pad_set(self.al_tpad.get()),
+                        "A note over the game inside the temple: your crystals, your plan. Only in the temple.")],
             "remnant": [("Island rumors", self.al_rru, lambda: self.ru_changed(self.al_rru.get()),
                          "On the world map's Uncharted Waters card, each rumor gets the island it leads to and your "
                          "Map Library rank for it. Only in your hideout."),
@@ -1129,6 +1133,7 @@ class AlertsPage:
                         last.get("area"), last.get("seed"), last.get("level", 0)))
                     # 2.125.7 (feedback: turned on while at the Well, nothing showed): the Desecration Helper too
                     self.ws_area(last.get("area"))
+                    self.temple_area(last.get("area"))             # 2.136.0: the Temple Notepad
                     i = next((n for n, (k, _t, _d) in enumerate(tail) if _d is last), None)
                     scene = next((d for k, _t, d in (tail[i:] if i is not None else []) if k == "scene"), None)
                     if scene is not None:
@@ -1176,6 +1181,7 @@ class AlertsPage:
                         elif kind == "area":
                             try:
                                 self.ws_area(data.get("area"))        # 2.81.0: the Desecration Helper
+                                self.temple_area(data.get("area"))    # 2.136.0: the Temple Notepad
                                 self.expedition_area(data.get("area"), gl_area_kind(      # 2.83.0: Remnant's places,
                                     data.get("area"), data.get("seed"), data.get("level", 0)))  # Island Rumors
                             except Exception:
