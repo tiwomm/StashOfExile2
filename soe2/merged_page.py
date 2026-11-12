@@ -481,6 +481,13 @@ class MergedOverlay:
         # counter, so the watcher never saw it change): while you're in a map whose Map Content shows Ritual still to
         # do, the bar is left out of captures by itself - the watcher sees the counter under it. Everywhere else (and
         # once every ritual there is done) screenshots and streams show it.
+        # 2.136.1 (feedback: "see through the overlay (the same way ritual does) and read the crystal count"): in a temple
+        # area with the Temple Helper on, the Temple Console's count under the bar is read.
+        try:
+            if getattr(self, "tm_in_temple", False) and self.temple_on():
+                return True
+        except Exception:
+            buglog.caught()
         try:
             from .utilities import RITUAL
             # 2.131.5: the whole Ritual map (done too) - the game's tribute counter under the bar is read as well

@@ -51,7 +51,8 @@ NOTES = {
         "big": [],
         "small": [
             ("Temple Notepad", "Opens in Vaal Ruins too."),
-            ("Crystals", "After a temple run: the old number says so, until you hover a Vaal Beacon."),
+            ("Crystals", "Read from the Temple Console's count in Vaal Ruins, under the overlay."),
+            ("Crystals", "After a temple run: the old number says so until it's read again."),
         ],
     },
     "2.136.0": {

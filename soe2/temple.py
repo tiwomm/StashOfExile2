@@ -40,6 +40,33 @@ def parse(lines):
     return None
 
 
+# 2.136.1 (feedback: "when I'm in the Vaal ruins, it should be able to see through the overlay (the same way ritual
+# does) and read the crystal count at the bottom of the screen"): the Temple Console prints "18/60" under its Run
+# Temple button. Read there (parts of the game; measured on 1080p and 1440p shots) while you're in a temple area.
+CONSOLE_BOX = (0.465, 0.942, 0.555, 0.978)
+CONSOLE_LINE = re.compile(r"(?<!\d)(\d{1,3})\s*[/|l]\s*(\d{2,3})(?!\d)")
+CONSOLE_EVERY = 2000                    # ms between looks
+
+
+def console_box(game):
+    gx, gy, gw, gh = game
+    a = CONSOLE_BOX
+    return gx + int(gw * a[0]), gy + int(gh * a[1]), gx + int(gw * a[2]), gy + int(gh * a[3])
+
+
+def parse_console(lines, most=None):
+    """OCR lines of the console's count -> (have, most) from "18/60", or None. The most must make sense (10-200,
+    and the same as the last read when there is one) and have <= most."""
+    for text, _box in lines or []:
+        m = CONSOLE_LINE.search(" ".join(str(text).split()).replace(" / ", "/"))
+        if not m:
+            continue
+        have, top = int(m.group(1)), int(m.group(2))
+        if 10 <= top <= 200 and 0 <= have <= top and (most is None or top == most):
+            return have, top
+    return None
+
+
 def region(pointer, game):
     """The mouse (x, y) and the game (x, y, w, h) -> (left, top, right, bottom) round the mouse, inside the game."""
     gx, gy, gw, gh = game
