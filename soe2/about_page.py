@@ -8,7 +8,7 @@ from tkinter import ttk
 
 from . import buglog
 from .config import APP_VERSION, pretty_version, save_json, SETTINGS
-from .style import C, FONT_TITLE
+from .style import C, FONT_TITLE, Tooltip
 from .updates import REPO
 
 GITHUB_URL = f"https://github.com/{REPO}"
@@ -129,6 +129,21 @@ class AboutPage:
                  anchor="w").pack(fill="x")                                               # 2.73.2
         tk.Label(head, text=f"Version {pretty_version()}  ·  a toolkit for Path of Exile 2  ·  free and open source "
                             "(AGPL-3.0)", bg=C["panel2"], fg=C["muted"], anchor="w").pack(fill="x")
+        try:                                                     # 2.133.0 (feedback: "An active user count would be nice")
+            from .communitymods import installs
+            got = installs()
+        except Exception:
+            got = None
+        if got:
+            row = tk.Frame(head, bg=C["panel2"])
+            row.pack(fill="x")
+            act = f"  ·  {got[1]} active this week" if got[1] is not None else ""
+            tk.Label(row, text=f"Community: {got[0]} installs share data{act}", bg=C["panel2"], fg=C["muted"],
+                     anchor="w").pack(side="left")
+            ci = tk.Label(row, text="ⓘ", bg=C["panel2"], fg=C["muted"], cursor="question_arrow")
+            ci.pack(side="left", padx=(4, 0))
+            Tooltip(ci, "Only installs with Community data sharing on are counted. Active = sent data in the last 7 "
+                        "days. A count only - nothing about who.")
         btns = tk.Frame(head, bg=C["panel2"])
         btns.pack(fill="x", pady=(8, 0))
         self.about_discord = tk.Label(btns, text="  💬  Join the Discord  ", bg=DISCORD, fg="#ffffff", cursor="hand2",

@@ -278,7 +278,7 @@ def pull(call=None):
     ok2, r = (call or B.call)("GET", "/mods/ratings")
     ok3, mp = (call or B.call)("GET", "/maps/ratings")
     ok4, gm = (call or B.call)("GET", "/gems", {"league": league})      # 2.132.0: pooled gem prices
-    d = {"league": league, "stats": s.get("stats", []), "players": s.get("players", 0),
+    d = {"league": league, "stats": s.get("stats", []), "players": s.get("players", 0), "active": s.get("active"),
          "ratings": r.get("ratings", []) if ok2 else cached().get("ratings", []),
          "maps": mp.get("maps", []) if ok3 else cached().get("maps", []),
          "gems": gm.get("gems", []) if ok4 else cached().get("gems", []), "ts": time.time()}
@@ -327,6 +327,14 @@ def rated_high():
         if total >= VOTE_MIN and (high or 0) / total >= VOTE_SHARE:
             out[key] = (high, total)
     return out
+
+
+def installs():
+    """2.133.0: (installs that ever shared, active in the last 7 days) from the last sync, or None before one."""
+    d = cached()
+    if not d.get("ts"):
+        return None
+    return int(d.get("players") or 0), d.get("active")
 
 
 def stats_count():

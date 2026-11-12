@@ -51,6 +51,7 @@ NOTES = {
         "big": [],
         "small": [
             ("Community", "Data sharing: every price-checked item, gear too. Opt-in, anonymous."),
+            ("About", "Community count: installs sharing data, active this week."),
         ],
     },
     "2.132.8": {
