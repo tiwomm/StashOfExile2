@@ -320,6 +320,10 @@ Most-used first; pages that share data go together so their doubles can be merge
 | P9 | ✅ 2.114.0 - Exchange rates, Notes, Calculator |
 | P10 | ✅ 2.116.0 - Settings (every tab), Privacy & community, About, the welcome / what's new card, first start - plus Settings › Advanced › Developer options (off and hidden until switched on): a Debug mode for Windows and Linux builds (more detail in the error log, a debug line in the status bar, nothing personal logged); an Unmatched mods page - every mod the app couldn't find on the trade list (unmatched_mods.txt) beside the closest trade wording, so each mismatch points at its fix. |
 
+### Next UI/UX pass - notes (collected as they come)
+
+- Map profit on the overlay bar (feedback 2026-11-12: "the profit tracker on the overlay needs some visual improvements"): "+9.8 exalted" sits tight against Avg with no separator, the word "exalted" is long for the bar, and gain vs. loss is shown by color only.
+
 ### Page standard (every pass checks the same things, in this order)
 
 1. **Purpose:** one sentence for what the page is for; one primary action (accent), everything else secondary or quiet.
