@@ -4,7 +4,7 @@
 
 > **Who we build for - read second.** Path of Exile players are utilitarian: they love data and information, problem solving and creative thinking. So every feature shows its numbers *and how they were worked out*, lets you sort, filter, compare and export them (CSV), keeps power-user depth (keys, versions, raw data) one click away instead of hiding it, explains in plain words, and leaves the decision to the player. Pretty is welcome; vague is not.
 
-**Current version: 2.132.8**
+**Current version: 2.133.0**
 
 Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds features, 2.10.1 only fixes. Each step below is one release; we work through them top to bottom.
 
@@ -268,6 +268,7 @@ Order (decided 2026-11-05): the page passes, then the Privacy & data hub, then t
 | 2.132.3 | Ritual Identifier (BETA). What's new in keywords. |
 | 2.132.4 | Overlay Settings name; Ritual Identifier is a Ritual helper option. |
 | 2.132.5 | Shorter helper and tooltip text. |
+| 2.133.0 | Community data: every price-checked item pooled, gear too. |
 | 2.132.8 | Releases: SHA-256 checksums and a VirusTotal scan link. |
 | 2.132.7 | Regex keys: 4 keys, one favorite each, press = copied. |
 | 2.132.6 | Regex keys; shared Regex and trade favorites; one-liner views and tags. |
