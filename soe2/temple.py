@@ -10,7 +10,8 @@ import time
 from .config import SETTINGS, load_json, save_json
 
 STATE_FILE = "temple.json"
-DEFAULTS = {"on": False}
+DEFAULTS = {"on": False, "notepad": True, "notes": "", "pad_x": None, "pad_y": None}
+TEMPLE_AREAS = ("IncursionTemple",)   # 2.136.0: Atziri's Temple, as Client.txt names the area
 LINE = re.compile(r"energi[sz]ed\s+beacons?\s*[:;.]?\s*(\d{1,3})\s*[/|l1]\s*(\d{2,3})", re.I)
 AROUND = (0.25, 0.38, 0.06)        # the part looked at: half its width, up and down from the mouse (parts of the game)
 
