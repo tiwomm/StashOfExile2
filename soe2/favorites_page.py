@@ -82,7 +82,7 @@ class FavoritesPage:
         vrow = tk.Frame(lf, bg=P1)
         vrow.pack(fill="x", pady=(0, 4))
         self.fav_view = SegBar(vrow, list(SHARE_VIEWS), value="Mine", command=lambda v: self.fav_view_changed(),
-                               size=9, pad=(10, 3))
+                               size=9, pad=(8, 4))
         self.fav_view.pack(side="left")
         self.fav_share_bar = tk.Frame(lf, bg=P1)
         self.fav_share_btns = {}
@@ -90,7 +90,7 @@ class FavoritesPage:
                               ("▲ Upvote", self.fav_vote, "Upvote it"),
                               ("Trade Site", self.fav_shared_open, "Open its search on the trade site")):
             b = ttk.Button(self.fav_share_bar, text=text, command=fn)
-            b.pack(side="left", padx=(0, 6))
+            b.pack(side="left", padx=(0, 8))
             Tooltip(b, tip)
             self.fav_share_btns[text] = b
         tv = ttk.Treeview(lf, columns=("price", "when"), show="tree headings", selectmode="extended")
