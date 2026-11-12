@@ -102,11 +102,13 @@ class MusicPage:
         """One click = one command to your media player."""
         w = getattr(self, "mu_win", None)
         hwnd = None
-        try:
-            import ctypes
-            hwnd = ctypes.windll.user32.GetParent(w.winfo_id()) or w.winfo_id()
-        except Exception:
-            pass
+        import sys
+        if sys.platform == "win32" and w is not None:
+            try:
+                import ctypes
+                hwnd = ctypes.windll.user32.GetParent(w.winfo_id()) or w.winfo_id()
+            except Exception:
+                buglog.caught()
         ok = MU.send(what, hwnd)
         b = getattr(self, "mu_btns", {}).get(what)
         if b is not None:
