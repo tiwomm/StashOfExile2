@@ -159,6 +159,11 @@ def _regex_keys_21326(S):
     S.pop("regex_key", None)
 
 
+def _no_motion_21351(S):
+    """2.135.1: nothing fades any more - the Reduce motion switch is gone."""
+    S.pop("reduce_motion", None)
+
+
 STEPS = (
     ("modbook_import", "1.x", "app", _modbook_import, "modbook_imported"),
     ("rules_scoped", "2.6.0", "app", _rules_scoped, "rules_scoped_26"),
@@ -176,6 +181,7 @@ STEPS = (
     ("whispers_after_21292", "2.129.2", "settings", _whispers_after_21292, None),
     ("ritual_id_21324", "2.132.4", "settings", _ritual_id_21324, None),
     ("regex_keys_21326", "2.132.6", "settings", _regex_keys_21326, None),
+    ("no_motion_21351", "2.135.1", "settings", _no_motion_21351, None),
 )
 
 

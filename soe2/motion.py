@@ -3,62 +3,15 @@ caller, App.__init__):
   * Hover: a list row lights under the mouse (every ttk Treeview); a clickable icon or link (a Label with a hand cursor
     - ✕, ↻, ⋯, "Never show again" ...) brightens. Buttons already had hover / pressed faces (themes.make_element).
   * Focus: Tab to a button, switch, box or list and it shows a ring in the accent color (style._setup_style).
-  * Motion: tooltips, toasts and windows over the game fade in over ~150 ms (lists never animate). Settings ›
-    Appearance › Reduce motion turns it off; until you choose, it follows Windows' "Show animations".
+  * Motion: none. (2.135.1, feedback: "reduce motion ... should have that enabled by default and remove the toggle":
+    tooltips, toasts and windows over the game appear at once - the fade and its switch are gone.)
 Nothing here touches the game: it's the app's own windows."""
-import sys
 import tkinter as tk
 
 from .config import SETTINGS
 
-FADE_MS, FADE_STEPS = 150, 6
 HOVER_CURSORS = ("hand2", "hand1")
 _STATE = {"installed": False}
-
-
-def windows_animations():
-    """Windows' own "Show animations in Windows" (SPI_GETCLIENTAREAANIMATION); True off Windows."""
-    if sys.platform != "win32":
-        return True
-    try:
-        import ctypes
-        v = ctypes.c_int(1)
-        ctypes.windll.user32.SystemParametersInfoW(0x1042, 0, ctypes.byref(v), 0)
-        return bool(v.value)
-    except Exception:
-        return True
-
-
-def reduced():
-    """Reduce motion on? Your setting, else Windows' animations switch."""
-    v = SETTINGS.get("reduce_motion")
-    if v is None:
-        return not windows_animations()
-    return bool(v)
-
-
-def fade_in(win, target=None, ms=FADE_MS):
-    """Fade a just-shown Toplevel from clear to its alpha (target, else what it has). Off with Reduce motion."""
-    if reduced():
-        return False
-    try:
-        goal = float(target if target is not None else win.attributes("-alpha"))
-        win.attributes("-alpha", 0.0)
-    except (tk.TclError, ValueError):
-        return False
-    step_ms = max(10, ms // FADE_STEPS)
-
-    def step(i):
-        try:
-            if not win.winfo_exists():
-                return
-            win.attributes("-alpha", goal * min(1.0, i / FADE_STEPS))
-        except tk.TclError:
-            return
-        if i < FADE_STEPS:
-            win.after(step_ms, step, i + 1)
-    step(1)
-    return True
 
 
 def _mix(a, b, t):
