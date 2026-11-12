@@ -675,7 +675,8 @@ class Engine(TabReaderJobs, WealthJobs, StratCostJobs, threading.Thread):
                     raise
                 q = gear.build_query(it_, must_s, opt_s, k, vals, plain=True)   # refused: once more, the simplest form
                 total, ids, qid = gear.run_search(league, q)
-            st = self._stage(item["base"], name, [{"mods": check}], total, ids, qid, hours, league, verify_tot, record=False)
+            st = self._stage(item["base"], name, [{"mods": check}], total, ids, qid, hours, league, verify_tot, record=False,
+                             pool_base=item.get("name") if item.get("rarity") == "Unique" else None)
             st["k"] = k
             stages.append(st)
             if st["n"] >= need:
@@ -787,7 +788,7 @@ class Engine(TabReaderJobs, WealthJobs, StratCostJobs, threading.Thread):
         return (f"Memory: an earlier search ({mmss(time.time() - mem['ts'])} ago, {mem['n']} listings, {mem['mods']} of these mods) "
                 f"found listings from {fmt_div(mem['floor'])}.")
 
-    def _stage(self, base, name, gs, total, ids, qid, hours, league, verify_tot, record=True):
+    def _stage(self, base, name, gs, total, ids, qid, hours, league, verify_tot, record=True, pool_base=None):
         """One search -> fetch -> check the listings really carry the mods -> remember it."""
         mods = [m for g in gs for m in g["mods"]]
         rich = fetch_rich(qid, ids, hours) if total > 0 else []
@@ -809,4 +810,6 @@ class Engine(TabReaderJobs, WealthJobs, StratCostJobs, threading.Thread):
         from .trade import current_opts
         if record and not current_opts():          # 2.4.1: a search narrowed by hand doesn't teach the Mod book
             MARKET.record(base, Market.filters_of(mods), name, total, kept, st["est"])
-        return st
+        else:                                      # 2.133.0 (feedback: "All items should be pooled, gear included"):
+            MARKET.pool(pool_base or base, rich)   # every other search's listings - gear, uniques, waystones, the
+        return st                                  # fallbacks - go to the Community pool only, never the Mod book
