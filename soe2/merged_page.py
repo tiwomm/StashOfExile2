@@ -51,17 +51,23 @@ def hud_k(game_h):
     return max(0.6, min(3.0, (game_h or 1080) / 1080))
 
 
-def set_click_through(w, on):
+def set_click_through(w, on, _tries=0):
     """Windows: mouse clicks pass through the window to whatever is under it (WS_EX_TRANSPARENT on a layered window).
-    GGG ToS: a window style of the app's own window - nothing is sent to the game."""
+    GGG ToS: a window style of the app's own window - nothing is sent to the game.
+    2.133.1 (feedback: "Hollow deep is still causing crashes"): no update_idletasks - it runs layout jobs until none
+    are left, and a theme change that keeps a page laying itself out never let it return (12 s+, "not responding").
+    A window not on screen yet has no frame: tried again in 50 ms, up to 1 s."""
     import sys
     if sys.platform != "win32":
         return False
     try:
         import ctypes
         u = ctypes.windll.user32
-        w.update_idletasks()
-        hwnd = u.GetParent(w.winfo_id()) or w.winfo_id()
+        hwnd = u.GetParent(w.winfo_id())
+        if not hwnd and _tries < 20:
+            w.after(50, lambda: w.winfo_exists() and set_click_through(w, on, _tries + 1))
+            return True
+        hwnd = hwnd or w.winfo_id()
         ex = u.GetWindowLongW(hwnd, -20)
         ex = (ex | 0x20 | 0x80000) if on else (ex & ~0x20)
         u.SetWindowLongW(hwnd, -20, ex)
@@ -69,6 +75,24 @@ def set_click_through(w, on):
     except Exception:
         return False
 
+
+
+def when_laid_out(w, fn, inner=None, tries=0):
+    """2.133.1: run fn once the window is laid out - shown (its width known) and, given inner, at least as big as
+    it - checking once per idle round, up to 60 rounds. Never update_idletasks: that runs layout jobs until none are
+    left, and a theme change that keeps a page laying itself out never let it return. The window stays responsive
+    between rounds whatever the page does."""
+    try:
+        if not w.winfo_exists():
+            return
+        ok = w.winfo_width() > 1 and (inner is None or (w.winfo_reqwidth() >= inner.winfo_reqwidth() and
+                                                         w.winfo_reqheight() >= inner.winfo_reqheight()))
+        if ok or tries >= 60:
+            fn()
+        else:
+            w.after_idle(lambda: when_laid_out(w, fn, inner, tries + 1))
+    except tk.TclError:
+        pass
 
 
 class _Trunc(CanvasText):
@@ -422,10 +446,21 @@ class MergedOverlay:
         """(Re)build the one window from what's on. -> the window, or None when nothing is on. 2.74.0: then
         click-through, as the lock says."""
         w = self._merged_build()
-        try:
-            self.goalbar_build()                             # 2.124.0: the NOW / Campaign / Ritual lines, on top
-        except Exception:
-            self.log_error("the goal bar")
+        if w is not None:                                    # 2.124.0: the NOW / Campaign / Ritual lines, on top -
+            def gb():                                        # 2.133.1: once the window is laid out (after_idle), so
+                if getattr(self, "mg_win", None) is not w:   # nothing forces a layout flush (a theme change froze
+                    return                                   # Windows in one)
+                try:
+                    self.goalbar_build(settled=True)
+                except Exception:
+                    self.log_error("the goal bar")
+            try:
+                inner = next((c for c in w.body.winfo_children() if isinstance(c, tk.Canvas)), None)
+            except (tk.TclError, AttributeError):
+                inner = None
+            when_laid_out(w, gb, inner)
+        else:
+            self.goal_rows = []
         self.overlay_click_through()
         return w
 
@@ -520,13 +555,15 @@ class MergedOverlay:
             w.hide()
             return w
         w.show()
-        if "mx" not in cfg and self.ov_spot() == "right":   # (on the right: its width is known now)
-            try:
-                w.update_idletasks()
-                rx, ry = self.ov_panel_xy(w.winfo_width())
-                w.geometry(f"+{rx}+{ry}")
-            except tk.TclError:
-                pass
+        if "mx" not in cfg and self.ov_spot() == "right":   # (on the right: its width is known once laid out -
+            def right():                                    # 2.133.1: after the waiting layout jobs, not a forced
+                try:                                        # flush that can spin forever on a theme change)
+                    if w.winfo_exists():
+                        rx, ry = self.ov_panel_xy(max(w.winfo_width(), w.winfo_reqwidth()))
+                        w.geometry(f"+{rx}+{ry}")
+                except tk.TclError:
+                    pass
+            when_laid_out(w, right)
         self._mg_on_screen(w)
         return w
 
@@ -549,11 +586,14 @@ class MergedOverlay:
 
     def _mg_on_screen(self, w):
         """2.56.1 (feedback: a locked strip past the screen's edge couldn't be reached): always all on the screen it
-        is on - moved in, and a strip wider than the screen made narrower (never under its minimum)."""
+        is on - moved in, and a strip wider than the screen made narrower (never under its minimum). 2.133.1: once
+        the layout jobs already waiting are done (after_idle), never a forced update_idletasks."""
+        when_laid_out(w, lambda: self._mg_on_screen_now(w))
+
+    def _mg_on_screen_now(self, w):
         from .style import monitor_rect
         cfg = self.tracker_cfg()
         try:
-            w.update_idletasks()
             x, y = w.winfo_x(), w.winfo_y()
             ww, hh = max(w.winfo_width(), w.winfo_reqwidth()), max(w.winfo_height(), w.winfo_reqheight())
             l_, t, r, b = monitor_rect(self.root, x + 10, y + 10, full=True)
