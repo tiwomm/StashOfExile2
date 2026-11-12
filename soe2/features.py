@@ -40,8 +40,8 @@ BETA = (
     {"key": "breaks", "name": "Break reminders", "what": "A kind nudge in long sessions, in your hideout or a town.",
      "modules": (), "was": ("breaks", "on")},
     {"key": "mapprofit", "name": "Map profit", "what": "What each map earned, from your inventory - on your PC only.",
-     "modules": (), "was": ("map_profit", "on")},
-    {"key": "temple", "name": "Temple Helper", "what": "Your crystals on the bar, and a card when they're full.",
+     "modules": ("mapprofit",), "was": ("map_profit", "on")},
+    {"key": "temple", "name": "Temple Helper", "what": "Clear a Vaal Beacon to track your Crystals.",
      "modules": (), "was": ("temple", "on")},
 )
 ALL = GROUPS + BETA

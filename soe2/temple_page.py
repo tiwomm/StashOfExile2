@@ -1,12 +1,8 @@
 """2.132.1 Temple Helper - the watcher (a look round the mouse in maps, for the Vaal Beacon's tooltip), the crystals
 on the line above the bar (2.132.2, with Ritual's - the bar had no room) and the alert card when they're full; its row in Overlay ↳ Overlay Settings › Helpers (temple.py reads)."""
-import tkinter as tk
-from tkinter import ttk
-
 from . import buglog
 from . import temple as TM
 from .config import SETTINGS, save_json
-from .style import C, Tooltip
 
 
 class TemplePage:
@@ -67,23 +63,3 @@ class TemplePage:
                                      "the Vaal Ruins", color="#d9a441", mark="◆", secs=5 if test else 10,
                                      game=game_rect(), tag="Temple", rank=1, vital=True)
         return self.tm_win
-
-    # ---------------------------------------------------------------- Overlay ↳ Overlay Settings › Helpers: its row
-    def temple_row(self, box, bg, CB):
-        sm = ("Segoe UI", 9)
-        row = tk.Frame(box, bg=bg)
-        row.pack(fill="x", pady=(8, 0))
-        self.al_temple = tk.BooleanVar(value=bool(TM.cfg()["on"]))
-        cb = ttk.Checkbutton(row, text="Temple Helper (BETA)", variable=self.al_temple, style=CB,
-                             command=lambda: self.temple_set(bool(self.al_temple.get())))
-        cb.pack(side="left")
-        tb = ttk.Button(row, text="Test", width=6, command=lambda: self.temple_alert(test=True))
-        tb.pack(side="left", padx=(8, 0))
-        info = tk.Label(row, text="ⓘ", bg=bg, fg=C["muted"], font=sm, cursor="question_arrow")
-        info.pack(side="left", padx=(8, 0))
-        tk.Label(box, text="Your crystals (Energised Beacons) on the bar, and a card when they're full.", bg=bg,
-                 fg=C["muted"], font=sm, anchor="w").pack(fill="x")
-        Tooltip(cb, "Hover a Vaal Beacon in a map: its tooltip's \"Energised Beacons: 55/60\" is read. Off until you "
-                    "turn it on.")
-        Tooltip(tb, "Shows the Crystals full card now.")
-        Tooltip(info, "Clear a Vaal Beacon to track your Crystals.")

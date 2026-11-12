@@ -28,10 +28,10 @@ QUICK_TIPS = {"Style": "How the overlay looks over the game",
               "Place": "Where the overlay sits: the Bar on the XP bar or at the top, the Panel left or right. Picking "
                        "one puts it there, wherever you dragged it",
               "Click-through": "Clicks go through the overlay to the game",
-              "notes": "Notes ▾ on the bar: your own notes in a window over the game",
-              "calc": "Calc ▾ on the bar: a small calculator over the game",
-              "regex": "Regex ▾ on the bar: your saved stash searches, one click to copy",
-              "rates": "Rates ▾ on the bar: today's currency exchange rates"}
+              "notes": "Notes ▾ on the overlay: your own notes in a window over the game",
+              "calc": "Calc ▾ on the overlay: a small calculator over the game",
+              "regex": "Regex ▾ on the overlay: your saved stash searches, one click to copy",
+              "rates": "Rates ▾ on the overlay: today's currency exchange rates"}
 
 
 class OverlayQuick:

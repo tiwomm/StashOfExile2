@@ -30,6 +30,18 @@ VERSION HISTORY
          account filter is dropped on the board).
        - Lucrative Strats (feedback: "multiple copies of the same thing"): Official | Community | Mine, each copy
          once; Type & tags on yours.
+       - Ritual Identifier / Temple Helper (feedback: "I need it to just read as I'm potentially running past it";
+         "it currently only tracks the first crystal encounter and then stops"): the whole game is read each second
+         (hover_page.SCREEN); a failed picture (the mouse on another monitor made a negative box) left the look busy
+         for good - now caught. Each map's altars get their cards again.
+       - The Helpers line says HELPERS (was RITUAL / TEMPLE / IN MAP); no ◆ before Crystals.
+       - Temple is a row under Helpers › IN MAPS, after Expedition.
+       - The map's name is never on the overlay (feedback; still known for the rank and the logs); Avg and Maps
+         leave a full overlay before Map profit. "On the bar" says "On the overlay".
+       - Map Profit is a page, Overlay ↳ Map Profit (while it's on): All Time / Daily / Hourly, bars, Delete, Clear
+         all (Undo). Items a covered look sees after the last clear one count toward what you went in with (an omen
+         moved from your stash isn't profit). Items it can't recognize: a hint, and the Top Up key teaches them
+         (with Top Up off too). The app's own log showed every map since had 30-50 unknown cells.
   2.132.5
        - Shorter text (feedback: "nobody needs to know that ... unnecessary unprofessional filler"): the helpers' lines
          and tooltips (one line each now - HELPER_BLURBS is the tooltip too), statuses, the Ritual filter, Favours,
