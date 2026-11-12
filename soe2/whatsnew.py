@@ -47,6 +47,13 @@ BETA_AREAS = ("Wealth", "Money Makers", "Game Search", "Market Insights", "Craft
 # repeats. Someone coming from rollup["since"] or older (or a fresh install) sees it instead of each version; someone
 # on a pre-release already saw them and gets only this version's own lines (notes_between).
 NOTES = {
+    "2.136.2": {
+        "big": [],
+        "small": [
+            ("Map profit", "Temple runs count: Vaal Ruins is your town, Atziri's Temple the map."),
+            ("Session", "Vaal Ruins isn't counted as a map any more."),
+        ],
+    },
     "2.136.1": {
         "big": [],
         "small": [

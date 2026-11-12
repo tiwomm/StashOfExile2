@@ -88,6 +88,9 @@ def is_hideout(area_id, name=""):
 
 
 NOT_MAPS = ("Abyss_Hub",)        # The Well of Souls: a level-65+ area that isn't a run
+# 2.136.2 (feedback: "treat vaal ruins as town/hideout ... and treat atziri's temple as the map"): the endgame Vaal
+# Ruins (level 65, so it looked like a map) is a hub you plan and stash in - a town. Atziri's Temple stays a map.
+HUBS = ("IncursionHubEndgame",)
 
 
 def area_kind(area_id, seed, level=0):
@@ -95,6 +98,8 @@ def area_kind(area_id, seed, level=0):
     a = area_id or ""
     if is_hideout(a):
         return "hideout"
+    if a in HUBS:
+        return "town"
     if a in NOT_MAPS:                                    # 2.131.5 (feedback: "showed up after well of souls (not a
         return "other"                                   # map, just an area)")
     if seed == 1:
