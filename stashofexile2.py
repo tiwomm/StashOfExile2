@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU AGPL v3.0 (see LICENSE; up to 2.129.4: GNU GPL v3.0). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.132.8
+VERSION 2.133.0
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,6 +19,13 @@ VERSION 2.132.8
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.133.0
+       - Community pool, every item (feedback: "All items should be pooled, gear included"): gear, uniques (by name),
+         waystones and the fallback searches now go to market.db's pool table and up with the hourly summary as
+         "pool:<base>" rows (Community data sharing only, same summary: listings + middle price per mod). Kept apart:
+         the Mod book, Insights and learned Highs never read them; the board leaves them out of /mods/stats.
+       - About (feedback: "An active user count would be nice"): "Community: N installs share data · M active this week"
+         from the hourly sync (/mods/stats "active" = contributors with a batch in the last 7 days). Sharing installs only.
   2.132.8
        - Releases (feedback: "virustotal link and checksums"): SHA256SUMS.txt with each release, the SHA-256 in the
          notes, and the exe sent to VirusTotal (repo secret VT_API_KEY) for a scan link. tools/release_notes.py --sha / --vt.
@@ -3642,7 +3649,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.132.8"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.133.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 

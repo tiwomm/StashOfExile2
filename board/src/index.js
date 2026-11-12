@@ -1156,7 +1156,9 @@ async function gemPrices(url, env) {
 async function modStats(url, env) {
   const league = String(url.searchParams.get("league") || "").slice(0, 60);
   const bases = await env.DB.prepare("SELECT base, n, w, slog, batches FROM base_prices WHERE league = ?").bind(league).all();
-  const rows = await env.DB.prepare("SELECT base, sid, n, w, slog, batches FROM mod_prices WHERE league = ? AND n >= 3")
+  // 2.133.0: "pool:" rows (gear, uniques, fallback searches) are kept for later study, not sent to every install
+  const rows = await env.DB.prepare(`SELECT base, sid, n, w, slog, batches FROM mod_prices WHERE league = ? AND n >= 3
+    AND base NOT LIKE 'pool:%'`)
     .bind(league).all();
   const typical = {};
   for (const b of bases.results) if (b.w > 0) typical[b.base] = b.slog / b.w;
@@ -1165,7 +1167,9 @@ async function modStats(url, env) {
     return [r.base, r.sid, r.n, Math.round(Math.exp(lm) * 1000) / 1000,
       base === undefined ? null : Math.round(Math.exp(lm - base) * 100) / 100, r.batches];
   });
-  return json({ league, stats: out, players: (await env.DB.prepare("SELECT COUNT(*) AS n FROM contributors").first()).n });
+  // 2.133.0: installs that sent a summary in the last 7 days (Community data sharing on) - a count, nothing else
+  const active = (await env.DB.prepare("SELECT COUNT(*) AS n FROM contributors WHERE last >= ?").bind(now() - 7 * 86400).first()).n;
+  return json({ league, stats: out, players: (await env.DB.prepare("SELECT COUNT(*) AS n FROM contributors").first()).n, active });
 }
 
 async function mapRatings(env) {

@@ -26,6 +26,8 @@ EVERY = 3600
 UPLOAD_EVERY = 45 * 60      # 2.98.5: "Upload to community" - the board takes one batch per install per 45 min
 MIN_N, MIN_BATCHES = 12, 3            # a pooled price counts once this many listings from this many summaries
 VOTE_MIN, VOTE_SHARE = 3, 0.6
+MAX_PRICES, MAX_BASES = 600, 100      # what the board takes from one batch
+POOL = "pool:"                         # 2.133.0: gear / uniques / fallback searches - never teach the Mod book
 
 _lock = threading.Lock()
 
@@ -39,7 +41,8 @@ WHAT = ("Community data sharing is off until you say yes. If you turn it on, the
 # 2.89.2 (feedback): each thing sent, and what it's for. Keep this list TRUE - every
 # new upload that rides on this switch gets a line here.
 DETAILS = (
-    ("Mod prices your price checks see", "a summary only - how many listings and their middle price, per mod", "better "
+    ("Mod prices your price checks see", "a summary only - how many listings and their middle price, per mod, for any item "
+     "you price-check (gear too)", "better "
      "prices for everyone in the Mod Book, most of all early in a league"),
     ("Your Mod Book ratings", "the S-F tier (F = ignore) you set for a mod", "the pooled ratings that decide which mods "
      "matter"),
@@ -96,21 +99,28 @@ def helped(league=None):
 
 # ---------------------------------------------------------------- what this install sends
 def summary(market, since, league):
-    """Listings your price checks stored since `since` -> (prices, bases, newest ts)."""
+    """Listings your price checks stored since `since` -> (prices, bases, newest ts). 2.133.0: the Mod book's listings
+    first, then the pool's (gear, uniques, fallback searches) fill what's left of the batch."""
     if not market.db:
         return [], [], since
     with market.lock:
         rows = market.db.execute("SELECT base, price_div, sids, seen FROM listings WHERE league=? AND seen>? "
                                  "AND price_div IS NOT NULL ORDER BY seen LIMIT 20000", (league, since)).fetchall()
-    by_pair, by_base, newest = {}, {}, since
-    for base, price, sids, seen in rows:
-        newest = max(newest, seen)
-        by_base.setdefault(base, []).append(price)
-        for sid in json.loads(sids or "[]"):
-            by_pair.setdefault((base, sid), []).append(price)
-    prices = [{"base": b, "sid": s, "n": len(v), "med": round(statistics.median(v), 4)}
-              for (b, s), v in sorted(by_pair.items(), key=lambda kv: -len(kv[1]))][:600]
-    bases = [{"base": b, "n": len(v), "med": round(statistics.median(v), 4)} for b, v in by_base.items()][:100]
+        more = market.db.execute("SELECT base, price_div, sids, seen FROM pool WHERE league=? AND seen>? "
+                                 "AND price_div IS NOT NULL ORDER BY seen LIMIT 20000", (league, since)).fetchall()
+    newest, prices, bases = since, [], []
+    for tag, part in (("", rows), (POOL, more)):        # pool rows go up as "pool:<base>": kept apart on the board
+        by_pair, by_base = {}, {}
+        for base, price, sids, seen in part:
+            base = (tag + base)[:80]
+            newest = max(newest, seen)
+            by_base.setdefault(base, []).append(price)
+            for sid in json.loads(sids or "[]"):
+                by_pair.setdefault((base, sid), []).append(price)
+        prices += [{"base": b, "sid": s, "n": len(v), "med": round(statistics.median(v), 4)}
+                   for (b, s), v in sorted(by_pair.items(), key=lambda kv: -len(kv[1]))][:MAX_PRICES - len(prices)]
+        bases += [{"base": b, "n": len(v), "med": round(statistics.median(v), 4)}
+                  for b, v in sorted(by_base.items(), key=lambda kv: -len(kv[1]))][:MAX_BASES - len(bases)]
     return prices, bases, newest
 
 
@@ -268,7 +278,7 @@ def pull(call=None):
     ok2, r = (call or B.call)("GET", "/mods/ratings")
     ok3, mp = (call or B.call)("GET", "/maps/ratings")
     ok4, gm = (call or B.call)("GET", "/gems", {"league": league})      # 2.132.0: pooled gem prices
-    d = {"league": league, "stats": s.get("stats", []), "players": s.get("players", 0),
+    d = {"league": league, "stats": s.get("stats", []), "players": s.get("players", 0), "active": s.get("active"),
          "ratings": r.get("ratings", []) if ok2 else cached().get("ratings", []),
          "maps": mp.get("maps", []) if ok3 else cached().get("maps", []),
          "gems": gm.get("gems", []) if ok4 else cached().get("gems", []), "ts": time.time()}
@@ -287,6 +297,8 @@ def learned_highs(league, good, high_lift):
             base, sid, n, med, lift, batches = row
         except (TypeError, ValueError):
             continue
+        if str(base).startswith(POOL):
+            continue
         if n >= MIN_N and batches >= MIN_BATCHES and lift is not None and lift >= high_lift and med >= good:
             if sid not in out or lift > out[sid]["lift"]:
                 out[sid] = {"tier": "high", "lift": lift, "n": n, "from": "community", "med": med}
@@ -299,7 +311,8 @@ def pooled(league=None):
     league = league if league is not None else SETTINGS.get("league") or ""
     if d.get("league") != league:
         return {}
-    return {(r[0], r[1]): {"n": r[2], "med": r[3], "lift": r[4], "batches": r[5]} for r in d.get("stats", []) if len(r) == 6}
+    return {(r[0], r[1]): {"n": r[2], "med": r[3], "lift": r[4], "batches": r[5]} for r in d.get("stats", [])
+            if len(r) == 6 and not str(r[0]).startswith(POOL)}
 
 
 def rated_high():
@@ -314,6 +327,14 @@ def rated_high():
         if total >= VOTE_MIN and (high or 0) / total >= VOTE_SHARE:
             out[key] = (high, total)
     return out
+
+
+def installs():
+    """2.133.0: (installs that ever shared, active in the last 7 days) from the last sync, or None before one."""
+    d = cached()
+    if not d.get("ts"):
+        return None
+    return int(d.get("players") or 0), d.get("active")
 
 
 def stats_count():

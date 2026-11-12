@@ -77,7 +77,12 @@ class Market:
                     "CREATE TABLE IF NOT EXISTS preds(ts REAL, league TEXT, base TEXT, pred REAL, actual REAL, n_comp INT);"
                     "CREATE TABLE IF NOT EXISTS listed(sig TEXT PRIMARY KEY, ts REAL, league TEXT, base TEXT, name TEXT,"
                     " sids TEXT, vals TEXT, est_div REAL, listed_div REAL);"
-                    "CREATE TABLE IF NOT EXISTS legacy(sid TEXT PRIMARY KEY, lift REAL, n INT, league TEXT, text TEXT);")
+                    "CREATE TABLE IF NOT EXISTS legacy(sid TEXT PRIMARY KEY, lift REAL, n INT, league TEXT, text TEXT);"
+                    # 2.133.0: listings the Mod book doesn't learn from (gear, uniques, fallback searches) - kept
+                    # only for the Community pool's summary (Community data sharing), same 45 days
+                    "CREATE TABLE IF NOT EXISTS pool(id TEXT PRIMARY KEY, base TEXT, seen REAL, price_div REAL,"
+                    " sids TEXT, league TEXT);"
+                    "CREATE INDEX IF NOT EXISTS pool_ls ON pool(league, seen);")
                 for table, col, kind in (("obs", "league", "TEXT"), ("listings", "league", "TEXT"), ("listings", "vals", "TEXT"),
                                          ("listings", "name", "TEXT"), ("listings", "lines", "TEXT"),       # 2.4.0
                                          ("listings", "price_txt", "TEXT"), ("listings", "qid", "TEXT")):
@@ -93,6 +98,7 @@ class Market:
                 cut = time.time() - self.KEEP_DAYS * 86400                                            # you fed stays
                 self.db.execute("DELETE FROM obs WHERE ts<?", (cut,))
                 self.db.execute("DELETE FROM listings WHERE seen<?", (cut,))
+                self.db.execute("DELETE FROM pool WHERE seen<?", (cut,))
                 self.db.execute("CREATE INDEX IF NOT EXISTS listings_bl ON listings(base, league)")
                 self.db.commit()
         except Exception as e:
@@ -248,6 +254,37 @@ class Market:
                 self.refresh_learned()
         except Exception as e:
             self.last_error = f"{type(e).__name__}: {e}"
+
+    def pool(self, base, rows):
+        """2.133.0: listings for the Community pool only (base or unique name, divine price, stat ids). The Mod book,
+        Insights and the model never read this table; nothing is kept but what the hourly summary needs."""
+        if not self.db or not base or not rows:
+            return 0
+        try:
+            league, now, n = self.cur(), time.time(), 0
+            with self.lock:
+                for r in rows:
+                    if not r.get("id") or r.get("mods") is None or not r.get("price"):
+                        continue
+                    d = RATES.to_div(r["price"][0], r["price"][1], league)
+                    if d is None or d >= self.ABSURD_DIV:
+                        continue
+                    sids, given = set(), r.get("hsids") or []
+                    for i, (t, _nums) in enumerate(r["mods"]):
+                        sid = sid_for_line(t)
+                        if not sid and i < len(given) and given[i] in SIDTEXT:
+                            sid = given[i]
+                        if sid:
+                            sids.add(sid)
+                    n += self.db.execute("INSERT OR IGNORE INTO pool(id, base, seen, price_div, sids, league) "
+                                         "SELECT ?,?,?,?,?,? WHERE NOT EXISTS (SELECT 1 FROM listings WHERE id=?)",
+                                         (r["id"], str(base)[:80], now, d, json.dumps(sorted(sids)), league,
+                                          r["id"])).rowcount
+                self.db.commit()
+            return n
+        except Exception as e:
+            self.last_error = f"{type(e).__name__}: {e}"
+            return 0
 
     def _new_rec_stats(self):
         return {"listings": 0, "no_rate": 0, "currencies": set(), "no_id": 0, "no_mods": 0, "field_samples": [],
