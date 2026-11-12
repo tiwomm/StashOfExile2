@@ -1,7 +1,5 @@
 name: Deploy community board
-# The Money Makers Community board (board/): a Cloudflare Worker + D1 database. Runs when board/ changes on main, or
-# by hand (Actions > Deploy community board > Run workflow). Needs the repo secrets listed in board/README.md;
-# without them it skips quietly.
+# The community board (board/). Runs when board/ changes on main, or by hand. Skips quietly without its secrets.
 on:
   push:
     branches: [main]
@@ -23,7 +21,7 @@ jobs:
         id: ready
         run: |
           if [ -z "$CLOUDFLARE_API_TOKEN" ] || [ -z "$CLOUDFLARE_ACCOUNT_ID" ] || [ -z "$D1_ID" ]; then
-            echo "Board secrets aren't set yet - see board/README.md. Skipping."; echo "go=no" >> "$GITHUB_OUTPUT"
+            echo "Board secrets aren't set. Skipping."; echo "go=no" >> "$GITHUB_OUTPUT"
           else echo "go=yes" >> "$GITHUB_OUTPUT"; fi
       - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444  # v5
         if: steps.ready.outputs.go == 'yes'
@@ -46,14 +44,14 @@ jobs:
           ADMIN_KEY: ${{ secrets.ADMIN_KEY }}
         run: |
           if [ -n "$ADMIN_KEY" ]; then printf '%s' "$ADMIN_KEY" | npx wrangler secret put ADMIN_KEY;
-          else echo "No ADMIN_KEY secret: nobody can become admin until you add one."; fi
+          else echo "No ADMIN_KEY secret."; fi
       - name: IP pepper (2.89.3)
         if: steps.ready.outputs.go == 'yes'
         env:
           IP_PEPPER: ${{ secrets.IP_PEPPER }}
         run: |
           if [ -n "$IP_PEPPER" ]; then printf '%s' "$IP_PEPPER" | npx wrangler secret put IP_PEPPER;
-          else echo "No IP_PEPPER secret: the board keeps its own random key (add one: 32+ random characters)."; fi
+          else echo "No IP_PEPPER secret: the board keeps its own."; fi
       - name: Bug reports (2.48.0)
         if: steps.ready.outputs.go == 'yes'
         env:
@@ -61,5 +59,5 @@ jobs:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
         run: |
           if [ -n "$BUGS_GITHUB_TOKEN" ]; then printf '%s' "$BUGS_GITHUB_TOKEN" | npx wrangler secret put GITHUB_TOKEN;
-          else echo "No BUGS_GITHUB_TOKEN secret: Report a bug opens GitHub in the browser instead."; fi
+          else echo "No BUGS_GITHUB_TOKEN secret."; fi
           if [ -n "$DISCORD_WEBHOOK" ]; then printf '%s' "$DISCORD_WEBHOOK" | npx wrangler secret put DISCORD_WEBHOOK; fi

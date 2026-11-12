@@ -1,7 +1,6 @@
 name: New issues to Discord
-# 2.48.0: every new GitHub issue (from the app's Report a bug, or opened on GitHub) is posted to Discord. Needs the
-# DISCORD_WEBHOOK repo secret (Discord: Server Settings > Integrations > Webhooks > New Webhook > Copy Webhook URL);
-# without it this skips quietly. App reports already tell Discord from the board server, so those are skipped here.
+# 2.48.0: every new GitHub issue is posted to Discord. Skips quietly without its secret. App reports already go to
+# Discord from the board server, so those are skipped here.
 on:
   issues:
     types: [opened]
