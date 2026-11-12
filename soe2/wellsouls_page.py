@@ -40,7 +40,7 @@ class WellSoulsPage:
             return f"Can't read the screen: {self.ws_problem}."
         if getattr(self, "ws_here", False):
             return "On - you're at The Well of Souls: each option shows its tier"
-        return "On - wakes up when you enter The Well of Souls (from the game's log)"
+        return "On - Well of Souls Desecration Tiers."
 
     def ws_toggle(self, want):
         c = self.ws_cfg()

@@ -74,7 +74,7 @@ class RemnantPage:
         if self.remnant_status() == "warn":
             return f"Can't read the screen: {self.rm_problem}."
         last = getattr(self, "rm_last", "")
-        head = "On - prices show by themselves when a remnant's reward book opens"
+        head = "On - Watching for Remnants."
         return head + (f"  ·  {last}" if last else "")
 
     def remnant_toggle(self, want):
