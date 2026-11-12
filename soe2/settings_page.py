@@ -1050,10 +1050,10 @@ class SettingsPage:
 
     def hotkeys_defaults(self):
         """2.127.0 (feedback: "in case anything goes wrong"): every keybind back to the app's own - after a yes. The
-        keys of your own chat commands stay (they have no default)."""
+        keys of your own chat commands and Regex keys stay (they have no default)."""
         from .tracker_page import DEFAULT_HOTKEYS
-        if not messagebox.askyesno("Keybinds", "Set every keybind back to the default?\n\nYour chat commands keep "
-                                   "their keys.", parent=self.dlg_parent()):
+        if not messagebox.askyesno("Keybinds", "Set every keybind back to the default?\n\nYour chat commands and "
+                                   "Regex keys keep their keys.", parent=self.dlg_parent()):
             return False
         for kid, key in DEFAULT_HOTKEYS.items():
             v = self.hk_vars.get(kid)
