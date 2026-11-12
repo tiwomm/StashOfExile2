@@ -47,6 +47,14 @@ BETA_AREAS = ("Wealth", "Money Makers", "Game Search", "Market Insights", "Craft
 # repeats. Someone coming from rollup["since"] or older (or a fresh install) sees it instead of each version; someone
 # on a pre-release already saw them and gets only this version's own lines (notes_between).
 NOTES = {
+    "2.136.1": {
+        "big": [],
+        "small": [
+            ("Temple Notepad", "Opens in Vaal Ruins too."),
+            ("Crystals", "Read from the Temple Console's count in Vaal Ruins, under the overlay."),
+            ("Crystals", "After a temple run: the old number says so until it's read again."),
+        ],
+    },
     "2.136.0": {
         "big": [
             ("◆", "Temple Notepad", "A note in the temple: crystals, runs, your plan. Helpers › Temple.", None,

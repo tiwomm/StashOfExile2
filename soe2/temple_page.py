@@ -80,10 +80,64 @@ class TemplePage:
         """Every area change: in the temple -> the notepad shows (when it's on); anywhere else -> it goes."""
         here = str(area_id or "") in TM.TEMPLE_AREAS
         self.tm_in_temple = here
+        if str(area_id or "") == TM.RUN_AREA:                # 2.136.1: a run spends crystals - the number is old now
+            TM.mark_old()
+            self.temple_pad_refresh()
+        try:
+            self.overlay_capture_sync()                     # 2.136.1: the bar out of captures here (the count under it)
+        except Exception:
+            buglog.caught()
+        if here and self.temple_on() and not getattr(self, "_tm_con_job", None):
+            self._tm_con_job = self.root.after(500, self.temple_console_tick)
         if here and self.temple_pad_on():
             self.temple_pad_show()
         elif not here:
             self.temple_pad_close()
+
+    def temple_console_tick(self):
+        """2.136.1: every 2 s in a temple area, the Temple Console's "18/60" under its Run Temple button is read (the
+        bar is out of captures there, so it sees under it). No console open = nothing read, nothing changed."""
+        self._tm_con_job = None
+        if not getattr(self, "tm_in_temple", False) or not self.temple_on():
+            return
+        self._tm_con_job = self.root.after(TM.CONSOLE_EVERY, self.temple_console_tick)
+        if getattr(self, "_tm_con_busy", False):
+            return
+        try:
+            from .overlaywin import foreground_ok
+            if not foreground_ok():
+                return
+            from .alerts_page import game_rect
+            g = game_rect()
+        except Exception:
+            buglog.caught()
+            return
+        if not g:
+            return
+        box = TM.console_box(g)
+        st = TM.state()
+        most = st["most"] if st else None
+        self._tm_con_busy = True
+
+        def work():
+            from . import remnant as RM
+            try:
+                img = RM.grab(box)
+                img = img.resize((img.width * 3, img.height * 3))      # small digits read better bigger
+                return TM.parse_console(RM.ocr(img), most)
+            except Exception:
+                buglog.caught()
+                return None
+
+        def done(got):
+            self._tm_con_busy = False
+            if got:
+                self.temple_seen(got)
+        try:
+            self.run_bg(work, done)
+        except Exception:
+            self._tm_con_busy = False
+            buglog.caught()
 
     def temple_pad_on(self):
         return self.temple_on() and bool(TM.cfg().get("notepad", True))
@@ -123,6 +177,8 @@ class TemplePage:
 
     def temple_pad_line(self):
         st = TM.state()
+        if st and st.get("old"):
+            return TM.bar_text(st) + " - hover a Vaal Beacon to update"
         return TM.bar_text(st) if st else "Crystals ? - hover a Vaal Beacon in a map"
 
     def temple_pad_show(self):
@@ -148,7 +204,8 @@ class TemplePage:
         body = tk.Frame(w.body, bg=P["bg"], padx=8, pady=8)
         body.pack(fill="both", expand=True)
         self.tm_pad_head = tk.Label(body, text=self.temple_pad_line(), bg=P["bg"], fg=P["head"],
-                                    font=(P["font"], self.ov_font(10), "bold"), anchor="w")
+                                    font=(P["font"], self.ov_font(10), "bold"), anchor="w", justify="left",
+                                    wraplength=max(180, int(c.get("pad_w") or 300) - 24))
         self.tm_pad_head.pack(fill="x")
         tk.Label(body, text="Placed rooms stay until destabilized.", bg=P["bg"], fg=P["muted"],
                  font=(P["font"], self.ov_font(9)), anchor="w").pack(fill="x", pady=(0, 4))

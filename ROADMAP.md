@@ -4,7 +4,7 @@
 
 > **Who we build for - read second.** Path of Exile players are utilitarian: they love data and information, problem solving and creative thinking. So every feature shows its numbers *and how they were worked out*, lets you sort, filter, compare and export them (CSV), keeps power-user depth (keys, versions, raw data) one click away instead of hiding it, explains in plain words, and leaves the decision to the player. Pretty is welcome; vague is not.
 
-**Current version: 2.136.0**
+**Current version: 2.136.1**
 
 Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds features, 2.10.1 only fixes. Each step below is one release; we work through them top to bottom.
 
@@ -269,6 +269,7 @@ Order (decided 2026-11-05): the page passes, then the Privacy & data hub, then t
 | 2.132.4 | Overlay Settings name; Ritual Identifier is a Ritual helper option. |
 | 2.132.5 | Shorter helper and tooltip text. |
 | 2.136.0 | Temple Notepad: a note over the game, only inside the temple. |
+| 2.136.1 | Temple Notepad in Vaal Ruins too; crystals read from the Temple Console (under the bar); marked old once a run starts. |
 | 2.135.1 | No fades (Reduce motion always on); Regex: Genesis Tree, warping rune and Alloy mods. |
 | 2.135.0 | Page windows stay with the app; Scan stash out of BETA, Count currency in More; Temple crystals in runs. |
 | 2.134.1 | Update question: What's new only, checksums stay on the release page. |
@@ -390,6 +391,7 @@ From a research pass on PoE1 / PoE2 tools, forum and Reddit wishes. Order to be 
 | UX | **Privacy & data hub** (planned #2) also gathers Under the Hood's info and every manual data job - Rate mods, map ranks and the like - in a "Manual data submissions" section ("when you're bored"). |
 | Test | **Ultrawide pass:** the overlay, cards and Price Checks at 5120x1440 and 3840x1080. |
 | Data | **Campaign guide pack:** update the first week of December. |
+| New | **Suggest a feature** (decided 2026-11-12): next to Report a bug, the same form for an idea. When an idea ships, What's new and the README credit the person, only by a name they choose to give (nothing sent or shown unless they opt in). |
 | Future | **Atlas progress tracker** (only if the log shows enough to track it), **leveling gems from a PoB code**, **debloat pass**. |
 | Future | **Buff watch** (a player's ask, 2026-11-09): one buff you pick (Guard, an aura) read from the game's buff bar and shown big near your health bar (BETA, off by default; pixels only, no memory, no keys). GGG's stance on mirroring UI is a gray area (Hinekora, AGPL-3.0, says so) - check before building. |
 
