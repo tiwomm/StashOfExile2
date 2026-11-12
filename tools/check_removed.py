@@ -25,6 +25,9 @@ DOCS = ("README.md", "TOS.md", "linux/README.md", "themes/README.md", "strats/RE
 
 # (version, what it was, words a person read, names in the code / settings keys[, pending])
 REMOVED = [
+    ("2.132.7", "the Regex key window (1-4 favorites per key, typed into the stash search one per press)",
+     ("each press types the next one", "+ Add a favorite", "No favorites on this key yet"),
+     ("rx_keys_dialog", "rx_keys_win", "rx_keys_state", "MAX_PER_KEY", "type_search", "_rx_key_pos")),
     ("2.132.6", "the single Regex key that copied a search (now Regex keys that type it in the stash search)",
      ("Copy your stash search (in game)", "- it copies"), ("rx_hk_box", "rx_hotkey_pick", "rx_key_lbl")),
     ("2.132.4", "the Ritual Identifier as a helper of its own (its Helpers row, Quick settings chip, BETA feature) - "

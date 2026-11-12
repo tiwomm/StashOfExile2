@@ -1317,12 +1317,11 @@ class TrackerPage:
                 ("Strat Tracker: a run is done (setups counted by key)", SETTINGS.get("ledger_key") or "Ctrl+Alt+N",
                  "Money Makers", "checks:ledger_key"),
                 ("Go to hideout", oc.get("hideout_key", ""), "Chat commands", "overlay:hideout_key")]
-        rx = (self.rx_keys() if hasattr(self, "rx_keys") else []) or [{"key": "", "favs": []}]
+        rx = self.rx_keys() if hasattr(self, "rx_keys") else []
         at = next((n + 1 for n, r in enumerate(rows) if r[2] == "Tools"), len(rows))
-        for i, k in enumerate(rx):                                                     # 2.132.6: Regex keys
-            first = self.rx_ref_label(k["favs"][0]) if k.get("favs") else "no favorites yet"
-            more = f" (+{len(k['favs']) - 1})" if len(k.get("favs") or []) > 1 else ""
-            rows.insert(at + i, (f"Regex key {i + 1}: {first}{more}", k.get("key", ""), "Regex", f"rxkey:{i}"))
+        for i, k in enumerate(rx):                     # 2.132.7: Regex keys - each copies one favorite (Regex › Favorites)
+            rows.insert(at + i, (f"Regex key {i + 1}: copy {self.rx_ref_label(k['fav'])}", k.get("key", ""), "Regex",
+                                 f"rxkey:{i}"))
         for i, c in enumerate(oc.get("commands", []) or []):
             if c.get("cmd"):
                 rows.append((f"Chat: {c.get('name') or c.get('cmd', '')}", c.get("key", ""), "Chat commands",
