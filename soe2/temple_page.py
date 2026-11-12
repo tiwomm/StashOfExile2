@@ -86,5 +86,4 @@ class TemplePage:
         Tooltip(cb, "Hover a Vaal Beacon in a map: its tooltip's \"Energised Beacons: 55/60\" is read. Off until you "
                     "turn it on.")
         Tooltip(tb, "Shows the Crystals full card now.")
-        Tooltip(info, "In maps only, it looks round the mouse every second and a half for that one line (Windows' text "
-                      "reader). Only the two numbers are kept - nothing else on screen, nothing sent anywhere.")
+        Tooltip(info, "Clear a Vaal Beacon to track your Crystals.")

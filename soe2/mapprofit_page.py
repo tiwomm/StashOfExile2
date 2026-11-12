@@ -324,9 +324,7 @@ class MapProfitPage:
                  font=("Segoe UI", 9)).pack(side="left", padx=(8, 0))
         ii = tk.Label(head, text="ⓘ", bg=P2, fg=C["muted"], cursor="question_arrow")
         ii.pack(side="left", padx=(8, 0))
-        Tooltip(ii, "Open your inventory in your hideout or a town before a map and again after it: what changed is "
-                    "that map's loot. Only Currency Exchange items count (no waystones, no gear), at Exchange Rates' "
-                    "prices. Kept on your PC only (map_profit.jsonl) - never uploaded or shared.")
+        Tooltip(ii, "Open your inventory before a map to get a baseline.")
         bar = tk.Frame(box, bg=P2)
         bar.pack(fill="x", pady=(8, 8))
         self.mp_q = tk.StringVar()
@@ -458,13 +456,9 @@ class MapProfitPage:
         info.pack(side="left", padx=(8, 0))
         tk.Label(box, text="What each map earned, from your inventory before and after it - on your PC only.", bg=bg,
                  fg=C["muted"], font=sm, anchor="w").pack(fill="x")
-        Tooltip(cb, "Reads your inventory when it's open in your hideout or a town (the same quick look as Top Up). "
-                    "Off until you turn it on.")
+        Tooltip(cb, "Automatically tracks currency from mapping when you leave a map.")
         Tooltip(mb, "Every map counted, with how each number was worked out.")
-        Tooltip(info, "Only Currency Exchange items count - currency, omens, runes... - never waystones or gear. Items "
-                      "are known by Scan stash's pictures or the ones you taught with "
-                      f"{self.topup_key_text()}. Prices: Exchange Rates. Saved in map_profit.jsonl in your data folder "
-                      "and never sent anywhere.")
+        Tooltip(info, "Only tracks Currency Exchange based items.")
 
     def mp_sync_switch(self):
         v = getattr(self, "al_mp", None)

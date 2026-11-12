@@ -119,14 +119,14 @@ def breach_level(text):
 
 # 2.119.0 (UX pass): what each helper does, in one line - under its name on Helpers, and (2.124.0) the tip on its
 # Quick settings chip
-HELPER_BLURBS = {"delirium": "An End Delirium card when a map ends with Delirium still on",
-                 "breach": "Warns when your stored Hiveblood is almost full",
-                 "ritual": "Counts rituals done; reminds you if you leave early",
-                 "remnant": "Prices each reward in a remnant's book",
-                 "focus": "Your current goal on the bar, a nudge in town",
-                 "campaign": "Where you are in the campaign and what's next",
-                 "whispers": "A card when someone wants to buy your item",
-                 "desecrate": "Each Well of Souls option's tier",
+HELPER_BLURBS = {"delirium": "Reminder popup to end Delirium.",
+                 "breach": "Reminder popup for when Hiveblood is full or almost full.",
+                 "ritual": "Counts Rituals & Tribute; reminds if you leave map without completing.",
+                 "remnant": "Prices rewards in Remnants.",
+                 "focus": "Helps ADHD folks stay on track with league goals.",
+                 "campaign": "Descriptive campaign guide.",
+                 "whispers": "On-screen popup for potential missed whispers during campaign (useful to sell items before unlocking Ange).",
+                 "desecrate": "Tier of each Desecration modifier.",
                  "topup": "Says what's running low when you open your inventory in a hideout or town",   # 2.131.1
                  "breaks": "An alert card after a long stretch of play, in a hideout or town",
                  "mapprofit": "What each map earned, from your inventory - on your PC only",          # 2.132.1
@@ -346,21 +346,7 @@ class AlertsPage:
             return b
 
         self.al_chips = {}
-        what = {
-            "delirium": "An End Delirium card when you finish a map with Delirium still on (reads your screen)",
-            "breach": "a banner when your stored Hiveblood is almost full, and when it's full (reads Client.txt)",
-            "ritual": "reads the Ritual counter (0/3 ...) from your screen; reminds you if you leave a map after "
-                      "starting its rituals but not finishing them",
-            "remnant": "Expedition Remnant Price Checker: each reward in a remnant's book gets its poe.ninja price, by "
-                       "itself, beside the runeshapes players rate best for loot",
-            "focus": "League Plan: your current goal on the bar, and a short poke in town now and then "
-                     "(Overlay ↳ League Plan)",
-            "campaign": "Campaign Helper: where you are in the campaign, what's next and what it's worth (reads "
-                        "Client.txt)",
-            "whispers": "Trade Whisper Watcher: a card over the game when someone whispers to buy an item you listed - "
-                        "easy to miss in a busy chat (reads Client.txt; nothing is saved)",
-            "desecrate": "Desecration Helper: at The Well of Souls each revealed option shows its tier (T1 = best "
-                         "for that item type) - on only while you're there (reads Client.txt, then your screen)"}
+        what = {k: HELPER_BLURBS[k] for k in ("delirium", "breach", "ritual", "remnant", "focus", "campaign", "whispers", "desecrate")}   # 2.132.5: one line each (its tooltip too)
         tests = {"delirium": self.alerts_test_delirium, "breach": lambda: self.breach_alert(test=True),
                  "ritual": self.alerts_test_ritual, "remnant": self.alerts_test_remnant,
                  "focus": lambda: self.ov_intro_setup("focus"), "campaign": lambda: self.camp_route_show(),
@@ -388,8 +374,7 @@ class AlertsPage:
                         "A line over the overlay's bar while you're in a map with Ritual: how many rituals are done and "
                         "your tribute."),
                        ("Favours prices", self.al_rfav, lambda: self.favours_changed(self.al_rfav.get()),
-                        "At a Ritual altar's Favours window: poe.ninja's price on each omen and other 1-cell reward. "
-                        "Price check one there (your price check key) and it learns its picture."),
+                        "Prices rewards in the Ritual Favours window."),
                        ("Tribute reminder", self.al_rtrib, self.alerts_tribute_changed,
                         "Close the Favours window with tribute left: a reminder to offer it to "
                         "the King."),
@@ -454,8 +439,7 @@ class AlertsPage:
         frow.pack(anchor="w", pady=(4, 0))
         fl = ttk.Button(frow, text="Filter in the Ritual window…", command=self.ritual_filter_open)
         fl.pack(side="left")
-        Tooltip(fl, "Make your item filter work in the Ritual altar's Favours window (a game setting with no switch "
-                    "in its menus) - the app shows where and what to change.")
+        Tooltip(fl, "Enables your loot filter in the Ritual Favours window.")
         fst = tk.Label(frow, text="", bg=P2, fg=C["muted"], font=sm, anchor="w")
         fst.pack(side="left", padx=(8, 0))
         self.al_rfilter_link, self.al_rfilter_state = fl, fst
@@ -494,8 +478,7 @@ class AlertsPage:
         tk.Label(box, text="A kind nudge in long sessions (water, stretch, food, sleep), only in your hideout or a town.",
                  bg=P2, fg=C["muted"], font=sm, anchor="w").pack(fill="x")
         Tooltip(bcb, "One small card every so often while you play - never in a map. Off until you turn it on.")
-        Tooltip(bi, "The lines rotate; more join the longer you play (a meal at 2 h, fresh air at 4 h, a shower at "
-                    "8 h, sleep at 12 h or late at night). Play time is the Session timer's. Nothing is saved or sent.")
+        Tooltip(bi, "Reminders to keep up with your basic needs during long sessions.")
         Tooltip(btest, "Shows the next reminder now.")
         self.al_break_every = ecb
         self.topup_row(box, P2, CB)                         # 2.131.0: Top Up Reminders
@@ -727,9 +710,7 @@ class AlertsPage:
                  fg=C["text"], font=("Segoe UI", 10), anchor="w").pack(side="left")
         tip = tk.Label(top, text="ⓘ", bg=P2, fg=C["muted"], font=("Segoe UI", 10), cursor="question_arrow")
         tip.pack(side="left", padx=(8, 0))
-        Tooltip(tip, f"A game setting with no switch in its menus: {RF.KEY} in {RF.FILE}. {RF.CREDIT}. The app reads "
-                     "that line; Turn it on changes it (only that line, only while the game is closed), or follow the "
-                     "steps to change it yourself.")
+        Tooltip(tip, f"Game Setting: Automatically turn it on, or configure it manually. {RF.CREDIT}.")
         status = tk.Label(dlg, text="", bg=P2, fg=C["muted"], font=("Segoe UI", 10, "bold"), anchor="w",
                           justify="left", wraplength=460)
         status.pack(fill="x", pady=(8, 2))
@@ -828,8 +809,7 @@ class AlertsPage:
         btns.pack(fill="x", pady=(12, 0))
         on_btn = ttk.Button(btns, text="Turn it on", style="Primary.TButton", command=turn_on)
         on_btn.pack(side="left")
-        Tooltip(on_btn, "Changes that one line from false to true - nothing else in the file. The game must be closed; "
-                        "a copy of the file is kept in the app's data folder first.")
+        Tooltip(on_btn, "Game must be closed to edit config file.")
         ttk.Button(btns, text="Open folder", command=open_folder).pack(side="left", padx=(8, 0))
         ttk.Button(btns, text="Copy line", command=copy_line).pack(side="left", padx=(8, 0))
         ttk.Button(btns, text="Check again", command=check).pack(side="left", padx=(8, 0))
@@ -986,7 +966,7 @@ class AlertsPage:
             btxt = ("On - Hiveblood is waiting to be spent" + (": you'll be reminded when you leave the map"
                                                               if self.breach_cfg().get("leave_reminder", True) else ""))
         else:
-            btxt = "On - watching for the game's Hiveblood warnings"
+            btxt = "On - Watching for Hiveblood messages."
         rtxt = self.ritual_text(rows["ritual"])
         mtxt = rows["remnant"]["note"] or self.remnant_text(rows["remnant"])
         rows["remnant"]["note"] = ""
@@ -998,7 +978,7 @@ class AlertsPage:
         rows["focus"]["on"].set(bool(_F.cfg()["on"]))
         rows["campaign"]["on"].set(bool(_CP.cfg()["on"]))
         ftxt = ("On - " + (self.focus_line()[0] or "pick a goal in Overlay ↳ League Plan")) if _F.cfg()["on"] else rows["focus"]["what"]
-        ctxt = ("On - " + (_CP.line_text() or "waits for a campaign zone in the game's log")) if _CP.cfg()["on"] else rows["campaign"]["what"]
+        ctxt = ("On - " + (_CP.line_text() or "Waiting for a campaign zone.")) if _CP.cfg()["on"] else rows["campaign"]["what"]
         from . import whispers as _W                                              # 2.98.1
         rows["whispers"]["on"].set(bool(_W.cfg()["on"]))
         if not _W.cfg()["on"]:
@@ -1071,7 +1051,7 @@ class AlertsPage:
         if RITUAL.seen == "unread":
             return ("On - the Ritual counter is on screen but couldn't be read. Make a problem report "
                     "(Settings > Advanced) while it shows so it can be fixed.")
-        return "On - watching for the Ritual counter (it shows in maps with Ritual)"
+        return "On - Watching for Rituals."
 
     def ritual_seen(self):
         """Every second: remember the counter while you're in a map."""

@@ -239,7 +239,7 @@ class Engine(TabReaderJobs, WealthJobs, StratCostJobs, threading.Thread):
             table = load_json("stats_cache.json", {})
             build_sidtext(table)
             return table
-        STATUS("Downloading the trade site's mod list (once a day)...")
+        STATUS("Downloading the trade site's mod list...")
         data = call("GET", BASE + "/data/stats")
         table, same, opts = {}, {}, {}
         for group in data["result"]:
