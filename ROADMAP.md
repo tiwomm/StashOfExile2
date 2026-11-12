@@ -269,7 +269,7 @@ Order (decided 2026-11-05): the page passes, then the Privacy & data hub, then t
 | 2.132.4 | Overlay Settings name; Ritual Identifier is a Ritual helper option. |
 | 2.132.5 | Shorter helper and tooltip text. |
 | 2.136.0 | Temple Notepad: a note over the game, only inside the temple. |
-| 2.136.1 | Temple Notepad in Vaal Ruins too; crystals marked as before your last run once a run starts. |
+| 2.136.1 | Temple Notepad in Vaal Ruins too; crystals read from the Temple Console (under the bar); marked old once a run starts. |
 | 2.135.1 | No fades (Reduce motion always on); Regex: Genesis Tree, warping rune and Alloy mods. |
 | 2.135.0 | Page windows stay with the app; Scan stash out of BETA, Count currency in More; Temple crystals in runs. |
 | 2.134.1 | Update question: What's new only, checksums stay on the release page. |

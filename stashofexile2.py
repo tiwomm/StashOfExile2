@@ -25,6 +25,10 @@ VERSION HISTORY
        - Crystals (feedback: "I have 54/60 it says 58/60"): a temple run spends crystals and the number is only read
          from a Vaal Beacon, so entering a run (IncursionTemple) marks it "58/60? (before your last run)" until the
          next read (temple.mark_old, "old" in temple.json); the notepad adds "hover a Vaal Beacon to update".
+       - Crystals (feedback: "it should be able to see through the overlay (the same way ritual does) and read the
+         crystal count at the bottom of the screen"): in a temple area, every 2 s, the Temple Console's "18/60" under
+         Run Temple is read (temple.CONSOLE_BOX, x3 bigger for OCR, parse_console: the most must match the last read);
+         the bar is out of screen captures there (overlay_hide_capture), as for Ritual.
   2.136.0
        - Temple Notepad (feedback: "possibly have a copy of our notepad as a temple notepad"): a note over the game
          that shows only inside the temple (Client.txt area "IncursionTemple", temple.TEMPLE_AREAS) - your crystals
