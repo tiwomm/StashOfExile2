@@ -395,6 +395,19 @@ From a research pass on PoE1 / PoE2 tools, forum and Reddit wishes. Order to be 
 | Future | **Atlas progress tracker** (only if the log shows enough to track it), **leveling gems from a PoB code**, **debloat pass**. |
 | Future | **Buff watch** (a player's ask, 2026-11-09): one buff you pick (Guard, an aura) read from the game's buff bar and shown big near your health bar (BETA, off by default; pixels only, no memory, no keys). GGG's stance on mirroring UI is a gray area (Hinekora, AGPL-3.0, says so) - check before building. |
 
+### Strat & profit overhaul (asked 2026-11-12)
+
+One run record for the whole app (area, time, loadout, content, loot, profit) that Session, Map profit, Strat Tracker and Leaderboards all read - so each page shows the same runs its own way. May move features between pages; a UX/UI pass comes with it.
+
+| Area | Plan |
+|------|------|
+| Link | **Map profit ↔ Strat Tracker:** each run's profit counts toward the strat you're running (per run, per hour, best and worst run). |
+| UX | **Create a strat - one panel, no wall of switches:** activity (Atlas map, pinnacle boss, temple ...), map type, solo / party, atlas masters (pick per master, up to their limit), content tags (search, or type a new one), loadout (waystone + tablets), and the rarity it adds up to (waystone + tablets + character), each number one hover from how it was worked out. |
+| New | **Pinnacle content:** ready-made strats per pinnacle boss - fragments in, drops out, profit per kill. Lives in the Strat Tracker as an activity (decided 2026-11-12); profit per kill comes from Map profit. |
+| New | **Content mix bar** in the Session tracker: the share of your runs per content (Abyss, Breach, Delirium, Ritual ...), with a mark and a word per part, not color alone. How runs get their content: Map Content's icons (already read for Temple and Ritual) first; tablets in the map device as a later idea. |
+| Expand | **Run history:** one row per run with its content tags, time, rarity and profit; pin the drops you care about to the top. |
+| Credit | Ideas (not code, words or design) from Juice Tools (juicetools.app, by Mort). Its terms keep its code, design and text its own, so ours is built and worded from scratch; credited in the README for the ideas. |
+
 ## 🤔 Maybe later (ideas to weigh when the plan above is done)
 
 - **Community FAQ → Community forum** (expanded 2.85.1; mockups first, when it comes up): the FAQ works like a forum, a hybrid of two popular forums - threads in sections (Questions, Farm strats, Trading, Builds, General), each post under the player's community name (asked once at start-up), replies, and upvotes that count for both farm strats and FAQ answers. The asker marks the answer that solved it, and that answer goes to the searchable FAQ (e.g. "Can Sanctify add a socket, or only corruption?" -> "Corruption only ..."); players who opted in get unanswered questions offered to them. A player profile shows their posts and total upvotes (reputation), as on the trading-style popular forum. Moderation follows admin privileges plus the 2.85.0 reviewers: reports with reasons, hide / lock / pin / move threads, edit history, bans. Runs on the community board server (board/). **To solve first:** how the app gets updates - pulling new threads, replies, votes and moderation changes (when to poll and how often, what to cache on this PC, unread counts, notifications, staying inside the board's free-plan limits).
