@@ -2610,7 +2610,7 @@ VERSION HISTORY
        same SETTINGS hotkey_only, shown the other way round, off by default).
   2.30.0
        Money Makers: a Community board instead of GitHub issues for sharing. Server = board/ (Cloudflare Worker +
-       D1, deployed by .github/workflows/board.yml with repo secrets - board/README.md has the setup). No login
+       D1, deployed by .github/workflows/board.yml). No login
        (Discord OAuth was dropped: its app rules were too much): the first post / vote / report asks for a display
        name, POST /auth/join returns a key (board_session.json); JOINS_PER_DAY (5) new accounts per hashed IP per
        day stop vote stuffing. Posts (strats + one-liners) are live at once, checked against the same layout

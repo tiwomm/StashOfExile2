@@ -1094,7 +1094,7 @@ class MoneyMakersPage:
 
     def mm_admin_key(self, key=None):
         from tkinter import simpledialog
-        key = key or simpledialog.askstring("Community board", "The board's admin key (the ADMIN_KEY secret):",
+        key = key or simpledialog.askstring("Community board", "Admin key:",
                                             parent=self.root, show="•")
         if key:
             ok, d = B.become_admin(key)
