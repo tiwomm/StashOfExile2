@@ -47,6 +47,12 @@ BETA_AREAS = ("Wealth", "Money Makers", "Game Search", "Market Insights", "Craft
 # repeats. Someone coming from rollup["since"] or older (or a fresh install) sees it instead of each version; someone
 # on a pre-release already saw them and gets only this version's own lines (notes_between).
 NOTES = {
+    "2.132.7": {
+        "big": [],
+        "small": [
+            ("Regex", "Regex keys: up to 4, one favorite each. Press = copied. Set in Favorites › ⌨ Key…"),
+        ],
+    },
     "2.132.6": {
         "big": [
             ("⌨", "Regex keys", "Type 1-4 favorites in the stash search, one per press.", None, "Regex"),
