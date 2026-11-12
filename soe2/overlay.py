@@ -197,6 +197,35 @@ def type_chat(cmd, sender=None, sleep=time.sleep, clip=None):
         write(old)
 
 
+def type_search(text, sender=None, sleep=time.sleep, clip=None):
+    """2.132.6 Regex keys: put a search in the open stash's search box - Ctrl+F (the game's own "find" key), Ctrl+A,
+    Ctrl+V - in one quick burst; your clipboard is put back afterwards. One key press, one search typed."""
+    send = sender or _send_keys
+    if clip is None:
+        from .clipboard import read_clipboard_text, write_clipboard_text
+        clip = (read_clipboard_text, write_clipboard_text)
+    read, write = clip
+    old = read()
+    hook = CLIP_HOOK[0]
+    if hook:
+        hook(text)
+        if old:
+            hook(old)
+    pasted = write(text)
+    keys = [(0x11, None, True), (0x12, None, True), (0x10, None, True),             # let go of Ctrl / Alt / Shift
+            (0x11, None, False), (0x46, None, False), (0x46, None, True), (0x11, None, True),   # Ctrl+F
+            (0x11, None, False), (0x41, None, False), (0x41, None, True), (0x11, None, True)]   # Ctrl+A
+    if pasted:
+        keys += [(0x11, None, False), (0x56, None, False), (0x56, None, True), (0x11, None, True)]   # Ctrl+V
+    else:
+        keys += [e for ch in text for e in ((None, ch, False), (None, ch, True))]
+    send(keys)
+    if pasted and old:
+        sleep(0.15)
+        write(old)
+    return pasted
+
+
 # ---------------------------------------------------------------- the old AutoHotkey settings
 def ahk_config_path():
     return os.path.join(os.environ.get("APPDATA") or os.path.expanduser("~"), "POE2Overlay", "config.ini")

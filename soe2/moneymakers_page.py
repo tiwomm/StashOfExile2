@@ -1620,7 +1620,7 @@ class MoneyMakersPage:
         w.transient(self.root)
         P1 = C["panel"]
         tk.Label(w, text=o["text"][:90], bg=P1, fg=C["text"], wraplength=420, justify="left",
-                 font=("Segoe UI", 10, "bold")).pack(anchor="w", padx=12, pady=(12, 6))
+                 font=("Segoe UI", 10, "bold")).pack(anchor="w", padx=12, pady=(12, 8))
         row = tk.Frame(w, bg=P1)
         row.pack(fill="x", padx=12)
         cat = tk.StringVar(value=o.get("category", ""))
@@ -1645,8 +1645,8 @@ class MoneyMakersPage:
         box.pack(fill="both", padx=12, pady=8)
         for col, (g, tags) in enumerate(groups.items()):
             f = tk.Frame(box, bg=P1)
-            f.grid(row=0, column=col, sticky="nw", padx=(0, 14))
-            tk.Label(f, text=g.upper(), bg=P1, fg=C["muted"], font=("Segoe UI", 8, "bold")).pack(anchor="w")
+            f.grid(row=0, column=col, sticky="nw", padx=(0, 16))
+            tk.Label(f, text=g.upper(), bg=P1, fg=C["muted"], font=("Segoe UI", 9, "bold")).pack(anchor="w")
             for t in tags:
                 v = tk.BooleanVar(value=t in have)
                 picks[t] = v

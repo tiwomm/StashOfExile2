@@ -11,7 +11,9 @@ from .clipboard import read_clipboard_text
 from .config import load_json, save_json, SETTINGS
 from .style import C, MONO, SegBar, Tooltip, flowify
 from .chrome import section as chrome_section
+from .share_page import VIEWS as SHARE_VIEWS
 
+MAX_KEYS, MAX_PER_KEY = 6, 4             # 2.132.6 Regex keys
 KIND_NAMES = {"tablet": "Tablets", "waystone": "Waystones", "relic": "Relics", "jewel": "Jewels",
               "gear": "Gear items"}                         # 2.22.0: jewels and gear
 STATE_FILE, PRESETS_FILE = "regex_state.json", "regex_presets.json"
@@ -93,27 +95,15 @@ class RegexPage:
         self.rx_test_out.pack(side="left", fill="x", expand=True, padx=(16, 0))
         self.rx_test_out.bind("<Configure>", lambda e: self.rx_test_out.config(wraplength=max(200, e.width - 8)))
         self.rx_pick_btn = ttk.Button(info, text="Select its mods", command=self.rx_tick_item)
-        # 2.2.0: the Regex key - one key in game puts a search on the clipboard (P7: a small line under the search)
+        # 2.132.6: Regex keys live on Favorites (⌨ Key…) - a key types a favorite in the stash search
         hk = tk.Frame(res, bg=P2)
         hk.pack(fill="x", pady=(8, 0))
         sm = ("Segoe UI", 9)
-        tk.Label(hk, text="Regex key", bg=P2, fg=C["muted"], font=sm).pack(side="left")
-        self.rx_key_var = tk.StringVar(value=SETTINGS.get("regex_key", ""))
-        # 2.57.0: shown here, set in Settings › Hotkeys (the one place for keys)
-        self.rx_key_lbl = tk.Label(hk, text="", bg=P2, fg=C["text"], font=("Consolas", 9, "bold"))
-        self.rx_key_lbl.pack(side="left", padx=8)
-        ch = tk.Label(hk, text="Change…", bg=P2, fg=C["accent"], font=sm, cursor="hand2")
-        ch.pack(side="left", padx=(0, 8))
-        ch.bind("<Button-1>", lambda e: self.hotkeys_open("checks:regex_key"))
-        self._rx_key_text()
-        tk.Label(hk, text="- it copies", bg=P2, fg=C["muted"], font=sm).pack(side="left")
-        self.rx_hk_var = tk.StringVar()
-        self.rx_hk_box = ttk.Combobox(hk, textvariable=self.rx_hk_var, state="readonly", width=26)
-        self.rx_hk_box.pack(side="left", padx=8)
-        self.rx_hk_box.bind("<<ComboboxSelected>>", lambda e: self.rx_hotkey_pick())
-        tk.Label(hk, text="then Ctrl+V in the stash search.", bg=P2, fg=C["muted"], font=sm).pack(side="left")
-        from .style import flowify
-        flowify(hk)                                          # 2.98.0: wraps in a narrow window
+        tk.Label(hk, text="Regex keys: save it to Favorites, then", bg=P2, fg=C["muted"], font=sm).pack(side="left")
+        go = tk.Label(hk, text="⌨ Key…", bg=P2, fg=C["accent"], font=sm, cursor="hand2")
+        go.pack(side="left", padx=(4, 0))
+        go.bind("<Button-1>", lambda e: self.rx_page.pick("★ Favorites"))
+        self.rx_keys_link = go
 
         # ---- option cards (rebuilt per item type)
         self.rx_cards = tk.Frame(tab, bg=P1)
@@ -305,7 +295,6 @@ class RegexPage:
         self.rx_build_lists()
         self.rx_update()
         self.rx_presets_refresh()
-        self.rx_hotkey_refresh()
         if save:
             self.rx_save()
 
@@ -685,14 +674,6 @@ class RegexPage:
         self._say(f"Copied ({len(s)} characters). In game: open the stash, Ctrl+V in its search.", 8)
 
     # ---------------- 2.2.0: one key copies a stash search (in game: Ctrl+V in the stash search)
-    def rx_hotkey_choices(self):
-        """[(label, value)]: the search shown for each item type, and every saved search."""
-        out = [(f"{KIND_NAMES[k][:-1]} search (as set up here)", f"current:{k}") for k in R.KINDS]
-        for k in R.KINDS:
-            for name in sorted(self.rx_presets.get(k, {})):
-                out.append((f"★ {name} ({KIND_NAMES[k][:-1].lower()})", f"preset:{k}:{name}"))
-        return out
-
     def rx_search_for(self, choice):
         """The search string for a hotkey choice ('current:tablet', 'preset:waystone:My T15s') -> (label, text)."""
         parts = str(choice or "current:tablet").split(":", 2)
@@ -709,50 +690,164 @@ class RegexPage:
         s, _notes = R.build(kind, want, avoid, st.get("all"), st.get("opts"))
         return label, s or ""
 
-    def rx_hotkey_copy(self):
-        """The Regex hotkey was pressed (in game): put the chosen search on the clipboard."""
-        label, s = self.rx_search_for(SETTINGS.get("regex_hotkey_search"))
+    def _rx_key_text(self):
+        """(Settings › Keybinds changed a key: the Key column follows.)"""
+        self.rx_fill_favorites()
+    def rx_keys(self):
+        out = []
+        for k in SETTINGS.get("regex_keys") or []:
+            if isinstance(k, dict):
+                out.append({"key": str(k.get("key") or ""), "favs": [str(x) for x in k.get("favs") or []][:MAX_PER_KEY]})
+        SETTINGS["regex_keys"] = out[:MAX_KEYS]
+        return SETTINGS["regex_keys"]
+
+    def rx_ref_label(self, ref):
+        parts = str(ref).split(":", 2)
+        return parts[2] if parts[0] == "preset" and len(parts) == 3 else self.rx_search_for(ref)[0]
+
+    def rx_ref_search(self, ref):
+        """A key's favorite ('preset:waystone:Juiced T15') -> (name, search)."""
+        parts = str(ref).split(":", 2)
+        if parts[0] == "preset" and len(parts) == 3:
+            f = next((f for f in self.rx_favs if f["kind"] == parts[1] and f["name"] == parts[2]), None)
+            return (parts[2], self.rx_fav_search(f)) if f else (parts[2], "")
+        return self.rx_search_for(ref)
+
+    def rx_key_press(self, i, now=None):
+        """Regex key i was pressed in game: the next of its favorites goes into the stash search."""
+        keys = self.rx_keys()
+        if i >= len(keys) or not keys[i]["favs"]:
+            return None
+        pos = getattr(self, "_rx_key_pos", {})
+        n = pos.get(i, -1) + 1
+        favs = keys[i]["favs"]
+        n %= len(favs)
+        pos[i] = n
+        self._rx_key_pos = pos
+        name, s = self.rx_ref_search(favs[n])
         if not s:
-            self.toast.show("Nothing to copy", ["The search for the Regex key is empty.",
-                                                "Pick mods in the Regex window first."], C["red"], 5)
-            return
+            self.toast.show("Nothing to search", [f"\"{name}\" is empty."], C["red"], 4)
+            return None
+        from .overlay import type_search
         self.ignore_clip(s)
         self.own_clip = s
-        self.root.clipboard_clear()
-        self.root.clipboard_append(s)
-        self.toast.show("Stash search copied", [f"{label} ({len(s)} characters)",
-                                                "In your stash: Ctrl+V in the search."], C["accent"], 4)
+        type_search(s)
+        self.toast.show("Stash search", [f"{name}" + (f"  ({n + 1}/{len(favs)})" if len(favs) > 1 else "")],
+                        C["accent"], 3)
+        return name, s
 
-    def _rx_key_text(self):
-        from .overlay import key_label
-        k = SETTINGS.get("regex_key", "")
-        self.rx_key_var.set(k)
-        if getattr(self, "rx_key_lbl", None) is not None:
-            self.rx_key_lbl.config(text=key_label(k) if k else "none", fg=C["text"] if k else C["muted"])
+    def rx_key_hit(self, vk, ctrl, alt, shift):
+        """From the key watcher: is this a Regex key? -> its index or None."""
+        from .overlay import parse_key
+        for i, k in enumerate(self.rx_keys()):
+            if k["key"] and parse_key(k["key"]) == (vk, ctrl, alt, shift) and k["favs"]:
+                return i
+        return None
 
-    def rx_key_set(self, text):
-        SETTINGS["regex_key"] = text
-        save_json("settings.json", SETTINGS)
-        self._rx_key_text()
-        if hasattr(self, "fill_hotkeys"):
-            self.fill_hotkeys()
-        self.update_mouse_watch()
+    def rx_keys_dialog(self, ref=None):
+        """⌨ Key…: which Regex key, its favorites in order (up to 4), and its key (set in Settings › Keybinds)."""
+        w = tk.Toplevel(self.root)
+        w.title("Regex key")
+        w.configure(bg=C["panel"])
+        w.transient(self.root)
+        P1 = C["panel"]
+        keys = [dict(k, favs=list(k["favs"])) for k in self.rx_keys()]
+        if not keys:
+            keys.append({"key": "", "favs": []})
+        slot = next((i for i, k in enumerate(keys) if ref and ref in k["favs"]), 0)
+        if ref and not any(ref in k["favs"] for k in keys) and len(keys[slot]["favs"]) >= MAX_PER_KEY:
+            keys.append({"key": "", "favs": []})
+            slot = len(keys) - 1
+        if ref and ref not in keys[slot]["favs"]:
+            keys[slot]["favs"].append(ref)
+        st = {"slot": slot}
+        top = tk.Frame(w, bg=P1)
+        top.pack(fill="x", padx=12, pady=(12, 4))
+        tk.Label(top, text="Key", bg=P1, fg=C["muted"]).pack(side="left")
+        names = lambda: [f"Regex key {i + 1}" + (f" ({k['key']})" if k["key"] else "") for i, k in enumerate(keys)] + \
+            (["+ New key"] if len(keys) < MAX_KEYS else [])                 # noqa: E731
+        pick = ttk.Combobox(top, state="readonly", width=22, values=names())
+        pick.pack(side="left", padx=8)
+        ch = ttk.Button(top, text="Change key…", command=lambda: (save(close=False), w.destroy(),
+                                                                 self.hotkeys_open(f"rxkey:{st['slot']}")))
+        ch.pack(side="left")
+        Tooltip(ch, "Set it in Settings › Keybinds")
+        lst = tk.Frame(w, bg=P1)
+        lst.pack(fill="x", padx=12, pady=4)
 
-    def rx_hotkey_pick(self):
-        val = dict(self.rx_hotkey_choices()).get(self.rx_hk_var.get())
-        if val:
-            SETTINGS["regex_hotkey_search"] = val
+        def draw():
+            for c in lst.winfo_children():
+                c.destroy()
+            favs = keys[st["slot"]]["favs"]
+            for n, r in enumerate(favs):
+                row = tk.Frame(lst, bg=P1)
+                row.pack(fill="x", pady=1)
+                tk.Label(row, text=f"{n + 1}", bg=P1, fg=C["muted"], width=2).pack(side="left")
+                tk.Label(row, text=self.rx_ref_label(r), bg=P1, fg=C["text"], anchor="w").pack(side="left", fill="x",
+                                                                                               expand=True)
+                for t, d in (("↑", -1), ("↓", 1)):
+                    b = ttk.Button(row, text=t, width=3, command=lambda n=n, d=d: move(n, d))
+                    b.pack(side="left")
+                    Tooltip(b, "Move up" if d < 0 else "Move down")
+                x = ttk.Button(row, text="✕", width=3, command=lambda n=n: (favs.pop(n), draw()))
+                x.pack(side="left", padx=(4, 0))
+                Tooltip(x, "Take it off this key")
+            if not favs:
+                tk.Label(lst, text="No favorites on this key yet.", bg=P1, fg=C["muted"]).pack(anchor="w")
+            pick.config(values=names())
+            pick.current(st["slot"])
+            add.config(state="disabled" if len(favs) >= MAX_PER_KEY else "readonly")
+
+        def move(n, d):
+            favs = keys[st["slot"]]["favs"]
+            m = n + d
+            if 0 <= m < len(favs):
+                favs[n], favs[m] = favs[m], favs[n]
+                draw()
+
+        def picked(_e=None):
+            i = pick.current()
+            if i >= len(keys):
+                keys.append({"key": "", "favs": []})
+            st["slot"] = min(i, len(keys) - 1)
+            draw()
+        pick.bind("<<ComboboxSelected>>", picked)
+        arow = tk.Frame(w, bg=P1)
+        arow.pack(fill="x", padx=12, pady=(4, 8))
+        tk.Label(arow, text="+ Add a favorite", bg=P1, fg=C["muted"]).pack(side="left")
+        refs = [f"preset:{f['kind']}:{f['name']}" for f in self.rx_favs]
+        add = ttk.Combobox(arow, state="readonly", width=30, values=[self.rx_ref_label(r) for r in refs])
+        add.pack(side="left", padx=8)
+
+        def added(_e=None):
+            i = add.current()
+            favs = keys[st["slot"]]["favs"]
+            if 0 <= i < len(refs) and refs[i] not in favs and len(favs) < MAX_PER_KEY:
+                favs.append(refs[i])
+            add.set("")
+            draw()
+        add.bind("<<ComboboxSelected>>", added)
+        tk.Label(w, text="In game, each press types the next one in the stash search.", bg=P1, fg=C["muted"],
+                 font=("Segoe UI", 9)).pack(anchor="w", padx=12)
+
+        def save(close=True):
+            SETTINGS["regex_keys"] = [k for k in keys if k["favs"] or k["key"]][:MAX_KEYS]
             save_json("settings.json", SETTINGS)
+            self._rx_key_pos = {}
+            self.rx_fill_favorites()
+            if hasattr(self, "fill_hotkeys"):
+                self.fill_hotkeys()
+            if close:
+                w.destroy()
+        btns = tk.Frame(w, bg=P1)
+        btns.pack(fill="x", padx=12, pady=(8, 12))
+        ttk.Button(btns, text="Save", style="Primary.TButton", command=save).pack(side="right")
+        ttk.Button(btns, text="Cancel", command=w.destroy).pack(side="right", padx=(0, 8))
+        draw()
+        self.rx_keys_win = w
+        self.rx_keys_state = (keys, st, save)
+        return w
 
-    def rx_hotkey_refresh(self):
-        if not hasattr(self, "rx_hk_box"):
-            return
-        ch = self.rx_hotkey_choices()
-        self.rx_hk_box["values"] = [lab for lab, _v in ch]
-        cur = SETTINGS.get("regex_hotkey_search") or f"current:{self.rx_kind.get()}"
-        self.rx_hk_var.set(next((lab for lab, v in ch if v == cur), ch[0][0]))
-
-    # ---------------- 2.4.0: Favorites (were "Saved searches")
     def rx_load_favorites(self):
         """[{name, kind, state, added}] from regex_favorites.json (or its backup); the first time, the old saved
         searches (regex_presets.json) become Favorites."""
@@ -791,7 +886,6 @@ class RegexPage:
         self.rx_presets = self.rx_fav_index()
         self._rx_fav_write()
         self.rx_fill_favorites()
-        self.rx_hotkey_refresh()
 
     def rx_show_page(self):
         fav = self.rx_page.get() == "★ Favorites"
@@ -804,22 +898,42 @@ class RegexPage:
         P1 = C["panel"]
         bar = tk.Frame(page, bg=P1, padx=8, pady=8)
         bar.pack(fill="x")
-        for text, fn, accent in (("Copy", self.rx_fav_copy, True), ("Open in the builder", self.rx_fav_open, False),
-                                 ("Use for the Regex key", self.rx_fav_hotkey, False), ("Rename…", self.rx_fav_rename, False),
-                                 ("Delete", lambda: self.rx_fav_delete(self.rx_fav_tv.selection()), False)):
-            ttk.Button(bar, text=text, command=fn, style="Primary.TButton" if accent else "TButton").pack(side="left",
-                                                                                                    padx=(0, 8))
+        # 2.132.6 (feedback: "publish their regex to the database ... sorting for Official | Community | Mine"):
+        # search first, the three views, then what you can do with the picked one (gray until there is one)
+        self.rx_fav_q = tk.StringVar()
+        tk.Label(bar, text="🔍", bg=P1, fg=C["muted"], font=("Segoe UI Symbol", 10)).pack(side="left", padx=(0, 4))
+        q = ttk.Entry(bar, textvariable=self.rx_fav_q, width=22)
+        q.pack(side="left")
+        Tooltip(q, "Search names, searches and tags")
+        self.rx_fav_q.trace_add("write", lambda *_a: self.root.after_idle(self.rx_fill_favorites))
+        self.rx_fav_view = SegBar(bar, list(SHARE_VIEWS), value="Mine", command=lambda v: self.rx_fav_view_changed(),
+                                  size=10, pad=(12, 4))
+        self.rx_fav_view.pack(side="left", padx=(12, 0))
+        self.rx_fav_btns = {}
+        for text, fn, accent, tip in (
+                ("📋 Copy", self.rx_fav_copy, True, "Copy the search (or double-click it)"),
+                ("Open in the builder", self.rx_fav_open, False, "Open it in Build a search"),
+                ("⌨ Key…", self.rx_fav_hotkey, False, "Put it on a Regex key: in game, the key types it in the "
+                                                     "stash search"),
+                ("🏷 Tags…", self.rx_fav_tags, False, "Tag one of yours"),
+                ("📤 Post", self.rx_fav_post, False, "Share one of yours on the Community board"),
+                ("▲ Upvote", self.rx_fav_vote, False, "Upvote a Community one"),
+                ("☆ Add to Mine", self.rx_fav_take, False, "Keep a Community or Official one in your Favorites"),
+                ("Delete", lambda: self.rx_fav_delete(self.rx_fav_tv.selection()), False, "Delete yours (Ctrl+Z undoes)")):
+            b = ttk.Button(bar, text=text, command=fn, style="Primary.TButton" if accent else "TButton")
+            b.pack(side="left", padx=(8 if text == "📋 Copy" else 0, 8))
+            Tooltip(b, tip)
+            self.rx_fav_btns[text] = b
         self.undo_button(bar, "regex").pack(side="left", padx=(0, 8))
-        self.rx_fav_msg = tk.Label(page, text="Your saved searches, all item types together. 📋 Copy (or double-click) "
-                                              "copies one; Delete removes the selected ones (Ctrl+Z undoes). They're kept in "
-                                              "the app's data folder, so updates don't touch them.",
-                                   bg=P1, fg=C["muted"], anchor="w", justify="left", padx=12)
+        flowify(bar) if callable(flowify) else None
+        self.rx_fav_msg = tk.Label(page, text="Your saved searches, and the community's.", bg=P1, fg=C["muted"],
+                                   anchor="w", justify="left", padx=12)
         self.rx_fav_msg.pack(fill="x")
-        self.rx_fav_msg.bind("<Configure>", lambda e: self.rx_fav_msg.config(wraplength=max(300, e.width - 24)))
         tf = tk.Frame(page, bg=P1)
         tf.pack(fill="both", expand=True, padx=8, pady=(8, 8))
-        cols = (("copy", "", 70, "center"), ("name", "Name", 200, "w"), ("kind", "For", 90, "w"),
-                ("search", "Search", 420, "w"), ("len", "Length", 60, "e"))
+        cols = (("copy", "", 70, "center"), ("name", "Name", 180, "w"), ("kind", "For", 80, "w"),
+                ("search", "Search", 360, "w"), ("len", "Length", 56, "e"), ("tags", "Tags", 130, "w"),
+                ("key", "Key", 70, "w"), ("score", "▲", 40, "center"), ("by", "By", 100, "w"))
         tv = ttk.Treeview(tf, columns=[c[0] for c in cols], show="headings")
         for cid, title, w, anchor in cols:
             tv.heading(cid, text=title)
@@ -829,43 +943,117 @@ class RegexPage:
         sb.pack(side="right", fill="y")
         tv.pack(fill="both", expand=True)
         tv.tag_configure("odd", background=C["odd"])
+        tv.tag_configure("mine", foreground=C["green"])
         tv.bind("<Double-1>", lambda e: self.rx_fav_copy())
         tv.bind("<ButtonRelease-1>", self.rx_fav_click, add="+")      # 2.21.0: a Copy button on every row
+        tv.bind("<<TreeviewSelect>>", lambda e: self.rx_fav_greys(), add="+")
         self.rx_fav_tv = tv
+        self.rx_rows = {}
         self.list_register("regex", tv, delete=self.rx_fav_delete)
         tv.menu_actions = lambda sel: [("📋 Copy the search", self.rx_fav_copy, len(sel) == 1),     # 2.36.0
                                        ("Open in Build a search", self.rx_fav_open, len(sel) == 1),
-                                       ("Use for the Regex key", self.rx_fav_hotkey, len(sel) == 1),
-                                       ("Rename…", self.rx_fav_rename, len(sel) == 1)]
+                                       ("⌨ Put on a Regex key…", self.rx_fav_hotkey, self._rx_one_mine()),
+                                       ("Rename…", self.rx_fav_rename, self._rx_one_mine()),
+                                       ("⚑ Report…", self.rx_fav_report, bool(self._rx_post()))]
         self.rx_fav_empty = tk.Label(tf, text="No Favorites yet.\nBuild a search, then press ☆ Add to Favorites.",
                                      bg=P1, fg=C["muted"], font=("Segoe UI", 10), justify="center")
 
     def rx_fav_search(self, f):
+        if f.get("_shared") or not f.get("state"):
+            return str(f.get("search") or "")                    # (a shared one: its search as posted)
         want = list((f["state"].get("want") or {}).items())
         avoid = [(i, None) for i in f["state"].get("avoid") or []]
         s, _n = R.build(f["kind"], want, avoid, f["state"].get("all"), f["state"].get("opts"))
         return s or ""
 
+    @staticmethod
+    def _rx_shared(d):
+        """A board post's data -> a favorite-like dict."""
+        return {"name": str(d.get("name", "")), "kind": d.get("for") if d.get("for") in R.KINDS else "waystone",
+                "state": d.get("state") if isinstance(d.get("state"), dict) else None, "search": d.get("search", ""),
+                "tags": list(d.get("tags") or []), "author": d.get("author", ""), "_shared": True}
+
+    def rx_fav_view_changed(self):
+        if self.rx_fav_view.get() != "Mine":
+            self.share_fetch("regex", self.rx_fill_favorites)
+        self.rx_fill_favorites()
+
+    def rx_key_of(self, f):
+        """-> "F6 1/2" if this favorite is on a Regex key."""
+        ref = f"preset:{f['kind']}:{f['name']}"
+        for k in SETTINGS.get("regex_keys") or []:
+            favs = k.get("favs") or []
+            if ref in favs and k.get("key"):
+                return f"{k['key']} {favs.index(ref) + 1}/{len(favs)}" if len(favs) > 1 else k["key"]
+        return ""
+
     def rx_fill_favorites(self):
         tv = getattr(self, "rx_fav_tv", None)
         if tv is None:
             return
+        from .share_page import view_rows
         tv.delete(*tv.get_children())
-        for i, f in enumerate(self.rx_favs):
+        view = self.rx_fav_view.get() if hasattr(self, "rx_fav_view") else "Mine"
+        q = self.rx_fav_q.get().strip().lower() if hasattr(self, "rx_fav_q") else ""
+
+        def search_of(d):
             try:
-                s = self.rx_fav_search(f)
+                return self.rx_fav_search(d)
             except Exception:
-                s = ""
-            tv.insert("", "end", iid=str(i), values=("📋 Copy", f["name"], KIND_NAMES[f["kind"]][:-1], s or "(empty)", len(s)),
-                      tags=("odd",) if i % 2 else ())
-        if self.rx_favs:
+                return ""
+        rows = view_rows(view, self.rx_favs, self.share_posts("regex"), self.share_official("regex"),
+                         key=lambda d: (d.get("for") or d.get("kind"), (d.get("search") or search_of(d)).strip()))
+        self.rx_rows = {}
+        n = 0
+        for r in rows:
+            f = r["data"] if r["origin"] == "mine" else self._rx_shared(r["data"])
+            s = search_of(f)
+            if q and q not in (f["name"] + " " + s + " " + " ".join(f.get("tags") or [])).lower():
+                continue
+            post = r.get("_post") or {}
+            iid = f"m:{r['_i']}" if r["origin"] == "mine" else (f"b:{post['id']}" if post else f"o:{n}")
+            self.rx_rows[iid] = dict(f, _origin=r["origin"], _post=post or None, _i=r.get("_i"))
+            by = "Me" if r["origin"] == "mine" else (post.get("author", {}) or {}).get("name") or f.get("author", "")
+            tv.insert("", "end", iid=iid, values=("📋 Copy", f["name"], KIND_NAMES[f["kind"]][:-1], s or "(empty)", len(s),
+                                                  ", ".join(f.get("tags") or []),
+                                                  self.rx_key_of(f) if r["origin"] == "mine" else "",
+                                                  post.get("score", "") if post else "", by),
+                      tags=(("odd",) if n % 2 else ()) + (("mine",) if r["origin"] == "mine" else ()))
+            n += 1
+        if self.rx_rows:
             self.rx_fav_empty.place_forget()
         else:
+            self.rx_fav_empty.config(text="No Favorites yet.\nBuild a search, then press ☆ Add to Favorites."
+                                     if view == "Mine" else "Nothing here yet.")
             self.rx_fav_empty.place(relx=0.5, rely=0.4, anchor="center")
+        self.rx_fav_greys()
+
+    def _rx_sel_rows(self):
+        return [self.rx_rows[i] for i in self.rx_fav_tv.selection() if i in getattr(self, "rx_rows", {})]
 
     def _rx_fav_sel(self):
-        sel = self.rx_fav_tv.selection()
-        return [self.rx_favs[int(i)] for i in sel if str(i).isdigit() and int(i) < len(self.rx_favs)]
+        """The picked favorites (yours as they are; shared ones as favorite-like copies)."""
+        return [self.rx_favs[r["_i"]] if r["_origin"] == "mine" else r for r in self._rx_sel_rows()]
+
+    def _rx_one_mine(self):
+        rows = self._rx_sel_rows()
+        return len(rows) == 1 and rows[0]["_origin"] == "mine"
+
+    def _rx_post(self):
+        rows = self._rx_sel_rows()
+        return rows[0]["_post"] if len(rows) == 1 else None
+
+    def rx_fav_greys(self):
+        rows = self._rx_sel_rows()
+        one, mine = len(rows) == 1, self._rx_one_mine()
+        post = self._rx_post()
+        for text, ok in (("📋 Copy", one), ("Open in the builder", one and bool(rows[0].get("state"))),
+                         ("⌨ Key…", mine), ("🏷 Tags…", mine), ("📤 Post", mine), ("▲ Upvote", bool(post)),
+                         ("☆ Add to Mine", one and not mine), ("Delete", bool(rows) and all(r["_origin"] == "mine"
+                                                                                         for r in rows))):
+            b = getattr(self, "rx_fav_btns", {}).get(text)
+            if b is not None:
+                b.state(["!disabled"] if ok else ["disabled"])
 
     def rx_fav_click(self, e):
         """A click on a row's "📋 Copy" cell copies that favorite."""
@@ -892,7 +1080,7 @@ class RegexPage:
 
     def rx_fav_open(self):
         f = (self._rx_fav_sel() or [None])[0]
-        if not f:
+        if not f or not f.get("state"):
             return self._say("Select a favorite first.", 5)
         self.rx_kind.set(f["kind"])
         self.rx_state[f["kind"]] = copy.deepcopy(f["state"])
@@ -900,34 +1088,76 @@ class RegexPage:
         self.rx_page.pick("Build a search")
         self.rx_kind_changed()
 
+    def rx_fav_take(self):
+        """A shared one -> your Favorites (its name, search and builder picks)."""
+        rows = self._rx_sel_rows()
+        if len(rows) != 1 or rows[0]["_origin"] == "mine":
+            return self._say("Pick a Community or Official one.", 5)
+        r = rows[0]
+        f = {"name": self._rx_unique(r["kind"], r["name"] or "Shared search"), "kind": r["kind"],
+             "state": copy.deepcopy(r.get("state")) or {}, "added": time.time(), "tags": list(r.get("tags") or [])}
+        if not r.get("state"):
+            f["search"] = r.get("search", "")
+        self.rx_favs.append(f)
+        self.rx_fav_changed()
+        self._say(f"\"{f['name']}\" is in your Favorites (Mine).", 6)
+        return f
+
+    def rx_fav_tags(self):
+        f = (self._rx_fav_sel() or [None])[0]
+        if not f or not self._rx_one_mine():
+            return self._say("Pick one of yours (Mine) to tag it.", 5)
+
+        def save(tags):
+            f["tags"] = tags
+            self.rx_fav_changed()
+        return self.share_tags(f["name"], f.get("tags"), save)
+
+    def rx_fav_post(self):
+        f = (self._rx_fav_sel() or [None])[0]
+        if not f or not self._rx_one_mine():
+            return self._say("Pick one of yours (Mine) to post it.", 5)
+        s = self.rx_fav_search(f)
+        if not s:
+            return self._say("That search is empty.", 5)
+        data = {"name": f["name"][:60], "for": f["kind"], "search": s[:250]}
+        if f.get("state"):
+            data["state"] = f["state"]
+        if f.get("tags"):
+            data["tags"] = list(f["tags"])
+        return self.share_post("regex", data, self.rx_fill_favorites)
+
+    def rx_fav_vote(self):
+        return self.share_vote("regex", self._rx_post(), self.rx_fill_favorites)
+
+    def rx_fav_report(self):
+        return self.share_report("regex", self._rx_post(), self.rx_fill_favorites)
+
     def rx_fav_hotkey(self):
         f = (self._rx_fav_sel() or [None])[0]
-        if not f:
-            return self._say("Select a favorite first.", 5)
-        SETTINGS["regex_hotkey_search"] = f"preset:{f['kind']}:{f['name']}"
-        save_json("settings.json", SETTINGS)
-        self.rx_hotkey_refresh()
-        key = SETTINGS.get("regex_key")
-        self._say(f"The Regex key now copies \"{f['name']}\"." + ("" if key else
-                  " Set the key under Build a search > Regex key."), 8)
+        if not f or not self._rx_one_mine():
+            return self._say("Pick one of yours (Mine) first.", 5)
+        return self.rx_keys_dialog(f"preset:{f['kind']}:{f['name']}")
 
     def rx_fav_rename(self):
         f = (self._rx_fav_sel() or [None])[0]
-        if not f:
+        if not f or not self._rx_one_mine():
             return self._say("Select a favorite first.", 5)
         name = simpledialog.askstring("Rename", "New name:", initialvalue=f["name"], parent=self.root)
         if not name or not name.strip() or name.strip() == f["name"]:
             return
         old = f"preset:{f['kind']}:{f['name']}"
         f["name"] = self._rx_unique(f["kind"], name.strip())
-        if SETTINGS.get("regex_hotkey_search") == old:
-            SETTINGS["regex_hotkey_search"] = f"preset:{f['kind']}:{f['name']}"
-            save_json("settings.json", SETTINGS)
+        new = f"preset:{f['kind']}:{f['name']}"
+        for k in SETTINGS.get("regex_keys") or []:                 # (its Regex key follows it)
+            k["favs"] = [new if x == old else x for x in k.get("favs") or []]
+        save_json("settings.json", SETTINGS)
         self.rx_fav_changed()
 
     def rx_fav_delete(self, rows):
-        idx = sorted({int(r) for r in rows if str(r).isdigit() and int(r) < len(self.rx_favs)}, reverse=True)
-        gone = [(i, self.rx_favs[i]) for i in idx]
+        idx = sorted({self.rx_rows[r]["_i"] for r in rows if r in getattr(self, "rx_rows", {})
+                      and self.rx_rows[r]["_origin"] == "mine"}, reverse=True)
+        gone = [(i, self.rx_favs[i]) for i in idx if i < len(self.rx_favs)]
         if not gone:
             return
         for i, _f in gone:

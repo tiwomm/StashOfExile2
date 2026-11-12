@@ -150,6 +150,15 @@ def _ritual_id_21324(S):
     S.pop("ritual_id", None)
 
 
+def _regex_keys_21326(S):
+    """2.132.6: the one Regex key (it copied a search) becomes Regex key 1 (it types it in the stash search)."""
+    key = str(S.get("regex_key") or "")
+    if key and not S.get("regex_keys"):
+        ref = str(S.get("regex_hotkey_search") or "current:tablet")
+        S["regex_keys"] = [{"key": key, "favs": [ref]}]
+    S.pop("regex_key", None)
+
+
 STEPS = (
     ("modbook_import", "1.x", "app", _modbook_import, "modbook_imported"),
     ("rules_scoped", "2.6.0", "app", _rules_scoped, "rules_scoped_26"),
@@ -166,6 +175,7 @@ STEPS = (
     ("favours_art_2129", "2.129.0", "settings", _favours_art_2129, None),
     ("whispers_after_21292", "2.129.2", "settings", _whispers_after_21292, None),
     ("ritual_id_21324", "2.132.4", "settings", _ritual_id_21324, None),
+    ("regex_keys_21326", "2.132.6", "settings", _regex_keys_21326, None),
 )
 
 
