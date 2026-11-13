@@ -26,6 +26,10 @@ VERSION HISTORY
          second on its own thread with its own text reader (remnant ocr(fast=True): its own engine and lock, so the
          whole-screen read can't hold it up), only in a map with a Temple and the game in front. A slow PC reads back
          to back as fast as it can.
+       - Alert cards (feedback: "instead of an X on the over game cards/alerts/notifications, you can click anywhere on
+         the card to dismiss it"): no ×. One alert: a click anywhere closes it. Several: a click on a row closes that
+         one; on the header ("click to close"), the edges or the countdown, all of them. (The card already took the
+         click - it was never click-through - so nothing changes for the game.)
   2.138.0
        - Map profit (feedback: "I want an export csv option ... if you hit clear all, I want it to ask if you want to
          export the data first ... clear it from the list or clear the data itself"): Export CSV… (one row per item

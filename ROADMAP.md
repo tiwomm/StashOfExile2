@@ -275,7 +275,7 @@ Order (decided 2026-11-05): the page passes, then the Privacy & data hub, then t
 | 2.137.1 | Alert cards at the top center by default (not on your character); a space after HELPERS. |
 | 2.137.2 | Ritual Identifier and Temple Helper read a quarter of the screen bigger every other look: small labels found at any size. |
 | 2.138.0 | Map profit: Export CSV, and Clear all asks (export first, hide from the list, or delete). Leaderboards: Export my times. |
-| 2.138.1 | Fast Beacon Read (opt-in, Helpers › Temple): catches a Vaal Beacon's count as you stand on it. |
+| 2.138.1 | Fast Beacon Read (opt-in, Helpers › Temple): catches a Vaal Beacon's count as you stand on it. Alerts close with a click anywhere on them (no ×). |
 | 2.135.1 | No fades (Reduce motion always on); Regex: Genesis Tree, warping rune and Alloy mods. |
 | 2.135.0 | Page windows stay with the app; Scan stash out of BETA, Count currency in More; Temple crystals in runs. |
 | 2.134.1 | Update question: What's new only, checksums stay on the release page. |

@@ -51,6 +51,7 @@ NOTES = {
         "big": [],
         "small": [
             ("Fast Beacon Read", "New switch in Helpers › Temple. Turn it on only if crystals aren't counted."),
+            ("Alerts", "Click anywhere on one to close it. No more ×."),
         ],
     },
     "2.138.0": {
