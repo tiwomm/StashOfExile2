@@ -104,7 +104,14 @@ class HoverPage:
             if self.temple_on() or force:
                 self.temple_seen(TM.parse(lines))
             if self.ritid_on() or force:
-                self.ritid_seen(RID.parse(lines))
+                key = RID.parse(lines)
+                self.ritid_seen(key)
+                if not key:                                 # 2.138.0: Debug mode - an altar seen but its type not read
+                    seen = [RID.letters(t) for t, _b in lines or [] if "RITUAL" in RID.letters(t)]
+                    seen = [s for s in seen if "REWARD" not in s]
+                    if seen and time.time() - getattr(self, "_rid_said", 0.0) > 30:
+                        self._rid_said = time.time()
+                        buglog.debug("Ritual", "altar seen, type not read: " + " | ".join(s[:40] for s in seen[:3]))
         try:
             self.run_bg(work, done)
         except Exception:
