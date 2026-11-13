@@ -1680,13 +1680,17 @@ class App(SettingsPage, GearBookPage, PriceCheckPage, PricePopup, FavoritesPage,
 
     def er_tick_once(self):
         from . import errorreports as ER
-        if ER.on():
+        if ER.on() or ER.admin():
             threading.Thread(target=self._er_work, daemon=True).start()
 
     def _er_work(self):
         from . import errorreports as ER
         try:
             ER.send()
+        except Exception:
+            buglog.caught()
+        try:
+            ER.fetch_pool()                              # board admins: everyone's, to this PC only (once a day)
         except Exception:
             buglog.caught()
 

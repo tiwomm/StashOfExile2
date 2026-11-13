@@ -28,8 +28,10 @@ VERSION HISTORY
          6 code places, a count, the version and Windows/Linux; trade site errors also send the site's short answer
          ("Unknown stat provided: ...") - never the address or search. Every field must match a narrow pattern (here
          and on the board). Board: POST /errors (x-soe2 header, 30 a day per address and per install), app_errors +
-         app_error_installs (hashed install id, 30 days); GET /errors needs the ERRORS_KEY secret. Settings › Privacy &
-         community: the switch and "What error reports send" (the next send word for word).
+         app_error_installs (hashed install id, 30 days). Private (feedback: "how can we make sure it never ends up
+         public/uploaded to github"): GET /errors is for board admins only; the admin's app saves everyone's to its own
+         data folder once a day (error_reports.json) - no workflow, no key, never the repo (tools/check_private.py in
+         Checks). Settings › Privacy & community: the switch and "What error reports send" (the next send word for word).
   2.136.2
        - Vaal Ruins is a town (feedback: "Profit tracker needs to ... treat vaal ruins as town/hideout area to track
          profits in my inventory ... and treat atziri's temple as the map"): maplib.HUBS ("IncursionHubEndgame", level

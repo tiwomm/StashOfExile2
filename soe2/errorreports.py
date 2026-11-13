@@ -19,6 +19,8 @@ import threading
 from .config import SETTINGS, load_json, save_json
 
 STATE = "error_sent.json"        # {"last": newest log time sent, "sent": n}
+POOLED = "error_reports.json"    # board admins only: everyone's reports, kept in this PC's data folder - never the repo
+POOL_EVERY = 86400
 EVERY = 3600
 MAX_ITEMS = 50
 KINDS = ("error", "crash", "freeze", "slow", "net", "caught", "debug")
@@ -190,4 +192,31 @@ def preview():
             bits.append("< " + " < ".join(it["frames"]))
         out.append("  ".join(bits) + f"  x{it['n']}")
     return "\n".join(out)
+
+
+def admin():
+    """True when this app is signed in to the board as an admin (the admin key was entered here)."""
+    from . import board as B
+    try:
+        return bool(B.configured() and B.signed_in() and (B.session().get("user") or {}).get("admin"))
+    except Exception:
+        return False
+
+
+def fetch_pool(call=None, force=False):
+    """Board admins: everyone's error reports -> error_reports.json in this PC's data folder, once a day. Only the
+    board's admin check lets it through; nothing else (no workflow, no key) can read them. -> rows saved, or None."""
+    if not admin():
+        return None
+    old = load_json(POOLED, {}) or {}
+    import time
+    if not force and time.time() - float(old.get("ts") or 0) < POOL_EVERY:
+        return None
+    from . import board as B
+    ok, d = (call or B.call)("GET", "/errors")
+    if not ok or not isinstance(d, dict):
+        return None
+    rows = d.get("errors") or []
+    save_json(POOLED, {"ts": time.time(), "errors": rows})
+    return len(rows)
 
