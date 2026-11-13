@@ -47,6 +47,12 @@ BETA_AREAS = ("Wealth", "Money Makers", "Game Search", "Market Insights", "Craft
 # repeats. Someone coming from rollup["since"] or older (or a fresh install) sees it instead of each version; someone
 # on a pre-release already saw them and gets only this version's own lines (notes_between).
 NOTES = {
+    "2.142.1": {
+        "big": [],
+        "small": [
+            ("Vaal Lens", "Room medallions are known by their room's picture - no hover needed."),
+        ],
+    },
     "2.142.0": {
         "big": [
             ("◆", "Vaal Lens", "Plans your hand: Thaumaturge, Corruption Chamber beside it, upgrade, lock.", None,

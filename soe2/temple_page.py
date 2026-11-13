@@ -411,7 +411,11 @@ class TemplePage:
         for k, sl in enumerate(M.slots(got["head"], s, have)):
             ib = M.icon_box(sl)
             vec = M.feat(full.crop((ib[0] - gx, ib[1] - gy, ib[2] - gx, ib[3] - gy)))
-            hand.append(M.identify(vec, icons))
+            who = M.identify(vec, icons)
+            if who is None:                                 # 2.142.1: a room medallion shows its room's icon
+                room = M.room_from_icon(full, sl, origin=(gx, gy))
+                who = f"Uromoti's Medallion: {room}" if room else None
+            hand.append(who)
             if ptr and sl[0] <= ptr[0] <= sl[2] and sl[1] <= ptr[1] <= sl[3] and got["names"]:
                 n = got["names"][0][0]
                 if n == "Uromoti's Medallion" and got["room"]:     # (its picture is its room's: kept by room)
