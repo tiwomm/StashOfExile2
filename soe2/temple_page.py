@@ -177,7 +177,7 @@ class TemplePage:
                 if sct is not None:
                     sct.close()
             except Exception:
-                pass
+                buglog.caught()
         self._tm_fast_thread = threading.Thread(target=loop, daemon=True, name="Fast Beacon Read")
         self._tm_fast_thread.start()
         self._tm_fast_poll()
