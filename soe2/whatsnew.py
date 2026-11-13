@@ -47,6 +47,12 @@ BETA_AREAS = ("Wealth", "Money Makers", "Game Search", "Market Insights", "Craft
 # repeats. Someone coming from rollup["since"] or older (or a fresh install) sees it instead of each version; someone
 # on a pre-release already saw them and gets only this version's own lines (notes_between).
 NOTES = {
+    "2.138.4": {
+        "big": [],
+        "small": [
+            ("Price check", "Megalomaniac: each passive it allocates is searched."),
+        ],
+    },
     "2.138.3": {
         "big": [],
         "small": [
