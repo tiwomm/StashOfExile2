@@ -52,6 +52,7 @@ NOTES = {
         "small": [
             ("Temple", "Fast Beacon Read: looks 30 times a second, reads only the Beacon's tooltip - should catch more."),
             ("Ritual", "Altar type: one slow screen read shouldn't stop the rest of the map's looks any more."),
+            ("Price check", "Not now on a mod's rating ask: closes it at once."),
         ],
     },
     "2.138.2": {
