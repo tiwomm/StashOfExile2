@@ -503,3 +503,44 @@ def lines(board):
              (arch, "Architect found" if arch else "Architect not found")]
     count = " · ".join(f"{n.get(k, 0)} {w}" for k, w in (("room", "rooms"), ("path", "paths"), ("reward", "reward rooms")))
     return marks, count
+
+
+def placing(game):
+    """2.141.0: the game window (left, top, width, height) -> (scale, left, top) of the 2560x1440 console frame on
+    screen (frame() in reverse): a board point (x, y) is at (left + x * scale, top + y * scale)."""
+    gx, gy, gw, gh = game
+    want = round(gh * 16 / 9)
+    if gw > want + 2:
+        return gh / FULL[1], gx + (gw - want) // 2, gy
+    if gw < want - 2:
+        hh = round(gw * 9 / 16)
+        return gw / FULL[0], gx, gy + (gh - hh) // 2
+    return gh / FULL[1], gx, gy
+
+
+def on_screen(game, x, y):
+    s, left, top = placing(game)
+    return left + x * s, top + y * s
+
+
+# the console's card list (left of the board): the picked card's name is read here, in 2560x1440 frame coordinates
+CARD_BOX = (40, 640, 340, 1150)
+
+
+def card_box(game):
+    """-> (left, top, right, bottom) on screen of the card list."""
+    l, t = on_screen(game, CARD_BOX[0], CARD_BOX[1])
+    r, b = on_screen(game, CARD_BOX[2], CARD_BOX[3])
+    return int(l), int(t), int(r), int(b)
+
+
+def card_name(lines):
+    """OCR lines of the card list -> the one card's name, or None (none, or more than one: which one is picked isn't
+    known, so only the ✕ marks show)."""
+    from . import vaallens_plan as VP
+    seen = []
+    for text, _box in lines or []:
+        t = " ".join(str(text).split())
+        if VP.card(t) and t.lower() not in [s.lower() for s in seen]:
+            seen.append(t)
+    return seen[0] if len(seen) == 1 else None

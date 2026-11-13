@@ -47,6 +47,15 @@ BETA_AREAS = ("Wealth", "Money Makers", "Game Search", "Market Insights", "Craft
 # repeats. Someone coming from rollup["since"] or older (or a fresh install) sees it instead of each version; someone
 # on a pre-release already saw them and gets only this version's own lines (notes_between).
 NOTES = {
+    "2.141.0": {
+        "big": [
+            ("◆", "Vaal Lens", "Pick a card: 1 and 2 mark the best tiles, ✕ marks tiles touching a reward room.",
+             None, "Overlay"),
+        ],
+        "small": [
+            ("Vaal Lens", "Crystals show as pips."),
+        ],
+    },
     "2.140.0": {
         "big": [
             ("◆", "Vaal Lens", "Temple card reads the console's board: gold path, key room, Architect. Notes fold.",

@@ -210,6 +210,9 @@ class TemplePage:
         try:
             from .overlaywin import foreground_ok
             if not foreground_ok():
+                mk = getattr(self, "tm_marks_win", None)
+                if mk is not None:
+                    mk.hide()                                # 2.141.0: the marks only over the game
                 return
             from .alerts_page import game_rect
             g = game_rect()
@@ -244,6 +247,11 @@ class TemplePage:
                 try:
                     from . import vaallens as V
                     board = V.read(V.frame(RM.grab((gx, gy, gx + gw, gy + gh))))
+                    # 2.141.0: a card picked (the game lights its tiles) - its name, from the card list
+                    if V.seen(board) and board.get("lit"):
+                        cb = V.card_box(g)
+                        pic = RM.grab(cb)
+                        board["card"] = V.card_name(RM.ocr(pic.resize((pic.width * 2, pic.height * 2))))
                 except Exception:
                     buglog.caught()
             return got, lines, board
@@ -287,6 +295,9 @@ class TemplePage:
 
     def temple_pad_close(self):
         self._temple_pad_keep()
+        mk = getattr(self, "tm_marks_win", None)
+        if mk is not None:
+            mk.hide()
         w, self.tm_pad = getattr(self, "tm_pad", None), None
         if w is not None:
             try:
@@ -318,8 +329,34 @@ class TemplePage:
             if n != getattr(self, "_tm_board_said", None):
                 self._tm_board_said = n
                 buglog.debug("Vaal Lens", "board " + " ".join(f"{k}={v}" for k, v in sorted(n.items())))
+        self.temple_marks_sync(board)
         if self.tm_board_open or was:
             self.temple_pad_refresh()
+
+    def temple_marks_sync(self, board=None):
+        """2.141.0: a picked card's lit tiles -> 1 / 2 and ✕ over the game (vaallens_marks); none = none drawn."""
+        from . import vaallens as V, vaallens_plan as VP
+        marks = {}
+        board = board if board is not None else getattr(self, "tm_board", None)
+        if (board and V.seen(board) and board.get("lit") and self.temple_pad_shown()
+                and getattr(self, "tm_area", "") != TM.RUN_AREA):
+            marks = VP.marks(board, board["lit"], VP.card(board.get("card")))
+        self.tm_marks = marks
+        self.tm_pick = (board or {}).get("card") if marks else None
+        mk = getattr(self, "tm_marks_win", None)
+        try:
+            from .alerts_page import game_rect
+            g = game_rect() if marks else None
+            if marks and g:
+                if mk is None:
+                    from .vaallens_marks import Marks
+                    mk = self.tm_marks_win = Marks(self.root)
+                from .overlaywin import pal
+                mk.show(g, marks, pal())
+            elif mk is not None:
+                mk.hide()
+        except Exception:
+            buglog.caught()
 
     def temple_lens_lines(self):
         """-> ([(done, text)...], counts line) for the card; before the console is opened, one line saying so."""
@@ -328,6 +365,23 @@ class TemplePage:
         if not board:
             return [], "Open the Temple Console to read the board."
         return V.lines(board)
+
+    def temple_pick_lines(self):
+        """2.141.0: while a card is picked -> [(mark, text)]: the best tile's reason and how many tiles are ruled out."""
+        marks = getattr(self, "tm_marks", None) or {}
+        if not marks:
+            return []
+        out = []
+        best = [why for m, why in marks.values() if m == "1"]
+        name = getattr(self, "tm_pick", None)
+        if best:
+            out.append(("★", f"{name}: 1 · {best[0]}" if name else f"1 · {best[0]}"))
+        else:
+            out.append(("◻", "Card not read: only the ✕ tiles show"))
+        n = sum(1 for m, _w in marks.values() if m == "x")
+        if n:
+            out.append(("✕", f"{n} tile{'' if n == 1 else 's'} touch a reward room"))
+        return out
 
     def temple_pad_show(self):
         if self.temple_pad_shown():
@@ -345,7 +399,7 @@ class TemplePage:
         def moved(nx, ny, ww, hh):
             c.update(pad_x=int(nx), pad_y=int(ny), pad_w=int(ww), pad_h=int(hh))
             save_json("settings.json", SETTINGS)
-        w = OverlayWindow(self.root, "Vaal Lens", "◆", (x, y, c.get("pad_w") or 300, c.get("pad_h") or 260),
+        w = OverlayWindow(self.root, "Vaal Lens", "◆", (x, y, c.get("pad_w") or 300, None),
                           palette=P, locked=bool(self.tracker_cfg().get("mlocked")), on_lock=self.overlay_lock,
                           on_close=self.temple_pad_close, on_moved=moved, follow_game=True, min_size=(220, 160))
         w.withdraw()
@@ -360,6 +414,9 @@ class TemplePage:
         self.tm_pad_head.pack(side="left")
         tk.Label(top, text="BETA", bg=P["bg"], fg=P["muted"], font=(P["font"], self.ov_font(8), "bold"),
                  highlightthickness=1, highlightbackground=P["line"], padx=4).pack(side="right")
+        # 2.141.0: crystals as pips (one per run's worth, 6 each) under the count
+        self.tm_pad_pips = self._temple_pips(body, P)
+        tk.Frame(body, bg=P["head"], height=2).pack(fill="x", pady=(8, 0))
         tk.Label(body, text="THE BOARD", bg=P["bg"], fg=P["muted"], font=(P["font"], self.ov_font(8), "bold"),
                  anchor="w").pack(fill="x", pady=(8, 0))
         self.tm_lens_box = tk.Frame(body, bg=P["bg"])
@@ -415,12 +472,39 @@ class TemplePage:
             self.temple_pad_close()
             self.temple_pad_show()
 
+    def _temple_pips(self, parent, P):
+        """A row of pill pips (a canvas); its .fill = (n, of) is drawn at the canvas's width."""
+        cv = tk.Canvas(parent, bg=P["bg"], height=12, highlightthickness=0, bd=0)
+        cv.pack(fill="x", pady=(4, 0))
+        cv.fill = (0, 0)
+
+        def draw(_e=None):
+            cv.delete("all")
+            n, of = cv.fill
+            if not of:
+                return
+            w = max(40, cv.winfo_width())
+            gap, r = 5, 4
+            step = (w - 2 * r + gap) / of
+            for k in range(of):
+                x0 = r + k * step
+                cv.create_line(x0, 6, x0 + step - gap - r, 6, width=2 * r, capstyle="round",
+                               fill=P["head"] if k < n else P["line"])
+        cv.redraw = draw
+        cv.bind("<Configure>", draw)
+        return cv
+
     def temple_pad_refresh(self):
         """The crystals line and the board follow each new read."""
         lab = getattr(self, "tm_pad_head", None)
         try:
             if lab is not None and lab.winfo_exists():
                 lab.config(text=self.temple_pad_line())
+            pips = getattr(self, "tm_pad_pips", None)
+            if pips is not None and pips.winfo_exists():
+                st = TM.state()
+                pips.fill = (TM.runs(st), (st["most"] // TM.RUN) if st else 0)
+                pips.redraw()
         except tk.TclError:
             pass
         box = getattr(self, "tm_lens_box", None)
@@ -441,3 +525,12 @@ class TemplePage:
         if count:
             tk.Label(box, text=count, bg=P["bg"], fg=P["muted"], font=f9, anchor="w", justify="left",
                      wraplength=max(180, int(TM.cfg().get("pad_w") or 300) - 24)).pack(fill="x")
+        pick = self.temple_pick_lines()
+        if pick:
+            tk.Frame(box, bg=P["head"], height=2).pack(fill="x", pady=(8, 4))
+            tk.Label(box, text="THE PICK", bg=P["bg"], fg=P["muted"], font=(P["font"], self.ov_font(8), "bold"),
+                     anchor="w").pack(fill="x")
+            for mark, text in pick:
+                tk.Label(box, text=f"{mark} {text}", bg=P["bg"], fg=P["warn"] if mark == "✕" else P["text"], font=f10,
+                         anchor="w", justify="left",
+                         wraplength=max(180, int(TM.cfg().get("pad_w") or 300) - 24)).pack(fill="x")
