@@ -174,6 +174,16 @@ class FeaturesPage:
             tk.Label(sh, text="To show your times on the Leaderboards, pick a community name (asked next).", bg=P2,
                      fg=C["muted"], font=("Segoe UI", 9), anchor="w", justify="left", wraplength=760).pack(
                 fill="x", padx=(24, 0))
+        err_v = None
+        if not SETTINGS.get("error_asked"):                     # 2.137.0: asked once, next to data sharing
+            from . import errorreports as ER
+            tk.Frame(inner, bg=C["line"], height=1).pack(fill="x", pady=(8, 8))
+            er = tk.Frame(inner, bg=P2)
+            er.pack(fill="x")
+            err_v = tk.BooleanVar(value=False)
+            ttk.Checkbutton(er, text="Send error reports", variable=err_v, style="Card.TCheckbutton").pack(anchor="w")
+            tk.Label(er, text=ER.WHAT, bg=P2, fg=C["muted"], font=("Segoe UI", 9), anchor="w", justify="left",
+                     wraplength=760).pack(fill="x", padx=(24, 0))
         ask_v = None
         if not SETTINGS.get("ask_unrated_asked"):               # 2.131.2: the same switch as Settings, asked once
             tk.Frame(inner, bg=C["line"], height=1).pack(fill="x", pady=(8, 8))
@@ -213,6 +223,8 @@ class FeaturesPage:
             SETTINGS["data_dir_asked"] = True
             if ask_v is not None:
                 self.ask_unrated_set(bool(ask_v.get()))
+            if err_v is not None:
+                self.er_set(bool(err_v.get()), say=False)
             save_json("settings.json", SETTINGS)
             if share_v is not None:
                 self.cm_set_sharing(bool(share_v.get()), say=False)
@@ -239,6 +251,7 @@ class FeaturesPage:
         ttk.Button(foot, text="Turn all on", command=lambda: save(True)).pack(side="right", padx=(0, 8))
         ttk.Button(foot, text="Never ask again", style="Quiet.TButton", command=never).pack(side="left")
         w.feat_save, w.feat_vars, w.feat_share, w.feat_folder, w.feat_never = save, pvars, share_v, folder, never
+        w.feat_err = err_v
         try:
             from .style import center_over
             center_over(w, self.root)

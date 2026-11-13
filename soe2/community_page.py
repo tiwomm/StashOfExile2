@@ -54,12 +54,17 @@ class CommunityPage:
         g.pack(fill="x")
         self.cm_share_var = tk.BooleanVar(value=self.cm_sharing())
         self.cy_lb_var = tk.BooleanVar(value=bool(SETTINGS.get("lb_share", True)))
+        from . import errorreports as ER
+        self.er_var = tk.BooleanVar(value=ER.on())
         items = ((self.cm_share_var, "Share anonymous data with the community", self.cm_share_changed,
                   "Mod prices and ratings, map ranks, campaign zones the guide doesn't know - to the StashOfExile2 "
                   "community server, for better prices and guides for everyone."),
                  (self.cy_lb_var, "Leaderboard times", self.cy_lb_switch,
                   "Your best map, boss, trial and act times (the day, not the time) under your community name - needs "
-                  "data sharing on and a community name."))
+                  "data sharing on and a community name."),
+                 (self.er_var, "Error reports", lambda: self.er_set(bool(self.er_var.get())),
+                  "What went wrong in the app - where in the code and the error's type - so it gets fixed. Its own "
+                  "switch; no names, items, chat or files."))
         self.cy_rows = {}
         for i, (var, label, cmd, what) in enumerate(items):
             cb = ttk.Checkbutton(g, text=label, variable=var, command=cmd)
@@ -67,6 +72,8 @@ class CommunityPage:
             tk.Label(g, text=what, bg=P2, fg=C["muted"], font=("Segoe UI", 9), justify="left", wraplength=520,
                      anchor="w").grid(row=i, column=1, sticky="w", padx=(12, 0), pady=2)
             self.cy_rows[label] = cb
+        ttk.Button(row, text="What error reports send", style="Quiet.TButton",
+                   command=lambda: self.er_ask(info=True)).pack(anchor="w", pady=(4, 0))     # 2.137.0
         hr = tk.Frame(row, bg=P2)                                                               # 2.96.0
         hr.pack(fill="x", pady=(8, 0))
         # 2.120.0: Rate Mods is a page under Price Checks now (it was a window opened from here)

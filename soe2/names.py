@@ -49,6 +49,7 @@ FEATURES = (
     "Campaign Helper",
     "Clear All",                # Bulk Pricing › Items strip: empties the list shown
     "Community data sharing",
+    "Error reports",            # 2.137.0 Settings › Privacy & community: what went wrong in the app, opt-in
     "Craft Helper",
     "Data pack",                # the Craft Helper's mod data from GitHub
     "Keybinds",                 # Settings: every key the app listens for (2.127.0: was Keys)

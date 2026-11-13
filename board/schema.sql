@@ -141,3 +141,13 @@ CREATE TABLE IF NOT EXISTS gem_prices (
   div REAL NOT NULL, n INTEGER NOT NULL DEFAULT 1, updated INTEGER NOT NULL,
   PRIMARY KEY (league, kind, level, name)
 );
+
+-- 2.137.0: Error reports (opt-in, its own switch): one row per kind of error - where in the code, the error's type, the
+-- trade site's short answer - counted; app_error_installs counts installs (hashed id), kept 30 days. GET /errors is for
+-- board admins only.
+CREATE TABLE IF NOT EXISTS app_errors (
+  sig TEXT PRIMARY KEY, kind TEXT NOT NULL, place TEXT NOT NULL, etype TEXT NOT NULL DEFAULT '',
+  frames TEXT NOT NULL DEFAULT '', msg TEXT NOT NULL DEFAULT '', first_v TEXT NOT NULL, last_v TEXT NOT NULL,
+  os TEXT NOT NULL DEFAULT '', first INTEGER NOT NULL, last INTEGER NOT NULL, n INTEGER NOT NULL
+);
+CREATE TABLE IF NOT EXISTS app_error_installs (sig TEXT NOT NULL, cid TEXT NOT NULL, last INTEGER NOT NULL, PRIMARY KEY (sig, cid));

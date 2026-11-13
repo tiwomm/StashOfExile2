@@ -65,7 +65,8 @@ WHERE = ("It all goes to the StashOfExile2 community server (run by the app's de
          "ranks, unmatched mods) stays in the pool for everyone - it was never linked to you.")
 NEVER = ("Never sent: your account or character names, your wealth (stash value, net worth), your items or stash, "
          "listing ids, files from your computer. Check a screenshot before you upload it - it's public. Bug reports are "
-         "separate: they go only when you press Report a bug, and you see every word first.")
+         "separate: they go only when you press Report a bug, and you see every word first. Error reports have their own "
+         "switch.")
 
 
 def sharing():
@@ -267,6 +268,36 @@ def maps_unsent():
 
 
 # ---------------------------------------------------------------- what everyone pooled
+# 2.137.0 (feedback: "protection against malware/viruses going to the cloudflare database ... especially if I'm
+# downloading that data daily"): what comes down is only ever data - parsed as JSON, never run - and each row is
+# checked again here: plain numbers and short plain text only (letters, digits, a few marks; no control characters,
+# no < > { } ` $ \\), at most MAX_ROWS rows. Anything else is dropped before it's saved.
+MAX_ROWS = 20000
+_SAFE_TEXT = re.compile(r"^[^\x00-\x1f\x7f<>{}`$\\]{0,160}$")
+
+
+def safe_value(v, depth=0):
+    if v is None or isinstance(v, bool):
+        return True
+    if isinstance(v, (int, float)):
+        return v == v and abs(v) < 1e15                  # (no NaN, nothing absurd)
+    if isinstance(v, str):
+        return bool(_SAFE_TEXT.match(v))
+    if isinstance(v, (list, tuple)) and depth < 2:
+        return len(v) <= 40 and all(safe_value(x, depth + 1) for x in v)
+    if isinstance(v, dict) and depth < 2:
+        return len(v) <= 40 and all(isinstance(k, str) and _SAFE_TEXT.match(k) and safe_value(x, depth + 1)
+                                    for k, x in v.items())
+    return False
+
+
+def safe_rows(rows):
+    """Only the rows that are plain data (see above)."""
+    if not isinstance(rows, list):
+        return []
+    return [r for r in rows[:MAX_ROWS] if safe_value(r)]
+
+
 def pull(call=None):
     """Download the pooled prices for your league and the community ratings. -> (True, data) / (False, why)."""
     if not B.configured():
@@ -278,10 +309,12 @@ def pull(call=None):
     ok2, r = (call or B.call)("GET", "/mods/ratings")
     ok3, mp = (call or B.call)("GET", "/maps/ratings")
     ok4, gm = (call or B.call)("GET", "/gems", {"league": league})      # 2.132.0: pooled gem prices
-    d = {"league": league, "stats": s.get("stats", []), "players": s.get("players", 0), "active": s.get("active"),
-         "ratings": r.get("ratings", []) if ok2 else cached().get("ratings", []),
-         "maps": mp.get("maps", []) if ok3 else cached().get("maps", []),
-         "gems": gm.get("gems", []) if ok4 else cached().get("gems", []), "ts": time.time()}
+    num = lambda x: x if isinstance(x, (int, float)) and not isinstance(x, bool) and 0 <= x < 1e9 else 0   # noqa: E731
+    d = {"league": league, "stats": safe_rows(s.get("stats", [])), "players": num(s.get("players", 0)),
+         "active": num(s.get("active")) if s.get("active") is not None else None,
+         "ratings": safe_rows(r.get("ratings", [])) if ok2 else cached().get("ratings", []),
+         "maps": safe_rows(mp.get("maps", [])) if ok3 else cached().get("maps", []),
+         "gems": safe_rows(gm.get("gems", [])) if ok4 else cached().get("gems", []), "ts": time.time()}
     save_json(FILE, d)
     return True, d
 

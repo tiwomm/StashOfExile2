@@ -52,6 +52,7 @@ From source (Python 3.12): `py -m pip install requests pystray pillow mss numpy 
 ## Privacy
 
 - Nothing leaves your PC unless you turn on Community data sharing - and then only anonymous data, never names or wealth.
+- Error reports: off until you say yes, a switch of their own. Only where in the code an error happened and its type - never messages, names, items or files.
 - Logs (`app_log.txt`, `crash_report.txt`) stay on your PC and leave out your names and folders. You see every word before a bug report is sent.
 - Settings › Privacy & community › Leave and delete my data removes everything of yours from the community board.
 

@@ -316,6 +316,7 @@ class App(SettingsPage, GearBookPage, PriceCheckPage, PricePopup, FavoritesPage,
         self.root.after(5 * 60 * 1000, self.keys_refresh)   # 2.88.2: a fresh key watcher every 5 minutes
         self.start_utilities()                       # 2.0: chat commands & notes listen to the same keyboard watcher
         root.after(15000, self.cm_start)             # 2.31.0: the community Mod book (hourly)
+        root.after(20000, self.er_start)             # 2.137.0: Error reports (opt-in, hourly)
         root.after(2500, self.calc_ov_restore)
         root.after(2600, self.music_sync)            # 2.134.0: Music Controls, if on       # 2.74.0: the calculator over the game, if it was up
         # (2.92.2: which switches go on the bar is asked when you enable the overlay, not at start)
@@ -1637,6 +1638,125 @@ class App(SettingsPage, GearBookPage, PriceCheckPage, PricePopup, FavoritesPage,
             hx, hy, hw, hh = self.root.winfo_rootx(), self.root.winfo_rooty(), self.root.winfo_width(), self.root.winfo_height()
             w.geometry(f"+{hx + max(0, (hw - w.winfo_reqwidth()) // 2)}+{hy + max(0, (hh - w.winfo_reqheight()) // 3)}")
             self.popup_over_app(w)                        # 2.131.1: never lost behind the app
+            w.lift()
+        except tk.TclError:
+            pass
+        return w
+
+    # ---------------- 2.137.0: Error reports (errorreports.py) - opt-in, its own switch, asked once
+    def er_set(self, on, say=True):
+        from . import errorreports as ER
+        ER.set_on(on)
+        if hasattr(self, "er_var"):
+            self.er_var.set(ER.on())
+        w = getattr(self, "er_ask_win", None)
+        if w is not None:
+            try:
+                w.destroy()
+            except tk.TclError:
+                pass
+            self.er_ask_win = None
+        if say:
+            self._say("Thanks - error reports are on. Settings › Privacy & community turns them off." if on else
+                      "Error reports are off. Nothing about errors leaves your PC.", 6)
+        if on:
+            self.root.after(5000, self.er_tick_once)
+
+    def er_start(self):
+        """At start: ask once (only when the Feature Picker won't - it asks itself), then send hourly while on."""
+        from . import errorreports as ER
+        from . import features as FEAT
+        if not ER.asked() and FEAT.asked() in ("done", "never") and not self._qs_open() and \
+                getattr(self, "feat_win", None) is None:
+            self.er_ask()
+        self.root.after(60000, self.er_tick)
+
+    def er_tick(self):
+        from . import errorreports as ER
+        self.er_tick_once()
+        self.root.after(ER.EVERY * 1000, self.er_tick)
+
+    def er_tick_once(self):
+        from . import errorreports as ER
+        if ER.on() or ER.admin():
+            threading.Thread(target=self._er_work, daemon=True).start()
+
+    def _er_work(self):
+        from . import errorreports as ER
+        try:
+            ER.send()
+        except Exception:
+            buglog.caught()
+        try:
+            n = ER.fetch_pool()                          # board admins: everyone's, to this PC only (once a day)
+            if n:
+                self.ui_q.put(("er_pooled", n))
+        except Exception:
+            buglog.caught()
+
+    def ev_er_pooled(self, n):
+        """2.137.0 (feedback: "prompt me for it"): the admin is told - nothing is fixed by itself."""
+        self._say(f"Error reports: {n} new kind{'' if n == 1 else 's'} since the last look. They're in "
+                  f"error_reports.json in your data folder - ask Claude to go through them.", 15)
+
+    def er_ask(self, info=False):
+        """The question (asked once - a no is final), or with info=True what's sent, word for word (Settings)."""
+        from . import errorreports as ER
+        old = getattr(self, "er_ask_win", None)
+        try:
+            if old is not None and old.winfo_exists():
+                old.lift()
+                return old
+        except tk.TclError:
+            pass
+        P2 = C["panel2"]
+        w = self.er_ask_win = tk.Toplevel(self.root, bg=P2)
+        w.title("Error reports")
+        w.transient(self.root)
+        w.resizable(False, False)
+        box = tk.Frame(w, bg=P2, padx=16, pady=16)
+        box.pack(fill="both", expand=True)
+        tk.Label(box, text="What error reports send" if info else "Send error reports?", bg=P2, fg=C["text"],
+                 font=("Segoe UI", 12, "bold"), anchor="w").pack(fill="x")
+        tk.Label(box, text=ER.WHAT, bg=P2, fg=C["text"], justify="left", wraplength=520, anchor="w").pack(
+            fill="x", pady=(8, 8))
+        g = tk.Frame(box, bg=P2)
+        g.pack(fill="x")
+        for c, h in enumerate(("WHAT", "WHAT EXACTLY", "WHAT IT'S FOR")):
+            tk.Label(g, text=h, bg=P2, fg=C["muted"], font=("Segoe UI", 9, "bold"), anchor="w").grid(
+                row=0, column=c, sticky="w", padx=(0, 12), pady=(0, 2))
+        for r, (what, exact, why) in enumerate(ER.DETAILS, start=1):
+            for c, (t, wl, col) in enumerate(((what, 150, C["text"]), (exact, 190, C["muted"]), (why, 170, C["muted"]))):
+                tk.Label(g, text=t, bg=P2, fg=col, font=("Segoe UI", 9, "bold" if c == 0 else "normal"), justify="left",
+                         wraplength=wl, anchor="nw").grid(row=r, column=c, sticky="nw", padx=(0, 12), pady=4)
+        tk.Label(box, text="Never sent: error messages, your names, items, prices, chat, files or web addresses. It goes "
+                 "only to the StashOfExile2 community server and is never published. Change it any time: Settings › "
+                 "Privacy & community.", bg=P2, fg=C["muted"], justify="left", wraplength=520, anchor="w").pack(
+            fill="x", pady=(8, 8))
+        if info:
+            tk.Label(box, text="The next send, word for word:", bg=P2, fg=C["text"], font=("Segoe UI", 9, "bold"),
+                     anchor="w").pack(fill="x")
+            txt = tk.Text(box, height=8, width=70, bg=C["panel"], fg=C["text"], font=("Consolas", 9), wrap="none",
+                          relief="flat")
+            txt.insert("1.0", ER.preview())
+            txt.config(state="disabled")
+            txt.pack(fill="x", pady=(2, 12))
+            self.er_preview_txt = txt
+        row = tk.Frame(box, bg=P2)
+        row.pack(fill="x")
+        if info:
+            ttk.Button(row, text="Close", command=lambda: (w.destroy(), setattr(self, "er_ask_win", None))).pack(
+                side="right")
+        else:
+            ttk.Button(row, text="Send reports", style="Primary.TButton", command=lambda: self.er_set(True)).pack(
+                side="right")
+            ttk.Button(row, text="No thanks", command=lambda: self.er_set(False)).pack(side="right", padx=(0, 8))
+        w.protocol("WM_DELETE_WINDOW", lambda: (w.destroy(), setattr(self, "er_ask_win", None)))
+        try:
+            w.update_idletasks()
+            hx, hy, hw, hh = self.root.winfo_rootx(), self.root.winfo_rooty(), self.root.winfo_width(), self.root.winfo_height()
+            w.geometry(f"+{hx + max(0, (hw - w.winfo_reqwidth()) // 2)}+{hy + max(0, (hh - w.winfo_reqheight()) // 3)}")
+            self.popup_over_app(w)
             w.lift()
         except tk.TclError:
             pass

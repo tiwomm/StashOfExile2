@@ -18,7 +18,7 @@
 // hidden by reviewers or an admin. Every field has limits; names are unique; edits, suggestions, reports, votes and
 // admin-key tries have daily limits.
 //
-// Secrets / vars: ADMIN_KEY, REPORT_HIDE, POSTS_PER_DAY, JOINS_PER_DAY. Stored per player: a made-up id and the
+// Secrets / vars: ADMIN_KEY, ERRORS_PER_DAY (2.137.0), REPORT_HIDE, POSTS_PER_DAY, JOINS_PER_DAY. Stored per player: a made-up id and the
 // display name. Internet addresses are only kept as a hash with the day, to count new accounts.
 import RULES from "./schema.json";
 import { RegExpMatcher, englishDataset, englishRecommendedTransformers } from "obscenity";
@@ -195,7 +195,8 @@ const tidy = (o, order) => Object.fromEntries(order.filter((k) => o[k] !== undef
 // ------------------------------------------------------------------ helpers
 const now = () => Math.floor(Date.now() / 1000);
 const json = (body, status = 200) => new Response(JSON.stringify(body), {
-  status, headers: { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" },
+  status, headers: { "content-type": "application/json; charset=utf-8", "cache-control": "no-store",
+    "x-content-type-options": "nosniff" },
 });
 const fail = (status, error) => json({ error }, status);
 const page = (title, text) => new Response(`<!doctype html><meta charset="utf-8"><title>${title}</title>
@@ -239,6 +240,9 @@ async function housekeeping(env) {
     env.DB.prepare("DELETE FROM joins WHERE day <> ?").bind(day),
     env.DB.prepare("DELETE FROM bug_limits WHERE day <> ?").bind(day),
     env.DB.prepare("DELETE FROM sessions WHERE expires < ?").bind(now()),
+    env.DB.prepare("DELETE FROM app_error_installs WHERE last < ?").bind(now() - 30 * 86400),     // 2.137.0
+    // 2.137.0: a flood of made-up errors can't fill the database - the newest 5,000 kinds stay
+    env.DB.prepare("DELETE FROM app_errors WHERE sig NOT IN (SELECT sig FROM app_errors ORDER BY last DESC LIMIT 5000)"),
     env.DB.prepare(`DELETE FROM images WHERE created < ? AND NOT EXISTS (SELECT 1 FROM posts p WHERE instr(p.data, '"b:' || images.key || '"') > 0)
       AND NOT EXISTS (SELECT 1 FROM revisions r WHERE instr(r.data, '"b:' || images.key || '"') > 0)`).bind(now() - 3600),
   ]);
@@ -296,6 +300,13 @@ const MIGRATIONS = [
   `CREATE TABLE IF NOT EXISTS gem_prices (league TEXT NOT NULL, kind TEXT NOT NULL, level INTEGER NOT NULL,
     name TEXT NOT NULL, div REAL NOT NULL, n INTEGER NOT NULL DEFAULT 1, updated INTEGER NOT NULL,
     PRIMARY KEY (league, kind, level, name))`,
+  // 2.137.0: Error reports (opt-in, its own switch) - one row per kind of error, counted; which installs saw it only
+  // as a hashed install id (for "how many installs"), kept 30 days
+  `CREATE TABLE IF NOT EXISTS app_errors (sig TEXT PRIMARY KEY, kind TEXT NOT NULL, place TEXT NOT NULL,
+    etype TEXT NOT NULL DEFAULT '', frames TEXT NOT NULL DEFAULT '', msg TEXT NOT NULL DEFAULT '', first_v TEXT NOT NULL,
+    last_v TEXT NOT NULL, os TEXT NOT NULL DEFAULT '', first INTEGER NOT NULL, last INTEGER NOT NULL, n INTEGER NOT NULL)`,
+  `CREATE TABLE IF NOT EXISTS app_error_installs (sig TEXT NOT NULL, cid TEXT NOT NULL, last INTEGER NOT NULL,
+    PRIMARY KEY (sig, cid))`,
 ];
 async function migrate(env) {
   if (migrated) return;
@@ -1061,6 +1072,8 @@ const okPrice = (m) => typeof m === "number" && isFinite(m) && m > 0.0005 && m <
 const ZONE_TEXT = /^[\p{L}\p{N} ',.\-]{1,80}$/u;
 const UNMATCHED_TEXT = /^[\p{L}\p{N}_ #%+\-.,'():/]{3,100}$/u, BASE_TEXT = /^[\p{L}\p{N} ',.\-]{1,60}$/u;
 const okText = (t, n = 80) => typeof t === "string" && t.length > 0 && t.length <= n;
+// 2.137.0: a base name is plain words (letters, digits, ' , . - and spaces; "pool:" in front for pooled rows)
+const okBase = (t) => okText(t) && /^[\p{L}\p{N} ',.\-]{1,75}$/u.test(String(t).replace(/^pool:/, ""));
 
 async function modBatch(req, env) {
   const body = await readBody(req);
@@ -1080,7 +1093,7 @@ async function modBatch(req, env) {
   let used = 0;
   if (league) {
     for (const p of (Array.isArray(body.prices) ? body.prices : []).slice(0, MAX_PAIRS)) {
-      if (!okText(p?.base) || !SID.test(String(p?.sid)) || !okPrice(p?.med) || !(p?.n >= 1)) continue;
+      if (!okBase(p?.base) || !SID.test(String(p?.sid)) || !okPrice(p?.med) || !(p?.n >= 1)) continue;
       const w = Math.min(Number(p.n) || 1, W_CAP);
       stmts.push(env.DB.prepare(`INSERT INTO mod_prices (league, base, sid, n, w, slog, batches, updated)
         VALUES (?1, ?2, ?3, ?4, ?5, ?6, 1, ?7) ON CONFLICT(league, base, sid) DO UPDATE SET n = n + ?4, w = w + ?5,
@@ -1089,7 +1102,7 @@ async function modBatch(req, env) {
       used++;
     }
     for (const b of (Array.isArray(body.bases) ? body.bases : []).slice(0, 100)) {
-      if (!okText(b?.base) || !okPrice(b?.med) || !(b?.n >= 1)) continue;
+      if (!okBase(b?.base) || !okPrice(b?.med) || !(b?.n >= 1)) continue;
       const w = Math.min(Number(b.n) || 1, W_CAP * 3);
       stmts.push(env.DB.prepare(`INSERT INTO base_prices (league, base, n, w, slog, batches, updated)
         VALUES (?1, ?2, ?3, ?4, ?5, 1, ?6) ON CONFLICT(league, base) DO UPDATE SET n = n + ?3, w = w + ?4,
@@ -1212,6 +1225,59 @@ async function modRatings(env) {
 // 2.89.3: a public issue - an account name (Name#1234) or a Windows / Linux home path is masked here too
 const scrubText = (t) => String(t).replace(/([\\/](?:Users|home)[\\/])[^\\/\s"']+/gi, "$1<you>")
   .replace(/[\p{L}\p{N}_]{2,40}#\d{4}\b/gu, "<account>").replace(/@(everyone|here)/gi, "@\u200b$1");
+// ------------------------------------------------------------------ 2.137.0: Error reports (opt-in)
+// POST /errors {cid, v, os, items: [{kind, place, etype, frames, msg, n}]} - what went wrong in the app: where in the
+// code, the error's type, and (trade site errors) the site's short answer. No names, items, files or free text: every
+// field must match a narrow pattern or the item is dropped. GET /errors: board admins only (signed in with the admin
+// key) - never public, no other key; the developer's app keeps a copy on their own PC.
+const ERR_KINDS = ["error", "crash", "freeze", "slow", "net", "caught", "debug"];
+const ERR_PLACE = /^[A-Za-z0-9 _.:()\/'#,-]{1,80}$/;
+const ERR_TYPE = /^[A-Za-z_][A-Za-z0-9_.]{0,60}$/;
+const ERR_FRAME = /^[A-Za-z0-9_.-]{1,40}:[A-Za-z0-9_<>.-]{1,60}:\d{1,6}$/;
+const ERR_MSG = /^[A-Za-z0-9 _.:,'()#/-]{0,120}$/;
+async function errorBatch(req, env) {
+  if (!/^application\/json/i.test(req.headers.get("content-type") || "") || req.headers.get("x-soe2") !== "1")
+    return fail(400, "bad request");
+  const body = await readBody(req);
+  const cidRaw = String(body.cid || "");
+  if (!/^[a-f0-9]{32}$/.test(cidRaw)) return fail(400, "bad cid");
+  const ipk = await ipKey(req, env, "errors");
+  if (!(await allowance(env, "errors_ip", ipk, Number(env.ERRORS_PER_DAY || 30)))) return fail(429, "too many today");
+  if (!(await allowance(env, "errors_cid", cidRaw, 30))) return fail(429, "too many today");
+  const v = /^[0-9][0-9.]{0,14}$/.test(String(body.v || "")) ? String(body.v) : "?";
+  const os = /^(win|linux|mac)[0-9._-]{0,20}$/.test(String(body.os || "")) ? String(body.os) : "";
+  const cid = await sha256(cidRaw), t = now();
+  const stmts = [];
+  let used = 0;
+  for (const it of (Array.isArray(body.items) ? body.items : []).slice(0, 50)) {
+    const kind = String(it?.kind || ""), place = String(it?.place || "").trim();
+    const etype = String(it?.etype || ""), msg = String(it?.msg || "").trim();
+    const frames = (Array.isArray(it?.frames) ? it.frames : []).slice(0, 6).map(String);
+    const n = Math.min(Math.max(Math.floor(Number(it?.n) || 1), 1), 1000);
+    if (!ERR_KINDS.includes(kind) || !ERR_PLACE.test(place) || (etype && !ERR_TYPE.test(etype)) ||
+        !frames.every((f) => ERR_FRAME.test(f)) || !ERR_MSG.test(msg)) continue;
+    const fr = frames.join(" < ");
+    const sig = (await sha256(`${kind}|${place}|${etype}|${fr}|${msg}`)).slice(0, 32);
+    stmts.push(env.DB.prepare(`INSERT INTO app_errors (sig, kind, place, etype, frames, msg, first_v, last_v, os, first, last, n)
+      VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?7, ?8, ?9, ?9, ?10) ON CONFLICT(sig) DO UPDATE SET last_v = ?7, os = ?8,
+      last = ?9, n = n + ?10`).bind(sig, kind, place, etype, fr, msg, v, os, t, n));
+    stmts.push(env.DB.prepare(`INSERT INTO app_error_installs (sig, cid, last) VALUES (?1, ?2, ?3)
+      ON CONFLICT(sig, cid) DO UPDATE SET last = ?3`).bind(sig, cid, t));
+    used++;
+  }
+  if (stmts.length) await env.DB.batch(stmts);
+  return json({ ok: true, used });
+}
+
+async function errorList(env, me, url) {
+  if (!me?.admin) return fail(403, "not allowed");
+  const since = Math.max(0, Number(url.searchParams.get("since")) || 0);
+  const rows = await env.DB.prepare(`SELECT e.*, (SELECT COUNT(*) FROM app_error_installs i WHERE i.sig = e.sig) AS installs
+    FROM app_errors e WHERE e.last > ?1 ORDER BY installs DESC, e.n DESC LIMIT 500`).bind(since).all();
+  return json({ errors: rows.results.map((r) => ({ kind: r.kind, place: r.place, type: r.etype, frames: r.frames,
+    msg: r.msg, first_v: r.first_v, last_v: r.last_v, os: r.os, first: r.first, last: r.last, n: r.n, installs: r.installs })) });
+}
+
 async function bugReport(req, env) {
   // 2.89.3: only the app sends these - a web page can't (a JSON body and the app's own header force a check first)
   if (!/^application\/json/i.test(req.headers.get("content-type") || "") || req.headers.get("x-soe2") !== "1")
@@ -1302,6 +1368,8 @@ export default {
       if (path === "/maps/ratings") return mapRatings(env);
       if (path === "/campaign/zones") return campaignZones(env);
       if (path === "/bugs" && req.method === "POST") return bugReport(req, env);
+      if (path === "/errors" && req.method === "POST") return errorBatch(req, env);       // 2.137.0
+
       const me = await who(req, env);
       const im = /^\/images\/([0-9a-f]{32})$/.exec(path);
       if (im && req.method === "GET") return getImage(env, me, im[1]);
@@ -1327,6 +1395,7 @@ export default {
       if (path === "/me" && req.method === "DELETE") return deleteMe(env, me);
       if (path === "/auth/admin" && req.method === "POST") return becomeAdmin(req, env, me);
       if (path === "/me/inbox" && req.method === "GET") return inbox(env, me);
+      if (path === "/errors" && req.method === "GET") return errorList(env, me, url);          // 2.137.0: admins
       if (path === "/admin/names/sweep" && req.method === "POST") return sweepNames(env, me);
       if (path === "/review" && req.method === "GET") return reviewQueue(env, me);
       if (me.banned) return fail(403, "This account can't post on the board.");
