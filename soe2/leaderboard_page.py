@@ -1,6 +1,7 @@
 """2.86.0: Overlay ↳ Leaderboards - Campaign, Maps, Bosses & pinnacles, Trials; Mine (this PC) or Everyone (the
 community board, opt-in through Community data sharing); this league or all; by class.
 Right-click a row on Everyone: Report (and, for reviewers / admins, Hide / Keep). GGG ToS: the game's log only."""
+import os
 import threading
 import time
 import tkinter as tk
@@ -9,7 +10,8 @@ from tkinter import ttk
 from . import board as B
 from . import leaderboard as LB
 from .config import SETTINGS, save_json
-from .style import C, SegBar
+from . import buglog
+from .style import C, SegBar, Tooltip
 
 ALL_LEAGUES = "All leagues"
 TOPS = (5, 10, 20, 30, 50, 100)             # 2.104.1 (feedback): how many rows a board shows
@@ -57,6 +59,10 @@ class LeaderboardPage:
         tb.bind("<<ComboboxSelected>>", lambda e: self.lb_top_pick())
         ttk.Button(top2, text="↻ Refresh", style="Quiet.TButton", command=lambda: self.lb_refresh(send=True)).pack(
             side="right")
+        # 2.138.0 (feedback: "anywhere that saves player data ... should have that option")
+        exb = ttk.Button(top2, text="Export my times…", style="Quiet.TButton", command=self.lb_export)
+        exb.pack(side="right", padx=(0, 8))
+        Tooltip(exb, "Your fastest maps, bosses, trials and acts to a CSV - from this PC, no character names")
         self.lb_msg = tk.Label(body, text="", bg=P1, fg=C["muted"], anchor="w", justify="left", padx=12)
         self.lb_msg.pack(fill="x")
         split = tk.Frame(body, bg=P1)
@@ -378,3 +384,29 @@ class LeaderboardPage:
     def lb_review(self, r, vote):
         self._lb_bg(lambda: B.lb_review(r["id"], vote), lambda res: (
             self._say(("Done." if res[0] else res[1]), 6), self.lb_board_fill()))
+
+    def lb_export(self, path=None):
+        """2.138.0: your best times (Mine) to a CSV."""
+        from . import csvexport
+        try:
+            entries = LB.best(self.lb_mine())
+        except Exception:
+            buglog.caught()
+            entries = []
+        if not entries:
+            self._say("No times of yours yet - finish a map, boss, trial or act first.", 6)
+            return None
+        if path is None:
+            from tkinter import filedialog
+            path = filedialog.asksaveasfilename(parent=self.dlg_parent(), defaultextension=".csv",
+                                                initialfile="my_times.csv", filetypes=[("CSV", "*.csv")])
+        if not path:
+            return None
+        try:
+            n = csvexport.write_lb_times(path, entries)
+        except OSError as e:
+            self._say(f"Couldn't save the CSV ({e.__class__.__name__}).", 8)
+            return None
+        self._say(f"Saved {n} time{'s' if n != 1 else ''} to {os.path.basename(path)}.", 8)
+        return path
+
