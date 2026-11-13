@@ -54,6 +54,7 @@ NOTES = {
         ],
         "small": [
             ("Error reports", "Never sends names, items, chat or files. Settings › Privacy & community shows the next send."),
+            ("Community data", "Downloads are checked twice: plain numbers and words only, the rest dropped."),
         ],
     },
     "2.136.2": {
