@@ -54,6 +54,7 @@ NOTES = {
             ("Overlay", "The map you're in comes first. Session and Last map's profit have labels."),
             ("Overlay", "Hover SESSION for maps run and the average."),
             ("Overlay", "Tools are icons - hover one for its name."),
+            ("Price check", "Megalomaniac: its passives should be in the search now."),
         ],
     },
     "2.138.4": {

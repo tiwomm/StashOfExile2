@@ -27,6 +27,9 @@ VERSION HISTORY
          are icons (Windows' icon font; their names where it's missing) with their name on hover and ▴ when open.
          The Bar is taller (HUD_SPOTS 0.036 -> 0.046) for a label over each value; Start session is the chip now.
          README's overlay screenshot and the Appearance previews show it.
+       - Price checks (feedback: a Megalomaniac found 10,000 listings, its trade link had no stat filters): the trade
+         site lists a stat with a choice as one id per choice ("enchant.stat_2954116742|20686"); the plain id isn't on
+         it, so the passives were left out. An id with its option on the list counts (engine._price_gear).
   2.138.4
        - Price checks (feedback: "Megalomaniac jewels can have any of the games keystone nodes on them, in any
          combination, we need to make them searchable"): its "{ Enhancement }" / "Allocates Overwhelm() — Unscalable
