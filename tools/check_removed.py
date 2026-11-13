@@ -25,6 +25,8 @@ DOCS = ("README.md", "TOS.md", "linux/README.md", "themes/README.md", "strats/RE
 
 # (version, what it was, words a person read, names in the code / settings keys[, pending])
 REMOVED = [
+    ("2.140.0", "the Temple Notepad (the card in the temple is Vaal Lens now: crystals, the board, notes in a fold)",
+     ("Temple Notepad",), ()),
     ("2.135.1", "Reduce motion (Settings › Appearance › Motion) and the short fades it switched off - nothing fades now",
      ("Reduce motion makes them appear at once",), ("fade_in", "reduce_motion_var", "on_reduce_motion",
                                                      "windows_animations", "FADE_STEPS")),

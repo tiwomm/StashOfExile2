@@ -372,8 +372,8 @@ class AlertsPage:
         self.al_tpad = tk.BooleanVar(value=bool(_TMc().get("notepad", True)))
         self.al_tfast = tk.BooleanVar(value=bool(_TMc().get("fast_read", False)))
         opts = {
-            "temple": [("Temple Notepad", self.al_tpad, lambda: self.temple_pad_set(self.al_tpad.get()),
-                        "A note over the game inside the temple: your crystals, your plan. Only in the temple."),
+            "temple": [("Vaal Lens", self.al_tpad, lambda: self.temple_pad_set(self.al_tpad.get()),
+                        "A card in Vaal Ruins and the temple: your crystals, what's on the board, your notes."),
                        # 2.138.1 (feedback: "Enable only if crystals aren't being counted")
                        ("Fast Beacon Read", self.al_tfast, lambda: self.temple_fast_set(self.al_tfast.get()),
                         "Enable only if crystals aren't being counted. Watches round your character 30 times a second "
@@ -1138,7 +1138,7 @@ class AlertsPage:
                         last.get("area"), last.get("seed"), last.get("level", 0)))
                     # 2.125.7 (feedback: turned on while at the Well, nothing showed): the Desecration Helper too
                     self.ws_area(last.get("area"))
-                    self.temple_area(last.get("area"))             # 2.136.0: the Temple Notepad
+                    self.temple_area(last.get("area"))             # 2.136.0: Vaal Lens
                     i = next((n for n, (k, _t, _d) in enumerate(tail) if _d is last), None)
                     scene = next((d for k, _t, d in (tail[i:] if i is not None else []) if k == "scene"), None)
                     if scene is not None:
@@ -1186,7 +1186,7 @@ class AlertsPage:
                         elif kind == "area":
                             try:
                                 self.ws_area(data.get("area"))        # 2.81.0: the Desecration Helper
-                                self.temple_area(data.get("area"))    # 2.136.0: the Temple Notepad
+                                self.temple_area(data.get("area"))    # 2.136.0: Vaal Lens
                                 self.expedition_area(data.get("area"), gl_area_kind(      # 2.83.0: Remnant's places,
                                     data.get("area"), data.get("seed"), data.get("level", 0)))  # Island Rumors
                             except Exception:
