@@ -249,6 +249,8 @@ class MapProfitPage:
             e = self.mp_last = last[-1] if last else None
         if e is None:
             return "Profit –"
+        if abs(e.get("div") or 0) < 0.0005:               # 2.139.1 (feedback: "+0.000 div"): nothing gained
+            return "0 div"
         return MP.signed(e["div"], fmt_div)        # (2.139.0: its label says LAST MAP'S PROFIT)
 
     def mp_breakdown(self, e=None):
