@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU AGPL v3.0 (see LICENSE; up to 2.129.4: GNU GPL v3.0). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.136.2
+VERSION 2.137.0
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,6 +19,17 @@ VERSION 2.136.2
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.137.0
+       - Error reports (feedback: "have error log data sent to the cloudflare server so we can automatically handle
+         bugs/issues ... debug stuff/errors/trade errors should go with it"): errorreports.py. Off until you say yes,
+         its own switch ("error_reports", asked once: "error_asked" - the Feature Picker asks, or a small question at
+         start once the picker is done; a no is final). Hourly it reads app_log.txt (already cleaned) and sends the
+         board one line per kind of error: kind, place (file:function:line or fixed words), the error's type, up to
+         6 code places, a count, the version and Windows/Linux; trade site errors also send the site's short answer
+         ("Unknown stat provided: ...") - never the address or search. Every field must match a narrow pattern (here
+         and on the board). Board: POST /errors (x-soe2 header, 30 a day per address and per install), app_errors +
+         app_error_installs (hashed install id, 30 days); GET /errors needs the ERRORS_KEY secret. Settings › Privacy &
+         community: the switch and "What error reports send" (the next send word for word).
   2.136.2
        - Vaal Ruins is a town (feedback: "Profit tracker needs to ... treat vaal ruins as town/hideout area to track
          profits in my inventory ... and treat atziri's temple as the map"): maplib.HUBS ("IncursionHubEndgame", level
@@ -3713,7 +3724,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.136.2"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.137.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 

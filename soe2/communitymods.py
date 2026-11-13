@@ -65,7 +65,8 @@ WHERE = ("It all goes to the StashOfExile2 community server (run by the app's de
          "ranks, unmatched mods) stays in the pool for everyone - it was never linked to you.")
 NEVER = ("Never sent: your account or character names, your wealth (stash value, net worth), your items or stash, "
          "listing ids, files from your computer. Check a screenshot before you upload it - it's public. Bug reports are "
-         "separate: they go only when you press Report a bug, and you see every word first.")
+         "separate: they go only when you press Report a bug, and you see every word first. Error reports have their own "
+         "switch.")
 
 
 def sharing():
