@@ -126,6 +126,14 @@ class HoverPage:
                     buglog.caught()
             if self.temple_on() or force:
                 self.temple_seen(TM.parse(lines))
+                # 2.142.0 Vaal Lens: a medallion's name on screen in the temple (its label or tooltip), the
+                # Medallions panel closed -> take it or leave it
+                if getattr(self, "tm_in_temple", False) and self.temple_pad_on():
+                    from . import medallions as M
+                    med = M.parse(lines)
+                    if not med["count"]:
+                        for name in dict.fromkeys(n for n, _b in med["names"]):
+                            self.temple_medal_drop(name, med["room"])
             if self.ritid_on() or force:
                 key = RID.parse(lines)
                 self.ritid_seen(key)

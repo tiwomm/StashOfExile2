@@ -1,6 +1,6 @@
 """2.141.0 Vaal Lens (BETA): the marks over the Temple Console - when a card is picked and the game lights the tiles
-it can go on, 1 (best) and 2 on two of them with a callout, and a dashed ✕ on every lit tile that touches a reward
-room. A see-through window over the game: clicks go to the game, left out of captures (the board under it is read
+it can go on, 1 (best) and 2 on two of them with a callout, a dashed ✕ on every lit tile that touches a reward
+room, and + where the room it wants goes (2.142.0). A see-through window over the game: clicks go to the game, left out of captures (the board under it is read
 too). It only draws; nothing is sent to the game."""
 import tkinter as tk
 
@@ -85,31 +85,33 @@ class Marks:
             if m == "x":
                 cv.create_polygon(*pts, fill="", outline=warn, width=max(2, int(4 * s)), dash=(8, 6))
                 cv.create_text(x, y, text="✕", fill=warn, font=(fam, big, "bold"))
+            elif m == "p":                                  # 2.142.0: the hand's plan (TH, CC, AL...)
+                cv.create_polygon(*pts, fill="", outline=accent, width=max(2, int(3 * s)), dash=(4, 4))
+                cv.create_text(x, y, text=why, fill=accent, font=(fam, small, "bold"))
+            elif m == "+":                                  # 2.142.0: where the room it wants goes, beside 1
+                cv.create_polygon(*pts, fill="", outline=accent, width=max(2, int(3 * s)), dash=(4, 4))
+                cv.create_text(x, y, text="+", fill=accent, font=(fam, big, "bold"))
             else:
                 cv.create_polygon(*pts, fill="", outline=accent, width=max(2, int((6 if m == "1" else 3) * s)))
                 cv.create_text(x, y, text=m, fill=accent, font=(fam, big, "bold"))
             call.setdefault(m, (x, y, why))
-        # one callout for the best tile and one for the ✕s, in a column right of the board (off the tiles)
-        used = []
-        for m, (title, color) in (("1", ("1 · BEST", accent)), ("x", ("✕ TOUCHES A REWARD ROOM", warn))):
+        # one callout, for the best tile, right of the board (2.142.0, feedback: the ✕ needs no callout - the Vaal
+        # Lens card says what it means)
+        for m, (title, color) in (("1", ("1 · BEST", accent)),):
             if m not in call:
                 continue
             x, y, why = call[m]
             bx, by = ox + RIGHT * s, y - 30 * s
-            for u in used:
-                if abs(by - u) < 110 * s:
-                    by = u + 110 * s
-            used.append(by)
             tid = cv.create_text(bx + 14, by + 10, text=title, fill=color, font=(fam, small, "bold"), anchor="nw")
-            wid = cv.create_text(bx + 14, by + 10 + abs(small) * 1.5, text=(why[:1].upper() + why[1:] if m == "1" else "It would destabilize."),
+            wid = cv.create_text(bx + 14, by + 10 + abs(small) * 1.5, text=why[:1].upper() + why[1:],
+                                 width=int(440 * s),
                                  fill=ink, font=(fam, small), anchor="nw")
             x0, y0, x1, y1 = cv.bbox(tid)[0], cv.bbox(tid)[1], cv.bbox(wid)[2], cv.bbox(wid)[3]
             x1 = max(x1, cv.bbox(tid)[2])
             box = cv.create_rectangle(x0 - 14, y0 - 10, x1 + 14, y1 + 10, fill=bg, outline="")
             cv.create_line(x0 - 14, y0 - 10, x1 + 14, y0 - 10, fill=color, width=3)
             cv.create_line(x0 - 14, y1 + 10, x1 + 14, y1 + 10, fill=color, width=3)
-            lead = {"dash": (6, 5)} if m == "x" else {}
-            cv.create_line(x + hw * 0.6, y, x0 - 14, (y0 + y1) / 2, fill=color, width=2, **lead)
+            cv.create_line(x + hw * 0.6, y, x0 - 14, (y0 + y1) / 2, fill=color, width=2)
             cv.tag_lower(box)
             cv.tag_raise(tid)
             cv.tag_raise(wid)

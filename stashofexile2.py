@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU AGPL v3.0 (see LICENSE; up to 2.129.4: GNU GPL v3.0). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.141.0
+VERSION 2.142.0
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,6 +19,24 @@ VERSION 2.141.0
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.142.0
+       - Vaal Lens medallions (BETA; feedback: "could we get some detection for medallions that drop and make
+         suggestions if a person's 6/6 medallions are full"): medallions.py - the 9 medallions by name, how good
+         each is (lock and upgrade first, Zantipi's last, a capacity one worth nothing once full, Uromoti's by the
+         room it adds). The Medallions panel (V) is read with the board: its count, each slot by its picture (lock
+         and upgrade known from the start; a hovered slot's name is read with the slot under the mouse and its
+         picture kept in medallion_icons.json). A medallion's name on screen in the temple -> an alert: take it (room
+         for it, or better than your weakest: use or destroy that one) or leave it.
+       - The hand's plan (feedback: "I should be getting suggestions to place the thaumaturge then the corruption
+         chamber attached to it and upgrade it to t3 and lock it"): every room card in the list plus the rooms your
+         medallions add - Thaumaturge first with room beside it, Corruption Chamber / Alchemy Lab / Sacrificial
+         Chamber beside it, then upgrade and lock. Marked on the board (TH, CC, AL...) and listed on the card (THE
+         PLAN); with a card picked its planned tile is 1.
+       - The picked card in a list of several: the one whose diamond glows. The side panels keep to the game's edges.
+       - The console is read in the temple too (it opens there). A gray (unreachable) Architect counts; a reward
+         room drawn silver counts by kind.
+       - No callout for the ✕ (feedback: "isn't necessary to have the line, maybe just a tooltip"): the card's ✕ line
+         has an ⓘ saying what it means.
   2.141.0
        - Vaal Lens callouts (BETA; the user picked mockup C "Board callouts" with the Field Kit card): a card picked
          (the game lights the tiles it can go on) -> 1 (best) and 2 on two lit tiles, a dashed red ✕ on every lit tile
@@ -3820,7 +3838,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.141.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.142.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 

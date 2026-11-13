@@ -47,6 +47,19 @@ BETA_AREAS = ("Wealth", "Money Makers", "Game Search", "Market Insights", "Craft
 # repeats. Someone coming from rollup["since"] or older (or a fresh install) sees it instead of each version; someone
 # on a pre-release already saw them and gets only this version's own lines (notes_between).
 NOTES = {
+    "2.142.0": {
+        "big": [
+            ("◆", "Vaal Lens", "Plans your hand: Thaumaturge, Corruption Chamber beside it, upgrade, lock.", None,
+             "Overlay"),
+            ("◆", "Vaal Lens", "Medallions: take it or leave it when one drops and yours are full.", None, "Overlay"),
+        ],
+        "small": [
+            ("Vaal Lens", "Hover each medallion in your panel (V) once so it learns them."),
+            ("Vaal Lens", "Reads the picked card among several."),
+            ("Vaal Lens", "Gray Architect and silver reward rooms count."),
+            ("Vaal Lens", "No callout for ✕ - hover ⓘ on the card."),
+        ],
+    },
     "2.141.0": {
         "big": [
             ("◆", "Vaal Lens", "Pick a card: 1 and 2 mark the best tiles, ✕ marks tiles touching a reward room.",
