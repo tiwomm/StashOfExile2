@@ -626,7 +626,12 @@ class Engine(TabReaderJobs, WealthJobs, StratCostJobs, threading.Thread):
                 continue
             m.pop("search_ids", None)                       # (worked out fresh each time - ticks change)
             if valid and not str(m["sid"]).startswith(("equip:", "map:")):  # 1.42: only ids the trade site's own list has
-                m["search_ids"] = [i for i in (m.get("ids") or [m["sid"]]) if i in valid]
+                # 2.139.0 (feedback: a Megalomaniac found 10,000 listings - its passives were left out): the trade
+                # site lists a stat with a choice as one id per choice ("enchant.stat_2954116742|20686"), so an id
+                # with its option counts as on the list
+                opt_ = m.get("option")
+                m["search_ids"] = [i for i in (m.get("ids") or [m["sid"]])
+                                   if i in valid or (opt_ is not None and f"{i}|{opt_}" in valid)]
                 if not m["search_ids"] and m.get("option") is not None:    # 2.127.0: a Legacy whose game-data id
                     from .mods import option_live                          # isn't the trade site's - its own, by
                     hit = option_live(m["text"], valid)                    # the wording

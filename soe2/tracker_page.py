@@ -1226,6 +1226,10 @@ class TrackerPage:
         if getattr(self, "tk_ov_cv", None) is not None:    # 2.47.0: the skins' two columns
             where = n.get("where") if show_where and live and n.get("where") not in ("-", None) else ""
             texts.update(map=f"Map: {val('map')}", where=where.strip())      # 2.76.0: the rank is its own part
+        try:                                                  # 2.139.0 Map First: the chip and the map part
+            texts.update(self.a8_texts(n, live, camp))
+        except Exception:
+            buglog.caught()
         texts["rank"] = self.rank_text(n.get("where") if live and getattr(self, "_mr_in", None) else None)
         if camp:                                              # 2.124.0: the zone's time, no map numbers
             from . import campaign as _CP

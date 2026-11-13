@@ -169,7 +169,8 @@ class LightOverlay:
             row.pack(fill="x")
             panel = self.merged_layout() != "xpbar"          # 2.124.0: the layout picked (the Panel too)
             pieces = ["left", "right"] if style == "flanks" and not panel else ["all"]
-            spot_h = max(26, int(0.036 * 1440 * scale))
+            from .merged_page import HUD_SPOTS
+            spot_h = max(26, int(HUD_SPOTS["xpbar"][0][3] * 1440 * scale))
             if panel:
                 self._hud_k = hud_k(1440) * 0.8
             for piece in pieces:
@@ -193,10 +194,13 @@ class LightOverlay:
                     W, H = getattr(self, f"_lt_{kind}_bar")(f, cv, P, want, (0, 0, width, spot_h), piece)
                 cv.configure(width=W, height=H)
                 side = "right" if piece == "right" else "left"
-                f.pack(side=side, anchor="s", padx=((width - W) // 2 if style == "micro" and not panel else 0, 0))
+                f.pack(side=side, anchor="s", padx=(max(0, (width - W) // 2) if style == "micro" and not panel else 0, 0))
                 canvases.append(cv)
             sample = {"session": "1:24:07", "map": "Map: 3:12", "where": "Bluff", "maps": "Maps: 6",
-                      "avg": "Avg: 6:01", "rank": "★ A"}
+                      "avg": "Avg: 6:01", "rank": "★ A",
+                      # 2.139.0 Map First
+                      "a8_chip": "● IN MAP", "a8_label": "THIS MAP · ★ A", "a8_place": "Bluff", "a8_timer": "3:12",
+                      "profit": "+1.2 div"}
             for k, lab in self.tk_ov_lbls.items():
                 try:
                     lab.config(text=sample.get(k, ""))
@@ -336,11 +340,8 @@ class LightOverlay:
         return x
 
     def _lt_menus_w(self, cv, P):
-        f = self._lt_fm(cv, P, 9)
-        names = {"notes": "Notes  ▾", "calc": "Calc  ▾", "regex": "Regex  ▾", "rates": "Rates  ▾",
-                 "vendor": "Vendor  ▾"}
         start = (self._lt_fm(cv, P, 9, True).measure(self.START_TEXT) + self._hf(9) + 24) if self.start_on_bar() else 0
-        return start + sum(f.measure(names[k]) + 12 for k in self.bar_buttons()) + self._u(6)
+        return start + self.mg_tools_w(cv, P) + self._u(6)     # 2.139.0: icons
 
     def _lt_time(self, cv, P, x, y, size, num=True):
         """The session time (bold). -> the width kept for it. 2.119.0 (UX pass, feedback: long map names were cut):
@@ -476,8 +477,8 @@ class LightOverlay:
             else:
                 self._lt_text(cv, P, x, mid, "·", 10, P["muted"], anchor="center")
 
-        H = u(30)
-        r2 = (0, H - (0 if slate else u(4)))
+        H = u(40)                                           # 2.139.0: a label over each value
+        r2 = (u(6), H - (u(6) if slate else u(8)))
         m2 = (r2[0] + r2[1]) // 2
         # ---- the right end: lock, ⚙, the clock, the menus
         x = self._lt_glyphs(w, cv, P, W - pad, m2)
@@ -491,46 +492,8 @@ class LightOverlay:
                 sep(x - sw // 2, *r2, m2)
                 x -= sw
         right = x
-        x = pad
-        if want["timer"]:
-            drawn = []
-
-            def lead(x):
-                if drawn:
-                    sep(x + sw // 2, *r2, m2)
-                    return x + sw
-                return x
-            if ln.get("session", True):
-                x += self._mg_play(cv, P, x, m2, anchor="w", size=10) + u(6)
-                x += self._lt_time(cv, P, x, m2, 12, num=True) + u(4)
-                drawn.append("session")
-            if ln.get("rank", True) or ln.get("map", True) or ln.get("where", True):
-                x = lead(x)
-                room = right - x - sum(widths[k] + sw for k in fixed) - u(4)
-                if room > u(30) and (ln.get("map", True) or ln.get("where", True)):
-                    # 2.119.0 (UX pass): the rank rides in the map's text (as on Classic) - its own slot stood empty
-                    # whenever a map had no rank, a gap after the timer
-                    it = cv.create_text(x, m2, text="", anchor="w", fill=P["text"], font=(P["font"], self._hf(10)),
-                                        tags=("mg",))
-                    part = _MapPart(cv, it, P["bg"], halo=P.get("halo"))
-                    part.width, part.font = room, (P["font"], self._hf(10))
-                    part.show = (ln.get("map", True), ln.get("where", True), bool(ln.get("rank", True)))
-                    part.muted = P["muted"]
-                    self.tk_ov_lbls["map"] = _PartOf(part, "map")
-                    self.tk_ov_lbls["where"] = _PartOf(part, "where")
-                    self.tk_ov_lbls["rank"] = _PartOf(part, "rank")
-                    self._rank_click(cv, part)
-                    x += room
-                elif ln.get("rank", True):
-                    x += self._lt_rank(cv, P, x, m2) + u(6)
-                drawn.append("map")
-            for k in fixed:
-                x = lead(x)
-                self._lt_text(cv, P, x + widths[k] // 2, m2, "", 10, P["big"], anchor="center", key=k, cls=_Clean)
-                x += widths[k]
-                drawn.append(k)
-            if self.tk_ov_cv is None:
-                self.tk_ov_cv = cv
+        # 2.139.0 Map First: chip | the map part | SESSION | LAST MAP'S PROFIT (ova8)
+        self.a8_bar(w, cv, P, want, pad, right, m2, lambda sx: sep(sx, *r2, m2))
         if not slate:                                       # the hairline under the (bottom) row
             self._lt_rule(cv, P, pad, W - pad, H - u(3), strong="c")
         return W, H
@@ -553,32 +516,16 @@ class LightOverlay:
         cfg, ln = self.tracker_cfg(), self.ov_lines()
         pad = u(6)
         rl = u(150)                                          # the accent rule's length
-        if piece == "left":
-            fm = self._lt_fm(cv, P, 9)
-            y1 = u(8) + u(11)
-            y2 = y1 + u(19)
-            x = pad
-            if ln.get("session", True):
-                x += self._mg_play(cv, P, x, y1, anchor="w", size=10) + u(6)
-                x += self._lt_time(cv, P, x, y1, 13, num=True) + u(6)
-            if ln.get("map", True):
-                self._lt_text(cv, P, x, y1, "", 9, P["text"], key="map", cls=_Clean)
-                x += fm.measure("Map 00:00")
-            w1 = x
-            x = pad
-            if ln.get("rank", True):
-                x += self._lt_rank(cv, P, x, y2) + u(6)
-            if ln.get("where", True):
-                self._lt_where(cv, P, x, y2, 22)
-                x += fm.measure("Arcane Isle of the Dead") + u(6)
-            for k, sample in (("maps", "Maps 000"), ("avg", "Avg 00:00")):
-                if ln.get(k):
-                    self._lt_text(cv, P, x, y2, "", 9, P["big"], key=k, cls=_Clean)
-                    x += fm.measure(sample) + u(8)
-            W = max(w1, x, rl) + pad
+        if piece == "left":                                 # 2.139.0 Map First (ova8), as wide as it needs
+            H = u(44)
+            mid = u(6) + (H - u(6)) // 2
+            x = self.a8_bar(w, cv, P, want, pad, None, mid,
+                            lambda sx: cv.create_line(sx, mid - u(13), sx, mid + u(13), fill=P["line"], tags=("mg",)),
+                            map_w=u(190))
+            W = max(x, rl) + pad
             self._lt_rule(cv, P, pad, pad + rl, u(4), strong="l")
             self.tk_ov_cv = cv
-            return W, y2 + u(12)
+            return W, H
         # right
         y = u(4)
         rows_w = []
@@ -604,31 +551,18 @@ class LightOverlay:
         return W, fy + u(10)
 
     def _lt_micro_bar(self, w, cv, P, want, spot, piece):
-        """Micro: ⏸ time | 3:12 ★ A | B D R E | menus · lock ⚙ - only as wide as that."""
+        """Micro: chip | the map part | SESSION | profit | menus · clock · lock ⚙ - only as wide as that (2.139.0 Map
+        First, ova8)."""
         u = self._u
-        cfg, ln = self.tracker_cfg(), self.ov_lines()
-        H = u(26)
+        cfg = self.tracker_cfg()
+        H = u(40)
         mid = H // 2
         pad = u(8)
-        fm = self._lt_fm(cv, P, 10)
-        x = pad
 
         def sep(x):
-            cv.create_line(x, mid - u(7), x, mid + u(7), fill=P["line"], tags=("mg",))
+            cv.create_line(x, mid - u(12), x, mid + u(12), fill=P["line"], tags=("mg",))
             return x + u(10)
-        if want["timer"]:
-            if ln.get("session", True):
-                x += self._mg_play(cv, P, x, mid, anchor="w", size=9) + u(4)
-                x += self._lt_time(cv, P, x, mid, 11, num=True) + u(8)
-            if ln.get("map", True) or ln.get("rank", True):
-                x = sep(x)
-            if ln.get("map", True):
-                from .merged_page import _Num
-                self._lt_text(cv, P, x, mid, "", 10, P["text"], key="map", cls=_Num)
-                x += fm.measure("00:00") + u(6)
-            if ln.get("rank", True):
-                x += self._lt_rank(cv, P, x, mid) + u(4)
-            self.tk_ov_cv = cv
+        x = self.a8_bar(w, cv, P, want, pad, None, mid, sep, map_w=u(160)) + u(10) if want["timer"] else pad
         if self.bar_buttons_on():
             x = sep(x)
             mw = self._lt_menus_w(cv, P)
@@ -644,186 +578,23 @@ class LightOverlay:
 
     # ---------------------------------------------------------------- Panels
     def _lt_hairline_panel(self, w, cv, P, want, spot, piece):
-        """Hairline Panel: everything right-aligned, like the game's area info (top right): the time, Map / Maps /
-        Avg, where you are and its rank, a thin rule, the switches in two columns, the clock, lock and ⚙."""
-        u = self._u
-        cfg, ln = self.tracker_cfg(), self.ov_lines()
-        PW = u(240)
-        pad = u(8)
-        R = PW - pad
-        y = pad
-        fm = self._lt_fm(cv, P, 9)
-        if want["timer"]:
-            if ln.get("session", True):
-                fb = self._lt_fm(cv, P, 16, True)
-                tw = fb.measure("0:00:00")
-                ty = y + fb.metrics("linespace") // 2
-                tx = R - tw
-                self._lt_time(cv, P, tx, ty, 16)
-                d = self._hf(10) + 6
-                self._mg_play(cv, P, tx - u(6) - d, ty, anchor="w", size=10)
-                y += fb.metrics("linespace") + u(2)
-            parts = [(k, s) for k, s in (("map", "Map 00:00"), ("maps", "Maps 000"), ("avg", "Avg 00:00")) if ln.get(k)]
-            if parts:
-                cy = y + u(8)
-                x = R
-                for k, sample in reversed(parts):
-                    self._lt_text(cv, P, x, cy, "", 9, P["big"], anchor="e", key=k, cls=_Clean)
-                    x -= fm.measure(sample) + u(10)
-                y += u(17)
-            if ln.get("where", True) or ln.get("rank", True):
-                cy = y + u(8)
-                x = R
-                if ln.get("rank", True):
-                    x -= self._lt_rank(cv, P, R, cy, anchor="e") + u(6)
-                if ln.get("where", True):
-                    self._lt_where(cv, P, x, cy, 26, anchor="e")
-                y += u(17)
-            self.tk_ov_cv = cv
-        y += u(4)
-        fy = y + u(8)
-        x = self._lt_glyphs(w, cv, P, R, fy)
-        if want["timer"] and cfg.get("clock", True):
-            x -= self._lt_clock(cv, P, x, fy) + u(10)
-        if self.bar_buttons_on():
-            fy += u(18)
-            self._lt_menus(w, cv, P, R, fy)
-        return PW, fy + u(10)
+        """Hairline Panel: the Map First panel (2.139.0) in Hairline's colors."""
+        return self._lt_slate_panel(w, cv, P, want, spot, piece)      # 2.139.0: Map First in every style
 
     def _lt_ornate_panel(self, w, cv, P, want, spot, piece):
         return self._lt_slate_panel(w, cv, P, want, spot, piece, style=P["skin"])
 
     def _lt_slate_panel(self, w, cv, P, want, spot, piece, style="slate"):
-        """Slate Panel: a SESSION header (clock, lock, ⚙ on the right), the time / Map / Maps / Avg in a 2 x 2 grid,
-        where you are and the rank, the switches in two columns (an accent bar on the left when on), the menus."""
-        from .merged_page import _Num
-        u = self._u
-        cfg, ln = self.tracker_cfg(), self.ov_lines()
-        PW = u(250)
-        pad = u(10)
-        R = PW - pad
-        hh = u(24)
-        self._lt_text(cv, P, pad, hh // 2, "SESSION" if want["timer"] else "MECHANICS", 8, P["accent"], bold=True)
-        x = self._lt_glyphs(w, cv, P, R, hh // 2)
-        if want["timer"] and cfg.get("clock", True):
-            self._lt_clock(cv, P, x, hh // 2)
-        cv.create_line(0, hh, PW, hh, fill=P["line"], tags=("mg",))
-        y = hh + u(6)
-        colw = (PW - 2 * pad) // 2
-        if want["timer"]:
-            cells = [k for k in ("session", "map", "maps", "avg") if ln.get(k, k in ("session", "map"))]
-            rh = u(24)
-            for i, k in enumerate(cells):
-                cx, cy = pad + (i % 2) * colw, y + (i // 2) * rh + rh // 2
-                if k == "session":
-                    cx += self._mg_play(cv, P, cx, cy, anchor="w", size=9) + u(5)
-                    self._lt_time(cv, P, cx, cy, 11, num=True)
-                    continue
-                lab = {"map": "Zone" if self.ov_camp_mode() else "Map", "maps": "Maps", "avg": "Avg"}[k]
-                self._lt_text(cv, P, cx, cy, lab, 8, P["muted"])
-                lw = self._lt_fm(cv, P, 8).measure(lab) + u(5)
-                self._lt_text(cv, P, cx + lw, cy, "", 12 if k == "map" else 10, P["big"], bold=k == "map", key=k,
-                              cls=_Num)
-            y += ((len(cells) + 1) // 2) * rh + u(2)
-            if ln.get("where", True) or ln.get("rank", True):
-                cy = y + u(8)
-                x = R
-                if ln.get("rank", True):
-                    x -= self._lt_rank(cv, P, R, cy, anchor="e") + u(6)
-                if ln.get("where", True):
-                    self._lt_where(cv, P, pad, cy, int((x - pad) / max(1, self._lt_fm(cv, P, 9).measure("n"))))
-                y += u(18)
-            self.tk_ov_cv = cv
-        if self.bar_buttons_on():
-            cv.create_line(0, y, PW, y, fill=P["line"], tags=("mg",))
-            self._lt_menus(w, cv, P, pad, y + u(12), anchor="w", right=PW - pad, step=u(20))
-            y += u(24) + (getattr(self, "_mg_menu_rows", 1) - 1) * u(20)
-        else:
-            y += u(4)
-        return PW, y
+        """2.139.0 Map First (ova8): the chip and the clock, the map part, SESSION | LAST MAP'S PROFIT, the tools -
+        the Panel of every style (Classic draws its stone round it)."""
+        PW = self._u(290)
+        return PW, self.a8_panel(w, cv, P, want, PW)
 
     def _lt_flanks_panel(self, w, cv, P, want, spot, piece):
-        """Flanks Panel: the numbers on the left under an accent rule, the switches, clock, lock and ⚙ pushed right
-        under another - the bar's two halves stacked."""
-        u = self._u
-        cfg, ln = self.tracker_cfg(), self.ov_lines()
-        PW = u(230)
-        pad = u(6)
-        R = PW - pad
-        rl = u(130)
-        fm = self._lt_fm(cv, P, 9)
-        y = pad
-        if want["timer"]:
-            self._lt_rule(cv, P, pad, pad + rl, y, strong="l")
-            y += u(14)
-            x = pad
-            if ln.get("session", True):
-                x += self._mg_play(cv, P, x, y, anchor="w", size=10) + u(6)
-                x += self._lt_time(cv, P, x, y, 13, num=True) + u(8)
-            if ln.get("map", True):
-                self._lt_text(cv, P, x, y, "", 9, P["text"], key="map", cls=_Clean)
-            y += u(18)
-            if ln.get("where", True) or ln.get("rank", True):
-                x = pad
-                if ln.get("rank", True):
-                    x += self._lt_rank(cv, P, x, y) + u(6)
-                if ln.get("where", True):
-                    self._lt_where(cv, P, x, y, 26)
-                y += u(16)
-            x = pad
-            for k, sample in (("maps", "Maps 000"), ("avg", "Avg 00:00")):
-                if ln.get(k):
-                    self._lt_text(cv, P, x, y, "", 9, P["big"], key=k, cls=_Clean)
-                    x += fm.measure(sample) + u(10)
-            if x > pad:
-                y += u(16)
-            self.tk_ov_cv = cv
-            y += u(4)
-        self._lt_rule(cv, P, R - rl, R, y, strong="r")
-        y += u(6)
-        fy = y + u(9)
-        x = self._lt_glyphs(w, cv, P, R, fy)
-        if want["timer"] and cfg.get("clock", True):
-            self._lt_clock(cv, P, x - u(4), fy)
-        if self.bar_buttons_on():
-            fy += u(18)
-            self._lt_menus(w, cv, P, R, fy)
-        return PW, fy + u(10)
+        """Split Panel: the Map First panel (2.139.0) in Split's colors."""
+        return self._lt_slate_panel(w, cv, P, want, spot, piece)      # 2.139.0: Map First in every style
 
     def _lt_micro_panel(self, w, cv, P, want, spot, piece):
-        """Micro Panel: a small tile - the time, this map's time and the rank; the switches as lettered squares;
-        lock and ⚙ (and the menus) under them."""
-        from .merged_page import _Num
-        u = self._u
-        cfg, ln = self.tracker_cfg(), self.ov_lines()
-        pad = u(8)
-        fm = self._lt_fm(cv, P, 10)
-        y = pad
-        x = pad
-        row_w = []
-        if want["timer"]:
-            cy = y + u(10)
-            if ln.get("session", True):
-                x += self._mg_play(cv, P, x, cy, anchor="w", size=9) + u(4)
-                x += self._lt_time(cv, P, x, cy, 12, num=True) + u(8)
-            if ln.get("map", True):
-                self._lt_text(cv, P, x, cy, "", 10, P["text"], key="map", cls=_Num)
-                x += fm.measure("00:00") + u(6)
-            if ln.get("rank", True):
-                x += self._lt_rank(cv, P, x, cy) + u(4)
-            row_w.append(x)
-            y += u(22)
-            self.tk_ov_cv = cv
-        gw = self._lt_glyphs_w(cv, P)
-        mw = self._lt_menus_w(cv, P) if self.bar_buttons_on() else 0
-        clock = want["timer"] and cfg.get("clock", True)
-        cw = self._lt_fm(cv, P, 9).measure("00:00 PM") + u(8) if clock else 0
-        row_w.append(pad + mw + cw + gw)
-        W = max(row_w) + pad
-        fy = y + u(6)
-        x = self._lt_glyphs(w, cv, P, W - pad, fy)
-        if clock:
-            self._lt_clock(cv, P, x, fy)
-        if mw:
-            self._lt_menus(w, cv, P, pad, fy, anchor="w")
-        return W, fy + u(10)
+        """Micro Panel: the Map First panel (2.139.0) in Micro's colors."""
+        return self._lt_slate_panel(w, cv, P, want, spot, piece)      # 2.139.0: Map First in every style
+

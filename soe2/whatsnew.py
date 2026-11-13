@@ -47,6 +47,16 @@ BETA_AREAS = ("Wealth", "Money Makers", "Game Search", "Market Insights", "Craft
 # repeats. Someone coming from rollup["since"] or older (or a fresh install) sees it instead of each version; someone
 # on a pre-release already saw them and gets only this version's own lines (notes_between).
 NOTES = {
+    "2.139.0": {
+        "big": [],
+        "small": [
+            ("Overlay", "New look in every style: a chip says In map, Paused or Hideout - click it to pause."),
+            ("Overlay", "The map you're in comes first. Session and Last map's profit have labels."),
+            ("Overlay", "Hover SESSION for maps run and the average."),
+            ("Overlay", "Tools are icons - hover one for its name."),
+            ("Price check", "Megalomaniac: its passives should be in the search now."),
+        ],
+    },
     "2.138.4": {
         "big": [],
         "small": [

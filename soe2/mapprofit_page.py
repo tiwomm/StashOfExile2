@@ -249,7 +249,7 @@ class MapProfitPage:
             e = self.mp_last = last[-1] if last else None
         if e is None:
             return "Profit –"
-        return MP.signed(e["div"], fmt_div)
+        return MP.signed(e["div"], fmt_div)        # (2.139.0: its label says LAST MAP'S PROFIT)
 
     def mp_breakdown(self, e=None):
         """How the bar's number was worked out: [line, ...] (the hover)."""
