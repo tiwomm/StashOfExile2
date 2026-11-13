@@ -4,7 +4,7 @@
 
 > **Who we build for - read second.** Path of Exile players are utilitarian: they love data and information, problem solving and creative thinking. So every feature shows its numbers *and how they were worked out*, lets you sort, filter, compare and export them (CSV), keeps power-user depth (keys, versions, raw data) one click away instead of hiding it, explains in plain words, and leaves the decision to the player. Pretty is welcome; vague is not.
 
-**Current version: 2.137.1**
+**Current version: 2.137.2**
 
 Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds features, 2.10.1 only fixes. Each step below is one release; we work through them top to bottom.
 
@@ -273,6 +273,7 @@ Order (decided 2026-11-05): the page passes, then the Privacy & data hub, then t
 | 2.136.2 | Vaal Ruins is a town: Map profit counts temple runs (inventory before and after), the Session tracker stops counting Vaal Ruins as a map. |
 | 2.137.0 | Error reports: opt-in, its own switch - where in the code an error happened and its type, trade site errors, counted - to the community board so bugs get fixed. |
 | 2.137.1 | Alert cards at the top center by default (not on your character); a space after HELPERS. |
+| 2.137.2 | Ritual Identifier and Temple Helper read a quarter of the screen bigger every other look: small labels found at any size. |
 | 2.135.1 | No fades (Reduce motion always on); Regex: Genesis Tree, warping rune and Alloy mods. |
 | 2.135.0 | Page windows stay with the app; Scan stash out of BETA, Count currency in More; Temple crystals in runs. |
 | 2.134.1 | Update question: What's new only, checksums stay on the release page. |
