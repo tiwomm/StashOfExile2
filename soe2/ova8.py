@@ -119,9 +119,16 @@ class OverlayA8:
         return {"a8_chip": chip_text(chip_key(s, camp)), "a8_label": label, "a8_place": place, "a8_timer": timer}
 
     def a8_session_tip(self):
+        """SESSION's hover: maps run and the average - each as its switch (Overlay options' Maps / Average) says."""
         n = self.tracker_numbers() or {}
+        ln = self.ov_lines()
         maps, avg = n.get("maps", "0"), n.get("avg", "-")
-        return f"{maps} maps this session" + (f", {avg} on average" if avg not in (None, "-", "") else "")
+        parts = []
+        if ln.get("maps", True):
+            parts.append(f"{maps} maps this session")
+        if ln.get("avg", True) and avg not in (None, "-", ""):
+            parts.append(f"{avg} on average")
+        return ", ".join(parts) or "This session's time"
 
     def a8_chip_tip(self):
         return CHIP_TIPS.get(chip_key(getattr(self, "tk_session", None)), "Pause the session")
