@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU AGPL v3.0 (see LICENSE; up to 2.129.4: GNU GPL v3.0). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.142.0
+VERSION 2.142.1
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,6 +19,11 @@ VERSION 2.142.0
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.142.1
+       - Vaal Lens room medallions (feedback: "the room card medallions have matching icons to the regular cards and
+         room tiles so I think you could guess at what the medallions are based on their picture"): a slot not known
+         by its own picture is matched against the board's room icons (a few sizes and spots) - an Uromoti's is known
+         by the room it adds (Corruption Chamber, Smithy...) without hovering it.
   2.142.0
        - Vaal Lens medallions (BETA; feedback: "could we get some detection for medallions that drop and make
          suggestions if a person's 6/6 medallions are full"): medallions.py - the 9 medallions by name, how good
@@ -3838,7 +3843,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.142.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.142.1"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
