@@ -49,6 +49,8 @@ class FeaturesPage:
         else:
             self.topup_start()                              # 2.131.0: Top Up (it stops itself when off)
             self.hover_start()                              # 2.132.1/2.132.3: Temple Helper, Ritual Identifier
+            if self.temple_fast_on():
+                self.temple_fast_start()                    # 2.138.1: Fast Beacon Read (opt-in)
         if FEAT.on("overlay") and self.ritual_cfg().get("on"):
             try:
                 self.ritual_start()

@@ -370,9 +370,14 @@ class AlertsPage:
         self.al_rtips = tk.BooleanVar(value=bool(self.remnant_cfg().get("tips", True)))
         from .temple import cfg as _TMc
         self.al_tpad = tk.BooleanVar(value=bool(_TMc().get("notepad", True)))
+        self.al_tfast = tk.BooleanVar(value=bool(_TMc().get("fast_read", False)))
         opts = {
             "temple": [("Temple Notepad", self.al_tpad, lambda: self.temple_pad_set(self.al_tpad.get()),
-                        "A note over the game inside the temple: your crystals, your plan. Only in the temple.")],
+                        "A note over the game inside the temple: your crystals, your plan. Only in the temple."),
+                       # 2.138.1 (feedback: "Enable only if crystals aren't being counted")
+                       ("Fast Beacon Read", self.al_tfast, lambda: self.temple_fast_set(self.al_tfast.get()),
+                        "Enable only if crystals aren't being counted. Reads above your character 10 times a second "
+                        "in Temple maps, to catch a Beacon's count as you stand on it - uses more CPU.")],
             "remnant": [("Island rumors", self.al_rru, lambda: self.ru_changed(self.al_rru.get()),
                          "On the world map's Uncharted Waters card, each rumor gets the island it leads to and your "
                          "Map Library rank for it. Only in your hideout."),
