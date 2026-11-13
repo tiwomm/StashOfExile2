@@ -750,12 +750,12 @@ class MergedOverlay:
         oc = self.overlay.cfg
         if not oc.get("notes_enabled"):
             return x
-        txt = "Notes"
-        if peek:
-            tabs = self.overlay.note_tabs()
-            first = (tabs[self.overlay.note_index()]["text"].strip().splitlines() or [""])[0]
-            first = first if len(first) <= chars else first[:max(1, chars - 1)].rstrip() + "…"
-            txt = ("NOTES  " if P.get("caps") else "Notes  ") + (first or "-")
+        if not peek:                                       # 2.139.0 Grouped: an icon, its name on hover
+            return self._mg_tool(cv, P, x, y, "notes", self.overlay.notes_shown(), self.merged_notes_drop, anchor)
+        tabs = self.overlay.note_tabs()
+        first = (tabs[self.overlay.note_index()]["text"].strip().splitlines() or [""])[0]
+        first = first if len(first) <= chars else first[:max(1, chars - 1)].rstrip() + "…"
+        txt = ("NOTES  " if P.get("caps") else "Notes  ") + (first or "-")
         txt += "  ▾" if not self.overlay.notes_shown() else "  ▴"
         cv.create_text(x, y, text=txt, anchor=anchor, fill=P["muted"], font=(P["font"], self._hf(9)), tags=("mg", "mg_notes"))
         cv.tag_bind("mg_notes", "<Button-1>", lambda e: self.merged_notes_drop())
@@ -763,6 +763,95 @@ class MergedOverlay:
         cv.tag_bind("mg_notes", "<Leave>", lambda e: cv.configure(cursor=""))
         bb = cv.bbox("mg_notes")
         return (bb[0] if bb else x) - 12
+
+    # ---------------------------------------------------------------- 2.139.0 Grouped (the mockup the user picked:
+    # "A. grouped looks sick"): the tools are icons - their name on hover - and an open one carries ▴
+    TOOL_ICONS = {"notes": "\uE70B", "calc": "\uE8EF", "regex": None, "rates": "\uE9D2", "vendor": "\uE7BF"}
+    TOOL_TIPS = {"notes": "Notes", "calc": "Calc", "regex": "Regex favorites", "rates": "Exchange Rates",
+                 "vendor": "Vendor"}
+    TOOL_NAMES = {"notes": "Notes", "calc": "Calc", "regex": "Regex", "rates": "Rates", "vendor": "Vendor"}
+
+    def _mg_icon_family(self):
+        """Windows' own icon font (Segoe MDL2 Assets), or None - then the tools keep their names."""
+        fam = getattr(type(self), "_mg_icon_fam", False)
+        if fam is False:
+            try:
+                fam = "Segoe MDL2 Assets" if "Segoe MDL2 Assets" in tkfont.families(self.root) else None
+            except tk.TclError:
+                fam = None
+            type(self)._mg_icon_fam = fam
+        return fam
+
+    def _mg_tool_face(self, what, P):
+        """-> (text, font) a tool is drawn with."""
+        fam, size = self._mg_icon_family(), self._hf(10)
+        if what == "regex" and fam:
+            return ".*", ("Consolas", self._hf(10), "bold")
+        if fam and self.TOOL_ICONS.get(what):
+            return self.TOOL_ICONS[what], (fam, size)
+        return self.TOOL_NAMES[what], (P["font"], self._hf(9))
+
+    def mg_tools_w(self, cv, P, keys=None):
+        """How wide the tools are, drawn as icons (each with room for its ▴)."""
+        keys = self.bar_buttons() if keys is None else keys
+        out = 0
+        for k in keys:
+            text, font = self._mg_tool_face(k, P)
+            out += tkfont.Font(root=cv, font=font).measure(text) + tkfont.Font(root=cv, font=(P["font"], self._hf(8))).measure(" ▴") + 12
+        return out
+
+    def _mg_tool(self, cv, P, x, y, what, shown, click, anchor="e"):
+        """One tool on the bar: its icon (▴ beside it while its window is open - a mark, not just a color), its name
+        on hover, a click opens / closes it. -> the next x."""
+        tag = "mg_notes" if what == "notes" else "mg_" + what
+        text, font = self._mg_tool_face(what, P)
+        mark = " ▴" if shown else ""
+        fill = P.get("accent", P["text"]) if shown else P["muted"]
+        if anchor == "e":
+            if mark:
+                it = cv.create_text(x, y, text=mark, anchor="e", fill=fill, font=(P["font"], self._hf(8)), tags=("mg", tag))
+                bb = cv.bbox(it)
+                x = bb[0] if bb else x
+            cv.create_text(x, y, text=text, anchor="e", fill=fill, font=font, tags=("mg", tag))
+        else:
+            it = cv.create_text(x, y, text=text, anchor="w", fill=fill, font=font, tags=("mg", tag))
+            if mark:
+                bb = cv.bbox(it)
+                cv.create_text(bb[2] if bb else x, y, text=mark, anchor="w", fill=fill, font=(P["font"], self._hf(8)),
+                               tags=("mg", tag))
+        cv.tag_bind(tag, "<Button-1>", lambda e: (self.ov_tip_hide(), click()))
+        self.ov_tip(cv, tag, self.TOOL_TIPS[what])
+        bb = cv.bbox(tag)
+        return (bb[0] if bb else x) - 12
+
+    def ov_tip(self, cv, tag, text):
+        """A name / line on hover over the game (an icon-only control's tooltip), in the overlay's colors."""
+        cv.tag_bind(tag, "<Enter>", lambda e: (cv.configure(cursor="hand2"), self.ov_tip_show(text, e.x_root, e.y_root)))
+        cv.tag_bind(tag, "<Leave>", lambda e: (cv.configure(cursor=""), self.ov_tip_hide()))
+
+    def ov_tip_show(self, text, x, y):
+        self.ov_tip_hide()
+        from .overlaywin import pal
+        P = pal()
+        w = self._ov_tip_win = tk.Toplevel(self.root)
+        w.overrideredirect(True)
+        try:
+            w.attributes("-topmost", True)
+        except tk.TclError:
+            pass
+        tk.Label(w, text=text, bg=P.get("bg", "#151311"), fg=P.get("text", "#efe6d2"), padx=8, pady=4,
+                 highlightthickness=1, highlightbackground=P.get("rim") or P.get("line", "#3a3226"),
+                 font=(P.get("font") or "Segoe UI", 10)).pack()
+        w.update_idletasks()
+        w.geometry(f"+{int(x - w.winfo_reqwidth() // 2)}+{int(y - w.winfo_reqheight() - 14)}")
+
+    def ov_tip_hide(self, _e=None):
+        w, self._ov_tip_win = getattr(self, "_ov_tip_win", None), None
+        if w is not None:
+            try:
+                w.destroy()
+            except tk.TclError:
+                pass
 
     def bar_buttons(self):
         """2.92.2: the menus on the bar, left to right: Notes ▾, Calc ▾, Regex ▾, Rates ▾, Vendor ▾ (each only when
@@ -845,14 +934,7 @@ class MergedOverlay:
             "rates": ("Rates", self.ovr_shown, self.ovr_toggle),
             "vendor": ("Vendor", lambda: getattr(self, "camp_vendor_win", None) is not None, self.camp_vendor_toggle),
         }[what]
-        tag = "mg_" + what
-        cv.create_text(x, y, text=name + ("  ▴" if shown() else "  ▾"), anchor=anchor, fill=P["muted"],
-                       font=(P["font"], self._hf(9)), tags=("mg", tag))
-        cv.tag_bind(tag, "<Button-1>", lambda e: click())
-        cv.tag_bind(tag, "<Enter>", lambda e: cv.configure(cursor="hand2"))
-        cv.tag_bind(tag, "<Leave>", lambda e: cv.configure(cursor=""))
-        bb = cv.bbox(tag)
-        return (bb[0] if bb else x) - 12
+        return self._mg_tool(cv, P, x, y, what, shown(), click, anchor)
 
     # 2.92.2 (feedback): your Regex favorites over the game, beside Notes and Calc
     def rx_ov_shown(self):
@@ -1259,7 +1341,7 @@ class MergedOverlay:
             try:                                              # 2.132.0: Map profit - the last map's, hover for how
                 if self.mp_on():
                     fixed.append("profit")
-                    widths["profit"] = fm.measure("+00.0 div") + 8
+                    widths["profit"] = fm.measure("+00.0 chaos last map") + 8
             except Exception:
                 buglog.caught()
             map_on = bool(ln.get("map", True) or ln.get("where", True))
