@@ -1690,9 +1690,16 @@ class App(SettingsPage, GearBookPage, PriceCheckPage, PricePopup, FavoritesPage,
         except Exception:
             buglog.caught()
         try:
-            ER.fetch_pool()                              # board admins: everyone's, to this PC only (once a day)
+            n = ER.fetch_pool()                          # board admins: everyone's, to this PC only (once a day)
+            if n:
+                self.ui_q.put(("er_pooled", n))
         except Exception:
             buglog.caught()
+
+    def ev_er_pooled(self, n):
+        """2.137.0 (feedback: "prompt me for it"): the admin is told - nothing is fixed by itself."""
+        self._say(f"Error reports: {n} new kind{'' if n == 1 else 's'} since the last look. They're in "
+                  f"error_reports.json in your data folder - ask Claude to go through them.", 15)
 
     def er_ask(self, info=False):
         """The question (asked once - a no is final), or with info=True what's sent, word for word (Settings)."""

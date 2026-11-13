@@ -32,6 +32,12 @@ VERSION HISTORY
          public/uploaded to github"): GET /errors is for board admins only; the admin's app saves everyone's to its own
          data folder once a day (error_reports.json) - no workflow, no key, never the repo (tools/check_private.py in
          Checks). Settings › Privacy & community: the switch and "What error reports send" (the next send word for word).
+         The admin is told ("N new kinds ... ask Claude") - nothing is fixed by itself (feedback: "prompt me for it").
+       - Downloads are only ever data (feedback: "protection against malware/viruses going to the cloudflare
+         database"): every pooled row is checked again in the app (communitymods.safe_rows, errorreports.safe_row -
+         plain numbers and short plain text, no control characters or < > { } ` $ \, capped) before it's saved; JSON
+         is parsed, never run. Board: base names must be plain words (okBase), answers carry nosniff, error kinds
+         capped at 5,000.
   2.136.2
        - Vaal Ruins is a town (feedback: "Profit tracker needs to ... treat vaal ruins as town/hideout area to track
          profits in my inventory ... and treat atziri's temple as the map"): maplib.HUBS ("IncursionHubEndgame", level

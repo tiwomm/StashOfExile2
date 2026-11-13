@@ -216,7 +216,28 @@ def fetch_pool(call=None, force=False):
     ok, d = (call or B.call)("GET", "/errors")
     if not ok or not isinstance(d, dict):
         return None
-    rows = d.get("errors") or []
-    save_json(POOLED, {"ts": time.time(), "errors": rows})
-    return len(rows)
+    rows = [r for r in (d.get("errors") or [])[:1000] if safe_row(r)]
+    seen = {_key(r) for r in old.get("errors") or [] if isinstance(r, dict)}
+    new = [r for r in rows if _key(r) not in seen]
+    save_json(POOLED, {"ts": time.time(), "errors": rows, "new": len(new)})
+    return len(new)
+
+
+def _key(r):
+    return (r.get("kind"), r.get("place"), r.get("type"), r.get("frames"), r.get("msg"))
+
+
+def safe_row(r):
+    """2.137.0: a downloaded report row, checked against the same narrow patterns as an upload - anything else is
+    dropped before it's saved (the board checks too; this is the second lock)."""
+    if not isinstance(r, dict) or r.get("kind") not in KINDS:
+        return False
+    frames = [f for f in str(r.get("frames") or "").split(" < ") if f]
+    nums = all(isinstance(r.get(k), int) and not isinstance(r.get(k), bool) and 0 <= r.get(k) < 10 ** 12
+               for k in ("n", "installs", "first", "last"))
+    vers = all(re.match(r"^[0-9?][0-9.]{0,14}$", str(r.get(k) or "?")) for k in ("first_v", "last_v"))
+    return bool(nums and vers and _PLACE.match(str(r.get("place") or "")) and
+                (not r.get("type") or _TYPE.match(str(r["type"]))) and all(_FRAME.match(f) for f in frames[:6]) and
+                len(frames) <= 6 and _MSG.match(str(r.get("msg") or "")) and
+                re.match(r"^((win|linux|mac)[0-9._-]{0,20})?$", str(r.get("os") or "")))
 

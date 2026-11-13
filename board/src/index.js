@@ -195,7 +195,8 @@ const tidy = (o, order) => Object.fromEntries(order.filter((k) => o[k] !== undef
 // ------------------------------------------------------------------ helpers
 const now = () => Math.floor(Date.now() / 1000);
 const json = (body, status = 200) => new Response(JSON.stringify(body), {
-  status, headers: { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" },
+  status, headers: { "content-type": "application/json; charset=utf-8", "cache-control": "no-store",
+    "x-content-type-options": "nosniff" },
 });
 const fail = (status, error) => json({ error }, status);
 const page = (title, text) => new Response(`<!doctype html><meta charset="utf-8"><title>${title}</title>
@@ -240,6 +241,8 @@ async function housekeeping(env) {
     env.DB.prepare("DELETE FROM bug_limits WHERE day <> ?").bind(day),
     env.DB.prepare("DELETE FROM sessions WHERE expires < ?").bind(now()),
     env.DB.prepare("DELETE FROM app_error_installs WHERE last < ?").bind(now() - 30 * 86400),     // 2.137.0
+    // 2.137.0: a flood of made-up errors can't fill the database - the newest 5,000 kinds stay
+    env.DB.prepare("DELETE FROM app_errors WHERE sig NOT IN (SELECT sig FROM app_errors ORDER BY last DESC LIMIT 5000)"),
     env.DB.prepare(`DELETE FROM images WHERE created < ? AND NOT EXISTS (SELECT 1 FROM posts p WHERE instr(p.data, '"b:' || images.key || '"') > 0)
       AND NOT EXISTS (SELECT 1 FROM revisions r WHERE instr(r.data, '"b:' || images.key || '"') > 0)`).bind(now() - 3600),
   ]);
@@ -1069,6 +1072,8 @@ const okPrice = (m) => typeof m === "number" && isFinite(m) && m > 0.0005 && m <
 const ZONE_TEXT = /^[\p{L}\p{N} ',.\-]{1,80}$/u;
 const UNMATCHED_TEXT = /^[\p{L}\p{N}_ #%+\-.,'():/]{3,100}$/u, BASE_TEXT = /^[\p{L}\p{N} ',.\-]{1,60}$/u;
 const okText = (t, n = 80) => typeof t === "string" && t.length > 0 && t.length <= n;
+// 2.137.0: a base name is plain words (letters, digits, ' , . - and spaces; "pool:" in front for pooled rows)
+const okBase = (t) => okText(t) && /^[\p{L}\p{N} ',.\-]{1,75}$/u.test(String(t).replace(/^pool:/, ""));
 
 async function modBatch(req, env) {
   const body = await readBody(req);
@@ -1088,7 +1093,7 @@ async function modBatch(req, env) {
   let used = 0;
   if (league) {
     for (const p of (Array.isArray(body.prices) ? body.prices : []).slice(0, MAX_PAIRS)) {
-      if (!okText(p?.base) || !SID.test(String(p?.sid)) || !okPrice(p?.med) || !(p?.n >= 1)) continue;
+      if (!okBase(p?.base) || !SID.test(String(p?.sid)) || !okPrice(p?.med) || !(p?.n >= 1)) continue;
       const w = Math.min(Number(p.n) || 1, W_CAP);
       stmts.push(env.DB.prepare(`INSERT INTO mod_prices (league, base, sid, n, w, slog, batches, updated)
         VALUES (?1, ?2, ?3, ?4, ?5, ?6, 1, ?7) ON CONFLICT(league, base, sid) DO UPDATE SET n = n + ?4, w = w + ?5,
@@ -1097,7 +1102,7 @@ async function modBatch(req, env) {
       used++;
     }
     for (const b of (Array.isArray(body.bases) ? body.bases : []).slice(0, 100)) {
-      if (!okText(b?.base) || !okPrice(b?.med) || !(b?.n >= 1)) continue;
+      if (!okBase(b?.base) || !okPrice(b?.med) || !(b?.n >= 1)) continue;
       const w = Math.min(Number(b.n) || 1, W_CAP * 3);
       stmts.push(env.DB.prepare(`INSERT INTO base_prices (league, base, n, w, slog, batches, updated)
         VALUES (?1, ?2, ?3, ?4, ?5, 1, ?6) ON CONFLICT(league, base) DO UPDATE SET n = n + ?3, w = w + ?4,
