@@ -50,7 +50,17 @@ def place_texts(n, session, live, camp=False, zone_time=None):
         return "THIS MAP", ("" if where in (None, "-") else str(where)), t
     if not live:
         return "NOW", "Not tracking", ""
-    return "NOW", {"hideout": "Hideout", "town": "Town"}.get(kind, "Between maps"), ""
+    # 2.139.1 (feedback: "TOWN" in the chip and "NOW · Town" beside it): out of a map the chip says where you are,
+    # and the map part shows your last map
+    last = None
+    for m in reversed(getattr(session, "maps", None) or []):
+        if m.get("name"):
+            last = m
+            break
+    if last is None:
+        return "LAST MAP", "None yet", ""
+    from .tracker import fmt_time
+    return "LAST MAP", str(last["name"]), fmt_time(last.get("time") or 0)
 
 
 class _Chip(CanvasText):
@@ -156,12 +166,20 @@ class OverlayA8:
         return w
 
     def _a8_pin(self, cv, P, x, y):
-        """A map pin, drawn (fonts' pins differ from PC to PC). -> its width."""
+        """A map pin, drawn (fonts' pins differ from PC to PC): a round head on a point, a hole in it - y is the head's
+        middle. 2.139.1 (feedback: "the gps pin looks like a ... flower"): a filled teardrop, not a ring on a stick.
+        -> its width."""
         u = self._u
-        r = u(4)
+        r = max(4, u(5))
+        cx, cy = x + r, y - r * 0.3
         col = P.get("accent") or P["text"]
-        cv.create_oval(x, y - r * 2, x + 2 * r, y, outline=col, width=max(1, u(2)), tags=("mg",))
-        cv.create_line(x + r, y, x + r, y + r + u(2), fill=col, width=max(1, u(2)), tags=("mg",))
+        tip = cy + r * 1.7
+        pts = [cx, tip, cx - r * 0.75, cy + r * 0.6, cx - r, cy - r * 0.1, cx - r * 0.75, cy - r * 0.8, cx, cy - r * 1.05,
+               cx + r * 0.75, cy - r * 0.8, cx + r, cy - r * 0.1, cx + r * 0.75, cy + r * 0.6]
+        cv.create_polygon(pts, smooth=True, fill=col, outline=col, tags=("mg",))
+        h = r * 0.38
+        cv.create_oval(cx - h, cy - h, cx + h, cy + h, fill=P.get("cell_bg") or P.get("field") or P["bg"], outline="",
+                       tags=("mg",))
         return 2 * r
 
     def a8_bar(self, w, cv, P, want, x0, right, mid, sep, map_w=None, spread=None):
@@ -174,9 +192,9 @@ class OverlayA8:
             cw = self._a8_chip(cv, P, x0, mid, u(20), longest=chip_text("idle"))
             self.tk_ov_lbls.pop("a8_chip").config(text=chip_text("idle"))
             return x0 + cw + u(12)
-        ly, vy = (mid - spread[0], mid + spread[1]) if spread else (mid - u(8), mid + u(7))     # label / value lines
-        x = x0 + self._a8_chip(cv, P, x0, mid, u(20)) + u(12)
-        fl, fv = self._lt_fm(cv, P, 8, True), self._lt_fm(cv, P, 11, True)
+        ly, vy = (mid - spread[0], mid + spread[1]) if spread else (mid - u(7), mid + u(6))     # label / value lines
+        x = x0 + self._a8_chip(cv, P, x0, mid, u(18)) + u(10)
+        fl, fv = self._lt_fm(cv, P, 8, True), self._lt_fm(cv, P, 10, True)
         ses_w = max(fl.measure("SESSION ⓘ"), fv.measure("00:00:00")) if ln.get("session", True) else 0
         prof = False
         try:
@@ -195,15 +213,15 @@ class OverlayA8:
                 fixed -= ses_w + gap
                 ses_w = 0
                 room = right - x - fixed - u(6)
-            room = min(room, u(300))                        # (wide: the rest is space before the tools)
+            room = min(room, u(210))                        # (wide: the rest is space before the tools)
         if show_map and room > u(60):
-            px = x + self._a8_pin(cv, P, x, mid + u(3)) + u(8)
+            px = x + self._a8_pin(cv, P, x, mid) + u(8)
             self._a8_label(cv, P, px, ly, "THIS MAP", key="a8_label")
-            tf = self._lt_fm(cv, P, 12, True)
+            tf = self._lt_fm(cv, P, 11, True)
             tw = tf.measure("00:00") + u(4)
-            tm = self._lt_text(cv, P, px, vy, "", 12, P.get("accent") or P["big"], bold=True, key="a8_timer")
-            t = self._lt_text(cv, P, px, vy, "", 12, P["big"], bold=True, key="a8_place", cls=_Fit)
-            t.width, t.font = max(u(40), x + room - px - tw - u(8)), (P["font"], self._hf(12), "bold")
+            tm = self._lt_text(cv, P, px, vy, "", 11, P.get("accent") or P["big"], bold=True, key="a8_timer")
+            t = self._lt_text(cv, P, px, vy, "", 11, P["big"], bold=True, key="a8_place", cls=_Fit)
+            t.width, t.font = max(u(40), x + room - px - tw - u(8)), (P["font"], self._hf(11), "bold")
             t.follow, t.gap = tm, u(10)
             x += room
         if ses_w:
@@ -211,7 +229,7 @@ class OverlayA8:
             x += gap
             from .merged_page import _Time
             lab = self._a8_label(cv, P, x, ly, "SESSION ⓘ")
-            t = self._lt_text(cv, P, x, vy, "", 11, P["big"], bold=True, key="session", cls=_Time)
+            t = self._lt_text(cv, P, x, vy, "", 10, P["big"], bold=True, key="session", cls=_Time)
             t.num, t.dim = True, (P["big"], P["muted"])
             cv.addtag_withtag("mg_a8ses", t.item)
             cv.addtag_withtag("mg_a8ses", lab.item)
@@ -221,7 +239,7 @@ class OverlayA8:
             sep(x + gap // 2)
             x += gap
             lab = self._a8_label(cv, P, x, ly, "LAST MAP'S PROFIT ⓘ")
-            t = self._lt_text(cv, P, x, vy, "", 11, P.get("accent") or P["big"], bold=True, key="profit")
+            t = self._lt_text(cv, P, x, vy, "", 10, P.get("accent") or P["big"], bold=True, key="profit")
             try:
                 self.mp_bar_bind(cv, t.item)
                 self.mp_bar_bind(cv, lab.item)
@@ -250,7 +268,7 @@ class OverlayA8:
         if want["timer"]:
             if ln.get("map", True) or ln.get("where", True):
                 ly, vy = y + u(12), y + u(30)
-                px = pad + self._a8_pin(cv, P, pad, vy - u(4)) + u(8)
+                px = pad + self._a8_pin(cv, P, pad, (ly + vy) // 2) + u(8)
                 self._a8_label(cv, P, px, ly, "THIS MAP", key="a8_label")
                 self._lt_text(cv, P, R, vy, "", 13, P.get("accent") or P["big"], anchor="e", bold=True,
                               key="a8_timer")

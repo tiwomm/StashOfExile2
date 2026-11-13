@@ -477,8 +477,8 @@ class LightOverlay:
             else:
                 self._lt_text(cv, P, x, mid, "·", 10, P["muted"], anchor="center")
 
-        H = u(40)                                           # 2.139.0: a label over each value
-        r2 = (u(6), H - (u(6) if slate else u(8)))
+        H = u(34)                                           # 2.139.0: a label over each value (2.139.1: 40 -> 34)
+        r2 = (u(5), H - (u(5) if slate else u(7)))
         m2 = (r2[0] + r2[1]) // 2
         # ---- the right end: lock, ⚙, the clock, the menus
         x = self._lt_glyphs(w, cv, P, W - pad, m2)
@@ -517,8 +517,8 @@ class LightOverlay:
         pad = u(6)
         rl = u(150)                                          # the accent rule's length
         if piece == "left":                                 # 2.139.0 Map First (ova8), as wide as it needs
-            H = u(44)
-            mid = u(6) + (H - u(6)) // 2
+            H = u(38)
+            mid = u(5) + (H - u(5)) // 2
             x = self.a8_bar(w, cv, P, want, pad, None, mid,
                             lambda sx: cv.create_line(sx, mid - u(13), sx, mid + u(13), fill=P["line"], tags=("mg",)),
                             map_w=u(190))
@@ -555,7 +555,7 @@ class LightOverlay:
         First, ova8)."""
         u = self._u
         cfg = self.tracker_cfg()
-        H = u(40)
+        H = u(34)
         mid = H // 2
         pad = u(8)
 

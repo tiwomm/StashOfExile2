@@ -27,7 +27,7 @@ HUD = ("xpbar",)                 # 2.65.0: fitted to the game's own bottom bar, 
 # (was 0.056 for two rows); a bar you moved keeps its bottom edge where you put it (OLD_HUD_H)
 # 2.130.1 (feedback: "bottom alignment mode is a few px above the xp bar, needs moved down"): measured on a 1440p
 # screenshot, the XP bar's top is 22 px (0.0153) up from the bottom - the Bar's bottom edge sits on it (was 0.0205)
-HUD_SPOTS = {"xpbar": [(0.531, -0.531, 0.0153, 0.046)]}     # 2.139.0: 0.036 -> 0.046 (a label over each value)
+HUD_SPOTS = {"xpbar": [(0.531, -0.531, 0.0153, 0.040)]}     # 2.139.1: 0.046 was too tall ("real tall and funky")
 OLD_HUD_H = 0.056
 
 
@@ -1328,6 +1328,6 @@ class MergedOverlay:
         x = lft
         self.mg_dropped = []                                 # 2.139.0 Map First (ova8): chip | map | SESSION | profit
         x = self.a8_bar(w, cv, P, want, x, right, mid, lambda sx: self._hud_sep(cv, P, sx, H, cy=mid, h=sh),
-                        spread=(max(5, H // 4 - 1), max(5, H // 4)))
+                        spread=(max(5, min(self._u(6), H // 4 - 2)), max(5, min(self._u(7), H // 4))))
         if not want["timer"] and self.bar_buttons_on():
             self._mg_bar_buttons(w, cv, P, x, mid, anchor="w")

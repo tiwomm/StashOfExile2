@@ -47,6 +47,15 @@ BETA_AREAS = ("Wealth", "Money Makers", "Game Search", "Market Insights", "Craft
 # repeats. Someone coming from rollup["since"] or older (or a fresh install) sees it instead of each version; someone
 # on a pre-release already saw them and gets only this version's own lines (notes_between).
 NOTES = {
+    "2.139.1": {
+        "big": [],
+        "small": [
+            ("Overlay", "Slimmer and tighter - less empty space up and down."),
+            ("Overlay", "The map pin looks like a pin now."),
+            ("Overlay", "Out of a map: shows your last map and its time."),
+            ("Overlay", "No profit reads 0 div, not +0.000 div."),
+        ],
+    },
     "2.139.0": {
         "big": [],
         "small": [
