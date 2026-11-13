@@ -28,6 +28,8 @@ VERSION HISTORY
          after remnant.READ_SECS and waiting for the reader after WAIT_SECS (remnant.OcrStuck), and a look still busy
          after hover_page.STUCK_SECS is let go - one read that never came back stopped every later look in that map.
          Debug mode: once a minute, how many looks ran and the slowest.
+       - Price Checks (feedback: "the "Not now" on price checks doesn't work, it doesn't go away if you click it"): Not
+         now redraws Price Checks' / Favorites' card (it only redrew a shown_rec one, which theirs never is).
   2.138.2
        - Session tracker (feedback: "Lightless Void, Abyssal Depths and Dark Domain should not count as another +1 map
          ... they're a sub-area within the map itself"): an Abyss's depths (maplib.is_subarea: id Abyss_Depths*, or
