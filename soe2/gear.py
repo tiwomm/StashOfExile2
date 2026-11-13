@@ -397,7 +397,12 @@ def parse_gear(text):
             m.update(option=opt, novalue=True)
         if not stat and not m["sid"]:
             m["note"] = m["note"] or "not found in the library or on the trade site's stat list"
-        if kind == "Enchant" and g.get("corrupted") and m["sid"]:    # 2.98.2 (feedback): a corrupted item's
+        if kind == "Enchant" and unique and m.get("option") is not None:
+            # 2.138.4 (feedback: "Megalomaniac jewels can have any of the game's ... nodes on them, in any combination,
+            # we need to make them searchable"): which passive it allocates sets the price - each one searched
+            m["auto"] = "high"
+            m["note"] = "which passive it allocates decides the price - searched"
+        elif kind == "Enchant" and g.get("corrupted") and m["sid"]:    # 2.98.2 (feedback): a corrupted item's
             m["auto"] = "high"                                       # enchantment is what the corruption gave it -
             m["note"] = "corruption enchantment - searched"          # listings must have it too
         elif kind not in AFFIX_KINDS:
@@ -453,7 +458,9 @@ def parse_gear(text):
                          note=f"{int(m['value'])} charm slots - searched at least that")
         name = {(x["sid"], x["option"]): x["shown"] for x in picks}
         legs = ", ".join(name[k] + (f" ×{v}" if v > 1 else "") for k, v in n.items())
-        if legs:
+        if legs and all(str(x["shown"]).startswith("Allocates ") for x in picks):
+            notes.append("Allocates: " + legs.replace("Allocates ", ""))     # 2.138.4: a Megalomaniac's passives
+        elif legs:
             notes.append("Legacies: " + legs)
 
     totals = []
