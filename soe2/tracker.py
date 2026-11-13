@@ -88,6 +88,15 @@ class Session:
             if self.where:
                 self.where["since"] = now
 
+    def _parent_map(self, area_id):
+        """2.138.2: entering an Abyss's depths from a map -> that map's index (or None: not a depths area, or you
+        weren't in a map)."""
+        from .maplib import is_subarea
+        w = self.where
+        if not is_subarea(area_id) or not w or w.get("kind") != "map" or w.get("map") is None:
+            return None
+        return w["map"]
+
     def _close_stretch(self, now):
         """Add the time since you entered the current area to that area's total."""
         w = self.where
@@ -123,6 +132,11 @@ class Session:
                 self._close_stretch(ts)
             k = area_kind(data["area"], data["seed"], data.get("level", 0))
             idx = None
+            parent = self._parent_map(data["area"])
+            if k == "map" and parent is not None:          # 2.138.2: an Abyss's depths - part of the map you're in
+                self.where = {"kind": k, "area": data["area"], "seed": data["seed"],
+                              "since": ts if self.running() else None, "map": parent, "named": True, "sub": True}
+                return True
             if k == "map":
                 idx = next((i for i, m in enumerate(self.maps) if m["area"] == data["area"] and m["seed"] == data["seed"]), None)
                 if idx is None:
@@ -130,12 +144,24 @@ class Session:
                                       "seed": data["seed"], "first": ts, "time": 0.0, "entries": 1, "deaths": 0,
                                       "char": _char_now()})
                     idx = len(self.maps) - 1
-                else:
-                    self.maps[idx]["entries"] += 1
+                elif not (self.where and self.where.get("sub") and self.where.get("map") == idx):
+                    self.maps[idx]["entries"] += 1          # (back from its depths isn't another entry)
+            came = self.where.get("map") if self.where and self.where.get("kind") == "map" else None
             self.where = {"kind": k, "area": data["area"], "seed": data["seed"], "since": ts if self.running() else None,
-                          "map": idx, "named": False}
+                          "map": idx, "named": False, "from_map": came}
             return True
         if kind == "scene" and self.where and not self.where.get("named") and data["name"] not in ("Atlas",):
+            from .maplib import is_subarea
+            i = self.where.get("map")
+            prev = self.where.get("from_map")
+            if i is not None and prev is not None and is_subarea("", data["name"]) and \
+                    self.maps[i].get("entries", 1) == 1 and i == len(self.maps) - 1:
+                # 2.138.2: a depths area the app didn't know by its id - named like one: fold it into the map before
+                m = self.maps.pop(i)
+                self.maps[prev]["time"] += m.get("time", 0.0)
+                self.maps[prev]["deaths"] += m.get("deaths", 0)
+                self.where.update(map=prev, named=True, sub=True)
+                return True
             self.where["named"] = True
             self.where["name"] = data["name"]
             if self.where.get("map") is not None:
