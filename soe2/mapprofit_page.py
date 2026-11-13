@@ -1,6 +1,7 @@
 """2.132.0 Map profit - the watcher's side (mapprofit.py has the counting and the log), the bar's profit part with
 its breakdown one hover away, the Map profit window (every map, searchable) and its row in Overlay ↳ Overlay Settings ›
 Helpers. Off until you turn it on. Everything stays on your PC (map_profit.jsonl) - never sent anywhere."""
+import os
 import time
 import tkinter as tk
 from tkinter import ttk
@@ -351,13 +352,21 @@ class MapProfitPage:
         self.mp_view.pack(side="left", padx=(12, 0))
         self.mp_clear_btn = ttk.Button(bar, text="Clear all…", command=self.mp_clear_all)
         self.mp_clear_btn.pack(side="right")
-        Tooltip(self.mp_clear_btn, "Delete every map (Undo puts them back)")
+        Tooltip(self.mp_clear_btn, "Hide every map from the list, or delete them - asks first, and offers a CSV")
+        # 2.138.0 (feedback: "On Map profit I want an export csv option")
+        self.mp_export_btn = ttk.Button(bar, text="Export CSV…", command=self.mp_export)
+        self.mp_export_btn.pack(side="right", padx=(0, 8))
+        Tooltip(self.mp_export_btn, "Every map in the list, one row per item: before, after, change and value")
         self.mp_del_btn = ttk.Button(bar, text="Delete", command=self.mp_delete_sel)
         self.mp_del_btn.pack(side="right", padx=(0, 8))
         Tooltip(self.mp_del_btn, "Delete the picked rows (Undo puts them back)")
         self.undo_button(bar, "mapprofit", side="right", padx=(0, 8))
         self.mp_sum = tk.Label(body, text="", bg=P1, fg=C["text"], font=("Segoe UI", 10, "bold"), anchor="w", padx=12)
         self.mp_sum.pack(fill="x")
+        # 2.138.0: maps hidden by Clear all › Hide from the list - still kept; one click shows them again
+        self.mp_hidden_lbl = tk.Label(body, text="", bg=P1, fg=C["accent"], cursor="hand2", anchor="w", padx=12,
+                                      font=("Segoe UI", 9))
+        self.mp_hidden_lbl.bind("<Button-1>", lambda _e: self.mp_unhide())
         # 2.132.6 (feedback: "Map profit didn't count my most recently completed map"): items it doesn't know yet
         # can't be counted - say so, and how to teach them
         self.mp_hint = tk.Label(body, text="", bg=P1, fg=C["warn"] if "warn" in C else C["muted"], anchor="w", padx=12,
@@ -384,7 +393,8 @@ class MapProfitPage:
 
     def mp_greys(self):
         for b, ok in ((getattr(self, "mp_del_btn", None), bool(self.mp_tv.selection())),
-                      (getattr(self, "mp_clear_btn", None), bool(getattr(self, "mp_rows", None)))):
+                      (getattr(self, "mp_clear_btn", None), bool(getattr(self, "mp_rows", None))),
+                      (getattr(self, "mp_export_btn", None), bool(getattr(self, "mp_rows", None)))):
             if b is not None:
                 b.state(["!disabled"] if ok else ["disabled"])
 
@@ -410,16 +420,120 @@ class MapProfitPage:
         self._say(f"Deleted {n} map{'s' if n != 1 else ''}. Undo puts them back.", 6)
         return gone
 
-    def mp_clear_all(self, ask=True):
-        from tkinter import messagebox
-        runs = self.mp_runs()
-        if not runs or (ask and not messagebox.askyesno("Clear all", f"Delete all {len(runs)} maps?\n(Undo puts them "
-                                                                   "back.)", parent=self.root)):
+    # ---------------------------------------------------------------- 2.138.0: Export CSV, and Clear all asks first
+    def mp_export(self, path=None):
+        """Every map shown (search and hidden maps respected) to a CSV - one row per item."""
+        from .csvexport import write_map_profit
+        runs = self.mp_runs(self.mp_q.get() if getattr(self, "mp_q", None) else "")
+        if not runs:
             return None
-        gone = MP.log_delete({r["id"] for r in runs})
-        self.push_undo("mapprofit", f"{len(runs)} maps", lambda: (MP.log_restore(gone), self.mp_after_change()))
+        if path is None:
+            from tkinter import filedialog
+            path = filedialog.asksaveasfilename(parent=self.dlg_parent(), defaultextension=".csv",
+                                                initialfile=f"map_profit_{time.strftime('%Y-%m-%d')}.csv",
+                                                filetypes=[("CSV", "*.csv")])
+        if not path:
+            return None
+        try:
+            n = write_map_profit(path, runs)
+        except OSError as e:
+            self._say(f"Couldn't save the CSV ({e.__class__.__name__}).", 8)
+            return None
+        self._say(f"Saved {n} map{'s' if n != 1 else ''} to {os.path.basename(path)}.", 8)
+        return path
+
+    def mp_hidden_before(self):
+        return float(SETTINGS.get("mp_hidden_before") or 0)
+
+    def mp_unhide(self):
+        SETTINGS["mp_hidden_before"] = 0
+        save_json("settings.json", SETTINGS)
         self.mp_after_change()
+
+    def mp_clear_all(self, ask=True, how=None):
+        """2.138.0 (feedback: "if you hit clear all, I want it to ask if you want to export the data first ... clear it
+        from the list or clear the data itself"): a small question - Export CSV first, Hide from the list (kept,
+        one click brings them back), or Delete for good (Undo works until the app closes). how= "hide" / "delete"
+        answers it without asking (tests)."""
+        runs = self.mp_runs()
+        if not runs:
+            return None
+        if how is None and ask:
+            return self.mp_clear_ask(runs)
+        return self._mp_clear_do(runs, how or "delete")
+
+    def _mp_clear_do(self, runs, how):
+        n = len(runs)
+        if how == "hide":
+            before = self.mp_hidden_before()
+            SETTINGS["mp_hidden_before"] = max(r["t"] for r in runs) + 0.001
+            save_json("settings.json", SETTINGS)
+
+            def back():
+                SETTINGS["mp_hidden_before"] = before
+                save_json("settings.json", SETTINGS)
+                self.mp_after_change()
+            self.push_undo("mapprofit", f"hiding {n} maps", back)
+            self.mp_after_change()
+            self._say(f"Hid {n} map{'s' if n != 1 else ''}. They're kept - \"Show hidden maps\" brings them back.", 8)
+            return "hidden"
+        gone = MP.log_delete({r["id"] for r in runs})
+        self.push_undo("mapprofit", f"{n} maps", lambda: (MP.log_restore(gone), self.mp_after_change()))
+        self.mp_after_change()
+        self._say(f"Deleted {n} map{'s' if n != 1 else ''}. Undo puts them back until you close the app.", 8)
         return gone
+
+    def mp_clear_ask(self, runs):
+        P2 = C["panel2"]
+        old = getattr(self, "mp_clear_win", None)
+        try:
+            if old is not None and old.winfo_exists():
+                old.destroy()
+        except tk.TclError:
+            pass
+        w = self.mp_clear_win = tk.Toplevel(self.root, bg=P2)
+        w.title("Clear all maps")
+        w.transient(self.root)
+        w.resizable(False, False)
+        box = tk.Frame(w, bg=P2, padx=16, pady=16)
+        box.pack(fill="both", expand=True)
+        n = len(runs)
+        tk.Label(box, text=f"Clear all {n} map{'s' if n != 1 else ''}?", bg=P2, fg=C["text"],
+                 font=("Segoe UI", 12, "bold"), anchor="w").pack(fill="x")
+        tk.Label(box, text="Save a copy first if you might want the numbers later.", bg=P2, fg=C["muted"],
+                 justify="left", wraplength=440, anchor="w").pack(fill="x", pady=(4, 12))
+        self.mp_clear_note = tk.Label(box, text="", bg=P2, fg=C["muted"], anchor="w", font=("Segoe UI", 9))
+        exp = ttk.Button(box, text="Export CSV first…", style="Primary.TButton")
+
+        def do_export():
+            p = self.mp_export()
+            if p:
+                exp.config(text="✓ Exported", style="TButton")
+                exp.state(["disabled"])
+                self.mp_clear_note.config(text=f"✓ Saved {os.path.basename(p)}")
+                self.mp_clear_note.pack(fill="x", pady=(0, 8))
+        exp.config(command=do_export)
+        exp.pack(anchor="w", pady=(0, 12))
+        for how, label, what in (("hide", "Hide from the list", "Kept on your PC. \"Show hidden maps\" brings them back."),
+                                 ("delete", "Delete for good", "Gone from your PC. Undo works until you close the app.")):
+            row = tk.Frame(box, bg=P2)
+            row.pack(fill="x", pady=2)
+            ttk.Button(row, text=label, width=18,
+                       command=lambda h=how: (w.destroy(), setattr(self, "mp_clear_win", None),
+                                              self._mp_clear_do(runs, h))).pack(side="left")
+            tk.Label(row, text=what, bg=P2, fg=C["muted"], font=("Segoe UI", 9), anchor="w").pack(side="left", padx=(8, 0))
+        foot = tk.Frame(box, bg=P2)
+        foot.pack(fill="x", pady=(12, 0))
+        ttk.Button(foot, text="Cancel", command=lambda: (w.destroy(), setattr(self, "mp_clear_win", None))).pack(
+            side="right")
+        w.protocol("WM_DELETE_WINDOW", lambda: (w.destroy(), setattr(self, "mp_clear_win", None)))
+        try:
+            from .style import center_over
+            center_over(w, self.root)
+            self.popup_over_app(w)
+        except Exception:
+            buglog.caught()
+        return w
 
     def mp_after_change(self):
         self.mp_last = None
@@ -429,7 +543,7 @@ class MapProfitPage:
         except Exception:
             buglog.caught()
 
-    def mp_runs(self, q=""):
+    def mp_runs(self, q="", all_maps=False):
         """The log as maps (a map you went back into through your portal is one), newest first."""
         runs = {}
         for e in MP.log_read(time.time() - MP.KEEP_DAYS * 86400):
@@ -444,6 +558,12 @@ class MapProfitPage:
                 was = r["rows"].get(name)
                 r["rows"][name] = [was[0] if was else b, a, each]
         out = sorted(runs.values(), key=lambda r: (-r["t"], -r["n"]))
+        cut = self.mp_hidden_before()                     # 2.138.0: hidden by Clear all › Hide from the list
+        if cut and not all_maps:
+            self.mp_n_hidden = sum(1 for r in out if r["t"] < cut)
+            out = [r for r in out if r["t"] >= cut]
+        else:
+            self.mp_n_hidden = 0
         q = (q or "").strip().lower()
         if q:
             out = [r for r in out if q in r["map"].lower() or any(q in n.lower() for n in r["rows"])]
@@ -492,6 +612,13 @@ class MapProfitPage:
                                  + (f" · {MP.signed(total / len(runs), fmt_div)} / map" if runs else "")
                                  + (f" · {MP.signed(total * 3600 / secs, fmt_div)} / hour" if secs >= 60 else "")
                                  + (f"     Session: {MP.signed(sd, fmt_div)} ({sn})" if sn else "")) if runs else "")
+        nh = getattr(self, "mp_n_hidden", 0)
+        if nh:
+            self.mp_hidden_lbl.config(text=f"Show hidden maps ({nh}) ›")
+            if not self.mp_hidden_lbl.winfo_manager():
+                self.mp_hidden_lbl.pack(fill="x", after=self.mp_sum)
+        elif self.mp_hidden_lbl.winfo_manager():
+            self.mp_hidden_lbl.pack_forget()
         last = runs[0] if runs else None
         if last and last["unknown"] >= 5 and not last["rows"]:
             self.mp_hint.config(text=f"⚠ Last map: {last['unknown']} items not recognized, so nothing was counted. "
@@ -509,6 +636,12 @@ class MapProfitPage:
             return
         P1 = C["panel"]                                     # (UX: empty - what it is + one button)
         self.mp_empty.place(relx=0.5, rely=0.35, anchor="center")
+        if nh and not (self.mp_q.get() if getattr(self, "mp_q", None) else ""):
+            tk.Label(self.mp_empty, text=f"Your {nh} map{'s are' if nh != 1 else ' is'} hidden (kept on your PC).",
+                     bg=P1, fg=C["muted"]).pack()
+            ttk.Button(self.mp_empty, text="Show hidden maps", style="Primary.TButton", command=self.mp_unhide).pack(
+                pady=(8, 0))
+            return
         tk.Label(self.mp_empty, text="No maps yet. Open your inventory before a map to get a baseline.", bg=P1,
                  fg=C["muted"]).pack()
         if not self.mp_on():

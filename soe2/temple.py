@@ -10,7 +10,21 @@ import time
 from .config import SETTINGS, load_json, save_json
 
 STATE_FILE = "temple.json"
-DEFAULTS = {"on": False, "notepad": True, "notes": "", "pad_x": None, "pad_y": None}
+DEFAULTS = {"on": False, "notepad": True, "notes": "", "pad_x": None, "pad_y": None, "fast_read": False}
+# 2.138.1 Fast Beacon Read (feedback: "if you stand on top of the vaal beacon, there's like a single frame where it shows
+# the crystal count" - about 130 ms; "toggled on ... Enable only if crystals aren't being counted"): off by default.
+# A small box above your character, read about 10 times a second, in maps with a Temple only, by its own text reader
+# (the slower whole-screen read can't hold it up). Measured on a 1080p clip: the tooltip sat at 0.28-0.44 of the
+# game's height, centered - the box is sized from the height, so ultrawide fits.
+FAST_BOX = (0.45, 0.14, 0.54)       # half-width (x the game's height), top, bottom (x the game's height)
+FAST_EVERY = 0.1                    # seconds between reads (slower PCs read back to back, as fast as they can)
+
+
+def fast_box(game):
+    gx, gy, gw, gh = game
+    cx = gx + gw // 2
+    hw = int(gh * FAST_BOX[0])
+    return max(gx, cx - hw), gy + int(gh * FAST_BOX[1]), min(gx + gw, cx + hw), gy + int(gh * FAST_BOX[2])
 # 2.136.0: Atziri's Temple, as Client.txt names the area. 2.137.0 (feedback: "should open in Vaal Ruins as well as
 # inside Atziri's Temple"): the endgame Vaal Ruins (IncursionHubEndgame, not the campaign's IncursionHub) and Atziri's
 # own area too.

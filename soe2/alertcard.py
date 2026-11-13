@@ -1,6 +1,6 @@
 """2.130.0 Helper alerts as one alert card (feedback: "a more elegant solution than just giant bold flashing letters,
 that's gonna piss some people off"): a small card over the game in the overlay's Style - a colored edge, a mark (! or
-✓) and a word, a line of detail, × to close it early and a thin line counting down its time. No flashing: it fades in
+✓) and a word, a line of detail, a click anywhere to close it early (2.138.2: was ×) and a thin line counting down its time. No flashing: it fades in
 once. Where it shows (Top center - the default since 2.137.1 -, Center, Above the bar, Top right) and its size (Small, Medium, Large) are settings
 (Game Overlay › Overlay Settings › Helpers › Alerts). Every helper's alert and the break reminders use it.
 2.131.4: alerts that come together share one card - a row each, most urgent on top, one countdown."""
@@ -81,7 +81,7 @@ class Row:
         self.card, self.color, self.mark, self.secs, self.tag, self.rank = card, color, mark, secs, tag, rank
         self.vital = vital
         self.on_close = on_close
-        self.card_title, self.card_x = _Text(self, title), _Text(self, "×")
+        self.card_title = _Text(self, title)
         self.card_sub = _Text(self, sub) if sub else None
 
     def __getattr__(self, name):                     # the rest is the card's window
@@ -217,20 +217,24 @@ class Card:
         body.pack(side="left", fill="both", expand=True)
 
         def xbutton(parent, tip, act, size=16):
-            x = tk.Label(parent, text="×", bg=BG, fg=MUT, font=(font, -int(size * ui)), cursor="hand2", padx=4)
-            x.pack(side="right", anchor="n", padx=(int(10 * ui), 0))
-            x.bind("<Button-1>", act)
-            x.bind("<Enter>", lambda _e=None: x.config(fg=TXT), add="+")
-            x.bind("<Leave>", lambda _e=None: x.config(fg=MUT), add="+")
-            Tooltip(x, tip)
-            return x
+            """2.138.2 (feedback: "instead of an X ... click anywhere on the card to dismiss it"): no × any more - a
+            click anywhere on the part closes it (a row: that alert; the card's top line: all of them)."""
+            return clickable(parent, act)
+
+        def clickable(w, act):
+            w.config(cursor="hand2")
+            w.bind("<Button-1>", act)
+            for ch in w.winfo_children():
+                clickable(ch, act)
+            return w
         if many:
             head = tk.Frame(body, bg=BG)
             head.pack(fill="x", pady=(0, int(4 * ui)))
             self.head = tk.Label(head, text=f"{len(self.rows)} alerts", bg=BG, fg=TXT,
                                  font=(hfont, -int(19 * ui), "bold"), anchor="w")
             self.head.pack(side="left")
-            xbutton(head, "Close all", self.close_all)
+            tk.Label(head, text="click to close", bg=BG, fg=MUT, font=(font, -int(11 * ui))).pack(side="right")
+            clickable(head, self.close_all)
         else:
             self.head = None
         shown = self.rows[:MAX_ROWS]
@@ -242,7 +246,6 @@ class Card:
             tk.Label(row, text=r.mark, bg=r.color, fg="#120c0c", font=(font, -int(15 * ui), "bold"),
                      width=2).pack(side="left", padx=(0, int(10 * ui)))
             r.box = row
-            xbutton(row, "Close this one" if many else "Close", r.card_close, 14 if many else 16)
             if many and r.tag:
                 tk.Label(row, text=r.tag, bg=BG, fg=MUT, font=(font, -int(11 * ui)), padx=int(5 * ui),
                          highlightthickness=1, highlightbackground=LINE).pack(side="right", anchor="n")
@@ -253,12 +256,19 @@ class Card:
             if r.card_sub is not None:
                 tk.Label(txt, text=r.card_sub.text, bg=BG, fg=MUT, anchor="w", justify="left",
                          font=(font, -int((12 if many else 14) * ui))).pack(fill="x")
+            clickable(row, r.card_close)
         more = len(self.rows) - len(shown)
         if more:
             tk.Label(body, text=f"+{more} more - close one to see it", bg=BG, fg=MUT, anchor="w",
                      font=(font, -int(12 * ui))).pack(fill="x", pady=(int(2 * ui), 0))
         self.bar = tk.Canvas(body, height=2, bg=BG, highlightthickness=0)
         self.bar.pack(fill="x", pady=(int(8 * ui), 0))
+        if not many:                                        # one alert: the whole card closes it
+            clickable(box, top.card_close)
+        else:                                               # the edges and the countdown close them all
+            for w in (box, body, self.bar):
+                w.config(cursor="hand2")
+                w.bind("<Button-1>", self.close_all)
         win.update_idletasks()
         w, h = win.winfo_reqwidth(), win.winfo_reqheight()
         px, py = place(c["where"], game, w, h)

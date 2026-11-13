@@ -504,30 +504,34 @@ def _engine_new():
 
 _OCR_LOCK = threading.Lock()
 _OCR_ERRS = set()
+# 2.138.1: a second text reader of its own, with its own lock - the Fast Beacon Read (temple) must never wait for the
+# whole-screen read
+_FAST = {"engine": [None], "lock": threading.Lock()}
 
 
-def ocr(img):
+def ocr(img, fast=False):
     """PIL image -> [(line text, (x0, y0, x1, y1) in the image's pixels)] with Windows.Media.Ocr (Linux: Tesseract).
     2.136.2 (feedback: the crystal count never changed - its log: an OSError in the Temple Console read): one read at
     a time (two readers on two threads shared one engine), and a failed read is tried once more with a fresh engine."""
     if sys.platform.startswith("linux"):
-        with _OCR_LOCK:
+        with (_FAST["lock"] if fast else _OCR_LOCK):
             return ocr_linux(img)
     if sys.platform != "win32":
         raise OcrUnavailable(ocr_available())
-    with _OCR_LOCK:
+    eng, lock = (_FAST["engine"], _FAST["lock"]) if fast else (_ENGINE, _OCR_LOCK)
+    with lock:
         try:
-            return _ocr(img)
+            return _ocr(img, eng)
         except OSError as e:
             code = getattr(e, "winerror", None) or getattr(e, "errno", None)
             if code not in _OCR_ERRS:                    # the error's number only (no text: it could hold anything)
                 _OCR_ERRS.add(code)
                 buglog.debug("OCR", f"read failed (error {code}) - trying again with a new reader")
-            _ENGINE[0] = None
-            return _ocr(img)
+            eng[0] = None
+            return _ocr(img, eng)
 
 
-def _ocr(img):
+def _ocr(img, slot=None):
     try:
         import asyncio
         from winrt.windows.graphics.imaging import BitmapAlphaMode, BitmapPixelFormat, SoftwareBitmap
@@ -535,7 +539,12 @@ def _ocr(img):
         from winrt.windows.storage.streams import DataWriter
     except Exception as e:
         raise OcrUnavailable(f"Windows' text reader isn't part of this build ({e.__class__.__name__})")
-    eng = _engine()
+    if slot is None or slot is _ENGINE:
+        eng = _engine()
+    else:
+        if slot[0] is None:
+            slot[0] = _engine_new()
+        eng = slot[0]
     if eng is None:
         raise OcrUnavailable("no OCR language: add English in Windows Settings > Language")
     # game text is small and light on dark: bigger reads better, within what the engine takes
