@@ -38,7 +38,7 @@ FEATURES = (
     "Ritual Identifier",        # 2.132.3 hover a Ritual Altar: its type, loot and danger (2.132.4: a Ritual helper option)
     "Temple Helper",
     "Music Controls",
-    "Temple Notepad",           # 2.136.0 a note over the game inside the temple (Temple Helper option)           # 2.134.0 ⏮ ⏯ ⏭ for any music player, a small window over the game            # 2.132.1 your crystals (Energised Beacons) on the bar; a card when full
+    "Vaal Lens",                # 2.140.0 a card in Vaal Ruins and the temple: crystals, the console's board, notes
     "Map profit",               # 2.132.0 what each map earned, from your inventory (Overlay ↳ Overlay Settings › Helpers)
     "Alerts show",              # 2.131.0 Overlay › Overlay Settings › Helpers: where and how big the alert card is
     "Data folder",              # 2.131.0 where your settings and lists live (Feature Picker; Settings › Advanced)

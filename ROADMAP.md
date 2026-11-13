@@ -4,7 +4,7 @@
 
 > **Who we build for - read second.** Path of Exile players are utilitarian: they love data and information, problem solving and creative thinking. So every feature shows its numbers *and how they were worked out*, lets you sort, filter, compare and export them (CSV), keeps power-user depth (keys, versions, raw data) one click away instead of hiding it, explains in plain words, and leaves the decision to the player. Pretty is welcome; vague is not.
 
-**Current version: 2.139.1**
+**Current version: 2.140.0**
 
 Versions follow Semantic Versioning 2.0.0, always written in full: 2.10.0 adds features, 2.10.1 only fixes. Each step below is one release; we work through them top to bottom.
 
@@ -276,6 +276,7 @@ Order (decided 2026-11-05): the page passes, then the Privacy & data hub, then t
 | 2.137.2 | Ritual Identifier and Temple Helper read a quarter of the screen bigger every other look: small labels found at any size. |
 | 2.138.0 | Map profit: Export CSV, and Clear all asks (export first, hide from the list, or delete). Leaderboards: Export my times. |
 | 2.138.1 | Fast Beacon Read (opt-in, Helpers › Temple): catches a Vaal Beacon's count as you stand on it. Alerts close with a click anywhere on them (no ×). |
+| 2.140.0 | Vaal Lens (BETA): the temple card reads the console's board; notes in a fold. |
 | 2.139.1 | Overlay Map First: a slimmer, tighter bar, a real map pin, Last map out of a map. |
 | 2.139.0 | Overlay Map First in every style: a state chip, the map first, Session and Last map's profit labeled, tools as icons. |
 | 2.138.4 | Megalomaniac: each passive it allocates is read and searched. |
@@ -415,6 +416,7 @@ One run record for the whole app (area, time, loadout, content, loot, profit) th
 | Link | **Map profit ↔ Strat Tracker:** each run's profit counts toward the strat you're running (per run, per hour, best and worst run). |
 | UX | **Create a strat - one panel, no wall of switches:** activity (Atlas map, pinnacle boss, temple ...), map type, solo / party, atlas masters (pick per master, up to their limit), content tags (search, or type a new one), loadout (waystone + tablets), and the rarity it adds up to (waystone + tablets + character), each number one hover from how it was worked out. |
 | New | **Pinnacle content:** ready-made strats per pinnacle boss - fragments in, drops out, profit per kill. Lives in the Strat Tracker as an activity (decided 2026-11-12); profit per kill comes from Map profit. |
+| Building | **Vaal Lens** (BETA): over the Temple Console - which of the offered cards to take, where it goes (1, 2), the plan (gold path, the Architect past the middle row, the key room, never touching outer-wall reward rooms), lock tips on valuable tier 3 chains (poe.ninja). Looks only. |
 | New | **Content mix bar** in the Session tracker: the share of your runs per content (Abyss, Breach, Delirium, Ritual ...), with a mark and a word per part, not color alone. How runs get their content: Map Content's icons (already read for Temple and Ritual) first; tablets in the map device as a later idea. |
 | Expand | **Run history:** one row per run with its content tags, time, rarity and profit; pin the drops you care about to the top. |
 | Credit | Ideas (not code, words or design) from Juice Tools (juicetools.app, by Mort). Its terms keep its code, design and text its own, so ours is built and worded from scratch; credited in the README for the ideas. |

@@ -74,15 +74,15 @@ class TemplePage:
                                      game=game_rect(), tag="Temple", rank=1, vital=True)
         return self.tm_win
 
-    # ---------------------------------------------------------------- 2.136.0: the Temple Notepad
-    # (feedback: "possibly have a copy of our notepad as a temple notepad" - recommended: its own Notes-style window
-    # that shows only inside the temple). Your crystals and runs on top, a page to type your plan on, the reminder
-    # that placed rooms stay. Dragged anywhere, in the overlay's style; its text and spot are kept (temple.json via
-    # SETTINGS["temple"]); Helpers › Temple › Temple Notepad switches it.
+    # ---------------------------------------------------------------- 2.136.0 (2.140.0: Vaal Lens)
+    # A card over the game in Vaal Ruins and the temple: your crystals, what's on the Temple Console's board (read
+    # off the screen while the console is open - vaallens.py), your notes in a fold. Dragged anywhere, in the overlay's
+    # style; its notes and spot are kept (SETTINGS["temple"]); Helpers › Temple › Vaal Lens switches it.
     def temple_area(self, area_id):
         """Every area change: in the temple -> the notepad shows (when it's on); anywhere else -> it goes."""
         here = str(area_id or "") in TM.TEMPLE_AREAS
         self.tm_in_temple = here
+        self.tm_area = str(area_id or "")
         if str(area_id or "") == TM.RUN_AREA:                # 2.136.1: a run spends crystals - the number is old now
             TM.mark_old()
             self.temple_pad_refresh()
@@ -222,21 +222,37 @@ class TemplePage:
         st = TM.state()
         most = st["most"] if st else None
         self._tm_con_busy = True
+        # 2.140.0 Vaal Lens: the board is read while the card shows, outside a run - when the console's count was read
+        # or the last look saw the board (the console is open), and every 5th look in case the count wasn't read
+        self._tm_looks = getattr(self, "_tm_looks", 0) + 1
+        lens = self.temple_pad_shown() and getattr(self, "tm_area", "") != TM.RUN_AREA
+        lens_any = lens and (getattr(self, "tm_board_open", False) or self._tm_looks % 5 == 0)
+        gx, gy, gw, gh = g
 
         def work():
             from . import remnant as RM
+            board = None
             try:
                 img = RM.grab(box)
                 img = img.resize((img.width * 3, img.height * 3))      # small digits read better bigger
                 lines = RM.ocr(img)
-                return TM.parse_console(lines, most), lines
+                got = TM.parse_console(lines, most)
             except Exception as e:
                 buglog.caught()
-                return None, e.__class__.__name__
+                return None, e.__class__.__name__, None
+            if lens and (got or lens_any):
+                try:
+                    from . import vaallens as V
+                    board = V.read(V.frame(RM.grab((gx, gy, gx + gw, gy + gh))))
+                except Exception:
+                    buglog.caught()
+            return got, lines, board
 
         def done(res):
             self._tm_con_busy = False
-            got, seen = res or (None, None)
+            got, seen, board = res or (None, None, None)
+            if board is not None:
+                self.temple_board_seen(board)
             if got:
                 self.temple_seen(got)
                 return
@@ -291,6 +307,28 @@ class TemplePage:
         """2.136.2 (feedback: "it shouldn't say that, it should just be reading my crystals"): the count only."""
         return TM.bar_text(TM.state())
 
+    def temple_board_seen(self, board):
+        """2.140.0: a look at the screen in Vaal Ruins: the console open = its board is kept and the card follows."""
+        from . import vaallens as V
+        was = getattr(self, "tm_board_open", False)
+        self.tm_board_open = V.seen(board)
+        if self.tm_board_open:
+            self.tm_board = board
+            n = V.summary(board)
+            if n != getattr(self, "_tm_board_said", None):
+                self._tm_board_said = n
+                buglog.debug("Vaal Lens", "board " + " ".join(f"{k}={v}" for k, v in sorted(n.items())))
+        if self.tm_board_open or was:
+            self.temple_pad_refresh()
+
+    def temple_lens_lines(self):
+        """-> ([(done, text)...], counts line) for the card; before the console is opened, one line saying so."""
+        from . import vaallens as V
+        board = getattr(self, "tm_board", None)
+        if not board:
+            return [], "Open the Temple Console to read the board."
+        return V.lines(board)
+
     def temple_pad_show(self):
         if self.temple_pad_shown():
             return self.tm_pad
@@ -307,27 +345,59 @@ class TemplePage:
         def moved(nx, ny, ww, hh):
             c.update(pad_x=int(nx), pad_y=int(ny), pad_w=int(ww), pad_h=int(hh))
             save_json("settings.json", SETTINGS)
-        w = OverlayWindow(self.root, "Temple Notepad", "◆", (x, y, c.get("pad_w") or 300, c.get("pad_h") or 260),
+        w = OverlayWindow(self.root, "Vaal Lens", "◆", (x, y, c.get("pad_w") or 300, c.get("pad_h") or 260),
                           palette=P, locked=bool(self.tracker_cfg().get("mlocked")), on_lock=self.overlay_lock,
                           on_close=self.temple_pad_close, on_moved=moved, follow_game=True, min_size=(220, 160))
         w.withdraw()
+        f9, f10 = (P["font"], self.ov_font(9)), (P["font"], self.ov_font(10))
         body = tk.Frame(w.body, bg=P["bg"], padx=8, pady=8)
         body.pack(fill="both", expand=True)
-        self.tm_pad_head = tk.Label(body, text=self.temple_pad_line(), bg=P["bg"], fg=P["head"],
+        top = tk.Frame(body, bg=P["bg"])
+        top.pack(fill="x")
+        self.tm_pad_head = tk.Label(top, text=self.temple_pad_line(), bg=P["bg"], fg=P["head"],
                                     font=(P["font"], self.ov_font(10), "bold"), anchor="w", justify="left",
-                                    wraplength=max(180, int(c.get("pad_w") or 300) - 24))
-        self.tm_pad_head.pack(fill="x")
-        tk.Label(body, text="Placed rooms stay until destabilized.", bg=P["bg"], fg=P["muted"],
-                 font=(P["font"], self.ov_font(9)), anchor="w").pack(fill="x", pady=(0, 4))
+                                    wraplength=max(140, int(c.get("pad_w") or 300) - 70))
+        self.tm_pad_head.pack(side="left")
+        tk.Label(top, text="BETA", bg=P["bg"], fg=P["muted"], font=(P["font"], self.ov_font(8), "bold"),
+                 highlightthickness=1, highlightbackground=P["line"], padx=4).pack(side="right")
+        tk.Label(body, text="THE BOARD", bg=P["bg"], fg=P["muted"], font=(P["font"], self.ov_font(8), "bold"),
+                 anchor="w").pack(fill="x", pady=(8, 0))
+        self.tm_lens_box = tk.Frame(body, bg=P["bg"])
+        self.tm_lens_box.pack(fill="x")
+        tk.Label(body, text="Never connect to a reward room.", bg=P["bg"], fg=P["muted"], font=f9,
+                 anchor="w").pack(fill="x", pady=(4, 0))
+        # notes in a fold (feedback: "maybe a dropdown clickable thing if someone wants to add notes to it")
+        fold = tk.Label(body, bg=P["bg"], fg=P["muted"], font=(P["font"], self.ov_font(8), "bold"), anchor="w",
+                        cursor="hand2")
+        fold.pack(fill="x", pady=(8, 0))
         t = tk.Text(body, bg=P.get("field") or P["cell_bg"], fg=P["text"], insertbackground=P["text"], relief="flat",
-                    highlightthickness=1, highlightbackground=P["line"], wrap="word", height=6,
-                    font=(P["font"], self.ov_font(10)), padx=8, pady=4)
-        t.pack(fill="both", expand=True)
+                    highlightthickness=1, highlightbackground=P["line"], wrap="word", height=4, font=f10, padx=8, pady=4)
         t.insert("1.0", c.get("notes") or "")
         t.bind("<FocusOut>", lambda _e: self._temple_pad_keep(), add="+")
         t.bind("<KeyRelease>", lambda _e: self._temple_pad_soon(), add="+")
-        self.tm_pad, self.tm_pad_text = w, t
+
+        def show_notes(open_):
+            fold.config(text="NOTES ▾" if open_ else "NOTES ▸")
+            if open_:
+                t.pack(fill="both", expand=True)
+            else:
+                t.pack_forget()
+
+        def flip(_e=None):
+            c["notes_open"] = not c.get("notes_open")
+            save_json("settings.json", SETTINGS)
+            show_notes(c["notes_open"])
+        c.setdefault("notes_open", bool((c.get("notes") or "").strip()))
+        fold.bind("<Button-1>", flip)
+        show_notes(c["notes_open"])
+        self.tm_pad, self.tm_pad_text, self.tm_pad_fold = w, t, fold
+        self.temple_pad_refresh()
         w.show()
+        try:
+            from .remnant_page import no_capture
+            no_capture(w)                                   # (the board under the card is read too)
+        except Exception:
+            buglog.caught()
         return w
 
     def _temple_pad_soon(self):
@@ -346,10 +416,28 @@ class TemplePage:
             self.temple_pad_show()
 
     def temple_pad_refresh(self):
-        """The crystals line follows each new read."""
+        """The crystals line and the board follow each new read."""
         lab = getattr(self, "tm_pad_head", None)
         try:
             if lab is not None and lab.winfo_exists():
                 lab.config(text=self.temple_pad_line())
         except tk.TclError:
             pass
+        box = getattr(self, "tm_lens_box", None)
+        try:
+            if box is None or not box.winfo_exists():
+                return
+        except tk.TclError:
+            return
+        from .overlaywin import pal
+        P = pal()
+        marks, count = self.temple_lens_lines()
+        for k in box.winfo_children():
+            k.destroy()
+        f9, f10 = (P["font"], self.ov_font(9)), (P["font"], self.ov_font(10))
+        for done, text in marks:
+            tk.Label(box, text=("✓ " if done else "◻ ") + text, bg=P["bg"], fg=P["text"] if done else P["muted"],
+                     font=f10, anchor="w").pack(fill="x")
+        if count:
+            tk.Label(box, text=count, bg=P["bg"], fg=P["muted"], font=f9, anchor="w", justify="left",
+                     wraplength=max(180, int(TM.cfg().get("pad_w") or 300) - 24)).pack(fill="x")
