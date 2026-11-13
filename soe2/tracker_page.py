@@ -1226,6 +1226,11 @@ class TrackerPage:
         if getattr(self, "tk_ov_cv", None) is not None:    # 2.47.0: the skins' two columns
             where = n.get("where") if show_where and live and n.get("where") not in ("-", None) else ""
             texts.update(map=f"Map: {val('map')}", where=where.strip())      # 2.76.0: the rank is its own part
+        # 2.139.0 Grouped (feedback: an empty "Map:" between maps): out of a map, where you are takes its place
+        kind = (getattr(s, "where", None) or {}).get("kind") if live else None
+        if live and not val("map") and kind != "map":
+            place = {"hideout": "Hideout", "town": "Town"}.get(kind, "Between maps")
+            texts.update(map=place, where="")
         texts["rank"] = self.rank_text(n.get("where") if live and getattr(self, "_mr_in", None) else None)
         if camp:                                              # 2.124.0: the zone's time, no map numbers
             from . import campaign as _CP

@@ -336,11 +336,8 @@ class LightOverlay:
         return x
 
     def _lt_menus_w(self, cv, P):
-        f = self._lt_fm(cv, P, 9)
-        names = {"notes": "Notes  ▾", "calc": "Calc  ▾", "regex": "Regex  ▾", "rates": "Rates  ▾",
-                 "vendor": "Vendor  ▾"}
         start = (self._lt_fm(cv, P, 9, True).measure(self.START_TEXT) + self._hf(9) + 24) if self.start_on_bar() else 0
-        return start + sum(f.measure(names[k]) + 12 for k in self.bar_buttons()) + self._u(6)
+        return start + self.mg_tools_w(cv, P) + self._u(6)     # 2.139.0: icons
 
     def _lt_time(self, cv, P, x, y, size, num=True):
         """The session time (bold). -> the width kept for it. 2.119.0 (UX pass, feedback: long map names were cut):
