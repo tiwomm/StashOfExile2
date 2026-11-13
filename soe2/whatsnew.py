@@ -50,9 +50,10 @@ NOTES = {
     "2.139.0": {
         "big": [],
         "small": [
-            ("Overlay", "Tools are icons now - hover one for its name."),
-            ("Overlay", "Out of a map: says Hideout or Town, not an empty Map."),
-            ("Overlay", "Map profit: says it's the last map's."),
+            ("Overlay", "New look in every style: a chip says In map, Paused or Hideout - click it to pause."),
+            ("Overlay", "The map you're in comes first. Session and Last map's profit have labels."),
+            ("Overlay", "Hover SESSION for maps run and the average."),
+            ("Overlay", "Tools are icons - hover one for its name."),
         ],
     },
     "2.138.4": {

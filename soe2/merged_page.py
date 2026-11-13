@@ -27,7 +27,7 @@ HUD = ("xpbar",)                 # 2.65.0: fitted to the game's own bottom bar, 
 # (was 0.056 for two rows); a bar you moved keeps its bottom edge where you put it (OLD_HUD_H)
 # 2.130.1 (feedback: "bottom alignment mode is a few px above the xp bar, needs moved down"): measured on a 1440p
 # screenshot, the XP bar's top is 22 px (0.0153) up from the bottom - the Bar's bottom edge sits on it (was 0.0205)
-HUD_SPOTS = {"xpbar": [(0.531, -0.531, 0.0153, 0.036)]}
+HUD_SPOTS = {"xpbar": [(0.531, -0.531, 0.0153, 0.046)]}     # 2.139.0: 0.036 -> 0.046 (a label over each value)
 OLD_HUD_H = 0.056
 
 
@@ -824,9 +824,14 @@ class MergedOverlay:
         bb = cv.bbox(tag)
         return (bb[0] if bb else x) - 12
 
-    def ov_tip(self, cv, tag, text):
-        """A name / line on hover over the game (an icon-only control's tooltip), in the overlay's colors."""
-        cv.tag_bind(tag, "<Enter>", lambda e: (cv.configure(cursor="hand2"), self.ov_tip_show(text, e.x_root, e.y_root)))
+    def ov_tip(self, cv, tag, text, hand=True):
+        """A name / line on hover over the game (an icon-only control's tooltip), in the overlay's colors. text: a
+        string, or a function giving it (worked out when the mouse comes)."""
+        def show(e):
+            if hand:
+                cv.configure(cursor="hand2")
+            self.ov_tip_show(text() if callable(text) else text, e.x_root, e.y_root)
+        cv.tag_bind(tag, "<Enter>", show)
         cv.tag_bind(tag, "<Leave>", lambda e: (cv.configure(cursor=""), self.ov_tip_hide()))
 
     def ov_tip_show(self, text, x, y):
@@ -903,8 +908,8 @@ class MergedOverlay:
     def start_on_bar(self):
         """2.131.1 (feedback: "the overlay on startup has no option to start session tracking"): while no session
         runs, ▶ Start session sits first on the bar; the timer takes its place once one starts."""
-        s = getattr(self, "tk_session", None)
-        return not getattr(self, "mg_timer", False) and (s is None or s.ended is not None)
+        # 2.139.0 Map First: the state chip starts one (▶ START) - no separate Start session on the bar
+        return False
 
     def _mg_start_button(self, cv, P, x, y, anchor="w"):
         """▶ Start session: the ▶ (the timer's own button) and its words, one click target. -> the next x."""
@@ -1321,64 +1326,8 @@ class MergedOverlay:
             right = self._mg_bar_buttons(w, cv, P, right - 4, mid, anchor="e") - SW
             self._hud_sep(cv, P, right + SW // 2, H, cy=mid, h=sh)
         x = lft
-        ln = self.ov_lines()                                 # 2.70.1: each part has its switch (Options)
-        if want["timer"]:
-            if ln.get("session", True):
-                x += self._mg_play(cv, P, x, mid, anchor="w", size=12) + 8      # 2.74.3: ⏸ / ▶ before the time
-                t = self._mg_text(cv, P, x, mid, "session", (P["font"], self._hf(13), "bold"), fill=P["big"], cls=_Time)
-                # 2.119.0 (UX pass, feedback: long map names were cut): the time takes only its own width - not
-                # tracking shows --:--, paused dims it (the ▶ beside it says so); no room kept for a PAUSED tag
-                t.num, t.dim = True, (P["big"], P["muted"])
-                fb_ = tkfont.Font(root=cv, family=P["font"], size=self._hf(13), weight="bold")
-                x += fb_.measure("0:00:00") + 6
-                drawn.append("session")
-            # 2.90.0: | Map 3:12  Arcane Isle | Maps: 4 | Avg. 6:01 | - the map and where you are share one part,
-            # each part's text is centered between its dividers, and the area's name is shown whole (smaller type
-            # before it is ever cut)
-            mw, aw = fm.measure("Maps: 000") + 8, fm.measure("Avg: 00:00") + 8
-            fixed = [k for k, on in (("maps", ln.get("maps")), ("avg", ln.get("avg"))) if on]
-            widths = {"maps": mw, "avg": aw}
-            try:                                              # 2.132.0: Map profit - the last map's, hover for how
-                if self.mp_on():
-                    fixed.append("profit")
-                    widths["profit"] = fm.measure("+00.0 chaos last map") + 8
-            except Exception:
-                buglog.caught()
-            map_on = bool(ln.get("map", True) or ln.get("where", True))
-
-            def room(keys):
-                return right - x - sum(widths[k] + SW for k in keys) - (SW if drawn and map_on else 0)
-            # 2.132.2 (feedback: "overlay text overlap ... we're cramming too much into the bar without factoring for
-            # resizing things (I don't really want to go any bigger)"): the bar stays its size - parts that don't fit
-            # leave it, the newest first (Map profit's, then Avg, then Maps); the Temple Helper's crystals are on the
-            # line above the bar, with Ritual's
-            min_map = self._hf(60) if map_on else 0
-            # 2.132.6 (feedback: "instead of removing map profit ... remove the map name"): Avg leaves first, then
-            # Maps; Map profit last
-            for k in ("avg", "maps", "profit"):
-                if room(fixed) >= min_map:
-                    break
-                if k in fixed:
-                    fixed.remove(k)
-            self.mg_dropped = [k for k in ("avg", "maps", "profit") if k in widths and k not in fixed]
-            if map_on:                                        # (the map's rank rides in this part too: ★ A)
-                x = lead(x)
-                map_w = max(min_map, room(fixed))
-                self._hud_map_part(cv, P, x, x + map_w, mid, f, show_map=ln.get("map", True),
-                                   show_where=ln.get("where", True), show_rank=bool(ln.get("rank", True)))
-                x += map_w
-                drawn.append("map")
-            elif fixed:
-                x = max(x, right - sum(widths[k] + SW for k in fixed))
-            for k in fixed:
-                x = lead(x)
-                t_ = self._mg_text(cv, P, x + widths[k] // 2, mid, k, f, anchor="center")
-                if k == "profit":
-                    try:
-                        self.mp_bar_bind(cv, t_.item)
-                    except Exception:
-                        buglog.caught()
-                x += widths[k]
-                drawn.append(k)
-        elif self.bar_buttons_on():
+        self.mg_dropped = []                                 # 2.139.0 Map First (ova8): chip | map | SESSION | profit
+        x = self.a8_bar(w, cv, P, want, x, right, mid, lambda sx: self._hud_sep(cv, P, sx, H, cy=mid, h=sh),
+                        spread=(max(5, H // 4 - 1), max(5, H // 4)))
+        if not want["timer"] and self.bar_buttons_on():
             self._mg_bar_buttons(w, cv, P, x, mid, anchor="w")

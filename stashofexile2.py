@@ -20,10 +20,13 @@ VERSION 2.139.0
 
 VERSION HISTORY
   2.139.0
-       - Overlay, Grouped (the mockup the user picked: "A. grouped looks sick"): the tools (Notes, Calc, Regex,
-         Rates, Vendor) are icons in every style - Windows' icon font, their names where it's missing - with their
-         name on hover (ov_tip) and ▴ beside an open one; out of a map the bar says Hideout / Town / Between maps
-         instead of an empty "Map:"; Map profit's part says "+5.5 chaos last map".
+       - Overlay, Map First (ova8 - the mockup the user picked after A, A2-A9: "I like a8 yeah, make sure it works for
+         all themes"): every style's Bar and Panel - a state chip (● IN MAP, ❚❚ PAUSED, ⌂ HIDEOUT / TOWN, ▶ START
+         SESSION: a mark and a word; a click pauses, resumes or starts), the map part (THIS MAP · rank / its name and
+         time; NOW / Hideout out of a map), SESSION ⓘ (maps and average on hover) and LAST MAP'S PROFIT ⓘ. The tools
+         are icons (Windows' icon font; their names where it's missing) with their name on hover and ▴ when open.
+         The Bar is taller (HUD_SPOTS 0.036 -> 0.046) for a label over each value; Start session is the chip now.
+         README's overlay screenshot and the Appearance previews show it.
   2.138.4
        - Price checks (feedback: "Megalomaniac jewels can have any of the games keystone nodes on them, in any
          combination, we need to make them searchable"): its "{ Enhancement }" / "Allocates Overwhelm() — Unscalable
