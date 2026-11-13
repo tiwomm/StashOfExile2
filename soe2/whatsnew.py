@@ -47,6 +47,12 @@ BETA_AREAS = ("Wealth", "Money Makers", "Game Search", "Market Insights", "Craft
 # repeats. Someone coming from rollup["since"] or older (or a fresh install) sees it instead of each version; someone
 # on a pre-release already saw them and gets only this version's own lines (notes_between).
 NOTES = {
+    "2.138.1": {
+        "big": [],
+        "small": [
+            ("Fast Beacon Read", "New switch in Helpers › Temple. Turn it on only if crystals aren't counted."),
+        ],
+    },
     "2.138.0": {
         "big": [
             ("⬇", "Map profit: Export CSV", "Every map, one row per item. Clear all now asks: export first, hide, or "

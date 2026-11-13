@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU AGPL v3.0 (see LICENSE; up to 2.129.4: GNU GPL v3.0). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.138.0
+VERSION 2.138.1
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,6 +19,13 @@ VERSION 2.138.0
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.138.1
+       - Fast Beacon Read (feedback: "if you stand on top of the vaal beacon, there's like a single frame where it shows
+         the crystal count"; "toggled on ... Enable only if crystals aren't being counted"): Helpers › Temple, off by
+         default. A box above your character (temple.FAST_BOX, sized from the game's height) read about 10 times a
+         second on its own thread with its own text reader (remnant ocr(fast=True): its own engine and lock, so the
+         whole-screen read can't hold it up), only in a map with a Temple and the game in front. A slow PC reads back
+         to back as fast as it can.
   2.138.0
        - Map profit (feedback: "I want an export csv option ... if you hit clear all, I want it to ask if you want to
          export the data first ... clear it from the list or clear the data itself"): Export CSV… (one row per item
@@ -3754,7 +3761,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.138.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.138.1"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 

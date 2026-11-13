@@ -38,6 +38,8 @@ class TemplePage:
 
     def temple_start(self):
         self.hover_start()                                  # 2.132.3: one look round the mouse feeds every reader
+        if self.temple_fast_on():
+            self.temple_fast_start()
 
     def temple_look(self, force=False):
         return self.hover_look(force)
@@ -94,6 +96,76 @@ class TemplePage:
             self.temple_pad_show()
         elif not here:
             self.temple_pad_close()
+
+    # ---------------------------------------------------------------- 2.138.1 Fast Beacon Read (opt-in)
+    def temple_fast_on(self):
+        return self.temple_on() and bool(TM.cfg().get("fast_read"))
+
+    def temple_fast_set(self, on):
+        TM.cfg()["fast_read"] = bool(on)
+        save_json("settings.json", SETTINGS)
+        if on:
+            self.temple_fast_start()
+
+    def temple_fast_wanted(self):
+        """Only while it's on, in a map with a Temple (Map Content's icon seen), the game in front."""
+        if not self.temple_fast_on() or getattr(self, "br_area", None) != "map" or not getattr(self, "tm_in_map", False):
+            return False
+        try:
+            from .overlaywin import foreground_ok
+            return bool(foreground_ok())
+        except Exception:
+            buglog.caught()
+            return False
+
+    def temple_fast_start(self):
+        """One background reader; it sleeps while it isn't wanted and stops when the switch goes off."""
+        t = getattr(self, "_tm_fast_thread", None)
+        if t is not None and t.is_alive():
+            return t
+        import threading
+        stop = self._tm_fast_stop = threading.Event()
+
+        def loop():
+            from . import remnant as RM
+            from .alerts_page import game_rect
+            while not stop.is_set():
+                t0 = time.time()
+                if not self.temple_fast_on():
+                    return
+                wanted = getattr(self, "_tm_fast_wanted", False)      # (set on the window's thread, below)
+                if not wanted:
+                    stop.wait(0.5)
+                    continue
+                try:
+                    g = game_rect()
+                    if g:
+                        got = TM.parse(RM.ocr(RM.grab(TM.fast_box(g)), fast=True))
+                        if got:
+                            self.ui_q.put(("tm_fast", got))
+                except Exception:
+                    buglog.caught()
+                    stop.wait(1.0)
+                stop.wait(max(0.0, TM.FAST_EVERY - (time.time() - t0)))
+        self._tm_fast_thread = threading.Thread(target=loop, daemon=True, name="Fast Beacon Read")
+        self._tm_fast_thread.start()
+        self._tm_fast_poll()
+        return self._tm_fast_thread
+
+    def _tm_fast_poll(self):
+        """Twice a second on the window's thread: is the fast reader wanted now? (Tk is read only from here.)"""
+        try:
+            self._tm_fast_wanted = self.temple_fast_wanted()
+        except Exception:
+            buglog.caught()
+            self._tm_fast_wanted = False
+        if self.temple_fast_on():
+            self.root.after(500, self._tm_fast_poll)
+        else:
+            self._tm_fast_wanted = False
+
+    def ev_tm_fast(self, got):
+        self.temple_seen(got)
 
     def temple_console_tick(self):
         """2.136.1: every 2 s in a temple area, the Temple Console's "18/60" under its Run Temple button is read (the
