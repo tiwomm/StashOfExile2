@@ -276,7 +276,7 @@ Order (decided 2026-11-05): the page passes, then the Privacy & data hub, then t
 | 2.137.2 | Ritual Identifier and Temple Helper read a quarter of the screen bigger every other look: small labels found at any size. |
 | 2.138.0 | Map profit: Export CSV, and Clear all asks (export first, hide from the list, or delete). Leaderboards: Export my times. |
 | 2.138.1 | Fast Beacon Read (opt-in, Helpers › Temple): catches a Vaal Beacon's count as you stand on it. Alerts close with a click anywhere on them (no ×). |
-| 2.139.0 | Overlay Grouped: tools as icons with hover names; Hideout / Town instead of an empty Map; profit says last map. |
+| 2.139.0 | Overlay Map First in every style: a state chip, the map first, Session and Last map's profit labeled, tools as icons. |
 | 2.138.4 | Megalomaniac: each passive it allocates is read and searched. |
 | 2.138.3 | Fast Beacon Read looks 30 times a second and reads only a tooltip; a stuck screen read no longer stops later looks. |
 | 2.138.2 | An Abyss's depths (Lightless Void, Abyssal Depths, Dark Domain) count with their map, not as another map. |
