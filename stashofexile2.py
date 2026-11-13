@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU AGPL v3.0 (see LICENSE; up to 2.129.4: GNU GPL v3.0). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.139.0
+VERSION 2.139.1
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,6 +19,12 @@ VERSION 2.139.0
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.139.1
+       - Overlay Map First (feedback: "it made it real tall and funky looking", "the gps pin looks like a ... flower",
+         "too much space vertically, does not look like your mockups"): the Bar 0.046 -> 0.040 tall (light styles
+         u(40) -> u(34)), the label and value lines closer, values a size smaller, the map part no wider than it needs
+         (u(210)); the pin a filled teardrop; out of a map the chip says where you are and the map part shows LAST MAP
+         (its name and time) - not "TOWN" then "NOW · Town"; a zero profit reads "0 div", not "+0.000 div".
   2.139.0
        - Overlay, Map First (ova8 - the mockup the user picked after A, A2-A9: "I like a8 yeah, make sure it works for
          all themes"): every style's Bar and Panel - a state chip (● IN MAP, ❚❚ PAUSED, ⌂ HIDEOUT / TOWN, ▶ START
@@ -3799,7 +3805,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.139.0"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.139.1"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
