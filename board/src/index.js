@@ -18,7 +18,7 @@
 // hidden by reviewers or an admin. Every field has limits; names are unique; edits, suggestions, reports, votes and
 // admin-key tries have daily limits.
 //
-// Secrets / vars: ADMIN_KEY, ERRORS_KEY (2.137.0: reading Error reports), ERRORS_PER_DAY, REPORT_HIDE, POSTS_PER_DAY, JOINS_PER_DAY. Stored per player: a made-up id and the
+// Secrets / vars: ADMIN_KEY, ERRORS_PER_DAY (2.137.0), REPORT_HIDE, POSTS_PER_DAY, JOINS_PER_DAY. Stored per player: a made-up id and the
 // display name. Internet addresses are only kept as a hash with the day, to count new accounts.
 import RULES from "./schema.json";
 import { RegExpMatcher, englishDataset, englishRecommendedTransformers } from "obscenity";
@@ -1223,7 +1223,8 @@ const scrubText = (t) => String(t).replace(/([\\/](?:Users|home)[\\/])[^\\/\s"']
 // ------------------------------------------------------------------ 2.137.0: Error reports (opt-in)
 // POST /errors {cid, v, os, items: [{kind, place, etype, frames, msg, n}]} - what went wrong in the app: where in the
 // code, the error's type, and (trade site errors) the site's short answer. No names, items, files or free text: every
-// field must match a narrow pattern or the item is dropped. GET /errors needs the ERRORS_KEY secret (x-errors-key).
+// field must match a narrow pattern or the item is dropped. GET /errors: board admins only (signed in with the admin
+// key) - never public, no other key; the developer's app keeps a copy on their own PC.
 const ERR_KINDS = ["error", "crash", "freeze", "slow", "net", "caught", "debug"];
 const ERR_PLACE = /^[A-Za-z0-9 _.:()\/'#,-]{1,80}$/;
 const ERR_TYPE = /^[A-Za-z_][A-Za-z0-9_.]{0,60}$/;
@@ -1263,9 +1264,8 @@ async function errorBatch(req, env) {
   return json({ ok: true, used });
 }
 
-async function errorList(req, env, url) {
-  if (!env.ERRORS_KEY || String(env.ERRORS_KEY).length < 32) return fail(503, "Error reports aren't set up on the board yet.");
-  if (!sameText(req.headers.get("x-errors-key") || "", env.ERRORS_KEY)) return fail(403, "not allowed");
+async function errorList(env, me, url) {
+  if (!me?.admin) return fail(403, "not allowed");
   const since = Math.max(0, Number(url.searchParams.get("since")) || 0);
   const rows = await env.DB.prepare(`SELECT e.*, (SELECT COUNT(*) FROM app_error_installs i WHERE i.sig = e.sig) AS installs
     FROM app_errors e WHERE e.last > ?1 ORDER BY installs DESC, e.n DESC LIMIT 500`).bind(since).all();
@@ -1364,7 +1364,7 @@ export default {
       if (path === "/campaign/zones") return campaignZones(env);
       if (path === "/bugs" && req.method === "POST") return bugReport(req, env);
       if (path === "/errors" && req.method === "POST") return errorBatch(req, env);       // 2.137.0
-      if (path === "/errors" && req.method === "GET") return errorList(req, env, url);
+
       const me = await who(req, env);
       const im = /^\/images\/([0-9a-f]{32})$/.exec(path);
       if (im && req.method === "GET") return getImage(env, me, im[1]);
@@ -1390,6 +1390,7 @@ export default {
       if (path === "/me" && req.method === "DELETE") return deleteMe(env, me);
       if (path === "/auth/admin" && req.method === "POST") return becomeAdmin(req, env, me);
       if (path === "/me/inbox" && req.method === "GET") return inbox(env, me);
+      if (path === "/errors" && req.method === "GET") return errorList(env, me, url);          // 2.137.0: admins
       if (path === "/admin/names/sweep" && req.method === "POST") return sweepNames(env, me);
       if (path === "/review" && req.method === "GET") return reviewQueue(env, me);
       if (me.banned) return fail(403, "This account can't post on the board.");

@@ -61,10 +61,3 @@ jobs:
           if [ -n "$BUGS_GITHUB_TOKEN" ]; then printf '%s' "$BUGS_GITHUB_TOKEN" | npx wrangler secret put GITHUB_TOKEN;
           else echo "No BUGS_GITHUB_TOKEN secret."; fi
           if [ -n "$DISCORD_WEBHOOK" ]; then printf '%s' "$DISCORD_WEBHOOK" | npx wrangler secret put DISCORD_WEBHOOK; fi
-      - name: Error reports (2.137.0) - the key that reads GET /errors
-        if: steps.ready.outputs.go == 'yes'
-        env:
-          ERRORS_KEY: ${{ secrets.ERRORS_KEY }}
-        run: |
-          if [ -n "$ERRORS_KEY" ]; then printf '%s' "$ERRORS_KEY" | npx wrangler secret put ERRORS_KEY;
-          else echo "No ERRORS_KEY secret: error reports are kept, but nobody can read them yet."; fi
