@@ -2,7 +2,7 @@
 StashOfExile2 - a Path of Exile 2 price checker for tablets and jewels, with a window instead of a text dump.
 Free software under the GNU AGPL v3.0 (see LICENSE; up to 2.129.4: GNU GPL v3.0). Written by an AI (Claude, by Anthropic) under a human's direction.
 
-VERSION 2.138.1
+VERSION 2.138.2
   How versions are numbered (from 2.0.0 on):
     MAJOR.MINOR.PATCH.  The 22 betas ended here: this build is 2.0.0. From now on every build gets a plain number:
       2.0.1, 2.0.2 ...  fixes (nothing new to learn)
@@ -19,6 +19,12 @@ VERSION 2.138.1
   version (settings.json, session.json, modbook.json, mod_rules.json, wealth.json, tabs.txt ...).
 
 VERSION HISTORY
+  2.138.2
+       - Session tracker (feedback: "Lightless Void, Abyssal Depths and Dark Domain should not count as another +1 map
+         ... they're a sub-area within the map itself"): an Abyss's depths (maplib.is_subarea: id Abyss_Depths*, or
+         named Lightless Void / Abyssal Depths / Dark Domain) belong to the map you opened them from - its time and
+         deaths count there, back out isn't another entry, and they aren't learned as maps. (Map profit and the Strat
+         Tracker already counted them with the map: map to depths to map never left the map.)
   2.138.1
        - Fast Beacon Read (feedback: "if you stand on top of the vaal beacon, there's like a single frame where it shows
          the crystal count"; "toggled on ... Enable only if crystals aren't being counted"): Helpers › Temple, off by
@@ -3765,7 +3771,7 @@ THE "LEARNING" PART
 import os
 import sys
 
-APP_VERSION = "2.138.1"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
+APP_VERSION = "2.138.2"  # bump this and __version__ in soe2/__init__.py together (see VERSION above)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 

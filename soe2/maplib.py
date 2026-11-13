@@ -91,6 +91,17 @@ NOT_MAPS = ("Abyss_Hub",)        # The Well of Souls: a level-65+ area that isn'
 # 2.136.2 (feedback: "treat vaal ruins as town/hideout ... and treat atziri's temple as the map"): the endgame Vaal
 # Ruins (level 65, so it looked like a map) is a hub you plan and stash in - a town. Atziri's Temple stays a map.
 HUBS = ("IncursionHubEndgame",)
+# 2.138.2 (feedback: "Lightless Void, Abyssal Depths and Dark Domain should not count as another +1 map ... they're a
+# sub-area within the map itself, their currency should be counted with the map"): an Abyss's depths are part of the
+# map you opened them from. Known by the area's id (Abyss_Depths1 ...) or, for one the app hasn't seen yet, by the
+# name the game gives it.
+SUBAREA_IDS = ("Abyss_Depths",)
+SUBAREA_NAMES = ("Lightless Void", "Abyssal Depths", "Dark Domain")
+
+
+def is_subarea(area_id="", name=""):
+    a = area_id or ""
+    return a.startswith(SUBAREA_IDS) or str(name or "").strip() in SUBAREA_NAMES
 
 
 def area_kind(area_id, seed, level=0):
@@ -116,7 +127,7 @@ def area_kind(area_id, seed, level=0):
 
 def learn(area_id, name, level=None):
     """The tracker entered an endgame area the library doesn't know (and got its name from the game). -> True if new."""
-    if not area_id or not name or is_hideout(area_id, name) or id_name(area_id):
+    if not area_id or not name or is_hideout(area_id, name) or id_name(area_id) or is_subarea(area_id, name):
         return False
     d = learned()
     if area_id in d and d[area_id].get("name") == name:
