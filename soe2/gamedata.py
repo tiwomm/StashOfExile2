@@ -233,6 +233,18 @@ PROP_RE = {
     "stack": re.compile(r"^Stack Size:\s*([\d,.\s]+)(?:/\s*([\d,.\s]+))?"),
 }
 CORRUPTION_HEADER = re.compile(r"^\{\s*(?:Corruption\s+)?Enhancement\b[^}]*\}\s*$", re.I)   # 2.105.0: "{ Enhancement }"
+_BRACED = re.compile(r"^[\{｛].*[\}｝]\s*$")
+_EMPTY_PARENS = re.compile(r"\(\s*\)")
+
+
+def _clean_line(l):
+    """A mod line as the stat lists word it: no "(Amethyst-Topaz)" range, no "— Unscalable Value", and (2.138.4)
+    no empty "()" - the game prints "Allocates Overwhelm()" on a Megalomaniac."""
+    l = _WRANGE.sub("", l)
+    l = re.sub(r"\s+[—-]\s+Unscalable Value.*$", "", l)
+    return _EMPTY_PARENS.sub("", l).strip()
+
+
 MOD_HEADER = re.compile(r'^\{\s*(?P<kind>[A-Za-z ]+?)\s+Modifier(?:\s+"(?P<name>[^"]*)")?(?:\s*\(Tier:\s*(?P<tier>\d+)\))?')
 
 
@@ -241,8 +253,10 @@ def _lore(sec):
     sec = [l for l in sec if l not in FLAG_LINES and not l.startswith(("Note:", "Place into", "Right click"))]
     if not sec:
         return None
-    return not any(MOD_HEADER.match(l) or _NUM.search(l) for l in sec) and \
-        not any(stat_for(_WRANGE.sub("", l))[0] for l in sec)
+    # 2.138.4 (feedback: a Megalomaniac priced by name only - its "{ Enhancement }" / "Allocates Overwhelm()" lines
+    # were read as lore): any { ... } header line means the section holds mods
+    return not any(MOD_HEADER.match(l) or _NUM.search(l) or _BRACED.match(l) for l in sec) and \
+        not any(stat_for(_clean_line(l))[0] for l in sec)
 
 
 def flavour_sections(sections, mods_from, unique=False):
@@ -352,8 +366,9 @@ def read_item(text):
                 continue
             if l in FLAG_LINES or l.startswith(("Note:", "Place into", "Right click")):
                 continue
-            l = _WRANGE.sub("", l)                           # 2.74.1: "Legacy of Gold (Amethyst-Topaz)" -> "Legacy of Gold"
-            l = re.sub(r"\s+[—-]\s+Unscalable Value.*$", "", l)     # 2.105.0: "Allocates Paragon — Unscalable Value"
+            # 2.74.1: "Legacy of Gold (Amethyst-Topaz)" -> "Legacy of Gold"; 2.105.0: "Allocates Paragon — Unscalable
+            # Value"; 2.138.4: "Allocates Overwhelm()" (see _clean_line)
+            l = _clean_line(l)
             tag = _TAGS.search(l)
             tagged = tag.group(1).lower() if tag else None
             k = kind or (tagged if tagged in ("implicit", "rune", "enchant") else "explicit")
