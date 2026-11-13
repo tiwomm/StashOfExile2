@@ -49,7 +49,7 @@ FEATURES = (
     "Campaign Helper",
     "Clear All",                # Bulk Pricing › Items strip: empties the list shown
     "Community data sharing",
-    "Fast Beacon Read",         # 2.138.1 Helpers › Temple: the Beacon's count above your character, 10 times a second
+    "Fast Beacon Read",         # 2.138.1 Helpers › Temple: the Beacon's count round your character (2.138.3: 30 looks a second)
     "Error reports",            # 2.137.0 Settings › Privacy & community: what went wrong in the app, opt-in
     "Craft Helper",
     "Data pack",                # the Craft Helper's mod data from GitHub

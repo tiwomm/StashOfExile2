@@ -5169,7 +5169,13 @@ class App(SettingsPage, GearBookPage, PriceCheckPage, PricePopup, FavoritesPage,
         item is priced again. None (Not now): no more asks on this item."""
         if grade is None:
             rec["ask_skip"] = True
-            if getattr(self, "shown_rec", None) is rec:
+            # 2.138.3 (feedback: "the "Not now" on price checks doesn't work, it doesn't go away if you click it"):
+            # Price Checks' card isn't the shown_rec one - it's redrawn there (the listings stay)
+            if rec.get("src") == "pc" and rec.get("id") == getattr(self, "pc_rid", None):
+                self.pc_show(rec, card_only=True)
+            elif rec.get("src") == "fav":
+                self.fav_rec_changed(rec, card_only=True)
+            elif getattr(self, "shown_rec", None) is rec:
                 self.show_detail(rec)
             return None
         self.card_thumb(rec, m, key, grade)

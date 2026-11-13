@@ -129,10 +129,18 @@ class TemplePage:
         def loop():
             from . import remnant as RM
             from .alerts_page import game_rect
+            import numpy as np
+            hb = {"t": time.time(), "looks": 0, "tips": 0, "got": 0}
+            sct = None
+            try:
+                import mss
+                sct = mss.mss()                     # (one screen grabber for the thread: made once, not per look)
+            except Exception:
+                buglog.caught()
             while not stop.is_set():
                 t0 = time.time()
                 if not self.temple_fast_on():
-                    return
+                    break
                 wanted = getattr(self, "_tm_fast_wanted", False)      # (set on the window's thread, below)
                 if not wanted:
                     stop.wait(0.5)
@@ -140,13 +148,36 @@ class TemplePage:
                 try:
                     g = game_rect()
                     if g:
-                        got = TM.parse(RM.ocr(RM.grab(TM.fast_box(g)), fast=True))
-                        if got:
-                            self.ui_q.put(("tm_fast", got))
+                        x0, y0, x1, y1 = TM.fast_box(g)
+                        img = RM.grab((x0, y0, x1, y1), sct=sct)
+                        hb["looks"] += 1
+                        box = TM.find_tooltip(np.asarray(img), g[3])
+                        if box:
+                            hb["tips"] += 1
+                            tip = img.crop(box)
+                            if tip.height < g[3] * 0.25:                # small capitals read better bigger
+                                tip = tip.resize((tip.width * 2, tip.height * 2))
+                            st = TM.state()
+                            got = TM.fast_parse(RM.ocr(tip, fast=True), st["most"] if st else None)
+                            if got:
+                                hb["got"] += 1
+                                self.ui_q.put(("tm_fast", got))
                 except Exception:
                     buglog.caught()
                     stop.wait(1.0)
+                if time.time() - hb["t"] >= 60 and hb["tips"]:
+                    # Debug mode: counts only - how often it looked, saw a tooltip, read a count
+                    buglog.debug("Temple", f"Fast Beacon Read: {hb['looks']} looks, {hb['tips']} tooltips seen, "
+                                           f"{hb['got']} counts read in the last minute")
+                    hb = {"t": time.time(), "looks": 0, "tips": 0, "got": 0}
+                elif time.time() - hb["t"] >= 60:
+                    hb = {"t": time.time(), "looks": 0, "tips": 0, "got": 0}
                 stop.wait(max(0.0, TM.FAST_EVERY - (time.time() - t0)))
+            try:
+                if sct is not None:
+                    sct.close()
+            except Exception:
+                buglog.caught()
         self._tm_fast_thread = threading.Thread(target=loop, daemon=True, name="Fast Beacon Read")
         self._tm_fast_thread.start()
         self._tm_fast_poll()
