@@ -373,6 +373,8 @@ def icon_feat(q):
 ICONS = os.path.join(HERE, "vaallens_icons.json")
 ICON_MIN = 0.90          # best prototype similarity to accept a cluster (members sit at 0.94-1.0 of their cluster)
 ICON_MARGIN = 0.015      # a cluster with another name this close -> the icon is not sure
+KIND_MIN = 0.82          # 2.142.0: below ICON_MIN (or not sure of the name), the kind still counts when the two
+                         # nearest named clusters are the same kind (a reward room drawn silver: "a reward room")
 _icons = None
 
 
@@ -405,6 +407,23 @@ def match_icon(vec, icons):
     rival = next((o for o in order[1:] if (cl[o].get("name") or cl[o]["id"]) != name), None)
     sure = rival is None or best[k] - best[rival] >= ICON_MARGIN
     return cl[k], float(best[k]), sure
+
+
+def match_kind(vec, icons):
+    """-> the kind the nearest icons agree on (KIND_MIN or closer), or None."""
+    cl, P, owner = icons
+    sims = P @ vec
+    best = np.full(len(cl), -1.0)
+    np.maximum.at(best, owner, sims)
+    order = [k for k in np.argsort(-best) if cl[k].get("kind")]
+    if not order or best[order[0]] < KIND_MIN:
+        return None
+    k = order[0]
+    name = cl[k].get("name") or cl[k]["id"]
+    rival = next((o for o in order[1:] if (cl[o].get("name") or cl[o]["id"]) != name), None)
+    if rival is None or cl[rival]["kind"] == cl[k]["kind"] or best[k] - best[rival] >= 0.04:
+        return cl[k]["kind"]
+    return None
 
 
 # ---------------------------------------------------------------- the board
@@ -440,7 +459,8 @@ def read(img, icons=None):
             cell["kind"] = occ
             continue
         cell["occupied"] = True
-        m, sim, sure = (match_icon(icon_feat(icon_crop(a, c)), icons) if icons else (None, 0.0, False))
+        vec = icon_feat(icon_crop(a, c)) if icons else None
+        m, sim, sure = (match_icon(vec, icons) if icons else (None, 0.0, False))
         cell["match"] = round(sim, 3)
         if c == ATZIRI:
             cell["kind"], cell["name"] = "atziri", "Atziri"
@@ -448,6 +468,9 @@ def read(img, icons=None):
             continue
         if m is None or not sure or m.get("kind") in (None, "atziri"):
             cell["icon"] = m["id"] if m else None       # a room-like cell we can't name: kind stays unknown
+            k = match_kind(vec, icons) if icons else None
+            if k in ("reward", "architect", "key"):    # (a room needs its name; these count by kind alone)
+                cell["kind"] = k
             continue
         cell["kind"], cell["icon"], cell["name"] = m["kind"], m["id"], m.get("name")
         if m["kind"] == "room" and read_tiers and not hid[HH + 2:HH + 32, HW + 6:HW + 58].any():     # numeral box in view
@@ -523,24 +546,75 @@ def on_screen(game, x, y):
     return left + x * s, top + y * s
 
 
-# the console's card list (left of the board): the picked card's name is read here, in 2560x1440 frame coordinates
-CARD_BOX = (40, 640, 340, 1150)
+# 2.142.0: the side panels keep to the game window's edges (the board keeps to the middle 16:9): the card list
+# (Room Cards) on the left, the Medallions panel on the right. Boxes in 2560x1440 frame coordinates.
+CARD_BOX = (40, 200, 480, 1150)
+MEDAL_BOX = (1700, 560, 2560, 1110)      # the panel and where a hovered medallion's tooltip shows (left of it)
+DIAMOND_X = (250, 440)                   # a card's diamond, from the card list box's left
+
+
+def side_box(game, box, right=False):
+    """A frame box -> on screen, kept to the game's left (or right) edge."""
+    s, _left, top = placing(game)
+    gx, gy, gw, gh = game
+    x0, y0, x1, y1 = box
+    if right:
+        return (int(gx + gw - (FULL[0] - x0) * s), int(top + y0 * s), int(gx + gw - (FULL[0] - x1) * s),
+                int(top + y1 * s))
+    return int(gx + x0 * s), int(top + y0 * s), int(gx + x1 * s), int(top + y1 * s)
 
 
 def card_box(game):
-    """-> (left, top, right, bottom) on screen of the card list."""
-    l, t = on_screen(game, CARD_BOX[0], CARD_BOX[1])
-    r, b = on_screen(game, CARD_BOX[2], CARD_BOX[3])
-    return int(l), int(t), int(r), int(b)
+    return side_box(game, CARD_BOX)
 
 
 def card_name(lines):
-    """OCR lines of the card list -> the one card's name, or None (none, or more than one: which one is picked isn't
-    known, so only the ✕ marks show)."""
+    """OCR lines of the card list -> the one card's name, or None (none, or more than one)."""
+    names = card_names(lines)
+    return names[0][0] if len(names) == 1 else None
+
+
+def card_names(lines):
+    """-> [(name, y middle in the picture)] of the cards read, top to bottom (a two-line name joined)."""
     from . import vaallens_plan as VP
-    seen = []
-    for text, _box in lines or []:
-        t = " ".join(str(text).split())
-        if VP.card(t) and t.lower() not in [s.lower() for s in seen]:
-            seen.append(t)
-    return seen[0] if len(seen) == 1 else None
+    rows = [(" ".join(str(t).split()), b or (0, k * 100, 0, k * 100 + 20)) for k, (t, b) in enumerate(lines or [])]
+    rows.sort(key=lambda r: r[1][1])
+    out, k = [], 0
+    while k < len(rows):
+        t, b = rows[k]
+        if k + 1 < len(rows) and not VP.card(t):
+            t2, b2 = rows[k + 1]
+            if b2[1] - b[3] < (b[3] - b[1]) * 1.2 and VP.card(t + " " + t2):
+                out.append((t + " " + t2, (b[1] + b2[3]) / 2))
+                k += 2
+                continue
+        if VP.card(t):
+            out.append((t, (b[1] + b[3]) / 2))
+        k += 1
+    return out
+
+
+def card_pick(img, lines, up=1.0):
+    """The card list's picture and its OCR lines (read at `up` times its size) -> the picked card's name: the one
+    whose diamond glows (gold share well above the others), or the only card. None: not known."""
+    names = card_names(lines)
+    if not names:
+        return None
+    if len(names) == 1:
+        return names[0][0]
+    a = np.asarray(img.convert("RGB")).astype(np.int32)
+    s = img.height / (CARD_BOX[3] - CARD_BOX[1])
+    x0, x1 = int(DIAMOND_X[0] * s), int(DIAMOND_X[1] * s)
+    glow = []
+    for name, y in names:
+        y = int(y / up)
+        p = a[max(0, y - int(75 * s)):y + int(75 * s), x0:x1]
+        if not p.size:
+            glow.append(0.0)
+            continue
+        r, g, b = p[..., 0], p[..., 1], p[..., 2]
+        glow.append(float(((r > 170) & (g > 140) & (b < 140)).mean()))
+    best = max(range(len(names)), key=lambda k: glow[k])
+    rest = sorted(glow[:best] + glow[best + 1:])
+    mid = rest[len(rest) // 2] if rest else 0.0
+    return names[best][0] if glow[best] >= 0.04 and glow[best] > 3 * mid else None
