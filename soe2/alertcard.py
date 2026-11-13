@@ -1,7 +1,7 @@
 """2.130.0 Helper alerts as one alert card (feedback: "a more elegant solution than just giant bold flashing letters,
 that's gonna piss some people off"): a small card over the game in the overlay's Style - a colored edge, a mark (! or
 ✓) and a word, a line of detail, × to close it early and a thin line counting down its time. No flashing: it fades in
-once. Where it shows (Center, Above the bar, Top center, Top right) and its size (Small, Medium, Large) are settings
+once. Where it shows (Top center - the default since 2.137.1 -, Center, Above the bar, Top right) and its size (Small, Medium, Large) are settings
 (Game Overlay › Overlay Settings › Helpers › Alerts). Every helper's alert and the break reminders use it.
 2.131.4: alerts that come together share one card - a row each, most urgent on top, one countdown."""
 import tkinter as tk
@@ -9,9 +9,11 @@ import tkinter as tk
 from . import buglog
 from .config import SETTINGS
 
-WHERE = {"center": "Center", "bar": "Above the bar", "top": "Top center", "topright": "Top right"}
+WHERE = {"top": "Top center", "center": "Center", "bar": "Above the bar", "topright": "Top right"}
 SIZES = {"small": ("Small", 0.8), "medium": ("Medium", 1.0), "large": ("Large", 1.3)}
-DEFAULTS = {"where": "center", "size": "medium"}
+# 2.137.1 (feedback: "the notification for it almost got me killed, it needs to be somewhere else on the screen"):
+# Top center by default - Center sat on your character (settings that had Center move once: migrations)
+DEFAULTS = {"where": "top", "size": "medium"}
 FADE = (0.25, 0.5, 0.75, 0.92, 1.0)        # the fade in, one step every 35 ms
 
 
