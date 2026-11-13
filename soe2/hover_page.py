@@ -13,6 +13,22 @@ from . import temple as TM
 EVERY_MS = 1000                     # how often it looks (only in a map, the game in front)
 SCREEN = (0.0, 0.0, 1.0, 0.86)      # the part of the game read: all of it but the bottom bar (life, skills, flasks)
 CONTENT_EVERY = 4.0                 # how often Map Content is checked for the Temple icon (until it's seen)
+# 2.137.2 (feedback: "this ritual didn't pop up the message ... it's consistent 100% of the time at any resolution"):
+# one read of the whole game misses small labels (a 4K game is shrunk to fit the text reader; a busy fight breaks
+# the reader's lines). Every other look reads one quarter of it instead, overlapping, at up to twice the size - so
+# each part of the screen is read big at least every 8 s, and the whole of it every 2 s.
+TILES = ((0.0, 0.0, 0.56, 0.56), (0.44, 0.0, 1.0, 0.56), (0.0, 0.44, 0.56, 1.0), (0.44, 0.44, 1.0, 1.0))
+
+
+def look_box(g, n):
+    """Look number n -> the part of the game read (screen pixels): even = all of it, odd = one quarter in turn."""
+    gx, gy, gw, gh = g
+    x0, y0 = gx + int(gw * SCREEN[0]), gy + int(gh * SCREEN[1])
+    w, h = int(gw * (SCREEN[2] - SCREEN[0])), int(gh * (SCREEN[3] - SCREEN[1]))
+    if n % 2 == 0:
+        return (x0, y0, x0 + w, y0 + h)
+    t = TILES[(n // 2) % len(TILES)]
+    return (x0 + int(w * t[0]), y0 + int(h * t[1]), x0 + int(w * t[2]), y0 + int(h * t[3]))
 
 
 class HoverPage:
@@ -56,8 +72,8 @@ class HoverPage:
         g = game_rect()
         if not g:
             return None
-        gx, gy, gw, gh = g
-        box = (gx + int(gw * SCREEN[0]), gy + int(gh * SCREEN[1]), gx + int(gw * SCREEN[2]), gy + int(gh * SCREEN[3]))
+        n = self._hv_n = getattr(self, "_hv_n", -1) + 1
+        box = look_box(g, n)
         if box[2] <= box[0] or box[3] <= box[1]:
             return None
         self._hv_busy = True

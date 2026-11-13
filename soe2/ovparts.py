@@ -311,7 +311,9 @@ class OverlayParts:
             tag = "▸ " + self.ritual_line_label()             # 2.132.2: RITUAL / TEMPLE / IN MAP
             cv.create_text(lft, mid, text=tag, anchor="w", fill=P["head"],
                            font=(P["hfont"], self._hf(9), "bold"), tags=("mg", "rit"))
-            rt = self._mg_text(cv, P, lft + fm.measure("▸ IN MAP ") + 8, mid, "ritual", f)
+            # 2.137.1 (feedback: "it shows HELPERSCrystals"): the gap is measured on the tag itself, in its own font
+            tf = tkfont.Font(root=cv, family=P["hfont"], size=self._hf(9), weight="bold")
+            rt = self._mg_text(cv, P, lft + tf.measure(tag + "  ") + 6, mid, "ritual", f)
             cv.addtag_withtag("rit", rt.item)
             rt.config(text=self.ritual_readout())
             if light:

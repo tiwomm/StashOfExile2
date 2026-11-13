@@ -164,6 +164,13 @@ def _no_motion_21351(S):
     S.pop("reduce_motion", None)
 
 
+def _alerts_top_21371(S):
+    """2.137.1: alert cards move from Center (on your character) to Top center - once; you can pick Center again."""
+    c = S.get("alert_card")
+    if isinstance(c, dict) and c.get("where") in (None, "center"):
+        c["where"] = "top"
+
+
 STEPS = (
     ("modbook_import", "1.x", "app", _modbook_import, "modbook_imported"),
     ("rules_scoped", "2.6.0", "app", _rules_scoped, "rules_scoped_26"),
@@ -182,6 +189,7 @@ STEPS = (
     ("ritual_id_21324", "2.132.4", "settings", _ritual_id_21324, None),
     ("regex_keys_21326", "2.132.6", "settings", _regex_keys_21326, None),
     ("no_motion_21351", "2.135.1", "settings", _no_motion_21351, None),
+    ("alerts_top_21371", "2.137.1", "settings", _alerts_top_21371, None),
 )
 
 
