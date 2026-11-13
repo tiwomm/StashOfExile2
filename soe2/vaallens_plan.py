@@ -49,6 +49,18 @@ TOUCH = {
 }
 
 
+# 2.142.0 (feedback: "I should be getting suggestions to place the thaumaturge then the corruption chamber attached to
+# it and upgrade it to t3 and lock it"): the rooms that pay at tier 3, and the room each wants beside it
+HIGH = ("Corruption Chamber", "Sacrificial Chamber", "Thaumaturge", "Alchemy Lab", "Smithy")
+PARTNER = {
+    "Thaumaturge": ("Corruption Chamber", "Sacrificial Chamber", "Alchemy Lab"),
+    "Corruption Chamber": ("Thaumaturge", "Sacrificial Chamber"),
+    "Sacrificial Chamber": ("Thaumaturge", "Generator"),
+    "Alchemy Lab": ("Thaumaturge",),
+    "Smithy": ("Golem Works", "Generator"),
+}
+
+
 def card(name):
     """A card's printed name -> ("path", None) | ("key", None) | ("room", family) | None (not read / not known).
     2.141.0: only a name read close to a known card counts - anything else gets the ✕ marks only."""
@@ -165,10 +177,17 @@ def rank(board, lit, what):
         else:
             fam = what[1]
             friends = sorted({taken[n] for n in near(t) if taken.get(n) in TOUCH.get(fam, ())})
+            pals = sorted({taken[n] for n in near(t) if taken.get(n) in PARTNER.get(fam, ())})
             free = sum(1 for n in near(t) if not taken.get(n))
+            spot = partner_spot(taken, t, lane)
             on_lane = t in lane
-            score = len(friends) * 6 + free - (8 if on_lane else 0)
-            why = ["next to " + ", ".join(friends)] if friends else []
+            score = len(friends) * 6 + len(pals) * 10 + free - (8 if on_lane else 0)
+            want = fam in PARTNER and spot and PARTNER[fam][0] not in pals
+            if want:
+                score += 8                              # room beside it for the room it wants most
+            why = ["next to " + ", ".join(sorted(set(friends) | set(pals)))] if friends or pals else []
+            if want:
+                why.append(f"room beside it for a {PARTNER[fam][0]}")
             if on_lane:
                 why.append("on the gold path's way")
             why.append(f"{free} free sides")
@@ -176,8 +195,24 @@ def rank(board, lit, what):
     return sorted(out, key=lambda x: (-x[0], abs(x[1][0]), x[1][1]))
 
 
+def partner_spot(taken, t, lane=()):
+    """A free tile beside t for the next room: not on the gold path's lane, touching no reward room (t counted as
+    taken); the one with the most free sides of its own. None: no room."""
+    b = dict(taken)
+    b[t] = "Room"
+    best = None
+    for n in near(t):
+        if b.get(n) or n in lane or n in (ATZIRI, ENTRANCE) or touches_reward(b, n):
+            continue
+        free = sum(1 for m in near(n) if not b.get(m))
+        if best is None or free > best[0]:
+            best = (free, n)
+    return best[1] if best else None
+
+
 def marks(board, lit, what):
-    """-> {tile: ("1" | "2" | "x", why)}: the best two (when the card is known) and every ruled-out tile."""
+    """-> {tile: ("1" | "2" | "x" | "+", why)}: the best two (when the card is known), every ruled-out tile, and for a
+    room that wants a partner (Thaumaturge -> Corruption Chamber...) "+" where that partner goes beside 1."""
     out, n = {}, 0
     for score, t, why in rank(board, lit, what):
         if score <= -1000:
@@ -185,4 +220,100 @@ def marks(board, lit, what):
         elif n < 2:
             n += 1
             out[t] = (str(n), why)
+    fam = what[1] if what and what[0] == "room" else None
+    one = [t for t, (m, _w) in out.items() if m == "1"]
+    if fam in PARTNER and one:
+        taken = names(board)
+        if not any(taken.get(x) == PARTNER[fam][0] for x in near(one[0])):
+            p = partner_spot(taken, one[0], spine(taken))
+            if p and p not in out:
+                out[p] = ("+", f"{PARTNER[fam][0]} here, beside it")
+    return out
+
+
+def combo(fam, hand=()):
+    """A high-value room picked -> the steps after placing it: [(mark, text)] (its partner beside it, then upgrade and
+    lock the one that pays). hand: medallion names you hold (learned), to say which ones do it."""
+    if fam not in PARTNER:
+        return []
+    pay = fam if fam in ("Corruption Chamber", "Sacrificial Chamber", "Alchemy Lab", "Smithy") else PARTNER[fam][0]
+    up = "Quipolatl's Medallion" in (hand or ())
+    lock = "Juatalotli's Medallion" in (hand or ())
+    steps = []
+    if pay != fam:
+        steps.append(("+", f"Then {pay} on +, beside it"))
+    steps.append(("▲", f"Upgrade {pay} to tier 3" + (" (Quipolatl's)" if up else "")))
+    steps.append(("■", "Lock it" + (" (Juatalotli's)" if lock else "")))
+    return steps
+
+
+# ---------------------------------------------------------------- 2.142.0 the hand's plan
+# (feedback, with two layouts: "the corruption chamber medallion + 2 of the cards in hand, those are the kinds of
+# suggestions a player needs"): every room card in the list plus the rooms your medallions add, laid out together -
+# each Thaumaturge first, with room beside it; the Corruption Chambers, Alchemy Labs and Sacrificial Chambers it
+# raises go beside it (an Alchemy Lab beside two when it can). Only free tiles joined to your paths and rooms, off the
+# gold path's lane, touching no reward room.
+ORDER = ("Thaumaturge", "Corruption Chamber", "Alchemy Lab", "Sacrificial Chamber", "Generator", "Smithy",
+         "Golem Works")
+SHORT = {"Thaumaturge": "TH", "Corruption Chamber": "CC", "Alchemy Lab": "AL", "Sacrificial Chamber": "SC",
+         "Generator": "GE", "Smithy": "SM", "Golem Works": "GW"}
+
+
+def _open_tiles(b, lane):
+    net = network(b)
+    out = set()
+    for c in net:
+        for n in near(c):
+            if not b.get(n) and n not in lane and n not in (ATZIRI, ENTRANCE) and not touches_reward(b, n):
+                out.add(n)
+    return out
+
+
+def hand_plan(board, fams):
+    """board: a read board; fams: room families in hand (cards and medallions, repeats allowed).
+    -> [(tile, family, why)] in the order to place them (only the rooms of the chains above)."""
+    taken = names(board)
+    lane = spine(taken)
+    b = dict(taken)
+    left = [f for f in fams if f in ORDER]
+    left.sort(key=ORDER.index)
+    plan = []
+    for fam in left:
+        best = None
+        for t in _open_tiles(b, lane):
+            pals = [b[n] for n in near(t) if b.get(n) in PARTNER.get(fam, ()) or b.get(n) in TOUCH.get(fam, ())]
+            free = sum(1 for n in near(t) if not b.get(n) and n not in lane and inside(n))
+            score = len(pals) * 10 + free * (3 if fam == "Thaumaturge" else 1) - abs(t[0]) * 0.2
+            if fam != "Thaumaturge" and "Thaumaturge" in PARTNER.get(fam, ()) and not pals and any(
+                    f == "Thaumaturge" for f in b.values()):
+                score -= 20                              # it wants a Thaumaturge beside it: keep looking
+            if best is None or score > best[0]:
+                best = (score, t, pals)
+        if best is None:
+            continue
+        _s, t, pals = best
+        b[t] = fam
+        why = ("beside " + ", ".join(sorted(set(pals)))) if pals else "room beside it for its chain"
+        plan.append((t, fam, why))
+    return plan
+
+
+def with_plan(marks, plan, lit, what):
+    """The plan on the board: each planned tile marked with its room's short name ("p"); with a card picked whose
+    room is in the plan and its tile lit, that tile is 1 (the ranked best moves to 2)."""
+    out = dict(marks)
+    fam = what[1] if what and what[0] == "room" else None
+    mine = next((t for t, f, _w in plan if f == fam and t in lit), None)
+    if mine is not None:
+        ranked = [t for t, (m, _w) in sorted(out.items(), key=lambda kv: kv[1][0]) if m in ("1", "2")]
+        for t in [t for t, (m, _w) in out.items() if m in ("1", "2", "+")]:
+            del out[t]
+        why = next(w for t, f, w in plan if t == mine)
+        out[mine] = ("1", "the plan: " + why)
+        rest = [t for t in ranked if t != mine]
+        if rest:
+            out[rest[0]] = ("2", "if not the plan's tile")
+    for t, f, _w in plan:
+        if t not in out:
+            out[t] = ("p", SHORT.get(f, "·"))
     return out
