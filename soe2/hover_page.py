@@ -12,6 +12,8 @@ from . import temple as TM
 
 EVERY_MS = 1000                     # how often it looks (only in a map, the game in front)
 SCREEN = (0.0, 0.0, 1.0, 0.86)      # the part of the game read: all of it but the bottom bar (life, skills, flasks)
+STUCK_SECS = 20                     # 2.138.3: a look still busy after this is let go (see remnant.READ_SECS)
+HEARTBEAT_SECS = 60
 CONTENT_EVERY = 4.0                 # how often Map Content is checked for the Temple icon (until it's seen)
 # 2.137.2 (feedback: "this ritual didn't pop up the message ... it's consistent 100% of the time at any resolution"):
 # one read of the whole game misses small labels (a 4K game is shrunk to fit the text reader; a busy fight breaks
@@ -33,6 +35,21 @@ def look_box(g, n):
 
 class HoverPage:
     """Mixed into App."""
+
+    def hover_heartbeat(self, secs, lines):
+        """2.138.3, Debug mode: once a minute in maps - how many looks, the slowest, and whether text was read at all
+        (so a log says whether the looks ran when an altar was missed). Counts only, never the text."""
+        hb = getattr(self, "_hv_hb", None)
+        now = time.time()
+        if hb is None:
+            hb = self._hv_hb = {"t": now, "n": 0, "slow": 0.0, "empty": 0}
+        hb["n"] += 1
+        hb["slow"] = max(hb["slow"], secs)
+        hb["empty"] += 0 if lines else 1
+        if now - hb["t"] >= HEARTBEAT_SECS:
+            buglog.debug("Ritual", f"looks in the last minute: {hb['n']}, slowest {hb['slow']:.1f} s, "
+                                   f"no text read in {hb['empty']}")
+            self._hv_hb = {"t": now, "n": 0, "slow": 0.0, "empty": 0}
 
     def hover_wanted(self):
         return self.temple_on() or self.ritid_on()
@@ -58,7 +75,10 @@ class HoverPage:
     def hover_look(self, force=False):
         """One look round the mouse (a background thread); the text goes to each helper that's on."""
         if getattr(self, "_hv_busy", False):
-            return None
+            # 2.138.3: a look that never came back no longer stops every later one (it's let go after STUCK_SECS)
+            if time.time() - getattr(self, "_hv_busy_at", 0.0) < STUCK_SECS:
+                return None
+            buglog.debug("Ritual", "a screen look didn't finish in %d s - looking again" % STUCK_SECS)
         if not force:
             if getattr(self, "br_area", None) != "map" or not self.hover_wanted():
                 return None
@@ -76,7 +96,7 @@ class HoverPage:
         box = look_box(g, n)
         if box[2] <= box[0] or box[3] <= box[1]:
             return None
-        self._hv_busy = True
+        self._hv_busy, self._hv_busy_at = True, time.time()
         # 2.132.4: does this map have a Temple (Map Content's icon)? Looked for until it's seen, every few seconds
         look_temple = (self.temple_on() or force) and not getattr(self, "tm_in_map", False) and \
             time.time() - getattr(self, "_tm_content_at", 0.0) > CONTENT_EVERY
@@ -92,9 +112,12 @@ class HoverPage:
                 buglog.caught()
                 return [], None
 
+        t_look = time.time()
+
         def done(got):
             self._hv_busy = False
             lines, has = got or ([], None)
+            self.hover_heartbeat(time.time() - t_look, lines)
             if has:
                 self.tm_in_map = True
                 try:
