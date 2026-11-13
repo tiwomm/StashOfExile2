@@ -85,6 +85,10 @@ class OcrUnavailable(Exception):
     pass
 
 
+class OcrStuck(Exception):
+    """2.138.3: a read took too long, or another read held the reader too long (nothing waits forever)."""
+
+
 # ================================================================ reading lines (pure: tested offline)
 ONE_X = re.compile(r"^[lI|i!]\s?[x×х](?=\s)")     # 2.129.0 (its log: 3 of 5 lines unread): OCR reads "1x" as "lx"
 # 2.130.4 (feedback: "doesn't read 10x divine orb" - its log: 'IOX Divine Orb'): a count whose digits OCR read as
@@ -317,13 +321,18 @@ def changed(a, b, tol=6.0):
 
 
 # ================================================================ the picture and the OCR (Windows)
-def grab(rect):
-    """(left, top, right, bottom) of the screen -> PIL image."""
+def grab(rect, sct=None):
+    """(left, top, right, bottom) of the screen -> PIL image. 2.138.3: sct = a grabber kept by a fast reader's thread
+    (made once, not for every look)."""
     import mss
     from PIL import Image
     l_, t, r, b = rect
-    with mss.mss() as sct:
-        shot = sct.grab({"left": int(l_), "top": int(t), "width": int(r - l_), "height": int(b - t)})
+    box = {"left": int(l_), "top": int(t), "width": int(r - l_), "height": int(b - t)}
+    if sct is not None:
+        shot = sct.grab(box)
+    else:
+        with mss.mss() as one:
+            shot = one.grab(box)
     return Image.frombytes("RGB", shot.size, shot.rgb)
 
 
@@ -407,6 +416,11 @@ _OCR_ERRS = set()
 # 2.138.1: a second text reader of its own, with its own lock - the Fast Beacon Read (temple) must never wait for the
 # whole-screen read
 _FAST = {"engine": [None], "lock": threading.Lock()}
+# 2.138.3 (feedback: "this ritual didn't give an alert either" while the altar's tooltip was on screen, and the Fast
+# Beacon Read missed crystals): one read that never came back stopped every later look in that map. A read now gives up
+# after READ_SECS (its reader is dropped, a new one is made next time) and waiting for the reader after WAIT_SECS.
+READ_SECS = 8.0
+WAIT_SECS = 10.0
 
 
 def ocr(img, fast=False):
@@ -416,9 +430,16 @@ def ocr(img, fast=False):
     if sys.platform != "win32":
         raise OcrUnavailable(ocr_available())
     eng, lock = (_FAST["engine"], _FAST["lock"]) if fast else (_ENGINE, _OCR_LOCK)
-    with lock:
+    if not lock.acquire(timeout=WAIT_SECS):
+        _said("busy", "another read held the text reader over %d s - this look skipped" % WAIT_SECS)
+        raise OcrStuck("busy")
+    try:
         try:
             return _ocr(img, eng)
+        except OcrStuck:
+            eng[0] = None                                # (a fresh reader next time)
+            _said("slow", "a read took over %d s - a new reader is made" % READ_SECS)
+            raise
         except OSError as e:
             code = getattr(e, "winerror", None) or getattr(e, "errno", None)
             if code not in _OCR_ERRS:                    # the error's number only (no text: it could hold anything)
@@ -426,6 +447,19 @@ def ocr(img, fast=False):
                 buglog.debug("OCR", f"read failed (error {code}) - trying again with a new reader")
             eng[0] = None
             return _ocr(img, eng)
+    finally:
+        lock.release()
+
+
+_SAID = {}
+
+
+def _said(key, text, every=300):
+    """Debug mode: one line, at most every few minutes."""
+    now = time.time()
+    if now - _SAID.get(key, 0.0) > every:
+        _SAID[key] = now
+        buglog.debug("OCR", text)
 
 
 def _ocr(img, slot=None):
@@ -460,8 +494,14 @@ def _ocr(img, slot=None):
     bmp = SoftwareBitmap.create_copy_from_buffer(dw.detach_buffer(), BitmapPixelFormat.BGRA8, img.width, img.height,
                                                  BitmapAlphaMode.PREMULTIPLIED)
 
-    async def run():
+    async def read():
         return await eng.recognize_async(bmp)
+
+    async def run():
+        try:
+            return await asyncio.wait_for(read(), READ_SECS)
+        except asyncio.TimeoutError:
+            raise OcrStuck("slow")
     res = asyncio.run(run())
     out = []
     for line in res.lines:
