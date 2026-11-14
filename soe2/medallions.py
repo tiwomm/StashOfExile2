@@ -216,3 +216,32 @@ def identify(vec, icons):
             if s > best:
                 best, who = s, name
     return who
+
+
+# 2.142.1 (feedback: "the room card medallions have matching icons to the regular cards and room tiles"): a slot not
+# known by its own picture is matched against the board's room icons - an Uromoti's shows the room it adds
+ROOM_MIN = 0.90
+
+
+def room_from_icon(full, slot, scale=1.0, origin=(0, 0)):
+    """The game's picture (PIL), a slot box on screen -> the room family its icon shows, or None. Searches a few
+    sizes and spots round the slot's middle (the room icon sits a little above it)."""
+    from PIL import Image
+    from . import vaallens as V
+    icons = V.load_icons()
+    a = np.asarray(full.convert("RGB")).astype(np.float32)
+    ox, oy = origin
+    sw = (slot[2] - slot[0]) / SLOT[0]
+    best = (0.0, None)
+    for sc in (1.0, 1.05, 1.1, 1.15):
+        r = V.IR / sc * sw
+        for dy in range(44, 64, 4):
+            cx, cy = (slot[0] + slot[2]) / 2 - ox, slot[1] + dy * sw - oy
+            crop = a[int(cy - r):int(cy + r), int(cx - r):int(cx + r)]
+            if crop.shape[0] < 10 or crop.shape[1] < 10:
+                continue
+            q = np.asarray(Image.fromarray(crop.astype(np.uint8)).resize((2 * V.IR, 2 * V.IR), Image.BILINEAR))
+            m, sim, sure = V.match_icon(V.icon_feat(q.astype(np.float32)), icons)
+            if m and sure and m.get("kind") == "room" and m.get("name") and sim > best[0]:
+                best = (sim, m["name"])
+    return best[1] if best[0] >= ROOM_MIN else None
